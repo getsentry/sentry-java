@@ -1,125 +1,8 @@
----
-alwaysApply: false
-description: Pull request creation, stacked PRs, and PR workflow
----
-
-# Pull Request Rules
-
-## Creating a Pull Request
-
-### Step 1: Ensure Feature Branch
-
-If on `main`, create and switch to a new branch:
-
-```bash
-git checkout -b <type>/<short-description>
-```
-
-Branch names use `feat/`, `fix/`, `ref/`, etc. matching the commit type.
-
-### Step 2: Format Code and Regenerate API Files
-
-```bash
-./gradlew spotlessApply apiDump
-```
-
-This is **required** before every PR. Fix any failures before continuing.
-
-### Step 3: Commit Changes
-
-Use `git status --porcelain` to review changes. Ignore files only relevant for local testing (hardcoded debug toggles, sample app config, `.env` files). Restore those with `git checkout -- <file>`.
-
-Follow [Sentry commit message conventions](https://develop.sentry.dev/engineering-practices/commit-messages/):
-
-```
-<type>(<scope>): <subject>
-```
-
-Allowed types: `feat`, `fix`, `ref`, `chore`, `docs`, `test`, `perf`, `build`, `ci`, `style`, `meta`, `license`
-
-- Use imperative present tense ("add" not "added")
-- Capitalize subject, no trailing period
-- Keep under 100 characters
-
-### Step 4: Push
-
-```bash
-git push -u origin HEAD
-```
-
-If push fails due to diverged history, ask the user — do not force-push.
-
-### Step 5: Create PR
-
-Create a draft PR using the repo's PR template:
-
-```markdown
-## :scroll: Description
-<Describe the changes in detail>
-
-## :bulb: Motivation and Context
-<Why is this change required? What problem does it solve?>
-
-## :green_heart: How did you test it?
-<Describe how you tested>
-
-## :pencil: Checklist
-- [ ] I added GH Issue ID _&_ Linear ID
-- [ ] I added tests to verify the changes.
-- [ ] No new PII added or SDK only sends newly added PII if `sendDefaultPII` is enabled.
-- [ ] I updated the docs if needed.
-- [ ] I updated the wizard if needed.
-- [ ] Review from the native team if needed.
-- [ ] No breaking change or entry added to the changelog.
-- [ ] No breaking change for hybrid SDKs or communicated to hybrid SDKs.
-
-## :crystal_ball: Next steps
-```
-
-### Step 6: Update Changelog
-
-Add an entry to `CHANGELOG.md` under `## Unreleased` in the appropriate subsection:
-
-| Change Type | Subsection |
-|---|---|
-| New feature | `### Features` |
-| Bug fix | `### Fixes` |
-| Refactoring, internal cleanup | `### Internal` |
-| Dependency update | `### Dependencies` |
-
-Entry format:
-
-```markdown
-- <Short description> ([#<PR_NUMBER>](https://github.com/getsentry/sentry-java/pull/<PR_NUMBER>))
-```
-
-**When rebasing:** A rebase onto `main` can land your branch after a release was cut, where the `## Unreleased` heading your entry lived under has since been renamed to that version number. If that happens, move your new entry into an `## Unreleased` section at the top of `CHANGELOG.md` (create the section if it no longer exists) so it is not left under an already-released version.
-
-Commit changelog separately:
-
-```bash
-git add CHANGELOG.md && git commit -m "changelog" && git push
-```
-
-### PR Title Format
-
-Follow the commit message format:
-
-```
-<type>(<scope>): <Subject>
-```
-
-Examples:
-- `feat(core): Add structured logging support`
-- `fix(android): Prevent crash on API 21 when registering receiver`
-
----
-
-## Stacked PRs
+# Stacked PRs
 
 Stacked PRs split a large feature into small, easy-to-review PRs where each builds on the previous one. This follows the same concept as the [Graphite](https://graphite.dev/) stacking workflow.
 
-### Structure
+## Structure
 
 ```
 main ← collection-branch ← stack-pr-1 ← stack-pr-2 ← stack-pr-3 ← ...
@@ -132,7 +15,7 @@ main ← collection-branch ← stack-pr-1 ← stack-pr-2 ← stack-pr-3 ← ...
 
 The collection branch exists so that individual stack PRs can be **merge-committed** (not squashed). PRs targeting `main` use squash merging, but that causes repeated merge conflicts when syncing the stack. Merge commits on non-`main` branches avoid this. The collection branch itself is squash-merged into `main` at the end.
 
-### Branch Naming
+## Branch Naming
 
 Prefer a shared prefix for the feature, with descriptive suffixes per PR. The collection branch uses the shared prefix. The type prefix (`feat/`, `fix/`, etc.) may vary depending on the nature of each PR's changes:
 
@@ -143,7 +26,7 @@ feat/scope-attributes-logger       # PR 2 → targets PR 1
 fix/attribute-type-detection        # PR 3 (fix, different name — that's fine) → targets PR 2
 ```
 
-### PR Title Naming
+## PR Title Naming
 
 Include the topic name and a sequential number in brackets:
 
@@ -156,7 +39,7 @@ Examples:
 - `feat(core): [Global Attributes 2] Wire scope attributes into LoggerApi and MetricsApi`
 - `feat(samples): [Global Attributes 3] Showcase scope attributes in Spring Boot 4 sample`
 
-### Finding All PRs in a Stack
+## Finding All PRs in a Stack
 
 Do **not** rely on branch name patterns — later PRs in a stack may use different prefixes or naming. Instead:
 
@@ -175,7 +58,7 @@ Do **not** rely on branch name patterns — later PRs in a stack may use differe
    ```
    Repeat until you reach the collection branch going up and find no more PRs going down.
 
-### Creating the Collection Branch
+## Creating the Collection Branch
 
 Before the first stacked PR, create the collection branch with an empty commit (so GitHub allows opening a PR) and create the collection PR:
 
@@ -189,7 +72,7 @@ gh pr create --base main --draft --title "<type>(<scope>): <Topic>" --body "Coll
 
 **CRITICAL: Do NOT manually update the collection branch.** Never merge, fast-forward, or push stack branch commits into the collection branch. The collection branch stays at its initial position (the empty commit on `main`) until the user merges individual stack PRs into it one by one through GitHub. If you fast-forward the collection branch to include stack commits, GitHub will auto-merge and delete all stack PR branches, destroying the entire stack.
 
-### Creating a New Stacked PR
+## Creating a New Stacked PR
 
 1. Start from the tip of the previous stack branch (or the collection branch for the first PR).
 2. Create a new branch, make changes, format, commit, and push.
@@ -199,7 +82,7 @@ gh pr create --base main --draft --title "<type>(<scope>): <Topic>" --body "Coll
    ```
 4. Add the stack list to the top of the new PR's description and update it on all existing PRs in the stack (see below).
 
-### Stack List in PR Description
+## Stack List in PR Description
 
 Every PR in the stack — **including the collection branch PR** — must have a stack list **at the top of its description** (before the `## :scroll: Description` section). When a new PR is added, update the description on **all** PRs in the stack and on the collection branch PR.
 
@@ -233,7 +116,7 @@ To update the PR description, use `--body-file` to avoid shell quoting issues wi
 2. Use the `Edit` tool to prepend or replace the stack list section in `/tmp/pr-body.md`
 3. Update the description: `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`
 
-### Merging Stacked PRs (done by the user, not the agent)
+## Merging Stacked PRs (done by the user, not the agent)
 
 Individual stack PRs are merged in order from bottom to top (PR 1 first, then PR 2, etc.) using **merge commits** (not squash). After each merge, the next PR's base automatically becomes the merged branch's target. GitHub handles rebasing onto the new base.
 
@@ -241,7 +124,7 @@ Once all stack PRs are merged into the collection branch, the collection PR is *
 
 **Do not merge PRs.** Only the user merges PRs.
 
-### Syncing the Stack
+## Syncing the Stack
 
 When a base PR changes (e.g. after addressing review feedback on PR 1), merge the changes forward through the stack **between adjacent stack PR branches only**:
 
