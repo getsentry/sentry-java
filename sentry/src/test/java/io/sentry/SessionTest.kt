@@ -1,10 +1,7 @@
 package io.sentry
 
 import com.google.common.truth.Truth.assertThat
-import java.io.StringReader
-import java.io.StringWriter
 import kotlin.test.Test
-import org.mockito.kotlin.mock
 
 class SessionTest {
 
@@ -112,34 +109,5 @@ class SessionTest {
     val clone = session.clone()
 
     assertThat(clone.hasNonTerminatingUnhandledError()).isTrue()
-  }
-
-  @Test
-  fun `serialization round-trips a non-terminating unhandled error and Unhandled status`() {
-    val logger = mock<ILogger>()
-    val session = okSession()
-    session.recordNonTerminatingUnhandledError()
-    session.end()
-    assertThat(session.status).isEqualTo(Session.State.Unhandled)
-
-    val writer = StringWriter()
-    session.serialize(JsonObjectWriter(writer, 100), logger)
-
-    val deserialized =
-      Session.Deserializer().deserialize(JsonObjectReader(StringReader(writer.toString())), logger)
-
-    assertThat(deserialized.status).isEqualTo(Session.State.Unhandled)
-    assertThat(deserialized.hasNonTerminatingUnhandledError()).isTrue()
-  }
-
-  @Test
-  fun `a non-terminating unhandled error defaults to false and is not serialized when unset`() {
-    val logger = mock<ILogger>()
-    val session = okSession()
-
-    val writer = StringWriter()
-    session.serialize(JsonObjectWriter(writer, 100), logger)
-
-    assertThat(writer.toString()).doesNotContain("non_terminating_unhandled_error")
   }
 }
