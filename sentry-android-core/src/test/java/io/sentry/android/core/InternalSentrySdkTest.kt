@@ -495,7 +495,7 @@ class InternalSentrySdkTest {
     assertThat(scopeSession.get().hasNonTerminatingUnhandledError()).isTrue()
     assertThat(scopeSession.get().sessionId).isEqualTo(originalSid.get())
 
-    // and it is persisted so pending survives process death
+    // and it is persisted so the flag survives process death
     val sessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
     val persistedSession =
       fixture.options.serializer.deserialize(sessionFile.reader(), Session::class.java)!!
@@ -541,10 +541,10 @@ class InternalSentrySdkTest {
     fixture.captureEnvelopeNonTerminatingWithEvent(
       fixture.createSentryEventWithUnhandledException()
     )
-    val pendingSession = AtomicReference<Session>()
-    Sentry.configureScope { scope -> pendingSession.set(scope.session) }
-    val oldSid = pendingSession.get().sessionId
-    assertThat(pendingSession.get().hasNonTerminatingUnhandledError()).isTrue()
+    val unhandledSession = AtomicReference<Session>()
+    Sentry.configureScope { scope -> unhandledSession.set(scope.session) }
+    val oldSid = unhandledSession.get().sessionId
+    assertThat(unhandledSession.get().hasNonTerminatingUnhandledError()).isTrue()
     fixture.capturedEnvelopes.clear()
 
     // when a subsequent hard crash is captured through the existing terminating API

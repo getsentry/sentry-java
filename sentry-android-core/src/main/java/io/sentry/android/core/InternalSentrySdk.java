@@ -294,7 +294,6 @@ public final class InternalSentrySdk {
             });
       }
 
-      // Capture the original envelope as-is (no session item attached).
       return scopes.captureEnvelope(envelope);
     } catch (Exception e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", e);
