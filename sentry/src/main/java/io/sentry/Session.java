@@ -67,15 +67,6 @@ public final class Session implements JsonUnknown, JsonSerializable {
   /** the Abnormal mechanism, e.g. what was the reason for session to become abnormal (ANR) */
   private @Nullable String abnormalMechanism;
 
-  /**
-   * Whether the session experienced an unhandled error that did <em>not</em> terminate the process,
-   * e.g. an unhandled Flutter exception. A native crash is also unhandled, but it kills the process
-   * and therefore ends the session as {@link State#Crashed} instead.
-   *
-   * <p>Kept locally and persisted with the session, but never sent as a status while the session is
-   * alive. On end() the session is finalized as {@link State#Unhandled} instead of {@link
-   * State#Exited}, unless a crash escalated it to {@link State#Crashed}.
-   */
   private boolean hasNonTerminatingUnhandledError;
 
   /** The session lock, ops should be atomic */
@@ -242,8 +233,12 @@ public final class Session implements JsonUnknown, JsonSerializable {
   }
 
   /**
-   * Whether the session experienced an unhandled error that did not terminate the process, and so
-   * finalizes as {@link State#Unhandled} rather than {@link State#Exited}.
+   * Whether the session experienced an unhandled error that did <em>not</em> terminate the process,
+   * e.g. an unhandled Flutter exception, and so finalizes as {@link State#Unhandled} rather than
+   * {@link State#Exited}. A native crash is also unhandled, but it kills the process and ends the
+   * session as {@link State#Crashed} instead.
+   *
+   * <p>Never sent as a status while the session is alive; it is only persisted with the session.
    */
   @ApiStatus.Internal
   public boolean hasNonTerminatingUnhandledError() {
@@ -294,8 +289,6 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
       // at this state it might be Crashed already, so we don't check for it.
       if (status == State.Ok) {
-        // a session that experienced an unhandled (but non-terminal) exception is finalized as
-        // Unhandled rather than Exited.
         status = hasNonTerminatingUnhandledError ? State.Unhandled : State.Exited;
       }
 
