@@ -1,9 +1,11 @@
 package io.sentry.util
 
+import com.google.common.truth.Truth.assertThat
 import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -35,6 +37,27 @@ class ExceptionUtilsTest {
   @Test
   fun `rethrowIfFatal rethrows ThreadDeath`() {
     assertFails { ExceptionUtils.rethrowIfFatal(ThreadDeath()) }
+  }
+
+  @Test
+  fun `rethrowIfFatal rethrows NoClassDefFoundError as-is`() {
+    val error = NoClassDefFoundError()
+    val thrown = assertFailsWith<NoClassDefFoundError> { ExceptionUtils.rethrowIfFatal(error) }
+    assertThat(thrown).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `rethrowIfFatal rethrows NoSuchMethodError as-is`() {
+    val error = NoSuchMethodError()
+    val thrown = assertFailsWith<NoSuchMethodError> { ExceptionUtils.rethrowIfFatal(error) }
+    assertThat(thrown).isSameInstanceAs(error)
+  }
+
+  @Test
+  fun `rethrowIfFatal rethrows UnsatisfiedLinkError as-is`() {
+    val error = UnsatisfiedLinkError()
+    val thrown = assertFailsWith<UnsatisfiedLinkError> { ExceptionUtils.rethrowIfFatal(error) }
+    assertThat(thrown).isSameInstanceAs(error)
   }
 
   @Test
