@@ -39,7 +39,7 @@ Allowed types: `feat`, `fix`, `ref`, `chore`, `docs`, `test`, `perf`, `build`, `
 
 - Use imperative present tense ("add" not "added")
 - Capitalize subject, no trailing period
-- Keep under 100 characters
+- Keep the subject under 70 characters
 
 ### Step 4: Push
 
@@ -51,30 +51,9 @@ If push fails due to diverged history, ask the user — do not force-push.
 
 ### Step 5: Create PR
 
-Create a draft PR using the repo's PR template:
-
-```markdown
-## :scroll: Description
-<Describe the changes in detail>
-
-## :bulb: Motivation and Context
-<Why is this change required? What problem does it solve?>
-
-## :green_heart: How did you test it?
-<Describe how you tested>
-
-## :pencil: Checklist
-- [ ] I added GH Issue ID _&_ Linear ID
-- [ ] I added tests to verify the changes.
-- [ ] No new PII added or SDK only sends newly added PII if `sendDefaultPII` is enabled.
-- [ ] I updated the docs if needed.
-- [ ] I updated the wizard if needed.
-- [ ] Review from the native team if needed.
-- [ ] No breaking change or entry added to the changelog.
-- [ ] No breaking change for hybrid SDKs or communicated to hybrid SDKs.
-
-## :crystal_ball: Next steps
-```
+Create a draft PR using the repo's PR template at `.github/pull_request_template.md`. Read
+that file for the current section structure and checklist, fill in each section, and check
+the checklist items that apply.
 
 ### Step 6: Update Changelog
 
