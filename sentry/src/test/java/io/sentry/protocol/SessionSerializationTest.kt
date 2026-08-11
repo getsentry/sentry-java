@@ -10,6 +10,7 @@ import io.sentry.Session
 import java.io.StringReader
 import java.io.StringWriter
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import org.junit.Test
 import org.mockito.kotlin.mock
 
@@ -64,6 +65,13 @@ class SessionSerializationTest {
 
     assertEquals(Session.State.Unhandled, deserialized.status)
     assertEquals(true, deserialized.hasNonTerminatingUnhandledError())
+  }
+
+  @Test
+  fun `non-terminating flag is omitted when unset`() {
+    val session = Session(null, null, "environment", "release")
+
+    assertFalse(serialize(session).contains("non_terminating_unhandled_error"))
   }
 
   // Helper
