@@ -45,6 +45,7 @@ public class SentryLogbackInitializer implements GenericApplicationListener {
           if (!isSentryAppenderRegistered(logger)) {
             final SentryAppender sentryAppender = getSentryAppender();
 
+            sentryAppender.setEnableLogs(sentryProperties.getLogging().isEnableLogs());
             Optional.ofNullable(sentryProperties.getLogging().getMinimumBreadcrumbLevel())
                 .map(slf4jLevel -> Level.toLevel(slf4jLevel.name()))
                 .ifPresent(sentryAppender::setMinimumBreadcrumbLevel);

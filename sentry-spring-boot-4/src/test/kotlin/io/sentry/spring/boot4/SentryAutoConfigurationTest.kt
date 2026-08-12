@@ -244,6 +244,7 @@ class SentryAutoConfigurationTest {
         "sentry.cron.default-failure-issue-threshold=40",
         "sentry.cron.default-recovery-threshold=50",
         "sentry.logs.enabled=true",
+        "sentry.logging.enable-logs=true",
         "sentry.strict-trace-continuation=true",
         "sentry.org-id=12345",
       )
@@ -301,6 +302,7 @@ class SentryAutoConfigurationTest {
         assertThat(options.cron!!.defaultFailureIssueThreshold).isEqualTo(40L)
         assertThat(options.cron!!.defaultRecoveryThreshold).isEqualTo(50L)
         assertThat(options.logs.isEnabled).isEqualTo(true)
+        assertThat(options.logging.isEnableLogs).isTrue()
         assertThat(options.isStrictTraceContinuation).isEqualTo(true)
         assertThat(options.orgId).isEqualTo("12345")
       }

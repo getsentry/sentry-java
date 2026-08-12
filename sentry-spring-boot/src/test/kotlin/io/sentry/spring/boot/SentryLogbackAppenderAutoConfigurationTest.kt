@@ -112,6 +112,7 @@ class SentryLogbackAppenderAutoConfigurationTest {
         "sentry.logging.minimum-event-level=info",
         "sentry.logging.minimum-breadcrumb-level=debug",
         "sentry.logging.minimum-level=error",
+        "sentry.logging.enable-logs=true",
       )
       .run {
         val appenders = rootLogger.getAppenders(SentryAppender::class.java)
@@ -121,7 +122,17 @@ class SentryLogbackAppenderAutoConfigurationTest {
         assertThat(sentryAppender.minimumBreadcrumbLevel).isEqualTo(Level.DEBUG)
         assertThat(sentryAppender.minimumEventLevel).isEqualTo(Level.INFO)
         assertThat(sentryAppender.minimumLevel).isEqualTo(Level.ERROR)
+        assertThat(sentryAppender.isEnableLogs).isTrue()
       }
+  }
+
+  @Test
+  fun `SentryAppender Logs are disabled by default`() {
+    dsnEnabledRunner.run {
+      val sentryAppender = rootLogger.getAppenders(SentryAppender::class.java).single()
+
+      assertThat((sentryAppender as SentryAppender).isEnableLogs).isFalse()
+    }
   }
 
   @Test
