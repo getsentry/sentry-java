@@ -1,5 +1,6 @@
 package io.sentry.log4j2
 
+import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.InitPriority
 import io.sentry.ScopesAdapter
@@ -28,6 +29,7 @@ import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.MarkerManager
 import org.apache.logging.log4j.ThreadContext
+import org.apache.logging.log4j.core.LogEvent
 import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.AppenderRef
 import org.apache.logging.log4j.core.config.Configuration
@@ -35,7 +37,10 @@ import org.apache.logging.log4j.core.config.LoggerConfig
 import org.apache.logging.log4j.spi.ExtendedLogger
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -57,6 +62,8 @@ class SentryAppenderTest {
       minimumLevel: Level? = null,
       debug: Boolean? = null,
       contextTags: List<String>? = null,
+      enableLogs: Boolean = true,
+      enableGlobalLogs: Boolean = true,
     ): ExtendedLogger {
       if (transportFactory != null) {
         this.transportFactory = transportFactory
@@ -71,6 +78,7 @@ class SentryAppenderTest {
           minimumBreadcrumbLevel,
           minimumEventLevel,
           minimumLevel,
+          enableLogs,
           debug,
           this.transportFactory,
           ScopesAdapter.getInstance(),
@@ -98,6 +106,7 @@ class SentryAppenderTest {
 
       appender.start(
         appender.getOptionsConfiguration { options ->
+          options.logs.isEnabled = enableGlobalLogs
           options.logs.loggerBatchProcessorFactory =
             ILoggerBatchProcessorFactory { options, client ->
               LoggerBatchProcessor(options, client, ImmediateExecutorService())
@@ -251,6 +260,168 @@ class SentryAppenderTest {
 
     verify(fixture.transport)
       .send(checkEvent { event -> assertEquals(SentryLevel.FATAL, event.level) }, anyOrNull())
+  }
+
+  @Test
+  fun `does not capture logs when local logs are disabled`() {
+    val logger = fixture.getSut(enableLogs = false, enableGlobalLogs = true)
+
+    logger.info("this should not be captured as a log")
+    Sentry.flush(10)
+
+    verify(fixture.transport, never()).send(checkLogs {})
+  }
+
+  @Test
+  fun `captures logs when local and aggregate logs are enabled`() {
+    val logger = fixture.getSut(enableLogs = true, enableGlobalLogs = true)
+
+    logger.info("this should be captured as a log")
+    Sentry.flush(10)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          assertEquals("this should be captured as a log", logs.items.first().body)
+        }
+      )
+  }
+
+  @Test
+  fun `captures events and breadcrumbs when local logs are disabled`() {
+    val logger =
+      fixture.getSut(
+        minimumBreadcrumbLevel = Level.INFO,
+        minimumEventLevel = Level.ERROR,
+        enableLogs = false,
+        enableGlobalLogs = true,
+      )
+
+    logger.info("this should be a breadcrumb")
+    logger.error("this should be an event")
+    Sentry.flush(10)
+
+    verify(fixture.transport)
+      .send(
+        checkEvent { event ->
+          assertEquals("this should be an event", event.message?.formatted)
+          assertEquals("this should be a breadcrumb", event.breadcrumbs?.single()?.message)
+        },
+        anyOrNull(),
+      )
+    verify(fixture.transport, never()).send(checkLogs {})
+  }
+
+  @Test
+  fun `existing constructors default logs to disabled`() {
+    val scopes = mock<IScopes>()
+    val event = mock<LogEvent>()
+    whenever(event.level).thenReturn(Level.INFO)
+
+    val deprecatedAppender =
+      SentryAppender(
+        "deprecated",
+        null,
+        null,
+        Level.OFF,
+        Level.OFF,
+        null,
+        null,
+        scopes,
+        null,
+      )
+    val existingAppender =
+      SentryAppender(
+        "existing",
+        null,
+        null,
+        Level.OFF,
+        Level.OFF,
+        Level.INFO,
+        null,
+        null,
+        scopes,
+        null,
+      )
+
+    deprecatedAppender.append(event)
+    existingAppender.append(event)
+
+    verify(scopes, never()).logger()
+  }
+
+  @Test
+  fun `existing factory and plugin attribute default logs to disabled`() {
+    val event = mock<LogEvent>()
+    whenever(event.level).thenReturn(Level.INFO)
+    val existingAppender =
+      spy(
+        assertNotNull(
+          SentryAppender.createAppender(
+            "existing",
+            Level.OFF,
+            Level.OFF,
+            Level.INFO,
+            null,
+            null,
+            null,
+            null,
+          )
+        )
+      )
+    val pluginDefaultAppender =
+      spy(
+        assertNotNull(
+          SentryAppender.createAppender(
+            "plugin-default",
+            Level.OFF,
+            Level.OFF,
+            Level.INFO,
+            null,
+            null,
+            null,
+            null,
+            null,
+          )
+        )
+      )
+
+    existingAppender.append(event)
+    pluginDefaultAppender.append(event)
+
+    verify(existingAppender, never()).captureLog(event)
+    verify(pluginDefaultAppender, never()).captureLog(event)
+  }
+
+  @Test
+  fun `plugin attribute enables logs with explicit opt in`() {
+    initForTest {
+      it.dsn = "http://key@localhost/proj"
+      it.logs.isEnabled = true
+    }
+    val event = mock<LogEvent>()
+    whenever(event.level).thenReturn(Level.INFO)
+    val appender =
+      spy(
+        assertNotNull(
+          SentryAppender.createAppender(
+            "enabled",
+            Level.OFF,
+            Level.OFF,
+            Level.INFO,
+            true,
+            null,
+            null,
+            null,
+            null,
+          )
+        )
+      )
+    doNothing().whenever(appender).captureLog(event)
+
+    appender.append(event)
+
+    verify(appender).captureLog(event)
   }
 
   @Test

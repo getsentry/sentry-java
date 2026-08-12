@@ -12,6 +12,7 @@
             minimumBreadcrumbLevel="DEBUG"
             minimumEventLevel="WARN"
             minimumLevel="DEBUG"
+            enableLogs="true"
             debug="true"
             contextTags="userId,requestId"
     />

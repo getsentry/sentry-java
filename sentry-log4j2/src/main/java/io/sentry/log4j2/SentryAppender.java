@@ -55,6 +55,7 @@ public class SentryAppender extends AbstractAppender {
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private @NotNull Level minimumLevel = Level.INFO;
+  private final boolean enableLogs;
   private final @Nullable Boolean debug;
   private final @NotNull IScopes scopes;
   private final @Nullable List<String> contextTags;
@@ -104,6 +105,32 @@ public class SentryAppender extends AbstractAppender {
       final @Nullable ITransportFactory transportFactory,
       final @NotNull IScopes scopes,
       final @Nullable String[] contextTags) {
+    this(
+        name,
+        filter,
+        dsn,
+        minimumBreadcrumbLevel,
+        minimumEventLevel,
+        minimumLevel,
+        false,
+        debug,
+        transportFactory,
+        scopes,
+        contextTags);
+  }
+
+  public SentryAppender(
+      final @NotNull String name,
+      final @Nullable Filter filter,
+      final @Nullable String dsn,
+      final @Nullable Level minimumBreadcrumbLevel,
+      final @Nullable Level minimumEventLevel,
+      final @Nullable Level minimumLevel,
+      final boolean enableLogs,
+      final @Nullable Boolean debug,
+      final @Nullable ITransportFactory transportFactory,
+      final @NotNull IScopes scopes,
+      final @Nullable String[] contextTags) {
     super(name, filter, null, true, null);
     this.dsn = dsn;
     if (minimumBreadcrumbLevel != null) {
@@ -115,6 +142,7 @@ public class SentryAppender extends AbstractAppender {
     if (minimumLevel != null) {
       this.minimumLevel = minimumLevel;
     }
+    this.enableLogs = enableLogs;
     this.debug = debug;
     this.transportFactory = transportFactory;
     this.scopes = scopes;
@@ -133,12 +161,34 @@ public class SentryAppender extends AbstractAppender {
    * @param filter The filter, if any, to use.
    * @return The SentryAppender.
    */
+  public static @Nullable SentryAppender createAppender(
+      final @Nullable String name,
+      final @Nullable Level minimumBreadcrumbLevel,
+      final @Nullable Level minimumEventLevel,
+      final @Nullable Level minimumLevel,
+      final @Nullable String dsn,
+      final @Nullable Boolean debug,
+      final @Nullable Filter filter,
+      final @Nullable String contextTags) {
+    return createAppender(
+        name,
+        minimumBreadcrumbLevel,
+        minimumEventLevel,
+        minimumLevel,
+        false,
+        dsn,
+        debug,
+        filter,
+        contextTags);
+  }
+
   @PluginFactory
   public static @Nullable SentryAppender createAppender(
       @Nullable @PluginAttribute("name") final String name,
       @Nullable @PluginAttribute("minimumBreadcrumbLevel") final Level minimumBreadcrumbLevel,
       @Nullable @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
       @Nullable @PluginAttribute("minimumLevel") final Level minimumLevel,
+      @Nullable @PluginAttribute("enableLogs") final Boolean enableLogs,
       @Nullable @PluginAttribute("dsn") final String dsn,
       @Nullable @PluginAttribute("debug") final Boolean debug,
       @Nullable @PluginElement("filter") final Filter filter,
@@ -155,6 +205,7 @@ public class SentryAppender extends AbstractAppender {
         minimumBreadcrumbLevel,
         minimumEventLevel,
         minimumLevel,
+        Boolean.TRUE.equals(enableLogs),
         debug,
         null,
         ScopesAdapter.getInstance(),
@@ -206,7 +257,8 @@ public class SentryAppender extends AbstractAppender {
 
   @Override
   public void append(final @NotNull LogEvent eventObject) {
-    if (scopes.getOptions().getLogs().isEnabled()
+    if (enableLogs
+        && scopes.getOptions().getLogs().isEnabled()
         && eventObject.getLevel().isMoreSpecificThan(minimumLevel)) {
       captureLog(eventObject);
     }
