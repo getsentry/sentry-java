@@ -118,12 +118,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     final File previousSessionFile = getPreviousSessionFile(directoryPath);
 
     if (HintUtils.hasType(hint, SessionEnd.class)) {
-      try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
-        final @Nullable Session endingSession = readSessionFromEnvelope(envelope);
-        final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
-        if (!isStaleSessionEnd(endingSession, currentSession) && !currentSessionFile.delete()) {
-          options.getLogger().log(WARNING, "Current envelope doesn't exist.");
-        }
+      if (!currentSessionFile.delete()) {
+        options.getLogger().log(WARNING, "Current envelope doesn't exist.");
       }
     }
 
@@ -289,7 +285,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   private @Nullable Session readSessionFromEnvelope(final @NotNull SentryEnvelope envelope) {
     final Iterable<SentryEnvelopeItem> items = envelope.getItems();
 
-    // we know that a session envelope has a single item inside
+    // we know that an envelope with a SessionStart hint has a single item inside
     if (items.iterator().hasNext()) {
       final SentryEnvelopeItem item = items.iterator().next();
 
@@ -339,20 +335,6 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   /**
-   * Whether a {@link SessionEnd} envelope was queued while a newer session replaced it on disk.
-   * Deleting the file would then drop the newer session's unhandled error before it can be
-   * finalized, so it is kept instead.
-   */
-  private boolean isStaleSessionEnd(
-      final @Nullable Session endingSession, final @Nullable Session currentSession) {
-    return endingSession != null
-        && currentSession != null
-        && currentSession.hasNonTerminatingUnhandledError()
-        && hasDifferentSessionId(endingSession, currentSession)
-        && startedLaterThan(currentSession, endingSession);
-  }
-
-  /**
    * Whether a {@link SessionStart} envelope refers to the session already on disk. Only {@link
    * #persistCurrentSession(Session)} can have put it there, writing the live session, so the stored
    * copy is at least as advanced as this envelope. Rotating and overwriting it would file a running
@@ -370,20 +352,6 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     return firstSession.getSessionId() != null
         && secondSession.getSessionId() != null
         && Objects.equals(firstSession.getSessionId(), secondSession.getSessionId());
-  }
-
-  private boolean hasDifferentSessionId(
-      final @NotNull Session firstSession, final @NotNull Session secondSession) {
-    return firstSession.getSessionId() != null
-        && secondSession.getSessionId() != null
-        && !Objects.equals(firstSession.getSessionId(), secondSession.getSessionId());
-  }
-
-  @SuppressWarnings("JavaUtilDate")
-  private boolean startedLaterThan(final @NotNull Session session, final @NotNull Session other) {
-    return session.getStarted() != null
-        && other.getStarted() != null
-        && session.getStarted().after(other.getStarted());
   }
 
   private boolean writeEnvelopeToDisk(
