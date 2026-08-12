@@ -3,9 +3,12 @@ package io.sentry.compose.navigation3
 import android.app.Application
 import android.content.ComponentName
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.navigation3.runtime.entryProvider
@@ -210,6 +213,54 @@ class SentryNav3EffectTest {
     val profileTransaction: SentryTracer = fixture.transactions.last { it.name == "/ProfileScreen" }
     val childSpans: List<Span> = profileTransaction.spans
     assertTrue(childSpans.any { span: Span -> span.operation == "test.sync-work" })
+  }
+
+  @Test
+  fun `nav display destination effects after push see navigation transaction`() {
+    val fixture: RealScopeTestScopes = createRealScopeTestScopes()
+    val backStack: SnapshotStateList<Any> = mutableStateListOf(HomeScreen())
+    val observedSpans: MutableList<Pair<String, ISpan?>> = mutableListOf()
+
+    composeRule.setContent {
+      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
+
+      NavDisplay(
+        backStack = backStack,
+        entryProvider =
+          entryProvider {
+            entry<HomeScreen> {}
+            entry<ProfileScreen> {
+              remember {
+                fixture.scopes.getSpan().also { span: ISpan? ->
+                  observedSpans.add("remember" to span)
+                }
+              }
+
+              DisposableEffect(Unit) {
+                observedSpans.add("disposable-effect" to fixture.scopes.getSpan())
+                onDispose {}
+              }
+
+              SideEffect { observedSpans.add("side-effect" to fixture.scopes.getSpan()) }
+
+              LaunchedEffect(Unit) {
+                observedSpans.add("launched-effect" to fixture.scopes.getSpan())
+              }
+            }
+          },
+      )
+    }
+    composeRule.waitForIdle()
+
+    backStack.add(ProfileScreen("123"))
+    composeRule.waitForIdle()
+
+    val expectedLabels: List<String> =
+      listOf("remember", "disposable-effect", "side-effect", "launched-effect")
+    for (label: String in expectedLabels) {
+      val span: ISpan? = observedSpans.last { it.first == label }.second
+      assertEquals("/ProfileScreen", (span as SentryTracer).name)
+    }
   }
 
   @Test
