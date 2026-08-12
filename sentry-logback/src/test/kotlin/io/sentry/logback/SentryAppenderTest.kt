@@ -38,6 +38,7 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.Logger
@@ -55,6 +56,7 @@ class SentryAppenderTest {
     encoder: Encoder<ILoggingEvent>? = null,
     sendDefaultPii: Boolean = false,
     enableLogs: Boolean = false,
+    enableGlobalLogs: Boolean = enableLogs,
     options: SentryOptions = SentryOptions(),
     startLater: Boolean = false,
   ) {
@@ -71,7 +73,7 @@ class SentryAppenderTest {
       this.encoder = encoder
       options.dsn = dsn
       options.isSendDefaultPii = sendDefaultPii
-      options.logs.isEnabled = enableLogs
+      options.logs.isEnabled = enableGlobalLogs
       options.logs.loggerBatchProcessorFactory = ILoggerBatchProcessorFactory { options, client ->
         LoggerBatchProcessor(options, client, ImmediateExecutorService())
       }
@@ -81,6 +83,7 @@ class SentryAppenderTest {
       appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
       appender.setMinimumEventLevel(minimumEventLevel)
       appender.setMinimumLevel(minimumLevel)
+      appender.setEnableLogs(enableLogs)
       appender.context = loggerContext
       appender.setTransportFactory(transportFactory)
       encoder?.context = loggerContext
@@ -320,6 +323,57 @@ class SentryAppenderTest {
         },
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `does not capture logs by default when aggregate logs are enabled`() {
+    fixture = Fixture(enableGlobalLogs = true)
+
+    assertFalse(fixture.appender.isEnableLogs)
+    fixture.logger.info("this should not be captured as a log")
+    Sentry.flush(10)
+
+    verify(fixture.transport, never()).send(checkLogs {})
+  }
+
+  @Test
+  fun `captures logs when local and aggregate logs are enabled`() {
+    fixture = Fixture(enableLogs = true)
+
+    assertTrue(fixture.appender.isEnableLogs)
+    fixture.logger.info("this should be captured as a log")
+    Sentry.flush(10)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          assertEquals("this should be captured as a log", logs.items.first().body)
+        }
+      )
+  }
+
+  @Test
+  fun `captures events and breadcrumbs when local logs are disabled`() {
+    fixture =
+      Fixture(
+        minimumBreadcrumbLevel = Level.INFO,
+        minimumEventLevel = Level.ERROR,
+        enableGlobalLogs = true,
+      )
+
+    fixture.logger.info("this should be a breadcrumb")
+    fixture.logger.error("this should be an event")
+    Sentry.flush(10)
+
+    verify(fixture.transport)
+      .send(
+        checkEvent { event ->
+          assertEquals("this should be an event", event.message?.formatted)
+          assertEquals("this should be a breadcrumb", event.breadcrumbs?.single()?.message)
+        },
+        anyOrNull(),
+      )
+    verify(fixture.transport, never()).send(checkLogs {})
   }
 
   @Test
