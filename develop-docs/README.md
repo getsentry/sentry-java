@@ -15,7 +15,7 @@ These rules keep the docs consistent, easy to navigate, and easy to grep.
 
 ### Directory structure
 
-- Use a **flat directory structure** for all markdown files, they live live directly in `develop-docs/`.
+- Use a **flat directory structure** for all markdown files, they live directly in `develop-docs/`.
 - All markdown files are prefixed with a group / or namespace. Common prefixes are:
   - `general-` — cross-cutting topics (e.g. `general-development.md`, `general-architecture.md`)
   - `feature-` — a specific SDK feature (e.g. `feature-errors.md`, `feature-profiling.md`)
@@ -26,9 +26,15 @@ These rules keep the docs consistent, easy to navigate, and easy to grep.
   Add a new prefix only when an existing one clearly does not fit, and keep the list
   above up to date.
 
+- The prefixes carry the same grouping a nested directory tree would, while keeping every
+  document one `ls` and one glob away (`develop-docs/feature-*.md`). Nesting becomes worth
+  the churn once a prefix grows past roughly ten documents — revisit the structure then,
+  not before.
+
 ### File naming
 
-- File names are **lowercase**.
+- File names are **lowercase**, except for this `README.md`, which GitHub renders as the
+  folder's landing page.
 - Use **dashes** (`-`) as separators, never underscores or spaces. For example, use
   `feature-profiling.md`, not `feature_profiling.md` or `Feature Profiling.md`.
 - Use the `.md` extension for all text documents.
@@ -74,6 +80,21 @@ These rules keep the docs consistent, easy to navigate, and easy to grep.
 - Avoid pinning content to a specific SDK version or date unless it is genuinely
   version-specific; keep docs evergreen.
 - Cross-link related documents with relative links (e.g. `[profiling](feature-profiling.md)`).
+
+### Structuring a feature document
+
+Most feature documents answer the same four questions, and following that order makes them
+easier to compare and to keep current:
+
+1. **Surface area** — where and when the SDK collects the data.
+2. **Collection** — how the SDK collects it.
+3. **Format** — what the collected data looks like on the wire.
+4. **Pipeline** — how the backend ingests, stores, and serves it.
+
+Do not restate (4) in every document. Describe the shared path once in
+[general-pipeline.md](general-pipeline.md) and cover only the deviations a feature
+introduces. Omit any of the four that a feature does not have, and keep each as high-level
+as the topic allows so the document stays true for longer.
 
 ### Diagrams with Mermaid
 

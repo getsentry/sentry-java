@@ -7,10 +7,12 @@ from the device to a downloadable profile in Sentry.
 
 ## What Perfetto is
 
-[Perfetto](https://perfetto.dev/) is Android's system-wide tracing stack. Its
-[stack-sampling profiler](https://perfetto.dev/docs/data-sources/native-heap-profiler)
-records periodic samples of native and Java call stacks and writes them to a binary
-`.pftrace` trace file (a serialized [Perfetto protobuf](https://perfetto.dev/docs/reference/trace-packet-proto)).
+[Perfetto](https://perfetto.dev/) is Google's tracing framework for Android and Linux, and
+the tooling Android itself is instrumented with. Its
+[callstack sampler](https://perfetto.dev/docs/getting-started/cpu-profiling) interrupts the
+app at a fixed frequency, records the native and Java call stacks of the running threads,
+and writes them to a binary `.pftrace` file (a serialized
+[Perfetto protobuf](https://perfetto.dev/docs/reference/trace-packet-proto)).
 Starting with Android 15, apps can request such traces at
 runtime via `ProfilingManager` without root or `adb`, which is what makes on-device
 continuous profiling possible.
@@ -18,14 +20,25 @@ continuous profiling possible.
 Useful Perfetto references:
 
 - Perfetto docs: https://perfetto.dev/docs/
+- CPU profiling with Perfetto: https://perfetto.dev/docs/getting-started/cpu-profiling
 - Trace format (`TracePacket` proto): https://perfetto.dev/docs/reference/trace-packet-proto
 - Perfetto UI (to open a downloaded `.pftrace`): https://ui.perfetto.dev/
 
 ## Pipeline overview
 
-A profile chunk is captured on the device, embedded into a Sentry envelope, expanded and
-routed by Relay, and finally symbolicated and stored by the monolith so it can be served
-as a flamegraph and downloaded as a raw Perfetto trace.
+Profile chunks travel the standard ingestion path described in
+[general-pipeline.md](general-pipeline.md) — SDK envelope,
+[Relay](https://develop.sentry.dev/ingestion/relay/) (Sentry's ingestion proxy), Kafka, a
+monolith processing task, then storage and a read API. Read that first; the rest of this
+document covers only where Perfetto deviates from it.
+
+The deviations are:
+
+- The envelope item carries **JSON and raw binary in one payload**, subdivided by a
+  `meta_length` header rather than base64-encoding the trace ([details](#envelope-format-and-the-meta_length-header)).
+- Relay **converts** the Perfetto trace into the existing Sample v2 profile format, and
+  additionally **keeps the raw `.pftrace`** in the object store so it can be downloaded
+  later ([details](#relay-getsentryrelay)).
 
 ```mermaid
 flowchart TD
@@ -132,8 +145,7 @@ the payload:
 
 ## Relay (getsentry/relay)
 
-Relay processing is gated behind the `organizations:continuous-profiling-perfetto` feature
-flag; without it the chunk is dropped. In processing mode Relay:
+In processing mode Relay:
 
 1. **Splits** the compound item payload at `meta_length` into `(metadata JSON, raw profile)`
    and reads `content_type: "perfetto"` from the metadata.
@@ -170,22 +182,20 @@ The monolith later uses `stored_id` to fetch the raw trace back.
 
 ## Monolith (getsentry/sentry)
 
-A profiling task consumes the `profiles` topic. `process_profile_task` (in
-`src/sentry/profiles/task.py`):
+`process_profile_task` (in `src/sentry/profiles/task.py`) consumes the `profiles` topic.
+Because Relay already converted the trace to Sample v2, the task treats a Perfetto chunk
+like any other: deobfuscate, hand it to `vroomrs` to parse and normalize
+(`vroomrs.profile_chunk_from_json_str(...)`), compress and store it, and emit function
+metrics to Snuba.
 
-1. Unpacks the message and parses the Sample v2 `payload`.
-2. Runs **deobfuscation** (Android only for now).
-3. Calls `vroomrs` to parse and normalize the chunk
-   (`vroomrs.profile_chunk_from_json_str(...)`), compresses it, and saves it to the profile
-   **object store** bucket.
-4. Extracts function metrics and emits them to **Snuba** (for querying and flamegraph
-   metadata).
-5. Persists a lightweight **`ProfileChunkAttachment`** DB row for each attachment on the
-   message — storing `project_id`, `profiler_id`, `chunk_id`, `name`, `content_type`, and
-   the `stored_id` object store key — so the raw Perfetto trace can be downloaded by ID
-   rather than exposing the `stored_id` directly.
+The Perfetto-specific step is the last one: for each attachment on the message the task
+persists a lightweight **`ProfileChunkAttachment`** row — `project_id`, `profiler_id`,
+`chunk_id`, `name`, `content_type`, and the `stored_id` object store key. The row exists so
+the raw trace can be downloaded by ID without exposing the `stored_id`.
 
-`getsentry/vroom` is an extra service on top, which reads the stored chunk and Snuba-indexed metadata to serve and merge multiple profile chunks into a single flamegraph. The API endpoint is served by the monolith, but it just passes the request through to vroom.
+Flamegraphs themselves are served by `getsentry/vroom`, which reads the stored chunks and
+the Snuba-indexed metadata and merges several chunks into one flamegraph. The endpoint
+lives in the monolith and passes the request through.
 
 ### Perfetto format dispatch (vroom / vroomrs)
 
@@ -199,8 +209,7 @@ field, and both `vroom` and `vroomrs` now dispatch on it instead of the platform
 
 ## Downloading a Perfetto profile
 
-The monolith exposes two feature-gated endpoints (both require the
-`organizations:continuous-profiling-perfetto` flag):
+The monolith exposes two feature-gated endpoints:
 
 - **List attachments** — `GET /organizations/{org}/profiling/chunk-attachments/`
   (`sentry-api-0-organization-profiling-chunk-attachments`). Requires a `project` and
@@ -212,7 +221,7 @@ The monolith exposes two feature-gated endpoints (both require the
   the org's configured attachments role, analogous to generic event attachments.
 
 In the flamegraph UI, a toolbar button (added for continuous profiles when the flag is on
-and at least one attachment exists) lists and downloads these traces.
+and at least one attachment exists) lists and provides a way to download these traces.
 
 ## References
 
