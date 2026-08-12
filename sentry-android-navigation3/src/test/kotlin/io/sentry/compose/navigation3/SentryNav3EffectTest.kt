@@ -6,7 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.ui.NavDisplay
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Breadcrumb
@@ -17,11 +20,13 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.Span
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.protocol.Contexts
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
@@ -147,6 +152,64 @@ class SentryNav3EffectTest {
 
     assertEquals(2, observedSpans.size)
     assertEquals("/ProfileScreen", (observedSpans[1] as SentryTracer).name)
+  }
+
+  @Test
+  fun `nav display destination body after push sees navigation transaction`() {
+    val fixture: RealScopeTestScopes = createRealScopeTestScopes()
+    val backStack: SnapshotStateList<Any> = mutableStateListOf(HomeScreen())
+    val observedSpans: MutableList<Pair<String, ISpan?>> = mutableListOf()
+
+    composeRule.setContent {
+      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
+
+      NavDisplay(
+        backStack = backStack,
+        entryProvider =
+          entryProvider {
+            entry<HomeScreen> { observedSpans.add("home" to fixture.scopes.getSpan()) }
+            entry<ProfileScreen> { observedSpans.add("profile" to fixture.scopes.getSpan()) }
+          },
+      )
+    }
+    composeRule.waitForIdle()
+    observedSpans.clear()
+
+    backStack.add(ProfileScreen("123"))
+    composeRule.waitForIdle()
+
+    val profileSpan: ISpan? = observedSpans.last { it.first == "profile" }.second
+    assertEquals("/ProfileScreen", (profileSpan as SentryTracer).name)
+  }
+
+  @Test
+  fun `nav display destination body after push attaches synchronous child span to navigation transaction`() {
+    val fixture: RealScopeTestScopes = createRealScopeTestScopes()
+    val backStack: SnapshotStateList<Any> = mutableStateListOf(HomeScreen())
+
+    composeRule.setContent {
+      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
+
+      NavDisplay(
+        backStack = backStack,
+        entryProvider =
+          entryProvider {
+            entry<HomeScreen> {}
+            entry<ProfileScreen> {
+              val span: ISpan? = fixture.scopes.getSpan()?.startChild("test.sync-work")
+              span?.finish()
+            }
+          },
+      )
+    }
+    composeRule.waitForIdle()
+
+    backStack.add(ProfileScreen("123"))
+    composeRule.waitForIdle()
+
+    val profileTransaction: SentryTracer = fixture.transactions.last { it.name == "/ProfileScreen" }
+    val childSpans: List<Span> = profileTransaction.spans
+    assertTrue(childSpans.any { span: Span -> span.operation == "test.sync-work" })
   }
 
   @Test

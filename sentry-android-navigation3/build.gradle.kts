@@ -71,6 +71,8 @@ dependencies {
 
   testImplementation(libs.androidx.compose.runtime)
   testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.androidx.navigation3.runtime)
+  testImplementation(libs.androidx.navigation3.ui)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.core.ktx)
   testImplementation(libs.androidx.test.ext.junit)

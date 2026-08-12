@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.NonRestartableComposable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.ObserverHandle
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
@@ -107,8 +109,6 @@ public fun <T : Any> SentryNav3Effect(
   require(options.maxCapturedBackStackEntries > 0) {
     "maxCapturedBackStackEntries must be positive, was ${options.maxCapturedBackStackEntries}"
   }
-  val backStackSnapshot = backStack.toList()
-
   val observer =
     remember(
       backStack,
@@ -132,11 +132,24 @@ public fun <T : Any> SentryNav3Effect(
   observer.nameExtractor = nameExtractor
   observer.argumentsExtractor = argumentsExtractor
 
-  DisposableEffect(observer) { onDispose { observer.cleanup() } }
+  DisposableEffect(observer, backStack) {
+    // Observe snapshot application so pushed routes are bound before NavDisplay recomposes them.
+    val handle: ObserverHandle = Snapshot.registerApplyObserver { changed, _ ->
+      if (backStack in changed) {
+        observer.onBackStackChanged(backStack = backStack.currentSnapshot())
+      }
+    }
 
-  // TODO ADAM: Comment on why we're not using a LaunchedEffect.
-  DisposableEffect(observer, backStackSnapshot) {
-    observer.onBackStackChanged(backStack = backStackSnapshot)
-    onDispose {}
+    observer.onBackStackChanged(backStack = backStack.currentSnapshot())
+
+    onDispose {
+      handle.dispose()
+      observer.cleanup()
+    }
   }
 }
+
+private fun <T : Any> SnapshotStateList<T>.currentSnapshot(): List<T> =
+  Snapshot.withoutReadObservation {
+    toList()
+  }

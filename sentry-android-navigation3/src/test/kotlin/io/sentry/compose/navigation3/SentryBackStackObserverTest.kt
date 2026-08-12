@@ -77,6 +77,7 @@ class SentryBackStackObserverTest {
       whenever(scopes.configureScope(any())).thenAnswer {
         (it.arguments[0] as ScopeCallback).run(scope)
       }
+      whenever(scopes.getSpan()).thenAnswer { scope.span }
       whenever(scope.contexts).thenReturn(Contexts())
 
       return SentryBackStackObserver(
