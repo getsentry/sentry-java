@@ -2,15 +2,30 @@
 
 This file provides guidance to AI coding agents when working with code in this repository.
 
-## STOP — Required Reading (Do This First)
+## Domain-Specific Rules
 
-Before doing ANYTHING else (including answering questions), you MUST use the Read tool to load these files:
-1. `.cursor/rules/coding.mdc`
-2. `.cursor/rules/overview_dev.mdc`
+This file covers the whole repository. Before working on a specific area, read the matching
+rule file in `.cursor/rules/`:
 
-Then identify and read any topically relevant `.cursor/rules/*.mdc` files for the area you're working on (e.g., `opentelemetry.mdc` for OTel work, `metrics.mdc` for metrics work). Use the Glob tool on `.cursor/rules/*.mdc` to discover available rule files.
+| Rule | Read it when working on |
+|---|---|
+| `api` | Public API surface, binary compatibility, `.api` files, `apiDump`, `IScope`/`IScopes`/`Sentry` static API, protocol classes |
+| `options` | `SentryOptions`, namespaced options, `ExternalOptions`, `sentry.properties`, `ManifestMetadataReader`, Spring Boot properties |
+| `scopes` | Scope management, forking, lifecycle, `ScopeType`, thread-local storage, scope bleeding, Hub → Scopes migration |
+| `deduplication` | Duplicate event detection, `DuplicateEventDetectionEventProcessor`, `enableDeduplication` |
+| `offline` | Caching, envelope storage, network failure handling, retries, `AsyncHttpTransport`, `EnvelopeCache`, rate limiting |
+| `feature_flags` | `addFeatureFlag`, `FeatureFlagBuffer`, `maxFeatureFlags`, LaunchDarkly and OpenFeature integrations |
+| `metrics` | `Sentry.metrics()`, `IMetricsApi`, count/distribution/gauge, `MetricsBatchProcessor` |
+| `queues` | Queue tracing, `queue.publish`/`queue.process`, `enableQueueTracing`, Kafka instrumentation, messaging span data |
+| `continuous_profiling_jvm` | `sentry-async-profiler`, `IContinuousProfiler`, `ProfileChunk`, JFR files, `ProfileLifecycle` |
+| `opentelemetry` | `sentry-opentelemetry-*`, agent vs agentless, span processing, sampling, context propagation |
+| `new_module` | Adding a new integration or sample module |
+| `pr` | Creating pull requests, stacked PRs, changelog entries |
+| `e2e_tests` | System tests, sample applications, `system-test-runner.py`, mock Sentry server |
 
-Do NOT skip this step. Do NOT proceed without reading these files first.
+Rules can be combined — a tracing scope issue may need both `scopes` and `opentelemetry`.
+There is no rule for Android profiling yet; read the `sentry-android-core` profiling code
+directly and fetch related rules such as `options`, `offline`, or `api` as needed.
 
 ## Project Overview
 
