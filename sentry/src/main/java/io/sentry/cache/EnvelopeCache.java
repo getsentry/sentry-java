@@ -135,18 +135,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     if (HintUtils.hasType(hint, SessionStart.class)) {
       try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
         final @Nullable Session startingSession = readSessionFromEnvelope(envelope);
-        if (startingSession != null) {
-          final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
-          if (currentSession != null && hasSameSessionId(currentSession, startingSession)) {
-            if (!isStaleSessionStart(startingSession, currentSession)) {
-              writeSessionToDisk(currentSessionFile, startingSession);
-            }
-          } else {
-            movePreviousSession(currentSessionFile, previousSessionFile);
+        final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
+        if (!isLateDuplicateStart(startingSession, currentSession)) {
+          movePreviousSession(currentSessionFile, previousSessionFile);
+          if (startingSession != null) {
             writeSessionToDisk(currentSessionFile, startingSession);
           }
-        } else {
-          movePreviousSession(currentSessionFile, previousSessionFile);
         }
       }
 
@@ -359,15 +353,16 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   /**
-   * Whether a {@link SessionStart} envelope is a late duplicate of the session already on disk,
-   * whose snapshot has since advanced. Writing it would roll back the recorded unhandled error or
-   * error count. Only meaningful for two snapshots of the same session.
+   * Whether a {@link SessionStart} envelope refers to the session already on disk. Only {@link
+   * #persistCurrentSession(Session)} can have put it there, writing the live session, so the stored
+   * copy is at least as advanced as this envelope. Rotating and overwriting it would file a running
+   * session as the previous one and roll back any unhandled error it has recorded since.
    */
-  private boolean isStaleSessionStart(
-      final @NotNull Session startingSession, final @NotNull Session currentSession) {
-    return (currentSession.hasNonTerminatingUnhandledError()
-            && !startingSession.hasNonTerminatingUnhandledError())
-        || currentSession.errorCount() > startingSession.errorCount();
+  private boolean isLateDuplicateStart(
+      final @Nullable Session startingSession, final @Nullable Session currentSession) {
+    return startingSession != null
+        && currentSession != null
+        && hasSameSessionId(currentSession, startingSession);
   }
 
   private boolean hasSameSessionId(
