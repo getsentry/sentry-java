@@ -133,7 +133,18 @@ public fun <T : Any> SentryNav3Effect(
   observer.argumentsExtractor = argumentsExtractor
 
   DisposableEffect(observer, backStack) {
-    // Observe snapshot application so pushed routes are bound before NavDisplay recomposes them.
+    // We observe back stack changes as soon as the snapshot is updated. Doing so ensures that
+    // onBackStackChanged() runs and is given a chance to create a nav transaction before the
+    // composable associated with the new back stack top is executed or any of its side effects
+    // fire. Absent that ordering, destination spans could be improperly parented under the prior
+    // transaction or be lost (if there was no active prior transaction).
+    //
+    // Note: b/c we register our snapshot observer in a DisposableEffect that runs (like all side
+    // effects) after composition bodies execute, we have to narrow our guarantee for the first
+    // destination. Its spans will be properly parented only if i) they're generated via a side
+    // effect, ii) SentryNav3Effect is invoked before NavDisplay, and iii) the Compose runtime
+    // continues to dispatch remembered observers in recorded composition order, i.e., honors the
+    // ordering from (ii).
     val handle: ObserverHandle = Snapshot.registerApplyObserver { changed, _ ->
       if (backStack in changed) {
         observer.onBackStackChanged(backStack = backStack.currentSnapshot())

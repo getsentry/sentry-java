@@ -28,13 +28,19 @@ import java.lang.ref.WeakReference
  *
  * --- Sanity check the current solution: Does Compose guarantee it recomposes / re-executes observers of changed state (here, the backstack) in lexical order?
  *
+ * --- Any performance concerns now that we're no longer using a LaunchedEffect to call onBackstackChanged()?
+ *
  * --- Explore i) ordering SentryNav3Effect vs NavDisplay, ii) SentryNavDisplay, or iii) rememberSentryNav3BackStack() (see "SentryNav3Effect Ordering Relative to NavDisplay" section in ~/Desktop/nav2-vs-nav3-transaction-policies.txt).
+ *
+ * ------ Note that remember*() and side effects have different semantics in Compose / are executed at different points in the composition lifecycle.
  *
  * --- Add simulated work in the destination that involves LaunchedEffect, DisposableEffect, etc.
  *
  * --- Have LLM check via Sample App.
  *
  * --- Decide whether we want to introduce SentryNavDecorator in phase 1 to ensure ordering updates work correctly.
+ *
+ * - Final API decision: SentryNav3Effect vs (a virtually identical) rememberSentry[Nav3]BackStack() vs SentryNavDisplay
  *
  * - Make sure sample app contains all required nav3 recipes.
  *
