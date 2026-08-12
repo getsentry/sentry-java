@@ -158,6 +158,28 @@ class SentryNav3EffectTest {
   }
 
   @Test
+  fun `synchronous content after SentryNav3Effect after push sees navigation transaction`() {
+    val fixture: RealScopeTestScopes = createRealScopeTestScopes()
+    val backStack: SnapshotStateList<Any> = mutableStateListOf(HomeScreen())
+    val observedSpans: MutableList<ISpan?> = mutableListOf()
+
+    composeRule.setContent {
+      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
+
+      val currentTop: Any = backStack.last()
+      if (currentTop is ProfileScreen) {
+        observedSpans.add(fixture.scopes.getSpan())
+      }
+    }
+    composeRule.waitForIdle()
+
+    backStack.add(ProfileScreen("123"))
+    composeRule.waitForIdle()
+
+    assertEquals("/ProfileScreen", (observedSpans.single() as SentryTracer).name)
+  }
+
+  @Test
   fun `nav display destination body after push sees navigation transaction`() {
     val fixture: RealScopeTestScopes = createRealScopeTestScopes()
     val backStack: SnapshotStateList<Any> = mutableStateListOf(HomeScreen())

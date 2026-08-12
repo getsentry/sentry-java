@@ -505,6 +505,13 @@ private fun Nav3RouteActivationEffect(
 ) {
   val currentAction = rememberUpdatedState(routeActivationAction)
 
+  if (currentAction.value == RouteActivationAction.MANUAL_CHILD_SPAN) {
+    // Keep this synchronous to verify that Nav3 route transactions are bound before destination
+    // composition runs, not merely before destination effects are launched.
+    runManualNav3RouteActivationSpan(route)
+    return
+  }
+
   LaunchedEffect(route) {
     runNav3RouteActivationAction(
       route = route,
