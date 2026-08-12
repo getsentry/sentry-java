@@ -6,15 +6,14 @@ import androidx.activity.ComponentActivity;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
-import io.sentry.SentryOptions;
-import io.sentry.util.LoadClass;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Launches the androidx photo picker to attach an screenshot to user feedback. All
- * androidx.activity references are isolated in this class, so it must only be loaded after {@link
- * #isAvailable} has returned true.
+ * androidx.activity references are isolated in this class, so it must only be loaded once {@link
+ * SentryUserFeedbackForm#isScreenshotPickerAvailable} has returned true. That check deliberately
+ * lives outside of this class, so that it can run without linking any androidx.activity type.
  */
 final class SentryFeedbackScreenshotPicker {
 
@@ -27,13 +26,6 @@ final class SentryFeedbackScreenshotPicker {
   private SentryFeedbackScreenshotPicker(
       final @NotNull ActivityResultLauncher<PickVisualMediaRequest> launcher) {
     this.launcher = launcher;
-  }
-
-  static boolean isAvailable(
-      final @NotNull LoadClass loadClass, final @NotNull SentryOptions options) {
-    return loadClass.isClassAvailable("androidx.activity.ComponentActivity", options)
-        && loadClass.isClassAvailable(
-            "androidx.activity.result.contract.ActivityResultContracts$PickVisualMedia", options);
   }
 
   static @Nullable SentryFeedbackScreenshotPicker register(

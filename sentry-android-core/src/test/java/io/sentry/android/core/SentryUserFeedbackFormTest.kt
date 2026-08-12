@@ -1,8 +1,11 @@
 package io.sentry.android.core
 
 import android.app.Activity
+import android.content.ContentProvider
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.database.Cursor
 import android.net.Uri
 import android.view.View
 import android.view.WindowManager
@@ -29,6 +32,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import org.junit.runner.RunWith
@@ -43,6 +47,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowContentResolver
 
 @RunWith(AndroidJUnit4::class)
 class SentryUserFeedbackFormTest {
@@ -277,6 +282,47 @@ class SentryUserFeedbackFormTest {
   }
 
   @Test
+  fun `feedback is captured with an image attachment when the size of the image is unknown`() {
+    fixture.options.isEnabled = true
+    whenever(fixture.mockFeedbackApi.capture(any<Feedback>(), anyOrNull()))
+      .thenReturn(SentryId(java.util.UUID.randomUUID()))
+    val activity = componentActivity()
+    val uri = registerFailingSizeQuery(activity, SecurityException("no read permission"))
+    val sut = fixture.getSut(context = activity)
+    sut.show()
+
+    addScreenshotButton(sut).performClick()
+    deliverPickerResult(activity, uri)
+    sut.findViewById<EditText>(R.id.sentry_dialog_user_feedback_edt_description).setText("message")
+    sut.findViewById<Button>(R.id.sentry_dialog_user_feedback_btn_send).performClick()
+
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(
+          "Unable to determine the size of the selected screenshot, the attachment size limit " +
+            "is applied when the feedback is captured."
+        ),
+        any<SecurityException>(),
+      )
+    val hintCaptor = argumentCaptor<Hint>()
+    verify(fixture.mockFeedbackApi).capture(any<Feedback>(), hintCaptor.capture())
+    assertThat(hintCaptor.firstValue.attachments).hasSize(1)
+  }
+
+  @Test
+  fun `a fatal error while reading the size of the image is not swallowed`() {
+    fixture.options.isEnabled = true
+    val activity = componentActivity()
+    val uri = registerFailingSizeQuery(activity, OutOfMemoryError())
+    val sut = fixture.getSut(context = activity)
+    sut.show()
+
+    addScreenshotButton(sut).performClick()
+    assertFailsWith<OutOfMemoryError> { deliverPickerResult(activity, uri) }
+  }
+
+  @Test
   fun `screenshot picker can be registered again when the dialog is shown again`() {
     fixture.options.isEnabled = true
     val sut = fixture.getSut(context = componentActivity())
@@ -285,6 +331,47 @@ class SentryUserFeedbackFormTest {
     // Would throw if the launcher of the first show() was still registered under the same key
     sut.show()
     assertThat(addScreenshotButton(sut).visibility).isEqualTo(View.VISIBLE)
+  }
+
+  /**
+   * Registers a provider whose size query fails with [failure], while the image itself can still be
+   * read, and returns the Uri served by it.
+   */
+  private fun registerFailingSizeQuery(
+    activity: ComponentActivity,
+    failure: Throwable,
+  ): Uri {
+    val authority = "io.sentry.test.${failure.javaClass.simpleName}"
+    ShadowContentResolver.registerProviderInternal(
+      authority,
+      object : ContentProvider() {
+        override fun onCreate() = true
+
+        override fun query(
+          uri: Uri,
+          projection: Array<out String>?,
+          selection: String?,
+          selectionArgs: Array<out String>?,
+          sortOrder: String?,
+        ): Cursor = throw failure
+
+        override fun getType(uri: Uri) = "image/png"
+
+        override fun insert(uri: Uri, values: ContentValues?): Uri? = null
+
+        override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?) = 0
+
+        override fun update(
+          uri: Uri,
+          values: ContentValues?,
+          selection: String?,
+          selectionArgs: Array<out String>?,
+        ) = 0
+      },
+    )
+    val uri = Uri.parse("content://$authority/1")
+    shadowOf(activity.contentResolver).registerInputStream(uri, "fake image".byteInputStream())
+    return uri
   }
 
   private fun componentActivity(): ComponentActivity =

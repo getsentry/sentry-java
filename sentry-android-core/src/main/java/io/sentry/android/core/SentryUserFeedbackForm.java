@@ -30,7 +30,9 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
+import io.sentry.util.LoadClass;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -216,6 +218,8 @@ public class SentryUserFeedbackForm extends AlertDialog {
               try {
                 screenshotPicker.launch();
               } catch (Throwable t) {
+                ExceptionUtils.rethrowIfFatal(t);
+                // e.g. no photo picker on the device, or the host activity is already gone
                 Sentry.getCurrentScopes()
                     .getOptions()
                     .getLogger()
@@ -399,9 +403,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
       return;
     }
     final @Nullable Activity activity = getActivity(getContext());
-    if (activity != null
-        && SentryFeedbackScreenshotPicker.isAvailable(
-            resolvedFeedbackOptions.getLoadClass(), options)) {
+    if (activity != null && isScreenshotPickerAvailable(options)) {
       screenshotPicker =
           SentryFeedbackScreenshotPicker.register(
               activity, uri -> onScreenshotPicked(options, btnAddScreenshot, uri));
@@ -419,11 +421,22 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
   }
 
+  /**
+   * Must be called before {@link SentryFeedbackScreenshotPicker} is touched for the first time, as
+   * that class links against androidx.activity types.
+   */
+  private boolean isScreenshotPickerAvailable(final @NotNull SentryOptions options) {
+    final @NotNull LoadClass loadClass = resolvedFeedbackOptions.getLoadClass();
+    return loadClass.isClassAvailable("androidx.activity.ComponentActivity", options)
+        && loadClass.isClassAvailable(
+            "androidx.activity.result.contract.ActivityResultContracts$PickVisualMedia", options);
+  }
+
   private void onScreenshotPicked(
       final @NotNull SentryOptions options,
       final @NotNull Button btnAddScreenshot,
       final @NotNull Uri uri) {
-    final long size = getUriSize(getContext().getContentResolver(), uri);
+    final long size = getUriSize(options, getContext().getContentResolver(), uri);
     if (size > options.getMaxAttachmentSize()) {
       options
           .getLogger()
@@ -466,6 +479,8 @@ public class SentryUserFeedbackForm extends AlertDialog {
               "event.attachment",
               false));
     } catch (Throwable t) {
+      ExceptionUtils.rethrowIfFatal(t);
+      // e.g. the read permission for the picked Uri was revoked in the meantime
       Sentry.getCurrentScopes()
           .getOptions()
           .getLogger()
@@ -473,7 +488,10 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
   }
 
-  private static long getUriSize(final @NotNull ContentResolver resolver, final @NotNull Uri uri) {
+  private static long getUriSize(
+      final @NotNull SentryOptions options,
+      final @NotNull ContentResolver resolver,
+      final @NotNull Uri uri) {
     try (final @Nullable Cursor cursor = resolver.query(uri, null, null, null, null)) {
       if (cursor != null && cursor.moveToFirst()) {
         final int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
@@ -481,8 +499,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
           return cursor.getLong(sizeIndex);
         }
       }
-    } catch (Throwable ignored) {
-      // if the size cannot be determined, let the attachment size limit handle it at capture time
+    } catch (Throwable t) {
+      ExceptionUtils.rethrowIfFatal(t);
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Unable to determine the size of the selected screenshot, the attachment size limit "
+                  + "is applied when the feedback is captured.",
+              t);
     }
     return -1;
   }
