@@ -14,6 +14,8 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -121,5 +123,20 @@ class EnvelopeFileObserverIntegrationTest {
       )
     verify(fixture.logger)
       .log(eq(SentryLevel.DEBUG), eq("EnvelopeFileObserverIntegration installed."))
+  }
+
+  @Test
+  fun `register creates the outbox dir when it does not exist yet`() {
+    val outboxDir = File(file, "outbox")
+    assertFalse(outboxDir.exists())
+
+    fixture.getSut { it.executorService = ImmediateExecutorService() }
+    val integration =
+      object : EnvelopeFileObserverIntegration() {
+        override fun getPath(options: SentryOptions): String = outboxDir.absolutePath
+      }
+    integration.register(fixture.scopes, fixture.scopes.options)
+
+    assertTrue(outboxDir.isDirectory)
   }
 }
