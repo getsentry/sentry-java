@@ -88,9 +88,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   @Override
   protected void append(@NotNull ILoggingEvent eventObject) {
-    if (enableLogs
-        && ScopesAdapter.getInstance().getOptions().getLogs().isEnabled()
-        && eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
+    if (enableLogs && eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
       captureLog(eventObject);
     }
     if (eventObject.getLevel().isGreaterOrEqual(minimumEventLevel)) {
