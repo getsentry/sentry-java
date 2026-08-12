@@ -22,6 +22,7 @@ import java.io.File
 import java.io.StringReader
 import java.util.Date
 import java.util.LinkedList
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -280,11 +281,29 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
   }
 
   override fun close() {
-    encoderLock.acquire().use {
-      encoder?.release()
-      encoder = null
+    // close() is called inline from the lifecycle path (ReplayIntegration.stop/close), which holds
+    // its own lock, so blocking here can freeze the main thread. If the encoder is wedged in a
+    // native MediaCodec call we'd never get the lock, so we give up instead: the already-dead codec
+    // is not released (leaking a native handle), which beats an ANR.
+    try {
+      val token = encoderLock.tryAcquire(ENCODER_RELEASE_TIMEOUT_MS, MILLISECONDS)
+      if (token == null) {
+        options.logger.log(
+          WARNING,
+          "Timed out waiting for the video encoder, skipping its release to not block the caller",
+        )
+      } else {
+        token.use {
+          encoder?.release()
+          encoder = null
+        }
+      }
+    } catch (e: InterruptedException) {
+      Thread.currentThread().interrupt()
+    } finally {
+      // has to happen on all paths, callers rely on it to stop persisting segment values
+      isClosed.set(true)
     }
-    isClosed.set(true)
   }
 
   // TODO: it's awful, choose a better serialization format
@@ -314,6 +333,13 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
   }
 
   internal companion object {
+    /**
+     * How long [close] waits for the video encoder to become available. Below Android's ~5s ANR
+     * budget, and above the encoder's own bail-out (see MAX_EOS_STALL_ITERATIONS), so an encoder
+     * that's merely slow is still awaited rather than abandoned.
+     */
+    private const val ENCODER_RELEASE_TIMEOUT_MS = 2000L
+
     internal const val ONGOING_SEGMENT = ".ongoing_segment"
 
     internal const val SEGMENT_KEY_HEIGHT = "config.height"

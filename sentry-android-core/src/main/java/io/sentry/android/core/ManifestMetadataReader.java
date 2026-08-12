@@ -119,6 +119,8 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_APP_START_PROFILING = "io.sentry.profiling.enable-app-start";
 
+  static final String ENABLE_LEGACY_PROFILING = "io.sentry.profiling.enable-legacy-profiling";
+
   static final String ENABLE_SCOPE_PERSISTENCE = "io.sentry.enable-scope-persistence";
 
   static final String REPLAYS_SESSION_SAMPLE_RATE = "io.sentry.session-replay.session-sample-rate";
@@ -544,6 +546,9 @@ final class ManifestMetadataReader {
         options.setEnableAppStartProfiling(
             readBool(
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
+
+        options.setEnableLegacyProfiling(
+            readBool(metadata, logger, ENABLE_LEGACY_PROFILING, options.isEnableLegacyProfiling()));
 
         options.setEnableScopePersistence(
             readBool(

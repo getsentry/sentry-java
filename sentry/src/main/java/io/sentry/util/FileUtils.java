@@ -39,6 +39,21 @@ public final class FileUtils {
   }
 
   /**
+   * Creates the directory and any missing parents, if it does not exist yet.
+   *
+   * <p>Callers are expected to log a failure: a missing directory otherwise surfaces later as an
+   * unrelated-looking write error.
+   *
+   * @param directory the directory to create
+   * @return true if the directory exists once this returns, false if it could not be created
+   */
+  public static boolean createDirectory(final @NotNull File directory) {
+    // mkdirs() also returns false when another thread created the directory first, so re-check
+    // instead of reporting a failure the caller would act on by skipping its write.
+    return directory.isDirectory() || directory.mkdirs() || directory.isDirectory();
+  }
+
+  /**
    * Reads the content of a File into a String. If the file does not exist or is not a file, null is
    * returned. Do not use with large files, as the String is kept in memory!
    *

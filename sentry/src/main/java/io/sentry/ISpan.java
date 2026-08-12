@@ -17,12 +17,25 @@ public interface ISpan {
   @NotNull
   ISpan startChild(@NotNull String operation);
 
-  @ApiStatus.Internal
+  /**
+   * Starts a child Span.
+   *
+   * @param operation - new span operation name
+   * @param description - new span description name
+   * @param spanOptions - options for the newly created span, e.g. an explicit start timestamp
+   * @return a new transaction span
+   */
   @NotNull
   ISpan startChild(
       @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions);
 
-  @ApiStatus.Internal
+  /**
+   * Starts a child Span.
+   *
+   * @param spanContext - the context for the newly created span
+   * @param spanOptions - options for the newly created span, e.g. an explicit start timestamp
+   * @return a new transaction span
+   */
   @NotNull
   ISpan startChild(@NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions);
 

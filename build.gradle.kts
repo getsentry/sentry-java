@@ -92,7 +92,7 @@ apiValidation {
 
 allprojects {
     group = Config.Sentry.group
-    version = properties[Config.Sentry.versionNameProp].toString()
+    version = providers.gradleProperty(Config.Sentry.versionNameProp).get()
     description = Config.Sentry.description
     tasks {
         withType<Test>().configureEach {
