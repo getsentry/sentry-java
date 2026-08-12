@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add an explicit Logs opt-in to the Logback appender ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
 - Make `ISpan.startChild` overloads with `SpanOptions` public ([#5927](https://github.com/getsentry/sentry-java/pull/5927))
 
 ### Improvements
