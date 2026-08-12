@@ -70,7 +70,7 @@ class DeviceInfoUtilTest {
     assertNotNull(enabledDevice.id)
     assertNotNull(enabledDevice.storageSize)
     assertNotNull(enabled.operatingSystem.isRooted)
-    assertNull(disabledDevice.id)
+    assertNotNull(disabledDevice.id)
     assertNull(disabledDevice.storageSize)
     assertNull(disabled.operatingSystem.isRooted)
   }
@@ -94,12 +94,12 @@ class DeviceInfoUtilTest {
   }
 
   @Test
-  fun `does not set device id when user info is disabled`() {
+  fun `sets device id when user info is disabled`() {
     val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(false) }
     val deviceInfo =
       DeviceInfoUtil.getInstance(context, options).collectDeviceInformation(false, false)
 
-    assertNull(deviceInfo.id)
+    assertNotNull(deviceInfo.id)
   }
 
   @Test
