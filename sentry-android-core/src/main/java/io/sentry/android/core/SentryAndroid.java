@@ -149,8 +149,7 @@ public final class SentryAndroid {
                       "Error in the 'OptionsConfiguration.configure' callback.",
                       t);
             }
-            if (options.getDistinctId() == null
-                && options.getDataCollectionResolver().isUserInfoWithLegacyAlways()) {
+            if (options.getDistinctId() == null) {
               try {
                 options.setDistinctId(Installation.id(context));
               } catch (RuntimeException e) {

@@ -111,10 +111,7 @@ class AndroidOptionsInitializerTest {
       )
 
       sentryOptions.configureOptions()
-      if (
-        sentryOptions.distinctId == null &&
-          sentryOptions.dataCollectionResolver.isUserInfoWithLegacyAlways
-      ) {
+      if (sentryOptions.distinctId == null) {
         sentryOptions.distinctId = Installation.id(if (useRealContext) context else mockContext)
       }
       AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
@@ -356,10 +353,10 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
-  fun `init should not set generated distinct id when user info is disabled`() {
+  fun `init should set generated distinct id when user info is disabled`() {
     fixture.initSut(configureOptions = { dataCollection.setUserInfo(false) })
 
-    assertNull(fixture.sentryOptions.distinctId)
+    assertNotNull(fixture.sentryOptions.distinctId)
   }
 
   @Test
