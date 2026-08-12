@@ -1618,7 +1618,8 @@ public final class SentryClient implements ISentryClient {
           }
         }
       }
-      if (sentryBaseEvent.getBreadcrumbs() == null) {
+      final List<Breadcrumb> eventBreadcrumbs = sentryBaseEvent.getBreadcrumbs();
+      if (eventBreadcrumbs == null || eventBreadcrumbs.isEmpty()) {
         sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
       } else if (!isCached) {
         // A Cached event comes from the outbox and already carries its own breadcrumbs (e.g. native
