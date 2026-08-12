@@ -163,6 +163,8 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_LOGS = "io.sentry.logs.enabled";
 
+  static final String ENABLE_TIMBER_LOGS = "io.sentry.timber.logs.enabled";
+
   static final String ENABLE_METRICS = "io.sentry.metrics.enabled";
 
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
@@ -705,6 +707,9 @@ final class ManifestMetadataReader {
         options
             .getLogs()
             .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
+
+        options.setEnableTimberLogs(
+            readBool(metadata, logger, ENABLE_TIMBER_LOGS, options.isEnableTimberLogs()));
 
         options
             .getMetrics()

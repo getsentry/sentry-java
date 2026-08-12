@@ -94,6 +94,21 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
+  fun `Timber logs are disabled by default`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertFalse(sentryOptions.isEnableTimberLogs)
+  }
+
+  @Test
+  fun `Timber logs can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.isEnableTimberLogs = true
+
+    assertTrue(sentryOptions.isEnableTimberLogs)
+  }
+
+  @Test
   fun `attach screenshots disabled by default for Android`() {
     val sentryOptions = SentryAndroidOptions()
 

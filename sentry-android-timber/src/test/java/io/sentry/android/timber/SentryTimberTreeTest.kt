@@ -31,11 +31,16 @@ class SentryTimberTreeTest {
       minEventLevel: SentryLevel = SentryLevel.ERROR,
       minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
       minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+      enableLogs: Boolean? = true,
     ): SentryTimberTree {
       logs = mock<ILoggerApi>()
       scopes = mock<Scopes>()
       whenever(scopes.logger()).thenReturn(logs)
-      return SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
+      return if (enableLogs == null) {
+        SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
+      } else {
+        SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel, enableLogs)
+      }
     }
   }
 
@@ -294,6 +299,17 @@ class SentryTimberTreeTest {
   fun `Tree does not throw when using log with args`() {
     val sut = fixture.getSut()
     sut.d("test %s, %s", 1, 1)
+  }
+
+  @Test
+  fun `Tree defaults logs to disabled while capturing events and breadcrumbs`() {
+    val sut = fixture.getSut(enableLogs = null)
+
+    sut.e("message")
+
+    verify(fixture.scopes).captureEvent(any())
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>())
+    verifyNoInteractions(fixture.logs)
   }
 
   @Test
