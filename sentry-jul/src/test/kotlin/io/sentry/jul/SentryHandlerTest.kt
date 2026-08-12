@@ -28,6 +28,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.slf4j.MDC
 
@@ -40,6 +41,8 @@ class SentryHandlerTest {
     val transport: ITransport = mock(),
     contextTags: List<String>? = null,
     printfStyle: Boolean? = null,
+    enableLogs: Boolean? = true,
+    enableGlobalLogs: Boolean = true,
   ) {
     var logger: Logger
     var handler: SentryHandler
@@ -48,6 +51,7 @@ class SentryHandlerTest {
       val options = SentryOptions()
       options.dsn = "http://key@localhost/proj"
       options.setTransportFactory { _, _ -> transport }
+      options.logs.isEnabled = enableGlobalLogs
       options.logs.loggerBatchProcessorFactory = ILoggerBatchProcessorFactory { options, client ->
         LoggerBatchProcessor(options, client, ImmediateExecutorService())
       }
@@ -58,6 +62,9 @@ class SentryHandlerTest {
       handler.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
       handler.setMinimumEventLevel(minimumEventLevel)
       handler.setMinimumLevel(minimumLevel)
+      if (enableLogs != null) {
+        handler.setEnableLogs(enableLogs)
+      }
       if (printfStyle == true) {
         handler.setPrintfStyle(printfStyle)
       }
@@ -318,11 +325,22 @@ class SentryHandlerTest {
 
   @Test
   fun `fetches configuration from logging dot properties`() {
-    fixture = Fixture(configureWithLogManager = true)
+    fixture = Fixture(configureWithLogManager = true, enableLogs = null)
     assertEquals(Level.CONFIG, fixture.handler.minimumBreadcrumbLevel)
     assertEquals(Level.WARNING, fixture.handler.minimumEventLevel)
     assertEquals(Level.ALL, fixture.handler.level)
     assertTrue(fixture.handler.isPrintfStyle)
+    assertTrue(fixture.handler.isEnableLogs)
+
+    fixture.logger.info("this should be captured as a log")
+    Sentry.flush(10)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          assertEquals("this should be captured as a log", logs.items.first().body)
+        }
+      )
   }
 
   @Test
@@ -416,6 +434,58 @@ class SentryHandlerTest {
         },
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `does not capture logs by default`() {
+    fixture = Fixture(enableLogs = null, enableGlobalLogs = true)
+
+    assertFalse(fixture.handler.isEnableLogs)
+    fixture.logger.info("this should not be captured as a log")
+    Sentry.flush(10)
+
+    verify(fixture.transport, never()).send(checkLogs {})
+  }
+
+  @Test
+  fun `captures logs when enabled through Java`() {
+    fixture = Fixture(enableLogs = true, enableGlobalLogs = true)
+
+    assertTrue(fixture.handler.isEnableLogs)
+    fixture.logger.info("this should be captured as a log")
+    Sentry.flush(10)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          assertEquals("this should be captured as a log", logs.items.first().body)
+        }
+      )
+  }
+
+  @Test
+  fun `captures events and breadcrumbs when logs are disabled`() {
+    fixture =
+      Fixture(
+        minimumBreadcrumbLevel = Level.INFO,
+        minimumEventLevel = Level.SEVERE,
+        enableLogs = false,
+        enableGlobalLogs = true,
+      )
+
+    fixture.logger.info("this should be a breadcrumb")
+    fixture.logger.severe("this should be an event")
+    Sentry.flush(10)
+
+    verify(fixture.transport)
+      .send(
+        checkEvent { event ->
+          assertEquals("this should be an event", event.message?.message)
+          assertEquals("this should be a breadcrumb", event.breadcrumbs?.single()?.message)
+        },
+        anyOrNull(),
+      )
+    verify(fixture.transport, never()).send(checkLogs {})
   }
 
   @Test

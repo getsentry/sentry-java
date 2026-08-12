@@ -15,8 +15,10 @@ public class io/sentry/jul/SentryHandler : java/util/logging/Handler {
 	public fun getMinimumBreadcrumbLevel ()Ljava/util/logging/Level;
 	public fun getMinimumEventLevel ()Ljava/util/logging/Level;
 	public fun getMinimumLevel ()Ljava/util/logging/Level;
+	public fun isEnableLogs ()Z
 	public fun isPrintfStyle ()Z
 	public fun publish (Ljava/util/logging/LogRecord;)V
+	public fun setEnableLogs (Z)V
 	public fun setMinimumBreadcrumbLevel (Ljava/util/logging/Level;)V
 	public fun setMinimumEventLevel (Ljava/util/logging/Level;)V
 	public fun setMinimumLevel (Ljava/util/logging/Level;)V
