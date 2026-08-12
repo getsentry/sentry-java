@@ -154,6 +154,41 @@ The repository is organized into multiple modules:
 - **Formatting**: Enforced via Spotless - always run `./gradlew spotlessApply` before committing
 - **API Compatibility**: Binary compatibility is enforced - run `./gradlew apiDump` after API changes
 
+### Exception Handling
+
+**Never introduce a new `catch (Throwable)`.** Catch the narrowest type the guarded code can
+actually throw. The repository still contains many pre-existing broad catches; they are legacy,
+not a precedent to follow.
+
+A broad catch swallows `OutOfMemoryError`, `StackOverflowError`, `ThreadDeath` and `LinkageError` —
+conditions the JVM/ART cannot recover from and that leave the process in an undefined state — and
+it hides real bugs in our own code behind a log line.
+
+"The SDK must never crash the host application" is not a reason to catch `Throwable`. That goal is
+served by `io.sentry.util.ExceptionUtils.rethrowIfFatal`, which lets the non-recoverable throwables
+through while leaving everything else for the caller to log or ignore:
+
+```java
+try {
+  doSomethingRisky();
+} catch (Throwable t) {
+  ExceptionUtils.rethrowIfFatal(t);
+  options.getLogger().log(SentryLevel.ERROR, "Failed to do something risky", t);
+}
+```
+
+Apply that pattern only where a broad catch is genuinely unavoidable — an entry point that runs
+arbitrary user code or third-party callbacks. Everywhere else, name the exception types. Say in the
+PR description why the broad catch is necessary.
+
+Two related cases:
+- **Probing an optional `compileOnly` dependency**: a missing or version-mismatched class surfaces
+  as a `LinkageError` subclass (`NoClassDefFoundError`, `NoSuchMethodError`, `UnsatisfiedLinkError`),
+  which `rethrowIfFatal` deliberately rethrows. Catch the specific subclass locally *before*
+  delegating — see `SentrySQLiteDriver.hasConnectionPool` and `LoadClass`.
+- **`InterruptedException`**: never swallow it. Either let it propagate or restore the interrupt
+  with `Thread.currentThread().interrupt()`; `rethrowIfFatal` does the latter for you.
+
 ### Testing Requirements
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
