@@ -575,10 +575,15 @@ public final class Scope implements IScope {
     tags.clear();
     attributes.clear();
     extra.clear();
+    contexts.clear();
     eventProcessors.clear();
     clearTransaction();
     clearAttachments();
     clearFeatureFlags();
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setContexts(contexts);
+    }
   }
 
   /**

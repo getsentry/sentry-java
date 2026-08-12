@@ -227,6 +227,7 @@ public final class io/sentry/CheckInStatus : java/lang/Enum {
 
 public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts {
 	public fun <init> (Lio/sentry/protocol/Contexts;Lio/sentry/protocol/Contexts;Lio/sentry/protocol/Contexts;Lio/sentry/ScopeType;)V
+	public fun clear ()V
 	public fun containsKey (Ljava/lang/Object;)Z
 	public fun entrySet ()Ljava/util/Set;
 	public fun get (Ljava/lang/Object;)Ljava/lang/Object;
@@ -5795,6 +5796,7 @@ public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	protected final field responseLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Contexts;)V
+	public fun clear ()V
 	public fun containsKey (Ljava/lang/Object;)Z
 	public fun entrySet ()Ljava/util/Set;
 	public fun equals (Ljava/lang/Object;)Z
@@ -7639,6 +7641,7 @@ public final class io/sentry/util/AutoClosableReentrantLock : io/sentry/ISentryL
 	public fun <init> ()V
 	public fun acquire ()Lio/sentry/ISentryLifecycleToken;
 	public fun close ()V
+	public fun tryAcquire (JLjava/util/concurrent/TimeUnit;)Lio/sentry/ISentryLifecycleToken;
 }
 
 public final class io/sentry/util/CheckInUtils {

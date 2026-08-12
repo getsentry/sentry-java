@@ -292,6 +292,7 @@ class ScopeTest {
     scope.screen = "MainActivity"
     scope.setExtra("some", "extra")
     scope.setAttribute("some", "attribute")
+    scope.setContexts("some", "context")
     scope.addEventProcessor(eventProcessor())
     scope.addAttachment(Attachment("path"))
     scope.addFeatureFlag("flag", true)
@@ -308,6 +309,7 @@ class ScopeTest {
     assertEquals(0, scope.tags.size)
     assertEquals(0, scope.attributes.size)
     assertEquals(0, scope.extras.size)
+    assertTrue(scope.contexts.isEmpty)
     assertEquals(0, scope.eventProcessors.size)
     assertEquals(0, scope.attachments.size)
     assertEquals(0, scope.featureFlags!!.values.size)
@@ -884,6 +886,21 @@ class ScopeTest {
     data class Obj(val stuff: Int)
     scope.setContexts("test", Obj(3))
     verify(observer).setContexts(argThat { (get("test") as Obj).stuff == 3 })
+  }
+
+  @Test
+  fun `Scope clear contexts sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    // Populate the live contexts directly so the observer is only notified by clear().
+    scope.contexts.set("test", "value")
+    assertFalse(scope.contexts.isEmpty)
+
+    scope.clear()
+    assertTrue(scope.contexts.isEmpty)
+    verify(observer).setContexts(argThat { isEmpty })
   }
 
   @Test

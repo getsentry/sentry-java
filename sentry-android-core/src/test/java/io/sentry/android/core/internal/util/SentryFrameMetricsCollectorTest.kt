@@ -19,7 +19,6 @@ import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.test.injectForField
 import java.lang.ref.WeakReference
-import java.lang.reflect.Field
 import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -302,18 +301,41 @@ class SentryFrameMetricsCollectorTest {
   }
 
   @Test
-  fun `collector accesses choreographer instance on creation on main thread`() {
+  fun `collector accesses choreographer instance and field asynchronously on main thread`() {
     val collector = fixture.getSut(context)
-    val field: Field? = collector.getProperty("choreographerLastFrameTimeField")
+
+    val field: Any? = collector.getProperty("choreographerLastFrameTimeField")
     var choreographer: Choreographer? = collector.getProperty("choreographer")
-    // Choreographer instance is accessed on main thread, but the field accessor happens in whatever
-    // thread created the collector
-    assertNotNull(field)
+
     assertNull(choreographer)
+    assertNull(field)
+
     // Execute all posted tasks
     Shadows.shadowOf(Looper.getMainLooper()).idle()
     choreographer = collector.getProperty("choreographer")
     assertNotNull(choreographer)
+    assertNotNull(collector.getProperty<Any?>("choreographerLastFrameTimeField"))
+  }
+
+  // Frame callbacks on API 26+ read their per-frame start timestamp directly from FrameMetrics,
+  // which can make the Choreographer fallback look like it should be specific to APIs < 26.
+  // But SpanFrameMetricsCollector separately calls getLastKnownFrameStartTimeNanos() on every
+  // API level for pending-frame interpolation, so API 26+ still needs the Choreographer
+  // fallback to be initialized.
+  @Test
+  fun `collector keeps choreographer fallback available on version O+`() {
+    val buildInfo =
+      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.O) }
+    val collector = fixture.getSut(context, buildInfo)
+
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+
+    val choreographer = collector.getProperty<Choreographer>("choreographer")
+    assertNotNull(collector.getProperty<Any?>("choreographerLastFrameTimeField"))
+
+    choreographer.injectForField("mLastFrameTimeNanos", 100)
+
+    assertEquals(100, collector.getLastKnownFrameStartTimeNanos())
   }
 
   @Test
@@ -621,10 +643,6 @@ class SentryFrameMetricsCollectorTest {
     // emit a fast frame (21ns cpu time — well under 16ms budget)
     listener.onFrameMetricsAvailable(createMockWindow(), createMockFrameMetrics(), 0)
 
-    // choreographer is at end of range so no pending delay
-    val choreographer = collector.getProperty<Choreographer>("choreographer")
-    choreographer.injectForField("mLastFrameTimeNanos", TimeUnit.SECONDS.toNanos(1))
-
     val result = collector.getFramesDelay(0, TimeUnit.SECONDS.toNanos(1))
     assertEquals(0.0, result.delaySeconds)
     assertEquals(0, result.framesContributingToDelayCount)
@@ -643,21 +661,22 @@ class SentryFrameMetricsCollectorTest {
     // emit a slow frame (~100ms extra = ~116ms total, well over 16ms budget)
     listener.onFrameMetricsAvailable(
       createMockWindow(),
-      createMockFrameMetrics(extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(100)),
+      createMockFrameMetrics(
+        extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(100),
+        intendedVsyncTimestampNanos = TimeUnit.SECONDS.toNanos(1),
+      ),
       0,
     )
 
     // emit a frozen frame (~1000ms extra = ~1016ms total, well over 700ms)
     listener.onFrameMetricsAvailable(
       createMockWindow(),
-      createMockFrameMetrics(extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(1000)),
+      createMockFrameMetrics(
+        extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(1000),
+        intendedVsyncTimestampNanos = TimeUnit.SECONDS.toNanos(2),
+      ),
       0,
     )
-
-    // choreographer is at end of range so no pending delay
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
-    val choreographer = collector.getProperty<Choreographer>("choreographer")
-    choreographer.injectForField("mLastFrameTimeNanos", TimeUnit.SECONDS.toNanos(5))
 
     val result = collector.getFramesDelay(0, TimeUnit.SECONDS.toNanos(5))
     assertTrue(result.delaySeconds > 0)
@@ -681,11 +700,6 @@ class SentryFrameMetricsCollectorTest {
       0,
     )
 
-    // choreographer is at end of range
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
-    val choreographer = collector.getProperty<Choreographer>("choreographer")
-    choreographer.injectForField("mLastFrameTimeNanos", TimeUnit.SECONDS.toNanos(5))
-
     // The frame's delay interval is roughly [~16ms, ~1000ms].
     // Query from 500ms so the range clips the delay interval in half.
     val queryStart = TimeUnit.MILLISECONDS.toNanos(500)
@@ -708,7 +722,6 @@ class SentryFrameMetricsCollectorTest {
     Shadows.shadowOf(Looper.getMainLooper()).idle()
     val listener =
       collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
-    val choreographer = collector.getProperty<Choreographer>("choreographer")
 
     collector.startCollection(mock())
 
@@ -719,8 +732,6 @@ class SentryFrameMetricsCollectorTest {
       createMockFrameMetrics(extraCpuDurationNanos = TimeUnit.MILLISECONDS.toNanos(100))
     whenever(frameMetrics1.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)).thenReturn(t0)
     listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics1, 0)
-
-    choreographer.injectForField("mLastFrameTimeNanos", t0 + TimeUnit.SECONDS.toNanos(1))
 
     // verify frame exists
     val resultBefore = collector.getFramesDelay(t0, t0 + TimeUnit.SECONDS.toNanos(1))
@@ -734,7 +745,6 @@ class SentryFrameMetricsCollectorTest {
     listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics2, 0)
 
     // the first frame should have been pruned (>5min old)
-    choreographer.injectForField("mLastFrameTimeNanos", t1 + TimeUnit.SECONDS.toNanos(1))
     val resultAfter = collector.getFramesDelay(t0, t0 + TimeUnit.SECONDS.toNanos(1))
     assertEquals(0, resultAfter.framesContributingToDelayCount)
   }
@@ -762,6 +772,7 @@ class SentryFrameMetricsCollectorTest {
     syncNanos: Long = 6,
     extraCpuDurationNanos: Long = 0,
     totalDurationNanos: Long = 60,
+    intendedVsyncTimestampNanos: Long = 50,
   ): FrameMetrics {
     val frameMetrics = mock<FrameMetrics>()
     whenever(frameMetrics.getMetric(FrameMetrics.UNKNOWN_DELAY_DURATION))
@@ -774,7 +785,8 @@ class SentryFrameMetricsCollectorTest {
     whenever(frameMetrics.getMetric(FrameMetrics.DRAW_DURATION)).thenReturn(drawNanos)
     whenever(frameMetrics.getMetric(FrameMetrics.SYNC_DURATION)).thenReturn(syncNanos)
     whenever(frameMetrics.getMetric(FrameMetrics.TOTAL_DURATION)).thenReturn(totalDurationNanos)
-    whenever(frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP)).thenReturn(50)
+    whenever(frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP))
+      .thenReturn(intendedVsyncTimestampNanos)
     return frameMetrics
   }
 }
