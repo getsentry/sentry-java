@@ -29,7 +29,7 @@ import org.mockito.kotlin.verify
 class ManifestMetadataReaderTest {
   private class Fixture {
     val logger = mock<ILogger>()
-    val options = SentryAndroidOptions().apply { setLogger(logger) }
+    val options = SentryAndroidOptions().apply { setLogger(this@Fixture.logger) }
     val buildInfoProvider = mock<BuildInfoProvider>()
 
     fun getContext(metaData: Bundle = Bundle()): Context =
@@ -1941,6 +1941,64 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertTrue(fixture.options.inAppExcludes.isEmpty())
+  }
+
+  @Test
+  fun `applyMetadata does not warn when legacy logs enabled metadata is absent`() {
+    fixture.options.isDebug = true
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    verify(fixture.logger, never()).log(eq(SentryLevel.WARNING), any<String>())
+  }
+
+  @Test
+  fun `applyMetadata warns when legacy logs enabled metadata is true`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.DEBUG to true,
+        ManifestMetadataReader.ENABLE_LOGS to true,
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    verify(fixture.logger)
+      .log(
+        SentryLevel.WARNING,
+        "The Android manifest option 'io.sentry.logs.enabled' is no longer supported. " +
+          "Manual Sentry.logger() calls no longer require it, and automatic logging " +
+          "integrations now require their own opt-ins.",
+        *emptyArray(),
+      )
+    assertThat(fixture.options.isEnableTimberLogs).isFalse()
+    assertThat(fixture.options.isEnableLogcatLogs).isFalse()
+  }
+
+  @Test
+  fun `applyMetadata warns when legacy logs enabled metadata is false`() {
+    fixture.options.isEnableTimberLogs = true
+    fixture.options.isEnableLogcatLogs = true
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.DEBUG to true,
+        ManifestMetadataReader.ENABLE_LOGS to false,
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    verify(fixture.logger)
+      .log(
+        SentryLevel.WARNING,
+        "The Android manifest option 'io.sentry.logs.enabled' no longer disables manual " +
+          "Sentry.logger() calls. Automatic logging integrations remain disabled unless " +
+          "enabled through their own opt-ins.",
+        *emptyArray(),
+      )
+    assertThat(fixture.options.isEnableTimberLogs).isTrue()
+    assertThat(fixture.options.isEnableLogcatLogs).isTrue()
   }
 
   @Test
