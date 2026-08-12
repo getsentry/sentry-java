@@ -2095,13 +2095,16 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 
 public final class io/sentry/PerformanceCollectionData {
 	public fun <init> (J)V
-	public fun getCpuUsagePercentage ()Ljava/lang/Double;
+	public fun getCpuUsagePercentage ()D
 	public fun getNanoTimestamp ()J
-	public fun getUsedHeapMemory ()Ljava/lang/Long;
-	public fun getUsedNativeMemory ()Ljava/lang/Long;
-	public fun setCpuUsagePercentage (Ljava/lang/Double;)V
-	public fun setUsedHeapMemory (Ljava/lang/Long;)V
-	public fun setUsedNativeMemory (Ljava/lang/Long;)V
+	public fun getUsedHeapMemory ()J
+	public fun getUsedNativeMemory ()J
+	public fun hasCpuUsagePercentage ()Z
+	public fun hasUsedHeapMemory ()Z
+	public fun hasUsedNativeMemory ()Z
+	public fun setCpuUsagePercentage (D)V
+	public fun setUsedHeapMemory (J)V
+	public fun setUsedNativeMemory (J)V
 }
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
