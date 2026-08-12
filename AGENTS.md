@@ -181,14 +181,6 @@ Apply that pattern only where a broad catch is genuinely unavoidable — an entr
 arbitrary user code or third-party callbacks. Everywhere else, name the exception types. Say in the
 PR description why the broad catch is necessary.
 
-Two related cases:
-- **Probing an optional `compileOnly` dependency**: a missing or version-mismatched class surfaces
-  as a `LinkageError` subclass (`NoClassDefFoundError`, `NoSuchMethodError`, `UnsatisfiedLinkError`),
-  which `rethrowIfFatal` deliberately rethrows. Catch the specific subclass locally *before*
-  delegating — see `SentrySQLiteDriver.hasConnectionPool` and `LoadClass`.
-- **`InterruptedException`**: never swallow it. Either let it propagate or restore the interrupt
-  with `Thread.currentThread().interrupt()`; `rethrowIfFatal` does the latter for you.
-
 ### Testing Requirements
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
