@@ -26,7 +26,7 @@ import java.lang.ref.WeakReference
  *
  * - Make sure our composition ordering updates work correctly when creating a nav transaction. (Eg, if we navigate to a screen that uses a LaunchedEffect to do initial work, we want to make sure that work is tracked under the nav transaction.)
  *
- * --- Sanity check the current solution: Does Compose guarantee it recomposes / re-executes observers of changed state (here, the backstack) in lexical order?
+ * --- Determine whether we want to use the snapshot observer approach or the previous DisposableEffect approach. (See discussion of downsides of snapshot approach in ~/Desktop/nav3-observing-sync-work-in-destination-composable.txt)
  *
  * --- Any performance concerns now that we're no longer using a LaunchedEffect to call onBackstackChanged()?
  *
@@ -75,7 +75,7 @@ import java.lang.ref.WeakReference
  * ------ Transactions are containers, not proper spans. Our UX should indicate as much.
  */
 
-// TODO ADAM: KDoc
+// TODO ADAM: KDoc (including lack of thread-safety / need to thread-confine access).
 internal class SentryBackStackObserver<T : Any>
 internal constructor(
   private val scopes: IScopes,
