@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.Sentry
 import io.sentry.SentryLevel
@@ -15,6 +16,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
+import org.robolectric.shadows.ShadowLog
 
 @RunWith(AndroidJUnit4::class)
 class SentryLogcatAdapterTest {
@@ -26,9 +28,12 @@ class SentryLogcatAdapterTest {
     val breadcrumbs = mutableListOf<Breadcrumb>()
     val logs = mutableListOf<SentryLogEvent>()
 
-    fun initSut(options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null) {
-      val metadata =
-        Bundle().apply { putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123") }
+    fun initSut(
+      enableLogcatLogs: Boolean? = true,
+      metadata: Bundle = Bundle(),
+      options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null,
+    ) {
+      metadata.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
       val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
       initForTest(mockContext) {
         it.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
@@ -36,6 +41,9 @@ class SentryLogcatAdapterTest {
           breadcrumb
         }
         it.logs.isEnabled = true
+        if (enableLogcatLogs != null) {
+          it.isEnableLogcatLogs = enableLogcatLogs
+        }
         it.logs.beforeSend =
           SentryOptions.Logs.BeforeSendLogCallback { logEvent ->
             logs.add(logEvent)
@@ -55,6 +63,37 @@ class SentryLogcatAdapterTest {
     Sentry.close()
     fixture.breadcrumbs.clear()
     fixture.logs.clear()
+    ShadowLog.clear()
+  }
+
+  @Test
+  fun `Logcat logs are disabled by default while breadcrumbs and Android Log remain enabled`() {
+    fixture.initSut(enableLogcatLogs = null)
+
+    SentryLogcatAdapter.d(tag, commonMsg)
+
+    assertThat(fixture.logs).isEmpty()
+    assertThat(fixture.breadcrumbs).hasSize(1)
+    assertThat(ShadowLog.getLogs().any { it.tag == tag && it.msg == commonMsg }).isTrue()
+  }
+
+  @Test
+  fun `Logcat logs can be enabled through Android options`() {
+    fixture.initSut(enableLogcatLogs = true)
+
+    SentryLogcatAdapter.d(tag, commonMsg)
+
+    assertThat(fixture.logs).hasSize(1)
+  }
+
+  @Test
+  fun `Logcat logs can be enabled through manifest metadata`() {
+    val metadata = Bundle().apply { putBoolean(ManifestMetadataReader.ENABLE_LOGCAT_LOGS, true) }
+    fixture.initSut(enableLogcatLogs = null, metadata = metadata)
+
+    SentryLogcatAdapter.d(tag, commonMsg)
+
+    assertThat(fixture.logs).hasSize(1)
   }
 
   @Test

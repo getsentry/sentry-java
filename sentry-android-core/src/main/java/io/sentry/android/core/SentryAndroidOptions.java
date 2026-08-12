@@ -74,6 +74,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic Sentry Logs capture from Timber. Default is disabled. */
   private boolean enableTimberLogs = false;
 
+  /** Enable or disable automatic Sentry Logs capture from Logcat. Default is disabled. */
+  private boolean enableLogcatLogs = false;
+
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
@@ -466,6 +469,14 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableTimberLogs(boolean enableTimberLogs) {
     this.enableTimberLogs = enableTimberLogs;
+  }
+
+  public boolean isEnableLogcatLogs() {
+    return enableLogcatLogs;
+  }
+
+  public void setEnableLogcatLogs(boolean enableLogcatLogs) {
+    this.enableLogcatLogs = enableLogcatLogs;
   }
 
   /**
