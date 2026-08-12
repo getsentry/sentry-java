@@ -6,6 +6,7 @@ import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLogLevel;
+import io.sentry.SentryOptions;
 import io.sentry.logger.SentryLogParameters;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -52,8 +53,10 @@ public final class SentryLogcatAdapter {
       @Nullable final String msg,
       @Nullable final Throwable tr) {
     final @NotNull ScopesAdapter scopes = ScopesAdapter.getInstance();
-    // Check if logs are enabled before doing expensive operations
-    if (!scopes.getOptions().getLogs().isEnabled()) {
+    final @NotNull SentryOptions options = scopes.getOptions();
+    if (!(options instanceof SentryAndroidOptions)
+        || !((SentryAndroidOptions) options).isEnableLogcatLogs()
+        || !options.getLogs().isEnabled()) {
       return;
     }
     final @Nullable String trMessage = tr != null ? tr.getMessage() : null;
