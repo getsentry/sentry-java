@@ -20,6 +20,18 @@ public class SentryTimberTree(
   private val minBreadcrumbLevel: SentryLevel,
   private val minLogLevel: SentryLogLevel = SentryLogLevel.INFO,
 ) : Timber.Tree() {
+  private var enableLogs: Boolean = false
+
+  public constructor(
+    scopes: IScopes,
+    minEventLevel: SentryLevel,
+    minBreadcrumbLevel: SentryLevel,
+    minLogLevel: SentryLogLevel,
+    enableLogs: Boolean,
+  ) : this(scopes, minEventLevel, minBreadcrumbLevel, minLogLevel) {
+    this.enableLogs = enableLogs
+  }
+
   private val pendingTag = ThreadLocal<String?>()
 
   private fun retrieveTag(): String? {
@@ -185,7 +197,9 @@ public class SentryTimberTree(
 
     captureEvent(level, tag, sentryMessage, throwable)
     addBreadcrumb(level, sentryMessage, throwable)
-    addLog(logLevel, message, tag, throwable, *args)
+    if (enableLogs) {
+      addLog(logLevel, message, tag, throwable, *args)
+    }
   }
 
   /** do not log if it's lower than min. required level. */

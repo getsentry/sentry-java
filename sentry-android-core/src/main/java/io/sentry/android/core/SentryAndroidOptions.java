@@ -71,6 +71,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for Network Events Using NetworkCallback */
   private boolean enableNetworkEventBreadcrumbs = true;
 
+  /** Enable or disable automatic Sentry Logs capture from Timber. Default is disabled. */
+  private boolean enableTimberLogs = false;
+
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
@@ -455,6 +458,14 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableNetworkEventBreadcrumbs(boolean enableNetworkEventBreadcrumbs) {
     this.enableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs;
+  }
+
+  public boolean isEnableTimberLogs() {
+    return enableTimberLogs;
+  }
+
+  public void setEnableTimberLogs(boolean enableTimberLogs) {
+    this.enableTimberLogs = enableTimberLogs;
   }
 
   /**

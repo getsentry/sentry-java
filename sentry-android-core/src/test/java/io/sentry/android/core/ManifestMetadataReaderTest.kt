@@ -1968,6 +1968,25 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata keeps Timber logs disabled if not found`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertFalse(fixture.options.isEnableTimberLogs)
+  }
+
+  @Test
+  fun `applyMetadata reads Timber logs enabled to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_TIMBER_LOGS to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertTrue(fixture.options.isEnableTimberLogs)
+  }
+
+  @Test
   fun `applyMetadata reads metrics enabled and keep default value if not found`() {
     // Arrange
     val context = fixture.getContext()
