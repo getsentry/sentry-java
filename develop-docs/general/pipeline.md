@@ -118,4 +118,4 @@ others it authorizes the request and proxies it to a dedicated service that owns
 heavy read logic. Either way the endpoint is the public surface, and the storage keys and
 internal services stay behind it.
 
-See [feature-perfetto-profiling.md](feature-perfetto-profiling.md) for a worked example.
+See [feature/profiling/perfetto.md](../feature/profiling/perfetto.md) for a worked example.

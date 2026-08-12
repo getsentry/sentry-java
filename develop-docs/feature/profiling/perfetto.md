@@ -27,7 +27,7 @@ Useful Perfetto references:
 ## Pipeline overview
 
 Profile chunks travel the standard ingestion path described in
-[general-pipeline.md](general-pipeline.md) — SDK envelope,
+[general/pipeline.md](../../general/pipeline.md) — SDK envelope,
 [Relay](https://develop.sentry.dev/ingestion/relay/) (Sentry's ingestion proxy), Kafka, a
 monolith processing task, then storage and a read API. Read that first; the rest of this
 document covers only where Perfetto deviates from it.
@@ -83,9 +83,9 @@ flowchart TD
 
 ## SDK (getsentry/sentry-java)
 
-On API 35+, [`AndroidOptionsInitializer`](../sentry-android-core/src/main/java/io/sentry/android/core/AndroidOptionsInitializer.java)
+On API 35+, [`AndroidOptionsInitializer`](../../../sentry-android-core/src/main/java/io/sentry/android/core/AndroidOptionsInitializer.java)
 wires up `PerfettoContinuousProfiler` automatically. On older devices the SDK falls back
-to the legacy `Debug`-based [`AndroidContinuousProfiler`](../sentry-android-core/src/main/java/io/sentry/android/core/AndroidContinuousProfiler.java),
+to the legacy `Debug`-based [`AndroidContinuousProfiler`](../../../sentry-android-core/src/main/java/io/sentry/android/core/AndroidContinuousProfiler.java),
 gated by the `enableLegacyProfiling` option (manifest key
 `io.sentry.profiling.enable-legacy-profiling`, defaults to `true`). Only **continuous
 profiling** is supported on the Perfetto path — transaction-based and app-start profiling
@@ -93,7 +93,7 @@ are not.
 
 ### Capturing chunks
 
-Continuous profiling emits a stream of independent [`ProfileChunk`](../sentry/src/main/java/io/sentry/ProfileChunk.java)s
+Continuous profiling emits a stream of independent [`ProfileChunk`](../../../sentry/src/main/java/io/sentry/ProfileChunk.java)s
 rather than one profile per transaction. `PerfettoContinuousProfiler` drives a chained
 loop: each chunk runs for `MAX_CHUNK_DURATION_MILLIS` (60s) via `PerfettoProfiler`, which
 calls `ProfilingManager.requestProfiling(PROFILING_TYPE_STACK_SAMPLING, …)` at
@@ -111,13 +111,13 @@ ProfileChunk.Builder(profilerId, chunkId, measurements, traceFile, timestamp, Pr
 ```
 
 The chunk is captured via `scopes.captureProfileChunk(...)` and sent as its own envelope
-with item type [`SentryItemType.ProfileChunk`](../sentry/src/main/java/io/sentry/SentryItemType.java)
+with item type [`SentryItemType.ProfileChunk`](../../../sentry/src/main/java/io/sentry/SentryItemType.java)
 (wire name `profile_chunk`).
 
 ### Envelope format and the `meta_length` header
 
 A legacy chunk base64-encodes its trace into the `ProfileChunk` JSON. A Perfetto chunk is
-much larger, so [`SentryClient`](../sentry/src/main/java/io/sentry/SentryClient.java) instead
+much larger, so [`SentryClient`](../../../sentry/src/main/java/io/sentry/SentryClient.java) instead
 routes it through the new `SentryEnvelopeItem.fromPerfettoProfileChunk(...)` factory, which
 avoids base64 by sending the raw binary alongside the JSON.
 
@@ -128,7 +128,7 @@ the raw `.pftrace` bytes with **no delimiter**:
 [ProfileChunk JSON bytes][raw .pftrace binary bytes]
 ```
 
-A new `meta_length` property on the [envelope item header](../sentry/src/main/java/io/sentry/SentryEnvelopeItemHeader.java)
+A new `meta_length` property on the [envelope item header](../../../sentry/src/main/java/io/sentry/SentryEnvelopeItemHeader.java)
 tells the server where the JSON ends and the binary begins. The standard envelope item
 structure (header line + newline + payload) is unchanged; `meta_length` simply subdivides
 the payload:
@@ -220,8 +220,8 @@ The monolith exposes two feature-gated endpoints:
   streams the raw blob back from object store via the stored `stored_id`. Access requires
   the org's configured attachments role, analogous to generic event attachments.
 
-In the flamegraph UI, a toolbar button (added for continuous profiles when the flag is on
-and at least one attachment exists) lists and provides a way to download these traces.
+In the flamegraph UI, a toolbar button (added for continuous profiles when the feature is
+enabled and at least one attachment exists) lists and provides a way to download these traces.
 
 ## References
 
