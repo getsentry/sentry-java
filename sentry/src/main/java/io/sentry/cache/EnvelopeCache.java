@@ -308,7 +308,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
           } else {
             return session;
           }
-        } catch (Exception e) {
+        } catch (Throwable e) {
           options.getLogger().log(ERROR, "Item failed to process.", e);
         }
       } else {
