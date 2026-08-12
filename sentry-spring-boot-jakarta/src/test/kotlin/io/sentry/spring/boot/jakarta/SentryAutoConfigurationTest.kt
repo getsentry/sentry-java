@@ -246,6 +246,7 @@ class SentryAutoConfigurationTest {
         "sentry.cron.default-failure-issue-threshold=40",
         "sentry.cron.default-recovery-threshold=50",
         "sentry.logs.enabled=true",
+        "sentry.logging.enable-logs=true",
         "sentry.profile-session-sample-rate=1.0",
         "sentry.profiling-traces-dir-path=tmp/sentry/profiling-traces",
         "sentry.profile-lifecycle=TRACE",
@@ -305,6 +306,7 @@ class SentryAutoConfigurationTest {
         assertThat(options.cron!!.defaultFailureIssueThreshold).isEqualTo(40L)
         assertThat(options.cron!!.defaultRecoveryThreshold).isEqualTo(50L)
         assertThat(options.logs.isEnabled).isEqualTo(true)
+        assertThat(options.logging.isEnableLogs).isTrue()
         assertThat(options.profileSessionSampleRate).isEqualTo(1.0)
         assertThat(options.profilingTracesDirPath)
           .startsWith(File("tmp/sentry/profiling-traces").absolutePath)
