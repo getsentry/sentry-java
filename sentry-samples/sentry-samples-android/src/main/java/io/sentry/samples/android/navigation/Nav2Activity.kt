@@ -718,7 +718,12 @@ private suspend fun runNav2ComposeRouteActivationAction(
 }
 
 private fun runManualNav2RouteActivationSpan(routeName: String) {
-  val span = Sentry.getSpan()?.startChild("ui.load", "Nav2 /$routeName route activation")
+  val span =
+    Sentry.getSpan()
+      ?.startChild(
+        "test.navigation.route_activation",
+        "Nav2 /$routeName route activation",
+      )
   span?.setData("sample.route_activation", true)
   span?.finish()
 }

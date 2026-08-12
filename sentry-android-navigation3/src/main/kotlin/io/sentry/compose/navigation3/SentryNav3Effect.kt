@@ -129,6 +129,7 @@ public fun <T : Any> SentryNav3Effect(
       )
     }
 
+  // TODO ADAM: Note we're reading these on every recomposition attempt. Fix.
   observer.nameExtractor = nameExtractor
   observer.argumentsExtractor = argumentsExtractor
 
@@ -145,7 +146,15 @@ public fun <T : Any> SentryNav3Effect(
     // effect, ii) SentryNav3Effect is invoked before NavDisplay, and iii) the Compose runtime
     // continues to dispatch remembered observers in recorded composition order, i.e., honors the
     // ordering from (ii).
+    // TODO ADAM: Note: Snapshot apply observers do not get the same single-threaded, serialized execution                                                                                                                      • hex Connected
+    //  guarantees as Compose effects. This callback runs on whichever thread applies or advances the                                                                                                                 • inflection Needs auth
+    //  global snapshot. That may be the thread that performed the write, but it can also be a different                                                                                                              • linear Connected
+    //  thread when global apply notifications are deferred, so observer callbacks must not assume main-                                                                                                              • pendo Needs auth
+    //  thread affinity or single-threaded delivery. That's problematic because SentryBackStackObserver
+    //  isn't thread safe and perhaps can't be easily made threadsafe because Scope transaction/span reads
+    //  aren't thread safe.
     val handle: ObserverHandle = Snapshot.registerApplyObserver { changed, _ ->
+      // TODO ADAM: Performance issues?
       if (backStack in changed) {
         observer.onBackStackChanged(backStack = backStack.currentSnapshot())
       }

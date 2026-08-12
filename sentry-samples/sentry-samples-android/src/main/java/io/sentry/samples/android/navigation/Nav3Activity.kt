@@ -554,7 +554,12 @@ private fun crashSampleApp(navName: String): Nothing {
 }
 
 private fun runManualNav3RouteActivationSpan(route: Nav3Route) {
-  val span = Sentry.getSpan()?.startChild("ui.load", "Nav3 /${route.routeName} route activation")
+  val span =
+    Sentry.getSpan()
+      ?.startChild(
+        "test.navigation.route_activation",
+        "Nav3 /${route.routeName} route activation",
+      )
   span?.setData("sample.route_activation", true)
   span?.finish()
 }
