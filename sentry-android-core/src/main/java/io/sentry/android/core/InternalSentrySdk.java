@@ -203,8 +203,8 @@ public final class InternalSentrySdk {
       final SentryEnvelope repackagedEnvelope =
           new SentryEnvelope(envelope.getHeader(), envelopeItems);
       return scopes.captureEnvelope(repackagedEnvelope);
-    } catch (Exception e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", e);
+    } catch (Throwable t) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
     }
     return null;
   }
