@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -13,6 +14,11 @@ class NoOpSpanTest {
   fun `startChild does not return null`() {
     assertNotNull(span.startChild("op"))
     assertNotNull(span.startChild("op", "desc"))
+  }
+
+  @Test
+  fun `startChild with timestamp returns no-op span`() {
+    assertThat(span.startChild("op", "desc", SentryLongDate(1234))).isSameInstanceAs(span)
   }
 
   @Test
