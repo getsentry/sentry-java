@@ -7720,6 +7720,7 @@ public final class io/sentry/util/ExceptionUtils {
 	public fun <init> ()V
 	public static fun findRootCause (Ljava/lang/Throwable;)Ljava/lang/Throwable;
 	public static fun isIgnored (Ljava/util/Set;Ljava/lang/Throwable;)Z
+	public static fun rethrowIfFatal (Ljava/lang/Throwable;)V
 }
 
 public final class io/sentry/util/FileUtils {
