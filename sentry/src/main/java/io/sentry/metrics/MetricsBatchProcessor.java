@@ -19,10 +19,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @Open
 public class MetricsBatchProcessor implements IMetricsBatchProcessor {
@@ -46,9 +44,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
     this(options, client, new SentryExecutorService(options));
   }
 
-  @ApiStatus.Internal
-  @TestOnly
-  public MetricsBatchProcessor(
+  MetricsBatchProcessor(
       final @NotNull SentryOptions options,
       final @NotNull ISentryClient client,
       final @NotNull ISentryExecutorService executorService) {

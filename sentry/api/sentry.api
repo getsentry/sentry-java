@@ -5490,7 +5490,6 @@ public class io/sentry/metrics/MetricsBatchProcessor : io/sentry/metrics/IMetric
 	public static final field MAX_QUEUE_SIZE I
 	protected final field options Lio/sentry/SentryOptions;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
-	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;Lio/sentry/ISentryExecutorService;)V
 	public fun add (Lio/sentry/SentryMetricsEvent;)V
 	public fun close (Z)V
 	public fun flush (J)V
