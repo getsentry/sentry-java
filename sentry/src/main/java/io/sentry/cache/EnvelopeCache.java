@@ -339,19 +339,16 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * #persistCurrentSession(Session)} can have put it there, writing the live session, so the stored
    * copy is at least as advanced as this envelope. Rotating and overwriting it would file a running
    * session as the previous one and roll back any unhandled error it has recorded since.
+   *
+   * <p>A null session id never matches, so sessions we cannot tell apart are rotated as before.
    */
   private boolean isLateDuplicateStart(
       final @Nullable Session startingSession, final @Nullable Session currentSession) {
-    return startingSession != null
-        && currentSession != null
-        && hasSameSessionId(currentSession, startingSession);
-  }
-
-  private boolean hasSameSessionId(
-      final @NotNull Session firstSession, final @NotNull Session secondSession) {
-    return firstSession.getSessionId() != null
-        && secondSession.getSessionId() != null
-        && Objects.equals(firstSession.getSessionId(), secondSession.getSessionId());
+    if (startingSession == null || currentSession == null) {
+      return false;
+    }
+    final @Nullable String startingSessionId = startingSession.getSessionId();
+    return startingSessionId != null && startingSessionId.equals(currentSession.getSessionId());
   }
 
   private boolean writeEnvelopeToDisk(
