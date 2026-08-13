@@ -60,9 +60,9 @@ public class SentryUserFeedbackForm extends AlertDialog {
   }
 
   private void maybeStartShakeDetection(final @NotNull Context context) {
-    // Only a per-form opt-in on top of a globally disabled shake gesture starts a detector for
-    // this form. Both other cases defer to FeedbackShakeIntegration: while shake-to-report is
-    // enabled it already shows a form on shake, and once it has been disabled at runtime that
+    // Only a per-dialog opt-in on top of a globally disabled shake gesture starts a detector for
+    // this dialog. Both other cases defer to FeedbackShakeIntegration: while shake-to-report is
+    // enabled it already shows a dialog on shake, and once it has been disabled at runtime that
     // must stay disabled. Note resolvedFeedbackOptions is a copy of the global options, so its
     // isUseShakeGesture() is indistinguishable from the global one unless a configurator set it.
     final @NotNull SentryFeedbackOptions globalFeedbackOptions =
@@ -362,7 +362,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
   @Override
   protected void onStart() {
     super.onStart();
-    // Clear the message field so subsequent show() calls start with a fresh form
+    // Clear the message field so subsequent show() calls start with a fresh dialog
     final @NotNull EditText edtMessage =
         findViewById(R.id.sentry_dialog_user_feedback_edt_description);
     edtMessage.getText().clear();
@@ -370,12 +370,12 @@ public class SentryUserFeedbackForm extends AlertDialog {
 
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
-    // Pause shake-to-report on this form's activity while it is visible, so a shake can't stack a
-    // second form on top of it
-    final @Nullable FeedbackShakeIntegration integration = shakeIntegration();
+    // Pause shake-to-report on this dialog's activity while it is visible, so a shake can't stack
+    // a second dialog on top of it
+    final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
     final @Nullable Activity activity = getActivity(getContext());
     if (integration != null && activity != null) {
-      integration.onFormVisible(activity, this);
+      integration.onDialogVisible(activity, this);
     }
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
@@ -392,9 +392,9 @@ public class SentryUserFeedbackForm extends AlertDialog {
   @Override
   protected void onStop() {
     super.onStop();
-    final @Nullable FeedbackShakeIntegration integration = shakeIntegration();
+    final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
     if (integration != null) {
-      integration.onFormGone(this);
+      integration.onDialogGone(this);
     }
   }
 
@@ -402,19 +402,19 @@ public class SentryUserFeedbackForm extends AlertDialog {
   public void onDetachedFromWindow() {
     super.onDetachedFromWindow();
     // Safety net for teardown without a dismiss (e.g. the host activity is destroyed while the
-    // form is still showing): onStop never fires then, but the window is still detached —
+    // dialog is still showing): onStop never fires then, but the window is still detached —
     // without this, shake-to-report would stay paused forever.
-    final @Nullable FeedbackShakeIntegration integration = shakeIntegration();
+    final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
     if (integration != null) {
-      integration.onFormGone(this);
+      integration.onDialogGone(this);
     }
   }
 
   /**
-   * The shake integration to report this form's visibility to, or null when shake-to-report isn't
+   * The shake integration to report this dialog's visibility to, or null when shake-to-report isn't
    * available (non-Android controller, or the integration was never installed).
    */
-  private @Nullable FeedbackShakeIntegration shakeIntegration() {
+  private @Nullable FeedbackShakeIntegration getFeedbackShakeIntegration() {
     final @NotNull SentryFeedbackOptions.IShakeController controller =
         Sentry.getCurrentScopes().getOptions().getFeedbackOptions().getShakeController();
     return controller instanceof FeedbackShakeIntegration

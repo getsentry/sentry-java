@@ -27,10 +27,10 @@ import org.jetbrains.annotations.TestOnly;
  * Sentry.feedback().disableOnShake()}.
  *
  * <p>Shake detection is scoped to the resumed activity: a dialog belongs to the window of the
- * activity that created it, so it can only ever be visible while that activity is resumed. Forms
- * report themselves via {@link #onFormVisible(Activity, Dialog)} / {@link #onFormGone(Dialog)} and
- * detection is then suppressed for the activity hosting them, which keeps a shake from stacking a
- * second dialog on top of a visible one without letting a dialog on a backgrounded activity
+ * activity that created it, so it can only ever be visible while that activity is resumed. Dialogs
+ * report themselves via {@link #onDialogVisible(Activity, Dialog)} / {@link #onDialogGone(Dialog)}
+ * and detection is then suppressed for the activity hosting them, which keeps a shake from stacking
+ * a second dialog on top of a visible one without letting a dialog on a backgrounded activity
  * suppress detection elsewhere.
  */
 public final class FeedbackShakeIntegration
@@ -46,11 +46,11 @@ public final class FeedbackShakeIntegration
   private volatile @Nullable WeakReference<Activity> currentActivityRef;
 
   /**
-   * The feedback forms that are currently visible, together with the activity hosting them. More
+   * The feedback dialogs that are currently visible, together with the activity hosting them. More
    * than one can be visible at a time, e.g. when the app calls {@code Sentry.feedback().showForm()}
-   * while another form is already showing.
+   * while another dialog is already showing.
    */
-  private final @NotNull CopyOnWriteArrayList<VisibleForm> visibleForms =
+  private final @NotNull CopyOnWriteArrayList<VisibleDialog> visibleDialogs =
       new CopyOnWriteArrayList<>();
 
   public FeedbackShakeIntegration(final @NotNull Application application) {
@@ -133,18 +133,18 @@ public final class FeedbackShakeIntegration
   }
 
   /**
-   * Reports a feedback form as visible on {@code host}. Shake detection is suppressed for that
-   * activity until the form reports back via {@link #onFormGone(Dialog)}, so a shake can never
-   * stack a second form on top of a visible one — no matter how the visible one was opened.
+   * Reports a feedback dialog as visible on {@code host}. Shake detection is suppressed for that
+   * activity until the dialog reports back via {@link #onDialogGone(Dialog)}, so a shake can never
+   * stack a second dialog on top of a visible one — no matter how the visible one was opened.
    */
-  void onFormVisible(final @NotNull Activity host, final @NotNull Dialog form) {
-    visibleForms.add(new VisibleForm(host, form));
+  void onDialogVisible(final @NotNull Activity host, final @NotNull Dialog dialog) {
+    visibleDialogs.add(new VisibleDialog(host, dialog));
     stopShakeDetection();
   }
 
-  /** Reports a feedback form as no longer visible. Safe to call more than once per form. */
-  void onFormGone(final @NotNull Dialog form) {
-    if (!removeForm(form)) {
+  /** Reports a feedback dialog as no longer visible. Safe to call more than once per dialog. */
+  void onDialogGone(final @NotNull Dialog dialog) {
+    if (!removeDialog(dialog)) {
       return;
     }
     final @Nullable WeakReference<Activity> currentRef = currentActivityRef;
@@ -154,24 +154,24 @@ public final class FeedbackShakeIntegration
     }
   }
 
-  private boolean removeForm(final @NotNull Dialog form) {
+  private boolean removeDialog(final @NotNull Dialog dialog) {
     boolean removed = false;
-    for (final @NotNull VisibleForm visibleForm : visibleForms) {
-      // Drop entries whose form was collected without reporting back, so they can't suppress
+    for (final @NotNull VisibleDialog visibleDialog : visibleDialogs) {
+      // Drop entries whose dialog was collected without reporting back, so they can't suppress
       // detection forever.
-      final @Nullable Dialog trackedForm = visibleForm.formRef.get();
-      if (trackedForm == form) {
-        removed = visibleForms.remove(visibleForm) || removed;
-      } else if (trackedForm == null) {
-        visibleForms.remove(visibleForm);
+      final @Nullable Dialog trackedDialog = visibleDialog.dialogRef.get();
+      if (trackedDialog == dialog) {
+        removed = visibleDialogs.remove(visibleDialog) || removed;
+      } else if (trackedDialog == null) {
+        visibleDialogs.remove(visibleDialog);
       }
     }
     return removed;
   }
 
-  private boolean hasFormOn(final @NotNull Activity activity) {
-    for (final @NotNull VisibleForm visibleForm : visibleForms) {
-      if (visibleForm.formRef.get() != null && visibleForm.activityRef.get() == activity) {
+  private boolean hasDialogOn(final @NotNull Activity activity) {
+    for (final @NotNull VisibleDialog visibleDialog : visibleDialogs) {
+      if (visibleDialog.dialogRef.get() != null && visibleDialog.activityRef.get() == activity) {
         return true;
       }
     }
@@ -180,22 +180,22 @@ public final class FeedbackShakeIntegration
 
   @TestOnly
   @Nullable
-  Activity getFormActivity() {
-    for (final @NotNull VisibleForm visibleForm : visibleForms) {
-      if (visibleForm.formRef.get() != null) {
-        return visibleForm.activityRef.get();
+  Activity getDialogActivity() {
+    for (final @NotNull VisibleDialog visibleDialog : visibleDialogs) {
+      if (visibleDialog.dialogRef.get() != null) {
+        return visibleDialog.activityRef.get();
       }
     }
     return null;
   }
 
-  private static final class VisibleForm {
+  private static final class VisibleDialog {
     private final @NotNull WeakReference<Activity> activityRef;
-    private final @NotNull WeakReference<Dialog> formRef;
+    private final @NotNull WeakReference<Dialog> dialogRef;
 
-    VisibleForm(final @NotNull Activity activity, final @NotNull Dialog form) {
+    VisibleDialog(final @NotNull Activity activity, final @NotNull Dialog dialog) {
       this.activityRef = new WeakReference<>(activity);
-      this.formRef = new WeakReference<>(form);
+      this.dialogRef = new WeakReference<>(dialog);
     }
   }
 
@@ -246,11 +246,11 @@ public final class FeedbackShakeIntegration
     }
     // Stop any existing detection (e.g. when transitioning between activities)
     stopShakeDetection();
-    // A form is already visible here, so a shake could only stack a second one on top of it.
-    // The form has no detector of its own in this case: SentryUserFeedbackForm only starts one
+    // A dialog is already visible here, so a shake could only stack a second one on top of it.
+    // The dialog has no detector of its own in this case: SentryUserFeedbackForm only starts one
     // while shake-to-report is globally disabled, which is exactly when this integration is not
     // detecting either.
-    if (hasFormOn(activity)) {
+    if (hasDialogOn(activity)) {
       return;
     }
     shakeDetector.start(
@@ -262,16 +262,19 @@ public final class FeedbackShakeIntegration
           if (active == null
               || options == null
               || !enabled
-              || hasFormOn(active)
+              || hasDialogOn(active)
               || Boolean.TRUE.equals(inBackground)) {
             return;
           }
           active.runOnUiThread(
               () -> {
                 // Re-check on the main thread: shake-to-report may have been disabled, or an
-                // earlier queued shake may have shown a form in the meantime (the form reports
+                // earlier queued shake may have shown a dialog in the meantime (the dialog reports
                 // itself synchronously in onStart).
-                if (!enabled || hasFormOn(active) || active.isFinishing() || active.isDestroyed()) {
+                if (!enabled
+                    || hasDialogOn(active)
+                    || active.isFinishing()
+                    || active.isDestroyed()) {
                   return;
                 }
                 try {

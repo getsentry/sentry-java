@@ -197,7 +197,7 @@ class SentryUserFeedbackFormTest {
   }
 
   @Test
-  fun `form reports its own host activity to the shake integration while visible`() {
+  fun `dialog reports its own host activity to the shake integration while visible`() {
     fixture.options.isEnabled = true
     val integration = FeedbackShakeIntegration(fixture.application as Application)
     fixture.options.feedbackOptions.setShakeController(integration)
@@ -206,11 +206,11 @@ class SentryUserFeedbackFormTest {
     val sut = SentryUserFeedbackForm(activity, 0, null, null, null)
     sut.show()
 
-    assertEquals(activity, integration.formActivity)
+    assertEquals(activity, integration.dialogActivity)
 
     sut.dismiss()
     shadowOf(Looper.getMainLooper()).idle()
 
-    assertNull(integration.formActivity)
+    assertNull(integration.dialogActivity)
   }
 }
