@@ -328,7 +328,6 @@ class SentryUserFeedbackFormTest {
     val sut = fixture.getSut(context = componentActivity())
     sut.show()
     sut.dismiss()
-    // Would throw if the launcher of the first show() was still registered under the same key
     sut.show()
     assertThat(addScreenshotButton(sut).visibility).isEqualTo(View.VISIBLE)
   }
