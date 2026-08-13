@@ -1,30 +1,44 @@
 # Stacked PRs
 
-Stacked PRs split a large feature into small, easy-to-review PRs where each builds on the previous one. This follows the same concept as the [Graphite](https://graphite.dev/) stacking workflow.
+Stacked PRs split a large feature into small, easy-to-review PRs where each builds on the previous
+one. The general mechanics are the standard [Graphite](https://graphite.dev/) stacking workflow —
+this file covers only what is specific to sentry-java.
 
-## Structure
+## Why a Collection Branch
 
 ```
 main ← collection-branch ← stack-pr-1 ← stack-pr-2 ← stack-pr-3 ← ...
 ```
 
-- A **collection branch** is created from `main` and targets `main`. It serves as the base for the entire stack.
-- The first PR in the stack targets the collection branch (not `main`).
-- Each subsequent PR targets the previous stack PR's branch as its base.
-- Each PR contains only incremental changes on top of the previous one.
+A **collection branch** is created from `main` and targets `main`. The first stack PR targets it
+rather than `main`, and each later PR targets the previous stack PR's branch.
 
-The collection branch exists so that individual stack PRs can be **merge-committed** (not squashed). PRs targeting `main` use squash merging, but that causes repeated merge conflicts when syncing the stack. Merge commits on non-`main` branches avoid this. The collection branch itself is squash-merged into `main` at the end.
+It exists because PRs targeting `main` are **squash**-merged, which causes repeated merge conflicts
+when syncing a stack. Stack PRs are therefore **merge-committed** into the collection branch, and
+only the collection branch is squash-merged into `main` at the end — giving `main` one clean commit
+for the whole feature.
 
-## Branch Naming
+Create it with an empty commit, so GitHub allows opening a PR:
 
-Prefer a shared prefix for the feature, with descriptive suffixes per PR. The collection branch uses the shared prefix. The type prefix (`feat/`, `fix/`, etc.) may vary depending on the nature of each PR's changes:
-
+```bash
+git commit --allow-empty -m "collection: <topic>"
 ```
-feat/scope-attributes              # collection branch → targets main
-feat/scope-attributes-api          # PR 1 → targets collection branch
-feat/scope-attributes-logger       # PR 2 → targets PR 1
-fix/attribute-type-detection        # PR 3 (fix, different name — that's fine) → targets PR 2
-```
+
+## Rules That Will Destroy a Stack If Broken
+
+**Never update the collection branch yourself.** Never merge, fast-forward, or push stack branch
+commits into it. It stays at its initial position (the empty commit on `main`) until the user merges
+stack PRs through GitHub one by one. Fast-forwarding it makes GitHub auto-merge and delete every
+stack PR branch, destroying the entire stack.
+
+**Never amend or force-push a stack branch.** No `git commit --amend`, `--force`, or
+`--force-with-lease` on a branch that is part of a stack — a force-push can cause GitHub to
+auto-merge or auto-close the other PRs in the stack. If a commit needs fixing, add a fixup commit.
+
+**Sync only between adjacent stack branches**, by merging forward — never into the collection branch.
+Prefer merge over rebase; only rebase if explicitly requested.
+
+**Do not merge PRs.** Only the user merges them, bottom to top.
 
 ## PR Title Naming
 
@@ -37,56 +51,13 @@ Include the topic name and a sequential number in brackets:
 Examples:
 - `feat(core): [Global Attributes 1] Add scope-level attributes API`
 - `feat(core): [Global Attributes 2] Wire scope attributes into LoggerApi and MetricsApi`
-- `feat(samples): [Global Attributes 3] Showcase scope attributes in Spring Boot 4 sample`
-
-## Finding All PRs in a Stack
-
-Do **not** rely on branch name patterns — later PRs in a stack may use different prefixes or naming. Instead:
-
-1. Find the PR for the current branch:
-   ```bash
-   gh pr list --head "$(git branch --show-current)" --json number,title,baseRefName --jq '.[0]'
-   ```
-2. Read the PR description — the stack list is at the top of the body.
-3. If there is no stack list yet, walk the chain in both directions:
-   ```bash
-   # Find the PR whose head branch is the current PR's base (go up)
-   gh pr list --head <baseRefName> --json number,title,baseRefName
-
-   # Find PRs whose base branch is the current PR's head (go down)
-   gh pr list --base <currentBranch> --json number,title,headRefName
-   ```
-   Repeat until you reach the collection branch going up and find no more PRs going down.
-
-## Creating the Collection Branch
-
-Before the first stacked PR, create the collection branch with an empty commit (so GitHub allows opening a PR) and create the collection PR:
-
-```bash
-git checkout main
-git checkout -b feat/<topic>
-git commit --allow-empty -m "collection: <topic>"
-git push -u origin HEAD
-gh pr create --base main --draft --title "<type>(<scope>): <Topic>" --body "Collection PR for the <Topic> stack. Squash-merge this once all stack PRs are merged."
-```
-
-**CRITICAL: Do NOT manually update the collection branch.** Never merge, fast-forward, or push stack branch commits into the collection branch. The collection branch stays at its initial position (the empty commit on `main`) until the user merges individual stack PRs into it one by one through GitHub. If you fast-forward the collection branch to include stack commits, GitHub will auto-merge and delete all stack PR branches, destroying the entire stack.
-
-## Creating a New Stacked PR
-
-1. Start from the tip of the previous stack branch (or the collection branch for the first PR).
-2. Create a new branch, make changes, format, commit, and push.
-3. Create the PR with `--base <previous-branch>` (the collection branch for the first PR):
-   ```bash
-   gh pr create --base feat/previous-branch --draft --title "<type>(<scope>): [<Topic> <N>] <Subject>" --body "..."
-   ```
-4. Add the stack list to the top of the new PR's description and update it on all existing PRs in the stack (see below).
 
 ## Stack List in PR Description
 
-Every PR in the stack — **including the collection branch PR** — must have a stack list **at the top of its description** (before the `## :scroll: Description` section). When a new PR is added, update the description on **all** PRs in the stack and on the collection branch PR.
-
-Format:
+Every PR in the stack — **including the collection branch PR** — must have a stack list **at the top
+of its description**, before the `## :scroll: Description` section. When a PR is added, update the
+description on **all** PRs in the stack. The stack list is also how you enumerate a stack: read it
+off any PR body rather than guessing from branch names, which may use different prefixes.
 
 ```markdown
 ## PR Stack (<Topic>)
@@ -98,50 +69,20 @@ Format:
 ---
 ```
 
-No status column — GitHub already shows that. The `---` separates the stack list from the rest of the PR description.
+No status column — GitHub already shows that. The `---` separates the stack list from the rest of
+the description.
 
-**Merge method reminder:** On stack PRs (not the collection branch PR), add the following line at the very end of the PR description:
+**Merge method reminder:** on stack PRs (not the collection branch PR), end the description with:
 
 ```markdown
 > ⚠️ **Merge this PR using a merge commit** (not squash). Only the collection branch is squash-merged into main.
 ```
 
-This does not apply to standalone PRs or the collection branch PR.
+## Editing PR Descriptions
 
-To update the PR description, use `--body-file` to avoid shell quoting issues with special characters in the body.
+Do not use shell redirects (`>`, `>>`), pipes (`|`), or compound commands (`&&`, `||`). These create
+compound shell expressions that won't match permission patterns. Instead:
 
-**Important:** Do not use shell redirects (`>`, `>>`, `|`) or compound commands (`&&`, `||`). These create compound shell expressions that won't match permission patterns. Instead, use the `Write` and `Edit` tools for file manipulation:
-
-1. Read the current body with `gh pr view <PR_NUMBER> --json body --jq '.body'` (the output is returned directly — use the `Write` tool to save it to `/tmp/pr-body.md`)
-2. Use the `Edit` tool to prepend or replace the stack list section in `/tmp/pr-body.md`
-3. Update the description: `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`
-
-## Merging Stacked PRs (done by the user, not the agent)
-
-Individual stack PRs are merged in order from bottom to top (PR 1 first, then PR 2, etc.) using **merge commits** (not squash). After each merge, the next PR's base automatically becomes the merged branch's target. GitHub handles rebasing onto the new base.
-
-Once all stack PRs are merged into the collection branch, the collection PR is **squash-merged** into `main`. This gives `main` a clean single commit for the entire feature.
-
-**Do not merge PRs.** Only the user merges PRs.
-
-## Syncing the Stack
-
-When a base PR changes (e.g. after addressing review feedback on PR 1), merge the changes forward through the stack **between adjacent stack PR branches only**:
-
-```bash
-# On the branch for PR 2
-git checkout feat/scope-attributes-logger
-git merge feat/scope-attributes-api
-git push
-
-# On the branch for PR 3
-git checkout feat/scope-attributes-sample
-git merge feat/scope-attributes-logger
-git push
-```
-
-**Never merge into the collection branch.** Syncing only happens between stack PR branches. The collection branch is untouched until the user merges PRs through GitHub.
-
-Prefer merge over rebase — it preserves commit history, doesn't invalidate existing review comments, and avoids the need for force-pushing. Only rebase if explicitly requested.
-
-**Never amend or force-push stack branches.** Do not use `git commit --amend`, `--force`, or `--force-with-lease` on branches that are part of a stack. Amending a pushed commit requires a force-push, which can cause GitHub to auto-merge or auto-close other PRs in the stack. If a commit needs fixing, add a new fixup commit instead.
+1. Read the body with `gh pr view <PR_NUMBER> --json body --jq '.body'` (output is returned directly)
+2. Use the `Write` tool to save it to `/tmp/pr-body.md`, and the `Edit` tool to modify it
+3. Update with `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`

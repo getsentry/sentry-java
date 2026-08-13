@@ -67,7 +67,7 @@ git checkout -b <type>/<short-description>
 
 Derive the branch name from the changes being made. Use `feat/`, `fix/`, `ref/`, etc. matching the commit type conventions.
 
-**For stacked PRs:** For the first PR in a new stack, first create and push the collection branch (see `references/stacked-prs.md` § "Creating the Collection Branch"), then branch the PR off it. For subsequent PRs, branch off the previous stack branch. Use the naming conventions from `references/stacked-prs.md` § "Branch Naming".
+**For stacked PRs:** For the first PR in a new stack, first create and push the collection branch (see `references/stacked-prs.md` § "Why a Collection Branch"), then branch the PR off it. For subsequent PRs, branch off the previous stack branch. Give every branch in the stack a shared prefix naming the feature, with a descriptive suffix per PR.
 
 **CRITICAL: Never merge, fast-forward, or push commits into the collection branch.** It stays at its initial position until the user merges stack PRs through GitHub. Updating it will auto-merge and destroy the entire PR stack.
 
