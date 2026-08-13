@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Performance
+
+- Use Android manifest metadata resolved by the Sentry Android Gradle plugin at build time, avoiding `PackageManager` and `Bundle` parsing and reducing median SDK initialization time by 6.5% in a cold-start benchmark ([#5963](https://github.com/getsentry/sentry-java/pull/5963))
+
 ## 8.53.0
 
 ### Features
