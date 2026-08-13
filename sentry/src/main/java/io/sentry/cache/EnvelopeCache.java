@@ -137,7 +137,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     if (HintUtils.hasType(hint, SessionStart.class)) {
       try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
         final @Nullable Session startingSession = readSessionFromEnvelope(envelope);
-        if (!isLateDuplicateStart(startingSession)) {
+        if (!isAlreadyPersisted(startingSession)) {
           movePreviousSession(currentSessionFile, previousSessionFile);
           if (startingSession != null) {
             writeSessionToDisk(currentSessionFile, startingSession);
@@ -335,7 +335,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    *
    * <p>A null session id never matches, so sessions we cannot tell apart are rotated as before.
    */
-  private boolean isLateDuplicateStart(final @Nullable Session startingSession) {
+  private boolean isAlreadyPersisted(final @Nullable Session startingSession) {
     if (startingSession == null) {
       return false;
     }
