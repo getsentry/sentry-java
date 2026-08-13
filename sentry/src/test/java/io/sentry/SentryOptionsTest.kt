@@ -3,6 +3,7 @@ package io.sentry
 import io.sentry.SentryOptions.RequestSize
 import io.sentry.logger.ILoggerBatchProcessorFactory
 import io.sentry.logger.LoggerApi
+import io.sentry.metrics.MetricsApi
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.createTestScopes
 import io.sentry.util.StringUtils
@@ -562,6 +563,71 @@ class SentryOptionsTest {
     LoggerApi(scopes).info("test log")
 
     verify(client).captureLog(any(), anyOrNull())
+  }
+
+  @Test
+  fun `merging options does not warn when legacy metrics configuration is absent`() {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions().also {
+        it.isDebug = true
+        it.setLogger(logger)
+      }
+
+    options.merge(ExternalOptions())
+
+    verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>())
+  }
+
+  @Test
+  fun `merging options warns when legacy metrics configuration is true`() {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions().also {
+        it.isDebug = true
+        it.setLogger(logger)
+      }
+
+    options.merge(ExternalOptions().apply { isEnableMetrics = true })
+
+    verify(logger)
+      .log(
+        SentryLevel.WARNING,
+        "The 'metrics.enabled' option is no longer supported. Manual Sentry.metrics() calls no " +
+          "longer require it.",
+        *emptyArray(),
+      )
+    assertLegacyMetricsConfigurationDoesNotDisableCapture(options)
+  }
+
+  @Test
+  fun `merging options warns when legacy metrics configuration is false`() {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions().also {
+        it.isDebug = true
+        it.setLogger(logger)
+      }
+
+    options.merge(ExternalOptions().apply { isEnableMetrics = false })
+
+    verify(logger)
+      .log(
+        SentryLevel.WARNING,
+        "The 'metrics.enabled' option no longer disables manual Sentry.metrics() calls.",
+        *emptyArray(),
+      )
+    assertLegacyMetricsConfigurationDoesNotDisableCapture(options)
+  }
+
+  private fun assertLegacyMetricsConfigurationDoesNotDisableCapture(options: SentryOptions) {
+    options.dsn = "https://key@sentry.io/proj"
+    val client = createSentryClientMock()
+    val scopes = createTestScopes(options).apply { bindClient(client) }
+
+    MetricsApi(scopes).count("test metric")
+
+    verify(client).captureMetric(any(), anyOrNull(), anyOrNull())
   }
 
   @Test

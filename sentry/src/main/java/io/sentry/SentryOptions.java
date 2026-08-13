@@ -3748,6 +3748,19 @@ public class SentryOptions {
       }
     }
 
+    if (options.isEnableMetrics() != null) {
+      if (options.isEnableMetrics()) {
+        logger.log(
+            SentryLevel.WARNING,
+            "The 'metrics.enabled' option is no longer supported. Manual Sentry.metrics() calls no "
+                + "longer require it.");
+      } else {
+        logger.log(
+            SentryLevel.WARNING,
+            "The 'metrics.enabled' option no longer disables manual Sentry.metrics() calls.");
+      }
+    }
+
     if (options.getProfileSessionSampleRate() != null) {
       setProfileSessionSampleRate(options.getProfileSessionSampleRate());
     }
