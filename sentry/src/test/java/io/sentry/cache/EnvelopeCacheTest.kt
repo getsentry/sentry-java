@@ -24,6 +24,7 @@ import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
 import java.io.File
+import java.io.Writer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Date
@@ -35,8 +36,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class EnvelopeCacheTest {
@@ -264,6 +267,55 @@ class EnvelopeCacheTest {
       )!!
     assertThat(persistedCurrent.sessionId).isEqualTo(nextSession.sessionId)
     assertThat(persistedPrevious.sessionId).isEqualTo(currentSession.sessionId)
+  }
+
+  @Test
+  fun `SessionEnd deleting the persisted session lets the delayed SessionStart write it again`() {
+    val cache = fixture.getSUT()
+    val sid = SentryUUID.generateSentryId()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    cache.persistCurrentSession(createSession(sessionId = sid))
+
+    // the previous session's end envelope is still queued and deletes the file the live session
+    // was just written to
+    val endedSession = createSession()
+    cache.storeEnvelope(
+      SentryEnvelope.from(fixture.options.serializer, endedSession, null),
+      HintUtils.createWithTypeCheckHint(SessionEndHint()),
+    )
+    assertThat(currentSessionFile.exists()).isFalse()
+
+    val delayedStart = createSession(sessionId = sid)
+    cache.storeEnvelope(
+      SentryEnvelope.from(fixture.options.serializer, delayedStart, null),
+      HintUtils.createWithTypeCheckHint(SessionStartHint()),
+    )
+
+    val persistedSession =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedSession.sessionId).isEqualTo(sid)
+  }
+
+  @Test
+  fun `failed persist lets the delayed SessionStart write the session`() {
+    val sid = SentryUUID.generateSentryId()
+    val liveSession = createSession(sessionId = sid)
+    val delayedStart = createSession(sessionId = sid)
+    val serializer = mock<ISerializer>()
+    whenever(serializer.serialize(same(liveSession), any<Writer>()))
+      .thenThrow(RuntimeException("forced ex"))
+    whenever(serializer.deserialize(any(), eq(Session::class.java))).thenReturn(delayedStart)
+    val cache = fixture.getSUT { options -> options.setSerializer(serializer) }
+
+    cache.persistCurrentSession(liveSession)
+
+    val envelope = SentryEnvelope.from(SentryOptions.empty().serializer, delayedStart, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    verify(serializer).serialize(same(delayedStart), any<Writer>())
   }
 
   @Test
