@@ -13,9 +13,6 @@
       <dsn>https://502f25099c204a2fbf4cb16edc5975d1@o447951.ingest.sentry.io/5428563</dsn>
       <contextTag>userId</contextTag>
       <contextTag>requestId</contextTag>
-      <logs>
-        <enabled>true</enabled>
-      </logs>
     </options>
     <enableLogs>true</enableLogs>
     <!-- Demonstrates how to modify the minimum values -->
