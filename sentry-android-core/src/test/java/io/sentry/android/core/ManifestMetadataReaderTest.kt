@@ -4,12 +4,14 @@ import android.content.Context
 import android.os.Bundle
 import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.FilterString
 import io.sentry.ILogger
 import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
 import io.sentry.TransactionOptions
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,6 +25,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 
 @RunWith(AndroidJUnit4::class)
 class ManifestMetadataReaderTest {
@@ -40,6 +43,52 @@ class ManifestMetadataReaderTest {
   @BeforeTest
   fun `set up`() {
     ContextUtils.resetInstance()
+  }
+
+  @AfterTest
+  fun `tear down`() {
+    ManifestMetadataReader.buildTimeMetadata = null
+  }
+
+  @Test
+  fun `applyMetadata reads typed build-time metadata without querying context`() {
+    val context = mock<Context>()
+    ManifestMetadataReader.buildTimeMetadata =
+      mapOf(
+        ManifestMetadataReader.DEBUG to true,
+        ManifestMetadataReader.DIST to "dist",
+        ManifestMetadataReader.SAMPLE_RATE to 0.5f,
+        ManifestMetadataReader.MAX_BREADCRUMBS to 42,
+      )
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isDebug).isTrue()
+    assertThat(fixture.options.dist).isEqualTo("dist")
+    assertThat(fixture.options.sampleRate).isEqualTo(0.5)
+    assertThat(fixture.options.maxBreadcrumbs).isEqualTo(42)
+    verifyNoInteractions(context)
+  }
+
+  @Test
+  fun `build-time metadata is authoritative when a key is absent`() {
+    val context = mock<Context>()
+    fixture.options.dist = "configured"
+    ManifestMetadataReader.buildTimeMetadata = emptyMap()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dist).isEqualTo("configured")
+    verifyNoInteractions(context)
+  }
+
+  @Test
+  fun `isAutoInit reads build-time metadata without querying context`() {
+    val context = mock<Context>()
+    ManifestMetadataReader.buildTimeMetadata = mapOf(ManifestMetadataReader.AUTO_INIT to false)
+
+    assertThat(ManifestMetadataReader.isAutoInit(context, fixture.logger)).isFalse()
+    verifyNoInteractions(context)
   }
 
   @Test
