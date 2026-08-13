@@ -3,18 +3,21 @@ package io.sentry.compose.navigation3
 import android.app.Application
 import android.content.ComponentName
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.ui.NavDisplay
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.IScope
 import io.sentry.IScopes
@@ -23,13 +26,11 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
-import io.sentry.Span
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.protocol.Contexts
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
@@ -38,7 +39,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -47,7 +47,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
-class SentryNav3EffectTest {
+class SentryNavDisplayTest {
 
   @get:Rule(order = 1)
   val addActivityToRobolectricRule =
@@ -118,13 +118,31 @@ class SentryNav3EffectTest {
 
   private fun createRealScopeTestScopes(): RealScopeTestScopes = RealScopeTestScopes()
 
+  @Composable
+  private fun <T : Any> TestSentryNavDisplay(
+    backStack: List<T>,
+    scopes: IScopes,
+    options: SentryNav3Options = SentryNav3Options(),
+    nameExtractor: ((T) -> String)? = null,
+    argumentsExtractor: ((T) -> Map<String, Any?>)? = null,
+  ) {
+    SentryNavDisplay(
+      backStack = backStack,
+      scopes = scopes,
+      options = options,
+      nameExtractor = nameExtractor,
+      argumentsExtractor = argumentsExtractor,
+      entryProvider = { key -> NavEntry(key) {} },
+    )
+  }
+
   @Test
   fun `initial backstack fires breadcrumb and transaction`() {
     val fixture = createScopes()
     val backStack = mutableStateListOf<Any>(HomeScreen())
 
     composeRule.setContent {
-      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
+      TestSentryNavDisplay(backStack = backStack, scopes = fixture.scopes)
     }
 
     composeRule.waitForIdle()
@@ -134,130 +152,40 @@ class SentryNav3EffectTest {
   }
 
   @Test
-  fun `destination launched effect after SentryNav3Effect sees navigation transaction`() {
-    val fixture = createRealScopeTestScopes()
-    val backStack = mutableStateListOf<Any>(HomeScreen())
-    val observedSpans = mutableListOf<ISpan?>()
-
-    composeRule.setContent {
-      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
-
-      val currentTop = backStack.last()
-      LaunchedEffect(currentTop) { observedSpans.add(fixture.scopes.getSpan()) }
-    }
-    composeRule.waitForIdle()
-
-    assertEquals(1, observedSpans.size)
-    assertEquals("/HomeScreen", (observedSpans[0] as SentryTracer).name)
-
-    backStack.add(ProfileScreen("123"))
-    composeRule.waitForIdle()
-
-    assertEquals(2, observedSpans.size)
-    assertEquals("/ProfileScreen", (observedSpans[1] as SentryTracer).name)
-  }
-
-  @Test
-  fun `synchronous content after SentryNav3Effect after push sees navigation transaction`() {
+  fun `initial destination body is composed before navigation transaction is bound`() {
     val fixture: RealScopeTestScopes = createRealScopeTestScopes()
     val backStack: SnapshotStateList<Any> = mutableStateListOf(HomeScreen())
     val observedSpans: MutableList<ISpan?> = mutableListOf()
 
     composeRule.setContent {
-      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
-
-      val currentTop: Any = backStack.last()
-      if (currentTop is ProfileScreen) {
-        observedSpans.add(fixture.scopes.getSpan())
-      }
-    }
-    composeRule.waitForIdle()
-
-    backStack.add(ProfileScreen("123"))
-    composeRule.waitForIdle()
-
-    assertEquals("/ProfileScreen", (observedSpans.single() as SentryTracer).name)
-  }
-
-  @Test
-  fun `nav display destination body after push sees navigation transaction`() {
-    val fixture: RealScopeTestScopes = createRealScopeTestScopes()
-    val backStack: SnapshotStateList<Any> = mutableStateListOf(HomeScreen())
-    val observedSpans: MutableList<Pair<String, ISpan?>> = mutableListOf()
-
-    composeRule.setContent {
-      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
-
-      NavDisplay(
+      SentryNavDisplay(
         backStack = backStack,
+        scopes = fixture.scopes,
         entryProvider =
           entryProvider {
-            entry<HomeScreen> { observedSpans.add("home" to fixture.scopes.getSpan()) }
-            entry<ProfileScreen> { observedSpans.add("profile" to fixture.scopes.getSpan()) }
-          },
-      )
-    }
-    composeRule.waitForIdle()
-    observedSpans.clear()
-
-    backStack.add(ProfileScreen("123"))
-    composeRule.waitForIdle()
-
-    val profileSpan: ISpan? = observedSpans.last { it.first == "profile" }.second
-    assertEquals("/ProfileScreen", (profileSpan as SentryTracer).name)
-  }
-
-  @Test
-  fun `nav display destination body after push attaches synchronous child span to navigation transaction`() {
-    val fixture: RealScopeTestScopes = createRealScopeTestScopes()
-    val backStack: SnapshotStateList<Any> = mutableStateListOf(HomeScreen())
-
-    composeRule.setContent {
-      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
-
-      NavDisplay(
-        backStack = backStack,
-        entryProvider =
-          entryProvider {
-            entry<HomeScreen> {}
-            entry<ProfileScreen> {
-              val span: ISpan? = fixture.scopes.getSpan()?.startChild("test.sync-work")
-              span?.finish()
-            }
+            entry<HomeScreen> { observedSpans.add(fixture.scopes.getSpan()) }
           },
       )
     }
     composeRule.waitForIdle()
 
-    backStack.add(ProfileScreen("123"))
-    composeRule.waitForIdle()
-
-    val profileTransaction: SentryTracer = fixture.transactions.last { it.name == "/ProfileScreen" }
-    val childSpans: List<Span> = profileTransaction.spans
-    assertTrue(childSpans.any { span: Span -> span.operation == "test.sync-work" })
+    assertThat(observedSpans.first()).isNull()
   }
 
   @Test
-  fun `nav display destination effects after push see navigation transaction`() {
+  fun `destination effects after push see navigation transaction`() {
     val fixture: RealScopeTestScopes = createRealScopeTestScopes()
     val backStack: SnapshotStateList<Any> = mutableStateListOf(HomeScreen())
     val observedSpans: MutableList<Pair<String, ISpan?>> = mutableListOf()
 
     composeRule.setContent {
-      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
-
-      NavDisplay(
+      SentryNavDisplay(
         backStack = backStack,
+        scopes = fixture.scopes,
         entryProvider =
           entryProvider {
             entry<HomeScreen> {}
             entry<ProfileScreen> {
-              remember {
-                fixture.scopes.getSpan().also { span: ISpan? ->
-                  observedSpans.add("remember" to span)
-                }
-              }
-
               DisposableEffect(Unit) {
                 observedSpans.add("disposable-effect" to fixture.scopes.getSpan())
                 onDispose {}
@@ -277,9 +205,8 @@ class SentryNav3EffectTest {
     backStack.add(ProfileScreen("123"))
     composeRule.waitForIdle()
 
-    val expectedLabels: List<String> =
-      listOf("remember", "disposable-effect", "side-effect", "launched-effect")
-    for (label: String in expectedLabels) {
+    val effectLabels: List<String> = listOf("disposable-effect", "side-effect", "launched-effect")
+    for (label: String in effectLabels) {
       val span: ISpan? = observedSpans.last { it.first == label }.second
       assertEquals("/ProfileScreen", (span as SentryTracer).name)
     }
@@ -291,7 +218,7 @@ class SentryNav3EffectTest {
     val backStack = mutableStateListOf<Any>(HomeScreen())
 
     composeRule.setContent {
-      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
+      TestSentryNavDisplay(backStack = backStack, scopes = fixture.scopes)
     }
     composeRule.waitForIdle()
 
@@ -311,7 +238,7 @@ class SentryNav3EffectTest {
 
     composeRule.setContent {
       if (showEffect.value) {
-        SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
+        TestSentryNavDisplay(backStack = backStack, scopes = fixture.scopes)
       }
     }
     composeRule.waitForIdle()
@@ -330,15 +257,17 @@ class SentryNav3EffectTest {
     val fixture = createScopes()
     val backStack = mutableStateListOf<Any>(HomeScreen())
     val recomposeTrigger = mutableStateOf(0)
+    var destinationCompositions = 0
 
     composeRule.setContent {
       @Suppress("UNUSED_EXPRESSION") recomposeTrigger.value
 
-      SentryNav3Effect(
+      SentryNavDisplay(
         backStack = backStack,
         scopes = fixture.scopes,
         nameExtractor = { key -> key::class.simpleName ?: "unknown" },
         argumentsExtractor = { _ -> emptyMap() },
+        entryProvider = { key -> NavEntry(key) { destinationCompositions++ } },
       )
     }
     composeRule.waitForIdle()
@@ -346,6 +275,7 @@ class SentryNav3EffectTest {
     verify(fixture.scopes, times(1)).addBreadcrumb(any<Breadcrumb>(), any())
     verify(fixture.scopes, times(1))
       .startTransaction(any<TransactionContext>(), any<TransactionOptions>())
+    assertThat(destinationCompositions).isEqualTo(1)
 
     recomposeTrigger.value = 1
     composeRule.waitForIdle()
@@ -355,6 +285,7 @@ class SentryNav3EffectTest {
     verify(fixture.scopes, times(1)).addBreadcrumb(any<Breadcrumb>(), any())
     verify(fixture.scopes, times(1))
       .startTransaction(any<TransactionContext>(), any<TransactionOptions>())
+    assertThat(destinationCompositions).isEqualTo(1)
   }
 
   @Test
@@ -364,7 +295,7 @@ class SentryNav3EffectTest {
     val useCustomName = mutableStateOf(false)
 
     composeRule.setContent {
-      SentryNav3Effect(
+      TestSentryNavDisplay(
         backStack = backStack,
         scopes = fixture.scopes,
         nameExtractor =
@@ -396,7 +327,7 @@ class SentryNav3EffectTest {
     val breadcrumbsEnabled = mutableStateOf(true)
 
     composeRule.setContent {
-      SentryNav3Effect(
+      TestSentryNavDisplay(
         backStack = backStack,
         scopes = fixture.scopes,
         options =
@@ -425,7 +356,7 @@ class SentryNav3EffectTest {
     val captureBackStack = mutableStateOf(true)
 
     composeRule.setContent {
-      SentryNav3Effect(
+      TestSentryNavDisplay(
         backStack = backStack,
         scopes = fixture.scopes,
         options = SentryNav3Options().apply { this.captureBackStack = captureBackStack.value },
@@ -448,7 +379,7 @@ class SentryNav3EffectTest {
     val transactionsEnabled = mutableStateOf(true)
 
     composeRule.setContent {
-      SentryNav3Effect(
+      TestSentryNavDisplay(
         backStack = backStack,
         scopes = fixture.scopes,
         options =
@@ -478,7 +409,7 @@ class SentryNav3EffectTest {
     val maxCapturedBackStackEntries = mutableStateOf(10)
 
     composeRule.setContent {
-      SentryNav3Effect(
+      TestSentryNavDisplay(
         backStack = backStack,
         scopes = fixture.scopes,
         options =
@@ -502,15 +433,52 @@ class SentryNav3EffectTest {
   }
 
   @Test
-  fun `empty backstack does not trigger breadcrumb`() {
+  fun `NavBackStack triggers navigation instrumentation`() {
     val fixture = createScopes()
-    val backStack = mutableStateListOf<Any>()
+    val backStack = NavBackStack<TestNavKey>(TestNavKey("home"))
 
     composeRule.setContent {
-      SentryNav3Effect(backStack = backStack, scopes = fixture.scopes)
+      TestSentryNavDisplay(
+        backStack = backStack,
+        scopes = fixture.scopes,
+        nameExtractor = { it.name },
+      )
     }
     composeRule.waitForIdle()
 
-    verify(fixture.scopes, never()).addBreadcrumb(any<Breadcrumb>(), any())
+    backStack.add(TestNavKey("profile"))
+    composeRule.waitForIdle()
+
+    val transactionCaptor = argumentCaptor<TransactionContext>()
+    verify(fixture.scopes, times(2))
+      .startTransaction(transactionCaptor.capture(), any<TransactionOptions>())
+    assertThat(transactionCaptor.lastValue.name).isEqualTo("/profile")
+  }
+
+  @Test
+  fun `immutable backstack replacements preserve navigation history`() {
+    val fixture = createScopes()
+    val backStack = mutableStateOf<List<Any>>(listOf(HomeScreen()))
+
+    composeRule.setContent {
+      TestSentryNavDisplay(backStack = backStack.value, scopes = fixture.scopes)
+    }
+    composeRule.waitForIdle()
+
+    val profile = ProfileScreen("123")
+    backStack.value = backStack.value + profile
+    composeRule.waitForIdle()
+
+    backStack.value = listOf(HomeScreen("replacement"), profile)
+    composeRule.waitForIdle()
+
+    val breadcrumbCaptor = argumentCaptor<Breadcrumb>()
+    verify(fixture.scopes, times(2)).addBreadcrumb(breadcrumbCaptor.capture(), any())
+    assertThat(breadcrumbCaptor.lastValue.data["from"]).isEqualTo("/HomeScreen")
+    assertThat(breadcrumbCaptor.lastValue.data["to"]).isEqualTo("/ProfileScreen")
+    verify(fixture.scopes, times(2))
+      .startTransaction(any<TransactionContext>(), any<TransactionOptions>())
   }
 }
+
+private data class TestNavKey(val name: String) : NavKey

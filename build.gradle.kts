@@ -45,7 +45,7 @@ buildscript {
 
 apiValidation {
     ignoredClasses.add(
-        "io.sentry.compose.navigation3.ComposableSingletons\$SentryNav3EffectKt"
+        "io.sentry.compose.navigation3.ComposableSingletons\$SentryNavDisplayKt"
     )
     ignoredPackages.addAll(
         setOf(

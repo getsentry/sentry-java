@@ -2,9 +2,13 @@ package io.sentry.compose.navigation3
 
 import org.jetbrains.annotations.ApiStatus
 
-/** Configuration info for a [SentryNav3Effect]. */
+/** Configuration for [SentryNavDisplay] instrumentation. */
 @ApiStatus.Experimental
 public class SentryNav3Options {
+  private companion object {
+    private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 30
+  }
+
   /**
    * Whether user-visible navigation changes should produce Sentry breadcrumbs. If `true`, a change
    * in the primary route generates a breadcrumb like `from=/Home` and `to=/Profile`.
@@ -32,5 +36,5 @@ public class SentryNav3Options {
    * Maximum number of entries Sentry records per captured back stack (starting with the most
    * recent).
    */
-  public var maxCapturedBackStackEntries: Int = 30
+  public var maxCapturedBackStackEntries: Int = DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES
 }

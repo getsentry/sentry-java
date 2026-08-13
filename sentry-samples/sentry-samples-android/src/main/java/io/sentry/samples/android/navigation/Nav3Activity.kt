@@ -65,10 +65,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.ui.NavDisplay
 import io.sentry.Sentry
-import io.sentry.compose.navigation3.SentryNav3Effect
 import io.sentry.compose.navigation3.SentryNav3Options
+import io.sentry.compose.navigation3.SentryNavDisplay
 import io.sentry.samples.android.GithubAPI
 import io.sentry.samples.android.R
 import kotlinx.coroutines.Dispatchers
@@ -108,19 +107,6 @@ private fun Nav3SampleApp() {
   var selectedScenario by rememberSaveable { mutableStateOf(Nav3Scenario.SINGLE_STACK) }
   var showCrashConfirmation by remember { mutableStateOf(false) }
 
-  SentryNav3Effect(
-    backStack = backStack,
-    options =
-      SentryNav3Options().apply {
-        this.enableNavigationBreadcrumbs = enableNavigationBreadcrumbs
-        this.enableNavigationTransactions = enableNavigationTransactions
-        this.captureBackStack = captureBackStack
-        this.maxCapturedBackStackEntries = maxCapturedBackStackEntries
-      },
-    nameExtractor = { route -> route.routeName },
-    argumentsExtractor = { route -> route.arguments },
-  )
-
   Scaffold(
     topBar = {
       Nav3TopBar(
@@ -153,7 +139,7 @@ private fun Nav3SampleApp() {
         },
       )
       Box(modifier = Modifier.weight(1f)) {
-        NavDisplay(
+        SentryNavDisplay(
           backStack = backStack,
           modifier = Modifier.fillMaxSize(),
           onBack = {
@@ -164,6 +150,15 @@ private fun Nav3SampleApp() {
             }
           },
           sceneStrategies = listOf(dialogSceneStrategy, bottomSheetSceneStrategy),
+          options =
+            SentryNav3Options().apply {
+              this.enableNavigationBreadcrumbs = enableNavigationBreadcrumbs
+              this.enableNavigationTransactions = enableNavigationTransactions
+              this.captureBackStack = captureBackStack
+              this.maxCapturedBackStackEntries = maxCapturedBackStackEntries
+            },
+          nameExtractor = { route -> route.routeName },
+          argumentsExtractor = { route -> route.arguments },
           entryProvider =
             entryProvider {
               entry<Nav3Route.SingleStack> { route ->
@@ -505,13 +500,6 @@ private fun Nav3RouteActivationEffect(
 ) {
   val currentAction = rememberUpdatedState(routeActivationAction)
 
-  if (currentAction.value == RouteActivationAction.MANUAL_CHILD_SPAN) {
-    // Keep this synchronous to verify that Nav3 route transactions are bound before destination
-    // composition runs, not merely before destination effects are launched.
-    runManualNav3RouteActivationSpan(route)
-    return
-  }
-
   LaunchedEffect(route) {
     runNav3RouteActivationAction(
       route = route,
@@ -787,7 +775,7 @@ private fun FutureRoute(routeName: String, scenario: String) {
   RouteScaffold(
     title = "$routeName: WIP",
     description =
-      "Reserved for a future milestone when SentryNav3Effect supports $scenario navigation " +
+      "Reserved for a future milestone when SentryNavDisplay supports $scenario navigation " +
         "state.",
   )
 }

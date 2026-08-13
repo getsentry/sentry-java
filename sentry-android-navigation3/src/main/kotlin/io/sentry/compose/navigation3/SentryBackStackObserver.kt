@@ -19,63 +19,8 @@ import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.lang.ref.WeakReference
 
-/*
- * TODO ADAM: NEXT STEPS
- *
- * - Apply Compose performance rendering tracing to Nav2Activity and Nav3Activity. (We want to ensure those traces show up in the nav transactions.)
- *
- * - Make sure our composition ordering updates work correctly when creating a nav transaction. (Eg, if we navigate to a screen that uses a LaunchedEffect to do initial work, we want to make sure that work is tracked under the nav transaction.)
- *
- * --- Determine whether we want to use the snapshot observer approach or the previous DisposableEffect approach. (See discussion of downsides of snapshot approach in ~/Desktop/nav3-observing-sync-work-in-destination-composable.txt)
- *
- * --- Any performance concerns now that we're no longer using a LaunchedEffect to call onBackstackChanged()?
- *
- * --- Explore i) ordering SentryNav3Effect vs NavDisplay, ii) SentryNavDisplay, or iii) rememberSentryNav3BackStack() (see "SentryNav3Effect Ordering Relative to NavDisplay" section in ~/Desktop/nav2-vs-nav3-transaction-policies.txt).
- *
- * ------ Note that remember*() and side effects have different semantics in Compose / are executed at different points in the composition lifecycle.
- *
- * --- Add simulated work in the destination that involves LaunchedEffect, DisposableEffect, etc.
- *
- * --- Have LLM check via Sample App.
- *
- * --- Decide whether we want to introduce SentryNavDecorator in phase 1 to ensure ordering updates work correctly.
- *
- * - Final API decision: SentryNav3Effect vs (a virtually identical) rememberSentry[Nav3]BackStack() vs SentryNavDisplay
- *
- * - Make sure sample app contains all required nav3 recipes.
- *
- * - Have LLM re-check for Nav2 vs Nav3 parity.
- *
- * - Fix sample app UX wonkiness (eg, tab selection, etc.)
- *
- * - Use kotlinx serialization to produce routes in sample app.
- *
- * - Determine whether we want to emit any additional Sentry state when the backstack is updated (eg, SceneStrategy, DialogStrategy, etc.).
- *
- * - Harmonize Nav2 and Nav3 sample apps.
- *
- * - Initial PRs for Nav2 sample app without Compose tab, and then Compose tab.
- *
- * - Then PR for Nav3 phase 1 implementation.
- *
- * - Does SAGP auto-instrument for Nav2??
- */
-/*
- * TODO ADAM: MAJOR DISCUSSION POINTS
- *
- * - Transaction generation: Updating our Activity-centry ui.load approach to a single-Activity, Compose-first world.
- *
- * --- Transaction deference policies. Right now nav transactions defer to any existing transaction, which will often be ui.load and (if enabled) ui.action.
- * --- See note from convo with Geno.
- * --- See ~/Desktop/nav2-vs-nav3-transaction-policies.txt and ~/Desktop/automatic-transactions.txt
- *
- * - Transaction UX in Sentry UI:
- *
- * --- Confusing to have, say, a navigation transaction whose only child span is a transient one occurring, say, at 2.99 seconds. That means the nav transaction looks like it takes ~3 seconds, even though there may only be 0.01 ms of work performed.
- * ------ Transactions are containers, not proper spans. Our UX should indicate as much.
- */
-
 // TODO ADAM: KDoc (including lack of thread-safety / need to thread-confine access).
+@Suppress("LongParameterList", "TooManyFunctions")
 internal class SentryBackStackObserver<T : Any>
 internal constructor(
   private val scopes: IScopes,

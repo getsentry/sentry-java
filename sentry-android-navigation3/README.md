@@ -1,6 +1,3 @@
-// TODO ADAM: Add a section about navigation transaction / span policy. (See my own project notes.)
-// TODO ADAM: Discuss all flags relevant to Nav3 Sentry data generation (eg, enableScreenTracking – which comes via Sentry Options; SentryNav3Options).
-
 # sentry-android-navigation3
 
 This module provides Sentry instrumentation for single-stack Jetpack Navigation 3 apps on Android.
@@ -34,15 +31,16 @@ This module has a minimum Android API level of 23.
 
 ## Basic Usage
 
-Call `SentryNav3Effect` from the composable that owns your app's Navigation 3 back stack.
-Place it next to `NavDisplay` or at the same app-shell level. Do not call it from inside a single
-screen destination, because it will leave composition when that screen is replaced.
+Use `SentryNavDisplay` in place of Navigation 3's `NavDisplay` for the back stack you want to
+instrument. This integration mirrors the canonical single-back-stack `NavDisplay` API from
+Navigation 3 1.1.5.
 
 ```kotlin
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
-import io.sentry.compose.navigation3.SentryNav3Effect
+import androidx.navigation3.runtime.entryProvider
+import io.sentry.compose.navigation3.SentryNavDisplay
 
 data object Home
 data class Profile(val userId: String)
@@ -51,11 +49,13 @@ data class Profile(val userId: String)
 fun AppNavigation() {
   val backStack = remember { mutableStateListOf<Any>(Home) }
 
-  SentryNav3Effect(backStack = backStack)
-
-  NavDisplay(
+  SentryNavDisplay(
     backStack = backStack,
-    // Configure your Navigation 3 entries here.
+    entryProvider =
+      entryProvider {
+        entry<Home> { HomeScreen() }
+        entry<Profile> { route -> ProfileScreen(route.userId) }
+      },
   )
 }
 ```
@@ -70,8 +70,9 @@ It also starts a navigation transaction named `/Profile` when tracing is enabled
 
 ## Migration From Nav2
 
-If you're moving from the Navigation 2 Compose integration (`NavHostController.withSentryObservableEffect`) to
-`SentryNav3Effect`, the high-level signals are similar, but the API surface and route model are different.
+If you're moving from the Navigation 2 Compose integration
+(`NavHostController.withSentryObservableEffect`) to `SentryNavDisplay`, the high-level signals are
+similar, but the API surface, route model, and transaction timing are different.
 
 ### Entry point
 
@@ -85,7 +86,10 @@ Nav3 observes your app-owned back stack directly:
 
 ```kotlin
 val backStack = remember { mutableStateListOf<Route>(Home) }
-SentryNav3Effect(backStack = backStack)
+SentryNavDisplay(
+  backStack = backStack,
+  entryProvider = appEntryProvider,
+)
 ```
 
 This means Nav3 does not inspect `NavDestination` objects. It only sees the back-stack entries you place in
@@ -134,17 +138,27 @@ entirely from your app model, so you should explicitly redact any PII or secrets
 
 ### Screen tracking
 
-Both integrations continue to respect the SDK-wide `SentryOptions.isEnableScreenTracking` option. The Nav3
-effect does not add a separate screen-tracking toggle.
+Both integrations continue to respect the SDK-wide `SentryOptions.isEnableScreenTracking` option.
+`SentryNavDisplay` does not add a separate screen-tracking toggle.
 
 ### Current scope
 
 Nav2 observes destination changes from a `NavController`. Nav3 currently observes a single app-owned back stack.
 Multiple retained stacks, multipane visibility, and custom primary-route selection need a later API.
 
+### Destination transaction timing
+
+Navigation 2 notifies Sentry synchronously during `NavController.navigate()`, before Compose renders
+the new destination. Navigation 3 exposes an app-owned back stack without an equivalent
+pre-composition callback.
+
+As a result, spans started during a destination's initial composable body are not guaranteed to
+attach to the new route transaction. Start destination work from `LaunchedEffect`,
+`DisposableEffect`, or `SideEffect` so it attaches to the new navigation transaction.
+
 ## Enable Navigation Transactions
 
-`SentryNav3Effect` enables navigation transactions by default, but it only starts transactions
+`SentryNavDisplay` enables navigation transactions by default, but it only starts transactions
 when SDK tracing is enabled in your Sentry options.
 
 ```kotlin
@@ -154,21 +168,25 @@ SentryAndroid.init(context) { options ->
 }
 ```
 
-Then add the effect:
+Then use the instrumented display:
 
 ```kotlin
-SentryNav3Effect(backStack = backStack)
+SentryNavDisplay(
+  backStack = backStack,
+  entryProvider = appEntryProvider,
+)
 ```
 
 To keep breadcrumbs and screen tracking but disable navigation transactions from this integration:
 
 ```kotlin
-SentryNav3Effect(
+SentryNavDisplay(
   backStack = backStack,
   options =
     SentryNav3Options().apply {
       enableNavigationTransactions = false
     },
+  entryProvider = appEntryProvider,
 )
 ```
 
@@ -191,7 +209,7 @@ data class Article(val slug: String) : Route
 fun AppNavigation() {
   val backStack = remember { mutableStateListOf<Route>(Home) }
 
-  SentryNav3Effect(
+  SentryNavDisplay(
     backStack = backStack,
     nameExtractor = { route ->
       when (route) {
@@ -200,9 +218,8 @@ fun AppNavigation() {
         is Article -> "article"
       }
     },
+    entryProvider = appEntryProvider,
   )
-
-  NavDisplay(backStack = backStack)
 }
 ```
 
@@ -211,9 +228,10 @@ This records route names like `/home`, `/profile`, and `/article` instead of Kot
 If your extractor returns a leading slash, Sentry keeps one slash:
 
 ```kotlin
-SentryNav3Effect(
+SentryNavDisplay(
   backStack = backStack,
   nameExtractor = { route -> "/${route::class.simpleName}" },
+  entryProvider = appEntryProvider,
 )
 ```
 
@@ -226,7 +244,7 @@ transactions, and `contexts.navigation`. They are not controlled by `sendDefault
 automatically scrubbed by this integration.
 
 ```kotlin
-SentryNav3Effect(
+SentryNavDisplay(
   backStack = backStack,
   nameExtractor = { route ->
     when (route) {
@@ -242,6 +260,7 @@ SentryNav3Effect(
       is Article -> mapOf("slug" to route.slug)
     }
   },
+  entryProvider = appEntryProvider,
 )
 ```
 
@@ -249,7 +268,7 @@ The profile example deliberately avoids sending `userId`. If a route contains PI
 or replace those values before returning the map.
 
 ```kotlin
-SentryNav3Effect(
+SentryNavDisplay(
   backStack = backStack,
   argumentsExtractor = { route ->
     when (route) {
@@ -257,6 +276,7 @@ SentryNav3Effect(
       else -> emptyMap()
     }
   },
+  entryProvider = appEntryProvider,
 )
 ```
 
@@ -266,7 +286,7 @@ values are converted with `toString()` and a warning is logged.
 Nested safe values are supported:
 
 ```kotlin
-SentryNav3Effect(
+SentryNavDisplay(
   backStack = backStack,
   argumentsExtractor = { route ->
     when (route) {
@@ -281,6 +301,7 @@ SentryNav3Effect(
       else -> emptyMap()
     }
   },
+  entryProvider = appEntryProvider,
 )
 ```
 
@@ -290,12 +311,13 @@ Sentry attaches the latest back-stack entries to `contexts.navigation.backstack`
 is 30 entries.
 
 ```kotlin
-SentryNav3Effect(
+SentryNavDisplay(
   backStack = backStack,
   options =
     SentryNav3Options().apply {
       maxCapturedBackStackEntries = 10
     },
+  entryProvider = appEntryProvider,
 )
 ```
 
@@ -306,32 +328,35 @@ Set this based on how much navigation context is useful for debugging crashes an
 You can disable individual parts of the integration.
 
 ```kotlin
-SentryNav3Effect(
+SentryNavDisplay(
   backStack = backStack,
   options =
     SentryNav3Options().apply {
       enableNavigationBreadcrumbs = false
     },
+  entryProvider = appEntryProvider,
 )
 ```
 
 ```kotlin
-SentryNav3Effect(
+SentryNavDisplay(
   backStack = backStack,
   options =
     SentryNav3Options().apply {
       enableNavigationTransactions = false
     },
+  entryProvider = appEntryProvider,
 )
 ```
 
 ```kotlin
-SentryNav3Effect(
+SentryNavDisplay(
   backStack = backStack,
   options =
     SentryNav3Options().apply {
       captureBackStack = false
     },
+  entryProvider = appEntryProvider,
 )
 ```
 
@@ -339,14 +364,14 @@ Screen tracking follows the SDK's `SentryOptions.isEnableScreenTracking` setting
 
 ## Recommended App-Shell Setup
 
-The effect should live for the whole navigation session.
+The display should live for the whole navigation session.
 
 ```kotlin
 @Composable
 fun RootScreen() {
   val backStack = remember { mutableStateListOf<Route>(Home) }
 
-  SentryNav3Effect(
+  SentryNavDisplay(
     backStack = backStack,
     options =
       SentryNav3Options().apply {
@@ -366,27 +391,26 @@ fun RootScreen() {
         is Article -> mapOf("slug" to route.slug)
       }
     },
-  )
-
-  NavDisplay(
-    backStack = backStack,
-    // Configure your Navigation 3 entries here.
+    entryProvider = appEntryProvider,
   )
 }
 ```
 
-Avoid this pattern:
+`SentryNavDisplay` should remain in composition for the whole navigation session. Avoid conditionally
+removing it while continuing to use the same back stack:
 
 ```kotlin
 @Composable
 fun ProfileScreen(backStack: SnapshotStateList<Route>) {
-  // Do not put the effect inside a destination screen.
-  SentryNav3Effect(backStack = backStack)
+  // Do not create the app's navigation display inside a single destination screen.
+  SentryNavDisplay(
+    backStack = backStack,
+    entryProvider = appEntryProvider,
+  )
 }
 ```
 
-When `ProfileScreen` leaves composition, the integration is disposed and navigation is no longer
-observed.
+When `ProfileScreen` leaves composition, the display and its instrumentation are disposed.
 
 ## Current Limitations
 

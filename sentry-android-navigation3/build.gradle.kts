@@ -68,6 +68,7 @@ dependencies {
   api(projects.sentry)
 
   compileOnly(libs.androidx.compose.runtime)
+  compileOnly(libs.androidx.navigation3.ui)
 
   testImplementation(libs.androidx.compose.runtime)
   testImplementation(libs.androidx.compose.ui.test.junit4)
@@ -77,6 +78,7 @@ dependencies {
   testImplementation(libs.androidx.core.ktx)
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.test.runner)
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.mockito.inline)
