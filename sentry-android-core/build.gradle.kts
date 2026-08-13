@@ -122,6 +122,7 @@ dependencies {
   testImplementation(projects.sentrySpotlight)
   testImplementation(projects.sentryAndroidFragment)
   testImplementation(projects.sentryAndroidTimber)
+  testImplementation(libs.timber)
   testImplementation(projects.sentryAndroidReplay)
   testImplementation(projects.sentryCompose)
   testImplementation(projects.sentryAndroidNdk)
@@ -132,5 +133,4 @@ dependencies {
   testImplementation(libs.androidx.compose.foundation.layout)
   testImplementation(libs.androidx.compose.material3)
   testRuntimeOnly(libs.androidx.fragment.ktx)
-  testRuntimeOnly(libs.timber)
 }
