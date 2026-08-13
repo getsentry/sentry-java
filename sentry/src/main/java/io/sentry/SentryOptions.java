@@ -3733,6 +3733,21 @@ public class SentryOptions {
       }
     }
 
+    if (options.isEnableLogs() != null) {
+      if (options.isEnableLogs()) {
+        logger.log(
+            SentryLevel.WARNING,
+            "The 'logs.enabled' option is no longer supported. Manual Sentry.logger() calls no "
+                + "longer require it, and automatic logging integrations now require their own "
+                + "opt-ins.");
+      } else {
+        logger.log(
+            SentryLevel.WARNING,
+            "The 'logs.enabled' option no longer disables manual Sentry.logger() calls. Automatic "
+                + "logging integrations remain disabled unless enabled through their own opt-ins.");
+      }
+    }
+
     if (options.isEnableMetrics() != null) {
       getMetrics().setEnabled(options.isEnableMetrics());
     }
