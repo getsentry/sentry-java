@@ -723,6 +723,21 @@ final class ManifestMetadataReader {
           }
         }
 
+        if (metadata.containsKey(ENABLE_METRICS)) {
+          final boolean enableMetrics = readBool(metadata, logger, ENABLE_METRICS, false);
+          if (enableMetrics) {
+            logger.log(
+                SentryLevel.WARNING,
+                "The Android manifest option 'io.sentry.metrics.enabled' is no longer supported. "
+                    + "Manual Sentry.metrics() calls no longer require it.");
+          } else {
+            logger.log(
+                SentryLevel.WARNING,
+                "The Android manifest option 'io.sentry.metrics.enabled' no longer disables "
+                    + "manual Sentry.metrics() calls.");
+          }
+        }
+
         options.setEnableTimberLogs(
             readBool(metadata, logger, ENABLE_TIMBER_LOGS, options.isEnableTimberLogs()));
 

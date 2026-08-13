@@ -2054,8 +2054,22 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `legacy metrics metadata does not disable capture`() {
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to false)
+  fun `applyMetadata does not warn when legacy metrics enabled metadata is absent`() {
+    fixture.options.isDebug = true
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    verify(fixture.logger, never()).log(eq(SentryLevel.WARNING), any<String>())
+  }
+
+  @Test
+  fun `applyMetadata warns when legacy metrics enabled metadata is true`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.DEBUG to true,
+        ManifestMetadataReader.ENABLE_METRICS to true,
+      )
     val context = fixture.getContext(metaData = bundle)
     val client = createSentryClientMock()
 
@@ -2064,6 +2078,38 @@ class ManifestMetadataReaderTest {
     val scopes = createTestScopes(fixture.options).also { it.bindClient(client) }
     scopes.metrics().count("metric name")
 
+    verify(fixture.logger)
+      .log(
+        SentryLevel.WARNING,
+        "The Android manifest option 'io.sentry.metrics.enabled' is no longer supported. " +
+          "Manual Sentry.metrics() calls no longer require it.",
+        *emptyArray(),
+      )
+    verify(client).captureMetric(any(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `applyMetadata warns when legacy metrics enabled metadata is false`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.DEBUG to true,
+        ManifestMetadataReader.ENABLE_METRICS to false,
+      )
+    val context = fixture.getContext(metaData = bundle)
+    val client = createSentryClientMock()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+    fixture.options.dsn = "https://key@sentry.io/proj"
+    val scopes = createTestScopes(fixture.options).also { it.bindClient(client) }
+    scopes.metrics().count("metric name")
+
+    verify(fixture.logger)
+      .log(
+        SentryLevel.WARNING,
+        "The Android manifest option 'io.sentry.metrics.enabled' no longer disables manual " +
+          "Sentry.metrics() calls.",
+        *emptyArray(),
+      )
     verify(client).captureMetric(any(), anyOrNull(), anyOrNull())
   }
 
