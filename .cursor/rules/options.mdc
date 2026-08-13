@@ -4,7 +4,10 @@ description: Adding and modifying SDK options
 ---
 # Adding Options to the SDK
 
-New features must be **opt-in by default**. Options control whether a feature is enabled and how it behaves.
+New automatic capture features must be **opt-in by default**. Deliberate API calls such as
+`Sentry.logger()` and `Sentry.metrics()` capture whenever the SDK is enabled and do not have
+aggregate signal enable flags. Options control signal behavior and whether individual automatic
+sources are enabled.
 
 ## Namespaced Options
 
@@ -12,12 +15,12 @@ Newer features use namespaced option classes nested inside `SentryOptions`, e.g.
 - `SentryOptions.getLogs()` → `SentryOptions.Logs`
 - `SentryOptions.getMetrics()` → `SentryOptions.Metrics`
 
-Each namespaced options class is a `public static final class` inside `SentryOptions` with its own fields, getters/setters, and callbacks (e.g. `BeforeSendLogCallback`, `BeforeSendMetricCallback`).
+Each namespaced options class is a `public static final class` inside `SentryOptions` with its own fields, getters/setters, factories, and callbacks (e.g. `BeforeSendLogCallback`, `BeforeSendMetricCallback`).
 
-A typical namespaced options class contains:
-- `enabled` boolean (default `false` for opt-in)
-- `sampleRate` double (if the feature supports sampling)
-- `beforeSend` callback interface (nested inside the options class)
+Do not assume that a namespaced signal needs an aggregate `enabled` field. In particular, Logs and
+Metrics are available through deliberate API calls whenever the SDK is enabled. Their namespaced
+options contain behavior such as sampling, `beforeSend`, limits, and processor factories. Automatic
+capture integrations use source-local enable options that default to `false`.
 
 To add a new namespaced options class:
 1. Create the `public static final class` inside `SentryOptions` with fields, getters/setters, and any callback interfaces
@@ -47,21 +50,19 @@ The core options class. Add the field (or nested class) with getter/setter here.
 Allows setting options via `sentry.properties` file or system properties. Fields use nullable wrapper types (`@Nullable Boolean`, `@Nullable Double`) since unset means "don't override the default."
 
 **File:** `sentry/src/main/java/io/sentry/ExternalOptions.java`
-- Add `@Nullable` fields with getter/setter for each externally configurable option (e.g. `enableMetrics`, `logsSampleRate`)
-- Wire them in the static `from(PropertiesProvider)` method:
-  - Boolean: `propertiesProvider.getBooleanProperty("metrics.enabled")`
-  - Double: `propertiesProvider.getDoubleProperty("logs.sample-rate")`
+- Add `@Nullable` fields with getter/setter for each externally configurable option (e.g. `logsSampleRate`)
+- Wire them in the static `from(PropertiesProvider)` method, for example:
+  `propertiesProvider.getDoubleProperty("logs.sample-rate")`
 
 **File:** `sentry/src/main/java/io/sentry/SentryOptions.java` — `merge()` method
 - Add null-check blocks to apply each external option onto the namespaced options class:
   ```java
-  if (options.isEnableMetrics() != null) {
-      getMetrics().setEnabled(options.isEnableMetrics());
-  }
   if (options.getLogsSampleRate() != null) {
       getLogs().setSampleRate(options.getLogsSampleRate());
   }
   ```
+- Do not add or restore `logs.enabled` or `metrics.enabled`. Legacy values are retained only long
+  enough to emit presence-aware migration warnings and must not be applied.
 
 **Tests:**
 - `sentry/src/test/java/io/sentry/ExternalOptionsTest.kt` — test true/false/null for booleans, valid values and null for doubles
@@ -72,9 +73,12 @@ Allows setting options via `sentry.properties` file or system properties. Fields
 Allows setting options via `AndroidManifest.xml` `<meta-data>` tags.
 
 **File:** `sentry-android-core/src/main/java/io/sentry/android/core/ManifestMetadataReader.java`
-- Add a `static final String` constant for the key (e.g. `"io.sentry.metrics.enabled"`)
+- Add a `static final String` constant for the key
 - Read it in `applyMetadata()` using `readBool(metadata, logger, CONSTANT, defaultValue)`
-- Apply to the namespaced options, e.g. `options.getMetrics().setEnabled(...)`
+- Apply automatic-source options directly, for example
+  `options.setEnableLogcatLogs(...)` for `io.sentry.logcat.logs.enabled`
+- Do not add or restore `io.sentry.logs.enabled` or `io.sentry.metrics.enabled`; those aggregate
+  keys are obsolete and are read only to emit migration warnings.
 
 **Tests:** `sentry-android-core/src/test/java/io/sentry/android/core/ManifestMetadataReaderTest.kt`
 - Test default value preserved when not in manifest
@@ -83,21 +87,37 @@ Allows setting options via `AndroidManifest.xml` `<meta-data>` tags.
 
 ### 4. Spring Boot Properties (Spring Boot only)
 
-`SentryProperties` extends `SentryOptions`, so namespaced options (nested classes) are automatically available as Spring Boot properties without extra code. For example, `SentryOptions.Logs` is automatically mapped to `sentry.logs.enabled` in `application.properties`.
+`SentryProperties` extends `SentryOptions`, so bindable namespaced behavior options are available
+through the `SentryOptions` class hierarchy. Spring-owned integration controls belong to a Spring
+namespace instead. For example, `SentryProperties.Logging.enableLogs` binds to
+`sentry.logging.enable-logs` and controls Logs forwarding from the auto-configured Logback
+appender. `sentry.logging.enabled` separately controls whether that appender is installed.
 
-No additional code is needed for namespaced options — Spring Boot auto-configuration handles this via property binding on the `SentryOptions` class hierarchy.
+Do not add or restore `sentry.logs.enabled` or `sentry.metrics.enabled`. Spring detects those legacy
+properties through `Environment` only to emit migration warnings; it does not bind or apply them.
 
 **Tests:** `sentry-spring-boot*/src/test/kotlin/.../SentryAutoConfigurationTest.kt`
-- Add the property (e.g. `"sentry.logs.enabled=true"`) to the existing `resolves all properties` test
+- Add the new property to the existing binding test
 - Assert the value is set on the resolved `SentryProperties` bean
+- Test default, explicit `true`, explicit `false`, and propagation into the owning integration
 - There are three Spring Boot modules with separate test files: `sentry-spring-boot`, `sentry-spring-boot-jakarta`, `sentry-spring-boot-4`
 
 ### 5. Reading Options at Runtime
 
-Features check their options at usage time. For namespaced features the check typically happens in the feature's API class (e.g. `LoggerApi`, `MetricsApi`):
-- Check `options.getLogs().isEnabled()` early and return if disabled
-- Apply sampling via `options.getLogs().getSampleRate()` if applicable
-- Apply `beforeSend` callback in `SentryClient` before sending
+Deliberate APIs such as `LoggerApi` and `MetricsApi` do not check aggregate signal enable flags.
+They capture whenever their scopes are enabled, then apply signal behavior such as sampling and
+`beforeSend`.
+
+Automatic integrations must check their source-local opt-in without affecting their existing event
+or breadcrumb paths. Current Logs controls are:
+- Logback: appender `enableLogs`
+- Log4j2: appender `enableLogs`
+- JUL: handler `enableLogs`
+- Spring Boot Logback: `sentry.logging.enable-logs`
+- Timber: `enableTimberLogs` / `io.sentry.timber.logs.enabled`
+- Logcat: `enableLogcatLogs` / `io.sentry.logcat.logs.enabled`
+
+All source-local options default to `false` and gate only Sentry Logs forwarding.
 
 When a feature has its own capture path (e.g. `captureLog`), the relevant classes are:
 - `ISentryClient` — add the capture method signature
@@ -106,10 +126,11 @@ When a feature has its own capture path (e.g. `captureLog`), the relevant classe
 
 ## Checklist for Adding a New Namespaced Option
 
-1. `SentryOptions.java` — nested options class + getter/setter on `SentryOptions`
-2. `ExternalOptions.java` — `@Nullable` fields + wiring in `from()`
-3. `SentryOptions.java` `merge()` — apply external options to namespaced class
-4. `ManifestMetadataReader.java` — Android manifest support (if Android-relevant)
-5. `SentryAutoConfigurationTest.kt` — Spring Boot property binding tests (all three Spring Boot modules)
-6. Tests for all of the above (`SentryOptionsTest`, `ExternalOptionsTest`, `ManifestMetadataReaderTest`)
-7. Run `./gradlew apiDump` — the nested class and its methods appear in `sentry.api`
+1. Decide whether the option controls deliberate API behavior or an automatic capture source
+2. `SentryOptions.java` — nested behavior option + getter/setter where core ownership is appropriate
+3. `ExternalOptions.java` and `SentryOptions.merge()` — add external support if applicable
+4. `ManifestMetadataReader.java` — add Android support if applicable
+5. Spring properties — use the owning integration namespace and test all three Spring Boot modules
+6. Test defaults and every supported configuration layer
+7. Verify automatic-source opt-ins default to `false` and do not gate events or breadcrumbs
+8. Run `./gradlew spotlessApply apiDump`
