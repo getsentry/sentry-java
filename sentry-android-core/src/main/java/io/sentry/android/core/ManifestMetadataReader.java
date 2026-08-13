@@ -729,11 +729,6 @@ final class ManifestMetadataReader {
         options.setEnableLogcatLogs(
             readBool(metadata, logger, ENABLE_LOGCAT_LOGS, options.isEnableLogcatLogs()));
 
-        options
-            .getMetrics()
-            .setEnabled(
-                readBool(metadata, logger, ENABLE_METRICS, options.getMetrics().isEnabled()));
-
         final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
         feedbackOptions.setNameRequired(
             readBool(metadata, logger, FEEDBACK_NAME_REQUIRED, feedbackOptions.isNameRequired()));

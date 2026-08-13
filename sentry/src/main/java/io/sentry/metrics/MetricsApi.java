@@ -118,15 +118,6 @@ public final class MetricsApi implements IMetricsApi {
         return;
       }
 
-      if (!options.getMetrics().isEnabled()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Sentry Metrics is disabled and this 'metrics' call is a no-op.");
-        return;
-      }
-
       if (name == null) {
         return;
       }

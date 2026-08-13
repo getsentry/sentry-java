@@ -3976,9 +3976,7 @@ public final class io/sentry/SentryOptions$Metrics {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;
 	public fun getMetricsBatchProcessorFactory ()Lio/sentry/metrics/IMetricsBatchProcessorFactory;
-	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;)V
-	public fun setEnabled (Z)V
 	public fun setMetricsBatchProcessorFactory (Lio/sentry/metrics/IMetricsBatchProcessorFactory;)V
 }
 
