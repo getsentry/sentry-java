@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Prevent a class of Session Replay deadlocks by confining lifecycle state changes to Android's main thread ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
+
 ## 8.53.0
 
 ### Features
