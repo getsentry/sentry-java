@@ -76,6 +76,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   protected final @NotNull AutoClosableReentrantLock cacheLock = new AutoClosableReentrantLock();
   protected final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
 
+  /**
+   * Session id last written to the current session file by {@link #persistCurrentSession(Session)},
+   * which bypasses the transport queue that every other write to that file goes through.
+   */
+  private volatile @Nullable String lastPersistedSessionId;
+
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
     final int maxCacheItems = options.getMaxCacheItems();
@@ -131,8 +137,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     if (HintUtils.hasType(hint, SessionStart.class)) {
       try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
         final @Nullable Session startingSession = readSessionFromEnvelope(envelope);
-        final @Nullable Session currentSession = readSessionFromDisk(currentSessionFile);
-        if (!isLateDuplicateStart(startingSession, currentSession)) {
+        if (!isLateDuplicateStart(startingSession)) {
           movePreviousSession(currentSessionFile, previousSessionFile);
           if (startingSession != null) {
             writeSessionToDisk(currentSessionFile, startingSession);
@@ -321,34 +326,21 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     return null;
   }
 
-  private @Nullable Session readSessionFromDisk(final @NotNull File sessionFile) {
-    if (!sessionFile.exists()) {
-      return null;
-    }
-    try (final Reader reader =
-        new BufferedReader(new InputStreamReader(new FileInputStream(sessionFile), UTF_8))) {
-      return serializer.getValue().deserialize(reader, Session.class);
-    } catch (Exception e) {
-      options.getLogger().log(ERROR, "Failed to read session from disk.", e);
-      return null;
-    }
-  }
-
   /**
-   * Whether a {@link SessionStart} envelope refers to the session already on disk. Only {@link
-   * #persistCurrentSession(Session)} can have put it there, writing the live session, so the stored
-   * copy is at least as advanced as this envelope. Rotating and overwriting it would file a running
-   * session as the previous one and roll back any unhandled error it has recorded since.
+   * Whether a {@link SessionStart} envelope refers to the session {@link
+   * #persistCurrentSession(Session)} already wrote to the current session file. That copy is the
+   * live session, so it is at least as advanced as this envelope. Rotating and overwriting it would
+   * file a running session as the previous one and roll back any unhandled error it has recorded
+   * since.
    *
    * <p>A null session id never matches, so sessions we cannot tell apart are rotated as before.
    */
-  private boolean isLateDuplicateStart(
-      final @Nullable Session startingSession, final @Nullable Session currentSession) {
-    if (startingSession == null || currentSession == null) {
+  private boolean isLateDuplicateStart(final @Nullable Session startingSession) {
+    if (startingSession == null) {
       return false;
     }
     final @Nullable String startingSessionId = startingSession.getSessionId();
-    return startingSessionId != null && startingSessionId.equals(currentSession.getSessionId());
+    return startingSessionId != null && startingSessionId.equals(lastPersistedSessionId);
   }
 
   private boolean writeEnvelopeToDisk(
@@ -392,6 +384,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   public void persistCurrentSession(final @NotNull Session session) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       writeSessionToDisk(getCurrentSessionFile(directory.getOrCreate().getAbsolutePath()), session);
+      lastPersistedSessionId = session.getSessionId();
     }
   }
 
