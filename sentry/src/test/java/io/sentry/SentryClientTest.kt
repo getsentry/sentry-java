@@ -154,6 +154,13 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when client is created, metrics batch processor is created`() {
+    val sut = fixture.getSut()
+
+    verify(fixture.metricsBatchProcessorFactory).create(fixture.sentryOptions, sut)
+  }
+
+  @Test
   fun `when dsn is an invalid string, client throws`() {
     fixture.sentryOptions.dsn = "invalid-dsn"
     assertFailsWith<IllegalArgumentException> { fixture.getSut() }

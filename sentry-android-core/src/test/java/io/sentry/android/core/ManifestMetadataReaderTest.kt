@@ -11,6 +11,8 @@ import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
 import io.sentry.TransactionOptions
+import io.sentry.test.createSentryClientMock
+import io.sentry.test.createTestScopes
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -20,6 +22,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -2051,41 +2054,17 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads metrics enabled and keep default value if not found`() {
-    // Arrange
-    val context = fixture.getContext()
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.metrics.isEnabled)
-  }
-
-  @Test
-  fun `applyMetadata reads metrics enabled to options`() {
-    // Arrange
+  fun `legacy metrics metadata does not disable capture`() {
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to false)
     val context = fixture.getContext(metaData = bundle)
+    val client = createSentryClientMock()
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+    fixture.options.dsn = "https://key@sentry.io/proj"
+    val scopes = createTestScopes(fixture.options).also { it.bindClient(client) }
+    scopes.metrics().count("metric name")
 
-    // Assert
-    assertFalse(fixture.options.metrics.isEnabled)
-  }
-
-  @Test
-  fun `applyMetadata reads metrics enabled to options when set to true`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to true)
-    val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.metrics.isEnabled)
+    verify(client).captureMetric(any(), anyOrNull(), anyOrNull())
   }
 
   @Test
