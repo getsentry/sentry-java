@@ -186,9 +186,9 @@ public class SentryAutoConfiguration {
       // its technically possible to set non-throwable class to `ignoredExceptionsForType` set
       // here we make sure that only classes that extend throwable are set on this field
       options.getIgnoredExceptionsForType().removeIf(it -> !Throwable.class.isAssignableFrom(it));
+      Sentry.init(options);
       warnForLegacyLogsConfiguration(environment, options);
       warnForLegacyMetricsConfiguration(environment, options);
-      Sentry.init(options);
       return ScopesAdapter.getInstance();
     }
 
