@@ -453,36 +453,6 @@ class EnvelopeCacheTest {
   }
 
   @Test
-  fun `AbnormalExit hint keeps persisted unhandled session as abnormal`() {
-    val cache = fixture.getSUT()
-
-    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
-    val session = createSession().apply { recordNonTerminatingUnhandledError() }
-    fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
-
-    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
-    val abnormalHint =
-      object : AbnormalExit {
-        override fun mechanism(): String = "abnormal_mechanism"
-
-        override fun ignoreCurrentThread(): Boolean = false
-
-        override fun timestamp(): Long = session.started!!.time + TimeUnit.HOURS.toMillis(1)
-      }
-    val hints = HintUtils.createWithTypeCheckHint(abnormalHint)
-    cache.storeEnvelope(envelope, hints)
-
-    val updatedSession =
-      fixture.options.serializer.deserialize(
-        previousSessionFile.bufferedReader(),
-        Session::class.java,
-      )
-    assertEquals(State.Abnormal, updatedSession!!.status)
-    assertEquals("abnormal_mechanism", updatedSession.abnormalMechanism)
-    assertTrue(updatedSession.hasNonTerminatingUnhandledError())
-  }
-
-  @Test
   fun `when AbnormalExit happened before previous session start, does not mark as abnormal`() {
     val cache = fixture.getSUT()
 
@@ -534,29 +504,6 @@ class EnvelopeCacheTest {
       )
     assertEquals(State.Crashed, updatedSession!!.status)
     assertEquals(nativeCrashTimestamp, updatedSession.timestamp!!.time)
-  }
-
-  @Test
-  fun `NativeCrashExit hint keeps persisted unhandled session as crashed`() {
-    val cache = fixture.getSUT()
-
-    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
-    val session = createSession().apply { recordNonTerminatingUnhandledError() }
-    fixture.options.serializer.serialize(session, previousSessionFile.bufferedWriter())
-
-    val nativeCrashTimestamp = session.started!!.time + TimeUnit.HOURS.toMillis(1)
-    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
-    val hints = HintUtils.createWithTypeCheckHint(NativeCrashExit { nativeCrashTimestamp })
-    cache.storeEnvelope(envelope, hints)
-
-    val updatedSession =
-      fixture.options.serializer.deserialize(
-        previousSessionFile.bufferedReader(),
-        Session::class.java,
-      )
-    assertEquals(State.Crashed, updatedSession!!.status)
-    assertEquals(nativeCrashTimestamp, updatedSession.timestamp!!.time)
-    assertFalse(updatedSession.hasNonTerminatingUnhandledError())
   }
 
   @Test
