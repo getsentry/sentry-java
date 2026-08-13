@@ -150,10 +150,15 @@ public class SentryHandler extends Handler {
     final @Nullable Object[] arguments = loggingEvent.getParameters();
     final @NotNull SentryAttributes attributes = SentryAttributes.of();
 
-    @NotNull String message = loggingEvent.getMessage();
+    final @Nullable String messageTemplate = loggingEvent.getMessage();
+    if (messageTemplate == null) {
+      return;
+    }
+
+    @NotNull String message = messageTemplate;
     if (loggingEvent.getResourceBundle() != null
-        && loggingEvent.getResourceBundle().containsKey(loggingEvent.getMessage())) {
-      message = loggingEvent.getResourceBundle().getString(loggingEvent.getMessage());
+        && loggingEvent.getResourceBundle().containsKey(messageTemplate)) {
+      message = loggingEvent.getResourceBundle().getString(messageTemplate);
     }
 
     final @NotNull String formattedMessage = maybeFormatted(arguments, message);

@@ -486,6 +486,31 @@ class SentryHandlerTest {
   }
 
   @Test
+  fun `captures null message as event and breadcrumb when logs are enabled`() {
+    fixture =
+      Fixture(
+        minimumBreadcrumbLevel = Level.INFO,
+        minimumEventLevel = Level.SEVERE,
+        enableLogs = true,
+      )
+
+    fixture.logger.info(null as String?)
+    fixture.logger.severe(null as String?)
+    Sentry.flush(10)
+
+    verify(fixture.transport)
+      .send(
+        checkEvent { event ->
+          assertNull(event.message?.message)
+          assertEquals(1, event.breadcrumbs?.size)
+          assertNull(event.breadcrumbs?.single()?.message)
+        },
+        anyOrNull(),
+      )
+    verify(fixture.transport, never()).send(checkLogs {})
+  }
+
+  @Test
   fun `converts finest log level to Sentry log level`() {
     fixture = Fixture(minimumLevel = Level.FINEST)
     fixture.logger.finest("testing trace level")
