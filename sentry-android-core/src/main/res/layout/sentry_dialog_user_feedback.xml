@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- The form is wrapped in a ScrollView, so the buttons stay reachable when the dialog does not
+     fit on screen, e.g. in landscape or with a large font scale. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/sentry_dialog_user_feedback_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:filterTouchesWhenObscured="true"
-    tools:ignore="HardcodedText,RtlHardcoded"
+    tools:ignore="HardcodedText,RtlHardcoded">
+
+<RelativeLayout
+    android:id="@+id/sentry_dialog_user_feedback_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
     android:theme="?android:attr/dialogTheme"
     android:padding="24dp">
 
@@ -96,31 +102,40 @@
 
     <Button
         android:id="@+id/sentry_dialog_user_feedback_btn_add_screenshot"
+        style="?android:attr/borderlessButtonStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:backgroundTint="?android:attr/colorBackground"
         android:text="Add a screenshot"
         android:visibility="gone"
         android:layout_below="@id/sentry_dialog_user_feedback_edt_description" />
 
-    <Button
-        android:id="@+id/sentry_dialog_user_feedback_btn_send"
+    <LinearLayout
+        android:id="@+id/sentry_dialog_user_feedback_button_bar"
+        style="?android:attr/buttonBarStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:backgroundTint="?android:attr/colorPrimary"
-        android:textColor="?android:attr/textColorPrimaryInverse"
-        android:layout_marginTop="32dp"
-        android:text="Send Bug Report"
-        android:layout_below="@id/sentry_dialog_user_feedback_btn_add_screenshot" />
+        android:orientation="horizontal"
+        android:gravity="right"
+        android:layout_marginTop="24dp"
+        android:layout_below="@id/sentry_dialog_user_feedback_btn_add_screenshot">
 
-    <Button
-        android:id="@+id/sentry_dialog_user_feedback_btn_cancel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="?android:attr/colorBackground"
-        android:text="Cancel"
-        android:layout_below="@id/sentry_dialog_user_feedback_btn_send" />
+        <Button
+            android:id="@+id/sentry_dialog_user_feedback_btn_cancel"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel" />
+
+        <Button
+            android:id="@+id/sentry_dialog_user_feedback_btn_send"
+            style="?android:attr/buttonBarPositiveButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Send Bug Report" />
+
+    </LinearLayout>
 
 </RelativeLayout>
+
+</ScrollView>
