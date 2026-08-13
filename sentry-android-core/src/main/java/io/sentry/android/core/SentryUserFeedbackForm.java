@@ -60,15 +60,11 @@ public class SentryUserFeedbackForm extends AlertDialog {
   }
 
   private void maybeStartShakeDetection(final @NotNull Context context) {
-    // Only a per-dialog opt-in on top of a globally disabled shake gesture starts a detector for
-    // this dialog. Both other cases defer to FeedbackShakeIntegration: while shake-to-report is
-    // enabled it already shows a dialog on shake, and once it has been disabled at runtime that
-    // must stay disabled. Note resolvedFeedbackOptions is a copy of the global options, so its
-    // isUseShakeGesture() is indistinguishable from the global one unless a configurator set it.
+    // Only start shake detection if it's enabled within the options,
+    // and not already running globally
     final @NotNull SentryFeedbackOptions globalFeedbackOptions =
         Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
     if (!resolvedFeedbackOptions.isUseShakeGesture()
-        || globalFeedbackOptions.isUseShakeGesture()
         || globalFeedbackOptions.getShakeController().isOnShakeEnabled()) {
       return;
     }
@@ -401,9 +397,9 @@ public class SentryUserFeedbackForm extends AlertDialog {
   @Override
   public void onDetachedFromWindow() {
     super.onDetachedFromWindow();
-    // Safety net for teardown without a dismiss (e.g. the host activity is destroyed while the
-    // dialog is still showing): onStop never fires then, but the window is still detached —
-    // without this, shake-to-report would stay paused forever.
+    // Runs on every teardown: on dismiss the decor view is removed before onStop(), and when the
+    // host activity is destroyed with the dialog still showing this is the only callback that
+    // fires. onDialogGone is idempotent, so reporting from both here and onStop() is safe.
     final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
     if (integration != null) {
       integration.onDialogGone(this);

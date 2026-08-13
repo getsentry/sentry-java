@@ -47,7 +47,7 @@ public final class FeedbackShakeIntegration
 
   /**
    * The feedback dialogs that are currently visible, together with the activity hosting them. More
-   * than one can be visible at a time, e.g. when the app calls {@code Sentry.feedback().showForm()}
+   * than one can be visible at a time, e.g. when the app calls {@code Sentry.feedback().show()}
    * while another dialog is already showing.
    */
   private final @NotNull CopyOnWriteArrayList<VisibleDialog> visibleDialogs =
@@ -85,7 +85,7 @@ public final class FeedbackShakeIntegration
     }
     enabled = true;
 
-    // Re-arm the detector in case it was closed before, either by disable() or by a previous
+    // Re-arm the detector in case it was closed before, either by disableOnShake() or by a previous
     // close() (e.g. a second Sentry.init reusing the same options), otherwise the closed latch
     // would keep shake detection off permanently.
     shakeDetector.reopen();
@@ -202,6 +202,7 @@ public final class FeedbackShakeIntegration
   @Override
   public void close() throws IOException {
     disableOnShake();
+    visibleDialogs.clear();
   }
 
   @Override
@@ -277,9 +278,14 @@ public final class FeedbackShakeIntegration
                     || active.isDestroyed()) {
                   return;
                 }
+                @Nullable Dialog dialog = null;
                 try {
-                  new SentryUserFeedbackForm.Builder(active).create().show();
+                  dialog = new SentryUserFeedbackForm.Builder(active).create();
+                  dialog.show();
                 } catch (Throwable e) {
+                  if (dialog != null) {
+                    onDialogGone(dialog);
+                  }
                   options
                       .getLogger()
                       .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);
