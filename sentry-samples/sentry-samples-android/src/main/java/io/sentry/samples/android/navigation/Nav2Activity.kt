@@ -8,9 +8,12 @@ import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
+import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.compose.BackHandler
@@ -39,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -95,8 +99,10 @@ class Nav2Activity : AppCompatActivity() {
   private var composeCurrentRouteText = Nav2ComposeDestination.SingleStack.displayRoute()
   private var composeBackStackText = Nav2ComposeDestination.SingleStack.backStackRoute()
   private val sentryNavigationListener = SentryNavigationListener()
+  private val finishUiLoad = mutableStateOf(true)
   private val routeActivationAction = mutableStateOf(RouteActivationAction.NONE)
   private var routeActivationActionSpinner: Spinner? = null
+  private var uiLoadReported = false
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -118,6 +124,7 @@ class Nav2Activity : AppCompatActivity() {
     }
 
     updateChrome(navController.currentDestination, navController.currentBackStackEntry?.arguments)
+    window.decorView.post { maybeReportFullyDisplayed() }
   }
 
   internal fun navigateTo(destination: Nav2Destination) {
@@ -205,10 +212,18 @@ class Nav2Activity : AppCompatActivity() {
       orientation = LinearLayout.VERTICAL
       setPadding(24.dp, 18.dp, 24.dp, 12.dp)
       addView(
-        TextView(context).apply {
-          text = "Navigation 2"
-          textSize = 20f
-          setTextColor(color(android.R.color.black))
+        LinearLayout(context).apply {
+          orientation = LinearLayout.HORIZONTAL
+          gravity = Gravity.CENTER_VERTICAL
+          addView(
+            TextView(context).apply {
+              text = "Navigation 2"
+              textSize = 20f
+              setTextColor(color(android.R.color.black))
+              layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+            }
+          )
+          addView(nav2SettingsButton())
         }
       )
       addView(View(context), LinearLayout.LayoutParams(MATCH_PARENT, 12.dp))
@@ -278,6 +293,36 @@ class Nav2Activity : AppCompatActivity() {
     }
   }
 
+  private fun nav2SettingsButton(): View =
+    ImageButton(this).apply {
+      setImageResource(android.R.drawable.ic_menu_manage)
+      setBackgroundColor(color(android.R.color.transparent))
+      contentDescription = "Nav2 settings"
+      setOnClickListener { showNav2Settings(it) }
+    }
+
+  private fun showNav2Settings(anchor: View) {
+    val content =
+      LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(24.dp, 20.dp, 24.dp, 20.dp)
+        setBackgroundResource(android.R.drawable.dialog_holo_light_frame)
+        addView(
+          CheckBox(context).apply {
+            text = "Finish activity ui.load"
+            isChecked = finishUiLoad.value
+            setOnCheckedChangeListener { _, checked -> setFinishUiLoad(checked) }
+          }
+        )
+      }
+
+    val popup =
+      PopupWindow(content, WRAP_CONTENT, WRAP_CONTENT, true).apply {
+        elevation = 12.dp.toFloat()
+      }
+    popup.showAsDropDown(anchor)
+  }
+
   internal fun runRouteActivationAction(routeName: String) {
     val action = routeActivationAction.value
     if (action == RouteActivationAction.NONE) {
@@ -302,7 +347,33 @@ class Nav2Activity : AppCompatActivity() {
               }
             }
           )
-      RouteActivationAction.MANUAL_CHILD_SPAN -> runManualNav2RouteActivationSpan(routeName)
+      RouteActivationAction.MANUAL_CHILD_SPAN_ASYNC -> Unit
+      RouteActivationAction.MANUAL_CHILD_SPAN_SYNC -> runManualNav2RouteActivationSpan(routeName)
+    }
+  }
+
+  internal fun runAsyncRouteActivationAction(routeName: String) {
+    val action = routeActivationAction.value
+    if (action != RouteActivationAction.MANUAL_CHILD_SPAN_ASYNC) {
+      return
+    }
+
+    tagNav2SampleAction(action.tagName, routeName)
+    runManualNav2RouteActivationSpan(routeName)
+  }
+
+  private fun maybeReportFullyDisplayed() {
+    if (!finishUiLoad.value || uiLoadReported) {
+      return
+    }
+    uiLoadReported = true
+    Sentry.reportFullyDisplayed()
+  }
+
+  private fun setFinishUiLoad(enabled: Boolean) {
+    finishUiLoad.value = enabled
+    if (enabled) {
+      window.decorView.post { maybeReportFullyDisplayed() }
     }
   }
 
@@ -685,6 +756,13 @@ private fun Nav2ComposeRouteActivationEffect(
 ) {
   val currentAction = rememberUpdatedState(routeActivationAction)
 
+  remember(destination, currentAction.value) {
+    if (currentAction.value == RouteActivationAction.MANUAL_CHILD_SPAN_SYNC) {
+      tagNav2SampleAction(currentAction.value.tagName, destination.routeName)
+      runManualNav2RouteActivationSpan(destination.routeName)
+    }
+  }
+
   LaunchedEffect(destination) {
     runNav2ComposeRouteActivationAction(
       routeName = destination.routeName,
@@ -713,7 +791,8 @@ private suspend fun runNav2ComposeRouteActivationAction(
         withContext(Dispatchers.IO) { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }
       }
     }
-    RouteActivationAction.MANUAL_CHILD_SPAN -> runManualNav2RouteActivationSpan(routeName)
+    RouteActivationAction.MANUAL_CHILD_SPAN_ASYNC -> runManualNav2RouteActivationSpan(routeName)
+    RouteActivationAction.MANUAL_CHILD_SPAN_SYNC -> Unit
   }
 }
 
@@ -1026,6 +1105,7 @@ class Nav2RouteFragment : Fragment() {
     val activity = requireActivity() as Nav2Activity
     val routeName = requireArguments().getString(ARG_ROUTE_NAME).orEmpty()
     activity.runRouteActivationAction(routeName)
+    view.post { activity.runAsyncRouteActivationAction(routeName) }
   }
 
   private fun productDetailLayout(activity: Nav2Activity): View {

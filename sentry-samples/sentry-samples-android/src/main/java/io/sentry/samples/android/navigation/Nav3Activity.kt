@@ -45,6 +45,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -103,9 +104,19 @@ private fun Nav3SampleApp() {
   var enableNavigationTransactions by remember { mutableStateOf(true) }
   var captureBackStack by remember { mutableStateOf(true) }
   var maxCapturedBackStackEntries by remember { mutableIntStateOf(10) }
+  var finishUiLoad by rememberSaveable { mutableStateOf(true) }
+  var uiLoadReported by rememberSaveable { mutableStateOf(false) }
   var routeActivationAction by remember { mutableStateOf(RouteActivationAction.NONE) }
   var selectedScenario by rememberSaveable { mutableStateOf(Nav3Scenario.SINGLE_STACK) }
   var showCrashConfirmation by remember { mutableStateOf(false) }
+
+  LaunchedEffect(finishUiLoad, uiLoadReported) {
+    if (finishUiLoad && !uiLoadReported) {
+      withFrameNanos { }
+      Sentry.reportFullyDisplayed()
+      uiLoadReported = true
+    }
+  }
 
   Scaffold(
     topBar = {
@@ -118,6 +129,8 @@ private fun Nav3SampleApp() {
         onEnableNavigationTransactionsChange = { enableNavigationTransactions = it },
         captureBackStack = captureBackStack,
         onCaptureBackStackChange = { captureBackStack = it },
+        finishUiLoad = finishUiLoad,
+        onFinishUiLoadChange = { finishUiLoad = it },
         onMaxCapturedBackStackEntriesChange = { maxCapturedBackStackEntries = it },
       )
     },
@@ -245,6 +258,8 @@ private fun Nav3TopBar(
   onEnableNavigationTransactionsChange: (Boolean) -> Unit,
   captureBackStack: Boolean,
   onCaptureBackStackChange: (Boolean) -> Unit,
+  finishUiLoad: Boolean,
+  onFinishUiLoadChange: (Boolean) -> Unit,
   onMaxCapturedBackStackEntriesChange: (Int) -> Unit,
 ) {
   val currentRoute = backStack.lastOrNull() ?: Nav3Route.SingleStack
@@ -295,6 +310,8 @@ private fun Nav3TopBar(
         onEnableNavigationTransactionsChange = onEnableNavigationTransactionsChange,
         captureBackStack = captureBackStack,
         onCaptureBackStackChange = onCaptureBackStackChange,
+        finishUiLoad = finishUiLoad,
+        onFinishUiLoadChange = onFinishUiLoadChange,
         maxCapturedBackStackEntries = maxCapturedBackStackEntries,
         onMaxCapturedBackStackEntriesChange = onMaxCapturedBackStackEntriesChange,
       )
@@ -313,6 +330,8 @@ private fun Nav3SettingsMenu(
   onEnableNavigationTransactionsChange: (Boolean) -> Unit,
   captureBackStack: Boolean,
   onCaptureBackStackChange: (Boolean) -> Unit,
+  finishUiLoad: Boolean,
+  onFinishUiLoadChange: (Boolean) -> Unit,
   maxCapturedBackStackEntries: Int,
   onMaxCapturedBackStackEntriesChange: (Int) -> Unit,
 ) {
@@ -337,6 +356,11 @@ private fun Nav3SettingsMenu(
       label = "Capture backstack",
       checked = captureBackStack,
       onCheckedChange = onCaptureBackStackChange,
+    )
+    SentryNav3OptionsMenuItem(
+      label = "Finish activity ui.load",
+      checked = finishUiLoad,
+      onCheckedChange = onFinishUiLoadChange,
     )
 
     Column(
@@ -500,6 +524,13 @@ private fun Nav3RouteActivationEffect(
 ) {
   val currentAction = rememberUpdatedState(routeActivationAction)
 
+  remember(route, currentAction.value) {
+    if (currentAction.value == RouteActivationAction.MANUAL_CHILD_SPAN_SYNC) {
+      tagNav3SampleAction(currentAction.value.tagName, route)
+      runManualNav3RouteActivationSpan(route)
+    }
+  }
+
   LaunchedEffect(route) {
     runNav3RouteActivationAction(
       route = route,
@@ -528,7 +559,8 @@ private suspend fun runNav3RouteActivationAction(
         withContext(Dispatchers.IO) { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }
       }
     }
-    RouteActivationAction.MANUAL_CHILD_SPAN -> runManualNav3RouteActivationSpan(route)
+    RouteActivationAction.MANUAL_CHILD_SPAN_ASYNC -> runManualNav3RouteActivationSpan(route)
+    RouteActivationAction.MANUAL_CHILD_SPAN_SYNC -> Unit
   }
 }
 
