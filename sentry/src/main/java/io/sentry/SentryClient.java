@@ -9,7 +9,6 @@ import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.logger.ILoggerBatchProcessor;
-import io.sentry.logger.NoOpLoggerBatchProcessor;
 import io.sentry.metrics.IMetricsBatchProcessor;
 import io.sentry.metrics.NoOpMetricsBatchProcessor;
 import io.sentry.protocol.Contexts;
@@ -62,12 +61,7 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
-    if (options.getLogs().isEnabled()) {
-      loggerBatchProcessor =
-          options.getLogs().getLoggerBatchProcessorFactory().create(options, this);
-    } else {
-      loggerBatchProcessor = NoOpLoggerBatchProcessor.getInstance();
-    }
+    loggerBatchProcessor = options.getLogs().getLoggerBatchProcessorFactory().create(options, this);
     if (options.getMetrics().isEnabled()) {
       metricsBatchProcessor =
           options.getMetrics().getMetricsBatchProcessorFactory().create(options, this);

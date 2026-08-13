@@ -114,9 +114,7 @@ public class SentryHandler extends Handler {
       return;
     }
     try {
-      if (enableLogs
-          && ScopesAdapter.getInstance().getOptions().getLogs().isEnabled()
-          && record.getLevel().intValue() >= minimumLevel.intValue()) {
+      if (enableLogs && record.getLevel().intValue() >= minimumLevel.intValue()) {
         captureLog(record);
       }
       if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {

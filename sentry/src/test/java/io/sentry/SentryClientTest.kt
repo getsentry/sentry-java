@@ -181,7 +181,7 @@ class SentryClientTest {
 
   @Test
   fun `when client is closed with isRestarting false, transport waits`() {
-    val sut = fixture.getSut { options -> options.logs.isEnabled = true }
+    val sut = fixture.getSut()
     assertTrue(sut.isEnabled)
     sut.close(false)
     assertNotEquals(0, fixture.sentryOptions.shutdownTimeoutMillis)
@@ -195,7 +195,7 @@ class SentryClientTest {
 
   @Test
   fun `when client is closed with isRestarting true, transport does not wait`() {
-    val sut = fixture.getSut { options -> options.logs.isEnabled = true }
+    val sut = fixture.getSut()
     assertTrue(sut.isEnabled)
     sut.close(true)
     verify(fixture.transport).flush(eq(0))
@@ -307,7 +307,6 @@ class SentryClientTest {
   @Test
   fun `when beforeSend captures a log, the nested log is dropped`() {
     val scope = createScope()
-    fixture.sentryOptions.logs.isEnabled = true
     lateinit var sut: SentryClient
     fixture.sentryOptions.setBeforeSend { e, _ ->
       sut.captureLog(
@@ -328,7 +327,6 @@ class SentryClientTest {
   @Test
   fun `when beforeSendLog logs again, the nested log is dropped and does not recurse`() {
     val scope = createScope()
-    fixture.sentryOptions.logs.isEnabled = true
     var invocations = 0
     lateinit var sut: SentryClient
     fixture.sentryOptions.logs.setBeforeSend { l ->

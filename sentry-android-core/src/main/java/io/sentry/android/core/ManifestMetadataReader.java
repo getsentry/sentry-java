@@ -706,10 +706,6 @@ final class ManifestMetadataReader {
           }
         }
 
-        options
-            .getLogs()
-            .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
-
         options.setEnableTimberLogs(
             readBool(metadata, logger, ENABLE_TIMBER_LOGS, options.isEnableTimberLogs()));
 

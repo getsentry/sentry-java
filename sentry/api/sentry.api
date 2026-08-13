@@ -3964,9 +3964,7 @@ public final class io/sentry/SentryOptions$Logs {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;
 	public fun getLoggerBatchProcessorFactory ()Lio/sentry/logger/ILoggerBatchProcessorFactory;
-	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;)V
-	public fun setEnabled (Z)V
 	public fun setLoggerBatchProcessorFactory (Lio/sentry/logger/ILoggerBatchProcessorFactory;)V
 }
 

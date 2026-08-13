@@ -63,7 +63,6 @@ class SentryAppenderTest {
       debug: Boolean? = null,
       contextTags: List<String>? = null,
       enableLogs: Boolean = true,
-      enableGlobalLogs: Boolean = true,
     ): ExtendedLogger {
       if (transportFactory != null) {
         this.transportFactory = transportFactory
@@ -106,7 +105,6 @@ class SentryAppenderTest {
 
       appender.start(
         appender.getOptionsConfiguration { options ->
-          options.logs.isEnabled = enableGlobalLogs
           options.logs.loggerBatchProcessorFactory =
             ILoggerBatchProcessorFactory { options, client ->
               LoggerBatchProcessor(options, client, ImmediateExecutorService())
@@ -264,7 +262,7 @@ class SentryAppenderTest {
 
   @Test
   fun `does not capture logs when local logs are disabled`() {
-    val logger = fixture.getSut(enableLogs = false, enableGlobalLogs = true)
+    val logger = fixture.getSut(enableLogs = false)
 
     logger.info("this should not be captured as a log")
     Sentry.flush(10)
@@ -273,8 +271,8 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `captures logs when local and aggregate logs are enabled`() {
-    val logger = fixture.getSut(enableLogs = true, enableGlobalLogs = true)
+  fun `captures logs when local logs are enabled`() {
+    val logger = fixture.getSut(enableLogs = true)
 
     logger.info("this should be captured as a log")
     Sentry.flush(10)
@@ -294,7 +292,6 @@ class SentryAppenderTest {
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.ERROR,
         enableLogs = false,
-        enableGlobalLogs = true,
       )
 
     logger.info("this should be a breadcrumb")
@@ -397,7 +394,6 @@ class SentryAppenderTest {
   fun `plugin attribute enables logs with explicit opt in`() {
     initForTest {
       it.dsn = "http://key@localhost/proj"
-      it.logs.isEnabled = true
     }
     val event = mock<LogEvent>()
     whenever(event.level).thenReturn(Level.INFO)

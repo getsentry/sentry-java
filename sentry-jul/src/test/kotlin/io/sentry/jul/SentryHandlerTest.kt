@@ -42,7 +42,6 @@ class SentryHandlerTest {
     contextTags: List<String>? = null,
     printfStyle: Boolean? = null,
     enableLogs: Boolean? = true,
-    enableGlobalLogs: Boolean = true,
   ) {
     var logger: Logger
     var handler: SentryHandler
@@ -51,7 +50,6 @@ class SentryHandlerTest {
       val options = SentryOptions()
       options.dsn = "http://key@localhost/proj"
       options.setTransportFactory { _, _ -> transport }
-      options.logs.isEnabled = enableGlobalLogs
       options.logs.loggerBatchProcessorFactory = ILoggerBatchProcessorFactory { options, client ->
         LoggerBatchProcessor(options, client, ImmediateExecutorService())
       }
@@ -438,7 +436,7 @@ class SentryHandlerTest {
 
   @Test
   fun `does not capture logs by default`() {
-    fixture = Fixture(enableLogs = null, enableGlobalLogs = true)
+    fixture = Fixture(enableLogs = null)
 
     assertFalse(fixture.handler.isEnableLogs)
     fixture.logger.info("this should not be captured as a log")
@@ -449,7 +447,7 @@ class SentryHandlerTest {
 
   @Test
   fun `captures logs when enabled through Java`() {
-    fixture = Fixture(enableLogs = true, enableGlobalLogs = true)
+    fixture = Fixture(enableLogs = true)
 
     assertTrue(fixture.handler.isEnableLogs)
     fixture.logger.info("this should be captured as a log")
@@ -470,7 +468,6 @@ class SentryHandlerTest {
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.SEVERE,
         enableLogs = false,
-        enableGlobalLogs = true,
       )
 
     fixture.logger.info("this should be a breadcrumb")

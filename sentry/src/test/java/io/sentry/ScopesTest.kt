@@ -2517,7 +2517,7 @@ class ScopesTest {
 
   @Test
   fun `when captureLog is called on disabled client, do nothing`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
     sut.close()
 
     sut.logger().warn("test message")
@@ -2525,16 +2525,8 @@ class ScopesTest {
   }
 
   @Test
-  fun `when logging is not enabled, do nothing`() {
-    val (sut, mockClient) = getEnabledScopes()
-
-    sut.logger().warn("test message")
-    verify(mockClient, never()).captureLog(any(), anyOrNull())
-  }
-
-  @Test
   fun `capturing null log does nothing`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().warn(null)
     verify(mockClient, never()).captureLog(any(), anyOrNull())
@@ -2542,7 +2534,7 @@ class ScopesTest {
 
   @Test
   fun `creating trace log works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().trace("trace log message")
 
@@ -2559,7 +2551,7 @@ class ScopesTest {
 
   @Test
   fun `creating debug log works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().debug("debug log message")
 
@@ -2576,7 +2568,7 @@ class ScopesTest {
 
   @Test
   fun `creating a info log works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().info("info log message")
 
@@ -2593,7 +2585,7 @@ class ScopesTest {
 
   @Test
   fun `creating warn log works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().warn("warn log message")
 
@@ -2610,7 +2602,7 @@ class ScopesTest {
 
   @Test
   fun `creating error log works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().error("error log message")
 
@@ -2627,7 +2619,7 @@ class ScopesTest {
 
   @Test
   fun `creating fatal log works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().fatal("fatal log message")
 
@@ -2644,7 +2636,7 @@ class ScopesTest {
 
   @Test
   fun `creating log works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().log(SentryLogLevel.WARN, "log message")
 
@@ -2661,7 +2653,7 @@ class ScopesTest {
 
   @Test
   fun `log with manual origin does not have origin attribute`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().log(SentryLogLevel.WARN, "log message")
 
@@ -2677,7 +2669,7 @@ class ScopesTest {
 
   @Test
   fun `log with non manual origin does have origin attribute`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut
       .logger()
@@ -2700,7 +2692,6 @@ class ScopesTest {
   fun `creating log with format string works`() {
     val (sut, mockClient) =
       getEnabledScopes {
-        it.logs.isEnabled = true
         it.environment = "testenv"
         it.release = "1.0"
         it.serverName = "srv1"
@@ -2741,7 +2732,7 @@ class ScopesTest {
 
   @Test
   fun `creating log with timestamp works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().log(SentryLogLevel.WARN, SentryLongDate(123), "log message")
 
@@ -2759,7 +2750,7 @@ class ScopesTest {
 
   @Test
   fun `creating log with attributes from map works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut
       .logger()
@@ -2786,7 +2777,7 @@ class ScopesTest {
 
   @Test
   fun `creating log with attributes works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut
       .logger()
@@ -2862,7 +2853,7 @@ class ScopesTest {
 
   @Test
   fun `creating log with attributes and timestamp works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut
       .logger()
@@ -2893,7 +2884,7 @@ class ScopesTest {
 
   @Test
   fun `creating log with attributes and timestamp and format string works`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut
       .logger()
@@ -2948,7 +2939,7 @@ class ScopesTest {
 
   @Test
   fun `creating log with without args does not add template attribute`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().log(SentryLogLevel.WARN, "log %s")
 
@@ -2971,7 +2962,7 @@ class ScopesTest {
 
   @Test
   fun `captures format string on format error`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().log(SentryLogLevel.WARN, "log %d", "arg1")
 
@@ -2998,7 +2989,6 @@ class ScopesTest {
   fun `adds user fields to log attributes if sendDefaultPii is true`() {
     val (sut, mockClient) =
       getEnabledScopes {
-        it.logs.isEnabled = true
         it.distinctId = "distinctId"
         it.isSendDefaultPii = true
       }
@@ -3038,7 +3028,6 @@ class ScopesTest {
   fun `adds user fields to log attributes even if sendDefaultPii is false`() {
     val (sut, mockClient) =
       getEnabledScopes {
-        it.logs.isEnabled = true
         it.distinctId = "distinctId"
       }
 
@@ -3077,7 +3066,6 @@ class ScopesTest {
   fun `unset user does provide distinct-id as user-id`() {
     val (sut, mockClient) =
       getEnabledScopes {
-        it.logs.isEnabled = true
         it.distinctId = "distinctId"
       }
 
@@ -3100,7 +3088,6 @@ class ScopesTest {
   fun `unset user does provide null user-id when distinct-id is missing`() {
     val (sut, mockClient) =
       getEnabledScopes {
-        it.logs.isEnabled = true
         it.distinctId = null
       }
 
@@ -3122,7 +3109,6 @@ class ScopesTest {
   fun `missing user fields do not break attributes`() {
     val (sut, mockClient) =
       getEnabledScopes {
-        it.logs.isEnabled = true
         it.isSendDefaultPii = true
         it.distinctId = "distinctId"
       }
@@ -3145,7 +3131,7 @@ class ScopesTest {
 
   @Test
   fun `adds session replay id to log attributes`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
     val replayId = SentryId()
     sut.scope.replayId = replayId
     sut.logger().log(SentryLogLevel.WARN, "log message")
@@ -3163,7 +3149,7 @@ class ScopesTest {
 
   @Test
   fun `missing session replay id do not break attributes`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
     sut.logger().log(SentryLogLevel.WARN, "log message")
 
     verify(mockClient)
@@ -3179,7 +3165,7 @@ class ScopesTest {
 
   @Test
   fun `does not add session replay buffering to log attributes if no replay id in scope and in controller`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().log(SentryLogLevel.WARN, "log message")
     assertEquals(SentryId.EMPTY_ID, sut.options.replayController.replayId)
@@ -3199,7 +3185,7 @@ class ScopesTest {
 
   @Test
   fun `does not add session replay buffering to log attributes if replay id in scope`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
     val replayId = SentryId()
     sut.scope.replayId = replayId
 
@@ -3223,7 +3209,6 @@ class ScopesTest {
     val mockReplayController = mock<ReplayController>()
     val (sut, mockClient) =
       getEnabledScopes {
-        it.logs.isEnabled = true
         it.setReplayController(mockReplayController)
       }
     val replayId = SentryId()
@@ -3247,7 +3232,7 @@ class ScopesTest {
 
   @Test
   fun `log event has spanId from active span`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     val transaction =
       sut.startTransaction(
@@ -3273,7 +3258,7 @@ class ScopesTest {
 
   @Test
   fun `log event has spanId from propagation context when no active span`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     var propagationContext: PropagationContext? = null
     sut.configureScope { propagationContext = it.propagationContext }
@@ -3385,7 +3370,7 @@ class ScopesTest {
 
   @Test
   fun `metric with non manual origin does have origin attribute`() {
-    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     sut
       .metrics()
