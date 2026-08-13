@@ -501,30 +501,22 @@ class SentryOptionsTest {
 
   @Test
   fun `merging options does not warn when legacy logs configuration is absent`() {
-    val logger = mock<ILogger>()
-    val options =
-      SentryOptions().also {
-        it.isDebug = true
-        it.setLogger(logger)
-      }
+    val fatalLogger = mock<ILogger>()
+    val options = SentryOptions().also { it.setFatalLogger(fatalLogger) }
 
     options.merge(ExternalOptions())
 
-    verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>())
+    verify(fatalLogger, never()).log(eq(SentryLevel.WARNING), any<String>())
   }
 
   @Test
-  fun `merging options warns when legacy logs configuration is true`() {
-    val logger = mock<ILogger>()
-    val options =
-      SentryOptions().also {
-        it.isDebug = true
-        it.setLogger(logger)
-      }
+  fun `merging options warns through fatal logger when legacy logs configuration is true`() {
+    val fatalLogger = mock<ILogger>()
+    val options = SentryOptions().also { it.setFatalLogger(fatalLogger) }
 
     options.merge(ExternalOptions().apply { isEnableLogs = true })
 
-    verify(logger)
+    verify(fatalLogger)
       .log(
         SentryLevel.WARNING,
         "The 'logs.enabled' option is no longer supported. Manual Sentry.logger() calls no " +
@@ -535,17 +527,13 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `merging options warns when legacy logs configuration is false`() {
-    val logger = mock<ILogger>()
-    val options =
-      SentryOptions().also {
-        it.isDebug = true
-        it.setLogger(logger)
-      }
+  fun `merging options warns through fatal logger when legacy logs configuration is false`() {
+    val fatalLogger = mock<ILogger>()
+    val options = SentryOptions().also { it.setFatalLogger(fatalLogger) }
 
     options.merge(ExternalOptions().apply { isEnableLogs = false })
 
-    verify(logger)
+    verify(fatalLogger)
       .log(
         SentryLevel.WARNING,
         "The 'logs.enabled' option no longer disables manual Sentry.logger() calls. Automatic " +
@@ -567,30 +555,22 @@ class SentryOptionsTest {
 
   @Test
   fun `merging options does not warn when legacy metrics configuration is absent`() {
-    val logger = mock<ILogger>()
-    val options =
-      SentryOptions().also {
-        it.isDebug = true
-        it.setLogger(logger)
-      }
+    val fatalLogger = mock<ILogger>()
+    val options = SentryOptions().also { it.setFatalLogger(fatalLogger) }
 
     options.merge(ExternalOptions())
 
-    verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>())
+    verify(fatalLogger, never()).log(eq(SentryLevel.WARNING), any<String>())
   }
 
   @Test
-  fun `merging options warns when legacy metrics configuration is true`() {
-    val logger = mock<ILogger>()
-    val options =
-      SentryOptions().also {
-        it.isDebug = true
-        it.setLogger(logger)
-      }
+  fun `merging options warns through fatal logger when legacy metrics configuration is true`() {
+    val fatalLogger = mock<ILogger>()
+    val options = SentryOptions().also { it.setFatalLogger(fatalLogger) }
 
     options.merge(ExternalOptions().apply { isEnableMetrics = true })
 
-    verify(logger)
+    verify(fatalLogger)
       .log(
         SentryLevel.WARNING,
         "The 'metrics.enabled' option is no longer supported. Manual Sentry.metrics() calls no " +
@@ -601,17 +581,13 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `merging options warns when legacy metrics configuration is false`() {
-    val logger = mock<ILogger>()
-    val options =
-      SentryOptions().also {
-        it.isDebug = true
-        it.setLogger(logger)
-      }
+  fun `merging options warns through fatal logger when legacy metrics configuration is false`() {
+    val fatalLogger = mock<ILogger>()
+    val options = SentryOptions().also { it.setFatalLogger(fatalLogger) }
 
     options.merge(ExternalOptions().apply { isEnableMetrics = false })
 
-    verify(logger)
+    verify(fatalLogger)
       .log(
         SentryLevel.WARNING,
         "The 'metrics.enabled' option no longer disables manual Sentry.metrics() calls.",

@@ -201,7 +201,7 @@ public class SentryAutoConfiguration {
             Boolean.TRUE.equals(environment.getProperty("sentry.logs.enabled", Boolean.class));
         if (enableLogs) {
           options
-              .getLogger()
+              .getFatalLogger()
               .log(
                   SentryLevel.WARNING,
                   "The 'sentry.logs.enabled' property is no longer supported. Manual "
@@ -209,7 +209,7 @@ public class SentryAutoConfiguration {
                       + "integrations now require their own opt-ins.");
         } else {
           options
-              .getLogger()
+              .getFatalLogger()
               .log(
                   SentryLevel.WARNING,
                   "The 'sentry.logs.enabled' property no longer disables manual Sentry.logger() "
@@ -226,14 +226,14 @@ public class SentryAutoConfiguration {
             Boolean.TRUE.equals(environment.getProperty("sentry.metrics.enabled", Boolean.class));
         if (enableMetrics) {
           options
-              .getLogger()
+              .getFatalLogger()
               .log(
                   SentryLevel.WARNING,
                   "The 'sentry.metrics.enabled' property is no longer supported. Manual "
                       + "Sentry.metrics() calls no longer require it.");
         } else {
           options
-              .getLogger()
+              .getFatalLogger()
               .log(
                   SentryLevel.WARNING,
                   "The 'sentry.metrics.enabled' property no longer disables manual "
