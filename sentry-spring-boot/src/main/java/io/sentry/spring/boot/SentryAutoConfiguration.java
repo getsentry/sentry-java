@@ -185,6 +185,7 @@ public class SentryAutoConfiguration {
       options.getIgnoredExceptionsForType().removeIf(it -> !Throwable.class.isAssignableFrom(it));
       Sentry.init(options);
       warnForLegacyLogsConfiguration(environment, options);
+      warnForLegacyMetricsConfiguration(environment, options);
       return ScopesAdapter.getInstance();
     }
 
@@ -209,6 +210,29 @@ public class SentryAutoConfiguration {
                   "The 'sentry.logs.enabled' property no longer disables manual Sentry.logger() "
                       + "calls. Automatic logging integrations remain disabled unless enabled "
                       + "through their own opt-ins.");
+        }
+      }
+    }
+
+    private void warnForLegacyMetricsConfiguration(
+        final @NotNull Environment environment, final @NotNull SentryOptions options) {
+      if (environment.containsProperty("sentry.metrics.enabled")) {
+        final boolean enableMetrics =
+            Boolean.TRUE.equals(environment.getProperty("sentry.metrics.enabled", Boolean.class));
+        if (enableMetrics) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "The 'sentry.metrics.enabled' property is no longer supported. Manual "
+                      + "Sentry.metrics() calls no longer require it.");
+        } else {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "The 'sentry.metrics.enabled' property no longer disables manual "
+                      + "Sentry.metrics() calls.");
         }
       }
     }
