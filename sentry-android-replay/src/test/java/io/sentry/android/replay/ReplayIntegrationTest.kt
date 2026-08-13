@@ -4,8 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888
+import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
@@ -50,11 +52,14 @@ import io.sentry.transport.RateLimiter
 import io.sentry.util.Random
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
@@ -73,6 +78,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
@@ -442,6 +448,82 @@ class ReplayIntegrationTest {
     verify(recorder).close()
     verify(captureStrategy).stop()
     assertFalse(replay.isRecording())
+  }
+
+  @Test
+  fun `background lifecycle calls run on main thread in order`() {
+    val calls = mutableListOf<String>()
+    val captureStrategy =
+      mock<CaptureStrategy> {
+        doAnswer { calls += "start" }.whenever(mock).start(any(), any(), anyOrNull())
+        doAnswer { calls += "pause" }.whenever(mock).pause()
+        doAnswer { calls += "resume" }.whenever(mock).resume()
+        doAnswer { calls += "stop" }.whenever(mock).stop()
+      }
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+    replay.register(fixture.scopes, fixture.options)
+
+    Thread {
+        replay.start()
+        replay.pause()
+        replay.resume()
+        replay.stop()
+      }
+      .apply {
+        start()
+        join()
+      }
+
+    assertThat(calls).isEmpty()
+    shadowOf(Looper.getMainLooper()).idle()
+    assertThat(calls).containsExactly("start", "pause", "resume", "stop").inOrder()
+  }
+
+  @Test
+  fun `background close waits for main thread teardown`() {
+    fixture.options.shutdownTimeoutMillis = TimeUnit.SECONDS.toMillis(30)
+    val recorder = mock<Recorder>()
+    val replay = fixture.getSut(context, recorderProvider = { recorder })
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    val closeThread = Thread { replay.close() }.apply { start() }
+    await.until { closeThread.state == Thread.State.TIMED_WAITING }
+
+    verify(recorder, never()).close()
+    shadowOf(Looper.getMainLooper()).idle()
+    closeThread.join(TimeUnit.SECONDS.toMillis(2))
+
+    assertThat(closeThread.isAlive).isFalse()
+    verify(recorder).close()
+  }
+
+  @Test
+  fun `main thread close does not wait for replay executor`() {
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { mock() })
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    val running = CountDownLatch(1)
+    val release = CountDownLatch(1)
+    val finished = CountDownLatch(1)
+    replay.replayExecutor.submit {
+      running.countDown()
+      try {
+        release.await()
+      } finally {
+        finished.countDown()
+      }
+    }
+    assertThat(running.await(10, TimeUnit.SECONDS)).isTrue()
+
+    try {
+      replay.close()
+      assertThat(finished.count).isEqualTo(1L)
+    } finally {
+      release.countDown()
+    }
+    assertThat(finished.await(10, TimeUnit.SECONDS)).isTrue()
   }
 
   @Test

@@ -47,7 +47,6 @@ import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
 import io.sentry.transport.RateLimiter.IRateLimitObserver
-import io.sentry.util.AutoClosableReentrantLock
 import io.sentry.util.FileUtils
 import io.sentry.util.HintUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -55,8 +54,10 @@ import io.sentry.util.Random
 import java.io.Closeable
 import java.io.File
 import java.util.LinkedList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 
 public class ReplayIntegration(
@@ -121,8 +122,8 @@ public class ReplayIntegration(
   internal val persistingExecutor by lazyPersistingExecutor
 
   internal val isEnabled = AtomicBoolean(false)
-  internal val isManualPause = AtomicBoolean(false)
-  private var captureStrategy: CaptureStrategy? = null
+  internal var isManualPause = false
+  @Volatile private var captureStrategy: CaptureStrategy? = null
   public val replayCacheDir: File?
     get() = captureStrategy?.replayCacheDir
 
@@ -131,7 +132,6 @@ public class ReplayIntegration(
   private var replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null
   private var mainLooperHandler: MainLooperHandler = MainLooperHandler()
   private var gestureRecorderProvider: (() -> GestureRecorder)? = null
-  internal val lifecycleLock = AutoClosableReentrantLock()
   private val lifecycle = ReplayLifecycle()
 
   override fun register(scopes: IScopes, options: SentryOptions) {
@@ -169,82 +169,84 @@ public class ReplayIntegration(
     lifecycle.currentState >= STARTED && lifecycle.currentState < STOPPED
 
   override fun start() {
-    lifecycleLock.acquire().use {
-      if (!isEnabled.get()) {
-        return
-      }
+    postOnMainThread { startInternal() }
+  }
 
-      if (!lifecycle.isAllowed(STARTED)) {
-        options.logger.log(
-          DEBUG,
-          "Session replay is already being recorded, not starting a new one",
-        )
-        return
-      }
-
-      val isFullSession = random.sample(options.sessionReplay.sessionSampleRate)
-      if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
-        options.logger.log(
-          INFO,
-          "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified",
-        )
-        return
-      }
-
-      lifecycle.currentState = STARTED
-      captureStrategy =
-        replayCaptureStrategyProvider?.invoke(isFullSession)
-          ?: if (isFullSession) {
-            SessionCaptureStrategy(
-              options,
-              scopes,
-              dateProvider,
-              replayExecutor,
-              persistingExecutor,
-              replayCacheProvider,
-            )
-          } else {
-            BufferCaptureStrategy(
-              options,
-              scopes,
-              dateProvider,
-              random,
-              replayExecutor,
-              persistingExecutor,
-              replayCacheProvider,
-            )
-          }
-      recorder?.start()
-      captureStrategy?.start()
-
-      registerRootViewListeners()
+  private fun startInternal() {
+    if (!isEnabled.get()) {
+      return
     }
+
+    if (!lifecycle.isAllowed(STARTED)) {
+      options.logger.log(
+        DEBUG,
+        "Session replay is already being recorded, not starting a new one",
+      )
+      return
+    }
+
+    val isFullSession = random.sample(options.sessionReplay.sessionSampleRate)
+    if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
+      options.logger.log(
+        INFO,
+        "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified",
+      )
+      return
+    }
+
+    lifecycle.currentState = STARTED
+    captureStrategy =
+      replayCaptureStrategyProvider?.invoke(isFullSession)
+        ?: if (isFullSession) {
+          SessionCaptureStrategy(
+            options,
+            scopes,
+            dateProvider,
+            replayExecutor,
+            persistingExecutor,
+            replayCacheProvider,
+          )
+        } else {
+          BufferCaptureStrategy(
+            options,
+            scopes,
+            dateProvider,
+            random,
+            replayExecutor,
+            persistingExecutor,
+            replayCacheProvider,
+          )
+        }
+    recorder?.start()
+    captureStrategy?.start()
+
+    registerRootViewListeners()
   }
 
   override fun resume() {
-    isManualPause.set(false)
-    resumeInternal()
+    postOnMainThread {
+      isManualPause = false
+      resumeInternal()
+    }
   }
 
   private fun resumeInternal() {
-    lifecycleLock.acquire().use {
-      if (!isEnabled.get() || !lifecycle.isAllowed(RESUMED)) {
-        return
-      }
-
-      if (
-        isManualPause.get() ||
-          lastKnownConnectionStatus == DISCONNECTED ||
-          scopes?.rateLimiter?.isActiveForCategory(All) == true ||
-          scopes?.rateLimiter?.isActiveForCategory(Replay) == true
-      ) {
-        return
-      }
-
-      lifecycle.currentState = RESUMED
-      captureStrategy?.resume()
-      recorder?.resume()
+    if (!isEnabled.get() || !lifecycle.isAllowed(RESUMED)) {
+      return
     }
+
+    if (
+      isManualPause ||
+        lastKnownConnectionStatus == DISCONNECTED ||
+        scopes?.rateLimiter?.isActiveForCategory(All) == true ||
+        scopes?.rateLimiter?.isActiveForCategory(Replay) == true
+    ) {
+      return
+    }
+
+    lifecycle.currentState = RESUMED
+    captureStrategy?.resume()
+    recorder?.resume()
   }
 
   override fun captureReplay(isTerminating: Boolean?) {
@@ -277,8 +279,10 @@ public class ReplayIntegration(
   override fun getBreadcrumbConverter(): ReplayBreadcrumbConverter = replayBreadcrumbConverter
 
   override fun pause() {
-    isManualPause.set(true)
-    pauseInternal()
+    postOnMainThread {
+      isManualPause = true
+      pauseInternal()
+    }
   }
 
   override fun enableDebugMaskingOverlay() {
@@ -306,31 +310,31 @@ public class ReplayIntegration(
   }
 
   private fun pauseInternal() {
-    lifecycleLock.acquire().use {
-      if (!isEnabled.get() || !lifecycle.isAllowed(PAUSED)) {
-        return
-      }
-
-      recorder?.pause()
-      captureStrategy?.pause()
-      lifecycle.currentState = PAUSED
+    if (!isEnabled.get() || !lifecycle.isAllowed(PAUSED)) {
+      return
     }
+
+    recorder?.pause()
+    captureStrategy?.pause()
+    lifecycle.currentState = PAUSED
   }
 
   override fun stop() {
-    lifecycleLock.acquire().use {
-      if (!isEnabled.get() || !lifecycle.isAllowed(STOPPED)) {
-        return
-      }
+    postOnMainThread { stopInternal() }
+  }
 
-      unregisterRootViewListeners()
-      recorder?.reset()
-      recorder?.stop()
-      gestureRecorder?.stop()
-      captureStrategy?.stop()
-      captureStrategy = null
-      lifecycle.currentState = STOPPED
+  private fun stopInternal() {
+    if (!isEnabled.get() || !lifecycle.isAllowed(STOPPED)) {
+      return
     }
+
+    unregisterRootViewListeners()
+    recorder?.reset()
+    recorder?.stop()
+    gestureRecorder?.stop()
+    captureStrategy?.stop()
+    captureStrategy = null
+    lifecycle.currentState = STOPPED
   }
 
   override fun onScreenshotRecorded(bitmap: Bitmap) {
@@ -380,30 +384,37 @@ public class ReplayIntegration(
   }
 
   override fun close() {
-    lifecycleLock.acquire().use {
-      if (!isEnabled.get() || !lifecycle.isAllowed(CLOSED)) {
-        return
-      }
-
-      options.connectionStatusProvider.removeConnectionStatusObserver(this)
-      scopes?.rateLimiter?.removeRateLimitObserver(this)
-      stop()
-      recorder?.close()
-      recorder = null
-      rootViewsSpy.close()
-      lifecycle.currentState = CLOSED
+    if (!isEnabled.get()) {
+      return
     }
-    // shutdown outside lock — awaiting termination while holding lifecycleLock deadlocks
-    // if any executor task tries to acquire the same lock
+
+    val isMainThread = Looper.myLooper() == Looper.getMainLooper()
+    val closeCompleted = if (isMainThread) null else CountDownLatch(1)
+    postOnMainThread {
+      try {
+        closeInternal()
+      } finally {
+        closeCompleted?.countDown()
+      }
+    }
+    if (closeCompleted != null) {
+      // Wait until main-thread teardown queues replay cleanup before shutting down its executors.
+      try {
+        closeCompleted.await(options.shutdownTimeoutMillis, MILLISECONDS)
+      } catch (e: InterruptedException) {
+        Thread.currentThread().interrupt()
+      }
+    }
+
     if (lazyReplayExecutor.isInitialized()) {
-      if (options.threadChecker.isMainThread) {
+      if (isMainThread) {
         replayExecutor.gracefulShutdown()
       } else {
         replayExecutor.shutdown()
       }
     }
     if (lazyPersistingExecutor.isInitialized()) {
-      if (options.threadChecker.isMainThread) {
+      if (isMainThread) {
         persistingExecutor.gracefulShutdown()
       } else {
         persistingExecutor.shutdown()
@@ -411,32 +422,50 @@ public class ReplayIntegration(
     }
   }
 
-  override fun onConnectionStatusChanged(status: ConnectionStatus) {
-    lastKnownConnectionStatus = status
-
-    if (captureStrategy !is SessionCaptureStrategy) {
-      // we only want to stop recording when offline for session mode
+  private fun closeInternal() {
+    if (!lifecycle.isAllowed(CLOSED)) {
       return
     }
 
-    if (status == DISCONNECTED) {
-      pauseInternal()
-    } else {
-      // being positive for other states, even if it's NO_PERMISSION
-      resumeInternal()
+    options.connectionStatusProvider.removeConnectionStatusObserver(this)
+    scopes?.rateLimiter?.removeRateLimitObserver(this)
+    stopInternal()
+    recorder?.close()
+    recorder = null
+    rootViewsSpy.close()
+    lifecycle.currentState = CLOSED
+  }
+
+  override fun onConnectionStatusChanged(status: ConnectionStatus) {
+    lastKnownConnectionStatus = status
+
+    postOnMainThread {
+      if (captureStrategy !is SessionCaptureStrategy) {
+        // we only want to stop recording when offline for session mode
+        return@postOnMainThread
+      }
+
+      if (status == DISCONNECTED) {
+        pauseInternal()
+      } else {
+        // being positive for other states, even if it's NO_PERMISSION
+        resumeInternal()
+      }
     }
   }
 
   override fun onRateLimitChanged(rateLimiter: RateLimiter) {
-    if (captureStrategy !is SessionCaptureStrategy) {
-      // we only want to stop recording when rate-limited for session mode
-      return
-    }
+    postOnMainThread {
+      if (captureStrategy !is SessionCaptureStrategy) {
+        // we only want to stop recording when rate-limited for session mode
+        return@postOnMainThread
+      }
 
-    if (rateLimiter.isActiveForCategory(All) || rateLimiter.isActiveForCategory(Replay)) {
-      pauseInternal()
-    } else {
-      resumeInternal()
+      if (rateLimiter.isActiveForCategory(All) || rateLimiter.isActiveForCategory(Replay)) {
+        pauseInternal()
+      } else {
+        resumeInternal()
+      }
     }
   }
 
@@ -447,9 +476,8 @@ public class ReplayIntegration(
     captureStrategy?.onTouchEvent(event)
   }
 
-  // Runs [block] on the main thread. If already there, executes inline; otherwise posts via
-  // the main looper handler. Prevents deadlocks when lifecycle-lock-acquiring code (e.g.
-  // checkCanRecord -> pauseInternal) is called from the replay executor thread.
+  // Runs [block] on the main thread. If already there, executes inline; otherwise posts via the
+  // main looper handler so lifecycle mutations are serialized without locking.
   private inline fun postOnMainThread(crossinline block: () -> Unit) {
     if (Looper.myLooper() == Looper.getMainLooper()) {
       block()
