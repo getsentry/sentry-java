@@ -75,9 +75,12 @@ public class SentryUserFeedbackForm extends AlertDialog {
   }
 
   private void maybeStartShakeDetection(final @NotNull Context context) {
+    // Only start shake detection if it's enabled within the options,
+    // and not already running globally
     final @NotNull SentryFeedbackOptions globalFeedbackOptions =
         Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
-    if (!resolvedFeedbackOptions.isUseShakeGesture() || globalFeedbackOptions.isUseShakeGesture()) {
+    if (!resolvedFeedbackOptions.isUseShakeGesture()
+        || globalFeedbackOptions.getShakeController().isOnShakeEnabled()) {
       return;
     }
     final @Nullable Activity activity = getActivity(context);
@@ -110,6 +113,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
   private @NotNull SentryShakeDetector.Listener shakeListener(
       final @NotNull WeakReference<Activity> activityRef) {
     return () -> {
+      // If shake-to-report got enabled globally in the meantime, FeedbackShakeIntegration
+      // reacts to the same shake — don't show a second dialog for it.
+      if (Sentry.getCurrentScopes()
+          .getOptions()
+          .getFeedbackOptions()
+          .getShakeController()
+          .isOnShakeEnabled()) {
+        return;
+      }
       final @Nullable Activity active = activityRef.get();
       if (active != null && !active.isFinishing() && !active.isDestroyed()) {
         active.runOnUiThread(
@@ -326,13 +338,27 @@ public class SentryUserFeedbackForm extends AlertDialog {
             final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess =
                 feedbackOptions.getOnSubmitSuccess();
             if (onSubmitSuccess != null) {
-              onSubmitSuccess.call(feedback);
+              try {
+                onSubmitSuccess.call(feedback);
+              } catch (Exception e) {
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "onSubmitSuccess callback threw an exception.", e);
+              }
             }
           } else {
             final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitError =
                 feedbackOptions.getOnSubmitError();
             if (onSubmitError != null) {
-              onSubmitError.call(feedback);
+              try {
+                onSubmitError.call(feedback);
+              } catch (Exception e) {
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "onSubmitError callback threw an exception.", e);
+              }
             }
           }
           cancel();
@@ -352,7 +378,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
     if (onFormClose != null) {
       super.setOnDismissListener(
           dialog -> {
-            onFormClose.run();
+            // User-provided callback: a crash in it must not take down the app or skip the
+            // cleanup and the user's own dismiss listener below
+            try {
+              onFormClose.run();
+            } catch (Exception e) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "onFormClose callback threw an exception.", e);
+            }
             currentReplayId = null;
             if (delegate != null) {
               delegate.onDismiss(dialog);
@@ -366,7 +400,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
   @Override
   protected void onStart() {
     super.onStart();
-    // Clear the message field so subsequent show() calls start with a fresh form
+    // Clear the message field so subsequent show() calls start with a fresh dialog
     final @NotNull EditText edtMessage =
         findViewById(R.id.sentry_dialog_user_feedback_edt_description);
     edtMessage.getText().clear();
@@ -375,9 +409,20 @@ public class SentryUserFeedbackForm extends AlertDialog {
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     maybeRegisterScreenshotPicker(options);
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
+    // Pause shake-to-report on this dialog's activity while it is visible, so a shake can't stack
+    // a second dialog on top of it
+    final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
+    final @Nullable Activity activity = getActivity(getContext());
+    if (integration != null && activity != null) {
+      integration.onDialogVisible(activity, this);
+    }
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
-      onFormOpen.run();
+      try {
+        onFormOpen.run();
+      } catch (Exception e) {
+        options.getLogger().log(SentryLevel.ERROR, "onFormOpen callback threw an exception.", e);
+      }
     }
     options.getReplayController().captureReplay(false);
     currentReplayId = options.getReplayController().getReplayId();
@@ -389,6 +434,10 @@ public class SentryUserFeedbackForm extends AlertDialog {
     if (screenshotPicker != null) {
       screenshotPicker.unregister();
       screenshotPicker = null;
+    }
+    final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
+    if (integration != null) {
+      integration.onDialogGone(this);
     }
   }
 
@@ -521,6 +570,30 @@ public class SentryUserFeedbackForm extends AlertDialog {
       }
       return FileUtils.inputStreamToByteArray(inputStream, maxSize);
     }
+  }
+
+  @Override
+  public void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    // Runs on every teardown: on dismiss the decor view is removed before onStop(), and when the
+    // host activity is destroyed with the dialog still showing this is the only callback that
+    // fires. onDialogGone is idempotent, so reporting from both here and onStop() is safe.
+    final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
+    if (integration != null) {
+      integration.onDialogGone(this);
+    }
+  }
+
+  /**
+   * The shake integration to report this dialog's visibility to, or null when shake-to-report isn't
+   * available (non-Android controller, or the integration was never installed).
+   */
+  private @Nullable FeedbackShakeIntegration getFeedbackShakeIntegration() {
+    final @NotNull SentryFeedbackOptions.IShakeController controller =
+        Sentry.getCurrentScopes().getOptions().getFeedbackOptions().getShakeController();
+    return controller instanceof FeedbackShakeIntegration
+        ? (FeedbackShakeIntegration) controller
+        : null;
   }
 
   @Override

@@ -4,10 +4,21 @@
 
 ### Features
 
-- Make `ISpan.startChild` overloads with `SpanOptions` public ([#5927](https://github.com/getsentry/sentry-java/pull/5927))
 - Add screenshot attachment button to the Android user feedback widget ([#5828](https://github.com/getsentry/sentry-java/pull/5828))
   - Users can now attach a screenshot when submitting feedback. Enabled by default; can be disabled via `SentryFeedbackOptions.setEnableAttachScreenshot(false)` or the `io.sentry.feedback.enable-attach-screenshot` manifest flag.
   - Requires the `androidx.activity` `>=1.8.2` dependency
+
+## 8.53.0
+
+### Features
+
+- Allow child spans to use explicit start timestamps through `ISpan` ([#5929](https://github.com/getsentry/sentry-java/pull/5929))
+- Make `ISpan.startChild` overloads with `SpanOptions` public ([#5927](https://github.com/getsentry/sentry-java/pull/5927))
+- Add `Sentry.feedback().enableOnShake()`, `Sentry.feedback().disableOnShake()`, and `Sentry.feedback().isOnShakeEnabled()` to toggle and query shake-to-report at runtime ([#5827](https://github.com/getsentry/sentry-java/pull/5827))
+
+### Improvements
+
+- Remove `ApiStatus.Experimental` annotation from `SentrySQLiteDriver` ([#5938](https://github.com/getsentry/sentry-java/pull/5938))
 
 ### Fixes
 

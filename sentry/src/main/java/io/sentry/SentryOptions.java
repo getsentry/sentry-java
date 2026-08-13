@@ -3539,6 +3539,22 @@ public class SentryOptions {
         new SentryFeedbackOptions(
             (associatedEventId, configurator) ->
                 logger.log(SentryLevel.WARNING, "showForm() can only be called in Android."),
+            new SentryFeedbackOptions.IShakeController() {
+              @Override
+              public void enableOnShake() {
+                logger.log(SentryLevel.WARNING, "Shake to report is only supported on Android.");
+              }
+
+              @Override
+              public void disableOnShake() {
+                logger.log(SentryLevel.WARNING, "Shake to report is only supported on Android.");
+              }
+
+              @Override
+              public boolean isOnShakeEnabled() {
+                return false;
+              }
+            },
             new LoadClass());
 
     if (!empty) {

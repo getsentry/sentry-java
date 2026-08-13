@@ -1,6 +1,7 @@
 package io.sentry
 
 import io.sentry.SentryFeedbackOptions.IFormHandler
+import io.sentry.SentryFeedbackOptions.IShakeController
 import io.sentry.util.LoadClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,7 +10,7 @@ import org.mockito.kotlin.mock
 class SentryFeedbackOptionsTest {
   @Test
   fun `feedback options is initialized with default values`() {
-    val options = SentryFeedbackOptions(mock<IFormHandler>(), LoadClass())
+    val options = SentryFeedbackOptions(mock<IFormHandler>(), mock<IShakeController>(), LoadClass())
     assertEquals(false, options.isNameRequired)
     assertEquals(true, options.isShowName)
     assertEquals(false, options.isEmailRequired)
@@ -40,7 +41,7 @@ class SentryFeedbackOptionsTest {
   @Test
   fun `feedback options copy constructor`() {
     val options =
-      SentryFeedbackOptions(mock<IFormHandler>(), LoadClass()).apply {
+      SentryFeedbackOptions(mock<IFormHandler>(), mock<IShakeController>(), LoadClass()).apply {
         isNameRequired = true
         isShowName = false
         isEmailRequired = true
@@ -94,5 +95,6 @@ class SentryFeedbackOptionsTest {
     assertEquals(options.onSubmitSuccess, optionsCopy.onSubmitSuccess)
     assertEquals(options.onSubmitError, optionsCopy.onSubmitError)
     assertEquals(options.formHandler, optionsCopy.formHandler)
+    assertEquals(options.shakeController, optionsCopy.shakeController)
   }
 }

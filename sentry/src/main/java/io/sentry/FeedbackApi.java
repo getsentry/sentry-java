@@ -32,6 +32,21 @@ final class FeedbackApi implements IFeedbackApi {
   }
 
   @Override
+  public void enableOnShake() {
+    scopes.getOptions().getFeedbackOptions().getShakeController().enableOnShake();
+  }
+
+  @Override
+  public void disableOnShake() {
+    scopes.getOptions().getFeedbackOptions().getShakeController().disableOnShake();
+  }
+
+  @Override
+  public boolean isOnShakeEnabled() {
+    return scopes.getOptions().getFeedbackOptions().getShakeController().isOnShakeEnabled();
+  }
+
+  @Override
   public @NotNull SentryId capture(final @NotNull Feedback feedback) {
     return scopes.captureFeedback(feedback);
   }

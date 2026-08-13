@@ -113,10 +113,16 @@ public final class SentryFeedbackOptions {
 
   private @NotNull IFormHandler iFormHandler;
 
+  private @NotNull IShakeController shakeController;
+
   private @NotNull LoadClass loadClass;
 
-  SentryFeedbackOptions(@NotNull IFormHandler iFormHandler, @NotNull LoadClass loadClass) {
+  SentryFeedbackOptions(
+      final @NotNull IFormHandler iFormHandler,
+      final @NotNull IShakeController shakeController,
+      final @NotNull LoadClass loadClass) {
     this.iFormHandler = iFormHandler;
+    this.shakeController = shakeController;
     this.loadClass = loadClass;
   }
 
@@ -149,6 +155,7 @@ public final class SentryFeedbackOptions {
     this.onSubmitSuccess = other.onSubmitSuccess;
     this.onSubmitError = other.onSubmitError;
     this.iFormHandler = other.iFormHandler;
+    this.shakeController = other.shakeController;
     this.loadClass = other.loadClass;
   }
 
@@ -662,6 +669,26 @@ public final class SentryFeedbackOptions {
     return iFormHandler;
   }
 
+  /**
+   * Sets the controller to be used to enable/disable shake-to-report at runtime.
+   *
+   * @param shakeController the controller to be used to enable/disable shake-to-report at runtime
+   */
+  @ApiStatus.Internal
+  public void setShakeController(final @NotNull IShakeController shakeController) {
+    this.shakeController = shakeController;
+  }
+
+  /**
+   * Gets the controller to be used to enable/disable shake-to-report at runtime.
+   *
+   * @return the controller to be used to enable/disable shake-to-report at runtime
+   */
+  @ApiStatus.Internal
+  public @NotNull IShakeController getShakeController() {
+    return shakeController;
+  }
+
   @Override
   public String toString() {
     return "SentryFeedbackOptions{"
@@ -742,6 +769,16 @@ public final class SentryFeedbackOptions {
     void showForm(
         final @Nullable SentryId associatedEventId,
         final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator);
+  }
+
+  /** Controls shake-to-report at runtime, overriding {@link #isUseShakeGesture()}. */
+  @ApiStatus.Internal
+  public interface IShakeController {
+    void enableOnShake();
+
+    void disableOnShake();
+
+    boolean isOnShakeEnabled();
   }
 
   /** Configuration callback for feedback options. */
