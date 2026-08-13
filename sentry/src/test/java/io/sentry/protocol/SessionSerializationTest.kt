@@ -35,6 +35,34 @@ class SessionSerializationTest {
         "b2d0224b-4b1f-49db-94c9-fd4a439b3ef5",
         "anr_foreground",
       )
+
+    /**
+     * An unhandled session cannot be built by mutating [getSut]: the flag is only reachable through
+     * [Session.recordNonTerminatingUnhandledError], which no-ops unless the session is still `Ok`,
+     * and a crash would clear it again. Ending on a fixed timestamp keeps `seq` and `duration`
+     * deterministic.
+     */
+    fun getUnhandledSut() =
+      Session(
+          Session.State.Ok,
+          DateUtils.getDateTime("1945-06-16T06:36:49.000Z"),
+          DateUtils.getDateTime("1970-04-21T09:32:21.000Z"),
+          9001,
+          "631693c2-3d61-4a93-8fd1-89817426ba5a",
+          "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
+          true,
+          4,
+          5.5,
+          "5a174e69-a297-4ba4-b6e1-2244a8299ec8",
+          "790da4ae-50ca-48a2-98f6-9b7f4e05a8c3",
+          "d732be55-b57e-48ec-afe6-b0040c7f93de",
+          "b2d0224b-4b1f-49db-94c9-fd4a439b3ef5",
+          null,
+        )
+        .apply {
+          recordNonTerminatingUnhandledError()
+          end(DateUtils.getDateTime("1970-04-21T09:32:21.000Z"))
+        }
   }
 
   private val fixture = Fixture()
@@ -55,23 +83,19 @@ class SessionSerializationTest {
   }
 
   @Test
-  fun `serialize and deserialize round-trips Unhandled status and non-terminating flag`() {
-    val session = Session(null, null, "environment", "release")
-    session.recordNonTerminatingUnhandledError()
-    session.end()
-    assertThat(session.status).isEqualTo(Session.State.Unhandled)
-
-    val deserialized = deserialize(serialize(session))
-
-    assertThat(deserialized.status).isEqualTo(Session.State.Unhandled)
-    assertThat(deserialized.hasNonTerminatingUnhandledError()).isTrue()
+  fun serializeUnhandled() {
+    val expected = sanitizedFile("json/session_unhandled.json")
+    val actual = serialize(fixture.getUnhandledSut())
+    assertThat(actual).isEqualTo(expected)
   }
 
   @Test
-  fun `non-terminating flag is omitted when unset`() {
-    val session = Session(null, null, "environment", "release")
-
-    assertThat(serialize(session)).doesNotContain("non_terminating_unhandled_error")
+  fun deserializeUnhandled() {
+    val expectedJson = sanitizedFile("json/session_unhandled.json")
+    val actual = deserialize(expectedJson)
+    assertThat(actual.status).isEqualTo(Session.State.Unhandled)
+    assertThat(actual.hasNonTerminatingUnhandledError()).isTrue()
+    assertThat(serialize(actual)).isEqualTo(expectedJson)
   }
 
   // Helper
