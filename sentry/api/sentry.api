@@ -854,6 +854,9 @@ public abstract interface class io/sentry/IFeedbackApi {
 	public abstract fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
 	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public abstract fun disableOnShake ()V
+	public abstract fun enableOnShake ()V
+	public abstract fun isOnShakeEnabled ()Z
 	public abstract fun show ()V
 	public abstract fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public abstract fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
@@ -1605,7 +1608,10 @@ public final class io/sentry/NoOpFeedbackApi : io/sentry/IFeedbackApi {
 	public fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
 	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public fun disableOnShake ()V
+	public fun enableOnShake ()V
 	public static fun getInstance ()Lio/sentry/NoOpFeedbackApi;
+	public fun isOnShakeEnabled ()Z
 	public fun show ()V
 	public fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
@@ -3236,6 +3242,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun getOnFormOpen ()Ljava/lang/Runnable;
 	public fun getOnSubmitError ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
 	public fun getOnSubmitSuccess ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
+	public fun getShakeController ()Lio/sentry/SentryFeedbackOptions$IShakeController;
 	public fun getSubmitButtonLabel ()Ljava/lang/CharSequence;
 	public fun getSuccessMessageText ()Ljava/lang/CharSequence;
 	public fun isEmailRequired ()Z
@@ -3261,6 +3268,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun setOnFormOpen (Ljava/lang/Runnable;)V
 	public fun setOnSubmitError (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
 	public fun setOnSubmitSuccess (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
+	public fun setShakeController (Lio/sentry/SentryFeedbackOptions$IShakeController;)V
 	public fun setShowBranding (Z)V
 	public fun setShowEmail (Z)V
 	public fun setShowName (Z)V
@@ -3273,6 +3281,12 @@ public final class io/sentry/SentryFeedbackOptions {
 
 public abstract interface class io/sentry/SentryFeedbackOptions$IFormHandler {
 	public abstract fun showForm (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+}
+
+public abstract interface class io/sentry/SentryFeedbackOptions$IShakeController {
+	public abstract fun disableOnShake ()V
+	public abstract fun enableOnShake ()V
+	public abstract fun isOnShakeEnabled ()Z
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$OptionsConfigurator {

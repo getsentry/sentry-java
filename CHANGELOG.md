@@ -6,6 +6,7 @@
 
 - Allow child spans to use explicit start timestamps through `ISpan` ([#5929](https://github.com/getsentry/sentry-java/pull/5929))
 - Make `ISpan.startChild` overloads with `SpanOptions` public ([#5927](https://github.com/getsentry/sentry-java/pull/5927))
+- Add `Sentry.feedback().enableOnShake()`, `Sentry.feedback().disableOnShake()`, and `Sentry.feedback().isOnShakeEnabled()` to toggle and query shake-to-report at runtime ([#5827](https://github.com/getsentry/sentry-java/pull/5827))
 
 ### Improvements
 
