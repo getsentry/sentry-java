@@ -19,8 +19,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @Open
 public class MetricsBatchProcessor implements IMetricsBatchProcessor {
@@ -34,16 +36,26 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
   private final @NotNull Queue<SentryMetricsEvent> queue;
   private final @NotNull ISentryExecutorService executorService;
   private final @NotNull AtomicBoolean hasScheduled = new AtomicBoolean(false);
+  private volatile boolean hasAcceptedItem = false;
   private volatile boolean isShuttingDown = false;
 
   private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
 
   public MetricsBatchProcessor(
       final @NotNull SentryOptions options, final @NotNull ISentryClient client) {
+    this(options, client, new SentryExecutorService(options));
+  }
+
+  @ApiStatus.Internal
+  @TestOnly
+  public MetricsBatchProcessor(
+      final @NotNull SentryOptions options,
+      final @NotNull ISentryClient client,
+      final @NotNull ISentryExecutorService executorService) {
     this.options = options;
     this.client = client;
     this.queue = new ConcurrentLinkedQueue<>();
-    this.executorService = new SentryExecutorService(options);
+    this.executorService = executorService;
   }
 
   @Override
@@ -65,6 +77,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
     }
     pendingCount.increment();
     queue.offer(metricsEvent);
+    hasAcceptedItem = true;
     maybeSchedule(false);
   }
 
@@ -72,14 +85,14 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
   @Override
   public void close(final boolean isRestarting) {
     isShuttingDown = true;
-    if (isRestarting) {
+    if (isRestarting && hasAcceptedItem) {
       maybeSchedule(true);
       executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
-    } else {
-      executorService.close(options.getShutdownTimeoutMillis());
-      while (!queue.isEmpty()) {
-        flushBatch();
-      }
+      return;
+    }
+    executorService.close(options.getShutdownTimeoutMillis());
+    while (!queue.isEmpty()) {
+      flushBatch();
     }
   }
 
@@ -106,6 +119,9 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
 
   @Override
   public void flush(long timeoutMillis) {
+    if (!hasAcceptedItem) {
+      return;
+    }
     maybeSchedule(true);
     try {
       pendingCount.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
