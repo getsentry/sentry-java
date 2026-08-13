@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
+import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -30,7 +31,6 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
-import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.LoadClass;
 import java.io.IOException;
@@ -229,13 +229,12 @@ public class SentryUserFeedbackForm extends AlertDialog {
             if (screenshotPicker != null) {
               try {
                 screenshotPicker.launch();
-              } catch (Throwable t) {
-                ExceptionUtils.rethrowIfFatal(t);
-                // e.g. no photo picker on the device, or the host activity is already gone
+              } catch (ActivityNotFoundException | IllegalStateException e) {
+                // No photo picker on the device, or the launcher is no longer registered
                 Sentry.getCurrentScopes()
                     .getOptions()
                     .getLogger()
-                    .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", t);
+                    .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", e);
               }
             }
           } else {
@@ -527,13 +526,14 @@ public class SentryUserFeedbackForm extends AlertDialog {
               mime,
               "event.attachment",
               false));
-    } catch (Throwable t) {
-      ExceptionUtils.rethrowIfFatal(t);
-      // e.g. the read permission for the picked Uri was revoked in the meantime
+    } catch (RuntimeException e) {
+      // The ContentResolver call crosses into the provider's process, so any failure there arrives
+      // as one of the exceptions Binder can marshal, e.g. a SecurityException once the read
+      // permission for the picked Uri was revoked
       Sentry.getCurrentScopes()
           .getOptions()
           .getLogger()
-          .log(SentryLevel.ERROR, "Failed to attach image to feedback.", t);
+          .log(SentryLevel.ERROR, "Failed to attach image to feedback.", e);
     }
   }
 
@@ -548,15 +548,14 @@ public class SentryUserFeedbackForm extends AlertDialog {
           return cursor.getLong(sizeIndex);
         }
       }
-    } catch (Throwable t) {
-      ExceptionUtils.rethrowIfFatal(t);
+    } catch (RuntimeException e) {
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Unable to determine the size of the selected screenshot, the attachment size limit "
                   + "is applied when the feedback is captured.",
-              t);
+              e);
     }
     return -1;
   }
