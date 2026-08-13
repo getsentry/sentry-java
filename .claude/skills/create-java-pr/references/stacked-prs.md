@@ -24,6 +24,10 @@ Create it with an empty commit, so GitHub allows opening a PR:
 git commit --allow-empty -m "collection: <topic>"
 ```
 
+Push it and open its PR against `main` right away — it is the PR the whole stack is eventually
+squash-merged through, and it carries the stack list like every other PR. Give it a plain title
+(`<type>(<scope>): <Topic>`, no `[<Topic> <N>]` bracket) and no merge method reminder.
+
 ## Rules That Will Destroy a Stack If Broken
 
 **Never update the collection branch yourself.** Never merge, fast-forward, or push stack branch
@@ -78,11 +82,5 @@ the description.
 > ⚠️ **Merge this PR using a merge commit** (not squash). Only the collection branch is squash-merged into main.
 ```
 
-## Editing PR Descriptions
-
-Do not use shell redirects (`>`, `>>`), pipes (`|`), or compound commands (`&&`, `||`). These create
-compound shell expressions that won't match permission patterns. Instead:
-
-1. Read the body with `gh pr view <PR_NUMBER> --json body --jq '.body'` (output is returned directly)
-2. Use the `Write` tool to save it to `/tmp/pr-body.md`, and the `Edit` tool to modify it
-3. Update with `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`
+Updating every PR's stack list means editing several descriptions — follow the procedure in
+`SKILL.md` § "Editing PR Descriptions".

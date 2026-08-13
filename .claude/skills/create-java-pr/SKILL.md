@@ -8,7 +8,7 @@ description: Create a pull request in sentry-java. Use when asked to "create pr"
 Prepare local changes and create a pull request for the sentry-java repo.
 
 **For stacked PRs:** read `references/stacked-prs.md` before proceeding. It is the source of truth for
-stack structure, branch and title naming, stack list format, and merge strategy.
+stack structure, title naming, stack list format, and merge strategy.
 
 ## Step 0: Determine PR Type From Git Branch Context
 
@@ -152,11 +152,7 @@ Skip this step for standalone PRs.
 
 After creating the PR, update the PR description on **every other PR in the stack — including the collection branch PR** — so all PRs have the same up-to-date stack list. Follow the format and commands in `references/stacked-prs.md` § "Stack List in PR Description".
 
-**Important:** When updating PR bodies, never use shell redirects (`>`, `>>`) or pipes (`|`) or compound commands (`&&`). These create compound shell expressions that won't match permission patterns. Instead:
-- Use `gh pr view <NUMBER> --json body --jq '.body'` to get the body (output returned directly)
-- Use the `Write` tool to save it to a temp file
-- Use the `Edit` tool to modify the temp file
-- Use `gh pr edit <NUMBER> --body-file /tmp/pr-body.md` to update
+Edit each body using the procedure in § "Editing PR Descriptions" below.
 
 ## Step 6: Update Changelog
 
@@ -208,8 +204,14 @@ git push
 
 ### No changelog needed
 
-If no changelog entry is needed, add `#skip-changelog` to the PR description to disable the changelog CI check:
+If no changelog entry is needed, append `#skip-changelog` to the end of the PR description to disable
+the changelog CI check, using the procedure in § "Editing PR Descriptions" below.
 
-1. Get the current body: `gh pr view <PR_NUMBER> --json body --jq '.body'`
-2. Use the `Write` tool to save the output to `/tmp/pr-body.md`, appending `\n#skip-changelog\n` at the end
-3. Update: `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`
+## Editing PR Descriptions
+
+Do not use shell redirects (`>`, `>>`), pipes (`|`), or compound commands (`&&`, `||`). These create
+compound shell expressions that won't match permission patterns. Instead:
+
+1. Read the body with `gh pr view <PR_NUMBER> --json body --jq '.body'` (output is returned directly)
+2. Use the `Write` tool to save it to `/tmp/pr-body.md`, and the `Edit` tool to modify it
+3. Update with `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`

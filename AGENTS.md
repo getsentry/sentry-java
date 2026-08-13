@@ -98,7 +98,7 @@ make systemTest
 4. **High-level communication**: Give high-level explanations of changes made, not step-by-step descriptions
 5. **Simplicity first**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible.
 6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply apiDump`
-7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command
+7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
 
 ## Repository Skills
 
