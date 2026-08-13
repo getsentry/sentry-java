@@ -202,9 +202,8 @@ class SentryAutoConfigurationTest {
   fun `legacy logs property emits no warning when absent`() {
     val logger = mock<ILogger>()
     dsnEnabledRunner
-      .withPropertyValues("sentry.debug=true")
       .withBean(ILogger::class.java, { logger })
-      .withUserConfiguration(LoggerConfiguration::class.java)
+      .withUserConfiguration(FatalLoggerConfiguration::class.java)
       .run { verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>()) }
   }
 
@@ -212,9 +211,9 @@ class SentryAutoConfigurationTest {
   fun `legacy logs property true emits migration warning`() {
     val logger = mock<ILogger>()
     dsnEnabledRunner
-      .withPropertyValues("sentry.debug=true", "sentry.logs.enabled=true")
+      .withPropertyValues("sentry.logs.enabled=true")
       .withBean(ILogger::class.java, { logger })
-      .withUserConfiguration(LoggerConfiguration::class.java)
+      .withUserConfiguration(FatalLoggerConfiguration::class.java)
       .run {
         verify(logger)
           .log(
@@ -232,9 +231,9 @@ class SentryAutoConfigurationTest {
   fun `legacy logs property false emits migration warning`() {
     val logger = mock<ILogger>()
     dsnEnabledRunner
-      .withPropertyValues("sentry.debug=true", "sentry.logs.enabled=false")
+      .withPropertyValues("sentry.logs.enabled=false")
       .withBean(ILogger::class.java, { logger })
-      .withUserConfiguration(LoggerConfiguration::class.java)
+      .withUserConfiguration(FatalLoggerConfiguration::class.java)
       .run {
         verify(logger)
           .log(
@@ -252,9 +251,8 @@ class SentryAutoConfigurationTest {
   fun `legacy metrics property emits no warning when absent`() {
     val logger = mock<ILogger>()
     dsnEnabledRunner
-      .withPropertyValues("sentry.debug=true")
       .withBean(ILogger::class.java, { logger })
-      .withUserConfiguration(LoggerConfiguration::class.java)
+      .withUserConfiguration(FatalLoggerConfiguration::class.java)
       .run { verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>()) }
   }
 
@@ -262,9 +260,9 @@ class SentryAutoConfigurationTest {
   fun `legacy metrics property true emits migration warning`() {
     val logger = mock<ILogger>()
     dsnEnabledRunner
-      .withPropertyValues("sentry.debug=true", "sentry.metrics.enabled=true")
+      .withPropertyValues("sentry.metrics.enabled=true")
       .withBean(ILogger::class.java, { logger })
-      .withUserConfiguration(LoggerConfiguration::class.java)
+      .withUserConfiguration(FatalLoggerConfiguration::class.java)
       .run {
         verify(logger)
           .log(
@@ -280,9 +278,9 @@ class SentryAutoConfigurationTest {
   fun `legacy metrics property false emits migration warning`() {
     val logger = mock<ILogger>()
     dsnEnabledRunner
-      .withPropertyValues("sentry.debug=true", "sentry.metrics.enabled=false")
+      .withPropertyValues("sentry.metrics.enabled=false")
       .withBean(ILogger::class.java, { logger })
-      .withUserConfiguration(LoggerConfiguration::class.java)
+      .withUserConfiguration(FatalLoggerConfiguration::class.java)
       .run {
         verify(logger)
           .log(
@@ -1309,10 +1307,10 @@ class SentryAutoConfigurationTest {
   }
 
   @Configuration(proxyBeanMethods = false)
-  open class LoggerConfiguration {
+  open class FatalLoggerConfiguration {
     @Bean
-    open fun loggerConfiguration(logger: ILogger) =
-      Sentry.OptionsConfiguration<SentryOptions> { it.setLogger(logger) }
+    open fun fatalLoggerConfiguration(logger: ILogger) =
+      Sentry.OptionsConfiguration<SentryOptions> { it.setFatalLogger(logger) }
   }
 
   @Configuration(proxyBeanMethods = false)

@@ -24,9 +24,11 @@ import io.sentry.test.injectForField
 import io.sentry.util.PlatformTestManipulator
 import io.sentry.util.thread.IThreadChecker
 import io.sentry.util.thread.ThreadChecker
+import java.io.ByteArrayOutputStream
 import java.io.Closeable
 import java.io.File
 import java.io.FileReader
+import java.io.PrintStream
 import java.nio.file.Files
 import java.util.Properties
 import java.util.concurrent.CompletableFuture
@@ -299,8 +301,36 @@ class SentryTest {
       initForTest { it.isEnableExternalConfiguration = true }
       assertTrue(ScopesAdapter.getInstance().isEnabled)
     } finally {
+      System.clearProperty("sentry.properties.file")
       temporaryFolder.delete()
     }
+  }
+
+  @Test
+  fun `external legacy configuration warning is visible when debug is disabled`() {
+    val file = tmpDir.newFile("sentry.properties")
+    file.writeText("dsn=$dsn\nlogs.enabled=true")
+    System.setProperty("sentry.properties.file", file.absolutePath)
+    val originalOut = System.out
+    val output = ByteArrayOutputStream()
+    System.setOut(PrintStream(output))
+
+    try {
+      initForTest { it.isEnableExternalConfiguration = true }
+    } finally {
+      System.setOut(originalOut)
+      System.clearProperty("sentry.properties.file")
+    }
+
+    assertTrue(
+      output
+        .toString()
+        .contains(
+          "WARNING: The 'logs.enabled' option is no longer supported. Manual Sentry.logger() " +
+            "calls no longer require it, and automatic logging integrations now require their " +
+            "own opt-ins."
+        )
+    )
   }
 
   @Test
