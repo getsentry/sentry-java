@@ -648,15 +648,6 @@ public final class SentryFeedbackOptions {
     void disableOnShake();
 
     boolean isOnShakeEnabled();
-
-    /**
-     * Pauses or resumes reacting to detected shakes without tearing down shake detection. Feedback
-     * dialogs pause detection while they are visible, so a shake can never stack a second dialog on
-     * top of one that is already showing — no matter how the visible dialog was opened.
-     *
-     * @param paused true to ignore detected shakes, false to react to them again
-     */
-    void setOnShakePaused(boolean paused);
   }
 
   /** Configuration callback for feedback options. */

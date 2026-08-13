@@ -3283,7 +3283,6 @@ public abstract interface class io/sentry/SentryFeedbackOptions$IShakeController
 	public abstract fun disableOnShake ()V
 	public abstract fun enableOnShake ()V
 	public abstract fun isOnShakeEnabled ()Z
-	public abstract fun setOnShakePaused (Z)V
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$OptionsConfigurator {

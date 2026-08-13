@@ -3554,9 +3554,6 @@ public class SentryOptions {
               public boolean isOnShakeEnabled() {
                 return false;
               }
-
-              @Override
-              public void setOnShakePaused(final boolean paused) {}
             });
 
     if (!empty) {

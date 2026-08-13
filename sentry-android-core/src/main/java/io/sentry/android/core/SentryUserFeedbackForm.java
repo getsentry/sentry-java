@@ -370,9 +370,13 @@ public class SentryUserFeedbackForm extends AlertDialog {
 
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
-    // Pause shake-to-report while this form is visible, so a shake can't stack a second
-    // form on top of it
-    feedbackOptions.getShakeController().setOnShakePaused(true);
+    // Pause shake-to-report on this form's activity while it is visible, so a shake can't stack a
+    // second form on top of it
+    final @Nullable FeedbackShakeIntegration integration = shakeIntegration();
+    final @Nullable Activity activity = getActivity(getContext());
+    if (integration != null && activity != null) {
+      integration.onFormVisible(activity, this);
+    }
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
       try {
@@ -388,11 +392,10 @@ public class SentryUserFeedbackForm extends AlertDialog {
   @Override
   protected void onStop() {
     super.onStop();
-    Sentry.getCurrentScopes()
-        .getOptions()
-        .getFeedbackOptions()
-        .getShakeController()
-        .setOnShakePaused(false);
+    final @Nullable FeedbackShakeIntegration integration = shakeIntegration();
+    if (integration != null) {
+      integration.onFormGone(this);
+    }
   }
 
   @Override
@@ -401,11 +404,22 @@ public class SentryUserFeedbackForm extends AlertDialog {
     // Safety net for teardown without a dismiss (e.g. the host activity is destroyed while the
     // form is still showing): onStop never fires then, but the window is still detached —
     // without this, shake-to-report would stay paused forever.
-    Sentry.getCurrentScopes()
-        .getOptions()
-        .getFeedbackOptions()
-        .getShakeController()
-        .setOnShakePaused(false);
+    final @Nullable FeedbackShakeIntegration integration = shakeIntegration();
+    if (integration != null) {
+      integration.onFormGone(this);
+    }
+  }
+
+  /**
+   * The shake integration to report this form's visibility to, or null when shake-to-report isn't
+   * available (non-Android controller, or the integration was never installed).
+   */
+  private @Nullable FeedbackShakeIntegration shakeIntegration() {
+    final @NotNull SentryFeedbackOptions.IShakeController controller =
+        Sentry.getCurrentScopes().getOptions().getFeedbackOptions().getShakeController();
+    return controller instanceof FeedbackShakeIntegration
+        ? (FeedbackShakeIntegration) controller
+        : null;
   }
 
   @Override

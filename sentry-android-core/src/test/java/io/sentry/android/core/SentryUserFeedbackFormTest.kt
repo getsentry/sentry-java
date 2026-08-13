@@ -1,5 +1,7 @@
 package io.sentry.android.core
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.os.Looper
 import android.view.WindowManager
@@ -20,6 +22,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
@@ -29,6 +32,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
@@ -190,5 +194,23 @@ class SentryUserFeedbackFormTest {
       .log(eq(SentryLevel.ERROR), eq("onFormOpen callback threw an exception."), any())
     // The form open must still complete its own work after the callback crash
     verify(fixture.mockReplayController).captureReplay(eq(false))
+  }
+
+  @Test
+  fun `form reports its own host activity to the shake integration while visible`() {
+    fixture.options.isEnabled = true
+    val integration = FeedbackShakeIntegration(fixture.application as Application)
+    fixture.options.feedbackOptions.setShakeController(integration)
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+
+    val sut = SentryUserFeedbackForm(activity, 0, null, null, null)
+    sut.show()
+
+    assertEquals(activity, integration.formActivity)
+
+    sut.dismiss()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertNull(integration.formActivity)
   }
 }

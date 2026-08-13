@@ -4,6 +4,7 @@ import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.app.Activity;
 import android.app.Application;
+import android.app.Dialog;
 import android.os.Bundle;
 import io.sentry.IScopes;
 import io.sentry.Integration;
@@ -14,6 +15,7 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -26,9 +28,10 @@ import org.jetbrains.annotations.TestOnly;
  *
  * <p>Shake detection is scoped to the resumed activity: a dialog belongs to the window of the
  * activity that created it, so it can only ever be visible while that activity is resumed. Forms
- * report themselves via {@link #setOnShakePaused(boolean)} and detection is then suppressed for
- * that one activity, which keeps a shake from stacking a second dialog on top of a visible one
- * without letting a dialog on a backgrounded activity suppress detection elsewhere.
+ * report themselves via {@link #onFormVisible(Activity, Dialog)} / {@link #onFormGone(Dialog)} and
+ * detection is then suppressed for the activity hosting them, which keeps a shake from stacking a
+ * second dialog on top of a visible one without letting a dialog on a backgrounded activity
+ * suppress detection elsewhere.
  */
 public final class FeedbackShakeIntegration
     implements Integration,
@@ -42,8 +45,13 @@ public final class FeedbackShakeIntegration
   private volatile boolean enabled = false;
   private volatile @Nullable WeakReference<Activity> currentActivityRef;
 
-  /** The activity a feedback form is currently showing on, if any. */
-  private volatile @Nullable WeakReference<Activity> formActivityRef;
+  /**
+   * The feedback forms that are currently visible, together with the activity hosting them. More
+   * than one can be visible at a time, e.g. when the app calls {@code Sentry.feedback().showForm()}
+   * while another form is already showing.
+   */
+  private final @NotNull CopyOnWriteArrayList<VisibleForm> visibleForms =
+      new CopyOnWriteArrayList<>();
 
   public FeedbackShakeIntegration(final @NotNull Application application) {
     this.application = Objects.requireNonNull(application, "Application is required");
@@ -124,33 +132,71 @@ public final class FeedbackShakeIntegration
     return enabled;
   }
 
-  @Override
-  public void setOnShakePaused(final boolean paused) {
-    if (paused) {
-      final @Nullable Activity activity = CurrentActivityHolder.getInstance().getActivity();
-      formActivityRef = activity == null ? null : new WeakReference<>(activity);
-      stopShakeDetection();
-    } else {
-      formActivityRef = null;
-      // The form is gone, so detection can resume for whichever activity is currently resumed.
-      final @Nullable WeakReference<Activity> currentRef = currentActivityRef;
-      final @Nullable Activity current = currentRef == null ? null : currentRef.get();
-      if (enabled && current != null) {
-        startShakeDetection(current);
-      }
+  /**
+   * Reports a feedback form as visible on {@code host}. Shake detection is suppressed for that
+   * activity until the form reports back via {@link #onFormGone(Dialog)}, so a shake can never
+   * stack a second form on top of a visible one — no matter how the visible one was opened.
+   */
+  void onFormVisible(final @NotNull Activity host, final @NotNull Dialog form) {
+    visibleForms.add(new VisibleForm(host, form));
+    stopShakeDetection();
+  }
+
+  /** Reports a feedback form as no longer visible. Safe to call more than once per form. */
+  void onFormGone(final @NotNull Dialog form) {
+    if (!removeForm(form)) {
+      return;
+    }
+    final @Nullable WeakReference<Activity> currentRef = currentActivityRef;
+    final @Nullable Activity current = currentRef == null ? null : currentRef.get();
+    if (enabled && current != null) {
+      startShakeDetection(current);
     }
   }
 
+  private boolean removeForm(final @NotNull Dialog form) {
+    boolean removed = false;
+    for (final @NotNull VisibleForm visibleForm : visibleForms) {
+      // Drop entries whose form was collected without reporting back, so they can't suppress
+      // detection forever.
+      final @Nullable Dialog trackedForm = visibleForm.formRef.get();
+      if (trackedForm == form) {
+        removed = visibleForms.remove(visibleForm) || removed;
+      } else if (trackedForm == null) {
+        visibleForms.remove(visibleForm);
+      }
+    }
+    return removed;
+  }
+
   private boolean hasFormOn(final @NotNull Activity activity) {
-    final @Nullable WeakReference<Activity> ref = formActivityRef;
-    return ref != null && ref.get() == activity;
+    for (final @NotNull VisibleForm visibleForm : visibleForms) {
+      if (visibleForm.formRef.get() != null && visibleForm.activityRef.get() == activity) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @TestOnly
   @Nullable
   Activity getFormActivity() {
-    final @Nullable WeakReference<Activity> ref = formActivityRef;
-    return ref == null ? null : ref.get();
+    for (final @NotNull VisibleForm visibleForm : visibleForms) {
+      if (visibleForm.formRef.get() != null) {
+        return visibleForm.activityRef.get();
+      }
+    }
+    return null;
+  }
+
+  private static final class VisibleForm {
+    private final @NotNull WeakReference<Activity> activityRef;
+    private final @NotNull WeakReference<Dialog> formRef;
+
+    VisibleForm(final @NotNull Activity activity, final @NotNull Dialog form) {
+      this.activityRef = new WeakReference<>(activity);
+      this.formRef = new WeakReference<>(form);
+    }
   }
 
   @Override

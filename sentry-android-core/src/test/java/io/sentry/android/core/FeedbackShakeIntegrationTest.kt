@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import android.app.Activity
 import android.app.Application
+import android.app.Dialog
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -279,8 +280,9 @@ class FeedbackShakeIntegrationTest {
     val sut = fixture.getSut(useShakeGesture = true)
     sut.register(fixture.scopes, fixture.options)
 
-    sut.setOnShakePaused(true)
-    sut.setOnShakePaused(false)
+    val form = mock<Dialog>()
+    sut.onFormVisible(fixture.activity, form)
+    sut.onFormGone(form)
 
     verify(fixture.application, never()).unregisterActivityLifecycleCallbacks(any())
     assertThat(sut.isOnShakeEnabled).isTrue()
@@ -293,8 +295,7 @@ class FeedbackShakeIntegrationTest {
     val sut = fixture.getSut(useShakeGesture = true)
     sut.register(fixture.scopes, fixture.options)
 
-    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
-    sut.setOnShakePaused(true)
+    sut.onFormVisible(fixture.activity, mock())
     assertThat(sut.formActivity).isSameInstanceAs(fixture.activity)
 
     // Coming back to the activity the form is on (e.g. screen off/on) must not re-arm detection,
@@ -318,12 +319,32 @@ class FeedbackShakeIntegrationTest {
 
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
     sut.onActivityResumed(fixture.activity)
-    sut.setOnShakePaused(true)
+    sut.onFormVisible(fixture.activity, mock())
 
     sut.onActivityPaused(fixture.activity)
     sut.onActivityResumed(otherActivity)
 
     verify(otherActivity).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `a form reports the activity it is showing on, not the current one`() {
+    // The form's host activity is what a stacked dialog would land on, so a mid-transition
+    // CurrentActivityHolder must not decide which activity detection is suppressed for.
+    val otherActivity = mock<Activity>()
+    whenever(fixture.activity.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    CurrentActivityHolder.getInstance().setActivity(otherActivity)
+    sut.onFormVisible(fixture.activity, mock())
+
+    assertThat(sut.formActivity).isSameInstanceAs(fixture.activity)
+
+    sut.onActivityResumed(fixture.activity)
+
+    verify(fixture.activity, never()).getSystemService(eq(Context.SENSOR_SERVICE))
   }
 
   @Test
@@ -335,10 +356,55 @@ class FeedbackShakeIntegrationTest {
 
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
     sut.onActivityResumed(fixture.activity)
-    sut.setOnShakePaused(true)
-    sut.setOnShakePaused(false)
+    val form = mock<Dialog>()
+    sut.onFormVisible(fixture.activity, form)
+    sut.onFormGone(form)
 
     assertThat(sut.formActivity).isNull()
     verify(fixture.activity, atLeastOnce()).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `dismissing one of two visible forms keeps detection suppressed`() {
+    // Two forms can be visible at once, e.g. when the app calls showForm() while a form is
+    // already up. The first one going away must not re-arm detection under the second.
+    whenever(fixture.activity.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+    sut.onActivityResumed(fixture.activity)
+    val first = mock<Dialog>()
+    val second = mock<Dialog>()
+    sut.onFormVisible(fixture.activity, first)
+    sut.onFormVisible(fixture.activity, second)
+
+    sut.onFormGone(first)
+    assertThat(sut.formActivity).isSameInstanceAs(fixture.activity)
+    verify(fixture.activity, times(1)).getSystemService(eq(Context.SENSOR_SERVICE))
+
+    sut.onFormGone(second)
+    assertThat(sut.formActivity).isNull()
+    verify(fixture.activity, times(2)).getSystemService(eq(Context.SENSOR_SERVICE))
+  }
+
+  @Test
+  fun `reporting the same form gone twice re-arms detection only once`() {
+    // A dismissed dialog reports back from both onStop() and onDetachedFromWindow().
+    whenever(fixture.activity.getSystemService(any())).thenReturn(null)
+
+    val sut = fixture.getSut(useShakeGesture = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+    sut.onActivityResumed(fixture.activity)
+    val form = mock<Dialog>()
+    sut.onFormVisible(fixture.activity, form)
+    sut.onFormGone(form)
+    sut.onFormGone(form)
+
+    // Once for the resume, once for the single re-arm - the second report is a no-op.
+    verify(fixture.activity, times(2)).getSystemService(eq(Context.SENSOR_SERVICE))
   }
 }

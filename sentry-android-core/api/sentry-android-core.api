@@ -307,7 +307,6 @@ public final class io/sentry/android/core/FeedbackShakeIntegration : android/app
 	public fun onActivityStarted (Landroid/app/Activity;)V
 	public fun onActivityStopped (Landroid/app/Activity;)V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
-	public fun setOnShakePaused (Z)V
 }
 
 public abstract interface class io/sentry/android/core/IDebugImagesLoader {
