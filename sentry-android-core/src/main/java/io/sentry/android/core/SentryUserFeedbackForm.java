@@ -3,7 +3,6 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
-import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -31,6 +30,7 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.LoadClass;
 import java.io.IOException;
@@ -229,12 +229,20 @@ public class SentryUserFeedbackForm extends AlertDialog {
             if (screenshotPicker != null) {
               try {
                 screenshotPicker.launch();
-              } catch (ActivityNotFoundException | IllegalStateException e) {
-                // No photo picker on the device, or the launcher is no longer registered
+              } catch (LinkageError e) {
+                // androidx.activity is compileOnly, so the version in the app's apk may not have
+                // the photo picker APIs this was compiled against
                 Sentry.getCurrentScopes()
                     .getOptions()
                     .getLogger()
                     .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", e);
+              } catch (Throwable t) {
+                ExceptionUtils.rethrowIfFatal(t);
+                // e.g. no photo picker on the device, or the launcher is no longer registered
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", t);
               }
             }
           } else {
@@ -452,9 +460,21 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
     final @Nullable Activity activity = getActivity(getContext());
     if (activity != null && isScreenshotPickerAvailable(options)) {
-      screenshotPicker =
-          SentryFeedbackScreenshotPicker.register(
-              activity, uri -> onScreenshotPicked(options, btnAddScreenshot, uri));
+      try {
+        screenshotPicker =
+            SentryFeedbackScreenshotPicker.register(
+                activity, uri -> onScreenshotPicked(options, btnAddScreenshot, uri));
+      } catch (LinkageError e) {
+        // This is where androidx.activity is linked for the first time. It is a compileOnly
+        // dependency, so the version in the app's apk may be older than the one we compiled
+        // against, or missing the photo picker APIs entirely.
+        options
+            .getLogger()
+            .log(SentryLevel.INFO, "androidx.activity is too old for the screenshot picker.", e);
+      } catch (Throwable t) {
+        ExceptionUtils.rethrowIfFatal(t);
+        options.getLogger().log(SentryLevel.ERROR, "Failed to register the screenshot picker.", t);
+      }
     }
     if (screenshotPicker != null) {
       btnAddScreenshot.setVisibility(View.VISIBLE);
@@ -526,14 +546,14 @@ public class SentryUserFeedbackForm extends AlertDialog {
               mime,
               "event.attachment",
               false));
-    } catch (RuntimeException e) {
-      // The ContentResolver call crosses into the provider's process, so any failure there arrives
-      // as one of the exceptions Binder can marshal, e.g. a SecurityException once the read
-      // permission for the picked Uri was revoked
+    } catch (Throwable t) {
+      ExceptionUtils.rethrowIfFatal(t);
+      // The ContentResolver call crosses into the provider's process, which can fail in any number
+      // of ways, e.g. a SecurityException once the read permission for the picked Uri was revoked
       Sentry.getCurrentScopes()
           .getOptions()
           .getLogger()
-          .log(SentryLevel.ERROR, "Failed to attach image to feedback.", e);
+          .log(SentryLevel.ERROR, "Failed to attach image to feedback.", t);
     }
   }
 
@@ -548,14 +568,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
           return cursor.getLong(sizeIndex);
         }
       }
-    } catch (RuntimeException e) {
+    } catch (Throwable t) {
+      ExceptionUtils.rethrowIfFatal(t);
       options
           .getLogger()
           .log(
               SentryLevel.WARNING,
               "Unable to determine the size of the selected screenshot, the attachment size limit "
                   + "is applied when the feedback is captured.",
-              e);
+              t);
     }
     return -1;
   }
