@@ -12,6 +12,7 @@ public final class io/sentry/android/timber/SentryTimberIntegration : io/sentry/
 	public fun <init> (Lio/sentry/SentryLevel;Lio/sentry/SentryLevel;Lio/sentry/SentryLogLevel;)V
 	public synthetic fun <init> (Lio/sentry/SentryLevel;Lio/sentry/SentryLevel;Lio/sentry/SentryLogLevel;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Lio/sentry/SentryLevel;Lio/sentry/SentryLevel;Lio/sentry/SentryLogLevel;Z)V
+	public fun <init> (Lio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun <init> (Z)V
 	public fun close ()V
 	public final fun getEnableLogs ()Z

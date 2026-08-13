@@ -9,6 +9,7 @@ import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.android.timber.BuildConfig.VERSION_NAME
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.LazyEvaluator.Evaluator
 import java.io.Closeable
 import timber.log.Timber
 
@@ -18,11 +19,13 @@ public class SentryTimberIntegration(
   public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
   public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
 ) : Integration, Closeable {
-  public var enableLogs: Boolean = false
-    private set
+  public val enableLogs: Boolean
+    get() = enableLogsProvider.evaluate()
+
+  private var enableLogsProvider: Evaluator<Boolean> = Evaluator { false }
 
   public constructor(enableLogs: Boolean) : this() {
-    this.enableLogs = enableLogs
+    enableLogsProvider = Evaluator { enableLogs }
   }
 
   public constructor(
@@ -31,7 +34,11 @@ public class SentryTimberIntegration(
     minLogsLevel: SentryLogLevel,
     enableLogs: Boolean,
   ) : this(minEventLevel, minBreadcrumbLevel, minLogsLevel) {
-    this.enableLogs = enableLogs
+    enableLogsProvider = Evaluator { enableLogs }
+  }
+
+  public constructor(enableLogsProvider: Evaluator<Boolean>) : this() {
+    this.enableLogsProvider = enableLogsProvider
   }
 
   private lateinit var tree: SentryTimberTree
@@ -47,7 +54,14 @@ public class SentryTimberIntegration(
   override fun register(scopes: IScopes, options: SentryOptions) {
     logger = options.logger
 
-    tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel, enableLogs)
+    tree =
+      SentryTimberTree(
+        scopes,
+        minEventLevel,
+        minBreadcrumbLevel,
+        minLogsLevel,
+        enableLogsProvider.evaluate(),
+      )
     Timber.plant(tree)
 
     logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
