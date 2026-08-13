@@ -189,6 +189,20 @@ public final class FeedbackShakeIntegration
     return null;
   }
 
+  /** Creates the dialog shown on shake. Replaceable in tests to simulate a failing show(). */
+  interface DialogFactory {
+    @NotNull
+    Dialog create(final @NotNull Activity activity);
+  }
+
+  private @NotNull DialogFactory dialogFactory =
+      activity -> new SentryUserFeedbackForm.Builder(activity).create();
+
+  @TestOnly
+  void setDialogFactory(final @NotNull DialogFactory dialogFactory) {
+    this.dialogFactory = dialogFactory;
+  }
+
   private static final class VisibleDialog {
     private final @NotNull WeakReference<Activity> activityRef;
     private final @NotNull WeakReference<Dialog> dialogRef;
@@ -280,7 +294,7 @@ public final class FeedbackShakeIntegration
                 }
                 @Nullable Dialog dialog = null;
                 try {
-                  dialog = new SentryUserFeedbackForm.Builder(active).create();
+                  dialog = dialogFactory.create(active);
                   dialog.show();
                 } catch (Throwable e) {
                   if (dialog != null) {
