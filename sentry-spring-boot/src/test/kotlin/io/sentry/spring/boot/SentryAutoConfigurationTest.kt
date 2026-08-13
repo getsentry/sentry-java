@@ -9,6 +9,7 @@ import io.sentry.EventProcessor
 import io.sentry.FilterString
 import io.sentry.Hint
 import io.sentry.IContinuousProfiler
+import io.sentry.ILogger
 import io.sentry.IProfileConverter
 import io.sentry.IScopes
 import io.sentry.ITransportFactory
@@ -59,7 +60,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.mockito.internal.util.MockUtil.isMock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.quartz.JobExecutionContext
@@ -192,6 +195,56 @@ class SentryAutoConfigurationTest {
             it.getBean(Sentry.OptionsConfiguration::class.java, "customOptionsConfiguration")
           )
           .isNotNull
+      }
+  }
+
+  @Test
+  fun `legacy logs property emits no warning when absent`() {
+    val logger = mock<ILogger>()
+    dsnEnabledRunner
+      .withPropertyValues("sentry.debug=true")
+      .withBean(ILogger::class.java, { logger })
+      .withUserConfiguration(LoggerConfiguration::class.java)
+      .run { verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>()) }
+  }
+
+  @Test
+  fun `legacy logs property true emits migration warning`() {
+    val logger = mock<ILogger>()
+    dsnEnabledRunner
+      .withPropertyValues("sentry.debug=true", "sentry.logs.enabled=true")
+      .withBean(ILogger::class.java, { logger })
+      .withUserConfiguration(LoggerConfiguration::class.java)
+      .run {
+        verify(logger)
+          .log(
+            SentryLevel.WARNING,
+            "The 'sentry.logs.enabled' property is no longer supported. Manual " +
+              "Sentry.logger() calls no longer require it, and automatic logging " +
+              "integrations now require their own opt-ins.",
+            *emptyArray(),
+          )
+        assertThat(it.getBean(SentryProperties::class.java).logging.isEnableLogs).isFalse()
+      }
+  }
+
+  @Test
+  fun `legacy logs property false emits migration warning`() {
+    val logger = mock<ILogger>()
+    dsnEnabledRunner
+      .withPropertyValues("sentry.debug=true", "sentry.logs.enabled=false")
+      .withBean(ILogger::class.java, { logger })
+      .withUserConfiguration(LoggerConfiguration::class.java)
+      .run {
+        verify(logger)
+          .log(
+            SentryLevel.WARNING,
+            "The 'sentry.logs.enabled' property no longer disables manual Sentry.logger() " +
+              "calls. Automatic logging integrations remain disabled unless enabled through " +
+              "their own opt-ins.",
+            *emptyArray(),
+          )
+        assertThat(it.getBean(SentryProperties::class.java).logging.isEnableLogs).isFalse()
       }
   }
 
@@ -1207,6 +1260,13 @@ class SentryAutoConfigurationTest {
     }
 
     @Bean open fun sentryTransport() = transport
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  open class LoggerConfiguration {
+    @Bean
+    open fun loggerConfiguration(logger: ILogger) =
+      Sentry.OptionsConfiguration<SentryOptions> { it.setLogger(logger) }
   }
 
   @Configuration(proxyBeanMethods = false)

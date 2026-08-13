@@ -11,6 +11,7 @@ import io.sentry.Integration;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.quartz.SentryJobListener;
@@ -165,7 +166,8 @@ public class SentryAutoConfiguration {
         final @NotNull List<Sentry.OptionsConfiguration<SentryOptions>> optionsConfigurations,
         final @NotNull SentryProperties options,
         final @NotNull ObjectProvider<ISpanFactory> spanFactory,
-        final @NotNull ObjectProvider<GitProperties> gitProperties) {
+        final @NotNull ObjectProvider<GitProperties> gitProperties,
+        final @NotNull Environment environment) {
       optionsConfigurations.forEach(
           optionsConfiguration -> optionsConfiguration.configure(options));
       gitProperties.ifAvailable(
@@ -186,8 +188,34 @@ public class SentryAutoConfiguration {
       // its technically possible to set non-throwable class to `ignoredExceptionsForType` set
       // here we make sure that only classes that extend throwable are set on this field
       options.getIgnoredExceptionsForType().removeIf(it -> !Throwable.class.isAssignableFrom(it));
+      warnForLegacyLogsConfiguration(environment, options);
       Sentry.init(options);
       return ScopesAdapter.getInstance();
+    }
+
+    private void warnForLegacyLogsConfiguration(
+        final @NotNull Environment environment, final @NotNull SentryOptions options) {
+      if (environment.containsProperty("sentry.logs.enabled")) {
+        final boolean enableLogs =
+            Boolean.TRUE.equals(environment.getProperty("sentry.logs.enabled", Boolean.class));
+        if (enableLogs) {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "The 'sentry.logs.enabled' property is no longer supported. Manual "
+                      + "Sentry.logger() calls no longer require it, and automatic logging "
+                      + "integrations now require their own opt-ins.");
+        } else {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "The 'sentry.logs.enabled' property no longer disables manual Sentry.logger() "
+                      + "calls. Automatic logging integrations remain disabled unless enabled "
+                      + "through their own opt-ins.");
+        }
+      }
     }
 
     @Configuration(proxyBeanMethods = false)
