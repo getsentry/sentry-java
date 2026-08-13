@@ -249,6 +249,52 @@ class SentryAutoConfigurationTest {
   }
 
   @Test
+  fun `legacy metrics property emits no warning when absent`() {
+    val logger = mock<ILogger>()
+    dsnEnabledRunner
+      .withPropertyValues("sentry.debug=true")
+      .withBean(ILogger::class.java, { logger })
+      .withUserConfiguration(LoggerConfiguration::class.java)
+      .run { verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>()) }
+  }
+
+  @Test
+  fun `legacy metrics property true emits migration warning`() {
+    val logger = mock<ILogger>()
+    dsnEnabledRunner
+      .withPropertyValues("sentry.debug=true", "sentry.metrics.enabled=true")
+      .withBean(ILogger::class.java, { logger })
+      .withUserConfiguration(LoggerConfiguration::class.java)
+      .run {
+        verify(logger)
+          .log(
+            SentryLevel.WARNING,
+            "The 'sentry.metrics.enabled' property is no longer supported. Manual " +
+              "Sentry.metrics() calls no longer require it.",
+            *emptyArray(),
+          )
+      }
+  }
+
+  @Test
+  fun `legacy metrics property false emits migration warning`() {
+    val logger = mock<ILogger>()
+    dsnEnabledRunner
+      .withPropertyValues("sentry.debug=true", "sentry.metrics.enabled=false")
+      .withBean(ILogger::class.java, { logger })
+      .withUserConfiguration(LoggerConfiguration::class.java)
+      .run {
+        verify(logger)
+          .log(
+            SentryLevel.WARNING,
+            "The 'sentry.metrics.enabled' property no longer disables manual " +
+              "Sentry.metrics() calls.",
+            *emptyArray(),
+          )
+      }
+  }
+
+  @Test
   fun `properties are applied to SentryOptions`() {
     contextRunner
       .withPropertyValues(
