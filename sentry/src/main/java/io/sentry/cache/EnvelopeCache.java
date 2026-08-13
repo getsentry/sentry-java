@@ -80,7 +80,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * Session id last written to the current session file by {@link #persistCurrentSession(Session)},
    * which bypasses the transport queue that every other write to that file goes through.
    */
-  private volatile @Nullable String lastPersistedSessionId;
+  private @Nullable String lastPersistedSessionId;
 
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
@@ -124,8 +124,11 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     final File previousSessionFile = getPreviousSessionFile(directoryPath);
 
     if (HintUtils.hasType(hint, SessionEnd.class)) {
-      if (!currentSessionFile.delete()) {
-        options.getLogger().log(WARNING, "Current envelope doesn't exist.");
+      try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+        lastPersistedSessionId = null;
+        if (!currentSessionFile.delete()) {
+          options.getLogger().log(WARNING, "Current envelope doesn't exist.");
+        }
       }
     }
 
@@ -365,7 +368,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     return true;
   }
 
-  private void writeSessionToDisk(final @NotNull File file, final @NotNull Session session) {
+  private boolean writeSessionToDisk(final @NotNull File file, final @NotNull Session session) {
     try (final OutputStream outputStream = new FileOutputStream(file);
         final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       options
@@ -377,14 +380,20 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       options
           .getLogger()
           .log(ERROR, e, "Error writing Session to offline storage: %s", session.getSessionId());
+      return false;
     }
+    return true;
   }
 
   @ApiStatus.Internal
   public void persistCurrentSession(final @NotNull Session session) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
-      writeSessionToDisk(getCurrentSessionFile(directory.getOrCreate().getAbsolutePath()), session);
-      lastPersistedSessionId = session.getSessionId();
+      final boolean written =
+          writeSessionToDisk(
+              getCurrentSessionFile(directory.getOrCreate().getAbsolutePath()), session);
+      if (written) {
+        lastPersistedSessionId = session.getSessionId();
+      }
     }
   }
 
