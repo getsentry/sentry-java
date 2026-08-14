@@ -1,7 +1,6 @@
 .PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
 
 all: stop clean javadocs compile
-assembleBenchmarks: assembleBenchmarkTestRelease
 assembleUiTests: assembleUiTestRelease
 preMerge: check
 publish: clean dryRelease

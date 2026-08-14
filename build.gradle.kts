@@ -79,8 +79,6 @@ apiValidation {
             "sentry-uitest-android",
             "sentry-uitest-android-benchmark",
             "sentry-uitest-android-critical",
-            "test-app-plain",
-            "test-app-sentry",
             "test-app-size",
             "sentry-samples-netflix-dgs",
             "sentry-samples-console-otlp",
