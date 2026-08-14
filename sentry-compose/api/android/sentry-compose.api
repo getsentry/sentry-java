@@ -12,6 +12,7 @@ public final class io/sentry/compose/SentryComposeHelperKt {
 
 public final class io/sentry/compose/SentryComposeTracingKt {
 	public static final fun SentryTraced (Ljava/lang/String;Landroidx/compose/ui/Modifier;ZLkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun getLocalSentryScopes ()Landroidx/compose/runtime/ProvidableCompositionLocal;
 }
 
 public final class io/sentry/compose/SentryModifier {
