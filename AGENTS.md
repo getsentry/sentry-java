@@ -20,7 +20,6 @@ rule file in `.cursor/rules/`:
 | `continuous_profiling_jvm` | `sentry-async-profiler`, `IContinuousProfiler`, `ProfileChunk`, JFR files, `ProfileLifecycle` |
 | `opentelemetry` | `sentry-opentelemetry-*`, agent vs agentless, span processing, sampling, context propagation |
 | `new_module` | Adding a new integration or sample module |
-| `pr` | Creating pull requests, stacked PRs, changelog entries |
 | `e2e_tests` | System tests, sample applications, `system-test-runner.py`, mock Sentry server |
 
 Rules can be combined — a tracing scope issue may need both `scopes` and `opentelemetry`.
@@ -99,7 +98,7 @@ make systemTest
 4. **High-level communication**: Give high-level explanations of changes made, not step-by-step descriptions
 5. **Simplicity first**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible.
 6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply apiDump`
-7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command
+7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
 
 ## Repository Skills
 
@@ -225,7 +224,9 @@ gh pr view --json url -q '.url'
 
 ### Changelog
 
-User-facing changes get an entry under the `## Unreleased` section of `CHANGELOG.md`. When rebasing onto `main`, a release may have renamed the `## Unreleased` heading your entry was under to a version number — if so, move your entry back into an `## Unreleased` section at the top of the file (create it if it no longer exists). See `.cursor/rules/pr.mdc` for the full changelog and PR workflow.
+User-facing changes get an entry under the `## Unreleased` section of `CHANGELOG.md`. The
+`create-java-pr` skill is the source of truth for the full changelog and PR workflow, including
+subsection selection and the rebase caveat when a release renames `## Unreleased`.
 
 ## Useful Resources
 
