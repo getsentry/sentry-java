@@ -19,26 +19,26 @@ public class SentryTimberIntegration(
   public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
   public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
 ) : Integration, Closeable {
-  public val enableLogs: Boolean
-    get() = enableLogsProvider.evaluate()
+  public val logsEnabled: Boolean
+    get() = logsEnabledProvider.evaluate()
 
-  private var enableLogsProvider: Evaluator<Boolean> = Evaluator { false }
+  private var logsEnabledProvider: Evaluator<Boolean> = Evaluator { false }
 
-  public constructor(enableLogs: Boolean) : this() {
-    enableLogsProvider = Evaluator { enableLogs }
+  public constructor(logsEnabled: Boolean) : this() {
+    logsEnabledProvider = Evaluator { logsEnabled }
   }
 
   public constructor(
     minEventLevel: SentryLevel,
     minBreadcrumbLevel: SentryLevel,
     minLogsLevel: SentryLogLevel,
-    enableLogs: Boolean,
+    logsEnabled: Boolean,
   ) : this(minEventLevel, minBreadcrumbLevel, minLogsLevel) {
-    enableLogsProvider = Evaluator { enableLogs }
+    logsEnabledProvider = Evaluator { logsEnabled }
   }
 
-  public constructor(enableLogsProvider: Evaluator<Boolean>) : this() {
-    this.enableLogsProvider = enableLogsProvider
+  public constructor(logsEnabledProvider: Evaluator<Boolean>) : this() {
+    this.logsEnabledProvider = logsEnabledProvider
   }
 
   private lateinit var tree: SentryTimberTree
@@ -60,7 +60,7 @@ public class SentryTimberIntegration(
         minEventLevel,
         minBreadcrumbLevel,
         minLogsLevel,
-        enableLogsProvider.evaluate(),
+        logsEnabledProvider.evaluate(),
       )
     Timber.plant(tree)
 

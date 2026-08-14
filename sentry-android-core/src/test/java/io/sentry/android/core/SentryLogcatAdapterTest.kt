@@ -28,7 +28,7 @@ class SentryLogcatAdapterTest {
     val logs = mutableListOf<SentryLogEvent>()
 
     fun initSut(
-      enableLogcatLogs: Boolean? = true,
+      logcatLogsEnabled: Boolean? = true,
       metadata: Bundle = Bundle(),
       options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null,
     ) {
@@ -39,8 +39,8 @@ class SentryLogcatAdapterTest {
           breadcrumbs.add(breadcrumb)
           breadcrumb
         }
-        if (enableLogcatLogs != null) {
-          it.isEnableLogcatLogs = enableLogcatLogs
+        if (logcatLogsEnabled != null) {
+          it.logcatLogsEnabled = logcatLogsEnabled
         }
         it.logs.beforeSend =
           SentryOptions.Logs.BeforeSendLogCallback { logEvent ->
@@ -66,7 +66,7 @@ class SentryLogcatAdapterTest {
 
   @Test
   fun `Logcat logs are disabled by default while breadcrumbs and Android Log remain enabled`() {
-    fixture.initSut(enableLogcatLogs = null)
+    fixture.initSut(logcatLogsEnabled = null)
 
     SentryLogcatAdapter.d(tag, commonMsg)
 
@@ -77,7 +77,7 @@ class SentryLogcatAdapterTest {
 
   @Test
   fun `Logcat logs can be enabled through Android options`() {
-    fixture.initSut(enableLogcatLogs = true)
+    fixture.initSut(logcatLogsEnabled = true)
 
     SentryLogcatAdapter.d(tag, commonMsg)
 
@@ -87,7 +87,7 @@ class SentryLogcatAdapterTest {
   @Test
   fun `Logcat logs can be enabled through manifest metadata`() {
     val metadata = Bundle().apply { putBoolean(ManifestMetadataReader.ENABLE_LOGCAT_LOGS, true) }
-    fixture.initSut(enableLogcatLogs = null, metadata = metadata)
+    fixture.initSut(logcatLogsEnabled = null, metadata = metadata)
 
     SentryLogcatAdapter.d(tag, commonMsg)
 

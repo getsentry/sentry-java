@@ -39,9 +39,9 @@ class SentryTimberIntegrationTest {
       minEventLevel: SentryLevel = SentryLevel.ERROR,
       minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
       minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
-      enableLogs: Boolean? = null,
+      logsEnabled: Boolean? = null,
     ): SentryTimberIntegration =
-      if (enableLogs == null) {
+      if (logsEnabled == null) {
         SentryTimberIntegration(
           minEventLevel = minEventLevel,
           minBreadcrumbLevel = minBreadcrumbLevel,
@@ -52,7 +52,7 @@ class SentryTimberIntegrationTest {
           minEventLevel = minEventLevel,
           minBreadcrumbLevel = minBreadcrumbLevel,
           minLogsLevel = minLogsLevel,
-          enableLogs = enableLogs,
+          logsEnabled = logsEnabled,
         )
       }
   }
@@ -90,7 +90,7 @@ class SentryTimberIntegrationTest {
     val sut = fixture.getSut()
     sut.register(fixture.scopes, fixture.options)
 
-    assertFalse(sut.enableLogs)
+    assertFalse(sut.logsEnabled)
     Timber.e("message")
 
     verify(fixture.scopes).captureEvent(any())
@@ -100,10 +100,10 @@ class SentryTimberIntegrationTest {
 
   @Test
   fun `Manual integration captures logs when enabled`() {
-    val sut = fixture.getSut(enableLogs = true)
+    val sut = fixture.getSut(logsEnabled = true)
     sut.register(fixture.scopes, fixture.options)
 
-    assertTrue(sut.enableLogs)
+    assertTrue(sut.logsEnabled)
     Timber.i("message")
 
     verify(fixture.logs).log(any(), any<SentryLogParameters>(), any<String>())
@@ -111,9 +111,9 @@ class SentryTimberIntegrationTest {
 
   @Test
   fun `Integration evaluates Logs provider when registered`() {
-    var enableLogs = false
-    val sut = SentryTimberIntegration(Evaluator { enableLogs })
-    enableLogs = true
+    var logsEnabled = false
+    val sut = SentryTimberIntegration(Evaluator { logsEnabled })
+    logsEnabled = true
 
     sut.register(fixture.scopes, fixture.options)
     Timber.i("message")

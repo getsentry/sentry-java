@@ -225,7 +225,7 @@ class SentryAutoConfigurationTest {
               "integrations now require their own opt-ins.",
             *emptyArray(),
           )
-        assertThat(it.getBean(SentryProperties::class.java).logging.isEnableLogs).isFalse()
+        assertThat(it.getBean(SentryProperties::class.java).logging.logsEnabled).isFalse()
       }
   }
 
@@ -245,7 +245,7 @@ class SentryAutoConfigurationTest {
               "their own opt-ins.",
             *emptyArray(),
           )
-        assertThat(it.getBean(SentryProperties::class.java).logging.isEnableLogs).isFalse()
+        assertThat(it.getBean(SentryProperties::class.java).logging.logsEnabled).isFalse()
       }
   }
 
@@ -342,7 +342,7 @@ class SentryAutoConfigurationTest {
         "sentry.cron.default-timezone=America/New_York",
         "sentry.cron.default-failure-issue-threshold=40",
         "sentry.cron.default-recovery-threshold=50",
-        "sentry.logging.enable-logs=true",
+        "sentry.logging.logs-enabled=true",
         "sentry.profile-session-sample-rate=1.0",
         "sentry.profiling-traces-dir-path=tmp/sentry/profiling-traces",
         "sentry.profile-lifecycle=TRACE",
@@ -401,7 +401,7 @@ class SentryAutoConfigurationTest {
         assertThat(options.cron!!.defaultTimezone).isEqualTo("America/New_York")
         assertThat(options.cron!!.defaultFailureIssueThreshold).isEqualTo(40L)
         assertThat(options.cron!!.defaultRecoveryThreshold).isEqualTo(50L)
-        assertThat(options.logging.isEnableLogs).isTrue()
+        assertThat(options.logging.logsEnabled).isTrue()
         assertThat(options.profileSessionSampleRate).isEqualTo(1.0)
         assertThat(options.profilingTracesDirPath)
           .startsWith(File("tmp/sentry/profiling-traces").absolutePath)
