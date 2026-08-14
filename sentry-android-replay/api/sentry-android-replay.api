@@ -58,7 +58,7 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun captureReplay (Ljava/lang/Boolean;)V
+	public fun captureReplay (Ljava/lang/Boolean;)Lio/sentry/protocol/SentryId;
 	public fun close ()V
 	public fun disableDebugMaskingOverlay ()V
 	public fun enableDebugMaskingOverlay ()V
