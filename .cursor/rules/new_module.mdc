@@ -12,7 +12,9 @@ This document outlines the complete process for adding a new module to the sentr
 
 ### 1. Create the Module Structure
 
-1. Create the new module, conforming to the existing naming conventions and build scripts
+1. Create the new module, conforming to the existing naming conventions and build scripts.
+   Copy the `build.gradle.kts` of the closest existing integration rather than writing one from
+   scratch — `sentry-kafka` is a good JVM template, `sentry-android-timber` a good Android one.
 
 2. Add the module to the include list in `settings.gradle.kts`
 
@@ -27,8 +29,35 @@ ignoredProjects.addAll(
 )
 ```
 
-3. If adding a JVM sample, add E2E (system) tests, following the structure we have in the existing JVM examples.
+3. Add a `SENTRY_{MODULE}_SDK_NAME` constant to the `Config.Sentry` block in
+   `buildSrc/src/main/java/Config.kt`:
+
+```kotlin
+val SENTRY_FOO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.foo"
+```
+
+The module's `build.gradle.kts` consumes it in both `buildConfig` and the jar manifest
+(`Sentry-SDK-Name` / `Sentry-SDK-Package-Name`) — see `sentry-kafka/build.gradle.kts`.
+
+4. Add the instrumented library to `gradle/libs.versions.toml` and depend on it with
+   `compileOnly(libs.<lib>)`, so the integration does not force the dependency on users.
+
+5. Register the integration with the SDK so it is reported in the `sdk` payload. Every
+   integration does this — see `sentry-openfeature/.../SentryOpenFeatureHook.java`:
+
+```java
+static {
+  SentryIntegrationPackageStorage.getInstance()
+      .addPackage("maven:io.sentry:sentry-{module-name}", BuildConfig.VERSION_NAME);
+}
+// then, from the constructor:
+addIntegrationToSdkVersion("{IntegrationName}");
+```
+
+6. If adding a JVM sample, add E2E (system) tests, following the structure we have in the existing JVM examples.
    The test should then be added to `test/system-test-runner.py` and `.github/workflows/system-tests-backend.yml`.
+
+`sentry-bom` and the root `build.gradle.kts` need no change — they iterate over subprojects.
 
 ### 2. Create Module Documentation
 
@@ -46,22 +75,29 @@ The following tasks are required only when adding a module that isn't a sample.
 
 ### 3. Update Main README.md
 
-Add the new module to the packages table in the main `README.md` with a placeholder link to the badge:
+Add the new module to the packages table in the main `README.md`. Copy the row of a neighbouring
+module and swap the name — Android modules carry a third column for the min API level, JVM modules
+do not:
 
 ```markdown
-| sentry-{module-name} | [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-{module-name}/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.sentry/sentry-{module-name}) | |
+| sentry-{module-name} | [![Maven Central Version](https://img.shields.io/maven-central/v/io.sentry/sentry-{module-name}?style=for-the-badge&logo=sentry&color=green)](https://central.sonatype.com/artifact/io.sentry/sentry-{module-name}) |
 ```
 
 Note that the badge will only work after the module is released to Maven Central.
 
-### 4. Add Documentation to docs.sentry.io
+### 4. Add the Module to the Issue Template
+
+Add `- sentry-{module-name}` to the integrations dropdown in
+`.github/ISSUE_TEMPLATE/bug_report_java.yml`, or `bug_report_android.yml` for an Android module.
+
+### 5. Add Documentation to docs.sentry.io
 
 Add the necessary documentation to [docs.sentry.io](https://docs.sentry.io):
 - For Java modules: Add to Java platform docs, usually in integrations section
 - For Android modules: Add to Android platform docs, usually in integrations section
 - Include installation instructions, configuration options, and usage examples
 
-### 5. Post release tasks
+### 6. Post release tasks
 
 Remind the user to perform the following tasks after the module is merged and released:
 
