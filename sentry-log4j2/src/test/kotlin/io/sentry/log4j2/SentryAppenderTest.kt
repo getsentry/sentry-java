@@ -62,7 +62,7 @@ class SentryAppenderTest {
       minimumLevel: Level? = null,
       debug: Boolean? = null,
       contextTags: List<String>? = null,
-      enableLogs: Boolean = true,
+      logsEnabled: Boolean = true,
     ): ExtendedLogger {
       if (transportFactory != null) {
         this.transportFactory = transportFactory
@@ -77,7 +77,7 @@ class SentryAppenderTest {
           minimumBreadcrumbLevel,
           minimumEventLevel,
           minimumLevel,
-          enableLogs,
+          logsEnabled,
           debug,
           this.transportFactory,
           ScopesAdapter.getInstance(),
@@ -262,7 +262,7 @@ class SentryAppenderTest {
 
   @Test
   fun `does not capture logs when local logs are disabled`() {
-    val logger = fixture.getSut(enableLogs = false)
+    val logger = fixture.getSut(logsEnabled = false)
 
     logger.info("this should not be captured as a log")
     Sentry.flush(10)
@@ -272,7 +272,7 @@ class SentryAppenderTest {
 
   @Test
   fun `captures logs when local logs are enabled`() {
-    val logger = fixture.getSut(enableLogs = true)
+    val logger = fixture.getSut(logsEnabled = true)
 
     logger.info("this should be captured as a log")
     Sentry.flush(10)
@@ -291,7 +291,7 @@ class SentryAppenderTest {
       fixture.getSut(
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.ERROR,
-        enableLogs = false,
+        logsEnabled = false,
       )
 
     logger.info("this should be a breadcrumb")

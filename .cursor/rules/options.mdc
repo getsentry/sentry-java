@@ -76,7 +76,7 @@ Allows setting options via `AndroidManifest.xml` `<meta-data>` tags.
 - Add a `static final String` constant for the key
 - Read it in `applyMetadata()` using `readBool(metadata, logger, CONSTANT, defaultValue)`
 - Apply automatic-source options directly, for example
-  `options.setEnableLogcatLogs(...)` for `io.sentry.logcat.logs.enabled`
+  `options.setLogcatLogsEnabled(...)` for `io.sentry.logcat.logs.enabled`
 - Do not add or restore `io.sentry.logs.enabled` or `io.sentry.metrics.enabled`; those aggregate
   keys are obsolete and are read only to emit migration warnings.
 
@@ -89,8 +89,8 @@ Allows setting options via `AndroidManifest.xml` `<meta-data>` tags.
 
 `SentryProperties` extends `SentryOptions`, so bindable namespaced behavior options are available
 through the `SentryOptions` class hierarchy. Spring-owned integration controls belong to a Spring
-namespace instead. For example, `SentryProperties.Logging.enableLogs` binds to
-`sentry.logging.enable-logs` and controls Logs forwarding from the auto-configured Logback
+namespace instead. For example, `SentryProperties.Logging.logsEnabled` binds to
+`sentry.logging.logs-enabled` and controls Logs forwarding from the auto-configured Logback
 appender. `sentry.logging.enabled` separately controls whether that appender is installed.
 
 Do not add or restore `sentry.logs.enabled` or `sentry.metrics.enabled`. Spring detects those legacy
@@ -110,12 +110,12 @@ They capture whenever their scopes are enabled, then apply signal behavior such 
 
 Automatic integrations must check their source-local opt-in without affecting their existing event
 or breadcrumb paths. Current Logs controls are:
-- Logback: appender `enableLogs`
-- Log4j2: appender `enableLogs`
-- JUL: handler `enableLogs`
-- Spring Boot Logback: `sentry.logging.enable-logs`
-- Timber: `enableTimberLogs` / `io.sentry.timber.logs.enabled`
-- Logcat: `enableLogcatLogs` / `io.sentry.logcat.logs.enabled`
+- Logback: appender `logsEnabled`
+- Log4j2: appender `logsEnabled`
+- JUL: handler `logsEnabled`
+- Spring Boot Logback: `sentry.logging.logs-enabled`
+- Timber: `timberLogsEnabled` / `io.sentry.timber.logs.enabled`
+- Logcat: `logcatLogsEnabled` / `io.sentry.logcat.logs.enabled`
 
 All source-local options default to `false` and gate only Sentry Logs forwarding.
 

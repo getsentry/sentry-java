@@ -55,7 +55,7 @@ public final class SentryLogcatAdapter {
     final @NotNull ScopesAdapter scopes = ScopesAdapter.getInstance();
     final @NotNull SentryOptions options = scopes.getOptions();
     if (!(options instanceof SentryAndroidOptions)
-        || !((SentryAndroidOptions) options).isEnableLogcatLogs()) {
+        || !((SentryAndroidOptions) options).getLogcatLogsEnabled()) {
       return;
     }
     final @Nullable String trMessage = tr != null ? tr.getMessage() : null;

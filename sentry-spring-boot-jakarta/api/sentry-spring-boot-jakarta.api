@@ -57,14 +57,14 @@ public class io/sentry/spring/boot/jakarta/SentryProperties$Graphql {
 public class io/sentry/spring/boot/jakarta/SentryProperties$Logging {
 	public fun <init> ()V
 	public fun getLoggers ()Ljava/util/List;
+	public fun getLogsEnabled ()Z
 	public fun getMinimumBreadcrumbLevel ()Lorg/slf4j/event/Level;
 	public fun getMinimumEventLevel ()Lorg/slf4j/event/Level;
 	public fun getMinimumLevel ()Lorg/slf4j/event/Level;
-	public fun isEnableLogs ()Z
 	public fun isEnabled ()Z
-	public fun setEnableLogs (Z)V
 	public fun setEnabled (Z)V
 	public fun setLoggers (Ljava/util/List;)V
+	public fun setLogsEnabled (Z)V
 	public fun setMinimumBreadcrumbLevel (Lorg/slf4j/event/Level;)V
 	public fun setMinimumEventLevel (Lorg/slf4j/event/Level;)V
 	public fun setMinimumLevel (Lorg/slf4j/event/Level;)V

@@ -55,7 +55,7 @@ public class SentryAppender extends AbstractAppender {
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private @NotNull Level minimumLevel = Level.INFO;
-  private final boolean enableLogs;
+  private final boolean logsEnabled;
   private final @Nullable Boolean debug;
   private final @NotNull IScopes scopes;
   private final @Nullable List<String> contextTags;
@@ -126,7 +126,7 @@ public class SentryAppender extends AbstractAppender {
       final @Nullable Level minimumBreadcrumbLevel,
       final @Nullable Level minimumEventLevel,
       final @Nullable Level minimumLevel,
-      final boolean enableLogs,
+      final boolean logsEnabled,
       final @Nullable Boolean debug,
       final @Nullable ITransportFactory transportFactory,
       final @NotNull IScopes scopes,
@@ -142,7 +142,7 @@ public class SentryAppender extends AbstractAppender {
     if (minimumLevel != null) {
       this.minimumLevel = minimumLevel;
     }
-    this.enableLogs = enableLogs;
+    this.logsEnabled = logsEnabled;
     this.debug = debug;
     this.transportFactory = transportFactory;
     this.scopes = scopes;
@@ -188,7 +188,7 @@ public class SentryAppender extends AbstractAppender {
       @Nullable @PluginAttribute("minimumBreadcrumbLevel") final Level minimumBreadcrumbLevel,
       @Nullable @PluginAttribute("minimumEventLevel") final Level minimumEventLevel,
       @Nullable @PluginAttribute("minimumLevel") final Level minimumLevel,
-      @Nullable @PluginAttribute("enableLogs") final Boolean enableLogs,
+      @Nullable @PluginAttribute("logsEnabled") final Boolean logsEnabled,
       @Nullable @PluginAttribute("dsn") final String dsn,
       @Nullable @PluginAttribute("debug") final Boolean debug,
       @Nullable @PluginElement("filter") final Filter filter,
@@ -205,7 +205,7 @@ public class SentryAppender extends AbstractAppender {
         minimumBreadcrumbLevel,
         minimumEventLevel,
         minimumLevel,
-        Boolean.TRUE.equals(enableLogs),
+        Boolean.TRUE.equals(logsEnabled),
         debug,
         null,
         ScopesAdapter.getInstance(),
@@ -257,7 +257,7 @@ public class SentryAppender extends AbstractAppender {
 
   @Override
   public void append(final @NotNull LogEvent eventObject) {
-    if (enableLogs && eventObject.getLevel().isMoreSpecificThan(minimumLevel)) {
+    if (logsEnabled && eventObject.getLevel().isMoreSpecificThan(minimumLevel)) {
       captureLog(eventObject);
     }
     if (eventObject.getLevel().isMoreSpecificThan(minimumEventLevel)) {

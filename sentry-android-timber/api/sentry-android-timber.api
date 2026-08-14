@@ -15,7 +15,7 @@ public final class io/sentry/android/timber/SentryTimberIntegration : io/sentry/
 	public fun <init> (Lio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun <init> (Z)V
 	public fun close ()V
-	public final fun getEnableLogs ()Z
+	public final fun getLogsEnabled ()Z
 	public final fun getMinBreadcrumbLevel ()Lio/sentry/SentryLevel;
 	public final fun getMinEventLevel ()Lio/sentry/SentryLevel;
 	public final fun getMinLogsLevel ()Lio/sentry/SentryLogLevel;

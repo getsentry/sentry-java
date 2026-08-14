@@ -1975,14 +1975,14 @@ class ManifestMetadataReaderTest {
           "integrations now require their own opt-ins.",
         *emptyArray(),
       )
-    assertThat(fixture.options.isEnableTimberLogs).isFalse()
-    assertThat(fixture.options.isEnableLogcatLogs).isFalse()
+    assertThat(fixture.options.timberLogsEnabled).isFalse()
+    assertThat(fixture.options.logcatLogsEnabled).isFalse()
   }
 
   @Test
   fun `applyMetadata warns when legacy logs enabled metadata is false`() {
-    fixture.options.isEnableTimberLogs = true
-    fixture.options.isEnableLogcatLogs = true
+    fixture.options.timberLogsEnabled = true
+    fixture.options.logcatLogsEnabled = true
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGS to false)
     val context = fixture.getContext(metaData = bundle)
 
@@ -1996,8 +1996,8 @@ class ManifestMetadataReaderTest {
           "enabled through their own opt-ins.",
         *emptyArray(),
       )
-    assertThat(fixture.options.isEnableTimberLogs).isTrue()
-    assertThat(fixture.options.isEnableLogcatLogs).isTrue()
+    assertThat(fixture.options.timberLogsEnabled).isTrue()
+    assertThat(fixture.options.logcatLogsEnabled).isTrue()
   }
 
   @Test
@@ -2006,7 +2006,7 @@ class ManifestMetadataReaderTest {
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertFalse(fixture.options.isEnableTimberLogs)
+    assertFalse(fixture.options.timberLogsEnabled)
   }
 
   @Test
@@ -2016,7 +2016,7 @@ class ManifestMetadataReaderTest {
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertTrue(fixture.options.isEnableTimberLogs)
+    assertTrue(fixture.options.timberLogsEnabled)
   }
 
   @Test
@@ -2025,7 +2025,7 @@ class ManifestMetadataReaderTest {
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertThat(fixture.options.isEnableLogcatLogs).isFalse()
+    assertThat(fixture.options.logcatLogsEnabled).isFalse()
   }
 
   @Test
@@ -2035,18 +2035,18 @@ class ManifestMetadataReaderTest {
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertThat(fixture.options.isEnableLogcatLogs).isTrue()
+    assertThat(fixture.options.logcatLogsEnabled).isTrue()
   }
 
   @Test
   fun `applyMetadata reads Logcat logs disabled to options`() {
-    fixture.options.isEnableLogcatLogs = true
+    fixture.options.logcatLogsEnabled = true
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGCAT_LOGS to false)
     val context = fixture.getContext(metaData = bundle)
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    assertThat(fixture.options.isEnableLogcatLogs).isFalse()
+    assertThat(fixture.options.logcatLogsEnabled).isFalse()
   }
 
   @Test

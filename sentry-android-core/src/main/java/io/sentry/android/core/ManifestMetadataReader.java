@@ -746,11 +746,11 @@ final class ManifestMetadataReader {
           }
         }
 
-        options.setEnableTimberLogs(
-            readBool(metadata, logger, ENABLE_TIMBER_LOGS, options.isEnableTimberLogs()));
+        options.setTimberLogsEnabled(
+            readBool(metadata, logger, ENABLE_TIMBER_LOGS, options.getTimberLogsEnabled()));
 
-        options.setEnableLogcatLogs(
-            readBool(metadata, logger, ENABLE_LOGCAT_LOGS, options.isEnableLogcatLogs()));
+        options.setLogcatLogsEnabled(
+            readBool(metadata, logger, ENABLE_LOGCAT_LOGS, options.getLogcatLogsEnabled()));
 
         final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
         feedbackOptions.setNameRequired(
