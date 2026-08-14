@@ -38,6 +38,7 @@ public final class SentryTracer implements ITransaction {
 
   private volatile @Nullable Future<?> idleTimeoutFuture;
   private volatile @Nullable Future<?> deadlineTimeoutFuture;
+  private volatile long deadlineTimeoutScheduledAtNanos;
 
   // Whether timeout tasks may still be scheduled. Set to false once the tracer is finished. The
   // executor itself is owned by the options (shared SDK-wide) and obtained from there when needed.
@@ -144,6 +145,47 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void onDeadlineTimeoutReached() {
+    if (isFinished()) {
+      isDeadlineTimerRunning.set(false);
+      return;
+    }
+
+    final @Nullable Long deadlineTimeout = transactionOptions.getDeadlineTimeout();
+    if (deadlineTimeout != null) {
+      final long elapsedNanos =
+          scopes.getOptions().getDateProvider().now().nanoTimestamp()
+              - deadlineTimeoutScheduledAtNanos;
+      if (deadlineTimeout > 0 && DateUtils.nanosToMillis(elapsedNanos) > deadlineTimeout * 2.0) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Dropping transaction %s because the deadline timer fired too late",
+                name);
+        root.finish();
+        scopes.configureScope(
+            scope -> {
+              scope.withTransaction(
+                  transaction -> {
+                    if (transaction == this) {
+                      scope.clearTransaction();
+                    }
+                  });
+            });
+        if (timersEnabled) {
+          try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
+            if (timersEnabled) {
+              cancelIdleTimer();
+              cancelDeadlineTimer();
+              timersEnabled = false;
+            }
+          }
+        }
+        return;
+      }
+    }
+
     final @Nullable SpanStatus status = getStatus();
     forceFinish(
         (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
@@ -307,6 +349,8 @@ public final class SentryTracer implements ITransaction {
         if (timersEnabled) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
+          deadlineTimeoutScheduledAtNanos =
+              scopes.getOptions().getDateProvider().now().nanoTimestamp();
           try {
             deadlineTimeoutFuture =
                 scopes
@@ -530,7 +574,8 @@ public final class SentryTracer implements ITransaction {
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
+              "Span operation: %s, description: %s dropped due to limit reached. Returning"
+                  + " NoOpSpan.",
               operation,
               description);
       return NoOpSpan.getInstance();
@@ -627,7 +672,8 @@ public final class SentryTracer implements ITransaction {
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
+              "Span operation: %s, description: %s dropped due to limit reached. Returning"
+                  + " NoOpSpan.",
               operation,
               description);
       return NoOpSpan.getInstance();
@@ -975,6 +1021,24 @@ public final class SentryTracer implements ITransaction {
   @Nullable
   Future<?> getDeadlineTimeoutFuture() {
     return deadlineTimeoutFuture;
+  }
+
+  @TestOnly
+  @Nullable
+  Future<?> getIdleTimeoutTask() {
+    return idleTimeoutFuture;
+  }
+
+  @TestOnly
+  @Nullable
+  Runnable getDeadlineTimeoutTask() {
+    return deadlineTimeoutFuture == null ? null : this::onDeadlineTimeoutReached;
+  }
+
+  @TestOnly
+  @Nullable
+  Object getTimer() {
+    return null;
   }
 
   @TestOnly
