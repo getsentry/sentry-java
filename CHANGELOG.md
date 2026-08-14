@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Performance
+
+- Use manifest metadata resolved at build time, reducing Android SDK initialization time by 6.5% ([#5969](https://github.com/getsentry/sentry-java/pull/5969))
+
 ## 8.53.0
 
 ### Features
