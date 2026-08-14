@@ -47,13 +47,13 @@ class ManifestMetadataReaderTest {
 
   @AfterTest
   fun `tear down`() {
-    ManifestMetadataReader.buildTimeMetadata = null
+    ManifestMetadataReader.manifestMetadata = null
   }
 
   @Test
   fun `applyMetadata reads typed build-time metadata without querying context`() {
     val context = mock<Context>()
-    ManifestMetadataReader.buildTimeMetadata =
+    ManifestMetadataReader.manifestMetadata =
       mapOf(
         ManifestMetadataReader.DEBUG to true,
         ManifestMetadataReader.DIST to "dist",
@@ -74,7 +74,7 @@ class ManifestMetadataReaderTest {
   fun `build-time metadata is authoritative when a key is absent`() {
     val context = mock<Context>()
     fixture.options.dist = "configured"
-    ManifestMetadataReader.buildTimeMetadata = emptyMap()
+    ManifestMetadataReader.manifestMetadata = emptyMap()
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
@@ -85,7 +85,7 @@ class ManifestMetadataReaderTest {
   @Test
   fun `isAutoInit reads build-time metadata without querying context`() {
     val context = mock<Context>()
-    ManifestMetadataReader.buildTimeMetadata = mapOf(ManifestMetadataReader.AUTO_INIT to false)
+    ManifestMetadataReader.manifestMetadata = mapOf(ManifestMetadataReader.AUTO_INIT to false)
 
     assertThat(ManifestMetadataReader.isAutoInit(context, fixture.logger)).isFalse()
     verifyNoInteractions(context)

@@ -26,9 +26,8 @@ import org.jetbrains.annotations.Nullable;
 /** Class responsible for reading values from manifest and setting them to the options */
 final class ManifestMetadataReader {
 
-  // Populated by the Sentry Android Gradle plugin with manifest metadata resolved at build time.
-  // When set, it is authoritative: the manifest is not read at runtime.
-  static @Nullable Map<String, Object> buildTimeMetadata;
+  // Populated by the Sentry Android Gradle plugin from the merged manifest at build time.
+  static @Nullable Map<String, Object> manifestMetadata;
 
   static final String DSN = "io.sentry.dsn";
   static final String DEBUG = "io.sentry.debug";
@@ -930,7 +929,7 @@ final class ManifestMetadataReader {
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @Nullable BuildInfoProvider buildInfoProvider) {
-    final @Nullable Map<String, Object> injected = buildTimeMetadata;
+    final @Nullable Map<String, Object> injected = manifestMetadata;
     if (injected != null) {
       return injected;
     }
