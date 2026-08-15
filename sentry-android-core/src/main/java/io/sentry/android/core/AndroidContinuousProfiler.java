@@ -151,6 +151,7 @@ public class AndroidContinuousProfiler
           break;
       }
       if (!isRunning()) {
+        shouldStop = false;
         logger.log(SentryLevel.DEBUG, "Started Profiler.");
         start();
       }
