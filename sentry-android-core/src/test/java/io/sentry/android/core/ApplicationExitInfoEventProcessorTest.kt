@@ -405,6 +405,18 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `if scope environment is persisted, it takes precedence over the options environment`() {
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+
+    val processor = fixture.getSut(tmpDir, populateOptionsCache = true)
+    fixture.persistScope(PersistingScopeObserver.ENVIRONMENT_FILENAME, "staging")
+
+    val processed = processor.process(SentryEvent(), hint)
+
+    assertEquals("staging", processed!!.environment)
+  }
+
+  @Test
   fun `if release is not persisted and app was not updated, uses release from options`() {
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
     val processor = fixture.getSut(tmpDir)
@@ -485,6 +497,7 @@ class ApplicationExitInfoEventProcessorTest {
     fixture.options.release = "io.sentry.samples@1.2.0+232"
     fixture.options.environment = "production"
     fixture.options.dist = "custom-dist"
+    fixture.persistScope(PersistingScopeObserver.ENVIRONMENT_FILENAME, "staging")
     setLastUpdateTime(1_000)
 
     val processed = processor.process(SentryEvent(), hint)!!
