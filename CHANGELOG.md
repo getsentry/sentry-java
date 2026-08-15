@@ -52,6 +52,8 @@
   - `ClientReportRecorder` now reads the item count from the envelope item header instead of deserializing the payload, which under sustained rate limiting could pin CPU cores while repeatedly throwing exceptions
 - Report tasks handed to a no-op `ISentryExecutorService` as cancelled ([#5874](https://github.com/getsentry/sentry-java/pull/5874))
   - `NoOpSentryExecutorService` previously returned a `Future` that was never run and never cancelled, so callers could not tell a dropped task from a queued one and `get()` would block until its timeout
+- Fix `NoSuchMethodError` when using `SentryTraced` or `SentryUserFeedbackButton` with Jetpack Compose older than 1.8 ([#5887](https://github.com/getsentry/sentry-java/pull/5887))
+  - Since `8.32.0`, `sentry-compose` was compiled against a newer `androidx.compose.material3`, whose transitive Compose versions were inlined into the SDK by composables like `Box`. This made the SDK reference Compose internals (`Composer.shouldExecute`, `BoxKt.maybeCachedBoxMeasurePolicy`) that do not exist on older Compose versions.
 
 ### Performance
 

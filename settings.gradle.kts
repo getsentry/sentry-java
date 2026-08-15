@@ -125,6 +125,7 @@ include(
     "sentry-samples:sentry-samples-spring-boot-4-otlp",
     "sentry-samples:sentry-samples-spring-boot-4-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
+    "sentry-android-integration-tests:compose-floor-integration-tests",
     "sentry-android-integration-tests:sentry-uitest-android-critical",
     "sentry-android-integration-tests:sentry-uitest-android-benchmark",
     "sentry-android-integration-tests:sentry-uitest-android-macrobenchmark",
