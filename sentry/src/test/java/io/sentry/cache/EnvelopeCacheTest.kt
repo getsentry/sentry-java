@@ -1,5 +1,6 @@
 package io.sentry.cache
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DateUtils
 import io.sentry.Hint
 import io.sentry.ILogger
@@ -23,6 +24,7 @@ import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
 import java.io.File
+import java.io.Writer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Date
@@ -34,8 +36,10 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class EnvelopeCacheTest {
@@ -158,6 +162,160 @@ class EnvelopeCacheTest {
 
     file.deleteRecursively()
     assertTrue(didStore)
+  }
+
+  @Test
+  fun `delayed same SID SessionStart preserves newer unhandled snapshot`() {
+    val cache = fixture.getSUT()
+    val sid = SentryUUID.generateSentryId()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val newerSession = createSession(sessionId = sid)
+    newerSession.recordNonTerminatingUnhandledError()
+    cache.persistCurrentSession(newerSession)
+
+    val delayedStart = createSession(sessionId = sid)
+    val envelope = SentryEnvelope.from(fixture.options.serializer, delayedStart, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    val persistedSession =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedSession.sessionId).isEqualTo(sid)
+    assertThat(persistedSession.hasNonTerminatingUnhandledError()).isTrue()
+    assertThat(persistedSession.errorCount()).isEqualTo(1)
+    assertThat(previousSessionFile.exists()).isFalse()
+  }
+
+  @Test
+  fun `delayed same SID SessionStart preserves newer error count snapshot`() {
+    val cache = fixture.getSUT()
+    val sid = SentryUUID.generateSentryId()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val newerSession = createSession(sessionId = sid)
+    newerSession.update(null, null, true)
+    cache.persistCurrentSession(newerSession)
+
+    val delayedStart = createSession(sessionId = sid)
+    val envelope = SentryEnvelope.from(fixture.options.serializer, delayedStart, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    val persistedSession =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedSession.sessionId).isEqualTo(sid)
+    assertThat(persistedSession.hasNonTerminatingUnhandledError()).isFalse()
+    assertThat(persistedSession.errorCount()).isEqualTo(1)
+    assertThat(previousSessionFile.exists()).isFalse()
+  }
+
+  @Test
+  fun `null SIDs on SessionStart rotate instead of preserving as same session`() {
+    val cache = fixture.getSUT()
+    val currentSession = createSession(sessionId = null)
+    currentSession.update(null, null, true)
+    cache.persistCurrentSession(currentSession)
+    val startingSession = createSession(sessionId = null)
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, startingSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    val persistedPrevious =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isNull()
+    assertThat(persistedCurrent.errorCount()).isEqualTo(0)
+    assertThat(persistedPrevious.sessionId).isNull()
+    assertThat(persistedPrevious.errorCount()).isEqualTo(1)
+  }
+
+  @Test
+  fun `different SID SessionStart rotates current session`() {
+    val cache = fixture.getSUT()
+    val currentSession = createSession()
+    cache.persistCurrentSession(currentSession)
+    val nextSession = createSession()
+
+    val envelope = SentryEnvelope.from(fixture.options.serializer, nextSession, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    val persistedCurrent =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    val persistedPrevious =
+      fixture.options.serializer.deserialize(
+        previousSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedCurrent.sessionId).isEqualTo(nextSession.sessionId)
+    assertThat(persistedPrevious.sessionId).isEqualTo(currentSession.sessionId)
+  }
+
+  @Test
+  fun `SessionEnd deleting the persisted session lets the delayed SessionStart write it again`() {
+    val cache = fixture.getSUT()
+    val sid = SentryUUID.generateSentryId()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    cache.persistCurrentSession(createSession(sessionId = sid))
+
+    // the previous session's end envelope is still queued and deletes the file the live session
+    // was just written to
+    val endedSession = createSession()
+    cache.storeEnvelope(
+      SentryEnvelope.from(fixture.options.serializer, endedSession, null),
+      HintUtils.createWithTypeCheckHint(SessionEndHint()),
+    )
+    assertThat(currentSessionFile.exists()).isFalse()
+
+    val delayedStart = createSession(sessionId = sid)
+    cache.storeEnvelope(
+      SentryEnvelope.from(fixture.options.serializer, delayedStart, null),
+      HintUtils.createWithTypeCheckHint(SessionStartHint()),
+    )
+
+    val persistedSession =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedSession.sessionId).isEqualTo(sid)
+  }
+
+  @Test
+  fun `failed persist lets the delayed SessionStart write the session`() {
+    val sid = SentryUUID.generateSentryId()
+    val liveSession = createSession(sessionId = sid)
+    val delayedStart = createSession(sessionId = sid)
+    val serializer = mock<ISerializer>()
+    whenever(serializer.serialize(same(liveSession), any<Writer>()))
+      .thenThrow(RuntimeException("forced ex"))
+    whenever(serializer.deserialize(any(), eq(Session::class.java))).thenReturn(delayedStart)
+    val cache = fixture.getSUT { options -> options.setSerializer(serializer) }
+
+    cache.persistCurrentSession(liveSession)
+
+    val envelope = SentryEnvelope.from(SentryOptions.empty().serializer, delayedStart, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    verify(serializer).serialize(same(delayedStart), any<Writer>())
   }
 
   @Test
@@ -491,14 +649,17 @@ class EnvelopeCacheTest {
     assertFalse(didStore)
   }
 
-  private fun createSession(started: Date? = null): Session =
+  private fun createSession(
+    started: Date? = null,
+    sessionId: String? = SentryUUID.generateSentryId(),
+  ): Session =
     Session(
       Ok,
       started ?: DateUtils.getCurrentDateTime(),
       DateUtils.getCurrentDateTime(),
       0,
       "dis",
-      SentryUUID.generateSentryId(),
+      sessionId,
       true,
       null,
       null,
