@@ -673,6 +673,36 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `background close timeout leaves cleanup queued on main thread`() {
+    fixture.options.shutdownTimeoutMillis = 1
+    val recorder = mock<Recorder>()
+    val captureStrategy = mock<CaptureStrategy>()
+    val replay =
+      fixture.getSut(
+        context,
+        recorderProvider = { recorder },
+        replayCaptureStrategyProvider = { captureStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    shadowOf(Looper.getMainLooper()).idle()
+    val replayExecutor = replay.replayExecutor
+
+    val closeThread = Thread { replay.close() }.apply { start() }
+    closeThread.join(TimeUnit.SECONDS.toMillis(2))
+
+    assertThat(closeThread.isAlive).isFalse()
+    assertThat(replayExecutor.isShutdown).isFalse()
+    verify(recorder, never()).close()
+
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(recorder).close()
+    assertThat(replayExecutor.isShutdown).isTrue()
+  }
+
+  @Test
   fun `main thread close does not wait for replay executor`() {
     val replay = fixture.getSut(context, replayCaptureStrategyProvider = { mock() })
     replay.register(fixture.scopes, fixture.options)

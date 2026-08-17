@@ -460,39 +460,47 @@ public class ReplayIntegration(
     }
 
     val isMainThread = options.threadChecker.isMainThread
-    val closeCompleted = if (isMainThread) null else CountDownLatch(1)
     if (isMainThread) {
       closeInternal()
-    } else {
-      mainLooperHandler.post {
+      shutdownExecutors(waitForTermination = false)
+      return
+    }
+
+    val closeCompleted = CountDownLatch(1)
+    if (
+      !mainLooperHandler.post {
         try {
           closeInternal()
         } finally {
-          closeCompleted?.countDown()
+          shutdownExecutors(waitForTermination = false)
+          closeCompleted.countDown()
         }
       }
+    ) {
+      return
     }
-    if (closeCompleted != null) {
-      // Wait until main-thread teardown queues replay cleanup before shutting down its executors.
-      try {
-        closeCompleted.await(options.shutdownTimeoutMillis, MILLISECONDS)
-      } catch (e: InterruptedException) {
-        Thread.currentThread().interrupt()
+    try {
+      if (closeCompleted.await(options.shutdownTimeoutMillis, MILLISECONDS)) {
+        shutdownExecutors(waitForTermination = true)
       }
+    } catch (e: InterruptedException) {
+      Thread.currentThread().interrupt()
     }
+  }
 
+  private fun shutdownExecutors(waitForTermination: Boolean) {
     if (lazyReplayExecutor.isInitialized()) {
-      if (isMainThread) {
-        replayExecutor.gracefulShutdown()
-      } else {
+      if (waitForTermination) {
         replayExecutor.shutdown()
+      } else {
+        replayExecutor.gracefulShutdown()
       }
     }
     if (lazyPersistingExecutor.isInitialized()) {
-      if (isMainThread) {
-        persistingExecutor.gracefulShutdown()
-      } else {
+      if (waitForTermination) {
         persistingExecutor.shutdown()
+      } else {
+        persistingExecutor.gracefulShutdown()
       }
     }
   }
