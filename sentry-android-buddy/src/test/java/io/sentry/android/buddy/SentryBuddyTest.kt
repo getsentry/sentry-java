@@ -29,7 +29,7 @@ class SentryBuddyTest {
   @Test
   fun `activity resume records screen through installed facade`() {
     val application = RuntimeEnvironment.getApplication()
-    SentryBuddy.install(application)
+    SentryBuddy.install(application, SentryBuddyOptions(showOverlay = false))
 
     SentryBuddy.startRecording(BuddyFlowIntent("Checkout"))
     Robolectric.buildActivity(Activity::class.java).setup()
@@ -37,5 +37,16 @@ class SentryBuddyTest {
 
     assertThat(recording.timeline.map { it.type }).contains(BuddyTimelineItem.Type.SCREEN)
     assertThat(recording.summary.screenCount).isEqualTo(1)
+  }
+
+  @Test
+  fun `disabled install does not install recorder`() {
+    val application = RuntimeEnvironment.getApplication()
+
+    SentryBuddy.install(application, SentryBuddyOptions(enabled = false))
+
+    assertFailsWith<IllegalStateException> {
+      SentryBuddy.startRecording(BuddyFlowIntent("Checkout"))
+    }
   }
 }

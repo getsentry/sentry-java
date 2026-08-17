@@ -2,13 +2,21 @@ package io.sentry.android.buddy
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.platform.ComposeView
 import io.sentry.ITransaction
 import io.sentry.Sentry
 import io.sentry.TransactionOptions
 import java.util.Date
 import java.util.UUID
+import java.util.WeakHashMap
 
 internal class BuddyRecorder(
   private val metadataProvider: BuddyMetadataProvider,
@@ -178,23 +186,110 @@ internal class BuddyRecorder(
   }
 }
 
-internal class BuddyActivityLifecycleCallbacks(private val recorder: BuddyRecorder) :
-  Application.ActivityLifecycleCallbacks {
+internal class BuddyActivityLifecycleCallbacks(
+  private val recorder: BuddyRecorder,
+  private var overlayManager: BuddyOverlayManager?,
+) : Application.ActivityLifecycleCallbacks {
   override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
 
   override fun onActivityStarted(activity: Activity) = Unit
 
   override fun onActivityResumed(activity: Activity) {
     recorder.recordScreen(activity.javaClass.simpleName)
+    overlayManager?.attach(activity)
   }
 
-  override fun onActivityPaused(activity: Activity) = Unit
+  override fun onActivityPaused(activity: Activity) {
+    overlayManager?.detach(activity)
+  }
 
   override fun onActivityStopped(activity: Activity) = Unit
 
   override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
 
-  override fun onActivityDestroyed(activity: Activity) = Unit
+  override fun onActivityDestroyed(activity: Activity) {
+    overlayManager?.detach(activity)
+  }
+
+  fun updateOverlay(options: SentryBuddyOptions) {
+    if (!options.showOverlay) {
+      overlayManager?.detachAll()
+      overlayManager = null
+      return
+    }
+    if (overlayManager == null) {
+      overlayManager =
+        BuddyOverlayManager(SentryBuddySessionController(analyzer = options.analyzer))
+    }
+  }
+
+  fun detachAll() {
+    overlayManager?.detachAll()
+  }
+}
+
+internal class BuddyOverlayManager(private val controller: SentryBuddySessionController) {
+  private val overlays = WeakHashMap<Activity, View>()
+
+  fun attach(activity: Activity) {
+    if (overlays.containsKey(activity)) {
+      return
+    }
+    val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
+    val container = BuddyOverlayContainer(activity, controller)
+    container.layoutParams =
+      ViewGroup.LayoutParams(
+        ViewGroup.LayoutParams.MATCH_PARENT,
+        ViewGroup.LayoutParams.MATCH_PARENT,
+      )
+    val composeView = ComposeView(activity)
+    composeView.layoutParams =
+      FrameLayout.LayoutParams(
+        FrameLayout.LayoutParams.MATCH_PARENT,
+        FrameLayout.LayoutParams.MATCH_PARENT,
+      )
+    composeView.setContent { MaterialTheme { SentryBuddyOverlay(controller = controller) {} } }
+    container.addView(composeView)
+    try {
+      content.addView(container)
+      overlays[activity] = container
+    } catch (_: IllegalStateException) {
+      content.removeView(container)
+    }
+  }
+
+  fun detach(activity: Activity) {
+    val overlay = overlays.remove(activity) ?: return
+    (overlay.parent as? ViewGroup)?.removeView(overlay)
+  }
+
+  fun detachAll() {
+    overlays.keys.toList().forEach(::detach)
+  }
+}
+
+internal class BuddyOverlayContainer(
+  context: Context,
+  private val controller: SentryBuddySessionController,
+) : FrameLayout(context) {
+  override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+    val state = controller.state
+    if (
+      (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) &&
+        !event.isInBubbleTouchBounds(width, density)
+    ) {
+      return false
+    }
+    return super.dispatchTouchEvent(event)
+  }
+
+  private val density: Float
+    get() = resources.displayMetrics.density
+
+  private fun MotionEvent.isInBubbleTouchBounds(width: Int, density: Float): Boolean {
+    val touchSize = 120f * density
+    return x >= width - touchSize && y <= touchSize
+  }
 }
 
 internal interface BuddyMetadataProvider {

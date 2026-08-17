@@ -838,16 +838,6 @@ fun IntegrationsScreen() {
     verticalArrangement = Arrangement.spacedBy(12.dp),
   ) {
     item {
-      SentryTraced("sentry_buddy_sample") {
-        OutlinedButton(
-          onClick = { activity.startActivity(Intent(activity, SentryBuddyActivity::class.java)) },
-          modifier = Modifier,
-        ) {
-          Text("Open Sentry Buddy", maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
-      }
-    }
-    item {
       SentryTraced("open_compose_activity") {
         OutlinedButton(
           onClick = {

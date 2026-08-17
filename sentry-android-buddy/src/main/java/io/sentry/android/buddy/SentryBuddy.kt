@@ -13,11 +13,27 @@ public object SentryBuddy {
 
   @JvmStatic
   public fun install(application: Application) {
+    install(application, SentryBuddyOptions())
+  }
+
+  @JvmStatic
+  public fun install(application: Application, configure: SentryBuddyOptions.() -> Unit) {
+    install(application, SentryBuddyOptions().apply(configure))
+  }
+
+  @JvmStatic
+  public fun install(application: Application, options: SentryBuddyOptions) {
     synchronized(lock) {
-      if (installedApplication === application && recorder != null) {
+      if (!options.enabled) {
+        uninstallLocked()
         return
       }
-      lifecycleCallbacks?.let { installedApplication?.unregisterActivityLifecycleCallbacks(it) }
+
+      if (installedApplication === application && recorder != null) {
+        lifecycleCallbacks?.updateOverlay(options)
+        return
+      }
+      uninstallLocked()
 
       val sentryFacade = RealBuddySentryFacade()
       val newRecorder =
@@ -25,7 +41,7 @@ public object SentryBuddy {
           metadataProvider = AndroidBuddyMetadataProvider(application, sentryFacade),
           sentryFacade = sentryFacade,
         )
-      val callbacks = BuddyActivityLifecycleCallbacks(newRecorder)
+      val callbacks = BuddyActivityLifecycleCallbacks(newRecorder, overlayManager(options))
       application.registerActivityLifecycleCallbacks(callbacks)
 
       recorder = newRecorder
@@ -58,13 +74,27 @@ public object SentryBuddy {
     return checkNotNull(recorder) { "SentryBuddy.install(application) must be called first." }
   }
 
+  private fun uninstallLocked() {
+    lifecycleCallbacks?.let { callbacks ->
+      callbacks.detachAll()
+      installedApplication?.unregisterActivityLifecycleCallbacks(callbacks)
+    }
+    recorder = null
+    lifecycleCallbacks = null
+    installedApplication = null
+  }
+
+  private fun overlayManager(options: SentryBuddyOptions): BuddyOverlayManager? {
+    if (!options.showOverlay) {
+      return null
+    }
+    return BuddyOverlayManager(SentryBuddySessionController(analyzer = options.analyzer))
+  }
+
   @TestOnly
   internal fun resetForTest() {
     synchronized(lock) {
-      lifecycleCallbacks?.let { installedApplication?.unregisterActivityLifecycleCallbacks(it) }
-      recorder = null
-      lifecycleCallbacks = null
-      installedApplication = null
+      uninstallLocked()
     }
   }
 }

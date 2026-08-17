@@ -350,6 +350,12 @@ public final class io/sentry/android/buddy/BuildConfig {
 	public fun <init> ()V
 }
 
+public final class io/sentry/android/buddy/ComposableSingletons$InternalKt {
+	public static final field INSTANCE Lio/sentry/android/buddy/ComposableSingletons$InternalKt;
+	public fun <init> ()V
+	public final fun getLambda$223533481$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+}
+
 public final class io/sentry/android/buddy/ComposableSingletons$SentryBuddyUiKt {
 	public static final field INSTANCE Lio/sentry/android/buddy/ComposableSingletons$SentryBuddyUiKt;
 	public fun <init> ()V
@@ -383,6 +389,8 @@ public final class io/sentry/android/buddy/SentryBuddy {
 	public static final field $stable I
 	public static final field INSTANCE Lio/sentry/android/buddy/SentryBuddy;
 	public static final fun install (Landroid/app/Application;)V
+	public static final fun install (Landroid/app/Application;Lio/sentry/android/buddy/SentryBuddyOptions;)V
+	public static final fun install (Landroid/app/Application;Lkotlin/jvm/functions/Function1;)V
 	public static final fun recordStep (Ljava/lang/String;)V
 	public static final fun recordStep (Ljava/lang/String;Ljava/util/Map;)V
 	public static final fun startRecording (Lio/sentry/android/buddy/BuddyFlowIntent;)V
@@ -391,6 +399,21 @@ public final class io/sentry/android/buddy/SentryBuddy {
 
 public abstract interface class io/sentry/android/buddy/SentryBuddyAnalyzer {
 	public abstract fun analyze (Lio/sentry/android/buddy/BuddyAnalysisRequest;)Lio/sentry/android/buddy/BuddyAnalysisResponse;
+}
+
+public final class io/sentry/android/buddy/SentryBuddyOptions {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (Z)V
+	public fun <init> (ZZ)V
+	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyAnalyzer;)V
+	public synthetic fun <init> (ZZLio/sentry/android/buddy/SentryBuddyAnalyzer;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAnalyzer ()Lio/sentry/android/buddy/SentryBuddyAnalyzer;
+	public final fun getEnabled ()Z
+	public final fun getShowOverlay ()Z
+	public final fun setAnalyzer (Lio/sentry/android/buddy/SentryBuddyAnalyzer;)V
+	public final fun setEnabled (Z)V
+	public final fun setShowOverlay (Z)V
 }
 
 public abstract interface class io/sentry/android/buddy/SentryBuddyRecorderFacade {
