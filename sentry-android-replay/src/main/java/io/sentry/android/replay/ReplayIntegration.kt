@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
-import android.os.Looper
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory.All
@@ -460,7 +459,7 @@ public class ReplayIntegration(
       return
     }
 
-    val isMainThread = Looper.myLooper() == Looper.getMainLooper()
+    val isMainThread = options.threadChecker.isMainThread
     val closeCompleted = if (isMainThread) null else CountDownLatch(1)
     if (isMainThread) {
       closeInternal()

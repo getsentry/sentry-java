@@ -50,6 +50,7 @@ import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
+import io.sentry.util.thread.IThreadChecker
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.Date
@@ -90,6 +91,10 @@ class ReplayIntegrationTest {
   internal class Fixture {
     val options =
       SentryOptions().apply {
+        threadChecker =
+          mock<IThreadChecker> {
+            on { isMainThread }.thenAnswer { Looper.myLooper() == Looper.getMainLooper() }
+          }
         setReplayController(
           mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) }
         )
