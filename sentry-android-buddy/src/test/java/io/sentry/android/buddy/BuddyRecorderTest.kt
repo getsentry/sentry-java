@@ -27,7 +27,7 @@ class BuddyRecorderTest {
     assertThat(recording.recording.id).isEqualTo("recording-1")
     assertThat(recording.recording.durationMs).isEqualTo(2000)
     assertThat(recording.summary.screenCount).isEqualTo(1)
-    assertThat(recording.summary.stepCount).isEqualTo(1)
+    assertThat(recording.summary.spanCount).isEqualTo(2)
     assertThat(recording.summary.timelineItemCount).isEqualTo(4)
     assertThat(recording.timeline.map { it.type })
       .containsExactly(
@@ -150,6 +150,8 @@ class BuddyRecorderTest {
 
     override val traceId: String? = "trace-id"
     override val spanId: String? = "span-id"
+
+    override val spanCount: Int = 2
 
     override fun finish() {
       finished = true

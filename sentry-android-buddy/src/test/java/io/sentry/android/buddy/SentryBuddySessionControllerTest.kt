@@ -212,7 +212,7 @@ class SentryBuddySessionControllerTest {
           BuddyRecordingSummary(
             durationMs = 1000,
             screenCount = 3,
-            stepCount = 1,
+            spanCount = 4,
             breadcrumbCount = 0,
             timelineItemCount = 5,
           ),

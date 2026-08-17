@@ -571,7 +571,7 @@ private fun RecordingCard(recording: BuddyFlowRecording) {
 private fun MetricGrid(recording: BuddyFlowRecording) {
   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
     MetricCard(recording.summary.timelineItemCount.toString(), "Events", Modifier.weight(1f))
-    MetricCard(recording.summary.stepCount.toString(), "Steps", Modifier.weight(1f), BuddyRed)
+    MetricCard(recording.summary.spanCount.toString(), "Spans", Modifier.weight(1f), BuddyRed)
     MetricCard(recording.summary.screenCount.toString(), "Screens", Modifier.weight(1f))
   }
 }
@@ -718,8 +718,8 @@ private fun InsightsSheet(
   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
     MetricCard(state.response.insights.size.toString(), "Insights", Modifier.weight(1f), BuddyRed)
     MetricCard(
-      state.request.recording.summary.stepCount.toString(),
-      "Steps",
+      state.request.recording.summary.spanCount.toString(),
+      "Spans",
       Modifier.weight(1f),
       BuddyGold,
     )

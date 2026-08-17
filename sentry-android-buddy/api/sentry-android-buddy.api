@@ -350,7 +350,7 @@ public final class io/sentry/android/buddy/BuddyRecordingSummary : io/sentry/Jso
 	public final fun getBreadcrumbCount ()I
 	public final fun getDurationMs ()J
 	public final fun getScreenCount ()I
-	public final fun getStepCount ()I
+	public final fun getSpanCount ()I
 	public final fun getTimelineItemCount ()I
 	public fun hashCode ()I
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
@@ -427,14 +427,15 @@ public final class io/sentry/android/buddy/ComposableSingletons$SentryBuddyUiKt 
 	public final fun getLambda$-1194038066$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-1377717530$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-1514667205$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1530691945$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$-509495423$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$-682238859$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1427546231$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1471666656$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$1538029560$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1892283088$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1945716413$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1976959436$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$356797945$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$901668060$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class io/sentry/android/buddy/DummySentryBuddyFlowAnalysesApi : io/sentry/android/buddy/SentryBuddyFlowAnalysesApi {

@@ -11,7 +11,7 @@ public data class BuddyRecordingSummary
 public constructor(
   public val durationMs: Long,
   public val screenCount: Int,
-  public val stepCount: Int,
+  public val spanCount: Int,
   public val breadcrumbCount: Int,
   public val timelineItemCount: Int,
 ) : JsonSerializable {
@@ -20,7 +20,7 @@ public constructor(
     writer.beginObject()
     writer.name("durationMs").value(durationMs)
     writer.name("screenCount").value(screenCount.toLong())
-    writer.name("stepCount").value(stepCount.toLong())
+    writer.name("spanCount").value(spanCount.toLong())
     writer.name("breadcrumbCount").value(breadcrumbCount.toLong())
     writer.name("timelineItemCount").value(timelineItemCount.toLong())
     writer.endObject()

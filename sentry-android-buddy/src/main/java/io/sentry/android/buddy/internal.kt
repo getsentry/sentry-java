@@ -87,9 +87,9 @@ internal class BuddyRecorder(
         elapsedMs = durationMs,
         name = recording.intent.name,
       )
-    activeRecording = null
 
     val result = buildRecording(recording, stoppedAt, durationMs)
+    activeRecording = null
     recording.transaction.finish()
     BUDDY_TAG_KEYS.forEach(sentryFacade::removeTag)
     return result
@@ -129,7 +129,7 @@ internal class BuddyRecorder(
     return BuddyRecordingSummary(
       durationMs = durationMs,
       screenCount = timeline.count { it.type == BuddyTimelineItem.Type.SCREEN },
-      stepCount = timeline.count { it.type == BuddyTimelineItem.Type.STEP },
+      spanCount = activeRecording?.transaction?.spanCount ?: 0,
       breadcrumbCount = timeline.count { it.type == BuddyTimelineItem.Type.BREADCRUMB },
       timelineItemCount = timeline.size,
     )
@@ -382,6 +382,8 @@ internal interface BuddySentryTransaction {
 
   val spanId: String?
 
+  val spanCount: Int
+
   fun finish()
 }
 
@@ -420,6 +422,9 @@ internal class RealBuddySentryTransaction(private val transaction: ITransaction)
 
   override val spanId: String?
     get() = transaction.spanContext.spanId.toString()
+
+  override val spanCount: Int
+    get() = transaction.spans.size + 1
 
   override fun finish() {
     transaction.finish()

@@ -158,7 +158,7 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
     return BuddyAnalysisResponse(
       summary =
         "$flowName ran for ${formatDuration(recording.summary.durationMs)} across " +
-          "${recording.summary.screenCount} screens and ${recording.summary.stepCount} steps.",
+          "${recording.summary.screenCount} screens and ${recording.summary.spanCount} spans.",
       insights =
         listOf(
           BuddyInsight(
@@ -168,8 +168,8 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
             elapsedMs = recording.summary.durationMs,
           ),
           BuddyInsight(
-            title = "${recording.summary.stepCount} manual steps recorded",
-            body = "Add explicit steps around the moments that matter most to this flow.",
+            title = "${recording.summary.spanCount} spans captured",
+            body = "Use spans to explain the work that matters most to this flow.",
             severity = BuddyRecommendationPriority.LOW,
           ),
         ),

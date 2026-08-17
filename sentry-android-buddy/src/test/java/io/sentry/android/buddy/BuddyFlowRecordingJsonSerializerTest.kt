@@ -15,6 +15,7 @@ class BuddyFlowRecordingJsonSerializerTest {
     assertThat(json).contains("\"useCase\":\"onboard_new_flow\"")
     assertThat(json).contains("\"slug\":\"checkout\"")
     assertThat(json).contains("\"importance\":\"business_critical\"")
+    assertThat(json).contains("\"spanCount\":2")
     assertThat(json).contains("\"type\":\"recording_started\"")
     assertThat(json).contains("\"type\":\"screen\"")
     assertThat(json).contains("\"type\":\"step\"")
@@ -52,7 +53,7 @@ class BuddyFlowRecordingJsonSerializerTest {
         BuddyRecordingSummary(
           durationMs = 2000,
           screenCount = 1,
-          stepCount = 1,
+          spanCount = 2,
           breadcrumbCount = 0,
           timelineItemCount = 4,
         ),
