@@ -34,10 +34,11 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
-  fun `analyze passes recording json and developer context to analyzer`() {
+  fun `analyze submits and polls flow analysis`() {
     val recorder = FakeRecorderFacade()
-    val analyzer = FakeAnalyzer()
-    val controller = SentryBuddySessionController(recorderFacade = recorder, analyzer = analyzer)
+    val flowAnalysesApi = FakeFlowAnalysesApi()
+    val controller =
+      SentryBuddySessionController(recorderFacade = recorder, flowAnalysesApi = flowAnalysesApi)
 
     controller.startRecording(flowName = "Login")
     controller.stopRecording()
@@ -49,11 +50,17 @@ class SentryBuddySessionControllerTest {
     )
     controller.analyze()
 
-    assertThat(analyzer.request?.flowName).isEqualTo("Checkout")
-    assertThat(analyzer.request?.developerNotes).isEqualTo("Spinner felt slow")
-    assertThat(analyzer.request?.focusAreas).containsExactly(BuddyFocusArea.NETWORK_TIMING)
-    assertThat(analyzer.request?.recordingJson).isEqualTo(recorder.recordingResult.recordingJson)
+    assertThat(flowAnalysesApi.request?.flowName).isEqualTo("Checkout")
+    assertThat(flowAnalysesApi.request?.developerNotes).isEqualTo("Spinner felt slow")
+    assertThat(flowAnalysesApi.request?.focusAreas).containsExactly(BuddyFocusArea.NETWORK_TIMING)
+    assertThat(flowAnalysesApi.request?.recordingJson)
+      .isEqualTo(recorder.recordingResult.recordingJson)
+    assertThat(flowAnalysesApi.submitted).isTrue()
+    assertThat(flowAnalysesApi.polledIds).containsExactly("analysis-1")
     assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Insights::class.java)
+    val state = controller.state as SentryBuddySessionState.Insights
+    assertThat(state.submission.status).isEqualTo(BuddyFlowAnalysisStatus.PENDING)
+    assertThat(state.analysis.status).isEqualTo(BuddyFlowAnalysisStatus.COMPLETED)
   }
 
   @Test
@@ -86,11 +93,11 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
-  fun `analyzer failure enters error state`() {
+  fun `flow analysis submit failure enters error state`() {
     val controller =
       SentryBuddySessionController(
         recorderFacade = FakeRecorderFacade(),
-        analyzer = FakeAnalyzer(failure = IllegalStateException("No response")),
+        flowAnalysesApi = FakeFlowAnalysesApi(submitFailure = IllegalStateException("No response")),
       )
 
     controller.startRecording(flowName = "Login")
@@ -100,6 +107,22 @@ class SentryBuddySessionControllerTest {
 
     assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Error::class.java)
     assertThat((controller.state as SentryBuddySessionState.Error).message).isEqualTo("No response")
+  }
+
+  @Test
+  fun `pending flow analysis remains analyzing`() {
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        flowAnalysesApi = FakeFlowAnalysesApi(status = BuddyFlowAnalysisStatus.PENDING),
+      )
+
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.analyze()
+
+    assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Analyzing::class.java)
   }
 
   private class FakeRecorderFacade(
@@ -121,18 +144,52 @@ class SentryBuddySessionControllerTest {
     }
   }
 
-  private class FakeAnalyzer(private val failure: RuntimeException? = null) : SentryBuddyAnalyzer {
-    var request: BuddyAnalysisRequest? = null
+  private class FakeFlowAnalysesApi(
+    private val submitFailure: RuntimeException? = null,
+    private val status: BuddyFlowAnalysisStatus = BuddyFlowAnalysisStatus.COMPLETED,
+  ) : SentryBuddyFlowAnalysesApi {
+    var request: BuddyFlowAnalysisSubmitRequest? = null
+    var submitted = false
+    val polledIds = mutableListOf<String>()
 
-    override fun analyze(request: BuddyAnalysisRequest): BuddyAnalysisResponse {
-      failure?.let { throw it }
+    override fun submit(request: BuddyFlowAnalysisSubmitRequest): BuddyFlowAnalysisSubmission {
+      submitFailure?.let { throw it }
       this.request = request
-      return BuddyAnalysisResponse(
-        summary = "Summary",
-        insights = emptyList(),
-        recommendations = emptyList(),
+      submitted = true
+      return BuddyFlowAnalysisSubmission(
+        id = "analysis-1",
+        status = BuddyFlowAnalysisStatus.PENDING,
       )
     }
+
+    override fun get(flowAnalysisId: String): BuddyFlowAnalysis {
+      polledIds += flowAnalysisId
+      return BuddyFlowAnalysis(
+        id = flowAnalysisId,
+        status = status,
+        result =
+          if (status == BuddyFlowAnalysisStatus.COMPLETED) {
+            BuddyAnalysisResponse(
+              summary = "Summary",
+              insights = emptyList(),
+              recommendations = emptyList(),
+            )
+          } else {
+            null
+          },
+      )
+    }
+
+    override fun resolveRecommendation(
+      flowAnalysisId: String,
+      recommendationId: String,
+      resolution: String,
+    ): BuddyRecommendationResolution =
+      BuddyRecommendationResolution(
+        flowAnalysisId = flowAnalysisId,
+        recommendationId = recommendationId,
+        resolution = resolution,
+      )
   }
 
   private companion object {

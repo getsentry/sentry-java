@@ -524,15 +524,15 @@ private fun SelectablePill(label: String, selected: Boolean, onClick: () -> Unit
 private fun AnalyzingSheet(state: SentryBuddySessionState.Analyzing) {
   SheetTitle("Analyzing", "Session • ${formatElapsed(state.request.recording.summary.durationMs)}")
   Text(
-    "Seer Is Analyzing",
+    "Flow Analysis Submitted",
     style = MaterialTheme.typography.titleLarge,
     fontWeight = FontWeight.Bold,
   )
   listOf(
-      "Stitching spans into a trace",
-      "Grouping errors by stack trace",
-      "Comparing timings to your p95",
-      "Writing fix suggestions",
+      "POST /v1/flow-analyses accepted",
+      "GET /v1/flow-analyses/${state.submission.id}",
+      "Building flow recommendations",
+      "Waiting for completion",
     )
     .forEachIndexed { index, label ->
       Row(

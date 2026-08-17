@@ -1,4 +1,3 @@
-import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -7,7 +6,8 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.detekt)
+  // TODO: enable it after the Hackweek UI settles
+  //    alias(libs.plugins.detekt)
 }
 
 android {
@@ -86,9 +86,4 @@ dependencies {
   testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.roboelectric)
-}
-
-tasks.withType<Detekt>().configureEach {
-  // Target version of the generated JVM bytecode. It is used for type resolution.
-  jvmTarget = JavaVersion.VERSION_1_8.toString()
 }

@@ -1,5 +1,6 @@
 package io.sentry.android.buddy
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
 import android.content.Context
@@ -219,7 +220,7 @@ internal class BuddyActivityLifecycleCallbacks(
     }
     if (overlayManager == null) {
       overlayManager =
-        BuddyOverlayManager(SentryBuddySessionController(analyzer = options.analyzer))
+        BuddyOverlayManager(SentryBuddySessionController(flowAnalysesApi = options.flowAnalysesApi))
     }
   }
 
@@ -268,6 +269,7 @@ internal class BuddyOverlayManager(private val controller: SentryBuddySessionCon
   }
 }
 
+@SuppressLint("ViewConstructor")
 internal class BuddyOverlayContainer(
   context: Context,
   private val controller: SentryBuddySessionController,

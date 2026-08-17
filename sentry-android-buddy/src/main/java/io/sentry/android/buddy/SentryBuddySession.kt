@@ -47,13 +47,31 @@ public constructor(
 )
 
 @ApiStatus.Experimental
-public data class BuddyAnalysisRequest
+public data class BuddyFlowAnalysisSubmitRequest
 public constructor(
   public val recording: BuddyFlowRecording,
   public val recordingJson: String,
   public val flowName: String,
   public val developerNotes: String,
   public val focusAreas: Set<BuddyFocusArea>,
+)
+
+@ApiStatus.Experimental
+public enum class BuddyFlowAnalysisStatus(public val value: String) {
+  PENDING("PENDING"),
+  RUNNING("RUNNING"),
+  COMPLETED("COMPLETED"),
+  FAILED("FAILED"),
+  EXPIRED("EXPIRED"),
+  CANCELLED("CANCELLED"),
+}
+
+@ApiStatus.Experimental
+public data class BuddyFlowAnalysisSubmission
+public constructor(
+  public val id: String,
+  public val status: BuddyFlowAnalysisStatus = BuddyFlowAnalysisStatus.PENDING,
+  public val pollPath: String = "/v1/flow-analyses/$id",
 )
 
 @ApiStatus.Experimental
@@ -65,13 +83,75 @@ public constructor(
 )
 
 @ApiStatus.Experimental
-public fun interface SentryBuddyAnalyzer {
-  public fun analyze(request: BuddyAnalysisRequest): BuddyAnalysisResponse
+public data class BuddyFlowAnalysis
+public constructor(
+  public val id: String,
+  public val status: BuddyFlowAnalysisStatus,
+  public val result: BuddyAnalysisResponse? = null,
+  public val errorMessage: String? = null,
+)
+
+@ApiStatus.Experimental
+public data class BuddyRecommendationResolution
+public constructor(
+  public val flowAnalysisId: String,
+  public val recommendationId: String,
+  public val resolution: String,
+  public val state: String = "resolved",
+)
+
+@ApiStatus.Experimental
+public interface SentryBuddyFlowAnalysesApi {
+  /** Models `POST /v1/flow-analyses`, which should return 202 Accepted with PENDING status. */
+  public fun submit(request: BuddyFlowAnalysisSubmitRequest): BuddyFlowAnalysisSubmission
+
+  /** Models `GET /v1/flow-analyses/{flowAnalysisId}`. */
+  public fun get(flowAnalysisId: String): BuddyFlowAnalysis
+
+  /** Models `POST /v1/flow-analyses/{flowAnalysisId}/recommendations/{id}/resolve`. */
+  public fun resolveRecommendation(
+    flowAnalysisId: String,
+    recommendationId: String,
+    resolution: String,
+  ): BuddyRecommendationResolution
 }
 
 @ApiStatus.Experimental
-public object DummySentryBuddyAnalyzer : SentryBuddyAnalyzer {
-  override fun analyze(request: BuddyAnalysisRequest): BuddyAnalysisResponse {
+public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
+  private val analyses = mutableMapOf<String, BuddyFlowAnalysis>()
+
+  override fun submit(request: BuddyFlowAnalysisSubmitRequest): BuddyFlowAnalysisSubmission {
+    val id = "flow-analysis-${request.recording.recording.id}"
+    analyses[id] =
+      BuddyFlowAnalysis(
+        id = id,
+        status = BuddyFlowAnalysisStatus.COMPLETED,
+        result = analyze(request),
+      )
+    return BuddyFlowAnalysisSubmission(id = id, status = BuddyFlowAnalysisStatus.PENDING)
+  }
+
+  override fun get(flowAnalysisId: String): BuddyFlowAnalysis {
+    return analyses[flowAnalysisId]
+      ?: BuddyFlowAnalysis(
+        id = flowAnalysisId,
+        status = BuddyFlowAnalysisStatus.FAILED,
+        errorMessage = "Flow analysis not found.",
+      )
+  }
+
+  override fun resolveRecommendation(
+    flowAnalysisId: String,
+    recommendationId: String,
+    resolution: String,
+  ): BuddyRecommendationResolution =
+    BuddyRecommendationResolution(
+      flowAnalysisId = flowAnalysisId,
+      recommendationId = recommendationId,
+      resolution = resolution,
+    )
+
+  private fun analyze(request: BuddyFlowAnalysisSubmitRequest): BuddyAnalysisResponse {
     val recording = request.recording
     val flowName = request.flowName.ifBlank { recording.flow.name }
     return BuddyAnalysisResponse(
@@ -181,12 +261,17 @@ public sealed class SentryBuddySessionState {
     public val focusAreas: Set<BuddyFocusArea>,
   ) : SentryBuddySessionState()
 
-  public data class Analyzing public constructor(public val request: BuddyAnalysisRequest) :
-    SentryBuddySessionState()
+  public data class Analyzing
+  public constructor(
+    public val request: BuddyFlowAnalysisSubmitRequest,
+    public val submission: BuddyFlowAnalysisSubmission,
+  ) : SentryBuddySessionState()
 
   public data class Insights
   public constructor(
-    public val request: BuddyAnalysisRequest,
+    public val request: BuddyFlowAnalysisSubmitRequest,
+    public val submission: BuddyFlowAnalysisSubmission,
+    public val analysis: BuddyFlowAnalysis,
     public val response: BuddyAnalysisResponse,
   ) : SentryBuddySessionState()
 
@@ -202,7 +287,7 @@ public class SentryBuddySessionController
 @JvmOverloads
 public constructor(
   private val recorderFacade: SentryBuddyRecorderFacade = RealSentryBuddyRecorderFacade,
-  private val analyzer: SentryBuddyAnalyzer = DummySentryBuddyAnalyzer,
+  private val flowAnalysesApi: SentryBuddyFlowAnalysesApi = DummySentryBuddyFlowAnalysesApi,
   private val clock: () -> Long = { System.currentTimeMillis() },
 ) {
   public var state: SentryBuddySessionState = SentryBuddySessionState.Closed
@@ -236,7 +321,7 @@ public constructor(
         )
       recorderFacade.startRecording(intent)
       state = SentryBuddySessionState.Recording(intent = intent, startedAtMs = clock())
-    } catch (exception: RuntimeException) {
+    } catch (exception: IllegalStateException) {
       state =
         SentryBuddySessionState.Error(
           exception.message ?: "Failed to start recording.",
@@ -249,7 +334,7 @@ public constructor(
     val previousState = state
     try {
       state = SentryBuddySessionState.StoppedSummary(recorderFacade.stopRecording())
-    } catch (exception: RuntimeException) {
+    } catch (exception: IllegalStateException) {
       state =
         SentryBuddySessionState.Error(
           exception.message ?: "Failed to stop recording.",
@@ -286,20 +371,53 @@ public constructor(
   public fun analyze() {
     val briefingState = state as? SentryBuddySessionState.Briefing ?: return
     val request =
-      BuddyAnalysisRequest(
+      BuddyFlowAnalysisSubmitRequest(
         recording = briefingState.result.recording,
         recordingJson = briefingState.result.recordingJson,
         flowName = briefingState.flowName,
         developerNotes = briefingState.developerNotes,
         focusAreas = briefingState.focusAreas,
       )
-    state = SentryBuddySessionState.Analyzing(request)
     try {
+      val submission = flowAnalysesApi.submit(request)
+      state = SentryBuddySessionState.Analyzing(request, submission)
+      pollFlowAnalysis()
+    } catch (exception: IllegalStateException) {
       state =
-        SentryBuddySessionState.Insights(request = request, response = analyzer.analyze(request))
-    } catch (exception: RuntimeException) {
+        SentryBuddySessionState.Error(exception.message ?: "Failed to submit flow analysis.", state)
+    }
+  }
+
+  public fun pollFlowAnalysis() {
+    val analyzingState = state as? SentryBuddySessionState.Analyzing ?: return
+    try {
+      val analysis = flowAnalysesApi.get(analyzingState.submission.id)
+      when (analysis.status) {
+        BuddyFlowAnalysisStatus.COMPLETED -> {
+          val response =
+            checkNotNull(analysis.result) { "Flow analysis completed without a result." }
+          state =
+            SentryBuddySessionState.Insights(
+              request = analyzingState.request,
+              submission = analyzingState.submission,
+              analysis = analysis,
+              response = response,
+            )
+        }
+        BuddyFlowAnalysisStatus.FAILED ->
+          state =
+            SentryBuddySessionState.Error(
+              analysis.errorMessage ?: "Flow analysis failed.",
+              analyzingState,
+            )
+        BuddyFlowAnalysisStatus.PENDING,
+        BuddyFlowAnalysisStatus.RUNNING,
+        BuddyFlowAnalysisStatus.EXPIRED,
+        BuddyFlowAnalysisStatus.CANCELLED -> Unit
+      }
+    } catch (exception: IllegalStateException) {
       state =
-        SentryBuddySessionState.Error(exception.message ?: "Failed to analyze recording.", state)
+        SentryBuddySessionState.Error(exception.message ?: "Failed to poll flow analysis.", state)
     }
   }
 

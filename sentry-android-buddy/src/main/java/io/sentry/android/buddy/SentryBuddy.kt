@@ -88,7 +88,9 @@ public object SentryBuddy {
     if (!options.showOverlay) {
       return null
     }
-    return BuddyOverlayManager(SentryBuddySessionController(analyzer = options.analyzer))
+    return BuddyOverlayManager(
+      SentryBuddySessionController(flowAnalysesApi = options.flowAnalysesApi)
+    )
   }
 
   @TestOnly

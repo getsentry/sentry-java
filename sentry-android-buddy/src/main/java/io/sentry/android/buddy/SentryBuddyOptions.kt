@@ -8,5 +8,5 @@ public class SentryBuddyOptions
 public constructor(
   public var enabled: Boolean = true,
   public var showOverlay: Boolean = true,
-  public var analyzer: SentryBuddyAnalyzer = DummySentryBuddyAnalyzer,
+  public var flowAnalysesApi: SentryBuddyFlowAnalysesApi = DummySentryBuddyFlowAnalysesApi,
 )
