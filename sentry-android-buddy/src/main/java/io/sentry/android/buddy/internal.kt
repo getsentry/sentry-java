@@ -237,7 +237,8 @@ internal class BuddyOverlayManager(private val controller: SentryBuddySessionCon
       return
     }
     val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
-    val container = BuddyOverlayContainer(activity, controller)
+    val hitBounds = BuddyOverlayHitBounds()
+    val container = BuddyOverlayContainer(activity, controller, hitBounds)
     container.layoutParams =
       ViewGroup.LayoutParams(
         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -249,7 +250,7 @@ internal class BuddyOverlayManager(private val controller: SentryBuddySessionCon
         FrameLayout.LayoutParams.MATCH_PARENT,
         FrameLayout.LayoutParams.MATCH_PARENT,
       )
-    composeView.setContent { MaterialTheme { SentryBuddyOverlay(controller = controller) {} } }
+    composeView.setContent { MaterialTheme { SentryBuddyInstalledOverlay(controller, hitBounds) } }
     container.addView(composeView)
     try {
       content.addView(container)
@@ -273,24 +274,17 @@ internal class BuddyOverlayManager(private val controller: SentryBuddySessionCon
 internal class BuddyOverlayContainer(
   context: Context,
   private val controller: SentryBuddySessionController,
+  private val bubbleHitBounds: BuddyOverlayHitBounds,
 ) : FrameLayout(context) {
   override fun dispatchTouchEvent(event: MotionEvent): Boolean {
     val state = controller.state
     if (
       (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) &&
-        !event.isInBubbleTouchBounds(width, density)
+        !bubbleHitBounds.contains(event.x, event.y)
     ) {
       return false
     }
     return super.dispatchTouchEvent(event)
-  }
-
-  private val density: Float
-    get() = resources.displayMetrics.density
-
-  private fun MotionEvent.isInBubbleTouchBounds(width: Int, density: Float): Boolean {
-    val touchSize = 120f * density
-    return x >= width - touchSize && y <= touchSize
   }
 }
 

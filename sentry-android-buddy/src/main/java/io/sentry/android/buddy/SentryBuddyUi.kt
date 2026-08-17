@@ -1,17 +1,21 @@
 package io.sentry.android.buddy
 
+import android.graphics.Rect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -42,14 +46,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import java.util.Locale
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import org.jetbrains.annotations.ApiStatus
 
@@ -79,6 +90,33 @@ public fun SentryBuddyOverlay(
   controller: SentryBuddySessionController,
   content: @Composable BoxScope.() -> Unit,
 ) {
+  SentryBuddyOverlayContent(
+    modifier = modifier,
+    controller = controller,
+    bubbleHitBounds = null,
+    content = content,
+  )
+}
+
+@Composable
+internal fun SentryBuddyInstalledOverlay(
+  controller: SentryBuddySessionController,
+  bubbleHitBounds: BuddyOverlayHitBounds,
+) {
+  SentryBuddyOverlayContent(
+    controller = controller,
+    bubbleHitBounds = bubbleHitBounds,
+    content = {},
+  )
+}
+
+@Composable
+private fun SentryBuddyOverlayContent(
+  modifier: Modifier = Modifier,
+  controller: SentryBuddySessionController,
+  bubbleHitBounds: BuddyOverlayHitBounds?,
+  content: @Composable BoxScope.() -> Unit,
+) {
   var state by remember { mutableStateOf(controller.state) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
 
@@ -96,11 +134,17 @@ public fun SentryBuddyOverlay(
     }
   }
 
-  Box(modifier = modifier.fillMaxSize()) {
+  BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    val density = LocalDensity.current
+    val maxWidthPx = with(density) { maxWidth.toPx() }
+    val maxHeightPx = with(density) { maxHeight.toPx() }
     content()
     BuddyBubble(
       state = state,
       nowMs = nowMs,
+      maxWidthPx = maxWidthPx,
+      maxHeightPx = maxHeightPx,
+      bubbleHitBounds = bubbleHitBounds,
       onClick = {
         when (state) {
           SentryBuddySessionState.Closed -> dispatch { open() }
@@ -117,11 +161,37 @@ public fun SentryBuddyOverlay(
 private fun BoxScope.BuddyBubble(
   state: SentryBuddySessionState,
   nowMs: Long,
+  maxWidthPx: Float,
+  maxHeightPx: Float,
+  bubbleHitBounds: BuddyOverlayHitBounds?,
   onClick: () -> Unit,
 ) {
+  val density = LocalDensity.current
+  val bubbleSizePx = with(density) { BuddyBubbleSize.toPx() }
+  val bubbleMarginPx = with(density) { BuddyBubbleMargin.toPx() }
+  val initialTopPx = with(density) { BuddyBubbleInitialTop.toPx() }
   val isRecording = state is SentryBuddySessionState.Recording
   val bubbleColor = if (isRecording) BuddyRed else BuddyPurple
   val label = if (isRecording) "■" else "△"
+  var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
+
+  fun defaultOffset(): Offset =
+    Offset(
+      x = maxWidthPx - bubbleSizePx - bubbleMarginPx,
+      y = initialTopPx,
+    )
+
+  fun Offset.constrain(): Offset =
+    Offset(
+      x = x.constrain(bubbleMarginPx, maxWidthPx - bubbleSizePx - bubbleMarginPx),
+      y = y.constrain(bubbleMarginPx, maxHeightPx - bubbleSizePx - bubbleMarginPx),
+    )
+
+  LaunchedEffect(maxWidthPx, maxHeightPx) {
+    bubbleOffset = (bubbleOffset ?: defaultOffset()).constrain()
+  }
+
+  val resolvedOffset = (bubbleOffset ?: defaultOffset()).constrain()
   val elapsed =
     if (state is SentryBuddySessionState.Recording) {
       formatElapsed(nowMs - state.startedAtMs)
@@ -130,7 +200,18 @@ private fun BoxScope.BuddyBubble(
     }
 
   Column(
-    modifier = Modifier.align(Alignment.TopEnd).padding(top = 24.dp, end = 24.dp),
+    modifier =
+      Modifier.offset { IntOffset(resolvedOffset.x.roundToInt(), resolvedOffset.y.roundToInt()) }
+        .onGloballyPositioned { coordinates ->
+          val position = coordinates.positionInRoot()
+          val touchPaddingPx = with(density) { BuddyBubbleTouchPadding.toPx() }.roundToInt()
+          bubbleHitBounds?.update(
+            left = position.x.roundToInt() - touchPaddingPx,
+            top = position.y.roundToInt() - touchPaddingPx,
+            right = position.x.roundToInt() + coordinates.size.width + touchPaddingPx,
+            bottom = position.y.roundToInt() + coordinates.size.height + touchPaddingPx,
+          )
+        },
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.spacedBy(8.dp),
   ) {
@@ -139,22 +220,17 @@ private fun BoxScope.BuddyBubble(
         Modifier.size(64.dp)
           .shadow(10.dp, CircleShape)
           .background(bubbleColor, CircleShape)
+          .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
+          .pointerInput(maxWidthPx, maxHeightPx) {
+            detectDragGestures { change, dragAmount ->
+              change.consume()
+              bubbleOffset = ((bubbleOffset ?: resolvedOffset) + dragAmount).constrain()
+            }
+          }
           .clickable(onClick = onClick),
       contentAlignment = Alignment.Center,
     ) {
       Text(label, color = Color.White, style = MaterialTheme.typography.headlineSmall)
-      if (!isRecording) {
-        Box(
-          modifier =
-            Modifier.align(Alignment.TopEnd)
-              .size(24.dp)
-              .background(BuddyRed, CircleShape)
-              .border(2.dp, Color.White, CircleShape),
-          contentAlignment = Alignment.Center,
-        ) {
-          Text("2", color = Color.White, style = MaterialTheme.typography.labelMedium)
-        }
-      }
     }
     elapsed?.let {
       Text(
@@ -165,6 +241,18 @@ private fun BoxScope.BuddyBubble(
       )
     }
   }
+}
+
+internal class BuddyOverlayHitBounds {
+  private val lock = Any()
+  private var bounds: Rect? = null
+
+  fun update(left: Int, top: Int, right: Int, bottom: Int) {
+    synchronized(lock) { bounds = Rect(left, top, right, bottom) }
+  }
+
+  fun contains(x: Float, y: Float): Boolean =
+    synchronized(lock) { bounds?.contains(x.roundToInt(), y.roundToInt()) == true }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -671,6 +759,18 @@ private fun formatElapsed(durationMs: Long): String {
   val seconds = totalSeconds % 60
   return String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
 }
+
+private fun Float.constrain(min: Float, max: Float): Float {
+  if (max < min) {
+    return 0f
+  }
+  return coerceIn(min, max)
+}
+
+private val BuddyBubbleSize = 64.dp
+private val BuddyBubbleMargin = 24.dp
+private val BuddyBubbleInitialTop = 96.dp
+private val BuddyBubbleTouchPadding = 20.dp
 
 private val BuddyPurple = Color(0xFF7553FF)
 private val BuddyRed = Color(0xFFFF003D)
