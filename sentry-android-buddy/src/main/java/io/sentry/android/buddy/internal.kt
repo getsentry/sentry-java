@@ -201,6 +201,7 @@ internal class BuddyActivityLifecycleCallbacks(
   override fun onActivityResumed(activity: Activity) {
     currentActivity = WeakReference(activity)
     recorder.recordScreen(activity.javaClass.simpleName)
+    overlayManager?.recordingEvent("Screen captured")
     overlayManager?.attach(activity)
   }
 
@@ -223,7 +224,14 @@ internal class BuddyActivityLifecycleCallbacks(
   }
 
   fun recordCurrentScreen() {
-    currentActivity?.get()?.let { recorder.recordScreen(it.javaClass.simpleName) }
+    currentActivity?.get()?.let {
+      recorder.recordScreen(it.javaClass.simpleName)
+      overlayManager?.recordingEvent("Screen captured")
+    }
+  }
+
+  fun recordingEvent(text: String) {
+    overlayManager?.recordingEvent(text)
   }
 
   fun updateOverlay(options: SentryBuddyOptions) {
@@ -281,6 +289,10 @@ internal class BuddyOverlayManager(private val controller: SentryBuddySessionCon
 
   fun detachAll() {
     overlays.keys.toList().forEach(::detach)
+  }
+
+  fun recordingEvent(text: String) {
+    controller.recordTransientEvent(text)
   }
 }
 

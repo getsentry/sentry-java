@@ -1,6 +1,9 @@
 package io.sentry.android.buddy
 
 import android.graphics.Rect
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -47,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -123,6 +128,7 @@ private fun SentryBuddyOverlayContent(
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
   var isRecordingHelpOpen by remember { mutableStateOf(false) }
   var transientRecordingText by remember { mutableStateOf<String?>(null) }
+  var observedTransientEventId by remember { mutableStateOf(controller.transientRecordingEventId) }
 
   fun dispatch(action: SentryBuddySessionController.() -> Unit) {
     controller.action()
@@ -140,20 +146,16 @@ private fun SentryBuddyOverlayContent(
 
   LaunchedEffect(state) {
     if (state is SentryBuddySessionState.Recording) {
-      val messages =
-        listOf(
-          "Flow recording started",
-          "Screen event captured",
-          "Tracking spans",
-          "Breadcrumbs linked",
-        )
-      var index = 0
       while (true) {
-        transientRecordingText = messages[index % messages.size]
-        index++
-        delay(1600)
-        transientRecordingText = null
-        delay(1800)
+        if (controller.transientRecordingEventId != observedTransientEventId) {
+          observedTransientEventId = controller.transientRecordingEventId
+          transientRecordingText = controller.transientRecordingText
+          delay(1400)
+          if (controller.transientRecordingEventId == observedTransientEventId) {
+            transientRecordingText = null
+          }
+        }
+        delay(150)
       }
     } else {
       transientRecordingText = null
@@ -245,7 +247,8 @@ private fun BoxScope.BuddyBubble(
   }
 
   val resolvedOffset = (bubbleOffset ?: defaultOffset()).constrain()
-  val showTransientAbove = resolvedOffset.y > maxHeightPx / 2f
+  val transientHeightPx = with(density) { BuddyTransientTextHeight.toPx() }
+  val showTransientAbove = resolvedOffset.y > transientHeightPx + bubbleMarginPx
   val elapsed =
     if (state is SentryBuddySessionState.Recording) {
       formatElapsed(nowMs - state.startedAtMs)
@@ -269,9 +272,6 @@ private fun BoxScope.BuddyBubble(
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.spacedBy(8.dp),
   ) {
-    if (showTransientAbove) {
-      TransientRecordingText(transientText)
-    }
     Box(
       modifier =
         Modifier.size(64.dp)
@@ -301,9 +301,6 @@ private fun BoxScope.BuddyBubble(
         onDismiss = onDismissRecordingHelp,
       )
     }
-    if (!showTransientAbove) {
-      TransientRecordingText(transientText)
-    }
     elapsed?.let {
       Text(
         text = it,
@@ -313,24 +310,51 @@ private fun BoxScope.BuddyBubble(
       )
     }
   }
+  TransientRecordingText(
+    text = transientText,
+    bubbleOffset = resolvedOffset,
+    maxWidthPx = maxWidthPx,
+    bubbleSizePx = bubbleSizePx,
+    showAbove = showTransientAbove,
+  )
 }
 
 @Composable
-private fun TransientRecordingText(text: String?) {
-  if (text == null) {
-    return
-  }
-  Surface(
-    color = BuddyInk.copy(alpha = 0.92f),
-    shape = RoundedCornerShape(18.dp),
-    shadowElevation = 6.dp,
+private fun BoxScope.TransientRecordingText(
+  text: String?,
+  bubbleOffset: Offset,
+  maxWidthPx: Float,
+  bubbleSizePx: Float,
+  showAbove: Boolean,
+) {
+  val density = LocalDensity.current
+  val textWidthPx = with(density) { BuddyTransientTextWidth.toPx() }
+  val textHeightPx = with(density) { BuddyTransientTextHeight.toPx() }
+  val x =
+    (bubbleOffset.x + bubbleSizePx / 2f - textWidthPx / 2f).constrain(
+      0f,
+      maxWidthPx - textWidthPx,
+    )
+  val y =
+    if (showAbove) {
+      bubbleOffset.y - textHeightPx
+    } else {
+      bubbleOffset.y + bubbleSizePx + with(density) { 8.dp.toPx() }
+    }
+
+  AnimatedVisibility(
+    visible = text != null,
+    enter = fadeIn(),
+    exit = fadeOut(),
+    modifier = Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) },
   ) {
     Text(
-      text = text,
-      modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-      color = Color.White,
+      text = text.orEmpty(),
+      modifier = Modifier.width(BuddyTransientTextWidth),
+      color = BuddyInk,
       style = MaterialTheme.typography.labelMedium,
       fontWeight = FontWeight.Bold,
+      textAlign = TextAlign.Center,
     )
   }
 }
@@ -407,7 +431,7 @@ private fun SheetTitle(title: String, subtitle: String) {
 
 @Composable
 private fun IntroSheet(onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit) {
-  SheetTitle("Sentry Buddy", "Debug build • v${BuildConfig.VERSION_NAME}")
+  SheetTitle("Sentry Buddy", "v${BuildConfig.VERSION_NAME}")
   Text(
     "Record a flow",
     style = MaterialTheme.typography.titleLarge,
@@ -419,7 +443,7 @@ private fun IntroSheet(onDispatch: (SentryBuddySessionController.() -> Unit) -> 
     colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
     onClick = { onDispatch { startRecording() } },
   ) {
-    Text("●  Start Recording", fontWeight = FontWeight.Bold)
+    BuddyButtonText("Start Recording")
   }
   Text(
     "The panel closes so you can navigate freely. Tap the bubble to stop.",
@@ -476,7 +500,7 @@ private fun RecordingTooltip(
         colors = ButtonDefaults.buttonColors(containerColor = BuddyRed),
         onClick = onStopAndAnalyze,
       ) {
-        Text("Stop and Analyze", fontWeight = FontWeight.Bold)
+        BuddyButtonText("Stop and Analyze")
       }
     }
   }
@@ -555,7 +579,7 @@ private fun StoppedSummarySheet(
     colors = ButtonDefaults.buttonColors(containerColor = BuddyRed),
     onClick = { onDispatch { briefRecording() } },
   ) {
-    Text("■  Stop and Analyze", fontWeight = FontWeight.Bold)
+    BuddyButtonText("Stop and Analyze")
   }
 }
 
@@ -676,25 +700,21 @@ private fun BriefingSheet(
   var flowName by remember(state.result.recording.recording.id) { mutableStateOf(state.flowName) }
   var notes by
     remember(state.result.recording.recording.id) { mutableStateOf(state.developerNotes) }
+  var isFlowNameFocused by remember(state.result.recording.recording.id) { mutableStateOf(false) }
   fun updateController() {
     onDispatch { updateBriefing(flowName, notes, state.focusAreas) }
   }
 
-  SheetTitle("Brief Seer", "Flow • ${formatElapsed(state.result.recording.summary.durationMs)}")
-  Text(
-    "Give Seer some context",
-    style = MaterialTheme.typography.titleLarge,
-    fontWeight = FontWeight.Bold,
-  )
+  SheetTitle("Give Seer some context", formatElapsed(state.result.recording.summary.durationMs))
   OutlinedTextField(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.fillMaxWidth().onFocusChanged { isFlowNameFocused = it.isFocused },
     value = flowName,
     onValueChange = {
       flowName = it
       updateController()
     },
     singleLine = true,
-    label = { Text("Name your flow") },
+    placeholder = { if (!isFlowNameFocused) Text("Name your flow") },
   )
   OutlinedTextField(
     modifier = Modifier.fillMaxWidth(),
@@ -718,10 +738,10 @@ private fun BriefingSheet(
         }
       },
     ) {
-      Text("Analyze", fontWeight = FontWeight.Bold)
+      BuddyButtonText("Analyze")
     }
     OutlinedButton(modifier = Modifier.height(56.dp), onClick = { onDispatch { analyze() } }) {
-      Text("Skip")
+      BuddyButtonText("Skip")
     }
   }
 }
@@ -767,9 +787,10 @@ private fun InsightsSheet(
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
 ) {
   val clipboard = LocalClipboardManager.current
+  var isJsonDialogOpen by remember { mutableStateOf(false) }
   SheetTitle(
     "Flow insights",
-    "Flow • ${formatElapsed(state.request.recording.summary.durationMs)}",
+    "${state.request.flowName} • ${formatElapsed(state.request.recording.summary.durationMs)}",
   )
   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
     MetricCard(state.response.insights.size.toString(), "Insights", Modifier.weight(1f), BuddyRed)
@@ -809,16 +830,97 @@ private fun InsightsSheet(
       modifier = Modifier.weight(1f).height(52.dp),
       onClick = { onDispatch { recordAgain() } },
     ) {
-      Text("Record Again", fontWeight = FontWeight.Bold)
+      BuddyButtonText("Record Again")
     }
-    Button(
-      modifier = Modifier.weight(1f).height(52.dp),
-      colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
-      onClick = { clipboard.setText(AnnotatedString(state.request.recordingJson)) },
+    Surface(
+      modifier =
+        Modifier.weight(1f)
+          .height(52.dp)
+          .combinedClickable(
+            onClick = { clipboard.setText(AnnotatedString(state.request.recordingJson)) },
+            onLongClick = { isJsonDialogOpen = true },
+          ),
+      color = BuddyPurple,
+      shape = RoundedCornerShape(28.dp),
     ) {
-      Text("Copy JSON", fontWeight = FontWeight.Bold)
+      Box(contentAlignment = Alignment.Center) { BuddyButtonText("Copy JSON", color = Color.White) }
     }
   }
+  if (isJsonDialogOpen) {
+    AlertDialog(
+      onDismissRequest = { isJsonDialogOpen = false },
+      confirmButton = {
+        TextButton(onClick = { isJsonDialogOpen = false }) { BuddyButtonText("Close") }
+      },
+      title = { Text("Recording JSON", fontWeight = FontWeight.Bold) },
+      text = {
+        Text(
+          text = prettyPrintJson(state.request.recordingJson),
+          modifier = Modifier.height(320.dp).verticalScroll(rememberScrollState()),
+          fontFamily = FontFamily.Monospace,
+          color = BuddyInk,
+        )
+      },
+    )
+  }
+}
+
+@Composable
+private fun BuddyButtonText(text: String, color: Color = Color.Unspecified) {
+  Text(
+    text = text,
+    color = color,
+    style = MaterialTheme.typography.titleMedium,
+    fontWeight = FontWeight.Bold,
+  )
+}
+
+private fun prettyPrintJson(value: String): String {
+  val result = StringBuilder(value.length * 2)
+  var indent = 0
+  var inString = false
+  var escaping = false
+
+  value.forEach { char ->
+    when {
+      escaping -> {
+        result.append(char)
+        escaping = false
+      }
+      char == '\\' && inString -> {
+        result.append(char)
+        escaping = true
+      }
+      char == '"' -> {
+        result.append(char)
+        inString = !inString
+      }
+      inString -> result.append(char)
+      char == '{' || char == '[' -> {
+        result.append(char)
+        indent++
+        appendJsonNewLine(result, indent)
+      }
+      char == '}' || char == ']' -> {
+        indent = (indent - 1).coerceAtLeast(0)
+        appendJsonNewLine(result, indent)
+        result.append(char)
+      }
+      char == ',' -> {
+        result.append(char)
+        appendJsonNewLine(result, indent)
+      }
+      char == ':' -> result.append(": ")
+      !char.isWhitespace() -> result.append(char)
+    }
+  }
+
+  return result.toString()
+}
+
+private fun appendJsonNewLine(result: StringBuilder, indent: Int) {
+  result.append('\n')
+  repeat(indent) { result.append("  ") }
 }
 
 @Composable
@@ -893,6 +995,8 @@ private val BuddyBubbleSize = 64.dp
 private val BuddyBubbleMargin = 24.dp
 private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
+private val BuddyTransientTextWidth = 190.dp
+private val BuddyTransientTextHeight = 28.dp
 
 private val BuddyPurple = Color(0xFF7553FF)
 private val BuddyRed = Color(0xFFFF003D)

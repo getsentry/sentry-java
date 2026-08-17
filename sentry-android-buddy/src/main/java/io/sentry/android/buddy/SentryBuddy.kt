@@ -55,6 +55,7 @@ public object SentryBuddy {
     val recorder = requireInstalled()
     recorder.start(intent)
     lifecycleCallbacks?.recordCurrentScreen()
+    lifecycleCallbacks?.recordingEvent("Flow recording started")
   }
 
   @JvmStatic
@@ -65,6 +66,7 @@ public object SentryBuddy {
   @JvmStatic
   public fun recordStep(name: String, data: Map<String, Any?>) {
     requireInstalled().recordStep(name, data)
+    lifecycleCallbacks?.recordingEvent("Step captured")
   }
 
   @JvmStatic

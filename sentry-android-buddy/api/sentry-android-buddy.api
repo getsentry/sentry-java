@@ -428,15 +428,16 @@ public final class io/sentry/android/buddy/ComposableSingletons$SentryBuddyUiKt 
 	public final fun getLambda$-1377717530$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-1514667205$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-1530691945$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-509495423$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1944467248$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-218216137$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-682238859$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1040476556$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1538029560$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1644532347$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1892283088$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1945716413$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1976959436$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$356797945$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$567083575$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 }
 
 public final class io/sentry/android/buddy/DummySentryBuddyFlowAnalysesApi : io/sentry/android/buddy/SentryBuddyFlowAnalysesApi {

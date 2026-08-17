@@ -157,8 +157,10 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
     val flowName = request.flowName.ifBlank { recording.flow.name }
     return BuddyAnalysisResponse(
       summary =
-        "$flowName ran for ${formatDuration(recording.summary.durationMs)} across " +
-          "${recording.summary.screenCount} screens and ${recording.summary.spanCount} spans.",
+        "Your flow ran for ${formatDuration(recording.summary.durationMs)} across " +
+          "${recording.summary.screenCount} ${"screen".pluralize(recording.summary.screenCount)} " +
+          "and produced ${recording.summary.spanCount} " +
+          "${"span".pluralize(recording.summary.spanCount)}.",
       insights =
         listOf(
           BuddyInsight(
@@ -217,6 +219,8 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
 
   private fun String.slugifyForSnippet(): String =
     trim().lowercase(Locale.ROOT).replace(Regex("[^a-z0-9]+"), ".").trim('.').ifEmpty { "flow" }
+
+  private fun String.pluralize(count: Int): String = if (count == 1) this else "${this}s"
 }
 
 @ApiStatus.Experimental
@@ -298,6 +302,12 @@ public constructor(
   public var state: SentryBuddySessionState = SentryBuddySessionState.Closed
     private set
 
+  internal var transientRecordingText: String? = null
+    private set
+
+  internal var transientRecordingEventId: Long = 0
+    private set
+
   public fun open() {
     state = SentryBuddySessionState.Intro
   }
@@ -326,6 +336,7 @@ public constructor(
         )
       recorderFacade.startRecording(intent)
       state = SentryBuddySessionState.Recording(intent = intent, startedAtMs = clock())
+      recordTransientEvent("Flow recording started")
     } catch (exception: IllegalStateException) {
       state =
         SentryBuddySessionState.Error(
@@ -428,6 +439,13 @@ public constructor(
 
   public fun recordAgain() {
     state = SentryBuddySessionState.Intro
+  }
+
+  internal fun recordTransientEvent(text: String) {
+    if (state is SentryBuddySessionState.Recording) {
+      transientRecordingText = text
+      transientRecordingEventId++
+    }
   }
 
   public companion object {
