@@ -106,6 +106,10 @@
       android:exported="false" />
 
     <activity
+      android:name=".SentryBuddyActivity"
+      android:exported="false" />
+
+    <activity
       android:name=".CameraXActivity"
       android:exported="false" />
 
