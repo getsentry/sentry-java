@@ -20,7 +20,6 @@ rule file in `.cursor/rules/`:
 | `continuous_profiling_jvm` | `sentry-async-profiler`, `IContinuousProfiler`, `ProfileChunk`, JFR files, `ProfileLifecycle` |
 | `opentelemetry` | `sentry-opentelemetry-*`, agent vs agentless, span processing, sampling, context propagation |
 | `new_module` | Adding a new integration or sample module |
-| `pr` | Creating pull requests, stacked PRs, changelog entries |
 | `e2e_tests` | System tests, sample applications, `system-test-runner.py`, mock Sentry server |
 
 Rules can be combined — a tracing scope issue may need both `scopes` and `opentelemetry`.
@@ -99,7 +98,7 @@ make systemTest
 4. **High-level communication**: Give high-level explanations of changes made, not step-by-step descriptions
 5. **Simplicity first**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible.
 6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply apiDump`
-7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command
+7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
 
 ## Repository Skills
 
@@ -154,6 +153,33 @@ The repository is organized into multiple modules:
 - **Formatting**: Enforced via Spotless - always run `./gradlew spotlessApply` before committing
 - **API Compatibility**: Binary compatibility is enforced - run `./gradlew apiDump` after API changes
 
+### Exception Handling
+
+**Never introduce a new `catch (Throwable)`.** Catch the narrowest type the guarded code can
+actually throw. The repository still contains many pre-existing broad catches; they are legacy,
+not a precedent to follow.
+
+A broad catch swallows `OutOfMemoryError`, `StackOverflowError`, `ThreadDeath` and `LinkageError` —
+conditions the JVM/ART cannot recover from and that leave the process in an undefined state — and
+it hides real bugs in our own code behind a log line.
+
+"The SDK must never crash the host application" is not a reason to catch `Throwable`. That goal is
+served by `io.sentry.util.ExceptionUtils.rethrowIfFatal`, which lets the non-recoverable throwables
+through while leaving everything else for the caller to log or ignore:
+
+```java
+try {
+  doSomethingRisky();
+} catch (Throwable t) {
+  ExceptionUtils.rethrowIfFatal(t);
+  options.getLogger().log(SentryLevel.ERROR, "Failed to do something risky", t);
+}
+```
+
+Apply that pattern only where a broad catch is genuinely unavoidable — an entry point that runs
+arbitrary user code or third-party callbacks. Everywhere else, name the exception types. Say in the
+PR description why the broad catch is necessary.
+
 ### Testing Requirements
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
@@ -198,7 +224,9 @@ gh pr view --json url -q '.url'
 
 ### Changelog
 
-User-facing changes get an entry under the `## Unreleased` section of `CHANGELOG.md`. When rebasing onto `main`, a release may have renamed the `## Unreleased` heading your entry was under to a version number — if so, move your entry back into an `## Unreleased` section at the top of the file (create it if it no longer exists). See `.cursor/rules/pr.mdc` for the full changelog and PR workflow.
+User-facing changes get an entry under the `## Unreleased` section of `CHANGELOG.md`. The
+`create-java-pr` skill is the source of truth for the full changelog and PR workflow, including
+subsection selection and the rebase caveat when a release renames `## Unreleased`.
 
 ## Useful Resources
 

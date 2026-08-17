@@ -10,12 +10,19 @@
 
 - Defer starting Session Replay off the SDK initialization critical path ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
 
+### Dependencies
+
+- Bump Native SDK from v0.16.2 to v0.16.3 ([#5962](https://github.com/getsentry/sentry-java/pull/5962))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0163)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.2...0.16.3)
+
 ## 8.53.0
 
 ### Features
 
 - Allow child spans to use explicit start timestamps through `ISpan` ([#5929](https://github.com/getsentry/sentry-java/pull/5929))
 - Make `ISpan.startChild` overloads with `SpanOptions` public ([#5927](https://github.com/getsentry/sentry-java/pull/5927))
+- Add `Sentry.feedback().enableOnShake()`, `Sentry.feedback().disableOnShake()`, and `Sentry.feedback().isOnShakeEnabled()` to toggle and query shake-to-report at runtime ([#5827](https://github.com/getsentry/sentry-java/pull/5827))
 
 ### Improvements
 
