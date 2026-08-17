@@ -1,10 +1,10 @@
 package io.sentry.android.buddy
 
 import android.graphics.Rect
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -47,13 +49,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -120,7 +121,8 @@ private fun SentryBuddyOverlayContent(
 ) {
   var state by remember { mutableStateOf(controller.state) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
-  var isRecordingSheetOpen by remember { mutableStateOf(false) }
+  var isRecordingHelpOpen by remember { mutableStateOf(false) }
+  var transientRecordingText by remember { mutableStateOf<String?>(null) }
 
   fun dispatch(action: SentryBuddySessionController.() -> Unit) {
     controller.action()
@@ -136,6 +138,28 @@ private fun SentryBuddyOverlayContent(
     }
   }
 
+  LaunchedEffect(state) {
+    if (state is SentryBuddySessionState.Recording) {
+      val messages =
+        listOf(
+          "Flow recording started",
+          "Screen event captured",
+          "Tracking spans",
+          "Breadcrumbs linked",
+        )
+      var index = 0
+      while (true) {
+        transientRecordingText = messages[index % messages.size]
+        index++
+        delay(1600)
+        transientRecordingText = null
+        delay(1800)
+      }
+    } else {
+      transientRecordingText = null
+    }
+  }
+
   BoxWithConstraints(modifier = modifier.fillMaxSize()) {
     val density = LocalDensity.current
     val maxWidthPx = with(density) { maxWidth.toPx() }
@@ -147,31 +171,41 @@ private fun SentryBuddyOverlayContent(
       maxWidthPx = maxWidthPx,
       maxHeightPx = maxHeightPx,
       bubbleHitBounds = bubbleHitBounds,
+      transientText = transientRecordingText,
       onClick = {
         when (state) {
           SentryBuddySessionState.Closed -> dispatch { open() }
-          is SentryBuddySessionState.Recording -> isRecordingSheetOpen = true
+          is SentryBuddySessionState.Recording ->
+            dispatch {
+              stopRecording()
+              briefRecording()
+            }
           else -> dispatch { close() }
         }
       },
-    )
-    BuddySheet(
-      state = state,
-      nowMs = nowMs,
-      isRecordingSheetOpen = isRecordingSheetOpen,
-      onDismissRecordingSheet = { isRecordingSheetOpen = false },
+      onLongClick = {
+        if (state is SentryBuddySessionState.Recording) {
+          isRecordingHelpOpen = true
+        }
+      },
       onStopAndAnalyze = {
-        isRecordingSheetOpen = false
+        isRecordingHelpOpen = false
         dispatch {
           stopRecording()
           briefRecording()
         }
       },
+      onDismissRecordingHelp = { isRecordingHelpOpen = false },
+      isRecordingHelpOpen = isRecordingHelpOpen,
+    )
+    BuddySheet(
+      state = state,
       onDispatch = { dispatch(it) },
     )
   }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BoxScope.BuddyBubble(
   state: SentryBuddySessionState,
@@ -179,7 +213,12 @@ private fun BoxScope.BuddyBubble(
   maxWidthPx: Float,
   maxHeightPx: Float,
   bubbleHitBounds: BuddyOverlayHitBounds?,
+  transientText: String?,
   onClick: () -> Unit,
+  onLongClick: () -> Unit,
+  onStopAndAnalyze: () -> Unit,
+  onDismissRecordingHelp: () -> Unit,
+  isRecordingHelpOpen: Boolean,
 ) {
   val density = LocalDensity.current
   val bubbleSizePx = with(density) { BuddyBubbleSize.toPx() }
@@ -206,6 +245,7 @@ private fun BoxScope.BuddyBubble(
   }
 
   val resolvedOffset = (bubbleOffset ?: defaultOffset()).constrain()
+  val showTransientAbove = resolvedOffset.y > maxHeightPx / 2f
   val elapsed =
     if (state is SentryBuddySessionState.Recording) {
       formatElapsed(nowMs - state.startedAtMs)
@@ -229,6 +269,9 @@ private fun BoxScope.BuddyBubble(
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.spacedBy(8.dp),
   ) {
+    if (showTransientAbove) {
+      TransientRecordingText(transientText)
+    }
     Box(
       modifier =
         Modifier.size(64.dp)
@@ -241,14 +284,25 @@ private fun BoxScope.BuddyBubble(
               bubbleOffset = ((bubbleOffset ?: resolvedOffset) + dragAmount).constrain()
             }
           }
-          .clickable(onClick = onClick),
+          .combinedClickable(onClick = onClick, onLongClick = onLongClick),
       contentAlignment = Alignment.Center,
     ) {
       if (isRecording) {
-        PauseIcon(tint = Color.White, modifier = Modifier.size(26.dp))
+        StopIcon(tint = Color.White, modifier = Modifier.size(22.dp))
       } else {
         SentryBuddyGlyph(tint = Color.White, modifier = Modifier.size(30.dp))
       }
+    }
+    if (isRecording && isRecordingHelpOpen && state is SentryBuddySessionState.Recording) {
+      RecordingTooltip(
+        state = state,
+        nowMs = nowMs,
+        onStopAndAnalyze = onStopAndAnalyze,
+        onDismiss = onDismissRecordingHelp,
+      )
+    }
+    if (!showTransientAbove) {
+      TransientRecordingText(transientText)
     }
     elapsed?.let {
       Text(
@@ -258,6 +312,26 @@ private fun BoxScope.BuddyBubble(
         fontFamily = FontFamily.Monospace,
       )
     }
+  }
+}
+
+@Composable
+private fun TransientRecordingText(text: String?) {
+  if (text == null) {
+    return
+  }
+  Surface(
+    color = BuddyInk.copy(alpha = 0.92f),
+    shape = RoundedCornerShape(18.dp),
+    shadowElevation = 6.dp,
+  ) {
+    Text(
+      text = text,
+      modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+      color = Color.White,
+      style = MaterialTheme.typography.labelMedium,
+      fontWeight = FontWeight.Bold,
+    )
   }
 }
 
@@ -277,27 +351,14 @@ internal class BuddyOverlayHitBounds {
 @Composable
 private fun BuddySheet(
   state: SentryBuddySessionState,
-  nowMs: Long,
-  isRecordingSheetOpen: Boolean,
-  onDismissRecordingSheet: () -> Unit,
-  onStopAndAnalyze: () -> Unit,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
 ) {
-  if (state is SentryBuddySessionState.Closed) {
-    return
-  }
-  if (state is SentryBuddySessionState.Recording && !isRecordingSheetOpen) {
+  if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
     return
   }
 
   ModalBottomSheet(
-    onDismissRequest = {
-      if (state is SentryBuddySessionState.Recording) {
-        onDismissRecordingSheet()
-      } else {
-        onDispatch { close() }
-      }
-    },
+    onDismissRequest = { onDispatch { close() } },
     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     containerColor = Color.White,
     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
@@ -308,12 +369,12 @@ private fun BuddySheet(
     ) {
       when (state) {
         SentryBuddySessionState.Intro -> IntroSheet(onDispatch)
-        is SentryBuddySessionState.Recording -> RecordingSheet(state, nowMs, onStopAndAnalyze)
         is SentryBuddySessionState.StoppedSummary -> StoppedSummarySheet(state, onDispatch)
         is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch)
         is SentryBuddySessionState.Analyzing -> AnalyzingSheet(state)
         is SentryBuddySessionState.Insights -> InsightsSheet(state, onDispatch)
         is SentryBuddySessionState.Error -> ErrorSheet(state, onDispatch)
+        is SentryBuddySessionState.Recording,
         SentryBuddySessionState.Closed -> Unit
       }
     }
@@ -321,11 +382,8 @@ private fun BuddySheet(
 }
 
 @Composable
-private fun PauseIcon(tint: Color, modifier: Modifier = Modifier) {
-  Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-    Box(modifier = Modifier.weight(1f).height(26.dp).background(tint, RoundedCornerShape(3.dp)))
-    Box(modifier = Modifier.weight(1f).height(26.dp).background(tint, RoundedCornerShape(3.dp)))
-  }
+private fun StopIcon(tint: Color, modifier: Modifier = Modifier) {
+  Box(modifier = modifier.background(tint, RoundedCornerShape(4.dp)))
 }
 
 @Composable
@@ -373,56 +431,54 @@ private fun IntroSheet(onDispatch: (SentryBuddySessionController.() -> Unit) -> 
 
 @Composable
 private fun SentryBuddyGlyph(tint: Color, modifier: Modifier = Modifier) {
-  Canvas(modifier = modifier) {
-    val strokeWidth = size.minDimension * 0.11f
-    val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-    val left = size.width * 0.10f
-    val top = size.height * 0.12f
-    val arcSize = size.minDimension * 0.72f
-    drawArc(
-      color = tint,
-      startAngle = -58f,
-      sweepAngle = 116f,
-      useCenter = false,
-      topLeft = Offset(left, top),
-      size = androidx.compose.ui.geometry.Size(arcSize, arcSize),
-      style = stroke,
-    )
-    drawArc(
-      color = tint,
-      startAngle = -58f,
-      sweepAngle = 116f,
-      useCenter = false,
-      topLeft = Offset(left + size.width * 0.18f, top + size.height * 0.18f),
-      size = androidx.compose.ui.geometry.Size(arcSize * 0.55f, arcSize * 0.55f),
-      style = stroke,
-    )
-    drawLine(
-      color = tint,
-      start = Offset(size.width * 0.18f, size.height * 0.86f),
-      end = Offset(size.width * 0.82f, size.height * 0.86f),
-      strokeWidth = strokeWidth,
-      cap = StrokeCap.Round,
-    )
-  }
+  Icon(
+    painter = painterResource(id = R.drawable.sentry_buddy_glyph_light),
+    contentDescription = null,
+    modifier = modifier,
+    tint = tint,
+  )
 }
 
 @Composable
-private fun RecordingSheet(
+private fun RecordingTooltip(
   state: SentryBuddySessionState.Recording,
   nowMs: Long,
   onStopAndAnalyze: () -> Unit,
+  onDismiss: () -> Unit,
 ) {
   val durationMs = nowMs - state.startedAtMs
-  SheetTitle("Recording Flow", "Everything stays on device")
-  ActiveRecordingCard(durationMs)
-  ActiveTimelinePreview(state.intent, durationMs)
-  Button(
-    modifier = Modifier.fillMaxWidth().height(56.dp),
-    colors = ButtonDefaults.buttonColors(containerColor = BuddyRed),
-    onClick = onStopAndAnalyze,
+  Card(
+    modifier = Modifier.width(300.dp).shadow(12.dp, RoundedCornerShape(20.dp)),
+    colors = CardDefaults.cardColors(containerColor = Color.White),
+    border = CardDefaults.outlinedCardBorder(),
+    shape = RoundedCornerShape(20.dp),
   ) {
-    Text("Stop and Analyze", fontWeight = FontWeight.Bold)
+    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Column {
+          Text("Recording Flow", color = BuddyInk, fontWeight = FontWeight.Bold)
+          Text(
+            "Everything stays on device",
+            color = BuddyMuted,
+            style = MaterialTheme.typography.bodySmall,
+          )
+        }
+        TextButton(onClick = onDismiss) { Text("Close") }
+      }
+      ActiveRecordingCard(durationMs)
+      ActiveTimelinePreview(state.intent, durationMs)
+      Button(
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = BuddyRed),
+        onClick = onStopAndAnalyze,
+      ) {
+        Text("Stop and Analyze", fontWeight = FontWeight.Bold)
+      }
+    }
   }
 }
 
@@ -638,7 +694,7 @@ private fun BriefingSheet(
       updateController()
     },
     singleLine = true,
-    label = { Text("The name of your flow") },
+    label = { Text("Name your flow") },
   )
   OutlinedTextField(
     modifier = Modifier.fillMaxWidth(),

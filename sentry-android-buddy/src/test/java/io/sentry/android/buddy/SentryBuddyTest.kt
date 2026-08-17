@@ -31,8 +31,8 @@ class SentryBuddyTest {
     val application = RuntimeEnvironment.getApplication()
     SentryBuddy.install(application, SentryBuddyOptions(showOverlay = false))
 
-    SentryBuddy.startRecording(BuddyFlowIntent("Checkout"))
     Robolectric.buildActivity(Activity::class.java).setup()
+    SentryBuddy.startRecording(BuddyFlowIntent("Checkout"))
     val recording = SentryBuddy.stopRecording()
 
     assertThat(recording.timeline.map { it.type }).contains(BuddyTimelineItem.Type.SCREEN)

@@ -52,7 +52,9 @@ public object SentryBuddy {
 
   @JvmStatic
   public fun startRecording(intent: BuddyFlowIntent) {
-    requireInstalled().start(intent)
+    val recorder = requireInstalled()
+    recorder.start(intent)
+    lifecycleCallbacks?.recordCurrentScreen()
   }
 
   @JvmStatic

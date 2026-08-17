@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.ComposeView
 import io.sentry.ITransaction
 import io.sentry.Sentry
 import io.sentry.TransactionOptions
+import java.lang.ref.WeakReference
 import java.util.Date
 import java.util.UUID
 import java.util.WeakHashMap
@@ -191,16 +192,22 @@ internal class BuddyActivityLifecycleCallbacks(
   private val recorder: BuddyRecorder,
   private var overlayManager: BuddyOverlayManager?,
 ) : Application.ActivityLifecycleCallbacks {
+  private var currentActivity: WeakReference<Activity>? = null
+
   override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
 
   override fun onActivityStarted(activity: Activity) = Unit
 
   override fun onActivityResumed(activity: Activity) {
+    currentActivity = WeakReference(activity)
     recorder.recordScreen(activity.javaClass.simpleName)
     overlayManager?.attach(activity)
   }
 
   override fun onActivityPaused(activity: Activity) {
+    if (currentActivity?.get() === activity) {
+      currentActivity = null
+    }
     overlayManager?.detach(activity)
   }
 
@@ -209,7 +216,14 @@ internal class BuddyActivityLifecycleCallbacks(
   override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
 
   override fun onActivityDestroyed(activity: Activity) {
+    if (currentActivity?.get() === activity) {
+      currentActivity = null
+    }
     overlayManager?.detach(activity)
+  }
+
+  fun recordCurrentScreen() {
+    currentActivity?.get()?.let { recorder.recordScreen(it.javaClass.simpleName) }
   }
 
   fun updateOverlay(options: SentryBuddyOptions) {
