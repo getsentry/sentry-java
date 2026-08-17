@@ -231,6 +231,7 @@ dependencies {
   ksp(libs.androidx.room3.compiler)
 
   debugImplementation(projects.sentryAndroidDistribution)
+  debugImplementation(projects.sentryAndroidBuddy)
   debugImplementation(libs.leakcanary)
 }
 

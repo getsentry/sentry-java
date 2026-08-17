@@ -20,6 +20,8 @@ public class MyApplication extends Application {
     strictMode();
     super.onCreate();
 
+    SentryBuddySampleIntegration.install(this);
+
     extendAppStartExample();
 
     SampleDatabases.INSTANCE.warmUp(this);

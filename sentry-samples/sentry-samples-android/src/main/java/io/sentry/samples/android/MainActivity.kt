@@ -20,6 +20,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -830,6 +832,8 @@ fun UserFeedbackScreen() {
 @Composable
 fun IntegrationsScreen() {
   val activity = LocalContext.current.getActivity()
+  var buddyRecordingActive by remember { mutableStateOf(false) }
+  var buddyRecordingJson by remember { mutableStateOf<String?>(null) }
 
   LazyVerticalGrid(
     columns = GridCells.Adaptive(minSize = 180.dp),
@@ -837,6 +841,68 @@ fun IntegrationsScreen() {
     horizontalArrangement = Arrangement.spacedBy(12.dp),
     verticalArrangement = Arrangement.spacedBy(12.dp),
   ) {
+    item(span = { GridItemSpan(maxLineSpan) }) {
+      SentryTraced("sentry_buddy_sample") {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          Text(
+            text = "Sentry Buddy",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+          )
+          Text(
+            text =
+              if (SentryBuddySampleIntegration.isAvailable()) {
+                "Record a local checkout flow. Navigate to other sample screens, come back, " +
+                  "and stop to inspect the JSON artifact."
+              } else {
+                "Sentry Buddy is only available in debug builds."
+              },
+            style = MaterialTheme.typography.bodySmall,
+          )
+          Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+              enabled = SentryBuddySampleIntegration.isAvailable() && !buddyRecordingActive,
+              onClick = {
+                SentryBuddySampleIntegration.startCheckoutRecording()
+                buddyRecordingActive = true
+                buddyRecordingJson = null
+                Toast.makeText(activity, "Sentry Buddy recording started", Toast.LENGTH_SHORT)
+                  .show()
+              },
+            ) {
+              Text("Start")
+            }
+            OutlinedButton(
+              enabled = SentryBuddySampleIntegration.isAvailable() && buddyRecordingActive,
+              onClick = {
+                SentryBuddySampleIntegration.recordStep("Developer tapped sample step")
+                Toast.makeText(activity, "Buddy step recorded", Toast.LENGTH_SHORT).show()
+              },
+            ) {
+              Text("Record Step")
+            }
+            OutlinedButton(
+              enabled = SentryBuddySampleIntegration.isAvailable() && buddyRecordingActive,
+              onClick = {
+                buddyRecordingJson = SentryBuddySampleIntegration.stopRecording()
+                buddyRecordingActive = false
+                Toast.makeText(activity, "Sentry Buddy recording stopped", Toast.LENGTH_SHORT)
+                  .show()
+              },
+            ) {
+              Text("Stop")
+            }
+          }
+          buddyRecordingJson?.let { json ->
+            Text(
+              text = json,
+              style = MaterialTheme.typography.bodySmall,
+              modifier = Modifier.fillMaxWidth(),
+            )
+          }
+        }
+      }
+    }
     item {
       SentryTraced("open_compose_activity") {
         OutlinedButton(
