@@ -80,6 +80,7 @@ public constructor(
   public val summary: String,
   public val insights: List<BuddyInsight>,
   public val recommendations: List<BuddyRecommendation>,
+  public val recommendationsText: String = "",
 )
 
 @ApiStatus.Experimental
@@ -201,6 +202,10 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
             priority = BuddyRecommendationPriority.LOW,
           ),
         ),
+      recommendationsText =
+        "Add spans around the key work in $flowName so the flow is easier to explain in " +
+          "Sentry. Use this recording as the initial baseline for duration and keep the " +
+          "Buddy correlation tags on related events and transactions.",
     )
   }
 

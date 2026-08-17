@@ -1,6 +1,7 @@
 package io.sentry.android.buddy
 
 import android.graphics.Rect
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -48,6 +49,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -172,7 +175,6 @@ private fun BoxScope.BuddyBubble(
   val initialTopPx = with(density) { BuddyBubbleInitialTop.toPx() }
   val isRecording = state is SentryBuddySessionState.Recording
   val bubbleColor = if (isRecording) BuddyRed else BuddyPurple
-  val label = if (isRecording) "■" else "△"
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
 
   fun defaultOffset(): Offset =
@@ -230,7 +232,11 @@ private fun BoxScope.BuddyBubble(
           .clickable(onClick = onClick),
       contentAlignment = Alignment.Center,
     ) {
-      Text(label, color = Color.White, style = MaterialTheme.typography.headlineSmall)
+      if (isRecording) {
+        Text("■", color = Color.White, style = MaterialTheme.typography.headlineSmall)
+      } else {
+        SentryBuddyGlyph(tint = Color.White, modifier = Modifier.size(30.dp))
+      }
     }
     elapsed?.let {
       Text(
@@ -299,7 +305,7 @@ private fun SheetTitle(title: String, subtitle: String) {
       modifier = Modifier.size(44.dp).background(BuddyPurple, RoundedCornerShape(10.dp)),
       contentAlignment = Alignment.Center,
     ) {
-      Text("△", color = Color.White, style = MaterialTheme.typography.titleLarge)
+      SentryBuddyGlyph(tint = Color.White, modifier = Modifier.size(26.dp))
     }
     Column {
       Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -312,16 +318,10 @@ private fun SheetTitle(title: String, subtitle: String) {
 private fun IntroSheet(onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit) {
   SheetTitle("Sentry Buddy", "Debug build • v${BuildConfig.VERSION_NAME}")
   Text(
-    "Record a session to get a full picture",
+    "Record a flow",
     style = MaterialTheme.typography.titleLarge,
     fontWeight = FontWeight.Bold,
     color = BuddyInk,
-  )
-  Text(
-    "Recommendations catch problems one at a time. A recording captures the screens, steps, " +
-      "and Sentry correlation while you use the app, then Buddy turns the trace into guidance.",
-    color = BuddyMuted,
-    style = MaterialTheme.typography.bodyLarge,
   )
   Button(
     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -336,39 +336,41 @@ private fun IntroSheet(onDispatch: (SentryBuddySessionController.() -> Unit) -> 
     textAlign = TextAlign.Center,
     color = BuddyMuted,
   )
-  RecommendationPreview()
 }
 
 @Composable
-private fun RecommendationPreview() {
-  Text("Recommendations", style = MaterialTheme.typography.labelLarge, color = BuddyMuted)
-  Card(
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = CardDefaults.outlinedCardBorder(),
-  ) {
-    Column {
-      PreviewRow("Unhandled Error on Login", "IllegalStateException thrown once while signing in.")
-      HorizontalDivider()
-      PreviewRow(
-        "Home Has No Screen Transaction",
-        "You have opened this screen 4 times with no transaction.",
-      )
-    }
-  }
-}
-
-@Composable
-private fun PreviewRow(title: String, body: String) {
-  Row(
-    modifier = Modifier.fillMaxWidth().padding(16.dp),
-    horizontalArrangement = Arrangement.spacedBy(12.dp),
-  ) {
-    Box(modifier = Modifier.size(10.dp).background(BuddyPurple, CircleShape))
-    Column {
-      Text(title, fontWeight = FontWeight.Bold, color = BuddyInk)
-      Text(body, color = BuddyMuted)
-      Text("Just now", color = BuddyMuted, fontFamily = FontFamily.Monospace)
-    }
+private fun SentryBuddyGlyph(tint: Color, modifier: Modifier = Modifier) {
+  Canvas(modifier = modifier) {
+    val strokeWidth = size.minDimension * 0.11f
+    val stroke = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+    val left = size.width * 0.10f
+    val top = size.height * 0.12f
+    val arcSize = size.minDimension * 0.72f
+    drawArc(
+      color = tint,
+      startAngle = -58f,
+      sweepAngle = 116f,
+      useCenter = false,
+      topLeft = Offset(left, top),
+      size = androidx.compose.ui.geometry.Size(arcSize, arcSize),
+      style = stroke,
+    )
+    drawArc(
+      color = tint,
+      startAngle = -58f,
+      sweepAngle = 116f,
+      useCenter = false,
+      topLeft = Offset(left + size.width * 0.18f, top + size.height * 0.18f),
+      size = androidx.compose.ui.geometry.Size(arcSize * 0.55f, arcSize * 0.55f),
+      style = stroke,
+    )
+    drawLine(
+      color = tint,
+      start = Offset(size.width * 0.18f, size.height * 0.86f),
+      end = Offset(size.width * 0.82f, size.height * 0.86f),
+      strokeWidth = strokeWidth,
+      cap = StrokeCap.Round,
+    )
   }
 }
 
@@ -650,7 +652,7 @@ private fun InsightsSheet(
 ) {
   val clipboard = LocalClipboardManager.current
   SheetTitle(
-    "Session Insights",
+    "Flow insights",
     "Session • ${formatElapsed(state.request.recording.summary.durationMs)}",
   )
   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -674,13 +676,17 @@ private fun InsightsSheet(
     style = MaterialTheme.typography.titleMedium,
     fontWeight = FontWeight.Bold,
   )
-  Column(modifier = Modifier.border(1.dp, BuddyBorder, RoundedCornerShape(12.dp))) {
-    state.response.recommendations.forEachIndexed { index, recommendation ->
-      RecommendationRow(recommendation)
-      if (index != state.response.recommendations.lastIndex) {
-        HorizontalDivider()
-      }
-    }
+  Surface(
+    modifier = Modifier.fillMaxWidth().border(1.dp, BuddyBorder, RoundedCornerShape(12.dp)),
+    color = Color.White,
+    shape = RoundedCornerShape(12.dp),
+  ) {
+    Text(
+      text = state.response.recommendationsText.ifBlank { "No recommendations returned yet." },
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      color = BuddyInk,
+      style = MaterialTheme.typography.bodyMedium,
+    )
   }
   Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
     OutlinedButton(
