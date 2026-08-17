@@ -415,6 +415,28 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `terminating capture marks strategy synchronously without conversion`() {
+    val replayId = SentryId()
+    val captureStrategy = mock<BufferCaptureStrategy>()
+    whenever(captureStrategy.currentReplayId).thenReturn(replayId)
+    val replay =
+      fixture.getSut(
+        context,
+        sessionSampleRate = 0.0,
+        replayCaptureStrategyProvider = { captureStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertThat(replay.captureReplay(true)).isEqualTo(replayId)
+
+    verify(captureStrategy).captureReplay(eq(true), any())
+    verify(captureStrategy, never()).convert()
+  }
+
+  @Test
   fun `captureReplay returns empty id when error replay is not sampled`() {
     val captureStrategy = mock<BufferCaptureStrategy>()
     whenever(captureStrategy.currentReplayId).thenReturn(SentryId())

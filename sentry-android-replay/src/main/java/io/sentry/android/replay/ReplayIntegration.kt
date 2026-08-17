@@ -278,8 +278,13 @@ public class ReplayIntegration(
 
     // Set it synchronously so the event that triggered the flush picks it up before conversion.
     scopes?.configureScope { it.replayId = current.replayId }
-    enqueueOnMainThread {
-      captureReplayInternal(current.generation, current.replayId, isTerminating == true)
+    if (isTerminating == true) {
+      // A main-thread crash blocks the looper while flushing, so mark termination synchronously.
+      current.captureStrategy?.captureReplay(true) {}
+    } else {
+      enqueueOnMainThread {
+        captureReplayInternal(current.generation, current.replayId, false)
+      }
     }
     return current.replayId
   }
