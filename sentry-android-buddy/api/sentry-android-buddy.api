@@ -1,0 +1,228 @@
+public final class io/sentry/android/buddy/BuddyAppInfo : io/sentry/JsonSerializable {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/Long;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/android/buddy/BuddyAppInfo;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyAppInfo;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddyAppInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEnvironment ()Ljava/lang/String;
+	public final fun getPackageName ()Ljava/lang/String;
+	public final fun getRelease ()Ljava/lang/String;
+	public final fun getVersionCode ()Ljava/lang/Long;
+	public final fun getVersionName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyDeviceInfo : io/sentry/JsonSerializable {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/android/buddy/BuddyDeviceInfo;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyDeviceInfo;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddyDeviceInfo;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getManufacturer ()Ljava/lang/String;
+	public final fun getModel ()Ljava/lang/String;
+	public final fun getOsName ()Ljava/lang/String;
+	public final fun getOsVersion ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyFlowImportance : java/lang/Enum {
+	public static final field BUSINESS_CRITICAL Lio/sentry/android/buddy/BuddyFlowImportance;
+	public static final field HIGH Lio/sentry/android/buddy/BuddyFlowImportance;
+	public static final field LOW Lio/sentry/android/buddy/BuddyFlowImportance;
+	public static final field MEDIUM Lio/sentry/android/buddy/BuddyFlowImportance;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/buddy/BuddyFlowImportance;
+	public static fun values ()[Lio/sentry/android/buddy/BuddyFlowImportance;
+}
+
+public final class io/sentry/android/buddy/BuddyFlowIntent : io/sentry/JsonSerializable {
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/BuddyFlowImportance;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/BuddyFlowImportance;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/BuddyFlowImportance;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Lio/sentry/android/buddy/BuddyFlowImportance;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/BuddyFlowImportance;Ljava/util/Map;)Lio/sentry/android/buddy/BuddyFlowIntent;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyFlowIntent;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/BuddyFlowImportance;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddyFlowIntent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/util/Map;
+	public final fun getDeveloperGoal ()Ljava/lang/String;
+	public final fun getImportance ()Lio/sentry/android/buddy/BuddyFlowImportance;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getSlug ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyFlowRecording : io/sentry/JsonSerializable {
+	public static final field Companion Lio/sentry/android/buddy/BuddyFlowRecording$Companion;
+	public static final field PLATFORM Ljava/lang/String;
+	public static final field TYPE Ljava/lang/String;
+	public static final field USE_CASE Ljava/lang/String;
+	public static final field VERSION I
+	public fun <init> (Lio/sentry/android/buddy/BuddyFlowIntent;Lio/sentry/android/buddy/BuddyRecordingMetadata;Lio/sentry/android/buddy/BuddyAppInfo;Lio/sentry/android/buddy/BuddyDeviceInfo;Lio/sentry/android/buddy/BuddyRecordingSummary;Ljava/util/List;Lio/sentry/android/buddy/BuddySentryCorrelation;)V
+	public final fun component1 ()Lio/sentry/android/buddy/BuddyFlowIntent;
+	public final fun component2 ()Lio/sentry/android/buddy/BuddyRecordingMetadata;
+	public final fun component3 ()Lio/sentry/android/buddy/BuddyAppInfo;
+	public final fun component4 ()Lio/sentry/android/buddy/BuddyDeviceInfo;
+	public final fun component5 ()Lio/sentry/android/buddy/BuddyRecordingSummary;
+	public final fun component6 ()Ljava/util/List;
+	public final fun component7 ()Lio/sentry/android/buddy/BuddySentryCorrelation;
+	public final fun copy (Lio/sentry/android/buddy/BuddyFlowIntent;Lio/sentry/android/buddy/BuddyRecordingMetadata;Lio/sentry/android/buddy/BuddyAppInfo;Lio/sentry/android/buddy/BuddyDeviceInfo;Lio/sentry/android/buddy/BuddyRecordingSummary;Ljava/util/List;Lio/sentry/android/buddy/BuddySentryCorrelation;)Lio/sentry/android/buddy/BuddyFlowRecording;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyFlowRecording;Lio/sentry/android/buddy/BuddyFlowIntent;Lio/sentry/android/buddy/BuddyRecordingMetadata;Lio/sentry/android/buddy/BuddyAppInfo;Lio/sentry/android/buddy/BuddyDeviceInfo;Lio/sentry/android/buddy/BuddyRecordingSummary;Ljava/util/List;Lio/sentry/android/buddy/BuddySentryCorrelation;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddyFlowRecording;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getApp ()Lio/sentry/android/buddy/BuddyAppInfo;
+	public final fun getDevice ()Lio/sentry/android/buddy/BuddyDeviceInfo;
+	public final fun getFlow ()Lio/sentry/android/buddy/BuddyFlowIntent;
+	public final fun getRecording ()Lio/sentry/android/buddy/BuddyRecordingMetadata;
+	public final fun getSentry ()Lio/sentry/android/buddy/BuddySentryCorrelation;
+	public final fun getSummary ()Lio/sentry/android/buddy/BuddyRecordingSummary;
+	public final fun getTimeline ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyFlowRecording$Companion {
+}
+
+public final class io/sentry/android/buddy/BuddyFlowRecordingJsonSerializer {
+	public static final field INSTANCE Lio/sentry/android/buddy/BuddyFlowRecordingJsonSerializer;
+	public static final fun serialize (Lio/sentry/android/buddy/BuddyFlowRecording;)Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyRecordingMetadata : io/sentry/JsonSerializable {
+	public static final field Companion Lio/sentry/android/buddy/BuddyRecordingMetadata$Companion;
+	public static final field MANUAL_DEBUG_RECORDING Ljava/lang/String;
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Ljava/util/Date;J)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/util/Date;
+	public final fun component4 ()Ljava/util/Date;
+	public final fun component5 ()J
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Ljava/util/Date;J)Lio/sentry/android/buddy/BuddyRecordingMetadata;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyRecordingMetadata;Ljava/lang/String;Ljava/lang/String;Ljava/util/Date;Ljava/util/Date;JILjava/lang/Object;)Lio/sentry/android/buddy/BuddyRecordingMetadata;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getEndedAt ()Ljava/util/Date;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getSource ()Ljava/lang/String;
+	public final fun getStartedAt ()Ljava/util/Date;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyRecordingMetadata$Companion {
+}
+
+public final class io/sentry/android/buddy/BuddyRecordingSummary : io/sentry/JsonSerializable {
+	public fun <init> (JIIII)V
+	public final fun component1 ()J
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun component5 ()I
+	public final fun copy (JIIII)Lio/sentry/android/buddy/BuddyRecordingSummary;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyRecordingSummary;JIIIIILjava/lang/Object;)Lio/sentry/android/buddy/BuddyRecordingSummary;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getBreadcrumbCount ()I
+	public final fun getDurationMs ()J
+	public final fun getScreenCount ()I
+	public final fun getStepCount ()I
+	public final fun getTimelineItemCount ()I
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddySentryCorrelation : io/sentry/JsonSerializable {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Ljava/util/Map;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)Lio/sentry/android/buddy/BuddySentryCorrelation;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddySentryCorrelation;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddySentryCorrelation;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getRecordingId ()Ljava/lang/String;
+	public final fun getSpanId ()Ljava/lang/String;
+	public final fun getTags ()Ljava/util/Map;
+	public final fun getTraceId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyTimelineItem : io/sentry/JsonSerializable {
+	public fun <init> (Lio/sentry/android/buddy/BuddyTimelineItem$Type;Ljava/util/Date;J)V
+	public fun <init> (Lio/sentry/android/buddy/BuddyTimelineItem$Type;Ljava/util/Date;JLjava/lang/String;)V
+	public fun <init> (Lio/sentry/android/buddy/BuddyTimelineItem$Type;Ljava/util/Date;JLjava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Lio/sentry/android/buddy/BuddyTimelineItem$Type;Ljava/util/Date;JLjava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public final fun component2 ()Ljava/util/Date;
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/util/Map;
+	public final fun copy (Lio/sentry/android/buddy/BuddyTimelineItem$Type;Ljava/util/Date;JLjava/lang/String;Ljava/util/Map;)Lio/sentry/android/buddy/BuddyTimelineItem;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyTimelineItem;Lio/sentry/android/buddy/BuddyTimelineItem$Type;Ljava/util/Date;JLjava/lang/String;Ljava/util/Map;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddyTimelineItem;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/util/Map;
+	public final fun getElapsedMs ()J
+	public final fun getName ()Ljava/lang/String;
+	public final fun getTimestamp ()Ljava/util/Date;
+	public final fun getType ()Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public fun hashCode ()I
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyTimelineItem$Type : java/lang/Enum {
+	public static final field BREADCRUMB Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public static final field RECORDING_STARTED Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public static final field RECORDING_STOPPED Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public static final field SCREEN Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public static final field STEP Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public final fun getValue ()Ljava/lang/String;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public static fun values ()[Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+}
+
+public final class io/sentry/android/buddy/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/android/buddy/SentryBuddy {
+	public static final field INSTANCE Lio/sentry/android/buddy/SentryBuddy;
+	public static final fun install (Landroid/app/Application;)V
+	public static final fun recordStep (Ljava/lang/String;)V
+	public static final fun recordStep (Ljava/lang/String;Ljava/util/Map;)V
+	public static final fun startRecording (Lio/sentry/android/buddy/BuddyFlowIntent;)V
+	public static final fun stopRecording ()Lio/sentry/android/buddy/BuddyFlowRecording;
+}
+

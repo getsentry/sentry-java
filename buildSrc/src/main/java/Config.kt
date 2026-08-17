@@ -101,7 +101,8 @@ object Config {
             "sentry-android-timber",
             "sentry-compose-android",
             "sentry-android-sqlite",
-            "sentry-android-replay"
+            "sentry-android-replay",
+            "sentry-android-buddy"
         )
 
         val androidXLibs = listOf(

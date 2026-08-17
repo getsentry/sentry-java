@@ -53,6 +53,7 @@ include(
     "sentry-android-navigation",
     "sentry-android-sqlite",
     "sentry-android-replay",
+    "sentry-android-buddy",
     "sentry-compose",
     "sentry-apollo",
     "sentry-apollo-3",

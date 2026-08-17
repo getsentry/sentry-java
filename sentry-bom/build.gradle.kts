@@ -11,7 +11,8 @@ dependencies {
           it.name != project.name &&
           !it.name.endsWith("-bom") &&
           !it.name.contains("test", ignoreCase = true) &&
-          !it.name.contains("sentry-android-distribution")
+          !it.name.contains("sentry-android-distribution") &&
+          it.name != "sentry-android-buddy"
       }
       .forEach { project ->
         evaluationDependsOn(project.path)
