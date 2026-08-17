@@ -310,7 +310,7 @@ public constructor(
 
   @JvmOverloads
   public fun startRecording(
-    flowName: String = "Sentry Buddy Session",
+    flowName: String = "Sentry Buddy Flow",
     developerGoal: String = "Understand how this app flow maps to Sentry telemetry.",
     importance: BuddyFlowImportance = BuddyFlowImportance.BUSINESS_CRITICAL,
     focusAreas: Set<BuddyFocusArea> = DEFAULT_FOCUS_AREAS,
