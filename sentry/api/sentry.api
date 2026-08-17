@@ -227,6 +227,7 @@ public final class io/sentry/CheckInStatus : java/lang/Enum {
 
 public final class io/sentry/CombinedContextsView : io/sentry/protocol/Contexts {
 	public fun <init> (Lio/sentry/protocol/Contexts;Lio/sentry/protocol/Contexts;Lio/sentry/protocol/Contexts;Lio/sentry/ScopeType;)V
+	public fun clear ()V
 	public fun containsKey (Ljava/lang/Object;)Z
 	public fun entrySet ()Ljava/util/Set;
 	public fun get (Ljava/lang/Object;)Ljava/lang/Object;
@@ -853,6 +854,9 @@ public abstract interface class io/sentry/IFeedbackApi {
 	public abstract fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
 	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public abstract fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public abstract fun disableOnShake ()V
+	public abstract fun enableOnShake ()V
+	public abstract fun isOnShakeEnabled ()Z
 	public abstract fun show ()V
 	public abstract fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public abstract fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
@@ -1196,6 +1200,7 @@ public abstract interface class io/sentry/ISpan {
 	public abstract fun startChild (Lio/sentry/SpanContext;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
@@ -1222,7 +1227,6 @@ public abstract interface class io/sentry/ITransaction : io/sentry/ISpan {
 	public abstract fun scheduleFinish ()V
 	public abstract fun setName (Ljava/lang/String;)V
 	public abstract fun setName (Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
-	public abstract fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
 }
 
 public abstract interface class io/sentry/ITransactionProfiler {
@@ -1604,7 +1608,10 @@ public final class io/sentry/NoOpFeedbackApi : io/sentry/IFeedbackApi {
 	public fun capture (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
 	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun capture (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
+	public fun disableOnShake ()V
+	public fun enableOnShake ()V
 	public static fun getInstance ()Lio/sentry/NoOpFeedbackApi;
+	public fun isOnShakeEnabled ()Z
 	public fun show ()V
 	public fun show (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public fun show (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
@@ -1938,6 +1945,7 @@ public final class io/sentry/NoOpSpan : io/sentry/ISpan {
 	public fun startChild (Lio/sentry/SpanContext;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
@@ -2094,13 +2102,16 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 
 public final class io/sentry/PerformanceCollectionData {
 	public fun <init> (J)V
-	public fun getCpuUsagePercentage ()Ljava/lang/Double;
+	public fun getCpuUsagePercentage ()D
 	public fun getNanoTimestamp ()J
-	public fun getUsedHeapMemory ()Ljava/lang/Long;
-	public fun getUsedNativeMemory ()Ljava/lang/Long;
-	public fun setCpuUsagePercentage (Ljava/lang/Double;)V
-	public fun setUsedHeapMemory (Ljava/lang/Long;)V
-	public fun setUsedNativeMemory (Ljava/lang/Long;)V
+	public fun getUsedHeapMemory ()J
+	public fun getUsedNativeMemory ()J
+	public fun hasCpuUsagePercentage ()Z
+	public fun hasUsedHeapMemory ()Z
+	public fun hasUsedNativeMemory ()Z
+	public fun setCpuUsagePercentage (D)V
+	public fun setUsedHeapMemory (J)V
+	public fun setUsedNativeMemory (J)V
 }
 
 public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -3231,6 +3242,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun getOnFormOpen ()Ljava/lang/Runnable;
 	public fun getOnSubmitError ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
 	public fun getOnSubmitSuccess ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
+	public fun getShakeController ()Lio/sentry/SentryFeedbackOptions$IShakeController;
 	public fun getSubmitButtonLabel ()Ljava/lang/CharSequence;
 	public fun getSuccessMessageText ()Ljava/lang/CharSequence;
 	public fun isEmailRequired ()Z
@@ -3256,6 +3268,7 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun setOnFormOpen (Ljava/lang/Runnable;)V
 	public fun setOnSubmitError (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
 	public fun setOnSubmitSuccess (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
+	public fun setShakeController (Lio/sentry/SentryFeedbackOptions$IShakeController;)V
 	public fun setShowBranding (Z)V
 	public fun setShowEmail (Z)V
 	public fun setShowName (Z)V
@@ -3268,6 +3281,12 @@ public final class io/sentry/SentryFeedbackOptions {
 
 public abstract interface class io/sentry/SentryFeedbackOptions$IFormHandler {
 	public abstract fun showForm (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
+}
+
+public abstract interface class io/sentry/SentryFeedbackOptions$IShakeController {
+	public abstract fun disableOnShake ()V
+	public abstract fun enableOnShake ()V
+	public abstract fun isOnShakeEnabled ()Z
 }
 
 public abstract interface class io/sentry/SentryFeedbackOptions$OptionsConfigurator {
@@ -4374,6 +4393,7 @@ public final class io/sentry/Span : io/sentry/ISpan {
 	public fun startChild (Lio/sentry/SpanContext;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
@@ -5795,6 +5815,7 @@ public class io/sentry/protocol/Contexts : io/sentry/JsonSerializable {
 	protected final field responseLock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/protocol/Contexts;)V
+	public fun clear ()V
 	public fun containsKey (Ljava/lang/Object;)Z
 	public fun entrySet ()Ljava/util/Set;
 	public fun equals (Ljava/lang/Object;)Z
@@ -7639,6 +7660,7 @@ public final class io/sentry/util/AutoClosableReentrantLock : io/sentry/ISentryL
 	public fun <init> ()V
 	public fun acquire ()Lio/sentry/ISentryLifecycleToken;
 	public fun close ()V
+	public fun tryAcquire (JLjava/util/concurrent/TimeUnit;)Lio/sentry/ISentryLifecycleToken;
 }
 
 public final class io/sentry/util/CheckInUtils {
@@ -7704,6 +7726,7 @@ public final class io/sentry/util/ExceptionUtils {
 	public fun <init> ()V
 	public static fun findRootCause (Ljava/lang/Throwable;)Ljava/lang/Throwable;
 	public static fun isIgnored (Ljava/util/Set;Ljava/lang/Throwable;)Z
+	public static fun rethrowIfFatal (Ljava/lang/Throwable;)V
 }
 
 public final class io/sentry/util/FileUtils {
