@@ -118,7 +118,10 @@ class SentryBuddySessionControllerTest {
   fun `resolving a recommendation updates the insights state`() {
     val flowAnalysesApi = FakeFlowAnalysesApi()
     val controller =
-      SentryBuddySessionController(recorderFacade = FakeRecorderFacade(), flowAnalysesApi = flowAnalysesApi)
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        flowAnalysesApi = flowAnalysesApi,
+      )
 
     controller.startRecording(flowName = "Login")
     controller.stopRecording()
@@ -139,7 +142,8 @@ class SentryBuddySessionControllerTest {
     val controller =
       SentryBuddySessionController(
         recorderFacade = FakeRecorderFacade(),
-        flowAnalysesApi = FakeFlowAnalysesApi(resolveFailure = IllegalStateException("Resolve failed")),
+        flowAnalysesApi =
+          FakeFlowAnalysesApi(resolveFailure = IllegalStateException("Resolve failed")),
       )
 
     controller.startRecording(flowName = "Login")
@@ -149,7 +153,8 @@ class SentryBuddySessionControllerTest {
     controller.resolveRecommendation("recommendation-1")
 
     assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Error::class.java)
-    assertThat((controller.state as SentryBuddySessionState.Error).message).isEqualTo("Resolve failed")
+    assertThat((controller.state as SentryBuddySessionState.Error).message)
+      .isEqualTo("Resolve failed")
   }
 
   @Test
@@ -361,14 +366,13 @@ class SentryBuddySessionControllerTest {
     ): FlowAnalysisResponse {
       resolveFailure?.let { throw it }
       resolvedRecommendationIds += recommendationId
-      recommendations =
-        recommendations.map { recommendation ->
-          if (recommendation.id == recommendationId) {
-            recommendation.copy(status = RecommendationStatus.RESOLVED)
-          } else {
-            recommendation
-          }
+      recommendations = recommendations.map { recommendation ->
+        if (recommendation.id == recommendationId) {
+          recommendation.copy(status = RecommendationStatus.RESOLVED)
+        } else {
+          recommendation
         }
+      }
       return get(flowId)
     }
   }

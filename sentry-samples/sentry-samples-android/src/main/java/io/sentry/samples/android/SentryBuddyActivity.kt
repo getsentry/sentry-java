@@ -96,7 +96,9 @@ private fun SentryTravelApp() {
   var selectedStay by remember { mutableStateOf(selectedDestination.stays.first()) }
   var confirmationId by remember { mutableStateOf<String?>(null) }
   var savedTrips by remember { mutableStateOf(emptyList<TravelTrip>()) }
-  var demoStatus by remember { mutableStateOf("Ready. Use the presenter controls to trigger Buddy cards.") }
+  var demoStatus by remember {
+    mutableStateOf("Ready. Use the presenter controls to trigger Buddy cards.")
+  }
   var isDemoControlsOpen by remember { mutableStateOf(false) }
   val scope = rememberCoroutineScope()
   val demoControls =
@@ -739,10 +741,26 @@ private fun TravelScaffold(
               color = TravelMuted,
             )
             Text(demoControls.status, color = TravelStamp, fontWeight = FontWeight.Bold)
-            SecondaryTravelButton("Healthy flow", Modifier.fillMaxWidth(), demoControls.onHealthyScenario)
-            SecondaryTravelButton("Slow span", Modifier.fillMaxWidth(), demoControls.onSlowSpanScenario)
-            SecondaryTravelButton("HTTP 503", Modifier.fillMaxWidth(), demoControls.onFailedHttpScenario)
-            SecondaryTravelButton("Captured error", Modifier.fillMaxWidth(), demoControls.onErrorScenario)
+            SecondaryTravelButton(
+              "Healthy flow",
+              Modifier.fillMaxWidth(),
+              demoControls.onHealthyScenario,
+            )
+            SecondaryTravelButton(
+              "Slow span",
+              Modifier.fillMaxWidth(),
+              demoControls.onSlowSpanScenario,
+            )
+            SecondaryTravelButton(
+              "HTTP 503",
+              Modifier.fillMaxWidth(),
+              demoControls.onFailedHttpScenario,
+            )
+            SecondaryTravelButton(
+              "Captured error",
+              Modifier.fillMaxWidth(),
+              demoControls.onErrorScenario,
+            )
           }
         },
       )
@@ -963,7 +981,9 @@ private class TravelTelemetry(private val store: TravelStore) {
   suspend fun runFailedHttpDemoScenario(): String =
     withAppSpan("travel.demo.failed_http", "Run failed HTTP Buddy demo flow") {
       addBreadcrumb("Ran failed HTTP Buddy demo scenario")
-      Sentry.addBreadcrumb(Breadcrumb.http("https://demo.sentry.dev/travel/availability", "GET", 503))
+      Sentry.addBreadcrumb(
+        Breadcrumb.http("https://demo.sentry.dev/travel/availability", "GET", 503)
+      )
       delay(120)
       "HTTP 503 ready. Buddy should flag a high-severity failed HTTP request."
     }

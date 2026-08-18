@@ -114,8 +114,7 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           severity = Severity.HIGH,
           currentValue = "Missing",
           suggestedValue = "Set options.dsn",
-          kotlinSnippet =
-            "options.dsn = \"https://examplePublicKey@o0.ingest.sentry.io/0\"",
+          kotlinSnippet = "options.dsn = \"https://examplePublicKey@o0.ingest.sentry.io/0\"",
         )
     }
 
