@@ -147,7 +147,6 @@ private fun SentryBuddyOverlayContent(
   var state by remember { mutableStateOf(controller.state) }
   var liveFeed by remember { mutableStateOf(controller.liveFeed) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
-  var isRecordingHelpOpen by remember { mutableStateOf(false) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
   val transientRecordingEventScope = rememberCoroutineScope()
   val analysisScope = rememberCoroutineScope()
@@ -238,20 +237,7 @@ private fun SentryBuddyOverlayContent(
           else -> dispatch { close() }
         }
       },
-      onLongClick = {
-        if (state is SentryBuddySessionState.Recording) {
-          isRecordingHelpOpen = true
-        }
-      },
-      onStopAndAnalyze = {
-        isRecordingHelpOpen = false
-        dispatch {
-          stopRecording()
-          briefRecording()
-        }
-      },
-      onDismissRecordingHelp = { isRecordingHelpOpen = false },
-      isRecordingHelpOpen = isRecordingHelpOpen,
+      onLongClick = {},
     )
     BuddySheet(
       state = state,
@@ -276,9 +262,6 @@ private fun BoxScope.BuddyBubble(
   transientEvent: TransientRecordingEvent?,
   onClick: () -> Unit,
   onLongClick: () -> Unit,
-  onStopAndAnalyze: () -> Unit,
-  onDismissRecordingHelp: () -> Unit,
-  isRecordingHelpOpen: Boolean,
 ) {
   val density = LocalDensity.current
   val bubbleSizePx = with(density) { BuddyBubbleSize.toPx() }
@@ -289,6 +272,29 @@ private fun BoxScope.BuddyBubble(
   val attentionItem = liveFeed.latestUnviewedAdverseItem
   val attentionColor = attentionItem?.let { severityColor(it.severity) }
   val pulseScale = remember { Animatable(1f) }
+  val stopTransition = rememberInfiniteTransition(label = "buddy-floating-stop-button")
+  val stopHaloScale by
+    stopTransition.animateFloat(
+      initialValue = 1.0f,
+      targetValue = 1.14f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+          repeatMode = RepeatMode.Reverse,
+        ),
+      label = "buddy-floating-stop-button-halo-scale",
+    )
+  val stopHaloAlpha by
+    stopTransition.animateFloat(
+      initialValue = 0.12f,
+      targetValue = 0.28f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+          repeatMode = RepeatMode.Reverse,
+        ),
+      label = "buddy-floating-stop-button-halo-alpha",
+    )
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
 
   LaunchedEffect(attentionItem?.id) {
@@ -342,20 +348,38 @@ private fun BoxScope.BuddyBubble(
     verticalArrangement = Arrangement.spacedBy(8.dp),
   ) {
     Box(
-      modifier =
-        Modifier.size(64.dp)
-          .shadow(10.dp, CircleShape)
-          .background(bubbleColor, CircleShape)
-          .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
-          .pointerInput(maxWidthPx, maxHeightPx) {
-            detectDragGestures { change, dragAmount ->
-              change.consume()
-              bubbleOffset = ((bubbleOffset ?: resolvedOffset) + dragAmount).constrain()
-            }
-          }
-          .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+      modifier = Modifier.size(64.dp),
       contentAlignment = Alignment.Center,
     ) {
+      if (isRecording) {
+        Box(
+          modifier =
+            Modifier.size(BuddyBubbleSize * stopHaloScale)
+              .graphicsLayer { alpha = stopHaloAlpha }
+              .background(BuddyRed, CircleShape)
+        )
+      }
+      Box(
+        modifier =
+          Modifier.size(64.dp)
+            .shadow(10.dp, CircleShape)
+            .background(bubbleColor, CircleShape)
+            .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
+            .pointerInput(maxWidthPx, maxHeightPx) {
+              detectDragGestures { change, dragAmount ->
+                change.consume()
+                bubbleOffset = ((bubbleOffset ?: resolvedOffset) + dragAmount).constrain()
+              }
+            }
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        contentAlignment = Alignment.Center,
+      ) {
+        if (isRecording) {
+          StopIcon(tint = Color.White, modifier = Modifier.size(22.dp))
+        } else {
+          SentryBuddyGlyph(tint = Color.White, modifier = Modifier.size(30.dp))
+        }
+      }
       if (attentionColor != null && !isRecording) {
         Box(
           modifier =
@@ -366,11 +390,6 @@ private fun BoxScope.BuddyBubble(
           modifier =
             Modifier.size(BuddyBubbleSize + 10.dp).border(3.dp, attentionColor, CircleShape)
         )
-      }
-      if (isRecording) {
-        StopIcon(tint = Color.White, modifier = Modifier.size(22.dp))
-      } else {
-        SentryBuddyGlyph(tint = Color.White, modifier = Modifier.size(30.dp))
       }
       if (liveFeed.unviewedAdverseCount > 0 && !isRecording) {
         Text(
@@ -389,14 +408,6 @@ private fun BoxScope.BuddyBubble(
           textAlign = TextAlign.Center,
         )
       }
-    }
-    if (isRecording && isRecordingHelpOpen && state is SentryBuddySessionState.Recording) {
-      RecordingTooltip(
-        state = state,
-        nowMs = nowMs,
-        onStopAndAnalyze = onStopAndAnalyze,
-        onDismiss = onDismissRecordingHelp,
-      )
     }
     elapsed?.let {
       Text(
@@ -756,103 +767,6 @@ private fun SentryBuddyGlyph(tint: Color, modifier: Modifier = Modifier) {
     contentDescription = null,
     modifier = modifier,
     tint = tint,
-  )
-}
-
-@Composable
-private fun RecordingTooltip(
-  state: SentryBuddySessionState.Recording,
-  nowMs: Long,
-  onStopAndAnalyze: () -> Unit,
-  onDismiss: () -> Unit,
-) {
-  val durationMs = nowMs - state.startedAtMs
-  Card(
-    modifier = Modifier.width(300.dp).shadow(12.dp, RoundedCornerShape(20.dp)),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = CardDefaults.outlinedCardBorder(),
-    shape = RoundedCornerShape(20.dp),
-  ) {
-    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Column {
-          Text("Recording Flow", color = BuddyInk, fontWeight = FontWeight.Bold)
-          Text(
-            "Everything stays on device",
-            color = BuddyMuted,
-            style = MaterialTheme.typography.bodySmall,
-          )
-        }
-        TextButton(onClick = onDismiss) { Text("Close") }
-      }
-      ActiveTimelinePreview(state.intent, durationMs)
-      BreathingStopButton(onClick = onStopAndAnalyze)
-    }
-  }
-}
-
-@Composable
-private fun BreathingStopButton(onClick: () -> Unit) {
-  val transition = rememberInfiniteTransition(label = "buddy-stop-button")
-  val haloScale by
-    transition.animateFloat(
-      initialValue = 1.0f,
-      targetValue = 1.04f,
-      animationSpec =
-        infiniteRepeatable(
-          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
-          repeatMode = RepeatMode.Reverse,
-        ),
-      label = "buddy-stop-button-halo-scale",
-    )
-  val haloAlpha by
-    transition.animateFloat(
-      initialValue = 0.12f,
-      targetValue = 0.24f,
-      animationSpec =
-        infiniteRepeatable(
-          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
-          repeatMode = RepeatMode.Reverse,
-        ),
-      label = "buddy-stop-button-halo-alpha",
-    )
-  val shape = RoundedCornerShape(24.dp)
-
-  Box(modifier = Modifier.fillMaxWidth().height(48.dp)) {
-    Box(
-      modifier =
-        Modifier.fillMaxSize()
-          .graphicsLayer {
-            scaleX = haloScale
-            scaleY = haloScale
-            alpha = haloAlpha
-          }
-          .background(BuddyRed, shape)
-    )
-    Button(
-      modifier = Modifier.fillMaxSize(),
-      colors = ButtonDefaults.buttonColors(containerColor = BuddyRed),
-      shape = shape,
-      onClick = onClick,
-    ) {
-      BuddyButtonText("Stop and Analyze")
-    }
-  }
-}
-
-@Composable
-private fun ActiveTimelinePreview(intent: BuddyFlowIntent, durationMs: Long) {
-  Text("Live Trace", style = MaterialTheme.typography.labelLarge, color = BuddyMuted)
-  TimelineRows(
-    items =
-      listOf(
-        TimelinePreviewItem(0, "recording_started ${intent.name}", BuddyPurple),
-        TimelinePreviewItem(durationMs, "recording_in_progress", BuddyRed),
-      )
   )
 }
 
