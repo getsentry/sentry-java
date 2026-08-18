@@ -344,6 +344,8 @@ private fun BoxScope.BuddyBubble(
         if (liveFeed.unviewedAdverseCount > 9) "9+" else liveFeed.unviewedAdverseCount.toString()
       else -> null
     }
+  val bubbleFaceChonkColor = if (isRecording) BuddyRecordingBubbleChonk else BuddyAccentBubbleChonk
+  val bubbleFaceColor = if (isRecording) BuddyRecordingBubbleColor else BuddyAccentBubbleColor
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
 
   fun defaultOffset(): Offset =
@@ -401,12 +403,15 @@ private fun BoxScope.BuddyBubble(
       if (isSevere) {
         BuddyBubbleAnimatedDrawable(
           drawableRes = R.drawable.avd_buddy_flames,
-          modifier = Modifier.size(BuddySevereFlamesSize).align(Alignment.Center),
+          modifier =
+            Modifier.size(BuddySevereFlamesSize)
+              .align(Alignment.TopCenter)
+              .offset(x = BuddySevereFlamesOffsetX, y = BuddySevereFlamesOffsetY),
         )
       }
       Box(
         modifier =
-          Modifier.size(64.dp)
+          Modifier.size(BuddyBubbleSize)
             .shadow(10.dp, CircleShape)
             .pointerInput(maxWidthPx, maxHeightPx) {
               detectDragGestures { change, dragAmount ->
@@ -419,20 +424,13 @@ private fun BoxScope.BuddyBubble(
       ) {
         Box(
           modifier =
-            Modifier.size(BuddyBubbleFaceSize)
-              .background(
-                if (isRecording || isSevere) BuddyRecordingBubbleChonk else BuddyAccentBubbleChonk,
-                CircleShape,
-              )
+            Modifier.size(BuddyBubbleFaceSize).background(bubbleFaceChonkColor, CircleShape)
         )
         Box(
           modifier =
             Modifier.size(BuddyBubbleFaceSize)
-              .padding(bottom = 2.dp)
-              .background(
-                if (isRecording || isSevere) BuddyRecordingBubbleColor else BuddyAccentBubbleColor,
-                CircleShape,
-              )
+              .offset(y = BuddyBubbleFaceLift)
+              .background(bubbleFaceColor, CircleShape)
               .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
         )
         BuddyBubbleGlyph(state = bubbleGlyphState)
@@ -2936,9 +2934,12 @@ private fun Float.constrain(min: Float, max: Float): Float {
 
 private val BuddyBubbleSize = 64.dp
 private val BuddyBubbleFaceSize = 54.dp
+private val BuddyBubbleFaceLift = (-1).dp
 private val BuddyBubbleGlyphSize = 44.dp
 private val BuddyRecordingRingSize = 92.dp
-private val BuddySevereFlamesSize = 120.dp
+private val BuddySevereFlamesSize = 128.dp
+private val BuddySevereFlamesOffsetX = (-2).dp
+private val BuddySevereFlamesOffsetY = (-24).dp
 private val BuddyBubbleMargin = 24.dp
 private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
