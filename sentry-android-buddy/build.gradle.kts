@@ -70,6 +70,7 @@ kotlin { explicitApi() }
 
 dependencies {
   api(projects.sentry)
+  api(libs.okhttp)
 
   compileOnly(libs.jetbrains.annotations)
 
@@ -85,5 +86,6 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.okhttp.mockwebserver)
   testImplementation(libs.roboelectric)
 }

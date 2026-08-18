@@ -69,8 +69,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.jetbrains.annotations.ApiStatus
 
 @ApiStatus.Experimental
@@ -131,10 +133,18 @@ private fun SentryBuddyOverlayContent(
   var isRecordingHelpOpen by remember { mutableStateOf(false) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
   val transientRecordingEventScope = rememberCoroutineScope()
+  val analysisScope = rememberCoroutineScope()
 
   fun dispatch(action: SentryBuddySessionController.() -> Unit) {
     controller.action()
     state = controller.state
+  }
+
+  fun dispatchAnalysis(action: SentryBuddySessionController.() -> Unit) {
+    analysisScope.launch {
+      withContext(Dispatchers.IO) { controller.action() }
+      state = controller.state
+    }
   }
 
   LaunchedEffect(state) {
@@ -156,6 +166,23 @@ private fun SentryBuddyOverlayContent(
   LaunchedEffect(state) {
     if (state !is SentryBuddySessionState.Recording) {
       transientRecordingEvent = null
+    }
+  }
+
+  LaunchedEffect(state) {
+    if (state is SentryBuddySessionState.Analyzing) {
+      val deadlineMs = System.currentTimeMillis() + ANALYSIS_TIMEOUT_MS
+      while (
+        state is SentryBuddySessionState.Analyzing && System.currentTimeMillis() < deadlineMs
+      ) {
+        delay(ANALYSIS_POLL_INTERVAL_MS)
+        withContext(Dispatchers.IO) { controller.pollFlowAnalysis() }
+        state = controller.state
+      }
+      if (state is SentryBuddySessionState.Analyzing) {
+        controller.timeoutFlowAnalysis()
+        state = controller.state
+      }
     }
   }
 
@@ -200,6 +227,7 @@ private fun SentryBuddyOverlayContent(
     BuddySheet(
       state = state,
       onDispatch = { dispatch(it) },
+      onAnalyze = { dispatchAnalysis { analyze() } },
     )
   }
 }
@@ -389,6 +417,7 @@ internal class BuddyOverlayHitBounds {
 private fun BuddySheet(
   state: SentryBuddySessionState,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+  onAnalyze: () -> Unit,
 ) {
   if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
     return
@@ -407,7 +436,7 @@ private fun BuddySheet(
       when (state) {
         SentryBuddySessionState.Intro -> IntroSheet(onDispatch)
         is SentryBuddySessionState.StoppedSummary -> StoppedSummarySheet(state, onDispatch)
-        is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch)
+        is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
         is SentryBuddySessionState.Analyzing -> AnalyzingSheet(state)
         is SentryBuddySessionState.Insights -> InsightsSheet(state, onDispatch)
         is SentryBuddySessionState.Error -> ErrorSheet(state, onDispatch)
@@ -709,6 +738,7 @@ private fun timelineColor(item: BuddyTimelineItem): Color =
 private fun BriefingSheet(
   state: SentryBuddySessionState.Briefing,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+  onAnalyze: () -> Unit,
 ) {
   var flowName by remember(state.result.recording.recording.id) { mutableStateOf(state.flowName) }
   var notes by
@@ -744,15 +774,13 @@ private fun BriefingSheet(
       modifier = Modifier.weight(1f).height(56.dp),
       colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
       onClick = {
-        onDispatch {
-          updateBriefing(flowName, notes, state.focusAreas)
-          analyze()
-        }
+        updateController()
+        onAnalyze()
       },
     ) {
       BuddyButtonText("Analyze")
     }
-    OutlinedButton(modifier = Modifier.height(56.dp), onClick = { onDispatch { analyze() } }) {
+    OutlinedButton(modifier = Modifier.height(56.dp), onClick = onAnalyze) {
       BuddyButtonText("Skip")
     }
   }
@@ -1000,6 +1028,8 @@ private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
+private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
+private const val ANALYSIS_TIMEOUT_MS = 30_000L
 
 private val BuddyPurple = Color(0xFF7553FF)
 private val BuddyRed = Color(0xFFFF003D)

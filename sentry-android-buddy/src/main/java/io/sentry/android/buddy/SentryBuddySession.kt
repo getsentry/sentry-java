@@ -276,6 +276,14 @@ public constructor(
   public fun analyze() {
     val briefingState = state as? SentryBuddySessionState.Briefing ?: return
     val request = buildFlowAnalysisRequest(briefingState)
+    if (request.dsn.isBlank()) {
+      state =
+        SentryBuddySessionState.Error(
+          "Flow analysis requires Sentry to be configured with a DSN.",
+          briefingState,
+        )
+      return
+    }
     try {
       val submission = flowAnalysesApi.submit(request)
       state = SentryBuddySessionState.Analyzing(briefingState.result, request, submission)
@@ -284,6 +292,12 @@ public constructor(
       state =
         SentryBuddySessionState.Error(exception.message ?: "Failed to submit flow analysis.", state)
     }
+  }
+
+  internal fun timeoutFlowAnalysis() {
+    val analyzingState = state as? SentryBuddySessionState.Analyzing ?: return
+    state =
+      SentryBuddySessionState.Error("Flow analysis timed out after 30 seconds.", analyzingState)
   }
 
   public fun pollFlowAnalysis() {
@@ -351,7 +365,7 @@ public constructor(
       endTimeMs = recording.recording.endedAt.time,
       dsn = recording.sentry.dsn.orEmpty(),
       userAnnotation = state.userAnnotation(),
-      sdkVersion = "io.sentry.android.buddy@${BuildConfig.VERSION_NAME}",
+      sdk = "io.sentry.android.buddy@${BuildConfig.VERSION_NAME}",
       events = recording.timeline.map { it.toFlowAnalysisEvent() },
     )
   }
@@ -377,7 +391,7 @@ public constructor(
   private fun BuddyTimelineItem.toFlowAnalysisEvent(): FlowAnalysisEvent =
     FlowAnalysisEvent(
       type = type.value,
-      timeMs = timestamp.time,
+      timestamp = timestamp.time,
       data = dataWithCommonFields(),
     )
 

@@ -147,13 +147,15 @@ Rationale:
 
 ## Ktor Flow Analysis Protocol Shape
 
-Buddy's local protocol model mirrors the prototype Ktor flow-analysis API.
+Buddy's local protocol model mirrors the Ktor bridge in
+`markushi/sentry-seer-buddy-bridge`. Treat that bridge repository as the source of truth for the
+wire model.
 
 Decision:
 
 - Use `FlowAnalysisRequest` with `flow_id`, `trace_ids`, `start_time_ms`, `end_time_ms`, `dsn`,
-  `user_annotation`, `sdk_version`, and `events`.
-- Use `FlowAnalysisEvent(type, time_ms, data)` as the open event shape.
+  `user_annotation`, `sdk`, and `events`.
+- Use `FlowAnalysisEvent(type, timestamp, data)` as the open event shape.
 - Model submit, poll, and resolve operations as:
   - `POST /v1/flow-analysis`
   - `GET /v1/flow-analysis/{flowId}`
@@ -163,9 +165,45 @@ Decision:
 
 Rationale:
 
-- The protocol stays close to the mock Ktor service while allowing Buddy to move quickly.
+- The protocol stays close to the bridge service while allowing Buddy to move quickly.
 - `FlowAnalysisEvent.data` remains open so richer events can be added without changing the protocol
   model for every prototype iteration.
+
+## Bridge Transport
+
+Buddy includes an OkHttp-backed implementation of `SentryBuddyFlowAnalysesApi` for the Ktor bridge.
+
+Decision:
+
+- Use OkHttp rather than `HttpURLConnection`.
+- Keep `flowAnalysesApi` as the core extension point.
+- Provide `SentryBuddyHttpFlowAnalysesApi(baseUrl)` as the built-in bridge client.
+- Configure the sample app's debug build to use `http://10.0.2.2:8080` by default.
+- Keep the release sample integration as a no-op.
+
+Rationale:
+
+- OkHttp gives us a straightforward, testable HTTP client for the debug-only bridge.
+- Keeping the interface injectable preserves the dummy API and allows alternate local/tunnel URLs.
+- `10.0.2.2` is the Android emulator's host-machine alias and the sample app already permits cleartext
+  traffic to it.
+
+## Flow Analysis Polling
+
+The bridge returns `PROCESSING` first and completes analysis asynchronously.
+
+Decision:
+
+- Submit analysis off the main thread.
+- Poll `GET /v1/flow-analysis/{flowId}` every 1 second while the sheet is in `Analyzing` state.
+- Time out after 30 seconds and show a Buddy error state.
+- Require a non-empty DSN before submitting because the bridge validates `dsn`.
+
+Rationale:
+
+- The dummy API completed immediately, but the real bridge runs an async enrichment pipeline.
+- Network calls must not run on the Android main thread.
+- A 30 second timeout is enough for the Hack Week demo while preventing the UI from waiting forever.
 
 ## Assemble Recording JSON From Buddy-Owned State
 

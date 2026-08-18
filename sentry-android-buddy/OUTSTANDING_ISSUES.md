@@ -170,6 +170,19 @@ Open decision:
 - Should screenshots/view hierarchy be captured at stop time, or only when an error event already
   includes them?
 
+## Bridge Integration Follow-Ups
+
+Buddy now targets the Ktor bridge repository's current flow-analysis model and can use the HTTP bridge
+from the debug sample app. Remaining integration questions:
+
+- Authentication and authorization for a non-local bridge.
+- How physical devices should discover the bridge URL; `10.0.2.2` only works for emulators.
+- Whether the 30 second polling timeout is enough once Seer-backed enrichments are enabled.
+- Whether bridge validation should continue requiring `dsn`, or whether Buddy should support local
+  analysis without a configured Sentry project.
+- Whether recommendation resolution should be exposed in the Buddy UI.
+- Whether bridge errors should support structured error codes instead of only an `error` message.
+
 ## Options We Considered
 
 ### 1. Low-Infra Current Transaction Model

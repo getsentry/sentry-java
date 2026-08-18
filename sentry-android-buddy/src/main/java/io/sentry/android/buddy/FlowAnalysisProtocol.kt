@@ -10,14 +10,14 @@ import org.jetbrains.annotations.ApiStatus
 public data class FlowAnalysisEvent
 public constructor(
   public val type: String,
-  public val timeMs: Long,
+  public val timestamp: Long,
   public val data: Map<String, Any?> = emptyMap(),
 ) : JsonSerializable {
   @Throws(IOException::class)
   override fun serialize(writer: ObjectWriter, logger: ILogger) {
     writer.beginObject()
     writer.name("type").value(type)
-    writer.name("time_ms").value(timeMs)
+    writer.name("timestamp").value(timestamp)
     writer.name("data").value(logger, data)
     writer.endObject()
   }
@@ -32,7 +32,7 @@ public constructor(
   public val endTimeMs: Long,
   public val dsn: String,
   public val userAnnotation: String,
-  public val sdkVersion: String,
+  public val sdk: String,
   public val events: List<FlowAnalysisEvent>,
 ) : JsonSerializable {
   @Throws(IOException::class)
@@ -44,7 +44,7 @@ public constructor(
     writer.name("end_time_ms").value(endTimeMs)
     writer.name("dsn").value(dsn)
     writer.name("user_annotation").value(userAnnotation)
-    writer.name("sdk_version").value(sdkVersion)
+    writer.name("sdk").value(sdk)
     writer.name("events").value(logger, events)
     writer.endObject()
   }
@@ -81,6 +81,7 @@ public constructor(
   public val description: String,
   public val link: String? = null,
   public val severity: Severity = Severity.MEDIUM,
+  public val resolvable: Boolean = true,
   public val status: RecommendationStatus = RecommendationStatus.OPEN,
 ) : JsonSerializable {
   @Throws(IOException::class)
@@ -91,6 +92,7 @@ public constructor(
     writer.name("description").value(description)
     writer.name("link").value(link)
     writer.name("severity").value(severity.value)
+    writer.name("resolvable").value(resolvable)
     writer.name("status").value(status.value)
     writer.endObject()
   }

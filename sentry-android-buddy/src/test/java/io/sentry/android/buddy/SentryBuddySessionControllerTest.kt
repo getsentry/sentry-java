@@ -91,7 +91,7 @@ class SentryBuddySessionControllerTest {
         endTimeMs = 1,
         dsn = "",
         userAnnotation = "",
-        sdkVersion = "test",
+        sdk = "test",
         events = emptyList(),
       )
 
