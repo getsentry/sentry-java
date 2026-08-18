@@ -1021,7 +1021,8 @@ private class TravelTelemetry(private val store: TravelStore) {
     }
 
   private suspend fun <T> withAppSpan(op: String, description: String, block: suspend () -> T): T {
-    val span = Sentry.getSpan()?.startChild(op, description)
+    val span =
+      Sentry.getSpan()?.startChild(op, description) ?: Sentry.startTransaction(description, op)
     return try {
       block().also { span?.finish(SpanStatus.OK) }
     } catch (exception: Exception) {

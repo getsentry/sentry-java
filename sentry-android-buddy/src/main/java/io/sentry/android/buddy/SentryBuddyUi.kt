@@ -13,7 +13,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -85,7 +84,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
@@ -97,7 +95,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -975,39 +972,8 @@ private fun HomeTabRow(
   unreadRecommendationCount: Int,
   onSelect: (BuddyHomeTab) -> Unit,
 ) {
-  val density = LocalDensity.current
-  val tabBounds = remember { mutableStateOf<Map<BuddyHomeTab, HomeTabBounds>>(emptyMap()) }
-  val selectedBounds = tabBounds.value[selectedTab]
-  val animatedOffsetX by
-    animateDpAsState(
-      targetValue = selectedBounds?.left ?: 0.dp,
-      animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-      label = "buddy-home-tab-offset",
-    )
-  val animatedWidth by
-    animateDpAsState(
-      targetValue = selectedBounds?.width ?: 0.dp,
-      animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-      label = "buddy-home-tab-width",
-    )
-  val animatedHeight by
-    animateDpAsState(
-      targetValue = selectedBounds?.height ?: 0.dp,
-      animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-      label = "buddy-home-tab-height",
-    )
   Surface(color = BuddyCode, shape = RoundedCornerShape(16.dp)) {
     Box(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(4.dp)) {
-      if (selectedBounds != null) {
-        Box(
-          modifier =
-            Modifier.offset(x = animatedOffsetX)
-              .width(animatedWidth)
-              .height(animatedHeight)
-              .background(Color.White, RoundedCornerShape(12.dp))
-              .border(1.dp, BuddyBorder, RoundedCornerShape(12.dp))
-        )
-      }
       Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         BuddyHomeTab.entries.forEach { tab ->
           val isSelected = tab == selectedTab
@@ -1024,18 +990,15 @@ private fun HomeTabRow(
             }
           Box(
             modifier =
-              Modifier.onGloballyPositioned { coordinates ->
-                  tabBounds.value =
-                    tabBounds.value +
-                      (tab to
-                        with(density) {
-                          HomeTabBounds(
-                            left = coordinates.positionInParent().x.toDp(),
-                            width = coordinates.size.width.toDp(),
-                            height = coordinates.size.height.toDp(),
-                          )
-                        })
-                }
+              Modifier.background(
+                  if (isSelected) Color.White else Color.Transparent,
+                  RoundedCornerShape(12.dp),
+                )
+                .border(
+                  1.dp,
+                  if (isSelected) BuddyBorder else Color.Transparent,
+                  RoundedCornerShape(12.dp),
+                )
                 .clickable { onSelect(tab) }
           ) {
             Text(
@@ -1052,8 +1015,6 @@ private fun HomeTabRow(
     }
   }
 }
-
-private data class HomeTabBounds(val left: Dp, val width: Dp, val height: Dp)
 
 @Composable
 private fun LiveFeedTabContent(
