@@ -2,10 +2,16 @@ package io.sentry.android.buddy
 
 import android.content.Context
 import android.graphics.Rect
+import android.graphics.drawable.Animatable2
+import android.graphics.drawable.AnimatedVectorDrawable
+import android.graphics.drawable.Drawable
+import android.os.Build
+import android.widget.ImageView
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -89,6 +95,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.vectordrawable.graphics.drawable.Animatable2Compat
+import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.abs
@@ -315,7 +324,6 @@ private fun BoxScope.BuddyBubble(
   val pulseScale = remember { Animatable(1f) }
   val stopTransition = rememberInfiniteTransition(label = "buddy-floating-stop-button")
   val attentionTransition = rememberInfiniteTransition(label = "buddy-attention-ornaments")
-  val seerTransition = rememberInfiniteTransition(label = "buddy-seer-button")
   val stopHaloScale by
     stopTransition.animateFloat(
       initialValue = 1.0f,
@@ -348,21 +356,6 @@ private fun BoxScope.BuddyBubble(
           repeatMode = RepeatMode.Reverse,
         ),
       label = "buddy-attention-ornament-phase",
-    )
-  val seerSweepRotation by
-    seerTransition.animateFloat(
-      initialValue = 0f,
-      targetValue = 360f,
-      animationSpec =
-        infiniteRepeatable(
-          animation =
-            tween(
-              durationMillis = bubbleGlyphState.sweepDurationMillis,
-              easing = LinearEasing,
-            ),
-          repeatMode = RepeatMode.Restart,
-        ),
-      label = "buddy-seer-sweep-rotation",
     )
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
 
@@ -479,7 +472,7 @@ private fun BoxScope.BuddyBubble(
         if (isRecording) {
           StopIcon(tint = Color.White, modifier = Modifier.size(22.dp))
         } else {
-          BuddyBubbleGlyph(state = bubbleGlyphState, sweepRotation = seerSweepRotation)
+          BuddyBubbleGlyph(state = bubbleGlyphState)
         }
       }
       if (attentionColor != null && !isRecording) {
@@ -929,33 +922,85 @@ private fun StopIcon(tint: Color, modifier: Modifier = Modifier) {
   )
 }
 
-private enum class BuddyBubbleGlyphState(val sweepDurationMillis: Int) {
-  IDLE(2400),
-  UNREAD(2400),
-  ANALYZING(1100),
-  INSIGHTS_READY(3600),
-  RECORDING(1400),
+private enum class BuddyBubbleGlyphState {
+  IDLE,
+  UNREAD,
+  ANALYZING,
+  INSIGHTS_READY,
+  RECORDING,
 }
 
 @Composable
-private fun BuddyBubbleGlyph(state: BuddyBubbleGlyphState, sweepRotation: Float) {
-  val painterId =
-    if (state == BuddyBubbleGlyphState.IDLE) R.drawable.ic_buddy_seer
-    else R.drawable.ic_buddy_seer_beam
-  Icon(
-    painter = painterResource(id = painterId),
-    contentDescription = null,
-    modifier =
-      Modifier.size(30.dp).graphicsLayer {
-        rotationZ =
-          if (state == BuddyBubbleGlyphState.IDLE) {
-            0f
-          } else {
-            sweepRotation
-          }
-      },
-    tint = Color.White,
+private fun BuddyBubbleGlyph(state: BuddyBubbleGlyphState) {
+  val context = LocalContext.current
+  AndroidView(
+    factory = { viewContext ->
+      AppCompatImageView(viewContext).apply {
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        importantForAccessibility = ImageView.IMPORTANT_FOR_ACCESSIBILITY_NO
+      }
+    },
+    modifier = Modifier.size(30.dp),
+    update = { imageView -> imageView.bindBuddyBubbleGlyph(context, state) },
   )
+}
+
+private fun ImageView.bindBuddyBubbleGlyph(context: Context, state: BuddyBubbleGlyphState) {
+  val drawableRes =
+    when (state) {
+      BuddyBubbleGlyphState.IDLE -> R.drawable.avd_buddy_idle
+      BuddyBubbleGlyphState.UNREAD -> R.drawable.avd_buddy_unread
+      BuddyBubbleGlyphState.ANALYZING -> R.drawable.avd_buddy_analyzing
+      BuddyBubbleGlyphState.INSIGHTS_READY -> R.drawable.avd_buddy_ready
+      BuddyBubbleGlyphState.RECORDING -> R.drawable.ic_buddy_recording
+    }
+  val currentTag = tag as? Int
+  if (currentTag == drawableRes) {
+    return
+  }
+  tag = drawableRes
+  val nextDrawable = AppCompatResources.getDrawable(context, drawableRes)?.mutate()
+  setImageDrawable(nextDrawable)
+  restartBuddyBubbleAnimation(nextDrawable, loopIdle = state == BuddyBubbleGlyphState.IDLE)
+}
+
+private fun restartBuddyBubbleAnimation(drawable: Drawable?, loopIdle: Boolean) {
+  when (drawable) {
+    is AnimatedVectorDrawableCompat -> drawable.restart(loopIdle = loopIdle)
+    is AnimatedVectorDrawable -> drawable.restart(loopIdle = loopIdle)
+  }
+}
+
+private fun AnimatedVectorDrawableCompat.restart(loopIdle: Boolean) {
+  clearAnimationCallbacks()
+  if (loopIdle) {
+    registerAnimationCallback(
+      object : Animatable2Compat.AnimationCallback() {
+        override fun onAnimationEnd(drawable: Drawable?) {
+          start()
+        }
+      }
+    )
+  }
+  stop()
+  start()
+}
+
+private fun AnimatedVectorDrawable.restart(loopIdle: Boolean) {
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    clearAnimationCallbacks()
+    if (loopIdle) {
+      registerAnimationCallback(
+        object : Animatable2.AnimationCallback() {
+          override fun onAnimationEnd(drawable: Drawable?) {
+            start()
+          }
+        }
+      )
+    }
+  }
+  stop()
+  start()
 }
 
 @Composable

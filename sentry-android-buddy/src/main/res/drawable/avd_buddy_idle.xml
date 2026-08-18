@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_buddy_seer_idle">
+    <target
+        android:name="eye"
+        android:animation="@animator/buddy_blink" />
+</animated-vector>

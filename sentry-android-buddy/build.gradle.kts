@@ -75,6 +75,7 @@ dependencies {
   compileOnly(libs.jetbrains.annotations)
 
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
+  implementation(libs.androidx.appcompat)
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.foundation.layout)
   implementation(libs.androidx.compose.material3)
