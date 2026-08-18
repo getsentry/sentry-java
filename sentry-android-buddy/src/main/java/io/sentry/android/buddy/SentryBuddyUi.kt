@@ -73,6 +73,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -433,9 +434,9 @@ private fun BoxScope.BuddyBubble(
       if (isRecording) {
         Box(
           modifier =
-            Modifier.size(BuddyBubbleSize * stopHaloScale)
+            Modifier.size((BuddyBubbleSize + 4.dp) * stopHaloScale)
               .graphicsLayer { alpha = stopHaloAlpha }
-              .background(BuddyRed, CircleShape)
+              .border(3.dp, BuddyRecordingBubbleColor, CircleShape)
         )
       }
       Box(
@@ -487,20 +488,12 @@ private fun BoxScope.BuddyBubble(
         )
       }
       if (liveFeed.unviewedAdverseCount > 0 && !isRecording) {
-        Text(
-          text =
+        BubbleNotificationBadge(
+          count =
             if (liveFeed.unviewedAdverseCount > 9) "9+"
             else liveFeed.unviewedAdverseCount.toString(),
-          modifier =
-            Modifier.align(Alignment.TopEnd)
-              .offset(x = 6.dp, y = (-6).dp)
-              .size(22.dp)
-              .background(attentionColor ?: BuddyRed, CircleShape)
-              .border(2.dp, Color.White, CircleShape),
-          color = Color.White,
-          style = MaterialTheme.typography.labelSmall,
-          fontWeight = FontWeight.Bold,
-          textAlign = TextAlign.Center,
+          color = attentionColor ?: BuddyRed,
+          modifier = Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-6).dp),
         )
       }
     }
@@ -933,16 +926,36 @@ private enum class BuddyBubbleGlyphState {
 @Composable
 private fun BuddyBubbleGlyph(state: BuddyBubbleGlyphState) {
   val context = LocalContext.current
-  AndroidView(
-    factory = { viewContext ->
-      AppCompatImageView(viewContext).apply {
-        scaleType = ImageView.ScaleType.FIT_CENTER
-        importantForAccessibility = ImageView.IMPORTANT_FOR_ACCESSIBILITY_NO
-      }
-    },
-    modifier = Modifier.size(30.dp),
-    update = { imageView -> imageView.bindBuddyBubbleGlyph(context, state) },
-  )
+  Box(modifier = Modifier.size(38.dp).clip(CircleShape), contentAlignment = Alignment.Center) {
+    AndroidView(
+      factory = { viewContext ->
+        AppCompatImageView(viewContext).apply {
+          scaleType = ImageView.ScaleType.FIT_XY
+          importantForAccessibility = ImageView.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+      },
+      modifier = Modifier.fillMaxSize(),
+      update = { imageView -> imageView.bindBuddyBubbleGlyph(context, state) },
+    )
+  }
+}
+
+@Composable
+private fun BubbleNotificationBadge(count: String, color: Color, modifier: Modifier = Modifier) {
+  Box(
+    modifier =
+      modifier.size(22.dp).background(color, CircleShape).border(2.dp, Color.White, CircleShape),
+    contentAlignment = Alignment.Center,
+  ) {
+    Text(
+      text = count,
+      color = Color.White,
+      style = MaterialTheme.typography.labelSmall,
+      fontWeight = FontWeight.Bold,
+      maxLines = 1,
+      textAlign = TextAlign.Center,
+    )
+  }
 }
 
 private fun ImageView.bindBuddyBubbleGlyph(context: Context, state: BuddyBubbleGlyphState) {
