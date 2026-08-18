@@ -13,6 +13,10 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -80,6 +84,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -172,6 +177,7 @@ private fun SentryBuddyOverlayContent(
   var healthCheckState by remember { mutableStateOf(controller.healthCheckState) }
   var homeTab by remember { mutableStateOf(controller.homeTab) }
   var homeRecommendations by remember { mutableStateOf(controller.homeRecommendations) }
+  var screenScanState by remember { mutableStateOf(controller.screenScanState) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
   val transientRecordingEventScope = rememberCoroutineScope()
@@ -183,6 +189,7 @@ private fun SentryBuddyOverlayContent(
     healthCheckState = controller.healthCheckState
     homeTab = controller.homeTab
     homeRecommendations = controller.homeRecommendations
+    screenScanState = controller.screenScanState
     nowMs = System.currentTimeMillis()
   }
 
@@ -258,11 +265,20 @@ private fun SentryBuddyOverlayContent(
     }
   }
 
+  LaunchedEffect(screenScanState) {
+    if (screenScanState is BuddyScreenScanState.Scanning) {
+      delay(SCREEN_SCAN_DURATION_MS)
+      controller.completeScreenScan()
+      syncUiState()
+    }
+  }
+
   BoxWithConstraints(modifier = modifier.fillMaxSize()) {
     val density = LocalDensity.current
     val maxWidthPx = with(density) { maxWidth.toPx() }
     val maxHeightPx = with(density) { maxHeight.toPx() }
     content()
+    ScreenScanElectricityOverlay(screenScanState = screenScanState)
     BuddyBubble(
       state = state,
       liveFeed = liveFeed,
@@ -282,12 +298,13 @@ private fun SentryBuddyOverlayContent(
           else -> dispatch { close() }
         }
       },
-      onLongClick = {},
+      onLongClick = { dispatch { startScreenScan() } },
     )
     BuddySheet(
       state = state,
       liveFeed = liveFeed,
       healthCheckState = healthCheckState,
+      screenScanState = screenScanState,
       homeTab = homeTab,
       homeRecommendations = homeRecommendations,
       sentryUiLinks = controller.sentryUiLinks,
@@ -309,6 +326,7 @@ private fun SentryBuddyOverlayContent(
       onSelectHomeTab = { tab -> dispatch { selectHomeTab(tab) } },
       onRunHealthCheck = { dispatchHealthCheck { runHealthCheck() } },
       onDismissHealthCheck = { dispatch { dismissHealthCheck() } },
+      onDismissScreenScan = { dispatch { dismissScreenScan() } },
       onOpenUrl = { context, url -> openUrl(context, url) },
     )
   }
@@ -1168,6 +1186,29 @@ private fun LiveFeedInset(content: @Composable ColumnScope.() -> Unit) {
 private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
   val tint = if (enabled) BuddySentryPink.copy(alpha = 0.68f) else BuddyMuted
   val shape = RoundedCornerShape(12.dp)
+  val shimmerTransition = rememberInfiniteTransition(label = "health-check-shimmer")
+  val shimmerOffset by
+    shimmerTransition.animateFloat(
+      initialValue = -40f,
+      targetValue = 80f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 2200),
+          repeatMode = RepeatMode.Restart,
+        ),
+      label = "health-check-shimmer-offset",
+    )
+  val shimmerBrush =
+    Brush.linearGradient(
+      colors =
+        listOf(
+          BuddySentryPink.copy(alpha = 0.06f),
+          BuddySentryPink.copy(alpha = if (enabled) 0.20f else 0.10f),
+          BuddySentryPink.copy(alpha = 0.06f),
+        ),
+      start = Offset(shimmerOffset - 40f, 0f),
+      end = Offset(shimmerOffset + 40f, 40f),
+    )
   Surface(
     modifier =
       Modifier.size(40.dp)
@@ -1177,7 +1218,10 @@ private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
     color = Color.Transparent,
     shape = shape,
   ) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+      modifier = Modifier.fillMaxSize().background(shimmerBrush, shape),
+      contentAlignment = Alignment.Center,
+    ) {
       HealthCheckIcon(tint = tint, modifier = Modifier.width(38.dp).height(30.dp))
     }
   }
