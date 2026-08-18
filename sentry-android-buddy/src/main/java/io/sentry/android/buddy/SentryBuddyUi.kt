@@ -83,6 +83,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import java.util.Locale
@@ -1169,11 +1170,10 @@ private fun PerformanceAttentionItemContent(
       style = MaterialTheme.typography.bodyLarge,
       fontWeight = FontWeight.Normal,
     )
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      item.performanceHeroStats().forEach { stat ->
-        PerformanceStatCard(stat, color, Modifier.weight(1f))
-      }
+    item.performancePrimaryStat()?.let { stat ->
+      PerformanceHeroStatCard(stat, color)
     }
+    PerformanceContextCards(item, color)
     Text(
       item.performanceNarrative(liveFeed),
       color = BuddyMuted,
@@ -1187,13 +1187,9 @@ private fun PerformanceAttentionItemContent(
 private data class PerformanceStat(val value: String, val label: String)
 
 @Composable
-private fun PerformanceStatCard(
-  stat: PerformanceStat,
-  color: Color,
-  modifier: Modifier = Modifier,
-) {
+private fun PerformanceHeroStatCard(stat: PerformanceStat, color: Color) {
   Surface(
-    modifier = modifier,
+    modifier = Modifier.fillMaxWidth(),
     color = Color.White.copy(alpha = 0.88f),
     shape = RoundedCornerShape(14.dp),
     border = CardDefaults.outlinedCardBorder(),
@@ -1205,7 +1201,7 @@ private fun PerformanceStatCard(
       Text(
         stat.value,
         color = color,
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.headlineSmall,
         fontFamily = FontFamily.Monospace,
         fontWeight = FontWeight.Bold,
       )
@@ -1215,6 +1211,49 @@ private fun PerformanceStatCard(
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Bold,
       )
+    }
+  }
+}
+
+@Composable
+private fun PerformanceContextCards(item: BuddyLiveFeedItem, color: Color) {
+  val contextCards =
+    listOfNotNull(
+      item.performanceSourceLabel()?.let { PerformanceStat(it, "Source") },
+      item.visibleScreens.lastOrNull()?.let { PerformanceStat(it, "Screen") },
+    )
+  if (contextCards.isEmpty()) {
+    return
+  }
+
+  Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    contextCards.forEach { stat ->
+      Surface(
+        modifier = Modifier.weight(1f),
+        color = Color.White.copy(alpha = 0.72f),
+        shape = RoundedCornerShape(14.dp),
+        border = CardDefaults.outlinedCardBorder(),
+      ) {
+        Column(
+          modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+          verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+          Text(
+            stat.label,
+            color = BuddyMuted,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+          )
+          Text(
+            stat.value,
+            color = if (stat.label == "Source") color else BuddyInk,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+        }
+      }
     }
   }
 }
@@ -1630,13 +1669,6 @@ private fun BuddyLiveFeedItem.performanceSourceLabel(): String? =
     BuddyLiveFeedItem.Category.FAILED_SPAN -> timelineItem.data.stringValue("op")?.humanizeDotKey()
     else -> null
   }
-
-private fun BuddyLiveFeedItem.performanceHeroStats(): List<PerformanceStat> =
-  listOfNotNull(
-    performancePrimaryStat(),
-    visibleScreens.lastOrNull()?.let { PerformanceStat(it, "Screen") },
-    performanceSourceLabel()?.let { PerformanceStat(it, "Source") },
-  )
 
 private fun BuddyLiveFeedItem.performancePrimaryStat(): PerformanceStat? {
   val duration = timelineItem.data.longValue("duration_ms")
