@@ -22,6 +22,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,6 +47,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -664,18 +666,30 @@ private fun BoxScope.BuddyQuoteText(
     mutableStateOf((System.currentTimeMillis() % BuddyFabQuotes.size).toInt())
   }
   var showQuote by remember { mutableStateOf(true) }
+  var quoteHeightPx by remember { mutableStateOf(0f) }
   val density = LocalDensity.current
   val textWidthPx = with(density) { BuddyFabQuoteTextWidth.toPx() }
+  val quoteGapPx = with(density) { BuddyFabQuoteGap.toPx() }
+  val estimatedQuoteHeightPx = with(density) { BuddyFabQuoteEstimatedHeight.toPx() }
+  val quoteSide =
+    if (bubbleOffset.x + bubbleSizePx / 2f > maxWidthPx / 2f) {
+      BuddyQuoteBubbleSide.LEFT_OF_FAB
+    } else {
+      BuddyQuoteBubbleSide.RIGHT_OF_FAB
+    }
   val x =
-    (bubbleOffset.x + bubbleSizePx / 2f - textWidthPx / 2f).constrain(
-      0f,
-      maxWidthPx - textWidthPx,
-    )
-  val y = bubbleOffset.y + bubbleSizePx + with(density) { 10.dp.toPx() }
+    when (quoteSide) {
+      BuddyQuoteBubbleSide.LEFT_OF_FAB ->
+        (bubbleOffset.x + bubbleSizePx - textWidthPx).constrain(0f, maxWidthPx - textWidthPx)
+      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> bubbleOffset.x.constrain(0f, maxWidthPx - textWidthPx)
+    }
+  val resolvedQuoteHeightPx = if (quoteHeightPx > 0f) quoteHeightPx else estimatedQuoteHeightPx
+  val y = (bubbleOffset.y - resolvedQuoteHeightPx - quoteGapPx).coerceAtLeast(0f)
   val ambientIsDark = MaterialTheme.colorScheme.background.luminance() < 0.45f
-  val bubbleFill = if (ambientIsDark) Color.White else BuddyInk
+  val bubbleFill = if (ambientIsDark) Color.White else BuddyPurple
   val bubbleText = if (ambientIsDark) Color.Black else Color.White
-  val bubbleBorder = if (ambientIsDark) Color.Black else Color.White
+  val bubbleBorder = BuddyInk
+  val bubbleShape = remember(quoteSide) { buddyQuoteBubbleShape(quoteSide) }
 
   LaunchedEffect(Unit) {
     while (true) {
@@ -693,46 +707,83 @@ private fun BoxScope.BuddyQuoteText(
     exit = fadeOut(),
     modifier = Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) },
   ) {
-    Box(modifier = Modifier.width(BuddyFabQuoteTextWidth)) {
-      Surface(
-        modifier = Modifier.fillMaxWidth().padding(bottom = BuddyFabQuoteTailHeight),
-        color = bubbleFill,
-        shape = RoundedCornerShape(18.dp),
-        border = androidx.compose.foundation.BorderStroke(2.dp, bubbleBorder),
-        shadowElevation = 8.dp,
-      ) {
-        Text(
-          text = BuddyFabQuotes[quoteIndex],
-          modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-          color = bubbleText,
-          style = MaterialTheme.typography.labelMedium,
-          fontWeight = FontWeight.Normal,
-          textAlign = TextAlign.Center,
-          maxLines = 4,
-          overflow = TextOverflow.Ellipsis,
-        )
-      }
-      Canvas(
-        modifier =
-          Modifier.size(BuddyFabQuoteTailWidth, BuddyFabQuoteTailHeight + 2.dp)
-            .align(Alignment.BottomCenter)
-      ) {
-        val strokeWidth = 2.dp.toPx()
-        val path = androidx.compose.ui.graphics.Path().apply {
-          moveTo(size.width * 0.5f, size.height)
-          lineTo(strokeWidth / 2f, strokeWidth / 2f)
-          lineTo(size.width - strokeWidth / 2f, strokeWidth / 2f)
-          close()
-        }
-        drawPath(path = path, color = bubbleFill)
-        drawPath(
-          path = path,
-          color = bubbleBorder,
-          style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth),
-        )
-      }
+    Surface(
+      modifier =
+        Modifier.width(BuddyFabQuoteTextWidth).onGloballyPositioned { coordinates ->
+          quoteHeightPx = coordinates.size.height.toFloat()
+        },
+      color = bubbleFill,
+      shape = bubbleShape,
+      border = androidx.compose.foundation.BorderStroke(2.dp, bubbleBorder),
+      shadowElevation = 8.dp,
+    ) {
+      Text(
+        text = BuddyFabQuotes[quoteIndex],
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+        color = bubbleText,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Normal,
+        textAlign = TextAlign.Center,
+        maxLines = 4,
+        overflow = TextOverflow.Ellipsis,
+      )
     }
   }
+}
+
+private enum class BuddyQuoteBubbleSide {
+  LEFT_OF_FAB,
+  RIGHT_OF_FAB,
+}
+
+private fun buddyQuoteBubbleShape(side: BuddyQuoteBubbleSide) = GenericShape { size, _ ->
+  val corner = min(size.width, size.height) * 0.16f
+  val tailHeight = min(size.width, size.height) * 0.18f
+  val tailWidth = min(size.width, size.height) * 0.24f
+  val bottom = size.height - tailHeight
+  val tailCenter =
+    when (side) {
+      BuddyQuoteBubbleSide.LEFT_OF_FAB -> size.width * 0.82f
+      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> size.width * 0.18f
+    }
+  val tailLeft = (tailCenter - tailWidth / 2f).coerceIn(corner * 1.2f, size.width - corner * 2f)
+  val tailRight = (tailCenter + tailWidth / 2f).coerceIn(corner * 2f, size.width - corner * 1.2f)
+  val tailTipX =
+    when (side) {
+      BuddyQuoteBubbleSide.LEFT_OF_FAB -> size.width * 0.92f
+      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> size.width * 0.08f
+    }
+  val tailOuterControlX =
+    when (side) {
+      BuddyQuoteBubbleSide.LEFT_OF_FAB -> size.width * 0.95f
+      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> size.width * 0.05f
+    }
+  val tailInnerControlX =
+    when (side) {
+      BuddyQuoteBubbleSide.LEFT_OF_FAB -> size.width * 0.87f
+      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> size.width * 0.13f
+    }
+
+  moveTo(corner, 0f)
+  lineTo(size.width - corner, 0f)
+  quadraticTo(size.width, 0f, size.width, corner)
+  lineTo(size.width, bottom - corner)
+  quadraticTo(size.width, bottom, size.width - corner, bottom)
+  if (side == BuddyQuoteBubbleSide.LEFT_OF_FAB) {
+    lineTo(tailRight, bottom)
+    quadraticTo(tailOuterControlX, bottom + tailHeight * 0.28f, tailTipX, size.height)
+    quadraticTo(tailInnerControlX, bottom + tailHeight * 0.55f, tailLeft, bottom)
+    lineTo(corner, bottom)
+  } else {
+    lineTo(tailRight, bottom)
+    quadraticTo(tailInnerControlX, bottom + tailHeight * 0.55f, tailTipX, size.height)
+    quadraticTo(tailOuterControlX, bottom + tailHeight * 0.28f, tailLeft, bottom)
+    lineTo(corner, bottom)
+  }
+  quadraticTo(0f, bottom, 0f, bottom - corner)
+  lineTo(0f, corner)
+  quadraticTo(0f, 0f, corner, 0f)
+  close()
 }
 
 private enum class BuddyBubbleGlyphState {
@@ -1012,6 +1063,7 @@ private fun HomeTabRow(
       Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         BuddyHomeTab.entries.forEach { tab ->
           val isSelected = tab == selectedTab
+          val interactionSource = remember(tab) { MutableInteractionSource() }
           val label =
             when (tab) {
               BuddyHomeTab.LIVE_FEED -> "Live Feed"
@@ -1021,7 +1073,7 @@ private fun HomeTabRow(
                 } else {
                   "Recommendations"
                 }
-              BuddyHomeTab.RECORD_FLOW -> "Record flow"
+              BuddyHomeTab.RECORD_FLOW -> "Record Flow"
             }
           Box(
             modifier =
@@ -1034,7 +1086,10 @@ private fun HomeTabRow(
                   if (isSelected) BuddyBorder else Color.Transparent,
                   RoundedCornerShape(12.dp),
                 )
-                .clickable { onSelect(tab) }
+                .clickable(
+                  interactionSource = interactionSource,
+                  indication = null,
+                ) { onSelect(tab) }
           ) {
             Text(
               text = label,
@@ -1171,19 +1226,17 @@ private fun LiveFeedInset(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
+  val tint = if (enabled) BuddySentryPink else BuddyMuted
   Surface(
     modifier =
       Modifier.size(40.dp)
         .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
         .clickable(enabled = enabled, onClick = onClick),
-    color = BuddySentryPink.copy(alpha = 0.12f),
+    color = Color.Transparent,
     shape = RoundedCornerShape(12.dp),
   ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      HealthCheckIcon(
-        tint = if (enabled) BuddySentryPink else BuddyMuted,
-        modifier = Modifier.size(20.dp),
-      )
+      HealthCheckIcon(tint = tint, modifier = Modifier.size(28.dp))
     }
   }
 }
@@ -1347,21 +1400,21 @@ private fun HealthCheckValueRow(label: String, value: String) {
 private fun HealthCheckIcon(tint: Color, modifier: Modifier = Modifier) {
   Canvas(modifier = modifier) {
     val borderWidth = size.minDimension * 0.08f
-    val borderCorner = size.minDimension * 0.16f
+    val borderCorner = size.minDimension * 0.18f
     val kitWidth = size.width - borderWidth
-    val kitHeight = size.height * 0.68f
+    val kitHeight = size.height - borderWidth
     val kitLeft = borderWidth / 2f
     val kitTop = (size.height - kitHeight) / 2f
     drawRoundRect(
-      color = BuddyBorder,
+      color = tint,
       topLeft = Offset(kitLeft, kitTop),
       size = Size(kitWidth, kitHeight),
       cornerRadius = androidx.compose.ui.geometry.CornerRadius(borderCorner),
       style = androidx.compose.ui.graphics.drawscope.Stroke(width = borderWidth),
     )
 
-    val arm = size.minDimension * 0.20f
-    val length = size.minDimension * 0.54f
+    val arm = size.minDimension * 0.24f
+    val length = size.minDimension * 0.66f
     val crossCorner = arm * 0.22f
     val center = Offset(size.width / 2f, size.height / 2f)
     drawRoundRect(
@@ -2839,8 +2892,8 @@ private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
 private val BuddyFabQuoteTextWidth = 230.dp
-private val BuddyFabQuoteTailWidth = 22.dp
-private val BuddyFabQuoteTailHeight = 14.dp
+private val BuddyFabQuoteGap = 8.dp
+private val BuddyFabQuoteEstimatedHeight = 86.dp
 private val BuddyAttentionCardHeight = 264.dp
 private val BuddyQuickDecisionStackHeight = 188.dp
 private val BuddySheetHorizontalPadding = 24.dp
