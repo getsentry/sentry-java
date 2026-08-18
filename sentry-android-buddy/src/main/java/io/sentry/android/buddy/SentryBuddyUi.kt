@@ -1148,7 +1148,7 @@ private fun LiveFeedRows(
     border = CardDefaults.outlinedCardBorder(),
   ) {
     Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-      items.forEach { item ->
+      items.forEachIndexed { index, item ->
         val color =
           if (item.adverse) severityColor(item.severity) else timelineColor(item.timelineItem)
         val link = sentryUiLinks.linkFor(item)
@@ -1156,23 +1156,32 @@ private fun LiveFeedRows(
           modifier =
             Modifier.fillMaxWidth()
               .clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } }
-              .padding(vertical = 7.dp),
-          horizontalArrangement = Arrangement.spacedBy(10.dp),
-          verticalAlignment = Alignment.CenterVertically,
+              .padding(top = 7.dp),
+          horizontalArrangement = Arrangement.spacedBy(12.dp),
+          verticalAlignment = Alignment.Top,
         ) {
-          LiveFeedCategoryPill(item.category.label, color)
-          Text(
-            item.title(),
+          LiveFeedTimelineMarker(
+            color = color,
+            showConnector = index != items.lastIndex,
+          )
+          Row(
             modifier = Modifier.weight(1f),
-            color = BuddyInk,
-            fontWeight = FontWeight.Normal,
-          )
-          Text(
-            relativeTime(item.timestamp.time, nowMs),
-            color = BuddyMuted,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Normal,
-          )
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            Text(
+              item.title(),
+              modifier = Modifier.weight(1f),
+              color = BuddyInk,
+              fontWeight = FontWeight.Normal,
+            )
+            Text(
+              relativeTime(item.timestamp.time, nowMs),
+              color = BuddyMuted,
+              style = MaterialTheme.typography.labelMedium,
+              fontWeight = FontWeight.Normal,
+            )
+          }
         }
       }
       Text(
@@ -1183,6 +1192,19 @@ private fun LiveFeedRows(
         textAlign = TextAlign.Start,
         fontWeight = FontWeight.Normal,
       )
+    }
+  }
+}
+
+@Composable
+private fun LiveFeedTimelineMarker(color: Color, showConnector: Boolean) {
+  Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Box(
+      modifier =
+        Modifier.size(18.dp).background(color, CircleShape).border(2.dp, BuddyBorder, CircleShape)
+    )
+    if (showConnector) {
+      Box(modifier = Modifier.size(width = 2.dp, height = 24.dp).background(BuddyBorder))
     }
   }
 }
