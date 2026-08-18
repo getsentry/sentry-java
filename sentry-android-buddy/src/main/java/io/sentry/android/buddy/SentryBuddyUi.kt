@@ -800,9 +800,10 @@ private fun InsightsSheet(
 ) {
   val clipboard = LocalClipboardManager.current
   var isJsonDialogOpen by remember { mutableStateOf(false) }
+  val flowName = state.result.recording.flow.name.ifBlank { "Unnamed flow" }
   SheetTitle(
     "Flow insights",
-    "${state.result.recording.flow.name} • ${formatElapsed(state.result.recording.summary.durationMs)}",
+    "$flowName • ${formatElapsed(state.result.recording.summary.durationMs)}",
   )
   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
     MetricCard(state.response.insights.size.toString(), "Insights", Modifier.weight(1f), BuddyRed)

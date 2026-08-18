@@ -251,8 +251,8 @@ public constructor(
     val stoppedState = state as? SentryBuddySessionState.StoppedSummary ?: return
     state =
       SentryBuddySessionState.Briefing(
-        result = stoppedState.result,
-        flowName = stoppedState.result.recording.flow.name,
+        result = stoppedState.result.withFlowName(""),
+        flowName = "",
         developerNotes = "",
         focusAreas = DEFAULT_FOCUS_AREAS,
       )

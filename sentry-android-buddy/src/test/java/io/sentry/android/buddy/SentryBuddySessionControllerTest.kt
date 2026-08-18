@@ -34,6 +34,20 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
+  fun `brief recording starts with empty editable flow name`() {
+    val controller = SentryBuddySessionController(recorderFacade = FakeRecorderFacade())
+
+    controller.startRecording()
+    controller.stopRecording()
+    controller.briefRecording()
+
+    assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Briefing::class.java)
+    val state = controller.state as SentryBuddySessionState.Briefing
+    assertThat(state.flowName).isEmpty()
+    assertThat(state.result.recording.flow.name).isEmpty()
+  }
+
+  @Test
   fun `analyze submits and polls flow analysis`() {
     val recorder = FakeRecorderFacade()
     val flowAnalysesApi = FakeFlowAnalysesApi()
