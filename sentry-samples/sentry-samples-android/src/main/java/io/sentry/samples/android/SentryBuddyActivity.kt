@@ -96,28 +96,21 @@ private fun SentryTravelApp() {
   var selectedStay by remember { mutableStateOf(selectedDestination.stays.first()) }
   var confirmationId by remember { mutableStateOf<String?>(null) }
   var savedTrips by remember { mutableStateOf(emptyList<TravelTrip>()) }
-  var demoStatus by remember {
-    mutableStateOf("Ready. Use the presenter controls to trigger Buddy cards.")
-  }
   var isDemoControlsOpen by remember { mutableStateOf(false) }
   val scope = rememberCoroutineScope()
   val demoControls =
     TravelDemoControls(
       isOpen = isDemoControlsOpen,
-      status = demoStatus,
       onOpen = { isDemoControlsOpen = true },
       onDismiss = { isDemoControlsOpen = false },
-      onHealthyScenario = {
-        scope.launch { demoStatus = telemetry.runHealthyDemoScenario() }
-      },
       onSlowSpanScenario = {
-        scope.launch { demoStatus = telemetry.runSlowSpanDemoScenario() }
+        scope.launch { telemetry.runSlowSpanDemoScenario() }
       },
       onFailedHttpScenario = {
-        scope.launch { demoStatus = telemetry.runFailedHttpDemoScenario() }
+        scope.launch { telemetry.runFailedHttpDemoScenario() }
       },
       onErrorScenario = {
-        demoStatus = telemetry.simulateBookingFailure()
+        telemetry.simulateBookingFailure()
       },
     )
 
@@ -738,13 +731,7 @@ private fun TravelScaffold(
           Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
               "Trigger deterministic Buddy cards from any page without cluttering the travel UI.",
-              color = TravelMuted,
-            )
-            Text(demoControls.status, color = TravelStamp, fontWeight = FontWeight.Bold)
-            SecondaryTravelButton(
-              "Healthy flow",
-              Modifier.fillMaxWidth(),
-              demoControls.onHealthyScenario,
+              color = TravelStamp,
             )
             SecondaryTravelButton(
               "Slow span",
@@ -770,10 +757,8 @@ private fun TravelScaffold(
 
 private data class TravelDemoControls(
   val isOpen: Boolean,
-  val status: String,
   val onOpen: () -> Unit,
   val onDismiss: () -> Unit,
-  val onHealthyScenario: () -> Unit,
   val onSlowSpanScenario: () -> Unit,
   val onFailedHttpScenario: () -> Unit,
   val onErrorScenario: () -> Unit,
@@ -962,13 +947,6 @@ private class TravelTelemetry(private val store: TravelStore) {
       repeat(8_000) { (it * 31).hashCode() }
       addBreadcrumb("Scored recommended destinations")
       "Recommendation scoring completed."
-    }
-
-  suspend fun runHealthyDemoScenario(): String =
-    withAppSpan("travel.demo.healthy", "Run healthy Buddy demo flow") {
-      addBreadcrumb("Ran healthy Buddy demo scenario")
-      delay(180)
-      "Healthy flow ready. Buddy should show clean screens and steps only."
     }
 
   suspend fun runSlowSpanDemoScenario(): String =
