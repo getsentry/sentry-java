@@ -1114,6 +1114,7 @@ private fun HealthCheckFindingCard(
   finding: BuddyHealthCheckFinding,
   onOpenUrl: (Context, String) -> Unit,
 ) {
+  val clipboard = LocalClipboardManager.current
   val color = severityColor(finding.severity)
   val context = LocalContext.current
   Surface(
@@ -1146,8 +1147,31 @@ private fun HealthCheckFindingCard(
       finding.suggestedValue?.let {
         HealthCheckValueRow(label = "Consider", value = it)
       }
-      finding.link?.let { link ->
-        TextButton(onClick = { onOpenUrl(context, link) }) { BuddyButtonText("Open Link") }
+      finding.kotlinSnippet?.let { snippet ->
+        Surface(
+          color = BuddyInk.copy(alpha = 0.05f),
+          shape = RoundedCornerShape(12.dp),
+          border = CardDefaults.outlinedCardBorder(),
+        ) {
+          Text(
+            text = snippet,
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            color = BuddyInk,
+            fontFamily = FontFamily.Monospace,
+          )
+        }
+      }
+      if (finding.kotlinSnippet != null || finding.link != null) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+          finding.kotlinSnippet?.let { snippet ->
+            TextButton(onClick = { clipboard.setText(AnnotatedString(snippet)) }) {
+              BuddyButtonText("Copy Kotlin")
+            }
+          }
+          finding.link?.let { link ->
+            TextButton(onClick = { onOpenUrl(context, link) }) { BuddyButtonText("Open Link") }
+          }
+        }
       }
     }
   }

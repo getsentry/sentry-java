@@ -70,6 +70,7 @@ public constructor(
   public val severity: Severity,
   public val currentValue: String? = null,
   public val suggestedValue: String? = null,
+  public val kotlinSnippet: String? = null,
   public val link: String? = null,
 )
 
@@ -113,6 +114,8 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           severity = Severity.HIGH,
           currentValue = "Missing",
           suggestedValue = "Set options.dsn",
+          kotlinSnippet =
+            "options.dsn = \"https://examplePublicKey@o0.ingest.sentry.io/0\"",
         )
     }
 
@@ -141,6 +144,7 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           severity = Severity.MEDIUM,
           currentValue = "Tracing disabled",
           suggestedValue = "Set tracesSampleRate or tracesSampler",
+          kotlinSnippet = "options.tracesSampleRate = 1.0",
         )
     }
 
@@ -154,6 +158,9 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           severity = Severity.LOW,
           currentValue = "Disabled",
           suggestedValue = "Set sessionReplay.sessionSampleRate or onErrorSampleRate",
+          kotlinSnippet =
+            "options.sessionReplay.sessionSampleRate = 0.1\n" +
+              "options.sessionReplay.onErrorSampleRate = 1.0",
         )
     }
 
@@ -167,6 +174,7 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           severity = Severity.LOW,
           currentValue = "Disabled",
           suggestedValue = "Set anrEnabled = true",
+          kotlinSnippet = "options.isAnrEnabled = true",
         )
     }
 
@@ -448,6 +456,7 @@ internal object HealthCheckFindingDeserializer : JsonDeserializer<BuddyHealthChe
     var severity: Severity = Severity.MEDIUM
     var currentValue: String? = null
     var suggestedValue: String? = null
+    var kotlinSnippet: String? = null
     var link: String? = null
 
     reader.beginObject()
@@ -464,6 +473,8 @@ internal object HealthCheckFindingDeserializer : JsonDeserializer<BuddyHealthChe
         "current_value" -> currentValue = reader.nextStringOrNull()
         "suggestedValue",
         "suggested_value" -> suggestedValue = reader.nextStringOrNull()
+        "kotlinSnippet",
+        "kotlin_snippet" -> kotlinSnippet = reader.nextStringOrNull()
         "link" -> link = reader.nextStringOrNull()
         else -> reader.skipValue()
       }
@@ -477,6 +488,7 @@ internal object HealthCheckFindingDeserializer : JsonDeserializer<BuddyHealthChe
       severity = severity,
       currentValue = currentValue,
       suggestedValue = suggestedValue,
+      kotlinSnippet = kotlinSnippet,
       link = link,
     )
   }

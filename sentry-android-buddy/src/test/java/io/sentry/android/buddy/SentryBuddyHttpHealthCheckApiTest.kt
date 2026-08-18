@@ -31,6 +31,7 @@ class SentryBuddyHttpHealthCheckApiTest {
               "severity": "LOW",
               "currentValue": "8.39.0",
               "suggestedValue": "8.40.0",
+              "kotlin_snippet": "implementation(\"io.sentry:sentry-android:8.40.0\")",
               "link": "https://github.com/getsentry/sentry-java/releases/tag/8.40.0"
             }]
           }
@@ -45,6 +46,8 @@ class SentryBuddyHttpHealthCheckApiTest {
     assertThat(response.summary).contains("1 finding")
     assertThat(response.findings).hasSize(1)
     assertThat(response.findings.single().title).contains("Upgrade")
+    assertThat(response.findings.single().kotlinSnippet)
+      .isEqualTo("implementation(\"io.sentry:sentry-android:8.40.0\")")
     val recordedRequest = server.takeRequest()
     assertThat(recordedRequest.method).isEqualTo("POST")
     assertThat(recordedRequest.path).isEqualTo("/v1/health-check")
