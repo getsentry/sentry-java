@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -68,6 +69,7 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -148,6 +150,7 @@ private fun SentryBuddyOverlayContent(
     controller.action()
     state = controller.state
     liveFeed = controller.liveFeed
+    nowMs = System.currentTimeMillis()
   }
 
   fun dispatchAnalysis(action: SentryBuddySessionController.() -> Unit) {
@@ -155,11 +158,12 @@ private fun SentryBuddyOverlayContent(
       withContext(Dispatchers.IO) { controller.action() }
       state = controller.state
       liveFeed = controller.liveFeed
+      nowMs = System.currentTimeMillis()
     }
   }
 
   LaunchedEffect(state) {
-    if (state is SentryBuddySessionState.Recording) {
+    if (state !is SentryBuddySessionState.Closed) {
       while (true) {
         nowMs = System.currentTimeMillis()
         delay(1000)
@@ -487,6 +491,8 @@ private fun BuddySheet(
   if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
     return
   }
+  val maxSheetHeight =
+    with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } * 0.75f
 
   ModalBottomSheet(
     onDismissRequest = { onDispatch { close() } },
@@ -495,7 +501,11 @@ private fun BuddySheet(
     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
   ) {
     Column(
-      modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp),
+      modifier =
+        Modifier.fillMaxWidth()
+          .heightIn(max = maxSheetHeight)
+          .verticalScroll(rememberScrollState())
+          .padding(24.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
       when (state) {
@@ -698,46 +708,37 @@ private fun LiveFeedRows(
       ) {
         Row(
           modifier = Modifier.fillMaxWidth().padding(14.dp),
-          horizontalArrangement = Arrangement.spacedBy(12.dp),
-          verticalAlignment = Alignment.Top,
+          horizontalArrangement = Arrangement.spacedBy(10.dp),
+          verticalAlignment = Alignment.CenterVertically,
         ) {
-          Box(modifier = Modifier.size(10.dp).background(color, CircleShape).offset(y = 5.dp))
-          Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically,
-            ) {
-              Text(item.title(), color = BuddyInk, fontWeight = FontWeight.Bold)
-              Text(
-                relativeTime(item.timestamp.time, nowMs),
-                color = BuddyMuted,
-                style = MaterialTheme.typography.labelMedium,
-              )
-            }
-            item.subtitle()?.let {
-              Text(it, color = BuddyMuted, style = MaterialTheme.typography.bodySmall)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-              Text(
-                item.category.label,
-                color = color,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
-              )
-              if (link != null) {
-                Text(
-                  "Open in Sentry",
-                  color = BuddyPurple,
-                  style = MaterialTheme.typography.labelMedium,
-                  fontWeight = FontWeight.Bold,
-                )
-              }
-            }
-          }
+          LiveFeedCategoryPill(item.category.label, color)
+          Text(
+            item.title(),
+            modifier = Modifier.weight(1f),
+            color = BuddyInk,
+            fontWeight = FontWeight.Bold,
+          )
+          Text(
+            relativeTime(item.timestamp.time, nowMs),
+            color = BuddyMuted,
+            style = MaterialTheme.typography.labelMedium,
+          )
         }
       }
     }
+  }
+}
+
+@Composable
+private fun LiveFeedCategoryPill(label: String, color: Color) {
+  Surface(color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(18.dp)) {
+    Text(
+      label,
+      modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+      color = color,
+      style = MaterialTheme.typography.labelSmall,
+      fontWeight = FontWeight.Bold,
+    )
   }
 }
 
@@ -1000,8 +1001,8 @@ private fun Int.positiveChip(label: String): String? = if (this > 0) "$this $lab
 
 private fun BuddyLiveFeedItem.title(): String =
   when (category) {
-    BuddyLiveFeedItem.Category.SCREEN -> "Screen: ${timelineItem.name.orEmpty()}"
-    BuddyLiveFeedItem.Category.STEP -> "Step: ${timelineItem.name.orEmpty()}"
+    BuddyLiveFeedItem.Category.SCREEN -> timelineItem.name ?: "Unknown screen"
+    BuddyLiveFeedItem.Category.STEP -> timelineItem.name ?: "Unnamed step"
     BuddyLiveFeedItem.Category.ERROR -> timelineItem.name ?: "Error captured"
     BuddyLiveFeedItem.Category.FAILED_HTTP -> httpTitle()
     BuddyLiveFeedItem.Category.SLOW_SPAN -> timelineItem.name ?: "Slow span"
