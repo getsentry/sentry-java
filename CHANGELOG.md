@@ -4,7 +4,7 @@
 
 ### Performance
 
-- Use manifest metadata resolved at build time to reduce Android SDK initialization overhead ([#5969](https://github.com/getsentry/sentry-java/pull/5969))
+- Use manifest metadata resolved at build time to reduce Android SDK initialization overhead ([#5976](https://github.com/getsentry/sentry-java/pull/5976))
 
 ### Dependencies
 
