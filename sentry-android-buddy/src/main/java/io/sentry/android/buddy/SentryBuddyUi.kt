@@ -1,6 +1,10 @@
 package io.sentry.android.buddy
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
 import android.graphics.Rect
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -9,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -61,6 +66,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
@@ -240,6 +246,7 @@ private fun SentryBuddyOverlayContent(
     BuddySheet(
       state = state,
       liveFeed = liveFeed,
+      sentryUiLinks = controller.sentryUiLinks,
       nowMs = nowMs,
       onDispatch = { dispatch(it) },
       onAnalyze = { dispatchAnalysis { analyze() } },
@@ -472,6 +479,7 @@ internal class BuddyOverlayHitBounds {
 private fun BuddySheet(
   state: SentryBuddySessionState,
   liveFeed: BuddyLiveFeed,
+  sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
@@ -491,7 +499,8 @@ private fun BuddySheet(
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
       when (state) {
-        SentryBuddySessionState.LiveFeed -> LiveFeedSheet(liveFeed, nowMs, onDispatch)
+        SentryBuddySessionState.LiveFeed ->
+          LiveFeedSheet(liveFeed, sentryUiLinks, nowMs, onDispatch)
         SentryBuddySessionState.Intro -> IntroSheet(onDispatch)
         is SentryBuddySessionState.StoppedSummary -> StoppedSummarySheet(state, onDispatch)
         is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
@@ -556,11 +565,12 @@ private fun IntroSheet(onDispatch: (SentryBuddySessionController.() -> Unit) -> 
 @Composable
 private fun LiveFeedSheet(
   liveFeed: BuddyLiveFeed,
+  sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
 ) {
   SheetTitle("Sentry Buddy", "Live Feed")
-  AttentionCard(liveFeed, nowMs)
+  AttentionCard(liveFeed, sentryUiLinks, nowMs)
   Button(
     modifier = Modifier.fillMaxWidth().height(56.dp),
     colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
@@ -577,12 +587,12 @@ private fun LiveFeedSheet(
   if (liveFeed.items.isEmpty()) {
     EmptyLiveFeedCard()
   } else {
-    LiveFeedRows(liveFeed.items, nowMs)
+    LiveFeedRows(liveFeed.items, sentryUiLinks, nowMs)
   }
 }
 
 @Composable
-private fun AttentionCard(liveFeed: BuddyLiveFeed, nowMs: Long) {
+private fun AttentionCard(liveFeed: BuddyLiveFeed, sentryUiLinks: BuddySentryUiLinks, nowMs: Long) {
   val item = liveFeed.latestAdverseItem
   if (item == null) {
     Card(border = CardDefaults.outlinedCardBorder()) {
@@ -602,7 +612,11 @@ private fun AttentionCard(liveFeed: BuddyLiveFeed, nowMs: Long) {
   }
 
   val color = severityColor(item.severity)
+  val context = LocalContext.current
+  val link = sentryUiLinks.linkFor(item)
   Card(
+    modifier =
+      Modifier.clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } },
     colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.10f)),
     border = CardDefaults.outlinedCardBorder(),
   ) {
@@ -625,6 +639,14 @@ private fun AttentionCard(liveFeed: BuddyLiveFeed, nowMs: Long) {
         fontWeight = FontWeight.Bold,
       )
       item.subtitle()?.let { Text(it, color = BuddyMuted) }
+      if (link != null) {
+        Text(
+          "Open in Sentry",
+          color = BuddyPurple,
+          style = MaterialTheme.typography.labelMedium,
+          fontWeight = FontWeight.Bold,
+        )
+      }
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         adverseCountChips(liveFeed).forEach { chip ->
           Surface(
@@ -658,12 +680,22 @@ private fun EmptyLiveFeedCard() {
 }
 
 @Composable
-private fun LiveFeedRows(items: List<BuddyLiveFeedItem>, nowMs: Long) {
+private fun LiveFeedRows(
+  items: List<BuddyLiveFeedItem>,
+  sentryUiLinks: BuddySentryUiLinks,
+  nowMs: Long,
+) {
+  val context = LocalContext.current
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     items.forEach { item ->
       val color =
         if (item.adverse) severityColor(item.severity) else timelineColor(item.timelineItem)
-      Card(border = CardDefaults.outlinedCardBorder()) {
+      val link = sentryUiLinks.linkFor(item)
+      Card(
+        modifier =
+          Modifier.clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } },
+        border = CardDefaults.outlinedCardBorder(),
+      ) {
         Row(
           modifier = Modifier.fillMaxWidth().padding(14.dp),
           horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -686,12 +718,22 @@ private fun LiveFeedRows(items: List<BuddyLiveFeedItem>, nowMs: Long) {
             item.subtitle()?.let {
               Text(it, color = BuddyMuted, style = MaterialTheme.typography.bodySmall)
             }
-            Text(
-              item.category.label,
-              color = color,
-              style = MaterialTheme.typography.labelMedium,
-              fontWeight = FontWeight.Bold,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+              Text(
+                item.category.label,
+                color = color,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+              )
+              if (link != null) {
+                Text(
+                  "Open in Sentry",
+                  color = BuddyPurple,
+                  style = MaterialTheme.typography.labelMedium,
+                  fontWeight = FontWeight.Bold,
+                )
+              }
+            }
           }
         }
       }
@@ -1015,6 +1057,14 @@ private fun relativeTime(timestampMs: Long, nowMs: Long): String {
     return "${ageSeconds}s ago"
   }
   return "${ageSeconds / 60}m ago"
+}
+
+private fun openSentryLink(context: Context, link: String) {
+  try {
+    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)))
+  } catch (_: ActivityNotFoundException) {
+    // A debug overlay should not crash the app when no browser can handle the link.
+  }
 }
 
 private fun Map<String, Any?>.mapValue(key: String): Map<*, *> =

@@ -9,6 +9,9 @@ object SentryBuddySampleIntegration {
   fun install(application: Application) {
     SentryBuddy.install(application) {
       flowAnalysesApi = SentryBuddyHttpFlowAnalysesApi("http://10.0.2.2:8080")
+      sentryUiBaseUrl = "https://sentry-sdks.sentry.io"
+      sentryUiOrganizationSlug = "sentry-sdks"
+      sentryUiProjectId = "5428559"
     }
   }
 }

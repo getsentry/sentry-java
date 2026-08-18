@@ -569,6 +569,7 @@ internal class BuddyActivityLifecycleCallbacks(
       overlayManager =
         BuddyOverlayManager(SentryBuddySessionController(flowAnalysesApi = options.flowAnalysesApi))
     }
+    overlayManager?.updateOptions(options)
   }
 
   fun detachAll() {
@@ -578,6 +579,10 @@ internal class BuddyActivityLifecycleCallbacks(
 
 internal class BuddyOverlayManager(private val controller: SentryBuddySessionController) {
   private val overlays = WeakHashMap<Activity, View>()
+
+  fun updateOptions(options: SentryBuddyOptions) {
+    controller.sentryUiLinks = options.sentryUiLinks()
+  }
 
   fun attach(activity: Activity) {
     if (overlays.containsKey(activity)) {

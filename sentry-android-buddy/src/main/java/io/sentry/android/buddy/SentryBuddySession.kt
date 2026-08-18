@@ -197,6 +197,8 @@ public constructor(
   internal var liveFeed: BuddyLiveFeed = safeLiveFeed()
     private set
 
+  internal var sentryUiLinks: BuddySentryUiLinks = BuddySentryUiLinks()
+
   private val transientRecordingEventLock: Any = Any()
   private val transientRecordingEventListeners = mutableListOf<(TransientRecordingEvent) -> Unit>()
   private var transientRecordingEventId: Long = 0
