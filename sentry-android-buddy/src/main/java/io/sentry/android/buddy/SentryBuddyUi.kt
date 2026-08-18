@@ -9,11 +9,17 @@ import android.os.Build
 import android.widget.ImageView
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -22,6 +28,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -30,6 +37,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -78,6 +86,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
@@ -89,6 +98,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -817,10 +827,15 @@ private fun BuddySheet(
     containerColor = Color.White,
     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
   ) {
+    val sheetBodyModifier =
+      if (state == SentryBuddySessionState.LiveFeed) {
+        Modifier.fillMaxWidth().height(maxSheetHeight)
+      } else {
+        Modifier.fillMaxWidth().heightIn(max = maxSheetHeight)
+      }
     Column(
       modifier =
-        Modifier.fillMaxWidth()
-          .heightIn(max = maxSheetHeight)
+        sheetBodyModifier
           .verticalScroll(rememberScrollState())
           .padding(
             horizontal = if (state is SentryBuddySessionState.LiveFeed) 0.dp else 24.dp,
@@ -1064,7 +1079,7 @@ private fun BuddyHomeSheet(
   LiveFeedInset {
     SheetTitle(
       title = "Sentry Buddy",
-      subtitle = "Debug build • v${BuildConfig.VERSION_NAME}",
+      subtitle = "v${BuildConfig.VERSION_NAME}",
       trailingContent =
         if (homeTab == BuddyHomeTab.LIVE_FEED) {
           {
@@ -1082,7 +1097,25 @@ private fun BuddyHomeSheet(
       unreadRecommendationCount = unreadRecommendations,
       onSelect = onSelectHomeTab,
     )
-    when (homeTab) {
+  }
+  AnimatedContent(
+    targetState = homeTab,
+    transitionSpec = {
+      val slideDirection = if (targetState.ordinal > initialState.ordinal) 1 else -1
+      (slideInHorizontally(
+          animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
+          initialOffsetX = { fullWidth -> (fullWidth / 5) * slideDirection },
+        ) + fadeIn(animationSpec = tween(durationMillis = 180)))
+        .togetherWith(
+          slideOutHorizontally(
+            animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
+            targetOffsetX = { fullWidth -> -(fullWidth / 5) * slideDirection },
+          ) + fadeOut(animationSpec = tween(durationMillis = 180))
+        )
+    },
+    label = "buddy-home-tab-content",
+  ) { currentTab ->
+    when (currentTab) {
       BuddyHomeTab.LIVE_FEED ->
         LiveFeedTabContent(
           liveFeed = liveFeed,
@@ -1093,15 +1126,18 @@ private fun BuddyHomeSheet(
           onOpenUrl = onOpenUrl,
         )
       BuddyHomeTab.RECOMMENDATIONS ->
-        RecommendationsTabContent(
-          recommendations = homeRecommendations,
-          nowMs = nowMs,
-          onResolve = onResolveHomeRecommendation,
-          onDismiss = onDismissHomeRecommendation,
-          onMarkRead = onMarkHomeRecommendationRead,
-          onOpenUrl = onOpenUrl,
-        )
-      BuddyHomeTab.RECORD_FLOW -> RecordFlowTabContent(onStartRecording = onStartRecording)
+        LiveFeedInset {
+          RecommendationsTabContent(
+            recommendations = homeRecommendations,
+            nowMs = nowMs,
+            onResolve = onResolveHomeRecommendation,
+            onDismiss = onDismissHomeRecommendation,
+            onMarkRead = onMarkHomeRecommendationRead,
+            onOpenUrl = onOpenUrl,
+          )
+        }
+      BuddyHomeTab.RECORD_FLOW ->
+        LiveFeedInset { RecordFlowTabContent(onStartRecording = onStartRecording) }
     }
   }
   HealthCheckDialog(
@@ -1118,43 +1154,76 @@ private fun HomeTabRow(
   unreadRecommendationCount: Int,
   onSelect: (BuddyHomeTab) -> Unit,
 ) {
+  val density = LocalDensity.current
+  val tabBounds = remember { mutableStateOf<Map<BuddyHomeTab, HomeTabBounds>>(emptyMap()) }
+  val selectedBounds = tabBounds.value[selectedTab]
+  val animatedOffsetX by
+    animateDpAsState(
+      targetValue = selectedBounds?.left ?: 0.dp,
+      animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+      label = "buddy-home-tab-offset",
+    )
+  val animatedWidth by
+    animateDpAsState(
+      targetValue = selectedBounds?.width ?: 0.dp,
+      animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+      label = "buddy-home-tab-width",
+    )
   Surface(color = BuddyCode, shape = RoundedCornerShape(16.dp)) {
-    Row(
-      modifier = Modifier.fillMaxWidth().padding(4.dp),
-      horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-      BuddyHomeTab.entries.forEach { tab ->
-        val isSelected = tab == selectedTab
-        val label =
-          when (tab) {
-            BuddyHomeTab.LIVE_FEED -> "Live Feed"
-            BuddyHomeTab.RECOMMENDATIONS ->
-              if (unreadRecommendationCount > 0) {
-                "Recommendations ($unreadRecommendationCount)"
-              } else {
-                "Recommendations"
-              }
-            BuddyHomeTab.RECORD_FLOW -> "Record flow"
-          }
+    Box(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(4.dp)) {
+      if (selectedBounds != null) {
         Surface(
-          modifier = Modifier.weight(1f).clickable { onSelect(tab) },
-          color = if (isSelected) Color.White else Color.Transparent,
+          modifier = Modifier.offset(x = animatedOffsetX).width(animatedWidth).fillMaxHeight(),
+          color = Color.White,
           shape = RoundedCornerShape(12.dp),
-          border = if (isSelected) CardDefaults.outlinedCardBorder() else null,
-        ) {
-          Text(
-            text = label,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp),
-            color = if (isSelected) BuddyInk else BuddyMuted,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-          )
+          border = CardDefaults.outlinedCardBorder(),
+        ) {}
+      }
+      Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        BuddyHomeTab.entries.forEach { tab ->
+          val isSelected = tab == selectedTab
+          val label =
+            when (tab) {
+              BuddyHomeTab.LIVE_FEED -> "Live Feed"
+              BuddyHomeTab.RECOMMENDATIONS ->
+                if (unreadRecommendationCount > 0) {
+                  "Recommendations ($unreadRecommendationCount)"
+                } else {
+                  "Recommendations"
+                }
+              BuddyHomeTab.RECORD_FLOW -> "Record flow"
+            }
+          Box(
+            modifier =
+              Modifier.onGloballyPositioned { coordinates ->
+                  tabBounds.value =
+                    tabBounds.value +
+                      (tab to
+                        with(density) {
+                          HomeTabBounds(
+                            left = coordinates.positionInParent().x.toDp(),
+                            width = coordinates.size.width.toDp(),
+                          )
+                        })
+                }
+                .clickable { onSelect(tab) }
+          ) {
+            Text(
+              text = label,
+              modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+              color = if (isSelected) BuddyInk else BuddyMuted,
+              style = MaterialTheme.typography.labelLarge,
+              fontWeight = FontWeight.Bold,
+              maxLines = 1,
+            )
+          }
         }
       }
     }
   }
 }
+
+private data class HomeTabBounds(val left: Dp, val width: Dp)
 
 @Composable
 private fun LiveFeedTabContent(
@@ -1165,6 +1234,7 @@ private fun LiveFeedTabContent(
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
+  Spacer(Modifier.height(12.dp))
   AttentionCard(
     liveFeed = liveFeed,
     sentryUiLinks = sentryUiLinks,
@@ -1173,22 +1243,24 @@ private fun LiveFeedTabContent(
     onDismiss = { onDispatch { dismissLiveFeedAttention() } },
     onOpenUrl = onOpenUrl,
   )
-  Text(
-    "Live feed",
-    style = MaterialTheme.typography.titleMedium,
-    fontWeight = FontWeight.Bold,
-    color = BuddyInk,
-  )
-  if (liveFeed.items.isEmpty()) {
-    EmptyLiveFeedCard()
-  } else {
-    LiveFeedRows(
-      items = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT),
-      showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
-      sentryUiLinks = sentryUiLinks,
-      nowMs = nowMs,
-      onOpenUrl = onOpenUrl,
+  LiveFeedInset {
+    Text(
+      "Live feed",
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.Bold,
+      color = BuddyInk,
     )
+    if (liveFeed.items.isEmpty()) {
+      EmptyLiveFeedCard()
+    } else {
+      LiveFeedRows(
+        items = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT),
+        showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
+        sentryUiLinks = sentryUiLinks,
+        nowMs = nowMs,
+        onOpenUrl = onOpenUrl,
+      )
+    }
   }
 }
 
