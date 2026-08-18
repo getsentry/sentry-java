@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
+import io.sentry.util.LoadClass;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,6 +38,13 @@ public final class SentryFeedbackOptions {
 
   /** Shows the feedback form when a shake gesture is detected. Defaults to {@code false}. */
   private boolean useShakeGesture = false;
+
+  /**
+   * Displays a button on the feedback form that allows the user to attach a screenshot from the
+   * device gallery. Only supported on Android, and requires the androidx.activity dependency and a
+   * ComponentActivity host; the button is hidden otherwise. Defaults to true.
+   */
+  private boolean enableAttachScreenshot = true;
 
   // Text Customization
   /** The title of the feedback form. Defaults to "Report a Bug". */
@@ -78,6 +86,18 @@ public final class SentryFeedbackOptions {
    */
   private @NotNull CharSequence successMessageText = "Thank you for your report!";
 
+  /** The label of the button to attach a screenshot. Defaults to "Add a screenshot". */
+  private @NotNull CharSequence addScreenshotButtonLabel = "Add a screenshot";
+
+  /** The label of the button to remove an attached screenshot. Defaults to "Remove screenshot". */
+  private @NotNull CharSequence removeScreenshotButtonLabel = "Remove screenshot";
+
+  /**
+   * The message displayed when the selected screenshot exceeds the maximum attachment size.
+   * Defaults to "Image is too large".
+   */
+  private @NotNull CharSequence screenshotTooLargeMessageText = "Screenshot is too large";
+
   // Callbacks
   /** Callback called when the feedback form is opened. */
   private @Nullable Runnable onFormOpen;
@@ -95,10 +115,15 @@ public final class SentryFeedbackOptions {
 
   private @NotNull IShakeController shakeController;
 
+  private @NotNull LoadClass loadClass;
+
   SentryFeedbackOptions(
-      final @NotNull IFormHandler iFormHandler, final @NotNull IShakeController shakeController) {
+      final @NotNull IFormHandler iFormHandler,
+      final @NotNull IShakeController shakeController,
+      final @NotNull LoadClass loadClass) {
     this.iFormHandler = iFormHandler;
     this.shakeController = shakeController;
+    this.loadClass = loadClass;
   }
 
   /** Creates a copy of the passed {@link SentryFeedbackOptions}. */
@@ -110,6 +135,7 @@ public final class SentryFeedbackOptions {
     this.useSentryUser = other.useSentryUser;
     this.showBranding = other.showBranding;
     this.useShakeGesture = other.useShakeGesture;
+    this.enableAttachScreenshot = other.enableAttachScreenshot;
     this.formTitle = other.formTitle;
     this.submitButtonLabel = other.submitButtonLabel;
     this.cancelButtonLabel = other.cancelButtonLabel;
@@ -121,12 +147,16 @@ public final class SentryFeedbackOptions {
     this.messageLabel = other.messageLabel;
     this.messagePlaceholder = other.messagePlaceholder;
     this.successMessageText = other.successMessageText;
+    this.addScreenshotButtonLabel = other.addScreenshotButtonLabel;
+    this.removeScreenshotButtonLabel = other.removeScreenshotButtonLabel;
+    this.screenshotTooLargeMessageText = other.screenshotTooLargeMessageText;
     this.onFormOpen = other.onFormOpen;
     this.onFormClose = other.onFormClose;
     this.onSubmitSuccess = other.onSubmitSuccess;
     this.onSubmitError = other.onSubmitError;
     this.iFormHandler = other.iFormHandler;
     this.shakeController = other.shakeController;
+    this.loadClass = other.loadClass;
   }
 
   /**
@@ -259,6 +289,28 @@ public final class SentryFeedbackOptions {
    */
   public void setUseShakeGesture(final boolean useShakeGesture) {
     this.useShakeGesture = useShakeGesture;
+  }
+
+  /**
+   * Displays a button on the feedback form that allows the user to attach a screenshot from the
+   * device gallery. Only supported on Android, and requires the androidx.activity dependency and a
+   * ComponentActivity host; the button is hidden otherwise. Defaults to true.
+   *
+   * @return true if the attach screenshot button is shown
+   */
+  public boolean isEnableAttachScreenshot() {
+    return enableAttachScreenshot;
+  }
+
+  /**
+   * Sets whether the attach screenshot button is shown on the feedback form. Only supported on
+   * Android, and requires the androidx.activity dependency and a ComponentActivity host; the button
+   * is hidden otherwise. Defaults to true.
+   *
+   * @param enableAttachScreenshot true if the attach screenshot button should be shown
+   */
+  public void setEnableAttachScreenshot(final boolean enableAttachScreenshot) {
+    this.enableAttachScreenshot = enableAttachScreenshot;
   }
 
   /**
@@ -461,6 +513,64 @@ public final class SentryFeedbackOptions {
     this.successMessageText = successMessageText;
   }
 
+  /**
+   * The label of the button to attach a screenshot. Defaults to "Add a screenshot".
+   *
+   * @return the label of the button to attach a screenshot
+   */
+  public @NotNull CharSequence getAddScreenshotButtonLabel() {
+    return addScreenshotButtonLabel;
+  }
+
+  /**
+   * Sets the label of the button to attach a screenshot.
+   *
+   * @param addScreenshotButtonLabel the label of the button to attach a screenshot
+   */
+  public void setAddScreenshotButtonLabel(final @NotNull CharSequence addScreenshotButtonLabel) {
+    this.addScreenshotButtonLabel = addScreenshotButtonLabel;
+  }
+
+  /**
+   * The label of the button to remove an attached screenshot. Defaults to "Remove screenshot".
+   *
+   * @return the label of the button to remove an attached screenshot
+   */
+  public @NotNull CharSequence getRemoveScreenshotButtonLabel() {
+    return removeScreenshotButtonLabel;
+  }
+
+  /**
+   * Sets the label of the button to remove an attached screenshot.
+   *
+   * @param removeScreenshotButtonLabel the label of the button to remove an attached screenshot
+   */
+  public void setRemoveScreenshotButtonLabel(
+      final @NotNull CharSequence removeScreenshotButtonLabel) {
+    this.removeScreenshotButtonLabel = removeScreenshotButtonLabel;
+  }
+
+  /**
+   * The message displayed when the selected screenshot exceeds the maximum attachment size.
+   * Defaults to "Image is too large".
+   *
+   * @return the message displayed when the selected screenshot is too large
+   */
+  public @NotNull CharSequence getScreenshotTooLargeMessageText() {
+    return screenshotTooLargeMessageText;
+  }
+
+  /**
+   * Sets the message displayed when the selected screenshot exceeds the maximum attachment size.
+   *
+   * @param screenshotTooLargeMessageText the message displayed when the selected screenshot is too
+   *     large
+   */
+  public void setScreenshotTooLargeMessageText(
+      final @NotNull CharSequence screenshotTooLargeMessageText) {
+    this.screenshotTooLargeMessageText = screenshotTooLargeMessageText;
+  }
+
   // Callbacks
   /**
    * Callback called when the feedback form is opened.
@@ -596,6 +706,8 @@ public final class SentryFeedbackOptions {
         + showBranding
         + ", useShakeGesture="
         + useShakeGesture
+        + ", enableScreenshot="
+        + enableAttachScreenshot
         + ", formTitle='"
         + formTitle
         + '\''
@@ -626,7 +738,26 @@ public final class SentryFeedbackOptions {
         + ", messagePlaceholder='"
         + messagePlaceholder
         + '\''
+        + ", addScreenshotButtonLabel='"
+        + addScreenshotButtonLabel
+        + '\''
+        + ", removeScreenshotButtonLabel='"
+        + removeScreenshotButtonLabel
+        + '\''
+        + ", screenshotTooLargeMessageText='"
+        + screenshotTooLargeMessageText
+        + '\''
         + '}';
+  }
+
+  @ApiStatus.Internal
+  public @NotNull LoadClass getLoadClass() {
+    return loadClass;
+  }
+
+  @ApiStatus.Internal
+  public @NotNull void setLoadClass(final @NotNull LoadClass loadClass) {
+    this.loadClass = loadClass;
   }
 
   public interface SentryFeedbackCallback {
