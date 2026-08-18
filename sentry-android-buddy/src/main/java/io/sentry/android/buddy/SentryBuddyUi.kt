@@ -1380,6 +1380,11 @@ private fun AttentionCard(
   val context = LocalContext.current
   val link = sentryUiLinks.linkFor(item)
   val dismissScope = rememberCoroutineScope()
+  val contentAlpha = remember(item.id) { Animatable(0f) }
+  LaunchedEffect(item.id) {
+    contentAlpha.snapTo(0f)
+    contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 260))
+  }
   Box(modifier = modifier.fillMaxWidth().height(BuddyAttentionCardHeight).attentionCardChrome()) {
     BoxWithConstraints(
       modifier =
@@ -1407,12 +1412,9 @@ private fun AttentionCard(
         }
     ) {
       val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
-      Box(
-        modifier =
-          Modifier.matchParentSize().offset {
-            IntOffset((dismissOffset.value + widthPx).roundToInt(), 0)
-          }
-      ) {
+      val artAlpha =
+        maxOf(1f - contentAlpha.value, (-dismissOffset.value / widthPx).coerceIn(0f, 1f))
+      Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = artAlpha }) {
         EmptyAttentionArt(
           index = emptyArtIndex,
           modifier = Modifier.fillMaxSize(),
@@ -1421,6 +1423,7 @@ private fun AttentionCard(
       Box(
         modifier =
           Modifier.matchParentSize()
+            .graphicsLayer { alpha = contentAlpha.value }
             .offset { IntOffset(dismissOffset.value.roundToInt(), 0) }
             .clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } }
       ) {
@@ -2200,11 +2203,15 @@ private fun BriefingSheet(
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
 ) {
+  val recordingId = state.result.recording.recording.id
+  val quickDecisionCards = remember { demoQuickDecisionCards() }
   var flowName by remember(state.result.recording.recording.id) { mutableStateOf(state.flowName) }
   var notes by
     remember(state.result.recording.recording.id) { mutableStateOf(state.developerNotes) }
-  fun updateController() {
-    onDispatch { updateBriefing(flowName, notes, state.focusAreas) }
+  var activeQuickDecisionIndex by remember(recordingId) { mutableStateOf(0) }
+  var quickDecisionAnswers by remember(recordingId) { mutableStateOf(emptyMap<String, String>()) }
+  fun updateController(developerNotes: String = notes) {
+    onDispatch { updateBriefing(flowName, developerNotes, state.focusAreas) }
   }
 
   SheetTitle("Give Seer some context", formatElapsed(state.result.recording.summary.durationMs))
@@ -2217,6 +2224,16 @@ private fun BriefingSheet(
     },
     singleLine = true,
     label = { Text("Name your flow") },
+  )
+  QuickDecisionCardStack(
+    cards = quickDecisionCards,
+    answers = quickDecisionAnswers,
+    activeIndex = activeQuickDecisionIndex,
+    onSelect = { card, option ->
+      val nextAnswers = quickDecisionAnswers + (card.id to option.value)
+      quickDecisionAnswers = nextAnswers
+      activeQuickDecisionIndex = quickDecisionCards.nextUnansweredIndex(nextAnswers)
+    },
   )
   OutlinedTextField(
     modifier = Modifier.fillMaxWidth(),
@@ -2234,7 +2251,7 @@ private fun BriefingSheet(
       modifier = Modifier.weight(1f).height(56.dp),
       colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
       onClick = {
-        updateController()
+        updateController(notes.withQuickDecisionAnswers(quickDecisionCards, quickDecisionAnswers))
         onAnalyze()
       },
     ) {
@@ -2244,6 +2261,197 @@ private fun BriefingSheet(
       BuddyButtonText("Skip")
     }
   }
+}
+
+private data class QuickDecisionCard(
+  val id: String,
+  val eyebrow: String,
+  val title: String,
+  val detail: String,
+  val options: List<QuickDecisionOption>,
+)
+
+private data class QuickDecisionOption(val value: String, val label: String)
+
+@Composable
+private fun QuickDecisionCardStack(
+  cards: List<QuickDecisionCard>,
+  answers: Map<String, String>,
+  activeIndex: Int,
+  onSelect: (QuickDecisionCard, QuickDecisionOption) -> Unit,
+) {
+  if (cards.isEmpty()) {
+    return
+  }
+  val visibleCards = cards.drop(activeIndex).take(3)
+  Box(modifier = Modifier.fillMaxWidth().height(BuddyQuickDecisionStackHeight)) {
+    visibleCards.asReversed().forEachIndexed { reversedIndex, card ->
+      val stackIndex = visibleCards.lastIndex - reversedIndex
+      val isActive = stackIndex == 0
+      QuickDecisionCardView(
+        card = card,
+        selectedValue = answers[card.id],
+        cardIndex = activeIndex + stackIndex,
+        cardCount = cards.size,
+        isActive = isActive,
+        modifier =
+          Modifier.matchParentSize().graphicsLayer {
+            translationX = (stackIndex * 10).dp.toPx()
+            translationY = (stackIndex * 10).dp.toPx()
+            scaleX = 1f - stackIndex * 0.04f
+            scaleY = 1f - stackIndex * 0.04f
+            alpha = 1f - stackIndex * 0.18f
+          },
+        onSelect = { option -> onSelect(card, option) },
+      )
+    }
+  }
+}
+
+@Composable
+private fun QuickDecisionCardView(
+  card: QuickDecisionCard,
+  selectedValue: String?,
+  cardIndex: Int,
+  cardCount: Int,
+  isActive: Boolean,
+  modifier: Modifier = Modifier,
+  onSelect: (QuickDecisionOption) -> Unit,
+) {
+  Surface(
+    modifier = modifier,
+    color = BuddyPurple.copy(alpha = if (isActive) 0.10f else 0.06f),
+    shape = RoundedCornerShape(20.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Column(
+      modifier = Modifier.fillMaxSize().padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        LiveFeedCategoryPill(card.eyebrow, BuddyPurple)
+        Spacer(Modifier.weight(1f))
+        Text(
+          "${cardIndex + 1}/$cardCount",
+          color = BuddyMuted,
+          style = MaterialTheme.typography.labelMedium,
+          fontWeight = FontWeight.Bold,
+        )
+      }
+      Text(
+        card.title,
+        color = BuddyInk,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+      )
+      Text(
+        card.detail,
+        color = BuddyMuted,
+        style = MaterialTheme.typography.bodySmall,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+      )
+      Spacer(Modifier.weight(1f))
+      Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        card.options.forEach { option ->
+          val selected = option.value == selectedValue
+          Surface(
+            modifier =
+              Modifier.weight(1f).height(38.dp).clickable(enabled = isActive) { onSelect(option) },
+            color = if (selected) BuddyPurple else Color.White,
+            shape = RoundedCornerShape(19.dp),
+            border = CardDefaults.outlinedCardBorder(),
+          ) {
+            Box(contentAlignment = Alignment.Center) {
+              Text(
+                option.label,
+                color = if (selected) Color.White else BuddyInk,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+private fun demoQuickDecisionCards(): List<QuickDecisionCard> =
+  listOf(
+    QuickDecisionCard(
+      id = "audience",
+      eyebrow = "Audience",
+      title = "Who depends on this flow?",
+      detail =
+        "This tells Seer whether to prioritize user-facing reliability or internal workflow detail.",
+      options =
+        listOf(
+          QuickDecisionOption("customer_facing", "Customers"),
+          QuickDecisionOption("internal", "Internal"),
+          QuickDecisionOption("both", "Both"),
+        ),
+    ),
+    QuickDecisionCard(
+      id = "criticality",
+      eyebrow = "Criticality",
+      title = "How central is it to the app?",
+      detail =
+        "Critical flows should get stronger recommendations and tighter monitoring suggestions.",
+      options =
+        listOf(
+          QuickDecisionOption("low", "Low"),
+          QuickDecisionOption("medium", "Medium"),
+          QuickDecisionOption("high", "High"),
+        ),
+    ),
+    QuickDecisionCard(
+      id = "monitoring",
+      eyebrow = "Monitors",
+      title = "Should Seer suggest monitors?",
+      detail = "Use this when the flow needs alerting beyond the issues Buddy already observed.",
+      options =
+        listOf(
+          QuickDecisionOption("none", "Not now"),
+          QuickDecisionOption("errors", "Errors"),
+          QuickDecisionOption("full", "Full"),
+        ),
+    ),
+  )
+
+private fun List<QuickDecisionCard>.nextUnansweredIndex(answers: Map<String, String>): Int =
+  indexOfFirst { answers[it.id] == null }
+    .let { index ->
+      if (index == -1) lastIndex.coerceAtLeast(0) else index
+    }
+
+private fun String.withQuickDecisionAnswers(
+  cards: List<QuickDecisionCard>,
+  answers: Map<String, String>,
+): String {
+  val answerLines = cards.mapNotNull { card ->
+    val value = answers[card.id] ?: return@mapNotNull null
+    val label = card.options.firstOrNull { it.value == value }?.label ?: value
+    "${card.eyebrow}: $label"
+  }
+  if (answerLines.isEmpty()) {
+    return this
+  }
+  return buildString {
+      val trimmedNotes = this@withQuickDecisionAnswers.trim()
+      if (trimmedNotes.isNotEmpty()) {
+        append(trimmedNotes).append("\n\n")
+      }
+      append("Quick decisions:")
+      answerLines.forEach { answerLine -> append('\n').append("- ").append(answerLine) }
+    }
+    .trimEnd()
 }
 
 @Composable
@@ -2289,9 +2497,7 @@ private fun InsightsSheet(
   onResolveRecommendation: (String) -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
-  val clipboard = LocalClipboardManager.current
   val context = LocalContext.current
-  var isJsonDialogOpen by remember { mutableStateOf(false) }
   val flowName = state.result.recording.flow.name.ifBlank { "Unnamed flow" }
   val traceLink =
     remember(state.result.recording, sentryUiLinks) {
@@ -2354,43 +2560,14 @@ private fun InsightsSheet(
       BuddyButtonText("Record Again")
     }
     if (traceLink != null) {
-      OutlinedButton(
+      Button(
         modifier = Modifier.weight(1f).height(52.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
         onClick = { onOpenUrl(context, traceLink) },
       ) {
-        BuddyButtonText("Open in Sentry")
+        BuddyButtonText("Open in Sentry", color = Color.White)
       }
     }
-    Surface(
-      modifier =
-        Modifier.weight(1f)
-          .height(52.dp)
-          .combinedClickable(
-            onClick = { clipboard.setText(AnnotatedString(state.result.recordingJson)) },
-            onLongClick = { isJsonDialogOpen = true },
-          ),
-      color = BuddyPurple,
-      shape = RoundedCornerShape(28.dp),
-    ) {
-      Box(contentAlignment = Alignment.Center) { BuddyButtonText("Copy JSON", color = Color.White) }
-    }
-  }
-  if (isJsonDialogOpen) {
-    AlertDialog(
-      onDismissRequest = { isJsonDialogOpen = false },
-      confirmButton = {
-        TextButton(onClick = { isJsonDialogOpen = false }) { BuddyButtonText("Close") }
-      },
-      title = { Text("Recording JSON", fontWeight = FontWeight.Bold) },
-      text = {
-        Text(
-          text = prettyPrintJson(state.result.recordingJson),
-          modifier = Modifier.height(320.dp).verticalScroll(rememberScrollState()),
-          fontFamily = FontFamily.Monospace,
-          color = BuddyInk,
-        )
-      },
-    )
   }
 }
 
@@ -2402,54 +2579,6 @@ private fun BuddyButtonText(text: String, color: Color = Color.Unspecified) {
     style = MaterialTheme.typography.titleMedium,
     fontWeight = FontWeight.Bold,
   )
-}
-
-private fun prettyPrintJson(value: String): String {
-  val result = StringBuilder(value.length * 2)
-  var indent = 0
-  var inString = false
-  var escaping = false
-
-  value.forEach { char ->
-    when {
-      escaping -> {
-        result.append(char)
-        escaping = false
-      }
-      char == '\\' && inString -> {
-        result.append(char)
-        escaping = true
-      }
-      char == '"' -> {
-        result.append(char)
-        inString = !inString
-      }
-      inString -> result.append(char)
-      char == '{' || char == '[' -> {
-        result.append(char)
-        indent++
-        appendJsonNewLine(result, indent)
-      }
-      char == '}' || char == ']' -> {
-        indent = (indent - 1).coerceAtLeast(0)
-        appendJsonNewLine(result, indent)
-        result.append(char)
-      }
-      char == ',' -> {
-        result.append(char)
-        appendJsonNewLine(result, indent)
-      }
-      char == ':' -> result.append(": ")
-      !char.isWhitespace() -> result.append(char)
-    }
-  }
-
-  return result.toString()
-}
-
-private fun appendJsonNewLine(result: StringBuilder, indent: Int) {
-  result.append('\n')
-  repeat(indent) { result.append("  ") }
 }
 
 @Composable
@@ -2543,6 +2672,7 @@ private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
 private val BuddyAttentionCardHeight = 264.dp
+private val BuddyQuickDecisionStackHeight = 188.dp
 private val BuddySheetHorizontalPadding = 24.dp
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 10
