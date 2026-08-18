@@ -1,24 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<set xmlns:android="http://schemas.android.com/apk/res/android"
-    android:ordering="sequentially">
-    <objectAnimator
-        android:propertyName="scaleY"
-        android:valueFrom="1.0"
-        android:valueTo="1.0"
-        android:valueType="floatType"
-        android:duration="6000" />
-    <objectAnimator
-        android:propertyName="scaleY"
-        android:valueFrom="1.0"
-        android:valueTo="0.08"
-        android:valueType="floatType"
-        android:duration="90"
-        android:interpolator="@anim/buddy_smooth" />
-    <objectAnimator
-        android:propertyName="scaleY"
-        android:valueFrom="0.08"
-        android:valueTo="1.0"
-        android:valueType="floatType"
-        android:duration="110"
-        android:interpolator="@anim/buddy_smooth" />
-</set>
+<!-- bd-shut: one blink every 7s. Loops natively, no restart callback needed. -->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="7000"
+    android:repeatCount="infinite"
+    android:valueType="floatType">
+    <propertyValuesHolder android:propertyName="scaleY">
+        <keyframe android:fraction="0" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
+        <keyframe android:fraction="0.86" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
+        <keyframe android:fraction="0.92" android:value="0.08" android:interpolator="@anim/buddy_ease_smooth" />
+        <keyframe android:fraction="1" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
+    </propertyValuesHolder>
+</objectAnimator>

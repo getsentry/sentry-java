@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="buddy_state_idle">Sentry Buddy, idle</string>
+    <string name="buddy_state_unread">Sentry Buddy, recommendations waiting</string>
+    <string name="buddy_state_recording">Sentry Buddy, recording session</string>
+    <string name="buddy_state_analyzing">Sentry Buddy, analyzing</string>
+    <string name="buddy_state_ready">Sentry Buddy, insights ready</string>
+    <string name="buddy_state_severe">Sentry Buddy, severe error</string>
+</resources>

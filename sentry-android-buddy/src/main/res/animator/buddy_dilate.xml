@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- bd-dilate: fast pupil dilation. Severe errors only. -->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="700"
+    android:repeatCount="infinite"
+    android:valueType="floatType">
+    <propertyValuesHolder android:propertyName="scaleX">
+        <keyframe android:fraction="0" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
+        <keyframe android:fraction="0.5" android:value="1.35" android:interpolator="@anim/buddy_ease_smooth" />
+        <keyframe android:fraction="1" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
+    </propertyValuesHolder>
+    <propertyValuesHolder android:propertyName="scaleY">
+        <keyframe android:fraction="0" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
+        <keyframe android:fraction="0.5" android:value="1.35" android:interpolator="@anim/buddy_ease_smooth" />
+        <keyframe android:fraction="1" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
+    </propertyValuesHolder>
+</objectAnimator>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scraps ease-smooth token: cubic-bezier(.72, 0, .16, 1) -->
+<pathInterpolator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:controlX1="0.72" android:controlY1="0"
+    android:controlX2="0.16" android:controlY2="1" />

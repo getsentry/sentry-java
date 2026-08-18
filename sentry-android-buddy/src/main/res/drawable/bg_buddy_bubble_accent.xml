@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chonk ledge: solid 2dp lip under the face, per the Scraps button spec. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/buddy_accent_chonk" />
+        </shape>
+    </item>
+    <item android:bottom="@dimen/buddy_chonk_ledge">
+        <shape android:shape="oval">
+            <solid android:color="@color/buddy_accent_vibrant" />
+        </shape>
+    </item>
+</layer-list>

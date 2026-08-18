@@ -11,11 +11,6 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -85,9 +80,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -312,51 +307,24 @@ private fun BoxScope.BuddyBubble(
   val isRecording = state is SentryBuddySessionState.Recording
   val attentionItem = liveFeed.latestUnviewedAdverseItem
   val attentionColor = attentionItem?.let { severityColor(it.severity) }
-  val showAttentionFlames = !isRecording && attentionItem?.severity == Severity.HIGH
-  val showAttentionSparks = !isRecording && attentionItem?.severity == Severity.MEDIUM
   val bubbleGlyphState =
     when {
       isRecording -> BuddyBubbleGlyphState.RECORDING
       state is SentryBuddySessionState.Analyzing -> BuddyBubbleGlyphState.ANALYZING
       state is SentryBuddySessionState.Insights -> BuddyBubbleGlyphState.INSIGHTS_READY
+      attentionItem?.severity == Severity.HIGH -> BuddyBubbleGlyphState.SEVERE
       liveFeed.unviewedAdverseCount > 0 -> BuddyBubbleGlyphState.UNREAD
       else -> BuddyBubbleGlyphState.IDLE
     }
-  val stopTransition = rememberInfiniteTransition(label = "buddy-floating-stop-button")
-  val attentionTransition = rememberInfiniteTransition(label = "buddy-attention-ornaments")
-  val stopHaloScale by
-    stopTransition.animateFloat(
-      initialValue = 1.0f,
-      targetValue = 1.14f,
-      animationSpec =
-        infiniteRepeatable(
-          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
-          repeatMode = RepeatMode.Reverse,
-        ),
-      label = "buddy-floating-stop-button-halo-scale",
-    )
-  val stopHaloAlpha by
-    stopTransition.animateFloat(
-      initialValue = 0.12f,
-      targetValue = 0.28f,
-      animationSpec =
-        infiniteRepeatable(
-          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
-          repeatMode = RepeatMode.Reverse,
-        ),
-      label = "buddy-floating-stop-button-halo-alpha",
-    )
-  val attentionOrnamentPhase by
-    attentionTransition.animateFloat(
-      initialValue = 0f,
-      targetValue = 1f,
-      animationSpec =
-        infiniteRepeatable(
-          animation = tween(durationMillis = 950, easing = FastOutSlowInEasing),
-          repeatMode = RepeatMode.Reverse,
-        ),
-      label = "buddy-attention-ornament-phase",
-    )
+  val isSevere = bubbleGlyphState == BuddyBubbleGlyphState.SEVERE
+  val badgeText =
+    when {
+      isRecording -> null
+      isSevere -> "!"
+      liveFeed.unviewedAdverseCount > 0 ->
+        if (liveFeed.unviewedAdverseCount > 9) "9+" else liveFeed.unviewedAdverseCount.toString()
+      else -> null
+    }
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
 
   fun defaultOffset(): Offset =
@@ -405,29 +373,16 @@ private fun BoxScope.BuddyBubble(
       modifier = Modifier.size(64.dp),
       contentAlignment = Alignment.Center,
     ) {
-      if (showAttentionFlames) {
-        AttentionFlames(
-          phase = attentionOrnamentPhase,
-          modifier =
-            Modifier.size(width = 82.dp, height = 34.dp)
-              .align(Alignment.TopCenter)
-              .offset(y = (-27).dp),
-        )
-      } else if (showAttentionSparks) {
-        AttentionSparks(
-          phase = attentionOrnamentPhase,
-          modifier =
-            Modifier.size(width = 86.dp, height = 38.dp)
-              .align(Alignment.TopCenter)
-              .offset(y = (-29).dp),
+      if (isRecording) {
+        BuddyBubbleAnimatedDrawable(
+          drawableRes = R.drawable.avd_buddy_recording_ring,
+          modifier = Modifier.size(BuddyRecordingRingSize).align(Alignment.Center),
         )
       }
-      if (isRecording) {
-        Box(
-          modifier =
-            Modifier.size((BuddyBubbleSize + 4.dp) * stopHaloScale)
-              .graphicsLayer { alpha = stopHaloAlpha }
-              .border(3.dp, BuddyRecordingBubbleColor, CircleShape)
+      if (isSevere) {
+        BuddyBubbleAnimatedDrawable(
+          drawableRes = R.drawable.avd_buddy_flames,
+          modifier = Modifier.size(BuddySevereFlamesSize).align(Alignment.Center),
         )
       }
       Box(
@@ -445,34 +400,28 @@ private fun BoxScope.BuddyBubble(
       ) {
         Box(
           modifier =
-            Modifier.matchParentSize()
+            Modifier.size(BuddyBubbleFaceSize)
               .background(
-                if (isRecording) BuddyRecordingBubbleChonk else BuddyAccentBubbleChonk,
+                if (isRecording || isSevere) BuddyRecordingBubbleChonk else BuddyAccentBubbleChonk,
                 CircleShape,
               )
         )
         Box(
           modifier =
-            Modifier.matchParentSize()
+            Modifier.size(BuddyBubbleFaceSize)
               .padding(bottom = 2.dp)
               .background(
-                if (isRecording) BuddyRecordingBubbleColor else BuddyAccentBubbleColor,
+                if (isRecording || isSevere) BuddyRecordingBubbleColor else BuddyAccentBubbleColor,
                 CircleShape,
               )
               .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
         )
-        if (isRecording) {
-          StopIcon(tint = Color.White, modifier = Modifier.size(22.dp))
-        } else {
-          BuddyBubbleGlyph(state = bubbleGlyphState)
-        }
+        BuddyBubbleGlyph(state = bubbleGlyphState)
       }
-      if (liveFeed.unviewedAdverseCount > 0 && !isRecording) {
+      if (badgeText != null) {
         BubbleNotificationBadge(
-          count =
-            if (liveFeed.unviewedAdverseCount > 9) "9+"
-            else liveFeed.unviewedAdverseCount.toString(),
-          color = attentionColor ?: BuddyRed,
+          count = badgeText,
+          color = if (isSevere) BuddyRed else attentionColor ?: BuddyRed,
           modifier = Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-6).dp),
         )
       }
@@ -829,8 +778,7 @@ private fun BuddySheet(
   if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
     return
   }
-  val maxSheetHeight =
-    with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } * 0.75f
+  val maxSheetHeight = LocalConfiguration.current.screenHeightDp.dp * 0.75f
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val sheetScope = rememberCoroutineScope()
   fun startRecordingAfterSheetExit() {
@@ -885,32 +833,41 @@ private fun BuddySheet(
   }
 }
 
-@Composable
-private fun StopIcon(tint: Color, modifier: Modifier = Modifier) {
-  Icon(
-    painter = painterResource(id = R.drawable.ic_buddy_recording),
-    contentDescription = null,
-    modifier = modifier,
-    tint = tint,
-  )
-}
-
 private enum class BuddyBubbleGlyphState {
   IDLE,
   UNREAD,
   ANALYZING,
   INSIGHTS_READY,
+  SEVERE,
   RECORDING,
+}
+
+@Composable
+private fun BuddyBubbleAnimatedDrawable(drawableRes: Int, modifier: Modifier = Modifier) {
+  val context = LocalContext.current
+  AndroidView(
+    factory = { viewContext ->
+      AppCompatImageView(viewContext).apply {
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        importantForAccessibility = ImageView.IMPORTANT_FOR_ACCESSIBILITY_NO
+      }
+    },
+    modifier = modifier,
+    update = { imageView -> imageView.bindBuddyDrawable(context, drawableRes) },
+  )
 }
 
 @Composable
 private fun BuddyBubbleGlyph(state: BuddyBubbleGlyphState) {
   val context = LocalContext.current
-  Box(modifier = Modifier.size(38.dp).clip(CircleShape), contentAlignment = Alignment.Center) {
+  Box(
+    modifier = Modifier.size(BuddyBubbleGlyphSize).clip(CircleShape),
+    contentAlignment = Alignment.Center,
+  ) {
     AndroidView(
       factory = { viewContext ->
         AppCompatImageView(viewContext).apply {
-          scaleType = ImageView.ScaleType.FIT_XY
+          scaleType = ImageView.ScaleType.FIT_CENTER
           importantForAccessibility = ImageView.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
       },
@@ -945,8 +902,17 @@ private fun ImageView.bindBuddyBubbleGlyph(context: Context, state: BuddyBubbleG
       BuddyBubbleGlyphState.UNREAD -> R.drawable.avd_buddy_unread
       BuddyBubbleGlyphState.ANALYZING -> R.drawable.avd_buddy_analyzing
       BuddyBubbleGlyphState.INSIGHTS_READY -> R.drawable.avd_buddy_ready
+      BuddyBubbleGlyphState.SEVERE -> R.drawable.avd_buddy_severe
       BuddyBubbleGlyphState.RECORDING -> R.drawable.ic_buddy_recording
     }
+  bindBuddyDrawable(context, drawableRes, loopIdle = state == BuddyBubbleGlyphState.IDLE)
+}
+
+private fun ImageView.bindBuddyDrawable(
+  context: Context,
+  drawableRes: Int,
+  loopIdle: Boolean = false,
+) {
   val currentTag = tag as? Int
   if (currentTag == drawableRes) {
     return
@@ -954,7 +920,7 @@ private fun ImageView.bindBuddyBubbleGlyph(context: Context, state: BuddyBubbleG
   tag = drawableRes
   val nextDrawable = AppCompatResources.getDrawable(context, drawableRes)?.mutate()
   setImageDrawable(nextDrawable)
-  restartBuddyBubbleAnimation(nextDrawable, loopIdle = state == BuddyBubbleGlyphState.IDLE)
+  restartBuddyBubbleAnimation(nextDrawable, loopIdle = loopIdle)
 }
 
 private fun restartBuddyBubbleAnimation(drawable: Drawable?, loopIdle: Boolean) {
@@ -2336,7 +2302,7 @@ private fun QuickDecisionThankYouCard() {
 private fun QuickDecisionCardPeek(modifier: Modifier = Modifier) {
   Surface(
     modifier = modifier,
-    color = BuddyPurple.copy(alpha = 0.06f),
+    color = BuddyQuickDecisionPeek,
     shape = RoundedCornerShape(20.dp),
     border = CardDefaults.outlinedCardBorder(),
   ) {}
@@ -2353,7 +2319,7 @@ private fun QuickDecisionCardView(
 ) {
   Surface(
     modifier = modifier,
-    color = BuddyPurple.copy(alpha = 0.10f),
+    color = BuddyQuickDecisionCard,
     shape = RoundedCornerShape(20.dp),
     border = CardDefaults.outlinedCardBorder(),
   ) {
@@ -2698,6 +2664,10 @@ private fun Float.constrain(min: Float, max: Float): Float {
 }
 
 private val BuddyBubbleSize = 64.dp
+private val BuddyBubbleFaceSize = 54.dp
+private val BuddyBubbleGlyphSize = 44.dp
+private val BuddyRecordingRingSize = 92.dp
+private val BuddySevereFlamesSize = 120.dp
 private val BuddyBubbleMargin = 24.dp
 private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
@@ -2718,6 +2688,8 @@ private val BuddyRed = Color(0xFFFF003D)
 private val BuddyRecordingBubbleColor = Color(0xFFFF002B)
 private val BuddyRecordingBubbleChonk = Color(0xFFC10000)
 private val BuddyGold = Color(0xFFC47A00)
+private val BuddyQuickDecisionCard = Color(0xFFF0EAFF)
+private val BuddyQuickDecisionPeek = Color(0xFFF8F5FF)
 private val BuddyInk = Color(0xFF171426)
 private val BuddyMuted = Color(0xFF6F6B7A)
 private val BuddyBorder = Color(0xFFE0DDE6)

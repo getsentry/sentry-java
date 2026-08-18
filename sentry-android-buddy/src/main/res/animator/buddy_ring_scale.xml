@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- bd-ring: expanding recording pulse. -->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="1400"
+    android:repeatCount="infinite"
+    android:valueType="floatType">
+    <propertyValuesHolder android:propertyName="scaleX">
+        <keyframe android:fraction="0" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
+        <keyframe android:fraction="1" android:value="1.7" android:interpolator="@anim/buddy_ease_smooth" />
+    </propertyValuesHolder>
+    <propertyValuesHolder android:propertyName="scaleY">
+        <keyframe android:fraction="0" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
+        <keyframe android:fraction="1" android:value="1.7" android:interpolator="@anim/buddy_ease_smooth" />
+    </propertyValuesHolder>
+</objectAnimator>

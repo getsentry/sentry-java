@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
-    android:viewportWidth="16"
-    android:viewportHeight="16">
+    android:width="44dp"
+    android:height="44dp"
+    android:viewportWidth="26"
+    android:viewportHeight="26">
     <path
-        android:pathData="M4.5,4.5h7a1.5,1.5 0 0,1 1.5,1.5v4a1.5,1.5 0 0,1 -1.5,1.5h-7a1.5,1.5 0 0,1 -1.5,-1.5v-4a1.5,1.5 0 0,1 1.5,-1.5z"
-        android:fillColor="#FFFFFFFF" />
+        android:name="stop"
+        android:pathData="M10.263,8.211h5.474a2.053,2.053 0 0,1 2.053,2.053v5.474a2.053,2.053 0 0,1 -2.053,2.053h-5.474a2.053,2.053 0 0,1 -2.053,-2.053v-5.474a2.053,2.053 0 0,1 2.053,-2.053z"
+        android:fillColor="@color/buddy_on_vibrant" />
 </vector>

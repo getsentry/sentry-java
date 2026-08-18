@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Insights ready: the sweep slows to a lazy drift. -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/ic_buddy_seer_beam">
+    android:drawable="@drawable/ic_buddy_eye_beam_ready">
     <target
         android:name="beam"
-        android:animation="@animator/buddy_sweep_ready" />
+        android:animation="@animator/buddy_radar_ready" />
 </animated-vector>
