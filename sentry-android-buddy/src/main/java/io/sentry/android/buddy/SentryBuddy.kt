@@ -194,7 +194,10 @@ public object SentryBuddy {
       return null
     }
     return BuddyOverlayManager(
-        SentryBuddySessionController(flowAnalysesApi = options.flowAnalysesApi)
+        SentryBuddySessionController(
+          flowAnalysesApi = options.flowAnalysesApi,
+          openUrlApi = options.openUrlApi,
+        )
       )
       .also { it.updateOptions(options) }
   }

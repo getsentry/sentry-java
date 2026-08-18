@@ -1,10 +1,7 @@
 package io.sentry.android.buddy
 
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
 import android.graphics.Rect
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -176,6 +173,10 @@ private fun SentryBuddyOverlayContent(
     }
   }
 
+  fun openUrl(context: Context, url: String) {
+    analysisScope.launch { withContext(Dispatchers.IO) { controller.openUrl(context, url) } }
+  }
+
   LaunchedEffect(state) {
     if (state !is SentryBuddySessionState.Closed) {
       while (true) {
@@ -255,6 +256,7 @@ private fun SentryBuddyOverlayContent(
       nowMs = nowMs,
       onDispatch = { dispatch(it) },
       onAnalyze = { dispatchAnalysis { analyze() } },
+      onOpenUrl = { context, url -> openUrl(context, url) },
     )
   }
 }
@@ -792,6 +794,7 @@ private fun BuddySheet(
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
 ) {
   if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
     return
@@ -823,7 +826,14 @@ private fun BuddySheet(
     ) {
       when (state) {
         SentryBuddySessionState.LiveFeed ->
-          LiveFeedSheet(liveFeed, sentryUiLinks, nowMs, onDispatch, ::startRecordingAfterSheetExit)
+          LiveFeedSheet(
+            liveFeed,
+            sentryUiLinks,
+            nowMs,
+            onDispatch,
+            ::startRecordingAfterSheetExit,
+            onOpenUrl,
+          )
         SentryBuddySessionState.Intro -> IntroSheet(::startRecordingAfterSheetExit)
         is SentryBuddySessionState.StoppedSummary -> StoppedSummarySheet(state, onDispatch)
         is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
@@ -892,6 +902,7 @@ private fun LiveFeedSheet(
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onStartRecording: () -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
 ) {
   SheetTitle("Sentry Buddy", "Live Feed")
   val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
@@ -902,6 +913,7 @@ private fun LiveFeedSheet(
     nowMs = nowMs,
     emptyArtIndex = emptyAttentionArtIndex,
     onDismiss = { onDispatch { dismissLiveFeedAttention() } },
+    onOpenUrl = onOpenUrl,
   )
   Spacer(Modifier.height(12.dp))
   Button(
@@ -921,7 +933,7 @@ private fun LiveFeedSheet(
   if (liveFeed.items.isEmpty()) {
     EmptyLiveFeedCard()
   } else {
-    LiveFeedRows(liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT), sentryUiLinks, nowMs)
+    LiveFeedRows(liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT), sentryUiLinks, nowMs, onOpenUrl)
   }
 }
 
@@ -932,6 +944,7 @@ private fun AttentionCard(
   nowMs: Long,
   emptyArtIndex: Int,
   onDismiss: () -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
 ) {
   val item = liveFeed.latestUnviewedAdverseItem
   val dismissOffset = remember(item?.id) { Animatable(0f) }
@@ -1002,7 +1015,7 @@ private fun AttentionCard(
         modifier =
           Modifier.matchParentSize()
             .offset { IntOffset(dismissOffset.value.roundToInt(), 0) }
-            .clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } }
+            .clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } }
       ) {
         AttentionItemContent(
           item = item,
@@ -1125,6 +1138,7 @@ private fun LiveFeedRows(
   items: List<BuddyLiveFeedItem>,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
+  onOpenUrl: (Context, String) -> Unit,
 ) {
   val context = LocalContext.current
   Surface(
@@ -1141,7 +1155,7 @@ private fun LiveFeedRows(
         Row(
           modifier =
             Modifier.fillMaxWidth()
-              .clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } }
+              .clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } }
               .padding(vertical = 7.dp),
           horizontalArrangement = Arrangement.spacedBy(10.dp),
           verticalAlignment = Alignment.CenterVertically,
@@ -1411,14 +1425,6 @@ private fun relativeTime(timestampMs: Long, nowMs: Long): String {
     return "${ageSeconds}s ago"
   }
   return "${ageSeconds / 60}m ago"
-}
-
-private fun openSentryLink(context: Context, link: String) {
-  try {
-    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)))
-  } catch (_: ActivityNotFoundException) {
-    // A debug overlay should not crash the app when no browser can handle the link.
-  }
 }
 
 private fun Map<String, Any?>.mapValue(key: String): Map<*, *> =

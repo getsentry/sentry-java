@@ -1,5 +1,6 @@
 package io.sentry.android.buddy
 
+import android.content.Context
 import java.util.Locale
 import org.jetbrains.annotations.ApiStatus
 
@@ -189,6 +190,7 @@ public class SentryBuddySessionController
 public constructor(
   private val recorderFacade: SentryBuddyRecorderFacade = RealSentryBuddyRecorderFacade,
   private val flowAnalysesApi: SentryBuddyFlowAnalysesApi = DummySentryBuddyFlowAnalysesApi,
+  private val openUrlApi: SentryBuddyOpenUrlApi = DummySentryBuddyOpenUrlApi,
   private val clock: () -> Long = { System.currentTimeMillis() },
 ) {
   public var state: SentryBuddySessionState = SentryBuddySessionState.Closed
@@ -345,6 +347,14 @@ public constructor(
 
   public fun recordAgain() {
     state = SentryBuddySessionState.Intro
+  }
+
+  public fun openUrl(context: Context, url: String) {
+    try {
+      openUrlApi.open(context, url)
+    } catch (_: IllegalStateException) {
+      // A debug overlay should not disrupt the current session when the bridge is unreachable.
+    }
   }
 
   internal fun recordTransientEvent(text: String) {
