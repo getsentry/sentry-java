@@ -1,9 +1,9 @@
 package io.sentry.android.buddy
 
 import android.content.Context
-import org.jetbrains.annotations.ApiStatus
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import org.jetbrains.annotations.ApiStatus
 
 @ApiStatus.Experimental
 public enum class BuddyFocusArea(public val label: String) {
@@ -390,8 +390,10 @@ public constructor(
     val analyzingState = state as? SentryBuddySessionState.Analyzing ?: return
     state =
       SentryBuddySessionState.Error(
-        "Flow analysis timed out after " + TimeUnit.MILLISECONDS.toSeconds(ANALYSIS_TIMEOUT_MS) + " seconds.",
-        analyzingState
+        "Flow analysis timed out after " +
+          TimeUnit.MILLISECONDS.toSeconds(ANALYSIS_TIMEOUT_MS) +
+          " seconds.",
+        analyzingState,
       )
   }
 

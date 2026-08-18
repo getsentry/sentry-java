@@ -2732,7 +2732,10 @@ private fun InsightsSheet(
         RecommendationRow(
           recommendation = recommendation,
           onResolve = { onResolveRecommendation(recommendation.id) },
-          onOpenLink = recommendation.link?.let { link -> { onOpenUrl(context, link) } },
+          onOpenLink =
+            (recommendation.seerRunUrl ?: recommendation.link)?.let { link ->
+              { onOpenUrl(context, link) }
+            },
         )
       }
     }
@@ -2810,7 +2813,11 @@ private fun RecommendationRow(
             OutlinedButton(onClick = { onResolve?.invoke() }) { BuddyButtonText("Resolve") }
           }
           if (onOpenLink != null) {
-            TextButton(onClick = onOpenLink) { BuddyButtonText("Open Link") }
+            TextButton(onClick = onOpenLink) {
+              BuddyButtonText(
+                if (recommendation.seerRunUrl != null) "Open Seer Run" else "Open Link"
+              )
+            }
           }
         }
       }
@@ -2951,7 +2958,7 @@ private val BuddySheetHorizontalPadding = 24.dp
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 9
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
-public const val ANALYSIS_TIMEOUT_MS : Long = 120_000L
+public const val ANALYSIS_TIMEOUT_MS: Long = 120_000L
 
 private val BuddyPurple = Color(0xFF7553FF)
 private val BuddyAccentBubbleColor = Color(0xFF7553FF)
