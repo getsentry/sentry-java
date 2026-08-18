@@ -79,6 +79,38 @@ sampler or `beforeSendTransaction` later drops/redacts a transaction, Buddy resp
 This does not recover transactions that were already sampled out before the recording started, and it
 does not capture spans from transactions that finish after Buddy has already finalized the recording.
 
+## Pinned Buddy Trace ID
+
+Another possible correlation layer is to pin the scope propagation context to the Buddy root
+transaction's trace ID while a recording is active.
+
+This would not replace the Buddy root transaction. The transaction is still the desired Sentry UI
+container for the flow. A pinned trace ID would instead act as an additional join key for telemetry
+that does not become a child span of the Buddy transaction.
+
+Potential benefits:
+
+- Events, logs, and metrics captured without an active span could inherit the Buddy trace ID.
+- Sentry and Seer lookups could query by `trace:<buddy_trace_id>` in addition to the explicit
+  `sentry.buddy.recording_id` tag.
+- Transactions that derive from propagation context during the recording may be easier to associate
+  with the Buddy flow, even if they remain separate transactions.
+
+Limitations:
+
+- A shared trace ID does not make spans children of the Buddy transaction. Parentage still depends on
+  the current transaction/span.
+- Activity tracing or incoming trace continuation can still create separate transactions.
+- Async work that captured propagation context before the recording started may not use the Buddy trace
+  ID.
+- Pinning propagation context would need restore logic similar to `tracesSampler` and
+  `beforeSendTransaction`.
+- Debug-only behavior may be acceptable, but changing propagation context can surprise apps that are
+  intentionally continuing an incoming trace.
+
+Status: not implemented. Consider this if tags plus best-effort current transaction are not enough for
+Seer/Sentry correlation.
+
 ## Options We Considered
 
 ### 1. Low-Infra Current Transaction Model
