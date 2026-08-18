@@ -61,6 +61,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.sqlite.db.SupportSQLiteDatabase
+import io.sentry.Breadcrumb
 import io.sentry.Sentry
 import io.sentry.SpanStatus
 import io.sentry.compose.SentryTraced
@@ -89,6 +90,7 @@ private fun SentryTravelApp() {
   var selectedStay by remember { mutableStateOf(selectedDestination.stays.first()) }
   var confirmationId by remember { mutableStateOf<String?>(null) }
   var savedTrips by remember { mutableStateOf(emptyList<TravelTrip>()) }
+  var demoStatus by remember { mutableStateOf("Ready. Use the presenter controls to trigger Buddy cards.") }
   val scope = rememberCoroutineScope()
 
   MaterialTheme(
@@ -130,6 +132,19 @@ private fun SentryTravelApp() {
               },
               onScorePicks = {
                 scope.launch { telemetry.scoreRecommendations() }
+              },
+              demoStatus = demoStatus,
+              onHealthyScenario = {
+                scope.launch { demoStatus = telemetry.runHealthyDemoScenario() }
+              },
+              onSlowSpanScenario = {
+                scope.launch { demoStatus = telemetry.runSlowSpanDemoScenario() }
+              },
+              onFailedHttpScenario = {
+                scope.launch { demoStatus = telemetry.runFailedHttpDemoScenario() }
+              },
+              onErrorScenario = {
+                demoStatus = telemetry.simulateBookingFailure()
               },
             )
           }
@@ -288,6 +303,11 @@ private fun TravelHomeScreen(
   onSupport: () -> Unit,
   onRefreshDeals: () -> Unit,
   onScorePicks: () -> Unit,
+  demoStatus: String,
+  onHealthyScenario: () -> Unit,
+  onSlowSpanScenario: () -> Unit,
+  onFailedHttpScenario: () -> Unit,
+  onErrorScenario: () -> Unit,
 ) {
   SentryTraced("sentry_travel_home") {
     TravelScaffold(title = "Sentry Travel", subtitle = "Plan your next traceable trip") {
@@ -310,6 +330,27 @@ private fun TravelHomeScreen(
       Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         SecondaryTravelButton("Profile", Modifier.weight(1f), onProfile)
         SecondaryTravelButton("Support", Modifier.weight(1f), onSupport)
+      }
+      SectionTitle("Buddy demo board")
+      TravelCard {
+        Text(
+          "Presenter controls",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold,
+        )
+        Text(
+          "Each button triggers a deterministic Buddy card so the demo does not depend on live backend behavior.",
+          color = TravelMuted,
+        )
+        Text(demoStatus, color = TravelStamp, fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+          SecondaryTravelButton("Healthy flow", Modifier.weight(1f), onHealthyScenario)
+          SecondaryTravelButton("Slow span", Modifier.weight(1f), onSlowSpanScenario)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+          SecondaryTravelButton("HTTP 503", Modifier.weight(1f), onFailedHttpScenario)
+          SecondaryTravelButton("Captured error", Modifier.weight(1f), onErrorScenario)
+        }
       }
       SectionTitle("Featured escapes")
       travelDestinations.forEach { DestinationCard(it, onClick = { onExplore() }) }
@@ -786,6 +827,28 @@ private class TravelTelemetry(private val store: TravelStore) {
       repeat(8_000) { (it * 31).hashCode() }
       addBreadcrumb("Scored recommended destinations")
       "Recommendation scoring completed."
+    }
+
+  suspend fun runHealthyDemoScenario(): String =
+    withAppSpan("travel.demo.healthy", "Run healthy Buddy demo flow") {
+      addBreadcrumb("Ran healthy Buddy demo scenario")
+      delay(180)
+      "Healthy flow ready. Buddy should show clean screens and steps only."
+    }
+
+  suspend fun runSlowSpanDemoScenario(): String =
+    withAppSpan("travel.demo.slow_span", "Run slow span Buddy demo flow") {
+      addBreadcrumb("Ran slow span Buddy demo scenario")
+      delay(1200)
+      "Slow span ready. Buddy should flag a medium-severity performance issue."
+    }
+
+  suspend fun runFailedHttpDemoScenario(): String =
+    withAppSpan("travel.demo.failed_http", "Run failed HTTP Buddy demo flow") {
+      addBreadcrumb("Ran failed HTTP Buddy demo scenario")
+      Sentry.addBreadcrumb(Breadcrumb.http("https://demo.sentry.dev/travel/availability", "GET", 503))
+      delay(120)
+      "HTTP 503 ready. Buddy should flag a high-severity failed HTTP request."
     }
 
   suspend fun buildItinerary(destination: TravelDestination): String =
