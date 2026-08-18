@@ -896,17 +896,12 @@ private fun BuddyHomeSheet(
     SheetTitle(
       title = "Sentry Buddy",
       subtitle = "v${BuildConfig.VERSION_NAME}",
-      trailingContent =
-        if (homeTab == BuddyHomeTab.LIVE_FEED) {
-          {
-            HealthCheckActionButton(
-              enabled = healthCheckState !is BuddyHealthCheckState.Running,
-              onClick = onRunHealthCheck,
-            )
-          }
-        } else {
-          null
-        },
+      trailingContent = {
+        HealthCheckActionButton(
+          enabled = healthCheckState !is BuddyHealthCheckState.Running,
+          onClick = onRunHealthCheck,
+        )
+      },
     )
     HomeTabRow(
       selectedTab = homeTab,
@@ -1176,12 +1171,12 @@ private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
         .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
         .clip(CircleShape)
         .clickable(enabled = enabled, onClick = onClick),
-    color = BuddyRed.copy(alpha = 0.10f),
+    color = BuddySentryPink.copy(alpha = 0.12f),
     shape = CircleShape,
   ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
       HealthCheckIcon(
-        tint = if (enabled) BuddyRed else BuddyMuted,
+        tint = if (enabled) BuddySentryPink else BuddyMuted,
         modifier = Modifier.size(20.dp),
       )
     }
@@ -2888,6 +2883,7 @@ private val BuddyAccentBubbleShadow = Color(0xFF44208F)
 private val BuddyAccentBubbleStart = Color(0xFF896CFF)
 private val BuddyAccentBubbleEnd = Color(0xFF6948F5)
 private val BuddyRed = Color(0xFFFF003D)
+private val BuddySentryPink = Color(0xFFC85B9C)
 private val BuddyRecordingBubbleChonk = Color(0xFFC10000)
 private val BuddyRecordingBubbleShadow = Color(0xFF7E001A)
 private val BuddyRecordingBubbleStart = Color(0xFFFF4D73)
