@@ -16,23 +16,21 @@ class SentryBuddyHttpHealthCheckApiTest {
   }
 
   @Test
-  fun `check posts health check request and parses findings`() {
+  fun `check posts health check request and parses recommendations`() {
     server.enqueue(
       MockResponse()
         .setResponseCode(200)
         .setBody(
           """
           {
-            "summary": "Buddy found 1 finding worth checking.",
-            "findings": [{
+            "recommendations": [{
               "id": "sdk-outdated",
-              "title": "Upgrade the Sentry SDK",
-              "description": "Newer SDK versions are available.",
+              "title": "Upgrade Sentry SDK to 8.40.0",
+              "description": "Version io.sentry.android@8.39.0 detected, but sentry-java 8.40.0 is available.",
+              "link": "https://github.com/getsentry/sentry-java/releases/tag/8.40.0",
               "severity": "LOW",
-              "currentValue": "8.39.0",
-              "suggestedValue": "8.40.0",
-              "kotlin_snippet": "implementation(\"io.sentry:sentry-android:8.40.0\")",
-              "link": "https://github.com/getsentry/sentry-java/releases/tag/8.40.0"
+              "resolvable": true,
+              "status": "OPEN"
             }]
           }
           """
@@ -43,18 +41,30 @@ class SentryBuddyHttpHealthCheckApiTest {
 
     val response = api.check(request())
 
-    assertThat(response.summary).contains("1 finding")
-    assertThat(response.findings).hasSize(1)
-    assertThat(response.findings.single().title).contains("Upgrade")
-    assertThat(response.findings.single().kotlinSnippet)
-      .isEqualTo("implementation(\"io.sentry:sentry-android:8.40.0\")")
+    assertThat(response.recommendations).hasSize(1)
+    val recommendation = response.recommendations.single()
+    assertThat(recommendation.id).isEqualTo("sdk-outdated")
+    assertThat(recommendation.title).contains("Upgrade")
+    assertThat(recommendation.severity).isEqualTo(Severity.LOW)
+    assertThat(recommendation.status).isEqualTo(RecommendationStatus.OPEN)
+    assertThat(recommendation.link)
+      .isEqualTo("https://github.com/getsentry/sentry-java/releases/tag/8.40.0")
     val recordedRequest = server.takeRequest()
     assertThat(recordedRequest.method).isEqualTo("POST")
     assertThat(recordedRequest.path).isEqualTo("/v1/health-check")
     val body = recordedRequest.body.readUtf8()
     assertThat(body).contains("\"sdk\":\"io.sentry.android@8.39.0\"")
-    assertThat(body).contains("\"dsnConfigured\":true")
-    assertThat(body).contains("\"sessionReplayEnabled\":false")
+    assertThat(body).contains("\"dsn_configured\":true")
+    assertThat(body).contains("\"session_replay_enabled\":false")
+    assertThat(body).contains("\"traces_sample_rate\":1.0")
+  }
+
+  @Test
+  fun `check tolerates a response without recommendations`() {
+    server.enqueue(MockResponse().setResponseCode(200).setBody("""{}"""))
+    val api = SentryBuddyHttpHealthCheckApi(server.url("/").toString())
+
+    assertThat(api.check(request()).recommendations).isEmpty()
   }
 
   @Test

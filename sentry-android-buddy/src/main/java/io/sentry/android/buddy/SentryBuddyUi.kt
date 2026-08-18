@@ -89,12 +89,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontStyle
@@ -1230,8 +1228,8 @@ private fun HealthCheckDialog(
             modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
           ) {
-            Text(state.response.summary, color = BuddyMuted)
-            if (state.response.findings.isEmpty()) {
+            Text(healthCheckSummary(state.response.recommendations.size), color = BuddyMuted)
+            if (state.response.recommendations.isEmpty()) {
               Surface(
                 color = BuddyPurple.copy(alpha = 0.08f),
                 shape = RoundedCornerShape(14.dp),
@@ -1243,8 +1241,11 @@ private fun HealthCheckDialog(
                 )
               }
             } else {
-              state.response.findings.forEach { finding ->
-                HealthCheckFindingCard(finding = finding, onOpenUrl = onOpenUrl)
+              state.response.recommendations.forEach { recommendation ->
+                HealthCheckRecommendationCard(
+                  recommendation = recommendation,
+                  onOpenUrl = onOpenUrl,
+                )
               }
             }
           }
@@ -1264,13 +1265,21 @@ private fun HealthCheckStep(text: String) {
   }
 }
 
+private fun healthCheckSummary(count: Int): String =
+  if (count == 0) {
+    "Buddy did not find any obvious Sentry config changes to recommend."
+  } else if (count == 1) {
+    "Buddy found 1 recommendation worth checking."
+  } else {
+    "Buddy found $count recommendations worth checking."
+  }
+
 @Composable
-private fun HealthCheckFindingCard(
-  finding: BuddyHealthCheckFinding,
+private fun HealthCheckRecommendationCard(
+  recommendation: Recommendation,
   onOpenUrl: (Context, String) -> Unit,
 ) {
-  val clipboard = LocalClipboardManager.current
-  val color = severityColor(finding.severity)
+  val color = severityColor(recommendation.severity)
   val context = LocalContext.current
   Surface(
     color = color.copy(alpha = 0.08f),
@@ -1286,57 +1295,22 @@ private fun HealthCheckFindingCard(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
-        LiveFeedCategoryPill(finding.severity.value, color)
+        LiveFeedCategoryPill(recommendation.severity.value, color)
         Text(
-          finding.title,
+          recommendation.title,
           modifier = Modifier.weight(1f),
           color = BuddyInk,
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
         )
       }
-      Text(finding.description, color = BuddyInk)
-      finding.currentValue?.let {
-        HealthCheckValueRow(label = "Current", value = it)
-      }
-      finding.suggestedValue?.let {
-        HealthCheckValueRow(label = "Consider", value = it)
-      }
-      finding.kotlinSnippet?.let { snippet ->
-        Surface(
-          color = BuddyInk.copy(alpha = 0.05f),
-          shape = RoundedCornerShape(12.dp),
-          border = CardDefaults.outlinedCardBorder(),
-        ) {
-          Text(
-            text = snippet,
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            color = BuddyInk,
-            fontFamily = FontFamily.Monospace,
-          )
-        }
-      }
-      if (finding.kotlinSnippet != null || finding.link != null) {
+      Text(recommendation.description, color = BuddyInk)
+      recommendation.link?.let { link ->
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-          finding.kotlinSnippet?.let { snippet ->
-            TextButton(onClick = { clipboard.setText(AnnotatedString(snippet)) }) {
-              BuddyButtonText("Copy Kotlin")
-            }
-          }
-          finding.link?.let { link ->
-            TextButton(onClick = { onOpenUrl(context, link) }) { BuddyButtonText("Open Link") }
-          }
+          TextButton(onClick = { onOpenUrl(context, link) }) { BuddyButtonText("Open Link") }
         }
       }
     }
-  }
-}
-
-@Composable
-private fun HealthCheckValueRow(label: String, value: String) {
-  Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-    Text(label, color = BuddyMuted, fontWeight = FontWeight.Bold)
-    Text(value, color = BuddyInk)
   }
 }
 

@@ -57,15 +57,18 @@ internal fun FlowAnalysisResponse.toHomeRecommendations(
 internal fun BuddyHealthCheckResponse.toHomeRecommendations(
   nowMs: Long
 ): List<BuddyHomeRecommendation> {
-  return findings.map { finding ->
+  return recommendations.map { recommendation ->
     BuddyHomeRecommendation(
-      id = "health-check:${finding.id}",
+      id = "health-check:${recommendation.id}",
       source = BuddyRecommendationSource.HEALTH_CHECK,
-      title = finding.title,
-      description = finding.description,
-      severity = finding.severity,
+      title = recommendation.title,
+      description = recommendation.description,
+      severity = recommendation.severity,
+      status = recommendation.status,
+      unread = recommendation.status == RecommendationStatus.OPEN,
       updatedAtMs = nowMs,
-      primaryLink = finding.link,
+      primaryLink = recommendation.link,
+      seerRunUrl = recommendation.seerRunUrl,
     )
   }
 }

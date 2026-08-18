@@ -269,16 +269,15 @@ class SentryBuddySessionControllerTest {
             override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse {
               assertThat(request.sdk).isNotEmpty()
               return BuddyHealthCheckResponse(
-                summary = "Buddy found 1 finding worth checking.",
-                findings =
+                recommendations =
                   listOf(
-                    BuddyHealthCheckFinding(
+                    Recommendation(
                       id = "tracing-disabled",
                       title = "Turn on tracing",
                       description = "Tracing looks off.",
                       severity = Severity.MEDIUM,
                     )
-                  ),
+                  )
               )
             }
           },
@@ -289,7 +288,7 @@ class SentryBuddySessionControllerTest {
 
     assertThat(controller.healthCheckState).isInstanceOf(BuddyHealthCheckState.Results::class.java)
     val state = controller.healthCheckState as BuddyHealthCheckState.Results
-    assertThat(state.response.findings.single().title).contains("tracing")
+    assertThat(state.response.recommendations.single().title).contains("tracing")
     assertThat(controller.homeRecommendations.single().id)
       .isEqualTo("health-check:tracing-disabled")
   }
@@ -316,16 +315,15 @@ class SentryBuddySessionControllerTest {
           object : SentryBuddyHealthCheckApi {
             override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse {
               return BuddyHealthCheckResponse(
-                summary = "Buddy found 1 finding worth checking.",
-                findings =
+                recommendations =
                   listOf(
-                    BuddyHealthCheckFinding(
+                    Recommendation(
                       id = "replay-disabled",
                       title = "Consider enabling Session Replay",
                       description = "Replay is off.",
                       severity = Severity.LOW,
                     )
-                  ),
+                  )
               )
             }
           },
@@ -352,16 +350,15 @@ class SentryBuddySessionControllerTest {
           object : SentryBuddyHealthCheckApi {
             override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse {
               return BuddyHealthCheckResponse(
-                summary = "Buddy found 1 finding worth checking.",
-                findings =
+                recommendations =
                   listOf(
-                    BuddyHealthCheckFinding(
+                    Recommendation(
                       id = "replay-disabled",
                       title = "Consider enabling Session Replay",
                       description = "Replay is off.",
                       severity = Severity.LOW,
                     )
-                  ),
+                  )
               )
             }
           },
@@ -412,7 +409,7 @@ class SentryBuddySessionControllerTest {
         healthCheckApi =
           object : SentryBuddyHealthCheckApi {
             override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse =
-              BuddyHealthCheckResponse(summary = "ok", findings = emptyList())
+              BuddyHealthCheckResponse(recommendations = emptyList())
           },
       )
 
