@@ -49,7 +49,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -98,6 +97,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -687,10 +687,6 @@ private fun BoxScope.BuddyQuoteText(
     }
   val resolvedQuoteHeightPx = if (quoteHeightPx > 0f) quoteHeightPx else estimatedQuoteHeightPx
   val y = (bubbleOffset.y - resolvedQuoteHeightPx - quoteGapPx).coerceAtLeast(0f)
-  val bubbleFill = BuddyFabQuoteOffWhite
-  val bubbleText = BuddyAccentBubbleChonk
-  val bubbleBorder = BuddyAccentBubbleShadow
-  val bubbleShape = remember(quoteSide) { buddyQuoteBubbleShape(quoteSide) }
 
   LaunchedEffect(Unit) {
     while (true) {
@@ -708,84 +704,26 @@ private fun BoxScope.BuddyQuoteText(
     exit = fadeOut(),
     modifier = Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) },
   ) {
-    Surface(
+    Text(
+      text = BuddyFabQuotes[quoteIndex],
       modifier =
         Modifier.width(BuddyFabQuoteTextWidth).onGloballyPositioned { coordinates ->
           quoteHeightPx = coordinates.size.height.toFloat()
         },
-      color = bubbleFill,
-      shape = bubbleShape,
-      border = androidx.compose.foundation.BorderStroke(2.dp, bubbleBorder),
-      shadowElevation = 8.dp,
-    ) {
-      Text(
-        text = BuddyFabQuotes[quoteIndex],
-        modifier =
-          Modifier.fillMaxWidth().padding(start = 14.dp, top = 14.dp, end = 14.dp, bottom = 24.dp),
-        color = bubbleText,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.Normal,
-        textAlign = TextAlign.Center,
-        maxLines = 4,
-        overflow = TextOverflow.Ellipsis,
-      )
-    }
+      color = BuddyInk,
+      style = MaterialTheme.typography.titleSmall,
+      fontWeight = FontWeight.Bold,
+      fontStyle = FontStyle.Italic,
+      textAlign = TextAlign.Center,
+      maxLines = 4,
+      overflow = TextOverflow.Ellipsis,
+    )
   }
 }
 
 private enum class BuddyQuoteBubbleSide {
   LEFT_OF_FAB,
   RIGHT_OF_FAB,
-}
-
-private fun buddyQuoteBubbleShape(side: BuddyQuoteBubbleSide) = GenericShape { size, _ ->
-  val corner = min(size.width, size.height) * 0.34f
-  val tailHeight = min(size.width, size.height) * 0.24f
-  val tailWidth = min(size.width, size.height) * 0.32f
-  val bottom = size.height - tailHeight
-  val tailCenter =
-    when (side) {
-      BuddyQuoteBubbleSide.LEFT_OF_FAB -> size.width * 0.82f
-      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> size.width * 0.18f
-    }
-  val tailLeft = (tailCenter - tailWidth / 2f).coerceIn(corner * 1.2f, size.width - corner * 2f)
-  val tailRight = (tailCenter + tailWidth / 2f).coerceIn(corner * 2f, size.width - corner * 1.2f)
-  val tailTipX =
-    when (side) {
-      BuddyQuoteBubbleSide.LEFT_OF_FAB -> size.width * 0.92f
-      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> size.width * 0.08f
-    }
-  val tailOuterControlX =
-    when (side) {
-      BuddyQuoteBubbleSide.LEFT_OF_FAB -> size.width * 0.95f
-      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> size.width * 0.05f
-    }
-  val tailInnerControlX =
-    when (side) {
-      BuddyQuoteBubbleSide.LEFT_OF_FAB -> size.width * 0.87f
-      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> size.width * 0.13f
-    }
-
-  moveTo(corner, 0f)
-  lineTo(size.width - corner, 0f)
-  quadraticTo(size.width, 0f, size.width, corner)
-  lineTo(size.width, bottom - corner)
-  quadraticTo(size.width, bottom, size.width - corner, bottom)
-  if (side == BuddyQuoteBubbleSide.LEFT_OF_FAB) {
-    lineTo(tailRight, bottom)
-    quadraticTo(tailOuterControlX, bottom + tailHeight * 0.28f, tailTipX, size.height)
-    quadraticTo(tailInnerControlX, bottom + tailHeight * 0.55f, tailLeft, bottom)
-    lineTo(corner, bottom)
-  } else {
-    lineTo(tailRight, bottom)
-    quadraticTo(tailInnerControlX, bottom + tailHeight * 0.55f, tailTipX, size.height)
-    quadraticTo(tailOuterControlX, bottom + tailHeight * 0.28f, tailLeft, bottom)
-    lineTo(corner, bottom)
-  }
-  quadraticTo(0f, bottom, 0f, bottom - corner)
-  lineTo(0f, corner)
-  quadraticTo(0f, 0f, corner, 0f)
-  close()
 }
 
 private enum class BuddyBubbleGlyphState {
