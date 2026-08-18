@@ -331,6 +331,7 @@ private fun BoxScope.BuddyBubble(
   val bubbleMarginPx = with(density) { BuddyBubbleMargin.toPx() }
   val initialTopPx = with(density) { BuddyBubbleInitialTop.toPx() }
   val isRecording = state is SentryBuddySessionState.Recording
+  val showQuote = state is SentryBuddySessionState.Closed
   val attentionItem = liveFeed.latestUnviewedAdverseItem
   val attentionColor = attentionItem?.let { severityColor(it.severity) }
   val bubbleGlyphState =
@@ -456,6 +457,12 @@ private fun BoxScope.BuddyBubble(
     maxWidthPx = maxWidthPx,
     bubbleSizePx = bubbleSizePx,
     showAbove = showTransientAbove,
+  )
+  BuddyQuoteText(
+    visible = showQuote,
+    bubbleOffset = resolvedOffset,
+    maxWidthPx = maxWidthPx,
+    bubbleSizePx = bubbleSizePx,
   )
 }
 
@@ -642,6 +649,48 @@ private fun BuddySheet(
       }
     }
   }
+}
+
+@Composable
+private fun BoxScope.BuddyQuoteText(
+  visible: Boolean,
+  bubbleOffset: Offset,
+  maxWidthPx: Float,
+  bubbleSizePx: Float,
+) {
+  if (!visible) {
+    return
+  }
+  var quoteIndex by remember {
+    mutableStateOf((System.currentTimeMillis() % BuddyFabQuotes.size).toInt())
+  }
+  val density = LocalDensity.current
+  val textWidthPx = with(density) { BuddyFabQuoteTextWidth.toPx() }
+  val x =
+    (bubbleOffset.x + bubbleSizePx / 2f - textWidthPx / 2f).constrain(
+      0f,
+      maxWidthPx - textWidthPx,
+    )
+  val y = bubbleOffset.y + bubbleSizePx + with(density) { 10.dp.toPx() }
+
+  LaunchedEffect(Unit) {
+    while (true) {
+      delay(BUDDY_FAB_QUOTE_INTERVAL_MS)
+      quoteIndex = (quoteIndex + 1) % BuddyFabQuotes.size
+    }
+  }
+
+  Text(
+    text = "\"${BuddyFabQuotes[quoteIndex]}\"",
+    modifier =
+      Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) }.width(BuddyFabQuoteTextWidth),
+    color = BuddyInk.copy(alpha = 0.82f),
+    style = MaterialTheme.typography.labelMedium,
+    fontWeight = FontWeight.Normal,
+    textAlign = TextAlign.Center,
+    maxLines = 3,
+    overflow = TextOverflow.Ellipsis,
+  )
 }
 
 private enum class BuddyBubbleGlyphState {
@@ -2759,13 +2808,79 @@ private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
+private val BuddyFabQuoteTextWidth = 230.dp
 private val BuddyAttentionCardHeight = 264.dp
 private val BuddyQuickDecisionStackHeight = 188.dp
 private val BuddySheetHorizontalPadding = 24.dp
+private const val BUDDY_FAB_QUOTE_INTERVAL_MS = 7_000L
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 9
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
 public const val ANALYSIS_TIMEOUT_MS: Long = 120_000L
+
+private val BuddyFabQuotes =
+  listOf(
+    "I take care of the place while the Master is away.",
+    "I am the sword in the darkness. I am the watcher on the walls.",
+    "Number One, you have the bridge.",
+    "I may have committed some light treason.",
+    "That rug really tied the room together.",
+    "The Watcher sees all.",
+    "Daisy, Daisy, give me your answer do.",
+    "Computer, enhance!",
+    "New information has come to light, man.",
+    "The owls are not what they seem.",
+    "I'm completely operational, and all my circuits are functioning perfectly.",
+    "How about a nice game of chess?",
+    "Sure. Fine. Whatever.",
+    "Calculating the price of a banana...",
+    "I'm meeting you more than halfway here.",
+    "Well, that was a freebie.",
+    "Is there a carbon monoxide leak in this house?",
+    "Please enjoy all facts equally.",
+    "A handshake is available upon request.",
+    "Please stand by.",
+    "Mind the gap.",
+    "You may as well come quietly.",
+    "Time is an illusion. Lunchtime doubly so.",
+    "It is pitch black. You are likely to be eaten by a grue.",
+    "You have died of dysentery.",
+    "Press any key to continue.",
+    "You have 20 seconds to comply.",
+    "Thank you for your cooperation.",
+    "Buy more. Buy more now. Buy. And be happy.",
+    "This has been a happy and productive day.",
+    "Plugh.",
+    "You are in a maze of twisty little passages, all alike.",
+    "You have scored 0 out of a possible 350 points.",
+    "I'm Guybrush Threepwood, mighty pirate.",
+    "Ask me about Loom.",
+    "Rise and shine, Mr. Freeman.",
+    "This is my hiding spot, and I'm not moving until the situation is drastically improved.",
+    "Assuming direct control.",
+    "Constants and variables.",
+    "Use bombs wisely.",
+    "Wake me when you need me.",
+    "Nothing happens.",
+    "That doesn't seem to work.",
+    "You need a bigger dungeon.",
+    "Are you a bad enough dude to rescue the president?",
+    "Say fuzzy pickles!",
+    "You cannot grasp the grue form of Giygas' attack!",
+    "Ness dug around in the trash can. There's a hamburger inside.",
+    "Pictures taken instantaneously!",
+    "I'm a photographic genius, if I do say so myself.",
+    "The enemy left a present.",
+    "Hello and...goodbye!",
+    "A pencil-shaped iron statue is blocking the path.",
+    "Boing!",
+    "I am the third and strongest master of this hole.",
+    "\"Yes\" is \"No\" and \"No\" is \"Yes.\" It makes perfect sense in Moonside.",
+    "Welcome to Moonside. Wel Come to moo nsi ns dem oons ide.",
+    "Ness's HP drops to 0!",
+    "\"Yes\" means \"No\" \"No\" means \"Yes.\" Or did you already know this?",
+    "If you stay here too long, you'll end up frying your brain. Yes, you will. No, you will... not. Yesno, you will won't.",
+  )
 
 private val BuddyPurple = Color(0xFF7553FF)
 private val BuddyAccentBubbleChonk = Color(0xFF5827D6)
