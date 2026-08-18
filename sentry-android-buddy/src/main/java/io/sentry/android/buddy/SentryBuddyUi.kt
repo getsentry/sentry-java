@@ -688,7 +688,7 @@ private fun BoxScope.BuddyQuoteText(
   val ambientIsDark = MaterialTheme.colorScheme.background.luminance() < 0.45f
   val bubbleFill = if (ambientIsDark) Color.White else BuddyPurple
   val bubbleText = if (ambientIsDark) Color.Black else Color.White
-  val bubbleBorder = BuddyInk
+  val bubbleBorder = BuddyBorder
   val bubbleShape = remember(quoteSide) { buddyQuoteBubbleShape(quoteSide) }
 
   LaunchedEffect(Unit) {
@@ -719,7 +719,8 @@ private fun BoxScope.BuddyQuoteText(
     ) {
       Text(
         text = BuddyFabQuotes[quoteIndex],
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+        modifier =
+          Modifier.fillMaxWidth().padding(start = 14.dp, top = 12.dp, end = 14.dp, bottom = 18.dp),
         color = bubbleText,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Normal,
@@ -737,9 +738,9 @@ private enum class BuddyQuoteBubbleSide {
 }
 
 private fun buddyQuoteBubbleShape(side: BuddyQuoteBubbleSide) = GenericShape { size, _ ->
-  val corner = min(size.width, size.height) * 0.16f
-  val tailHeight = min(size.width, size.height) * 0.18f
-  val tailWidth = min(size.width, size.height) * 0.24f
+  val corner = min(size.width, size.height) * 0.24f
+  val tailHeight = min(size.width, size.height) * 0.24f
+  val tailWidth = min(size.width, size.height) * 0.32f
   val bottom = size.height - tailHeight
   val tailCenter =
     when (side) {
@@ -1229,16 +1230,18 @@ private fun LiveFeedInset(content: @Composable ColumnScope.() -> Unit) {
 @Composable
 private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
   val tint = if (enabled) BuddySentryPink else BuddyMuted
+  val shape = RoundedCornerShape(12.dp)
   Surface(
     modifier =
       Modifier.size(40.dp)
         .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
+        .clip(shape)
         .clickable(enabled = enabled, onClick = onClick),
     color = Color.Transparent,
-    shape = RoundedCornerShape(12.dp),
+    shape = shape,
   ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      HealthCheckIcon(tint = tint, modifier = Modifier.size(28.dp))
+      HealthCheckIcon(tint = tint, modifier = Modifier.width(34.dp).height(30.dp))
     }
   }
 }
@@ -1408,15 +1411,15 @@ private fun HealthCheckIcon(tint: Color, modifier: Modifier = Modifier) {
     val kitLeft = borderWidth / 2f
     val kitTop = (size.height - kitHeight) / 2f
     drawRoundRect(
-      color = tint,
+      color = BuddyBorder,
       topLeft = Offset(kitLeft, kitTop),
       size = Size(kitWidth, kitHeight),
       cornerRadius = androidx.compose.ui.geometry.CornerRadius(borderCorner),
       style = androidx.compose.ui.graphics.drawscope.Stroke(width = borderWidth),
     )
 
-    val arm = size.minDimension * 0.24f
-    val length = size.minDimension * 0.66f
+    val arm = size.minDimension * 0.21f
+    val length = size.minDimension * 0.58f
     val crossCorner = arm * 0.22f
     val center = Offset(size.width / 2f, size.height / 2f)
     drawRoundRect(
@@ -1509,8 +1512,13 @@ private fun AttentionCard(
         }
     ) {
       val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
+      val swipeProgress = (-dismissOffset.value / widthPx).coerceIn(0f, 1f)
       val artAlpha =
-        maxOf(1f - contentAlpha.value, (-dismissOffset.value / widthPx).coerceIn(0f, 1f))
+        if (swipeProgress > 0f) {
+          ((swipeProgress - 0.5f) / 0.5f).coerceIn(0f, 1f)
+        } else {
+          1f - contentAlpha.value
+        }
       Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = artAlpha }) {
         EmptyAttentionArt(
           index = emptyArtIndex,
@@ -2438,8 +2446,13 @@ private fun QuickDecisionCardStack(
 
 @Composable
 private fun QuickDecisionThankYouCard() {
+  val alpha = remember { Animatable(0f) }
+  LaunchedEffect(Unit) {
+    alpha.snapTo(0f)
+    alpha.animateTo(1f, animationSpec = tween(durationMillis = 180))
+  }
   Surface(
-    modifier = Modifier.fillMaxWidth().height(BuddyQuickDecisionStackHeight),
+    modifier = Modifier.fillMaxWidth().height(BuddyQuickDecisionStackHeight).graphicsLayer { this.alpha = alpha.value },
     shape = RoundedCornerShape(20.dp),
     border = CardDefaults.outlinedCardBorder(),
   ) {
