@@ -167,6 +167,69 @@ Rationale:
 - `FlowAnalysisEvent.data` remains open so richer events can be added without changing the protocol
   model for every prototype iteration.
 
+## Assemble Recording JSON From Buddy-Owned State
+
+This description reflects the implementation at commit `788f4b028aff53c7d9dc763f23b6436eb423fa05`
+as observed on `2026-08-18 09:25:48 CEST`.
+
+Buddy does not build the final recording JSON by scraping a completed Sentry event, replay artifact,
+or transport payload after the flow finishes. Instead, Buddy owns a small in-memory recording session,
+collects a narrow set of signals while that session is active, materializes one
+`BuddyFlowRecording` at stop time, and only then serializes that object to JSON.
+
+Decision:
+
+- Start each recording by creating Buddy-owned session state with a recording ID, flow intent, start
+  timestamps, correlation tags, and one Buddy root transaction.
+- Populate the final artifact from distinct sources:
+  - developer-authored flow intent
+  - Buddy-generated recording metadata
+  - runtime app and device metadata
+  - a normalized timeline accumulated during the recording window
+  - Sentry correlation fields captured from the Buddy transaction and tags
+- Treat the timeline as the primary source of truth for what happened during the flow.
+- Derive summary fields such as counts and duration from the finalized timeline rather than storing a
+  separate parallel summary stream during capture.
+- Keep JSON serialization as a final formatting step over the already-shaped `BuddyFlowRecording`
+  object.
+
+Rationale:
+
+- A Buddy-owned recording model keeps the artifact intentional and explainable instead of coupling it
+  to whichever Sentry payload happened to exist at the end.
+- Separating flow intent, metadata, timeline, and Sentry correlation makes it easier to evolve the
+  recording format without turning it into a raw telemetry dump.
+- Deriving summary from the finalized timeline reduces disagreement between the human-readable rollup
+  and the recorded event sequence.
+- Restricting serialization to the final step keeps the schema stable and the capture pipeline easier
+  to reason about.
+
+Timeline construction options considered:
+
+| Option | Major pros | Major cons |
+|---|---|---|
+| Build the timeline as signals are produced | Simple, local, easy to test, immediately useful for overlay and local JSON | Can normalize too early, miss late signals, and make ordering/deduplication harder |
+| Buffer raw observations and normalize at stop | Preserves flexibility, allows better sorting, deduplication, and schema evolution | Adds a normalization layer and requires separate handling for live UI feedback |
+| Reconstruct the timeline after the fact from Sentry artifacts | Reuses backend telemetry and can include richer Sentry data later | Depends on network, sampling, redaction, ingestion, and correlation completeness |
+| Use a live flow skeleton with post-stop enrichment | Keeps developer intent and screens as the backbone while allowing richer telemetry merge | Requires clear merge, provenance, conflict, and duplicate-handling rules |
+| Persist a local append-only journal | Can survive process death and capture pre-crash context | Adds storage, cleanup, corruption, and privacy responsibilities |
+| Let the flow-analysis service own timeline construction | Keeps SDK thinner and lets server-side analysis evolve faster | Makes local JSON less useful and depends on service availability and behavior |
+| Treat developer steps as the timeline and attach telemetry as context | Produces a cleaner flow narrative and keeps telemetry from overwhelming intent | Requires matching telemetry to steps/screens and can hide standalone chronological detail |
+
+The current prototype mostly builds the normalized timeline as signals are produced, then sorts and
+finalizes it at stop time. A likely next refinement is the hybrid model: record a live skeleton from
+developer steps and screen transitions, collect Sentry telemetry as observations, and normalize or
+attach those observations after stop. That keeps developer-authored flow markers canonical while
+allowing spans, breadcrumbs, events, and later backend data to enrich the recording.
+
+What this means in practice:
+
+- Buddy records explicit developer steps and screen transitions directly.
+- Buddy also observes a conservative subset of accepted Sentry breadcrumbs, accepted error events,
+  and sampled transactions/spans during the active recording window.
+- On stop, Buddy sorts and finalizes those accumulated items, computes summary fields, snapshots app
+  and device metadata, attaches Sentry trace correlation, and exports one versioned JSON document.
+
 ## Documentation Maintenance
 
 Decision:
