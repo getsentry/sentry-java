@@ -40,3 +40,6 @@ agents.lock
 
 # Warden local run logs
 .warden/logs/
+
+# Local environment files
+.env
