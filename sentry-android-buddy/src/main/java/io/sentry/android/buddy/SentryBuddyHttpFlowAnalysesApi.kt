@@ -34,24 +34,21 @@ public constructor(
         .url(flowAnalysisUrl())
         .post(serialize(request).toRequestBody(JSON_MEDIA_TYPE))
         .build()
-    return execute(httpRequest)
+    return execute(httpRequest, FlowAnalysisResponseDeserializer)
   }
 
   override fun get(flowId: String): FlowAnalysisResponse {
     val httpRequest = Request.Builder().url(flowAnalysisUrl(flowId)).get().build()
-    return execute(httpRequest)
+    return execute(httpRequest, FlowAnalysisResponseDeserializer)
   }
 
-  override fun resolveRecommendation(
-    flowId: String,
-    recommendationId: String,
-  ): FlowAnalysisResponse {
+  override fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation {
     val httpRequest =
       Request.Builder()
         .url(flowAnalysisUrl(flowId, "recommendations", recommendationId, "resolve"))
         .post(ByteArray(0).toRequestBody(null))
         .build()
-    return execute(httpRequest)
+    return execute(httpRequest, RecommendationDeserializer)
   }
 
   private fun flowAnalysisUrl(vararg pathSegments: String): okhttp3.HttpUrl {
@@ -66,7 +63,7 @@ public constructor(
     return writer.toString()
   }
 
-  private fun execute(request: Request): FlowAnalysisResponse {
+  private fun <T> execute(request: Request, deserializer: JsonDeserializer<T>): T {
     try {
       client.newCall(request).execute().use { response ->
         val body = response.body?.string().orEmpty()
@@ -76,7 +73,7 @@ public constructor(
         if (body.isBlank()) {
           throw IllegalStateException("Flow analysis bridge returned an empty response.")
         }
-        return parseFlowAnalysisResponse(body)
+        return parse(body, deserializer)
       }
     } catch (exception: IOException) {
       throw IllegalStateException(
@@ -94,11 +91,9 @@ public constructor(
     }
   }
 
-  private fun parseFlowAnalysisResponse(body: String): FlowAnalysisResponse {
+  private fun <T> parse(body: String, deserializer: JsonDeserializer<T>): T {
     try {
-      return JsonObjectReader(StringReader(body)).use {
-        FlowAnalysisResponseDeserializer.deserialize(it, logger)
-      }
+      return JsonObjectReader(StringReader(body)).use { deserializer.deserialize(it, logger) }
     } catch (exception: Exception) {
       throw IllegalStateException("Failed to parse flow analysis bridge response.", exception)
     }
@@ -130,6 +125,7 @@ internal object FlowAnalysisResponseDeserializer : JsonDeserializer<FlowAnalysis
     var recommendations: List<Recommendation> = emptyList()
     var issues: List<SentryIssue> = emptyList()
     var error: String? = null
+    var enrichmentErrors: List<String> = emptyList()
 
     reader.beginObject()
     while (reader.hasNext()) {
@@ -141,6 +137,9 @@ internal object FlowAnalysisResponseDeserializer : JsonDeserializer<FlowAnalysis
           recommendations = reader.nextListOrNull(logger, RecommendationDeserializer).orEmpty()
         "issues" -> issues = reader.nextListOrNull(logger, SentryIssueDeserializer).orEmpty()
         "error" -> error = reader.nextStringOrNull()
+        "enrichment_errors" ->
+          enrichmentErrors =
+            (reader.nextObjectOrNull() as? List<*>).orEmpty().filterIsInstance<String>()
         else -> reader.skipValue()
       }
     }
@@ -153,6 +152,7 @@ internal object FlowAnalysisResponseDeserializer : JsonDeserializer<FlowAnalysis
       recommendations = recommendations,
       issues = issues,
       error = error,
+      enrichmentErrors = enrichmentErrors,
     )
   }
 }
@@ -166,6 +166,7 @@ internal object RecommendationDeserializer : JsonDeserializer<Recommendation> {
     var severity: Severity = Severity.MEDIUM
     var resolvable = true
     var status: RecommendationStatus = RecommendationStatus.OPEN
+    var seerRunUrl: String? = null
 
     reader.beginObject()
     while (reader.hasNext()) {
@@ -178,6 +179,7 @@ internal object RecommendationDeserializer : JsonDeserializer<Recommendation> {
         "resolvable" -> resolvable = reader.nextBooleanOrNull() ?: resolvable
         "status" ->
           status = reader.nextStringOrNull()?.let { RecommendationStatus.valueOf(it) } ?: status
+        "seer_run_url" -> seerRunUrl = reader.nextStringOrNull()
         else -> reader.skipValue()
       }
     }
@@ -191,6 +193,7 @@ internal object RecommendationDeserializer : JsonDeserializer<Recommendation> {
       severity = severity,
       resolvable = resolvable,
       status = status,
+      seerRunUrl = seerRunUrl,
     )
   }
 }

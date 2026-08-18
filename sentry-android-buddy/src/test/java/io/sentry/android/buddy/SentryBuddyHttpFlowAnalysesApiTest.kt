@@ -54,7 +54,8 @@ class SentryBuddyHttpFlowAnalysesApiTest {
               "link": "https://example.com",
               "severity": "HIGH",
               "resolvable": false,
-              "status": "OPEN"
+              "status": "OPEN",
+              "seer_run_url": null
             }],
             "issues": [{
               "id": "issue-1",
@@ -63,7 +64,8 @@ class SentryBuddyHttpFlowAnalysesApiTest {
               "count": 3,
               "level": "error",
               "permalink": "https://sentry.io/issues/1"
-            }]
+            }],
+            "enrichment_errors": ["IssueEnrichment: boom"]
           }
           """
             .trimIndent()
@@ -78,18 +80,34 @@ class SentryBuddyHttpFlowAnalysesApiTest {
     assertThat(response.recommendations.single().resolvable).isFalse()
     assertThat(response.recommendations.single().severity).isEqualTo(Severity.HIGH)
     assertThat(response.issues.single().id).isEqualTo("issue-1")
+    assertThat(response.enrichmentErrors).containsExactly("IssueEnrichment: boom")
     assertThat(server.takeRequest().path).isEqualTo("/v1/flow-analysis/flow-1")
   }
 
   @Test
-  fun `resolve recommendation posts to bridge resolve endpoint`() {
+  fun `resolve recommendation posts to bridge resolve endpoint and parses the recommendation`() {
     server.enqueue(
-      MockResponse().setResponseCode(200).setBody("""{"flow_id":"flow-1","status":"COMPLETED"}""")
+      MockResponse()
+        .setResponseCode(200)
+        .setBody(
+          """
+          {
+            "id": "rec-1",
+            "title": "Add spans",
+            "description": "Add spans around checkout.",
+            "status": "RESOLVED",
+            "seer_run_url": "https://sentry.io/seer/runs/1"
+          }
+          """
+            .trimIndent()
+        )
     )
     val api = SentryBuddyHttpFlowAnalysesApi(server.url("/").toString())
 
-    api.resolveRecommendation("flow-1", "rec-1")
+    val resolved = api.resolveRecommendation("flow-1", "rec-1")
 
+    assertThat(resolved.status).isEqualTo(RecommendationStatus.RESOLVED)
+    assertThat(resolved.seerRunUrl).isEqualTo("https://sentry.io/seer/runs/1")
     val request = server.takeRequest()
     assertThat(request.method).isEqualTo("POST")
     assertThat(request.path).isEqualTo("/v1/flow-analysis/flow-1/recommendations/rec-1/resolve")

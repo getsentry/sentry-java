@@ -47,8 +47,11 @@ public interface SentryBuddyFlowAnalysesApi {
   /** Models `GET /v1/flow-analysis/{flowId}`. */
   public fun get(flowId: String): FlowAnalysisResponse
 
-  /** Models `POST /v1/flow-analysis/{flowId}/recommendations/{id}/resolve`. */
-  public fun resolveRecommendation(flowId: String, recommendationId: String): FlowAnalysisResponse
+  /**
+   * Models `POST /v1/flow-analysis/{flowId}/recommendations/{id}/resolve`, which answers with the
+   * resolved recommendation only.
+   */
+  public fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation
 }
 
 @ApiStatus.Experimental
@@ -69,20 +72,17 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
       )
   }
 
-  override fun resolveRecommendation(
-    flowId: String,
-    recommendationId: String,
-  ): FlowAnalysisResponse {
+  override fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation {
     val analysis = get(flowId)
-    val updatedRecommendations =
-      analysis.recommendations.map { recommendation ->
-        if (recommendation.id == recommendationId) {
-          recommendation.copy(status = RecommendationStatus.RESOLVED)
-        } else {
-          recommendation
-        }
-      }
-    return analysis.copy(recommendations = updatedRecommendations).also { analyses[flowId] = it }
+    val resolved =
+      analysis.recommendations
+        .first { it.id == recommendationId }
+        .copy(
+          status = RecommendationStatus.RESOLVED,
+          seerRunUrl = "https://sentry.io/seer/runs/$recommendationId",
+        )
+    analyses[flowId] = analysis.withRecommendation(resolved)
+    return resolved
   }
 
   private fun completedAnalysis(request: FlowAnalysisRequest): FlowAnalysisResponse {
@@ -373,8 +373,9 @@ public constructor(
   public fun resolveRecommendation(recommendationId: String) {
     val insightsState = state as? SentryBuddySessionState.Insights ?: return
     try {
-      val analysis =
+      val resolved =
         flowAnalysesApi.resolveRecommendation(insightsState.request.flowId, recommendationId)
+      val analysis = insightsState.analysis.withRecommendation(resolved)
       state =
         insightsState.copy(
           analysis = analysis,

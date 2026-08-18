@@ -83,6 +83,7 @@ public constructor(
   public val severity: Severity = Severity.MEDIUM,
   public val resolvable: Boolean = true,
   public val status: RecommendationStatus = RecommendationStatus.OPEN,
+  public val seerRunUrl: String? = null,
 ) : JsonSerializable {
   @Throws(IOException::class)
   override fun serialize(writer: ObjectWriter, logger: ILogger) {
@@ -94,6 +95,7 @@ public constructor(
     writer.name("severity").value(severity.value)
     writer.name("resolvable").value(resolvable)
     writer.name("status").value(status.value)
+    writer.name("seer_run_url").value(seerRunUrl)
     writer.endObject()
   }
 }
@@ -131,6 +133,7 @@ public constructor(
   public val recommendations: List<Recommendation> = emptyList(),
   public val issues: List<SentryIssue> = emptyList(),
   public val error: String? = null,
+  public val enrichmentErrors: List<String> = emptyList(),
 ) : JsonSerializable {
   @Throws(IOException::class)
   override fun serialize(writer: ObjectWriter, logger: ILogger) {
@@ -141,6 +144,18 @@ public constructor(
     writer.name("recommendations").value(logger, recommendations)
     writer.name("issues").value(logger, issues)
     writer.name("error").value(error)
+    writer.name("enrichment_errors").value(logger, enrichmentErrors)
     writer.endObject()
   }
 }
+
+/**
+ * The resolve endpoint answers with the resolved recommendation only, so the caller keeps the rest
+ * of the analysis it already holds.
+ */
+internal fun FlowAnalysisResponse.withRecommendation(
+  recommendation: Recommendation
+): FlowAnalysisResponse =
+  copy(
+    recommendations = recommendations.map { if (it.id == recommendation.id) recommendation else it }
+  )

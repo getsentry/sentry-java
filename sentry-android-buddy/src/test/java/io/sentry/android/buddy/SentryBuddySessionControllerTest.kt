@@ -135,6 +135,8 @@ class SentryBuddySessionControllerTest {
       .isEqualTo(RecommendationStatus.RESOLVED)
     assertThat(state.response.recommendations.single().status)
       .isEqualTo(RecommendationStatus.RESOLVED)
+    assertThat(state.analysis.recommendations.single().seerRunUrl)
+      .isEqualTo("https://sentry.io/seer/runs/1")
   }
 
   @Test
@@ -360,20 +362,18 @@ class SentryBuddySessionControllerTest {
       )
     }
 
-    override fun resolveRecommendation(
-      flowId: String,
-      recommendationId: String,
-    ): FlowAnalysisResponse {
+    override fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation {
       resolveFailure?.let { throw it }
       resolvedRecommendationIds += recommendationId
-      recommendations = recommendations.map { recommendation ->
-        if (recommendation.id == recommendationId) {
-          recommendation.copy(status = RecommendationStatus.RESOLVED)
-        } else {
-          recommendation
-        }
-      }
-      return get(flowId)
+      val resolved =
+        recommendations
+          .first { it.id == recommendationId }
+          .copy(
+            status = RecommendationStatus.RESOLVED,
+            seerRunUrl = "https://sentry.io/seer/runs/1",
+          )
+      recommendations = recommendations.map { if (it.id == resolved.id) resolved else it }
+      return resolved
     }
   }
 
