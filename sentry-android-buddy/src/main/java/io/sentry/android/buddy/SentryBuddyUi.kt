@@ -664,6 +664,7 @@ private fun BoxScope.BuddyQuoteText(
   var quoteIndex by remember {
     mutableStateOf((System.currentTimeMillis() % BuddyFabQuotes.size).toInt())
   }
+  var showQuote by remember { mutableStateOf(true) }
   val density = LocalDensity.current
   val textWidthPx = with(density) { BuddyFabQuoteTextWidth.toPx() }
   val x =
@@ -675,22 +676,31 @@ private fun BoxScope.BuddyQuoteText(
 
   LaunchedEffect(Unit) {
     while (true) {
-      delay(BUDDY_FAB_QUOTE_INTERVAL_MS)
+      showQuote = true
+      delay(BUDDY_FAB_QUOTE_VISIBLE_MS)
+      showQuote = false
+      delay(BUDDY_FAB_QUOTE_INTERVAL_MS - BUDDY_FAB_QUOTE_VISIBLE_MS)
       quoteIndex = (quoteIndex + 1) % BuddyFabQuotes.size
     }
   }
 
-  Text(
-    text = "\"${BuddyFabQuotes[quoteIndex]}\"",
-    modifier =
-      Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) }.width(BuddyFabQuoteTextWidth),
-    color = BuddyInk.copy(alpha = 0.82f),
-    style = MaterialTheme.typography.labelMedium,
-    fontWeight = FontWeight.Normal,
-    textAlign = TextAlign.Center,
-    maxLines = 3,
-    overflow = TextOverflow.Ellipsis,
-  )
+  AnimatedVisibility(
+    visible = showQuote,
+    enter = fadeIn(),
+    exit = fadeOut(),
+    modifier = Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) },
+  ) {
+    Text(
+      text = BuddyFabQuotes[quoteIndex],
+      modifier = Modifier.width(BuddyFabQuoteTextWidth),
+      color = BuddyInk.copy(alpha = 0.82f),
+      style = MaterialTheme.typography.labelMedium,
+      fontWeight = FontWeight.Normal,
+      textAlign = TextAlign.Center,
+      maxLines = 3,
+      overflow = TextOverflow.Ellipsis,
+    )
+  }
 }
 
 private enum class BuddyBubbleGlyphState {
@@ -2807,7 +2817,8 @@ private val BuddyFabQuoteTextWidth = 230.dp
 private val BuddyAttentionCardHeight = 264.dp
 private val BuddyQuickDecisionStackHeight = 188.dp
 private val BuddySheetHorizontalPadding = 24.dp
-private const val BUDDY_FAB_QUOTE_INTERVAL_MS = 7_000L
+private const val BUDDY_FAB_QUOTE_INTERVAL_MS = 30_000L
+private const val BUDDY_FAB_QUOTE_VISIBLE_MS = 3_000L
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 9
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
