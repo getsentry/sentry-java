@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -65,6 +66,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -948,14 +950,18 @@ private fun LiveFeedSheet(
   )
   val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
   Spacer(Modifier.height(12.dp))
-  AttentionCard(
-    liveFeed = liveFeed,
-    sentryUiLinks = sentryUiLinks,
-    nowMs = nowMs,
-    emptyArtIndex = emptyAttentionArtIndex,
-    onDismiss = { onDispatch { dismissLiveFeedAttention() } },
-    onOpenUrl = onOpenUrl,
-  )
+  BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+    val fullBleedWidth = maxWidth + BuddySheetHorizontalPadding * 2
+    AttentionCard(
+      modifier = Modifier.requiredWidth(fullBleedWidth).offset(x = -BuddySheetHorizontalPadding),
+      liveFeed = liveFeed,
+      sentryUiLinks = sentryUiLinks,
+      nowMs = nowMs,
+      emptyArtIndex = emptyAttentionArtIndex,
+      onDismiss = { onDispatch { dismissLiveFeedAttention() } },
+      onOpenUrl = onOpenUrl,
+    )
+  }
   Spacer(Modifier.height(12.dp))
   Button(
     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -992,18 +998,17 @@ private fun LiveFeedSheet(
 
 @Composable
 private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
-  Surface(
-    modifier = Modifier.size(40.dp).clickable(enabled = enabled, onClick = onClick),
-    color = if (enabled) BuddyPurple.copy(alpha = 0.10f) else BuddyBorder,
-    shape = RoundedCornerShape(12.dp),
-    border = CardDefaults.outlinedCardBorder(),
+  Box(
+    modifier =
+      Modifier.size(40.dp)
+        .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
+        .clickable(enabled = enabled, onClick = onClick),
+    contentAlignment = Alignment.Center,
   ) {
-    Box(contentAlignment = Alignment.Center) {
-      HealthCheckIcon(
-        tint = if (enabled) BuddyPurple else BuddyMuted,
-        modifier = Modifier.size(18.dp),
-      )
-    }
+    HealthCheckIcon(
+      tint = if (enabled) BuddyPurple else BuddyMuted,
+      modifier = Modifier.size(18.dp),
+    )
   }
 }
 
@@ -1197,6 +1202,7 @@ private fun HealthCheckIcon(tint: Color, modifier: Modifier = Modifier) {
 
 @Composable
 private fun AttentionCard(
+  modifier: Modifier = Modifier,
   liveFeed: BuddyLiveFeed,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
@@ -1205,21 +1211,13 @@ private fun AttentionCard(
   onOpenUrl: (Context, String) -> Unit,
 ) {
   val item = liveFeed.latestUnviewedAdverseItem
-  val attentionCardHeight =
-    if (item?.isPerformanceIssue() == true) BuddyAttentionPerformanceCardHeight
-    else BuddyAttentionCardHeight
   val dismissOffset = remember(item?.id) { Animatable(0f) }
 
   if (item == null) {
-    Surface(
-      modifier = Modifier.fillMaxWidth(),
-      color = Color.Transparent,
-      shape = RoundedCornerShape(16.dp),
-      border = CardDefaults.outlinedCardBorder(),
-    ) {
+    Box(modifier = modifier.fillMaxWidth().height(BuddyAttentionCardHeight).attentionCardChrome()) {
       EmptyAttentionArt(
         index = emptyArtIndex,
-        modifier = Modifier.fillMaxWidth().height(BuddyAttentionCardHeight),
+        modifier = Modifier.fillMaxSize(),
       )
     }
     return
@@ -1229,15 +1227,10 @@ private fun AttentionCard(
   val context = LocalContext.current
   val link = sentryUiLinks.linkFor(item)
   val dismissScope = rememberCoroutineScope()
-  Surface(
-    modifier = Modifier.fillMaxWidth(),
-    color = Color.Transparent,
-    shape = RoundedCornerShape(16.dp),
-    border = CardDefaults.outlinedCardBorder(),
-  ) {
+  Box(modifier = modifier.fillMaxWidth().height(BuddyAttentionCardHeight).attentionCardChrome()) {
     BoxWithConstraints(
       modifier =
-        Modifier.fillMaxWidth().height(attentionCardHeight).pointerInput(item.id) {
+        Modifier.fillMaxSize().pointerInput(item.id) {
           detectDragGestures(
             onDragEnd = {
               val dismissDistance = size.width.toFloat()
@@ -1289,6 +1282,23 @@ private fun AttentionCard(
       }
     }
   }
+}
+
+private fun Modifier.attentionCardChrome(): Modifier = drawBehind {
+  val stroke = 1.dp.toPx()
+  val inset = stroke / 2f
+  drawLine(
+    color = BuddyBorder,
+    start = Offset(0f, inset),
+    end = Offset(size.width, inset),
+    strokeWidth = stroke,
+  )
+  drawLine(
+    color = BuddyBorder,
+    start = Offset(0f, size.height - inset),
+    end = Offset(size.width, size.height - inset),
+    strokeWidth = stroke,
+  )
 }
 
 @Composable
@@ -2329,8 +2339,8 @@ private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
-private val BuddyAttentionCardHeight = 184.dp
-private val BuddyAttentionPerformanceCardHeight = 264.dp
+private val BuddyAttentionCardHeight = 264.dp
+private val BuddySheetHorizontalPadding = 24.dp
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 10
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
