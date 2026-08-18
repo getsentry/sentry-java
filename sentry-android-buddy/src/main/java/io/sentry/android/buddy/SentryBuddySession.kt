@@ -142,6 +142,8 @@ public object RealSentryBuddyRecorderFacade : SentryBuddyRecorderFacade {
 public sealed class SentryBuddySessionState {
   public object Closed : SentryBuddySessionState()
 
+  public object LiveFeed : SentryBuddySessionState()
+
   public object Intro : SentryBuddySessionState()
 
   public data class Recording
@@ -192,12 +194,20 @@ public constructor(
   public var state: SentryBuddySessionState = SentryBuddySessionState.Closed
     private set
 
+  internal var liveFeed: BuddyLiveFeed = safeLiveFeed()
+    private set
+
   private val transientRecordingEventLock: Any = Any()
   private val transientRecordingEventListeners = mutableListOf<(TransientRecordingEvent) -> Unit>()
   private var transientRecordingEventId: Long = 0
 
   public fun open() {
     state = SentryBuddySessionState.Intro
+  }
+
+  internal fun openLiveFeed() {
+    liveFeed = safeMarkLiveFeedSeen()
+    state = SentryBuddySessionState.LiveFeed
   }
 
   public fun close() {
@@ -353,6 +363,46 @@ public constructor(
       synchronized(transientRecordingEventLock) { transientRecordingEventListeners -= listener }
     }
   }
+
+  internal fun addLiveFeedListener(listener: (BuddyLiveFeed) -> Unit): () -> Unit {
+    val noOp: () -> Unit = {}
+    return try {
+      if (recorderFacade !== RealSentryBuddyRecorderFacade) {
+        listener(BuddyLiveFeed())
+        noOp
+      } else {
+        SentryBuddy.addLiveFeedListener { feed ->
+          liveFeed = feed
+          listener(feed)
+        }
+      }
+    } catch (_: IllegalStateException) {
+      listener(BuddyLiveFeed())
+      noOp
+    }
+  }
+
+  private fun safeLiveFeed(): BuddyLiveFeed =
+    try {
+      if (recorderFacade === RealSentryBuddyRecorderFacade) {
+        SentryBuddy.liveFeedSnapshot()
+      } else {
+        BuddyLiveFeed()
+      }
+    } catch (_: IllegalStateException) {
+      BuddyLiveFeed()
+    }
+
+  private fun safeMarkLiveFeedSeen(): BuddyLiveFeed =
+    try {
+      if (recorderFacade === RealSentryBuddyRecorderFacade) {
+        SentryBuddy.markLiveFeedSeen()
+      } else {
+        BuddyLiveFeed()
+      }
+    } catch (_: IllegalStateException) {
+      BuddyLiveFeed()
+    }
 
   private fun buildFlowAnalysisRequest(
     state: SentryBuddySessionState.Briefing

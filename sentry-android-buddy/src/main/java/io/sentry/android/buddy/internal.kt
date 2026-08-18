@@ -40,6 +40,8 @@ internal class BuddyRecorder(
   private val idGenerator: BuddyIdGenerator = UuidBuddyIdGenerator,
 ) {
   private var activeRecording: ActiveRecording? = null
+  private val liveFeed = BuddyLiveFeedBuffer(LIVE_FEED_CAPACITY)
+  private val liveFeedListeners = mutableListOf<(BuddyLiveFeed) -> Unit>()
 
   @Synchronized
   fun start(intent: BuddyFlowIntent) {
@@ -79,16 +81,31 @@ internal class BuddyRecorder(
 
   @Synchronized fun isRecording(): Boolean = activeRecording != null
 
+  @Synchronized fun liveFeedSnapshot(): BuddyLiveFeed = liveFeed.snapshot()
+
+  @Synchronized fun markLiveFeedSeen(): BuddyLiveFeed = liveFeed.markAdverseViewed()
+
+  @Synchronized
+  fun addLiveFeedListener(listener: (BuddyLiveFeed) -> Unit): () -> Unit {
+    liveFeedListeners += listener
+    listener(liveFeed.snapshot())
+    return { synchronized(this) { liveFeedListeners -= listener } }
+  }
+
   @Synchronized
   fun recordStep(name: String, data: Map<String, Any?> = emptyMap()) {
     val recording = requireActiveRecording()
-    recording.timeline += timelineItem(BuddyTimelineItem.Type.STEP, name, data, recording)
+    val item = timelineItem(BuddyTimelineItem.Type.STEP, name, data, recording)
+    recording.timeline += item
+    recordLiveFeedItem(item, BuddyLiveFeedItem.Category.STEP, Severity.LOW, adverse = false)
   }
 
   @Synchronized
   fun recordScreen(name: String) {
-    val recording = activeRecording ?: return
-    recording.timeline += timelineItem(BuddyTimelineItem.Type.SCREEN, name, emptyMap(), recording)
+    val recording = activeRecording
+    val item = screenTimelineItem(name, recording)
+    recording?.timeline?.add(item)
+    recordLiveFeedItem(item, BuddyLiveFeedItem.Category.SCREEN, Severity.LOW, adverse = false)
   }
 
   @Synchronized
@@ -98,8 +115,22 @@ internal class BuddyRecorder(
 
   @Synchronized
   fun recordTransaction(transaction: BuddyObservedTransaction) {
-    val recording = activeRecording ?: return
-    if (transaction.recordingId != recording.id || transaction.operation == ROOT_TRANSACTION_OP) {
+    val recording = activeRecording
+    transaction.spans.forEach { span ->
+      span.toLiveFeedItem(recording)?.let { liveFeedItem ->
+        recordLiveFeedItem(
+          liveFeedItem.item,
+          liveFeedItem.category,
+          liveFeedItem.severity,
+          adverse = true,
+        )
+      }
+    }
+    if (
+      recording == null ||
+        transaction.recordingId != recording.id ||
+        transaction.operation == ROOT_TRANSACTION_OP
+    ) {
       return
     }
     transaction.toNavigationScreenTimelineItem(recording)?.let { recording.addNavigationScreen(it) }
@@ -108,18 +139,30 @@ internal class BuddyRecorder(
 
   @Synchronized
   fun recordBreadcrumb(breadcrumb: BuddyObservedBreadcrumb) {
-    val recording = activeRecording ?: return
+    val recording = activeRecording
     breadcrumb.toNavigationScreenTimelineItem(recording)?.let {
-      recording.addNavigationScreen(it)
+      recording?.addNavigationScreen(it)
+      recordLiveFeedItem(it, BuddyLiveFeedItem.Category.SCREEN, Severity.LOW, adverse = false)
       return
     }
-    recording.timeline += breadcrumb.toTimelineItem(recording)
+    val item = breadcrumb.toTimelineItem(recording)
+    recording?.timeline?.add(item)
+    breadcrumb.toLiveFeedItem(item)?.let { liveFeedItem ->
+      recordLiveFeedItem(
+        liveFeedItem.item,
+        liveFeedItem.category,
+        liveFeedItem.severity,
+        adverse = true,
+      )
+    }
   }
 
   @Synchronized
   fun recordEvent(event: BuddyObservedEvent) {
-    val recording = activeRecording ?: return
-    recording.timeline += event.toTimelineItem(recording)
+    val recording = activeRecording
+    val item = event.toTimelineItem(recording)
+    recording?.timeline?.add(item)
+    recordLiveFeedItem(item, BuddyLiveFeedItem.Category.ERROR, Severity.HIGH, adverse = true)
   }
 
   @Synchronized
@@ -204,7 +247,7 @@ internal class BuddyRecorder(
   }
 
   private fun BuddyObservedTransaction.toNavigationScreenTimelineItem(
-    recording: ActiveRecording
+    recording: ActiveRecording?
   ): BuddyTimelineItem? {
     if (operation?.lowercase(Locale.ROOT) != NAVIGATION_OP) {
       return null
@@ -213,7 +256,7 @@ internal class BuddyRecorder(
     return BuddyTimelineItem(
       type = BuddyTimelineItem.Type.SCREEN,
       timestamp = timestamp,
-      elapsedMs = timestamp.time - recording.startedAt.time,
+      elapsedMs = recording.elapsedAt(timestamp),
       name = destination,
       data =
         linkedMapOf(
@@ -225,7 +268,7 @@ internal class BuddyRecorder(
   }
 
   private fun BuddyObservedBreadcrumb.toNavigationScreenTimelineItem(
-    recording: ActiveRecording
+    recording: ActiveRecording?
   ): BuddyTimelineItem? {
     val normalizedCategory = category?.lowercase(Locale.ROOT)
     val normalizedType = type?.lowercase(Locale.ROOT)
@@ -252,7 +295,7 @@ internal class BuddyRecorder(
     return BuddyTimelineItem(
       type = BuddyTimelineItem.Type.SCREEN,
       timestamp = timestamp,
-      elapsedMs = timestamp.time - recording.startedAt.time,
+      elapsedMs = recording.elapsedAt(timestamp),
       name = destination,
       data = screenData.filterValues { it != null },
     )
@@ -268,34 +311,105 @@ internal class BuddyRecorder(
     return arguments.keys.mapNotNull { it?.toString() }.sorted().takeIf { it.isNotEmpty() }
   }
 
-  private fun BuddyObservedSpan.toTimelineItem(recording: ActiveRecording): BuddyTimelineItem =
+  private fun BuddyObservedSpan.toTimelineItem(recording: ActiveRecording?): BuddyTimelineItem =
     BuddyTimelineItem(
       type = BuddyTimelineItem.Type.SPAN,
       timestamp = timestamp,
-      elapsedMs = timestamp.time - recording.startedAt.time,
+      elapsedMs = recording.elapsedAt(timestamp),
       name = description ?: operation,
       data = data,
     )
 
   private fun BuddyObservedBreadcrumb.toTimelineItem(
-    recording: ActiveRecording
+    recording: ActiveRecording?
   ): BuddyTimelineItem =
     BuddyTimelineItem(
       type = BuddyTimelineItem.Type.BREADCRUMB,
       timestamp = timestamp,
-      elapsedMs = timestamp.time - recording.startedAt.time,
+      elapsedMs = recording.elapsedAt(timestamp),
       name = category ?: type,
       data = data,
     )
 
-  private fun BuddyObservedEvent.toTimelineItem(recording: ActiveRecording): BuddyTimelineItem =
+  private fun BuddyObservedEvent.toTimelineItem(recording: ActiveRecording?): BuddyTimelineItem =
     BuddyTimelineItem(
       type = BuddyTimelineItem.Type.EVENT,
       timestamp = timestamp,
-      elapsedMs = timestamp.time - recording.startedAt.time,
+      elapsedMs = recording.elapsedAt(timestamp),
       name = title,
       data = data,
     )
+
+  private fun screenTimelineItem(name: String, recording: ActiveRecording?): BuddyTimelineItem =
+    BuddyTimelineItem(
+      type = BuddyTimelineItem.Type.SCREEN,
+      timestamp = clock.now(),
+      elapsedMs = recording?.let { elapsedSince(it) } ?: 0,
+      name = name,
+    )
+
+  private fun BuddyObservedSpan.toLiveFeedItem(recording: ActiveRecording?): LiveFeedItem? {
+    val item = toTimelineItem(recording)
+    return item.toAdverseSpanLiveFeedItem()
+  }
+
+  private fun BuddyTimelineItem.toAdverseSpanLiveFeedItem(): LiveFeedItem? {
+    val status = data.stringValue(DATA_STATUS)
+    val isFailed = status != null && status != STATUS_OK
+    val isSlow = data.longValue(DATA_DURATION_MS)?.let { it >= SLOW_SPAN_THRESHOLD_MS } == true
+    if (!isFailed && !isSlow) {
+      return null
+    }
+    return LiveFeedItem(
+      item = this,
+      category =
+        if (isFailed) BuddyLiveFeedItem.Category.FAILED_SPAN
+        else BuddyLiveFeedItem.Category.SLOW_SPAN,
+      severity = if (isFailed) Severity.HIGH else Severity.MEDIUM,
+    )
+  }
+
+  private fun BuddyObservedBreadcrumb.toLiveFeedItem(item: BuddyTimelineItem): LiveFeedItem? {
+    val normalizedCategory = category?.lowercase(Locale.ROOT)
+    val normalizedType = type?.lowercase(Locale.ROOT)
+    if (normalizedCategory != HTTP_OP && normalizedType != HTTP_OP) {
+      return null
+    }
+    val statusCode =
+      data.mapValue(DATA_DATA).longValue(DATA_STATUS_CODE) ?: data.longValue(DATA_STATUS_CODE)
+    if (statusCode == null || statusCode < FAILED_HTTP_STATUS_CODE) {
+      return null
+    }
+    return LiveFeedItem(
+      item = item,
+      category = BuddyLiveFeedItem.Category.FAILED_HTTP,
+      severity =
+        if (statusCode >= SERVER_ERROR_HTTP_STATUS_CODE) Severity.HIGH else Severity.MEDIUM,
+    )
+  }
+
+  private fun recordLiveFeedItem(
+    item: BuddyTimelineItem,
+    category: BuddyLiveFeedItem.Category,
+    severity: Severity,
+    adverse: Boolean,
+  ) {
+    val snapshot = liveFeed.add(item, category, severity, adverse)
+    liveFeedListeners.toList().forEach { it(snapshot) }
+  }
+
+  private fun ActiveRecording?.elapsedAt(timestamp: Date): Long =
+    this?.let { timestamp.time - it.startedAt.time } ?: 0
+
+  private fun Map<String, Any?>.mapValue(key: String): Map<*, *> =
+    this[key] as? Map<*, *> ?: emptyMap<Any, Any>()
+
+  private fun Map<*, *>.longValue(key: String): Long? =
+    when (val value = this[key]) {
+      is Number -> value.toLong()
+      is String -> value.toLongOrNull()
+      else -> null
+    }
 
   private fun timelineItem(
     type: BuddyTimelineItem.Type,
@@ -334,9 +448,21 @@ internal class BuddyRecorder(
 
   private data class ObservedNavigationScreen(val destination: String, val elapsedMs: Long)
 
+  private data class LiveFeedItem(
+    val item: BuddyTimelineItem,
+    val category: BuddyLiveFeedItem.Category,
+    val severity: Severity,
+  )
+
   private companion object {
+    private const val LIVE_FEED_CAPACITY = 25
+    private const val SLOW_SPAN_THRESHOLD_MS = 1000L
+    private const val FAILED_HTTP_STATUS_CODE = 400L
+    private const val SERVER_ERROR_HTTP_STATUS_CODE = 500L
     private const val ROOT_TRANSACTION_OP = "ui.flow_recording"
+    private const val HTTP_OP = "http"
     private const val NAVIGATION_OP = "navigation"
+    private const val STATUS_OK = "OK"
     private const val TAG_RECORDING_ID = "sentry.buddy.recording_id"
     private const val TAG_FLOW_SLUG = "sentry.buddy.flow_slug"
     private const val TAG_SOURCE = "sentry.buddy.source"
@@ -350,6 +476,9 @@ internal class BuddyRecorder(
     private const val DATA_HINT = "hint"
     private const val DATA_OP = "op"
     private const val DATA_SOURCE = "source"
+    private const val DATA_STATUS = "status"
+    private const val DATA_STATUS_CODE = "status_code"
+    private const val DATA_DURATION_MS = "duration_ms"
     private const val DATA_TO = "to"
     private const val DATA_TO_ARGUMENT_KEYS = "to_argument_keys"
     private const val DATA_TO_ARGUMENTS = "to_arguments"

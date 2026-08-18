@@ -85,7 +85,7 @@ class BuddyRecorderTest {
   }
 
   @Test
-  fun `screen while inactive is ignored`() {
+  fun `screen while inactive does not start a recording`() {
     val fixture = Fixture()
 
     fixture.recorder.recordScreen("CheckoutActivity")
@@ -327,6 +327,123 @@ class BuddyRecorderTest {
     val sampler = RealBuddySentryFacade.tracesSampler(fixture.recorder, null)
 
     assertThat(sampler.sample(samplingContext())).isNull()
+  }
+
+  @Test
+  fun `live feed records useful passive signals while inactive`() {
+    val fixture = Fixture()
+
+    fixture.recorder.recordScreen("CheckoutActivity")
+    fixture.recorder.recordEvent(
+      BuddyObservedEvent(
+        timestamp = Date(500),
+        title = "IllegalStateException",
+        data = linkedMapOf("message" to "Checkout failed"),
+      )
+    )
+
+    val feed = fixture.recorder.liveFeedSnapshot()
+
+    assertThat(feed.items.map { it.category })
+      .containsExactly(BuddyLiveFeedItem.Category.ERROR, BuddyLiveFeedItem.Category.SCREEN)
+      .inOrder()
+    assertThat(feed.unviewedAdverseCount).isEqualTo(1)
+    assertThat(feed.latestAdverseItem?.timelineItem?.name).isEqualTo("IllegalStateException")
+  }
+
+  @Test
+  fun `live feed records only adverse passive spans`() {
+    val fixture = Fixture()
+
+    fixture.recorder.recordTransaction(
+      BuddyObservedTransaction(
+        recordingId = null,
+        operation = "ui.load",
+        transactionName = "CheckoutActivity",
+        timestamp = Date(500),
+        spans =
+          listOf(
+            BuddyObservedSpan(
+              id = "fast-span",
+              timestamp = Date(500),
+              operation = "db.query",
+              description = "SELECT fast",
+              data = linkedMapOf("op" to "db.query", "duration_ms" to 10),
+            ),
+            BuddyObservedSpan(
+              id = "slow-span",
+              timestamp = Date(600),
+              operation = "http.client",
+              description = "GET /slow",
+              data = linkedMapOf("op" to "http.client", "duration_ms" to 1200),
+            ),
+            BuddyObservedSpan(
+              id = "failed-span",
+              timestamp = Date(700),
+              operation = "http.client",
+              description = "POST /failed",
+              data = linkedMapOf("op" to "http.client", "status" to "INTERNAL_ERROR"),
+            ),
+          ),
+      )
+    )
+
+    val feed = fixture.recorder.liveFeedSnapshot()
+
+    assertThat(feed.items.map { it.category })
+      .containsExactly(
+        BuddyLiveFeedItem.Category.FAILED_SPAN,
+        BuddyLiveFeedItem.Category.SLOW_SPAN,
+      )
+      .inOrder()
+    assertThat(feed.unviewedAdverseCount).isEqualTo(2)
+    assertThat(feed.latestAdverseItem?.category).isEqualTo(BuddyLiveFeedItem.Category.FAILED_SPAN)
+  }
+
+  @Test
+  fun `live feed records failed http breadcrumbs`() {
+    val fixture = Fixture()
+
+    fixture.recorder.recordBreadcrumb(
+      BuddyObservedBreadcrumb(
+        timestamp = Date(500),
+        type = "http",
+        category = "http",
+        data =
+          linkedMapOf("data" to mapOf("method" to "GET", "url" to "/items", "status_code" to 503)),
+      )
+    )
+
+    val item = fixture.recorder.liveFeedSnapshot().items.single()
+
+    assertThat(item.category).isEqualTo(BuddyLiveFeedItem.Category.FAILED_HTTP)
+    assertThat(item.severity).isEqualTo(Severity.HIGH)
+  }
+
+  @Test
+  fun `mark live feed seen clears unviewed adverse count`() {
+    val fixture = Fixture()
+    fixture.recorder.recordEvent(BuddyObservedEvent(Date(500), "Boom", emptyMap()))
+
+    assertThat(fixture.recorder.liveFeedSnapshot().unviewedAdverseCount).isEqualTo(1)
+
+    val feed = fixture.recorder.markLiveFeedSeen()
+
+    assertThat(feed.unviewedAdverseCount).isEqualTo(0)
+    assertThat(feed.latestAdverseItem?.viewed).isTrue()
+  }
+
+  @Test
+  fun `live feed keeps the last 25 useful signals`() {
+    val fixture = Fixture()
+
+    repeat(30) { index -> fixture.recorder.recordScreen("Screen $index") }
+
+    val feed = fixture.recorder.liveFeedSnapshot()
+
+    assertThat(feed.items).hasSize(25)
+    assertThat(feed.items.first().timelineItem.name).isEqualTo("Screen 29")
+    assertThat(feed.items.last().timelineItem.name).isEqualTo("Screen 5")
   }
 
   private class Fixture {

@@ -88,6 +88,13 @@ public object SentryBuddy {
     return requireInstalled().stop()
   }
 
+  internal fun liveFeedSnapshot(): BuddyLiveFeed = requireInstalled().liveFeedSnapshot()
+
+  internal fun markLiveFeedSeen(): BuddyLiveFeed = requireInstalled().markLiveFeedSeen()
+
+  internal fun addLiveFeedListener(listener: (BuddyLiveFeed) -> Unit): () -> Unit =
+    requireInstalled().addLiveFeedListener(listener)
+
   private fun requireInstalled(): BuddyRecorder {
     return checkNotNull(recorder) { "SentryBuddy.install(application) must be called first." }
   }

@@ -2,6 +2,8 @@ package io.sentry.android.buddy
 
 import android.graphics.Rect
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -129,6 +131,7 @@ private fun SentryBuddyOverlayContent(
   content: @Composable BoxScope.() -> Unit,
 ) {
   var state by remember { mutableStateOf(controller.state) }
+  var liveFeed by remember { mutableStateOf(controller.liveFeed) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
   var isRecordingHelpOpen by remember { mutableStateOf(false) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
@@ -138,12 +141,14 @@ private fun SentryBuddyOverlayContent(
   fun dispatch(action: SentryBuddySessionController.() -> Unit) {
     controller.action()
     state = controller.state
+    liveFeed = controller.liveFeed
   }
 
   fun dispatchAnalysis(action: SentryBuddySessionController.() -> Unit) {
     analysisScope.launch {
       withContext(Dispatchers.IO) { controller.action() }
       state = controller.state
+      liveFeed = controller.liveFeed
     }
   }
 
@@ -159,6 +164,13 @@ private fun SentryBuddyOverlayContent(
   DisposableEffect(controller) {
     val removeListener = controller.addTransientRecordingEventListener { event ->
       transientRecordingEventScope.launch { transientRecordingEvent = event }
+    }
+    onDispose { removeListener() }
+  }
+
+  DisposableEffect(controller) {
+    val removeListener = controller.addLiveFeedListener { feed ->
+      transientRecordingEventScope.launch { liveFeed = feed }
     }
     onDispose { removeListener() }
   }
@@ -193,6 +205,7 @@ private fun SentryBuddyOverlayContent(
     content()
     BuddyBubble(
       state = state,
+      liveFeed = liveFeed,
       nowMs = nowMs,
       maxWidthPx = maxWidthPx,
       maxHeightPx = maxHeightPx,
@@ -200,7 +213,7 @@ private fun SentryBuddyOverlayContent(
       transientEvent = transientRecordingEvent,
       onClick = {
         when (state) {
-          SentryBuddySessionState.Closed -> dispatch { open() }
+          SentryBuddySessionState.Closed -> dispatch { openLiveFeed() }
           is SentryBuddySessionState.Recording ->
             dispatch {
               stopRecording()
@@ -226,6 +239,8 @@ private fun SentryBuddyOverlayContent(
     )
     BuddySheet(
       state = state,
+      liveFeed = liveFeed,
+      nowMs = nowMs,
       onDispatch = { dispatch(it) },
       onAnalyze = { dispatchAnalysis { analyze() } },
     )
@@ -236,6 +251,7 @@ private fun SentryBuddyOverlayContent(
 @Composable
 private fun BoxScope.BuddyBubble(
   state: SentryBuddySessionState,
+  liveFeed: BuddyLiveFeed,
   nowMs: Long,
   maxWidthPx: Float,
   maxHeightPx: Float,
@@ -253,7 +269,18 @@ private fun BoxScope.BuddyBubble(
   val initialTopPx = with(density) { BuddyBubbleInitialTop.toPx() }
   val isRecording = state is SentryBuddySessionState.Recording
   val bubbleColor = if (isRecording) BuddyRed else BuddyPurple
+  val attentionItem = liveFeed.latestUnviewedAdverseItem
+  val attentionColor = attentionItem?.let { severityColor(it.severity) }
+  val pulseScale = remember { Animatable(1f) }
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
+
+  LaunchedEffect(attentionItem?.id) {
+    if (attentionItem != null) {
+      pulseScale.snapTo(1f)
+      pulseScale.animateTo(1.28f, animationSpec = tween(durationMillis = 700))
+      pulseScale.snapTo(1f)
+    }
+  }
 
   fun defaultOffset(): Offset =
     Offset(
@@ -312,10 +339,38 @@ private fun BoxScope.BuddyBubble(
           .combinedClickable(onClick = onClick, onLongClick = onLongClick),
       contentAlignment = Alignment.Center,
     ) {
+      if (attentionColor != null && !isRecording) {
+        Box(
+          modifier =
+            Modifier.size(BuddyBubbleSize * pulseScale.value)
+              .border(3.dp, attentionColor.copy(alpha = 0.35f), CircleShape)
+        )
+        Box(
+          modifier =
+            Modifier.size(BuddyBubbleSize + 10.dp).border(3.dp, attentionColor, CircleShape)
+        )
+      }
       if (isRecording) {
         StopIcon(tint = Color.White, modifier = Modifier.size(22.dp))
       } else {
         SentryBuddyGlyph(tint = Color.White, modifier = Modifier.size(30.dp))
+      }
+      if (liveFeed.unviewedAdverseCount > 0 && !isRecording) {
+        Text(
+          text =
+            if (liveFeed.unviewedAdverseCount > 9) "9+"
+            else liveFeed.unviewedAdverseCount.toString(),
+          modifier =
+            Modifier.align(Alignment.TopEnd)
+              .offset(x = 6.dp, y = (-6).dp)
+              .size(22.dp)
+              .background(attentionColor ?: BuddyRed, CircleShape)
+              .border(2.dp, Color.White, CircleShape),
+          color = Color.White,
+          style = MaterialTheme.typography.labelSmall,
+          fontWeight = FontWeight.Bold,
+          textAlign = TextAlign.Center,
+        )
       }
     }
     if (isRecording && isRecordingHelpOpen && state is SentryBuddySessionState.Recording) {
@@ -416,6 +471,8 @@ internal class BuddyOverlayHitBounds {
 @Composable
 private fun BuddySheet(
   state: SentryBuddySessionState,
+  liveFeed: BuddyLiveFeed,
+  nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
 ) {
@@ -434,6 +491,7 @@ private fun BuddySheet(
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
       when (state) {
+        SentryBuddySessionState.LiveFeed -> LiveFeedSheet(liveFeed, nowMs, onDispatch)
         SentryBuddySessionState.Intro -> IntroSheet(onDispatch)
         is SentryBuddySessionState.StoppedSummary -> StoppedSummarySheet(state, onDispatch)
         is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
@@ -493,6 +551,152 @@ private fun IntroSheet(onDispatch: (SentryBuddySessionController.() -> Unit) -> 
     textAlign = TextAlign.Center,
     color = BuddyMuted,
   )
+}
+
+@Composable
+private fun LiveFeedSheet(
+  liveFeed: BuddyLiveFeed,
+  nowMs: Long,
+  onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+) {
+  SheetTitle("Sentry Buddy", "Live Feed")
+  AttentionCard(liveFeed, nowMs)
+  Button(
+    modifier = Modifier.fillMaxWidth().height(56.dp),
+    colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
+    onClick = { onDispatch { startRecording() } },
+  ) {
+    BuddyButtonText("Start Recording")
+  }
+  Text(
+    "Recent useful signals",
+    style = MaterialTheme.typography.titleMedium,
+    fontWeight = FontWeight.Bold,
+    color = BuddyInk,
+  )
+  if (liveFeed.items.isEmpty()) {
+    EmptyLiveFeedCard()
+  } else {
+    LiveFeedRows(liveFeed.items, nowMs)
+  }
+}
+
+@Composable
+private fun AttentionCard(liveFeed: BuddyLiveFeed, nowMs: Long) {
+  val item = liveFeed.latestAdverseItem
+  if (item == null) {
+    Card(border = CardDefaults.outlinedCardBorder()) {
+      Row(
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+          Text("Needs attention", color = BuddyInk, fontWeight = FontWeight.Bold)
+          Text("No recent errors or slow spans.", color = BuddyMuted)
+        }
+        Text("OK", color = BuddyPurple, fontWeight = FontWeight.Bold)
+      }
+    }
+    return
+  }
+
+  val color = severityColor(item.severity)
+  Card(
+    colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.10f)),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+      Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Box(modifier = Modifier.size(10.dp).background(color, CircleShape))
+        Text("Needs attention", color = BuddyInk, fontWeight = FontWeight.Bold)
+        Text(relativeTime(item.timestamp.time, nowMs), color = BuddyMuted)
+      }
+      Text(
+        item.title(),
+        color = BuddyInk,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+      )
+      item.subtitle()?.let { Text(it, color = BuddyMuted) }
+      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        adverseCountChips(liveFeed).forEach { chip ->
+          Surface(
+            color = Color.White,
+            shape = RoundedCornerShape(16.dp),
+            border = CardDefaults.outlinedCardBorder(),
+          ) {
+            Text(
+              chip,
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+              color = BuddyInk,
+              style = MaterialTheme.typography.labelMedium,
+              fontWeight = FontWeight.Bold,
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun EmptyLiveFeedCard() {
+  Card(border = CardDefaults.outlinedCardBorder()) {
+    Text(
+      "Navigate through the app and Buddy will show screens, manual steps, errors, and slow or failed work here.",
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      color = BuddyMuted,
+    )
+  }
+}
+
+@Composable
+private fun LiveFeedRows(items: List<BuddyLiveFeedItem>, nowMs: Long) {
+  Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    items.forEach { item ->
+      val color =
+        if (item.adverse) severityColor(item.severity) else timelineColor(item.timelineItem)
+      Card(border = CardDefaults.outlinedCardBorder()) {
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(14.dp),
+          horizontalArrangement = Arrangement.spacedBy(12.dp),
+          verticalAlignment = Alignment.Top,
+        ) {
+          Box(modifier = Modifier.size(10.dp).background(color, CircleShape).offset(y = 5.dp))
+          Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically,
+            ) {
+              Text(item.title(), color = BuddyInk, fontWeight = FontWeight.Bold)
+              Text(
+                relativeTime(item.timestamp.time, nowMs),
+                color = BuddyMuted,
+                style = MaterialTheme.typography.labelMedium,
+              )
+            }
+            item.subtitle()?.let {
+              Text(it, color = BuddyMuted, style = MaterialTheme.typography.bodySmall)
+            }
+            Text(
+              item.category.label,
+              color = color,
+              style = MaterialTheme.typography.labelMedium,
+              fontWeight = FontWeight.Bold,
+            )
+          }
+        }
+      }
+    }
+  }
 }
 
 @Composable
@@ -732,6 +936,97 @@ private fun timelineColor(item: BuddyTimelineItem): Color =
     BuddyTimelineItem.Type.STEP -> BuddyRed
     BuddyTimelineItem.Type.SCREEN -> BuddyPurple
     else -> BuddyMuted
+  }
+
+private fun adverseCountChips(liveFeed: BuddyLiveFeed): List<String> {
+  val adverseItems = liveFeed.items.filter { it.adverse }
+  return listOfNotNull(
+    adverseItems.count { it.category == BuddyLiveFeedItem.Category.ERROR }.positiveChip("errors"),
+    adverseItems
+      .count {
+        it.category == BuddyLiveFeedItem.Category.SLOW_SPAN ||
+          it.category == BuddyLiveFeedItem.Category.FAILED_SPAN
+      }
+      .positiveChip("spans"),
+    adverseItems
+      .count { it.category == BuddyLiveFeedItem.Category.FAILED_HTTP }
+      .positiveChip("HTTP"),
+  )
+}
+
+private fun Int.positiveChip(label: String): String? = if (this > 0) "$this $label" else null
+
+private fun BuddyLiveFeedItem.title(): String =
+  when (category) {
+    BuddyLiveFeedItem.Category.SCREEN -> "Screen: ${timelineItem.name.orEmpty()}"
+    BuddyLiveFeedItem.Category.STEP -> "Step: ${timelineItem.name.orEmpty()}"
+    BuddyLiveFeedItem.Category.ERROR -> timelineItem.name ?: "Error captured"
+    BuddyLiveFeedItem.Category.FAILED_HTTP -> httpTitle()
+    BuddyLiveFeedItem.Category.SLOW_SPAN -> timelineItem.name ?: "Slow span"
+    BuddyLiveFeedItem.Category.FAILED_SPAN -> timelineItem.name ?: "Failed span"
+  }
+
+private fun BuddyLiveFeedItem.subtitle(): String? =
+  when (category) {
+    BuddyLiveFeedItem.Category.SCREEN -> null
+    BuddyLiveFeedItem.Category.STEP -> null
+    BuddyLiveFeedItem.Category.ERROR ->
+      listOfNotNull(
+          timelineItem.data.stringValue("message"),
+          timelineItem.data.stringValue("transaction")?.let { "in $it" },
+        )
+        .joinToString(" • ")
+        .ifBlank { null }
+    BuddyLiveFeedItem.Category.FAILED_HTTP -> httpSubtitle()
+    BuddyLiveFeedItem.Category.SLOW_SPAN,
+    BuddyLiveFeedItem.Category.FAILED_SPAN -> spanSubtitle()
+  }
+
+private fun BuddyLiveFeedItem.httpTitle(): String {
+  val data = timelineItem.data.mapValue("data")
+  val method = data.stringValue("method") ?: data.stringValue("http.method")
+  val url = data.stringValue("url") ?: data.stringValue("http.url")
+  return listOfNotNull(method, url).joinToString(" ").ifBlank { timelineItem.name ?: "Failed HTTP" }
+}
+
+private fun BuddyLiveFeedItem.httpSubtitle(): String? {
+  val data = timelineItem.data.mapValue("data")
+  val statusCode = data.longValue("status_code") ?: timelineItem.data.longValue("status_code")
+  return statusCode?.let { "HTTP $it" }
+}
+
+private fun BuddyLiveFeedItem.spanSubtitle(): String? =
+  listOfNotNull(
+      timelineItem.data.stringValue("op"),
+      timelineItem.data.stringValue("status")?.let { "status $it" },
+      timelineItem.data.longValue("duration_ms")?.let { "${it}ms" },
+      timelineItem.data.stringValue("transaction")?.let { "in $it" },
+    )
+    .joinToString(" • ")
+    .ifBlank { null }
+
+private fun relativeTime(timestampMs: Long, nowMs: Long): String {
+  val ageMs = (nowMs - timestampMs).coerceAtLeast(0)
+  if (ageMs < 1000) {
+    return "just now"
+  }
+  val ageSeconds = ageMs / 1000
+  if (ageSeconds < 60) {
+    return "${ageSeconds}s ago"
+  }
+  return "${ageSeconds / 60}m ago"
+}
+
+private fun Map<String, Any?>.mapValue(key: String): Map<*, *> =
+  this[key] as? Map<*, *> ?: emptyMap<Any, Any>()
+
+private fun Map<*, *>.stringValue(key: String): String? = this[key]?.toString()
+
+private fun Map<*, *>.longValue(key: String): Long? =
+  when (val value = this[key]) {
+    is Number -> value.toLong()
+    is String -> value.toLongOrNull()
+    else -> null
   }
 
 @Composable
