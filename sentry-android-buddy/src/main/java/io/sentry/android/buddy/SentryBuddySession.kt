@@ -79,7 +79,7 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
     return FlowAnalysisResponse(
       flowId = request.flowId,
       status = AnalysisStatus.COMPLETED,
-      title = "Flow ${request.flowId} is ready for review",
+      title = "Your flow is ready for review.",
       recommendations =
         listOf(
           Recommendation(
@@ -266,6 +266,7 @@ public constructor(
     val briefingState = state as? SentryBuddySessionState.Briefing ?: return
     state =
       briefingState.copy(
+        result = briefingState.result.withFlowName(flowName),
         flowName = flowName,
         developerNotes = developerNotes,
         focusAreas = focusAreas,
@@ -363,6 +364,14 @@ public constructor(
     if (focusAreas.isNotEmpty()) {
       append('\n').append("Focus areas: ").append(focusAreas.joinToString { it.label })
     }
+  }
+
+  private fun BuddyRecordingResult.withFlowName(flowName: String): BuddyRecordingResult {
+    val updatedRecording = recording.copy(flow = recording.flow.copy(name = flowName))
+    return copy(
+      recording = updatedRecording,
+      recordingJson = BuddyFlowRecordingJsonSerializer.serialize(updatedRecording),
+    )
   }
 
   private fun BuddyTimelineItem.toFlowAnalysisEvent(): FlowAnalysisEvent =

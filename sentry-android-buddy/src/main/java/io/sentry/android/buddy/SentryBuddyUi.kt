@@ -53,7 +53,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -714,21 +713,20 @@ private fun BriefingSheet(
   var flowName by remember(state.result.recording.recording.id) { mutableStateOf(state.flowName) }
   var notes by
     remember(state.result.recording.recording.id) { mutableStateOf(state.developerNotes) }
-  var isFlowNameFocused by remember(state.result.recording.recording.id) { mutableStateOf(false) }
   fun updateController() {
     onDispatch { updateBriefing(flowName, notes, state.focusAreas) }
   }
 
   SheetTitle("Give Seer some context", formatElapsed(state.result.recording.summary.durationMs))
   OutlinedTextField(
-    modifier = Modifier.fillMaxWidth().onFocusChanged { isFlowNameFocused = it.isFocused },
+    modifier = Modifier.fillMaxWidth(),
     value = flowName,
     onValueChange = {
       flowName = it
       updateController()
     },
     singleLine = true,
-    placeholder = { if (!isFlowNameFocused) Text("Name your flow") },
+    label = { Text("Name your flow") },
   )
   OutlinedTextField(
     modifier = Modifier.fillMaxWidth(),

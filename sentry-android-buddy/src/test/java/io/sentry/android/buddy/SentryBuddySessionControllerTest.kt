@@ -64,6 +64,27 @@ class SentryBuddySessionControllerTest {
     assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Insights::class.java)
     val state = controller.state as SentryBuddySessionState.Insights
     assertThat(state.analysis.status).isEqualTo(AnalysisStatus.COMPLETED)
+    assertThat(state.result.recording.flow.name).isEqualTo("Checkout")
+  }
+
+  @Test
+  fun `dummy flow analysis uses generic ready message`() {
+    val request =
+      FlowAnalysisRequest(
+        flowId = "recording-copy-test",
+        traceIds = emptyList(),
+        startTimeMs = 0,
+        endTimeMs = 1,
+        dsn = "",
+        userAnnotation = "",
+        sdkVersion = "test",
+        events = emptyList(),
+      )
+
+    DummySentryBuddyFlowAnalysesApi.submit(request)
+    val response = DummySentryBuddyFlowAnalysesApi.get(request.flowId)
+
+    assertThat(response.title).isEqualTo("Your flow is ready for review.")
   }
 
   @Test
