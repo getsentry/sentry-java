@@ -66,6 +66,7 @@ import io.sentry.SpanStatus
 import io.sentry.compose.SentryTraced
 import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.sqlite.SampleDatabases
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -92,25 +93,23 @@ private fun SentryTravelApp() {
 
   MaterialTheme(
     colorScheme =
-      androidx.compose.material3.darkColorScheme(
-        primary = TravelPurple,
-        secondary = TravelCoral,
-        tertiary = TravelGold,
-        surface = TravelNavy,
-        background = TravelNavy,
+      androidx.compose.material3.lightColorScheme(
+        primary = TravelNavy,
+        secondary = TravelSky,
+        tertiary = TravelStamp,
+        surface = TravelPaper,
+        background = TravelCloud,
         onPrimary = Color.White,
-        onSecondary = Color.White,
-        onSurface = TravelCream,
-        onBackground = TravelCream,
+        onSecondary = TravelNavy,
+        onSurface = TravelInk,
+        onBackground = TravelInk,
       )
   ) {
-    Surface(modifier = Modifier.fillMaxSize(), color = TravelNavy) {
+    Surface(modifier = Modifier.fillMaxSize(), color = TravelCloud) {
       Box(
         modifier =
           Modifier.fillMaxSize()
-            .background(
-              Brush.verticalGradient(listOf(TravelNavy, Color(0xFF17152C), Color(0xFF241634)))
-            )
+            .background(Brush.verticalGradient(listOf(TravelCloud, TravelPaper, Color(0xFFE7F3FA))))
             .windowInsetsPadding(WindowInsets.safeDrawing)
       ) {
         NavHost(navController = navController, startDestination = TravelRoute.Home.route) {
@@ -406,7 +405,7 @@ private fun ReviewScreen(
       HeroCard(
         title = destination.name,
         body = "${stay.name} for ${stay.nights} nights",
-        accent = TravelPurple,
+        accent = TravelSky,
       )
       TimelineRow("Booking validation", "Custom span checks dates, guests, and itinerary fit.")
       TimelineRow(
@@ -605,23 +604,32 @@ private fun TravelScaffold(
 }
 
 @Composable
-private fun HeroCard(title: String, body: String, accent: Color = TravelPurple) {
+private fun HeroCard(title: String, body: String, accent: Color = TravelSky) {
   Card(
-    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
-    shape = RoundedCornerShape(28.dp),
-    modifier =
-      Modifier.fillMaxWidth()
-        .border(1.dp, Color.White.copy(alpha = 0.10f), RoundedCornerShape(28.dp)),
+    colors = CardDefaults.cardColors(containerColor = TravelPaper),
+    shape = RoundedCornerShape(24.dp),
+    modifier = Modifier.fillMaxWidth().border(1.dp, TravelTicketEdge, RoundedCornerShape(24.dp)),
   ) {
     Box(
       modifier =
         Modifier.fillMaxWidth()
-          .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.55f), Color.Transparent)))
+          .background(Brush.linearGradient(listOf(accent.copy(alpha = 0.24f), Color.Transparent)))
           .padding(20.dp)
     ) {
-      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text(body, color = TravelCream.copy(alpha = 0.82f))
+      Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+          "BOARDING PASS",
+          color = TravelStamp,
+          style = MaterialTheme.typography.labelSmall,
+          fontWeight = FontWeight.ExtraBold,
+        )
+        Text(
+          title,
+          color = TravelInk,
+          style = MaterialTheme.typography.headlineSmall,
+          fontWeight = FontWeight.ExtraBold,
+        )
+        Text(body, color = TravelMuted)
       }
     }
   }
@@ -638,7 +646,7 @@ private fun DestinationCard(destination: TravelDestination, onClick: () -> Unit)
         modifier =
           Modifier.size(58.dp)
             .clip(RoundedCornerShape(18.dp))
-            .background(Brush.linearGradient(listOf(destination.accent, TravelPurple)))
+            .background(Brush.linearGradient(listOf(destination.accent, TravelSky)))
       )
       Column(modifier = Modifier.weight(1f)) {
         Text(
@@ -673,10 +681,11 @@ private fun TravelCard(onClick: (() -> Unit)? = null, content: @Composable Colum
     modifier =
       Modifier.fillMaxWidth()
         .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.09f)),
-    shape = RoundedCornerShape(22.dp),
+    colors = CardDefaults.cardColors(containerColor = TravelPaper),
+    shape = RoundedCornerShape(20.dp),
+    border = androidx.compose.foundation.BorderStroke(1.dp, TravelTicketEdge),
   ) {
-    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
       content()
     }
   }
@@ -691,7 +700,7 @@ private fun TimelineRow(title: String, body: String, onClick: (() -> Unit)? = nu
         .padding(vertical = 8.dp),
     horizontalArrangement = Arrangement.spacedBy(12.dp),
   ) {
-    Box(modifier = Modifier.size(12.dp).background(TravelCoral, CircleShape))
+    Box(modifier = Modifier.size(12.dp).background(TravelStamp, CircleShape))
     Column(modifier = Modifier.weight(1f)) {
       Text(title, fontWeight = FontWeight.Bold)
       Text(body, color = TravelMuted)
@@ -701,7 +710,12 @@ private fun TimelineRow(title: String, body: String, onClick: (() -> Unit)? = nu
 
 @Composable
 private fun SectionTitle(text: String) {
-  Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+  Text(
+    text.uppercase(Locale.ROOT),
+    color = TravelInk,
+    style = MaterialTheme.typography.labelLarge,
+    fontWeight = FontWeight.ExtraBold,
+  )
 }
 
 @Composable
@@ -718,8 +732,8 @@ private fun PrimaryTravelButton(text: String, modifier: Modifier = Modifier, onC
   Button(
     onClick = onClick,
     modifier = modifier.height(52.dp),
-    colors = ButtonDefaults.buttonColors(containerColor = TravelPurple),
-    shape = RoundedCornerShape(18.dp),
+    colors = ButtonDefaults.buttonColors(containerColor = TravelNavy),
+    shape = RoundedCornerShape(12.dp),
   ) {
     Text(text, fontWeight = FontWeight.Bold)
   }
@@ -734,7 +748,8 @@ private fun SecondaryTravelButton(
   OutlinedButton(
     onClick = onClick,
     modifier = modifier.height(52.dp),
-    shape = RoundedCornerShape(18.dp),
+    shape = RoundedCornerShape(12.dp),
+    colors = ButtonDefaults.outlinedButtonColors(contentColor = TravelNavy),
   ) {
     Text(text, fontWeight = FontWeight.Bold)
   }
@@ -964,7 +979,7 @@ private val travelDestinations =
       tagline = "Temples, tea, and tidy spans",
       description =
         "A slow, scenic itinerary through lantern streets, moss gardens, and calm cafes.",
-      accent = Color(0xFF7B52FB),
+      accent = Color(0xFF7EC8E3),
       highlights = listOf("3 days", "8 spans", "Great for scroll replay"),
       itinerary = listOf("Arrival and tea lanes", "Garden walk and market", "Sunrise shrine loop"),
       stays =
@@ -1008,7 +1023,7 @@ private val travelDestinations =
       name = "Lisbon Release Coast",
       tagline = "Tiles, trams, and golden-hour traces",
       description = "A coastal city break with food stops and a high-signal booking flow.",
-      accent = Color(0xFFF55459),
+      accent = Color(0xFFE35D52),
       highlights = listOf("4 days", "HTTP actions", "DB save path"),
       itinerary = listOf("Tile walk", "Coastline train", "Fado dinner"),
       stays =
@@ -1032,10 +1047,14 @@ private val travelDestinations =
     ),
   )
 
-private val TravelNavy = Color(0xFF111225)
-private val TravelPurple = Color(0xFF7B52FB)
-private val TravelCoral = Color(0xFFF55459)
-private val TravelGold = Color(0xFFFFC66D)
-private val TravelGreen = Color(0xFF2FBF71)
-private val TravelCream = Color(0xFFFFF7EA)
-private val TravelMuted = Color(0xFFC9C1D8)
+private val TravelNavy = Color(0xFF102A43)
+private val TravelSky = Color(0xFF7EC8E3)
+private val TravelStamp = Color(0xFFE35D52)
+private val TravelCoral = Color(0xFFF3A261)
+private val TravelGold = Color(0xFFD8A441)
+private val TravelGreen = Color(0xFF2A9D8F)
+private val TravelPaper = Color(0xFFFFFCF4)
+private val TravelCloud = Color(0xFFF3F8FB)
+private val TravelInk = Color(0xFF162334)
+private val TravelMuted = Color(0xFF66798A)
+private val TravelTicketEdge = Color(0xFFD9E5EC)
