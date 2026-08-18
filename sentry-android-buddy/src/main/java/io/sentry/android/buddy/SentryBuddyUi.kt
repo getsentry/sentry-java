@@ -1177,13 +1177,14 @@ private fun HomeTabRow(
   Surface(color = BuddyCode, shape = RoundedCornerShape(16.dp)) {
     Box(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(4.dp)) {
       if (selectedBounds != null) {
-        Surface(
+        Box(
           modifier =
-            Modifier.offset(x = animatedOffsetX).width(animatedWidth).height(animatedHeight),
-          color = Color.White,
-          shape = RoundedCornerShape(12.dp),
-          border = CardDefaults.outlinedCardBorder(),
-        ) {}
+            Modifier.offset(x = animatedOffsetX)
+              .width(animatedWidth)
+              .height(animatedHeight)
+              .background(Color.White, RoundedCornerShape(12.dp))
+              .border(1.dp, BuddyBorder, RoundedCornerShape(12.dp))
+        )
       }
       Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         BuddyHomeTab.entries.forEach { tab ->
@@ -1217,7 +1218,7 @@ private fun HomeTabRow(
           ) {
             Text(
               text = label,
-              modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+              modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
               color = if (isSelected) BuddyInk else BuddyMuted,
               style = MaterialTheme.typography.labelLarge,
               fontWeight = FontWeight.Bold,
@@ -1288,14 +1289,11 @@ private fun RecommendationsTabContent(
     fontWeight = FontWeight.Bold,
     color = BuddyInk,
   )
-  Text(
-    "Everything Buddy wants you to verify or fix shows up here, regardless of where it came from.",
-    color = BuddyMuted,
-  )
+  Spacer(Modifier.height(16.dp))
   if (recommendations.isEmpty()) {
     Card(border = CardDefaults.outlinedCardBorder()) {
       Text(
-        "No recommendations yet. Run a health check, record a flow, or keep exploring the app.",
+        "No recommendations yet.",
         modifier = Modifier.fillMaxWidth().padding(16.dp),
         color = BuddyMuted,
       )
@@ -1326,7 +1324,7 @@ private fun RecordFlowTabContent(onStartRecording: () -> Unit) {
     color = BuddyInk,
   )
   Text(
-    "Record a user flow and Buddy will tie screens, spans, errors, and follow-up recommendations back to one trace.",
+    "Record a flow that's important to your app and Buddy will help you auto-generate dashboards, monitors, and other useful things!",
     color = BuddyMuted,
   )
   Button(
@@ -1341,12 +1339,6 @@ private fun RecordFlowTabContent(onStartRecording: () -> Unit) {
     modifier = Modifier.fillMaxWidth(),
     textAlign = TextAlign.Center,
     color = BuddyMuted,
-  )
-  HorizontalDivider()
-  Text(
-    "Buddy ships as debugImplementation only. It never runs in a release build.",
-    color = BuddyMuted,
-    style = MaterialTheme.typography.bodySmall,
   )
 }
 
