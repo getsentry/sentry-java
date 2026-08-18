@@ -22,13 +22,13 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -1089,7 +1089,9 @@ private fun HomeTabRow(
                 .clickable(
                   interactionSource = interactionSource,
                   indication = null,
-                ) { onSelect(tab) }
+                ) {
+                  onSelect(tab)
+                }
           ) {
             Text(
               text = label,
@@ -1551,64 +1553,85 @@ private fun AttentionItemContent(
     return
   }
 
-  Column(
-    modifier = modifier.fillMaxWidth().background(backgroundColor).padding(16.dp),
-    verticalArrangement = Arrangement.spacedBy(10.dp),
-  ) {
-    Text(
-      "Needs attention",
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.Bold,
-      color = BuddyInk,
-    )
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(10.dp),
-      verticalAlignment = Alignment.CenterVertically,
+  AttentionCardBackground(modifier = modifier, backgroundColor = backgroundColor) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-      LiveFeedCategoryPill(item.category.label, color)
-      Spacer(Modifier.weight(1f))
       Text(
-        relativeTime(item.timestamp.time, nowMs),
-        color = BuddyMuted,
-        style = MaterialTheme.typography.labelMedium,
+        "Needs attention",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = BuddyInk,
+      )
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        LiveFeedCategoryPill(item.category.label, color)
+        Spacer(Modifier.weight(1f))
+        Text(
+          relativeTime(item.timestamp.time, nowMs),
+          color = BuddyMuted,
+          style = MaterialTheme.typography.labelMedium,
+          fontWeight = FontWeight.Normal,
+        )
+      }
+      Text(
+        item.title(),
+        modifier = Modifier.fillMaxWidth(),
+        color = BuddyInk,
+        style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Normal,
       )
-    }
-    Text(
-      item.title(),
-      modifier = Modifier.fillMaxWidth(),
-      color = BuddyInk,
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.Normal,
-    )
-    item.screenContextText()?.let { screenContext ->
-      Text(
-        screenContext,
-        color = BuddyMuted,
-        style = MaterialTheme.typography.bodySmall,
-        fontWeight = FontWeight.Normal,
-      )
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      adverseCountChips(liveFeed).forEach { chip ->
-        Surface(
-          color = Color.White,
-          shape = RoundedCornerShape(16.dp),
-          border = CardDefaults.outlinedCardBorder(),
-        ) {
-          Text(
-            chip,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            color = BuddyInk,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Normal,
-          )
+      item.screenContextText()?.let { screenContext ->
+        Text(
+          screenContext,
+          color = BuddyMuted,
+          style = MaterialTheme.typography.bodySmall,
+          fontWeight = FontWeight.Normal,
+        )
+      }
+      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        adverseCountChips(liveFeed).forEach { chip ->
+          Surface(
+            color = Color.White,
+            shape = RoundedCornerShape(16.dp),
+            border = CardDefaults.outlinedCardBorder(),
+          ) {
+            Text(
+              chip,
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+              color = BuddyInk,
+              style = MaterialTheme.typography.labelMedium,
+              fontWeight = FontWeight.Normal,
+            )
+          }
         }
       }
     }
   }
 }
+
+@Composable
+private fun AttentionCardBackground(
+  modifier: Modifier = Modifier,
+  backgroundColor: Color,
+  content: @Composable BoxScope.() -> Unit,
+) {
+  Box(modifier = modifier.fillMaxWidth().background(backgroundColor).clipToAttentionCard()) {
+    Icon(
+      painter = painterResource(id = R.drawable.ic_buddy_eye),
+      contentDescription = null,
+      modifier = Modifier.size(232.dp).align(Alignment.BottomEnd).offset(x = 58.dp, y = 52.dp),
+      tint = Color.White.copy(alpha = 0.52f),
+    )
+    content()
+  }
+}
+
+private fun Modifier.clipToAttentionCard(): Modifier = this.clip(RoundedCornerShape(20.dp))
 
 @Composable
 private fun PerformanceAttentionItemContent(
@@ -1619,71 +1642,73 @@ private fun PerformanceAttentionItemContent(
   backgroundColor: Color,
   modifier: Modifier = Modifier,
 ) {
-  Column(
-    modifier = modifier.fillMaxWidth().background(backgroundColor).padding(16.dp),
-    verticalArrangement = Arrangement.spacedBy(12.dp),
-  ) {
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically,
+  AttentionCardBackground(modifier = modifier, backgroundColor = backgroundColor) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      Text(
-        "Needs attention",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        color = BuddyInk,
-      )
-      Text(
-        relativeTime(item.timestamp.time, nowMs),
-        color = BuddyMuted,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.Normal,
-      )
-    }
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(10.dp),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      LiveFeedCategoryPill(item.category.label, color)
-      item.performanceSourceLabel()?.let { source ->
-        Surface(color = Color.White.copy(alpha = 0.85f), shape = RoundedCornerShape(18.dp)) {
-          Text(
-            source,
-            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-            color = BuddyMuted,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-          )
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          "Needs attention",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold,
+          color = BuddyInk,
+        )
+        Text(
+          relativeTime(item.timestamp.time, nowMs),
+          color = BuddyMuted,
+          style = MaterialTheme.typography.labelMedium,
+          fontWeight = FontWeight.Normal,
+        )
+      }
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        LiveFeedCategoryPill(item.category.label, color)
+        item.performanceSourceLabel()?.let { source ->
+          Surface(color = Color.White.copy(alpha = 0.85f), shape = RoundedCornerShape(18.dp)) {
+            Text(
+              source,
+              modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+              color = BuddyMuted,
+              style = MaterialTheme.typography.labelSmall,
+              fontWeight = FontWeight.Bold,
+            )
+          }
         }
       }
+      Text(
+        item.performanceHeadline(),
+        modifier = Modifier.fillMaxWidth(),
+        color = BuddyInk,
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold,
+      )
+      Text(
+        item.title(),
+        modifier = Modifier.fillMaxWidth(),
+        color = BuddyInk,
+        style = MaterialTheme.typography.bodyLarge,
+        fontWeight = FontWeight.Normal,
+      )
+      item.performancePrimaryStat()?.let { stat ->
+        PerformanceHeroStatCard(stat, color)
+      }
+      PerformanceContextCards(item, color)
+      Text(
+        item.performanceNarrative(liveFeed),
+        color = BuddyMuted,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Normal,
+      )
+      AttentionTimelinePreview(item, liveFeed, color)
     }
-    Text(
-      item.performanceHeadline(),
-      modifier = Modifier.fillMaxWidth(),
-      color = BuddyInk,
-      style = MaterialTheme.typography.headlineSmall,
-      fontWeight = FontWeight.Bold,
-    )
-    Text(
-      item.title(),
-      modifier = Modifier.fillMaxWidth(),
-      color = BuddyInk,
-      style = MaterialTheme.typography.bodyLarge,
-      fontWeight = FontWeight.Normal,
-    )
-    item.performancePrimaryStat()?.let { stat ->
-      PerformanceHeroStatCard(stat, color)
-    }
-    PerformanceContextCards(item, color)
-    Text(
-      item.performanceNarrative(liveFeed),
-      color = BuddyMuted,
-      style = MaterialTheme.typography.bodySmall,
-      fontWeight = FontWeight.Normal,
-    )
-    AttentionTimelinePreview(item, liveFeed, color)
   }
 }
 
