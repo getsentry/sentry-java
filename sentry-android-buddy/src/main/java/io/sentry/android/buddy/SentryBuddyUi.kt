@@ -1326,22 +1326,7 @@ private fun AttentionCard(
   }
 }
 
-private fun Modifier.attentionCardChrome(): Modifier = drawBehind {
-  val stroke = 1.dp.toPx()
-  val inset = stroke / 2f
-  drawLine(
-    color = BuddyBorder,
-    start = Offset(0f, inset),
-    end = Offset(size.width, inset),
-    strokeWidth = stroke,
-  )
-  drawLine(
-    color = BuddyBorder,
-    start = Offset(0f, size.height - inset),
-    end = Offset(size.width, size.height - inset),
-    strokeWidth = stroke,
-  )
-}
+private fun Modifier.attentionCardChrome(): Modifier = this
 
 @Composable
 private fun AttentionItemContent(
