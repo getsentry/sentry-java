@@ -808,16 +808,16 @@ private fun InsightsSheet(
   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
     MetricCard(state.response.insights.size.toString(), "Insights", Modifier.weight(1f), BuddyRed)
     MetricCard(
-      state.result.recording.summary.spanCount.toString(),
-      "Spans",
-      Modifier.weight(1f),
-      BuddyGold,
-    )
-    MetricCard(
       state.result.recording.summary.screenCount.toString(),
       "Screens",
       Modifier.weight(1f),
       BuddyPurple,
+    )
+    MetricCard(
+      state.result.recording.summary.spanCount.toString(),
+      "Spans",
+      Modifier.weight(1f),
+      BuddyGold,
     )
   }
   Text(state.response.summary, color = BuddyMuted)
