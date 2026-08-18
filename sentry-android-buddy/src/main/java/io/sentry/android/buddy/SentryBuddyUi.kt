@@ -1351,21 +1351,32 @@ private fun HealthCheckValueRow(label: String, value: String) {
 @Composable
 private fun HealthCheckIcon(tint: Color, modifier: Modifier = Modifier) {
   Canvas(modifier = modifier) {
-    val arm = size.minDimension * 0.26f
-    val length = size.minDimension * 0.78f
-    val corner = arm * 0.22f
+    val borderWidth = size.minDimension * 0.08f
+    val borderInset = borderWidth / 2f
+    val borderCorner = size.minDimension * 0.16f
+    drawRoundRect(
+      color = BuddyBorder,
+      topLeft = Offset(borderInset, borderInset),
+      size = Size(size.width - borderWidth, size.height - borderWidth),
+      cornerRadius = androidx.compose.ui.geometry.CornerRadius(borderCorner),
+      style = androidx.compose.ui.graphics.drawscope.Stroke(width = borderWidth),
+    )
+
+    val arm = size.minDimension * 0.20f
+    val length = size.minDimension * 0.54f
+    val crossCorner = arm * 0.22f
     val center = Offset(size.width / 2f, size.height / 2f)
     drawRoundRect(
       color = tint,
       topLeft = Offset(center.x - arm / 2f, center.y - length / 2f),
       size = Size(arm, length),
-      cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner),
+      cornerRadius = androidx.compose.ui.geometry.CornerRadius(crossCorner),
     )
     drawRoundRect(
       color = tint,
       topLeft = Offset(center.x - length / 2f, center.y - arm / 2f),
       size = Size(length, arm),
-      cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner),
+      cornerRadius = androidx.compose.ui.geometry.CornerRadius(crossCorner),
     )
   }
 }
