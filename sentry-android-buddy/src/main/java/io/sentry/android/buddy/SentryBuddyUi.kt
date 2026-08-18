@@ -1140,10 +1140,9 @@ private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
     modifier =
       Modifier.size(40.dp)
         .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
-        .clip(CircleShape)
         .clickable(enabled = enabled, onClick = onClick),
     color = BuddySentryPink.copy(alpha = 0.12f),
-    shape = CircleShape,
+    shape = RoundedCornerShape(12.dp),
   ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
       HealthCheckIcon(
@@ -1313,12 +1312,15 @@ private fun HealthCheckValueRow(label: String, value: String) {
 private fun HealthCheckIcon(tint: Color, modifier: Modifier = Modifier) {
   Canvas(modifier = modifier) {
     val borderWidth = size.minDimension * 0.08f
-    val borderInset = borderWidth / 2f
     val borderCorner = size.minDimension * 0.16f
+    val kitWidth = size.width - borderWidth
+    val kitHeight = size.height * 0.68f
+    val kitLeft = borderWidth / 2f
+    val kitTop = (size.height - kitHeight) / 2f
     drawRoundRect(
       color = BuddyBorder,
-      topLeft = Offset(borderInset, borderInset),
-      size = Size(size.width - borderWidth, size.height - borderWidth),
+      topLeft = Offset(kitLeft, kitTop),
+      size = Size(kitWidth, kitHeight),
       cornerRadius = androidx.compose.ui.geometry.CornerRadius(borderCorner),
       style = androidx.compose.ui.graphics.drawscope.Stroke(width = borderWidth),
     )
