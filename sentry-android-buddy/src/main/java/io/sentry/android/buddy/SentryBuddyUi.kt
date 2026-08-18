@@ -2951,7 +2951,7 @@ private val BuddySheetHorizontalPadding = 24.dp
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 9
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
-private const val ANALYSIS_TIMEOUT_MS = 30_000L
+public const val ANALYSIS_TIMEOUT_MS : Long = 120_000L
 
 private val BuddyPurple = Color(0xFF7553FF)
 private val BuddyAccentBubbleColor = Color(0xFF7553FF)
