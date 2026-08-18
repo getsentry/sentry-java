@@ -37,7 +37,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -1169,11 +1168,18 @@ private fun HomeTabRow(
       animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
       label = "buddy-home-tab-width",
     )
+  val animatedHeight by
+    animateDpAsState(
+      targetValue = selectedBounds?.height ?: 0.dp,
+      animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+      label = "buddy-home-tab-height",
+    )
   Surface(color = BuddyCode, shape = RoundedCornerShape(16.dp)) {
     Box(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(4.dp)) {
       if (selectedBounds != null) {
         Surface(
-          modifier = Modifier.offset(x = animatedOffsetX).width(animatedWidth).fillMaxHeight(),
+          modifier =
+            Modifier.offset(x = animatedOffsetX).width(animatedWidth).height(animatedHeight),
           color = Color.White,
           shape = RoundedCornerShape(12.dp),
           border = CardDefaults.outlinedCardBorder(),
@@ -1203,6 +1209,7 @@ private fun HomeTabRow(
                           HomeTabBounds(
                             left = coordinates.positionInParent().x.toDp(),
                             width = coordinates.size.width.toDp(),
+                            height = coordinates.size.height.toDp(),
                           )
                         })
                 }
@@ -1223,7 +1230,7 @@ private fun HomeTabRow(
   }
 }
 
-private data class HomeTabBounds(val left: Dp, val width: Dp)
+private data class HomeTabBounds(val left: Dp, val width: Dp, val height: Dp)
 
 @Composable
 private fun LiveFeedTabContent(
@@ -1234,32 +1241,34 @@ private fun LiveFeedTabContent(
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
-  Spacer(Modifier.height(12.dp))
-  AttentionCard(
-    liveFeed = liveFeed,
-    sentryUiLinks = sentryUiLinks,
-    nowMs = nowMs,
-    emptyArtIndex = emptyArtIndex,
-    onDismiss = { onDispatch { dismissLiveFeedAttention() } },
-    onOpenUrl = onOpenUrl,
-  )
-  LiveFeedInset {
-    Text(
-      "Live feed",
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.Bold,
-      color = BuddyInk,
+  Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Spacer(Modifier.height(12.dp))
+    AttentionCard(
+      liveFeed = liveFeed,
+      sentryUiLinks = sentryUiLinks,
+      nowMs = nowMs,
+      emptyArtIndex = emptyArtIndex,
+      onDismiss = { onDispatch { dismissLiveFeedAttention() } },
+      onOpenUrl = onOpenUrl,
     )
-    if (liveFeed.items.isEmpty()) {
-      EmptyLiveFeedCard()
-    } else {
-      LiveFeedRows(
-        items = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT),
-        showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
-        sentryUiLinks = sentryUiLinks,
-        nowMs = nowMs,
-        onOpenUrl = onOpenUrl,
+    LiveFeedInset {
+      Text(
+        "Live feed",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = BuddyInk,
       )
+      if (liveFeed.items.isEmpty()) {
+        EmptyLiveFeedCard()
+      } else {
+        LiveFeedRows(
+          items = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT),
+          showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
+          sentryUiLinks = sentryUiLinks,
+          nowMs = nowMs,
+          onOpenUrl = onOpenUrl,
+        )
+      }
     }
   }
 }
