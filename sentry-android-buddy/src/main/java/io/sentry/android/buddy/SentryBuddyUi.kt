@@ -748,15 +748,15 @@ private fun BriefingSheet(
 
 @Composable
 private fun AnalyzingSheet(state: SentryBuddySessionState.Analyzing) {
-  SheetTitle("Analyzing", "Flow • ${formatElapsed(state.request.recording.summary.durationMs)}")
+  SheetTitle("Analyzing", "Flow • ${formatElapsed(state.result.recording.summary.durationMs)}")
   Text(
     "Flow Analysis Submitted",
     style = MaterialTheme.typography.titleLarge,
     fontWeight = FontWeight.Bold,
   )
   listOf(
-      "POST /v1/flow-analyses accepted",
-      "GET /v1/flow-analyses/${state.submission.id}",
+      "POST /v1/flow-analysis accepted",
+      "GET /v1/flow-analysis/${state.submission.flowId}",
       "Building flow recommendations",
       "Waiting for completion",
     )
@@ -790,18 +790,18 @@ private fun InsightsSheet(
   var isJsonDialogOpen by remember { mutableStateOf(false) }
   SheetTitle(
     "Flow insights",
-    "${state.request.flowName} • ${formatElapsed(state.request.recording.summary.durationMs)}",
+    "${state.result.recording.flow.name} • ${formatElapsed(state.result.recording.summary.durationMs)}",
   )
   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
     MetricCard(state.response.insights.size.toString(), "Insights", Modifier.weight(1f), BuddyRed)
     MetricCard(
-      state.request.recording.summary.spanCount.toString(),
+      state.result.recording.summary.spanCount.toString(),
       "Spans",
       Modifier.weight(1f),
       BuddyGold,
     )
     MetricCard(
-      state.request.recording.summary.screenCount.toString(),
+      state.result.recording.summary.screenCount.toString(),
       "Screens",
       Modifier.weight(1f),
       BuddyPurple,
@@ -837,7 +837,7 @@ private fun InsightsSheet(
         Modifier.weight(1f)
           .height(52.dp)
           .combinedClickable(
-            onClick = { clipboard.setText(AnnotatedString(state.request.recordingJson)) },
+            onClick = { clipboard.setText(AnnotatedString(state.result.recordingJson)) },
             onLongClick = { isJsonDialogOpen = true },
           ),
       color = BuddyPurple,
@@ -855,7 +855,7 @@ private fun InsightsSheet(
       title = { Text("Recording JSON", fontWeight = FontWeight.Bold) },
       text = {
         Text(
-          text = prettyPrintJson(state.request.recordingJson),
+          text = prettyPrintJson(state.result.recordingJson),
           modifier = Modifier.height(320.dp).verticalScroll(rememberScrollState()),
           fontFamily = FontFamily.Monospace,
           color = BuddyInk,
@@ -924,7 +924,7 @@ private fun appendJsonNewLine(result: StringBuilder, indent: Int) {
 }
 
 @Composable
-private fun RecommendationRow(recommendation: BuddyRecommendation) {
+private fun RecommendationRow(recommendation: Recommendation) {
   Column(
     modifier = Modifier.fillMaxWidth().padding(16.dp),
     verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -935,27 +935,17 @@ private fun RecommendationRow(recommendation: BuddyRecommendation) {
     ) {
       Box(
         modifier =
-          Modifier.size(10.dp).background(priorityColor(recommendation.priority), CircleShape)
+          Modifier.size(10.dp).background(severityColor(recommendation.severity), CircleShape)
       )
       Text(recommendation.title, color = BuddyInk, fontWeight = FontWeight.Bold)
     }
-    Text(recommendation.body, color = BuddyMuted)
+    Text(recommendation.description, color = BuddyMuted)
     Text(
-      "${recommendation.category.label} • ${recommendation.priority.label}",
+      "${recommendation.severity.value} • ${recommendation.status.value}",
       color = BuddyPurple,
       style = MaterialTheme.typography.labelMedium,
       fontWeight = FontWeight.Bold,
     )
-    recommendation.codeSnippet?.let {
-      Surface(color = BuddyCode, shape = RoundedCornerShape(8.dp)) {
-        Text(
-          text = it,
-          modifier = Modifier.fillMaxWidth().padding(10.dp),
-          fontFamily = FontFamily.Monospace,
-          color = BuddyInk,
-        )
-      }
-    }
   }
 }
 
@@ -969,11 +959,11 @@ private fun ErrorSheet(
   TextButton(onClick = { onDispatch { recordAgain() } }) { Text("Start over") }
 }
 
-private fun priorityColor(priority: BuddyRecommendationPriority): Color =
-  when (priority) {
-    BuddyRecommendationPriority.HIGH -> BuddyRed
-    BuddyRecommendationPriority.MEDIUM -> BuddyGold
-    BuddyRecommendationPriority.LOW -> BuddyPurple
+private fun severityColor(severity: Severity): Color =
+  when (severity) {
+    Severity.HIGH -> BuddyRed
+    Severity.MEDIUM -> BuddyGold
+    Severity.LOW -> BuddyPurple
   }
 
 private fun formatElapsed(durationMs: Long): String {

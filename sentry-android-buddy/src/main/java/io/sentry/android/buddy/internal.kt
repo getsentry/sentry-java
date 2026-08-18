@@ -119,6 +119,7 @@ internal class BuddyRecorder(
       sentry =
         BuddySentryCorrelation(
           recordingId = recording.id,
+          dsn = sentryFacade.dsn,
           traceId = recording.transaction.traceId,
           spanId = recording.transaction.spanId,
           tags = recording.tags,
@@ -388,6 +389,8 @@ internal object UuidBuddyIdGenerator : BuddyIdGenerator {
 }
 
 internal interface BuddySentryFacade {
+  val dsn: String?
+
   val release: String?
 
   val environment: String?
@@ -414,6 +417,9 @@ internal interface BuddySentryTransaction {
 }
 
 internal class RealBuddySentryFacade : BuddySentryFacade {
+  override val dsn: String?
+    get() = Sentry.getCurrentScopes().options.dsn
+
   override val release: String?
     get() = Sentry.getCurrentScopes().options.release
 

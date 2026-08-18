@@ -121,6 +121,7 @@ class BuddyRecorderTest {
     var startedTransactionName: String? = null
     var startedTransactionOperation: String? = null
 
+    override val dsn: String? = "https://public@example.com/1"
     override val release: String? = "1.0-debug"
     override val environment: String? = "debug"
 
