@@ -1747,7 +1747,7 @@ private fun emptyAttentionArtResource(index: Int): Int =
     6 -> R.drawable.buddy_attention_auth_doorway
     7 -> R.drawable.buddy_attention_black_friday
     8 -> R.drawable.buddy_attention_startups
-    else -> R.drawable.buddy_attention_thankyou
+    else -> R.drawable.buddy_attention_android_anr
   }
 
 @Composable
@@ -2283,29 +2283,63 @@ private fun QuickDecisionCardStack(
   if (cards.isEmpty()) {
     return
   }
+  if (activeIndex >= cards.size) {
+    QuickDecisionThankYouCard()
+    return
+  }
   val visibleCards = cards.drop(activeIndex).take(3)
   Box(modifier = Modifier.fillMaxWidth().height(BuddyQuickDecisionStackHeight)) {
     visibleCards.asReversed().forEachIndexed { reversedIndex, card ->
       val stackIndex = visibleCards.lastIndex - reversedIndex
       val isActive = stackIndex == 0
-      QuickDecisionCardView(
-        card = card,
-        selectedValue = answers[card.id],
-        cardIndex = activeIndex + stackIndex,
-        cardCount = cards.size,
-        isActive = isActive,
-        modifier =
-          Modifier.matchParentSize().graphicsLayer {
-            translationX = (stackIndex * 10).dp.toPx()
-            translationY = (stackIndex * 10).dp.toPx()
-            scaleX = 1f - stackIndex * 0.04f
-            scaleY = 1f - stackIndex * 0.04f
-            alpha = 1f - stackIndex * 0.18f
-          },
-        onSelect = { option -> onSelect(card, option) },
-      )
+      val modifier =
+        Modifier.matchParentSize().graphicsLayer {
+          translationX = (stackIndex * 10).dp.toPx()
+          translationY = (stackIndex * 10).dp.toPx()
+          scaleX = 1f - stackIndex * 0.04f
+          scaleY = 1f - stackIndex * 0.04f
+          alpha = 1f - stackIndex * 0.18f
+        }
+      if (isActive) {
+        QuickDecisionCardView(
+          card = card,
+          selectedValue = answers[card.id],
+          cardIndex = activeIndex + stackIndex,
+          cardCount = cards.size,
+          modifier = modifier,
+          onSelect = { option -> onSelect(card, option) },
+        )
+      } else {
+        QuickDecisionCardPeek(modifier = modifier)
+      }
     }
   }
+}
+
+@Composable
+private fun QuickDecisionThankYouCard() {
+  Surface(
+    modifier = Modifier.fillMaxWidth().height(BuddyQuickDecisionStackHeight),
+    shape = RoundedCornerShape(20.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Image(
+      painter = painterResource(id = R.drawable.buddy_attention_thankyou),
+      contentDescription = null,
+      modifier = Modifier.fillMaxSize(),
+      contentScale = ContentScale.Crop,
+    )
+  }
+}
+
+@Composable
+private fun QuickDecisionCardPeek(modifier: Modifier = Modifier) {
+  Surface(
+    modifier = modifier,
+    color = BuddyPurple.copy(alpha = 0.06f),
+    shape = RoundedCornerShape(20.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {}
 }
 
 @Composable
@@ -2314,19 +2348,18 @@ private fun QuickDecisionCardView(
   selectedValue: String?,
   cardIndex: Int,
   cardCount: Int,
-  isActive: Boolean,
   modifier: Modifier = Modifier,
   onSelect: (QuickDecisionOption) -> Unit,
 ) {
   Surface(
     modifier = modifier,
-    color = BuddyPurple.copy(alpha = if (isActive) 0.10f else 0.06f),
+    color = BuddyPurple.copy(alpha = 0.10f),
     shape = RoundedCornerShape(20.dp),
     border = CardDefaults.outlinedCardBorder(),
   ) {
     Column(
-      modifier = Modifier.fillMaxSize().padding(16.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
+      modifier = Modifier.fillMaxSize().padding(14.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -2360,8 +2393,7 @@ private fun QuickDecisionCardView(
         card.options.forEach { option ->
           val selected = option.value == selectedValue
           Surface(
-            modifier =
-              Modifier.weight(1f).height(38.dp).clickable(enabled = isActive) { onSelect(option) },
+            modifier = Modifier.weight(1f).height(38.dp).clickable { onSelect(option) },
             color = if (selected) BuddyPurple else Color.White,
             shape = RoundedCornerShape(19.dp),
             border = CardDefaults.outlinedCardBorder(),
@@ -2428,7 +2460,7 @@ private fun demoQuickDecisionCards(): List<QuickDecisionCard> =
 private fun List<QuickDecisionCard>.nextUnansweredIndex(answers: Map<String, String>): Int =
   indexOfFirst { answers[it.id] == null }
     .let { index ->
-      if (index == -1) lastIndex.coerceAtLeast(0) else index
+      if (index == -1) size else index
     }
 
 private fun String.withQuickDecisionAnswers(
@@ -2675,7 +2707,7 @@ private val BuddyAttentionCardHeight = 264.dp
 private val BuddyQuickDecisionStackHeight = 188.dp
 private val BuddySheetHorizontalPadding = 24.dp
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
-private const val EMPTY_ATTENTION_ART_VARIANTS = 10
+private const val EMPTY_ATTENTION_ART_VARIANTS = 9
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
 private const val ANALYSIS_TIMEOUT_MS = 30_000L
 
