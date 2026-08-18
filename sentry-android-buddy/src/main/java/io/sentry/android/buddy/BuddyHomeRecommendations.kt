@@ -10,6 +10,7 @@ internal enum class BuddyRecommendationSource(val label: String) {
   FLOW_ANALYSIS("Flow analysis"),
   HEALTH_CHECK("Health check"),
   LIVE_FEED("Live feed"),
+  SCREEN_SCAN("Screen scan"),
 }
 
 internal data class BuddyHomeRecommendation(

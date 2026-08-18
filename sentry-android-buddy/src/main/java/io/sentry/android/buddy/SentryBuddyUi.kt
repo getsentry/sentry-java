@@ -89,6 +89,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -586,6 +587,7 @@ private fun BuddySheet(
   state: SentryBuddySessionState,
   liveFeed: BuddyLiveFeed,
   healthCheckState: BuddyHealthCheckState,
+  screenScanState: BuddyScreenScanState,
   homeTab: BuddyHomeTab,
   homeRecommendations: List<BuddyHomeRecommendation>,
   sentryUiLinks: BuddySentryUiLinks,
@@ -599,9 +601,15 @@ private fun BuddySheet(
   onSelectHomeTab: (BuddyHomeTab) -> Unit,
   onRunHealthCheck: () -> Unit,
   onDismissHealthCheck: () -> Unit,
+  onDismissScreenScan: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
   if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
+    return
+  }
+  if (
+    state is SentryBuddySessionState.LiveFeed && screenScanState is BuddyScreenScanState.Scanning
+  ) {
     return
   }
   val maxSheetHeight = LocalConfiguration.current.screenHeightDp.dp * 0.75f
@@ -638,23 +646,34 @@ private fun BuddySheet(
     ) {
       when (state) {
         SentryBuddySessionState.LiveFeed ->
-          BuddyHomeSheet(
-            liveFeed,
-            healthCheckState,
-            homeTab,
-            homeRecommendations,
-            sentryUiLinks,
-            nowMs,
-            onDispatch,
-            ::startRecordingAfterSheetExit,
-            onResolveHomeRecommendation,
-            onDismissHomeRecommendation,
-            onMarkHomeRecommendationRead,
-            onSelectHomeTab,
-            onRunHealthCheck,
-            onDismissHealthCheck,
-            onOpenUrl,
-          )
+          if (screenScanState is BuddyScreenScanState.Results) {
+            ScreenInstrumentationSheet(
+              result = screenScanState.result,
+              onDismiss = onDismissScreenScan,
+              onShowRecommendations = {
+                onDismissScreenScan()
+                onSelectHomeTab(BuddyHomeTab.RECOMMENDATIONS)
+              },
+            )
+          } else {
+            BuddyHomeSheet(
+              liveFeed,
+              healthCheckState,
+              homeTab,
+              homeRecommendations,
+              sentryUiLinks,
+              nowMs,
+              onDispatch,
+              ::startRecordingAfterSheetExit,
+              onResolveHomeRecommendation,
+              onDismissHomeRecommendation,
+              onMarkHomeRecommendationRead,
+              onSelectHomeTab,
+              onRunHealthCheck,
+              onDismissHealthCheck,
+              onOpenUrl,
+            )
+          }
         SentryBuddySessionState.Intro -> IntroSheet(::startRecordingAfterSheetExit)
         is SentryBuddySessionState.StoppedSummary ->
           StoppedSummarySheet(state, sentryUiLinks, onDispatch, onOpenUrl)
@@ -804,6 +823,58 @@ private fun BubbleNotificationBadge(count: String, color: Color, modifier: Modif
   }
 }
 
+@Composable
+private fun ScreenScanElectricityOverlay(screenScanState: BuddyScreenScanState) {
+  val scanningState = screenScanState as? BuddyScreenScanState.Scanning ?: return
+  val transition = rememberInfiniteTransition(label = "buddy-screen-scan-electricity")
+  val phase by
+    transition.animateFloat(
+      initialValue = 0f,
+      targetValue = 1f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 520),
+          repeatMode = RepeatMode.Restart,
+        ),
+      label = "buddy-screen-scan-electricity-phase",
+    )
+  Canvas(
+    modifier =
+      Modifier.fillMaxSize().graphicsLayer { alpha = 1f - (phase * 0.18f).coerceIn(0f, 0.18f) }
+  ) {
+    scanningState.result.bounds.forEachIndexed { index, bounds ->
+      val pulse = (phase + index * 0.17f) % 1f
+      val glowAlpha = (0.22f + pulse * 0.30f).coerceIn(0.22f, 0.52f)
+      val inset = 1f + pulse * 3f
+      val topLeft = Offset(bounds.left + inset, bounds.top + inset)
+      val size =
+        Size(
+          (bounds.width - inset * 2).coerceAtLeast(1f),
+          (bounds.height - inset * 2).coerceAtLeast(1f),
+        )
+      val cornerRadius = CornerRadius(18f, 18f)
+      drawRoundRect(
+        color = BuddyScanElectricGlow.copy(alpha = glowAlpha),
+        topLeft = topLeft,
+        size = size,
+        cornerRadius = cornerRadius,
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 8f),
+      )
+      drawRoundRect(
+        color = BuddyScanElectricCore.copy(alpha = 0.72f),
+        topLeft = topLeft,
+        size = size,
+        cornerRadius = cornerRadius,
+        style =
+          androidx.compose.ui.graphics.drawscope.Stroke(
+            width = 2.5f,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 10f), phase * 56f),
+          ),
+      )
+    }
+  }
+}
+
 private fun ImageView.bindBuddyBubbleGlyph(context: Context, state: BuddyBubbleGlyphState) {
   val drawableRes =
     when (state) {
@@ -920,6 +991,93 @@ private fun IntroSheet(onStartRecording: () -> Unit) {
     color = BuddyMuted,
   )
 }
+
+@Composable
+private fun ScreenInstrumentationSheet(
+  result: BuddyScreenScanResult,
+  onDismiss: () -> Unit,
+  onShowRecommendations: () -> Unit,
+) {
+  SheetTitle("Screen scan", result.screenName)
+  Text(
+    "Seer traced the visible host UI and checked which Sentry signals can explain this screen.",
+    color = BuddyMuted,
+  )
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    color = BuddyPurple.copy(alpha = 0.08f),
+    shape = RoundedCornerShape(16.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(14.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text("Host bounds traced", color = BuddyInk, fontWeight = FontWeight.Bold)
+      Text(result.bounds.size.toString(), color = BuddyPurple, fontWeight = FontWeight.Bold)
+    }
+  }
+  Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    result.instrumentation.forEach { item -> ScreenInstrumentationRow(item) }
+  }
+  Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    OutlinedButton(modifier = Modifier.weight(1f).height(52.dp), onClick = onDismiss) {
+      BuddyButtonText("Close")
+    }
+    Button(
+      modifier = Modifier.weight(1f).height(52.dp),
+      colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
+      onClick = onShowRecommendations,
+    ) {
+      BuddyButtonText("Recommendations", color = Color.White)
+    }
+  }
+}
+
+@Composable
+private fun ScreenInstrumentationRow(item: BuddyScreenInstrumentationItem) {
+  val color = instrumentationStatusColor(item.status)
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    color = color.copy(alpha = 0.08f),
+    shape = RoundedCornerShape(14.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(14.dp),
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Box(modifier = Modifier.size(12.dp).background(color, CircleShape))
+      Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(item.label, color = BuddyInk, fontWeight = FontWeight.Bold)
+        Text(item.value, color = BuddyMuted, style = MaterialTheme.typography.bodySmall)
+      }
+      Text(
+        item.status.label,
+        color = color,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+      )
+    }
+  }
+}
+
+private val BuddyInstrumentationStatus.label: String
+  get() =
+    when (this) {
+      BuddyInstrumentationStatus.ENABLED -> "Wired"
+      BuddyInstrumentationStatus.WARNING -> "Check"
+      BuddyInstrumentationStatus.MISSING -> "Missing"
+    }
+
+private fun instrumentationStatusColor(status: BuddyInstrumentationStatus): Color =
+  when (status) {
+    BuddyInstrumentationStatus.ENABLED -> BuddyGreen
+    BuddyInstrumentationStatus.WARNING -> BuddyGold
+    BuddyInstrumentationStatus.MISSING -> BuddyRed
+  }
 
 @Composable
 private fun BuddyHomeSheet(
@@ -2894,6 +3052,7 @@ private const val BUDDY_FAB_QUOTE_VISIBLE_MS = 3_000L
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 9
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
+private const val SCREEN_SCAN_DURATION_MS = 1100L
 public const val ANALYSIS_TIMEOUT_MS: Long = 120_000L
 
 private val BuddyFabQuotes =
@@ -2980,6 +3139,9 @@ private val BuddyErrorBubbleShadow = Color(0xFF6B001C)
 private val BuddyErrorBubbleStart = Color(0xFFFF5B7A)
 private val BuddyErrorBubbleEnd = Color(0xFFFF003D)
 private val BuddyGold = Color(0xFFC47A00)
+private val BuddyGreen = Color(0xFF0F9D58)
+private val BuddyScanElectricCore = Color(0xFF88F7FF)
+private val BuddyScanElectricGlow = Color(0xFF7553FF)
 private val BuddyQuickDecisionCard = Color(0xFFF0EAFF)
 private val BuddyQuickDecisionPeek = Color(0xFFF8F5FF)
 private val BuddyInk = Color(0xFF171426)
