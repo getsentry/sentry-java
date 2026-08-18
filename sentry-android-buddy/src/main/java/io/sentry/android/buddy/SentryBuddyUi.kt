@@ -595,7 +595,7 @@ private fun LiveFeedSheet(
     BuddyButtonText("Start Recording")
   }
   Text(
-    "Recent useful signals",
+    "Live feed",
     style = MaterialTheme.typography.titleMedium,
     fontWeight = FontWeight.Bold,
     color = BuddyInk,
@@ -603,26 +603,28 @@ private fun LiveFeedSheet(
   if (liveFeed.items.isEmpty()) {
     EmptyLiveFeedCard()
   } else {
-    LiveFeedRows(liveFeed.items, sentryUiLinks, nowMs)
+    LiveFeedRows(liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT), sentryUiLinks, nowMs)
   }
 }
 
 @Composable
 private fun AttentionCard(liveFeed: BuddyLiveFeed, sentryUiLinks: BuddySentryUiLinks, nowMs: Long) {
+  Text(
+    "Needs attention",
+    style = MaterialTheme.typography.titleMedium,
+    fontWeight = FontWeight.Bold,
+    color = BuddyInk,
+  )
+
   val item = liveFeed.latestAdverseItem
   if (item == null) {
-    Card(border = CardDefaults.outlinedCardBorder()) {
-      Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-          Text("Needs attention", color = BuddyInk, fontWeight = FontWeight.Bold)
-          Text("No recent errors or slow spans.", color = BuddyMuted)
-        }
-        Text("OK", color = BuddyPurple, fontWeight = FontWeight.Bold)
-      }
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text("No recent errors or slow spans.", color = BuddyMuted)
+      Text("OK", color = BuddyPurple, fontWeight = FontWeight.Bold)
     }
     return
   }
@@ -634,33 +636,35 @@ private fun AttentionCard(liveFeed: BuddyLiveFeed, sentryUiLinks: BuddySentryUiL
     modifier =
       Modifier.clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } },
     colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.10f)),
-    border = CardDefaults.outlinedCardBorder(),
   ) {
     Column(
       modifier = Modifier.fillMaxWidth().padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
       Row(
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
-        Box(modifier = Modifier.size(10.dp).background(color, CircleShape))
-        Text("Needs attention", color = BuddyInk, fontWeight = FontWeight.Bold)
-        Text(relativeTime(item.timestamp.time, nowMs), color = BuddyMuted)
-      }
-      Text(
-        item.title(),
-        color = BuddyInk,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-      )
-      item.subtitle()?.let { Text(it, color = BuddyMuted) }
-      if (link != null) {
+        LiveFeedCategoryPill(item.category.label, color)
         Text(
-          "Open in Sentry",
-          color = BuddyPurple,
-          style = MaterialTheme.typography.labelMedium,
+          item.title(),
+          modifier = Modifier.weight(1f),
+          color = BuddyInk,
+          style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
+        )
+        Text(
+          relativeTime(item.timestamp.time, nowMs),
+          color = BuddyMuted,
+          style = MaterialTheme.typography.labelMedium,
+        )
+      }
+      item.screenContextText()?.let { screenContext ->
+        Text(
+          screenContext,
+          color = BuddyMuted,
+          style = MaterialTheme.typography.bodySmall,
         )
       }
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -707,29 +711,26 @@ private fun LiveFeedRows(
       val color =
         if (item.adverse) severityColor(item.severity) else timelineColor(item.timelineItem)
       val link = sentryUiLinks.linkFor(item)
-      Card(
+      Row(
         modifier =
-          Modifier.clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } },
-        border = CardDefaults.outlinedCardBorder(),
+          Modifier.fillMaxWidth()
+            .clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } }
+            .padding(vertical = 7.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
       ) {
-        Row(
-          modifier = Modifier.fillMaxWidth().padding(14.dp),
-          horizontalArrangement = Arrangement.spacedBy(10.dp),
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          LiveFeedCategoryPill(item.category.label, color)
-          Text(
-            item.title(),
-            modifier = Modifier.weight(1f),
-            color = BuddyInk,
-            fontWeight = FontWeight.Bold,
-          )
-          Text(
-            relativeTime(item.timestamp.time, nowMs),
-            color = BuddyMuted,
-            style = MaterialTheme.typography.labelMedium,
-          )
-        }
+        LiveFeedCategoryPill(item.category.label, color)
+        Text(
+          item.title(),
+          modifier = Modifier.weight(1f),
+          color = BuddyInk,
+          fontWeight = if (item.adverse) FontWeight.Bold else FontWeight.Normal,
+        )
+        Text(
+          relativeTime(item.timestamp.time, nowMs),
+          color = BuddyMuted,
+          style = MaterialTheme.typography.labelMedium,
+        )
       }
     }
   }
@@ -1035,22 +1036,6 @@ private fun BuddyLiveFeedItem.title(): String =
     BuddyLiveFeedItem.Category.FAILED_SPAN -> timelineItem.name ?: "Failed span"
   }
 
-private fun BuddyLiveFeedItem.subtitle(): String? =
-  when (category) {
-    BuddyLiveFeedItem.Category.SCREEN -> null
-    BuddyLiveFeedItem.Category.STEP -> null
-    BuddyLiveFeedItem.Category.ERROR ->
-      listOfNotNull(
-          timelineItem.data.stringValue("message"),
-          timelineItem.data.stringValue("transaction")?.let { "in $it" },
-        )
-        .joinToString(" • ")
-        .ifBlank { null }
-    BuddyLiveFeedItem.Category.FAILED_HTTP -> httpSubtitle()
-    BuddyLiveFeedItem.Category.SLOW_SPAN,
-    BuddyLiveFeedItem.Category.FAILED_SPAN -> spanSubtitle()
-  }
-
 private fun BuddyLiveFeedItem.httpTitle(): String {
   val data = timelineItem.data.mapValue("data")
   val method = data.stringValue("method") ?: data.stringValue("http.method")
@@ -1058,21 +1043,13 @@ private fun BuddyLiveFeedItem.httpTitle(): String {
   return listOfNotNull(method, url).joinToString(" ").ifBlank { timelineItem.name ?: "Failed HTTP" }
 }
 
-private fun BuddyLiveFeedItem.httpSubtitle(): String? {
-  val data = timelineItem.data.mapValue("data")
-  val statusCode = data.longValue("status_code") ?: timelineItem.data.longValue("status_code")
-  return statusCode?.let { "HTTP $it" }
+private fun BuddyLiveFeedItem.screenContextText(): String? {
+  if (visibleScreens.isEmpty()) {
+    return null
+  }
+  val label = if (visibleScreens.size == 1) "Screen" else "Screens"
+  return "$label: ${visibleScreens.joinToString(" -> ")}"
 }
-
-private fun BuddyLiveFeedItem.spanSubtitle(): String? =
-  listOfNotNull(
-      timelineItem.data.stringValue("op"),
-      timelineItem.data.stringValue("status")?.let { "status $it" },
-      timelineItem.data.longValue("duration_ms")?.let { "${it}ms" },
-      timelineItem.data.stringValue("transaction")?.let { "in $it" },
-    )
-    .joinToString(" • ")
-    .ifBlank { null }
 
 private fun relativeTime(timestampMs: Long, nowMs: Long): String {
   val ageMs = (nowMs - timestampMs).coerceAtLeast(0)
@@ -1400,6 +1377,7 @@ private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
+private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
 private const val ANALYSIS_TIMEOUT_MS = 30_000L
 

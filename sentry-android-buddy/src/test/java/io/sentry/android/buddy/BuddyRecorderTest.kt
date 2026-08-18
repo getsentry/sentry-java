@@ -421,6 +421,51 @@ class BuddyRecorderTest {
   }
 
   @Test
+  fun `live feed records visible screen for adverse event`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+    fixture.recorder.recordScreen("/home")
+
+    fixture.recorder.recordEvent(BuddyObservedEvent(Date(500), "Boom", emptyMap()))
+
+    val item = fixture.recorder.liveFeedSnapshot().latestAdverseItem
+
+    assertThat(item?.visibleScreens).containsExactly("/home")
+  }
+
+  @Test
+  fun `live feed records screen path for adverse span crossing screens`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+    fixture.recorder.recordScreen("/home")
+    fixture.clock.advance(500)
+    fixture.recorder.recordScreen("/profile")
+
+    fixture.recorder.recordTransaction(
+      BuddyObservedTransaction(
+        recordingId = "recording-1",
+        operation = "ui.load",
+        transactionName = "ProfileActivity",
+        timestamp = Date(1000),
+        spans =
+          listOf(
+            BuddyObservedSpan(
+              id = "slow-span",
+              timestamp = Date(100),
+              operation = "ui.load",
+              description = "full display",
+              data = linkedMapOf("duration_ms" to 1000),
+            )
+          ),
+      )
+    )
+
+    val item = fixture.recorder.liveFeedSnapshot().latestAdverseItem
+
+    assertThat(item?.visibleScreens).containsExactly("/home", "/profile").inOrder()
+  }
+
+  @Test
   fun `mark live feed seen clears unviewed adverse count`() {
     val fixture = Fixture()
     fixture.recorder.recordEvent(BuddyObservedEvent(Date(500), "Boom", emptyMap()))
