@@ -13,8 +13,11 @@ import android.widget.FrameLayout
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import io.sentry.ITransaction
+import io.sentry.SamplingContext
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.TracesSamplingDecision
+import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
@@ -67,6 +70,8 @@ internal class BuddyRecorder(
         timeline = timeline,
       )
   }
+
+  @Synchronized fun isRecording(): Boolean = activeRecording != null
 
   @Synchronized
   fun recordStep(name: String, data: Map<String, Any?> = emptyMap()) {
@@ -511,7 +516,11 @@ internal class RealBuddySentryFacade : BuddySentryFacade {
   ): BuddySentryTransaction {
     val options = TransactionOptions()
     options.setBindToScope(true)
-    val transaction = Sentry.startTransaction(name, operation, options)
+    val transaction =
+      Sentry.startTransaction(
+        TransactionContext(name, operation, TracesSamplingDecision(true)),
+        options,
+      )
     tags.forEach { (key, value) -> transaction.setTag(key, value) }
     return RealBuddySentryTransaction(transaction)
   }
@@ -526,6 +535,18 @@ internal class RealBuddySentryFacade : BuddySentryFacade {
           original?.execute(transaction, hint) ?: transaction.takeIf { original == null }
         processed?.let { recorder.recordTransaction(it.toBuddyObservedTransaction()) }
         processed
+      }
+
+    fun tracesSampler(
+      recorder: BuddyRecorder,
+      original: SentryOptions.TracesSamplerCallback?,
+    ): SentryOptions.TracesSamplerCallback =
+      SentryOptions.TracesSamplerCallback { samplingContext: SamplingContext ->
+        if (recorder.isRecording()) {
+          1.0
+        } else {
+          original?.sample(samplingContext)
+        }
       }
   }
 }

@@ -1,6 +1,10 @@
 package io.sentry.android.buddy
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.CustomSamplingContext
+import io.sentry.SamplingContext
+import io.sentry.SentryOptions
+import io.sentry.TransactionContext
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -113,6 +117,27 @@ class BuddyRecorderTest {
       .containsExactly("GET /external", "GET /api/items", "db.query")
   }
 
+  @Test
+  fun `traces sampler delegates while inactive and samples everything while recording`() {
+    val fixture = Fixture()
+    val original = SentryOptions.TracesSamplerCallback { 0.25 }
+    val sampler = RealBuddySentryFacade.tracesSampler(fixture.recorder, original)
+
+    assertThat(sampler.sample(samplingContext())).isEqualTo(0.25)
+
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+
+    assertThat(sampler.sample(samplingContext())).isEqualTo(1.0)
+  }
+
+  @Test
+  fun `traces sampler returns null while inactive without original sampler`() {
+    val fixture = Fixture()
+    val sampler = RealBuddySentryFacade.tracesSampler(fixture.recorder, null)
+
+    assertThat(sampler.sample(samplingContext())).isNull()
+  }
+
   private class Fixture {
     val clock = FakeClock()
     val sentry = FakeSentryFacade()
@@ -214,5 +239,11 @@ class BuddyRecorderTest {
     override fun finish() {
       finished = true
     }
+  }
+
+  private companion object {
+    @Suppress("DEPRECATION")
+    fun samplingContext(): SamplingContext =
+      SamplingContext(TransactionContext("Checkout", "ui.action"), null as CustomSamplingContext?)
   }
 }

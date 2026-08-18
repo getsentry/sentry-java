@@ -2,7 +2,8 @@
 
 This module is a Hack Week prototype. The current implementation favors a small debug-only surface
 over complete tracing control. This document captures the remaining transaction-model questions so
-future work can make the tradeoffs deliberately.
+future work can make the tradeoffs deliberately. Accepted behavior-level decisions are summarized in
+`DESIGN_DECISIONS.md`; this file focuses on gaps and deferred alternatives.
 
 ## Buddy Transaction Model
 
@@ -16,9 +17,14 @@ Buddy's summary or protocol events.
 Current model:
 
 - Start one root transaction named `Sentry Buddy Recording: <flow-slug>`.
+- Force the Buddy root transaction to be sampled so an explicit debug recording produces a Sentry
+  transaction artifact even when the app's normal trace sampling rate is lower.
 - Bind that transaction to scope while the recording is active.
 - Re-bind the Buddy transaction when an Activity resumes, because Android activity tracing may bind
   its own Activity transaction during navigation.
+- Temporarily wrap `tracesSampler` so transactions started during an active Buddy recording are
+  sampled. Outside active recordings, the wrapper delegates to the previous sampler or returns `null`
+  so the SDK can fall back to the app's normal sampling configuration.
 - Keep global Buddy tags active during recording so transactions created during the flow can be
   associated with the recording.
 - Snapshot child spans from the Buddy transaction into the final Buddy timeline as `span` events.
@@ -59,6 +65,19 @@ The callback currently gives Buddy a safe observation point:
 The callback does not re-parent existing spans. If a span already belongs to an Activity transaction,
 Buddy can copy its data into the Buddy recording timeline, but the original Sentry span still belongs
 to the Activity transaction unless we later implement a merge or mirroring model.
+
+## Sampling While Recording
+
+Buddy currently changes sampling only while a recording is active. The Buddy root transaction is
+created with an explicit sampled decision. Other transactions started during recording go through a
+temporary `tracesSampler` wrapper that returns `1.0` while Buddy is active.
+
+This is intended to make debug recordings reliable without changing normal app behavior before or
+after the recording. The wrapper is restored when Buddy is uninstalled or reset. If an app's original
+sampler or `beforeSendTransaction` later drops/redacts a transaction, Buddy respects that result.
+
+This does not recover transactions that were already sampled out before the recording started, and it
+does not capture spans from transactions that finish after Buddy has already finalized the recording.
 
 ## Options We Considered
 

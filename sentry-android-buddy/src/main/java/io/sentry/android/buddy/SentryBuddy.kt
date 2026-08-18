@@ -14,6 +14,8 @@ public object SentryBuddy {
   private var installedApplication: Application? = null
   private var previousBeforeSendTransaction: SentryOptions.BeforeSendTransactionCallback? = null
   private var buddyBeforeSendTransaction: SentryOptions.BeforeSendTransactionCallback? = null
+  private var previousTracesSampler: SentryOptions.TracesSamplerCallback? = null
+  private var buddyTracesSampler: SentryOptions.TracesSamplerCallback? = null
 
   @JvmStatic
   public fun install(application: Application) {
@@ -48,6 +50,7 @@ public object SentryBuddy {
       val callbacks = BuddyActivityLifecycleCallbacks(newRecorder, overlayManager(options))
       application.registerActivityLifecycleCallbacks(callbacks)
       installTransactionObserver(newRecorder)
+      installTracesSampler(newRecorder)
 
       recorder = newRecorder
       lifecycleCallbacks = callbacks
@@ -84,6 +87,7 @@ public object SentryBuddy {
   }
 
   private fun uninstallLocked() {
+    restoreTracesSampler()
     restoreTransactionObserver()
     lifecycleCallbacks?.let { callbacks ->
       callbacks.detachAll()
@@ -103,6 +107,15 @@ public object SentryBuddy {
     sentryOptions.beforeSendTransaction = observer
   }
 
+  private fun installTracesSampler(recorder: BuddyRecorder) {
+    val sentryOptions = Sentry.getCurrentScopes().options
+    val original = sentryOptions.tracesSampler
+    val sampler = RealBuddySentryFacade.tracesSampler(recorder, original)
+    previousTracesSampler = original
+    buddyTracesSampler = sampler
+    sentryOptions.tracesSampler = sampler
+  }
+
   private fun restoreTransactionObserver() {
     val observer = buddyBeforeSendTransaction ?: return
     val sentryOptions = Sentry.getCurrentScopes().options
@@ -111,6 +124,16 @@ public object SentryBuddy {
     }
     previousBeforeSendTransaction = null
     buddyBeforeSendTransaction = null
+  }
+
+  private fun restoreTracesSampler() {
+    val sampler = buddyTracesSampler ?: return
+    val sentryOptions = Sentry.getCurrentScopes().options
+    if (sentryOptions.tracesSampler === sampler) {
+      sentryOptions.tracesSampler = previousTracesSampler
+    }
+    previousTracesSampler = null
+    buddyTracesSampler = null
   }
 
   private fun overlayManager(options: SentryBuddyOptions): BuddyOverlayManager? {
