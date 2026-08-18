@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +34,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -842,7 +842,10 @@ private fun BuddySheet(
         Modifier.fillMaxWidth()
           .heightIn(max = maxSheetHeight)
           .verticalScroll(rememberScrollState())
-          .padding(24.dp),
+          .padding(
+            horizontal = if (state is SentryBuddySessionState.LiveFeed) 0.dp else 24.dp,
+            vertical = 24.dp,
+          ),
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
       when (state) {
@@ -938,61 +941,70 @@ private fun LiveFeedSheet(
   onDismissHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
-  SheetTitle(
-    title = "Sentry Buddy",
-    subtitle = "Live Feed",
-    trailingContent = {
-      HealthCheckActionButton(
-        enabled = healthCheckState !is BuddyHealthCheckState.Running,
-        onClick = onRunHealthCheck,
-      )
-    },
-  )
+  LiveFeedInset {
+    SheetTitle(
+      title = "Sentry Buddy",
+      subtitle = "Live Feed",
+      trailingContent = {
+        HealthCheckActionButton(
+          enabled = healthCheckState !is BuddyHealthCheckState.Running,
+          onClick = onRunHealthCheck,
+        )
+      },
+    )
+  }
   val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
-  Spacer(Modifier.height(12.dp))
-  BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-    val fullBleedWidth = maxWidth + BuddySheetHorizontalPadding * 2
-    AttentionCard(
-      modifier = Modifier.requiredWidth(fullBleedWidth).offset(x = -BuddySheetHorizontalPadding),
-      liveFeed = liveFeed,
-      sentryUiLinks = sentryUiLinks,
-      nowMs = nowMs,
-      emptyArtIndex = emptyAttentionArtIndex,
-      onDismiss = { onDispatch { dismissLiveFeedAttention() } },
-      onOpenUrl = onOpenUrl,
-    )
-  }
-  Spacer(Modifier.height(12.dp))
-  Button(
-    modifier = Modifier.fillMaxWidth().height(56.dp),
-    colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
-    onClick = onStartRecording,
-  ) {
-    BuddyButtonText("Start Recording")
-  }
-  Spacer(Modifier.height(12.dp))
-  Text(
-    "Live feed",
-    style = MaterialTheme.typography.titleMedium,
-    fontWeight = FontWeight.Bold,
-    color = BuddyInk,
+  LiveFeedInset { Spacer(Modifier.height(12.dp)) }
+  AttentionCard(
+    liveFeed = liveFeed,
+    sentryUiLinks = sentryUiLinks,
+    nowMs = nowMs,
+    emptyArtIndex = emptyAttentionArtIndex,
+    onDismiss = { onDispatch { dismissLiveFeedAttention() } },
+    onOpenUrl = onOpenUrl,
   )
-  if (liveFeed.items.isEmpty()) {
-    EmptyLiveFeedCard()
-  } else {
-    LiveFeedRows(
-      items = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT),
-      showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
-      sentryUiLinks = sentryUiLinks,
-      nowMs = nowMs,
-      onOpenUrl = onOpenUrl,
+  LiveFeedInset {
+    Spacer(Modifier.height(12.dp))
+    Button(
+      modifier = Modifier.fillMaxWidth().height(56.dp),
+      colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
+      onClick = onStartRecording,
+    ) {
+      BuddyButtonText("Start Recording")
+    }
+    Spacer(Modifier.height(12.dp))
+    Text(
+      "Live feed",
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.Bold,
+      color = BuddyInk,
     )
+    if (liveFeed.items.isEmpty()) {
+      EmptyLiveFeedCard()
+    } else {
+      LiveFeedRows(
+        items = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT),
+        showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
+        sentryUiLinks = sentryUiLinks,
+        nowMs = nowMs,
+        onOpenUrl = onOpenUrl,
+      )
+    }
   }
   HealthCheckDialog(
     state = healthCheckState,
     onDismiss = onDismissHealthCheck,
     onRetry = onRunHealthCheck,
     onOpenUrl = onOpenUrl,
+  )
+}
+
+@Composable
+private fun LiveFeedInset(content: @Composable ColumnScope.() -> Unit) {
+  Column(
+    modifier = Modifier.fillMaxWidth().padding(horizontal = BuddySheetHorizontalPadding),
+    verticalArrangement = Arrangement.spacedBy(16.dp),
+    content = content,
   )
 }
 
