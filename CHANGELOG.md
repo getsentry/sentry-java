@@ -8,6 +8,12 @@
   - Users can now attach a screenshot when submitting feedback. Enabled by default; can be disabled via `SentryFeedbackOptions.setEnableAttachScreenshot(false)` or the `io.sentry.feedback.enable-attach-screenshot` manifest flag.
   - Requires the `androidx.activity` `>=1.8.2` dependency
 
+### Dependencies
+
+- Bump Native SDK from v0.16.2 to v0.16.3 ([#5962](https://github.com/getsentry/sentry-java/pull/5962))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0163)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.2...0.16.3)
+
 ## 8.53.0
 
 ### Features
