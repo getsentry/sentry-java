@@ -30,6 +30,8 @@ Current model:
 - Snapshot child spans from the Buddy transaction into the final Buddy timeline as `span` events.
 - Wrap `beforeSendTransaction` to observe already-redacted transactions and copy matching child spans
   into the active Buddy timeline when possible.
+- Promote matching navigation transactions into `screen` timeline events when the existing Sentry
+  navigation integration captures them during a Buddy recording.
 - Do not synthesize or mirror spans into the Buddy transaction yet.
 
 This means Buddy is currently a best-effort single-flow transaction. It should capture normal spans
@@ -114,7 +116,10 @@ Seer/Sentry correlation.
 ## Breadcrumb Capture Scope
 
 Buddy now has a `beforeBreadcrumb` observation point and records a conservative subset of accepted
-breadcrumbs into the flow timeline. The intended long-term scope is still undecided.
+breadcrumbs into the flow timeline. Accepted navigation breadcrumbs with a destination are promoted to
+`screen` timeline events so existing Sentry navigation instrumentation can make Compose and AndroidX
+route changes visible to Buddy without adding a Buddy-specific app API. The intended long-term scope is
+still undecided.
 
 Current provisional scope:
 
@@ -130,12 +135,39 @@ Open decision:
 - Should app/custom breadcrumbs be included by default, excluded by default, or controlled through a
   Buddy option?
 - Should network breadcrumbs be recorded when a matching network span also exists, or deduplicated?
-- Should fragment lifecycle breadcrumbs be promoted to `screen`/`navigation` timeline events instead
-  of remaining raw `breadcrumb` events?
+- Should fragment lifecycle breadcrumbs be promoted to `screen`/`navigation` timeline events, matching
+  the navigation breadcrumb treatment?
 - Should click/user breadcrumbs be kept even when labels are weak or potentially noisy?
 
 The answer affects the amount of context sent to the flow-analysis service and the privacy/noise tradeoff
 of debug recordings. Keep the current filter conservative until we decide otherwise.
+
+## Compose And AndroidX Navigation Without Buddy APIs
+
+Current approach:
+
+- Do not ask app code to call a Buddy-specific Compose hook such as
+  `NavHostController.withSentryBuddyNavigation()`.
+- Consume existing Sentry navigation breadcrumbs and transactions after app callbacks and redaction.
+- Promote accepted navigation breadcrumbs and matching navigation transactions into Buddy `screen`
+  timeline events with source metadata.
+- Keep Activity lifecycle screen capture as the direct Buddy-owned signal for Activity transitions.
+
+Alternatives declined for now:
+
+- A user-facing Buddy Compose navigation hook. This would be reliable but is unrealistic for real apps
+  because users should not need to add Buddy-specific calls around every `NavHostController`.
+- Gradle plugin auto-instrumentation. This is a plausible product direction, but it is broader than the
+  Buddy module and has version/debuggability risk for the prototype.
+- A shared internal navigation-observation surface. This is the cleanest long-term model, but it needs
+  cross-module SDK architecture work before Buddy can consume normalized navigation events directly.
+- Compose runtime, view-tree, accessibility, or replay inference. These require no source changes but
+  are less route-aware, more fragile, and carry larger privacy/noise risks.
+
+Remaining gap:
+
+- Compose or AndroidX navigation that does not already produce Sentry navigation breadcrumbs or
+  transactions is still invisible to Buddy unless the app records explicit steps.
 
 ## SDK-Generated Data Sources
 
@@ -145,7 +177,9 @@ Wired:
 
 - Buddy root transaction and child spans that naturally attach to it.
 - Matching transaction child spans observed through `beforeSendTransaction` while recording is active.
+- Matching navigation transactions observed through `beforeSendTransaction`, promoted to screen events.
 - Conservative UI/navigation/HTTP/user breadcrumbs observed through `beforeBreadcrumb`.
+- Navigation breadcrumbs with destinations, promoted to screen events.
 - Accepted error events observed through `beforeSend` when they have exceptions, `ERROR`, or `FATAL`
   level.
 
@@ -249,7 +283,7 @@ Status: possible future direction.
 These are still not fully covered by the current low-infra model:
 
 - Fragment-only navigation inside one Activity.
-- Compose nested destinations.
+- Compose or AndroidX navigation without existing Sentry navigation instrumentation.
 - Tab or pager changes that are just UI state.
 - Raw button/click interactions.
 - Network calls that are not instrumented by Sentry spans.
@@ -257,5 +291,6 @@ These are still not fully covered by the current low-infra model:
 - Spans created before Buddy has re-bound itself after an Activity transition.
 - Transactions finishing after the recording has already been finalized.
 
-The next likely improvement is fragment navigation capture, followed by Compose navigation capture.
+The next likely improvement is direct fragment or normalized navigation observation if breadcrumb and
+transaction promotion are not enough.
 Those are navigation observability gaps, not transaction-pipeline gaps.

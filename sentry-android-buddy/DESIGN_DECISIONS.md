@@ -85,6 +85,8 @@ Decision:
   events.
 - Observe post-redaction transactions through `beforeSendTransaction` and copy matching child spans
   into the active Buddy recording timeline when possible.
+- Promote matching navigation transactions into `screen` timeline items so Compose/AndroidX navigation
+  can appear in the Buddy flow when the existing Sentry navigation integration is active.
 - Do not synthesize or mirror observed spans into the Buddy transaction yet.
 
 Rationale:
@@ -111,8 +113,10 @@ Decision:
 - Call the app's original callback first.
 - Record only the returned breadcrumb; if the app callback drops it, Buddy does not keep a private copy.
 - Capture navigation, HTTP, `ui.*`, `navigation`, `http`, and `user` breadcrumbs for now.
-- Store breadcrumbs as `BuddyTimelineItem.Type.BREADCRUMB` rather than promoting them into higher-level
-  event types yet.
+- Promote navigation breadcrumbs with a destination into `BuddyTimelineItem.Type.SCREEN` items with
+  `source = sentry_navigation_breadcrumb`.
+- Store other accepted breadcrumbs as `BuddyTimelineItem.Type.BREADCRUMB` rather than promoting them
+  into higher-level event types yet.
 
 Rationale:
 
@@ -120,6 +124,8 @@ Rationale:
   breadcrumbs.
 - Recording accepted breadcrumbs lets Buddy reuse existing SDK instrumentation without adding parallel
   navigation/click instrumentation immediately.
+- Promoting accepted navigation breadcrumbs lets Buddy see Compose and AndroidX route changes when the
+  existing Sentry navigation integration is active, without requiring Buddy-specific user code.
 - A conservative filter avoids dumping every custom breadcrumb into the flow-analysis payload before we
   decide the privacy/noise tradeoff.
 
@@ -263,8 +269,10 @@ allowing spans, breadcrumbs, events, and later backend data to enrich the record
 What this means in practice:
 
 - Buddy records explicit developer steps and screen transitions directly.
-- Buddy also observes a conservative subset of accepted Sentry breadcrumbs, accepted error events,
-  and sampled transactions/spans during the active recording window.
+- Buddy also observes a conservative subset of accepted Sentry breadcrumbs, accepted error events, and
+  sampled transactions/spans during the active recording window.
+- Buddy promotes accepted navigation breadcrumbs and matching navigation transactions into screen
+  timeline items instead of treating them as only generic telemetry.
 - On stop, Buddy sorts and finalizes those accumulated items, computes summary fields, snapshots app
   and device metadata, attaches Sentry trace correlation, and exports one versioned JSON document.
 

@@ -31,6 +31,7 @@ import java.util.Locale
 import java.util.UUID
 import java.util.WeakHashMap
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 internal class BuddyRecorder(
   private val metadataProvider: BuddyMetadataProvider,
@@ -101,12 +102,17 @@ internal class BuddyRecorder(
     if (transaction.recordingId != recording.id || transaction.operation == ROOT_TRANSACTION_OP) {
       return
     }
+    transaction.toNavigationScreenTimelineItem(recording)?.let { recording.addNavigationScreen(it) }
     recording.addSpanTimelineItems(transaction.spans)
   }
 
   @Synchronized
   fun recordBreadcrumb(breadcrumb: BuddyObservedBreadcrumb) {
     val recording = activeRecording ?: return
+    breadcrumb.toNavigationScreenTimelineItem(recording)?.let {
+      recording.addNavigationScreen(it)
+      return
+    }
     recording.timeline += breadcrumb.toTimelineItem(recording)
   }
 
@@ -186,6 +192,82 @@ internal class BuddyRecorder(
     }
   }
 
+  private fun ActiveRecording.addNavigationScreen(item: BuddyTimelineItem) {
+    val destination = item.name ?: return
+    val duplicate = observedNavigationScreens.any { screen ->
+      screen.destination == destination && abs(screen.elapsedMs - item.elapsedMs) <= 1000
+    }
+    if (!duplicate) {
+      observedNavigationScreens += ObservedNavigationScreen(destination, item.elapsedMs)
+      timeline += item
+    }
+  }
+
+  private fun BuddyObservedTransaction.toNavigationScreenTimelineItem(
+    recording: ActiveRecording
+  ): BuddyTimelineItem? {
+    if (operation?.lowercase(Locale.ROOT) != NAVIGATION_OP) {
+      return null
+    }
+    val destination = transactionName?.takeIf { it.isNotBlank() } ?: return null
+    return BuddyTimelineItem(
+      type = BuddyTimelineItem.Type.SCREEN,
+      timestamp = timestamp,
+      elapsedMs = timestamp.time - recording.startedAt.time,
+      name = destination,
+      data =
+        linkedMapOf(
+          DATA_SOURCE to SOURCE_SENTRY_NAVIGATION_TRANSACTION,
+          DATA_TRANSACTION to transactionName,
+          DATA_OP to operation,
+        ),
+    )
+  }
+
+  private fun BuddyObservedBreadcrumb.toNavigationScreenTimelineItem(
+    recording: ActiveRecording
+  ): BuddyTimelineItem? {
+    val normalizedCategory = category?.lowercase(Locale.ROOT)
+    val normalizedType = type?.lowercase(Locale.ROOT)
+    if (normalizedCategory != NAVIGATION_OP && normalizedType != NAVIGATION_OP) {
+      return null
+    }
+
+    val navigationData = navigationData()
+    val destination = navigationData.stringValue(DATA_TO)?.takeIf { it.isNotBlank() } ?: return null
+    val screenData =
+      linkedMapOf<String, Any?>(
+        DATA_SOURCE to SOURCE_SENTRY_NAVIGATION_BREADCRUMB,
+        DATA_FROM to navigationData.stringValue(DATA_FROM),
+        DATA_TO to destination,
+        DATA_BREADCRUMB_TYPE to type,
+        DATA_CATEGORY to category,
+      )
+    navigationData.argumentKeys(DATA_FROM_ARGUMENTS)?.let {
+      screenData[DATA_FROM_ARGUMENT_KEYS] = it
+    }
+    navigationData.argumentKeys(DATA_TO_ARGUMENTS)?.let { screenData[DATA_TO_ARGUMENT_KEYS] = it }
+    data[DATA_HINT]?.let { screenData[DATA_HINT] = it }
+
+    return BuddyTimelineItem(
+      type = BuddyTimelineItem.Type.SCREEN,
+      timestamp = timestamp,
+      elapsedMs = timestamp.time - recording.startedAt.time,
+      name = destination,
+      data = screenData.filterValues { it != null },
+    )
+  }
+
+  private fun BuddyObservedBreadcrumb.navigationData(): Map<*, *> =
+    data[DATA_DATA] as? Map<*, *> ?: data
+
+  private fun Map<*, *>.stringValue(key: String): String? = this[key]?.toString()
+
+  private fun Map<*, *>.argumentKeys(key: String): List<String>? {
+    val arguments = this[key] as? Map<*, *> ?: return null
+    return arguments.keys.mapNotNull { it?.toString() }.sorted().takeIf { it.isNotEmpty() }
+  }
+
   private fun BuddyObservedSpan.toTimelineItem(recording: ActiveRecording): BuddyTimelineItem =
     BuddyTimelineItem(
       type = BuddyTimelineItem.Type.SPAN,
@@ -247,14 +329,33 @@ internal class BuddyRecorder(
     val transaction: BuddySentryTransaction,
     val timeline: MutableList<BuddyTimelineItem>,
     val observedSpanIds: MutableSet<String> = mutableSetOf(),
+    val observedNavigationScreens: MutableList<ObservedNavigationScreen> = mutableListOf(),
   )
+
+  private data class ObservedNavigationScreen(val destination: String, val elapsedMs: Long)
 
   private companion object {
     private const val ROOT_TRANSACTION_OP = "ui.flow_recording"
+    private const val NAVIGATION_OP = "navigation"
     private const val TAG_RECORDING_ID = "sentry.buddy.recording_id"
     private const val TAG_FLOW_SLUG = "sentry.buddy.flow_slug"
     private const val TAG_SOURCE = "sentry.buddy.source"
     private const val TAG_USE_CASE = "sentry.buddy.use_case"
+    private const val DATA_BREADCRUMB_TYPE = "breadcrumb_type"
+    private const val DATA_CATEGORY = "category"
+    private const val DATA_DATA = "data"
+    private const val DATA_FROM = "from"
+    private const val DATA_FROM_ARGUMENT_KEYS = "from_argument_keys"
+    private const val DATA_FROM_ARGUMENTS = "from_arguments"
+    private const val DATA_HINT = "hint"
+    private const val DATA_OP = "op"
+    private const val DATA_SOURCE = "source"
+    private const val DATA_TO = "to"
+    private const val DATA_TO_ARGUMENT_KEYS = "to_argument_keys"
+    private const val DATA_TO_ARGUMENTS = "to_arguments"
+    private const val DATA_TRANSACTION = "transaction"
+    private const val SOURCE_SENTRY_NAVIGATION_BREADCRUMB = "sentry_navigation_breadcrumb"
+    private const val SOURCE_SENTRY_NAVIGATION_TRANSACTION = "sentry_navigation_transaction"
     private val BUDDY_TAG_KEYS = listOf(TAG_RECORDING_ID, TAG_FLOW_SLUG, TAG_SOURCE, TAG_USE_CASE)
 
     private val BuddyTimelineItem.Type.order: Int
@@ -519,6 +620,7 @@ internal data class BuddyObservedTransaction(
   val operation: String?,
   val transactionName: String?,
   val spans: List<BuddyObservedSpan>,
+  val timestamp: Date,
 )
 
 internal data class BuddyObservedSpan(
@@ -766,6 +868,7 @@ private fun SentryTransaction.toBuddyObservedTransaction(): BuddyObservedTransac
     operation = trace?.operation,
     transactionName = transaction,
     spans = spans.map { it.toBuddyObservedSpan(transaction) },
+    timestamp = Date((startTimestamp * 1000).toLong()),
   )
 }
 

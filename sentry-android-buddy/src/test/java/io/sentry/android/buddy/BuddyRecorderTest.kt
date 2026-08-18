@@ -103,6 +103,7 @@ class BuddyRecorderTest {
         recordingId = "recording-1",
         operation = "ui.load",
         transactionName = "SecondActivity",
+        timestamp = Date(500),
         spans =
           listOf(
             BuddyObservedSpan(
@@ -124,7 +125,32 @@ class BuddyRecorderTest {
   }
 
   @Test
-  fun `recording breadcrumb stores useful breadcrumb in timeline`() {
+  fun `matching navigation transaction records screen`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+
+    fixture.recorder.recordTransaction(
+      BuddyObservedTransaction(
+        recordingId = "recording-1",
+        operation = "navigation",
+        transactionName = "/checkout",
+        spans = emptyList(),
+        timestamp = Date(500),
+      )
+    )
+
+    val recording = fixture.recorder.stop()
+
+    assertThat(recording.summary.screenCount).isEqualTo(1)
+    val screen = recording.timeline.first { it.type == BuddyTimelineItem.Type.SCREEN }
+    assertThat(screen.name).isEqualTo("/checkout")
+    assertThat(screen.data).containsEntry("source", "sentry_navigation_transaction")
+    assertThat(screen.data).containsEntry("transaction", "/checkout")
+    assertThat(screen.data).containsEntry("op", "navigation")
+  }
+
+  @Test
+  fun `recording navigation breadcrumb records screen in timeline`() {
     val fixture = Fixture()
     fixture.recorder.start(BuddyFlowIntent("Checkout"))
 
@@ -133,20 +159,29 @@ class BuddyRecorderTest {
         timestamp = Date(500),
         type = "navigation",
         category = "navigation",
-        data = linkedMapOf("to" to "/github"),
+        data =
+          linkedMapOf(
+            "from" to "/home",
+            "to" to "/github",
+            "to_arguments" to mapOf("org" to "sentry"),
+          ),
       )
     )
 
     val recording = fixture.recorder.stop()
 
-    assertThat(recording.summary.breadcrumbCount).isEqualTo(1)
-    val breadcrumb = recording.timeline.first { it.type == BuddyTimelineItem.Type.BREADCRUMB }
-    assertThat(breadcrumb.name).isEqualTo("navigation")
-    assertThat(breadcrumb.data).containsEntry("to", "/github")
+    assertThat(recording.summary.screenCount).isEqualTo(1)
+    assertThat(recording.summary.breadcrumbCount).isEqualTo(0)
+    val screen = recording.timeline.first { it.type == BuddyTimelineItem.Type.SCREEN }
+    assertThat(screen.name).isEqualTo("/github")
+    assertThat(screen.data).containsEntry("source", "sentry_navigation_breadcrumb")
+    assertThat(screen.data).containsEntry("from", "/home")
+    assertThat(screen.data).containsEntry("to", "/github")
+    assertThat(screen.data).containsEntry("to_argument_keys", listOf("org"))
   }
 
   @Test
-  fun `breadcrumb observer records accepted useful breadcrumbs`() {
+  fun `breadcrumb observer promotes accepted navigation breadcrumbs`() {
     val fixture = Fixture()
     fixture.recorder.start(BuddyFlowIntent("Checkout"))
     val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null)
@@ -155,7 +190,33 @@ class BuddyRecorderTest {
         type = "navigation"
         category = "navigation"
         level = SentryLevel.INFO
+        setData("from", "/home")
         setData("to", "/github")
+        setData("to_arguments", mapOf("org" to "sentry"))
+      }
+
+    assertThat(observer.execute(breadcrumb, Hint())).isSameInstanceAs(breadcrumb)
+    val recording = fixture.recorder.stop()
+
+    val screen = recording.timeline.first { it.type == BuddyTimelineItem.Type.SCREEN }
+    assertThat(screen.name).isEqualTo("/github")
+    assertThat(screen.data).containsEntry("source", "sentry_navigation_breadcrumb")
+    assertThat(screen.data).containsEntry("from", "/home")
+    assertThat(screen.data).containsEntry("to", "/github")
+    assertThat(screen.data).containsEntry("to_argument_keys", listOf("org"))
+  }
+
+  @Test
+  fun `breadcrumb observer records accepted non-navigation breadcrumbs`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null)
+    val breadcrumb =
+      Breadcrumb(Date(500)).apply {
+        type = "http"
+        category = "http"
+        level = SentryLevel.INFO
+        setData("url", "https://example.com")
       }
 
     assertThat(observer.execute(breadcrumb, Hint())).isSameInstanceAs(breadcrumb)
@@ -163,10 +224,10 @@ class BuddyRecorderTest {
 
     val timelineBreadcrumb =
       recording.timeline.first { it.type == BuddyTimelineItem.Type.BREADCRUMB }
-    assertThat(timelineBreadcrumb.data).containsEntry("breadcrumb_type", "navigation")
-    assertThat(timelineBreadcrumb.data).containsEntry("category", "navigation")
+    assertThat(timelineBreadcrumb.data).containsEntry("breadcrumb_type", "http")
+    assertThat(timelineBreadcrumb.data).containsEntry("category", "http")
     assertThat(timelineBreadcrumb.data).containsEntry("level", "INFO")
-    assertThat(timelineBreadcrumb.data["data"]).isEqualTo(mapOf("to" to "/github"))
+    assertThat(timelineBreadcrumb.data["data"]).isEqualTo(mapOf("url" to "https://example.com"))
   }
 
   @Test
