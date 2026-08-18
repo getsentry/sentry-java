@@ -316,10 +316,10 @@ public final class io/sentry/android/buddy/ComposableSingletons$SentryBuddyUiKt 
 	public final fun getLambda$-682238859$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1215034671$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1525882558$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1847342617$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1884831281$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1892283088$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$342625061$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$356797945$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$336460570$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$567083575$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 }
 

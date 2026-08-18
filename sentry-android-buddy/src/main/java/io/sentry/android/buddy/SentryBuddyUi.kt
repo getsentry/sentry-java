@@ -947,6 +947,9 @@ private fun AttentionCard(
   onOpenUrl: (Context, String) -> Unit,
 ) {
   val item = liveFeed.latestUnviewedAdverseItem
+  val attentionCardHeight =
+    if (item?.isPerformanceIssue() == true) BuddyAttentionPerformanceCardHeight
+    else BuddyAttentionCardHeight
   val dismissOffset = remember(item?.id) { Animatable(0f) }
 
   if (item == null) {
@@ -976,7 +979,7 @@ private fun AttentionCard(
   ) {
     BoxWithConstraints(
       modifier =
-        Modifier.fillMaxWidth().height(BuddyAttentionCardHeight).pointerInput(item.id) {
+        Modifier.fillMaxWidth().height(attentionCardHeight).pointerInput(item.id) {
           detectDragGestures(
             onDragEnd = {
               val dismissDistance = size.width.toFloat()
@@ -1039,6 +1042,11 @@ private fun AttentionItemContent(
   backgroundColor: Color,
   modifier: Modifier = Modifier,
 ) {
+  if (item.isPerformanceIssue()) {
+    PerformanceAttentionItemContent(item, liveFeed, color, nowMs, backgroundColor, modifier)
+    return
+  }
+
   Column(
     modifier = modifier.fillMaxWidth().background(backgroundColor).padding(16.dp),
     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -1092,6 +1100,179 @@ private fun AttentionItemContent(
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Normal,
           )
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun PerformanceAttentionItemContent(
+  item: BuddyLiveFeedItem,
+  liveFeed: BuddyLiveFeed,
+  color: Color,
+  nowMs: Long,
+  backgroundColor: Color,
+  modifier: Modifier = Modifier,
+) {
+  Column(
+    modifier = modifier.fillMaxWidth().background(backgroundColor).padding(16.dp),
+    verticalArrangement = Arrangement.spacedBy(12.dp),
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(
+        "Needs attention",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = BuddyInk,
+      )
+      Text(
+        relativeTime(item.timestamp.time, nowMs),
+        color = BuddyMuted,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Normal,
+      )
+    }
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(10.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      LiveFeedCategoryPill(item.category.label, color)
+      item.performanceSourceLabel()?.let { source ->
+        Surface(color = Color.White.copy(alpha = 0.85f), shape = RoundedCornerShape(18.dp)) {
+          Text(
+            source,
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+            color = BuddyMuted,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+          )
+        }
+      }
+    }
+    Text(
+      item.performanceHeadline(),
+      modifier = Modifier.fillMaxWidth(),
+      color = BuddyInk,
+      style = MaterialTheme.typography.headlineSmall,
+      fontWeight = FontWeight.Bold,
+    )
+    Text(
+      item.title(),
+      modifier = Modifier.fillMaxWidth(),
+      color = BuddyInk,
+      style = MaterialTheme.typography.bodyLarge,
+      fontWeight = FontWeight.Normal,
+    )
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      item.performanceHeroStats().forEach { stat ->
+        PerformanceStatCard(stat, color, Modifier.weight(1f))
+      }
+    }
+    Text(
+      item.performanceNarrative(liveFeed),
+      color = BuddyMuted,
+      style = MaterialTheme.typography.bodySmall,
+      fontWeight = FontWeight.Normal,
+    )
+    AttentionTimelinePreview(item, liveFeed, color)
+  }
+}
+
+private data class PerformanceStat(val value: String, val label: String)
+
+@Composable
+private fun PerformanceStatCard(
+  stat: PerformanceStat,
+  color: Color,
+  modifier: Modifier = Modifier,
+) {
+  Surface(
+    modifier = modifier,
+    color = Color.White.copy(alpha = 0.88f),
+    shape = RoundedCornerShape(14.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+      verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+      Text(
+        stat.value,
+        color = color,
+        style = MaterialTheme.typography.titleMedium,
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Bold,
+      )
+      Text(
+        stat.label,
+        color = BuddyMuted,
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+      )
+    }
+  }
+}
+
+@Composable
+private fun AttentionTimelinePreview(
+  item: BuddyLiveFeedItem,
+  liveFeed: BuddyLiveFeed,
+  color: Color,
+) {
+  val previewItems = attentionTimelinePreviewItems(item, liveFeed)
+  if (previewItems.isEmpty()) {
+    return
+  }
+
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    color = Color.White.copy(alpha = 0.52f),
+    shape = RoundedCornerShape(14.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+      Text(
+        "Live trace around the issue",
+        color = BuddyMuted,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+      )
+      previewItems.forEachIndexed { index, previewItem ->
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(10.dp),
+          verticalAlignment = Alignment.Top,
+        ) {
+          LiveFeedTimelineMarker(
+            color = if (previewItem.id == item.id) color else timelinePreviewColor(previewItem),
+            showConnector = index != previewItems.lastIndex,
+          )
+          Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+          ) {
+            Text(
+              previewItem.title(),
+              color = BuddyInk,
+              style = MaterialTheme.typography.bodyMedium,
+              fontWeight = if (previewItem.id == item.id) FontWeight.Bold else FontWeight.Normal,
+            )
+            Text(
+              previewItem.timelinePreviewSubtitle(),
+              color = BuddyMuted,
+              style = MaterialTheme.typography.labelSmall,
+              fontWeight = FontWeight.Normal,
+            )
+          }
         }
       }
     }
@@ -1429,6 +1610,67 @@ private fun BuddyLiveFeedItem.httpTitle(): String {
   return listOfNotNull(method, url).joinToString(" ").ifBlank { timelineItem.name ?: "Failed HTTP" }
 }
 
+private fun BuddyLiveFeedItem.isPerformanceIssue(): Boolean =
+  category == BuddyLiveFeedItem.Category.SLOW_SPAN ||
+    category == BuddyLiveFeedItem.Category.FAILED_SPAN ||
+    category == BuddyLiveFeedItem.Category.FAILED_HTTP
+
+private fun BuddyLiveFeedItem.performanceHeadline(): String =
+  when (category) {
+    BuddyLiveFeedItem.Category.SLOW_SPAN -> "Performance issue detected"
+    BuddyLiveFeedItem.Category.FAILED_SPAN -> "Instrumented work failed"
+    BuddyLiveFeedItem.Category.FAILED_HTTP -> "Request returned an error"
+    else -> "Needs attention"
+  }
+
+private fun BuddyLiveFeedItem.performanceSourceLabel(): String? =
+  when (category) {
+    BuddyLiveFeedItem.Category.FAILED_HTTP -> "HTTP"
+    BuddyLiveFeedItem.Category.SLOW_SPAN,
+    BuddyLiveFeedItem.Category.FAILED_SPAN -> timelineItem.data.stringValue("op")?.humanizeDotKey()
+    else -> null
+  }
+
+private fun BuddyLiveFeedItem.performanceHeroStats(): List<PerformanceStat> =
+  listOfNotNull(
+    performancePrimaryStat(),
+    visibleScreens.lastOrNull()?.let { PerformanceStat(it, "Screen") },
+    performanceSourceLabel()?.let { PerformanceStat(it, "Source") },
+  )
+
+private fun BuddyLiveFeedItem.performancePrimaryStat(): PerformanceStat? {
+  val duration = timelineItem.data.longValue("duration_ms")
+  if (duration != null) {
+    return PerformanceStat(formatDurationValue(duration), "Duration")
+  }
+  val statusCode =
+    timelineItem.data.mapValue("data").longValue("status_code")
+      ?: timelineItem.data.longValue("status_code")
+  return statusCode?.let { PerformanceStat(it.toString(), "Status") }
+}
+
+private fun BuddyLiveFeedItem.performanceNarrative(liveFeed: BuddyLiveFeed): String {
+  val scope = screenContextText() ?: "Buddy is tracking the surrounding user flow."
+  val supportingStats =
+    listOfNotNull(
+        liveFeed.items
+          .count { it.adverse && it.category == BuddyLiveFeedItem.Category.SLOW_SPAN }
+          .positiveChip("slow spans"),
+        liveFeed.items
+          .count { it.adverse && it.category == BuddyLiveFeedItem.Category.FAILED_SPAN }
+          .positiveChip("failed spans"),
+        liveFeed.items
+          .count { it.adverse && it.category == BuddyLiveFeedItem.Category.FAILED_HTTP }
+          .positiveChip("HTTP issues"),
+      )
+      .joinToString()
+  return if (supportingStats.isBlank()) {
+    scope
+  } else {
+    "$scope Recent pattern: $supportingStats."
+  }
+}
+
 private fun BuddyLiveFeedItem.screenContextText(): String? {
   if (visibleScreens.isEmpty()) {
     return null
@@ -1436,6 +1678,33 @@ private fun BuddyLiveFeedItem.screenContextText(): String? {
   val label = if (visibleScreens.size == 1) "Screen" else "Screens"
   return "$label: ${visibleScreens.joinToString(" -> ")}"
 }
+
+private fun attentionTimelinePreviewItems(
+  item: BuddyLiveFeedItem,
+  liveFeed: BuddyLiveFeed,
+): List<BuddyLiveFeedItem> {
+  val chronological = liveFeed.items.asReversed()
+  val index = chronological.indexOfFirst { it.id == item.id }
+  if (index == -1) {
+    return emptyList()
+  }
+  val start = (index - 1).coerceAtLeast(0)
+  val end = min(index + 2, chronological.size)
+  return chronological.subList(start, end)
+}
+
+private fun BuddyLiveFeedItem.timelinePreviewSubtitle(): String {
+  val categoryLabel = category.label
+  val primaryValue = performancePrimaryStat()?.value
+  return if (primaryValue == null) categoryLabel else "$categoryLabel  •  $primaryValue"
+}
+
+private fun timelinePreviewColor(item: BuddyLiveFeedItem): Color =
+  if (item.adverse) {
+    severityColor(item.severity)
+  } else {
+    timelineColor(item.timelineItem)
+  }
 
 private fun relativeTime(timestampMs: Long, nowMs: Long): String {
   val ageMs = (nowMs - timestampMs).coerceAtLeast(0)
@@ -1448,6 +1717,19 @@ private fun relativeTime(timestampMs: Long, nowMs: Long): String {
   }
   return "${ageSeconds / 60}m ago"
 }
+
+private fun formatDurationValue(durationMs: Long): String {
+  if (durationMs < 1000) {
+    return "${durationMs}ms"
+  }
+  val seconds = durationMs / 1000f
+  return String.format(Locale.ROOT, "%.2fs", seconds)
+}
+
+private fun String.humanizeDotKey(): String =
+  split('.', '_', '-', ' ')
+    .filter { it.isNotBlank() }
+    .joinToString(" ") { part -> part.replaceFirstChar { it.titlecase(Locale.ROOT) } }
 
 private fun Map<String, Any?>.mapValue(key: String): Map<*, *> =
   this[key] as? Map<*, *> ?: emptyMap<Any, Any>()
@@ -1756,6 +2038,7 @@ private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
 private val BuddyAttentionCardHeight = 184.dp
+private val BuddyAttentionPerformanceCardHeight = 264.dp
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 10
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
