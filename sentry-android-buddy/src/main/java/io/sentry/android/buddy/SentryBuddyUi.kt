@@ -43,10 +43,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.annotations.ApiStatus
 
 @ApiStatus.Experimental
@@ -127,8 +130,8 @@ private fun SentryBuddyOverlayContent(
   var state by remember { mutableStateOf(controller.state) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
   var isRecordingHelpOpen by remember { mutableStateOf(false) }
-  var transientRecordingText by remember { mutableStateOf<String?>(null) }
-  var observedTransientEventId by remember { mutableStateOf(controller.transientRecordingEventId) }
+  var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
+  val transientRecordingEventScope = rememberCoroutineScope()
 
   fun dispatch(action: SentryBuddySessionController.() -> Unit) {
     controller.action()
@@ -144,21 +147,16 @@ private fun SentryBuddyOverlayContent(
     }
   }
 
+  DisposableEffect(controller) {
+    val removeListener = controller.addTransientRecordingEventListener { event ->
+      transientRecordingEventScope.launch { transientRecordingEvent = event }
+    }
+    onDispose { removeListener() }
+  }
+
   LaunchedEffect(state) {
-    if (state is SentryBuddySessionState.Recording) {
-      while (true) {
-        if (controller.transientRecordingEventId != observedTransientEventId) {
-          observedTransientEventId = controller.transientRecordingEventId
-          transientRecordingText = controller.transientRecordingText
-          delay(1400)
-          if (controller.transientRecordingEventId == observedTransientEventId) {
-            transientRecordingText = null
-          }
-        }
-        delay(150)
-      }
-    } else {
-      transientRecordingText = null
+    if (state !is SentryBuddySessionState.Recording) {
+      transientRecordingEvent = null
     }
   }
 
@@ -173,7 +171,7 @@ private fun SentryBuddyOverlayContent(
       maxWidthPx = maxWidthPx,
       maxHeightPx = maxHeightPx,
       bubbleHitBounds = bubbleHitBounds,
-      transientText = transientRecordingText,
+      transientEvent = transientRecordingEvent,
       onClick = {
         when (state) {
           SentryBuddySessionState.Closed -> dispatch { open() }
@@ -215,7 +213,7 @@ private fun BoxScope.BuddyBubble(
   maxWidthPx: Float,
   maxHeightPx: Float,
   bubbleHitBounds: BuddyOverlayHitBounds?,
-  transientText: String?,
+  transientEvent: TransientRecordingEvent?,
   onClick: () -> Unit,
   onLongClick: () -> Unit,
   onStopAndAnalyze: () -> Unit,
@@ -311,7 +309,7 @@ private fun BoxScope.BuddyBubble(
     }
   }
   TransientRecordingText(
-    text = transientText,
+    event = transientEvent,
     bubbleOffset = resolvedOffset,
     maxWidthPx = maxWidthPx,
     bubbleSizePx = bubbleSizePx,
@@ -321,12 +319,14 @@ private fun BoxScope.BuddyBubble(
 
 @Composable
 private fun BoxScope.TransientRecordingText(
-  text: String?,
+  event: TransientRecordingEvent?,
   bubbleOffset: Offset,
   maxWidthPx: Float,
   bubbleSizePx: Float,
   showAbove: Boolean,
 ) {
+  var visible by remember { mutableStateOf(false) }
+  var text by remember { mutableStateOf("") }
   val density = LocalDensity.current
   val textWidthPx = with(density) { BuddyTransientTextWidth.toPx() }
   val textHeightPx = with(density) { BuddyTransientTextHeight.toPx() }
@@ -342,14 +342,28 @@ private fun BoxScope.TransientRecordingText(
       bubbleOffset.y + bubbleSizePx + with(density) { 8.dp.toPx() }
     }
 
+  LaunchedEffect(event?.id) {
+    val currentEvent = event
+    if (currentEvent == null) {
+      visible = false
+      return@LaunchedEffect
+    }
+    text = currentEvent.text
+    visible = false
+    delay(40)
+    visible = true
+    delay(1400)
+    visible = false
+  }
+
   AnimatedVisibility(
-    visible = text != null,
+    visible = visible,
     enter = fadeIn(),
     exit = fadeOut(),
     modifier = Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) },
   ) {
     Text(
-      text = text.orEmpty(),
+      text = text,
       modifier = Modifier.width(BuddyTransientTextWidth),
       color = BuddyInk,
       style = MaterialTheme.typography.labelMedium,

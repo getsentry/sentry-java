@@ -80,6 +80,29 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
+  fun `record transient event notifies every recorded event`() {
+    val controller = SentryBuddySessionController(recorderFacade = FakeRecorderFacade())
+    val events = mutableListOf<TransientRecordingEvent>()
+    val removeListener = controller.addTransientRecordingEventListener { events += it }
+
+    controller.startRecording(flowName = "Login")
+    controller.recordTransientEvent("Screen: MainActivity")
+    controller.recordTransientEvent("Screen: MainActivity")
+
+    removeListener()
+    controller.recordTransientEvent("Step: Ignored")
+
+    assertThat(events.map { it.id }).containsExactly(1L, 2L, 3L).inOrder()
+    assertThat(events.map { it.text })
+      .containsExactly(
+        "Flow recording started",
+        "Screen: MainActivity",
+        "Screen: MainActivity",
+      )
+      .inOrder()
+  }
+
+  @Test
   fun `recorder failure enters error state`() {
     val controller =
       SentryBuddySessionController(

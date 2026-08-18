@@ -201,9 +201,10 @@ internal class BuddyActivityLifecycleCallbacks(
 
   override fun onActivityResumed(activity: Activity) {
     currentActivity = WeakReference(activity)
-    recorder.recordScreen(activity.javaClass.simpleName)
-    overlayManager?.recordingEvent("Screen captured")
     overlayManager?.attach(activity)
+    val screenName = activity.javaClass.simpleName
+    recorder.recordScreen(screenName)
+    overlayManager?.recordingEvent("Screen: $screenName")
   }
 
   override fun onActivityPaused(activity: Activity) {
@@ -226,8 +227,9 @@ internal class BuddyActivityLifecycleCallbacks(
 
   fun recordCurrentScreen() {
     currentActivity?.get()?.let {
-      recorder.recordScreen(it.javaClass.simpleName)
-      overlayManager?.recordingEvent("Screen captured")
+      val screenName = it.javaClass.simpleName
+      recorder.recordScreen(screenName)
+      overlayManager?.recordingEvent("Screen: $screenName")
     }
   }
 
@@ -456,7 +458,7 @@ internal class RealBuddySentryTransaction(private val transaction: ITransaction)
     get() = transaction.spanContext.spanId.toString()
 
   override val spanCount: Int
-    get() = transaction.spans.size + 1
+    get() = transaction.spans.size
 
   override fun finish() {
     transaction.finish()

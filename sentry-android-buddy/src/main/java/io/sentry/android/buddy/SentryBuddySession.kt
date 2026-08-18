@@ -114,6 +114,8 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
 public data class BuddyRecordingResult
 public constructor(public val recording: BuddyFlowRecording, public val recordingJson: String)
 
+internal data class TransientRecordingEvent(val id: Long, val text: String)
+
 @ApiStatus.Experimental
 public interface SentryBuddyRecorderFacade {
   public fun startRecording(intent: BuddyFlowIntent)
@@ -190,11 +192,9 @@ public constructor(
   public var state: SentryBuddySessionState = SentryBuddySessionState.Closed
     private set
 
-  internal var transientRecordingText: String? = null
-    private set
-
-  internal var transientRecordingEventId: Long = 0
-    private set
+  private val transientRecordingEventLock: Any = Any()
+  private val transientRecordingEventListeners = mutableListOf<(TransientRecordingEvent) -> Unit>()
+  private var transientRecordingEventId: Long = 0
 
   public fun open() {
     state = SentryBuddySessionState.Intro
@@ -317,9 +317,25 @@ public constructor(
   }
 
   internal fun recordTransientEvent(text: String) {
-    if (state is SentryBuddySessionState.Recording) {
-      transientRecordingText = text
+    val event: TransientRecordingEvent
+    val listeners: List<(TransientRecordingEvent) -> Unit>
+    synchronized(transientRecordingEventLock) {
+      if (state !is SentryBuddySessionState.Recording) {
+        return
+      }
       transientRecordingEventId++
+      event = TransientRecordingEvent(transientRecordingEventId, text)
+      listeners = transientRecordingEventListeners.toList()
+    }
+    listeners.forEach { it(event) }
+  }
+
+  internal fun addTransientRecordingEventListener(
+    listener: (TransientRecordingEvent) -> Unit
+  ): () -> Unit {
+    synchronized(transientRecordingEventLock) { transientRecordingEventListeners += listener }
+    return {
+      synchronized(transientRecordingEventLock) { transientRecordingEventListeners -= listener }
     }
   }
 
@@ -367,7 +383,7 @@ public constructor(
   ): BuddyAnalysisResponse {
     val durationMs = request.endTimeMs - request.startTimeMs
     val screenCount = request.events.count { it.type == BuddyTimelineItem.Type.SCREEN.value }
-    val spanCount = request.events.count { it.type == "span" }.coerceAtLeast(1)
+    val spanCount = request.events.count { it.type == "span" }
     return BuddyAnalysisResponse(
       summary =
         title

@@ -66,7 +66,7 @@ public object SentryBuddy {
   @JvmStatic
   public fun recordStep(name: String, data: Map<String, Any?>) {
     requireInstalled().recordStep(name, data)
-    lifecycleCallbacks?.recordingEvent("Step captured")
+    lifecycleCallbacks?.recordingEvent("Step: $name")
   }
 
   @JvmStatic
