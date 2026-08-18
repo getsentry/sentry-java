@@ -5,6 +5,7 @@ import android.graphics.Rect
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -66,7 +67,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -300,14 +300,22 @@ private fun BoxScope.BuddyBubble(
   val bubbleMarginPx = with(density) { BuddyBubbleMargin.toPx() }
   val initialTopPx = with(density) { BuddyBubbleInitialTop.toPx() }
   val isRecording = state is SentryBuddySessionState.Recording
-  val bubbleColor = if (isRecording) BuddyRed else BuddyPurple
   val attentionItem = liveFeed.latestUnviewedAdverseItem
   val attentionColor = attentionItem?.let { severityColor(it.severity) }
   val showAttentionFlames = !isRecording && attentionItem?.severity == Severity.HIGH
   val showAttentionSparks = !isRecording && attentionItem?.severity == Severity.MEDIUM
+  val bubbleGlyphState =
+    when {
+      isRecording -> BuddyBubbleGlyphState.RECORDING
+      state is SentryBuddySessionState.Analyzing -> BuddyBubbleGlyphState.ANALYZING
+      state is SentryBuddySessionState.Insights -> BuddyBubbleGlyphState.INSIGHTS_READY
+      liveFeed.unviewedAdverseCount > 0 -> BuddyBubbleGlyphState.UNREAD
+      else -> BuddyBubbleGlyphState.IDLE
+    }
   val pulseScale = remember { Animatable(1f) }
   val stopTransition = rememberInfiniteTransition(label = "buddy-floating-stop-button")
   val attentionTransition = rememberInfiniteTransition(label = "buddy-attention-ornaments")
+  val seerTransition = rememberInfiniteTransition(label = "buddy-seer-button")
   val stopHaloScale by
     stopTransition.animateFloat(
       initialValue = 1.0f,
@@ -340,6 +348,21 @@ private fun BoxScope.BuddyBubble(
           repeatMode = RepeatMode.Reverse,
         ),
       label = "buddy-attention-ornament-phase",
+    )
+  val seerSweepRotation by
+    seerTransition.animateFloat(
+      initialValue = 0f,
+      targetValue = 360f,
+      animationSpec =
+        infiniteRepeatable(
+          animation =
+            tween(
+              durationMillis = bubbleGlyphState.sweepDurationMillis,
+              easing = LinearEasing,
+            ),
+          repeatMode = RepeatMode.Restart,
+        ),
+      label = "buddy-seer-sweep-rotation",
     )
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
 
@@ -426,8 +449,6 @@ private fun BoxScope.BuddyBubble(
         modifier =
           Modifier.size(64.dp)
             .shadow(10.dp, CircleShape)
-            .background(bubbleColor, CircleShape)
-            .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
             .pointerInput(maxWidthPx, maxHeightPx) {
               detectDragGestures { change, dragAmount ->
                 change.consume()
@@ -437,10 +458,28 @@ private fun BoxScope.BuddyBubble(
             .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         contentAlignment = Alignment.Center,
       ) {
+        Box(
+          modifier =
+            Modifier.matchParentSize()
+              .background(
+                if (isRecording) BuddyRecordingBubbleChonk else BuddyAccentBubbleChonk,
+                CircleShape,
+              )
+        )
+        Box(
+          modifier =
+            Modifier.matchParentSize()
+              .padding(bottom = 2.dp)
+              .background(
+                if (isRecording) BuddyRecordingBubbleColor else BuddyAccentBubbleColor,
+                CircleShape,
+              )
+              .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
+        )
         if (isRecording) {
           StopIcon(tint = Color.White, modifier = Modifier.size(22.dp))
         } else {
-          SentryBuddyGlyph(tint = Color.White, modifier = Modifier.size(30.dp))
+          BuddyBubbleGlyph(state = bubbleGlyphState, sweepRotation = seerSweepRotation)
         }
       }
       if (attentionColor != null && !isRecording) {
@@ -882,7 +921,41 @@ private fun BuddySheet(
 
 @Composable
 private fun StopIcon(tint: Color, modifier: Modifier = Modifier) {
-  Box(modifier = modifier.background(tint, RoundedCornerShape(4.dp)))
+  Icon(
+    painter = painterResource(id = R.drawable.ic_buddy_recording),
+    contentDescription = null,
+    modifier = modifier,
+    tint = tint,
+  )
+}
+
+private enum class BuddyBubbleGlyphState(val sweepDurationMillis: Int) {
+  IDLE(2400),
+  UNREAD(2400),
+  ANALYZING(1100),
+  INSIGHTS_READY(3600),
+  RECORDING(1400),
+}
+
+@Composable
+private fun BuddyBubbleGlyph(state: BuddyBubbleGlyphState, sweepRotation: Float) {
+  val painterId =
+    if (state == BuddyBubbleGlyphState.IDLE) R.drawable.ic_buddy_seer
+    else R.drawable.ic_buddy_seer_beam
+  Icon(
+    painter = painterResource(id = painterId),
+    contentDescription = null,
+    modifier =
+      Modifier.size(30.dp).graphicsLayer {
+        rotationZ =
+          if (state == BuddyBubbleGlyphState.IDLE) {
+            0f
+          } else {
+            sweepRotation
+          }
+      },
+    tint = Color.White,
+  )
 }
 
 @Composable
@@ -2182,7 +2255,10 @@ private fun InsightsSheet(
   val context = LocalContext.current
   var isJsonDialogOpen by remember { mutableStateOf(false) }
   val flowName = state.result.recording.flow.name.ifBlank { "Unnamed flow" }
-  val traceLink = remember(state.result.recording, sentryUiLinks) { sentryUiLinks.linkFor(state.result.recording) }
+  val traceLink =
+    remember(state.result.recording, sentryUiLinks) {
+      sentryUiLinks.linkFor(state.result.recording)
+    }
   SheetTitle(
     "Flow insights",
     "$flowName • ${formatElapsed(state.result.recording.summary.durationMs)}",
@@ -2436,7 +2512,11 @@ private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
 private const val ANALYSIS_TIMEOUT_MS = 30_000L
 
 private val BuddyPurple = Color(0xFF7553FF)
+private val BuddyAccentBubbleColor = Color(0xFF7553FF)
+private val BuddyAccentBubbleChonk = Color(0xFF5827D6)
 private val BuddyRed = Color(0xFFFF003D)
+private val BuddyRecordingBubbleColor = Color(0xFFFF002B)
+private val BuddyRecordingBubbleChonk = Color(0xFFC10000)
 private val BuddyGold = Color(0xFFC47A00)
 private val BuddyInk = Color(0xFF171426)
 private val BuddyMuted = Color(0xFF6F6B7A)
