@@ -394,8 +394,40 @@ internal class BuddyRecorder(
     severity: Severity,
     adverse: Boolean,
   ) {
-    val snapshot = liveFeed.add(item, category, severity, adverse)
+    val snapshot =
+      liveFeed.add(
+        item = item,
+        category = category,
+        severity = severity,
+        adverse = adverse,
+        visibleScreens = activeRecording.visibleScreensFor(item),
+      )
     liveFeedListeners.toList().forEach { it(snapshot) }
+  }
+
+  private fun ActiveRecording?.visibleScreensFor(item: BuddyTimelineItem): List<String> {
+    val recording = this ?: return emptyList()
+    val startMs = item.timestamp.time
+    val endMs = item.data.longValue(DATA_DURATION_MS)?.let { startMs + it } ?: startMs
+    val screenItems =
+      recording.timeline
+        .filter { it.type == BuddyTimelineItem.Type.SCREEN && !it.name.isNullOrBlank() }
+        .sortedBy { it.timestamp.time }
+    val screenAtStart = screenItems.lastOrNull { it.timestamp.time <= startMs }
+    val screensDuringItem = screenItems.filter { it.timestamp.time in (startMs + 1)..endMs }
+    return (listOfNotNull(screenAtStart) + screensDuringItem)
+      .mapNotNull { it.name }
+      .dedupeConsecutive()
+  }
+
+  private fun List<String>.dedupeConsecutive(): List<String> {
+    val deduped = mutableListOf<String>()
+    forEach { screen ->
+      if (deduped.lastOrNull() != screen) {
+        deduped += screen
+      }
+    }
+    return deduped
   }
 
   private fun ActiveRecording?.elapsedAt(timestamp: Date): Long =

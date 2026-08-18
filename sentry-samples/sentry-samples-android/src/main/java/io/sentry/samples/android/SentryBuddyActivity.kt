@@ -84,7 +84,6 @@ private fun SentryTravelApp() {
   val context = androidx.compose.ui.platform.LocalContext.current
   val store = remember { TravelStore(context.applicationContext) }
   val telemetry = remember { TravelTelemetry(store) }
-  var actionMessage by remember { mutableStateOf("Ready to record a rich travel flow.") }
   var selectedDestination by remember { mutableStateOf(travelDestinations.first()) }
   var selectedStay by remember { mutableStateOf(selectedDestination.stays.first()) }
   var confirmationId by remember { mutableStateOf<String?>(null) }
@@ -117,7 +116,6 @@ private fun SentryTravelApp() {
         NavHost(navController = navController, startDestination = TravelRoute.Home.route) {
           composable(TravelRoute.Home.route) {
             TravelHomeScreen(
-              actionMessage = actionMessage,
               savedTripCount = savedTrips.size,
               onExplore = { navController.navigate(TravelRoute.Explore.route) },
               onTrips = {
@@ -129,22 +127,19 @@ private fun SentryTravelApp() {
               onProfile = { navController.navigate(TravelRoute.Profile.route) },
               onSupport = { navController.navigate(TravelRoute.Support.route) },
               onRefreshDeals = {
-                scope.launch {
-                  actionMessage = telemetry.refreshDeals("travel-home")
-                }
+                scope.launch { telemetry.refreshDeals("travel-home") }
               },
               onScorePicks = {
-                scope.launch { actionMessage = telemetry.scoreRecommendations() }
+                scope.launch { telemetry.scoreRecommendations() }
               },
             )
           }
           composable(TravelRoute.Explore.route) {
             ExploreScreen(
               destinations = travelDestinations,
-              actionMessage = actionMessage,
               onBack = { navController.popBackStack() },
               onSearch = { query ->
-                scope.launch { actionMessage = telemetry.searchDestinations(query) }
+                scope.launch { telemetry.searchDestinations(query) }
               },
               onDestinationSelected = { destination ->
                 selectedDestination = destination
@@ -156,13 +151,12 @@ private fun SentryTravelApp() {
           composable(TravelRoute.Destination.route) {
             DestinationScreen(
               destination = selectedDestination,
-              actionMessage = actionMessage,
               onBack = { navController.popBackStack() },
               onAvailability = {
-                scope.launch { actionMessage = telemetry.checkAvailability(selectedDestination) }
+                scope.launch { telemetry.checkAvailability(selectedDestination) }
               },
               onBuildItinerary = {
-                scope.launch { actionMessage = telemetry.buildItinerary(selectedDestination) }
+                scope.launch { telemetry.buildItinerary(selectedDestination) }
               },
               onStaySelected = { stay ->
                 selectedStay = stay
@@ -175,11 +169,10 @@ private fun SentryTravelApp() {
             StayScreen(
               destination = selectedDestination,
               stay = selectedStay,
-              actionMessage = actionMessage,
               onBack = { navController.popBackStack() },
               onReserve = {
                 scope.launch {
-                  actionMessage = telemetry.calculatePrice(selectedDestination, selectedStay)
+                  telemetry.calculatePrice(selectedDestination, selectedStay)
                   navController.navigate(TravelRoute.Review.route)
                 }
               },
@@ -189,14 +182,12 @@ private fun SentryTravelApp() {
             ReviewScreen(
               destination = selectedDestination,
               stay = selectedStay,
-              actionMessage = actionMessage,
               onBack = { navController.popBackStack() },
               onConfirm = {
                 scope.launch {
                   val id = telemetry.saveTrip(context, selectedDestination, selectedStay)
                   confirmationId = id
                   savedTrips = telemetry.loadTrips(context)
-                  actionMessage = "Saved trip $id locally."
                   navController.navigate(TravelRoute.Confirmation.route)
                 }
               },
@@ -266,22 +257,20 @@ private fun SentryTravelApp() {
           }
           composable(TravelRoute.Profile.route) {
             ProfileScreen(
-              actionMessage = actionMessage,
               onBack = { navController.popBackStack() },
               onSave = { airport, style ->
-                scope.launch { actionMessage = telemetry.savePreferences(context, airport, style) }
+                scope.launch { telemetry.savePreferences(context, airport, style) }
               },
             )
           }
           composable(TravelRoute.Support.route) {
             SupportScreen(
-              actionMessage = actionMessage,
               onBack = { navController.popBackStack() },
               onContact = {
-                scope.launch { actionMessage = telemetry.contactSupport() }
+                scope.launch { telemetry.contactSupport() }
               },
               onSimulateFailure = {
-                actionMessage = telemetry.simulateBookingFailure()
+                telemetry.simulateBookingFailure()
               },
             )
           }
@@ -293,7 +282,6 @@ private fun SentryTravelApp() {
 
 @Composable
 private fun TravelHomeScreen(
-  actionMessage: String,
   savedTripCount: Int,
   onExplore: () -> Unit,
   onTrips: () -> Unit,
@@ -305,7 +293,7 @@ private fun TravelHomeScreen(
   SentryTraced("sentry_travel_home") {
     TravelScaffold(title = "Sentry Travel", subtitle = "Plan your next traceable trip") {
       HeroCard(
-        title = "Record a real-feeling journey",
+        title = "Plan your next trip",
         body =
           "Browse destinations, reserve a stay, save a trip, and trigger spans Buddy can explain.",
       )
@@ -324,7 +312,6 @@ private fun TravelHomeScreen(
         SecondaryTravelButton("Profile", Modifier.weight(1f), onProfile)
         SecondaryTravelButton("Support", Modifier.weight(1f), onSupport)
       }
-      ActionStatusCard(actionMessage)
       SectionTitle("Featured escapes")
       travelDestinations.forEach { DestinationCard(it, onClick = { onExplore() }) }
       SectionTitle("Span actions")
@@ -339,7 +326,6 @@ private fun TravelHomeScreen(
 @Composable
 private fun ExploreScreen(
   destinations: List<TravelDestination>,
-  actionMessage: String,
   onBack: () -> Unit,
   onSearch: (String) -> Unit,
   onDestinationSelected: (TravelDestination) -> Unit,
@@ -355,7 +341,6 @@ private fun ExploreScreen(
         singleLine = true,
       )
       PrimaryTravelButton("Search destinations", Modifier.fillMaxWidth()) { onSearch(query) }
-      ActionStatusCard(actionMessage)
       destinations.forEach { destination ->
         DestinationCard(destination, onClick = { onDestinationSelected(destination) })
       }
@@ -366,7 +351,6 @@ private fun ExploreScreen(
 @Composable
 private fun DestinationScreen(
   destination: TravelDestination,
-  actionMessage: String,
   onBack: () -> Unit,
   onAvailability: () -> Unit,
   onBuildItinerary: () -> Unit,
@@ -384,7 +368,6 @@ private fun DestinationScreen(
         PrimaryTravelButton("Check availability", Modifier.weight(1f), onAvailability)
         SecondaryTravelButton("Build itinerary", Modifier.weight(1f), onBuildItinerary)
       }
-      ActionStatusCard(actionMessage)
       SectionTitle("Choose your stay")
       destination.stays.forEach { stay -> StayCard(stay) { onStaySelected(stay) } }
     }
@@ -395,7 +378,6 @@ private fun DestinationScreen(
 private fun StayScreen(
   destination: TravelDestination,
   stay: TravelStay,
-  actionMessage: String,
   onBack: () -> Unit,
   onReserve: () -> Unit,
 ) {
@@ -403,7 +385,6 @@ private fun StayScreen(
     TravelScaffold(title = stay.name, subtitle = destination.name, onBack = onBack) {
       HeroCard(title = stay.name, body = stay.description, accent = TravelGold)
       TravelMetricRow(listOf("${stay.nights} nights", "$${stay.price} total", stay.mood))
-      ActionStatusCard(actionMessage)
       SectionTitle("Included")
       stay.amenities.forEach {
         TimelineRow(title = it, body = "Included in this Sentry Travel plan")
@@ -417,7 +398,6 @@ private fun StayScreen(
 private fun ReviewScreen(
   destination: TravelDestination,
   stay: TravelStay,
-  actionMessage: String,
   onBack: () -> Unit,
   onConfirm: () -> Unit,
 ) {
@@ -433,7 +413,6 @@ private fun ReviewScreen(
         "Local persistence",
         "Confirming writes a saved trip through SQLite instrumentation.",
       )
-      ActionStatusCard(actionMessage)
       PrimaryTravelButton("Confirm trip", Modifier.fillMaxWidth(), onConfirm)
     }
   }
@@ -552,7 +531,6 @@ private fun ActivityDetailScreen(
 
 @Composable
 private fun ProfileScreen(
-  actionMessage: String,
   onBack: () -> Unit,
   onSave: (String, String) -> Unit,
 ) {
@@ -574,7 +552,6 @@ private fun ProfileScreen(
         label = { Text("Travel style") },
         singleLine = true,
       )
-      ActionStatusCard(actionMessage)
       PrimaryTravelButton("Save preferences", Modifier.fillMaxWidth()) { onSave(airport, style) }
     }
   }
@@ -582,7 +559,6 @@ private fun ProfileScreen(
 
 @Composable
 private fun SupportScreen(
-  actionMessage: String,
   onBack: () -> Unit,
   onContact: () -> Unit,
   onSimulateFailure: () -> Unit,
@@ -593,7 +569,6 @@ private fun SupportScreen(
         title = "Need help with the itinerary?",
         body = "Contact support for an HTTP span or simulate a booking failure for error capture.",
       )
-      ActionStatusCard(actionMessage)
       PrimaryTravelButton("Contact support", Modifier.fillMaxWidth(), onContact)
       SecondaryTravelButton("Simulate booking failure", Modifier.fillMaxWidth(), onSimulateFailure)
     }
@@ -727,14 +702,6 @@ private fun TimelineRow(title: String, body: String, onClick: (() -> Unit)? = nu
 @Composable
 private fun SectionTitle(text: String) {
   Text(text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-}
-
-@Composable
-private fun ActionStatusCard(message: String) {
-  TravelCard {
-    Text("Last Buddy signal", color = TravelGold, fontWeight = FontWeight.Bold)
-    Text(message, color = TravelMuted)
-  }
 }
 
 @Composable

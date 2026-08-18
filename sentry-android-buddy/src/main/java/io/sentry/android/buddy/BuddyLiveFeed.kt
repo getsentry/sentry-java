@@ -16,6 +16,7 @@ internal data class BuddyLiveFeedItem(
   val severity: Severity = Severity.LOW,
   val adverse: Boolean = false,
   val viewed: Boolean = false,
+  val visibleScreens: List<String> = emptyList(),
 ) {
   enum class Category(val label: String) {
     SCREEN("Screen"),
@@ -39,6 +40,7 @@ internal class BuddyLiveFeedBuffer(private val capacity: Int) {
     category: BuddyLiveFeedItem.Category,
     severity: Severity,
     adverse: Boolean,
+    visibleScreens: List<String>,
   ): BuddyLiveFeed {
     nextId++
     items +=
@@ -48,6 +50,7 @@ internal class BuddyLiveFeedBuffer(private val capacity: Int) {
         category = category,
         severity = severity,
         adverse = adverse,
+        visibleScreens = visibleScreens,
       )
     while (items.size > capacity) {
       items.removeFirst()

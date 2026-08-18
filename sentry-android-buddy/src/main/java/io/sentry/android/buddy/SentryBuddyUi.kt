@@ -4,6 +4,11 @@ import android.content.Context
 import android.graphics.Rect
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -60,6 +65,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -138,7 +144,6 @@ private fun SentryBuddyOverlayContent(
   var state by remember { mutableStateOf(controller.state) }
   var liveFeed by remember { mutableStateOf(controller.liveFeed) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
-  var isRecordingHelpOpen by remember { mutableStateOf(false) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
   val transientRecordingEventScope = rememberCoroutineScope()
   val analysisScope = rememberCoroutineScope()
@@ -233,20 +238,7 @@ private fun SentryBuddyOverlayContent(
           else -> dispatch { close() }
         }
       },
-      onLongClick = {
-        if (state is SentryBuddySessionState.Recording) {
-          isRecordingHelpOpen = true
-        }
-      },
-      onStopAndAnalyze = {
-        isRecordingHelpOpen = false
-        dispatch {
-          stopRecording()
-          briefRecording()
-        }
-      },
-      onDismissRecordingHelp = { isRecordingHelpOpen = false },
-      isRecordingHelpOpen = isRecordingHelpOpen,
+      onLongClick = {},
     )
     BuddySheet(
       state = state,
@@ -272,9 +264,6 @@ private fun BoxScope.BuddyBubble(
   transientEvent: TransientRecordingEvent?,
   onClick: () -> Unit,
   onLongClick: () -> Unit,
-  onStopAndAnalyze: () -> Unit,
-  onDismissRecordingHelp: () -> Unit,
-  isRecordingHelpOpen: Boolean,
 ) {
   val density = LocalDensity.current
   val bubbleSizePx = with(density) { BuddyBubbleSize.toPx() }
@@ -285,6 +274,29 @@ private fun BoxScope.BuddyBubble(
   val attentionItem = liveFeed.latestUnviewedAdverseItem
   val attentionColor = attentionItem?.let { severityColor(it.severity) }
   val pulseScale = remember { Animatable(1f) }
+  val stopTransition = rememberInfiniteTransition(label = "buddy-floating-stop-button")
+  val stopHaloScale by
+    stopTransition.animateFloat(
+      initialValue = 1.0f,
+      targetValue = 1.14f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+          repeatMode = RepeatMode.Reverse,
+        ),
+      label = "buddy-floating-stop-button-halo-scale",
+    )
+  val stopHaloAlpha by
+    stopTransition.animateFloat(
+      initialValue = 0.12f,
+      targetValue = 0.28f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+          repeatMode = RepeatMode.Reverse,
+        ),
+      label = "buddy-floating-stop-button-halo-alpha",
+    )
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
 
   LaunchedEffect(attentionItem?.id) {
@@ -338,20 +350,38 @@ private fun BoxScope.BuddyBubble(
     verticalArrangement = Arrangement.spacedBy(8.dp),
   ) {
     Box(
-      modifier =
-        Modifier.size(64.dp)
-          .shadow(10.dp, CircleShape)
-          .background(bubbleColor, CircleShape)
-          .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
-          .pointerInput(maxWidthPx, maxHeightPx) {
-            detectDragGestures { change, dragAmount ->
-              change.consume()
-              bubbleOffset = ((bubbleOffset ?: resolvedOffset) + dragAmount).constrain()
-            }
-          }
-          .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+      modifier = Modifier.size(64.dp),
       contentAlignment = Alignment.Center,
     ) {
+      if (isRecording) {
+        Box(
+          modifier =
+            Modifier.size(BuddyBubbleSize * stopHaloScale)
+              .graphicsLayer { alpha = stopHaloAlpha }
+              .background(BuddyRed, CircleShape)
+        )
+      }
+      Box(
+        modifier =
+          Modifier.size(64.dp)
+            .shadow(10.dp, CircleShape)
+            .background(bubbleColor, CircleShape)
+            .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
+            .pointerInput(maxWidthPx, maxHeightPx) {
+              detectDragGestures { change, dragAmount ->
+                change.consume()
+                bubbleOffset = ((bubbleOffset ?: resolvedOffset) + dragAmount).constrain()
+              }
+            }
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+        contentAlignment = Alignment.Center,
+      ) {
+        if (isRecording) {
+          StopIcon(tint = Color.White, modifier = Modifier.size(22.dp))
+        } else {
+          SentryBuddyGlyph(tint = Color.White, modifier = Modifier.size(30.dp))
+        }
+      }
       if (attentionColor != null && !isRecording) {
         Box(
           modifier =
@@ -362,11 +392,6 @@ private fun BoxScope.BuddyBubble(
           modifier =
             Modifier.size(BuddyBubbleSize + 10.dp).border(3.dp, attentionColor, CircleShape)
         )
-      }
-      if (isRecording) {
-        StopIcon(tint = Color.White, modifier = Modifier.size(22.dp))
-      } else {
-        SentryBuddyGlyph(tint = Color.White, modifier = Modifier.size(30.dp))
       }
       if (liveFeed.unviewedAdverseCount > 0 && !isRecording) {
         Text(
@@ -385,14 +410,6 @@ private fun BoxScope.BuddyBubble(
           textAlign = TextAlign.Center,
         )
       }
-    }
-    if (isRecording && isRecordingHelpOpen && state is SentryBuddySessionState.Recording) {
-      RecordingTooltip(
-        state = state,
-        nowMs = nowMs,
-        onStopAndAnalyze = onStopAndAnalyze,
-        onDismiss = onDismissRecordingHelp,
-      )
     }
     elapsed?.let {
       Text(
@@ -593,7 +610,7 @@ private fun LiveFeedSheet(
     BuddyButtonText("Start Recording")
   }
   Text(
-    "Recent useful signals",
+    "Live feed",
     style = MaterialTheme.typography.titleMedium,
     fontWeight = FontWeight.Bold,
     color = BuddyInk,
@@ -601,7 +618,7 @@ private fun LiveFeedSheet(
   if (liveFeed.items.isEmpty()) {
     EmptyLiveFeedCard()
   } else {
-    LiveFeedRows(liveFeed.items, sentryUiLinks, nowMs, onOpenUrl)
+    LiveFeedRows(liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT), sentryUiLinks, nowMs, onOpenUrl)
   }
 }
 
@@ -612,20 +629,22 @@ private fun AttentionCard(
   nowMs: Long,
   onOpenUrl: (Context, String) -> Unit,
 ) {
+  Text(
+    "Needs attention",
+    style = MaterialTheme.typography.titleMedium,
+    fontWeight = FontWeight.Bold,
+    color = BuddyInk,
+  )
+
   val item = liveFeed.latestAdverseItem
   if (item == null) {
-    Card(border = CardDefaults.outlinedCardBorder()) {
-      Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-          Text("Needs attention", color = BuddyInk, fontWeight = FontWeight.Bold)
-          Text("No recent errors or slow spans.", color = BuddyMuted)
-        }
-        Text("OK", color = BuddyPurple, fontWeight = FontWeight.Bold)
-      }
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text("No recent errors or slow spans.", color = BuddyMuted)
+      Text("OK", color = BuddyPurple, fontWeight = FontWeight.Bold)
     }
     return
   }
@@ -636,33 +655,35 @@ private fun AttentionCard(
   Card(
     modifier = Modifier.clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } },
     colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.10f)),
-    border = CardDefaults.outlinedCardBorder(),
   ) {
     Column(
       modifier = Modifier.fillMaxWidth().padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
       Row(
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
-        Box(modifier = Modifier.size(10.dp).background(color, CircleShape))
-        Text("Needs attention", color = BuddyInk, fontWeight = FontWeight.Bold)
-        Text(relativeTime(item.timestamp.time, nowMs), color = BuddyMuted)
-      }
-      Text(
-        item.title(),
-        color = BuddyInk,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-      )
-      item.subtitle()?.let { Text(it, color = BuddyMuted) }
-      if (link != null) {
+        LiveFeedCategoryPill(item.category.label, color)
         Text(
-          "Open in Sentry",
-          color = BuddyPurple,
-          style = MaterialTheme.typography.labelMedium,
+          item.title(),
+          modifier = Modifier.weight(1f),
+          color = BuddyInk,
+          style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
+        )
+        Text(
+          relativeTime(item.timestamp.time, nowMs),
+          color = BuddyMuted,
+          style = MaterialTheme.typography.labelMedium,
+        )
+      }
+      item.screenContextText()?.let { screenContext ->
+        Text(
+          screenContext,
+          color = BuddyMuted,
+          style = MaterialTheme.typography.bodySmall,
         )
       }
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -710,29 +731,26 @@ private fun LiveFeedRows(
       val color =
         if (item.adverse) severityColor(item.severity) else timelineColor(item.timelineItem)
       val link = sentryUiLinks.linkFor(item)
-      Card(
+      Row(
         modifier =
-          Modifier.clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } },
-        border = CardDefaults.outlinedCardBorder(),
+          Modifier.fillMaxWidth()
+            .clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } }
+            .padding(vertical = 7.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
       ) {
-        Row(
-          modifier = Modifier.fillMaxWidth().padding(14.dp),
-          horizontalArrangement = Arrangement.spacedBy(10.dp),
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          LiveFeedCategoryPill(item.category.label, color)
-          Text(
-            item.title(),
-            modifier = Modifier.weight(1f),
-            color = BuddyInk,
-            fontWeight = FontWeight.Bold,
-          )
-          Text(
-            relativeTime(item.timestamp.time, nowMs),
-            color = BuddyMuted,
-            style = MaterialTheme.typography.labelMedium,
-          )
-        }
+        LiveFeedCategoryPill(item.category.label, color)
+        Text(
+          item.title(),
+          modifier = Modifier.weight(1f),
+          color = BuddyInk,
+          fontWeight = if (item.adverse) FontWeight.Bold else FontWeight.Normal,
+        )
+        Text(
+          relativeTime(item.timestamp.time, nowMs),
+          color = BuddyMuted,
+          style = MaterialTheme.typography.labelMedium,
+        )
       }
     }
   }
@@ -758,83 +776,6 @@ private fun SentryBuddyGlyph(tint: Color, modifier: Modifier = Modifier) {
     contentDescription = null,
     modifier = modifier,
     tint = tint,
-  )
-}
-
-@Composable
-private fun RecordingTooltip(
-  state: SentryBuddySessionState.Recording,
-  nowMs: Long,
-  onStopAndAnalyze: () -> Unit,
-  onDismiss: () -> Unit,
-) {
-  val durationMs = nowMs - state.startedAtMs
-  Card(
-    modifier = Modifier.width(300.dp).shadow(12.dp, RoundedCornerShape(20.dp)),
-    colors = CardDefaults.cardColors(containerColor = Color.White),
-    border = CardDefaults.outlinedCardBorder(),
-    shape = RoundedCornerShape(20.dp),
-  ) {
-    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Column {
-          Text("Recording Flow", color = BuddyInk, fontWeight = FontWeight.Bold)
-          Text(
-            "Everything stays on device",
-            color = BuddyMuted,
-            style = MaterialTheme.typography.bodySmall,
-          )
-        }
-        TextButton(onClick = onDismiss) { Text("Close") }
-      }
-      ActiveRecordingCard(durationMs)
-      ActiveTimelinePreview(state.intent, durationMs)
-      Button(
-        modifier = Modifier.fillMaxWidth().height(48.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = BuddyRed),
-        onClick = onStopAndAnalyze,
-      ) {
-        BuddyButtonText("Stop and Analyze")
-      }
-    }
-  }
-}
-
-@Composable
-private fun ActiveRecordingCard(durationMs: Long) {
-  Card(
-    colors = CardDefaults.cardColors(containerColor = BuddyRed.copy(alpha = 0.10f)),
-    border = CardDefaults.outlinedCardBorder(),
-  ) {
-    Row(
-      modifier = Modifier.fillMaxWidth().padding(16.dp),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      Text("●  Recording", color = BuddyRed, fontWeight = FontWeight.Bold)
-      Text(
-        formatElapsed(durationMs),
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        color = BuddyInk,
-      )
-    }
-  }
-}
-
-@Composable
-private fun ActiveTimelinePreview(intent: BuddyFlowIntent, durationMs: Long) {
-  Text("Live Trace", style = MaterialTheme.typography.labelLarge, color = BuddyMuted)
-  TimelineRows(
-    items =
-      listOf(
-        TimelinePreviewItem(0, "recording_started ${intent.name}", BuddyPurple),
-        TimelinePreviewItem(durationMs, "recording_in_progress", BuddyRed),
-      )
   )
 }
 
@@ -1018,22 +959,6 @@ private fun BuddyLiveFeedItem.title(): String =
     BuddyLiveFeedItem.Category.FAILED_SPAN -> timelineItem.name ?: "Failed span"
   }
 
-private fun BuddyLiveFeedItem.subtitle(): String? =
-  when (category) {
-    BuddyLiveFeedItem.Category.SCREEN -> null
-    BuddyLiveFeedItem.Category.STEP -> null
-    BuddyLiveFeedItem.Category.ERROR ->
-      listOfNotNull(
-          timelineItem.data.stringValue("message"),
-          timelineItem.data.stringValue("transaction")?.let { "in $it" },
-        )
-        .joinToString(" • ")
-        .ifBlank { null }
-    BuddyLiveFeedItem.Category.FAILED_HTTP -> httpSubtitle()
-    BuddyLiveFeedItem.Category.SLOW_SPAN,
-    BuddyLiveFeedItem.Category.FAILED_SPAN -> spanSubtitle()
-  }
-
 private fun BuddyLiveFeedItem.httpTitle(): String {
   val data = timelineItem.data.mapValue("data")
   val method = data.stringValue("method") ?: data.stringValue("http.method")
@@ -1041,21 +966,13 @@ private fun BuddyLiveFeedItem.httpTitle(): String {
   return listOfNotNull(method, url).joinToString(" ").ifBlank { timelineItem.name ?: "Failed HTTP" }
 }
 
-private fun BuddyLiveFeedItem.httpSubtitle(): String? {
-  val data = timelineItem.data.mapValue("data")
-  val statusCode = data.longValue("status_code") ?: timelineItem.data.longValue("status_code")
-  return statusCode?.let { "HTTP $it" }
+private fun BuddyLiveFeedItem.screenContextText(): String? {
+  if (visibleScreens.isEmpty()) {
+    return null
+  }
+  val label = if (visibleScreens.size == 1) "Screen" else "Screens"
+  return "$label: ${visibleScreens.joinToString(" -> ")}"
 }
-
-private fun BuddyLiveFeedItem.spanSubtitle(): String? =
-  listOfNotNull(
-      timelineItem.data.stringValue("op"),
-      timelineItem.data.stringValue("status")?.let { "status $it" },
-      timelineItem.data.longValue("duration_ms")?.let { "${it}ms" },
-      timelineItem.data.stringValue("transaction")?.let { "in $it" },
-    )
-    .joinToString(" • ")
-    .ifBlank { null }
 
 private fun relativeTime(timestampMs: Long, nowMs: Long): String {
   val ageMs = (nowMs - timestampMs).coerceAtLeast(0)
@@ -1375,6 +1292,7 @@ private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
+private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
 private const val ANALYSIS_TIMEOUT_MS = 30_000L
 
