@@ -12,6 +12,8 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
+import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.ITransaction
 import io.sentry.SamplingContext
 import io.sentry.Sentry
@@ -23,6 +25,7 @@ import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import java.lang.ref.WeakReference
 import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import java.util.WeakHashMap
 import java.util.concurrent.TimeUnit
@@ -97,6 +100,12 @@ internal class BuddyRecorder(
       return
     }
     recording.addSpanTimelineItems(transaction.spans)
+  }
+
+  @Synchronized
+  fun recordBreadcrumb(breadcrumb: BuddyObservedBreadcrumb) {
+    val recording = activeRecording ?: return
+    recording.timeline += breadcrumb.toTimelineItem(recording)
   }
 
   @Synchronized
@@ -175,6 +184,17 @@ internal class BuddyRecorder(
       timestamp = timestamp,
       elapsedMs = timestamp.time - recording.startedAt.time,
       name = description ?: operation,
+      data = data,
+    )
+
+  private fun BuddyObservedBreadcrumb.toTimelineItem(
+    recording: ActiveRecording
+  ): BuddyTimelineItem =
+    BuddyTimelineItem(
+      type = BuddyTimelineItem.Type.BREADCRUMB,
+      timestamp = timestamp,
+      elapsedMs = timestamp.time - recording.startedAt.time,
+      name = category ?: type,
       data = data,
     )
 
@@ -491,6 +511,13 @@ internal data class BuddyObservedSpan(
   val data: Map<String, Any?>,
 )
 
+internal data class BuddyObservedBreadcrumb(
+  val timestamp: Date,
+  val type: String?,
+  val category: String?,
+  val data: Map<String, Any?>,
+)
+
 internal class RealBuddySentryFacade : BuddySentryFacade {
   override val dsn: String?
     get() = Sentry.getCurrentScopes().options.dsn
@@ -526,6 +553,21 @@ internal class RealBuddySentryFacade : BuddySentryFacade {
   }
 
   companion object {
+    fun breadcrumbObserver(
+      recorder: BuddyRecorder,
+      original: SentryOptions.BeforeBreadcrumbCallback?,
+    ): SentryOptions.BeforeBreadcrumbCallback =
+      SentryOptions.BeforeBreadcrumbCallback { breadcrumb, hint ->
+        val processed =
+          original?.execute(breadcrumb, hint) ?: breadcrumb.takeIf { original == null }
+        processed
+          ?.takeIf { it.isUsefulForBuddy() }
+          ?.let {
+            recorder.recordBreadcrumb(it.toBuddyObservedBreadcrumb(hint))
+          }
+        processed
+      }
+
     fun transactionObserver(
       recorder: BuddyRecorder,
       original: SentryOptions.BeforeSendTransactionCallback?,
@@ -549,6 +591,50 @@ internal class RealBuddySentryFacade : BuddySentryFacade {
         }
       }
   }
+}
+
+private fun Breadcrumb.isUsefulForBuddy(): Boolean {
+  val normalizedCategory = category?.lowercase(Locale.ROOT)
+  val normalizedType = type?.lowercase(Locale.ROOT)
+  return normalizedCategory == "navigation" ||
+    normalizedCategory == "http" ||
+    normalizedCategory?.startsWith("ui.") == true ||
+    normalizedType == "navigation" ||
+    normalizedType == "http" ||
+    normalizedType == "user"
+}
+
+private fun Breadcrumb.toBuddyObservedBreadcrumb(hint: Hint): BuddyObservedBreadcrumb =
+  BuddyObservedBreadcrumb(
+    timestamp = timestamp,
+    type = type,
+    category = category,
+    data =
+      linkedMapOf<String, Any?>(
+          "breadcrumb_type" to type,
+          "category" to category,
+          "message" to message,
+          "level" to level?.name,
+          "origin" to origin,
+        )
+        .apply {
+          if (data.isNotEmpty()) {
+            put("data", data)
+          }
+          hintSummary(hint)?.let { put("hint", it) }
+        },
+  )
+
+private fun hintSummary(hint: Hint): String? {
+  val knownHints =
+    listOf(
+      "sentry:typeCheckHint",
+      "android:fragment",
+      "android:navigationDestination",
+      "android:motionEvent",
+      "android:view",
+    )
+  return knownHints.firstOrNull { hint.get(it) != null }
 }
 
 internal class RealBuddySentryTransaction(private val transaction: ITransaction) :

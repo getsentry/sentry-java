@@ -111,6 +111,32 @@ Limitations:
 Status: not implemented. Consider this if tags plus best-effort current transaction are not enough for
 Seer/Sentry correlation.
 
+## Breadcrumb Capture Scope
+
+Buddy now has a `beforeBreadcrumb` observation point and records a conservative subset of accepted
+breadcrumbs into the flow timeline. The intended long-term scope is still undecided.
+
+Current provisional scope:
+
+- Navigation breadcrumbs.
+- HTTP breadcrumbs.
+- Breadcrumbs whose category starts with `ui.`.
+- Breadcrumbs whose type is `navigation`, `http`, or `user`.
+
+Open decision:
+
+- Should Buddy capture every breadcrumb during a debug recording, or only breadcrumbs likely to help
+  reconstruct user flow?
+- Should app/custom breadcrumbs be included by default, excluded by default, or controlled through a
+  Buddy option?
+- Should network breadcrumbs be recorded when a matching network span also exists, or deduplicated?
+- Should fragment lifecycle breadcrumbs be promoted to `screen`/`navigation` timeline events instead
+  of remaining raw `breadcrumb` events?
+- Should click/user breadcrumbs be kept even when labels are weak or potentially noisy?
+
+The answer affects the amount of context sent to the flow-analysis service and the privacy/noise tradeoff
+of debug recordings. Keep the current filter conservative until we decide otherwise.
+
 ## Options We Considered
 
 ### 1. Low-Infra Current Transaction Model

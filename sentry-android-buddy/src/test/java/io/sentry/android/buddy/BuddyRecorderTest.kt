@@ -1,8 +1,11 @@
 package io.sentry.android.buddy
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.Breadcrumb
 import io.sentry.CustomSamplingContext
+import io.sentry.Hint
 import io.sentry.SamplingContext
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.TransactionContext
 import java.util.Date
@@ -115,6 +118,79 @@ class BuddyRecorderTest {
     assertThat(recording.summary.spanCount).isEqualTo(3)
     assertThat(recording.timeline.filter { it.type == BuddyTimelineItem.Type.SPAN }.map { it.name })
       .containsExactly("GET /external", "GET /api/items", "db.query")
+  }
+
+  @Test
+  fun `recording breadcrumb stores useful breadcrumb in timeline`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+
+    fixture.recorder.recordBreadcrumb(
+      BuddyObservedBreadcrumb(
+        timestamp = Date(500),
+        type = "navigation",
+        category = "navigation",
+        data = linkedMapOf("to" to "/github"),
+      )
+    )
+
+    val recording = fixture.recorder.stop()
+
+    assertThat(recording.summary.breadcrumbCount).isEqualTo(1)
+    val breadcrumb = recording.timeline.first { it.type == BuddyTimelineItem.Type.BREADCRUMB }
+    assertThat(breadcrumb.name).isEqualTo("navigation")
+    assertThat(breadcrumb.data).containsEntry("to", "/github")
+  }
+
+  @Test
+  fun `breadcrumb observer records accepted useful breadcrumbs`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null)
+    val breadcrumb =
+      Breadcrumb(Date(500)).apply {
+        type = "navigation"
+        category = "navigation"
+        level = SentryLevel.INFO
+        setData("to", "/github")
+      }
+
+    assertThat(observer.execute(breadcrumb, Hint())).isSameInstanceAs(breadcrumb)
+    val recording = fixture.recorder.stop()
+
+    val timelineBreadcrumb =
+      recording.timeline.first { it.type == BuddyTimelineItem.Type.BREADCRUMB }
+    assertThat(timelineBreadcrumb.data).containsEntry("breadcrumb_type", "navigation")
+    assertThat(timelineBreadcrumb.data).containsEntry("category", "navigation")
+    assertThat(timelineBreadcrumb.data).containsEntry("level", "INFO")
+    assertThat(timelineBreadcrumb.data["data"]).isEqualTo(mapOf("to" to "/github"))
+  }
+
+  @Test
+  fun `breadcrumb observer ignores non-ui breadcrumbs`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null)
+    val breadcrumb = Breadcrumb(Date(500)).apply { category = "manual" }
+
+    observer.execute(breadcrumb, Hint())
+    val recording = fixture.recorder.stop()
+
+    assertThat(recording.summary.breadcrumbCount).isEqualTo(0)
+  }
+
+  @Test
+  fun `breadcrumb observer respects original callback drops`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+    val original = SentryOptions.BeforeBreadcrumbCallback { _, _ -> null }
+    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, original)
+    val breadcrumb = Breadcrumb(Date(500)).apply { category = "navigation" }
+
+    assertThat(observer.execute(breadcrumb, Hint())).isNull()
+    val recording = fixture.recorder.stop()
+
+    assertThat(recording.summary.breadcrumbCount).isEqualTo(0)
   }
 
   @Test

@@ -101,6 +101,30 @@ Deferred alternatives:
   transaction directly.
 - Add explicit Buddy-generated spans for UI interactions, fragment navigation, or Compose navigation.
 
+## Capture Useful Breadcrumbs
+
+Buddy records a conservative subset of breadcrumbs during an active recording.
+
+Decision:
+
+- Wrap `beforeBreadcrumb` during Buddy install and restore the previous callback on uninstall/reset.
+- Call the app's original callback first.
+- Record only the returned breadcrumb; if the app callback drops it, Buddy does not keep a private copy.
+- Capture navigation, HTTP, `ui.*`, `navigation`, `http`, and `user` breadcrumbs for now.
+- Store breadcrumbs as `BuddyTimelineItem.Type.BREADCRUMB` rather than promoting them into higher-level
+  event types yet.
+
+Rationale:
+
+- Fragment lifecycle, navigation, user interaction, and HTTP integrations already produce useful
+  breadcrumbs.
+- Recording accepted breadcrumbs lets Buddy reuse existing SDK instrumentation without adding parallel
+  navigation/click instrumentation immediately.
+- A conservative filter avoids dumping every custom breadcrumb into the flow-analysis payload before we
+  decide the privacy/noise tradeoff.
+
+Open questions about the final breadcrumb scope are tracked in `OUTSTANDING_ISSUES.md`.
+
 ## Ktor Flow Analysis Protocol Shape
 
 Buddy's local protocol model mirrors the prototype Ktor flow-analysis API.

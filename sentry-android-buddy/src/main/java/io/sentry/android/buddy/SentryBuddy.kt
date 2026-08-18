@@ -14,6 +14,8 @@ public object SentryBuddy {
   private var installedApplication: Application? = null
   private var previousBeforeSendTransaction: SentryOptions.BeforeSendTransactionCallback? = null
   private var buddyBeforeSendTransaction: SentryOptions.BeforeSendTransactionCallback? = null
+  private var previousBeforeBreadcrumb: SentryOptions.BeforeBreadcrumbCallback? = null
+  private var buddyBeforeBreadcrumb: SentryOptions.BeforeBreadcrumbCallback? = null
   private var previousTracesSampler: SentryOptions.TracesSamplerCallback? = null
   private var buddyTracesSampler: SentryOptions.TracesSamplerCallback? = null
 
@@ -49,6 +51,7 @@ public object SentryBuddy {
         )
       val callbacks = BuddyActivityLifecycleCallbacks(newRecorder, overlayManager(options))
       application.registerActivityLifecycleCallbacks(callbacks)
+      installBreadcrumbObserver(newRecorder)
       installTransactionObserver(newRecorder)
       installTracesSampler(newRecorder)
 
@@ -89,6 +92,7 @@ public object SentryBuddy {
   private fun uninstallLocked() {
     restoreTracesSampler()
     restoreTransactionObserver()
+    restoreBreadcrumbObserver()
     lifecycleCallbacks?.let { callbacks ->
       callbacks.detachAll()
       installedApplication?.unregisterActivityLifecycleCallbacks(callbacks)
@@ -105,6 +109,15 @@ public object SentryBuddy {
     previousBeforeSendTransaction = original
     buddyBeforeSendTransaction = observer
     sentryOptions.beforeSendTransaction = observer
+  }
+
+  private fun installBreadcrumbObserver(recorder: BuddyRecorder) {
+    val sentryOptions = Sentry.getCurrentScopes().options
+    val original = sentryOptions.beforeBreadcrumb
+    val observer = RealBuddySentryFacade.breadcrumbObserver(recorder, original)
+    previousBeforeBreadcrumb = original
+    buddyBeforeBreadcrumb = observer
+    sentryOptions.beforeBreadcrumb = observer
   }
 
   private fun installTracesSampler(recorder: BuddyRecorder) {
@@ -124,6 +137,16 @@ public object SentryBuddy {
     }
     previousBeforeSendTransaction = null
     buddyBeforeSendTransaction = null
+  }
+
+  private fun restoreBreadcrumbObserver() {
+    val observer = buddyBeforeBreadcrumb ?: return
+    val sentryOptions = Sentry.getCurrentScopes().options
+    if (sentryOptions.beforeBreadcrumb === observer) {
+      sentryOptions.beforeBreadcrumb = previousBeforeBreadcrumb
+    }
+    previousBeforeBreadcrumb = null
+    buddyBeforeBreadcrumb = null
   }
 
   private fun restoreTracesSampler() {
