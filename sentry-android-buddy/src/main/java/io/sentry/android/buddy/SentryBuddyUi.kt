@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,6 +29,7 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -68,10 +70,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -88,6 +91,7 @@ import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
@@ -466,61 +470,209 @@ private fun BoxScope.BuddyBubble(
 @Composable
 private fun AttentionFlames(phase: Float, modifier: Modifier = Modifier) {
   Canvas(modifier = modifier) {
-    val baseY = size.height * 0.92f
-    val centers = listOf(0.28f, 0.50f, 0.72f)
-    centers.forEachIndexed { index, centerFraction ->
-      val wave = sin(((phase + index * 0.23f) * 2f * PI).toFloat())
-      val centerX = size.width * centerFraction + wave * 2.4f
-      val height = size.height * (0.56f + index * 0.08f) + wave * 2f
-      val width = size.width * (0.085f + index * 0.012f)
-      val tipY = baseY - height
-      val outerFlame =
-        Path().apply {
-          moveTo(centerX, tipY)
-          cubicTo(
-            centerX - width * 1.35f,
-            tipY + height * 0.38f,
-            centerX - width,
-            baseY,
-            centerX,
-            baseY,
-          )
-          cubicTo(
-            centerX + width,
-            baseY,
-            centerX + width * 1.35f,
-            tipY + height * 0.38f,
-            centerX,
-            tipY,
-          )
-        }
-      drawPath(outerFlame, BuddyRed.copy(alpha = 0.86f))
+    val pixel = min(size.width / 20f, size.height / 9f)
+    val flameWidth = pixel * 18f
+    val flameHeight = pixel * 8f
+    val originX = (size.width - flameWidth) / 2f
+    val baseY = size.height * 0.98f
+    val originY = baseY - flameHeight
+    val flicker = sin((phase * 2f * PI).toFloat()) > 0f
 
-      val innerHeight = height * 0.58f
-      val innerWidth = width * 0.52f
-      val innerTipY = baseY - innerHeight
-      val innerFlame =
-        Path().apply {
-          moveTo(centerX, innerTipY)
-          cubicTo(
-            centerX - innerWidth,
-            innerTipY + innerHeight * 0.45f,
-            centerX - innerWidth * 0.78f,
-            baseY,
-            centerX,
-            baseY,
-          )
-          cubicTo(
-            centerX + innerWidth * 0.78f,
-            baseY,
-            centerX + innerWidth,
-            innerTipY + innerHeight * 0.45f,
-            centerX,
-            innerTipY,
-          )
-        }
-      drawPath(innerFlame, BuddyGold.copy(alpha = 0.88f))
+    fun drawPixel(col: Int, row: Int, color: Color) {
+      drawRect(
+        color = color,
+        topLeft = Offset(originX + col * pixel, originY + row * pixel),
+        size = Size(pixel * 0.96f, pixel * 0.96f),
+      )
     }
+
+    val orange = Color(0xFFFF6A00)
+    val yellow = Color(0xFFFFC400)
+    val outerFlame =
+      listOf(
+        4 to 0,
+        10 to 0,
+        14 to 0,
+        3 to 1,
+        4 to 1,
+        5 to 1,
+        9 to 1,
+        10 to 1,
+        11 to 1,
+        14 to 1,
+        2 to 2,
+        3 to 2,
+        4 to 2,
+        5 to 2,
+        6 to 2,
+        8 to 2,
+        9 to 2,
+        10 to 2,
+        11 to 2,
+        12 to 2,
+        13 to 2,
+        14 to 2,
+        15 to 2,
+        1 to 3,
+        2 to 3,
+        3 to 3,
+        4 to 3,
+        5 to 3,
+        6 to 3,
+        7 to 3,
+        8 to 3,
+        9 to 3,
+        10 to 3,
+        11 to 3,
+        12 to 3,
+        13 to 3,
+        14 to 3,
+        15 to 3,
+        16 to 3,
+        0 to 4,
+        1 to 4,
+        2 to 4,
+        3 to 4,
+        4 to 4,
+        5 to 4,
+        6 to 4,
+        7 to 4,
+        8 to 4,
+        9 to 4,
+        10 to 4,
+        11 to 4,
+        12 to 4,
+        13 to 4,
+        14 to 4,
+        15 to 4,
+        16 to 4,
+        17 to 4,
+        0 to 5,
+        1 to 5,
+        2 to 5,
+        3 to 5,
+        4 to 5,
+        5 to 5,
+        6 to 5,
+        7 to 5,
+        8 to 5,
+        9 to 5,
+        10 to 5,
+        11 to 5,
+        12 to 5,
+        13 to 5,
+        14 to 5,
+        15 to 5,
+        16 to 5,
+        17 to 5,
+        1 to 6,
+        2 to 6,
+        3 to 6,
+        4 to 6,
+        5 to 6,
+        6 to 6,
+        7 to 6,
+        8 to 6,
+        9 to 6,
+        10 to 6,
+        11 to 6,
+        12 to 6,
+        13 to 6,
+        14 to 6,
+        15 to 6,
+        16 to 6,
+        2 to 7,
+        3 to 7,
+        4 to 7,
+        5 to 7,
+        6 to 7,
+        7 to 7,
+        8 to 7,
+        9 to 7,
+        10 to 7,
+        11 to 7,
+        12 to 7,
+        13 to 7,
+        14 to 7,
+        15 to 7,
+      )
+    val animatedOuter = if (flicker) outerFlame + listOf(13 to 1, 16 to 2) else outerFlame
+    animatedOuter.forEach { (col, row) -> drawPixel(col, row, BuddyRed) }
+
+    listOf(
+        4 to 2,
+        9 to 2,
+        10 to 2,
+        13 to 2,
+        3 to 3,
+        4 to 3,
+        5 to 3,
+        8 to 3,
+        9 to 3,
+        10 to 3,
+        11 to 3,
+        12 to 3,
+        13 to 3,
+        14 to 3,
+        2 to 4,
+        3 to 4,
+        4 to 4,
+        5 to 4,
+        6 to 4,
+        8 to 4,
+        9 to 4,
+        10 to 4,
+        11 to 4,
+        12 to 4,
+        13 to 4,
+        14 to 4,
+        15 to 4,
+        2 to 5,
+        3 to 5,
+        4 to 5,
+        5 to 5,
+        6 to 5,
+        7 to 5,
+        8 to 5,
+        9 to 5,
+        10 to 5,
+        11 to 5,
+        12 to 5,
+        13 to 5,
+        14 to 5,
+        15 to 5,
+        3 to 6,
+        4 to 6,
+        5 to 6,
+        6 to 6,
+        7 to 6,
+        8 to 6,
+        9 to 6,
+        10 to 6,
+        11 to 6,
+        12 to 6,
+        13 to 6,
+        14 to 6,
+      )
+      .forEach { (col, row) -> drawPixel(col, row, orange) }
+
+    listOf(
+        9 to 3,
+        10 to 3,
+        4 to 4,
+        9 to 4,
+        10 to 4,
+        11 to 4,
+        5 to 5,
+        8 to 5,
+        9 to 5,
+        10 to 5,
+        11 to 5,
+        8 to 6,
+        9 to 6,
+        10 to 6,
+      )
+      .forEach { (col, row) -> drawPixel(col, row, yellow) }
   }
 }
 
@@ -646,10 +798,18 @@ private fun BuddySheet(
   }
   val maxSheetHeight =
     with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() } * 0.75f
+  val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+  val sheetScope = rememberCoroutineScope()
+  fun startRecordingAfterSheetExit() {
+    sheetScope.launch {
+      sheetState.hide()
+      onDispatch { startRecording() }
+    }
+  }
 
   ModalBottomSheet(
     onDismissRequest = { onDispatch { close() } },
-    sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    sheetState = sheetState,
     containerColor = Color.White,
     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
   ) {
@@ -663,8 +823,8 @@ private fun BuddySheet(
     ) {
       when (state) {
         SentryBuddySessionState.LiveFeed ->
-          LiveFeedSheet(liveFeed, sentryUiLinks, nowMs, onDispatch)
-        SentryBuddySessionState.Intro -> IntroSheet(onDispatch)
+          LiveFeedSheet(liveFeed, sentryUiLinks, nowMs, onDispatch, ::startRecordingAfterSheetExit)
+        SentryBuddySessionState.Intro -> IntroSheet(::startRecordingAfterSheetExit)
         is SentryBuddySessionState.StoppedSummary -> StoppedSummarySheet(state, onDispatch)
         is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
         is SentryBuddySessionState.Analyzing -> AnalyzingSheet(state)
@@ -702,7 +862,7 @@ private fun SheetTitle(title: String, subtitle: String) {
 }
 
 @Composable
-private fun IntroSheet(onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit) {
+private fun IntroSheet(onStartRecording: () -> Unit) {
   SheetTitle("Sentry Buddy", "v${BuildConfig.VERSION_NAME}")
   Text(
     "Record a flow",
@@ -713,7 +873,7 @@ private fun IntroSheet(onDispatch: (SentryBuddySessionController.() -> Unit) -> 
   Button(
     modifier = Modifier.fillMaxWidth().height(56.dp),
     colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
-    onClick = { onDispatch { startRecording() } },
+    onClick = onStartRecording,
   ) {
     BuddyButtonText("Start Recording")
   }
@@ -731,9 +891,11 @@ private fun LiveFeedSheet(
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+  onStartRecording: () -> Unit,
 ) {
   SheetTitle("Sentry Buddy", "Live Feed")
   val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
+  Spacer(Modifier.height(12.dp))
   AttentionCard(
     liveFeed = liveFeed,
     sentryUiLinks = sentryUiLinks,
@@ -741,13 +903,15 @@ private fun LiveFeedSheet(
     emptyArtIndex = emptyAttentionArtIndex,
     onDismiss = { onDispatch { dismissLiveFeedAttention() } },
   )
+  Spacer(Modifier.height(12.dp))
   Button(
     modifier = Modifier.fillMaxWidth().height(56.dp),
     colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
-    onClick = { onDispatch { startRecording() } },
+    onClick = onStartRecording,
   ) {
     BuddyButtonText("Start Recording")
   }
+  Spacer(Modifier.height(12.dp))
   Text(
     "Live feed",
     style = MaterialTheme.typography.titleMedium,
@@ -771,18 +935,6 @@ private fun AttentionCard(
 ) {
   val item = liveFeed.latestUnviewedAdverseItem
   val dismissOffset = remember(item?.id) { Animatable(0f) }
-  val headerAlpha =
-    if (item == null) {
-      0f
-    } else {
-      (1f - (-dismissOffset.value / ATTENTION_HEADER_FADE_DISTANCE_PX)).coerceIn(0f, 1f)
-    }
-  Text(
-    "Needs attention",
-    style = MaterialTheme.typography.titleMedium,
-    fontWeight = FontWeight.Bold,
-    color = BuddyInk.copy(alpha = headerAlpha),
-  )
 
   if (item == null) {
     Surface(
@@ -793,7 +945,7 @@ private fun AttentionCard(
     ) {
       EmptyAttentionArt(
         index = emptyArtIndex,
-        modifier = Modifier.fillMaxWidth().height(132.dp).padding(18.dp),
+        modifier = Modifier.fillMaxWidth().height(132.dp),
       )
     }
     return
@@ -811,7 +963,7 @@ private fun AttentionCard(
   ) {
     BoxWithConstraints(
       modifier =
-        Modifier.fillMaxWidth().heightIn(min = 132.dp).pointerInput(item.id) {
+        Modifier.fillMaxWidth().heightIn(min = 184.dp).pointerInput(item.id) {
           detectDragGestures(
             onDragEnd = {
               val dismissDistance = size.width.toFloat()
@@ -843,7 +995,7 @@ private fun AttentionCard(
       ) {
         EmptyAttentionArt(
           index = emptyArtIndex,
-          modifier = Modifier.fillMaxSize().padding(18.dp),
+          modifier = Modifier.fillMaxSize(),
         )
       }
       Box(
@@ -857,6 +1009,8 @@ private fun AttentionCard(
           liveFeed = liveFeed,
           color = color,
           nowMs = nowMs,
+          backgroundColor = color.copy(alpha = 0.10f),
+          modifier = Modifier.matchParentSize(),
         )
       }
     }
@@ -869,24 +1023,26 @@ private fun AttentionItemContent(
   liveFeed: BuddyLiveFeed,
   color: Color,
   nowMs: Long,
+  backgroundColor: Color,
+  modifier: Modifier = Modifier,
 ) {
   Column(
-    modifier = Modifier.fillMaxWidth().padding(16.dp),
+    modifier = modifier.fillMaxWidth().background(backgroundColor).padding(16.dp),
     verticalArrangement = Arrangement.spacedBy(10.dp),
   ) {
+    Text(
+      "Needs attention",
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.Bold,
+      color = BuddyInk,
+    )
     Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(10.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
       LiveFeedCategoryPill(item.category.label, color)
-      Text(
-        item.title(),
-        modifier = Modifier.weight(1f),
-        color = BuddyInk,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Normal,
-      )
+      Spacer(Modifier.weight(1f))
       Text(
         relativeTime(item.timestamp.time, nowMs),
         color = BuddyMuted,
@@ -894,6 +1050,13 @@ private fun AttentionItemContent(
         fontWeight = FontWeight.Normal,
       )
     }
+    Text(
+      item.title(),
+      modifier = Modifier.fillMaxWidth(),
+      color = BuddyInk,
+      style = MaterialTheme.typography.titleMedium,
+      fontWeight = FontWeight.Normal,
+    )
     item.screenContextText()?.let { screenContext ->
       Text(
         screenContext,
@@ -924,43 +1087,27 @@ private fun AttentionItemContent(
 
 @Composable
 private fun EmptyAttentionArt(index: Int, modifier: Modifier = Modifier) {
-  Canvas(modifier = modifier) {
-    val variant = index % EMPTY_ATTENTION_ART_VARIANTS
-    val palette =
-      when (variant % 5) {
-        0 -> listOf(BuddyPurple, BuddyRed, BuddyGold)
-        1 -> listOf(BuddyRed, BuddyPurple, BuddyMuted)
-        2 -> listOf(BuddyGold, BuddyPurple, BuddyRed)
-        3 -> listOf(BuddyPurple, BuddyMuted, BuddyGold)
-        else -> listOf(BuddyMuted, BuddyRed, BuddyPurple)
-      }
-    val w = size.width
-    val h = size.height
-    val center = Offset(w * (0.46f + (variant % 3) * 0.04f), h * 0.50f)
-    drawCircle(palette[0].copy(alpha = 0.12f), radius = h * 0.46f, center = center)
-    drawCircle(
-      palette[1].copy(alpha = 0.16f),
-      radius = h * 0.26f,
-      center = Offset(w * 0.68f, h * 0.34f),
-    )
-    drawCircle(
-      palette[2].copy(alpha = 0.18f),
-      radius = h * 0.18f,
-      center = Offset(w * 0.28f, h * 0.72f),
-    )
-    val glyph =
-      Path().apply {
-        moveTo(w * 0.45f, h * 0.18f)
-        lineTo(w * 0.27f, h * 0.74f)
-        lineTo(w * 0.72f, h * 0.74f)
-        close()
-      }
-    drawPath(glyph, palette[0].copy(alpha = 0.20f))
-    drawLine(palette[0], Offset(w * 0.38f, h * 0.58f), Offset(w * 0.58f, h * 0.58f), 5f)
-    drawLine(palette[1], Offset(w * 0.42f, h * 0.46f), Offset(w * 0.62f, h * 0.46f), 4f)
-    drawLine(palette[2], Offset(w * 0.46f, h * 0.34f), Offset(w * 0.66f, h * 0.34f), 3f)
-  }
+  Image(
+    painter = painterResource(id = emptyAttentionArtResource(index)),
+    contentDescription = null,
+    modifier = modifier,
+    contentScale = ContentScale.Crop,
+  )
 }
+
+private fun emptyAttentionArtResource(index: Int): Int =
+  when (index % EMPTY_ATTENTION_ART_VARIANTS) {
+    0 -> R.drawable.buddy_attention_android_anr
+    1 -> R.drawable.buddy_attention_tombstone_support
+    2 -> R.drawable.buddy_attention_ai_momentum
+    3 -> R.drawable.buddy_attention_seer_helps
+    4 -> R.drawable.buddy_attention_snapshot
+    5 -> R.drawable.buddy_attention_nextjs_otel
+    6 -> R.drawable.buddy_attention_auth_doorway
+    7 -> R.drawable.buddy_attention_black_friday
+    8 -> R.drawable.buddy_attention_startups
+    else -> R.drawable.buddy_attention_thankyou
+  }
 
 @Composable
 private fun EmptyLiveFeedCard() {
@@ -1014,6 +1161,14 @@ private fun LiveFeedRows(
           )
         }
       }
+      Text(
+        "…",
+        modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp),
+        color = BuddyMuted,
+        style = MaterialTheme.typography.titleMedium,
+        textAlign = TextAlign.Start,
+        fontWeight = FontWeight.Normal,
+      )
     }
   }
 }
@@ -1574,7 +1729,6 @@ private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 10
-private const val ATTENTION_HEADER_FADE_DISTANCE_PX = 180f
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
 private const val ANALYSIS_TIMEOUT_MS = 30_000L
 
