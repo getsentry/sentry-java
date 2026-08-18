@@ -40,6 +40,47 @@ class BuddySentryUiLinksTest {
   }
 
   @Test
+  fun `recording links to root trace view`() {
+    val links = BuddySentryUiLinks(baseUrl = "https://sentry-sdks.sentry.io", projectId = "5428559")
+    val recording =
+      BuddyFlowRecording(
+        flow = BuddyFlowIntent("Checkout"),
+        recording =
+          BuddyRecordingMetadata(
+            id = "recording-1",
+            source = BuddyRecordingMetadata.MANUAL_DEBUG_RECORDING,
+            startedAt = Date(0),
+            endedAt = Date(1),
+            durationMs = 1,
+          ),
+        app = BuddyAppInfo(packageName = "io.sentry.samples.android"),
+        device = BuddyDeviceInfo(model = "Pixel"),
+        summary =
+          BuddyRecordingSummary(
+            durationMs = 1,
+            screenCount = 0,
+            spanCount = 0,
+            breadcrumbCount = 0,
+            timelineItemCount = 0,
+          ),
+        timeline = emptyList(),
+        sentry =
+          BuddySentryCorrelation(
+            recordingId = "recording-1",
+            dsn = "https://public@example.com/1",
+            traceId = "trace-id",
+            spanId = "span-id",
+            tags = emptyMap(),
+          ),
+      )
+
+    assertThat(links.linkFor(recording))
+      .isEqualTo(
+        "https://sentry-sdks.sentry.io/performance/trace/trace-id/?project=5428559&span=span-id"
+      )
+  }
+
+  @Test
   fun `missing config returns no link`() {
     val links = BuddySentryUiLinks(baseUrl = "https://sentry-sdks.sentry.io")
     val item = liveFeedItem(BuddyLiveFeedItem.Category.ERROR, mapOf("event_id" to "abc123"))

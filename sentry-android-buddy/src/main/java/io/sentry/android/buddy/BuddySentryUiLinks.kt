@@ -7,6 +7,17 @@ internal data class BuddySentryUiLinks(
   val organizationSlug: String? = null,
   val projectId: String? = null,
 ) {
+  fun linkFor(recording: BuddyFlowRecording): String? {
+    val baseUrl = resolvedBaseUrl() ?: return null
+    val projectId = projectId?.takeIf { it.isNotBlank() } ?: return null
+    return traceLink(
+      baseUrl = baseUrl,
+      projectId = projectId,
+      traceId = recording.sentry.traceId ?: return null,
+      spanId = recording.sentry.spanId,
+    )
+  }
+
   fun linkFor(item: BuddyLiveFeedItem): String? {
     val baseUrl = resolvedBaseUrl() ?: return null
     val projectId = projectId?.takeIf { it.isNotBlank() } ?: return null
@@ -16,16 +27,25 @@ internal data class BuddySentryUiLinks(
           "$baseUrl/issues/?project=${projectId.urlEncode()}&query=${"event.id:$eventId".urlEncode()}"
         }
       BuddyLiveFeedItem.Category.SLOW_SPAN,
-      BuddyLiveFeedItem.Category.FAILED_SPAN -> traceLink(baseUrl, projectId, item)
-      BuddyLiveFeedItem.Category.FAILED_HTTP -> traceLink(baseUrl, projectId, item)
+      BuddyLiveFeedItem.Category.FAILED_SPAN -> traceLink(item, baseUrl, projectId)
+      BuddyLiveFeedItem.Category.FAILED_HTTP -> traceLink(item, baseUrl, projectId)
       BuddyLiveFeedItem.Category.SCREEN,
       BuddyLiveFeedItem.Category.STEP -> null
     }
   }
 
-  private fun traceLink(baseUrl: String, projectId: String, item: BuddyLiveFeedItem): String? {
+  private fun traceLink(item: BuddyLiveFeedItem, baseUrl: String, projectId: String): String? {
     val traceId = item.timelineItem.data.stringValue(DATA_TRACE_ID) ?: return null
     val spanId = item.timelineItem.data.stringValue(DATA_SPAN_ID)
+    return traceLink(baseUrl, projectId, traceId, spanId)
+  }
+
+  private fun traceLink(
+    baseUrl: String,
+    projectId: String,
+    traceId: String,
+    spanId: String?,
+  ): String {
     return buildString {
       append(baseUrl)
       append("/performance/trace/")

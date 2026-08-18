@@ -866,11 +866,12 @@ private fun BuddySheet(
             onOpenUrl,
           )
         SentryBuddySessionState.Intro -> IntroSheet(::startRecordingAfterSheetExit)
-        is SentryBuddySessionState.StoppedSummary -> StoppedSummarySheet(state, onDispatch)
+        is SentryBuddySessionState.StoppedSummary ->
+          StoppedSummarySheet(state, sentryUiLinks, onDispatch, onOpenUrl)
         is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
         is SentryBuddySessionState.Analyzing -> AnalyzingSheet(state)
         is SentryBuddySessionState.Insights ->
-          InsightsSheet(state, onDispatch, onResolveRecommendation, onOpenUrl)
+          InsightsSheet(state, sentryUiLinks, onDispatch, onResolveRecommendation, onOpenUrl)
         is SentryBuddySessionState.Error -> ErrorSheet(state, onDispatch)
         is SentryBuddySessionState.Recording,
         SentryBuddySessionState.Closed -> Unit
@@ -1776,13 +1777,24 @@ private fun TimelineRows(items: List<TimelinePreviewItem>) {
 @Composable
 private fun StoppedSummarySheet(
   state: SentryBuddySessionState.StoppedSummary,
+  sentryUiLinks: BuddySentryUiLinks,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
 ) {
+  val context = LocalContext.current
   val recording = state.result.recording
   SheetTitle("Recording Flow", "Everything stays on device")
   RecordingCard(recording)
   MetricGrid(recording)
   TimelinePreview(recording)
+  sentryUiLinks.linkFor(recording)?.let { traceLink ->
+    OutlinedButton(
+      modifier = Modifier.fillMaxWidth().height(52.dp),
+      onClick = { onOpenUrl(context, traceLink) },
+    ) {
+      BuddyButtonText("Open in Sentry")
+    }
+  }
   Button(
     modifier = Modifier.fillMaxWidth().height(56.dp),
     colors = ButtonDefaults.buttonColors(containerColor = BuddyRed),
@@ -2152,6 +2164,7 @@ private fun AnalyzingSheet(state: SentryBuddySessionState.Analyzing) {
 @Composable
 private fun InsightsSheet(
   state: SentryBuddySessionState.Insights,
+  sentryUiLinks: BuddySentryUiLinks,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onResolveRecommendation: (String) -> Unit,
   onOpenUrl: (Context, String) -> Unit,
@@ -2160,6 +2173,7 @@ private fun InsightsSheet(
   val context = LocalContext.current
   var isJsonDialogOpen by remember { mutableStateOf(false) }
   val flowName = state.result.recording.flow.name.ifBlank { "Unnamed flow" }
+  val traceLink = remember(state.result.recording, sentryUiLinks) { sentryUiLinks.linkFor(state.result.recording) }
   SheetTitle(
     "Flow insights",
     "$flowName • ${formatElapsed(state.result.recording.summary.durationMs)}",
@@ -2215,6 +2229,14 @@ private fun InsightsSheet(
       onClick = { onDispatch { recordAgain() } },
     ) {
       BuddyButtonText("Record Again")
+    }
+    if (traceLink != null) {
+      OutlinedButton(
+        modifier = Modifier.weight(1f).height(52.dp),
+        onClick = { onOpenUrl(context, traceLink) },
+      ) {
+        BuddyButtonText("Open in Sentry")
+      }
     }
     Surface(
       modifier =
