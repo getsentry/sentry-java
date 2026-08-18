@@ -79,8 +79,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -104,11 +104,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import java.util.Locale
-import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -353,8 +351,8 @@ private fun BoxScope.BuddyBubble(
         if (liveFeed.unviewedAdverseCount > 9) "9+" else liveFeed.unviewedAdverseCount.toString()
       else -> null
     }
-  val bubbleFaceChonkColor = if (isRecording) BuddyRecordingBubbleChonk else BuddyAccentBubbleChonk
-  val bubbleFaceColor = if (isRecording) BuddyRecordingBubbleColor else BuddyAccentBubbleColor
+  val bubblePalette =
+    buddyBubblePalette(isRecording = isRecording, attentionSeverity = attentionItem?.severity)
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
 
   fun defaultOffset(): Offset =
@@ -409,15 +407,6 @@ private fun BoxScope.BuddyBubble(
           modifier = Modifier.size(BuddyRecordingRingSize).align(Alignment.Center),
         )
       }
-      if (isSevere) {
-        BuddyBubbleAnimatedDrawable(
-          drawableRes = R.drawable.avd_buddy_flames,
-          modifier =
-            Modifier.size(BuddySevereFlamesSize)
-              .align(Alignment.TopCenter)
-              .offset(x = BuddySevereFlamesOffsetX, y = BuddySevereFlamesOffsetY),
-        )
-      }
       Box(
         modifier =
           Modifier.size(BuddyBubbleSize)
@@ -433,13 +422,13 @@ private fun BoxScope.BuddyBubble(
       ) {
         Box(
           modifier =
-            Modifier.size(BuddyBubbleFaceSize).background(bubbleFaceChonkColor, CircleShape)
+            Modifier.size(BuddyBubbleFaceSize).background(bubblePalette.shadowBrush, CircleShape)
         )
         Box(
           modifier =
             Modifier.size(BuddyBubbleFaceSize)
               .offset(y = BuddyBubbleFaceLift)
-              .background(bubbleFaceColor, CircleShape)
+              .background(bubblePalette.faceBrush, CircleShape)
               .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
         )
         BuddyBubbleGlyph(state = bubbleGlyphState)
@@ -470,253 +459,32 @@ private fun BoxScope.BuddyBubble(
   )
 }
 
-@Composable
-private fun AttentionFlames(phase: Float, modifier: Modifier = Modifier) {
-  Canvas(modifier = modifier) {
-    val pixel = min(size.width / 20f, size.height / 9f)
-    val flameWidth = pixel * 18f
-    val flameHeight = pixel * 8f
-    val originX = (size.width - flameWidth) / 2f
-    val baseY = size.height * 0.98f
-    val originY = baseY - flameHeight
-    val flicker = sin((phase * 2f * PI).toFloat()) > 0f
+private data class BuddyBubblePalette(val shadowBrush: Brush, val faceBrush: Brush)
 
-    fun drawPixel(col: Int, row: Int, color: Color) {
-      drawRect(
-        color = color,
-        topLeft = Offset(originX + col * pixel, originY + row * pixel),
-        size = Size(pixel * 0.96f, pixel * 0.96f),
-      )
+private fun buddyBubblePalette(
+  isRecording: Boolean,
+  attentionSeverity: Severity?,
+): BuddyBubblePalette {
+  val shadowColors =
+    when {
+      isRecording -> listOf(BuddyRecordingBubbleChonk, BuddyRecordingBubbleShadow)
+      attentionSeverity == Severity.HIGH -> listOf(BuddyErrorBubbleChonk, BuddyErrorBubbleShadow)
+      attentionSeverity == Severity.MEDIUM ->
+        listOf(BuddyWarningBubbleChonk, BuddyWarningBubbleShadow)
+      else -> listOf(BuddyAccentBubbleChonk, BuddyAccentBubbleShadow)
     }
-
-    val orange = Color(0xFFFF6A00)
-    val yellow = Color(0xFFFFC400)
-    val outerFlame =
-      listOf(
-        4 to 0,
-        10 to 0,
-        14 to 0,
-        3 to 1,
-        4 to 1,
-        5 to 1,
-        9 to 1,
-        10 to 1,
-        11 to 1,
-        14 to 1,
-        2 to 2,
-        3 to 2,
-        4 to 2,
-        5 to 2,
-        6 to 2,
-        8 to 2,
-        9 to 2,
-        10 to 2,
-        11 to 2,
-        12 to 2,
-        13 to 2,
-        14 to 2,
-        15 to 2,
-        1 to 3,
-        2 to 3,
-        3 to 3,
-        4 to 3,
-        5 to 3,
-        6 to 3,
-        7 to 3,
-        8 to 3,
-        9 to 3,
-        10 to 3,
-        11 to 3,
-        12 to 3,
-        13 to 3,
-        14 to 3,
-        15 to 3,
-        16 to 3,
-        0 to 4,
-        1 to 4,
-        2 to 4,
-        3 to 4,
-        4 to 4,
-        5 to 4,
-        6 to 4,
-        7 to 4,
-        8 to 4,
-        9 to 4,
-        10 to 4,
-        11 to 4,
-        12 to 4,
-        13 to 4,
-        14 to 4,
-        15 to 4,
-        16 to 4,
-        17 to 4,
-        0 to 5,
-        1 to 5,
-        2 to 5,
-        3 to 5,
-        4 to 5,
-        5 to 5,
-        6 to 5,
-        7 to 5,
-        8 to 5,
-        9 to 5,
-        10 to 5,
-        11 to 5,
-        12 to 5,
-        13 to 5,
-        14 to 5,
-        15 to 5,
-        16 to 5,
-        17 to 5,
-        1 to 6,
-        2 to 6,
-        3 to 6,
-        4 to 6,
-        5 to 6,
-        6 to 6,
-        7 to 6,
-        8 to 6,
-        9 to 6,
-        10 to 6,
-        11 to 6,
-        12 to 6,
-        13 to 6,
-        14 to 6,
-        15 to 6,
-        16 to 6,
-        2 to 7,
-        3 to 7,
-        4 to 7,
-        5 to 7,
-        6 to 7,
-        7 to 7,
-        8 to 7,
-        9 to 7,
-        10 to 7,
-        11 to 7,
-        12 to 7,
-        13 to 7,
-        14 to 7,
-        15 to 7,
-      )
-    val animatedOuter = if (flicker) outerFlame + listOf(13 to 1, 16 to 2) else outerFlame
-    animatedOuter.forEach { (col, row) -> drawPixel(col, row, BuddyRed) }
-
-    listOf(
-        4 to 2,
-        9 to 2,
-        10 to 2,
-        13 to 2,
-        3 to 3,
-        4 to 3,
-        5 to 3,
-        8 to 3,
-        9 to 3,
-        10 to 3,
-        11 to 3,
-        12 to 3,
-        13 to 3,
-        14 to 3,
-        2 to 4,
-        3 to 4,
-        4 to 4,
-        5 to 4,
-        6 to 4,
-        8 to 4,
-        9 to 4,
-        10 to 4,
-        11 to 4,
-        12 to 4,
-        13 to 4,
-        14 to 4,
-        15 to 4,
-        2 to 5,
-        3 to 5,
-        4 to 5,
-        5 to 5,
-        6 to 5,
-        7 to 5,
-        8 to 5,
-        9 to 5,
-        10 to 5,
-        11 to 5,
-        12 to 5,
-        13 to 5,
-        14 to 5,
-        15 to 5,
-        3 to 6,
-        4 to 6,
-        5 to 6,
-        6 to 6,
-        7 to 6,
-        8 to 6,
-        9 to 6,
-        10 to 6,
-        11 to 6,
-        12 to 6,
-        13 to 6,
-        14 to 6,
-      )
-      .forEach { (col, row) -> drawPixel(col, row, orange) }
-
-    listOf(
-        9 to 3,
-        10 to 3,
-        4 to 4,
-        9 to 4,
-        10 to 4,
-        11 to 4,
-        5 to 5,
-        8 to 5,
-        9 to 5,
-        10 to 5,
-        11 to 5,
-        8 to 6,
-        9 to 6,
-        10 to 6,
-      )
-      .forEach { (col, row) -> drawPixel(col, row, yellow) }
-  }
-}
-
-@Composable
-private fun AttentionSparks(phase: Float, modifier: Modifier = Modifier) {
-  Canvas(modifier = modifier) {
-    val sparks =
-      listOf(
-        Spark(0.22f, 0.66f, BuddyGold, 0.0f),
-        Spark(0.38f, 0.36f, BuddyRed.copy(alpha = 0.75f), 0.35f),
-        Spark(0.61f, 0.30f, BuddyGold, 0.62f),
-        Spark(0.78f, 0.64f, BuddyPurple.copy(alpha = 0.70f), 0.20f),
-      )
-    sparks.forEach { spark ->
-      val wave = sin(((phase + spark.offset) * 2f * PI).toFloat())
-      val twinkle = (0.58f + 0.32f * wave).coerceIn(0.35f, 0.95f)
-      val center = Offset(size.width * spark.x, size.height * spark.y - wave * 2.2f)
-      val radius = 2.6f + twinkle * 2f
-      val color = spark.color.copy(alpha = twinkle)
-      drawLine(
-        color = color,
-        start = Offset(center.x - radius, center.y),
-        end = Offset(center.x + radius, center.y),
-        strokeWidth = 2.2f,
-      )
-      drawLine(
-        color = color,
-        start = Offset(center.x, center.y - radius),
-        end = Offset(center.x, center.y + radius),
-        strokeWidth = 2.2f,
-      )
-      drawCircle(
-        spark.color.copy(alpha = 0.35f * twinkle),
-        radius = radius * 0.52f,
-        center = center,
-      )
+  val faceColors =
+    when {
+      isRecording -> listOf(BuddyRecordingBubbleStart, BuddyRecordingBubbleEnd)
+      attentionSeverity == Severity.HIGH -> listOf(BuddyErrorBubbleStart, BuddyErrorBubbleEnd)
+      attentionSeverity == Severity.MEDIUM -> listOf(BuddyWarningBubbleStart, BuddyWarningBubbleEnd)
+      else -> listOf(BuddyAccentBubbleStart, BuddyAccentBubbleEnd)
     }
-  }
+  return BuddyBubblePalette(
+    shadowBrush = Brush.linearGradient(colors = shadowColors),
+    faceBrush = Brush.linearGradient(colors = faceColors),
+  )
 }
-
-private data class Spark(val x: Float, val y: Float, val color: Color, val offset: Float)
 
 @Composable
 private fun BoxScope.TransientRecordingText(
@@ -1353,17 +1121,21 @@ private fun LiveFeedInset(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
-  Box(
+  Surface(
     modifier =
       Modifier.size(40.dp)
         .graphicsLayer { alpha = if (enabled) 1f else 0.45f }
+        .clip(CircleShape)
         .clickable(enabled = enabled, onClick = onClick),
-    contentAlignment = Alignment.Center,
+    color = BuddyRed.copy(alpha = 0.10f),
+    shape = CircleShape,
   ) {
-    HealthCheckIcon(
-      tint = if (enabled) BuddyPurple else BuddyMuted,
-      modifier = Modifier.size(18.dp),
-    )
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      HealthCheckIcon(
+        tint = if (enabled) BuddyRed else BuddyMuted,
+        modifier = Modifier.size(20.dp),
+      )
+    }
   }
 }
 
@@ -1525,56 +1297,21 @@ private fun HealthCheckValueRow(label: String, value: String) {
 @Composable
 private fun HealthCheckIcon(tint: Color, modifier: Modifier = Modifier) {
   Canvas(modifier = modifier) {
-    val strokeWidth = size.minDimension * 0.10f
-    val sheetWidth = size.width * 0.62f
-    val sheetHeight = size.height * 0.80f
-    val left = size.width * 0.08f
-    val top = size.height * 0.10f
+    val arm = size.minDimension * 0.26f
+    val length = size.minDimension * 0.78f
+    val corner = arm * 0.22f
+    val center = Offset(size.width / 2f, size.height / 2f)
     drawRoundRect(
       color = tint,
-      topLeft = Offset(left, top),
-      size = Size(sheetWidth, sheetHeight),
-      cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.12f),
-      style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth),
+      topLeft = Offset(center.x - arm / 2f, center.y - length / 2f),
+      size = Size(arm, length),
+      cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner),
     )
-    drawLine(
+    drawRoundRect(
       color = tint,
-      start = Offset(left + strokeWidth, top + size.height * 0.22f),
-      end = Offset(left + sheetWidth - strokeWidth, top + size.height * 0.22f),
-      strokeWidth = strokeWidth,
-      pathEffect = PathEffect.cornerPathEffect(strokeWidth),
-    )
-    drawLine(
-      color = tint,
-      start = Offset(left + strokeWidth, top + size.height * 0.38f),
-      end = Offset(left + sheetWidth * 0.72f, top + size.height * 0.38f),
-      strokeWidth = strokeWidth,
-      pathEffect = PathEffect.cornerPathEffect(strokeWidth),
-    )
-    drawCircle(
-      color = Color.White,
-      radius = size.width * 0.22f,
-      center = Offset(size.width * 0.78f, size.height * 0.73f),
-    )
-    drawCircle(
-      color = tint,
-      radius = size.width * 0.22f,
-      center = Offset(size.width * 0.78f, size.height * 0.73f),
-      style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth),
-    )
-    drawLine(
-      color = tint,
-      start = Offset(size.width * 0.69f, size.height * 0.73f),
-      end = Offset(size.width * 0.76f, size.height * 0.80f),
-      strokeWidth = strokeWidth,
-      pathEffect = PathEffect.cornerPathEffect(strokeWidth),
-    )
-    drawLine(
-      color = tint,
-      start = Offset(size.width * 0.76f, size.height * 0.80f),
-      end = Offset(size.width * 0.88f, size.height * 0.64f),
-      strokeWidth = strokeWidth,
-      pathEffect = PathEffect.cornerPathEffect(strokeWidth),
+      topLeft = Offset(center.x - length / 2f, center.y - arm / 2f),
+      size = Size(length, arm),
+      cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner),
     )
   }
 }
@@ -3017,9 +2754,6 @@ private val BuddyBubbleFaceSize = 54.dp
 private val BuddyBubbleFaceLift = (-1).dp
 private val BuddyBubbleGlyphSize = 44.dp
 private val BuddyRecordingRingSize = 92.dp
-private val BuddySevereFlamesSize = 128.dp
-private val BuddySevereFlamesOffsetX = (-2).dp
-private val BuddySevereFlamesOffsetY = (-24).dp
 private val BuddyBubbleMargin = 24.dp
 private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
@@ -3034,11 +2768,23 @@ private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
 public const val ANALYSIS_TIMEOUT_MS: Long = 120_000L
 
 private val BuddyPurple = Color(0xFF7553FF)
-private val BuddyAccentBubbleColor = Color(0xFF7553FF)
 private val BuddyAccentBubbleChonk = Color(0xFF5827D6)
+private val BuddyAccentBubbleShadow = Color(0xFF44208F)
+private val BuddyAccentBubbleStart = Color(0xFF896CFF)
+private val BuddyAccentBubbleEnd = Color(0xFF6948F5)
 private val BuddyRed = Color(0xFFFF003D)
-private val BuddyRecordingBubbleColor = Color(0xFFFF002B)
 private val BuddyRecordingBubbleChonk = Color(0xFFC10000)
+private val BuddyRecordingBubbleShadow = Color(0xFF7E001A)
+private val BuddyRecordingBubbleStart = Color(0xFFFF4D73)
+private val BuddyRecordingBubbleEnd = Color(0xFFFF002B)
+private val BuddyWarningBubbleChonk = Color(0xFF8A4200)
+private val BuddyWarningBubbleShadow = Color(0xFF5A2800)
+private val BuddyWarningBubbleStart = Color(0xFFFFB347)
+private val BuddyWarningBubbleEnd = Color(0xFFFF7A00)
+private val BuddyErrorBubbleChonk = Color(0xFFA4002B)
+private val BuddyErrorBubbleShadow = Color(0xFF6B001C)
+private val BuddyErrorBubbleStart = Color(0xFFFF5B7A)
+private val BuddyErrorBubbleEnd = Color(0xFFFF003D)
 private val BuddyGold = Color(0xFFC47A00)
 private val BuddyQuickDecisionCard = Color(0xFFF0EAFF)
 private val BuddyQuickDecisionPeek = Color(0xFFF8F5FF)
