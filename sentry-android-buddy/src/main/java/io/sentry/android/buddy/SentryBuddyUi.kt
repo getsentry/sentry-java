@@ -1542,17 +1542,6 @@ private fun AttentionCardBackground(
   content: @Composable BoxScope.() -> Unit,
 ) {
   Box(modifier = modifier.fillMaxWidth().background(backgroundColor).clipToAttentionCard()) {
-    Image(
-      painter = painterResource(id = R.drawable.ic_buddy_eye),
-      contentDescription = null,
-      modifier =
-        Modifier.fillMaxHeight()
-          .padding(vertical = 18.dp)
-          .align(Alignment.Center)
-          .aspectRatio(1f)
-          .alpha(0.24f),
-      contentScale = ContentScale.Fit,
-    )
     content()
   }
 }
