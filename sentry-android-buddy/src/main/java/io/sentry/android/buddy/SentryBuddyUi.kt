@@ -30,11 +30,13 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -76,6 +78,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -83,7 +86,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -685,10 +687,9 @@ private fun BoxScope.BuddyQuoteText(
     }
   val resolvedQuoteHeightPx = if (quoteHeightPx > 0f) quoteHeightPx else estimatedQuoteHeightPx
   val y = (bubbleOffset.y - resolvedQuoteHeightPx - quoteGapPx).coerceAtLeast(0f)
-  val ambientIsDark = MaterialTheme.colorScheme.background.luminance() < 0.45f
-  val bubbleFill = if (ambientIsDark) Color.White else BuddyPurple
-  val bubbleText = if (ambientIsDark) Color.Black else Color.White
-  val bubbleBorder = BuddyBorder
+  val bubbleFill = BuddyFabQuoteOffWhite
+  val bubbleText = BuddyAccentBubbleChonk
+  val bubbleBorder = BuddyAccentBubbleShadow
   val bubbleShape = remember(quoteSide) { buddyQuoteBubbleShape(quoteSide) }
 
   LaunchedEffect(Unit) {
@@ -720,7 +721,7 @@ private fun BoxScope.BuddyQuoteText(
       Text(
         text = BuddyFabQuotes[quoteIndex],
         modifier =
-          Modifier.fillMaxWidth().padding(start = 14.dp, top = 12.dp, end = 14.dp, bottom = 18.dp),
+          Modifier.fillMaxWidth().padding(start = 14.dp, top = 14.dp, end = 14.dp, bottom = 24.dp),
         color = bubbleText,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Normal,
@@ -738,7 +739,7 @@ private enum class BuddyQuoteBubbleSide {
 }
 
 private fun buddyQuoteBubbleShape(side: BuddyQuoteBubbleSide) = GenericShape { size, _ ->
-  val corner = min(size.width, size.height) * 0.24f
+  val corner = min(size.width, size.height) * 0.34f
   val tailHeight = min(size.width, size.height) * 0.24f
   val tailWidth = min(size.width, size.height) * 0.32f
   val bottom = size.height - tailHeight
@@ -1229,7 +1230,7 @@ private fun LiveFeedInset(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
-  val tint = if (enabled) BuddySentryPink else BuddyMuted
+  val tint = if (enabled) BuddySentryPink.copy(alpha = 0.68f) else BuddyMuted
   val shape = RoundedCornerShape(12.dp)
   Surface(
     modifier =
@@ -1241,7 +1242,7 @@ private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
     shape = shape,
   ) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      HealthCheckIcon(tint = tint, modifier = Modifier.width(34.dp).height(30.dp))
+      HealthCheckIcon(tint = tint, modifier = Modifier.width(38.dp).height(30.dp))
     }
   }
 }
@@ -1418,8 +1419,8 @@ private fun HealthCheckIcon(tint: Color, modifier: Modifier = Modifier) {
       style = androidx.compose.ui.graphics.drawscope.Stroke(width = borderWidth),
     )
 
-    val arm = size.minDimension * 0.21f
-    val length = size.minDimension * 0.58f
+    val arm = size.minDimension * 0.18f
+    val length = size.minDimension * 0.56f
     val crossCorner = arm * 0.22f
     val center = Offset(size.width / 2f, size.height / 2f)
     drawRoundRect(
@@ -1629,11 +1630,16 @@ private fun AttentionCardBackground(
   content: @Composable BoxScope.() -> Unit,
 ) {
   Box(modifier = modifier.fillMaxWidth().background(backgroundColor).clipToAttentionCard()) {
-    Icon(
+    Image(
       painter = painterResource(id = R.drawable.ic_buddy_eye),
       contentDescription = null,
-      modifier = Modifier.size(232.dp).align(Alignment.BottomEnd).offset(x = 58.dp, y = 52.dp),
-      tint = Color.White.copy(alpha = 0.52f),
+      modifier =
+        Modifier.fillMaxHeight()
+          .padding(vertical = 18.dp)
+          .align(Alignment.Center)
+          .aspectRatio(1f)
+          .alpha(0.24f),
+      contentScale = ContentScale.Fit,
     )
     content()
   }
@@ -3032,3 +3038,4 @@ private val BuddyInk = Color(0xFF171426)
 private val BuddyMuted = Color(0xFF6F6B7A)
 private val BuddyBorder = Color(0xFFE0DDE6)
 private val BuddyCode = Color(0xFFF3F1F6)
+private val BuddyFabQuoteOffWhite = Color(0xFFFFFBFE)
