@@ -217,6 +217,32 @@ from the debug sample app. Remaining integration questions:
 - Whether recommendation resolution should be exposed in the Buddy UI.
 - Whether bridge errors should support structured error codes instead of only an `error` message.
 
+## Recommendation Sink Lifecycle
+
+Buddy now keeps an in-memory Recommendations tab that aggregates suggestions from flow analysis,
+health checks, and live-feed heuristics.
+
+Current behavior:
+
+- Recommendations stay active until the developer explicitly resolves or dismisses them.
+- If a source emits the same recommendation again later, Buddy moves it back to the top of the sink
+  and marks it unread again, even if the developer had previously resolved or dismissed it.
+- Recommendations are not persisted across app restarts.
+
+Open decision:
+
+- Should recommendations auto-resolve once their source stops emitting them?
+- Should a developer dismissal suppress the same recommendation from resurfacing until a stronger
+  signal or a new app session occurs?
+- Should resurfacing depend on source-specific semantics, for example rerun Seer analyses versus a
+  repeated health-check finding versus a repeated live-feed heuristic?
+
+Tradeoff:
+
+- The current source-driven model is predictable and cheap to implement for the prototype, but it can
+  leave stale recommendations visible and can re-open recommendations the developer thought they had
+  already handled.
+
 ## Options We Considered
 
 ### 1. Low-Infra Current Transaction Model

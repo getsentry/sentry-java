@@ -214,6 +214,14 @@ public constructor(
   internal var healthCheckState: BuddyHealthCheckState = BuddyHealthCheckState.Hidden
     private set
 
+  internal var homeTab: BuddyHomeTab = BuddyHomeTab.LIVE_FEED
+    private set
+
+  internal var homeRecommendations: List<BuddyHomeRecommendation> = emptyList()
+    private set
+
+  private var lastSelectedHomeTab: BuddyHomeTab = BuddyHomeTab.LIVE_FEED
+
   private val transientRecordingEventLock: Any = Any()
   private val transientRecordingEventListeners = mutableListOf<(TransientRecordingEvent) -> Unit>()
   private var transientRecordingEventId: Long = 0
@@ -226,11 +234,56 @@ public constructor(
   internal fun openLiveFeed() {
     dismissHealthCheck()
     liveFeed = safeLiveFeed()
+    ingestHomeRecommendations(liveFeed.toHomeRecommendations())
+    homeTab = defaultHomeTab()
     state = SentryBuddySessionState.LiveFeed
   }
 
   internal fun dismissLiveFeedAttention() {
     liveFeed = safeMarkLiveFeedSeen()
+  }
+
+  internal fun selectHomeTab(tab: BuddyHomeTab) {
+    homeTab = tab
+    lastSelectedHomeTab = tab
+  }
+
+  internal fun markHomeRecommendationRead(recommendationId: String) {
+    updateHomeRecommendation(recommendationId) { it.copy(unread = false) }
+  }
+
+  internal fun dismissHomeRecommendation(recommendationId: String) {
+    updateHomeRecommendation(recommendationId) {
+      it.copy(status = RecommendationStatus.DISMISSED, unread = false, updatedAtMs = clock())
+    }
+  }
+
+  internal fun resolveHomeRecommendation(recommendationId: String) {
+    val recommendation = homeRecommendations.firstOrNull { it.id == recommendationId } ?: return
+    if (!recommendation.isOpen) {
+      return
+    }
+    if (recommendation.supportsRemoteResolve) {
+      val previousState = state
+      try {
+        val resolved =
+          flowAnalysesApi.resolveRecommendation(
+            requireNotNull(recommendation.flowId),
+            requireNotNull(recommendation.sourceRecommendationId),
+          )
+        applyResolvedFlowRecommendation(requireNotNull(recommendation.flowId), resolved)
+      } catch (exception: IllegalStateException) {
+        state =
+          SentryBuddySessionState.Error(
+            exception.message ?: "Failed to resolve recommendation.",
+            previousState,
+          )
+      }
+      return
+    }
+    updateHomeRecommendation(recommendationId) {
+      it.copy(status = RecommendationStatus.RESOLVED, unread = false, updatedAtMs = clock())
+    }
   }
 
   public fun close() {
@@ -343,7 +396,8 @@ public constructor(
     try {
       val analysis = flowAnalysesApi.get(analyzingState.request.flowId)
       when (analysis.status) {
-        AnalysisStatus.COMPLETED ->
+        AnalysisStatus.COMPLETED -> {
+          ingestHomeRecommendations(analysis.toHomeRecommendations(clock()))
           state =
             SentryBuddySessionState.Insights(
               result = analyzingState.result,
@@ -351,6 +405,7 @@ public constructor(
               analysis = analysis,
               response = analysis.toBuddyAnalysisResponse(analyzingState.request),
             )
+        }
         AnalysisStatus.FAILED ->
           state =
             SentryBuddySessionState.Error(
@@ -375,12 +430,7 @@ public constructor(
     try {
       val resolved =
         flowAnalysesApi.resolveRecommendation(insightsState.request.flowId, recommendationId)
-      val analysis = insightsState.analysis.withRecommendation(resolved)
-      state =
-        insightsState.copy(
-          analysis = analysis,
-          response = analysis.toBuddyAnalysisResponse(insightsState.request),
-        )
+      applyResolvedFlowRecommendation(insightsState.request.flowId, resolved)
     } catch (exception: IllegalStateException) {
       state =
         SentryBuddySessionState.Error(
@@ -397,6 +447,7 @@ public constructor(
     healthCheckState = BuddyHealthCheckState.Running
     try {
       val response = healthCheckApi.check(BuddyHealthCheckCapture.captureRequest())
+      ingestHomeRecommendations(response.toHomeRecommendations(clock()))
       healthCheckState = BuddyHealthCheckState.Results(response)
     } catch (exception: IllegalStateException) {
       healthCheckState =
@@ -448,6 +499,7 @@ public constructor(
       } else {
         SentryBuddy.addLiveFeedListener { feed ->
           liveFeed = feed
+          ingestHomeRecommendations(feed.toHomeRecommendations())
           listener(feed)
         }
       }
@@ -478,6 +530,77 @@ public constructor(
     } catch (_: IllegalStateException) {
       BuddyLiveFeed()
     }
+
+  private fun ingestHomeRecommendations(recommendations: List<BuddyHomeRecommendation>) {
+    recommendations.forEach { upsertHomeRecommendation(it) }
+  }
+
+  private fun upsertHomeRecommendation(incoming: BuddyHomeRecommendation) {
+    val existing = homeRecommendations.firstOrNull { it.id == incoming.id }
+    if (existing != null && !incoming.isMoreRecentThan(existing)) {
+      return
+    }
+    val merged = incoming.copy(unread = incoming.isOpen)
+    homeRecommendations = listOf(merged) + homeRecommendations.filterNot { it.id == incoming.id }
+  }
+
+  private fun updateHomeRecommendation(
+    recommendationId: String,
+    transform: (BuddyHomeRecommendation) -> BuddyHomeRecommendation,
+  ) {
+    val recommendation = homeRecommendations.firstOrNull { it.id == recommendationId } ?: return
+    val updated = transform(recommendation)
+    homeRecommendations = homeRecommendations.map { if (it.id == recommendationId) updated else it }
+  }
+
+  private fun defaultHomeTab(): BuddyHomeTab =
+    when {
+      liveFeed.latestUnviewedAdverseItem != null -> BuddyHomeTab.LIVE_FEED
+      homeRecommendations.any { it.isOpen && it.unread } -> BuddyHomeTab.RECOMMENDATIONS
+      else -> lastSelectedHomeTab
+    }
+
+  private fun applyResolvedFlowRecommendation(flowId: String, resolved: Recommendation) {
+    val nowMs = clock()
+    val resolvedAggregate =
+      BuddyHomeRecommendation(
+        id = "flow-analysis:${resolved.id}",
+        source = BuddyRecommendationSource.FLOW_ANALYSIS,
+        title = resolved.title,
+        description = resolved.description,
+        severity = resolved.severity,
+        status = resolved.status,
+        unread = false,
+        updatedAtMs = nowMs,
+        primaryLink = resolved.link,
+        seerRunUrl = resolved.seerRunUrl,
+        flowId = flowId,
+        sourceRecommendationId = resolved.id,
+      )
+    val existing = homeRecommendations.firstOrNull { it.id == resolvedAggregate.id }
+    val refreshedAggregate =
+      if (existing == null) {
+        resolvedAggregate
+      } else {
+        resolvedAggregate.copy(updatedAtMs = maxOf(nowMs, existing.updatedAtMs + 1))
+      }
+    homeRecommendations =
+      listOf(refreshedAggregate) + homeRecommendations.filterNot { it.id == refreshedAggregate.id }
+    val insightsState = state as? SentryBuddySessionState.Insights ?: return
+    if (insightsState.request.flowId != flowId) {
+      return
+    }
+    val analysis = insightsState.analysis.withRecommendation(resolved)
+    state =
+      insightsState.copy(
+        analysis = analysis,
+        response = analysis.toBuddyAnalysisResponse(insightsState.request),
+      )
+  }
+
+  private fun BuddyHomeRecommendation.isMoreRecentThan(existing: BuddyHomeRecommendation): Boolean {
+    return updatedAtMs > existing.updatedAtMs
+  }
 
   private fun buildFlowAnalysisRequest(
     state: SentryBuddySessionState.Briefing

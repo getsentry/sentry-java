@@ -79,6 +79,8 @@ class SentryBuddySessionControllerTest {
     val state = controller.state as SentryBuddySessionState.Insights
     assertThat(state.analysis.status).isEqualTo(AnalysisStatus.COMPLETED)
     assertThat(state.result.recording.flow.name).isEqualTo("Checkout")
+    assertThat(controller.homeRecommendations.map { it.id })
+      .containsExactly("flow-analysis:recommendation-1")
   }
 
   @Test
@@ -137,6 +139,32 @@ class SentryBuddySessionControllerTest {
       .isEqualTo(RecommendationStatus.RESOLVED)
     assertThat(state.analysis.recommendations.single().seerRunUrl)
       .isEqualTo("https://sentry.io/seer/runs/1")
+    assertThat(controller.homeRecommendations.single().status)
+      .isEqualTo(RecommendationStatus.RESOLVED)
+  }
+
+  @Test
+  fun `home resolve updates aggregate recommendation state`() {
+    var nowMs = 100L
+    val flowAnalysesApi = FakeFlowAnalysesApi()
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        flowAnalysesApi = flowAnalysesApi,
+        clock = { nowMs },
+      )
+
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.analyze()
+    nowMs = 200L
+    controller.resolveHomeRecommendation("flow-analysis:recommendation-1")
+
+    assertThat(flowAnalysesApi.resolvedRecommendationIds).containsExactly("recommendation-1")
+    assertThat(controller.homeRecommendations.single().status)
+      .isEqualTo(RecommendationStatus.RESOLVED)
+    assertThat(controller.homeRecommendations.single().unread).isFalse()
   }
 
   @Test
@@ -262,6 +290,97 @@ class SentryBuddySessionControllerTest {
     assertThat(controller.healthCheckState).isInstanceOf(BuddyHealthCheckState.Results::class.java)
     val state = controller.healthCheckState as BuddyHealthCheckState.Results
     assertThat(state.response.findings.single().title).contains("tracing")
+    assertThat(controller.homeRecommendations.single().id)
+      .isEqualTo("health-check:tracing-disabled")
+  }
+
+  @Test
+  fun `open live feed remembers last selected tab when there are no unread recommendations`() {
+    val controller = SentryBuddySessionController(recorderFacade = FakeRecorderFacade())
+
+    controller.openLiveFeed()
+    controller.selectHomeTab(BuddyHomeTab.RECORD_FLOW)
+    controller.close()
+    controller.openLiveFeed()
+
+    assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.RECORD_FLOW)
+  }
+
+  @Test
+  fun `open live feed prefers unread recommendations over remembered tab`() {
+    var nowMs = 100L
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        healthCheckApi =
+          object : SentryBuddyHealthCheckApi {
+            override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse {
+              return BuddyHealthCheckResponse(
+                summary = "Buddy found 1 finding worth checking.",
+                findings =
+                  listOf(
+                    BuddyHealthCheckFinding(
+                      id = "replay-disabled",
+                      title = "Consider enabling Session Replay",
+                      description = "Replay is off.",
+                      severity = Severity.LOW,
+                    )
+                  ),
+              )
+            }
+          },
+        clock = { nowMs },
+      )
+
+    controller.openLiveFeed()
+    controller.selectHomeTab(BuddyHomeTab.RECORD_FLOW)
+    controller.runHealthCheck()
+    controller.close()
+    nowMs = 200L
+    controller.openLiveFeed()
+
+    assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.RECOMMENDATIONS)
+  }
+
+  @Test
+  fun `rerunning a dismissed recommendation makes it active and unread again`() {
+    var nowMs = 100L
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        healthCheckApi =
+          object : SentryBuddyHealthCheckApi {
+            override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse {
+              return BuddyHealthCheckResponse(
+                summary = "Buddy found 1 finding worth checking.",
+                findings =
+                  listOf(
+                    BuddyHealthCheckFinding(
+                      id = "replay-disabled",
+                      title = "Consider enabling Session Replay",
+                      description = "Replay is off.",
+                      severity = Severity.LOW,
+                    )
+                  ),
+              )
+            }
+          },
+        clock = { nowMs },
+      )
+
+    controller.openLiveFeed()
+    controller.runHealthCheck()
+    controller.dismissHomeRecommendation("health-check:replay-disabled")
+
+    assertThat(controller.homeRecommendations.single().status)
+      .isEqualTo(RecommendationStatus.DISMISSED)
+
+    nowMs = 200L
+    controller.runHealthCheck()
+
+    assertThat(controller.homeRecommendations.single().status).isEqualTo(RecommendationStatus.OPEN)
+    assertThat(controller.homeRecommendations.single().unread).isTrue()
+    assertThat(controller.homeRecommendations.single().updatedAtMs).isEqualTo(200L)
   }
 
   @Test

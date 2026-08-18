@@ -162,6 +162,8 @@ private fun SentryBuddyOverlayContent(
   var state by remember { mutableStateOf(controller.state) }
   var liveFeed by remember { mutableStateOf(controller.liveFeed) }
   var healthCheckState by remember { mutableStateOf(controller.healthCheckState) }
+  var homeTab by remember { mutableStateOf(controller.homeTab) }
+  var homeRecommendations by remember { mutableStateOf(controller.homeRecommendations) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
   val transientRecordingEventScope = rememberCoroutineScope()
@@ -171,6 +173,8 @@ private fun SentryBuddyOverlayContent(
     state = controller.state
     liveFeed = controller.liveFeed
     healthCheckState = controller.healthCheckState
+    homeTab = controller.homeTab
+    homeRecommendations = controller.homeRecommendations
     nowMs = System.currentTimeMillis()
   }
 
@@ -215,7 +219,10 @@ private fun SentryBuddyOverlayContent(
 
   DisposableEffect(controller) {
     val removeListener = controller.addLiveFeedListener { feed ->
-      transientRecordingEventScope.launch { liveFeed = feed }
+      transientRecordingEventScope.launch {
+        liveFeed = feed
+        homeRecommendations = controller.homeRecommendations
+      }
     }
     onDispose { removeListener() }
   }
@@ -273,6 +280,8 @@ private fun SentryBuddyOverlayContent(
       state = state,
       liveFeed = liveFeed,
       healthCheckState = healthCheckState,
+      homeTab = homeTab,
+      homeRecommendations = homeRecommendations,
       sentryUiLinks = controller.sentryUiLinks,
       nowMs = nowMs,
       onDispatch = { dispatch(it) },
@@ -280,6 +289,16 @@ private fun SentryBuddyOverlayContent(
       onResolveRecommendation = { recommendationId ->
         dispatchAnalysis { resolveRecommendation(recommendationId) }
       },
+      onResolveHomeRecommendation = { recommendationId ->
+        dispatchAnalysis { resolveHomeRecommendation(recommendationId) }
+      },
+      onDismissHomeRecommendation = { recommendationId ->
+        dispatch { dismissHomeRecommendation(recommendationId) }
+      },
+      onMarkHomeRecommendationRead = { recommendationId ->
+        dispatch { markHomeRecommendationRead(recommendationId) }
+      },
+      onSelectHomeTab = { tab -> dispatch { selectHomeTab(tab) } },
       onRunHealthCheck = { dispatchHealthCheck { runHealthCheck() } },
       onDismissHealthCheck = { dispatch { dismissHealthCheck() } },
       onOpenUrl = { context, url -> openUrl(context, url) },
@@ -766,11 +785,17 @@ private fun BuddySheet(
   state: SentryBuddySessionState,
   liveFeed: BuddyLiveFeed,
   healthCheckState: BuddyHealthCheckState,
+  homeTab: BuddyHomeTab,
+  homeRecommendations: List<BuddyHomeRecommendation>,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
   onResolveRecommendation: (String) -> Unit,
+  onResolveHomeRecommendation: (String) -> Unit,
+  onDismissHomeRecommendation: (String) -> Unit,
+  onMarkHomeRecommendationRead: (String) -> Unit,
+  onSelectHomeTab: (BuddyHomeTab) -> Unit,
   onRunHealthCheck: () -> Unit,
   onDismissHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
@@ -807,13 +832,19 @@ private fun BuddySheet(
     ) {
       when (state) {
         SentryBuddySessionState.LiveFeed ->
-          LiveFeedSheet(
+          BuddyHomeSheet(
             liveFeed,
             healthCheckState,
+            homeTab,
+            homeRecommendations,
             sentryUiLinks,
             nowMs,
             onDispatch,
             ::startRecordingAfterSheetExit,
+            onResolveHomeRecommendation,
+            onDismissHomeRecommendation,
+            onMarkHomeRecommendationRead,
+            onSelectHomeTab,
             onRunHealthCheck,
             onDismissHealthCheck,
             onOpenUrl,
@@ -1013,65 +1044,66 @@ private fun IntroSheet(onStartRecording: () -> Unit) {
 }
 
 @Composable
-private fun LiveFeedSheet(
+private fun BuddyHomeSheet(
   liveFeed: BuddyLiveFeed,
   healthCheckState: BuddyHealthCheckState,
+  homeTab: BuddyHomeTab,
+  homeRecommendations: List<BuddyHomeRecommendation>,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onStartRecording: () -> Unit,
+  onResolveHomeRecommendation: (String) -> Unit,
+  onDismissHomeRecommendation: (String) -> Unit,
+  onMarkHomeRecommendationRead: (String) -> Unit,
+  onSelectHomeTab: (BuddyHomeTab) -> Unit,
   onRunHealthCheck: () -> Unit,
   onDismissHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
+  val unreadRecommendations = homeRecommendations.count { it.isOpen && it.unread }
+  val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
   LiveFeedInset {
     SheetTitle(
       title = "Sentry Buddy",
-      subtitle = "Live Feed",
-      trailingContent = {
-        HealthCheckActionButton(
-          enabled = healthCheckState !is BuddyHealthCheckState.Running,
-          onClick = onRunHealthCheck,
+      subtitle = "Debug build • v${BuildConfig.VERSION_NAME}",
+      trailingContent =
+        if (homeTab == BuddyHomeTab.LIVE_FEED) {
+          {
+            HealthCheckActionButton(
+              enabled = healthCheckState !is BuddyHealthCheckState.Running,
+              onClick = onRunHealthCheck,
+            )
+          }
+        } else {
+          null
+        },
+    )
+    HomeTabRow(
+      selectedTab = homeTab,
+      unreadRecommendationCount = unreadRecommendations,
+      onSelect = onSelectHomeTab,
+    )
+    when (homeTab) {
+      BuddyHomeTab.LIVE_FEED ->
+        LiveFeedTabContent(
+          liveFeed = liveFeed,
+          sentryUiLinks = sentryUiLinks,
+          nowMs = nowMs,
+          emptyArtIndex = emptyAttentionArtIndex,
+          onDispatch = onDispatch,
+          onOpenUrl = onOpenUrl,
         )
-      },
-    )
-  }
-  val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
-  LiveFeedInset { Spacer(Modifier.height(12.dp)) }
-  AttentionCard(
-    liveFeed = liveFeed,
-    sentryUiLinks = sentryUiLinks,
-    nowMs = nowMs,
-    emptyArtIndex = emptyAttentionArtIndex,
-    onDismiss = { onDispatch { dismissLiveFeedAttention() } },
-    onOpenUrl = onOpenUrl,
-  )
-  LiveFeedInset {
-    Spacer(Modifier.height(12.dp))
-    Button(
-      modifier = Modifier.fillMaxWidth().height(56.dp),
-      colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
-      onClick = onStartRecording,
-    ) {
-      BuddyButtonText("Start Recording")
-    }
-    Spacer(Modifier.height(12.dp))
-    Text(
-      "Live feed",
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.Bold,
-      color = BuddyInk,
-    )
-    if (liveFeed.items.isEmpty()) {
-      EmptyLiveFeedCard()
-    } else {
-      LiveFeedRows(
-        items = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT),
-        showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
-        sentryUiLinks = sentryUiLinks,
-        nowMs = nowMs,
-        onOpenUrl = onOpenUrl,
-      )
+      BuddyHomeTab.RECOMMENDATIONS ->
+        RecommendationsTabContent(
+          recommendations = homeRecommendations,
+          nowMs = nowMs,
+          onResolve = onResolveHomeRecommendation,
+          onDismiss = onDismissHomeRecommendation,
+          onMarkRead = onMarkHomeRecommendationRead,
+          onOpenUrl = onOpenUrl,
+        )
+      BuddyHomeTab.RECORD_FLOW -> RecordFlowTabContent(onStartRecording = onStartRecording)
     }
   }
   HealthCheckDialog(
@@ -1079,6 +1111,157 @@ private fun LiveFeedSheet(
     onDismiss = onDismissHealthCheck,
     onRetry = onRunHealthCheck,
     onOpenUrl = onOpenUrl,
+  )
+}
+
+@Composable
+private fun HomeTabRow(
+  selectedTab: BuddyHomeTab,
+  unreadRecommendationCount: Int,
+  onSelect: (BuddyHomeTab) -> Unit,
+) {
+  Surface(color = BuddyCode, shape = RoundedCornerShape(16.dp)) {
+    Row(
+      modifier = Modifier.fillMaxWidth().padding(4.dp),
+      horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+      BuddyHomeTab.entries.forEach { tab ->
+        val isSelected = tab == selectedTab
+        val label =
+          when (tab) {
+            BuddyHomeTab.LIVE_FEED -> "Live Feed"
+            BuddyHomeTab.RECOMMENDATIONS ->
+              if (unreadRecommendationCount > 0) {
+                "Recommendations ($unreadRecommendationCount)"
+              } else {
+                "Recommendations"
+              }
+            BuddyHomeTab.RECORD_FLOW -> "Record flow"
+          }
+        Surface(
+          modifier = Modifier.weight(1f).clickable { onSelect(tab) },
+          color = if (isSelected) Color.White else Color.Transparent,
+          shape = RoundedCornerShape(12.dp),
+          border = if (isSelected) CardDefaults.outlinedCardBorder() else null,
+        ) {
+          Text(
+            text = label,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp),
+            color = if (isSelected) BuddyInk else BuddyMuted,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun LiveFeedTabContent(
+  liveFeed: BuddyLiveFeed,
+  sentryUiLinks: BuddySentryUiLinks,
+  nowMs: Long,
+  emptyArtIndex: Int,
+  onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
+) {
+  AttentionCard(
+    liveFeed = liveFeed,
+    sentryUiLinks = sentryUiLinks,
+    nowMs = nowMs,
+    emptyArtIndex = emptyArtIndex,
+    onDismiss = { onDispatch { dismissLiveFeedAttention() } },
+    onOpenUrl = onOpenUrl,
+  )
+  Text(
+    "Live feed",
+    style = MaterialTheme.typography.titleMedium,
+    fontWeight = FontWeight.Bold,
+    color = BuddyInk,
+  )
+  if (liveFeed.items.isEmpty()) {
+    EmptyLiveFeedCard()
+  } else {
+    LiveFeedRows(
+      items = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT),
+      showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
+      sentryUiLinks = sentryUiLinks,
+      nowMs = nowMs,
+      onOpenUrl = onOpenUrl,
+    )
+  }
+}
+
+@Composable
+private fun RecommendationsTabContent(
+  recommendations: List<BuddyHomeRecommendation>,
+  nowMs: Long,
+  onResolve: (String) -> Unit,
+  onDismiss: (String) -> Unit,
+  onMarkRead: (String) -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
+) {
+  Text(
+    "Recommendations",
+    style = MaterialTheme.typography.titleLarge,
+    fontWeight = FontWeight.Bold,
+    color = BuddyInk,
+  )
+  Text(
+    "Buddy collects suggestions from the live feed, flow analysis, and health checks here.",
+    color = BuddyMuted,
+  )
+  if (recommendations.isEmpty()) {
+    Card(border = CardDefaults.outlinedCardBorder()) {
+      Text(
+        "No recommendations yet. Run a health check, record a flow, or keep exploring the app.",
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        color = BuddyMuted,
+      )
+    }
+    return
+  }
+
+  Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    recommendations.forEach { recommendation ->
+      HomeRecommendationRow(
+        recommendation = recommendation,
+        nowMs = nowMs,
+        onResolve = onResolve,
+        onDismiss = onDismiss,
+        onMarkRead = onMarkRead,
+        onOpenUrl = onOpenUrl,
+      )
+    }
+  }
+}
+
+@Composable
+private fun RecordFlowTabContent(onStartRecording: () -> Unit) {
+  Text(
+    "Record a flow",
+    style = MaterialTheme.typography.titleLarge,
+    fontWeight = FontWeight.Bold,
+    color = BuddyInk,
+  )
+  Text(
+    "Capture a real session so Buddy can connect screens, errors, spans, and recommendations to one trace.",
+    color = BuddyMuted,
+  )
+  Button(
+    modifier = Modifier.fillMaxWidth().height(56.dp),
+    colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
+    onClick = onStartRecording,
+  ) {
+    BuddyButtonText("Start Recording")
+  }
+  Text(
+    "The panel closes so you can navigate freely. Tap the bubble to stop and review the captured flow.",
+    modifier = Modifier.fillMaxWidth(),
+    textAlign = TextAlign.Center,
+    color = BuddyMuted,
   )
 }
 
@@ -2624,6 +2807,88 @@ private fun RecommendationRow(
           }
           if (onOpenLink != null) {
             TextButton(onClick = onOpenLink) { BuddyButtonText("Open Link") }
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun HomeRecommendationRow(
+  recommendation: BuddyHomeRecommendation,
+  nowMs: Long,
+  onResolve: (String) -> Unit,
+  onDismiss: (String) -> Unit,
+  onMarkRead: (String) -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
+) {
+  val context = LocalContext.current
+  val primaryLink = recommendation.seerRunUrl ?: recommendation.primaryLink
+  Surface(
+    modifier =
+      Modifier.fillMaxWidth().clickable {
+        onMarkRead(recommendation.id)
+        primaryLink?.let { onOpenUrl(context, it) }
+      },
+    color = severityColor(recommendation.severity).copy(alpha = 0.08f),
+    shape = RoundedCornerShape(14.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        LiveFeedCategoryPill(recommendation.source.label, severityColor(recommendation.severity))
+        Spacer(Modifier.weight(1f))
+        if (recommendation.unread && recommendation.isOpen) {
+          Box(modifier = Modifier.size(12.dp).background(BuddyPurple, CircleShape))
+        }
+      }
+      Text(
+        recommendation.title,
+        color = BuddyInk,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+      )
+      Text(recommendation.description, color = BuddyMuted)
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          relativeTime(recommendation.updatedAtMs, nowMs),
+          color = BuddyMuted,
+          style = MaterialTheme.typography.labelMedium,
+        )
+        Text(
+          "${recommendation.severity.value} • ${recommendation.status.value}",
+          color = BuddyPurple,
+          style = MaterialTheme.typography.labelMedium,
+          fontWeight = FontWeight.Bold,
+        )
+      }
+      Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (recommendation.isOpen) {
+          OutlinedButton(onClick = { onResolve(recommendation.id) }) {
+            BuddyButtonText("Resolve")
+          }
+          TextButton(onClick = { onDismiss(recommendation.id) }) { BuddyButtonText("Dismiss") }
+        }
+        if (primaryLink != null) {
+          TextButton(
+            onClick = {
+              onMarkRead(recommendation.id)
+              onOpenUrl(context, primaryLink)
+            }
+          ) {
+            BuddyButtonText(if (recommendation.seerRunUrl != null) "Open Seer Run" else "Open Link")
           }
         }
       }
