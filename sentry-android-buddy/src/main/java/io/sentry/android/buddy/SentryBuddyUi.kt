@@ -1210,7 +1210,7 @@ private fun RecommendationsTabContent(
     color = BuddyInk,
   )
   Text(
-    "Buddy collects suggestions from the live feed, flow analysis, and health checks here.",
+    "Everything Buddy wants you to verify or fix shows up here, regardless of where it came from.",
     color = BuddyMuted,
   )
   if (recommendations.isEmpty()) {
@@ -1247,7 +1247,7 @@ private fun RecordFlowTabContent(onStartRecording: () -> Unit) {
     color = BuddyInk,
   )
   Text(
-    "Capture a real session so Buddy can connect screens, errors, spans, and recommendations to one trace.",
+    "Record a user flow and Buddy will tie screens, spans, errors, and follow-up recommendations back to one trace.",
     color = BuddyMuted,
   )
   Button(
@@ -1262,6 +1262,12 @@ private fun RecordFlowTabContent(onStartRecording: () -> Unit) {
     modifier = Modifier.fillMaxWidth(),
     textAlign = TextAlign.Center,
     color = BuddyMuted,
+  )
+  HorizontalDivider()
+  Text(
+    "Buddy ships as debugImplementation only. It never runs in a release build.",
+    color = BuddyMuted,
+    style = MaterialTheme.typography.bodySmall,
   )
 }
 

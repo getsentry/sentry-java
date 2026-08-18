@@ -107,9 +107,9 @@ private fun BuddyLiveFeed.repeatedScreenRecommendations(): List<BuddyHomeRecomme
       BuddyHomeRecommendation(
         id = "live-feed:screen:$screenName",
         source = BuddyRecommendationSource.LIVE_FEED,
-        title = "$screenName may need more instrumentation",
+        title = "$screenName may be missing a screen transaction",
         description =
-          "Buddy has seen this screen ${screenItems.size} times recently. Recording a flow can confirm whether this screen has enough trace coverage.",
+          "Buddy has seen this screen ${screenItems.size} times recently without enough trace context to explain what happened there.",
         severity = Severity.LOW,
         updatedAtMs = latestVisit.timestamp.time,
       )
@@ -118,8 +118,11 @@ private fun BuddyLiveFeed.repeatedScreenRecommendations(): List<BuddyHomeRecomme
 
 private fun BuddyLiveFeedItem.liveFeedRecommendationDescription(): String {
   val screenName = visibleScreens.lastOrNull()
-  val screenContext = screenName?.let { " while $it was visible" }.orEmpty()
-  return "${recommendationTitle()} was captured in the live feed$screenContext."
+  return if (screenName == null) {
+    "${recommendationTitle()} was captured in the live feed and is worth another look."
+  } else {
+    "${recommendationTitle()} was captured while $screenName was visible."
+  }
 }
 
 private fun BuddyLiveFeedItem.recommendationTitle(): String =
@@ -144,4 +147,4 @@ private fun Map<String, Any?>.mapValue(key: String): Map<*, *> =
 
 private fun Map<*, *>.stringValue(key: String): String? = this[key]?.toString()
 
-private const val SCREEN_RECOMMENDATION_THRESHOLD = 3
+private const val SCREEN_RECOMMENDATION_THRESHOLD = 4
