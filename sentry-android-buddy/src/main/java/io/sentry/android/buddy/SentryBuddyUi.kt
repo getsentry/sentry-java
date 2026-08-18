@@ -7,6 +7,11 @@ import android.graphics.Rect
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -63,6 +68,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
@@ -782,37 +788,57 @@ private fun RecordingTooltip(
         }
         TextButton(onClick = onDismiss) { Text("Close") }
       }
-      ActiveRecordingCard(durationMs)
       ActiveTimelinePreview(state.intent, durationMs)
-      Button(
-        modifier = Modifier.fillMaxWidth().height(48.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = BuddyRed),
-        onClick = onStopAndAnalyze,
-      ) {
-        BuddyButtonText("Stop and Analyze")
-      }
+      BreathingStopButton(onClick = onStopAndAnalyze)
     }
   }
 }
 
 @Composable
-private fun ActiveRecordingCard(durationMs: Long) {
-  Card(
-    colors = CardDefaults.cardColors(containerColor = BuddyRed.copy(alpha = 0.10f)),
-    border = CardDefaults.outlinedCardBorder(),
-  ) {
-    Row(
-      modifier = Modifier.fillMaxWidth().padding(16.dp),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically,
+private fun BreathingStopButton(onClick: () -> Unit) {
+  val transition = rememberInfiniteTransition(label = "buddy-stop-button")
+  val haloScale by
+    transition.animateFloat(
+      initialValue = 1.0f,
+      targetValue = 1.04f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+          repeatMode = RepeatMode.Reverse,
+        ),
+      label = "buddy-stop-button-halo-scale",
+    )
+  val haloAlpha by
+    transition.animateFloat(
+      initialValue = 0.12f,
+      targetValue = 0.24f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+          repeatMode = RepeatMode.Reverse,
+        ),
+      label = "buddy-stop-button-halo-alpha",
+    )
+  val shape = RoundedCornerShape(24.dp)
+
+  Box(modifier = Modifier.fillMaxWidth().height(48.dp)) {
+    Box(
+      modifier =
+        Modifier.fillMaxSize()
+          .graphicsLayer {
+            scaleX = haloScale
+            scaleY = haloScale
+            alpha = haloAlpha
+          }
+          .background(BuddyRed, shape)
+    )
+    Button(
+      modifier = Modifier.fillMaxSize(),
+      colors = ButtonDefaults.buttonColors(containerColor = BuddyRed),
+      shape = shape,
+      onClick = onClick,
     ) {
-      Text("●  Recording", color = BuddyRed, fontWeight = FontWeight.Bold)
-      Text(
-        formatElapsed(durationMs),
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        color = BuddyInk,
-      )
+      BuddyButtonText("Stop and Analyze")
     }
   }
 }
