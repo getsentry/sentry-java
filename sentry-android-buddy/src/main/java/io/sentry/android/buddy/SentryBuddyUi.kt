@@ -1356,7 +1356,7 @@ private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
       Image(
         painter = painterResource(id = R.drawable.health_check_smiley),
         contentDescription = null,
-        modifier = Modifier.size(28.dp),
+        modifier = Modifier.size(36.dp),
         alpha = if (enabled) 1f else 0.45f,
         contentScale = ContentScale.Fit,
       )
