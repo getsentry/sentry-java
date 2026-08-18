@@ -206,15 +206,15 @@ Rationale:
 
 Timeline construction options considered:
 
-| Option | Major pros | Major cons |
-|---|---|---|
-| Build the timeline as signals are produced | Simple, local, easy to test, immediately useful for overlay and local JSON | Can normalize too early, miss late signals, and make ordering/deduplication harder |
-| Buffer raw observations and normalize at stop | Preserves flexibility, allows better sorting, deduplication, and schema evolution | Adds a normalization layer and requires separate handling for live UI feedback |
-| Reconstruct the timeline after the fact from Sentry artifacts | Reuses backend telemetry and can include richer Sentry data later | Depends on network, sampling, redaction, ingestion, and correlation completeness |
-| Use a live flow skeleton with post-stop enrichment | Keeps developer intent and screens as the backbone while allowing richer telemetry merge | Requires clear merge, provenance, conflict, and duplicate-handling rules |
-| Persist a local append-only journal | Can survive process death and capture pre-crash context | Adds storage, cleanup, corruption, and privacy responsibilities |
-| Let the flow-analysis service own timeline construction | Keeps SDK thinner and lets server-side analysis evolve faster | Makes local JSON less useful and depends on service availability and behavior |
-| Treat developer steps as the timeline and attach telemetry as context | Produces a cleaner flow narrative and keeps telemetry from overwhelming intent | Requires matching telemetry to steps/screens and can hide standalone chronological detail |
+| Option                                                                | Major pros                                                                               | Major cons                                                                                |
+|-----------------------------------------------------------------------|------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| Build the timeline as signals are produced                            | Simple, local, easy to test, immediately useful for overlay and local JSON               | Can normalize too early, miss late signals, and make ordering/deduplication harder        |
+| Buffer raw observations and normalize at stop                         | Preserves flexibility, allows better sorting, deduplication, and schema evolution        | Adds a normalization layer and requires separate handling for live UI feedback            |
+| Reconstruct the timeline after the fact from Sentry artifacts         | Reuses backend telemetry and can include richer Sentry data later                        | Depends on network, sampling, redaction, ingestion, and correlation completeness          |
+| Use a live flow skeleton with post-stop enrichment                    | Keeps developer intent and screens as the backbone while allowing richer telemetry merge | Requires clear merge, provenance, conflict, and duplicate-handling rules                  |
+| Persist a local append-only journal                                   | Can survive process death and capture pre-crash context                                  | Adds storage, cleanup, corruption, and privacy responsibilities                           |
+| Let the flow-analysis service own timeline construction               | Keeps SDK thinner and lets server-side analysis evolve faster                            | Makes local JSON less useful and depends on service availability and behavior             |
+| Treat developer steps as the timeline and attach telemetry as context | Produces a cleaner flow narrative and keeps telemetry from overwhelming intent           | Requires matching telemetry to steps/screens and can hide standalone chronological detail |
 
 The current prototype mostly builds the normalized timeline as signals are produced, then sorts and
 finalizes it at stop time. A likely next refinement is the hybrid model: record a live skeleton from
