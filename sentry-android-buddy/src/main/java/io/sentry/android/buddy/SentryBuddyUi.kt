@@ -15,6 +15,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -68,6 +69,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -84,7 +86,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import java.util.Locale
+import kotlin.math.PI
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -271,8 +275,11 @@ private fun BoxScope.BuddyBubble(
   val bubbleColor = if (isRecording) BuddyRed else BuddyPurple
   val attentionItem = liveFeed.latestUnviewedAdverseItem
   val attentionColor = attentionItem?.let { severityColor(it.severity) }
+  val showAttentionFlames = !isRecording && attentionItem?.severity == Severity.HIGH
+  val showAttentionSparks = !isRecording && attentionItem?.severity == Severity.MEDIUM
   val pulseScale = remember { Animatable(1f) }
   val stopTransition = rememberInfiniteTransition(label = "buddy-floating-stop-button")
+  val attentionTransition = rememberInfiniteTransition(label = "buddy-attention-ornaments")
   val stopHaloScale by
     stopTransition.animateFloat(
       initialValue = 1.0f,
@@ -294,6 +301,17 @@ private fun BoxScope.BuddyBubble(
           repeatMode = RepeatMode.Reverse,
         ),
       label = "buddy-floating-stop-button-halo-alpha",
+    )
+  val attentionOrnamentPhase by
+    attentionTransition.animateFloat(
+      initialValue = 0f,
+      targetValue = 1f,
+      animationSpec =
+        infiniteRepeatable(
+          animation = tween(durationMillis = 950, easing = FastOutSlowInEasing),
+          repeatMode = RepeatMode.Reverse,
+        ),
+      label = "buddy-attention-ornament-phase",
     )
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
 
@@ -351,6 +369,23 @@ private fun BoxScope.BuddyBubble(
       modifier = Modifier.size(64.dp),
       contentAlignment = Alignment.Center,
     ) {
+      if (showAttentionFlames) {
+        AttentionFlames(
+          phase = attentionOrnamentPhase,
+          modifier =
+            Modifier.size(width = 82.dp, height = 34.dp)
+              .align(Alignment.TopCenter)
+              .offset(y = (-27).dp),
+        )
+      } else if (showAttentionSparks) {
+        AttentionSparks(
+          phase = attentionOrnamentPhase,
+          modifier =
+            Modifier.size(width = 86.dp, height = 38.dp)
+              .align(Alignment.TopCenter)
+              .offset(y = (-29).dp),
+        )
+      }
       if (isRecording) {
         Box(
           modifier =
@@ -426,6 +461,106 @@ private fun BoxScope.BuddyBubble(
     showAbove = showTransientAbove,
   )
 }
+
+@Composable
+private fun AttentionFlames(phase: Float, modifier: Modifier = Modifier) {
+  Canvas(modifier = modifier) {
+    val baseY = size.height * 0.92f
+    val centers = listOf(0.28f, 0.50f, 0.72f)
+    centers.forEachIndexed { index, centerFraction ->
+      val wave = sin(((phase + index * 0.23f) * 2f * PI).toFloat())
+      val centerX = size.width * centerFraction + wave * 2.4f
+      val height = size.height * (0.56f + index * 0.08f) + wave * 2f
+      val width = size.width * (0.085f + index * 0.012f)
+      val tipY = baseY - height
+      val outerFlame =
+        Path().apply {
+          moveTo(centerX, tipY)
+          cubicTo(
+            centerX - width * 1.35f,
+            tipY + height * 0.38f,
+            centerX - width,
+            baseY,
+            centerX,
+            baseY,
+          )
+          cubicTo(
+            centerX + width,
+            baseY,
+            centerX + width * 1.35f,
+            tipY + height * 0.38f,
+            centerX,
+            tipY,
+          )
+        }
+      drawPath(outerFlame, BuddyRed.copy(alpha = 0.86f))
+
+      val innerHeight = height * 0.58f
+      val innerWidth = width * 0.52f
+      val innerTipY = baseY - innerHeight
+      val innerFlame =
+        Path().apply {
+          moveTo(centerX, innerTipY)
+          cubicTo(
+            centerX - innerWidth,
+            innerTipY + innerHeight * 0.45f,
+            centerX - innerWidth * 0.78f,
+            baseY,
+            centerX,
+            baseY,
+          )
+          cubicTo(
+            centerX + innerWidth * 0.78f,
+            baseY,
+            centerX + innerWidth,
+            innerTipY + innerHeight * 0.45f,
+            centerX,
+            innerTipY,
+          )
+        }
+      drawPath(innerFlame, BuddyGold.copy(alpha = 0.88f))
+    }
+  }
+}
+
+@Composable
+private fun AttentionSparks(phase: Float, modifier: Modifier = Modifier) {
+  Canvas(modifier = modifier) {
+    val sparks =
+      listOf(
+        Spark(0.22f, 0.66f, BuddyGold, 0.0f),
+        Spark(0.38f, 0.36f, BuddyRed.copy(alpha = 0.75f), 0.35f),
+        Spark(0.61f, 0.30f, BuddyGold, 0.62f),
+        Spark(0.78f, 0.64f, BuddyPurple.copy(alpha = 0.70f), 0.20f),
+      )
+    sparks.forEach { spark ->
+      val wave = sin(((phase + spark.offset) * 2f * PI).toFloat())
+      val twinkle = (0.58f + 0.32f * wave).coerceIn(0.35f, 0.95f)
+      val center = Offset(size.width * spark.x, size.height * spark.y - wave * 2.2f)
+      val radius = 2.6f + twinkle * 2f
+      val color = spark.color.copy(alpha = twinkle)
+      drawLine(
+        color = color,
+        start = Offset(center.x - radius, center.y),
+        end = Offset(center.x + radius, center.y),
+        strokeWidth = 2.2f,
+      )
+      drawLine(
+        color = color,
+        start = Offset(center.x, center.y - radius),
+        end = Offset(center.x, center.y + radius),
+        strokeWidth = 2.2f,
+      )
+      drawCircle(
+        spark.color.copy(alpha = 0.35f * twinkle),
+        radius = radius * 0.52f,
+        center = center,
+      )
+    }
+  }
+}
+
+private data class Spark(val x: Float, val y: Float, val color: Color, val offset: Float)
 
 @Composable
 private fun BoxScope.TransientRecordingText(
