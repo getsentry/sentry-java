@@ -958,7 +958,7 @@ private fun AttentionCard(
     ) {
       EmptyAttentionArt(
         index = emptyArtIndex,
-        modifier = Modifier.fillMaxWidth().height(132.dp),
+        modifier = Modifier.fillMaxWidth().height(BuddyAttentionCardHeight),
       )
     }
     return
@@ -976,7 +976,7 @@ private fun AttentionCard(
   ) {
     BoxWithConstraints(
       modifier =
-        Modifier.fillMaxWidth().heightIn(min = 184.dp).pointerInput(item.id) {
+        Modifier.fillMaxWidth().height(BuddyAttentionCardHeight).pointerInput(item.id) {
           detectDragGestures(
             onDragEnd = {
               val dismissDistance = size.width.toFloat()
@@ -1733,6 +1733,7 @@ private val BuddyBubbleInitialTop = 96.dp
 private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
+private val BuddyAttentionCardHeight = 184.dp
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 10
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
