@@ -125,6 +125,26 @@ Rationale:
 
 Open questions about the final breadcrumb scope are tracked in `OUTSTANDING_ISSUES.md`.
 
+## Capture Accepted Error Events
+
+Buddy records accepted Sentry error events during an active recording.
+
+Decision:
+
+- Wrap `beforeSend` during Buddy install and restore the previous callback on uninstall/reset.
+- Call the app's original callback first.
+- Record only the returned event; if the app callback drops it, Buddy does not keep a private copy.
+- Capture events with exceptions, `ERROR` level, or `FATAL` level.
+- Store accepted events as `BuddyTimelineItem.Type.EVENT` with compact metadata rather than serializing
+  the full event payload.
+
+Rationale:
+
+- Errors during a recorded flow are high-value context for Seer and for the local flow summary.
+- Recording after `beforeSend` respects app filtering and redaction.
+- Keeping the payload compact avoids sending stack frames, request bodies, or full event context through
+  Buddy before we decide the final privacy boundary.
+
 ## Ktor Flow Analysis Protocol Shape
 
 Buddy's local protocol model mirrors the prototype Ktor flow-analysis API.

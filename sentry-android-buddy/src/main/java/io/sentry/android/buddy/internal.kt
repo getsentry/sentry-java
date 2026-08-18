@@ -17,6 +17,8 @@ import io.sentry.Hint
 import io.sentry.ITransaction
 import io.sentry.SamplingContext
 import io.sentry.Sentry
+import io.sentry.SentryEvent
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
@@ -109,6 +111,12 @@ internal class BuddyRecorder(
   }
 
   @Synchronized
+  fun recordEvent(event: BuddyObservedEvent) {
+    val recording = activeRecording ?: return
+    recording.timeline += event.toTimelineItem(recording)
+  }
+
+  @Synchronized
   fun stop(): BuddyFlowRecording {
     val recording = requireActiveRecording()
     val stoppedAt = clock.now()
@@ -198,6 +206,15 @@ internal class BuddyRecorder(
       data = data,
     )
 
+  private fun BuddyObservedEvent.toTimelineItem(recording: ActiveRecording): BuddyTimelineItem =
+    BuddyTimelineItem(
+      type = BuddyTimelineItem.Type.EVENT,
+      timestamp = timestamp,
+      elapsedMs = timestamp.time - recording.startedAt.time,
+      name = title,
+      data = data,
+    )
+
   private fun timelineItem(
     type: BuddyTimelineItem.Type,
     name: String,
@@ -248,7 +265,8 @@ internal class BuddyRecorder(
           BuddyTimelineItem.Type.STEP -> 2
           BuddyTimelineItem.Type.SPAN -> 3
           BuddyTimelineItem.Type.BREADCRUMB -> 4
-          BuddyTimelineItem.Type.RECORDING_STOPPED -> 5
+          BuddyTimelineItem.Type.EVENT -> 5
+          BuddyTimelineItem.Type.RECORDING_STOPPED -> 6
         }
 
     private fun buddyTags(recordingId: String, flowSlug: String): Map<String, String> {
@@ -518,6 +536,12 @@ internal data class BuddyObservedBreadcrumb(
   val data: Map<String, Any?>,
 )
 
+internal data class BuddyObservedEvent(
+  val timestamp: Date,
+  val title: String?,
+  val data: Map<String, Any?>,
+)
+
 internal class RealBuddySentryFacade : BuddySentryFacade {
   override val dsn: String?
     get() = Sentry.getCurrentScopes().options.dsn
@@ -553,6 +577,19 @@ internal class RealBuddySentryFacade : BuddySentryFacade {
   }
 
   companion object {
+    fun eventObserver(
+      recorder: BuddyRecorder,
+      original: SentryOptions.BeforeSendCallback?,
+    ): SentryOptions.BeforeSendCallback = SentryOptions.BeforeSendCallback { event, hint ->
+      val processed = original?.execute(event, hint) ?: event.takeIf { original == null }
+      processed
+        ?.takeIf { it.isUsefulForBuddy() }
+        ?.let {
+          recorder.recordEvent(it.toBuddyObservedEvent())
+        }
+      processed
+    }
+
     fun breadcrumbObserver(
       recorder: BuddyRecorder,
       original: SentryOptions.BeforeBreadcrumbCallback?,
@@ -591,6 +628,47 @@ internal class RealBuddySentryFacade : BuddySentryFacade {
         }
       }
   }
+}
+
+private fun SentryEvent.isUsefulForBuddy(): Boolean =
+  isErrored || level == SentryLevel.ERROR || level == SentryLevel.FATAL
+
+private fun SentryEvent.toBuddyObservedEvent(): BuddyObservedEvent {
+  val primaryException = exceptions?.lastOrNull()
+  val throwable = throwable
+  val title =
+    primaryException?.type
+      ?: throwable?.javaClass?.name
+      ?: message?.formatted
+      ?: message?.message
+      ?: transaction
+      ?: eventId?.toString()
+
+  return BuddyObservedEvent(
+    timestamp = timestamp,
+    title = title,
+    data =
+      linkedMapOf<String, Any?>(
+          "event_id" to eventId?.toString(),
+          "level" to level?.name,
+          "transaction" to transaction,
+          "message" to (message?.formatted ?: message?.message),
+          "logger" to logger,
+          "is_crashed" to isCrashed,
+          "is_errored" to isErrored,
+          "exception_count" to exceptions?.size,
+          "exception_type" to primaryException?.type,
+          "exception_value" to primaryException?.value,
+          "throwable_type" to throwable?.javaClass?.name,
+          "throwable_message" to throwable?.message,
+          "trace_id" to contexts.trace?.traceId?.toString(),
+          "span_id" to contexts.trace?.spanId?.toString(),
+          "breadcrumb_count" to breadcrumbs?.size,
+        )
+        .apply {
+          tags?.takeIf { it.isNotEmpty() }?.let { put("tags", it) }
+        },
+  )
 }
 
 private fun Breadcrumb.isUsefulForBuddy(): Boolean {

@@ -137,6 +137,39 @@ Open decision:
 The answer affects the amount of context sent to the flow-analysis service and the privacy/noise tradeoff
 of debug recordings. Keep the current filter conservative until we decide otherwise.
 
+## SDK-Generated Data Sources
+
+Buddy should prefer SDK-generated data before adding Buddy-specific instrumentation. Current status:
+
+Wired:
+
+- Buddy root transaction and child spans that naturally attach to it.
+- Matching transaction child spans observed through `beforeSendTransaction` while recording is active.
+- Conservative UI/navigation/HTTP/user breadcrumbs observed through `beforeBreadcrumb`.
+- Accepted error events observed through `beforeSend` when they have exceptions, `ERROR`, or `FATAL`
+  level.
+
+Not yet wired:
+
+- Non-error message events that pass through `beforeSend`.
+- SDK logs / `beforeSendLog`.
+- Metrics / `beforeSendMetric`.
+- Replay IDs, replay segment events, or replay trace correlation beyond the trace IDs already registered
+  by the SDK.
+- Full event payloads, stack frames, request bodies, screenshots, view hierarchy attachments, or thread
+  dumps.
+- Feature flag snapshots outside the data already attached to spans/events.
+
+Open decision:
+
+- Should Buddy capture all accepted events during a debug recording, or only error-like events?
+- Should logs and metrics be included by default, behind a Buddy option, or omitted until Seer needs
+  them?
+- Should event payloads stay compact, or should Buddy include richer stack/context data for local-only
+  recordings?
+- Should screenshots/view hierarchy be captured at stop time, or only when an error event already
+  includes them?
+
 ## Options We Considered
 
 ### 1. Low-Infra Current Transaction Model

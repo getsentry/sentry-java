@@ -12,6 +12,8 @@ public object SentryBuddy {
   private var recorder: BuddyRecorder? = null
   private var lifecycleCallbacks: BuddyActivityLifecycleCallbacks? = null
   private var installedApplication: Application? = null
+  private var previousBeforeSend: SentryOptions.BeforeSendCallback? = null
+  private var buddyBeforeSend: SentryOptions.BeforeSendCallback? = null
   private var previousBeforeSendTransaction: SentryOptions.BeforeSendTransactionCallback? = null
   private var buddyBeforeSendTransaction: SentryOptions.BeforeSendTransactionCallback? = null
   private var previousBeforeBreadcrumb: SentryOptions.BeforeBreadcrumbCallback? = null
@@ -51,6 +53,7 @@ public object SentryBuddy {
         )
       val callbacks = BuddyActivityLifecycleCallbacks(newRecorder, overlayManager(options))
       application.registerActivityLifecycleCallbacks(callbacks)
+      installEventObserver(newRecorder)
       installBreadcrumbObserver(newRecorder)
       installTransactionObserver(newRecorder)
       installTracesSampler(newRecorder)
@@ -93,6 +96,7 @@ public object SentryBuddy {
     restoreTracesSampler()
     restoreTransactionObserver()
     restoreBreadcrumbObserver()
+    restoreEventObserver()
     lifecycleCallbacks?.let { callbacks ->
       callbacks.detachAll()
       installedApplication?.unregisterActivityLifecycleCallbacks(callbacks)
@@ -109,6 +113,15 @@ public object SentryBuddy {
     previousBeforeSendTransaction = original
     buddyBeforeSendTransaction = observer
     sentryOptions.beforeSendTransaction = observer
+  }
+
+  private fun installEventObserver(recorder: BuddyRecorder) {
+    val sentryOptions = Sentry.getCurrentScopes().options
+    val original = sentryOptions.beforeSend
+    val observer = RealBuddySentryFacade.eventObserver(recorder, original)
+    previousBeforeSend = original
+    buddyBeforeSend = observer
+    sentryOptions.beforeSend = observer
   }
 
   private fun installBreadcrumbObserver(recorder: BuddyRecorder) {
@@ -137,6 +150,16 @@ public object SentryBuddy {
     }
     previousBeforeSendTransaction = null
     buddyBeforeSendTransaction = null
+  }
+
+  private fun restoreEventObserver() {
+    val observer = buddyBeforeSend ?: return
+    val sentryOptions = Sentry.getCurrentScopes().options
+    if (sentryOptions.beforeSend === observer) {
+      sentryOptions.beforeSend = previousBeforeSend
+    }
+    previousBeforeSend = null
+    buddyBeforeSend = null
   }
 
   private fun restoreBreadcrumbObserver() {

@@ -5,9 +5,12 @@ import io.sentry.Breadcrumb
 import io.sentry.CustomSamplingContext
 import io.sentry.Hint
 import io.sentry.SamplingContext
+import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.TransactionContext
+import io.sentry.protocol.Message
+import io.sentry.protocol.SentryException
 import java.util.Date
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -191,6 +194,57 @@ class BuddyRecorderTest {
     val recording = fixture.recorder.stop()
 
     assertThat(recording.summary.breadcrumbCount).isEqualTo(0)
+  }
+
+  @Test
+  fun `event observer records accepted error events`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+    val observer = RealBuddySentryFacade.eventObserver(fixture.recorder, null)
+    val event =
+      SentryEvent(Date(500)).apply {
+        level = SentryLevel.ERROR
+        transaction = "CheckoutActivity"
+        message = Message().apply { formatted = "Checkout failed" }
+        exceptions = listOf(SentryException().apply { type = "IllegalStateException" })
+      }
+
+    assertThat(observer.execute(event, Hint())).isSameInstanceAs(event)
+    val recording = fixture.recorder.stop()
+
+    val timelineEvent = recording.timeline.first { it.type == BuddyTimelineItem.Type.EVENT }
+    assertThat(timelineEvent.name).isEqualTo("IllegalStateException")
+    assertThat(timelineEvent.data).containsEntry("level", "ERROR")
+    assertThat(timelineEvent.data).containsEntry("transaction", "CheckoutActivity")
+    assertThat(timelineEvent.data).containsEntry("message", "Checkout failed")
+    assertThat(timelineEvent.data).containsEntry("exception_type", "IllegalStateException")
+  }
+
+  @Test
+  fun `event observer ignores non-error events`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+    val observer = RealBuddySentryFacade.eventObserver(fixture.recorder, null)
+    val event = SentryEvent(Date(500)).apply { level = SentryLevel.INFO }
+
+    observer.execute(event, Hint())
+    val recording = fixture.recorder.stop()
+
+    assertThat(recording.timeline.map { it.type }).doesNotContain(BuddyTimelineItem.Type.EVENT)
+  }
+
+  @Test
+  fun `event observer respects original callback drops`() {
+    val fixture = Fixture()
+    fixture.recorder.start(BuddyFlowIntent("Checkout"))
+    val original = SentryOptions.BeforeSendCallback { _, _ -> null }
+    val observer = RealBuddySentryFacade.eventObserver(fixture.recorder, original)
+    val event = SentryEvent(Date(500)).apply { level = SentryLevel.ERROR }
+
+    assertThat(observer.execute(event, Hint())).isNull()
+    val recording = fixture.recorder.stop()
+
+    assertThat(recording.timeline.map { it.type }).doesNotContain(BuddyTimelineItem.Type.EVENT)
   }
 
   @Test

@@ -283,6 +283,7 @@ public final class io/sentry/android/buddy/BuddyTimelineItem : io/sentry/JsonSer
 
 public final class io/sentry/android/buddy/BuddyTimelineItem$Type : java/lang/Enum {
 	public static final field BREADCRUMB Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public static final field EVENT Lio/sentry/android/buddy/BuddyTimelineItem$Type;
 	public static final field RECORDING_STARTED Lio/sentry/android/buddy/BuddyTimelineItem$Type;
 	public static final field RECORDING_STOPPED Lio/sentry/android/buddy/BuddyTimelineItem$Type;
 	public static final field SCREEN Lio/sentry/android/buddy/BuddyTimelineItem$Type;

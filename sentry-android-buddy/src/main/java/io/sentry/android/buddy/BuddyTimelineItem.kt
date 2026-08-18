@@ -35,6 +35,7 @@ public constructor(
     STEP("step"),
     SPAN("span"),
     BREADCRUMB("breadcrumb"),
+    EVENT("event"),
     RECORDING_STOPPED("recording_stopped"),
   }
 }
