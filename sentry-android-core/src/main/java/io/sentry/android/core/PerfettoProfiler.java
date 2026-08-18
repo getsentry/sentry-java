@@ -2,6 +2,8 @@ package io.sentry.android.core;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
@@ -41,9 +43,13 @@ public class PerfettoProfiler {
 
   private static final long RESULT_TIMEOUT_MS = 5000;
 
+  private static final String PROFILING_PACKAGE_NAME = "com.google.android.profiling";
+  private static final long EMPTY_TRACE_PROFILING_PACKAGE_VERSION = 370546200L;
+
   private final @NotNull ILogger logger;
   private final @NotNull ISentryExecutorService executorService;
   private final @Nullable ProfilingManager profilingManager;
+  private final long profilingPackageVersion;
   private final @NotNull CancellationSignal cancellationSignal = new CancellationSignal();
 
   private final @NotNull Object profilingResultLock = new Object();
@@ -60,16 +66,26 @@ public class PerfettoProfiler {
     this(
         logger,
         executorService,
-        (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE));
+        (ProfilingManager) context.getSystemService(Context.PROFILING_SERVICE),
+        getProfilingPackageVersion(context, logger));
   }
 
   PerfettoProfiler(
       final @NotNull ILogger logger,
       final @NotNull ISentryExecutorService executorService,
       final @Nullable ProfilingManager profilingManager) {
+    this(logger, executorService, profilingManager, 0L);
+  }
+
+  PerfettoProfiler(
+      final @NotNull ILogger logger,
+      final @NotNull ISentryExecutorService executorService,
+      final @Nullable ProfilingManager profilingManager,
+      final long profilingPackageVersion) {
     this.logger = logger;
     this.executorService = executorService;
     this.profilingManager = profilingManager;
+    this.profilingPackageVersion = profilingPackageVersion;
   }
 
   public boolean start(final long durationMs) {
@@ -81,6 +97,13 @@ public class PerfettoProfiler {
 
     if (profilingManager == null) {
       logger.log(SentryLevel.WARNING, "ProfilingManager is not available.");
+      return false;
+    }
+
+    if (profilingPackageVersion == EMPTY_TRACE_PROFILING_PACKAGE_VERSION) {
+      logger.log(
+          SentryLevel.WARNING,
+          "Profiling is not supported by the installed Android profiling package version.");
       return false;
     }
 
@@ -214,6 +237,20 @@ public class PerfettoProfiler {
     }
 
     return traceFile;
+  }
+
+  private static long getProfilingPackageVersion(
+      final @NotNull Context context, final @NotNull ILogger logger) {
+    try {
+      final @NotNull PackageInfo packageInfo =
+          context
+              .getPackageManager()
+              .getPackageInfo(PROFILING_PACKAGE_NAME, PackageManager.MATCH_APEX);
+      return packageInfo.getLongVersionCode();
+    } catch (PackageManager.NameNotFoundException | RuntimeException e) {
+      logger.log(SentryLevel.DEBUG, "Failed to resolve Android profiling package version.", e);
+      return 0L;
+    }
   }
 
   private static @NotNull String errorCodeToString(final int errorCode) {
