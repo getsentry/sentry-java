@@ -14,11 +14,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
 import io.sentry.ITransaction
 import io.sentry.Sentry
+import io.sentry.SentryOptions
 import io.sentry.TransactionOptions
+import io.sentry.protocol.SentrySpan
+import io.sentry.protocol.SentryTransaction
 import java.lang.ref.WeakReference
 import java.util.Date
 import java.util.UUID
 import java.util.WeakHashMap
+import java.util.concurrent.TimeUnit
 
 internal class BuddyRecorder(
   private val metadataProvider: BuddyMetadataProvider,
@@ -77,10 +81,25 @@ internal class BuddyRecorder(
   }
 
   @Synchronized
+  fun makeCurrent() {
+    activeRecording?.transaction?.makeCurrent()
+  }
+
+  @Synchronized
+  fun recordTransaction(transaction: BuddyObservedTransaction) {
+    val recording = activeRecording ?: return
+    if (transaction.recordingId != recording.id || transaction.operation == ROOT_TRANSACTION_OP) {
+      return
+    }
+    recording.addSpanTimelineItems(transaction.spans)
+  }
+
+  @Synchronized
   fun stop(): BuddyFlowRecording {
     val recording = requireActiveRecording()
     val stoppedAt = clock.now()
     val durationMs = elapsedSince(recording)
+    recording.addSpanTimelineItems(recording.transaction.observedSpans())
     recording.timeline +=
       BuddyTimelineItem(
         type = BuddyTimelineItem.Type.RECORDING_STOPPED,
@@ -101,7 +120,7 @@ internal class BuddyRecorder(
     stoppedAt: Date,
     durationMs: Long,
   ): BuddyFlowRecording {
-    val timeline = recording.timeline.toList()
+    val timeline = recording.timeline.sortedWith(compareBy({ it.timestamp }, { it.type.order }))
     return BuddyFlowRecording(
       flow = recording.intent,
       recording =
@@ -131,11 +150,28 @@ internal class BuddyRecorder(
     return BuddyRecordingSummary(
       durationMs = durationMs,
       screenCount = timeline.count { it.type == BuddyTimelineItem.Type.SCREEN },
-      spanCount = activeRecording?.transaction?.spanCount ?: 0,
+      spanCount = timeline.count { it.type == BuddyTimelineItem.Type.SPAN },
       breadcrumbCount = timeline.count { it.type == BuddyTimelineItem.Type.BREADCRUMB },
       timelineItemCount = timeline.size,
     )
   }
+
+  private fun ActiveRecording.addSpanTimelineItems(spans: List<BuddyObservedSpan>) {
+    spans.forEach { span ->
+      if (observedSpanIds.add(span.id)) {
+        timeline += span.toTimelineItem(this)
+      }
+    }
+  }
+
+  private fun BuddyObservedSpan.toTimelineItem(recording: ActiveRecording): BuddyTimelineItem =
+    BuddyTimelineItem(
+      type = BuddyTimelineItem.Type.SPAN,
+      timestamp = timestamp,
+      elapsedMs = timestamp.time - recording.startedAt.time,
+      name = description ?: operation,
+      data = data,
+    )
 
   private fun timelineItem(
     type: BuddyTimelineItem.Type,
@@ -168,6 +204,7 @@ internal class BuddyRecorder(
     val tags: Map<String, String>,
     val transaction: BuddySentryTransaction,
     val timeline: MutableList<BuddyTimelineItem>,
+    val observedSpanIds: MutableSet<String> = mutableSetOf(),
   )
 
   private companion object {
@@ -177,6 +214,17 @@ internal class BuddyRecorder(
     private const val TAG_SOURCE = "sentry.buddy.source"
     private const val TAG_USE_CASE = "sentry.buddy.use_case"
     private val BUDDY_TAG_KEYS = listOf(TAG_RECORDING_ID, TAG_FLOW_SLUG, TAG_SOURCE, TAG_USE_CASE)
+
+    private val BuddyTimelineItem.Type.order: Int
+      get() =
+        when (this) {
+          BuddyTimelineItem.Type.RECORDING_STARTED -> 0
+          BuddyTimelineItem.Type.SCREEN -> 1
+          BuddyTimelineItem.Type.STEP -> 2
+          BuddyTimelineItem.Type.SPAN -> 3
+          BuddyTimelineItem.Type.BREADCRUMB -> 4
+          BuddyTimelineItem.Type.RECORDING_STOPPED -> 5
+        }
 
     private fun buddyTags(recordingId: String, flowSlug: String): Map<String, String> {
       return linkedMapOf(
@@ -202,6 +250,7 @@ internal class BuddyActivityLifecycleCallbacks(
   override fun onActivityResumed(activity: Activity) {
     currentActivity = WeakReference(activity)
     overlayManager?.attach(activity)
+    recorder.makeCurrent()
     val screenName = activity.javaClass.simpleName
     recorder.recordScreen(screenName)
     overlayManager?.recordingEvent("Screen: $screenName")
@@ -415,8 +464,27 @@ internal interface BuddySentryTransaction {
 
   val spanCount: Int
 
+  fun makeCurrent()
+
+  fun observedSpans(): List<BuddyObservedSpan>
+
   fun finish()
 }
+
+internal data class BuddyObservedTransaction(
+  val recordingId: String?,
+  val operation: String?,
+  val transactionName: String?,
+  val spans: List<BuddyObservedSpan>,
+)
+
+internal data class BuddyObservedSpan(
+  val id: String,
+  val timestamp: Date,
+  val operation: String,
+  val description: String?,
+  val data: Map<String, Any?>,
+)
 
 internal class RealBuddySentryFacade : BuddySentryFacade {
   override val dsn: String?
@@ -442,10 +510,23 @@ internal class RealBuddySentryFacade : BuddySentryFacade {
     tags: Map<String, String>,
   ): BuddySentryTransaction {
     val options = TransactionOptions()
-    options.setBindToScope(false)
+    options.setBindToScope(true)
     val transaction = Sentry.startTransaction(name, operation, options)
     tags.forEach { (key, value) -> transaction.setTag(key, value) }
     return RealBuddySentryTransaction(transaction)
+  }
+
+  companion object {
+    fun transactionObserver(
+      recorder: BuddyRecorder,
+      original: SentryOptions.BeforeSendTransactionCallback?,
+    ): SentryOptions.BeforeSendTransactionCallback =
+      SentryOptions.BeforeSendTransactionCallback { transaction, hint ->
+        val processed =
+          original?.execute(transaction, hint) ?: transaction.takeIf { original == null }
+        processed?.let { recorder.recordTransaction(it.toBuddyObservedTransaction()) }
+        processed
+      }
   }
 }
 
@@ -460,7 +541,102 @@ internal class RealBuddySentryTransaction(private val transaction: ITransaction)
   override val spanCount: Int
     get() = transaction.spans.size
 
+  override fun makeCurrent() {
+    transaction.makeCurrent()
+  }
+
+  override fun observedSpans(): List<BuddyObservedSpan> =
+    transaction.spans.map { span ->
+      BuddyObservedSpan(
+        id = span.spanId.toString(),
+        timestamp = Date(TimeUnit.NANOSECONDS.toMillis(span.startDate.nanoTimestamp())),
+        operation = span.operation,
+        description = span.description,
+        data =
+          spanData(
+            operation = span.operation,
+            description = span.description,
+            status = span.status?.name,
+            origin = span.spanContext.origin,
+            traceId = span.traceId.toString(),
+            spanId = span.spanId.toString(),
+            parentSpanId = span.parentSpanId?.toString(),
+            durationMs = span.finishDate?.let { span.startDate.diff(it) / -1_000_000 },
+            transactionName = null,
+            extraData = span.data,
+            tags = span.tags,
+          ),
+      )
+    }
+
   override fun finish() {
     transaction.finish()
   }
 }
+
+private fun SentryTransaction.toBuddyObservedTransaction(): BuddyObservedTransaction {
+  val trace = contexts.trace
+  return BuddyObservedTransaction(
+    recordingId = tags?.get("sentry.buddy.recording_id"),
+    operation = trace?.operation,
+    transactionName = transaction,
+    spans = spans.map { it.toBuddyObservedSpan(transaction) },
+  )
+}
+
+private fun SentrySpan.toBuddyObservedSpan(transactionName: String?): BuddyObservedSpan {
+  val durationMs = timestamp?.let { ((it - startTimestamp) * 1000).toLong() }
+  return BuddyObservedSpan(
+    id = spanId.toString(),
+    timestamp = Date((startTimestamp * 1000).toLong()),
+    operation = op,
+    description = description,
+    data =
+      spanData(
+        operation = op,
+        description = description,
+        status = status?.name,
+        origin = origin,
+        traceId = traceId.toString(),
+        spanId = spanId.toString(),
+        parentSpanId = parentSpanId?.toString(),
+        durationMs = durationMs,
+        transactionName = transactionName,
+        extraData = data,
+        tags = tags,
+      ),
+  )
+}
+
+private fun spanData(
+  operation: String,
+  description: String?,
+  status: String?,
+  origin: String?,
+  traceId: String,
+  spanId: String,
+  parentSpanId: String?,
+  durationMs: Long?,
+  transactionName: String?,
+  extraData: Map<String, Any?>?,
+  tags: Map<String, String>,
+): Map<String, Any?> =
+  linkedMapOf<String, Any?>(
+      "op" to operation,
+      "description" to description,
+      "status" to status,
+      "origin" to origin,
+      "trace_id" to traceId,
+      "span_id" to spanId,
+      "parent_span_id" to parentSpanId,
+      "duration_ms" to durationMs,
+      "transaction" to transactionName,
+    )
+    .apply {
+      if (!extraData.isNullOrEmpty()) {
+        put("data", extraData)
+      }
+      if (tags.isNotEmpty()) {
+        put("tags", tags)
+      }
+    }

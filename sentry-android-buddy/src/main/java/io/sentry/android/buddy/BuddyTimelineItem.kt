@@ -33,6 +33,7 @@ public constructor(
     RECORDING_STARTED("recording_started"),
     SCREEN("screen"),
     STEP("step"),
+    SPAN("span"),
     BREADCRUMB("breadcrumb"),
     RECORDING_STOPPED("recording_stopped"),
   }

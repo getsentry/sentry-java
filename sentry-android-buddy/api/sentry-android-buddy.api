@@ -286,6 +286,7 @@ public final class io/sentry/android/buddy/BuddyTimelineItem$Type : java/lang/En
 	public static final field RECORDING_STARTED Lio/sentry/android/buddy/BuddyTimelineItem$Type;
 	public static final field RECORDING_STOPPED Lio/sentry/android/buddy/BuddyTimelineItem$Type;
 	public static final field SCREEN Lio/sentry/android/buddy/BuddyTimelineItem$Type;
+	public static final field SPAN Lio/sentry/android/buddy/BuddyTimelineItem$Type;
 	public static final field STEP Lio/sentry/android/buddy/BuddyTimelineItem$Type;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getValue ()Ljava/lang/String;

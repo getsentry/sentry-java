@@ -1,6 +1,8 @@
 package io.sentry.android.buddy
 
 import android.app.Application
+import io.sentry.Sentry
+import io.sentry.SentryOptions
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.annotations.TestOnly
 
@@ -10,6 +12,8 @@ public object SentryBuddy {
   private var recorder: BuddyRecorder? = null
   private var lifecycleCallbacks: BuddyActivityLifecycleCallbacks? = null
   private var installedApplication: Application? = null
+  private var previousBeforeSendTransaction: SentryOptions.BeforeSendTransactionCallback? = null
+  private var buddyBeforeSendTransaction: SentryOptions.BeforeSendTransactionCallback? = null
 
   @JvmStatic
   public fun install(application: Application) {
@@ -43,6 +47,7 @@ public object SentryBuddy {
         )
       val callbacks = BuddyActivityLifecycleCallbacks(newRecorder, overlayManager(options))
       application.registerActivityLifecycleCallbacks(callbacks)
+      installTransactionObserver(newRecorder)
 
       recorder = newRecorder
       lifecycleCallbacks = callbacks
@@ -79,6 +84,7 @@ public object SentryBuddy {
   }
 
   private fun uninstallLocked() {
+    restoreTransactionObserver()
     lifecycleCallbacks?.let { callbacks ->
       callbacks.detachAll()
       installedApplication?.unregisterActivityLifecycleCallbacks(callbacks)
@@ -86,6 +92,25 @@ public object SentryBuddy {
     recorder = null
     lifecycleCallbacks = null
     installedApplication = null
+  }
+
+  private fun installTransactionObserver(recorder: BuddyRecorder) {
+    val sentryOptions = Sentry.getCurrentScopes().options
+    val original = sentryOptions.beforeSendTransaction
+    val observer = RealBuddySentryFacade.transactionObserver(recorder, original)
+    previousBeforeSendTransaction = original
+    buddyBeforeSendTransaction = observer
+    sentryOptions.beforeSendTransaction = observer
+  }
+
+  private fun restoreTransactionObserver() {
+    val observer = buddyBeforeSendTransaction ?: return
+    val sentryOptions = Sentry.getCurrentScopes().options
+    if (sentryOptions.beforeSendTransaction === observer) {
+      sentryOptions.beforeSendTransaction = previousBeforeSendTransaction
+    }
+    previousBeforeSendTransaction = null
+    buddyBeforeSendTransaction = null
   }
 
   private fun overlayManager(options: SentryBuddyOptions): BuddyOverlayManager? {
