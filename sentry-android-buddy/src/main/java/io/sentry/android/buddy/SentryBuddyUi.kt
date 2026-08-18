@@ -12,11 +12,11 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -843,9 +843,9 @@ private fun ScreenScanElectricityOverlay(screenScanState: BuddyScreenScanState) 
       Modifier.fillMaxSize().graphicsLayer { alpha = 1f - (phase * 0.18f).coerceIn(0f, 0.18f) }
   ) {
     scanningState.result.bounds.forEachIndexed { index, bounds ->
-      val pulse = (phase + index * 0.17f) % 1f
-      val glowAlpha = (0.22f + pulse * 0.30f).coerceIn(0.22f, 0.52f)
-      val inset = 1f + pulse * 3f
+      val pulse = (phase + index.toFloat() * 0.17f) % 1f
+      val glowAlpha = (0.45f + pulse * 0.35f).coerceIn(0.45f, 0.80f)
+      val inset = 2f + pulse * 4f
       val topLeft = Offset(bounds.left + inset, bounds.top + inset)
       val size =
         Size(
@@ -858,17 +858,17 @@ private fun ScreenScanElectricityOverlay(screenScanState: BuddyScreenScanState) 
         topLeft = topLeft,
         size = size,
         cornerRadius = cornerRadius,
-        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 8f),
+        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 14f),
       )
       drawRoundRect(
-        color = BuddyScanElectricCore.copy(alpha = 0.72f),
+        color = BuddyScanElectricCore.copy(alpha = 0.96f),
         topLeft = topLeft,
         size = size,
         cornerRadius = cornerRadius,
         style =
           androidx.compose.ui.graphics.drawscope.Stroke(
-            width = 2.5f,
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 10f), phase * 56f),
+            width = 4f,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(22f, 9f), phase * 72f),
           ),
       )
     }
@@ -1342,31 +1342,7 @@ private fun LiveFeedInset(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
-  val tint = if (enabled) BuddySentryPink.copy(alpha = 0.68f) else BuddyMuted
   val shape = RoundedCornerShape(12.dp)
-  val shimmerTransition = rememberInfiniteTransition(label = "health-check-shimmer")
-  val shimmerOffset by
-    shimmerTransition.animateFloat(
-      initialValue = -40f,
-      targetValue = 80f,
-      animationSpec =
-        infiniteRepeatable(
-          animation = tween(durationMillis = 2200),
-          repeatMode = RepeatMode.Restart,
-        ),
-      label = "health-check-shimmer-offset",
-    )
-  val shimmerBrush =
-    Brush.linearGradient(
-      colors =
-        listOf(
-          BuddySentryPink.copy(alpha = 0.06f),
-          BuddySentryPink.copy(alpha = if (enabled) 0.20f else 0.10f),
-          BuddySentryPink.copy(alpha = 0.06f),
-        ),
-      start = Offset(shimmerOffset - 40f, 0f),
-      end = Offset(shimmerOffset + 40f, 40f),
-    )
   Surface(
     modifier =
       Modifier.size(40.dp)
@@ -1376,11 +1352,14 @@ private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
     color = Color.Transparent,
     shape = shape,
   ) {
-    Box(
-      modifier = Modifier.fillMaxSize().background(shimmerBrush, shape),
-      contentAlignment = Alignment.Center,
-    ) {
-      HealthCheckIcon(tint = tint, modifier = Modifier.width(38.dp).height(30.dp))
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      Image(
+        painter = painterResource(id = R.drawable.health_check_smiley),
+        contentDescription = null,
+        modifier = Modifier.size(28.dp),
+        alpha = if (enabled) 1f else 0.45f,
+        contentScale = ContentScale.Fit,
+      )
     }
   }
 }
@@ -1513,42 +1492,6 @@ private fun HealthCheckRecommendationCard(
         }
       }
     }
-  }
-}
-
-@Composable
-private fun HealthCheckIcon(tint: Color, modifier: Modifier = Modifier) {
-  Canvas(modifier = modifier) {
-    val borderWidth = size.minDimension * 0.08f
-    val borderCorner = size.minDimension * 0.18f
-    val kitWidth = size.width - borderWidth
-    val kitHeight = size.height - borderWidth
-    val kitLeft = borderWidth / 2f
-    val kitTop = (size.height - kitHeight) / 2f
-    drawRoundRect(
-      color = BuddyBorder,
-      topLeft = Offset(kitLeft, kitTop),
-      size = Size(kitWidth, kitHeight),
-      cornerRadius = androidx.compose.ui.geometry.CornerRadius(borderCorner),
-      style = androidx.compose.ui.graphics.drawscope.Stroke(width = borderWidth),
-    )
-
-    val arm = size.minDimension * 0.18f
-    val length = size.minDimension * 0.56f
-    val crossCorner = arm * 0.22f
-    val center = Offset(size.width / 2f, size.height / 2f)
-    drawRoundRect(
-      color = tint,
-      topLeft = Offset(center.x - arm / 2f, center.y - length / 2f),
-      size = Size(arm, length),
-      cornerRadius = androidx.compose.ui.geometry.CornerRadius(crossCorner),
-    )
-    drawRoundRect(
-      color = tint,
-      topLeft = Offset(center.x - length / 2f, center.y - arm / 2f),
-      size = Size(length, arm),
-      cornerRadius = androidx.compose.ui.geometry.CornerRadius(crossCorner),
-    )
   }
 }
 
@@ -3052,7 +2995,7 @@ private const val BUDDY_FAB_QUOTE_VISIBLE_MS = 3_000L
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 private const val EMPTY_ATTENTION_ART_VARIANTS = 9
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
-private const val SCREEN_SCAN_DURATION_MS = 1100L
+private const val SCREEN_SCAN_DURATION_MS = 1700L
 public const val ANALYSIS_TIMEOUT_MS: Long = 120_000L
 
 private val BuddyFabQuotes =
