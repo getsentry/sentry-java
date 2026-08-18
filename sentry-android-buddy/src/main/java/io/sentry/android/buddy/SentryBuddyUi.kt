@@ -81,6 +81,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -105,6 +106,7 @@ import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -670,6 +672,10 @@ private fun BoxScope.BuddyQuoteText(
       maxWidthPx - textWidthPx,
     )
   val y = bubbleOffset.y + bubbleSizePx + with(density) { 10.dp.toPx() }
+  val ambientIsDark = MaterialTheme.colorScheme.background.luminance() < 0.45f
+  val bubbleFill = if (ambientIsDark) Color.White else BuddyInk
+  val bubbleText = if (ambientIsDark) Color.Black else Color.White
+  val bubbleBorder = if (ambientIsDark) Color.Black else Color.White
 
   LaunchedEffect(Unit) {
     while (true) {
@@ -687,16 +693,45 @@ private fun BoxScope.BuddyQuoteText(
     exit = fadeOut(),
     modifier = Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) },
   ) {
-    Text(
-      text = BuddyFabQuotes[quoteIndex],
-      modifier = Modifier.width(BuddyFabQuoteTextWidth),
-      color = BuddyInk.copy(alpha = 0.82f),
-      style = MaterialTheme.typography.labelMedium,
-      fontWeight = FontWeight.Normal,
-      textAlign = TextAlign.Center,
-      maxLines = 3,
-      overflow = TextOverflow.Ellipsis,
-    )
+    Box(modifier = Modifier.width(BuddyFabQuoteTextWidth)) {
+      Surface(
+        modifier = Modifier.fillMaxWidth().padding(bottom = BuddyFabQuoteTailHeight),
+        color = bubbleFill,
+        shape = RoundedCornerShape(18.dp),
+        border = androidx.compose.foundation.BorderStroke(2.dp, bubbleBorder),
+        shadowElevation = 8.dp,
+      ) {
+        Text(
+          text = BuddyFabQuotes[quoteIndex],
+          modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+          color = bubbleText,
+          style = MaterialTheme.typography.labelMedium,
+          fontWeight = FontWeight.Normal,
+          textAlign = TextAlign.Center,
+          maxLines = 4,
+          overflow = TextOverflow.Ellipsis,
+        )
+      }
+      Canvas(
+        modifier =
+          Modifier.size(BuddyFabQuoteTailWidth, BuddyFabQuoteTailHeight + 2.dp)
+            .align(Alignment.BottomCenter)
+      ) {
+        val strokeWidth = 2.dp.toPx()
+        val path = androidx.compose.ui.graphics.Path().apply {
+          moveTo(size.width * 0.5f, size.height)
+          lineTo(strokeWidth / 2f, strokeWidth / 2f)
+          lineTo(size.width - strokeWidth / 2f, strokeWidth / 2f)
+          close()
+        }
+        drawPath(path = path, color = bubbleFill)
+        drawPath(
+          path = path,
+          color = bubbleBorder,
+          style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth),
+        )
+      }
+    }
   }
 }
 
@@ -1386,14 +1421,30 @@ private fun AttentionCard(
               val shouldDismiss = abs(dismissOffset.value) > dismissDistance * 0.35f
               dismissScope.launch {
                 if (shouldDismiss) {
-                  dismissOffset.animateTo(-dismissDistance)
+                  coroutineScope {
+                    launch {
+                      dismissOffset.animateTo(
+                        -dismissDistance,
+                        animationSpec = tween(durationMillis = 280),
+                      )
+                    }
+                    launch {
+                      contentAlpha.animateTo(0f, animationSpec = tween(durationMillis = 440))
+                    }
+                  }
                   onDismiss()
                 } else {
+                  contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 180))
                   dismissOffset.animateTo(0f)
                 }
               }
             },
-            onDragCancel = { dismissScope.launch { dismissOffset.animateTo(0f) } },
+            onDragCancel = {
+              dismissScope.launch {
+                contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 180))
+                dismissOffset.animateTo(0f)
+              }
+            },
           ) { change, dragAmount ->
             change.consume()
             val dismissDistance = size.width.toFloat()
@@ -2788,6 +2839,8 @@ private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
 private val BuddyFabQuoteTextWidth = 230.dp
+private val BuddyFabQuoteTailWidth = 22.dp
+private val BuddyFabQuoteTailHeight = 14.dp
 private val BuddyAttentionCardHeight = 264.dp
 private val BuddyQuickDecisionStackHeight = 188.dp
 private val BuddySheetHorizontalPadding = 24.dp
