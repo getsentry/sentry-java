@@ -28,17 +28,23 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -91,7 +97,27 @@ private fun SentryTravelApp() {
   var confirmationId by remember { mutableStateOf<String?>(null) }
   var savedTrips by remember { mutableStateOf(emptyList<TravelTrip>()) }
   var demoStatus by remember { mutableStateOf("Ready. Use the presenter controls to trigger Buddy cards.") }
+  var isDemoControlsOpen by remember { mutableStateOf(false) }
   val scope = rememberCoroutineScope()
+  val demoControls =
+    TravelDemoControls(
+      isOpen = isDemoControlsOpen,
+      status = demoStatus,
+      onOpen = { isDemoControlsOpen = true },
+      onDismiss = { isDemoControlsOpen = false },
+      onHealthyScenario = {
+        scope.launch { demoStatus = telemetry.runHealthyDemoScenario() }
+      },
+      onSlowSpanScenario = {
+        scope.launch { demoStatus = telemetry.runSlowSpanDemoScenario() }
+      },
+      onFailedHttpScenario = {
+        scope.launch { demoStatus = telemetry.runFailedHttpDemoScenario() }
+      },
+      onErrorScenario = {
+        demoStatus = telemetry.simulateBookingFailure()
+      },
+    )
 
   MaterialTheme(
     colorScheme =
@@ -118,6 +144,7 @@ private fun SentryTravelApp() {
           composable(TravelRoute.Home.route) {
             TravelHomeScreen(
               savedTripCount = savedTrips.size,
+              demoControls = demoControls,
               onExplore = { navController.navigate(TravelRoute.Explore.route) },
               onTrips = {
                 scope.launch {
@@ -133,23 +160,11 @@ private fun SentryTravelApp() {
               onScorePicks = {
                 scope.launch { telemetry.scoreRecommendations() }
               },
-              demoStatus = demoStatus,
-              onHealthyScenario = {
-                scope.launch { demoStatus = telemetry.runHealthyDemoScenario() }
-              },
-              onSlowSpanScenario = {
-                scope.launch { demoStatus = telemetry.runSlowSpanDemoScenario() }
-              },
-              onFailedHttpScenario = {
-                scope.launch { demoStatus = telemetry.runFailedHttpDemoScenario() }
-              },
-              onErrorScenario = {
-                demoStatus = telemetry.simulateBookingFailure()
-              },
             )
           }
           composable(TravelRoute.Explore.route) {
             ExploreScreen(
+              demoControls = demoControls,
               destinations = travelDestinations,
               onBack = { navController.popBackStack() },
               onSearch = { query ->
@@ -164,6 +179,7 @@ private fun SentryTravelApp() {
           }
           composable(TravelRoute.Destination.route) {
             DestinationScreen(
+              demoControls = demoControls,
               destination = selectedDestination,
               onBack = { navController.popBackStack() },
               onAvailability = {
@@ -181,6 +197,7 @@ private fun SentryTravelApp() {
           }
           composable(TravelRoute.Stay.route) {
             StayScreen(
+              demoControls = demoControls,
               destination = selectedDestination,
               stay = selectedStay,
               onBack = { navController.popBackStack() },
@@ -194,6 +211,7 @@ private fun SentryTravelApp() {
           }
           composable(TravelRoute.Review.route) {
             ReviewScreen(
+              demoControls = demoControls,
               destination = selectedDestination,
               stay = selectedStay,
               onBack = { navController.popBackStack() },
@@ -209,6 +227,7 @@ private fun SentryTravelApp() {
           }
           composable(TravelRoute.Confirmation.route) {
             ConfirmationScreen(
+              demoControls = demoControls,
               destination = selectedDestination,
               confirmationId = confirmationId ?: "TRAVEL-LOCAL",
               onTrips = {
@@ -225,6 +244,7 @@ private fun SentryTravelApp() {
           composable(TravelRoute.MyTrips.route) {
             LaunchedEffect(Unit) { savedTrips = telemetry.loadTrips(context) }
             MyTripsScreen(
+              demoControls = demoControls,
               trips = savedTrips,
               onBack = { navController.popBackStack() },
               onTripSelected = { trip ->
@@ -240,6 +260,7 @@ private fun SentryTravelApp() {
           }
           composable(TravelRoute.TripDetail.route) {
             TripDetailScreen(
+              demoControls = demoControls,
               destination = selectedDestination,
               confirmationId = confirmationId ?: "TRAVEL-LOCAL",
               onBack = { navController.popBackStack() },
@@ -252,6 +273,7 @@ private fun SentryTravelApp() {
           ) { entry ->
             val day = entry.arguments?.getInt("day") ?: 1
             ItineraryDayScreen(
+              demoControls = demoControls,
               destination = selectedDestination,
               day = day,
               onBack = { navController.popBackStack() },
@@ -264,6 +286,7 @@ private fun SentryTravelApp() {
           ) { entry ->
             val activityId = entry.arguments?.getString("activityId") ?: "arrival"
             ActivityDetailScreen(
+              demoControls = demoControls,
               destination = selectedDestination,
               activityId = activityId,
               onBack = { navController.popBackStack() },
@@ -271,6 +294,7 @@ private fun SentryTravelApp() {
           }
           composable(TravelRoute.Profile.route) {
             ProfileScreen(
+              demoControls = demoControls,
               onBack = { navController.popBackStack() },
               onSave = { airport, style ->
                 scope.launch { telemetry.savePreferences(context, airport, style) }
@@ -279,6 +303,7 @@ private fun SentryTravelApp() {
           }
           composable(TravelRoute.Support.route) {
             SupportScreen(
+              demoControls = demoControls,
               onBack = { navController.popBackStack() },
               onContact = {
                 scope.launch { telemetry.contactSupport() }
@@ -296,6 +321,7 @@ private fun SentryTravelApp() {
 
 @Composable
 private fun TravelHomeScreen(
+  demoControls: TravelDemoControls,
   savedTripCount: Int,
   onExplore: () -> Unit,
   onTrips: () -> Unit,
@@ -303,14 +329,13 @@ private fun TravelHomeScreen(
   onSupport: () -> Unit,
   onRefreshDeals: () -> Unit,
   onScorePicks: () -> Unit,
-  demoStatus: String,
-  onHealthyScenario: () -> Unit,
-  onSlowSpanScenario: () -> Unit,
-  onFailedHttpScenario: () -> Unit,
-  onErrorScenario: () -> Unit,
 ) {
   SentryTraced("sentry_travel_home") {
-    TravelScaffold(title = "Sentry Travel", subtitle = "Plan your next traceable trip") {
+    TravelScaffold(
+      title = "Sentry Travel",
+      subtitle = "Plan your next traceable trip",
+      demoControls = demoControls,
+    ) {
       HeroCard(
         title = "Plan your next trip",
         body =
@@ -331,27 +356,6 @@ private fun TravelHomeScreen(
         SecondaryTravelButton("Profile", Modifier.weight(1f), onProfile)
         SecondaryTravelButton("Support", Modifier.weight(1f), onSupport)
       }
-      SectionTitle("Buddy demo board")
-      TravelCard {
-        Text(
-          "Presenter controls",
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.Bold,
-        )
-        Text(
-          "Each button triggers a deterministic Buddy card so the demo does not depend on live backend behavior.",
-          color = TravelMuted,
-        )
-        Text(demoStatus, color = TravelStamp, fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-          SecondaryTravelButton("Healthy flow", Modifier.weight(1f), onHealthyScenario)
-          SecondaryTravelButton("Slow span", Modifier.weight(1f), onSlowSpanScenario)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-          SecondaryTravelButton("HTTP 503", Modifier.weight(1f), onFailedHttpScenario)
-          SecondaryTravelButton("Captured error", Modifier.weight(1f), onErrorScenario)
-        }
-      }
       SectionTitle("Featured escapes")
       travelDestinations.forEach { DestinationCard(it, onClick = { onExplore() }) }
       SectionTitle("Span actions")
@@ -365,6 +369,7 @@ private fun TravelHomeScreen(
 
 @Composable
 private fun ExploreScreen(
+  demoControls: TravelDemoControls,
   destinations: List<TravelDestination>,
   onBack: () -> Unit,
   onSearch: (String) -> Unit,
@@ -372,7 +377,12 @@ private fun ExploreScreen(
 ) {
   var query by remember { mutableStateOf("coast") }
   SentryTraced("sentry_travel_explore") {
-    TravelScaffold(title = "Explore", subtitle = "Find the next stop", onBack = onBack) {
+    TravelScaffold(
+      title = "Explore",
+      subtitle = "Find the next stop",
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       OutlinedTextField(
         value = query,
         onValueChange = { query = it },
@@ -390,6 +400,7 @@ private fun ExploreScreen(
 
 @Composable
 private fun DestinationScreen(
+  demoControls: TravelDemoControls,
   destination: TravelDestination,
   onBack: () -> Unit,
   onAvailability: () -> Unit,
@@ -397,7 +408,12 @@ private fun DestinationScreen(
   onStaySelected: (TravelStay) -> Unit,
 ) {
   SentryTraced("sentry_travel_destination_${destination.id}") {
-    TravelScaffold(title = destination.name, subtitle = destination.tagline, onBack = onBack) {
+    TravelScaffold(
+      title = destination.name,
+      subtitle = destination.tagline,
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       HeroCard(
         title = destination.name,
         body = destination.description,
@@ -416,13 +432,19 @@ private fun DestinationScreen(
 
 @Composable
 private fun StayScreen(
+  demoControls: TravelDemoControls,
   destination: TravelDestination,
   stay: TravelStay,
   onBack: () -> Unit,
   onReserve: () -> Unit,
 ) {
   SentryTraced("sentry_travel_stay_${stay.id}") {
-    TravelScaffold(title = stay.name, subtitle = destination.name, onBack = onBack) {
+    TravelScaffold(
+      title = stay.name,
+      subtitle = destination.name,
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       HeroCard(title = stay.name, body = stay.description, accent = TravelGold)
       TravelMetricRow(listOf("${stay.nights} nights", "$${stay.price} total", stay.mood))
       SectionTitle("Included")
@@ -436,13 +458,19 @@ private fun StayScreen(
 
 @Composable
 private fun ReviewScreen(
+  demoControls: TravelDemoControls,
   destination: TravelDestination,
   stay: TravelStay,
   onBack: () -> Unit,
   onConfirm: () -> Unit,
 ) {
   SentryTraced("sentry_travel_review") {
-    TravelScaffold(title = "Review trip", subtitle = "Validate before saving", onBack = onBack) {
+    TravelScaffold(
+      title = "Review trip",
+      subtitle = "Validate before saving",
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       HeroCard(
         title = destination.name,
         body = "${stay.name} for ${stay.nights} nights",
@@ -460,13 +488,18 @@ private fun ReviewScreen(
 
 @Composable
 private fun ConfirmationScreen(
+  demoControls: TravelDemoControls,
   destination: TravelDestination,
   confirmationId: String,
   onTrips: () -> Unit,
   onPlanAnother: () -> Unit,
 ) {
   SentryTraced("sentry_travel_confirmation") {
-    TravelScaffold(title = "Trip confirmed", subtitle = confirmationId) {
+    TravelScaffold(
+      title = "Trip confirmed",
+      subtitle = confirmationId,
+      demoControls = demoControls,
+    ) {
       HeroCard(
         title = "${destination.name} is ready",
         body =
@@ -483,12 +516,18 @@ private fun ConfirmationScreen(
 
 @Composable
 private fun MyTripsScreen(
+  demoControls: TravelDemoControls,
   trips: List<TravelTrip>,
   onBack: () -> Unit,
   onTripSelected: (TravelTrip) -> Unit,
 ) {
   SentryTraced("sentry_travel_my_trips") {
-    TravelScaffold(title = "My trips", subtitle = "Loaded from local storage", onBack = onBack) {
+    TravelScaffold(
+      title = "My trips",
+      subtitle = "Loaded from local storage",
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       if (trips.isEmpty()) {
         HeroCard(
           title = "No saved trips yet",
@@ -514,13 +553,19 @@ private fun MyTripsScreen(
 
 @Composable
 private fun TripDetailScreen(
+  demoControls: TravelDemoControls,
   destination: TravelDestination,
   confirmationId: String,
   onBack: () -> Unit,
   onDaySelected: (Int) -> Unit,
 ) {
   SentryTraced("sentry_travel_trip_detail") {
-    TravelScaffold(title = "Trip detail", subtitle = confirmationId, onBack = onBack) {
+    TravelScaffold(
+      title = "Trip detail",
+      subtitle = confirmationId,
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       HeroCard(title = destination.name, body = "Three days of instrumented itinerary steps.")
       (1..3).forEach { day ->
         TravelCard(onClick = { onDaySelected(day) }) {
@@ -538,13 +583,19 @@ private fun TripDetailScreen(
 
 @Composable
 private fun ItineraryDayScreen(
+  demoControls: TravelDemoControls,
   destination: TravelDestination,
   day: Int,
   onBack: () -> Unit,
   onActivity: (String) -> Unit,
 ) {
   SentryTraced("sentry_travel_itinerary_day_$day") {
-    TravelScaffold(title = "Day $day", subtitle = destination.name, onBack = onBack) {
+    TravelScaffold(
+      title = "Day $day",
+      subtitle = destination.name,
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       destination.activities.forEach { activity ->
         TimelineRow(activity.title, activity.body, onClick = { onActivity(activity.id) })
       }
@@ -554,6 +605,7 @@ private fun ItineraryDayScreen(
 
 @Composable
 private fun ActivityDetailScreen(
+  demoControls: TravelDemoControls,
   destination: TravelDestination,
   activityId: String,
   onBack: () -> Unit,
@@ -561,7 +613,12 @@ private fun ActivityDetailScreen(
   val activity =
     destination.activities.firstOrNull { it.id == activityId } ?: destination.activities.first()
   SentryTraced("sentry_travel_activity_${activity.id}") {
-    TravelScaffold(title = activity.title, subtitle = destination.name, onBack = onBack) {
+    TravelScaffold(
+      title = activity.title,
+      subtitle = destination.name,
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       HeroCard(title = activity.title, body = activity.body, accent = TravelCoral)
       TravelMetricRow(listOf("Low risk", "2 app spans", "Replay-friendly"))
       TimelineRow("Why Buddy cares", "This deep screen verifies route depth and timeline ordering.")
@@ -571,13 +628,19 @@ private fun ActivityDetailScreen(
 
 @Composable
 private fun ProfileScreen(
+  demoControls: TravelDemoControls,
   onBack: () -> Unit,
   onSave: (String, String) -> Unit,
 ) {
   var airport by remember { mutableStateOf("SFO") }
   var style by remember { mutableStateOf("Slow mornings") }
   SentryTraced("sentry_travel_profile") {
-    TravelScaffold(title = "Traveler profile", subtitle = "Preference DB spans", onBack = onBack) {
+    TravelScaffold(
+      title = "Traveler profile",
+      subtitle = "Preference DB spans",
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       OutlinedTextField(
         value = airport,
         onValueChange = { airport = it.uppercase().take(3) },
@@ -599,12 +662,18 @@ private fun ProfileScreen(
 
 @Composable
 private fun SupportScreen(
+  demoControls: TravelDemoControls,
   onBack: () -> Unit,
   onContact: () -> Unit,
   onSimulateFailure: () -> Unit,
 ) {
   SentryTraced("sentry_travel_support") {
-    TravelScaffold(title = "Travel support", subtitle = "HTTP and error events", onBack = onBack) {
+    TravelScaffold(
+      title = "Travel support",
+      subtitle = "HTTP and error events",
+      onBack = onBack,
+      demoControls = demoControls,
+    ) {
       HeroCard(
         title = "Need help with the itinerary?",
         body = "Contact support for an HTTP span or simulate a booking failure for error capture.",
@@ -619,6 +688,7 @@ private fun SupportScreen(
 private fun TravelScaffold(
   title: String,
   subtitle: String,
+  demoControls: TravelDemoControls,
   onBack: (() -> Unit)? = null,
   content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -639,10 +709,57 @@ private fun TravelScaffold(
         )
         Text(subtitle, color = TravelMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
       }
+      Surface(
+        modifier = Modifier.size(44.dp),
+        color = TravelPaper,
+        shape = CircleShape,
+        border = androidx.compose.foundation.BorderStroke(1.dp, TravelTicketEdge),
+      ) {
+        IconButton(onClick = demoControls.onOpen) {
+          Icon(
+            imageVector = Icons.Filled.Settings,
+            contentDescription = "Open presenter controls",
+            tint = TravelNavy,
+          )
+        }
+      }
     }
     content()
+    if (demoControls.isOpen) {
+      AlertDialog(
+        onDismissRequest = demoControls.onDismiss,
+        confirmButton = {
+          TextButton(onClick = demoControls.onDismiss) { Text("Close") }
+        },
+        title = { Text("Buddy demo board", fontWeight = FontWeight.Bold) },
+        text = {
+          Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+              "Trigger deterministic Buddy cards from any page without cluttering the travel UI.",
+              color = TravelMuted,
+            )
+            Text(demoControls.status, color = TravelStamp, fontWeight = FontWeight.Bold)
+            SecondaryTravelButton("Healthy flow", Modifier.fillMaxWidth(), demoControls.onHealthyScenario)
+            SecondaryTravelButton("Slow span", Modifier.fillMaxWidth(), demoControls.onSlowSpanScenario)
+            SecondaryTravelButton("HTTP 503", Modifier.fillMaxWidth(), demoControls.onFailedHttpScenario)
+            SecondaryTravelButton("Captured error", Modifier.fillMaxWidth(), demoControls.onErrorScenario)
+          }
+        },
+      )
+    }
   }
 }
+
+private data class TravelDemoControls(
+  val isOpen: Boolean,
+  val status: String,
+  val onOpen: () -> Unit,
+  val onDismiss: () -> Unit,
+  val onHealthyScenario: () -> Unit,
+  val onSlowSpanScenario: () -> Unit,
+  val onFailedHttpScenario: () -> Unit,
+  val onErrorScenario: () -> Unit,
+)
 
 @Composable
 private fun HeroCard(title: String, body: String, accent: Color = TravelSky) {
