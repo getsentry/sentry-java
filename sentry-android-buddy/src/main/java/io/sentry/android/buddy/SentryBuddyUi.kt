@@ -87,6 +87,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import java.util.Locale
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
@@ -732,7 +733,14 @@ private fun LiveFeedSheet(
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
 ) {
   SheetTitle("Sentry Buddy", "Live Feed")
-  AttentionCard(liveFeed, sentryUiLinks, nowMs)
+  val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
+  AttentionCard(
+    liveFeed = liveFeed,
+    sentryUiLinks = sentryUiLinks,
+    nowMs = nowMs,
+    emptyArtIndex = emptyAttentionArtIndex,
+    onDismiss = { onDispatch { dismissLiveFeedAttention() } },
+  )
   Button(
     modifier = Modifier.fillMaxWidth().height(56.dp),
     colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
@@ -754,23 +762,39 @@ private fun LiveFeedSheet(
 }
 
 @Composable
-private fun AttentionCard(liveFeed: BuddyLiveFeed, sentryUiLinks: BuddySentryUiLinks, nowMs: Long) {
+private fun AttentionCard(
+  liveFeed: BuddyLiveFeed,
+  sentryUiLinks: BuddySentryUiLinks,
+  nowMs: Long,
+  emptyArtIndex: Int,
+  onDismiss: () -> Unit,
+) {
+  val item = liveFeed.latestUnviewedAdverseItem
+  val dismissOffset = remember(item?.id) { Animatable(0f) }
+  val headerAlpha =
+    if (item == null) {
+      0f
+    } else {
+      (1f - (-dismissOffset.value / ATTENTION_HEADER_FADE_DISTANCE_PX)).coerceIn(0f, 1f)
+    }
   Text(
     "Needs attention",
     style = MaterialTheme.typography.titleMedium,
     fontWeight = FontWeight.Bold,
-    color = BuddyInk,
+    color = BuddyInk.copy(alpha = headerAlpha),
   )
 
-  val item = liveFeed.latestAdverseItem
   if (item == null) {
-    Row(
-      modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically,
+    Surface(
+      modifier = Modifier.fillMaxWidth(),
+      color = Color.Transparent,
+      shape = RoundedCornerShape(16.dp),
+      border = CardDefaults.outlinedCardBorder(),
     ) {
-      Text("No recent errors or slow spans.", color = BuddyMuted)
-      Text("OK", color = BuddyPurple, fontWeight = FontWeight.Bold)
+      EmptyAttentionArt(
+        index = emptyArtIndex,
+        modifier = Modifier.fillMaxWidth().height(132.dp).padding(18.dp),
+      )
     }
     return
   }
@@ -778,59 +802,163 @@ private fun AttentionCard(liveFeed: BuddyLiveFeed, sentryUiLinks: BuddySentryUiL
   val color = severityColor(item.severity)
   val context = LocalContext.current
   val link = sentryUiLinks.linkFor(item)
-  Card(
-    modifier =
-      Modifier.clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } },
-    colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.10f)),
+  val dismissScope = rememberCoroutineScope()
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    color = Color.Transparent,
+    shape = RoundedCornerShape(16.dp),
+    border = CardDefaults.outlinedCardBorder(),
   ) {
-    Column(
-      modifier = Modifier.fillMaxWidth().padding(16.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        LiveFeedCategoryPill(item.category.label, color)
-        Text(
-          item.title(),
-          modifier = Modifier.weight(1f),
-          color = BuddyInk,
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.Bold,
-        )
-        Text(
-          relativeTime(item.timestamp.time, nowMs),
-          color = BuddyMuted,
-          style = MaterialTheme.typography.labelMedium,
-        )
-      }
-      item.screenContextText()?.let { screenContext ->
-        Text(
-          screenContext,
-          color = BuddyMuted,
-          style = MaterialTheme.typography.bodySmall,
-        )
-      }
-      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        adverseCountChips(liveFeed).forEach { chip ->
-          Surface(
-            color = Color.White,
-            shape = RoundedCornerShape(16.dp),
-            border = CardDefaults.outlinedCardBorder(),
-          ) {
-            Text(
-              chip,
-              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-              color = BuddyInk,
-              style = MaterialTheme.typography.labelMedium,
-              fontWeight = FontWeight.Bold,
-            )
+    BoxWithConstraints(
+      modifier =
+        Modifier.fillMaxWidth().heightIn(min = 132.dp).pointerInput(item.id) {
+          detectDragGestures(
+            onDragEnd = {
+              val dismissDistance = size.width.toFloat()
+              val shouldDismiss = abs(dismissOffset.value) > dismissDistance * 0.35f
+              dismissScope.launch {
+                if (shouldDismiss) {
+                  dismissOffset.animateTo(-dismissDistance)
+                  onDismiss()
+                } else {
+                  dismissOffset.animateTo(0f)
+                }
+              }
+            },
+            onDragCancel = { dismissScope.launch { dismissOffset.animateTo(0f) } },
+          ) { change, dragAmount ->
+            change.consume()
+            val dismissDistance = size.width.toFloat()
+            val nextOffset = (dismissOffset.value + dragAmount.x).coerceIn(-dismissDistance, 0f)
+            dismissScope.launch { dismissOffset.snapTo(nextOffset) }
           }
+        }
+    ) {
+      val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
+      Box(
+        modifier =
+          Modifier.matchParentSize().offset {
+            IntOffset((dismissOffset.value + widthPx).roundToInt(), 0)
+          }
+      ) {
+        EmptyAttentionArt(
+          index = emptyArtIndex,
+          modifier = Modifier.fillMaxSize().padding(18.dp),
+        )
+      }
+      Box(
+        modifier =
+          Modifier.matchParentSize()
+            .offset { IntOffset(dismissOffset.value.roundToInt(), 0) }
+            .clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } }
+      ) {
+        AttentionItemContent(
+          item = item,
+          liveFeed = liveFeed,
+          color = color,
+          nowMs = nowMs,
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun AttentionItemContent(
+  item: BuddyLiveFeedItem,
+  liveFeed: BuddyLiveFeed,
+  color: Color,
+  nowMs: Long,
+) {
+  Column(
+    modifier = Modifier.fillMaxWidth().padding(16.dp),
+    verticalArrangement = Arrangement.spacedBy(10.dp),
+  ) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(10.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      LiveFeedCategoryPill(item.category.label, color)
+      Text(
+        item.title(),
+        modifier = Modifier.weight(1f),
+        color = BuddyInk,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Normal,
+      )
+      Text(
+        relativeTime(item.timestamp.time, nowMs),
+        color = BuddyMuted,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Normal,
+      )
+    }
+    item.screenContextText()?.let { screenContext ->
+      Text(
+        screenContext,
+        color = BuddyMuted,
+        style = MaterialTheme.typography.bodySmall,
+        fontWeight = FontWeight.Normal,
+      )
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      adverseCountChips(liveFeed).forEach { chip ->
+        Surface(
+          color = Color.White,
+          shape = RoundedCornerShape(16.dp),
+          border = CardDefaults.outlinedCardBorder(),
+        ) {
+          Text(
+            chip,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            color = BuddyInk,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Normal,
+          )
         }
       }
     }
+  }
+}
+
+@Composable
+private fun EmptyAttentionArt(index: Int, modifier: Modifier = Modifier) {
+  Canvas(modifier = modifier) {
+    val variant = index % EMPTY_ATTENTION_ART_VARIANTS
+    val palette =
+      when (variant % 5) {
+        0 -> listOf(BuddyPurple, BuddyRed, BuddyGold)
+        1 -> listOf(BuddyRed, BuddyPurple, BuddyMuted)
+        2 -> listOf(BuddyGold, BuddyPurple, BuddyRed)
+        3 -> listOf(BuddyPurple, BuddyMuted, BuddyGold)
+        else -> listOf(BuddyMuted, BuddyRed, BuddyPurple)
+      }
+    val w = size.width
+    val h = size.height
+    val center = Offset(w * (0.46f + (variant % 3) * 0.04f), h * 0.50f)
+    drawCircle(palette[0].copy(alpha = 0.12f), radius = h * 0.46f, center = center)
+    drawCircle(
+      palette[1].copy(alpha = 0.16f),
+      radius = h * 0.26f,
+      center = Offset(w * 0.68f, h * 0.34f),
+    )
+    drawCircle(
+      palette[2].copy(alpha = 0.18f),
+      radius = h * 0.18f,
+      center = Offset(w * 0.28f, h * 0.72f),
+    )
+    val glyph =
+      Path().apply {
+        moveTo(w * 0.45f, h * 0.18f)
+        lineTo(w * 0.27f, h * 0.74f)
+        lineTo(w * 0.72f, h * 0.74f)
+        close()
+      }
+    drawPath(glyph, palette[0].copy(alpha = 0.20f))
+    drawLine(palette[0], Offset(w * 0.38f, h * 0.58f), Offset(w * 0.58f, h * 0.58f), 5f)
+    drawLine(palette[1], Offset(w * 0.42f, h * 0.46f), Offset(w * 0.62f, h * 0.46f), 4f)
+    drawLine(palette[2], Offset(w * 0.46f, h * 0.34f), Offset(w * 0.66f, h * 0.34f), 3f)
   }
 }
 
@@ -852,31 +980,39 @@ private fun LiveFeedRows(
   nowMs: Long,
 ) {
   val context = LocalContext.current
-  Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-    items.forEach { item ->
-      val color =
-        if (item.adverse) severityColor(item.severity) else timelineColor(item.timelineItem)
-      val link = sentryUiLinks.linkFor(item)
-      Row(
-        modifier =
-          Modifier.fillMaxWidth()
-            .clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } }
-            .padding(vertical = 7.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        LiveFeedCategoryPill(item.category.label, color)
-        Text(
-          item.title(),
-          modifier = Modifier.weight(1f),
-          color = BuddyInk,
-          fontWeight = if (item.adverse) FontWeight.Bold else FontWeight.Normal,
-        )
-        Text(
-          relativeTime(item.timestamp.time, nowMs),
-          color = BuddyMuted,
-          style = MaterialTheme.typography.labelMedium,
-        )
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    color = Color.Transparent,
+    shape = RoundedCornerShape(16.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+      items.forEach { item ->
+        val color =
+          if (item.adverse) severityColor(item.severity) else timelineColor(item.timelineItem)
+        val link = sentryUiLinks.linkFor(item)
+        Row(
+          modifier =
+            Modifier.fillMaxWidth()
+              .clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } }
+              .padding(vertical = 7.dp),
+          horizontalArrangement = Arrangement.spacedBy(10.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          LiveFeedCategoryPill(item.category.label, color)
+          Text(
+            item.title(),
+            modifier = Modifier.weight(1f),
+            color = BuddyInk,
+            fontWeight = FontWeight.Normal,
+          )
+          Text(
+            relativeTime(item.timestamp.time, nowMs),
+            color = BuddyMuted,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Normal,
+          )
+        }
       }
     }
   }
@@ -890,8 +1026,18 @@ private fun LiveFeedCategoryPill(label: String, color: Color) {
       modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
       color = color,
       style = MaterialTheme.typography.labelSmall,
-      fontWeight = FontWeight.Bold,
+      fontWeight = FontWeight.Normal,
     )
+  }
+}
+
+private object EmptyAttentionArtIndex {
+  private var nextIndex = 0
+
+  fun next(): Int {
+    val index = nextIndex
+    nextIndex = (nextIndex + 1) % EMPTY_ATTENTION_ART_VARIANTS
+    return index
   }
 }
 
@@ -1427,6 +1573,8 @@ private val BuddyBubbleTouchPadding = 20.dp
 private val BuddyTransientTextWidth = 190.dp
 private val BuddyTransientTextHeight = 28.dp
 private const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
+private const val EMPTY_ATTENTION_ART_VARIANTS = 10
+private const val ATTENTION_HEADER_FADE_DISTANCE_PX = 180f
 private const val ANALYSIS_POLL_INTERVAL_MS = 1000L
 private const val ANALYSIS_TIMEOUT_MS = 30_000L
 

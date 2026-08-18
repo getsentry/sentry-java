@@ -208,8 +208,12 @@ public constructor(
   }
 
   internal fun openLiveFeed() {
-    liveFeed = safeMarkLiveFeedSeen()
+    liveFeed = safeLiveFeed()
     state = SentryBuddySessionState.LiveFeed
+  }
+
+  internal fun dismissLiveFeedAttention() {
+    liveFeed = safeMarkLiveFeedSeen()
   }
 
   public fun close() {
