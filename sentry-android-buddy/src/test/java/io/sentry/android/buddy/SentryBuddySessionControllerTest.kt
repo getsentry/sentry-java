@@ -186,6 +186,79 @@ class SentryBuddySessionControllerTest {
     assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Analyzing::class.java)
   }
 
+  @Test
+  fun `health check from live feed stores results`() {
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        healthCheckApi =
+          object : SentryBuddyHealthCheckApi {
+            override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse {
+              assertThat(request.sdk).isNotEmpty()
+              return BuddyHealthCheckResponse(
+                summary = "Buddy found 1 finding worth checking.",
+                findings =
+                  listOf(
+                    BuddyHealthCheckFinding(
+                      id = "tracing-disabled",
+                      title = "Turn on tracing",
+                      description = "Tracing looks off.",
+                      severity = Severity.MEDIUM,
+                    )
+                  ),
+              )
+            }
+          },
+      )
+
+    controller.openLiveFeed()
+    controller.runHealthCheck()
+
+    assertThat(controller.healthCheckState).isInstanceOf(BuddyHealthCheckState.Results::class.java)
+    val state = controller.healthCheckState as BuddyHealthCheckState.Results
+    assertThat(state.response.findings.single().title).contains("tracing")
+  }
+
+  @Test
+  fun `health check failure stores inline error state`() {
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        healthCheckApi =
+          object : SentryBuddyHealthCheckApi {
+            override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse {
+              throw IllegalStateException("Bridge offline")
+            }
+          },
+      )
+
+    controller.openLiveFeed()
+    controller.runHealthCheck()
+
+    assertThat(controller.healthCheckState).isInstanceOf(BuddyHealthCheckState.Error::class.java)
+    assertThat((controller.healthCheckState as BuddyHealthCheckState.Error).message)
+      .isEqualTo("Bridge offline")
+  }
+
+  @Test
+  fun `closing the session hides health check state`() {
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        healthCheckApi =
+          object : SentryBuddyHealthCheckApi {
+            override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse =
+              BuddyHealthCheckResponse(summary = "ok", findings = emptyList())
+          },
+      )
+
+    controller.openLiveFeed()
+    controller.runHealthCheck()
+    controller.close()
+
+    assertThat(controller.healthCheckState).isEqualTo(BuddyHealthCheckState.Hidden)
+  }
+
   private class FakeRecorderFacade(
     private val startFailure: RuntimeException? = null,
     private val stopFailure: RuntimeException? = null,

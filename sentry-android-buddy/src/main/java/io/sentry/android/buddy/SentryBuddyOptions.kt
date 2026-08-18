@@ -9,6 +9,7 @@ public constructor(
   public var enabled: Boolean = true,
   public var showOverlay: Boolean = true,
   public var flowAnalysesApi: SentryBuddyFlowAnalysesApi = DummySentryBuddyFlowAnalysesApi,
+  public var healthCheckApi: SentryBuddyHealthCheckApi = DummySentryBuddyHealthCheckApi,
   public var openUrlApi: SentryBuddyOpenUrlApi = DummySentryBuddyOpenUrlApi,
   public var sentryUiBaseUrl: String? = null,
   public var sentryUiOrganizationSlug: String? = null,

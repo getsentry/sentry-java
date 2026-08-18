@@ -69,6 +69,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -153,24 +154,35 @@ private fun SentryBuddyOverlayContent(
 ) {
   var state by remember { mutableStateOf(controller.state) }
   var liveFeed by remember { mutableStateOf(controller.liveFeed) }
+  var healthCheckState by remember { mutableStateOf(controller.healthCheckState) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
   val transientRecordingEventScope = rememberCoroutineScope()
   val analysisScope = rememberCoroutineScope()
 
-  fun dispatch(action: SentryBuddySessionController.() -> Unit) {
-    controller.action()
+  fun syncUiState() {
     state = controller.state
     liveFeed = controller.liveFeed
+    healthCheckState = controller.healthCheckState
     nowMs = System.currentTimeMillis()
+  }
+
+  fun dispatch(action: SentryBuddySessionController.() -> Unit) {
+    controller.action()
+    syncUiState()
   }
 
   fun dispatchAnalysis(action: SentryBuddySessionController.() -> Unit) {
     analysisScope.launch {
       withContext(Dispatchers.IO) { controller.action() }
-      state = controller.state
-      liveFeed = controller.liveFeed
-      nowMs = System.currentTimeMillis()
+      syncUiState()
+    }
+  }
+
+  fun dispatchHealthCheck(action: SentryBuddySessionController.() -> Unit) {
+    analysisScope.launch {
+      withContext(Dispatchers.IO) { controller.action() }
+      syncUiState()
     }
   }
 
@@ -253,10 +265,13 @@ private fun SentryBuddyOverlayContent(
     BuddySheet(
       state = state,
       liveFeed = liveFeed,
+      healthCheckState = healthCheckState,
       sentryUiLinks = controller.sentryUiLinks,
       nowMs = nowMs,
       onDispatch = { dispatch(it) },
       onAnalyze = { dispatchAnalysis { analyze() } },
+      onRunHealthCheck = { dispatchHealthCheck { runHealthCheck() } },
+      onDismissHealthCheck = { dispatch { dismissHealthCheck() } },
       onOpenUrl = { context, url -> openUrl(context, url) },
     )
   }
@@ -791,10 +806,13 @@ internal class BuddyOverlayHitBounds {
 private fun BuddySheet(
   state: SentryBuddySessionState,
   liveFeed: BuddyLiveFeed,
+  healthCheckState: BuddyHealthCheckState,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
+  onRunHealthCheck: () -> Unit,
+  onDismissHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
   if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
@@ -829,10 +847,13 @@ private fun BuddySheet(
         SentryBuddySessionState.LiveFeed ->
           LiveFeedSheet(
             liveFeed,
+            healthCheckState,
             sentryUiLinks,
             nowMs,
             onDispatch,
             ::startRecordingAfterSheetExit,
+            onRunHealthCheck,
+            onDismissHealthCheck,
             onOpenUrl,
           )
         SentryBuddySessionState.Intro -> IntroSheet(::startRecordingAfterSheetExit)
@@ -854,8 +875,13 @@ private fun StopIcon(tint: Color, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SheetTitle(title: String, subtitle: String) {
+private fun SheetTitle(
+  title: String,
+  subtitle: String,
+  trailingContent: (@Composable () -> Unit)? = null,
+) {
   Row(
+    modifier = Modifier.fillMaxWidth(),
     verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.spacedBy(12.dp),
   ) {
@@ -869,6 +895,8 @@ private fun SheetTitle(title: String, subtitle: String) {
       Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
       Text(subtitle, color = BuddyMuted, style = MaterialTheme.typography.bodyMedium)
     }
+    Spacer(Modifier.weight(1f))
+    trailingContent?.invoke()
   }
 }
 
@@ -899,13 +927,25 @@ private fun IntroSheet(onStartRecording: () -> Unit) {
 @Composable
 private fun LiveFeedSheet(
   liveFeed: BuddyLiveFeed,
+  healthCheckState: BuddyHealthCheckState,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onStartRecording: () -> Unit,
+  onRunHealthCheck: () -> Unit,
+  onDismissHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
-  SheetTitle("Sentry Buddy", "Live Feed")
+  SheetTitle(
+    title = "Sentry Buddy",
+    subtitle = "Live Feed",
+    trailingContent = {
+      HealthCheckActionButton(
+        enabled = healthCheckState !is BuddyHealthCheckState.Running,
+        onClick = onRunHealthCheck,
+      )
+    },
+  )
   val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
   Spacer(Modifier.height(12.dp))
   AttentionCard(
@@ -940,6 +980,217 @@ private fun LiveFeedSheet(
       sentryUiLinks = sentryUiLinks,
       nowMs = nowMs,
       onOpenUrl = onOpenUrl,
+    )
+  }
+  HealthCheckDialog(
+    state = healthCheckState,
+    onDismiss = onDismissHealthCheck,
+    onRetry = onRunHealthCheck,
+    onOpenUrl = onOpenUrl,
+  )
+}
+
+@Composable
+private fun HealthCheckActionButton(enabled: Boolean, onClick: () -> Unit) {
+  Surface(
+    modifier = Modifier.size(40.dp).clickable(enabled = enabled, onClick = onClick),
+    color = if (enabled) BuddyPurple.copy(alpha = 0.10f) else BuddyBorder,
+    shape = RoundedCornerShape(12.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Box(contentAlignment = Alignment.Center) {
+      HealthCheckIcon(
+        tint = if (enabled) BuddyPurple else BuddyMuted,
+        modifier = Modifier.size(18.dp),
+      )
+    }
+  }
+}
+
+@Composable
+private fun HealthCheckDialog(
+  state: BuddyHealthCheckState,
+  onDismiss: () -> Unit,
+  onRetry: () -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
+) {
+  when (state) {
+    BuddyHealthCheckState.Hidden -> Unit
+    BuddyHealthCheckState.Running ->
+      AlertDialog(
+        onDismissRequest = {},
+        confirmButton = {},
+        title = { Text("Checking Sentry setup", fontWeight = FontWeight.Bold) },
+        text = {
+          Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+              "Buddy is checking your Sentry setup for recommended changes.",
+              color = BuddyInk,
+            )
+            HealthCheckStep("Reading SDK config")
+            HealthCheckStep("Checking the bridge for findings")
+            HealthCheckStep("Ranking the most useful fixes")
+          }
+        },
+      )
+    is BuddyHealthCheckState.Error ->
+      AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { BuddyButtonText("Close") } },
+        dismissButton = { TextButton(onClick = onRetry) { BuddyButtonText("Try Again") } },
+        title = { Text("Health check paused", fontWeight = FontWeight.Bold) },
+        text = { Text(state.message, color = BuddyInk) },
+      )
+    is BuddyHealthCheckState.Results ->
+      AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = { TextButton(onClick = onDismiss) { BuddyButtonText("Close") } },
+        dismissButton = { TextButton(onClick = onRetry) { BuddyButtonText("Run Again") } },
+        title = { Text("Health check", fontWeight = FontWeight.Bold) },
+        text = {
+          Column(
+            modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+          ) {
+            Text(state.response.summary, color = BuddyMuted)
+            if (state.response.findings.isEmpty()) {
+              Surface(
+                color = BuddyPurple.copy(alpha = 0.08f),
+                shape = RoundedCornerShape(14.dp),
+              ) {
+                Text(
+                  "Setup looks healthy. Buddy did not find any obvious changes to recommend right now.",
+                  modifier = Modifier.fillMaxWidth().padding(14.dp),
+                  color = BuddyInk,
+                )
+              }
+            } else {
+              state.response.findings.forEach { finding ->
+                HealthCheckFindingCard(finding = finding, onOpenUrl = onOpenUrl)
+              }
+            }
+          }
+        },
+      )
+  }
+}
+
+@Composable
+private fun HealthCheckStep(text: String) {
+  Row(
+    horizontalArrangement = Arrangement.spacedBy(10.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    Box(modifier = Modifier.size(10.dp).background(BuddyPurple, CircleShape))
+    Text(text, color = BuddyInk)
+  }
+}
+
+@Composable
+private fun HealthCheckFindingCard(
+  finding: BuddyHealthCheckFinding,
+  onOpenUrl: (Context, String) -> Unit,
+) {
+  val color = severityColor(finding.severity)
+  val context = LocalContext.current
+  Surface(
+    color = color.copy(alpha = 0.08f),
+    shape = RoundedCornerShape(14.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(14.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        LiveFeedCategoryPill(finding.severity.value, color)
+        Text(
+          finding.title,
+          modifier = Modifier.weight(1f),
+          color = BuddyInk,
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold,
+        )
+      }
+      Text(finding.description, color = BuddyInk)
+      finding.currentValue?.let {
+        HealthCheckValueRow(label = "Current", value = it)
+      }
+      finding.suggestedValue?.let {
+        HealthCheckValueRow(label = "Consider", value = it)
+      }
+      finding.link?.let { link ->
+        TextButton(onClick = { onOpenUrl(context, link) }) { BuddyButtonText("Open Link") }
+      }
+    }
+  }
+}
+
+@Composable
+private fun HealthCheckValueRow(label: String, value: String) {
+  Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Text(label, color = BuddyMuted, fontWeight = FontWeight.Bold)
+    Text(value, color = BuddyInk)
+  }
+}
+
+@Composable
+private fun HealthCheckIcon(tint: Color, modifier: Modifier = Modifier) {
+  Canvas(modifier = modifier) {
+    val strokeWidth = size.minDimension * 0.10f
+    val sheetWidth = size.width * 0.62f
+    val sheetHeight = size.height * 0.80f
+    val left = size.width * 0.08f
+    val top = size.height * 0.10f
+    drawRoundRect(
+      color = tint,
+      topLeft = Offset(left, top),
+      size = Size(sheetWidth, sheetHeight),
+      cornerRadius = androidx.compose.ui.geometry.CornerRadius(size.width * 0.12f),
+      style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth),
+    )
+    drawLine(
+      color = tint,
+      start = Offset(left + strokeWidth, top + size.height * 0.22f),
+      end = Offset(left + sheetWidth - strokeWidth, top + size.height * 0.22f),
+      strokeWidth = strokeWidth,
+      pathEffect = PathEffect.cornerPathEffect(strokeWidth),
+    )
+    drawLine(
+      color = tint,
+      start = Offset(left + strokeWidth, top + size.height * 0.38f),
+      end = Offset(left + sheetWidth * 0.72f, top + size.height * 0.38f),
+      strokeWidth = strokeWidth,
+      pathEffect = PathEffect.cornerPathEffect(strokeWidth),
+    )
+    drawCircle(
+      color = Color.White,
+      radius = size.width * 0.22f,
+      center = Offset(size.width * 0.78f, size.height * 0.73f),
+    )
+    drawCircle(
+      color = tint,
+      radius = size.width * 0.22f,
+      center = Offset(size.width * 0.78f, size.height * 0.73f),
+      style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth),
+    )
+    drawLine(
+      color = tint,
+      start = Offset(size.width * 0.69f, size.height * 0.73f),
+      end = Offset(size.width * 0.76f, size.height * 0.80f),
+      strokeWidth = strokeWidth,
+      pathEffect = PathEffect.cornerPathEffect(strokeWidth),
+    )
+    drawLine(
+      color = tint,
+      start = Offset(size.width * 0.76f, size.height * 0.80f),
+      end = Offset(size.width * 0.88f, size.height * 0.64f),
+      strokeWidth = strokeWidth,
+      pathEffect = PathEffect.cornerPathEffect(strokeWidth),
     )
   }
 }

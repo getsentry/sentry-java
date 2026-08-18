@@ -196,6 +196,7 @@ public object SentryBuddy {
     return BuddyOverlayManager(
         SentryBuddySessionController(
           flowAnalysesApi = options.flowAnalysesApi,
+          healthCheckApi = options.healthCheckApi,
           openUrlApi = options.openUrlApi,
         )
       )

@@ -30,6 +30,16 @@ public constructor(
   public val recommendationsText: String = "",
 )
 
+internal sealed class BuddyHealthCheckState {
+  data object Hidden : BuddyHealthCheckState()
+
+  data object Running : BuddyHealthCheckState()
+
+  data class Results(val response: BuddyHealthCheckResponse) : BuddyHealthCheckState()
+
+  data class Error(val message: String) : BuddyHealthCheckState()
+}
+
 @ApiStatus.Experimental
 public interface SentryBuddyFlowAnalysesApi {
   /** Models `POST /v1/flow-analysis`, which returns 202 Accepted with PROCESSING status. */
@@ -190,6 +200,7 @@ public class SentryBuddySessionController
 public constructor(
   private val recorderFacade: SentryBuddyRecorderFacade = RealSentryBuddyRecorderFacade,
   private val flowAnalysesApi: SentryBuddyFlowAnalysesApi = DummySentryBuddyFlowAnalysesApi,
+  private val healthCheckApi: SentryBuddyHealthCheckApi = DummySentryBuddyHealthCheckApi,
   private val openUrlApi: SentryBuddyOpenUrlApi = DummySentryBuddyOpenUrlApi,
   private val clock: () -> Long = { System.currentTimeMillis() },
 ) {
@@ -201,15 +212,20 @@ public constructor(
 
   internal var sentryUiLinks: BuddySentryUiLinks = BuddySentryUiLinks()
 
+  internal var healthCheckState: BuddyHealthCheckState = BuddyHealthCheckState.Hidden
+    private set
+
   private val transientRecordingEventLock: Any = Any()
   private val transientRecordingEventListeners = mutableListOf<(TransientRecordingEvent) -> Unit>()
   private var transientRecordingEventId: Long = 0
 
   public fun open() {
+    dismissHealthCheck()
     state = SentryBuddySessionState.Intro
   }
 
   internal fun openLiveFeed() {
+    dismissHealthCheck()
     liveFeed = safeLiveFeed()
     state = SentryBuddySessionState.LiveFeed
   }
@@ -219,6 +235,7 @@ public constructor(
   }
 
   public fun close() {
+    dismissHealthCheck()
     if (state !is SentryBuddySessionState.Recording) {
       state = SentryBuddySessionState.Closed
     }
@@ -233,6 +250,7 @@ public constructor(
   ) {
     val previousState = state
     try {
+      dismissHealthCheck()
       val intent =
         BuddyFlowIntent(
           name = flowName,
@@ -255,6 +273,7 @@ public constructor(
   public fun stopRecording() {
     val previousState = state
     try {
+      dismissHealthCheck()
       state = SentryBuddySessionState.StoppedSummary(recorderFacade.stopRecording())
     } catch (exception: IllegalStateException) {
       state =
@@ -267,6 +286,7 @@ public constructor(
 
   public fun briefRecording() {
     val stoppedState = state as? SentryBuddySessionState.StoppedSummary ?: return
+    dismissHealthCheck()
     state =
       SentryBuddySessionState.Briefing(
         result = stoppedState.result.withFlowName(""),
@@ -293,6 +313,7 @@ public constructor(
 
   public fun analyze() {
     val briefingState = state as? SentryBuddySessionState.Briefing ?: return
+    dismissHealthCheck()
     val request = buildFlowAnalysisRequest(briefingState)
     if (request.dsn.isBlank()) {
       state =
@@ -346,7 +367,26 @@ public constructor(
   }
 
   public fun recordAgain() {
+    dismissHealthCheck()
     state = SentryBuddySessionState.Intro
+  }
+
+  internal fun runHealthCheck() {
+    if (state != SentryBuddySessionState.LiveFeed) {
+      return
+    }
+    healthCheckState = BuddyHealthCheckState.Running
+    try {
+      val response = healthCheckApi.check(BuddyHealthCheckCapture.captureRequest())
+      healthCheckState = BuddyHealthCheckState.Results(response)
+    } catch (exception: IllegalStateException) {
+      healthCheckState =
+        BuddyHealthCheckState.Error(exception.message ?: "Failed to run health check.")
+    }
+  }
+
+  internal fun dismissHealthCheck() {
+    healthCheckState = BuddyHealthCheckState.Hidden
   }
 
   public fun openUrl(context: Context, url: String) {

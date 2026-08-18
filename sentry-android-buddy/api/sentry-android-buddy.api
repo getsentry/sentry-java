@@ -155,6 +155,59 @@ public final class io/sentry/android/buddy/BuddyFocusArea : java/lang/Enum {
 	public static fun values ()[Lio/sentry/android/buddy/BuddyFocusArea;
 }
 
+public final class io/sentry/android/buddy/BuddyHealthCheckFinding {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/Severity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/Severity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Lio/sentry/android/buddy/Severity;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Ljava/lang/String;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/Severity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lio/sentry/android/buddy/BuddyHealthCheckFinding;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyHealthCheckFinding;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/Severity;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddyHealthCheckFinding;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCurrentValue ()Ljava/lang/String;
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getId ()Ljava/lang/String;
+	public final fun getLink ()Ljava/lang/String;
+	public final fun getSeverity ()Lio/sentry/android/buddy/Severity;
+	public final fun getSuggestedValue ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyHealthCheckRequest {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Lio/sentry/android/buddy/BuddySdkConfigSnapshot;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lio/sentry/android/buddy/BuddySdkConfigSnapshot;
+	public final fun copy (Ljava/lang/String;Lio/sentry/android/buddy/BuddySdkConfigSnapshot;)Lio/sentry/android/buddy/BuddyHealthCheckRequest;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyHealthCheckRequest;Ljava/lang/String;Lio/sentry/android/buddy/BuddySdkConfigSnapshot;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddyHealthCheckRequest;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getConfig ()Lio/sentry/android/buddy/BuddySdkConfigSnapshot;
+	public final fun getSdk ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/android/buddy/BuddyHealthCheckResponse {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Ljava/util/List;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/util/List;)Lio/sentry/android/buddy/BuddyHealthCheckResponse;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddyHealthCheckResponse;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddyHealthCheckResponse;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFindings ()Ljava/util/List;
+	public final fun getSummary ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/sentry/android/buddy/BuddyInsight {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/Severity;Ljava/lang/Long;)V
@@ -235,6 +288,81 @@ public final class io/sentry/android/buddy/BuddyRecordingSummary : io/sentry/Jso
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/sentry/android/buddy/BuddySdkConfigSnapshot {
+	public static final field $stable I
+	public fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;ZLjava/lang/Double;ZZZZZZLjava/lang/Double;Ljava/lang/Double;ZZZZLjava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;)V
+	public synthetic fun <init> (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;ZLjava/lang/Double;ZZZZZZLjava/lang/Double;Ljava/lang/Double;ZZZZLjava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Z
+	public final fun component10 ()Z
+	public final fun component11 ()Z
+	public final fun component12 ()Z
+	public final fun component13 ()Z
+	public final fun component14 ()Z
+	public final fun component15 ()Ljava/lang/Double;
+	public final fun component16 ()Ljava/lang/Double;
+	public final fun component17 ()Z
+	public final fun component18 ()Z
+	public final fun component19 ()Z
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component20 ()Z
+	public final fun component21 ()Ljava/lang/Boolean;
+	public final fun component22 ()Ljava/lang/Boolean;
+	public final fun component23 ()Ljava/lang/Boolean;
+	public final fun component24 ()Ljava/lang/Boolean;
+	public final fun component25 ()Ljava/lang/Boolean;
+	public final fun component26 ()Ljava/lang/Boolean;
+	public final fun component27 ()Ljava/lang/Boolean;
+	public final fun component28 ()Ljava/lang/Boolean;
+	public final fun component29 ()Ljava/lang/Boolean;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component30 ()Ljava/lang/Boolean;
+	public final fun component31 ()Ljava/lang/Boolean;
+	public final fun component32 ()Ljava/lang/Boolean;
+	public final fun component4 ()Ljava/lang/String;
+	public final fun component5 ()Ljava/lang/Double;
+	public final fun component6 ()Ljava/lang/Double;
+	public final fun component7 ()Z
+	public final fun component8 ()Ljava/lang/Double;
+	public final fun component9 ()Z
+	public final fun copy (ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;ZLjava/lang/Double;ZZZZZZLjava/lang/Double;Ljava/lang/Double;ZZZZLjava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;)Lio/sentry/android/buddy/BuddySdkConfigSnapshot;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/BuddySdkConfigSnapshot;ZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;ZLjava/lang/Double;ZZZZZZLjava/lang/Double;Ljava/lang/Double;ZZZZLjava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;Ljava/lang/Boolean;ILjava/lang/Object;)Lio/sentry/android/buddy/BuddySdkConfigSnapshot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getActivityLifecycleBreadcrumbsEnabled ()Ljava/lang/Boolean;
+	public final fun getAnrEnabled ()Ljava/lang/Boolean;
+	public final fun getAppLifecycleBreadcrumbsEnabled ()Ljava/lang/Boolean;
+	public final fun getAttachAnrThreadDump ()Ljava/lang/Boolean;
+	public final fun getAttachScreenshot ()Ljava/lang/Boolean;
+	public final fun getAttachStacktrace ()Z
+	public final fun getAttachViewHierarchy ()Ljava/lang/Boolean;
+	public final fun getAutoActivityLifecycleTracingEnabled ()Ljava/lang/Boolean;
+	public final fun getAutoSessionTrackingEnabled ()Z
+	public final fun getBeforeBreadcrumbConfigured ()Z
+	public final fun getBeforeSendConfigured ()Z
+	public final fun getBeforeSendTransactionConfigured ()Z
+	public final fun getDist ()Ljava/lang/String;
+	public final fun getDsnConfigured ()Z
+	public final fun getEnvironment ()Ljava/lang/String;
+	public final fun getFramesTrackingEnabled ()Ljava/lang/Boolean;
+	public final fun getHasTracesSampler ()Z
+	public final fun getNdkEnabled ()Ljava/lang/Boolean;
+	public final fun getNetworkEventBreadcrumbsEnabled ()Ljava/lang/Boolean;
+	public final fun getPerformanceV2Enabled ()Ljava/lang/Boolean;
+	public final fun getProfilesSampleRate ()Ljava/lang/Double;
+	public final fun getProfilingEnabled ()Z
+	public final fun getRelease ()Ljava/lang/String;
+	public final fun getReportHistoricalAnrs ()Ljava/lang/Boolean;
+	public final fun getSampleRate ()Ljava/lang/Double;
+	public final fun getSessionReplayEnabled ()Z
+	public final fun getSessionReplayMaskAllImages ()Z
+	public final fun getSessionReplayMaskAllText ()Z
+	public final fun getSessionReplayOnErrorEnabled ()Z
+	public final fun getSessionReplayOnErrorSampleRate ()Ljava/lang/Double;
+	public final fun getSessionReplaySampleRate ()Ljava/lang/Double;
+	public final fun getTracesSampleRate ()Ljava/lang/Double;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/sentry/android/buddy/BuddySentryCorrelation : io/sentry/JsonSerializable {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/util/Map;)V
@@ -308,19 +436,30 @@ public final class io/sentry/android/buddy/ComposableSingletons$SentryBuddyUiKt 
 	public fun <init> ()V
 	public final fun getLambda$-112358923$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$-1194038066$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1219267009$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-1377717530$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-1422433876$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1531310189$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1619585511$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$-1714819701$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-171578664$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1733248058$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$-1944467248$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-2024332717$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-218216137$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-581241454$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-682238859$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1215034671$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1276428183$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1525882558$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$1847342617$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1884831281$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1892283088$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1978362776$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$336460570$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$567083575$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$822627732$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$866765393$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$993653794$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class io/sentry/android/buddy/DummySentryBuddyFlowAnalysesApi : io/sentry/android/buddy/SentryBuddyFlowAnalysesApi {
@@ -329,6 +468,12 @@ public final class io/sentry/android/buddy/DummySentryBuddyFlowAnalysesApi : io/
 	public fun get (Ljava/lang/String;)Lio/sentry/android/buddy/FlowAnalysisResponse;
 	public fun resolveRecommendation (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/android/buddy/FlowAnalysisResponse;
 	public fun submit (Lio/sentry/android/buddy/FlowAnalysisRequest;)Lio/sentry/android/buddy/FlowAnalysisResponse;
+}
+
+public final class io/sentry/android/buddy/DummySentryBuddyHealthCheckApi : io/sentry/android/buddy/SentryBuddyHealthCheckApi {
+	public static final field $stable I
+	public static final field INSTANCE Lio/sentry/android/buddy/DummySentryBuddyHealthCheckApi;
+	public fun check (Lio/sentry/android/buddy/BuddyHealthCheckRequest;)Lio/sentry/android/buddy/BuddyHealthCheckResponse;
 }
 
 public final class io/sentry/android/buddy/DummySentryBuddyOpenUrlApi : io/sentry/android/buddy/SentryBuddyOpenUrlApi {
@@ -476,6 +621,10 @@ public abstract interface class io/sentry/android/buddy/SentryBuddyFlowAnalysesA
 	public abstract fun submit (Lio/sentry/android/buddy/FlowAnalysisRequest;)Lio/sentry/android/buddy/FlowAnalysisResponse;
 }
 
+public abstract interface class io/sentry/android/buddy/SentryBuddyHealthCheckApi {
+	public abstract fun check (Lio/sentry/android/buddy/BuddyHealthCheckRequest;)Lio/sentry/android/buddy/BuddyHealthCheckResponse;
+}
+
 public final class io/sentry/android/buddy/SentryBuddyHttpFlowAnalysesApi : io/sentry/android/buddy/SentryBuddyFlowAnalysesApi {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;)V
@@ -484,6 +633,14 @@ public final class io/sentry/android/buddy/SentryBuddyHttpFlowAnalysesApi : io/s
 	public fun get (Ljava/lang/String;)Lio/sentry/android/buddy/FlowAnalysisResponse;
 	public fun resolveRecommendation (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/android/buddy/FlowAnalysisResponse;
 	public fun submit (Lio/sentry/android/buddy/FlowAnalysisRequest;)Lio/sentry/android/buddy/FlowAnalysisResponse;
+}
+
+public final class io/sentry/android/buddy/SentryBuddyHttpHealthCheckApi : io/sentry/android/buddy/SentryBuddyHealthCheckApi {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Lokhttp3/OkHttpClient;)V
+	public synthetic fun <init> (Ljava/lang/String;Lokhttp3/OkHttpClient;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun check (Lio/sentry/android/buddy/BuddyHealthCheckRequest;)Lio/sentry/android/buddy/BuddyHealthCheckResponse;
 }
 
 public final class io/sentry/android/buddy/SentryBuddyHttpOpenUrlApi : io/sentry/android/buddy/SentryBuddyOpenUrlApi {
@@ -504,13 +661,15 @@ public final class io/sentry/android/buddy/SentryBuddyOptions {
 	public fun <init> (Z)V
 	public fun <init> (ZZ)V
 	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;)V
-	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;)V
-	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Ljava/lang/String;)V
-	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public synthetic fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;)V
+	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;)V
+	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Ljava/lang/String;)V
+	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (ZZLio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getEnabled ()Z
 	public final fun getFlowAnalysesApi ()Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;
+	public final fun getHealthCheckApi ()Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;
 	public final fun getOpenUrlApi ()Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;
 	public final fun getSentryUiBaseUrl ()Ljava/lang/String;
 	public final fun getSentryUiOrganizationSlug ()Ljava/lang/String;
@@ -518,6 +677,7 @@ public final class io/sentry/android/buddy/SentryBuddyOptions {
 	public final fun getShowOverlay ()Z
 	public final fun setEnabled (Z)V
 	public final fun setFlowAnalysesApi (Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;)V
+	public final fun setHealthCheckApi (Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;)V
 	public final fun setOpenUrlApi (Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;)V
 	public final fun setSentryUiBaseUrl (Ljava/lang/String;)V
 	public final fun setSentryUiOrganizationSlug (Ljava/lang/String;)V
@@ -536,9 +696,10 @@ public final class io/sentry/android/buddy/SentryBuddySessionController {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/android/buddy/SentryBuddyRecorderFacade;)V
 	public fun <init> (Lio/sentry/android/buddy/SentryBuddyRecorderFacade;Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;)V
-	public fun <init> (Lio/sentry/android/buddy/SentryBuddyRecorderFacade;Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;)V
-	public fun <init> (Lio/sentry/android/buddy/SentryBuddyRecorderFacade;Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Lkotlin/jvm/functions/Function0;)V
-	public synthetic fun <init> (Lio/sentry/android/buddy/SentryBuddyRecorderFacade;Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/sentry/android/buddy/SentryBuddyRecorderFacade;Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;)V
+	public fun <init> (Lio/sentry/android/buddy/SentryBuddyRecorderFacade;Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;)V
+	public fun <init> (Lio/sentry/android/buddy/SentryBuddyRecorderFacade;Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lio/sentry/android/buddy/SentryBuddyRecorderFacade;Lio/sentry/android/buddy/SentryBuddyFlowAnalysesApi;Lio/sentry/android/buddy/SentryBuddyHealthCheckApi;Lio/sentry/android/buddy/SentryBuddyOpenUrlApi;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun analyze ()V
 	public final fun briefRecording ()V
 	public final fun close ()V
