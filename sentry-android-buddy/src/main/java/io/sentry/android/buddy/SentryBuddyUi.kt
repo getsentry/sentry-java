@@ -934,7 +934,13 @@ private fun LiveFeedSheet(
   if (liveFeed.items.isEmpty()) {
     EmptyLiveFeedCard()
   } else {
-    LiveFeedRows(liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT), sentryUiLinks, nowMs, onOpenUrl)
+    LiveFeedRows(
+      items = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT),
+      showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
+      sentryUiLinks = sentryUiLinks,
+      nowMs = nowMs,
+      onOpenUrl = onOpenUrl,
+    )
   }
 }
 
@@ -1356,6 +1362,7 @@ private fun EmptyLiveFeedCard() {
 @Composable
 private fun LiveFeedRows(
   items: List<BuddyLiveFeedItem>,
+  showOverflowEllipsis: Boolean,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onOpenUrl: (Context, String) -> Unit,
@@ -1404,14 +1411,16 @@ private fun LiveFeedRows(
           }
         }
       }
-      Text(
-        "…",
-        modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp),
-        color = BuddyMuted,
-        style = MaterialTheme.typography.titleMedium,
-        textAlign = TextAlign.Start,
-        fontWeight = FontWeight.Normal,
-      )
+      if (showOverflowEllipsis) {
+        Text(
+          "…",
+          modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp),
+          color = BuddyMuted,
+          style = MaterialTheme.typography.titleMedium,
+          textAlign = TextAlign.Start,
+          fontWeight = FontWeight.Normal,
+        )
+      }
     }
   }
 }
