@@ -322,7 +322,6 @@ private fun BoxScope.BuddyBubble(
       liveFeed.unviewedAdverseCount > 0 -> BuddyBubbleGlyphState.UNREAD
       else -> BuddyBubbleGlyphState.IDLE
     }
-  val pulseScale = remember { Animatable(1f) }
   val stopTransition = rememberInfiniteTransition(label = "buddy-floating-stop-button")
   val attentionTransition = rememberInfiniteTransition(label = "buddy-attention-ornaments")
   val stopHaloScale by
@@ -359,14 +358,6 @@ private fun BoxScope.BuddyBubble(
       label = "buddy-attention-ornament-phase",
     )
   var bubbleOffset by remember { mutableStateOf<Offset?>(null) }
-
-  LaunchedEffect(attentionItem?.id) {
-    if (attentionItem != null) {
-      pulseScale.snapTo(1f)
-      pulseScale.animateTo(1.28f, animationSpec = tween(durationMillis = 700))
-      pulseScale.snapTo(1f)
-    }
-  }
 
   fun defaultOffset(): Offset =
     Offset(
@@ -475,17 +466,6 @@ private fun BoxScope.BuddyBubble(
         } else {
           BuddyBubbleGlyph(state = bubbleGlyphState)
         }
-      }
-      if (attentionColor != null && !isRecording) {
-        Box(
-          modifier =
-            Modifier.size(BuddyBubbleSize * pulseScale.value)
-              .border(3.dp, attentionColor.copy(alpha = 0.35f), CircleShape)
-        )
-        Box(
-          modifier =
-            Modifier.size(BuddyBubbleSize + 10.dp).border(3.dp, attentionColor, CircleShape)
-        )
       }
       if (liveFeed.unviewedAdverseCount > 0 && !isRecording) {
         BubbleNotificationBadge(
