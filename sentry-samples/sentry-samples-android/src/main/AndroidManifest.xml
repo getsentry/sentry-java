@@ -102,6 +102,10 @@
       android:exported="false" />
 
     <activity
+      android:name=".SentryBuddyActivity"
+      android:exported="false" />
+
+    <activity
       android:name=".FrameDataForSpansActivity"
       android:exported="false" />
 
