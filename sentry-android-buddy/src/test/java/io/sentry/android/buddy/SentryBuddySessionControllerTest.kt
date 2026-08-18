@@ -115,6 +115,44 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
+  fun `resolving a recommendation updates the insights state`() {
+    val flowAnalysesApi = FakeFlowAnalysesApi()
+    val controller =
+      SentryBuddySessionController(recorderFacade = FakeRecorderFacade(), flowAnalysesApi = flowAnalysesApi)
+
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.analyze()
+    controller.resolveRecommendation("recommendation-1")
+
+    assertThat(flowAnalysesApi.resolvedRecommendationIds).containsExactly("recommendation-1")
+    val state = controller.state as SentryBuddySessionState.Insights
+    assertThat(state.analysis.recommendations.single().status)
+      .isEqualTo(RecommendationStatus.RESOLVED)
+    assertThat(state.response.recommendations.single().status)
+      .isEqualTo(RecommendationStatus.RESOLVED)
+  }
+
+  @Test
+  fun `recommendation resolve failure enters error state`() {
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        flowAnalysesApi = FakeFlowAnalysesApi(resolveFailure = IllegalStateException("Resolve failed")),
+      )
+
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.analyze()
+    controller.resolveRecommendation("recommendation-1")
+
+    assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Error::class.java)
+    assertThat((controller.state as SentryBuddySessionState.Error).message).isEqualTo("Resolve failed")
+  }
+
+  @Test
   fun `record transient event notifies every recorded event`() {
     val controller = SentryBuddySessionController(recorderFacade = FakeRecorderFacade())
     val events = mutableListOf<TransientRecordingEvent>()
@@ -281,10 +319,21 @@ class SentryBuddySessionControllerTest {
   private class FakeFlowAnalysesApi(
     private val submitFailure: RuntimeException? = null,
     private val status: AnalysisStatus = AnalysisStatus.COMPLETED,
+    private val resolveFailure: RuntimeException? = null,
   ) : SentryBuddyFlowAnalysesApi {
     var request: FlowAnalysisRequest? = null
     var submitted = false
     val polledIds = mutableListOf<String>()
+    val resolvedRecommendationIds = mutableListOf<String>()
+    private var recommendations =
+      listOf(
+        Recommendation(
+          id = "recommendation-1",
+          title = "Add spans around key flow work",
+          description = "Use explicit spans to explain the flow.",
+          severity = Severity.HIGH,
+        )
+      )
 
     override fun submit(request: FlowAnalysisRequest): FlowAnalysisResponse {
       submitFailure?.let { throw it }
@@ -302,13 +351,26 @@ class SentryBuddySessionControllerTest {
         flowId = flowId,
         status = status,
         title = if (status == AnalysisStatus.COMPLETED) "Summary" else null,
+        recommendations = if (status == AnalysisStatus.COMPLETED) recommendations else emptyList(),
       )
     }
 
     override fun resolveRecommendation(
       flowId: String,
       recommendationId: String,
-    ): FlowAnalysisResponse = get(flowId)
+    ): FlowAnalysisResponse {
+      resolveFailure?.let { throw it }
+      resolvedRecommendationIds += recommendationId
+      recommendations =
+        recommendations.map { recommendation ->
+          if (recommendation.id == recommendationId) {
+            recommendation.copy(status = RecommendationStatus.RESOLVED)
+          } else {
+            recommendation
+          }
+        }
+      return get(flowId)
+    }
   }
 
   private companion object {

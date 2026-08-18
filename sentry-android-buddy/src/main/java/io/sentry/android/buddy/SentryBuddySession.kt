@@ -27,7 +27,6 @@ public constructor(
   public val summary: String,
   public val insights: List<BuddyInsight>,
   public val recommendations: List<Recommendation>,
-  public val recommendationsText: String = "",
 )
 
 internal sealed class BuddyHealthCheckState {
@@ -371,6 +370,25 @@ public constructor(
     state = SentryBuddySessionState.Intro
   }
 
+  public fun resolveRecommendation(recommendationId: String) {
+    val insightsState = state as? SentryBuddySessionState.Insights ?: return
+    try {
+      val analysis =
+        flowAnalysesApi.resolveRecommendation(insightsState.request.flowId, recommendationId)
+      state =
+        insightsState.copy(
+          analysis = analysis,
+          response = analysis.toBuddyAnalysisResponse(insightsState.request),
+        )
+    } catch (exception: IllegalStateException) {
+      state =
+        SentryBuddySessionState.Error(
+          exception.message ?: "Failed to resolve recommendation.",
+          insightsState,
+        )
+    }
+  }
+
   internal fun runHealthCheck() {
     if (state != SentryBuddySessionState.LiveFeed) {
       return
@@ -534,7 +552,6 @@ public constructor(
           ),
         ),
       recommendations = recommendations,
-      recommendationsText = recommendations.joinToString(separator = "\n\n") { it.description },
     )
   }
 

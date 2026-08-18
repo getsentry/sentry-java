@@ -272,6 +272,9 @@ private fun SentryBuddyOverlayContent(
       nowMs = nowMs,
       onDispatch = { dispatch(it) },
       onAnalyze = { dispatchAnalysis { analyze() } },
+      onResolveRecommendation = { recommendationId ->
+        dispatchAnalysis { resolveRecommendation(recommendationId) }
+      },
       onRunHealthCheck = { dispatchHealthCheck { runHealthCheck() } },
       onDismissHealthCheck = { dispatch { dismissHealthCheck() } },
       onOpenUrl = { context, url -> openUrl(context, url) },
@@ -813,6 +816,7 @@ private fun BuddySheet(
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
+  onResolveRecommendation: (String) -> Unit,
   onRunHealthCheck: () -> Unit,
   onDismissHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
@@ -865,7 +869,8 @@ private fun BuddySheet(
         is SentryBuddySessionState.StoppedSummary -> StoppedSummarySheet(state, onDispatch)
         is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
         is SentryBuddySessionState.Analyzing -> AnalyzingSheet(state)
-        is SentryBuddySessionState.Insights -> InsightsSheet(state, onDispatch)
+        is SentryBuddySessionState.Insights ->
+          InsightsSheet(state, onDispatch, onResolveRecommendation, onOpenUrl)
         is SentryBuddySessionState.Error -> ErrorSheet(state, onDispatch)
         is SentryBuddySessionState.Recording,
         SentryBuddySessionState.Closed -> Unit
@@ -2148,8 +2153,11 @@ private fun AnalyzingSheet(state: SentryBuddySessionState.Analyzing) {
 private fun InsightsSheet(
   state: SentryBuddySessionState.Insights,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+  onResolveRecommendation: (String) -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
 ) {
   val clipboard = LocalClipboardManager.current
+  val context = LocalContext.current
   var isJsonDialogOpen by remember { mutableStateOf(false) }
   val flowName = state.result.recording.flow.name.ifBlank { "Unnamed flow" }
   SheetTitle(
@@ -2177,17 +2185,29 @@ private fun InsightsSheet(
     style = MaterialTheme.typography.titleMedium,
     fontWeight = FontWeight.Bold,
   )
-  Surface(
-    modifier = Modifier.fillMaxWidth().border(1.dp, BuddyBorder, RoundedCornerShape(12.dp)),
-    color = Color.White,
-    shape = RoundedCornerShape(12.dp),
-  ) {
-    Text(
-      text = state.response.recommendationsText.ifBlank { "No recommendations returned yet." },
-      modifier = Modifier.fillMaxWidth().padding(16.dp),
-      color = BuddyInk,
-      style = MaterialTheme.typography.bodyMedium,
-    )
+  if (state.response.recommendations.isEmpty()) {
+    Surface(
+      modifier = Modifier.fillMaxWidth().border(1.dp, BuddyBorder, RoundedCornerShape(12.dp)),
+      color = Color.White,
+      shape = RoundedCornerShape(12.dp),
+    ) {
+      Text(
+        text = "No recommendations returned yet.",
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        color = BuddyInk,
+        style = MaterialTheme.typography.bodyMedium,
+      )
+    }
+  } else {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+      state.response.recommendations.forEach { recommendation ->
+        RecommendationRow(
+          recommendation = recommendation,
+          onResolve = { onResolveRecommendation(recommendation.id) },
+          onOpenLink = recommendation.link?.let { link -> { onOpenUrl(context, link) } },
+        )
+      }
+    }
   }
   Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
     OutlinedButton(
@@ -2288,28 +2308,54 @@ private fun appendJsonNewLine(result: StringBuilder, indent: Int) {
 }
 
 @Composable
-private fun RecommendationRow(recommendation: Recommendation) {
-  Column(
-    modifier = Modifier.fillMaxWidth().padding(16.dp),
-    verticalArrangement = Arrangement.spacedBy(6.dp),
+private fun RecommendationRow(
+  recommendation: Recommendation,
+  onResolve: (() -> Unit)? = null,
+  onOpenLink: (() -> Unit)? = null,
+) {
+  Surface(
+    modifier = Modifier.fillMaxWidth(),
+    color = severityColor(recommendation.severity).copy(alpha = 0.08f),
+    shape = RoundedCornerShape(14.dp),
+    border = CardDefaults.outlinedCardBorder(),
   ) {
-    Row(
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalAlignment = Alignment.CenterVertically,
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-      Box(
-        modifier =
-          Modifier.size(10.dp).background(severityColor(recommendation.severity), CircleShape)
+      Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Box(
+          modifier =
+            Modifier.size(10.dp).background(severityColor(recommendation.severity), CircleShape)
+        )
+        Text(
+          recommendation.title,
+          modifier = Modifier.weight(1f),
+          color = BuddyInk,
+          fontWeight = FontWeight.Bold,
+        )
+      }
+      Text(recommendation.description, color = BuddyMuted)
+      Text(
+        "${recommendation.severity.value} • ${recommendation.status.value}",
+        color = BuddyPurple,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
       )
-      Text(recommendation.title, color = BuddyInk, fontWeight = FontWeight.Bold)
+      if (recommendation.resolvable || onOpenLink != null) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+          if (recommendation.resolvable && recommendation.status == RecommendationStatus.OPEN) {
+            OutlinedButton(onClick = { onResolve?.invoke() }) { BuddyButtonText("Resolve") }
+          }
+          if (onOpenLink != null) {
+            TextButton(onClick = onOpenLink) { BuddyButtonText("Open Link") }
+          }
+        }
+      }
     }
-    Text(recommendation.description, color = BuddyMuted)
-    Text(
-      "${recommendation.severity.value} • ${recommendation.status.value}",
-      color = BuddyPurple,
-      style = MaterialTheme.typography.labelMedium,
-      fontWeight = FontWeight.Bold,
-    )
   }
 }
 
