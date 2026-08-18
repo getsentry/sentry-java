@@ -567,7 +567,12 @@ internal class BuddyActivityLifecycleCallbacks(
     }
     if (overlayManager == null) {
       overlayManager =
-        BuddyOverlayManager(SentryBuddySessionController(flowAnalysesApi = options.flowAnalysesApi))
+        BuddyOverlayManager(
+          SentryBuddySessionController(
+            flowAnalysesApi = options.flowAnalysesApi,
+            openUrlApi = options.openUrlApi,
+          )
+        )
     }
     overlayManager?.updateOptions(options)
   }

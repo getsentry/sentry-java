@@ -1,10 +1,7 @@
 package io.sentry.android.buddy
 
-import android.content.ActivityNotFoundException
 import android.content.Context
-import android.content.Intent
 import android.graphics.Rect
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -162,6 +159,10 @@ private fun SentryBuddyOverlayContent(
     }
   }
 
+  fun openUrl(context: Context, url: String) {
+    analysisScope.launch { withContext(Dispatchers.IO) { controller.openUrl(context, url) } }
+  }
+
   LaunchedEffect(state) {
     if (state !is SentryBuddySessionState.Closed) {
       while (true) {
@@ -254,6 +255,7 @@ private fun SentryBuddyOverlayContent(
       nowMs = nowMs,
       onDispatch = { dispatch(it) },
       onAnalyze = { dispatchAnalysis { analyze() } },
+      onOpenUrl = { context, url -> openUrl(context, url) },
     )
   }
 }
@@ -487,6 +489,7 @@ private fun BuddySheet(
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
 ) {
   if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
     return
@@ -510,7 +513,7 @@ private fun BuddySheet(
     ) {
       when (state) {
         SentryBuddySessionState.LiveFeed ->
-          LiveFeedSheet(liveFeed, sentryUiLinks, nowMs, onDispatch)
+          LiveFeedSheet(liveFeed, sentryUiLinks, nowMs, onDispatch, onOpenUrl)
         SentryBuddySessionState.Intro -> IntroSheet(onDispatch)
         is SentryBuddySessionState.StoppedSummary -> StoppedSummarySheet(state, onDispatch)
         is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
@@ -578,9 +581,10 @@ private fun LiveFeedSheet(
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
 ) {
   SheetTitle("Sentry Buddy", "Live Feed")
-  AttentionCard(liveFeed, sentryUiLinks, nowMs)
+  AttentionCard(liveFeed, sentryUiLinks, nowMs, onOpenUrl)
   Button(
     modifier = Modifier.fillMaxWidth().height(56.dp),
     colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
@@ -597,12 +601,17 @@ private fun LiveFeedSheet(
   if (liveFeed.items.isEmpty()) {
     EmptyLiveFeedCard()
   } else {
-    LiveFeedRows(liveFeed.items, sentryUiLinks, nowMs)
+    LiveFeedRows(liveFeed.items, sentryUiLinks, nowMs, onOpenUrl)
   }
 }
 
 @Composable
-private fun AttentionCard(liveFeed: BuddyLiveFeed, sentryUiLinks: BuddySentryUiLinks, nowMs: Long) {
+private fun AttentionCard(
+  liveFeed: BuddyLiveFeed,
+  sentryUiLinks: BuddySentryUiLinks,
+  nowMs: Long,
+  onOpenUrl: (Context, String) -> Unit,
+) {
   val item = liveFeed.latestAdverseItem
   if (item == null) {
     Card(border = CardDefaults.outlinedCardBorder()) {
@@ -625,8 +634,7 @@ private fun AttentionCard(liveFeed: BuddyLiveFeed, sentryUiLinks: BuddySentryUiL
   val context = LocalContext.current
   val link = sentryUiLinks.linkFor(item)
   Card(
-    modifier =
-      Modifier.clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } },
+    modifier = Modifier.clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } },
     colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.10f)),
     border = CardDefaults.outlinedCardBorder(),
   ) {
@@ -694,6 +702,7 @@ private fun LiveFeedRows(
   items: List<BuddyLiveFeedItem>,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
+  onOpenUrl: (Context, String) -> Unit,
 ) {
   val context = LocalContext.current
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -703,7 +712,7 @@ private fun LiveFeedRows(
       val link = sentryUiLinks.linkFor(item)
       Card(
         modifier =
-          Modifier.clickable(enabled = link != null) { link?.let { openSentryLink(context, it) } },
+          Modifier.clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } },
         border = CardDefaults.outlinedCardBorder(),
       ) {
         Row(
@@ -1058,14 +1067,6 @@ private fun relativeTime(timestampMs: Long, nowMs: Long): String {
     return "${ageSeconds}s ago"
   }
   return "${ageSeconds / 60}m ago"
-}
-
-private fun openSentryLink(context: Context, link: String) {
-  try {
-    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)))
-  } catch (_: ActivityNotFoundException) {
-    // A debug overlay should not crash the app when no browser can handle the link.
-  }
 }
 
 private fun Map<String, Any?>.mapValue(key: String): Map<*, *> =
