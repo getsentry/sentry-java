@@ -1,6 +1,6 @@
 # Build Compose Sentry Travel shell
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 Blocked by: 01
 

@@ -1,6 +1,6 @@
 # Add Sentry Travel sample entry
 
-Status: ready-for-agent
+Status: done
 Type: AFK
 
 ## Description
