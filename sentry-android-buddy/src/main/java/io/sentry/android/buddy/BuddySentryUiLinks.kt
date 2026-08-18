@@ -13,7 +13,7 @@ internal data class BuddySentryUiLinks(
     return when (item.category) {
       BuddyLiveFeedItem.Category.ERROR ->
         item.timelineItem.data.stringValue(DATA_EVENT_ID)?.let { eventId ->
-          "$baseUrl/issues/?project=${projectId.urlEncode()}&query=${"event.id:$eventId".urlEncode()}"
+          "$baseUrl/issues/?project=${projectId.urlEncode()}&query=${"id:$eventId".urlEncode()}"
         }
       BuddyLiveFeedItem.Category.SLOW_SPAN,
       BuddyLiveFeedItem.Category.FAILED_SPAN -> traceLink(baseUrl, projectId, item)
