@@ -91,6 +91,7 @@ import io.sentry.android.buddy.ui.preview.previewRecordingResult
 import io.sentry.android.buddy.ui.preview.previewSevereLiveFeed
 import io.sentry.android.buddy.ui.preview.previewUnreadLiveFeed
 import kotlin.math.roundToInt
+import kotlin.random.Random
 import kotlinx.coroutines.delay
 
 @Composable
@@ -340,7 +341,7 @@ internal fun BoxScope.BuddyQuoteText(
     return
   }
   var quoteIndex by remember {
-    mutableStateOf((System.currentTimeMillis() % BuddyFabQuotes.size).toInt())
+    mutableStateOf(Random.nextInt(BuddyFabQuotes.size))
   }
   var showQuote by remember { mutableStateOf(true) }
   var quoteHeightPx by remember { mutableStateOf(0f) }
@@ -370,7 +371,7 @@ internal fun BoxScope.BuddyQuoteText(
       delay(BUDDY_FAB_QUOTE_VISIBLE_MS)
       showQuote = false
       delay(BUDDY_FAB_QUOTE_INTERVAL_MS - BUDDY_FAB_QUOTE_VISIBLE_MS)
-      quoteIndex = (quoteIndex + 1) % BuddyFabQuotes.size
+      quoteIndex = nextRandomBuddyFabQuoteIndex(quoteIndex)
     }
   }
 
@@ -400,6 +401,17 @@ internal fun BoxScope.BuddyQuoteText(
 internal enum class BuddyQuoteBubbleSide {
   LEFT_OF_FAB,
   RIGHT_OF_FAB,
+}
+
+private fun nextRandomBuddyFabQuoteIndex(currentIndex: Int): Int {
+  if (BuddyFabQuotes.size <= 1) {
+    return 0
+  }
+  var nextIndex = currentIndex
+  while (nextIndex == currentIndex) {
+    nextIndex = Random.nextInt(BuddyFabQuotes.size)
+  }
+  return nextIndex
 }
 
 // The bubble positions itself against the overlay bounds, so previews hand it a fixed-size frame
