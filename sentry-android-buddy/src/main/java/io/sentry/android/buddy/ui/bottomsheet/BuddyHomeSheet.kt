@@ -49,6 +49,7 @@ import io.sentry.android.buddy.model.BuddyLiveFeed
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.ui.common.BuddyButtonText
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
+import io.sentry.android.buddy.ui.common.BuddyRecommendationCardStyle
 import io.sentry.android.buddy.ui.common.BuddyRecommendationErrorCard
 import io.sentry.android.buddy.ui.common.SheetTitle
 import io.sentry.android.buddy.ui.common.openLinkLabelFor
@@ -69,7 +70,6 @@ import io.sentry.android.buddy.ui.preview.previewEmptyLiveFeed
 import io.sentry.android.buddy.ui.preview.previewHomeRecommendation
 import io.sentry.android.buddy.ui.preview.previewLiveFeed
 import io.sentry.android.buddy.ui.preview.previewSentryUiLinks
-import org.w3c.dom.Text
 
 @Composable
 internal fun BuddyHomeSheet(
@@ -316,6 +316,8 @@ internal fun RecommendationsTabContent(
               }
             },
           openLinkLabel = openLinkLabelFor(recommendation.seerRunUrl),
+          detailsLabel = "Details",
+          style = BuddyRecommendationCardStyle.ACTION_INBOX,
         )
       }
     }
