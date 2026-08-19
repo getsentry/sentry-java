@@ -971,7 +971,7 @@ public final class io/sentry/android/buddy/ui/userflow/ComposableSingletons$ZapA
 	public fun <init> ()V
 	public final fun getLambda$-1048584006$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-340124951$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$1928477819$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1605408885$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$382690161$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 }
 
