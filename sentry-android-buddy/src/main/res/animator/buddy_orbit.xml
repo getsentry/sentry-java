@@ -1,21 +1,50 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- bd-orbit: pupil circles while Seer reads the trace. -->
+<?xml version="1.0" encoding="utf-8"?><!-- bd-orbit: pupil circles while Seer reads the trace. -->
 <objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="1000"
-    android:repeatCount="infinite"
-    android:valueType="floatType">
-    <propertyValuesHolder android:propertyName="translateX">
-        <keyframe android:fraction="0" android:value="0" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="0.25" android:value="1.1" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="0.5" android:value="0" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="0.75" android:value="-1.1" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="1" android:value="0" android:interpolator="@android:anim/linear_interpolator" />
-    </propertyValuesHolder>
-    <propertyValuesHolder android:propertyName="translateY">
-        <keyframe android:fraction="0" android:value="-1.1" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="0.25" android:value="0" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="0.5" android:value="1.1" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="0.75" android:value="0" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="1" android:value="-1.1" android:interpolator="@android:anim/linear_interpolator" />
-    </propertyValuesHolder>
+  android:duration="1000"
+  android:repeatCount="infinite"
+  android:valueType="floatType">
+  <propertyValuesHolder android:propertyName="translateX">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0" />
+    <keyframe
+      android:fraction="0.25"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="1.1" />
+    <keyframe
+      android:fraction="0.5"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0" />
+    <keyframe
+      android:fraction="0.75"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.1" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0" />
+  </propertyValuesHolder>
+  <propertyValuesHolder android:propertyName="translateY">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.1" />
+    <keyframe
+      android:fraction="0.25"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0" />
+    <keyframe
+      android:fraction="0.5"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="1.1" />
+    <keyframe
+      android:fraction="0.75"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.1" />
+  </propertyValuesHolder>
 </objectAnimator>

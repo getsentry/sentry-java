@@ -1,11 +1,16 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- bd-radar @ 1100ms: the analyzing sweep. -->
+<?xml version="1.0" encoding="utf-8"?><!-- bd-radar @ 1100ms: the analyzing sweep. -->
 <objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="1100"
-    android:repeatCount="infinite"
-    android:valueType="floatType">
-    <propertyValuesHolder android:propertyName="rotation">
-        <keyframe android:fraction="0" android:value="0" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="1" android:value="360" android:interpolator="@android:anim/linear_interpolator" />
-    </propertyValuesHolder>
+  android:duration="1100"
+  android:repeatCount="infinite"
+  android:valueType="floatType">
+  <propertyValuesHolder android:propertyName="rotation">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="360" />
+  </propertyValuesHolder>
 </objectAnimator>

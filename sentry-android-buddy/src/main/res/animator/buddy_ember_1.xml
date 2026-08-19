@@ -1,20 +1,37 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- bd-emb 1170ms, staggered 190ms -->
+<?xml version="1.0" encoding="utf-8"?><!-- bd-emb 1170ms, staggered 190ms -->
 <objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="1170"
-    android:startOffset="190"
-    android:repeatCount="infinite"
-    android:valueType="floatType">
-    <propertyValuesHolder android:propertyName="translateY">
-        <keyframe android:fraction="0" android:value="0" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="1" android:value="-10" android:interpolator="@android:anim/linear_interpolator" />
-    </propertyValuesHolder>
-    <propertyValuesHolder android:propertyName="scaleX">
-        <keyframe android:fraction="0" android:value="1" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="1" android:value="0.35" android:interpolator="@android:anim/linear_interpolator" />
-    </propertyValuesHolder>
-    <propertyValuesHolder android:propertyName="scaleY">
-        <keyframe android:fraction="0" android:value="1" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="1" android:value="0.35" android:interpolator="@android:anim/linear_interpolator" />
-    </propertyValuesHolder>
+  android:duration="1170"
+  android:repeatCount="infinite"
+  android:startOffset="190"
+  android:valueType="floatType">
+  <propertyValuesHolder android:propertyName="translateY">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-10" />
+  </propertyValuesHolder>
+  <propertyValuesHolder android:propertyName="scaleX">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="1" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0.35" />
+  </propertyValuesHolder>
+  <propertyValuesHolder android:propertyName="scaleY">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="1" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0.35" />
+  </propertyValuesHolder>
 </objectAnimator>

@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Idle: blinks every 7s and glances around every 4.5s. -->
+<?xml version="1.0" encoding="utf-8"?><!-- Idle: blinks every 7s and glances around every 4.5s. -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/ic_buddy_eye">
-    <target
-        android:name="eye"
-        android:animation="@animator/buddy_blink" />
-    <target
-        android:name="pupil"
-        android:animation="@animator/buddy_glance" />
+  android:drawable="@drawable/ic_buddy_eye">
+  <target
+    android:name="eye"
+    android:animation="@animator/buddy_blink" />
+  <target
+    android:name="pupil"
+    android:animation="@animator/buddy_glance" />
 </animated-vector>

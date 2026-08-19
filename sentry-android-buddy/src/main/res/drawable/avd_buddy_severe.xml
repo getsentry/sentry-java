@@ -1,8 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Severe: pupil dilates fast on the danger bubble. Overlay avd_buddy_flames. -->
+<?xml version="1.0" encoding="utf-8"?><!-- Severe: pupil dilates fast on the danger bubble. Overlay avd_buddy_flames. -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/ic_buddy_eye_danger">
-    <target
-        android:name="pupil"
-        android:animation="@animator/buddy_dilate" />
+  android:drawable="@drawable/ic_buddy_eye_danger">
+  <target
+    android:name="pupil"
+    android:animation="@animator/buddy_dilate" />
 </animated-vector>

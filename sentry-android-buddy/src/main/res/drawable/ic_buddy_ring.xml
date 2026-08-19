@@ -1,18 +1,20 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Pulse ring that expands from behind the recording bubble.
+<?xml version="1.0" encoding="utf-8"?><!-- Pulse ring that expands from behind the recording bubble.
      The disc matches the 54dp bubble, but the canvas is 92 units wide so the
      1.7x peak of bd-ring is not clipped away by the viewport. Apply
      @dimen/buddy_ring_inset as a margin so the extra canvas costs no layout. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="92dp"
-    android:height="92dp"
-    android:viewportWidth="92"
-    android:viewportHeight="92">
-    <group android:name="ring" android:pivotX="46" android:pivotY="46">
-        <path
-            android:name="ring_fill"
-            android:pathData="M46,46m-27,0a27,27 0 1,0 54,0a27,27 0 1,0 -54,0"
-            android:fillColor="@color/buddy_danger_vibrant"
-            android:fillAlpha="0.5" />
-    </group>
+  android:width="92dp"
+  android:height="92dp"
+  android:viewportWidth="92"
+  android:viewportHeight="92">
+  <group
+    android:name="ring"
+    android:pivotX="46"
+    android:pivotY="46">
+    <path
+      android:name="ring_fill"
+      android:fillAlpha="0.5"
+      android:fillColor="@color/buddy_danger_vibrant"
+      android:pathData="M46,46m-27,0a27,27 0 1,0 54,0a27,27 0 1,0 -54,0" />
+  </group>
 </vector>

@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="buddy_bubble_size">54dp</dimen>
-    <dimen name="buddy_bubble_padding">8dp</dimen>
-    <!-- Glyph is 44dp (26-unit viewport) so the beam can overflow the mark
-         exactly as in the prototype. Keep clipChildren="false" on the container. -->
-    <dimen name="buddy_glyph_size">44dp</dimen>
-    <dimen name="buddy_chonk_ledge">2dp</dimen>
-    <dimen name="buddy_badge_size">21dp</dimen>
-    <dimen name="buddy_badge_dot_size">13dp</dimen>
-    <!-- Ring drawable is 92dp of canvas so the 54dp disc still has room at its
-         1.7x peak; the -19dp margin keeps the parent measuring 54dp. -->
-    <dimen name="buddy_ring_size">92dp</dimen>
-    <dimen name="buddy_ring_inset">-19dp</dimen>
-    <!-- Flame overlay is a 120dp box centred on the 54dp bubble, i.e. inset -33dp
-         on every edge. Parent must not clip. -->
-    <dimen name="buddy_flames_size">120dp</dimen>
-    <dimen name="buddy_flames_inset">-33dp</dimen>
+  <dimen name="buddy_bubble_size">54dp</dimen>
+  <dimen name="buddy_bubble_padding">8dp</dimen>
+  <!-- Glyph is 44dp (26-unit viewport) so the beam can overflow the mark
+       exactly as in the prototype. Keep clipChildren="false" on the container. -->
+  <dimen name="buddy_glyph_size">44dp</dimen>
+  <dimen name="buddy_chonk_ledge">2dp</dimen>
+  <dimen name="buddy_badge_size">21dp</dimen>
+  <dimen name="buddy_badge_dot_size">13dp</dimen>
+  <!-- Ring drawable is 92dp of canvas so the 54dp disc still has room at its
+       1.7x peak; the -19dp margin keeps the parent measuring 54dp. -->
+  <dimen name="buddy_ring_size">92dp</dimen>
+  <dimen name="buddy_ring_inset">-19dp</dimen>
+  <!-- Flame overlay is a 120dp box centred on the 54dp bubble, i.e. inset -33dp
+       on every edge. Parent must not clip. -->
+  <dimen name="buddy_flames_size">120dp</dimen>
+  <dimen name="buddy_flames_inset">-33dp</dimen>
 </resources>

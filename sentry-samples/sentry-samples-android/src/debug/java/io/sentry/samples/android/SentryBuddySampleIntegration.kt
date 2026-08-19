@@ -2,9 +2,9 @@ package io.sentry.samples.android
 
 import android.app.Application
 import io.sentry.android.buddy.SentryBuddy
-import io.sentry.android.buddy.SentryBuddyHttpFlowAnalysesApi
-import io.sentry.android.buddy.SentryBuddyHttpHealthCheckApi
-import io.sentry.android.buddy.SentryBuddyHttpOpenUrlApi
+import io.sentry.android.buddy.bridge.SentryBuddyHttpFlowAnalysesApi
+import io.sentry.android.buddy.bridge.SentryBuddyHttpHealthCheckApi
+import io.sentry.android.buddy.bridge.SentryBuddyHttpOpenUrlApi
 
 object SentryBuddySampleIntegration {
   @JvmStatic

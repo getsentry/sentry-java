@@ -9,6 +9,8 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.TransactionContext
+import io.sentry.android.buddy.bridge.*
+import io.sentry.android.buddy.model.*
 import io.sentry.protocol.Message
 import io.sentry.protocol.SentryException
 import java.util.Date

@@ -3,6 +3,8 @@ package io.sentry.android.buddy
 import android.app.Activity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import io.sentry.android.buddy.bridge.*
+import io.sentry.android.buddy.model.*
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

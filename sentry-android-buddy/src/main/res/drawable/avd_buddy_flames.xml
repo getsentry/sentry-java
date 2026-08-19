@@ -1,67 +1,190 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Severe state overlay. 62 animated targets. -->
+<?xml version="1.0" encoding="utf-8"?><!-- Severe state overlay. 62 animated targets. -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/ic_buddy_flames">
-    <target android:name="heat" android:animation="@animator/buddy_heat_scale" />
-    <target android:name="heat_fill" android:animation="@animator/buddy_heat_fade" />
-    <target android:name="flame0_0" android:animation="@animator/buddy_flick_430_0" />
-    <target android:name="flame0_1" android:animation="@animator/buddy_flick_380_0" />
-    <target android:name="flame0_2" android:animation="@animator/buddy_flick_340_0" />
-    <target android:name="flame1_0" android:animation="@animator/buddy_flick_490_47" />
-    <target android:name="flame1_1" android:animation="@animator/buddy_flick_450_61" />
-    <target android:name="flame1_2" android:animation="@animator/buddy_flick_390_39" />
-    <target android:name="flame2_0" android:animation="@animator/buddy_flick_550_94" />
-    <target android:name="flame2_1" android:animation="@animator/buddy_flick_520_122" />
-    <target android:name="flame2_2" android:animation="@animator/buddy_flick_440_78" />
-    <target android:name="flame3_0" android:animation="@animator/buddy_flick_610_141" />
-    <target android:name="flame3_1" android:animation="@animator/buddy_flick_380_183" />
-    <target android:name="flame3_2" android:animation="@animator/buddy_flick_490_117" />
-    <target android:name="flame4_0" android:animation="@animator/buddy_flick_430_188" />
-    <target android:name="flame4_1" android:animation="@animator/buddy_flick_450_244" />
-    <target android:name="flame4_2" android:animation="@animator/buddy_flick_540_156" />
-    <target android:name="flame5_0" android:animation="@animator/buddy_flick_490_235" />
-    <target android:name="flame5_1" android:animation="@animator/buddy_flick_520_305" />
-    <target android:name="flame5_2" android:animation="@animator/buddy_flick_340_195" />
-    <target android:name="flame6_0" android:animation="@animator/buddy_flick_550_282" />
-    <target android:name="flame6_1" android:animation="@animator/buddy_flick_380_366" />
-    <target android:name="flame6_2" android:animation="@animator/buddy_flick_390_234" />
-    <target android:name="flame7_0" android:animation="@animator/buddy_flick_610_329" />
-    <target android:name="flame7_1" android:animation="@animator/buddy_flick_450_427" />
-    <target android:name="flame7_2" android:animation="@animator/buddy_flick_440_273" />
-    <target android:name="flame8_0" android:animation="@animator/buddy_flick_430_376" />
-    <target android:name="flame8_1" android:animation="@animator/buddy_flick_520_488" />
-    <target android:name="flame8_2" android:animation="@animator/buddy_flick_490_312" />
-    <target android:name="flame9_0" android:animation="@animator/buddy_flick_490_423" />
-    <target android:name="flame9_1" android:animation="@animator/buddy_flick_380_549" />
-    <target android:name="flame9_2" android:animation="@animator/buddy_flick_540_351" />
-    <target android:name="flame10_0" android:animation="@animator/buddy_flick_550_470" />
-    <target android:name="flame10_1" android:animation="@animator/buddy_flick_450_610" />
-    <target android:name="flame10_2" android:animation="@animator/buddy_flick_340_390" />
-    <target android:name="flame11_0" android:animation="@animator/buddy_flick_610_517" />
-    <target android:name="flame11_1" android:animation="@animator/buddy_flick_520_671" />
-    <target android:name="flame11_2" android:animation="@animator/buddy_flick_390_429" />
-    <target android:name="flame12_0" android:animation="@animator/buddy_flick_430_564" />
-    <target android:name="flame12_1" android:animation="@animator/buddy_flick_380_732" />
-    <target android:name="flame12_2" android:animation="@animator/buddy_flick_440_468" />
-    <target android:name="flame13_0" android:animation="@animator/buddy_flick_490_611" />
-    <target android:name="flame13_1" android:animation="@animator/buddy_flick_450_793" />
-    <target android:name="flame13_2" android:animation="@animator/buddy_flick_490_507" />
-    <target android:name="flame14_0" android:animation="@animator/buddy_flick_550_658" />
-    <target android:name="flame14_1" android:animation="@animator/buddy_flick_520_854" />
-    <target android:name="flame14_2" android:animation="@animator/buddy_flick_540_546" />
-    <target android:name="flame15_0" android:animation="@animator/buddy_flick_610_705" />
-    <target android:name="flame15_1" android:animation="@animator/buddy_flick_380_915" />
-    <target android:name="flame15_2" android:animation="@animator/buddy_flick_340_585" />
-    <target android:name="ember0" android:animation="@animator/buddy_ember_0" />
-    <target android:name="ember0_fill" android:animation="@animator/buddy_ember_fade_0" />
-    <target android:name="ember1" android:animation="@animator/buddy_ember_1" />
-    <target android:name="ember1_fill" android:animation="@animator/buddy_ember_fade_1" />
-    <target android:name="ember2" android:animation="@animator/buddy_ember_2" />
-    <target android:name="ember2_fill" android:animation="@animator/buddy_ember_fade_2" />
-    <target android:name="ember3" android:animation="@animator/buddy_ember_3" />
-    <target android:name="ember3_fill" android:animation="@animator/buddy_ember_fade_3" />
-    <target android:name="ember4" android:animation="@animator/buddy_ember_4" />
-    <target android:name="ember4_fill" android:animation="@animator/buddy_ember_fade_4" />
-    <target android:name="ember5" android:animation="@animator/buddy_ember_5" />
-    <target android:name="ember5_fill" android:animation="@animator/buddy_ember_fade_5" />
+  android:drawable="@drawable/ic_buddy_flames">
+  <target
+    android:name="heat"
+    android:animation="@animator/buddy_heat_scale" />
+  <target
+    android:name="heat_fill"
+    android:animation="@animator/buddy_heat_fade" />
+  <target
+    android:name="flame0_0"
+    android:animation="@animator/buddy_flick_430_0" />
+  <target
+    android:name="flame0_1"
+    android:animation="@animator/buddy_flick_380_0" />
+  <target
+    android:name="flame0_2"
+    android:animation="@animator/buddy_flick_340_0" />
+  <target
+    android:name="flame1_0"
+    android:animation="@animator/buddy_flick_490_47" />
+  <target
+    android:name="flame1_1"
+    android:animation="@animator/buddy_flick_450_61" />
+  <target
+    android:name="flame1_2"
+    android:animation="@animator/buddy_flick_390_39" />
+  <target
+    android:name="flame2_0"
+    android:animation="@animator/buddy_flick_550_94" />
+  <target
+    android:name="flame2_1"
+    android:animation="@animator/buddy_flick_520_122" />
+  <target
+    android:name="flame2_2"
+    android:animation="@animator/buddy_flick_440_78" />
+  <target
+    android:name="flame3_0"
+    android:animation="@animator/buddy_flick_610_141" />
+  <target
+    android:name="flame3_1"
+    android:animation="@animator/buddy_flick_380_183" />
+  <target
+    android:name="flame3_2"
+    android:animation="@animator/buddy_flick_490_117" />
+  <target
+    android:name="flame4_0"
+    android:animation="@animator/buddy_flick_430_188" />
+  <target
+    android:name="flame4_1"
+    android:animation="@animator/buddy_flick_450_244" />
+  <target
+    android:name="flame4_2"
+    android:animation="@animator/buddy_flick_540_156" />
+  <target
+    android:name="flame5_0"
+    android:animation="@animator/buddy_flick_490_235" />
+  <target
+    android:name="flame5_1"
+    android:animation="@animator/buddy_flick_520_305" />
+  <target
+    android:name="flame5_2"
+    android:animation="@animator/buddy_flick_340_195" />
+  <target
+    android:name="flame6_0"
+    android:animation="@animator/buddy_flick_550_282" />
+  <target
+    android:name="flame6_1"
+    android:animation="@animator/buddy_flick_380_366" />
+  <target
+    android:name="flame6_2"
+    android:animation="@animator/buddy_flick_390_234" />
+  <target
+    android:name="flame7_0"
+    android:animation="@animator/buddy_flick_610_329" />
+  <target
+    android:name="flame7_1"
+    android:animation="@animator/buddy_flick_450_427" />
+  <target
+    android:name="flame7_2"
+    android:animation="@animator/buddy_flick_440_273" />
+  <target
+    android:name="flame8_0"
+    android:animation="@animator/buddy_flick_430_376" />
+  <target
+    android:name="flame8_1"
+    android:animation="@animator/buddy_flick_520_488" />
+  <target
+    android:name="flame8_2"
+    android:animation="@animator/buddy_flick_490_312" />
+  <target
+    android:name="flame9_0"
+    android:animation="@animator/buddy_flick_490_423" />
+  <target
+    android:name="flame9_1"
+    android:animation="@animator/buddy_flick_380_549" />
+  <target
+    android:name="flame9_2"
+    android:animation="@animator/buddy_flick_540_351" />
+  <target
+    android:name="flame10_0"
+    android:animation="@animator/buddy_flick_550_470" />
+  <target
+    android:name="flame10_1"
+    android:animation="@animator/buddy_flick_450_610" />
+  <target
+    android:name="flame10_2"
+    android:animation="@animator/buddy_flick_340_390" />
+  <target
+    android:name="flame11_0"
+    android:animation="@animator/buddy_flick_610_517" />
+  <target
+    android:name="flame11_1"
+    android:animation="@animator/buddy_flick_520_671" />
+  <target
+    android:name="flame11_2"
+    android:animation="@animator/buddy_flick_390_429" />
+  <target
+    android:name="flame12_0"
+    android:animation="@animator/buddy_flick_430_564" />
+  <target
+    android:name="flame12_1"
+    android:animation="@animator/buddy_flick_380_732" />
+  <target
+    android:name="flame12_2"
+    android:animation="@animator/buddy_flick_440_468" />
+  <target
+    android:name="flame13_0"
+    android:animation="@animator/buddy_flick_490_611" />
+  <target
+    android:name="flame13_1"
+    android:animation="@animator/buddy_flick_450_793" />
+  <target
+    android:name="flame13_2"
+    android:animation="@animator/buddy_flick_490_507" />
+  <target
+    android:name="flame14_0"
+    android:animation="@animator/buddy_flick_550_658" />
+  <target
+    android:name="flame14_1"
+    android:animation="@animator/buddy_flick_520_854" />
+  <target
+    android:name="flame14_2"
+    android:animation="@animator/buddy_flick_540_546" />
+  <target
+    android:name="flame15_0"
+    android:animation="@animator/buddy_flick_610_705" />
+  <target
+    android:name="flame15_1"
+    android:animation="@animator/buddy_flick_380_915" />
+  <target
+    android:name="flame15_2"
+    android:animation="@animator/buddy_flick_340_585" />
+  <target
+    android:name="ember0"
+    android:animation="@animator/buddy_ember_0" />
+  <target
+    android:name="ember0_fill"
+    android:animation="@animator/buddy_ember_fade_0" />
+  <target
+    android:name="ember1"
+    android:animation="@animator/buddy_ember_1" />
+  <target
+    android:name="ember1_fill"
+    android:animation="@animator/buddy_ember_fade_1" />
+  <target
+    android:name="ember2"
+    android:animation="@animator/buddy_ember_2" />
+  <target
+    android:name="ember2_fill"
+    android:animation="@animator/buddy_ember_fade_2" />
+  <target
+    android:name="ember3"
+    android:animation="@animator/buddy_ember_3" />
+  <target
+    android:name="ember3_fill"
+    android:animation="@animator/buddy_ember_fade_3" />
+  <target
+    android:name="ember4"
+    android:animation="@animator/buddy_ember_4" />
+  <target
+    android:name="ember4_fill"
+    android:animation="@animator/buddy_ember_fade_4" />
+  <target
+    android:name="ember5"
+    android:animation="@animator/buddy_ember_5" />
+  <target
+    android:name="ember5_fill"
+    android:animation="@animator/buddy_ember_fade_5" />
 </animated-vector>

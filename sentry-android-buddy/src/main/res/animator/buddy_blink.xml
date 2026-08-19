@@ -1,13 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- bd-shut: one blink every 7s. Loops natively, no restart callback needed. -->
+<?xml version="1.0" encoding="utf-8"?><!-- bd-shut: one blink every 7s. Loops natively, no restart callback needed. -->
 <objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="7000"
-    android:repeatCount="infinite"
-    android:valueType="floatType">
-    <propertyValuesHolder android:propertyName="scaleY">
-        <keyframe android:fraction="0" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
-        <keyframe android:fraction="0.86" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
-        <keyframe android:fraction="0.92" android:value="0.08" android:interpolator="@anim/buddy_ease_smooth" />
-        <keyframe android:fraction="1" android:value="1" android:interpolator="@anim/buddy_ease_smooth" />
-    </propertyValuesHolder>
+  android:duration="7000"
+  android:repeatCount="infinite"
+  android:valueType="floatType">
+  <propertyValuesHolder android:propertyName="scaleY">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1" />
+    <keyframe
+      android:fraction="0.86"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1" />
+    <keyframe
+      android:fraction="0.92"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="0.08" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1" />
+  </propertyValuesHolder>
 </objectAnimator>

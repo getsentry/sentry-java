@@ -1,11 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Recording: pulse ring behind the bubble. -->
+<?xml version="1.0" encoding="utf-8"?><!-- Recording: pulse ring behind the bubble. -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:drawable="@drawable/ic_buddy_ring">
-    <target
-        android:name="ring"
-        android:animation="@animator/buddy_ring_scale" />
-    <target
-        android:name="ring_fill"
-        android:animation="@animator/buddy_ring_fade" />
+  android:drawable="@drawable/ic_buddy_ring">
+  <target
+    android:name="ring"
+    android:animation="@animator/buddy_ring_scale" />
+  <target
+    android:name="ring_fill"
+    android:animation="@animator/buddy_ring_fade" />
 </animated-vector>

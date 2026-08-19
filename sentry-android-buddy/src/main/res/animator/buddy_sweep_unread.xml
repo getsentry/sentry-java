@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
-    android:propertyName="rotation"
-    android:valueFrom="0"
-    android:valueTo="360"
-    android:valueType="floatType"
-    android:duration="2400"
-    android:repeatCount="infinite"
-    android:interpolator="@android:anim/linear_interpolator" />
+  android:duration="2400"
+  android:interpolator="@android:anim/linear_interpolator"
+  android:propertyName="rotation"
+  android:repeatCount="infinite"
+  android:valueFrom="0"
+  android:valueTo="360"
+  android:valueType="floatType" />

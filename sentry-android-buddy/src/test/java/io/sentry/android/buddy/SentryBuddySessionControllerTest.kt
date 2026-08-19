@@ -1,6 +1,8 @@
 package io.sentry.android.buddy
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.android.buddy.bridge.*
+import io.sentry.android.buddy.model.*
 import java.util.Date
 import kotlin.test.Test
 

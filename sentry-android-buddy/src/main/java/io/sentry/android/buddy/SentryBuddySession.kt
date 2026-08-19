@@ -1,34 +1,45 @@
 package io.sentry.android.buddy
 
 import android.content.Context
+import io.sentry.android.buddy.bridge.BuddyFlowRecordingJsonSerializer
+import io.sentry.android.buddy.bridge.BuddyHealthCheckCapture
+import io.sentry.android.buddy.bridge.DummySentryBuddyFlowAnalysesApi
+import io.sentry.android.buddy.bridge.DummySentryBuddyHealthCheckApi
+import io.sentry.android.buddy.bridge.DummySentryBuddyOpenUrlApi
+import io.sentry.android.buddy.bridge.SentryBuddyFlowAnalysesApi
+import io.sentry.android.buddy.bridge.SentryBuddyHealthCheckApi
+import io.sentry.android.buddy.bridge.SentryBuddyOpenUrlApi
+import io.sentry.android.buddy.model.AnalysisStatus
+import io.sentry.android.buddy.model.BuddyAnalysisResponse
+import io.sentry.android.buddy.model.BuddyFlowImportance
+import io.sentry.android.buddy.model.BuddyFlowIntent
+import io.sentry.android.buddy.model.BuddyFocusArea
+import io.sentry.android.buddy.model.BuddyHealthCheckResponse
+import io.sentry.android.buddy.model.BuddyHomeRecommendation
+import io.sentry.android.buddy.model.BuddyHomeTab
+import io.sentry.android.buddy.model.BuddyInsight
+import io.sentry.android.buddy.model.BuddyInstrumentationStatus
+import io.sentry.android.buddy.model.BuddyLiveFeed
+import io.sentry.android.buddy.model.BuddyLiveFeedItem
+import io.sentry.android.buddy.model.BuddyRecommendationSource
+import io.sentry.android.buddy.model.BuddyRecordingResult
+import io.sentry.android.buddy.model.BuddyScreenInstrumentationItem
+import io.sentry.android.buddy.model.BuddyScreenScanResult
+import io.sentry.android.buddy.model.BuddyScreenScanState
+import io.sentry.android.buddy.model.BuddySdkConfigSnapshot
+import io.sentry.android.buddy.model.BuddySentryUiLinks
+import io.sentry.android.buddy.model.BuddyTimelineItem
+import io.sentry.android.buddy.model.FlowAnalysisEvent
+import io.sentry.android.buddy.model.FlowAnalysisRequest
+import io.sentry.android.buddy.model.FlowAnalysisResponse
+import io.sentry.android.buddy.model.Recommendation
+import io.sentry.android.buddy.model.RecommendationStatus
+import io.sentry.android.buddy.model.Severity
+import io.sentry.android.buddy.model.toHomeRecommendations
+import io.sentry.android.buddy.model.withRecommendation
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import org.jetbrains.annotations.ApiStatus
-
-@ApiStatus.Experimental
-public enum class BuddyFocusArea(public val label: String) {
-  ERRORS_AND_CRASHES("Errors and crashes"),
-  NETWORK_TIMING("Network timing"),
-  MISSING_INSTRUMENTATION("Missing instrumentation"),
-  FRAME_DROPS_AND_JANK("Frame drops and jank"),
-}
-
-@ApiStatus.Experimental
-public data class BuddyInsight
-public constructor(
-  public val title: String,
-  public val body: String,
-  public val severity: Severity,
-  public val elapsedMs: Long? = null,
-)
-
-@ApiStatus.Experimental
-public data class BuddyAnalysisResponse
-public constructor(
-  public val summary: String,
-  public val insights: List<BuddyInsight>,
-  public val recommendations: List<Recommendation>,
-)
 
 internal sealed class BuddyHealthCheckState {
   data object Hidden : BuddyHealthCheckState()
@@ -39,91 +50,6 @@ internal sealed class BuddyHealthCheckState {
 
   data class Error(val message: String) : BuddyHealthCheckState()
 }
-
-@ApiStatus.Experimental
-public interface SentryBuddyFlowAnalysesApi {
-  /** Models `POST /v1/flow-analysis`, which returns 202 Accepted with PROCESSING status. */
-  public fun submit(request: FlowAnalysisRequest): FlowAnalysisResponse
-
-  /** Models `GET /v1/flow-analysis/{flowId}`. */
-  public fun get(flowId: String): FlowAnalysisResponse
-
-  /**
-   * Models `POST /v1/flow-analysis/{flowId}/recommendations/{id}/resolve`, which answers with the
-   * resolved recommendation only.
-   */
-  public fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation
-}
-
-@ApiStatus.Experimental
-public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
-  private val analyses = mutableMapOf<String, FlowAnalysisResponse>()
-
-  override fun submit(request: FlowAnalysisRequest): FlowAnalysisResponse {
-    analyses[request.flowId] = completedAnalysis(request)
-    return FlowAnalysisResponse(flowId = request.flowId, status = AnalysisStatus.PROCESSING)
-  }
-
-  override fun get(flowId: String): FlowAnalysisResponse {
-    return analyses[flowId]
-      ?: FlowAnalysisResponse(
-        flowId = flowId,
-        status = AnalysisStatus.FAILED,
-        error = "Flow analysis not found.",
-      )
-  }
-
-  override fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation {
-    val analysis = get(flowId)
-    val resolved =
-      analysis.recommendations
-        .first { it.id == recommendationId }
-        .copy(
-          status = RecommendationStatus.RESOLVED,
-          seerRunUrl = "https://sentry.io/seer/runs/$recommendationId",
-        )
-    analyses[flowId] = analysis.withRecommendation(resolved)
-    return resolved
-  }
-
-  private fun completedAnalysis(request: FlowAnalysisRequest): FlowAnalysisResponse {
-    return FlowAnalysisResponse(
-      flowId = request.flowId,
-      status = AnalysisStatus.COMPLETED,
-      title = "Your flow is ready for review.",
-      recommendations =
-        listOf(
-          Recommendation(
-            id = "add-flow-spans",
-            title = "Add spans around key flow work",
-            description =
-              "The recording identifies the flow, but explicit spans will make the risky work " +
-                "easier to explain in Sentry.",
-            severity = Severity.HIGH,
-          ),
-          Recommendation(
-            id = "set-flow-budget",
-            title = "Set an initial duration budget",
-            description =
-              "Use this recording as the first baseline for future local or CI comparisons.",
-            severity = Severity.MEDIUM,
-          ),
-          Recommendation(
-            id = "keep-buddy-tags",
-            title = "Keep the Buddy correlation tags",
-            description =
-              "The recording included trace IDs ${request.traceIds.joinToString()} so related " +
-                "events and transactions can be found later.",
-            severity = Severity.LOW,
-          ),
-        ),
-    )
-  }
-}
-
-@ApiStatus.Experimental
-public data class BuddyRecordingResult
-public constructor(public val recording: BuddyFlowRecording, public val recordingJson: String)
 
 internal data class TransientRecordingEvent(val id: Long, val text: String)
 
@@ -437,12 +363,14 @@ public constructor(
               response = analysis.toBuddyAnalysisResponse(analyzingState.request),
             )
         }
+
         AnalysisStatus.FAILED ->
           state =
             SentryBuddySessionState.Error(
               analysis.error ?: "Flow analysis failed.",
               analyzingState,
             )
+
         AnalysisStatus.PROCESSING -> Unit
       }
     } catch (exception: IllegalStateException) {
@@ -812,3 +740,7 @@ public constructor(
       setOf(BuddyFocusArea.ERRORS_AND_CRASHES, BuddyFocusArea.NETWORK_TIMING)
   }
 }
+
+internal const val ANALYSIS_POLL_INTERVAL_MS = 1000L
+
+internal const val ANALYSIS_TIMEOUT_MS = 120_000L

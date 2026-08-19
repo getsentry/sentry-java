@@ -1,0 +1,159 @@
+package io.sentry.android.buddy.ui.userflow
+
+import android.content.Context
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import io.sentry.android.buddy.SentryBuddySessionController
+import io.sentry.android.buddy.SentryBuddySessionState
+import io.sentry.android.buddy.model.BuddySentryUiLinks
+import io.sentry.android.buddy.ui.common.BuddyButtonText
+import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
+import io.sentry.android.buddy.ui.common.MetricCard
+import io.sentry.android.buddy.ui.common.SheetTitle
+import io.sentry.android.buddy.ui.common.formatElapsed
+import io.sentry.android.buddy.ui.common.isResolvableNow
+import io.sentry.android.buddy.ui.common.openLinkLabelFor
+import io.sentry.android.buddy.ui.common.theme.BuddyBorder
+import io.sentry.android.buddy.ui.common.theme.BuddyGold
+import io.sentry.android.buddy.ui.common.theme.BuddyInk
+import io.sentry.android.buddy.ui.common.theme.BuddyMuted
+import io.sentry.android.buddy.ui.common.theme.BuddyPurple
+import io.sentry.android.buddy.ui.common.theme.BuddyRed
+import io.sentry.android.buddy.ui.common.toCardModel
+import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
+import io.sentry.android.buddy.ui.preview.previewAnalysisResponse
+import io.sentry.android.buddy.ui.preview.previewFlowAnalysis
+import io.sentry.android.buddy.ui.preview.previewFlowAnalysisRequest
+import io.sentry.android.buddy.ui.preview.previewRecordingResult
+import io.sentry.android.buddy.ui.preview.previewSentryUiLinks
+
+@Composable
+internal fun InsightsSheet(
+  state: SentryBuddySessionState.Insights,
+  sentryUiLinks: BuddySentryUiLinks,
+  onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+  onResolveRecommendation: (String) -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
+) {
+  val context = LocalContext.current
+  val flowName = state.result.recording.flow.name.ifBlank { "Unnamed flow" }
+  val traceLink =
+    remember(state.result.recording, sentryUiLinks) {
+      sentryUiLinks.linkFor(state.result.recording)
+    }
+  SheetTitle(
+    "Flow insights",
+    "$flowName • ${formatElapsed(state.result.recording.summary.durationMs)}",
+  )
+  Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    MetricCard(state.response.insights.size.toString(), "Insights", Modifier.weight(1f), BuddyRed)
+    MetricCard(
+      state.result.recording.summary.screenCount.toString(),
+      "Screens",
+      Modifier.weight(1f),
+      BuddyPurple,
+    )
+    MetricCard(
+      state.result.recording.summary.spanCount.toString(),
+      "Spans",
+      Modifier.weight(1f),
+      BuddyGold,
+    )
+  }
+  Text(state.response.summary, color = BuddyMuted)
+  Text(
+    "Recommendations",
+    style = MaterialTheme.typography.titleMedium,
+    fontWeight = FontWeight.Bold,
+  )
+  if (state.response.recommendations.isEmpty()) {
+    Surface(
+      modifier = Modifier.fillMaxWidth().border(1.dp, BuddyBorder, RoundedCornerShape(12.dp)),
+      color = Color.White,
+      shape = RoundedCornerShape(12.dp),
+    ) {
+      Text(
+        text = "No recommendations returned yet.",
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        color = BuddyInk,
+        style = MaterialTheme.typography.bodyMedium,
+      )
+    }
+  } else {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+      state.response.recommendations.forEach { recommendation ->
+        BuddyRecommendationCard(
+          model = recommendation.toCardModel(),
+          onResolve =
+            if (recommendation.isResolvableNow()) {
+              { onResolveRecommendation(recommendation.id) }
+            } else {
+              null
+            },
+          onOpenLink =
+            (recommendation.seerRunUrl ?: recommendation.link)?.let { link ->
+              { onOpenUrl(context, link) }
+            },
+          openLinkLabel = openLinkLabelFor(recommendation.seerRunUrl),
+        )
+      }
+    }
+  }
+  Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    OutlinedButton(
+      modifier = Modifier.weight(1f).height(52.dp),
+      onClick = { onDispatch { recordAgain() } },
+    ) {
+      BuddyButtonText("Record Again")
+    }
+    if (traceLink != null) {
+      Button(
+        modifier = Modifier.weight(1f).height(52.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
+        onClick = { onOpenUrl(context, traceLink) },
+      ) {
+        BuddyButtonText("Open in Sentry", color = Color.White)
+      }
+    }
+  }
+}
+
+@Preview(name = "Sheet · insights", showBackground = true, widthDp = 380, heightDp = 900)
+@Composable
+private fun InsightsSheetPreview() {
+  BuddyPreviewSurface {
+    InsightsSheet(
+      state =
+        SentryBuddySessionState.Insights(
+          result = previewRecordingResult,
+          request = previewFlowAnalysisRequest,
+          analysis = previewFlowAnalysis,
+          response = previewAnalysisResponse,
+        ),
+      sentryUiLinks = previewSentryUiLinks,
+      onDispatch = {},
+      onResolveRecommendation = {},
+      onOpenUrl = { _, _ -> },
+    )
+  }
+}

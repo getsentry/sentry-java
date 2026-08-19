@@ -1,13 +1,21 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- bd-emb 1170ms, staggered 190ms -->
+<?xml version="1.0" encoding="utf-8"?><!-- bd-emb 1170ms, staggered 190ms -->
 <objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="1170"
-    android:startOffset="190"
-    android:repeatCount="infinite"
-    android:valueType="floatType">
-    <propertyValuesHolder android:propertyName="fillAlpha">
-        <keyframe android:fraction="0" android:value="0" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="0.2" android:value="0.9" android:interpolator="@android:anim/linear_interpolator" />
-        <keyframe android:fraction="1" android:value="0" android:interpolator="@android:anim/linear_interpolator" />
-    </propertyValuesHolder>
+  android:duration="1170"
+  android:repeatCount="infinite"
+  android:startOffset="190"
+  android:valueType="floatType">
+  <propertyValuesHolder android:propertyName="fillAlpha">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0" />
+    <keyframe
+      android:fraction="0.2"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0.9" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0" />
+  </propertyValuesHolder>
 </objectAnimator>

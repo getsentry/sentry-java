@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Scraps design tokens consumed by Sentry Buddy. -->
-    <color name="buddy_accent_vibrant">#FF7553FF</color>
-    <color name="buddy_accent_chonk">#FF5827D6</color>
-    <color name="buddy_accent_content">#FF653DE9</color>
-    <color name="buddy_danger_vibrant">#FFFF002B</color>
-    <color name="buddy_danger_chonk">#FFC10000</color>
-    <color name="buddy_surface">#FFFFFFFF</color>
-    <color name="buddy_border">#FFDAD9DE</color>
-    <color name="buddy_ink">#FF181225</color>
-    <color name="buddy_on_vibrant">#FFFFFFFF</color>
+  <!-- Scraps design tokens consumed by Sentry Buddy. -->
+  <color name="buddy_accent_vibrant">#FF7553FF</color>
+  <color name="buddy_accent_chonk">#FF5827D6</color>
+  <color name="buddy_accent_content">#FF653DE9</color>
+  <color name="buddy_danger_vibrant">#FFFF002B</color>
+  <color name="buddy_danger_chonk">#FFC10000</color>
+  <color name="buddy_surface">#FFFFFFFF</color>
+  <color name="buddy_border">#FFDAD9DE</color>
+  <color name="buddy_ink">#FF181225</color>
+  <color name="buddy_on_vibrant">#FFFFFFFF</color>
 
-    <!-- Eyeball is filled with the bubble background so the beam cannot show
-         through the iris. Override per bubble variant. -->
-    <color name="buddy_eyeball_accent">#FF7553FF</color>
-    <color name="buddy_eyeball_danger">#FFFF002B</color>
+  <!-- Eyeball is filled with the bubble background so the beam cannot show
+       through the iris. Override per bubble variant. -->
+  <color name="buddy_eyeball_accent">#FF7553FF</color>
+  <color name="buddy_eyeball_danger">#FFFF002B</color>
 
-    <!-- Severe-state flame ramp. -->
-    <color name="buddy_flame_outer">#FFFF002B</color>
-    <color name="buddy_flame_mid">#FFFF6A00</color>
-    <color name="buddy_flame_core">#FFFFCE00</color>
+  <!-- Severe-state flame ramp. -->
+  <color name="buddy_flame_outer">#FFFF002B</color>
+  <color name="buddy_flame_mid">#FFFF6A00</color>
+  <color name="buddy_flame_core">#FFFFCE00</color>
 </resources>

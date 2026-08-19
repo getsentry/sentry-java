@@ -1,5 +1,11 @@
 package io.sentry.android.buddy
 
+import io.sentry.android.buddy.bridge.DummySentryBuddyFlowAnalysesApi
+import io.sentry.android.buddy.bridge.DummySentryBuddyHealthCheckApi
+import io.sentry.android.buddy.bridge.DummySentryBuddyOpenUrlApi
+import io.sentry.android.buddy.bridge.SentryBuddyFlowAnalysesApi
+import io.sentry.android.buddy.bridge.SentryBuddyHealthCheckApi
+import io.sentry.android.buddy.bridge.SentryBuddyOpenUrlApi
 import org.jetbrains.annotations.ApiStatus
 
 @ApiStatus.Experimental

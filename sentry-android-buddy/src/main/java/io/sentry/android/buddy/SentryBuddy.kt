@@ -3,6 +3,10 @@ package io.sentry.android.buddy
 import android.app.Application
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.android.buddy.model.BuddyFlowIntent
+import io.sentry.android.buddy.model.BuddyFlowRecording
+import io.sentry.android.buddy.model.BuddyLiveFeed
+import io.sentry.android.buddy.ui.overlay.BuddyOverlayManager
 import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.annotations.TestOnly
 

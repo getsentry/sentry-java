@@ -60,10 +60,6 @@ android {
   }
 
   composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
-
-  androidComponents.beforeVariants {
-    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
-  }
 }
 
 kotlin { explicitApi() }
@@ -80,6 +76,8 @@ dependencies {
   implementation(libs.androidx.compose.foundation.layout)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.ui)
+  implementation(libs.androidx.compose.ui.tooling.preview)
+  debugImplementation(libs.androidx.compose.ui.tooling)
   implementation(libs.kotlinx.coroutines.android)
 
   // tests
