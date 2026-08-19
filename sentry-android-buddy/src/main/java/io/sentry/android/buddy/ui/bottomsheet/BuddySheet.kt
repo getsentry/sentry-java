@@ -101,14 +101,16 @@ internal fun BuddySheet(
       when (state) {
         SentryBuddySessionState.LiveFeed ->
           if (screenScanState is BuddyScreenScanState.Results) {
-            ScreenInstrumentationSheet(
-              result = screenScanState.result,
-              onDismiss = onDismissScreenScan,
-              onShowRecommendations = {
-                onDismissScreenScan()
-                onSelectHomeTab(BuddyHomeTab.ACTIONS)
-              },
-            )
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
+              ScreenInstrumentationSheet(
+                result = screenScanState.result,
+                onDismiss = onDismissScreenScan,
+                onShowRecommendations = {
+                  onDismissScreenScan()
+                  onSelectHomeTab(BuddyHomeTab.ACTIONS)
+                },
+              )
+            }
           } else {
             BuddyHomeSheet(
               liveFeed,

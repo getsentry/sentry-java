@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -50,6 +51,7 @@ internal fun ScreenInstrumentationSheet(
     "Seer traced the visible host UI and checked which Sentry signals can explain this screen.",
     color = BuddyMuted,
   )
+  Spacer(Modifier.height(8.dp))
   Surface(
     modifier = Modifier.fillMaxWidth(),
     color = BuddyPurple.copy(alpha = 0.08f),
@@ -80,7 +82,7 @@ internal fun ScreenInstrumentationSheet(
       colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
       onClick = onShowRecommendations,
     ) {
-      BuddyButtonText("Recommendations", color = Color.White)
+      BuddyButtonText("Show fixes", color = Color.White)
     }
   }
 }

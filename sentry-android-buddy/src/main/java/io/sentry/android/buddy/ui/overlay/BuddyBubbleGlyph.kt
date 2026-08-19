@@ -111,6 +111,7 @@ internal fun BubbleNotificationBadge(count: String, color: Color, modifier: Modi
 @Composable
 internal fun ScreenScanElectricityOverlay(screenScanState: BuddyScreenScanState) {
   val scanningState = screenScanState as? BuddyScreenScanState.Scanning ?: return
+  val rootBounds = scanningState.result.bounds.maxByOrNull { it.width * it.height } ?: return
   val transition = rememberInfiniteTransition(label = "buddy-screen-scan-electricity")
   val phase by
     transition.animateFloat(
@@ -127,36 +128,61 @@ internal fun ScreenScanElectricityOverlay(screenScanState: BuddyScreenScanState)
     modifier =
       Modifier.fillMaxSize().graphicsLayer { alpha = 1f - (phase * 0.18f).coerceIn(0f, 0.18f) }
   ) {
-    scanningState.result.bounds.forEachIndexed { index, bounds ->
-      val pulse = (phase + index.toFloat() * 0.17f) % 1f
-      val glowAlpha = (0.45f + pulse * 0.35f).coerceIn(0.45f, 0.80f)
-      val inset = 2f + pulse * 4f
-      val topLeft = Offset(bounds.left + inset, bounds.top + inset)
-      val size =
-        Size(
-          (bounds.width - inset * 2).coerceAtLeast(1f),
-          (bounds.height - inset * 2).coerceAtLeast(1f),
-        )
-      val cornerRadius = CornerRadius(18f, 18f)
-      drawRoundRect(
-        color = BuddyScanElectricGlow.copy(alpha = glowAlpha),
-        topLeft = topLeft,
-        size = size,
-        cornerRadius = cornerRadius,
-        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 14f),
+    val inset = 8f
+    val pulse = phase
+    val glowAlpha = (0.26f + pulse * 0.22f).coerceIn(0.26f, 0.48f)
+    val topLeft = Offset(rootBounds.left + inset, rootBounds.top + inset)
+    val size =
+      Size(
+        (rootBounds.width - inset * 2).coerceAtLeast(1f),
+        (rootBounds.height - inset * 2).coerceAtLeast(1f),
       )
-      drawRoundRect(
-        color = BuddyScanElectricCore.copy(alpha = 0.96f),
-        topLeft = topLeft,
-        size = size,
-        cornerRadius = cornerRadius,
-        style =
-          androidx.compose.ui.graphics.drawscope.Stroke(
-            width = 4f,
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(22f, 9f), phase * 72f),
-          ),
-      )
-    }
+    val cornerRadius = CornerRadius(28f, 28f)
+    drawRoundRect(
+      color = BuddyScanElectricGlow.copy(alpha = glowAlpha),
+      topLeft = topLeft,
+      size = size,
+      cornerRadius = cornerRadius,
+      style =
+        androidx.compose.ui.graphics.drawscope.Stroke(
+          width = 16f,
+          pathEffect =
+            PathEffect.dashPathEffect(
+              floatArrayOf(64f, 260f, 28f, 190f, 44f, 320f),
+              phase * 520f,
+            ),
+        ),
+    )
+    drawRoundRect(
+      color = BuddyScanElectricCore.copy(alpha = 0.92f),
+      topLeft = topLeft,
+      size = size,
+      cornerRadius = cornerRadius,
+      style =
+        androidx.compose.ui.graphics.drawscope.Stroke(
+          width = 5f,
+          pathEffect =
+            PathEffect.dashPathEffect(
+              floatArrayOf(36f, 240f, 18f, 180f, 26f, 300f),
+              phase * 560f,
+            ),
+        ),
+    )
+    drawRoundRect(
+      color = Color(0xFFFFF3B0).copy(alpha = 0.72f),
+      topLeft = topLeft,
+      size = size,
+      cornerRadius = cornerRadius,
+      style =
+        androidx.compose.ui.graphics.drawscope.Stroke(
+          width = 3f,
+          pathEffect =
+            PathEffect.dashPathEffect(
+              floatArrayOf(10f, 280f, 14f, 220f, 8f, 340f),
+              phase * -620f,
+            ),
+        ),
+    )
   }
 }
 
