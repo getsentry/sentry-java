@@ -43,10 +43,6 @@ internal val BuddyGold = Color(0xFFC47A00)
 
 internal val BuddyGreen = Color(0xFF0F9D58)
 
-internal val BuddyScanElectricCore = Color(0xFFFFD54A)
-
-internal val BuddyScanElectricGlow = Color(0xFFFFA800)
-
 internal val BuddyQuickDecisionCard = Color(0xFFF0EAFF)
 
 internal val BuddyQuickDecisionPeek = Color(0xFFF8F5FF)

@@ -19,16 +19,12 @@ import io.sentry.android.buddy.model.BuddyFlowIntent
 import io.sentry.android.buddy.model.BuddyFlowRecording
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
 import io.sentry.android.buddy.model.BuddyInsight
-import io.sentry.android.buddy.model.BuddyInstrumentationStatus
 import io.sentry.android.buddy.model.BuddyLiveFeed
 import io.sentry.android.buddy.model.BuddyLiveFeedItem
 import io.sentry.android.buddy.model.BuddyRecommendationSource
 import io.sentry.android.buddy.model.BuddyRecordingMetadata
 import io.sentry.android.buddy.model.BuddyRecordingResult
 import io.sentry.android.buddy.model.BuddyRecordingSummary
-import io.sentry.android.buddy.model.BuddyScreenInstrumentationItem
-import io.sentry.android.buddy.model.BuddyScreenScanBounds
-import io.sentry.android.buddy.model.BuddyScreenScanResult
 import io.sentry.android.buddy.model.BuddySentryCorrelation
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.model.BuddyTimelineItem
@@ -304,32 +300,6 @@ internal val previewAnalysisResponse: BuddyAnalysisResponse =
         ),
       ),
     recommendations = listOf(previewRecommendation),
-  )
-
-internal val previewScreenScanResult: BuddyScreenScanResult =
-  BuddyScreenScanResult(
-    screenName = "LoginActivity",
-    bounds =
-      listOf(
-        BuddyScreenScanBounds("email_field", 24f, 120f, 356f, 176f),
-        BuddyScreenScanBounds("password_field", 24f, 196f, 356f, 252f),
-        BuddyScreenScanBounds("btn_sign_in", 24f, 288f, 356f, 344f),
-      ),
-    instrumentation =
-      listOf(
-        BuddyScreenInstrumentationItem(
-          "Screen surface",
-          "3 host bounds",
-          BuddyInstrumentationStatus.ENABLED,
-        ),
-        BuddyScreenInstrumentationItem("Tracing", "Enabled", BuddyInstrumentationStatus.ENABLED),
-        BuddyScreenInstrumentationItem("Session Replay", "Off", BuddyInstrumentationStatus.WARNING),
-        BuddyScreenInstrumentationItem(
-          "View hierarchy",
-          "Not attached",
-          BuddyInstrumentationStatus.MISSING,
-        ),
-      ),
   )
 
 private fun previewRecordingTimeline(): List<BuddyTimelineItem> =

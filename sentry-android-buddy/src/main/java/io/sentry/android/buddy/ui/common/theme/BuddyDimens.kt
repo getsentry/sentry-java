@@ -37,5 +37,3 @@ internal val BuddySheetHorizontalPadding = 24.dp
 internal const val LIVE_FEED_VISIBLE_ITEM_LIMIT = 7
 
 internal const val EMPTY_ATTENTION_ART_VARIANTS = 9
-
-internal const val SCREEN_SCAN_DURATION_MS = 1700L

@@ -25,7 +25,6 @@ import io.sentry.android.buddy.SentryBuddySessionState
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
 import io.sentry.android.buddy.model.BuddyHomeTab
 import io.sentry.android.buddy.model.BuddyLiveFeed
-import io.sentry.android.buddy.model.BuddyScreenScanState
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.ui.userflow.AnalyzingSheet
 import io.sentry.android.buddy.ui.userflow.BriefingSheet
@@ -41,7 +40,6 @@ internal fun BuddySheet(
   state: SentryBuddySessionState,
   liveFeed: BuddyLiveFeed,
   healthCheckState: BuddyHealthCheckState,
-  screenScanState: BuddyScreenScanState,
   homeTab: BuddyHomeTab,
   homeRecommendations: List<BuddyHomeRecommendation>,
   sentryUiLinks: BuddySentryUiLinks,
@@ -55,15 +53,9 @@ internal fun BuddySheet(
   onSelectHomeTab: (BuddyHomeTab) -> Unit,
   onRunHealthCheck: () -> Unit,
   onDismissHealthCheck: () -> Unit,
-  onDismissScreenScan: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
   if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
-    return
-  }
-  if (
-    state is SentryBuddySessionState.LiveFeed && screenScanState is BuddyScreenScanState.Scanning
-  ) {
     return
   }
   val maxSheetHeight = LocalWindowInfo.current.containerSize.height.dp * 0.75f
@@ -100,36 +92,23 @@ internal fun BuddySheet(
     ) {
       when (state) {
         SentryBuddySessionState.LiveFeed ->
-          if (screenScanState is BuddyScreenScanState.Results) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
-              ScreenInstrumentationSheet(
-                result = screenScanState.result,
-                onDismiss = onDismissScreenScan,
-                onShowRecommendations = {
-                  onDismissScreenScan()
-                  onSelectHomeTab(BuddyHomeTab.ACTIONS)
-                },
-              )
-            }
-          } else {
-            BuddyHomeSheet(
-              liveFeed,
-              healthCheckState,
-              homeTab,
-              homeRecommendations,
-              sentryUiLinks,
-              nowMs,
-              onDispatch,
-              ::startRecordingAfterSheetExit,
-              onResolveHomeRecommendation,
-              onDismissHomeRecommendation,
-              onMarkHomeRecommendationRead,
-              onSelectHomeTab,
-              onRunHealthCheck,
-              onDismissHealthCheck,
-              onOpenUrl,
-            )
-          }
+          BuddyHomeSheet(
+            liveFeed,
+            healthCheckState,
+            homeTab,
+            homeRecommendations,
+            sentryUiLinks,
+            nowMs,
+            onDispatch,
+            ::startRecordingAfterSheetExit,
+            onResolveHomeRecommendation,
+            onDismissHomeRecommendation,
+            onMarkHomeRecommendationRead,
+            onSelectHomeTab,
+            onRunHealthCheck,
+            onDismissHealthCheck,
+            onOpenUrl,
+          )
 
         SentryBuddySessionState.Intro -> IntroSheet(::startRecordingAfterSheetExit)
         is SentryBuddySessionState.StoppedSummary ->

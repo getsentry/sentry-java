@@ -3,10 +3,9 @@ package io.sentry.android.buddy.ui.overlay
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -94,7 +93,6 @@ import io.sentry.android.buddy.ui.preview.previewUnreadLiveFeed
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun BoxScope.BuddyBubble(
   state: SentryBuddySessionState,
@@ -105,7 +103,6 @@ internal fun BoxScope.BuddyBubble(
   bubbleHitBounds: BuddyOverlayHitBounds?,
   transientEvent: TransientRecordingEvent?,
   onClick: () -> Unit,
-  onLongClick: () -> Unit,
 ) {
   val density = LocalDensity.current
   val bubbleSizePx = with(density) { BuddyBubbleSize.toPx() }
@@ -200,7 +197,7 @@ internal fun BoxScope.BuddyBubble(
                 bubbleOffset = ((bubbleOffset ?: resolvedOffset) + dragAmount).constrain()
               }
             }
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
       ) {
         Box(
@@ -434,7 +431,6 @@ private fun BuddyBubblePreviewFrame(
         bubbleHitBounds = null,
         transientEvent = transientEvent,
         onClick = {},
-        onLongClick = {},
       )
     }
   }

@@ -8,12 +8,6 @@ import android.os.Build
 import android.widget.ImageView
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -23,16 +17,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -41,10 +29,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import io.sentry.android.buddy.R
-import io.sentry.android.buddy.model.BuddyScreenScanState
 import io.sentry.android.buddy.ui.common.theme.BuddyBubbleGlyphSize
-import io.sentry.android.buddy.ui.common.theme.BuddyScanElectricCore
-import io.sentry.android.buddy.ui.common.theme.BuddyScanElectricGlow
 
 internal enum class BuddyBubbleGlyphState {
   IDLE,
@@ -104,84 +89,6 @@ internal fun BubbleNotificationBadge(count: String, color: Color, modifier: Modi
       fontWeight = FontWeight.Bold,
       maxLines = 1,
       textAlign = TextAlign.Center,
-    )
-  }
-}
-
-@Composable
-internal fun ScreenScanElectricityOverlay(screenScanState: BuddyScreenScanState) {
-  val scanningState = screenScanState as? BuddyScreenScanState.Scanning ?: return
-  val rootBounds = scanningState.result.bounds.maxByOrNull { it.width * it.height } ?: return
-  val transition = rememberInfiniteTransition(label = "buddy-screen-scan-electricity")
-  val phase by
-    transition.animateFloat(
-      initialValue = 0f,
-      targetValue = 1f,
-      animationSpec =
-        infiniteRepeatable(
-          animation = tween(durationMillis = 520),
-          repeatMode = RepeatMode.Restart,
-        ),
-      label = "buddy-screen-scan-electricity-phase",
-    )
-  Canvas(
-    modifier =
-      Modifier.fillMaxSize().graphicsLayer { alpha = 1f - (phase * 0.18f).coerceIn(0f, 0.18f) }
-  ) {
-    val inset = 8f
-    val pulse = phase
-    val glowAlpha = (0.26f + pulse * 0.22f).coerceIn(0.26f, 0.48f)
-    val topLeft = Offset(rootBounds.left + inset, rootBounds.top + inset)
-    val size =
-      Size(
-        (rootBounds.width - inset * 2).coerceAtLeast(1f),
-        (rootBounds.height - inset * 2).coerceAtLeast(1f),
-      )
-    val cornerRadius = CornerRadius(28f, 28f)
-    drawRoundRect(
-      color = BuddyScanElectricGlow.copy(alpha = glowAlpha),
-      topLeft = topLeft,
-      size = size,
-      cornerRadius = cornerRadius,
-      style =
-        androidx.compose.ui.graphics.drawscope.Stroke(
-          width = 16f,
-          pathEffect =
-            PathEffect.dashPathEffect(
-              floatArrayOf(64f, 260f, 28f, 190f, 44f, 320f),
-              phase * 520f,
-            ),
-        ),
-    )
-    drawRoundRect(
-      color = BuddyScanElectricCore.copy(alpha = 0.92f),
-      topLeft = topLeft,
-      size = size,
-      cornerRadius = cornerRadius,
-      style =
-        androidx.compose.ui.graphics.drawscope.Stroke(
-          width = 5f,
-          pathEffect =
-            PathEffect.dashPathEffect(
-              floatArrayOf(36f, 240f, 18f, 180f, 26f, 300f),
-              phase * 560f,
-            ),
-        ),
-    )
-    drawRoundRect(
-      color = Color(0xFFFFF3B0).copy(alpha = 0.72f),
-      topLeft = topLeft,
-      size = size,
-      cornerRadius = cornerRadius,
-      style =
-        androidx.compose.ui.graphics.drawscope.Stroke(
-          width = 3f,
-          pathEffect =
-            PathEffect.dashPathEffect(
-              floatArrayOf(10f, 280f, 14f, 220f, 8f, 340f),
-              phase * -620f,
-            ),
-        ),
     )
   }
 }

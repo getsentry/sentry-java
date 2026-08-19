@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.platform.ComposeView
-import io.sentry.android.buddy.BuddyScreenScanner
 import io.sentry.android.buddy.SentryBuddyOptions
 import io.sentry.android.buddy.SentryBuddySessionController
 import io.sentry.android.buddy.SentryBuddySessionState
@@ -30,7 +29,6 @@ internal class BuddyOverlayManager(private val controller: SentryBuddySessionCon
     val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
     val hitBounds = BuddyOverlayHitBounds()
     val container = BuddyOverlayContainer(activity, controller, hitBounds)
-    controller.screenScanner = { BuddyScreenScanner.scan(activity, container) }
     container.layoutParams =
       ViewGroup.LayoutParams(
         ViewGroup.LayoutParams.MATCH_PARENT,
@@ -55,9 +53,6 @@ internal class BuddyOverlayManager(private val controller: SentryBuddySessionCon
   fun detach(activity: Activity) {
     val overlay = overlays.remove(activity) ?: return
     (overlay.parent as? ViewGroup)?.removeView(overlay)
-    if (overlays.isEmpty()) {
-      controller.screenScanner = null
-    }
   }
 
   fun detachAll() {

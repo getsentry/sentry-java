@@ -18,14 +18,9 @@ import io.sentry.android.buddy.model.BuddyHealthCheckResponse
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
 import io.sentry.android.buddy.model.BuddyHomeTab
 import io.sentry.android.buddy.model.BuddyInsight
-import io.sentry.android.buddy.model.BuddyInstrumentationStatus
 import io.sentry.android.buddy.model.BuddyLiveFeed
-import io.sentry.android.buddy.model.BuddyLiveFeedItem
 import io.sentry.android.buddy.model.BuddyRecommendationSource
 import io.sentry.android.buddy.model.BuddyRecordingResult
-import io.sentry.android.buddy.model.BuddyScreenInstrumentationItem
-import io.sentry.android.buddy.model.BuddyScreenScanResult
-import io.sentry.android.buddy.model.BuddyScreenScanState
 import io.sentry.android.buddy.model.BuddySdkConfigSnapshot
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.model.BuddyTimelineItem
@@ -147,11 +142,6 @@ public constructor(
   internal var homeRecommendations: List<BuddyHomeRecommendation> = emptyList()
     private set
 
-  internal var screenScanState: BuddyScreenScanState = BuddyScreenScanState.Hidden
-    private set
-
-  internal var screenScanner: (() -> BuddyScreenScanResult)? = null
-
   private var lastSelectedHomeTab: BuddyHomeTab = BuddyHomeTab.LIVE_FEED
 
   private val transientRecordingEventLock: Any = Any()
@@ -165,7 +155,6 @@ public constructor(
 
   internal fun openLiveFeed() {
     dismissHealthCheck()
-    dismissScreenScan()
     liveFeed = safeLiveFeed()
     ingestHomeRecommendations(liveFeed.toHomeRecommendations())
     homeTab = defaultHomeTab()
@@ -174,25 +163,6 @@ public constructor(
 
   internal fun dismissLiveFeedAttention() {
     liveFeed = safeMarkLiveFeedSeen()
-  }
-
-  internal fun startScreenScan() {
-    dismissHealthCheck()
-    liveFeed = safeLiveFeed()
-    val scanResult = screenScanner?.invoke() ?: fallbackScreenScanResult()
-    val result = scanResult.copy(instrumentation = screenInstrumentation(scanResult))
-    ingestHomeRecommendations(result.toHomeRecommendations(clock()))
-    screenScanState = BuddyScreenScanState.Scanning(result, clock())
-    state = SentryBuddySessionState.LiveFeed
-  }
-
-  internal fun completeScreenScan() {
-    val scanningState = screenScanState as? BuddyScreenScanState.Scanning ?: return
-    screenScanState = BuddyScreenScanState.Results(scanningState.result)
-  }
-
-  internal fun dismissScreenScan() {
-    screenScanState = BuddyScreenScanState.Hidden
   }
 
   internal fun selectHomeTab(tab: BuddyHomeTab) {
@@ -418,94 +388,11 @@ public constructor(
     healthCheckState = BuddyHealthCheckState.Hidden
   }
 
-  private fun fallbackScreenScanResult(): BuddyScreenScanResult =
-    BuddyScreenScanResult(
-      screenName =
-        liveFeed.items
-          .firstOrNull { it.category == BuddyLiveFeedItem.Category.SCREEN }
-          ?.timelineItem
-          ?.name ?: "Current screen",
-      bounds = emptyList(),
-      instrumentation = emptyList(),
-    )
-
-  private fun screenInstrumentation(
-    result: BuddyScreenScanResult
-  ): List<BuddyScreenInstrumentationItem> {
-    val config =
-      try {
-        BuddyHealthCheckCapture.captureRequest().config
-      } catch (_: IllegalStateException) {
-        null
-      }
-    val screenItems = liveFeed.items.filter { it.visibleScreens.contains(result.screenName) }
-    val adverseOnScreen = screenItems.count { it.adverse }
-    return listOf(
-      BuddyScreenInstrumentationItem(
-        label = "Screen surface",
-        value =
-          if (result.bounds.isEmpty()) "No host bounds found"
-          else "${result.bounds.size} host bounds",
-        status =
-          if (result.bounds.isEmpty()) BuddyInstrumentationStatus.WARNING
-          else BuddyInstrumentationStatus.ENABLED,
-      ),
-      BuddyScreenInstrumentationItem(
-        label = "Tracing",
-        value = if (config?.hasTracing() == true) "Enabled" else "Missing sample rate or sampler",
-        status =
-          if (config?.hasTracing() == true) BuddyInstrumentationStatus.ENABLED
-          else BuddyInstrumentationStatus.MISSING,
-      ),
-      BuddyScreenInstrumentationItem(
-        label = "Session Replay",
-        value = if (config?.hasReplay() == true) "Enabled" else "Off",
-        status =
-          if (config?.hasReplay() == true) BuddyInstrumentationStatus.ENABLED
-          else BuddyInstrumentationStatus.WARNING,
-      ),
-      BuddyScreenInstrumentationItem(
-        label = "View hierarchy",
-        value = if (config?.attachViewHierarchy == true) "Attached on errors" else "Not attached",
-        status =
-          if (config?.attachViewHierarchy == true) BuddyInstrumentationStatus.ENABLED
-          else BuddyInstrumentationStatus.WARNING,
-      ),
-      BuddyScreenInstrumentationItem(
-        label = "Live signals",
-        value =
-          if (adverseOnScreen > 0) "$adverseOnScreen issue nearby" else "No issues on this screen",
-        status =
-          if (adverseOnScreen > 0) BuddyInstrumentationStatus.WARNING
-          else BuddyInstrumentationStatus.ENABLED,
-      ),
-    )
-  }
-
   private fun BuddySdkConfigSnapshot.hasTracing(): Boolean =
     tracesSampleRate != null || hasTracesSampler
 
   private fun BuddySdkConfigSnapshot.hasReplay(): Boolean =
     sessionReplayEnabled || sessionReplayOnErrorEnabled
-
-  private fun BuddyScreenScanResult.toHomeRecommendations(
-    nowMs: Long
-  ): List<BuddyHomeRecommendation> {
-    return instrumentation
-      .filter { it.status != BuddyInstrumentationStatus.ENABLED }
-      .map { item ->
-        BuddyHomeRecommendation(
-          id = "screen-scan:${screenName}:${item.label}",
-          source = BuddyRecommendationSource.SCREEN_SCAN,
-          title = "${item.label} needs attention on $screenName",
-          description = item.value,
-          severity =
-            if (item.status == BuddyInstrumentationStatus.MISSING) Severity.MEDIUM
-            else Severity.LOW,
-          updatedAtMs = nowMs,
-        )
-      }
-  }
 
   public fun openUrl(context: Context, url: String) {
     try {
