@@ -1,6 +1,7 @@
 package io.sentry.android.buddy
 
 import android.content.Context
+import io.sentry.Sentry
 import io.sentry.android.buddy.bridge.BuddyFlowRecordingJsonSerializer
 import io.sentry.android.buddy.bridge.BuddyHealthCheckCapture
 import io.sentry.android.buddy.bridge.DummySentryBuddyFlowAnalysesApi
@@ -548,7 +549,7 @@ public constructor(
       endTimeMs = recording.recording.endedAt.time,
       dsn = recording.sentry.dsn.orEmpty(),
       userAnnotation = state.userAnnotation(),
-      sdk = "io.sentry.android.buddy@${BuildConfig.VERSION_NAME}",
+      sdk = Sentry.getCurrentScopes().options.sdkIdentifier(),
       events = recording.timeline.map { it.toFlowAnalysisEvent() },
     )
   }
@@ -631,3 +632,11 @@ public constructor(
 internal const val ANALYSIS_POLL_INTERVAL_MS = 1000L
 
 internal const val ANALYSIS_TIMEOUT_MS = 120_000L
+
+private fun io.sentry.SentryOptions.sdkIdentifier(): String {
+  val sdkVersion = sdkVersion
+  if (sdkVersion != null) {
+    return "${sdkVersion.name}@${sdkVersion.version}"
+  }
+  return sentryClientName?.takeIf { it.isNotBlank() } ?: "unknown"
+}
