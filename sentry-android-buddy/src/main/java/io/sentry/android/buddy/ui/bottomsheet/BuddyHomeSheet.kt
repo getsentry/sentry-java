@@ -350,7 +350,7 @@ internal fun RecordFlowTabContent(
     color = BuddyInk,
   )
   Text(
-    "Record a user flow that's important to your app and Buddy will help you auto-generate dashboards, monitors, and other useful things!",
+    "Record a user flow and Buddy will help you instrument it.",
     color = BuddyMuted,
   )
   Button(
