@@ -45,7 +45,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
@@ -59,14 +58,14 @@ import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.R
 import io.sentry.android.buddy.ui.common.BuddyWavyProgress
 import io.sentry.android.buddy.ui.common.Icons
+import io.sentry.android.buddy.ui.common.theme.BuddyAccentBubbleEnd
+import io.sentry.android.buddy.ui.common.theme.BuddyAccentBubbleShadow
+import io.sentry.android.buddy.ui.common.theme.BuddyAccentBubbleStart
 import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyGold
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
-import io.sentry.android.buddy.ui.common.theme.BuddyAccentBubbleEnd
-import io.sentry.android.buddy.ui.common.theme.BuddyAccentBubbleShadow
-import io.sentry.android.buddy.ui.common.theme.BuddyAccentBubbleStart
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
 import io.sentry.android.buddy.ui.common.theme.BuddyWarningBubbleEnd
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
@@ -310,16 +309,18 @@ private fun BuddyAnalyzingSeer(
   val sizePx = with(density) { size.toPx() }
   val pupilSize = size * 0.17f
   val idleOrbit by
-    androidx.compose.animation.core.rememberInfiniteTransition(label = "seer-icon").animateFloat(
-      initialValue = 0f,
-      targetValue = TAU,
-      animationSpec =
-        androidx.compose.animation.core.infiniteRepeatable(
-          tween(PUPIL_IDLE_ORBIT_MS, easing = androidx.compose.animation.core.LinearEasing),
-          androidx.compose.animation.core.RepeatMode.Restart,
-        ),
-      label = "seer-pupil-orbit",
-    )
+    androidx.compose.animation.core
+      .rememberInfiniteTransition(label = "seer-icon")
+      .animateFloat(
+        initialValue = 0f,
+        targetValue = TAU,
+        animationSpec =
+          androidx.compose.animation.core.infiniteRepeatable(
+            tween(PUPIL_IDLE_ORBIT_MS, easing = androidx.compose.animation.core.LinearEasing),
+            androidx.compose.animation.core.RepeatMode.Restart,
+          ),
+        label = "seer-pupil-orbit",
+      )
   val idleTarget =
     androidx.compose.ui.geometry.Offset(
       x = (cos(idleOrbit) * 0.85f).toFloat(),
@@ -355,10 +356,7 @@ private fun BuddyAnalyzingSeer(
           .background(BuddyAccentBubbleShadow.copy(alpha = 0.45f), CircleShape)
     )
     Box(
-      modifier =
-        Modifier.size(size * 0.8f)
-          .background(bubbleBrush, CircleShape)
-          .clip(CircleShape)
+      modifier = Modifier.size(size * 0.8f).background(bubbleBrush, CircleShape).clip(CircleShape)
     )
     Image(
       painter = painterResource(R.drawable.ic_buddy_eye_shell),

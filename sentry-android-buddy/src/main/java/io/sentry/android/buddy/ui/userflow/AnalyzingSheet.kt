@@ -12,7 +12,9 @@ import io.sentry.android.buddy.ui.preview.previewFlowAnalysisSubmission
 import io.sentry.android.buddy.ui.preview.previewRecordingResult
 
 @Composable
-internal fun AnalyzingSheet(@Suppress("UNUSED_PARAMETER") state: SentryBuddySessionState.Analyzing) {
+internal fun AnalyzingSheet(
+  @Suppress("UNUSED_PARAMETER") state: SentryBuddySessionState.Analyzing
+) {
   BuddyZapABug(modifier = Modifier.padding(top = 12.dp))
 }
 
