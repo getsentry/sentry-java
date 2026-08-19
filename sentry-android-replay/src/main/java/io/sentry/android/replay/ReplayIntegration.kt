@@ -168,6 +168,9 @@ public class ReplayIntegration(
 
   override fun onAppForegrounded(startNewSession: Boolean) {
     enqueueOnMainThread {
+      if (!isEnabled.get()) {
+        return@enqueueOnMainThread
+      }
       if (startNewSession) {
         val isFullSession = sample(options.sessionReplay.sessionSampleRate)
         if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
