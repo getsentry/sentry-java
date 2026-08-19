@@ -170,6 +170,7 @@ internal fun InsightsSheet(
                 null
               },
             onOpenLink = primaryLink?.let { link -> { onOpenUrl(context, link) } },
+            onOpenPerformanceLink = { link -> onOpenUrl(context, link) },
             openLinkLabel = openLinkLabelFor(seerRunUrl),
             detailsLabel = "Details",
             style = BuddyRecommendationCardStyle.ACTION_INBOX,

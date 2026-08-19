@@ -327,6 +327,10 @@ internal fun RecommendationsTabContent(
                   onOpenUrl(context, link)
                 }
               },
+            onOpenPerformanceLink = { link ->
+              onMarkRead(recommendation.id)
+              onOpenUrl(context, link)
+            },
             openLinkLabel = openLinkLabelFor(recommendation.seerRunUrl),
             detailsLabel = "Details",
             style = BuddyRecommendationCardStyle.ACTION_INBOX,

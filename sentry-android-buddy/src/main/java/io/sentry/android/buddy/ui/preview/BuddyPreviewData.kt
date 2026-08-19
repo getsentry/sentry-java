@@ -31,6 +31,7 @@ import io.sentry.android.buddy.model.BuddyTimelineItem
 import io.sentry.android.buddy.model.FlowAction
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
+import io.sentry.android.buddy.model.PerformanceCharacteristics
 import io.sentry.android.buddy.model.Recommendation
 import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.SentryIssue
@@ -154,6 +155,27 @@ internal val previewRecommendation: Recommendation =
             "Set options.tracesSampleRate, or install a tracesSampler, so transactions are " +
               "recorded.",
         )
+      ),
+  )
+
+internal val previewSpanRecommendation: Recommendation =
+  Recommendation(
+    id = "slow-db-query",
+    title = "The checkout query is slower here than in production",
+    description =
+      "db.sql.query took 820ms in the recording, while production sees 180ms at p50. Move the " +
+        "query off the main thread, or narrow it down.",
+    severity = Severity.HIGH,
+    performanceCharacteristics =
+      PerformanceCharacteristics(
+        spanOp = "db.sql.query",
+        link = "https://sentry.io/explore/traces/",
+        duration = 820.0,
+        avg = 230.0,
+        p50 = 180.0,
+        p75 = 280.0,
+        p90 = 420.0,
+        p95 = 520.0,
       ),
   )
 

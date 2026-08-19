@@ -138,6 +138,117 @@ class SentryBuddyHttpFlowAnalysesApiTest {
   }
 
   @Test
+  fun `get parses performance characteristics`() {
+    server.enqueue(
+      MockResponse()
+        .setResponseCode(200)
+        .setBody(
+          """
+          {
+            "flow_id": "flow-1",
+            "status": "COMPLETED",
+            "recommendations": [{
+              "id": "rec-1",
+              "title": "Slow query",
+              "description": "The query is slower than in production.",
+              "performance_characteristics": {
+                "span.op": "db.sql.query",
+                "link": "https://sentry.io/explore/traces/",
+                "duration": 820.5,
+                "avg": 230,
+                "p50": 180,
+                "p75": 280,
+                "p90": 420,
+                "p95": 520
+              }
+            }]
+          }
+          """
+            .trimIndent()
+        )
+    )
+    val api = SentryBuddyHttpFlowAnalysesApi(server.url("/").toString())
+
+    val performance = api.get("flow-1").recommendations.single().performanceCharacteristics
+
+    assertThat(performance)
+      .isEqualTo(
+        PerformanceCharacteristics(
+          spanOp = "db.sql.query",
+          link = "https://sentry.io/explore/traces/",
+          duration = 820.5,
+          avg = 230.0,
+          p50 = 180.0,
+          p75 = 280.0,
+          p90 = 420.0,
+          p95 = 520.0,
+        )
+      )
+  }
+
+  @Test
+  fun `get drops a duration that is not a number`() {
+    server.enqueue(
+      MockResponse()
+        .setResponseCode(200)
+        .setBody(
+          """
+          {
+            "flow_id": "flow-1",
+            "status": "COMPLETED",
+            "recommendations": [{
+              "id": "rec-1",
+              "title": "Slow query",
+              "description": "The query is slower than in production.",
+              "performance_characteristics": {
+                "span.op": "db.sql.query",
+                "duration": "~8.4s (full recording duration)",
+                "p50": 180
+              }
+            }]
+          }
+          """
+            .trimIndent()
+        )
+    )
+    val api = SentryBuddyHttpFlowAnalysesApi(server.url("/").toString())
+
+    val performance = api.get("flow-1").recommendations.single().performanceCharacteristics
+
+    assertThat(performance)
+      .isEqualTo(PerformanceCharacteristics(spanOp = "db.sql.query", p50 = 180.0))
+  }
+
+  @Test
+  fun `get keeps the recommendation when the performance characteristics are malformed`() {
+    server.enqueue(
+      MockResponse()
+        .setResponseCode(200)
+        .setBody(
+          """
+          {
+            "flow_id": "flow-1",
+            "status": "COMPLETED",
+            "recommendations": [{
+              "id": "rec-1",
+              "title": "Slow query",
+              "description": "The query is slower than in production.",
+              "performance_characteristics": "not an object"
+            }]
+          }
+          """
+            .trimIndent()
+        )
+    )
+    val api = SentryBuddyHttpFlowAnalysesApi(server.url("/").toString())
+
+    val recommendation = api.get("flow-1").recommendations.single()
+
+    assertThat(recommendation.id).isEqualTo("rec-1")
+    assertThat(recommendation.performanceCharacteristics).isNull()
+  }
+
+  @Test
   fun `dismiss recommendation posts to bridge dismiss endpoint and parses the recommendation`() {
     server.enqueue(
       MockResponse()

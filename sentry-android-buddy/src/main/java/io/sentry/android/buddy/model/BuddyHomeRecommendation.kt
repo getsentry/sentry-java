@@ -25,6 +25,7 @@ internal data class BuddyHomeRecommendation(
   val actions: List<RecommendationAction> = emptyList(),
   val flowId: String? = null,
   val sourceRecommendationId: String? = null,
+  val performanceCharacteristics: PerformanceCharacteristics? = null,
 ) {
   val isOpen: Boolean
     get() = status == RecommendationStatus.OPEN
@@ -56,6 +57,7 @@ internal fun FlowAnalysisResponse.toHomeRecommendations(
       updatedAtMs = nowMs,
       primaryLink = recommendation.link,
       actions = recommendation.actions,
+      performanceCharacteristics = recommendation.performanceCharacteristics,
       flowId = flowId,
       sourceRecommendationId = recommendation.id,
     )
@@ -77,6 +79,7 @@ internal fun BuddyHealthCheckResponse.toHomeRecommendations(
       updatedAtMs = nowMs,
       primaryLink = recommendation.link,
       actions = recommendation.actions,
+      performanceCharacteristics = recommendation.performanceCharacteristics,
     )
   }
 }

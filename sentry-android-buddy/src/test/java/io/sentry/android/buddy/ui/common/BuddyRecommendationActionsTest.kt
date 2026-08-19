@@ -25,7 +25,7 @@ class BuddyRecommendationActionsTest {
     val executed = mutableListOf<String>()
     val opened = mutableListOf<String>()
     val models =
-      listOf(action(id = "act-1"))
+      listOf(action(id = "act-1", actionableForSeer = true))
         .toActionModels(onExecute = { executed += it }, onOpenLink = { opened += it })
 
     models.single().onClick()
@@ -61,11 +61,12 @@ class BuddyRecommendationActionsTest {
     label: String = "Do the thing",
     link: String? = null,
     status: ActionStatus = ActionStatus.OPEN,
+    actionableForSeer: Boolean = false,
   ): RecommendationAction =
     RecommendationAction(
       id = id,
       actionLabel = label,
-      actionableForSeer = link == null,
+      actionableForSeer = actionableForSeer,
       description = "…",
       link = link,
       status = status,

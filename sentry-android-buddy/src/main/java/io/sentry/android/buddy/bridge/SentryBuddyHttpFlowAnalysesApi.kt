@@ -12,11 +12,13 @@ import io.sentry.android.buddy.model.AnalysisStatus
 import io.sentry.android.buddy.model.FlowAction
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
+import io.sentry.android.buddy.model.PerformanceCharacteristics
 import io.sentry.android.buddy.model.Recommendation
 import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.SentryIssue
 import io.sentry.android.buddy.model.Severity
+import io.sentry.vendor.gson.stream.JsonToken
 import java.io.IOException
 import java.io.StringReader
 import java.io.StringWriter
@@ -249,6 +251,7 @@ internal object RecommendationDeserializer : JsonDeserializer<Recommendation> {
     var severity: Severity = Severity.MEDIUM
     var status: RecommendationStatus = RecommendationStatus.OPEN
     var actions: List<RecommendationAction> = emptyList()
+    var performanceCharacteristics: PerformanceCharacteristics? = null
 
     reader.beginObject()
     while (reader.hasNext()) {
@@ -264,6 +267,16 @@ internal object RecommendationDeserializer : JsonDeserializer<Recommendation> {
         "actions" ->
           actions = reader.nextListOrNull(logger, RecommendationActionDeserializer).orEmpty()
 
+        // A malformed payload must not discard the whole recommendation.
+        "performance_characteristics" ->
+          performanceCharacteristics =
+            if (reader.peek() == JsonToken.BEGIN_OBJECT) {
+              reader.nextOrNull(logger, PerformanceCharacteristicsDeserializer)
+            } else {
+              reader.skipValue()
+              null
+            }
+
         else -> reader.skipValue()
       }
     }
@@ -277,6 +290,50 @@ internal object RecommendationDeserializer : JsonDeserializer<Recommendation> {
       severity = severity,
       status = status,
       actions = actions,
+      performanceCharacteristics = performanceCharacteristics,
+    )
+  }
+}
+
+internal object PerformanceCharacteristicsDeserializer :
+  JsonDeserializer<PerformanceCharacteristics> {
+  override fun deserialize(reader: ObjectReader, logger: ILogger): PerformanceCharacteristics {
+    var spanOp: String? = null
+    var link: String? = null
+    var duration: Double? = null
+    var avg: Double? = null
+    var p50: Double? = null
+    var p75: Double? = null
+    var p90: Double? = null
+    var p95: Double? = null
+
+    reader.beginObject()
+    while (reader.hasNext()) {
+      // The model writes the span op under the name the recording uses, the bridge under its own.
+      when (reader.nextName()) {
+        "span.op",
+        "span_op" -> spanOp = reader.nextStringOrNull()
+        "link" -> link = reader.nextStringOrNull()
+        "duration" -> duration = reader.nextDurationMsOrNull()
+        "avg" -> avg = reader.nextDurationMsOrNull()
+        "p50" -> p50 = reader.nextDurationMsOrNull()
+        "p75" -> p75 = reader.nextDurationMsOrNull()
+        "p90" -> p90 = reader.nextDurationMsOrNull()
+        "p95" -> p95 = reader.nextDurationMsOrNull()
+        else -> reader.skipValue()
+      }
+    }
+    reader.endObject()
+
+    return PerformanceCharacteristics(
+      spanOp = spanOp,
+      link = link,
+      duration = duration,
+      avg = avg,
+      p50 = p50,
+      p75 = p75,
+      p90 = p90,
+      p95 = p95,
     )
   }
 }
@@ -317,6 +374,18 @@ internal object RecommendationActionDeserializer : JsonDeserializer<Recommendati
     )
   }
 }
+
+/**
+ * The bridge sends every duration as a number of milliseconds. Text where a number belongs is
+ * dropped, so one odd value does not cost the whole recommendation.
+ */
+private fun ObjectReader.nextDurationMsOrNull(): Double? =
+  if (peek() == JsonToken.NUMBER) {
+    nextDouble()
+  } else {
+    skipValue()
+    null
+  }
 
 internal object SentryIssueDeserializer : JsonDeserializer<SentryIssue> {
   override fun deserialize(reader: ObjectReader, logger: ILogger): SentryIssue {

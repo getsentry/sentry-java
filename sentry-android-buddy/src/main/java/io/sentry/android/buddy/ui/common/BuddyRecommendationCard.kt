@@ -45,11 +45,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
+import io.sentry.android.buddy.model.PerformanceCharacteristics
 import io.sentry.android.buddy.model.Recommendation
 import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.ui.common.theme.BuddyBorder
+import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
@@ -59,6 +61,7 @@ import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
 import io.sentry.android.buddy.ui.preview.PREVIEW_NOW_MS
 import io.sentry.android.buddy.ui.preview.previewHomeRecommendation
 import io.sentry.android.buddy.ui.preview.previewRecommendation
+import io.sentry.android.buddy.ui.preview.previewSpanRecommendation
 import kotlinx.coroutines.delay
 
 private const val RECOMMENDATION_DISMISS_ANIMATION_MS = 220
@@ -74,6 +77,17 @@ internal data class BuddyRecommendationCardModel(
   val statusLabel: String? = null,
   val timestampLabel: String? = null,
   val unread: Boolean = false,
+  val performance: BuddyRecommendationPerformanceModel? = null,
+)
+
+/**
+ * The duration of the span of the recommendation, next to the durations the same span op has in
+ * production. Only spans have one, and only when the bridge could query every percentile.
+ */
+internal data class BuddyRecommendationPerformanceModel(
+  val stats: SpanDurationStats,
+  val spanOp: String? = null,
+  val link: String? = null,
 )
 
 /** One button of the card: an action of the recommendation, with the label the bridge gave it. */
@@ -107,6 +121,7 @@ internal fun BuddyRecommendationCard(
   actions: List<BuddyRecommendationActionModel> = emptyList(),
   onDismiss: (() -> Unit)? = null,
   onOpenLink: (() -> Unit)? = null,
+  onOpenPerformanceLink: ((String) -> Unit)? = null,
   openLinkLabel: String = "Open Link",
   detailsLabel: String = "Details",
   style: BuddyRecommendationCardStyle = BuddyRecommendationCardStyle.FLOW_INSIGHT,
@@ -168,6 +183,12 @@ internal fun BuddyRecommendationCard(
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
           )
+          model.performance?.let { performance ->
+            RecommendationPerformanceSection(
+              performance = performance,
+              onOpenLink = onOpenPerformanceLink,
+            )
+          }
           RecommendationActionRow(
             actions = actions,
             onOpenLink = onOpenLink,
@@ -349,6 +370,54 @@ private fun RecommendationActionPill(
   }
 }
 
+/**
+ * The chart carries the numbers, so the section around it only names the span op and offers the
+ * explore query that produced the production data.
+ */
+@Composable
+private fun RecommendationPerformanceSection(
+  performance: BuddyRecommendationPerformanceModel,
+  onOpenLink: ((String) -> Unit)?,
+) {
+  Surface(color = BuddyCode, shape = RoundedCornerShape(12.dp)) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          performance.spanOp ?: "This span",
+          modifier = Modifier.weight(1f),
+          color = BuddyInk,
+          style = MaterialTheme.typography.labelLarge,
+          fontWeight = FontWeight.Bold,
+        )
+        Text(
+          "vs production",
+          color = BuddyMuted,
+          style = MaterialTheme.typography.labelMedium,
+        )
+      }
+      SpanDurationRangeChart(stats = performance.stats)
+      val link = performance.link
+      if (link != null && onOpenLink != null) {
+        Row(modifier = Modifier.padding(horizontal = 12.dp)) {
+          RecommendationActionPill(
+            label = "Open in Explore",
+            onClick = { onOpenLink(link) },
+            emphasis = BuddyRecommendationPillEmphasis.SECONDARY,
+            icon = Icons.open_in_new,
+          )
+        }
+      }
+    }
+  }
+}
+
 @Composable
 private fun RecommendationDetailsDisclosure(
   label: String,
@@ -401,6 +470,7 @@ internal fun Recommendation.toCardModel(
           status.value.takeIf { it.isNotEmpty() },
         )
         .joinToString(" • "),
+    performance = performanceCharacteristics?.toPerformanceModel(),
   )
 
 internal fun BuddyHomeRecommendation.toCardModel(nowMs: Long): BuddyRecommendationCardModel =
@@ -417,7 +487,14 @@ internal fun BuddyHomeRecommendation.toCardModel(nowMs: Long): BuddyRecommendati
         .joinToString(" • "),
     timestampLabel = relativeTime(updatedAtMs, nowMs),
     unread = unread && isOpen,
+    performance = performanceCharacteristics?.toPerformanceModel(),
   )
+
+/** Without a full set of percentiles there is nothing to draw, so the section stays away. */
+private fun PerformanceCharacteristics.toPerformanceModel(): BuddyRecommendationPerformanceModel? =
+  toSpanDurationStats()?.let { stats ->
+    BuddyRecommendationPerformanceModel(stats = stats, spanOp = spanOp, link = link)
+  }
 
 @Composable
 internal fun BuddyRecommendationErrorCard(message: String, modifier: Modifier = Modifier) {
@@ -477,6 +554,18 @@ private fun BuddyRecommendationCardPreview() {
       actions = previewRecommendation.actions.toActionModels(onExecute = {}, onOpenLink = {}),
       onDismiss = {},
       onOpenLink = {},
+    )
+  }
+}
+
+@Preview(name = "Recommendation · span performance", showBackground = true, widthDp = 380)
+@Composable
+private fun BuddyRecommendationCardPerformancePreview() {
+  BuddyPreviewSurface {
+    BuddyRecommendationCard(
+      model = previewSpanRecommendation.toCardModel(),
+      onOpenLink = {},
+      onOpenPerformanceLink = {},
     )
   }
 }

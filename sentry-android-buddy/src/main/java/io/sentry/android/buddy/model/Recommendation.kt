@@ -19,6 +19,42 @@ public enum class ActionStatus(public val value: String) {
 }
 
 /**
+ * How the span of a recommendation compares against production. Only spans have one, and every
+ * field is optional, because the model cannot always query all of them.
+ *
+ * All durations are milliseconds. [duration] is the duration found in the recording, the other
+ * values come from production data. [link] opens an explore query on sentry.io that shows that
+ * production data.
+ */
+@ApiStatus.Experimental
+public data class PerformanceCharacteristics
+@JvmOverloads
+public constructor(
+  public val spanOp: String? = null,
+  public val link: String? = null,
+  public val duration: Double? = null,
+  public val avg: Double? = null,
+  public val p50: Double? = null,
+  public val p75: Double? = null,
+  public val p90: Double? = null,
+  public val p95: Double? = null,
+) : JsonSerializable {
+  @Throws(IOException::class)
+  override fun serialize(writer: ObjectWriter, logger: ILogger) {
+    writer.beginObject()
+    writer.name("span_op").value(spanOp)
+    writer.name("link").value(link)
+    writer.name("duration").value(duration)
+    writer.name("avg").value(avg)
+    writer.name("p50").value(p50)
+    writer.name("p75").value(p75)
+    writer.name("p90").value(p90)
+    writer.name("p95").value(p95)
+    writer.endObject()
+  }
+}
+
+/**
  * One thing that can be done about a recommendation. The app shows [actionLabel], and executing the
  * action starts the Seer run that carries out [description].
  */
@@ -62,6 +98,8 @@ public constructor(
   public val severity: Severity = Severity.MEDIUM,
   public val status: RecommendationStatus = RecommendationStatus.OPEN,
   public val actions: List<RecommendationAction> = emptyList(),
+  /** How the span of the recommendation compares against production. Only spans have one. */
+  public val performanceCharacteristics: PerformanceCharacteristics? = null,
 ) : JsonSerializable {
   @Throws(IOException::class)
   override fun serialize(writer: ObjectWriter, logger: ILogger) {
@@ -73,6 +111,7 @@ public constructor(
     writer.name("severity").value(severity.value)
     writer.name("status").value(status.value)
     writer.name("actions").value(logger, actions)
+    writer.name("performance_characteristics").value(logger, performanceCharacteristics)
     writer.endObject()
   }
 }
