@@ -10,9 +10,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,7 +21,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -32,9 +29,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -52,7 +52,6 @@ import io.sentry.android.buddy.ui.common.BuddyButtonText
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
 import io.sentry.android.buddy.ui.common.SheetTitle
 import io.sentry.android.buddy.ui.common.openLinkLabelFor
-import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
@@ -136,7 +135,7 @@ internal fun BuddyHomeSheet(
           onOpenUrl = onOpenUrl,
         )
 
-      BuddyHomeTab.RECOMMENDATIONS ->
+      BuddyHomeTab.ACTIONS ->
         LiveFeedInset {
           RecommendationsTabContent(
             recommendations = homeRecommendations,
@@ -166,51 +165,51 @@ internal fun HomeTabRow(
   unreadRecommendationCount: Int,
   onSelect: (BuddyHomeTab) -> Unit,
 ) {
-  Surface(color = BuddyCode, shape = RoundedCornerShape(16.dp)) {
-    Box(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(4.dp)) {
-      Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        BuddyHomeTab.entries.forEach { tab ->
-          val isSelected = tab == selectedTab
-          val interactionSource = remember(tab) { MutableInteractionSource() }
-          val label =
-            when (tab) {
-              BuddyHomeTab.LIVE_FEED -> "Live Feed"
-              BuddyHomeTab.RECOMMENDATIONS ->
-                if (unreadRecommendationCount > 0) {
-                  "Recommendations ($unreadRecommendationCount)"
-                } else {
-                  "Recommendations"
-                }
 
-              BuddyHomeTab.RECORD_FLOW -> "Record Flow"
-            }
-          Box(
-            modifier =
-              Modifier.background(
-                  if (isSelected) Color.White else Color.Transparent,
-                  RoundedCornerShape(12.dp),
-                )
-                .border(
-                  1.dp,
-                  if (isSelected) BuddyBorder else Color.Transparent,
-                  RoundedCornerShape(12.dp),
-                )
-                .clickable(
-                  interactionSource = interactionSource,
-                  indication = null,
-                ) {
-                  onSelect(tab)
-                }
-          ) {
-            Text(
-              text = label,
-              modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-              color = if (isSelected) BuddyInk else BuddyMuted,
-              style = MaterialTheme.typography.labelLarge,
-              fontWeight = FontWeight.Bold,
-              maxLines = 1,
-            )
+  Surface(color = BuddyCode, shape = RoundedCornerShape(16.dp)) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
+      BuddyHomeTab.entries.forEach { tab ->
+        val isSelected = tab == selectedTab
+        val label =
+          when (tab) {
+            BuddyHomeTab.LIVE_FEED -> "Live Feed"
+            BuddyHomeTab.ACTIONS ->
+              if (unreadRecommendationCount > 0) {
+                "Actions ($unreadRecommendationCount)"
+              } else {
+                "Actions"
+              }
+
+            BuddyHomeTab.RECORD_FLOW -> "Record Flow"
           }
+        Box(
+          modifier =
+            Modifier.weight(1f)
+              .padding(4.dp)
+              .background(
+                if (isSelected) Color.White else Color.Transparent,
+                RoundedCornerShape(16.dp),
+              )
+              .clip(RoundedCornerShape(16.dp))
+              .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(color = Color.White),
+              ) {
+                onSelect(tab)
+              },
+          contentAlignment = Alignment.Center,
+        ) {
+          Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+            color = if (isSelected) BuddyInk else BuddyMuted,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+          )
         }
       }
     }
@@ -227,7 +226,6 @@ internal fun LiveFeedTabContent(
   onOpenUrl: (Context, String) -> Unit,
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-    Spacer(Modifier.height(12.dp))
     AttentionCard(
       liveFeed = liveFeed,
       sentryUiLinks = sentryUiLinks,
@@ -392,13 +390,13 @@ private fun BuddyHomeSheetLiveFeedEmptyPreview() {
 @Preview(name = "Home · recommendations", showBackground = true, widthDp = 380, heightDp = 600)
 @Composable
 private fun BuddyHomeSheetRecommendationsPreview() {
-  BuddyHomeSheetPreviewFrame(BuddyHomeTab.RECOMMENDATIONS)
+  BuddyHomeSheetPreviewFrame(BuddyHomeTab.ACTIONS)
 }
 
 @Preview(name = "Home · recommendations empty", showBackground = true, widthDp = 380)
 @Composable
 private fun BuddyHomeSheetRecommendationsEmptyPreview() {
-  BuddyHomeSheetPreviewFrame(BuddyHomeTab.RECOMMENDATIONS, homeRecommendations = emptyList())
+  BuddyHomeSheetPreviewFrame(BuddyHomeTab.ACTIONS, homeRecommendations = emptyList())
 }
 
 @Preview(name = "Home · record flow", showBackground = true, widthDp = 380, heightDp = 500)

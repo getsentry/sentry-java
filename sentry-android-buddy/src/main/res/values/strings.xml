@@ -6,4 +6,5 @@
   <string name="buddy_state_analyzing">Sentry Buddy, analyzing</string>
   <string name="buddy_state_ready">Sentry Buddy, insights ready</string>
   <string name="buddy_state_severe">Sentry Buddy, severe error</string>
+  <string name="buddy_timeline_row_opens_link">Opens in Sentry</string>
 </resources>

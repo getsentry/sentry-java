@@ -849,6 +849,12 @@ public final class io/sentry/android/buddy/ui/common/ComposableSingletons$BuddyR
 	public final fun getLambda$1557649201$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 }
 
+public final class io/sentry/android/buddy/ui/common/ComposableSingletons$BuddyWavyProgressKt {
+	public static final field INSTANCE Lio/sentry/android/buddy/ui/common/ComposableSingletons$BuddyWavyProgressKt;
+	public fun <init> ()V
+	public final fun getLambda$1977180763$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+}
+
 public final class io/sentry/android/buddy/ui/common/ComposableSingletons$MetricCardKt {
 	public static final field INSTANCE Lio/sentry/android/buddy/ui/common/ComposableSingletons$MetricCardKt;
 	public fun <init> ()V

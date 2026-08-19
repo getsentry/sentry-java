@@ -604,7 +604,7 @@ public constructor(
   private fun defaultHomeTab(): BuddyHomeTab =
     when {
       liveFeed.latestUnviewedAdverseItem != null -> BuddyHomeTab.LIVE_FEED
-      homeRecommendations.any { it.isOpen && it.unread } -> BuddyHomeTab.RECOMMENDATIONS
+      homeRecommendations.any { it.isOpen && it.unread } -> BuddyHomeTab.ACTIONS
       else -> lastSelectedHomeTab
     }
 

@@ -18,7 +18,6 @@ internal fun BuddyLiveFeedItem.toTimelineRow(
   BuddyTimelineRow(
     id = id,
     stamp = relativeTime(timestamp.time, nowMs),
-    category = categoryKey(),
     detail = title(),
     trailing = durationText(),
     tone = tone(),
@@ -31,7 +30,6 @@ internal fun BuddyTimelineItem.toTimelineRow(id: Long): BuddyTimelineRow =
   BuddyTimelineRow(
     id = id,
     stamp = formatElapsed(elapsedMs),
-    category = data.stringValue("op") ?: type.value,
     detail = name.orEmpty(),
     trailing = data.longValue("duration_ms")?.let { formatDurationValue(it) },
     tone =

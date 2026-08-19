@@ -63,7 +63,6 @@ internal val previewTimelineRows: List<BuddyTimelineRow> =
     BuddyTimelineRow(
       id = 1,
       stamp = "0:31",
-      category = "http.client",
       detail = "GET /feed",
       trailing = "1.86 s",
       tone = BuddyTimelineTone.WARNING,
@@ -71,15 +70,13 @@ internal val previewTimelineRows: List<BuddyTimelineRow> =
     BuddyTimelineRow(
       id = 2,
       stamp = "0:24",
-      category = "db.query",
       detail = "SELECT * FROM cache",
       trailing = "41 ms",
     ),
-    BuddyTimelineRow(id = 3, stamp = "0:19", category = "navigation", detail = "Login → Home"),
+    BuddyTimelineRow(id = 3, stamp = "0:19", detail = "Login → Home"),
     BuddyTimelineRow(
       id = 4,
       stamp = "0:14",
-      category = "http.client",
       detail = "POST /auth",
       trailing = "3.42 s",
       tone = BuddyTimelineTone.WARNING,
@@ -87,15 +84,14 @@ internal val previewTimelineRows: List<BuddyTimelineRow> =
     BuddyTimelineRow(
       id = 5,
       stamp = "0:12",
-      category = "error",
       detail = "IllegalStateException",
       tone = BuddyTimelineTone.ERROR,
+      link = "https://sentry.io/issues/1",
     ),
-    BuddyTimelineRow(id = 6, stamp = "0:09", category = "ui.click", detail = "#btn_sign_in"),
+    BuddyTimelineRow(id = 6, stamp = "0:09", detail = "#btn_sign_in"),
     BuddyTimelineRow(
       id = 7,
       stamp = "0:03",
-      category = "ui.load",
       detail = "LoginActivity",
       trailing = "128 ms",
     ),

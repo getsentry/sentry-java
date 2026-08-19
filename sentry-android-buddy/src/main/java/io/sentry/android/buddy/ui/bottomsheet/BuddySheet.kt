@@ -17,7 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.BuddyHealthCheckState
 import io.sentry.android.buddy.SentryBuddySessionController
@@ -66,7 +66,7 @@ internal fun BuddySheet(
   ) {
     return
   }
-  val maxSheetHeight = LocalConfiguration.current.screenHeightDp.dp * 0.75f
+  val maxSheetHeight = LocalWindowInfo.current.containerSize.height.dp * 0.75f
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val sheetScope = rememberCoroutineScope()
   fun startRecordingAfterSheetExit() {
@@ -106,7 +106,7 @@ internal fun BuddySheet(
               onDismiss = onDismissScreenScan,
               onShowRecommendations = {
                 onDismissScreenScan()
-                onSelectHomeTab(BuddyHomeTab.RECOMMENDATIONS)
+                onSelectHomeTab(BuddyHomeTab.ACTIONS)
               },
             )
           } else {

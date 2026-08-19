@@ -2,16 +2,21 @@ package io.sentry.android.buddy.ui.common
 
 import java.util.Locale
 
+private const val RELATIVE_TIME_STEP_SECONDS = 5L
+
+/**
+ * Ages are rounded down to a coarse bucket, so a label that is redrawn every frame only changes
+ * every five seconds - and, past a minute, only once a minute.
+ */
 internal fun relativeTime(timestampMs: Long, nowMs: Long): String {
-  val ageMs = (nowMs - timestampMs).coerceAtLeast(0)
-  if (ageMs < 1000) {
-    return "just now"
+  val ageSeconds = (nowMs - timestampMs).coerceAtLeast(0) / 1000
+  if (ageSeconds < RELATIVE_TIME_STEP_SECONDS) {
+    return "now"
   }
-  val ageSeconds = ageMs / 1000
   if (ageSeconds < 60) {
-    return "${ageSeconds}s ago"
+    return "${ageSeconds / RELATIVE_TIME_STEP_SECONDS * RELATIVE_TIME_STEP_SECONDS}s"
   }
-  return "${ageSeconds / 60}m ago"
+  return "${ageSeconds / 60} min"
 }
 
 internal fun formatDurationValue(durationMs: Long): String {
