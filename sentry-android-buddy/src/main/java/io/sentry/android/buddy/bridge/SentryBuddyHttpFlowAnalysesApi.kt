@@ -235,6 +235,7 @@ internal object RecommendationActionDeserializer : JsonDeserializer<Recommendati
   override fun deserialize(reader: ObjectReader, logger: ILogger): RecommendationAction {
     var id: String? = null
     var actionLabel: String? = null
+    var actionableForSeer: Boolean = false
     var description: String? = null
     var link: String? = null
     var status: ActionStatus = ActionStatus.OPEN
@@ -245,6 +246,7 @@ internal object RecommendationActionDeserializer : JsonDeserializer<Recommendati
       when (reader.nextName()) {
         "id" -> id = reader.nextStringOrNull()
         "action_label" -> actionLabel = reader.nextStringOrNull()
+        "actionable_for_seer" -> actionableForSeer = reader.nextBooleanOrNull() ?: false
         "description" -> description = reader.nextStringOrNull()
         "link" -> link = reader.nextStringOrNull()
         "status" -> status = reader.nextStringOrNull()?.let { ActionStatus.valueOf(it) } ?: status
@@ -257,6 +259,7 @@ internal object RecommendationActionDeserializer : JsonDeserializer<Recommendati
     return RecommendationAction(
       id = requireNotNull(id) { "action id is required" },
       actionLabel = requireNotNull(actionLabel) { "action label is required" },
+      actionableForSeer = actionableForSeer,
       description = requireNotNull(description) { "action description is required" },
       link = link,
       status = status,

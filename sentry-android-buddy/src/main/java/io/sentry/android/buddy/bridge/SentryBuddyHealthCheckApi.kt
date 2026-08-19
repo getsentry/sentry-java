@@ -39,6 +39,7 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
               RecommendationAction(
                 id = "dsn-missing:fix",
                 actionLabel = "Set the DSN",
+                actionableForSeer = true,
                 description =
                   "Set options.dsn in the Sentry SDK options so events reach a Sentry project.",
               )
@@ -61,6 +62,7 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
               RecommendationAction(
                 id = "sdk-outdated:fix",
                 actionLabel = "Upgrade the SDK",
+                actionableForSeer = true,
                 description =
                   "Raise the io.sentry dependency to the newest release and rebuild the app.",
               )
@@ -81,6 +83,7 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
               RecommendationAction(
                 id = "tracing-disabled:fix",
                 actionLabel = "Turn on tracing",
+                actionableForSeer = true,
                 description =
                   "Set options.tracesSampleRate, or install a tracesSampler, so transactions are recorded.",
               )
@@ -101,6 +104,7 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
               RecommendationAction(
                 id = "replay-disabled:fix",
                 actionLabel = "Turn on Session Replay",
+                actionableForSeer = true,
                 description =
                   "Set a sessionSampleRate or an onErrorSampleRate in options.sessionReplay.",
               )
@@ -121,6 +125,7 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
               RecommendationAction(
                 id = "anr-disabled:fix",
                 actionLabel = "Turn on ANR reporting",
+                actionableForSeer = true,
                 description =
                   "Set options.isAnrEnabled to true so app hangs are reported to Sentry.",
               )

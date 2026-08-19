@@ -148,6 +148,7 @@ internal val previewRecommendation: Recommendation =
         RecommendationAction(
           id = "tracing-disabled:fix",
           actionLabel = "Turn on tracing",
+          actionableForSeer = true,
           description =
             "Set options.tracesSampleRate, or install a tracesSampler, so transactions are " +
               "recorded.",

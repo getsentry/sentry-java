@@ -106,6 +106,7 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
                 RecommendationAction(
                   id = "add-flow-spans:instrument",
                   actionLabel = "Add the spans",
+                  actionableForSeer = true,
                   description =
                     "Wrap the slowest steps of this flow in explicit spans so the work shows up " +
                       "in the trace.",
@@ -123,6 +124,7 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
                 RecommendationAction(
                   id = "set-flow-budget:add-alert",
                   actionLabel = "Create the budget",
+                  actionableForSeer = true,
                   description =
                     "Add a duration budget for this flow based on the recorded baseline.",
                 )

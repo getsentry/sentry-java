@@ -28,6 +28,7 @@ public data class RecommendationAction
 public constructor(
   public val id: String,
   public val actionLabel: String,
+  public val actionableForSeer: Boolean,
   /** Detailed instructions on how the action is carried out. It goes into the Seer prompt. */
   public val description: String,
   /** A link to an existing dashboard, a trace, or an explore query. */
@@ -40,6 +41,7 @@ public constructor(
     writer.beginObject()
     writer.name("id").value(id)
     writer.name("action_label").value(actionLabel)
+    writer.name("actionable_for_seer").value(actionableForSeer)
     writer.name("description").value(description)
     writer.name("link").value(link)
     writer.name("status").value(status.value)

@@ -93,7 +93,7 @@ internal fun BuddyLiveFeed.toHomeRecommendations(
       val key = "live-feed:error:${screenName.orEmpty()}:${item.recommendationTitle()}"
       val link = sentryUiLinks.linkFor(item)
       val action: RecommendationAction? = link?.let {
-        RecommendationAction("", "Explore", "", link = link, status = ActionStatus.OPEN, null)
+        RecommendationAction("", "Explore", actionableForSeer = false,"", link = link, status = ActionStatus.OPEN, null)
       }
 
       recommendations[key] =

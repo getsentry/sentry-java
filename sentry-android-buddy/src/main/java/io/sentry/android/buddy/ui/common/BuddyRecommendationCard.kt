@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -68,6 +69,7 @@ internal data class BuddyRecommendationCardModel(
 internal data class BuddyRecommendationActionModel(
   val id: String,
   val label: String,
+  val isActionableForSeer: Boolean,
   val onClick: () -> Unit,
 )
 
@@ -219,7 +221,7 @@ private fun RecommendationActionRow(
         emphasis =
           if (index == 0) BuddyRecommendationPillEmphasis.PRIMARY
           else BuddyRecommendationPillEmphasis.SECONDARY,
-        showExternalIcon = true,
+        icon = if (action.isActionableForSeer) Icons.wand_shine else Icons.open_in_new,
       )
     }
     onOpenLink?.let {
@@ -229,7 +231,7 @@ private fun RecommendationActionRow(
         emphasis =
           if (actions.isEmpty()) BuddyRecommendationPillEmphasis.PRIMARY
           else BuddyRecommendationPillEmphasis.SECONDARY,
-        showExternalIcon = true,
+        icon = Icons.open_in_new,
       )
     }
     onDismiss?.let {
@@ -237,7 +239,7 @@ private fun RecommendationActionRow(
         label = "Dismiss",
         onClick = it,
         emphasis = BuddyRecommendationPillEmphasis.GHOST,
-        showExternalIcon = false,
+        icon = null,
       )
     }
   }
@@ -248,7 +250,7 @@ private fun RecommendationActionPill(
   label: String,
   onClick: () -> Unit,
   emphasis: BuddyRecommendationPillEmphasis,
-  showExternalIcon: Boolean,
+  icon: ImageVector?,
 ) {
   val shape = RoundedCornerShape(22.dp)
   val background =
@@ -287,9 +289,9 @@ private fun RecommendationActionPill(
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.Bold,
       )
-      if (showExternalIcon) {
+      if (icon != null) {
         Icon(
-          imageVector = Icons.open_in_new,
+          imageVector = icon,
           contentDescription = null,
           tint = contentColor,
           modifier = Modifier.size(15.dp),
@@ -354,10 +356,10 @@ internal fun Recommendation.toCardModel(
     severity = severity,
     statusLabel =
       listOfNotNull(
-          pillLabel?.takeIf { showStatus },
-          severity.value.takeIf { it.isNotEmpty() },
-          status.value.takeIf { it.isNotEmpty() },
-        )
+        pillLabel?.takeIf { showStatus },
+        severity.value.takeIf { it.isNotEmpty() },
+        status.value.takeIf { it.isNotEmpty() },
+      )
         .joinToString(" • "),
   )
 
@@ -368,10 +370,10 @@ internal fun BuddyHomeRecommendation.toCardModel(nowMs: Long): BuddyRecommendati
     severity = severity,
     statusLabel =
       listOfNotNull(
-          source.label.takeIf { it.isNotEmpty() },
-          severity.value.takeIf { it.isNotEmpty() },
-          status.value.takeIf { it.isNotEmpty() },
-        )
+        source.label.takeIf { it.isNotEmpty() },
+        severity.value.takeIf { it.isNotEmpty() },
+        status.value.takeIf { it.isNotEmpty() },
+      )
         .joinToString(" • "),
     timestampLabel = relativeTime(updatedAtMs, nowMs),
     unread = unread && isOpen,
@@ -409,12 +411,12 @@ internal fun List<RecommendationAction>.toActionModels(
 ): List<BuddyRecommendationActionModel> =
   filter { it.status == ActionStatus.OPEN }
     .map { action ->
-      BuddyRecommendationActionModel(action.id, action.actionLabel) {
+      BuddyRecommendationActionModel(action.id, action.actionLabel, action.actionableForSeer) {
         val link = action.link
-        if (link != null) {
-          onOpenLink(link)
-        } else {
+        if (action.actionableForSeer) {
           onExecute(action.id)
+        } else if (link != null) {
+          onOpenLink(link)
         }
       }
     }
