@@ -219,9 +219,10 @@ class SentryBuddySessionControllerTest {
     controller.stopRecording()
     controller.briefRecording()
     controller.analyze()
-    controller.executeFlowAction("generate-dashboard")
+    val link = controller.executeFlowActionAndReturnLink("generate-dashboard")
 
     assertThat(flowAnalysesApi.executedFlowActionIds).containsExactly("generate-dashboard")
+    assertThat(link).isEqualTo("https://sentry.io/seer/runs/generate-dashboard")
     val state = controller.state as SentryBuddySessionState.Insights
     val action = state.analysis.actions.first { it.id == "generate-dashboard" }
     assertThat(action.status).isEqualTo(ActionStatus.EXECUTED)
@@ -687,11 +688,13 @@ class SentryBuddySessionControllerTest {
           id = "generate-dashboard",
           actionLabel = "Dashboard",
           description = "Draft a dashboard from the flow recording.",
+          actionableForSeer = true,
         ),
         FlowAction(
           id = "generate-monitors",
           actionLabel = "Monitors",
           description = "Draft monitors from the flow recording.",
+          actionableForSeer = true,
         ),
         FlowAction(
           id = "share-recording-json",

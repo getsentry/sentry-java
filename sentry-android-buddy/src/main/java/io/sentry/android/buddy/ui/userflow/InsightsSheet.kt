@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -73,7 +74,7 @@ internal fun InsightsSheet(
   state: SentryBuddySessionState.Insights,
   sentryUiLinks: BuddySentryUiLinks,
   recommendationError: String?,
-  onExecuteFlowAction: (String) -> Unit,
+  onExecuteFlowAction: (Context, String) -> Unit,
   onExecuteRecommendationAction: (String, String) -> Unit,
   onDismissRecommendation: (String) -> Unit,
   onOpenUrl: (Context, String) -> Unit,
@@ -202,7 +203,7 @@ private fun InsightsSheetPreview() {
         ),
       sentryUiLinks = previewSentryUiLinks,
       recommendationError = null,
-      onExecuteFlowAction = {},
+      onExecuteFlowAction = { _, _ -> },
       onExecuteRecommendationAction = { _, _ -> },
       onDismissRecommendation = {},
       onOpenUrl = { _, _ -> },
@@ -231,9 +232,9 @@ private fun FlowActionButton(
   modifier: Modifier = Modifier,
 ) {
   val shape = RoundedCornerShape(18.dp)
-  val background = BuddySweatshirtPink.copy(alpha = 0.12f)
-  val contentColor = BuddySweatshirtPink
-  val border = BorderStroke(1.dp, BuddySweatshirtPink.copy(alpha = 0.26f))
+  val background = BuddySweatshirtPink.copy(alpha = if (action.enabled) 0.12f else 0.05f)
+  val contentColor = if (action.enabled) BuddySweatshirtPink else BuddyInk.copy(alpha = 0.36f)
+  val border = BorderStroke(1.dp, contentColor.copy(alpha = 0.26f))
   Surface(
     modifier =
       modifier
@@ -242,8 +243,11 @@ private fun FlowActionButton(
         .semantics {
           contentDescription = action.label
           role = Role.Button
+          if (!action.enabled) {
+            disabled()
+          }
         }
-        .clickable(onClick = action.onClick),
+        .clickable(enabled = action.enabled, onClick = action.onClick),
     color = background,
     shape = shape,
     border = border,
@@ -271,46 +275,46 @@ private fun FlowActionButton(
   }
 }
 
-private data class BuddyFlowActionModel(
+internal data class BuddyFlowActionModel(
   val label: String,
   val visibleLabel: String,
   val icon: ImageVector,
+  val enabled: Boolean,
   val onClick: () -> Unit,
 )
 
-private fun List<FlowAction>.toPermaActionModels(
+internal fun List<FlowAction>.toPermaActionModels(
   context: Context,
   recordingJson: String,
-  onExecuteFlowAction: (String) -> Unit,
+  onExecuteFlowAction: (Context, String) -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ): List<BuddyFlowActionModel> =
-  mapNotNull { action ->
+  map { action ->
+      val link = action.seerRunUrl ?: action.link
       when (action.id) {
-        FLOW_ACTION_GENERATE_DASHBOARD,
-        FLOW_ACTION_GENERATE_MONITORS ->
-          BuddyFlowActionModel(
-            action.actionLabel,
-            action.permaActionVisibleLabel(),
-            action.permaActionIcon(),
-          ) {
-            val link = action.seerRunUrl ?: action.link
-            if (link != null) {
-              onOpenUrl(context, link)
-            } else {
-              onExecuteFlowAction(action.id)
-            }
-          }
-
         FLOW_ACTION_SHARE_RECORDING_JSON ->
           BuddyFlowActionModel(
             action.actionLabel,
             action.permaActionVisibleLabel(),
             action.permaActionIcon(),
+            enabled = true,
           ) {
             shareRecordingJson(context, recordingJson)
           }
 
-        else -> null
+        else ->
+          BuddyFlowActionModel(
+            action.actionLabel,
+            action.permaActionVisibleLabel(),
+            action.permaActionIcon(),
+            enabled = link != null || action.actionableForSeer,
+          ) {
+            if (link != null) {
+              onOpenUrl(context, link)
+            } else if (action.actionableForSeer) {
+              onExecuteFlowAction(context, action.id)
+            }
+          }
       }
     }
     .take(MAX_FLOW_ACTIONS)

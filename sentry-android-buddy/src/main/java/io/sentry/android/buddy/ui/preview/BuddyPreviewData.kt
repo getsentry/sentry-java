@@ -284,11 +284,13 @@ internal val previewFlowAnalysis: FlowAnalysisResponse =
           id = "generate-dashboard",
           actionLabel = "Dashboard",
           description = "Draft a dashboard from this flow recording.",
+          actionableForSeer = true,
         ),
         FlowAction(
           id = "generate-monitors",
           actionLabel = "Monitors",
           description = "Draft monitors from this flow recording.",
+          actionableForSeer = true,
         ),
         FlowAction(
           id = "share-recording-json",

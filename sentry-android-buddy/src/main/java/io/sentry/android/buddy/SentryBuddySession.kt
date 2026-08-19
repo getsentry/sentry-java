@@ -467,13 +467,19 @@ public constructor(
   }
 
   public fun executeFlowAction(actionId: String) {
-    val insightsState = state as? SentryBuddySessionState.Insights ?: return
+    executeFlowActionAndReturnLink(actionId)
+  }
+
+  internal fun executeFlowActionAndReturnLink(actionId: String): String? {
+    val insightsState = state as? SentryBuddySessionState.Insights ?: return null
     try {
       clearRecommendationError()
       val executed = flowAnalysesApi.executeFlowAction(insightsState.request.flowId, actionId)
       applyTopLevelFlowAction(insightsState.request.flowId, executed)
+      return executed.seerRunUrl ?: executed.link
     } catch (exception: IllegalStateException) {
       setRecommendationError(exception.message ?: "Failed to execute the action.")
+      return null
     }
   }
 

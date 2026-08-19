@@ -126,6 +126,16 @@ internal fun SentryBuddyOverlayContent(
     analysisScope.launch { withContext(Dispatchers.IO) { controller.openUrl(context, url) } }
   }
 
+  fun executeFlowAction(context: Context, actionId: String) {
+    analysisScope.launch {
+      val link = withContext(Dispatchers.IO) { controller.executeFlowActionAndReturnLink(actionId) }
+      syncUiState()
+      if (link != null) {
+        openUrl(context, link)
+      }
+    }
+  }
+
   LaunchedEffect(state) {
     if (state !is SentryBuddySessionState.Closed) {
       while (true) {
@@ -225,7 +235,7 @@ internal fun SentryBuddyOverlayContent(
       nowMs = nowMs,
       onDispatch = { dispatch(it) },
       onAnalyze = { dispatchAnalysis { analyze() } },
-      onExecuteFlowAction = { actionId -> dispatchAnalysis { executeFlowAction(actionId) } },
+      onExecuteFlowAction = { context, actionId -> executeFlowAction(context, actionId) },
       onExecuteRecommendationAction = { recommendationId, actionId ->
         dispatchAnalysis { executeRecommendationAction(recommendationId, actionId) }
       },

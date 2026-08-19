@@ -64,6 +64,7 @@ public constructor(
   public val id: String,
   public val actionLabel: String,
   public val description: String,
+  public val actionableForSeer: Boolean = false,
   public val link: String? = null,
   public val status: ActionStatus = ActionStatus.OPEN,
   public val seerRunUrl: String? = null,
@@ -74,6 +75,7 @@ public constructor(
     writer.name("id").value(id)
     writer.name("action_label").value(actionLabel)
     writer.name("description").value(description)
+    writer.name("actionable_for_seer").value(actionableForSeer)
     writer.name("link").value(link)
     writer.name("status").value(status.value)
     writer.name("seer_run_url").value(seerRunUrl)

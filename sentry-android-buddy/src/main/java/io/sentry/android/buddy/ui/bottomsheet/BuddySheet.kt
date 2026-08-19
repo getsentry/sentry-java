@@ -56,7 +56,7 @@ internal fun BuddySheet(
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
-  onExecuteFlowAction: (String) -> Unit,
+  onExecuteFlowAction: (Context, String) -> Unit,
   onExecuteRecommendationAction: (String, String) -> Unit,
   onDismissRecommendation: (String) -> Unit,
   onExecuteHomeRecommendationAction: (String, String) -> Unit,

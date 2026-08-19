@@ -208,6 +208,7 @@ internal object FlowActionDeserializer : JsonDeserializer<FlowAction> {
     var id: String? = null
     var actionLabel: String? = null
     var description: String? = null
+    var actionableForSeer: Boolean = false
     var link: String? = null
     var status: ActionStatus = ActionStatus.OPEN
     var seerRunUrl: String? = null
@@ -218,6 +219,7 @@ internal object FlowActionDeserializer : JsonDeserializer<FlowAction> {
         "id" -> id = reader.nextStringOrNull()
         "action_label" -> actionLabel = reader.nextStringOrNull()
         "description" -> description = reader.nextStringOrNull()
+        "actionable_for_seer" -> actionableForSeer = reader.nextBooleanOrNull() ?: false
         "link" -> link = reader.nextStringOrNull()
         "status" -> status = reader.nextStringOrNull()?.let { ActionStatus.valueOf(it) } ?: status
         "seer_run_url" -> seerRunUrl = reader.nextStringOrNull()
@@ -230,6 +232,7 @@ internal object FlowActionDeserializer : JsonDeserializer<FlowAction> {
       id = requireNotNull(id) { "flow action id is required" },
       actionLabel = requireNotNull(actionLabel) { "flow action label is required" },
       description = requireNotNull(description) { "flow action description is required" },
+      actionableForSeer = actionableForSeer,
       link = link,
       status = status,
       seerRunUrl = seerRunUrl,

@@ -53,6 +53,7 @@ class SentryBuddyHttpFlowAnalysesApiTest {
               "id": "generate-dashboard",
               "action_label": "Dashboard",
               "description": "Draft a dashboard.",
+              "actionable_for_seer": true,
               "status": "OPEN",
               "seer_run_url": null
             }],
@@ -93,6 +94,7 @@ class SentryBuddyHttpFlowAnalysesApiTest {
     assertThat(response.title).isEqualTo("Checkout flow")
     assertThat(response.actions.single().id).isEqualTo("generate-dashboard")
     assertThat(response.actions.single().actionLabel).isEqualTo("Dashboard")
+    assertThat(response.actions.single().actionableForSeer).isTrue()
     assertThat(response.recommendations.single().severity).isEqualTo(Severity.HIGH)
     val action = response.recommendations.single().actions.single()
     assertThat(action.id).isEqualTo("act-1")
@@ -114,6 +116,7 @@ class SentryBuddyHttpFlowAnalysesApiTest {
             "id": "generate-dashboard",
             "action_label": "Dashboard",
             "description": "Draft a dashboard.",
+            "actionable_for_seer": true,
             "status": "EXECUTED",
             "seer_run_url": "https://sentry.io/seer/runs/1"
           }
@@ -126,6 +129,7 @@ class SentryBuddyHttpFlowAnalysesApiTest {
     val executed = api.executeFlowAction("flow-1", "generate-dashboard")
 
     assertThat(executed.status).isEqualTo(ActionStatus.EXECUTED)
+    assertThat(executed.actionableForSeer).isTrue()
     assertThat(executed.seerRunUrl).isEqualTo("https://sentry.io/seer/runs/1")
     val request = server.takeRequest()
     assertThat(request.method).isEqualTo("POST")

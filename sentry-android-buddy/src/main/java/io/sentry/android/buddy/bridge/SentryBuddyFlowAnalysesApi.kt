@@ -169,11 +169,13 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
       FlowAction(
         id = "generate-dashboard",
         actionLabel = "Dashboard",
+        actionableForSeer = true,
         description = "Start a Seer run that drafts a dashboard from this flow recording.",
       ),
       FlowAction(
         id = "generate-monitors",
         actionLabel = "Monitors",
+        actionableForSeer = true,
         description = "Start a Seer run that drafts monitors from this flow recording.",
       ),
       FlowAction(
