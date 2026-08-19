@@ -198,7 +198,7 @@ private fun SentryTravelApp() {
               onBack = { navController.popBackStack() },
               onReserve = {
                 scope.launch {
-                  telemetry.calculatePrice(selectedDestination, selectedStay)
+                  telemetry.reserveStay(selectedDestination, selectedStay)
                   navController.navigate(TravelRoute.Review.route)
                 }
               },
@@ -726,12 +726,17 @@ private fun TravelScaffold(
         confirmButton = {
           TextButton(onClick = demoControls.onDismiss) { Text("Close") }
         },
-        title = { Text("Buddy demo board", fontWeight = FontWeight.Bold) },
+        title = { Text("Demo controls", fontWeight = FontWeight.Bold) },
         text = {
           Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-              "Trigger deterministic Buddy cards from any page without cluttering the travel UI.",
+              "Permanent demo bindings: Search destinations captures an exception, Build itinerary " +
+                "creates a slow DB span, and Reserve this stay creates a slow HTTP span.",
               color = TravelStamp,
+            )
+            Text(
+              "Extra one-tap triggers are still available below for presenter resets.",
+              color = TravelMuted,
             )
             SecondaryTravelButton(
               "Slow span",
@@ -938,8 +943,9 @@ private class TravelTelemetry(private val store: TravelStore) {
   suspend fun searchDestinations(query: String): String =
     withAppSpan("travel.search", "Search destinations") {
       delay(120)
+      Sentry.captureException(IllegalStateException("Simulated Sentry Travel search failure"))
       addBreadcrumb("Searched destinations for $query")
-      "Search ranked destinations for '$query'."
+      "Captured a simulated search failure for '$query'."
     }
 
   suspend fun scoreRecommendations(): String =
@@ -967,17 +973,17 @@ private class TravelTelemetry(private val store: TravelStore) {
     }
 
   suspend fun buildItinerary(destination: TravelDestination): String =
-    withAppSpan("travel.itinerary.generate", "Generate itinerary for ${destination.name}") {
-      delay(180)
+    withAppSpan("db.sql.query", "Load itinerary recommendations for ${destination.name}") {
+      delay(1200)
       addBreadcrumb("Built itinerary for ${destination.name}")
       "Generated a three-day itinerary for ${destination.name}."
     }
 
-  suspend fun calculatePrice(destination: TravelDestination, stay: TravelStay): String =
-    withAppSpan("travel.price.calculate", "Calculate price for ${stay.name}") {
-      delay(90)
-      addBreadcrumb("Calculated price for ${destination.name}")
-      "Calculated total price: $${stay.price}."
+  suspend fun reserveStay(destination: TravelDestination, stay: TravelStay): String =
+    withAppSpan("http.client", "Reserve ${stay.name} for ${destination.name}") {
+      delay(1200)
+      addBreadcrumb("Reserved ${stay.name} for ${destination.name}")
+      runHttpAction("Reservation hold created for ${stay.name}")
     }
 
   suspend fun saveTrip(
@@ -1024,9 +1030,9 @@ private class TravelTelemetry(private val store: TravelStore) {
     val span =
       Sentry.getSpan()?.startChild(op, description) ?: Sentry.startTransaction(description, op)
     return try {
-      block().also { span?.finish(SpanStatus.OK) }
+      block().also { span.finish(SpanStatus.OK) }
     } catch (exception: Exception) {
-      span?.finish(SpanStatus.INTERNAL_ERROR)
+      span.finish(SpanStatus.INTERNAL_ERROR)
       throw exception
     }
   }
