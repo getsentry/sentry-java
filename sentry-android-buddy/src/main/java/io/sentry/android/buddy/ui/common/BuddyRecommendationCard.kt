@@ -52,9 +52,7 @@ import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
-import io.sentry.android.buddy.ui.common.theme.BuddyPurple
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
-import io.sentry.android.buddy.ui.common.theme.BuddyReplayBlue
 import io.sentry.android.buddy.ui.common.theme.BuddyReplayBlueHighlight
 import io.sentry.android.buddy.ui.common.theme.severityColor
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
@@ -113,8 +111,7 @@ internal fun BuddyRecommendationCard(
   detailsLabel: String = "Details",
   style: BuddyRecommendationCardStyle = BuddyRecommendationCardStyle.FLOW_INSIGHT,
 ) {
-  val useBluePalette = model.severity.usesBlueRecommendationPalette()
-  val color = recommendationSeverityColor(model.severity)
+  val color = recommendationAccentColor(model.severity)
   val metadataLabels = model.statusLabel?.split(" • ").orEmpty().filter { it.isNotEmpty() }
   val cardColor =
     if (style == BuddyRecommendationCardStyle.ACTION_INBOX) Color.White
@@ -162,7 +159,6 @@ internal fun BuddyRecommendationCard(
               timestampLabel = model.timestampLabel,
               labels = metadataLabels,
               severity = model.severity,
-              useBluePalette = useBluePalette,
             )
           }
           Text(
@@ -177,14 +173,13 @@ internal fun BuddyRecommendationCard(
             onOpenLink = onOpenLink,
             openLinkLabel = openLinkLabel,
             onDismiss = onDismiss?.let { { if (!dismissing) dismissing = true } },
-            useBluePalette = useBluePalette,
+            accentColor = color,
           )
           RecommendationDetailsDisclosure(
             label = detailsLabel,
             description = model.description,
             expanded = detailsExpanded,
             onExpandedChange = { detailsExpanded = it },
-            useBluePalette = useBluePalette,
           )
         }
       }
@@ -197,7 +192,6 @@ private fun RecommendationMetadataRow(
   timestampLabel: String?,
   labels: List<String>,
   severity: Severity,
-  useBluePalette: Boolean,
 ) {
   Row(
     modifier = Modifier.fillMaxWidth(),
@@ -217,9 +211,7 @@ private fun RecommendationMetadataRow(
       horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End),
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      labels.forEach { label ->
-        RecommendationMetadataPill(label, metadataColor(label, severity, useBluePalette))
-      }
+      labels.forEach { label -> RecommendationMetadataPill(label, metadataColor(label, severity)) }
     }
   }
 }
@@ -237,16 +229,13 @@ private fun RecommendationMetadataPill(label: String, color: Color) {
   }
 }
 
-private fun metadataColor(label: String, severity: Severity, useBluePalette: Boolean): Color =
+private fun metadataColor(label: String, severity: Severity): Color =
   when (label) {
-    severity.value -> recommendationSeverityColor(severity)
-    RecommendationStatus.OPEN.value -> if (useBluePalette) BuddyReplayBlue else BuddyPurple
+    severity.value -> recommendationAccentColor(severity)
     else -> BuddyMuted
   }
 
-private fun Severity.usesBlueRecommendationPalette(): Boolean = this == Severity.LOW
-
-private fun recommendationSeverityColor(severity: Severity): Color =
+private fun recommendationAccentColor(severity: Severity): Color =
   when (severity) {
     Severity.LOW -> BuddyReplayBlueHighlight
     else -> severityColor(severity)
@@ -259,7 +248,7 @@ private fun RecommendationActionRow(
   onOpenLink: (() -> Unit)?,
   openLinkLabel: String,
   onDismiss: (() -> Unit)?,
-  useBluePalette: Boolean,
+  accentColor: Color,
 ) {
   if (actions.isEmpty() && onOpenLink == null && onDismiss == null) {
     return
@@ -277,7 +266,7 @@ private fun RecommendationActionRow(
           if (index == 0) BuddyRecommendationPillEmphasis.PRIMARY
           else BuddyRecommendationPillEmphasis.SECONDARY,
         icon = if (action.isActionableForSeer) Icons.wand_shine else Icons.open_in_new,
-        useBluePalette = useBluePalette,
+        accentColor = accentColor,
       )
     }
     onOpenLink?.let {
@@ -288,7 +277,7 @@ private fun RecommendationActionRow(
           if (actions.isEmpty()) BuddyRecommendationPillEmphasis.PRIMARY
           else BuddyRecommendationPillEmphasis.SECONDARY,
         icon = Icons.open_in_new,
-        useBluePalette = useBluePalette,
+        accentColor = accentColor,
       )
     }
     onDismiss?.let {
@@ -297,7 +286,7 @@ private fun RecommendationActionRow(
         onClick = it,
         emphasis = BuddyRecommendationPillEmphasis.GHOST,
         icon = null,
-        useBluePalette = useBluePalette,
+        accentColor = accentColor,
       )
     }
   }
@@ -309,27 +298,25 @@ private fun RecommendationActionPill(
   onClick: () -> Unit,
   emphasis: BuddyRecommendationPillEmphasis,
   icon: ImageVector?,
-  useBluePalette: Boolean,
+  accentColor: Color,
 ) {
   val shape = RoundedCornerShape(18.dp)
-  val primaryColor = if (useBluePalette) BuddyReplayBlueHighlight else BuddyPurple
-  val secondaryColor = if (useBluePalette) BuddyReplayBlue else BuddyPurple
   val background =
     when (emphasis) {
-      BuddyRecommendationPillEmphasis.PRIMARY -> primaryColor
-      BuddyRecommendationPillEmphasis.SECONDARY -> secondaryColor.copy(alpha = 0.10f)
+      BuddyRecommendationPillEmphasis.PRIMARY -> accentColor
+      BuddyRecommendationPillEmphasis.SECONDARY -> accentColor.copy(alpha = 0.10f)
       BuddyRecommendationPillEmphasis.GHOST -> Color.Transparent
     }
   val contentColor =
     when (emphasis) {
       BuddyRecommendationPillEmphasis.PRIMARY -> Color.White
-      BuddyRecommendationPillEmphasis.SECONDARY -> secondaryColor
+      BuddyRecommendationPillEmphasis.SECONDARY -> accentColor
       BuddyRecommendationPillEmphasis.GHOST -> BuddyMuted
     }
   val border =
     when (emphasis) {
       BuddyRecommendationPillEmphasis.SECONDARY ->
-        BorderStroke(1.dp, secondaryColor.copy(alpha = 0.22f))
+        BorderStroke(1.dp, accentColor.copy(alpha = 0.22f))
       BuddyRecommendationPillEmphasis.GHOST -> BorderStroke(1.dp, BuddyBorder)
       else -> null
     }
@@ -368,10 +355,8 @@ private fun RecommendationDetailsDisclosure(
   description: String,
   expanded: Boolean,
   onExpandedChange: (Boolean) -> Unit,
-  useBluePalette: Boolean,
 ) {
   val actionLabel = if (expanded) "Hide $label" else "Show $label"
-  val actionColor = if (useBluePalette) BuddyReplayBlue else BuddyPurple
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
       Text(
@@ -380,7 +365,7 @@ private fun RecommendationDetailsDisclosure(
           Modifier.clip(RoundedCornerShape(12.dp))
             .clickable { onExpandedChange(!expanded) }
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        color = actionColor,
+        color = BuddyMuted,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
       )
