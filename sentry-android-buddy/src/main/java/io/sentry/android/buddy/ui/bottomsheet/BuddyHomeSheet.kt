@@ -26,6 +26,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -78,6 +79,7 @@ internal fun BuddyHomeSheet(
   healthCheckState: BuddyHealthCheckState,
   homeTab: BuddyHomeTab,
   homeRecommendations: List<BuddyHomeRecommendation>,
+  hasLatestSeenInsights: Boolean,
   recommendationError: String?,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
@@ -87,6 +89,7 @@ internal fun BuddyHomeSheet(
   onDismissHomeRecommendation: (String) -> Unit,
   onMarkHomeRecommendationRead: (String) -> Unit,
   onSelectHomeTab: (BuddyHomeTab) -> Unit,
+  onOpenLatestInsights: () -> Unit,
   onRunHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
@@ -144,7 +147,13 @@ internal fun BuddyHomeSheet(
         }
 
       BuddyHomeTab.RECORD_FLOW ->
-        LiveFeedInset { RecordFlowTabContent(onStartRecording = onStartRecording) }
+        LiveFeedInset {
+          RecordFlowTabContent(
+            onStartRecording = onStartRecording,
+            hasLatestSeenInsights = hasLatestSeenInsights,
+            onOpenLatestInsights = onOpenLatestInsights,
+          )
+        }
     }
   }
 }
@@ -328,7 +337,11 @@ internal fun RecommendationsTabContent(
 }
 
 @Composable
-internal fun RecordFlowTabContent(onStartRecording: () -> Unit) {
+internal fun RecordFlowTabContent(
+  onStartRecording: () -> Unit,
+  hasLatestSeenInsights: Boolean,
+  onOpenLatestInsights: () -> Unit,
+) {
   Text(
     "See what’s happening under the hood.",
     style = MaterialTheme.typography.titleLarge,
@@ -345,6 +358,13 @@ internal fun RecordFlowTabContent(onStartRecording: () -> Unit) {
     onClick = onStartRecording,
   ) {
     BuddyButtonText("Start Recording")
+  }
+  OutlinedButton(
+    modifier = Modifier.fillMaxWidth().height(56.dp),
+    onClick = onOpenLatestInsights,
+    enabled = hasLatestSeenInsights,
+  ) {
+    BuddyButtonText("See latest flow insights")
   }
   Text(
     "The panel closes so you can navigate freely. Tap the bubble to stop and review the captured flow.",
@@ -380,10 +400,12 @@ private fun BuddyHomeSheetPreviewFrame(
       nowMs = PREVIEW_NOW_MS,
       onDispatch = {},
       onStartRecording = {},
+      hasLatestSeenInsights = true,
       onExecuteHomeRecommendationAction = { _, _ -> },
       onDismissHomeRecommendation = {},
       onMarkHomeRecommendationRead = {},
       onSelectHomeTab = {},
+      onOpenLatestInsights = {},
       onRunHealthCheck = {},
       onOpenUrl = { _, _ -> },
     )

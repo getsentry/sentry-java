@@ -119,6 +119,23 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
+  fun `open latest insights reopens the last seen insights state`() {
+    val controller = SentryBuddySessionController(recorderFacade = FakeRecorderFacade())
+
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.analyze()
+    val latestInsights = controller.state as SentryBuddySessionState.Insights
+
+    controller.openLiveFeed()
+    controller.openLatestInsights()
+
+    assertThat(controller.hasLatestSeenInsights).isTrue()
+    assertThat(controller.state).isEqualTo(latestInsights)
+  }
+
+  @Test
   fun `executing an action updates the insights state`() {
     val flowAnalysesApi = FakeFlowAnalysesApi()
     val controller =

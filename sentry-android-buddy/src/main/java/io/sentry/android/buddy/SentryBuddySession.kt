@@ -148,8 +148,12 @@ public constructor(
   internal var recommendationError: String? = null
     private set
 
+  internal val hasLatestSeenInsights: Boolean
+    get() = latestSeenInsightsState != null
+
   private var lastSelectedHomeTab: BuddyHomeTab = BuddyHomeTab.LIVE_FEED
   private var hasPendingHealthCheck: Boolean = false
+  private var latestSeenInsightsState: SentryBuddySessionState.Insights? = null
   private val knownFlowIds = linkedSetOf<String>()
 
   private val transientRecordingEventLock: Any = Any()
@@ -178,6 +182,12 @@ public constructor(
   internal fun selectHomeTab(tab: BuddyHomeTab) {
     homeTab = tab
     lastSelectedHomeTab = tab
+  }
+
+  internal fun openLatestInsights() {
+    val latestSeenInsights = latestSeenInsightsState ?: return
+    dismissHealthCheck()
+    state = latestSeenInsights
   }
 
   internal fun markHomeRecommendationRead(recommendationId: String) {
@@ -359,13 +369,15 @@ public constructor(
       when (analysis.status) {
         AnalysisStatus.COMPLETED -> {
           applyFlowAnalysis(analysis)
-          state =
+          val insightsState =
             SentryBuddySessionState.Insights(
               result = analyzingState.result,
               request = analyzingState.request,
               analysis = analysis,
               response = analysis.toBuddyAnalysisResponse(analyzingState.request),
             )
+          state = insightsState
+          latestSeenInsightsState = insightsState
         }
 
         AnalysisStatus.FAILED ->
@@ -617,7 +629,7 @@ public constructor(
       insightsState.copy(
         analysis = analysis,
         response = analysis.toBuddyAnalysisResponse(insightsState.request),
-      )
+      ).also { latestSeenInsightsState = it }
   }
 
   /**
@@ -676,7 +688,7 @@ public constructor(
       insightsState.copy(
         analysis = analysis,
         response = analysis.toBuddyAnalysisResponse(insightsState.request),
-      )
+      ).also { latestSeenInsightsState = it }
   }
 
   private fun applyFlowAction(

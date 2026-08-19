@@ -86,6 +86,7 @@ internal fun SentryBuddyOverlayContent(
   var homeTab by remember { mutableStateOf(controller.homeTab) }
   var homeRecommendations by remember { mutableStateOf(controller.homeRecommendations) }
   var recommendationError by remember { mutableStateOf(controller.recommendationError) }
+  var hasLatestSeenInsights by remember { mutableStateOf(controller.hasLatestSeenInsights) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
   val transientRecordingEventScope = rememberCoroutineScope()
@@ -98,6 +99,7 @@ internal fun SentryBuddyOverlayContent(
     homeTab = controller.homeTab
     homeRecommendations = controller.homeRecommendations
     recommendationError = controller.recommendationError
+    hasLatestSeenInsights = controller.hasLatestSeenInsights
     nowMs = System.currentTimeMillis()
   }
 
@@ -217,6 +219,7 @@ internal fun SentryBuddyOverlayContent(
       healthCheckState = healthCheckState,
       homeTab = homeTab,
       homeRecommendations = homeRecommendations,
+      hasLatestSeenInsights = hasLatestSeenInsights,
       recommendationError = recommendationError,
       sentryUiLinks = controller.sentryUiLinks,
       nowMs = nowMs,
@@ -238,6 +241,7 @@ internal fun SentryBuddyOverlayContent(
         dispatch { markHomeRecommendationRead(recommendationId) }
       },
       onSelectHomeTab = { tab -> dispatch { selectHomeTab(tab) } },
+      onOpenLatestInsights = { dispatch { openLatestInsights() } },
       onRunHealthCheck = { dispatchHealthCheck { runHealthCheck() } },
       onOpenUrl = { context, url -> openUrl(context, url) },
     )

@@ -50,6 +50,7 @@ internal fun BuddySheet(
   healthCheckState: BuddyHealthCheckState,
   homeTab: BuddyHomeTab,
   homeRecommendations: List<BuddyHomeRecommendation>,
+  hasLatestSeenInsights: Boolean,
   recommendationError: String?,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
@@ -61,6 +62,7 @@ internal fun BuddySheet(
   onDismissHomeRecommendation: (String) -> Unit,
   onMarkHomeRecommendationRead: (String) -> Unit,
   onSelectHomeTab: (BuddyHomeTab) -> Unit,
+  onOpenLatestInsights: () -> Unit,
   onRunHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
@@ -137,6 +139,7 @@ internal fun BuddySheet(
               healthCheckState,
               homeTab,
               homeRecommendations,
+              hasLatestSeenInsights,
               recommendationError,
               sentryUiLinks,
               nowMs,
@@ -146,6 +149,7 @@ internal fun BuddySheet(
               onDismissHomeRecommendation,
               onMarkHomeRecommendationRead,
               onSelectHomeTab,
+              onOpenLatestInsights,
               onRunHealthCheck,
               onOpenUrl,
             )
