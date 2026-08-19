@@ -52,8 +52,8 @@ import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
-import io.sentry.android.buddy.ui.common.theme.BuddyPurple
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
+import io.sentry.android.buddy.ui.common.theme.BuddyReplayBlue
 import io.sentry.android.buddy.ui.common.theme.severityColor
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
 import io.sentry.android.buddy.ui.preview.PREVIEW_NOW_MS
@@ -111,7 +111,7 @@ internal fun BuddyRecommendationCard(
   detailsLabel: String = "Details",
   style: BuddyRecommendationCardStyle = BuddyRecommendationCardStyle.FLOW_INSIGHT,
 ) {
-  val color = severityColor(model.severity)
+  val color = recommendationSeverityColor(model.severity)
   val metadataLabels = model.statusLabel?.split(" • ").orEmpty().filter { it.isNotEmpty() }
   val cardColor =
     if (style == BuddyRecommendationCardStyle.ACTION_INBOX) Color.White
@@ -230,9 +230,15 @@ private fun RecommendationMetadataPill(label: String, color: Color) {
 
 private fun metadataColor(label: String, severity: Severity): Color =
   when (label) {
-    severity.value -> severityColor(severity)
-    RecommendationStatus.OPEN.value -> BuddyPurple
+    severity.value -> recommendationSeverityColor(severity)
+    RecommendationStatus.OPEN.value -> BuddyReplayBlue
     else -> BuddyMuted
+  }
+
+private fun recommendationSeverityColor(severity: Severity): Color =
+  when (severity) {
+    Severity.LOW -> BuddyReplayBlue
+    else -> severityColor(severity)
   }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -292,20 +298,20 @@ private fun RecommendationActionPill(
   val shape = RoundedCornerShape(18.dp)
   val background =
     when (emphasis) {
-      BuddyRecommendationPillEmphasis.PRIMARY -> BuddyPurple
-      BuddyRecommendationPillEmphasis.SECONDARY -> BuddyPurple.copy(alpha = 0.10f)
+      BuddyRecommendationPillEmphasis.PRIMARY -> BuddyReplayBlue
+      BuddyRecommendationPillEmphasis.SECONDARY -> BuddyReplayBlue.copy(alpha = 0.10f)
       BuddyRecommendationPillEmphasis.GHOST -> Color.Transparent
     }
   val contentColor =
     when (emphasis) {
       BuddyRecommendationPillEmphasis.PRIMARY -> Color.White
-      BuddyRecommendationPillEmphasis.SECONDARY -> BuddyPurple
+      BuddyRecommendationPillEmphasis.SECONDARY -> BuddyReplayBlue
       BuddyRecommendationPillEmphasis.GHOST -> BuddyMuted
     }
   val border =
     when (emphasis) {
       BuddyRecommendationPillEmphasis.SECONDARY ->
-        BorderStroke(1.dp, BuddyPurple.copy(alpha = 0.22f))
+        BorderStroke(1.dp, BuddyReplayBlue.copy(alpha = 0.22f))
       BuddyRecommendationPillEmphasis.GHOST -> BorderStroke(1.dp, BuddyBorder)
       else -> null
     }
@@ -354,7 +360,7 @@ private fun RecommendationDetailsDisclosure(
           Modifier.clip(RoundedCornerShape(12.dp))
             .clickable { onExpandedChange(!expanded) }
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        color = BuddyPurple,
+        color = BuddyReplayBlue,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
       )
