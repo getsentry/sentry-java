@@ -191,7 +191,32 @@ public constructor(
   internal fun openLatestInsights() {
     val latestSeenInsights = latestSeenInsightsState ?: return
     dismissHealthCheck()
-    state = latestSeenInsights
+    try {
+      clearRecommendationError()
+      val analysis = flowAnalysesApi.get(latestSeenInsights.request.flowId)
+      when (analysis.status) {
+        AnalysisStatus.COMPLETED -> {
+          applyFlowAnalysis(analysis)
+          state =
+            latestSeenInsights
+              .copy(
+                analysis = analysis,
+                response = analysis.toBuddyAnalysisResponse(latestSeenInsights.request),
+              )
+              .also { latestSeenInsightsState = it }
+        }
+
+        AnalysisStatus.FAILED -> {
+          setRecommendationError(analysis.error ?: "Flow analysis failed.")
+          state = latestSeenInsights
+        }
+
+        AnalysisStatus.PROCESSING -> state = latestSeenInsights
+      }
+    } catch (exception: IllegalStateException) {
+      setRecommendationError(exception.message ?: "Failed to refresh flow insights.")
+      state = latestSeenInsights
+    }
   }
 
   internal fun markHomeRecommendationRead(recommendationId: String) {

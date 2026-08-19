@@ -242,7 +242,7 @@ internal fun SentryBuddyOverlayContent(
         dispatch { markHomeRecommendationRead(recommendationId) }
       },
       onSelectHomeTab = { tab -> dispatch { selectHomeTab(tab) } },
-      onOpenLatestInsights = { dispatch { openLatestInsights() } },
+      onOpenLatestInsights = { dispatchAnalysis { openLatestInsights() } },
       onRunHealthCheck = { dispatchHealthCheck { runHealthCheck() } },
       onOpenUrl = { context, url -> openUrl(context, url) },
     )

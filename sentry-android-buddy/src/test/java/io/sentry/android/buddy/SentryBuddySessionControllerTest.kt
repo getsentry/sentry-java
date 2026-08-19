@@ -154,6 +154,31 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
+  fun `open latest insights refreshes the stored analysis before reopening`() {
+    val flowAnalysesApi = FakeFlowAnalysesApi(flowActions = emptyList())
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        flowAnalysesApi = flowAnalysesApi,
+      )
+
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.analyze()
+    assertThat((controller.state as SentryBuddySessionState.Insights).analysis.actions).isEmpty()
+
+    flowAnalysesApi.flowActions = flowActions()
+    controller.openLiveFeed()
+    controller.openLatestInsights()
+
+    val reopened = controller.state as SentryBuddySessionState.Insights
+    assertThat(reopened.analysis.actions.map { it.id })
+      .containsExactly("generate-dashboard", "generate-monitors", "share-recording-json")
+      .inOrder()
+  }
+
+  @Test
   fun `executing an action updates the insights state`() {
     val flowAnalysesApi = FakeFlowAnalysesApi()
     val controller =
@@ -549,6 +574,7 @@ class SentryBuddySessionControllerTest {
     private val submitFailure: RuntimeException? = null,
     private val status: AnalysisStatus = AnalysisStatus.COMPLETED,
     private val actionFailure: RuntimeException? = null,
+    var flowActions: List<FlowAction> = flowActions(),
   ) : SentryBuddyFlowAnalysesApi {
     var request: FlowAnalysisRequest? = null
     var submitted = false
@@ -556,24 +582,6 @@ class SentryBuddySessionControllerTest {
     val dismissedRecommendationIds = mutableListOf<String>()
     val executedActionIds = mutableListOf<String>()
     val executedFlowActionIds = mutableListOf<String>()
-    private var flowActions =
-      listOf(
-        FlowAction(
-          id = "generate-dashboard",
-          actionLabel = "Dashboard",
-          description = "Draft a dashboard from the flow recording.",
-        ),
-        FlowAction(
-          id = "generate-monitors",
-          actionLabel = "Monitors",
-          description = "Draft monitors from the flow recording.",
-        ),
-        FlowAction(
-          id = "share-recording-json",
-          actionLabel = "Share JSON",
-          description = "Share the raw flow recording JSON.",
-        ),
-      )
     private var recommendations =
       listOf(
         Recommendation(
@@ -672,6 +680,25 @@ class SentryBuddySessionControllerTest {
 
   private companion object {
     private const val recordingJson = "{\"type\":\"sentry.mobile_flow_recording\"}"
+
+    private fun flowActions(): List<FlowAction> =
+      listOf(
+        FlowAction(
+          id = "generate-dashboard",
+          actionLabel = "Dashboard",
+          description = "Draft a dashboard from the flow recording.",
+        ),
+        FlowAction(
+          id = "generate-monitors",
+          actionLabel = "Monitors",
+          description = "Draft monitors from the flow recording.",
+        ),
+        FlowAction(
+          id = "share-recording-json",
+          actionLabel = "Share JSON",
+          description = "Share the raw flow recording JSON.",
+        ),
+      )
 
     private fun recording(): BuddyFlowRecording =
       BuddyFlowRecording(
