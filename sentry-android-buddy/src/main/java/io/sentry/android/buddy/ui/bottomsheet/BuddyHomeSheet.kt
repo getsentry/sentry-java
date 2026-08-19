@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -343,6 +343,9 @@ internal fun RecordFlowTabContent(
   hasLatestSeenInsights: Boolean,
   onOpenLatestInsights: () -> Unit,
 ) {
+  val startRecordingContentColor = BuddySweatshirtPink
+  val startRecordingBackground = BuddySweatshirtPink.copy(alpha = 0.12f)
+  val startRecordingBorder = BorderStroke(1.dp, startRecordingContentColor.copy(alpha = 0.26f))
   Text(
     "See what’s happening under the hood.",
     style = MaterialTheme.typography.titleLarge,
@@ -353,12 +356,17 @@ internal fun RecordFlowTabContent(
     "Record a user flow and Buddy will help you instrument it.",
     color = BuddyMuted,
   )
-  Button(
+  OutlinedButton(
     modifier = Modifier.fillMaxWidth().height(56.dp),
-    colors = ButtonDefaults.buttonColors(containerColor = BuddySweatshirtPink),
+    colors =
+      ButtonDefaults.outlinedButtonColors(
+        containerColor = startRecordingBackground,
+        contentColor = startRecordingContentColor,
+      ),
+    border = startRecordingBorder,
     onClick = onStartRecording,
   ) {
-    BuddyButtonText("Start Recording")
+    BuddyButtonText("Start Recording", color = startRecordingContentColor)
   }
   Text(
     "The panel closes so you can navigate freely. Tap the bubble to stop and review the captured flow.",
