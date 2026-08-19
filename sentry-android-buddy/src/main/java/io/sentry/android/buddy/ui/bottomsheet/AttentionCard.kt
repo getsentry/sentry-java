@@ -21,14 +21,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.model.BuddyLiveFeed
 import io.sentry.android.buddy.model.BuddyLiveFeedItem
 import io.sentry.android.buddy.model.BuddySentryUiLinks
+import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.ui.common.BuddyLabelPill
 import io.sentry.android.buddy.ui.common.relativeTime
 import io.sentry.android.buddy.ui.common.theme.BuddyAttentionCardHeight
@@ -53,7 +53,6 @@ import io.sentry.android.buddy.ui.preview.previewLiveFeed
 import io.sentry.android.buddy.ui.preview.previewSentryUiLinks
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 @Composable
@@ -80,46 +79,34 @@ internal fun AttentionCard(
   }
 
   val color = severityColor(item.severity)
+  val nextItem = liveFeed.nextAttentionCardItemAfter(item)
+  val nextItemColor = nextItem?.let { severityColor(it.severity) }
   val context = LocalContext.current
   val link = sentryUiLinks.linkFor(item)
   val dismissScope = rememberCoroutineScope()
-  val contentAlpha = remember(item.id) { Animatable(0f) }
-  LaunchedEffect(item.id) {
-    contentAlpha.snapTo(0f)
-    contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 260))
-  }
   Box(modifier = modifier.fillMaxWidth().height(BuddyAttentionCardHeight)) {
     BoxWithConstraints(
       modifier =
-        Modifier.fillMaxSize().pointerInput(item.id) {
+        Modifier.fillMaxSize().clipToBounds().pointerInput(item.id) {
           detectDragGestures(
             onDragEnd = {
               val dismissDistance = size.width.toFloat()
               val shouldDismiss = abs(dismissOffset.value) > dismissDistance * 0.35f
               dismissScope.launch {
                 if (shouldDismiss) {
-                  coroutineScope {
-                    launch {
-                      dismissOffset.animateTo(
-                        -dismissDistance,
-                        animationSpec = tween(durationMillis = 280),
-                      )
-                    }
-                    launch {
-                      contentAlpha.animateTo(0f, animationSpec = tween(durationMillis = 440))
-                    }
-                  }
+                  dismissOffset.animateTo(
+                    -dismissDistance,
+                    animationSpec = tween(durationMillis = 280),
+                  )
                   onDismiss()
                 } else {
-                  contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 180))
-                  dismissOffset.animateTo(0f)
+                  dismissOffset.animateTo(0f, animationSpec = tween(durationMillis = 180))
                 }
               }
             },
             onDragCancel = {
               dismissScope.launch {
-                contentAlpha.animateTo(1f, animationSpec = tween(durationMillis = 180))
-                dismissOffset.animateTo(0f)
+                dismissOffset.animateTo(0f, animationSpec = tween(durationMillis = 180))
               }
             },
           ) { change, dragAmount ->
@@ -131,23 +118,28 @@ internal fun AttentionCard(
         }
     ) {
       val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
-      val swipeProgress = (-dismissOffset.value / widthPx).coerceIn(0f, 1f)
-      val artAlpha =
-        if (swipeProgress > 0f) {
-          ((swipeProgress - 0.5f) / 0.5f).coerceIn(0f, 1f)
+      Box(
+        modifier =
+          Modifier.matchParentSize().offset {
+            IntOffset((dismissOffset.value + widthPx).roundToInt(), 0)
+          }
+      ) {
+        if (nextItem != null && nextItemColor != null) {
+          AttentionItemContent(
+            item = nextItem,
+            liveFeed = liveFeed,
+            color = nextItemColor,
+            nowMs = nowMs,
+            backgroundColor = nextItemColor.copy(alpha = 0.10f),
+            modifier = Modifier.matchParentSize(),
+          )
         } else {
-          0f
+          EmptyAttentionArt(index = emptyArtIndex, modifier = Modifier.fillMaxSize())
         }
-      Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = artAlpha }) {
-        EmptyAttentionArt(
-          index = emptyArtIndex,
-          modifier = Modifier.fillMaxSize(),
-        )
       }
       Box(
         modifier =
           Modifier.matchParentSize()
-            .graphicsLayer { alpha = contentAlpha.value }
             .offset { IntOffset(dismissOffset.value.roundToInt(), 0) }
             .clickable(enabled = link != null) { link?.let { onOpenUrl(context, it) } }
       ) {
@@ -166,6 +158,24 @@ internal fun AttentionCard(
 
 internal fun BuddyLiveFeed.attentionCardItem(): BuddyLiveFeedItem? =
   latestUnviewedAdverseItem ?: latestAdverseItem
+
+private fun BuddyLiveFeed.nextAttentionCardItemAfter(item: BuddyLiveFeedItem): BuddyLiveFeedItem? {
+  val candidates = items.filter { it.adverse && !it.dismissed && it.id != item.id }
+  val unviewedCandidates = candidates.filterNot { it.viewed }
+  return unviewedCandidates.maxWithOrNull(BuddyLiveFeedItemAttentionComparator)
+    ?: candidates.maxWithOrNull(BuddyLiveFeedItemAttentionComparator)
+}
+
+private val BuddyLiveFeedItemAttentionComparator =
+  compareBy<BuddyLiveFeedItem>({ it.severity.attentionRank }, { it.timestamp.time })
+
+private val Severity.attentionRank: Int
+  get() =
+    when (this) {
+      Severity.HIGH -> 3
+      Severity.MEDIUM -> 2
+      Severity.LOW -> 1
+    }
 
 @Composable
 internal fun AttentionItemContent(
