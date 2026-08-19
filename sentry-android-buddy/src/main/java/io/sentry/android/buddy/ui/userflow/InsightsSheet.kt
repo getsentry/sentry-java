@@ -79,7 +79,12 @@ internal fun InsightsSheet(
     "$flowName • ${formatElapsed(state.result.recording.summary.durationMs)}",
   )
   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-    MetricCard(state.response.insights.size.toString(), "Insights", Modifier.weight(1f), BuddyRed)
+    MetricCard(
+      state.response.recommendations.size.toString(),
+      "Insights",
+      Modifier.weight(1f),
+      BuddyRed,
+    )
     MetricCard(
       state.result.recording.summary.screenCount.toString(),
       "Screens",
