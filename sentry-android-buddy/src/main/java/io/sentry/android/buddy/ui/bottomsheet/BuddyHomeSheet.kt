@@ -30,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -284,41 +285,43 @@ internal fun RecommendationsTabContent(
       }
     } else {
       recommendations.forEach { recommendation ->
-        val primaryLink = recommendation.seerRunUrl ?: recommendation.primaryLink
-        BuddyRecommendationCard(
-          model = recommendation.toCardModel(nowMs),
-          modifier =
-            Modifier.clickable {
-              onMarkRead(recommendation.id)
-              primaryLink?.let { onOpenUrl(context, it) }
-            },
-          actions =
-            if (recommendation.isOpen) {
-              recommendation.actions.toActionModels(
-                onExecute = { actionId ->
-                  onMarkRead(recommendation.id)
-                  onExecuteAction(recommendation.id, actionId)
-                },
-                onOpenLink = { link ->
+        key(recommendation.id) {
+          val primaryLink = recommendation.seerRunUrl ?: recommendation.primaryLink
+          BuddyRecommendationCard(
+            model = recommendation.toCardModel(nowMs),
+            modifier =
+              Modifier.clickable {
+                onMarkRead(recommendation.id)
+                primaryLink?.let { onOpenUrl(context, it) }
+              },
+            actions =
+              if (recommendation.isOpen) {
+                recommendation.actions.toActionModels(
+                  onExecute = { actionId ->
+                    onMarkRead(recommendation.id)
+                    onExecuteAction(recommendation.id, actionId)
+                  },
+                  onOpenLink = { link ->
+                    onMarkRead(recommendation.id)
+                    onOpenUrl(context, link)
+                  },
+                )
+              } else {
+                emptyList()
+              },
+            onDismiss = if (recommendation.isOpen) ({ onDismiss(recommendation.id) }) else null,
+            onOpenLink =
+              primaryLink?.let { link ->
+                {
                   onMarkRead(recommendation.id)
                   onOpenUrl(context, link)
-                },
-              )
-            } else {
-              emptyList()
-            },
-          onDismiss = if (recommendation.isOpen) ({ onDismiss(recommendation.id) }) else null,
-          onOpenLink =
-            primaryLink?.let { link ->
-              {
-                onMarkRead(recommendation.id)
-                onOpenUrl(context, link)
-              }
-            },
-          openLinkLabel = openLinkLabelFor(recommendation.seerRunUrl),
-          detailsLabel = "Details",
-          style = BuddyRecommendationCardStyle.ACTION_INBOX,
-        )
+                }
+              },
+            openLinkLabel = openLinkLabelFor(recommendation.seerRunUrl),
+            detailsLabel = "Details",
+            style = BuddyRecommendationCardStyle.ACTION_INBOX,
+          )
+        }
       }
     }
   }

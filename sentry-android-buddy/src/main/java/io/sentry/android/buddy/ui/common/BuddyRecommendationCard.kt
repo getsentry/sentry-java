@@ -1,6 +1,7 @@
 package io.sentry.android.buddy.ui.common
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -127,6 +128,7 @@ internal fun BuddyRecommendationCard(
 
   AnimatedVisibility(
     visible = !dismissing,
+    enter = EnterTransition.None,
     exit =
       slideOutHorizontally(
         animationSpec = tween(RECOMMENDATION_DISMISS_ANIMATION_MS),

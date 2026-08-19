@@ -16,6 +16,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -99,7 +100,7 @@ internal fun InsightsSheet(
       shape = RoundedCornerShape(12.dp),
     ) {
       Text(
-        text = "No recommendations returned yet.",
+        text = "No recommendations.",
         modifier = Modifier.fillMaxWidth().padding(16.dp),
         color = BuddyInk,
         style = MaterialTheme.typography.bodyMedium,
@@ -108,30 +109,32 @@ internal fun InsightsSheet(
   } else {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
       state.response.recommendations.forEach { recommendation ->
-        val seerRunUrl = recommendation.seerRunUrl()
-        BuddyRecommendationCard(
-          model = recommendation.toCardModel(),
-          actions =
-            if (recommendation.isOpen()) {
-              recommendation.actions.toActionModels(
-                onExecute = { actionId ->
-                  onExecuteRecommendationAction(recommendation.id, actionId)
-                },
-                onOpenLink = { link -> onOpenUrl(context, link) },
-              )
-            } else {
-              emptyList()
-            },
-          onDismiss =
-            if (recommendation.isOpen()) {
-              { onDismissRecommendation(recommendation.id) }
-            } else {
-              null
-            },
-          onOpenLink =
-            (seerRunUrl ?: recommendation.link)?.let { link -> { onOpenUrl(context, link) } },
-          openLinkLabel = openLinkLabelFor(seerRunUrl),
-        )
+        key(recommendation.id) {
+          val seerRunUrl = recommendation.seerRunUrl()
+          BuddyRecommendationCard(
+            model = recommendation.toCardModel(),
+            actions =
+              if (recommendation.isOpen()) {
+                recommendation.actions.toActionModels(
+                  onExecute = { actionId ->
+                    onExecuteRecommendationAction(recommendation.id, actionId)
+                  },
+                  onOpenLink = { link -> onOpenUrl(context, link) },
+                )
+              } else {
+                emptyList()
+              },
+            onDismiss =
+              if (recommendation.isOpen()) {
+                { onDismissRecommendation(recommendation.id) }
+              } else {
+                null
+              },
+            onOpenLink =
+              (seerRunUrl ?: recommendation.link)?.let { link -> { onOpenUrl(context, link) } },
+            openLinkLabel = openLinkLabelFor(seerRunUrl),
+          )
+        }
       }
     }
   }

@@ -66,7 +66,7 @@ import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyGold
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
-import io.sentry.android.buddy.ui.common.theme.BuddyRed
+import io.sentry.android.buddy.ui.common.theme.BuddySeerSweatshirtPink
 import io.sentry.android.buddy.ui.common.theme.BuddyWarningBubbleEnd
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
 import kotlin.math.cos
@@ -234,7 +234,10 @@ internal fun BuddyZapABug(modifier: Modifier = Modifier) {
         fontStyle = FontStyle.Italic,
         text = "Hold tight. Seer is having a look at your flow.",
       )
-      BuddyWavyProgress(modifier = Modifier.padding(horizontal = 16.dp), color = BuddyRed)
+      BuddyWavyProgress(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        color = BuddySeerSweatshirtPink,
+      )
       Text(
         text = "Zap some bugs while you wait.",
         color = BuddyMuted,

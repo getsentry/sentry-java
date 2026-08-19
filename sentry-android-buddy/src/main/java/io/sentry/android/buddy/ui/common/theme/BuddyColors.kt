@@ -55,6 +55,8 @@ internal val BuddyBorder = Color(0xFFE0DDE6)
 
 internal val BuddyCode = Color(0xFFF3F1F6)
 
+internal val BuddySeerSweatshirtPink = Color(0xFFEF6CB7)
+
 internal fun severityColor(severity: Severity): Color =
   when (severity) {
     Severity.HIGH -> BuddyRed
