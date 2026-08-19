@@ -85,6 +85,7 @@ internal fun BuddySheet(
   ) {
     AnimatedContent(
       targetState = state,
+      contentKey = { contentState -> contentState.animationKey() },
       transitionSpec = {
         if (
           initialState is SentryBuddySessionState.Analyzing &&
@@ -174,3 +175,16 @@ internal fun BuddySheet(
     }
   }
 }
+
+private fun SentryBuddySessionState.animationKey(): String =
+  when (this) {
+    SentryBuddySessionState.Closed -> "closed"
+    SentryBuddySessionState.LiveFeed -> "live_feed"
+    SentryBuddySessionState.Intro -> "intro"
+    is SentryBuddySessionState.StoppedSummary -> "stopped_summary"
+    is SentryBuddySessionState.Briefing -> "briefing"
+    is SentryBuddySessionState.Analyzing -> "analyzing"
+    is SentryBuddySessionState.Insights -> "insights"
+    is SentryBuddySessionState.Error -> "error"
+    is SentryBuddySessionState.Recording -> "recording"
+  }
