@@ -94,18 +94,21 @@ internal fun InsightsSheet(
       "Insights",
       Modifier.weight(1f),
       BuddyRed,
+      showContainer = false,
     )
     MetricCard(
       state.result.recording.summary.screenCount.toString(),
       "Screens",
       Modifier.weight(1f),
       BuddyPurple,
+      showContainer = false,
     )
     MetricCard(
       state.result.recording.summary.spanCount.toString(),
       "Spans",
       Modifier.weight(1f),
       BuddyGold,
+      showContainer = false,
     )
   }
   FlowActionRow(

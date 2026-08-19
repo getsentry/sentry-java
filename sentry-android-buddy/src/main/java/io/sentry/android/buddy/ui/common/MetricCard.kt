@@ -30,17 +30,32 @@ internal fun MetricGrid(recording: BuddyFlowRecording) {
 }
 
 @Composable
-internal fun MetricCard(value: String, label: String, modifier: Modifier, color: Color = BuddyInk) {
-  Card(modifier = modifier, border = CardDefaults.outlinedCardBorder()) {
-    Column(modifier = Modifier.padding(14.dp)) {
-      Text(
-        value,
-        color = color,
-        style = MaterialTheme.typography.headlineSmall,
-        fontWeight = FontWeight.Bold,
-      )
-      Text(label, color = BuddyMuted)
+internal fun MetricCard(
+  value: String,
+  label: String,
+  modifier: Modifier,
+  color: Color = BuddyInk,
+  showContainer: Boolean = true,
+) {
+  if (showContainer) {
+    Card(modifier = modifier, border = CardDefaults.outlinedCardBorder()) {
+      MetricCardContent(value, label, color, Modifier.padding(14.dp))
     }
+  } else {
+    MetricCardContent(value, label, color, modifier.padding(vertical = 4.dp))
+  }
+}
+
+@Composable
+private fun MetricCardContent(value: String, label: String, color: Color, modifier: Modifier) {
+  Column(modifier = modifier) {
+    Text(
+      value,
+      color = color,
+      style = MaterialTheme.typography.headlineSmall,
+      fontWeight = FontWeight.Bold,
+    )
+    Text(label, color = BuddyMuted)
   }
 }
 
