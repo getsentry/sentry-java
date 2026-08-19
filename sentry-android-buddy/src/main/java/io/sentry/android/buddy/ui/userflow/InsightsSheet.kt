@@ -8,10 +8,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,6 +35,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.SentryBuddySessionState
@@ -58,6 +57,7 @@ import io.sentry.android.buddy.ui.common.theme.BuddyGold
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyPurple
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
+import io.sentry.android.buddy.ui.common.theme.BuddySweatshirtPink
 import io.sentry.android.buddy.ui.common.toActionModels
 import io.sentry.android.buddy.ui.common.toCardModel
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
@@ -213,23 +213,32 @@ private fun FlowActionRow(actions: List<BuddyFlowActionModel>) {
   }
   Row(
     modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
   ) {
     actions.forEachIndexed { index, action ->
-      FlowActionButton(action, isPrimary = index == 0)
+      FlowActionButton(
+        action = action,
+        isPrimary = index == 0,
+        modifier = Modifier.weight(1f),
+      )
     }
   }
 }
 
 @Composable
-private fun FlowActionButton(action: BuddyFlowActionModel, isPrimary: Boolean) {
-  val shape = RoundedCornerShape(16.dp)
-  val background = if (isPrimary) BuddyPurple else BuddyPurple.copy(alpha = 0.10f)
-  val contentColor = if (isPrimary) Color.White else BuddyPurple
-  val border = if (isPrimary) null else BorderStroke(1.dp, BuddyPurple.copy(alpha = 0.20f))
+private fun FlowActionButton(
+  action: BuddyFlowActionModel,
+  isPrimary: Boolean,
+  modifier: Modifier = Modifier,
+) {
+  val shape = RoundedCornerShape(18.dp)
+  val background = if (isPrimary) BuddySweatshirtPink else BuddySweatshirtPink.copy(alpha = 0.12f)
+  val contentColor = if (isPrimary) Color.White else BuddySweatshirtPink
+  val border = if (isPrimary) null else BorderStroke(1.dp, BuddySweatshirtPink.copy(alpha = 0.26f))
   Surface(
     modifier =
-      Modifier.size(48.dp)
+      modifier
+        .height(42.dp)
         .clip(shape)
         .semantics {
           contentDescription = action.label
@@ -240,12 +249,24 @@ private fun FlowActionButton(action: BuddyFlowActionModel, isPrimary: Boolean) {
     shape = shape,
     border = border,
   ) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Row(
+      modifier = Modifier.padding(horizontal = 8.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+    ) {
       Icon(
         imageVector = action.icon,
         contentDescription = null,
         tint = contentColor,
-        modifier = Modifier.size(21.dp),
+        modifier = Modifier.size(14.dp),
+      )
+      Text(
+        action.visibleLabel,
+        color = contentColor,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+        maxLines = 1,
+        overflow = TextOverflow.Clip,
       )
     }
   }
@@ -253,6 +274,7 @@ private fun FlowActionButton(action: BuddyFlowActionModel, isPrimary: Boolean) {
 
 private data class BuddyFlowActionModel(
   val label: String,
+  val visibleLabel: String,
   val icon: ImageVector,
   val onClick: () -> Unit,
 )
@@ -267,7 +289,11 @@ private fun List<FlowAction>.toPermaActionModels(
       when (action.id) {
         FLOW_ACTION_GENERATE_DASHBOARD,
         FLOW_ACTION_GENERATE_MONITORS ->
-          BuddyFlowActionModel(action.actionLabel, action.permaActionIcon()) {
+          BuddyFlowActionModel(
+            action.actionLabel,
+            action.permaActionVisibleLabel(),
+            action.permaActionIcon(),
+          ) {
             val link = action.seerRunUrl ?: action.link
             if (link != null) {
               onOpenUrl(context, link)
@@ -277,7 +303,11 @@ private fun List<FlowAction>.toPermaActionModels(
           }
 
         FLOW_ACTION_SHARE_RECORDING_JSON ->
-          BuddyFlowActionModel(action.actionLabel, action.permaActionIcon()) {
+          BuddyFlowActionModel(
+            action.actionLabel,
+            action.permaActionVisibleLabel(),
+            action.permaActionIcon(),
+          ) {
             shareRecordingJson(context, recordingJson)
           }
 
@@ -292,6 +322,12 @@ private fun FlowAction.permaActionIcon(): ImageVector =
     FLOW_ACTION_GENERATE_MONITORS -> Icons.monitor
     FLOW_ACTION_SHARE_RECORDING_JSON -> Icons.open_in_new
     else -> Icons.open_in_new
+  }
+
+private fun FlowAction.permaActionVisibleLabel(): String =
+  when (id) {
+    FLOW_ACTION_SHARE_RECORDING_JSON -> "Share"
+    else -> actionLabel
   }
 
 private fun shareRecordingJson(context: Context, recordingJson: String) {
