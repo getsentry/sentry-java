@@ -45,7 +45,6 @@ import io.sentry.android.buddy.ui.common.seerRunUrl
 import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyGold
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
-import io.sentry.android.buddy.ui.common.theme.BuddyMuted
 import io.sentry.android.buddy.ui.common.theme.BuddyPurple
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
 import io.sentry.android.buddy.ui.common.toActionModels
@@ -107,7 +106,6 @@ internal fun InsightsSheet(
         onOpenUrl = onOpenUrl,
       )
   )
-  Text(state.response.summary, color = BuddyMuted)
   Text(
     "Recommendations",
     style = MaterialTheme.typography.titleMedium,

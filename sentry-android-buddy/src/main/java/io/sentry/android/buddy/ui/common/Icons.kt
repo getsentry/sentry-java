@@ -114,6 +114,115 @@ internal object Icons {
     }
 
   private var _open_in_new: ImageVector? = null
+
+  @Suppress("CheckReturnValue")
+  val dashboard: ImageVector
+    get() {
+      if (_dashboard != null) {
+        return _dashboard!!
+      }
+      _dashboard =
+        ImageVector.Builder(
+            name = "dashboard",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+          )
+          .apply {
+            path(
+              fill = SolidColor(Color.Black),
+              fillAlpha = 1f,
+              stroke = null,
+              strokeAlpha = 1f,
+              strokeLineWidth = 1f,
+              strokeLineCap = StrokeCap.Butt,
+              strokeLineJoin = StrokeJoin.Bevel,
+              strokeLineMiter = 1f,
+              pathFillType = PathFillType.Companion.NonZero,
+            ) {
+              moveTo(4f, 4f)
+              horizontalLineTo(11f)
+              verticalLineTo(11f)
+              horizontalLineTo(4f)
+              close()
+              moveTo(13f, 4f)
+              horizontalLineTo(20f)
+              verticalLineTo(11f)
+              horizontalLineTo(13f)
+              close()
+              moveTo(4f, 13f)
+              horizontalLineTo(11f)
+              verticalLineTo(20f)
+              horizontalLineTo(4f)
+              close()
+              moveTo(13f, 13f)
+              horizontalLineTo(20f)
+              verticalLineTo(20f)
+              horizontalLineTo(13f)
+              close()
+            }
+          }
+          .build()
+      return _dashboard!!
+    }
+
+  private var _dashboard: ImageVector? = null
+
+  @Suppress("CheckReturnValue")
+  val monitor: ImageVector
+    get() {
+      if (_monitor != null) {
+        return _monitor!!
+      }
+      _monitor =
+        ImageVector.Builder(
+            name = "monitor",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+          )
+          .apply {
+            path(
+              fill = SolidColor(Color.Black),
+              fillAlpha = 1f,
+              stroke = null,
+              strokeAlpha = 1f,
+              strokeLineWidth = 1f,
+              strokeLineCap = StrokeCap.Butt,
+              strokeLineJoin = StrokeJoin.Bevel,
+              strokeLineMiter = 1f,
+              pathFillType = PathFillType.Companion.EvenOdd,
+            ) {
+              moveTo(3f, 4f)
+              horizontalLineTo(21f)
+              verticalLineTo(16f)
+              horizontalLineTo(3f)
+              close()
+              moveTo(5f, 6f)
+              horizontalLineTo(19f)
+              verticalLineTo(14f)
+              horizontalLineTo(5f)
+              close()
+              moveTo(11f, 16f)
+              horizontalLineTo(13f)
+              verticalLineTo(19f)
+              horizontalLineTo(11f)
+              close()
+              moveTo(8f, 19f)
+              horizontalLineTo(16f)
+              verticalLineTo(21f)
+              horizontalLineTo(8f)
+              close()
+            }
+          }
+          .build()
+      return _monitor!!
+    }
+
+  private var _monitor: ImageVector? = null
+
   @Suppress("CheckReturnValue")
   val bug: ImageVector
     get() {
