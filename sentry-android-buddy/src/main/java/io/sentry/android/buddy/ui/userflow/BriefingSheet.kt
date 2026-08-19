@@ -116,7 +116,7 @@ internal fun BriefingSheet(
     ) {
       BuddyButtonText("Analyze")
     }
-    OutlinedButton(modifier = Modifier.height(56.dp), onClick = onAnalyze) {
+    OutlinedButton(modifier = Modifier.height(56.dp), onClick = { onDispatch { skipAnalysis() } }) {
       BuddyButtonText("Skip")
     }
   }

@@ -172,7 +172,7 @@ public constructor(
     clearHealthCheckRecommendations()
     ingestHomeRecommendations(liveFeed.toHomeRecommendations(sentryUiLinks))
     hasPendingHealthCheck = true
-    homeTab = defaultHomeTab()
+    homeTab = lastSelectedHomeTab
     state = SentryBuddySessionState.LiveFeed
   }
 
@@ -328,6 +328,14 @@ public constructor(
         developerNotes = developerNotes,
         focusAreas = focusAreas,
       )
+  }
+
+  public fun skipAnalysis() {
+    if (state !is SentryBuddySessionState.Briefing) {
+      return
+    }
+    latestSeenInsightsState = null
+    openLiveFeed()
   }
 
   public fun analyze() {
@@ -593,13 +601,6 @@ public constructor(
   private fun removeHomeRecommendation(recommendationId: String) {
     homeRecommendations = homeRecommendations.filterNot { it.id == recommendationId }
   }
-
-  private fun defaultHomeTab(): BuddyHomeTab =
-    when {
-      liveFeed.latestUnviewedAdverseItem != null -> BuddyHomeTab.LIVE_FEED
-      homeRecommendations.any { it.isAttentionDriving && it.unread } -> BuddyHomeTab.ACTIONS
-      else -> lastSelectedHomeTab
-    }
 
   private fun setRecommendationError(message: String) {
     recommendationError = message

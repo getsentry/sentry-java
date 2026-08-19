@@ -106,6 +106,24 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
+  fun `skip analysis opens live feed without submitting flow analysis`() {
+    val flowAnalysesApi = FakeFlowAnalysesApi()
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        flowAnalysesApi = flowAnalysesApi,
+      )
+
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.skipAnalysis()
+
+    assertThat(controller.state).isEqualTo(SentryBuddySessionState.LiveFeed)
+    assertThat(flowAnalysesApi.submitted).isFalse()
+  }
+
+  @Test
   fun `record again returns to intro state`() {
     val controller = SentryBuddySessionController(recorderFacade = FakeRecorderFacade())
 
@@ -338,14 +356,18 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
-  fun `open live feed remembers last selected tab when there are no unread recommendations`() {
+  fun `open live feed remembers last selected tab even with unread recommendations`() {
     val controller = SentryBuddySessionController(recorderFacade = FakeRecorderFacade())
 
-    controller.openLiveFeed()
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.analyze()
     controller.selectHomeTab(BuddyHomeTab.RECORD_FLOW)
     controller.close()
     controller.openLiveFeed()
 
+    assertThat(controller.homeRecommendations.single().unread).isTrue()
     assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.RECORD_FLOW)
   }
 
