@@ -114,4 +114,136 @@ internal object Icons {
     }
 
   private var _open_in_new: ImageVector? = null
+  @Suppress("CheckReturnValue")
+  val bug: ImageVector
+    get() {
+      if (_bug != null) {
+        return _bug!!
+      }
+      _bug =
+        ImageVector.Builder(
+            name = "bug",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+          )
+          .apply {
+            // Legs and antennae.
+            path(
+              fill = null,
+              stroke = SolidColor(Color.Black),
+              strokeAlpha = 1f,
+              strokeLineWidth = 1.6f,
+              strokeLineCap = StrokeCap.Round,
+              strokeLineJoin = StrokeJoin.Round,
+              strokeLineMiter = 1f,
+              pathFillType = PathFillType.Companion.NonZero,
+            ) {
+              moveTo(6.6f, 11.2f)
+              lineTo(2.6f, 8.6f)
+              moveTo(6.2f, 14.4f)
+              lineTo(1.9f, 14.4f)
+              moveTo(6.6f, 17.4f)
+              lineTo(2.6f, 19.8f)
+              moveTo(17.4f, 11.2f)
+              lineTo(21.4f, 8.6f)
+              moveTo(17.8f, 14.4f)
+              lineTo(22.1f, 14.4f)
+              moveTo(17.4f, 17.4f)
+              lineTo(21.4f, 19.8f)
+              moveTo(10.3f, 4.2f)
+              lineTo(8.5f, 1.8f)
+              moveTo(13.7f, 4.2f)
+              lineTo(15.5f, 1.8f)
+            }
+            // Body.
+            path(
+              fill = SolidColor(Color.Black),
+              fillAlpha = 1f,
+              stroke = null,
+              strokeAlpha = 1f,
+              strokeLineWidth = 1f,
+              strokeLineCap = StrokeCap.Butt,
+              strokeLineJoin = StrokeJoin.Bevel,
+              strokeLineMiter = 1f,
+              pathFillType = PathFillType.Companion.NonZero,
+            ) {
+              moveTo(6.5f, 14.4f)
+              arcTo(5.5f, 6.6f, 0f, true, true, 17.5f, 14.4f)
+              arcTo(5.5f, 6.6f, 0f, true, true, 6.5f, 14.4f)
+              close()
+            }
+            // Head, with the two eyes cut out of it.
+            path(
+              fill = SolidColor(Color.Black),
+              fillAlpha = 1f,
+              stroke = null,
+              strokeAlpha = 1f,
+              strokeLineWidth = 1f,
+              strokeLineCap = StrokeCap.Butt,
+              strokeLineJoin = StrokeJoin.Bevel,
+              strokeLineMiter = 1f,
+              pathFillType = PathFillType.Companion.EvenOdd,
+            ) {
+              moveTo(8.8f, 6.6f)
+              arcTo(3.2f, 3.2f, 0f, true, true, 15.2f, 6.6f)
+              arcTo(3.2f, 3.2f, 0f, true, true, 8.8f, 6.6f)
+              close()
+              moveTo(9.9f, 6.2f)
+              arcTo(0.85f, 0.85f, 0f, true, true, 11.6f, 6.2f)
+              arcTo(0.85f, 0.85f, 0f, true, true, 9.9f, 6.2f)
+              close()
+              moveTo(12.4f, 6.2f)
+              arcTo(0.85f, 0.85f, 0f, true, true, 14.1f, 6.2f)
+              arcTo(0.85f, 0.85f, 0f, true, true, 12.4f, 6.2f)
+              close()
+            }
+          }
+          .build()
+      return _bug!!
+    }
+
+  private var _bug: ImageVector? = null
+
+  @Suppress("CheckReturnValue")
+  val bolt: ImageVector
+    get() {
+      if (_bolt != null) {
+        return _bolt!!
+      }
+      _bolt =
+        ImageVector.Builder(
+            name = "bolt",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+          )
+          .apply {
+            path(
+              fill = SolidColor(Color.Black),
+              fillAlpha = 1f,
+              stroke = null,
+              strokeAlpha = 1f,
+              strokeLineWidth = 1f,
+              strokeLineCap = StrokeCap.Butt,
+              strokeLineJoin = StrokeJoin.Bevel,
+              strokeLineMiter = 1f,
+              pathFillType = PathFillType.Companion.NonZero,
+            ) {
+              moveTo(13.2f, 2f)
+              lineTo(4.5f, 13.6f)
+              lineTo(10.6f, 13.6f)
+              lineTo(9.2f, 22f)
+              lineTo(19.5f, 9.6f)
+              lineTo(13.1f, 9.6f)
+              close()
+            }
+          }
+          .build()
+      return _bolt!!
+    }
+
+  private var _bolt: ImageVector? = null
 }
