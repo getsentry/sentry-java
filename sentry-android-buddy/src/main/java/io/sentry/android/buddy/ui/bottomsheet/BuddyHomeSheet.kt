@@ -183,7 +183,7 @@ internal fun HomeTabRow(
                 "Actions"
               }
 
-            BuddyHomeTab.RECORD_FLOW -> "Record Flow"
+            BuddyHomeTab.RECORD_FLOW -> "Analyze"
           }
         Box(
           modifier =

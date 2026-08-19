@@ -2,8 +2,8 @@ package io.sentry.android.buddy.model
 
 internal enum class BuddyHomeTab {
   LIVE_FEED,
-  ACTIONS,
   RECORD_FLOW,
+  ACTIONS,
 }
 
 internal enum class BuddyRecommendationSource(val label: String) {
