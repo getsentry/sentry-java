@@ -19,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -174,12 +175,12 @@ internal fun InsightsSheet(
     }
   }
   if (traceLink != null) {
-    Button(
-      modifier = Modifier.fillMaxWidth().height(52.dp),
-      colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
+    OutlinedButton(
+      modifier = Modifier.fillMaxWidth().height(56.dp),
+      colors = ButtonDefaults.outlinedButtonColors(contentColor = BuddyPurple),
       onClick = { onOpenUrl(context, traceLink) },
     ) {
-      BuddyButtonText("Open flow in Sentry", color = Color.White)
+      BuddyButtonText("Open flow in Sentry", color = BuddyPurple)
     }
   }
 }
