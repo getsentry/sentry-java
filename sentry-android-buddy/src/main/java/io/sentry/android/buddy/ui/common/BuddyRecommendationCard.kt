@@ -2,6 +2,11 @@ package io.sentry.android.buddy.ui.common
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,7 +46,6 @@ import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.ui.common.theme.BuddyBorder
-import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
 import io.sentry.android.buddy.ui.common.theme.BuddyPurple
@@ -97,7 +101,7 @@ internal fun BuddyRecommendationCard(
   onDismiss: (() -> Unit)? = null,
   onOpenLink: (() -> Unit)? = null,
   openLinkLabel: String = "Open Link",
-  detailsLabel: String = "Why this matters",
+  detailsLabel: String = "Details",
   style: BuddyRecommendationCardStyle = BuddyRecommendationCardStyle.FLOW_INSIGHT,
 ) {
   val color = severityColor(model.severity)
@@ -115,7 +119,8 @@ internal fun BuddyRecommendationCard(
     Column(modifier = Modifier.fillMaxWidth()) {
       Box(modifier = Modifier.fillMaxWidth().height(5.dp).background(color))
       Column(
-        modifier = Modifier.fillMaxWidth().padding(16.dp).animateContentSize(),
+        modifier =
+          Modifier.fillMaxWidth().padding(16.dp).animateContentSize(animationSpec = tween(120)),
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         if (model.timestampLabel != null || metadataLabels.isNotEmpty()) {
@@ -308,33 +313,25 @@ private fun RecommendationDetailsDisclosure(
   expanded: Boolean,
   onExpandedChange: (Boolean) -> Unit,
 ) {
+  val actionLabel = if (expanded) "Hide $label" else "Show $label"
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-    Surface(color = BuddyCode, shape = RoundedCornerShape(12.dp)) {
-      Row(
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+      Text(
+        actionLabel,
         modifier =
-          Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+          Modifier.clip(RoundedCornerShape(12.dp))
             .clickable { onExpandedChange(!expanded) }
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Text(
-          label,
-          modifier = Modifier.weight(1f),
-          color = BuddyInk,
-          style = MaterialTheme.typography.labelLarge,
-          fontWeight = FontWeight.Bold,
-        )
-        Text(
-          if (expanded) "Hide" else "Show",
-          color = BuddyPurple,
-          style = MaterialTheme.typography.labelMedium,
-          fontWeight = FontWeight.Bold,
-        )
-      }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        color = BuddyPurple,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Bold,
+      )
     }
-    AnimatedVisibility(visible = expanded) {
+    AnimatedVisibility(
+      visible = expanded,
+      enter = fadeIn(animationSpec = tween(60)) + expandVertically(animationSpec = tween(90)),
+      exit = fadeOut(animationSpec = tween(45)) + shrinkVertically(animationSpec = tween(75)),
+    ) {
       Text(
         description,
         modifier = Modifier.padding(horizontal = 2.dp),
