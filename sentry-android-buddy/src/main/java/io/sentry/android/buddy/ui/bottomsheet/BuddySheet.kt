@@ -1,6 +1,14 @@
 package io.sentry.android.buddy.ui.bottomsheet
 
 import android.content.Context
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -75,62 +83,93 @@ internal fun BuddySheet(
     containerColor = Color.White,
     shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
   ) {
-    val sheetBodyModifier =
-      if (state == SentryBuddySessionState.LiveFeed) {
-        Modifier.fillMaxWidth().height(maxSheetHeight)
-      } else {
-        Modifier.fillMaxWidth().heightIn(max = maxSheetHeight)
-      }
-    Column(
-      modifier =
-        sheetBodyModifier
-          .verticalScroll(rememberScrollState())
-          .padding(
-            horizontal = if (state is SentryBuddySessionState.LiveFeed) 0.dp else 24.dp,
-            vertical = 24.dp,
-          ),
-      verticalArrangement = Arrangement.spacedBy(16.dp),
+    AnimatedContent(
+      targetState = state,
+      transitionSpec = {
+        if (
+          initialState is SentryBuddySessionState.Analyzing &&
+            targetState is SentryBuddySessionState.Insights
+        ) {
+          ContentTransform(
+            targetContentEnter =
+              fadeIn(animationSpec = tween(durationMillis = 320, delayMillis = 80)) +
+                slideInVertically(
+                  animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing),
+                  initialOffsetY = { fullHeight -> fullHeight / 10 },
+                ),
+            initialContentExit =
+              fadeOut(animationSpec = tween(durationMillis = 180)) +
+                slideOutVertically(
+                  animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+                  targetOffsetY = { fullHeight -> -(fullHeight / 20) },
+                ),
+          )
+        } else {
+          ContentTransform(
+            targetContentEnter = fadeIn(animationSpec = tween(durationMillis = 180)),
+            initialContentExit = fadeOut(animationSpec = tween(durationMillis = 120)),
+          )
+        }
+      },
+      label = "buddy-sheet-content",
     ) {
-      when (state) {
-        SentryBuddySessionState.LiveFeed ->
-          BuddyHomeSheet(
-            liveFeed,
-            healthCheckState,
-            homeTab,
-            homeRecommendations,
-            recommendationError,
-            sentryUiLinks,
-            nowMs,
-            onDispatch,
-            ::startRecordingAfterSheetExit,
-            onExecuteHomeRecommendationAction,
-            onDismissHomeRecommendation,
-            onMarkHomeRecommendationRead,
-            onSelectHomeTab,
-            onRunHealthCheck,
-            onOpenUrl,
-          )
+      val sheetBodyModifier =
+        if (it == SentryBuddySessionState.LiveFeed) {
+          Modifier.fillMaxWidth().height(maxSheetHeight)
+        } else {
+          Modifier.fillMaxWidth().heightIn(max = maxSheetHeight)
+        }
+      Column(
+        modifier =
+          sheetBodyModifier
+            .verticalScroll(rememberScrollState())
+            .padding(
+              horizontal = if (it is SentryBuddySessionState.LiveFeed) 0.dp else 24.dp,
+              vertical = 24.dp,
+            ),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+      ) {
+        when (it) {
+          SentryBuddySessionState.LiveFeed ->
+            BuddyHomeSheet(
+              liveFeed,
+              healthCheckState,
+              homeTab,
+              homeRecommendations,
+              recommendationError,
+              sentryUiLinks,
+              nowMs,
+              onDispatch,
+              ::startRecordingAfterSheetExit,
+              onExecuteHomeRecommendationAction,
+              onDismissHomeRecommendation,
+              onMarkHomeRecommendationRead,
+              onSelectHomeTab,
+              onRunHealthCheck,
+              onOpenUrl,
+            )
 
-        SentryBuddySessionState.Intro -> IntroSheet(::startRecordingAfterSheetExit)
-        is SentryBuddySessionState.StoppedSummary ->
-          StoppedSummarySheet(state, sentryUiLinks, onDispatch, onOpenUrl)
+          SentryBuddySessionState.Intro -> IntroSheet(::startRecordingAfterSheetExit)
+          is SentryBuddySessionState.StoppedSummary ->
+            StoppedSummarySheet(it, sentryUiLinks, onDispatch, onOpenUrl)
 
-        is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
-        is SentryBuddySessionState.Analyzing -> AnalyzingSheet(state)
-        is SentryBuddySessionState.Insights ->
-          InsightsSheet(
-            state,
-            sentryUiLinks,
-            recommendationError,
-            onDispatch,
-            onExecuteRecommendationAction,
-            onDismissRecommendation,
-            onOpenUrl,
-          )
+          is SentryBuddySessionState.Briefing -> BriefingSheet(it, onDispatch, onAnalyze)
+          is SentryBuddySessionState.Analyzing -> AnalyzingSheet(it)
+          is SentryBuddySessionState.Insights ->
+            InsightsSheet(
+              it,
+              sentryUiLinks,
+              recommendationError,
+              onDispatch,
+              onExecuteRecommendationAction,
+              onDismissRecommendation,
+              onOpenUrl,
+            )
 
-        is SentryBuddySessionState.Error -> ErrorSheet(state, onDispatch)
-        is SentryBuddySessionState.Recording,
-        SentryBuddySessionState.Closed -> Unit
+          is SentryBuddySessionState.Error -> ErrorSheet(it, onDispatch)
+          is SentryBuddySessionState.Recording,
+          SentryBuddySessionState.Closed -> Unit
+        }
       }
     }
   }
