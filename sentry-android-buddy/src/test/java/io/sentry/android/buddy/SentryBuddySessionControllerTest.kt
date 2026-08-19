@@ -262,7 +262,7 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
-  fun `health check from live feed stores results`() {
+  fun `pending health check from live feed stores results`() {
     val controller =
       SentryBuddySessionController(
         recorderFacade = FakeRecorderFacade(),
@@ -286,7 +286,7 @@ class SentryBuddySessionControllerTest {
       )
 
     controller.openLiveFeed()
-    controller.runHealthCheck()
+    controller.runPendingHealthCheck()
 
     assertThat(controller.healthCheckState).isInstanceOf(BuddyHealthCheckState.Results::class.java)
     val state = controller.healthCheckState as BuddyHealthCheckState.Results
@@ -308,8 +308,7 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
-  fun `open live feed prefers unread recommendations over remembered tab`() {
-    var nowMs = 100L
+  fun `open live feed clears previous health check recommendations before rerunning`() {
     val controller =
       SentryBuddySessionController(
         recorderFacade = FakeRecorderFacade(),
@@ -329,17 +328,15 @@ class SentryBuddySessionControllerTest {
               )
             }
           },
-        clock = { nowMs },
       )
 
     controller.openLiveFeed()
-    controller.selectHomeTab(BuddyHomeTab.RECORD_FLOW)
-    controller.runHealthCheck()
+    controller.runPendingHealthCheck()
     controller.close()
-    nowMs = 200L
     controller.openLiveFeed()
 
-    assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.RECOMMENDATIONS)
+    assertThat(controller.homeRecommendations).isEmpty()
+    assertThat(controller.healthCheckState).isEqualTo(BuddyHealthCheckState.Hidden)
   }
 
   @Test
@@ -368,7 +365,7 @@ class SentryBuddySessionControllerTest {
       )
 
     controller.openLiveFeed()
-    controller.runHealthCheck()
+    controller.runPendingHealthCheck()
     controller.dismissHomeRecommendation("health-check:replay-disabled")
 
     assertThat(controller.homeRecommendations.single().status)
@@ -396,7 +393,7 @@ class SentryBuddySessionControllerTest {
       )
 
     controller.openLiveFeed()
-    controller.runHealthCheck()
+    controller.runPendingHealthCheck()
 
     assertThat(controller.healthCheckState).isInstanceOf(BuddyHealthCheckState.Error::class.java)
     assertThat((controller.healthCheckState as BuddyHealthCheckState.Error).message)
@@ -416,10 +413,32 @@ class SentryBuddySessionControllerTest {
       )
 
     controller.openLiveFeed()
-    controller.runHealthCheck()
+    controller.runPendingHealthCheck()
     controller.close()
 
     assertThat(controller.healthCheckState).isEqualTo(BuddyHealthCheckState.Hidden)
+  }
+
+  @Test
+  fun `pending health check runs only once per live feed open`() {
+    var checkCalls = 0
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        healthCheckApi =
+          object : SentryBuddyHealthCheckApi {
+            override fun check(request: BuddyHealthCheckRequest): BuddyHealthCheckResponse {
+              checkCalls += 1
+              return BuddyHealthCheckResponse()
+            }
+          },
+      )
+
+    controller.openLiveFeed()
+    controller.runPendingHealthCheck()
+    controller.runPendingHealthCheck()
+
+    assertThat(checkCalls).isEqualTo(1)
   }
 
   private class FakeRecorderFacade(

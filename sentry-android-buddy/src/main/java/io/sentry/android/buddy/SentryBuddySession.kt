@@ -144,6 +144,7 @@ public constructor(
     private set
 
   private var lastSelectedHomeTab: BuddyHomeTab = BuddyHomeTab.LIVE_FEED
+  private var hasPendingHealthCheck: Boolean = false
 
   private val transientRecordingEventLock: Any = Any()
   private val transientRecordingEventListeners = mutableListOf<(TransientRecordingEvent) -> Unit>()
@@ -157,7 +158,9 @@ public constructor(
   internal fun openLiveFeed() {
     dismissHealthCheck()
     liveFeed = safeLiveFeed()
+    clearHealthCheckRecommendations()
     ingestHomeRecommendations(liveFeed.toHomeRecommendations())
+    hasPendingHealthCheck = true
     homeTab = defaultHomeTab()
     state = SentryBuddySessionState.LiveFeed
   }
@@ -211,6 +214,7 @@ public constructor(
 
   public fun close() {
     dismissHealthCheck()
+    hasPendingHealthCheck = false
     if (state !is SentryBuddySessionState.Recording) {
       state = SentryBuddySessionState.Closed
     }
@@ -370,6 +374,14 @@ public constructor(
     }
   }
 
+  internal fun runPendingHealthCheck() {
+    if (!hasPendingHealthCheck) {
+      return
+    }
+    hasPendingHealthCheck = false
+    runHealthCheck()
+  }
+
   internal fun runHealthCheck() {
     if (state != SentryBuddySessionState.LiveFeed) {
       return
@@ -377,7 +389,7 @@ public constructor(
     healthCheckState = BuddyHealthCheckState.Running
     try {
       val response = healthCheckApi.check(BuddyHealthCheckCapture.captureRequest())
-      ingestHomeRecommendations(response.toHomeRecommendations(clock()))
+      replaceHealthCheckRecommendations(response.toHomeRecommendations(clock()))
       healthCheckState = BuddyHealthCheckState.Results(response)
     } catch (exception: IllegalStateException) {
       healthCheckState =
@@ -469,6 +481,17 @@ public constructor(
 
   private fun ingestHomeRecommendations(recommendations: List<BuddyHomeRecommendation>) {
     recommendations.forEach { upsertHomeRecommendation(it) }
+  }
+
+  private fun clearHealthCheckRecommendations() {
+    homeRecommendations = homeRecommendations.filterNot {
+      it.source == BuddyRecommendationSource.HEALTH_CHECK
+    }
+  }
+
+  private fun replaceHealthCheckRecommendations(recommendations: List<BuddyHomeRecommendation>) {
+    clearHealthCheckRecommendations()
+    ingestHomeRecommendations(recommendations)
   }
 
   private fun upsertHomeRecommendation(incoming: BuddyHomeRecommendation) {

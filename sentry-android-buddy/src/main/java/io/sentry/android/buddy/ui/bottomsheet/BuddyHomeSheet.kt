@@ -61,8 +61,7 @@ import io.sentry.android.buddy.ui.common.theme.LIVE_FEED_VISIBLE_ITEM_LIMIT
 import io.sentry.android.buddy.ui.common.timeline.BuddyTimeline
 import io.sentry.android.buddy.ui.common.timeline.toTimelineRow
 import io.sentry.android.buddy.ui.common.toCardModel
-import io.sentry.android.buddy.ui.healthcheck.HealthCheckActionButton
-import io.sentry.android.buddy.ui.healthcheck.HealthCheckDialog
+import io.sentry.android.buddy.ui.healthcheck.HealthCheckStatusCard
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
 import io.sentry.android.buddy.ui.preview.PREVIEW_NOW_MS
 import io.sentry.android.buddy.ui.preview.previewEmptyLiveFeed
@@ -85,22 +84,12 @@ internal fun BuddyHomeSheet(
   onMarkHomeRecommendationRead: (String) -> Unit,
   onSelectHomeTab: (BuddyHomeTab) -> Unit,
   onRunHealthCheck: () -> Unit,
-  onDismissHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
   val unreadRecommendations = homeRecommendations.count { it.isOpen && it.unread }
   val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
   LiveFeedInset {
-    SheetTitle(
-      title = "Sentry Buddy",
-      subtitle = "v${BuildConfig.VERSION_NAME}",
-      trailingContent = {
-        HealthCheckActionButton(
-          enabled = healthCheckState !is BuddyHealthCheckState.Running,
-          onClick = onRunHealthCheck,
-        )
-      },
-    )
+    SheetTitle(title = "Sentry Buddy", subtitle = "v${BuildConfig.VERSION_NAME}")
     HomeTabRow(
       selectedTab = homeTab,
       unreadRecommendationCount = unreadRecommendations,
@@ -139,10 +128,12 @@ internal fun BuddyHomeSheet(
         LiveFeedInset {
           RecommendationsTabContent(
             recommendations = homeRecommendations,
+            healthCheckState = healthCheckState,
             nowMs = nowMs,
             onResolve = onResolveHomeRecommendation,
             onDismiss = onDismissHomeRecommendation,
             onMarkRead = onMarkHomeRecommendationRead,
+            onRetryHealthCheck = onRunHealthCheck,
             onOpenUrl = onOpenUrl,
           )
         }
@@ -151,12 +142,6 @@ internal fun BuddyHomeSheet(
         LiveFeedInset { RecordFlowTabContent(onStartRecording = onStartRecording) }
     }
   }
-  HealthCheckDialog(
-    state = healthCheckState,
-    onDismiss = onDismissHealthCheck,
-    onRetry = onRunHealthCheck,
-    onOpenUrl = onOpenUrl,
-  )
 }
 
 @Composable
@@ -261,10 +246,12 @@ internal fun LiveFeedTabContent(
 @Composable
 internal fun RecommendationsTabContent(
   recommendations: List<BuddyHomeRecommendation>,
+  healthCheckState: BuddyHealthCheckState,
   nowMs: Long,
   onResolve: (String) -> Unit,
   onDismiss: (String) -> Unit,
   onMarkRead: (String) -> Unit,
+  onRetryHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
   Text(
@@ -274,39 +261,43 @@ internal fun RecommendationsTabContent(
     color = BuddyInk,
   )
   Spacer(Modifier.height(16.dp))
-  if (recommendations.isEmpty()) {
-    Card(border = CardDefaults.outlinedCardBorder()) {
-      Text(
-        "No recommendations yet.",
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        color = BuddyMuted,
-      )
-    }
-    return
-  }
-
   val context = LocalContext.current
+  val showEmptyRecommendationsCard =
+    recommendations.isEmpty() &&
+      (healthCheckState !is BuddyHealthCheckState.Results ||
+        healthCheckState.response.recommendations.isNotEmpty())
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    recommendations.forEach { recommendation ->
-      val primaryLink = recommendation.seerRunUrl ?: recommendation.primaryLink
-      BuddyRecommendationCard(
-        model = recommendation.toCardModel(nowMs),
-        modifier =
-          Modifier.clickable {
-            onMarkRead(recommendation.id)
-            primaryLink?.let { onOpenUrl(context, it) }
-          },
-        onResolve = if (recommendation.isOpen) ({ onResolve(recommendation.id) }) else null,
-        onDismiss = if (recommendation.isOpen) ({ onDismiss(recommendation.id) }) else null,
-        onOpenLink =
-          primaryLink?.let { link ->
-            {
+    HealthCheckStatusCard(state = healthCheckState, onRetry = onRetryHealthCheck)
+    if (showEmptyRecommendationsCard) {
+      Card(border = CardDefaults.outlinedCardBorder()) {
+        Text(
+          "No recommendations yet.",
+          modifier = Modifier.fillMaxWidth().padding(16.dp),
+          color = BuddyMuted,
+        )
+      }
+    } else {
+      recommendations.forEach { recommendation ->
+        val primaryLink = recommendation.seerRunUrl ?: recommendation.primaryLink
+        BuddyRecommendationCard(
+          model = recommendation.toCardModel(nowMs),
+          modifier =
+            Modifier.clickable {
               onMarkRead(recommendation.id)
-              onOpenUrl(context, link)
-            }
-          },
-        openLinkLabel = openLinkLabelFor(recommendation.seerRunUrl),
-      )
+              primaryLink?.let { onOpenUrl(context, it) }
+            },
+          onResolve = if (recommendation.isOpen) ({ onResolve(recommendation.id) }) else null,
+          onDismiss = if (recommendation.isOpen) ({ onDismiss(recommendation.id) }) else null,
+          onOpenLink =
+            primaryLink?.let { link ->
+              {
+                onMarkRead(recommendation.id)
+                onOpenUrl(context, link)
+              }
+            },
+          openLinkLabel = openLinkLabelFor(recommendation.seerRunUrl),
+        )
+      }
     }
   }
 }
@@ -368,7 +359,6 @@ private fun BuddyHomeSheetPreviewFrame(
       onMarkHomeRecommendationRead = {},
       onSelectHomeTab = {},
       onRunHealthCheck = {},
-      onDismissHealthCheck = {},
       onOpenUrl = { _, _ -> },
     )
   }
