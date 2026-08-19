@@ -28,6 +28,7 @@ import io.sentry.android.buddy.model.BuddyRecordingSummary
 import io.sentry.android.buddy.model.BuddySentryCorrelation
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.model.BuddyTimelineItem
+import io.sentry.android.buddy.model.FlowAction
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
 import io.sentry.android.buddy.model.Recommendation
@@ -277,6 +278,24 @@ internal val previewFlowAnalysis: FlowAnalysisResponse =
     flowId = "sign-in",
     status = AnalysisStatus.COMPLETED,
     title = "Your flow is ready for review.",
+    actions =
+      listOf(
+        FlowAction(
+          id = "generate-dashboard",
+          actionLabel = "Dashboard",
+          description = "Draft a dashboard from this flow recording.",
+        ),
+        FlowAction(
+          id = "generate-monitors",
+          actionLabel = "Monitors",
+          description = "Draft monitors from this flow recording.",
+        ),
+        FlowAction(
+          id = "share-recording-json",
+          actionLabel = "Share JSON",
+          description = "Share the raw flow recording JSON.",
+        ),
+      ),
     recommendations = listOf(previewRecommendation),
     issues =
       listOf(

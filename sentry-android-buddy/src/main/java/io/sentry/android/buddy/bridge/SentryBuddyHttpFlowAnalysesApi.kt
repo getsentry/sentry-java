@@ -9,6 +9,7 @@ import io.sentry.ObjectReader
 import io.sentry.SentryOptions
 import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.AnalysisStatus
+import io.sentry.android.buddy.model.FlowAction
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
 import io.sentry.android.buddy.model.Recommendation
@@ -82,6 +83,15 @@ public constructor(
     return execute(httpRequest, RecommendationActionDeserializer)
   }
 
+  override fun executeFlowAction(flowId: String, actionId: String): FlowAction {
+    val httpRequest =
+      Request.Builder()
+        .url(flowAnalysisUrl(flowId, "actions", actionId, "execute"))
+        .post(ByteArray(0).toRequestBody(null))
+        .build()
+    return execute(httpRequest, FlowActionDeserializer)
+  }
+
   private fun flowAnalysisUrl(vararg pathSegments: String): okhttp3.HttpUrl {
     val builder = baseUrl.toHttpUrl().newBuilder().addPathSegments("v1/flow-analysis")
     pathSegments.forEach { builder.addPathSegment(it) }
@@ -153,6 +163,7 @@ internal object FlowAnalysisResponseDeserializer : JsonDeserializer<FlowAnalysis
     var flowId: String? = null
     var status: AnalysisStatus? = null
     var title: String? = null
+    var actions: List<FlowAction> = emptyList()
     var recommendations: List<Recommendation> = emptyList()
     var issues: List<SentryIssue> = emptyList()
     var error: String? = null
@@ -164,6 +175,7 @@ internal object FlowAnalysisResponseDeserializer : JsonDeserializer<FlowAnalysis
         "flow_id" -> flowId = reader.nextStringOrNull()
         "status" -> status = reader.nextStringOrNull()?.let { AnalysisStatus.valueOf(it) }
         "title" -> title = reader.nextStringOrNull()
+        "actions" -> actions = reader.nextListOrNull(logger, FlowActionDeserializer).orEmpty()
         "recommendations" ->
           recommendations = reader.nextListOrNull(logger, RecommendationDeserializer).orEmpty()
 
@@ -182,10 +194,45 @@ internal object FlowAnalysisResponseDeserializer : JsonDeserializer<FlowAnalysis
       flowId = requireNotNull(flowId) { "flow_id is required" },
       status = requireNotNull(status) { "status is required" },
       title = title,
+      actions = actions,
       recommendations = recommendations,
       issues = issues,
       error = error,
       enrichmentErrors = enrichmentErrors,
+    )
+  }
+}
+
+internal object FlowActionDeserializer : JsonDeserializer<FlowAction> {
+  override fun deserialize(reader: ObjectReader, logger: ILogger): FlowAction {
+    var id: String? = null
+    var actionLabel: String? = null
+    var description: String? = null
+    var link: String? = null
+    var status: ActionStatus = ActionStatus.OPEN
+    var seerRunUrl: String? = null
+
+    reader.beginObject()
+    while (reader.hasNext()) {
+      when (reader.nextName()) {
+        "id" -> id = reader.nextStringOrNull()
+        "action_label" -> actionLabel = reader.nextStringOrNull()
+        "description" -> description = reader.nextStringOrNull()
+        "link" -> link = reader.nextStringOrNull()
+        "status" -> status = reader.nextStringOrNull()?.let { ActionStatus.valueOf(it) } ?: status
+        "seer_run_url" -> seerRunUrl = reader.nextStringOrNull()
+        else -> reader.skipValue()
+      }
+    }
+    reader.endObject()
+
+    return FlowAction(
+      id = requireNotNull(id) { "flow action id is required" },
+      actionLabel = requireNotNull(actionLabel) { "flow action label is required" },
+      description = requireNotNull(description) { "flow action description is required" },
+      link = link,
+      status = status,
+      seerRunUrl = seerRunUrl,
     )
   }
 }

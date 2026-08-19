@@ -58,6 +58,30 @@ public enum class AnalysisStatus(public val value: String) {
 }
 
 @ApiStatus.Experimental
+public data class FlowAction
+@JvmOverloads
+public constructor(
+  public val id: String,
+  public val actionLabel: String,
+  public val description: String,
+  public val link: String? = null,
+  public val status: ActionStatus = ActionStatus.OPEN,
+  public val seerRunUrl: String? = null,
+) : JsonSerializable {
+  @Throws(IOException::class)
+  override fun serialize(writer: ObjectWriter, logger: ILogger) {
+    writer.beginObject()
+    writer.name("id").value(id)
+    writer.name("action_label").value(actionLabel)
+    writer.name("description").value(description)
+    writer.name("link").value(link)
+    writer.name("status").value(status.value)
+    writer.name("seer_run_url").value(seerRunUrl)
+    writer.endObject()
+  }
+}
+
+@ApiStatus.Experimental
 public data class FlowAnalysisResponse
 @JvmOverloads
 public constructor(
@@ -68,6 +92,7 @@ public constructor(
   public val issues: List<SentryIssue> = emptyList(),
   public val error: String? = null,
   public val enrichmentErrors: List<String> = emptyList(),
+  public val actions: List<FlowAction> = emptyList(),
 ) : JsonSerializable {
   @Throws(IOException::class)
   override fun serialize(writer: ObjectWriter, logger: ILogger) {
@@ -75,6 +100,7 @@ public constructor(
     writer.name("flow_id").value(flowId)
     writer.name("status").value(status.value)
     writer.name("title").value(title)
+    writer.name("actions").value(logger, actions)
     writer.name("recommendations").value(logger, recommendations)
     writer.name("issues").value(logger, issues)
     writer.name("error").value(error)
@@ -93,3 +119,6 @@ internal fun FlowAnalysisResponse.withRecommendation(
   copy(
     recommendations = recommendations.map { if (it.id == recommendation.id) recommendation else it }
   )
+
+internal fun FlowAnalysisResponse.withAction(action: FlowAction): FlowAnalysisResponse =
+  copy(actions = actions.map { if (it.id == action.id) action else it })

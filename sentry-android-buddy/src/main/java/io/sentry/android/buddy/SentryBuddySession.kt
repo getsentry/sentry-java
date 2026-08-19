@@ -26,6 +26,7 @@ import io.sentry.android.buddy.model.BuddyRecordingResult
 import io.sentry.android.buddy.model.BuddySdkConfigSnapshot
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.model.BuddyTimelineItem
+import io.sentry.android.buddy.model.FlowAction
 import io.sentry.android.buddy.model.FlowAnalysisEvent
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
@@ -34,6 +35,7 @@ import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.model.toHomeRecommendations
+import io.sentry.android.buddy.model.withAction
 import io.sentry.android.buddy.model.withRecommendation
 import io.sentry.android.buddy.ui.bottomsheet.attentionCardItem
 import java.util.Locale
@@ -439,6 +441,17 @@ public constructor(
     knownFlowIds.toList().forEach { flowId -> refreshFlowAnalysisOrStoreError(flowId) }
   }
 
+  public fun executeFlowAction(actionId: String) {
+    val insightsState = state as? SentryBuddySessionState.Insights ?: return
+    try {
+      clearRecommendationError()
+      val executed = flowAnalysesApi.executeFlowAction(insightsState.request.flowId, actionId)
+      applyTopLevelFlowAction(insightsState.request.flowId, executed)
+    } catch (exception: IllegalStateException) {
+      setRecommendationError(exception.message ?: "Failed to execute the action.")
+    }
+  }
+
   internal fun runPendingHealthCheck() {
     if (!hasPendingHealthCheck) {
       return
@@ -728,6 +741,21 @@ public constructor(
     updateHomeRecommendation("flow-analysis:$recommendationId") {
       it.copy(actions = it.actions.replacing(executed), unread = false, updatedAtMs = clock())
     }
+  }
+
+  private fun applyTopLevelFlowAction(flowId: String, executed: FlowAction) {
+    val insightsState = state as? SentryBuddySessionState.Insights ?: return
+    if (insightsState.request.flowId != flowId) {
+      return
+    }
+    val analysis = insightsState.analysis.withAction(executed)
+    state =
+      insightsState
+        .copy(
+          analysis = analysis,
+          response = analysis.toBuddyAnalysisResponse(insightsState.request),
+        )
+        .also { latestSeenInsightsState = it }
   }
 
   private fun currentFlowRecommendation(flowId: String, recommendationId: String): Recommendation? {

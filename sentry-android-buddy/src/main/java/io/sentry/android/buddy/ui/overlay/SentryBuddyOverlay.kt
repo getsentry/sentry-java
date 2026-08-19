@@ -225,6 +225,7 @@ internal fun SentryBuddyOverlayContent(
       nowMs = nowMs,
       onDispatch = { dispatch(it) },
       onAnalyze = { dispatchAnalysis { analyze() } },
+      onExecuteFlowAction = { actionId -> dispatchAnalysis { executeFlowAction(actionId) } },
       onExecuteRecommendationAction = { recommendationId, actionId ->
         dispatchAnalysis { executeRecommendationAction(recommendationId, actionId) }
       },

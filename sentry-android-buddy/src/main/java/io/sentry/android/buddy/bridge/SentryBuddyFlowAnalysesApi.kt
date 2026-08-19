@@ -2,12 +2,14 @@ package io.sentry.android.buddy.bridge
 
 import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.AnalysisStatus
+import io.sentry.android.buddy.model.FlowAction
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
 import io.sentry.android.buddy.model.Recommendation
 import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
+import io.sentry.android.buddy.model.withAction
 import io.sentry.android.buddy.model.withRecommendation
 import org.jetbrains.annotations.ApiStatus
 
@@ -34,6 +36,12 @@ public interface SentryBuddyFlowAnalysesApi {
     recommendationId: String,
     actionId: String,
   ): RecommendationAction
+
+  /**
+   * Models `POST /v1/flow-analysis/{flowId}/actions/{actionId}/execute`, which starts the Seer run
+   * for a whole-flow action and answers with the executed action only.
+   */
+  public fun executeFlowAction(flowId: String, actionId: String): FlowAction
 }
 
 @ApiStatus.Experimental
@@ -87,11 +95,25 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
     return executed
   }
 
+  override fun executeFlowAction(flowId: String, actionId: String): FlowAction {
+    val analysis = get(flowId)
+    val executed =
+      analysis.actions
+        .first { it.id == actionId }
+        .copy(
+          status = ActionStatus.EXECUTED,
+          seerRunUrl = "https://sentry.io/seer/runs/$actionId",
+        )
+    analyses[flowId] = analysis.withAction(executed)
+    return executed
+  }
+
   private fun completedAnalysis(request: FlowAnalysisRequest): FlowAnalysisResponse {
     return FlowAnalysisResponse(
       flowId = request.flowId,
       status = AnalysisStatus.COMPLETED,
       title = "Your flow is ready for review.",
+      actions = defaultFlowActions(),
       recommendations =
         listOf(
           Recommendation(
@@ -141,4 +163,23 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
         ),
     )
   }
+
+  private fun defaultFlowActions(): List<FlowAction> =
+    listOf(
+      FlowAction(
+        id = "generate-dashboard",
+        actionLabel = "Dashboard",
+        description = "Start a Seer run that drafts a dashboard from this flow recording.",
+      ),
+      FlowAction(
+        id = "generate-monitors",
+        actionLabel = "Monitors",
+        description = "Start a Seer run that drafts monitors from this flow recording.",
+      ),
+      FlowAction(
+        id = "share-recording-json",
+        actionLabel = "Share JSON",
+        description = "Share the raw flow recording JSON.",
+      ),
+    )
 }

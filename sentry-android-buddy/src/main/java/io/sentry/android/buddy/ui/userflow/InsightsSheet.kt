@@ -1,6 +1,9 @@
 package io.sentry.android.buddy.ui.userflow
 
+import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.SentryBuddySessionController
 import io.sentry.android.buddy.SentryBuddySessionState
 import io.sentry.android.buddy.model.BuddySentryUiLinks
+import io.sentry.android.buddy.model.FlowAction
 import io.sentry.android.buddy.ui.common.BuddyButtonText
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCardStyle
@@ -59,6 +63,7 @@ internal fun InsightsSheet(
   sentryUiLinks: BuddySentryUiLinks,
   recommendationError: String?,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
+  onExecuteFlowAction: (String) -> Unit,
   onExecuteRecommendationAction: (String, String) -> Unit,
   onDismissRecommendation: (String) -> Unit,
   onOpenUrl: (Context, String) -> Unit,
@@ -88,6 +93,15 @@ internal fun InsightsSheet(
       BuddyGold,
     )
   }
+  FlowActionRow(
+    actions =
+      state.analysis.actions.toPermaActionModels(
+        context = context,
+        recordingJson = state.result.recordingJson,
+        onExecuteFlowAction = onExecuteFlowAction,
+        onOpenUrl = onOpenUrl,
+      )
+  )
   Text(state.response.summary, color = BuddyMuted)
   Text(
     "Recommendations",
@@ -180,9 +194,78 @@ private fun InsightsSheetPreview() {
       sentryUiLinks = previewSentryUiLinks,
       recommendationError = null,
       onDispatch = {},
+      onExecuteFlowAction = {},
       onExecuteRecommendationAction = { _, _ -> },
       onDismissRecommendation = {},
       onOpenUrl = { _, _ -> },
     )
   }
 }
+
+@Composable
+private fun FlowActionRow(actions: List<BuddyFlowActionModel>) {
+  if (actions.isEmpty()) {
+    return
+  }
+  Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    actions.forEach { action ->
+      OutlinedButton(
+        modifier = Modifier.weight(1f).height(48.dp),
+        onClick = action.onClick,
+      ) {
+        BuddyButtonText(action.label)
+      }
+    }
+  }
+}
+
+private data class BuddyFlowActionModel(val label: String, val onClick: () -> Unit)
+
+private fun List<FlowAction>.toPermaActionModels(
+  context: Context,
+  recordingJson: String,
+  onExecuteFlowAction: (String) -> Unit,
+  onOpenUrl: (Context, String) -> Unit,
+): List<BuddyFlowActionModel> =
+  mapNotNull { action ->
+      when (action.id) {
+        FLOW_ACTION_GENERATE_DASHBOARD,
+        FLOW_ACTION_GENERATE_MONITORS ->
+          BuddyFlowActionModel(action.actionLabel) {
+            val link = action.seerRunUrl ?: action.link
+            if (link != null) {
+              onOpenUrl(context, link)
+            } else {
+              onExecuteFlowAction(action.id)
+            }
+          }
+
+        FLOW_ACTION_SHARE_RECORDING_JSON ->
+          BuddyFlowActionModel(action.actionLabel) { shareRecordingJson(context, recordingJson) }
+
+        else -> null
+      }
+    }
+    .take(MAX_FLOW_ACTIONS)
+
+private fun shareRecordingJson(context: Context, recordingJson: String) {
+  val sendIntent =
+    Intent(Intent.ACTION_SEND).apply {
+      type = "text/plain"
+      putExtra(Intent.EXTRA_TEXT, recordingJson)
+    }
+  val chooser = Intent.createChooser(sendIntent, "Share flow JSON")
+  if (context !is Activity) {
+    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+  }
+  try {
+    context.startActivity(chooser)
+  } catch (_: ActivityNotFoundException) {
+    // Buddy is a debug overlay. A missing share target should not disrupt the recorded flow.
+  }
+}
+
+private const val FLOW_ACTION_GENERATE_DASHBOARD = "generate-dashboard"
+private const val FLOW_ACTION_GENERATE_MONITORS = "generate-monitors"
+private const val FLOW_ACTION_SHARE_RECORDING_JSON = "share-recording-json"
+private const val MAX_FLOW_ACTIONS = 3

@@ -182,6 +182,28 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
+  fun `executing a flow action updates the insights state`() {
+    val flowAnalysesApi = FakeFlowAnalysesApi()
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        flowAnalysesApi = flowAnalysesApi,
+      )
+
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.analyze()
+    controller.executeFlowAction("generate-dashboard")
+
+    assertThat(flowAnalysesApi.executedFlowActionIds).containsExactly("generate-dashboard")
+    val state = controller.state as SentryBuddySessionState.Insights
+    val action = state.analysis.actions.first { it.id == "generate-dashboard" }
+    assertThat(action.status).isEqualTo(ActionStatus.EXECUTED)
+    assertThat(action.seerRunUrl).isEqualTo("https://sentry.io/seer/runs/generate-dashboard")
+  }
+
+  @Test
   fun `home action execution updates aggregate recommendation state`() {
     var nowMs = 100L
     val flowAnalysesApi = FakeFlowAnalysesApi()
@@ -533,6 +555,25 @@ class SentryBuddySessionControllerTest {
     val polledIds = mutableListOf<String>()
     val dismissedRecommendationIds = mutableListOf<String>()
     val executedActionIds = mutableListOf<String>()
+    val executedFlowActionIds = mutableListOf<String>()
+    private var flowActions =
+      listOf(
+        FlowAction(
+          id = "generate-dashboard",
+          actionLabel = "Dashboard",
+          description = "Draft a dashboard from the flow recording.",
+        ),
+        FlowAction(
+          id = "generate-monitors",
+          actionLabel = "Monitors",
+          description = "Draft monitors from the flow recording.",
+        ),
+        FlowAction(
+          id = "share-recording-json",
+          actionLabel = "Share JSON",
+          description = "Share the raw flow recording JSON.",
+        ),
+      )
     private var recommendations =
       listOf(
         Recommendation(
@@ -568,6 +609,7 @@ class SentryBuddySessionControllerTest {
         flowId = flowId,
         status = status,
         title = if (status == AnalysisStatus.COMPLETED) "Summary" else null,
+        actions = if (status == AnalysisStatus.COMPLETED) flowActions else emptyList(),
         recommendations = if (status == AnalysisStatus.COMPLETED) recommendations else emptyList(),
       )
     }
@@ -610,6 +652,20 @@ class SentryBuddySessionControllerTest {
           )
         }
       }
+      return executed
+    }
+
+    override fun executeFlowAction(flowId: String, actionId: String): FlowAction {
+      actionFailure?.let { throw it }
+      executedFlowActionIds += actionId
+      val executed =
+        flowActions
+          .first { it.id == actionId }
+          .copy(
+            status = ActionStatus.EXECUTED,
+            seerRunUrl = "https://sentry.io/seer/runs/$actionId",
+          )
+      flowActions = flowActions.map { if (it.id == executed.id) executed else it }
       return executed
     }
   }

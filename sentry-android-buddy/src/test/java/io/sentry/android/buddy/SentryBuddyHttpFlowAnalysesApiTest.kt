@@ -49,6 +49,13 @@ class SentryBuddyHttpFlowAnalysesApiTest {
             "flow_id": "flow-1",
             "status": "COMPLETED",
             "title": "Checkout flow",
+            "actions": [{
+              "id": "generate-dashboard",
+              "action_label": "Dashboard",
+              "description": "Draft a dashboard.",
+              "status": "OPEN",
+              "seer_run_url": null
+            }],
             "recommendations": [{
               "id": "rec-1",
               "title": "Add spans",
@@ -84,6 +91,8 @@ class SentryBuddyHttpFlowAnalysesApiTest {
 
     assertThat(response.status).isEqualTo(AnalysisStatus.COMPLETED)
     assertThat(response.title).isEqualTo("Checkout flow")
+    assertThat(response.actions.single().id).isEqualTo("generate-dashboard")
+    assertThat(response.actions.single().actionLabel).isEqualTo("Dashboard")
     assertThat(response.recommendations.single().severity).isEqualTo(Severity.HIGH)
     val action = response.recommendations.single().actions.single()
     assertThat(action.id).isEqualTo("act-1")
@@ -92,6 +101,36 @@ class SentryBuddyHttpFlowAnalysesApiTest {
     assertThat(response.issues.single().id).isEqualTo("issue-1")
     assertThat(response.enrichmentErrors).containsExactly("IssueEnrichment: boom")
     assertThat(server.takeRequest().path).isEqualTo("/v1/flow-analysis/flow-1")
+  }
+
+  @Test
+  fun `execute flow action posts to bridge execute endpoint and parses the action`() {
+    server.enqueue(
+      MockResponse()
+        .setResponseCode(200)
+        .setBody(
+          """
+          {
+            "id": "generate-dashboard",
+            "action_label": "Dashboard",
+            "description": "Draft a dashboard.",
+            "status": "EXECUTED",
+            "seer_run_url": "https://sentry.io/seer/runs/1"
+          }
+          """
+            .trimIndent()
+        )
+    )
+    val api = SentryBuddyHttpFlowAnalysesApi(server.url("/").toString())
+
+    val executed = api.executeFlowAction("flow-1", "generate-dashboard")
+
+    assertThat(executed.status).isEqualTo(ActionStatus.EXECUTED)
+    assertThat(executed.seerRunUrl).isEqualTo("https://sentry.io/seer/runs/1")
+    val request = server.takeRequest()
+    assertThat(request.method).isEqualTo("POST")
+    assertThat(request.path)
+      .isEqualTo("/v1/flow-analysis/flow-1/actions/generate-dashboard/execute")
   }
 
   @Test
