@@ -730,8 +730,8 @@ private fun TravelScaffold(
         text = {
           Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-              "Permanent demo bindings: Search destinations captures an exception, Build itinerary " +
-                "creates a slow DB span, and Reserve this stay creates a slow HTTP span.",
+              "Permanent demo bindings:\n\"Search Destinations\" captures an exception; \"Build Itinerary\" " +
+                "creates a slow DB span; and \"Reserve This Stay\" creates a slow HTTP span.",
               color = TravelStamp,
             )
             Text(
