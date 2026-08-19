@@ -271,7 +271,7 @@ internal fun BuddyZapABug(modifier: Modifier = Modifier) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
           Text(
             text = "Hit: ${board.hits}",
-            color = BuddyMuted,
+            color = BuddySeerSweatshirtPink,
             style = MaterialTheme.typography.bodyMedium,
           )
           Text(

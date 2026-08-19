@@ -55,6 +55,7 @@ import io.sentry.android.buddy.ui.common.BuddyRecommendationCardStyle
 import io.sentry.android.buddy.ui.common.BuddyRecommendationErrorCard
 import io.sentry.android.buddy.ui.common.SheetTitle
 import io.sentry.android.buddy.ui.common.openLinkLabelFor
+import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
@@ -359,6 +360,16 @@ internal fun RecordFlowTabContent(
   ) {
     BuddyButtonText("Start Recording")
   }
+  Text(
+    "The panel closes so you can navigate freely. Tap the bubble to stop and review the captured flow.",
+    modifier = Modifier.fillMaxWidth(),
+    textAlign = TextAlign.Center,
+    color = BuddyMuted,
+  )
+  Surface(
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp).height(1.dp),
+    color = BuddyBorder,
+  ) {}
   OutlinedButton(
     modifier = Modifier.fillMaxWidth().height(56.dp),
     onClick = onOpenLatestInsights,
@@ -366,12 +377,6 @@ internal fun RecordFlowTabContent(
   ) {
     BuddyButtonText("See latest flow insights")
   }
-  Text(
-    "The panel closes so you can navigate freely. Tap the bubble to stop and review the captured flow.",
-    modifier = Modifier.fillMaxWidth(),
-    textAlign = TextAlign.Center,
-    color = BuddyMuted,
-  )
 }
 
 @Composable

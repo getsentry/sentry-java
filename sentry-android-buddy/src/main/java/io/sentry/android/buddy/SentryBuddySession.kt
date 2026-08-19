@@ -626,10 +626,12 @@ public constructor(
       return
     }
     state =
-      insightsState.copy(
-        analysis = analysis,
-        response = analysis.toBuddyAnalysisResponse(insightsState.request),
-      ).also { latestSeenInsightsState = it }
+      insightsState
+        .copy(
+          analysis = analysis,
+          response = analysis.toBuddyAnalysisResponse(insightsState.request),
+        )
+        .also { latestSeenInsightsState = it }
   }
 
   /**
@@ -685,10 +687,12 @@ public constructor(
     }
     val analysis = insightsState.analysis.withRecommendation(updated)
     state =
-      insightsState.copy(
-        analysis = analysis,
-        response = analysis.toBuddyAnalysisResponse(insightsState.request),
-      ).also { latestSeenInsightsState = it }
+      insightsState
+        .copy(
+          analysis = analysis,
+          response = analysis.toBuddyAnalysisResponse(insightsState.request),
+        )
+        .also { latestSeenInsightsState = it }
   }
 
   private fun applyFlowAction(
