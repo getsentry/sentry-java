@@ -54,6 +54,7 @@ import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
+import io.sentry.android.buddy.ui.common.theme.BuddyPurple
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
 import io.sentry.android.buddy.ui.common.theme.BuddyReplayBlueHighlight
 import io.sentry.android.buddy.ui.common.theme.severityColor
@@ -411,6 +412,7 @@ private fun RecommendationPerformanceSection(
             onClick = { onOpenLink(link) },
             emphasis = BuddyRecommendationPillEmphasis.SECONDARY,
             icon = Icons.open_in_new,
+            accentColor = BuddyPurple
           )
         }
       }

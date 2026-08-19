@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Inverse of @anim/buddy_blink_hold: snaps to the end value in the first 6% of the cycle, then
+     holds it. Paired with repeatMode="reverse", the held value is what you see almost always and
+     the snap only shows up at the cycle seam, which turns one animator into "pop open, stare,
+     blink once, stare". -->
+<pathInterpolator xmlns:android="http://schemas.android.com/apk/res/android"
+  android:pathData="M 0,0 C 0.008,0.62 0.024,1 0.06,1 L 1,1" />

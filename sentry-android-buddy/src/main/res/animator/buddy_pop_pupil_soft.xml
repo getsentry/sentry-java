@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Soft pupil layer counterpart of @animator/buddy_pop_pupil. -->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+  android:duration="2600"
+  android:interpolator="@anim/buddy_snap_hold"
+  android:propertyName="fillAlpha"
+  android:repeatCount="infinite"
+  android:repeatMode="reverse"
+  android:valueFrom="0"
+  android:valueTo="0.38391225"
+  android:valueType="floatType" />

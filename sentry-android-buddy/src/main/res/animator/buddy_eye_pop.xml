@@ -1,8 +1,17 @@
-<?xml version="1.0" encoding="utf-8"?><!-- bd-shut: one blink every 7s. Morphs the eyelid path instead of scaling the "eye" group, so the outline keeps its stroke width while the eye closes. valueFrom must stay identical to the eyeball path in ic_buddy_eye.xml, and both values must keep the same node types (M, C, C, Z) or the morph cannot be inflated. -->
+<?xml version="1.0" encoding="utf-8"?><!-- bd-pop: the lid snaps wide and stays wide, with a blink roughly every 5s. Morphs the eyelid
+     path instead of scaling the "eye" group, so the outline keeps its stroke width. valueFrom is
+     the shut lid of @animator/buddy_blink, valueTo widens it past the resting shape in
+     ic_buddy_eye.xml: the lower lid drops and the upper lid retracts, which is what reads as
+     "wide-eyed". All three paths must keep the same node types (M, C, C, Z) or the morph cannot be
+     inflated. @anim/buddy_snap_hold plus repeatMode="reverse" gives 156ms to open, ~4.9s wide,
+     then a 156ms shut/156ms open blink at the seam. @animator/buddy_pop_pupil fades the pupil on
+     the same curve so it does not float over a shut lid. -->
 <objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
-  android:duration="200"
-  android:interpolator="@android:anim/linear_interpolator"
+  android:duration="2600"
+  android:interpolator="@anim/buddy_snap_hold"
   android:propertyName="pathData"
-  android:valueFrom="M 7.0824898,14.7623 C 7.0824898,14.7623 13.374241,17.101241 18.847364,14.69213 C 16.672148,8.5173174 10.052945,7.6285196 7.0824898,14.7623 Z"
-  android:valueTo="M 7.0824898,14.7623 C 7.0824898,14.7623 12.651509,20.088532 18.847364,14.69213 C 16.672148,8.5173174 10.052945,7.6285196 7.0824898,14.7623 Z"
+  android:repeatCount="infinite"
+  android:repeatMode="reverse"
+  android:valueFrom="M 7.0824898,14.7623 C 7.0824898,14.7623 13.374241,17.101241 18.847364,14.69213 C 15.467595,12.564616 10.486584,12.591278 7.0824898,14.7623 Z"
+  android:valueTo="M 7.0824898,14.7623 C 7.0824898,14.7623 12.651509,20.088532 18.847364,14.69213 C 16.672148,7.8973174 10.052945,7.0085196 7.0824898,14.7623 Z"
   android:valueType="pathType" />

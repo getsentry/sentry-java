@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?><!-- bd-shake: the fine tremor of a tense eye. Only the fast, small component lives here; the
+     large slow movement is the pupil's saccades in @animator/buddy_dilate, which compose with
+     this because "pupil" is a child of the "eye" group. Layering a second slow animator on this
+     group instead would not add to the tremor, it would fight it for the same setter.
+     The three properties carry a different number of keyframes (15/11/10) on purpose, so the axes
+     drift out of phase and the 470ms cycle never repeats the same pose. Amplitudes are viewport
+     units (viewport is 26), so 0.3 stays under a stroke width, and the rotation does the visible
+     work: at the lid edge 2.2deg is a bigger excursion than the translation, and it varies across
+     the shape the way a real wobble does. Linear on every keyframe - easing each 30ms step turns
+     a tremor into a wobble. -->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+  android:duration="470"
+  android:interpolator="@android:anim/linear_interpolator"
+  android:repeatCount="infinite"
+  android:valueType="floatType">
+  <propertyValuesHolder android:propertyName="translateX">
+    <keyframe
+      android:fraction="0"
+      android:value="0" />
+    <keyframe
+      android:fraction="0.07"
+      android:value="0.22" />
+    <keyframe
+      android:fraction="0.14"
+      android:value="-0.16" />
+    <keyframe
+      android:fraction="0.2"
+      android:value="0.29" />
+    <keyframe
+      android:fraction="0.28"
+      android:value="-0.24" />
+    <keyframe
+      android:fraction="0.35"
+      android:value="0.13" />
+    <keyframe
+      android:fraction="0.43"
+      android:value="-0.3" />
+    <keyframe
+      android:fraction="0.5"
+      android:value="0.26" />
+    <keyframe
+      android:fraction="0.58"
+      android:value="-0.11" />
+    <keyframe
+      android:fraction="0.65"
+      android:value="0.3" />
+    <keyframe
+      android:fraction="0.73"
+      android:value="-0.27" />
+    <keyframe
+      android:fraction="0.81"
+      android:value="0.17" />
+    <keyframe
+      android:fraction="0.89"
+      android:value="-0.21" />
+    <keyframe
+      android:fraction="0.95"
+      android:value="0.09" />
+    <keyframe
+      android:fraction="1"
+      android:value="0" />
+  </propertyValuesHolder>
+
+  <propertyValuesHolder android:propertyName="translateY">
+    <keyframe
+      android:fraction="0"
+      android:value="0" />
+    <keyframe
+      android:fraction="0.09"
+      android:value="-0.15" />
+    <keyframe
+      android:fraction="0.19"
+      android:value="0.11" />
+    <keyframe
+      android:fraction="0.3"
+      android:value="-0.2" />
+    <keyframe
+      android:fraction="0.41"
+      android:value="0.16" />
+    <keyframe
+      android:fraction="0.52"
+      android:value="-0.09" />
+    <keyframe
+      android:fraction="0.63"
+      android:value="0.19" />
+    <keyframe
+      android:fraction="0.74"
+      android:value="-0.17" />
+    <keyframe
+      android:fraction="0.85"
+      android:value="0.12" />
+    <keyframe
+      android:fraction="0.93"
+      android:value="-0.07" />
+    <keyframe
+      android:fraction="1"
+      android:value="0" />
+  </propertyValuesHolder>
+
+  <propertyValuesHolder android:propertyName="rotation">
+    <keyframe
+      android:fraction="0"
+      android:value="0" />
+    <keyframe
+      android:fraction="0.11"
+      android:value="-1.6" />
+    <keyframe
+      android:fraction="0.23"
+      android:value="2.1" />
+    <keyframe
+      android:fraction="0.34"
+      android:value="-0.9" />
+    <keyframe
+      android:fraction="0.46"
+      android:value="1.8" />
+    <keyframe
+      android:fraction="0.57"
+      android:value="-2.2" />
+    <keyframe
+      android:fraction="0.69"
+      android:value="1.2" />
+    <keyframe
+      android:fraction="0.8"
+      android:value="-1.7" />
+    <keyframe
+      android:fraction="0.91"
+      android:value="0.8" />
+    <keyframe
+      android:fraction="1"
+      android:value="0" />
+  </propertyValuesHolder>
+</objectAnimator>

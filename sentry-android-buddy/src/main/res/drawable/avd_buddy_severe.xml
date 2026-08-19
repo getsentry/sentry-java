@@ -1,11 +1,26 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Severe: pupil dilates fast. The red bubble face carries the severity, so the glyph is the base white eye. -->
+<?xml version="1.0" encoding="utf-8"?><!-- Severe: a wide-eyed, trembling stare. The red bubble face carries the severity, so the glyph
+     is the base white eye. Four layers, each on its own period so the loop is hard to read:
+     the lid pops wide and blinks (2600ms), the eye group trembles (470ms), and the pupil sits
+     dilated while it darts between fixations (2190ms). -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
   android:drawable="@drawable/ic_buddy_eye">
+  <target
+    android:name="eyeball"
+    android:animation="@animator/buddy_eye_pop" />
+
+  <target
+    android:name="eye"
+    android:animation="@animator/buddy_eye_shake" />
+
   <target
     android:name="pupil"
     android:animation="@animator/buddy_dilate" />
 
   <target
-    android:name="eyeball"
-    android:animation="@animator/buddy_eye_pop" />
+    android:name="pupil_dot"
+    android:animation="@animator/buddy_pop_pupil" />
+
+  <target
+    android:name="pupil_dot_soft"
+    android:animation="@animator/buddy_pop_pupil_soft" />
 </animated-vector>

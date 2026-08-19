@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Fades pupil_dot in as the lid pops open and out again while it blinks. Timing mirrors
+     @animator/buddy_eye_pop. -->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+  android:duration="2600"
+  android:interpolator="@anim/buddy_snap_hold"
+  android:propertyName="fillAlpha"
+  android:repeatCount="infinite"
+  android:repeatMode="reverse"
+  android:valueFrom="0"
+  android:valueTo="0.5393053"
+  android:valueType="floatType" />

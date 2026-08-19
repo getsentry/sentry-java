@@ -1,49 +1,244 @@
-<?xml version="1.0" encoding="utf-8"?><!-- bd-dilate: fast pupil dilation. Severe errors only. -->
+<?xml version="1.0" encoding="utf-8"?><!-- bd-dilate: what the pupil does while the error is severe. Three behaviours in one animator
+     because two ObjectAnimators on the same property would fight over the setter instead of
+     adding up:
+     - translateX/Y are saccades, not a smooth glance. Real eyes jump and then fixate, so the
+       value sits still and then crosses to the next fixation in 45ms. Dwell times and targets are
+       both uneven, otherwise the loop is legible as a loop.
+     - scaleX/Y hold a dilated 1.3 baseline and ripple around it (hippus). A pupil never pulses
+       1.0 -> 1.35 -> 1.0 in a rhythm; it stays wide and quivers.
+     - the negative translateY baseline keeps the pupil high in the socket, where the widened lid
+       of @animator/buddy_eye_pop puts the visual centre.
+     The 2190ms period is deliberately not a multiple of the 470ms tremor in
+     @animator/buddy_eye_shake or the 2600ms lid cycle, so the three never line up twice. -->
 <objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
-  android:duration="700"
+  android:duration="2190"
   android:repeatCount="infinite"
   android:valueType="floatType">
-  <propertyValuesHolder android:propertyName="translationY">
+  <propertyValuesHolder android:propertyName="translateX">
     <keyframe
       android:fraction="0"
-      android:interpolator="@anim/buddy_ease_smooth"
-      android:value="-1" />
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-0.2" />
     <keyframe
-      android:fraction="0.5"
-      android:interpolator="@anim/buddy_ease_smooth"
-      android:value="-2" />
+      android:fraction="0.110"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-0.2" />
+    <keyframe
+      android:fraction="0.131"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.5" />
+    <keyframe
+      android:fraction="0.320"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="1.5" />
+    <keyframe
+      android:fraction="0.341"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="-1.35" />
+    <keyframe
+      android:fraction="0.440"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.35" />
+    <keyframe
+      android:fraction="0.461"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="0.95" />
+    <keyframe
+      android:fraction="0.660"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0.95" />
+    <keyframe
+      android:fraction="0.681"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="-0.9" />
+    <keyframe
+      android:fraction="0.820"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-0.9" />
+    <keyframe
+      android:fraction="0.841"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="0.5" />
+    <keyframe
+      android:fraction="0.930"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="0.5" />
+    <keyframe
+      android:fraction="0.951"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="-0.2" />
     <keyframe
       android:fraction="1"
-      android:interpolator="@anim/buddy_ease_smooth"
-      android:value="-1" />
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-0.2" />
+  </propertyValuesHolder>
+
+  <propertyValuesHolder android:propertyName="translateY">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.2" />
+    <keyframe
+      android:fraction="0.110"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.2" />
+    <keyframe
+      android:fraction="0.131"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="-1.55" />
+    <keyframe
+      android:fraction="0.320"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.55" />
+    <keyframe
+      android:fraction="0.341"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="-0.95" />
+    <keyframe
+      android:fraction="0.440"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-0.95" />
+    <keyframe
+      android:fraction="0.461"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="-1.5" />
+    <keyframe
+      android:fraction="0.660"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.5" />
+    <keyframe
+      android:fraction="0.681"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="-1.05" />
+    <keyframe
+      android:fraction="0.820"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.05" />
+    <keyframe
+      android:fraction="0.841"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="-1.35" />
+    <keyframe
+      android:fraction="0.930"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.35" />
+    <keyframe
+      android:fraction="0.951"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="-1.2" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@android:anim/linear_interpolator"
+      android:value="-1.2" />
   </propertyValuesHolder>
 
   <propertyValuesHolder android:propertyName="scaleX">
     <keyframe
       android:fraction="0"
       android:interpolator="@anim/buddy_ease_smooth"
-      android:value="1" />
+      android:value="1.3" />
     <keyframe
-      android:fraction="0.5"
+      android:fraction="0.09"
       android:interpolator="@anim/buddy_ease_smooth"
-      android:value="1.35" />
+      android:value="1.36" />
+    <keyframe
+      android:fraction="0.17"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.27" />
+    <keyframe
+      android:fraction="0.26"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.34" />
+    <keyframe
+      android:fraction="0.35"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.24" />
+    <keyframe
+      android:fraction="0.44"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.33" />
+    <keyframe
+      android:fraction="0.52"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.29" />
+    <keyframe
+      android:fraction="0.61"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.37" />
+    <keyframe
+      android:fraction="0.7"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.26" />
+    <keyframe
+      android:fraction="0.78"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.32" />
+    <keyframe
+      android:fraction="0.87"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.28" />
+    <keyframe
+      android:fraction="0.94"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.34" />
     <keyframe
       android:fraction="1"
-      android:interpolator="@anim/buddy_ease_smooth"
-      android:value="1" />
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.3" />
   </propertyValuesHolder>
+
   <propertyValuesHolder android:propertyName="scaleY">
     <keyframe
       android:fraction="0"
       android:interpolator="@anim/buddy_ease_smooth"
-      android:value="1" />
+      android:value="1.3" />
     <keyframe
-      android:fraction="0.5"
+      android:fraction="0.09"
       android:interpolator="@anim/buddy_ease_smooth"
-      android:value="1.35" />
+      android:value="1.36" />
+    <keyframe
+      android:fraction="0.17"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.27" />
+    <keyframe
+      android:fraction="0.26"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.34" />
+    <keyframe
+      android:fraction="0.35"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.24" />
+    <keyframe
+      android:fraction="0.44"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.33" />
+    <keyframe
+      android:fraction="0.52"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.29" />
+    <keyframe
+      android:fraction="0.61"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.37" />
+    <keyframe
+      android:fraction="0.7"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.26" />
+    <keyframe
+      android:fraction="0.78"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.32" />
+    <keyframe
+      android:fraction="0.87"
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.28" />
+    <keyframe
+      android:fraction="0.94"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="1.34" />
     <keyframe
       android:fraction="1"
-      android:interpolator="@anim/buddy_ease_smooth"
-      android:value="1" />
+      android:interpolator="@anim/buddy_ease_out"
+      android:value="1.3" />
   </propertyValuesHolder>
 </objectAnimator>
