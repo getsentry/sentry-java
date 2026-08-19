@@ -226,6 +226,15 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `foreground before register does nothing`() {
+    val replay = fixture.getSut(context)
+
+    replay.onAppForegrounded(true)
+
+    assertThat(replay.isRecording).isFalse()
+  }
+
+  @Test
   fun `start sets isRecording to true`() {
     val captureStrategy = mock<CaptureStrategy>()
     val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
