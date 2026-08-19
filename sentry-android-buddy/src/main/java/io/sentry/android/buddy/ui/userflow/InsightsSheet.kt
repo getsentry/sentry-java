@@ -1,6 +1,7 @@
 package io.sentry.android.buddy.ui.userflow
 
 import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import io.sentry.android.buddy.SentryBuddySessionState
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.ui.common.BuddyButtonText
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
+import io.sentry.android.buddy.ui.common.BuddyRecommendationCardStyle
 import io.sentry.android.buddy.ui.common.BuddyRecommendationErrorCard
 import io.sentry.android.buddy.ui.common.MetricCard
 import io.sentry.android.buddy.ui.common.SheetTitle
@@ -111,8 +113,13 @@ internal fun InsightsSheet(
       state.response.recommendations.forEach { recommendation ->
         key(recommendation.id) {
           val seerRunUrl = recommendation.seerRunUrl()
+          val primaryLink = seerRunUrl ?: recommendation.link
           BuddyRecommendationCard(
             model = recommendation.toCardModel(),
+            modifier =
+              primaryLink?.let { link ->
+                Modifier.clickable { onOpenUrl(context, link) }
+              } ?: Modifier,
             actions =
               if (recommendation.isOpen()) {
                 recommendation.actions.toActionModels(
@@ -131,8 +138,10 @@ internal fun InsightsSheet(
                 null
               },
             onOpenLink =
-              (seerRunUrl ?: recommendation.link)?.let { link -> { onOpenUrl(context, link) } },
+              primaryLink?.let { link -> { onOpenUrl(context, link) } },
             openLinkLabel = openLinkLabelFor(seerRunUrl),
+            detailsLabel = "Details",
+            style = BuddyRecommendationCardStyle.ACTION_INBOX,
           )
         }
       }
