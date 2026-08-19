@@ -136,7 +136,7 @@ internal fun AttentionCard(
         if (swipeProgress > 0f) {
           ((swipeProgress - 0.5f) / 0.5f).coerceIn(0f, 1f)
         } else {
-          1f - contentAlpha.value
+          0f
         }
       Box(modifier = Modifier.matchParentSize().graphicsLayer { alpha = artAlpha }) {
         EmptyAttentionArt(
