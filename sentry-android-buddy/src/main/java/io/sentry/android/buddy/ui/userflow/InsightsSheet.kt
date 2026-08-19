@@ -1,8 +1,8 @@
 package io.sentry.android.buddy.ui.userflow
 
 import android.content.Context
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -137,8 +137,7 @@ internal fun InsightsSheet(
               } else {
                 null
               },
-            onOpenLink =
-              primaryLink?.let { link -> { onOpenUrl(context, link) } },
+            onOpenLink = primaryLink?.let { link -> { onOpenUrl(context, link) } },
             openLinkLabel = openLinkLabelFor(seerRunUrl),
             detailsLabel = "Details",
             style = BuddyRecommendationCardStyle.ACTION_INBOX,

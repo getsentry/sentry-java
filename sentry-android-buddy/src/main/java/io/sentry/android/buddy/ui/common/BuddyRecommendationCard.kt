@@ -145,6 +145,7 @@ internal fun BuddyRecommendationCard(
       color = cardColor,
       shape = RoundedCornerShape(18.dp),
       border = CardDefaults.outlinedCardBorder(),
+      shadowElevation = 3.dp,
     ) {
       Column(modifier = Modifier.fillMaxWidth()) {
         Box(modifier = Modifier.fillMaxWidth().height(5.dp).background(color))

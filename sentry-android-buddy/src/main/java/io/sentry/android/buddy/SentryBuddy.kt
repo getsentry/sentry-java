@@ -96,7 +96,8 @@ public object SentryBuddy {
 
   internal fun markLiveFeedSeen(): BuddyLiveFeed = requireInstalled().markLiveFeedSeen()
 
-  internal fun dismissLiveFeedItem(id: Long): BuddyLiveFeed = requireInstalled().dismissLiveFeedItem(id)
+  internal fun dismissLiveFeedItem(id: Long): BuddyLiveFeed =
+    requireInstalled().dismissLiveFeedItem(id)
 
   internal fun addLiveFeedListener(listener: (BuddyLiveFeed) -> Unit): () -> Unit =
     requireInstalled().addLiveFeedListener(listener)

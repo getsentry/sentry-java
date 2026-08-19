@@ -59,8 +59,8 @@ import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
-import io.sentry.android.buddy.ui.common.theme.BuddySweatshirtPink
 import io.sentry.android.buddy.ui.common.theme.BuddySheetHorizontalPadding
+import io.sentry.android.buddy.ui.common.theme.BuddySweatshirtPink
 import io.sentry.android.buddy.ui.common.theme.LIVE_FEED_VISIBLE_ITEM_LIMIT
 import io.sentry.android.buddy.ui.common.timeline.BuddyTimeline
 import io.sentry.android.buddy.ui.common.timeline.toTimelineRow

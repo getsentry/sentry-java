@@ -80,6 +80,7 @@ public final class io/sentry/android/buddy/SentryBuddySessionController {
 	public final fun openUrl (Landroid/content/Context;Ljava/lang/String;)V
 	public final fun pollFlowAnalysis ()V
 	public final fun recordAgain ()V
+	public final fun skipAnalysis ()V
 	public final fun startRecording ()V
 	public final fun startRecording (Ljava/lang/String;)V
 	public final fun startRecording (Ljava/lang/String;Ljava/lang/String;)V
@@ -782,21 +783,23 @@ public final class io/sentry/android/buddy/model/Recommendation : io/sentry/Json
 
 public final class io/sentry/android/buddy/model/RecommendationAction : io/sentry/JsonSerializable {
 	public static final field $stable I
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;)V
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;Ljava/lang/String;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;Ljava/lang/String;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Ljava/lang/String;
+	public final fun component3 ()Z
 	public final fun component4 ()Ljava/lang/String;
-	public final fun component5 ()Lio/sentry/android/buddy/model/ActionStatus;
-	public final fun component6 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;Ljava/lang/String;)Lio/sentry/android/buddy/model/RecommendationAction;
-	public static synthetic fun copy$default (Lio/sentry/android/buddy/model/RecommendationAction;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/android/buddy/model/RecommendationAction;
+	public final fun component5 ()Ljava/lang/String;
+	public final fun component6 ()Lio/sentry/android/buddy/model/ActionStatus;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;Ljava/lang/String;)Lio/sentry/android/buddy/model/RecommendationAction;
+	public static synthetic fun copy$default (Lio/sentry/android/buddy/model/RecommendationAction;Ljava/lang/String;Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;Lio/sentry/android/buddy/model/ActionStatus;Ljava/lang/String;ILjava/lang/Object;)Lio/sentry/android/buddy/model/RecommendationAction;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getActionLabel ()Ljava/lang/String;
+	public final fun getActionableForSeer ()Z
 	public final fun getDescription ()Ljava/lang/String;
 	public final fun getId ()Ljava/lang/String;
 	public final fun getLink ()Ljava/lang/String;
@@ -861,8 +864,10 @@ public final class io/sentry/android/buddy/ui/bottomsheet/ComposableSingletons$B
 	public static final field INSTANCE Lio/sentry/android/buddy/ui/bottomsheet/ComposableSingletons$BuddyHomeSheetKt;
 	public fun <init> ()V
 	public final fun getLambda$-1642665903$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1772764521$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-381783655$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-750012649$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$1487729983$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1551431938$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1755165875$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 }
 

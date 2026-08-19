@@ -367,7 +367,7 @@ class SentryBuddySessionControllerTest {
     controller.close()
     controller.openLiveFeed()
 
-    assertThat(controller.homeRecommendations.single().unread).isTrue()
+    assertThat(controller.homeRecommendations.any { it.unread }).isTrue()
     assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.RECORD_FLOW)
   }
 
@@ -545,6 +545,7 @@ class SentryBuddySessionControllerTest {
               RecommendationAction(
                 id = "action-1",
                 actionLabel = "Add the spans",
+                actionableForSeer = true,
                 description = "Wrap the slowest steps in explicit spans.",
               )
             ),

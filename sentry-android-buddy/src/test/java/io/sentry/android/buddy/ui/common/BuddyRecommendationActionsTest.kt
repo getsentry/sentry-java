@@ -65,6 +65,7 @@ class BuddyRecommendationActionsTest {
     RecommendationAction(
       id = id,
       actionLabel = label,
+      actionableForSeer = link == null,
       description = "…",
       link = link,
       status = status,
