@@ -18,6 +18,9 @@ public final class NoOpReplayController implements ReplayController {
   public void start() {}
 
   @Override
+  public void startBuffering() {}
+
+  @Override
   public void stop() {}
 
   @Override
@@ -25,6 +28,15 @@ public final class NoOpReplayController implements ReplayController {
 
   @Override
   public void resume() {}
+
+  @Override
+  public void flush() {}
+
+  @Override
+  public void onAppForegrounded(boolean startNewReplay) {}
+
+  @Override
+  public void onAppBackgrounded() {}
 
   @Override
   public boolean isRecording() {

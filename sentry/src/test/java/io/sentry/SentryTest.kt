@@ -1505,16 +1505,29 @@ class SentryTest {
   }
 
   @Test
-  fun `replay debug masking is forwarded to replay controller`() {
+  fun `replay API is forwarded to replay controller`() {
     val replayController = mock<ReplayController>()
     initForTest {
       it.dsn = dsn
       it.setReplayController(replayController)
     }
-    Sentry.replay().enableDebugMaskingOverlay()
-    verify(replayController).enableDebugMaskingOverlay()
+    Sentry.replay().start()
+    Sentry.replay().startBuffering()
+    Sentry.replay().pause()
+    Sentry.replay().resume()
+    Sentry.replay().flush()
+    Sentry.replay().stop()
 
+    verify(replayController).start()
+    verify(replayController).startBuffering()
+    verify(replayController).pause()
+    verify(replayController).resume()
+    verify(replayController).flush()
+    verify(replayController).stop()
+
+    Sentry.replay().enableDebugMaskingOverlay()
     Sentry.replay().disableDebugMaskingOverlay()
+    verify(replayController).enableDebugMaskingOverlay()
     verify(replayController).disableDebugMaskingOverlay()
   }
 

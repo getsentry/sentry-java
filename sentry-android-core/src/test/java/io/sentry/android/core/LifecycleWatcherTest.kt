@@ -77,7 +77,7 @@ class LifecycleWatcherTest {
     val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
     watcher.onForeground()
     verify(fixture.scopes).startSession()
-    verify(fixture.replayController).start()
+    verify(fixture.replayController).onAppForegrounded(true)
   }
 
   @Test
@@ -87,7 +87,7 @@ class LifecycleWatcherTest {
     watcher.onForeground()
     watcher.onForeground()
     verify(fixture.scopes, times(2)).startSession()
-    verify(fixture.replayController, times(2)).start()
+    verify(fixture.replayController, times(2)).onAppForegrounded(true)
   }
 
   @Test
@@ -97,7 +97,8 @@ class LifecycleWatcherTest {
     watcher.onForeground()
     watcher.onForeground()
     verify(fixture.scopes).startSession()
-    verify(fixture.replayController).start()
+    verify(fixture.replayController).onAppForegrounded(true)
+    verify(fixture.replayController).onAppForegrounded(false)
   }
 
   @Test
@@ -214,7 +215,7 @@ class LifecycleWatcherTest {
 
     watcher.onForeground()
     verify(fixture.scopes, never()).startSession()
-    verify(fixture.replayController, never()).start()
+    verify(fixture.replayController).onAppForegrounded(false)
   }
 
   @Test
@@ -243,35 +244,7 @@ class LifecycleWatcherTest {
 
     watcher.onForeground()
     verify(fixture.scopes).startSession()
-    verify(fixture.replayController).start()
-  }
-
-  @Test
-  fun `if the hub has already a fresh session running, resumes replay to invalidate isManualPause flag`() {
-    val watcher =
-      fixture.getSUT(
-        enableAppLifecycleBreadcrumbs = false,
-        session =
-          Session(
-            State.Ok,
-            DateUtils.getCurrentDateTime(),
-            DateUtils.getCurrentDateTime(),
-            0,
-            "abc",
-            "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
-            true,
-            0,
-            10.0,
-            null,
-            null,
-            null,
-            "release",
-            null,
-          ),
-      )
-
-    watcher.onForeground()
-    verify(fixture.replayController).resume()
+    verify(fixture.replayController).onAppForegrounded(true)
   }
 
   @Test
@@ -280,13 +253,13 @@ class LifecycleWatcherTest {
     val watcher =
       fixture.getSUT(sessionIntervalMillis = 500L, enableAppLifecycleBreadcrumbs = false)
     watcher.onForeground()
-    verify(fixture.replayController).start()
+    verify(fixture.replayController).onAppForegrounded(true)
 
     watcher.onBackground()
-    verify(fixture.replayController).pause()
+    verify(fixture.replayController).onAppBackgrounded()
 
     watcher.onForeground()
-    verify(fixture.replayController, times(2)).resume()
+    verify(fixture.replayController).onAppForegrounded(false)
 
     watcher.onBackground()
     verify(fixture.replayController, timeout(10000)).stop()

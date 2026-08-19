@@ -62,11 +62,14 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun close ()V
 	public fun disableDebugMaskingOverlay ()V
 	public fun enableDebugMaskingOverlay ()V
+	public fun flush ()V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public final fun getReplayCacheDir ()Ljava/io/File;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isDebugMaskingOverlayEnabled ()Z
 	public fun isRecording ()Z
+	public fun onAppBackgrounded ()V
+	public fun onAppForegrounded (Z)V
 	public final fun onConfigurationChanged (Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
 	public fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
@@ -81,6 +84,7 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun resume ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
+	public fun startBuffering ()V
 	public fun stop ()V
 }
 
