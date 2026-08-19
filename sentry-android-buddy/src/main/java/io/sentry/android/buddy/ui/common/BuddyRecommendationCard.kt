@@ -353,10 +353,10 @@ internal fun Recommendation.toCardModel(
     severity = severity,
     statusLabel =
       listOfNotNull(
-        pillLabel?.takeIf { showStatus },
-        severity.value.takeIf { it.isNotEmpty() },
-        status.value.takeIf { it.isNotEmpty() },
-      )
+          pillLabel?.takeIf { showStatus },
+          severity.value.takeIf { it.isNotEmpty() },
+          status.value.takeIf { it.isNotEmpty() },
+        )
         .joinToString(" • "),
   )
 
@@ -367,10 +367,10 @@ internal fun BuddyHomeRecommendation.toCardModel(nowMs: Long): BuddyRecommendati
     severity = severity,
     statusLabel =
       listOfNotNull(
-        source.label.takeIf { it.isNotEmpty() },
-        severity.value.takeIf { it.isNotEmpty() },
-        status.value.takeIf { it.isNotEmpty() },
-      )
+          source.label.takeIf { it.isNotEmpty() },
+          severity.value.takeIf { it.isNotEmpty() },
+          status.value.takeIf { it.isNotEmpty() },
+        )
         .joinToString(" • "),
     timestampLabel = relativeTime(updatedAtMs, nowMs),
     unread = unread && isOpen,

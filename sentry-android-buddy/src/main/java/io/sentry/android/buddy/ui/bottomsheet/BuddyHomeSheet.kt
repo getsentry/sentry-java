@@ -216,14 +216,14 @@ internal fun LiveFeedTabContent(
   onOpenUrl: (Context, String) -> Unit,
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-    //    AttentionCard(
-    //      liveFeed = liveFeed,
-    //      sentryUiLinks = sentryUiLinks,
-    //      nowMs = nowMs,
-    //      emptyArtIndex = emptyArtIndex,
-    //      onDismiss = { onDispatch { dismissLiveFeedAttention() } },
-    //      onOpenUrl = onOpenUrl,
-    //    )
+    AttentionCard(
+      liveFeed = liveFeed,
+      sentryUiLinks = sentryUiLinks,
+      nowMs = nowMs,
+      emptyArtIndex = emptyArtIndex,
+      onDismiss = { onDispatch { dismissLiveFeedAttention() } },
+      onOpenUrl = onOpenUrl,
+    )
     LiveFeedInset {
       Text(
         "Live feed",

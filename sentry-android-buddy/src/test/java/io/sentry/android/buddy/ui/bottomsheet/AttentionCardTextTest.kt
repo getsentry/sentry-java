@@ -48,6 +48,14 @@ class AttentionCardTextTest {
       .isEqualTo(PerformanceStat("503", "Status"))
   }
 
+  @Test
+  fun `attention card keeps showing latest adverse item after it is viewed`() {
+    val error = item(BuddyLiveFeedItem.Category.ERROR, "HttpException", Severity.HIGH)
+    val feed = BuddyLiveFeed(latestAdverseItem = error, latestUnviewedAdverseItem = null)
+
+    assertThat(feed.attentionCardItem()).isEqualTo(error)
+  }
+
   private fun item(
     category: BuddyLiveFeedItem.Category,
     name: String,

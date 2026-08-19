@@ -247,7 +247,6 @@ internal object Icons {
 
   private var _bolt: ImageVector? = null
 
-
   @Suppress("CheckReturnValue")
   public val wand_shine: ImageVector
     get() {
@@ -256,12 +255,12 @@ internal object Icons {
       }
       _wand_shine =
         ImageVector.Builder(
-          name = "wand_shine",
-          defaultWidth = 24.dp,
-          defaultHeight = 24.dp,
-          viewportWidth = 24f,
-          viewportHeight = 24f,
-        )
+            name = "wand_shine",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+          )
           .apply {
             path(
               fill = SolidColor(Color.Black),

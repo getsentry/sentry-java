@@ -66,7 +66,7 @@ internal fun AttentionCard(
   onDismiss: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
-  val item = liveFeed.latestUnviewedAdverseItem
+  val item = liveFeed.attentionCardItem()
   val dismissOffset = remember(item?.id) { Animatable(0f) }
 
   if (item == null) {
@@ -163,6 +163,9 @@ internal fun AttentionCard(
     }
   }
 }
+
+internal fun BuddyLiveFeed.attentionCardItem(): BuddyLiveFeedItem? =
+  latestUnviewedAdverseItem ?: latestAdverseItem
 
 @Composable
 internal fun AttentionItemContent(
