@@ -215,12 +215,8 @@ private fun FlowActionRow(actions: List<BuddyFlowActionModel>) {
     modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
     horizontalArrangement = Arrangement.spacedBy(8.dp),
   ) {
-    actions.forEachIndexed { index, action ->
-      FlowActionButton(
-        action = action,
-        isPrimary = index == 0,
-        modifier = Modifier.weight(1f),
-      )
+    actions.forEach { action ->
+      FlowActionButton(action = action, modifier = Modifier.weight(1f))
     }
   }
 }
@@ -228,13 +224,12 @@ private fun FlowActionRow(actions: List<BuddyFlowActionModel>) {
 @Composable
 private fun FlowActionButton(
   action: BuddyFlowActionModel,
-  isPrimary: Boolean,
   modifier: Modifier = Modifier,
 ) {
   val shape = RoundedCornerShape(18.dp)
-  val background = if (isPrimary) BuddySweatshirtPink else BuddySweatshirtPink.copy(alpha = 0.12f)
-  val contentColor = if (isPrimary) Color.White else BuddySweatshirtPink
-  val border = if (isPrimary) null else BorderStroke(1.dp, BuddySweatshirtPink.copy(alpha = 0.26f))
+  val background = BuddySweatshirtPink.copy(alpha = 0.12f)
+  val contentColor = BuddySweatshirtPink
+  val border = BorderStroke(1.dp, BuddySweatshirtPink.copy(alpha = 0.26f))
   Surface(
     modifier =
       modifier
