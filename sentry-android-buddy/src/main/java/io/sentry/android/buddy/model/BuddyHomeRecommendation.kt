@@ -7,9 +7,9 @@ internal enum class BuddyHomeTab {
 }
 
 internal enum class BuddyRecommendationSource(val label: String) {
-  FLOW_ANALYSIS("Flow analysis"),
-  HEALTH_CHECK("Health check"),
-  LIVE_FEED("Live feed"),
+  FLOW_ANALYSIS("flow analysis"),
+  HEALTH_CHECK("health check"),
+  LIVE_FEED("live feed"),
 }
 
 internal data class BuddyHomeRecommendation(
@@ -78,7 +78,9 @@ internal fun BuddyHealthCheckResponse.toHomeRecommendations(
   }
 }
 
-internal fun BuddyLiveFeed.toHomeRecommendations(): List<BuddyHomeRecommendation> {
+internal fun BuddyLiveFeed.toHomeRecommendations(
+  sentryUiLinks: BuddySentryUiLinks
+): List<BuddyHomeRecommendation> {
   val recommendations = linkedMapOf<String, BuddyHomeRecommendation>()
   items
     .filter { it.category == BuddyLiveFeedItem.Category.ERROR }
@@ -86,6 +88,11 @@ internal fun BuddyLiveFeed.toHomeRecommendations(): List<BuddyHomeRecommendation
       val screenName = item.visibleScreens.lastOrNull()
       val titleSuffix = screenName?.let { " on $it" }.orEmpty()
       val key = "live-feed:error:${screenName.orEmpty()}:${item.recommendationTitle()}"
+      val link = sentryUiLinks.linkFor(item)
+      val action: RecommendationAction? = link?.let {
+        RecommendationAction("", "Explore", "", link = link, status = ActionStatus.OPEN, null)
+      }
+
       recommendations[key] =
         BuddyHomeRecommendation(
           id = key,
@@ -94,6 +101,7 @@ internal fun BuddyLiveFeed.toHomeRecommendations(): List<BuddyHomeRecommendation
           description = item.liveFeedRecommendationDescription(),
           severity = item.severity,
           updatedAtMs = item.timestamp.time,
+          actions = listOfNotNull(action),
         )
     }
 

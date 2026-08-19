@@ -870,7 +870,7 @@ public final class io/sentry/android/buddy/ui/common/ComposableSingletons$BuddyR
 	public static final field INSTANCE Lio/sentry/android/buddy/ui/common/ComposableSingletons$BuddyRecommendationCardKt;
 	public fun <init> ()V
 	public final fun getLambda$-1047316941$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$-1646012989$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1404717292$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-386557187$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$-89121762$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 }

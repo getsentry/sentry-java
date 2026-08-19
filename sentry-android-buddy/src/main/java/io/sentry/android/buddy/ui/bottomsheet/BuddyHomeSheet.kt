@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -69,6 +68,7 @@ import io.sentry.android.buddy.ui.preview.previewEmptyLiveFeed
 import io.sentry.android.buddy.ui.preview.previewHomeRecommendation
 import io.sentry.android.buddy.ui.preview.previewLiveFeed
 import io.sentry.android.buddy.ui.preview.previewSentryUiLinks
+import org.w3c.dom.Text
 
 @Composable
 internal fun BuddyHomeSheet(
@@ -191,6 +191,7 @@ internal fun HomeTabRow(
           Text(
             text = label,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+            textAlign = TextAlign.Center,
             color = if (isSelected) BuddyInk else BuddyMuted,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
@@ -212,14 +213,14 @@ internal fun LiveFeedTabContent(
   onOpenUrl: (Context, String) -> Unit,
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-    AttentionCard(
-      liveFeed = liveFeed,
-      sentryUiLinks = sentryUiLinks,
-      nowMs = nowMs,
-      emptyArtIndex = emptyArtIndex,
-      onDismiss = { onDispatch { dismissLiveFeedAttention() } },
-      onOpenUrl = onOpenUrl,
-    )
+    //    AttentionCard(
+    //      liveFeed = liveFeed,
+    //      sentryUiLinks = sentryUiLinks,
+    //      nowMs = nowMs,
+    //      emptyArtIndex = emptyArtIndex,
+    //      onDismiss = { onDispatch { dismissLiveFeedAttention() } },
+    //      onOpenUrl = onOpenUrl,
+    //    )
     LiveFeedInset {
       Text(
         "Live feed",
@@ -256,12 +257,11 @@ internal fun RecommendationsTabContent(
   onOpenUrl: (Context, String) -> Unit,
 ) {
   Text(
-    "Recommendations",
+    "Recommended Actions",
     style = MaterialTheme.typography.titleLarge,
     fontWeight = FontWeight.Bold,
     color = BuddyInk,
   )
-  Spacer(Modifier.height(16.dp))
   val context = LocalContext.current
   val showEmptyRecommendationsCard =
     recommendations.isEmpty() &&
@@ -320,13 +320,13 @@ internal fun RecommendationsTabContent(
 @Composable
 internal fun RecordFlowTabContent(onStartRecording: () -> Unit) {
   Text(
-    "Record a flow",
+    "See what’s happening under the hood.",
     style = MaterialTheme.typography.titleLarge,
     fontWeight = FontWeight.Bold,
     color = BuddyInk,
   )
   Text(
-    "Record a flow that's important to your app and Buddy will help you auto-generate dashboards, monitors, and other useful things!",
+    "Record a user flow that's important to your app and Buddy will help you auto-generate dashboards, monitors, and other useful things!",
     color = BuddyMuted,
   )
   Button(

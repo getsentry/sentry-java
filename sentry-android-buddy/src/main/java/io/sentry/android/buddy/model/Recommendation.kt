@@ -8,14 +8,14 @@ import org.jetbrains.annotations.ApiStatus
 
 @ApiStatus.Experimental
 public enum class RecommendationStatus(public val value: String) {
-  OPEN("OPEN"),
-  DISMISSED("DISMISSED"),
+  OPEN("open"),
+  DISMISSED("dismissed"),
 }
 
 @ApiStatus.Experimental
 public enum class ActionStatus(public val value: String) {
-  OPEN("OPEN"),
-  EXECUTED("EXECUTED"),
+  OPEN("open"),
+  EXECUTED("executed"),
 }
 
 /**

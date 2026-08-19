@@ -161,7 +161,7 @@ public constructor(
     dismissHealthCheck()
     liveFeed = safeLiveFeed()
     clearHealthCheckRecommendations()
-    ingestHomeRecommendations(liveFeed.toHomeRecommendations())
+    ingestHomeRecommendations(liveFeed.toHomeRecommendations(sentryUiLinks))
     hasPendingHealthCheck = true
     homeTab = defaultHomeTab()
     state = SentryBuddySessionState.LiveFeed
@@ -495,7 +495,7 @@ public constructor(
       } else {
         SentryBuddy.addLiveFeedListener { feed ->
           liveFeed = feed
-          ingestHomeRecommendations(feed.toHomeRecommendations())
+          ingestHomeRecommendations(feed.toHomeRecommendations(sentryUiLinks))
           listener(feed)
         }
       }
@@ -548,7 +548,10 @@ public constructor(
       return
     }
     val merged = incoming.copy(unread = incoming.isOpen)
-    homeRecommendations = listOf(merged) + homeRecommendations.filterNot { it.id == incoming.id }
+    homeRecommendations =
+      (listOf(merged) + homeRecommendations.filterNot { it.id == incoming.id }).sortedBy {
+        it.updatedAtMs
+      }
   }
 
   private fun updateHomeRecommendation(
@@ -557,7 +560,10 @@ public constructor(
   ) {
     val recommendation = homeRecommendations.firstOrNull { it.id == recommendationId } ?: return
     val updated = transform(recommendation)
-    homeRecommendations = homeRecommendations.map { if (it.id == recommendationId) updated else it }
+    homeRecommendations =
+      homeRecommendations
+        .map { if (it.id == recommendationId) updated else it }
+        .sortedBy { it.updatedAtMs }
   }
 
   private fun defaultHomeTab(): BuddyHomeTab =
@@ -596,7 +602,9 @@ public constructor(
         aggregate.copy(updatedAtMs = maxOf(nowMs, existing.updatedAtMs + 1))
       }
     homeRecommendations =
-      listOf(refreshedAggregate) + homeRecommendations.filterNot { it.id == refreshedAggregate.id }
+      (listOf(refreshedAggregate) +
+          homeRecommendations.filterNot { it.id == refreshedAggregate.id })
+        .sortedBy { it.updatedAtMs }
     val insightsState = state as? SentryBuddySessionState.Insights ?: return
     if (insightsState.request.flowId != flowId) {
       return

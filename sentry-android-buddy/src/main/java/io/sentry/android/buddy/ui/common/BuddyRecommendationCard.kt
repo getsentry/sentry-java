@@ -1,18 +1,17 @@
 package io.sentry.android.buddy.ui.common
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,8 +43,6 @@ internal data class BuddyRecommendationCardModel(
   val title: String,
   val description: String,
   val severity: Severity,
-  /** Pill text for the header. Null draws a plain severity dot instead. */
-  val pillLabel: String? = null,
   val statusLabel: String? = null,
   val timestampLabel: String? = null,
   val unread: Boolean = false,
@@ -76,35 +73,13 @@ internal fun BuddyRecommendationCard(
   Surface(
     modifier = modifier.fillMaxWidth(),
     color = color.copy(alpha = 0.08f),
-    shape = RoundedCornerShape(14.dp),
+    shape = RoundedCornerShape(16.dp),
     border = CardDefaults.outlinedCardBorder(),
   ) {
     Column(
       modifier = Modifier.fillMaxWidth().padding(16.dp),
-      verticalArrangement = Arrangement.spacedBy(10.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        if (model.pillLabel != null) {
-          BuddyLabelPill(model.pillLabel, color)
-        } else {
-          Box(modifier = Modifier.size(10.dp).background(color, CircleShape))
-        }
-        Text(
-          model.title,
-          modifier = Modifier.weight(1f),
-          color = BuddyInk,
-          style = MaterialTheme.typography.titleMedium,
-          fontWeight = FontWeight.Bold,
-        )
-        if (model.unread) {
-          Box(modifier = Modifier.size(12.dp).background(BuddyPurple, CircleShape))
-        }
-      }
-      Text(model.description, color = BuddyMuted)
       if (model.timestampLabel != null || model.statusLabel != null) {
         Row(
           modifier = Modifier.fillMaxWidth(),
@@ -126,17 +101,68 @@ internal fun BuddyRecommendationCard(
           }
         }
       }
-      if (actions.isNotEmpty()) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-          actions.forEach { action ->
-            OutlinedButton(onClick = action.onClick) { BuddyButtonText(action.label) }
-          }
-        }
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        Text(
+          model.title,
+          modifier = Modifier.weight(1f),
+          color = BuddyInk,
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold,
+        )
       }
-      if (onDismiss != null || onOpenLink != null) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-          onDismiss?.let { TextButton(onClick = it) { BuddyButtonText("Dismiss") } }
-          onOpenLink?.let { TextButton(onClick = it) { BuddyButtonText(openLinkLabel) } }
+      Text(model.description, color = BuddyMuted)
+
+      Column(modifier = Modifier.offset(x = (-8).dp)) {
+        if (actions.isNotEmpty()) {
+          actions.forEach { action ->
+            TextButton(
+              contentPadding = PaddingValues(8.dp),
+              onClick = action.onClick,
+            ) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+              ) {
+                BuddyButtonText(action.label)
+                Icon(
+                  imageVector = Icons.open_in_new,
+                  contentDescription = null,
+                  modifier = Modifier.size(16.dp),
+                )
+              }
+            }
+          }
+
+          onOpenLink?.let {
+            TextButton(
+              contentPadding = PaddingValues(8.dp),
+              onClick = it,
+            ) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+              ) {
+                BuddyButtonText(openLinkLabel)
+                Icon(
+                  imageVector = Icons.open_in_new,
+                  contentDescription = null,
+                  modifier = Modifier.size(16.dp),
+                )
+              }
+            }
+          }
+          onDismiss?.let {
+            TextButton(
+              contentPadding = PaddingValues(8.dp),
+              onClick = it,
+            ) {
+              BuddyButtonText("Dismiss")
+            }
+          }
         }
       }
     }
@@ -152,8 +178,13 @@ internal fun Recommendation.toCardModel(
     title = title,
     description = description,
     severity = severity,
-    pillLabel = pillLabel,
-    statusLabel = if (showStatus) "${severity.value} • ${status.value}" else null,
+    statusLabel =
+      listOfNotNull(
+          pillLabel?.takeIf { showStatus },
+          severity.value.takeIf { it.isNotEmpty() },
+          status.value.takeIf { it.isNotEmpty() },
+        )
+        .joinToString(" • "),
   )
 
 internal fun BuddyHomeRecommendation.toCardModel(nowMs: Long): BuddyRecommendationCardModel =
@@ -161,8 +192,13 @@ internal fun BuddyHomeRecommendation.toCardModel(nowMs: Long): BuddyRecommendati
     title = title,
     description = description,
     severity = severity,
-    pillLabel = source.label,
-    statusLabel = "${severity.value} • ${status.value}",
+    statusLabel =
+      listOfNotNull(
+          source.label.takeIf { it.isNotEmpty() },
+          severity.value.takeIf { it.isNotEmpty() },
+          status.value.takeIf { it.isNotEmpty() },
+        )
+        .joinToString(" • "),
     timestampLabel = relativeTime(updatedAtMs, nowMs),
     unread = unread && isOpen,
   )
