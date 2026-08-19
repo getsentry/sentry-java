@@ -19,6 +19,7 @@ import io.sentry.android.buddy.ANALYSIS_TIMEOUT_MS
 import io.sentry.android.buddy.SentryBuddySessionController
 import io.sentry.android.buddy.SentryBuddySessionState
 import io.sentry.android.buddy.TransientRecordingEvent
+import io.sentry.android.buddy.model.BuddyHomeTab
 import io.sentry.android.buddy.ui.bottomsheet.BuddySheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -84,6 +85,7 @@ internal fun SentryBuddyOverlayContent(
   var healthCheckState by remember { mutableStateOf(controller.healthCheckState) }
   var homeTab by remember { mutableStateOf(controller.homeTab) }
   var homeRecommendations by remember { mutableStateOf(controller.homeRecommendations) }
+  var recommendationError by remember { mutableStateOf(controller.recommendationError) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
   val transientRecordingEventScope = rememberCoroutineScope()
@@ -95,6 +97,7 @@ internal fun SentryBuddyOverlayContent(
     healthCheckState = controller.healthCheckState
     homeTab = controller.homeTab
     homeRecommendations = controller.homeRecommendations
+    recommendationError = controller.recommendationError
     nowMs = System.currentTimeMillis()
   }
 
@@ -176,6 +179,12 @@ internal fun SentryBuddyOverlayContent(
     }
   }
 
+  LaunchedEffect(state, homeTab) {
+    if (state == SentryBuddySessionState.LiveFeed && homeTab == BuddyHomeTab.ACTIONS) {
+      dispatchAnalysis { refreshKnownFlowRecommendations() }
+    }
+  }
+
   BoxWithConstraints(modifier = modifier.fillMaxSize()) {
     val density = LocalDensity.current
     val maxWidthPx = with(density) { maxWidth.toPx() }
@@ -208,6 +217,7 @@ internal fun SentryBuddyOverlayContent(
       healthCheckState = healthCheckState,
       homeTab = homeTab,
       homeRecommendations = homeRecommendations,
+      recommendationError = recommendationError,
       sentryUiLinks = controller.sentryUiLinks,
       nowMs = nowMs,
       onDispatch = { dispatch(it) },

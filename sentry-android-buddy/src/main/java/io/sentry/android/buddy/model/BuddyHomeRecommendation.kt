@@ -29,6 +29,9 @@ internal data class BuddyHomeRecommendation(
   val isOpen: Boolean
     get() = status == RecommendationStatus.OPEN
 
+  val isAttentionDriving: Boolean
+    get() = isOpen && (actions.isEmpty() || actions.any { it.status == ActionStatus.OPEN })
+
   /** The bridge only knows recommendations that belong to a flow analysis. */
   val supportsRemoteActions: Boolean
     get() = flowId != null && sourceRecommendationId != null

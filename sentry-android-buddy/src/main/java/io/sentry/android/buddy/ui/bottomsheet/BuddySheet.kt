@@ -42,6 +42,7 @@ internal fun BuddySheet(
   healthCheckState: BuddyHealthCheckState,
   homeTab: BuddyHomeTab,
   homeRecommendations: List<BuddyHomeRecommendation>,
+  recommendationError: String?,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
@@ -97,6 +98,7 @@ internal fun BuddySheet(
             healthCheckState,
             homeTab,
             homeRecommendations,
+            recommendationError,
             sentryUiLinks,
             nowMs,
             onDispatch,
@@ -119,6 +121,7 @@ internal fun BuddySheet(
           InsightsSheet(
             state,
             sentryUiLinks,
+            recommendationError,
             onDispatch,
             onExecuteRecommendationAction,
             onDismissRecommendation,

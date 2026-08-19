@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
 import io.sentry.android.buddy.model.Recommendation
 import io.sentry.android.buddy.model.RecommendationAction
@@ -29,6 +30,7 @@ import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
 import io.sentry.android.buddy.ui.common.theme.BuddyPurple
+import io.sentry.android.buddy.ui.common.theme.BuddyRed
 import io.sentry.android.buddy.ui.common.theme.severityColor
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
 import io.sentry.android.buddy.ui.preview.PREVIEW_NOW_MS
@@ -203,6 +205,24 @@ internal fun BuddyHomeRecommendation.toCardModel(nowMs: Long): BuddyRecommendati
     unread = unread && isOpen,
   )
 
+@Composable
+internal fun BuddyRecommendationErrorCard(message: String, modifier: Modifier = Modifier) {
+  Surface(
+    modifier = modifier.fillMaxWidth(),
+    color = BuddyRed.copy(alpha = 0.08f),
+    shape = RoundedCornerShape(12.dp),
+    border = CardDefaults.outlinedCardBorder(),
+  ) {
+    Text(
+      message,
+      modifier = Modifier.fillMaxWidth().padding(14.dp),
+      color = BuddyRed,
+      style = MaterialTheme.typography.bodyMedium,
+      fontWeight = FontWeight.Bold,
+    )
+  }
+}
+
 /** Open Seer runs get their own button label, so the reader knows where the link goes. */
 internal fun openLinkLabelFor(seerRunUrl: String?): String =
   if (seerRunUrl != null) "Open Seer Run" else "Open Link"
@@ -214,16 +234,18 @@ internal fun openLinkLabelFor(seerRunUrl: String?): String =
 internal fun List<RecommendationAction>.toActionModels(
   onExecute: (String) -> Unit,
   onOpenLink: (String) -> Unit,
-): List<BuddyRecommendationActionModel> = map { action ->
-  BuddyRecommendationActionModel(action.id, action.actionLabel) {
-    val link = action.link
-    if (link != null) {
-      onOpenLink(link)
-    } else {
-      onExecute(action.id)
+): List<BuddyRecommendationActionModel> =
+  filter { it.status == ActionStatus.OPEN }
+    .map { action ->
+      BuddyRecommendationActionModel(action.id, action.actionLabel) {
+        val link = action.link
+        if (link != null) {
+          onOpenLink(link)
+        } else {
+          onExecute(action.id)
+        }
+      }
     }
-  }
-}
 
 /** A dismissed recommendation keeps its card, but offers no buttons any more. */
 internal fun Recommendation.isOpen(): Boolean = status == RecommendationStatus.OPEN

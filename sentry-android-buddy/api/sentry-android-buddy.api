@@ -860,7 +860,7 @@ public final class io/sentry/android/buddy/ui/bottomsheet/ComposableSingletons$A
 public final class io/sentry/android/buddy/ui/bottomsheet/ComposableSingletons$BuddyHomeSheetKt {
 	public static final field INSTANCE Lio/sentry/android/buddy/ui/bottomsheet/ComposableSingletons$BuddyHomeSheetKt;
 	public fun <init> ()V
-	public final fun getLambda$-1447151080$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-1642665903$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-750012649$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1487729983$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$1755165875$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
@@ -945,10 +945,10 @@ public final class io/sentry/android/buddy/ui/userflow/ComposableSingletons$Erro
 public final class io/sentry/android/buddy/ui/userflow/ComposableSingletons$InsightsSheetKt {
 	public static final field INSTANCE Lio/sentry/android/buddy/ui/userflow/ComposableSingletons$InsightsSheetKt;
 	public fun <init> ()V
-	public final fun getLambda$-1667142964$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$-1649901584$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-874142759$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
+	public final fun getLambda$1791198857$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$187729825$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
-	public final fun getLambda$831532572$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$846064277$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class io/sentry/android/buddy/ui/userflow/ComposableSingletons$IntroSheetKt {

@@ -49,6 +49,7 @@ import io.sentry.android.buddy.model.BuddyLiveFeed
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.ui.common.BuddyButtonText
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
+import io.sentry.android.buddy.ui.common.BuddyRecommendationErrorCard
 import io.sentry.android.buddy.ui.common.SheetTitle
 import io.sentry.android.buddy.ui.common.openLinkLabelFor
 import io.sentry.android.buddy.ui.common.theme.BuddyCode
@@ -76,6 +77,7 @@ internal fun BuddyHomeSheet(
   healthCheckState: BuddyHealthCheckState,
   homeTab: BuddyHomeTab,
   homeRecommendations: List<BuddyHomeRecommendation>,
+  recommendationError: String?,
   sentryUiLinks: BuddySentryUiLinks,
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
@@ -87,7 +89,7 @@ internal fun BuddyHomeSheet(
   onRunHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
-  val unreadRecommendations = homeRecommendations.count { it.isOpen && it.unread }
+  val unreadRecommendations = homeRecommendations.count { it.isAttentionDriving && it.unread }
   val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
   LiveFeedInset {
     SheetTitle(title = "Sentry Buddy", subtitle = "v${BuildConfig.VERSION_NAME}")
@@ -130,6 +132,7 @@ internal fun BuddyHomeSheet(
           RecommendationsTabContent(
             recommendations = homeRecommendations,
             healthCheckState = healthCheckState,
+            recommendationError = recommendationError,
             nowMs = nowMs,
             onExecuteAction = onExecuteHomeRecommendationAction,
             onDismiss = onDismissHomeRecommendation,
@@ -249,6 +252,7 @@ internal fun LiveFeedTabContent(
 internal fun RecommendationsTabContent(
   recommendations: List<BuddyHomeRecommendation>,
   healthCheckState: BuddyHealthCheckState,
+  recommendationError: String?,
   nowMs: Long,
   onExecuteAction: (String, String) -> Unit,
   onDismiss: (String) -> Unit,
@@ -269,6 +273,7 @@ internal fun RecommendationsTabContent(
         healthCheckState.response.recommendations.isNotEmpty())
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
     HealthCheckStatusCard(state = healthCheckState, onRetry = onRetryHealthCheck)
+    recommendationError?.let { BuddyRecommendationErrorCard(it) }
     if (showEmptyRecommendationsCard) {
       Card(border = CardDefaults.outlinedCardBorder()) {
         Text(
@@ -365,6 +370,7 @@ private fun BuddyHomeSheetPreviewFrame(
       healthCheckState = BuddyHealthCheckState.Hidden,
       homeTab = homeTab,
       homeRecommendations = homeRecommendations,
+      recommendationError = null,
       sentryUiLinks = previewSentryUiLinks,
       nowMs = PREVIEW_NOW_MS,
       onDispatch = {},

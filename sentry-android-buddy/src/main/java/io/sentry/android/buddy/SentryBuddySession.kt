@@ -145,8 +145,12 @@ public constructor(
   internal var homeRecommendations: List<BuddyHomeRecommendation> = emptyList()
     private set
 
+  internal var recommendationError: String? = null
+    private set
+
   private var lastSelectedHomeTab: BuddyHomeTab = BuddyHomeTab.LIVE_FEED
   private var hasPendingHealthCheck: Boolean = false
+  private val knownFlowIds = linkedSetOf<String>()
 
   private val transientRecordingEventLock: Any = Any()
   private val transientRecordingEventListeners = mutableListOf<(TransientRecordingEvent) -> Unit>()
@@ -187,8 +191,8 @@ public constructor(
     }
     if (recommendation.supportsRemoteActions) {
       val flowId = requireNotNull(recommendation.flowId)
-      val previousState = state
       try {
+        clearRecommendationError()
         val dismissed =
           flowAnalysesApi.dismissRecommendation(
             flowId,
@@ -196,17 +200,11 @@ public constructor(
           )
         applyFlowRecommendation(flowId, dismissed)
       } catch (exception: IllegalStateException) {
-        state =
-          SentryBuddySessionState.Error(
-            exception.message ?: "Failed to dismiss recommendation.",
-            previousState,
-          )
+        setRecommendationError(exception.message ?: "Failed to dismiss recommendation.")
       }
       return
     }
-    updateHomeRecommendation(recommendationId) {
-      it.copy(status = RecommendationStatus.DISMISSED, unread = false, updatedAtMs = clock())
-    }
+    removeHomeRecommendation(recommendationId)
   }
 
   internal fun executeHomeRecommendationAction(recommendationId: String, actionId: String) {
@@ -216,8 +214,8 @@ public constructor(
     }
     if (recommendation.supportsRemoteActions) {
       val flowId = requireNotNull(recommendation.flowId)
-      val previousState = state
       try {
+        clearRecommendationError()
         val executed =
           flowAnalysesApi.executeAction(
             flowId,
@@ -225,12 +223,9 @@ public constructor(
             actionId,
           )
         applyFlowAction(flowId, requireNotNull(recommendation.sourceRecommendationId), executed)
+        refreshFlowAnalysisOrStoreError(flowId)
       } catch (exception: IllegalStateException) {
-        state =
-          SentryBuddySessionState.Error(
-            exception.message ?: "Failed to execute the action.",
-            previousState,
-          )
+        setRecommendationError(exception.message ?: "Failed to execute the action.")
       }
       return
     }
@@ -337,6 +332,7 @@ public constructor(
     }
     try {
       val submission = flowAnalysesApi.submit(request)
+      rememberKnownFlow(request.flowId)
       state = SentryBuddySessionState.Analyzing(briefingState.result, request, submission)
       pollFlowAnalysis()
     } catch (exception: IllegalStateException) {
@@ -362,7 +358,7 @@ public constructor(
       val analysis = flowAnalysesApi.get(analyzingState.request.flowId)
       when (analysis.status) {
         AnalysisStatus.COMPLETED -> {
-          ingestHomeRecommendations(analysis.toHomeRecommendations(clock()))
+          applyFlowAnalysis(analysis)
           state =
             SentryBuddySessionState.Insights(
               result = analyzingState.result,
@@ -395,31 +391,30 @@ public constructor(
   public fun dismissRecommendation(recommendationId: String) {
     val insightsState = state as? SentryBuddySessionState.Insights ?: return
     try {
+      clearRecommendationError()
       val dismissed =
         flowAnalysesApi.dismissRecommendation(insightsState.request.flowId, recommendationId)
       applyFlowRecommendation(insightsState.request.flowId, dismissed)
     } catch (exception: IllegalStateException) {
-      state =
-        SentryBuddySessionState.Error(
-          exception.message ?: "Failed to dismiss recommendation.",
-          insightsState,
-        )
+      setRecommendationError(exception.message ?: "Failed to dismiss recommendation.")
     }
   }
 
   public fun executeRecommendationAction(recommendationId: String, actionId: String) {
     val insightsState = state as? SentryBuddySessionState.Insights ?: return
     try {
+      clearRecommendationError()
       val executed =
         flowAnalysesApi.executeAction(insightsState.request.flowId, recommendationId, actionId)
       applyFlowAction(insightsState.request.flowId, recommendationId, executed)
+      refreshFlowAnalysisOrStoreError(insightsState.request.flowId)
     } catch (exception: IllegalStateException) {
-      state =
-        SentryBuddySessionState.Error(
-          exception.message ?: "Failed to execute the action.",
-          insightsState,
-        )
+      setRecommendationError(exception.message ?: "Failed to execute the action.")
     }
+  }
+
+  internal fun refreshKnownFlowRecommendations() {
+    knownFlowIds.toList().forEach { flowId -> refreshFlowAnalysisOrStoreError(flowId) }
   }
 
   internal fun runPendingHealthCheck() {
@@ -528,7 +523,11 @@ public constructor(
     }
 
   private fun ingestHomeRecommendations(recommendations: List<BuddyHomeRecommendation>) {
-    recommendations.forEach { upsertHomeRecommendation(it) }
+    recommendations
+      .filter { it.status != RecommendationStatus.DISMISSED }
+      .forEach {
+        upsertHomeRecommendation(it)
+      }
   }
 
   private fun clearHealthCheckRecommendations() {
@@ -547,7 +546,7 @@ public constructor(
     if (existing != null && !incoming.isMoreRecentThan(existing)) {
       return
     }
-    val merged = incoming.copy(unread = incoming.isOpen)
+    val merged = incoming.copy(unread = incoming.isAttentionDriving)
     homeRecommendations =
       (listOf(merged) + homeRecommendations.filterNot { it.id == incoming.id }).sortedBy {
         it.updatedAtMs
@@ -566,19 +565,82 @@ public constructor(
         .sortedBy { it.updatedAtMs }
   }
 
+  private fun removeHomeRecommendation(recommendationId: String) {
+    homeRecommendations = homeRecommendations.filterNot { it.id == recommendationId }
+  }
+
   private fun defaultHomeTab(): BuddyHomeTab =
     when {
       liveFeed.latestUnviewedAdverseItem != null -> BuddyHomeTab.LIVE_FEED
-      homeRecommendations.any { it.isOpen && it.unread } -> BuddyHomeTab.ACTIONS
+      homeRecommendations.any { it.isAttentionDriving && it.unread } -> BuddyHomeTab.ACTIONS
       else -> lastSelectedHomeTab
     }
+
+  private fun setRecommendationError(message: String) {
+    recommendationError = message
+  }
+
+  private fun clearRecommendationError() {
+    recommendationError = null
+  }
+
+  private fun rememberKnownFlow(flowId: String) {
+    knownFlowIds += flowId
+  }
+
+  private fun refreshFlowAnalysisOrStoreError(flowId: String) {
+    try {
+      refreshFlowAnalysis(flowId)
+    } catch (exception: IllegalStateException) {
+      setRecommendationError(exception.message ?: "Failed to refresh recommendations.")
+    }
+  }
+
+  private fun refreshFlowAnalysis(flowId: String) {
+    val analysis = flowAnalysesApi.get(flowId)
+    when (analysis.status) {
+      AnalysisStatus.COMPLETED -> applyFlowAnalysis(analysis)
+      AnalysisStatus.FAILED -> setRecommendationError(analysis.error ?: "Flow analysis failed.")
+      AnalysisStatus.PROCESSING -> Unit
+    }
+  }
+
+  private fun applyFlowAnalysis(analysis: FlowAnalysisResponse) {
+    rememberKnownFlow(analysis.flowId)
+    homeRecommendations = homeRecommendations.filterNot { it.flowId == analysis.flowId }
+    ingestHomeRecommendations(analysis.toHomeRecommendations(clock()))
+    val insightsState = state as? SentryBuddySessionState.Insights ?: return
+    if (insightsState.request.flowId != analysis.flowId) {
+      return
+    }
+    state =
+      insightsState.copy(
+        analysis = analysis,
+        response = analysis.toBuddyAnalysisResponse(insightsState.request),
+      )
+  }
 
   /**
    * The dismiss and execute endpoints answer with one recommendation or one action, so the answer
    * is folded back into both the home list and the open insights sheet.
    */
   private fun applyFlowRecommendation(flowId: String, updated: Recommendation) {
+    rememberKnownFlow(flowId)
     val nowMs = clock()
+    if (updated.status == RecommendationStatus.DISMISSED) {
+      removeHomeRecommendation("flow-analysis:${updated.id}")
+      val insightsState = state as? SentryBuddySessionState.Insights ?: return
+      if (insightsState.request.flowId != flowId) {
+        return
+      }
+      val analysis = insightsState.analysis.withRecommendation(updated)
+      state =
+        insightsState.copy(
+          analysis = analysis,
+          response = analysis.toBuddyAnalysisResponse(insightsState.request),
+        )
+      return
+    }
     val aggregate =
       BuddyHomeRecommendation(
         id = "flow-analysis:${updated.id}",
@@ -622,6 +684,7 @@ public constructor(
     recommendationId: String,
     executed: RecommendationAction,
   ) {
+    rememberKnownFlow(flowId)
     val recommendation = currentFlowRecommendation(flowId, recommendationId)
     if (recommendation != null) {
       applyFlowRecommendation(
@@ -722,7 +785,7 @@ public constructor(
             severity = Severity.LOW,
           ),
         ),
-      recommendations = recommendations,
+      recommendations = recommendations.filterNot { it.status == RecommendationStatus.DISMISSED },
     )
   }
 

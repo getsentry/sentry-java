@@ -28,6 +28,7 @@ import io.sentry.android.buddy.SentryBuddySessionState
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.ui.common.BuddyButtonText
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
+import io.sentry.android.buddy.ui.common.BuddyRecommendationErrorCard
 import io.sentry.android.buddy.ui.common.MetricCard
 import io.sentry.android.buddy.ui.common.SheetTitle
 import io.sentry.android.buddy.ui.common.formatElapsed
@@ -53,6 +54,7 @@ import io.sentry.android.buddy.ui.preview.previewSentryUiLinks
 internal fun InsightsSheet(
   state: SentryBuddySessionState.Insights,
   sentryUiLinks: BuddySentryUiLinks,
+  recommendationError: String?,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onExecuteRecommendationAction: (String, String) -> Unit,
   onDismissRecommendation: (String) -> Unit,
@@ -89,6 +91,7 @@ internal fun InsightsSheet(
     style = MaterialTheme.typography.titleMedium,
     fontWeight = FontWeight.Bold,
   )
+  recommendationError?.let { BuddyRecommendationErrorCard(it) }
   if (state.response.recommendations.isEmpty()) {
     Surface(
       modifier = Modifier.fillMaxWidth().border(1.dp, BuddyBorder, RoundedCornerShape(12.dp)),
@@ -164,6 +167,7 @@ private fun InsightsSheetPreview() {
           response = previewAnalysisResponse,
         ),
       sentryUiLinks = previewSentryUiLinks,
+      recommendationError = null,
       onDispatch = {},
       onExecuteRecommendationAction = { _, _ -> },
       onDismissRecommendation = {},

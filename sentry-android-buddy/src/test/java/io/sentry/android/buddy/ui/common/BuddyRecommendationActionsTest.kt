@@ -1,6 +1,7 @@
 package io.sentry.android.buddy.ui.common
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.RecommendationAction
 import kotlin.test.Test
 
@@ -46,10 +47,26 @@ class BuddyRecommendationActionsTest {
       .inOrder()
   }
 
+  @Test
+  fun `executed actions are not rendered as executable buttons`() {
+    val models =
+      listOf(action(id = "act-1", status = ActionStatus.EXECUTED))
+        .toActionModels(onExecute = {}, onOpenLink = {})
+
+    assertThat(models).isEmpty()
+  }
+
   private fun action(
     id: String,
     label: String = "Do the thing",
     link: String? = null,
+    status: ActionStatus = ActionStatus.OPEN,
   ): RecommendationAction =
-    RecommendationAction(id = id, actionLabel = label, description = "…", link = link)
+    RecommendationAction(
+      id = id,
+      actionLabel = label,
+      description = "…",
+      link = link,
+      status = status,
+    )
 }

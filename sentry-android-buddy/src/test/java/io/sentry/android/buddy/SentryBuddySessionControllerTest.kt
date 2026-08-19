@@ -134,6 +134,7 @@ class SentryBuddySessionControllerTest {
     controller.executeRecommendationAction("recommendation-1", "action-1")
 
     assertThat(flowAnalysesApi.executedActionIds).containsExactly("action-1")
+    assertThat(flowAnalysesApi.polledIds).containsExactly("recording-1", "recording-1").inOrder()
     val state = controller.state as SentryBuddySessionState.Insights
     val action = state.analysis.recommendations.single().actions.single()
     assertThat(action.status).isEqualTo(ActionStatus.EXECUTED)
@@ -142,6 +143,7 @@ class SentryBuddySessionControllerTest {
       .isEqualTo(ActionStatus.EXECUTED)
     assertThat(controller.homeRecommendations.single().seerRunUrl)
       .isEqualTo("https://sentry.io/seer/runs/1")
+    assertThat(controller.homeRecommendations.single().isAttentionDriving).isFalse()
   }
 
   @Test
@@ -169,7 +171,7 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
-  fun `action execution failure enters error state`() {
+  fun `action execution failure stores inline recommendation error`() {
     val controller =
       SentryBuddySessionController(
         recorderFacade = FakeRecorderFacade(),
@@ -183,9 +185,33 @@ class SentryBuddySessionControllerTest {
     controller.analyze()
     controller.executeRecommendationAction("recommendation-1", "action-1")
 
-    assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Error::class.java)
-    assertThat((controller.state as SentryBuddySessionState.Error).message)
-      .isEqualTo("Execute failed")
+    assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Insights::class.java)
+    assertThat(controller.recommendationError).isEqualTo("Execute failed")
+    val state = controller.state as SentryBuddySessionState.Insights
+    assertThat(state.response.recommendations.single().actions.single().status)
+      .isEqualTo(ActionStatus.OPEN)
+  }
+
+  @Test
+  fun `dismissing a flow recommendation hides it without leaving insights`() {
+    val flowAnalysesApi = FakeFlowAnalysesApi()
+    val controller =
+      SentryBuddySessionController(
+        recorderFacade = FakeRecorderFacade(),
+        flowAnalysesApi = flowAnalysesApi,
+      )
+
+    controller.startRecording(flowName = "Login")
+    controller.stopRecording()
+    controller.briefRecording()
+    controller.analyze()
+    controller.dismissRecommendation("recommendation-1")
+
+    assertThat(flowAnalysesApi.dismissedRecommendationIds).containsExactly("recommendation-1")
+    assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Insights::class.java)
+    assertThat((controller.state as SentryBuddySessionState.Insights).response.recommendations)
+      .isEmpty()
+    assertThat(controller.homeRecommendations).isEmpty()
   }
 
   @Test
@@ -367,8 +393,7 @@ class SentryBuddySessionControllerTest {
     controller.runPendingHealthCheck()
     controller.dismissHomeRecommendation("health-check:replay-disabled")
 
-    assertThat(controller.homeRecommendations.single().status)
-      .isEqualTo(RecommendationStatus.DISMISSED)
+    assertThat(controller.homeRecommendations).isEmpty()
 
     nowMs = 200L
     controller.runHealthCheck()
