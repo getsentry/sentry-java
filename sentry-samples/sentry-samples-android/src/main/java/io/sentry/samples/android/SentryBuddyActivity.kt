@@ -688,7 +688,10 @@ private fun TravelScaffold(
   content: @Composable ColumnScope.() -> Unit,
 ) {
   Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
+    modifier =
+      Modifier.fillMaxSize()
+        .verticalScroll(rememberScrollState())
+        .padding(start = 20.dp, top = 44.dp, end = 20.dp, bottom = 20.dp),
     verticalArrangement = Arrangement.spacedBy(16.dp),
   ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
