@@ -1,15 +1,11 @@
 package io.sentry.android.buddy.ui.userflow
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,37 +38,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import io.sentry.android.buddy.R
 import io.sentry.android.buddy.ui.common.BuddyWavyProgress
 import io.sentry.android.buddy.ui.common.Icons
-import io.sentry.android.buddy.ui.common.theme.BuddyAccentBubbleEnd
-import io.sentry.android.buddy.ui.common.theme.BuddyAccentBubbleShadow
-import io.sentry.android.buddy.ui.common.theme.BuddyAccentBubbleStart
 import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyGold
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
+import io.sentry.android.buddy.ui.common.theme.BuddyPurple
 import io.sentry.android.buddy.ui.common.theme.BuddySweatshirtPink
 import io.sentry.android.buddy.ui.common.theme.BuddyWarningBubbleEnd
+import io.sentry.android.buddy.ui.overlay.BuddyBubbleGlyph
+import io.sentry.android.buddy.ui.overlay.BuddyBubbleGlyphState
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
-import kotlin.math.cos
 import kotlin.math.hypot
-import kotlin.math.roundToInt
-import kotlin.math.sin
 import kotlin.random.Random
 import kotlinx.coroutines.delay
 
@@ -308,77 +297,12 @@ private fun BuddyAnalyzingSeer(
   lookVector: androidx.compose.ui.geometry.Offset?,
   size: Dp = 88.dp,
 ) {
-  val density = LocalDensity.current
-  val sizePx = with(density) { size.toPx() }
-  val pupilSize = size * 0.17f
-  val idleOrbit by
-    androidx.compose.animation.core
-      .rememberInfiniteTransition(label = "seer-icon")
-      .animateFloat(
-        initialValue = 0f,
-        targetValue = TAU,
-        animationSpec =
-          androidx.compose.animation.core.infiniteRepeatable(
-            tween(PUPIL_IDLE_ORBIT_MS, easing = androidx.compose.animation.core.LinearEasing),
-            androidx.compose.animation.core.RepeatMode.Restart,
-          ),
-        label = "seer-pupil-orbit",
-      )
-  val idleTarget =
-    androidx.compose.ui.geometry.Offset(
-      x = (cos(idleOrbit) * 0.85f).toFloat(),
-      y = (sin(idleOrbit * 1.3f) * 0.7f).toFloat(),
-    )
-  val focusTarget = lookVector?.normalized()
-  val desiredTarget = focusTarget ?: idleTarget
-  val pupilX by
-    animateFloatAsState(
-      targetValue = desiredTarget.x,
-      animationSpec = tween(durationMillis = if (focusTarget != null) 120 else 320),
-      label = "seer-pupil-x",
-    )
-  val pupilY by
-    animateFloatAsState(
-      targetValue = desiredTarget.y,
-      animationSpec = tween(durationMillis = if (focusTarget != null) 120 else 320),
-      label = "seer-pupil-y",
-    )
-  val bubbleBrush = remember {
-    Brush.linearGradient(
-      colors = listOf(BuddyAccentBubbleStart, BuddyAccentBubbleEnd),
-      start = androidx.compose.ui.geometry.Offset(0f, 0f),
-      end = androidx.compose.ui.geometry.Offset(1f, 1f),
-    )
-  }
-
   Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
     Box(
       modifier =
-        Modifier.size(size * 0.84f)
-          .shadow(14.dp, CircleShape)
-          .background(BuddyAccentBubbleShadow.copy(alpha = 0.45f), CircleShape)
+        Modifier.size(size * 0.84f).shadow(14.dp, CircleShape).background(BuddyPurple, CircleShape)
     )
-    Box(
-      modifier = Modifier.size(size * 0.8f).background(bubbleBrush, CircleShape).clip(CircleShape)
-    )
-    Image(
-      painter = painterResource(R.drawable.ic_buddy_eye_shell),
-      contentDescription = null,
-      modifier = Modifier.matchParentSize(),
-    )
-    Box(
-      modifier =
-        Modifier.size(pupilSize)
-          .offset {
-            IntOffset(
-              x = (pupilX * sizePx * PUPIL_X_TRAVEL_FRACTION).roundToInt(),
-              y =
-                (sizePx * PUPIL_BASELINE_Y_FRACTION + pupilY * sizePx * PUPIL_Y_TRAVEL_FRACTION)
-                  .roundToInt(),
-            )
-          }
-          .background(Color.White, CircleShape)
-    )
+    BuddyBubbleGlyph(BuddyBubbleGlyphState.ANALYZING, size * 0.8f)
   }
 }
 

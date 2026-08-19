@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Fades pupil_dot out while the lid closes, so the pupil does not float over a shut eye. Timing mirrors buddy_blink. -->
+<objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
+  android:duration="3500"
+  android:interpolator="@anim/buddy_blink_hold"
+  android:propertyName="fillAlpha"
+  android:repeatCount="infinite"
+  android:repeatMode="reverse"
+  android:valueFrom="0.5393053"
+  android:valueTo="0"
+  android:valueType="floatType" />

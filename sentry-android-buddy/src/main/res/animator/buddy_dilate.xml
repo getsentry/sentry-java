@@ -3,6 +3,21 @@
   android:duration="700"
   android:repeatCount="infinite"
   android:valueType="floatType">
+  <propertyValuesHolder android:propertyName="translationY">
+    <keyframe
+      android:fraction="0"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="-1" />
+    <keyframe
+      android:fraction="0.5"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="-2" />
+    <keyframe
+      android:fraction="1"
+      android:interpolator="@anim/buddy_ease_smooth"
+      android:value="-1" />
+  </propertyValuesHolder>
+
   <propertyValuesHolder android:propertyName="scaleX">
     <keyframe
       android:fraction="0"

@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Holds the eye wide open for 94% of the cycle, then closes it. Paired with repeatMode="reverse", so the eye reopens on the way back and one blink lands every two cycles. -->
+<pathInterpolator xmlns:android="http://schemas.android.com/apk/res/android"
+  android:pathData="M 0,0 L 0.94,0 C 0.965,0.12 0.98,0.45 1,1" />

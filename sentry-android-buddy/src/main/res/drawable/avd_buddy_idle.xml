@@ -2,8 +2,14 @@
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
   android:drawable="@drawable/ic_buddy_eye">
   <target
-    android:name="eye"
+    android:name="eyeball"
     android:animation="@animator/buddy_blink" />
+  <target
+    android:name="pupil_dot"
+    android:animation="@animator/buddy_blink_pupil" />
+  <target
+    android:name="pupil_dot_soft"
+    android:animation="@animator/buddy_blink_pupil_soft" />
   <target
     android:name="pupil"
     android:animation="@animator/buddy_glance" />

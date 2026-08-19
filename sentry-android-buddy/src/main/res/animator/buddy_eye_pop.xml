@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?><!-- bd-shut: one blink every 7s. Morphs the eyelid path instead of scaling the "eye" group, so the outline keeps its stroke width while the eye closes. valueFrom must stay identical to the eyeball path in ic_buddy_eye.xml, and both values must keep the same node types (M, C, C, Z) or the morph cannot be inflated. -->
 <objectAnimator xmlns:android="http://schemas.android.com/apk/res/android"
-  android:duration="3500"
-  android:interpolator="@anim/buddy_blink_hold"
+  android:duration="200"
+  android:interpolator="@android:anim/linear_interpolator"
   android:propertyName="pathData"
-  android:repeatCount="infinite"
-  android:repeatMode="reverse"
   android:valueFrom="M 7.0824898,14.7623 C 7.0824898,14.7623 13.374241,17.101241 18.847364,14.69213 C 16.672148,8.5173174 10.052945,7.6285196 7.0824898,14.7623 Z"
-  android:valueTo="M 7.0824898,14.7623 C 7.0824898,14.7623 13.374241,17.101241 18.847364,14.69213 C 15.467595,12.564616 10.486584,12.591278 7.0824898,14.7623 Z"
+  android:valueTo="M 7.0824898,14.7623 C 7.0824898,14.7623 12.651509,20.088532 18.847364,14.69213 C 16.672148,8.5173174 10.052945,7.6285196 7.0824898,14.7623 Z"
   android:valueType="pathType" />

@@ -11,11 +11,6 @@
   <color name="buddy_ink">#FF181225</color>
   <color name="buddy_on_vibrant">#FFFFFFFF</color>
 
-  <!-- Eyeball is filled with the bubble background so the beam cannot show
-       through the iris. Override per bubble variant. -->
-  <color name="buddy_eyeball_accent">#FF7553FF</color>
-  <color name="buddy_eyeball_danger">#FFFF002B</color>
-
   <!-- Severe-state flame ramp. -->
   <color name="buddy_flame_outer">#FFFF002B</color>
   <color name="buddy_flame_mid">#FFFF6A00</color>

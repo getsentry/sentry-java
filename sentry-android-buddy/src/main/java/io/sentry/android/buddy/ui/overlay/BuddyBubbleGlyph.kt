@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
@@ -56,10 +57,10 @@ internal fun BuddyBubbleAnimatedDrawable(drawableRes: Int, modifier: Modifier = 
 }
 
 @Composable
-internal fun BuddyBubbleGlyph(state: BuddyBubbleGlyphState) {
+internal fun BuddyBubbleGlyph(state: BuddyBubbleGlyphState, size: Dp = BuddyBubbleGlyphSize) {
   val context = LocalContext.current
   Box(
-    modifier = Modifier.size(BuddyBubbleGlyphSize).clip(CircleShape),
+    modifier = Modifier.size(size).clip(CircleShape),
     contentAlignment = Alignment.Center,
   ) {
     AndroidView(

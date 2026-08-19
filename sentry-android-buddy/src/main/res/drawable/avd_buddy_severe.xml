@@ -1,7 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Severe: pupil dilates fast on the danger bubble. Overlay avd_buddy_flames. -->
+<?xml version="1.0" encoding="utf-8"?><!-- Severe: pupil dilates fast. The red bubble face carries the severity, so the glyph is the base white eye. -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
-  android:drawable="@drawable/ic_buddy_eye_danger">
+  android:drawable="@drawable/ic_buddy_eye">
   <target
     android:name="pupil"
     android:animation="@animator/buddy_dilate" />
+
+  <target
+    android:name="eyeball"
+    android:animation="@animator/buddy_eye_pop" />
 </animated-vector>
