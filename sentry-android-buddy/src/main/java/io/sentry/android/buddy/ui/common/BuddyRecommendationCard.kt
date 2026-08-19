@@ -10,14 +10,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -113,8 +110,8 @@ internal fun BuddyRecommendationCard(
     shape = RoundedCornerShape(18.dp),
     border = CardDefaults.outlinedCardBorder(),
   ) {
-    Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-      Box(modifier = Modifier.width(5.dp).fillMaxHeight().background(color))
+    Column(modifier = Modifier.fillMaxWidth()) {
+      Box(modifier = Modifier.fillMaxWidth().height(5.dp).background(color))
       Column(
         modifier = Modifier.fillMaxWidth().padding(16.dp).animateContentSize(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
