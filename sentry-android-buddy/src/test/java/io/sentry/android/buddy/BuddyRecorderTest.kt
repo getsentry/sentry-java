@@ -481,6 +481,35 @@ class BuddyRecorderTest {
   }
 
   @Test
+  fun `dismissing live feed attention removes that item from future attention cards`() {
+    val fixture = Fixture()
+    fixture.recorder.recordEvent(BuddyObservedEvent(Date(500), "Boom", emptyMap()))
+
+    val attentionItem = fixture.recorder.liveFeedSnapshot().latestAdverseItem
+    val feed = fixture.recorder.dismissLiveFeedItem(requireNotNull(attentionItem).id)
+
+    assertThat(feed.unviewedAdverseCount).isEqualTo(0)
+    assertThat(feed.latestAdverseItem).isNull()
+    assertThat(feed.latestUnviewedAdverseItem).isNull()
+    assertThat(feed.items.single().dismissed).isTrue()
+  }
+
+  @Test
+  fun `dismissing one live feed attention item keeps newer adverse items visible`() {
+    val fixture = Fixture()
+    fixture.recorder.recordEvent(BuddyObservedEvent(Date(500), "Boom", emptyMap()))
+    fixture.clock.advance(100)
+    fixture.recorder.recordEvent(BuddyObservedEvent(Date(600), "Boom again", emptyMap()))
+
+    val newest = fixture.recorder.liveFeedSnapshot().latestAdverseItem
+    val feed = fixture.recorder.dismissLiveFeedItem(requireNotNull(newest).id)
+
+    assertThat(feed.unviewedAdverseCount).isEqualTo(1)
+    assertThat(feed.latestAdverseItem?.id).isNotEqualTo(newest.id)
+    assertThat(feed.latestUnviewedAdverseItem?.id).isEqualTo(feed.latestAdverseItem?.id)
+  }
+
+  @Test
   fun `live feed keeps the last 25 useful signals`() {
     val fixture = Fixture()
 

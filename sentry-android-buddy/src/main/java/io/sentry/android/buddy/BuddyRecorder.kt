@@ -69,6 +69,8 @@ internal class BuddyRecorder(
 
   @Synchronized fun markLiveFeedSeen(): BuddyLiveFeed = liveFeed.markAdverseViewed()
 
+  @Synchronized fun dismissLiveFeedItem(id: Long): BuddyLiveFeed = liveFeed.dismissAdverseItem(id)
+
   @Synchronized
   fun addLiveFeedListener(listener: (BuddyLiveFeed) -> Unit): () -> Unit {
     liveFeedListeners += listener

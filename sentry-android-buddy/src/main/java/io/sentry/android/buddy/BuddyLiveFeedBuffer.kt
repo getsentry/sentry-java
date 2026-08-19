@@ -42,9 +42,20 @@ internal class BuddyLiveFeedBuffer(private val capacity: Int) {
     return snapshot()
   }
 
+  fun dismissAdverseItem(id: Long): BuddyLiveFeed {
+    for (index in items.indices) {
+      val item = items[index]
+      if (item.id == id && item.adverse) {
+        items[index] = item.copy(viewed = true, dismissed = true)
+        break
+      }
+    }
+    return snapshot()
+  }
+
   fun snapshot(): BuddyLiveFeed {
     val newestFirst = items.reversed()
-    val adverseItems = newestFirst.filter { it.adverse }
+    val adverseItems = newestFirst.filter { it.adverse && !it.dismissed }
     val unviewedAdverseItems = adverseItems.filterNot { it.viewed }
     return BuddyLiveFeed(
       items = newestFirst,

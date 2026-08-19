@@ -35,6 +35,7 @@ import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.model.toHomeRecommendations
 import io.sentry.android.buddy.model.withRecommendation
+import io.sentry.android.buddy.ui.bottomsheet.attentionCardItem
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import org.jetbrains.annotations.ApiStatus
@@ -176,7 +177,8 @@ public constructor(
   }
 
   internal fun dismissLiveFeedAttention() {
-    liveFeed = safeMarkLiveFeedSeen()
+    val attentionItemId = liveFeed.attentionCardItem()?.id ?: return
+    liveFeed = safeDismissLiveFeedItem(attentionItemId)
   }
 
   internal fun selectHomeTab(tab: BuddyHomeTab) {
@@ -527,6 +529,17 @@ public constructor(
     try {
       if (recorderFacade === RealSentryBuddyRecorderFacade) {
         SentryBuddy.markLiveFeedSeen()
+      } else {
+        BuddyLiveFeed()
+      }
+    } catch (_: IllegalStateException) {
+      BuddyLiveFeed()
+    }
+
+  private fun safeDismissLiveFeedItem(id: Long): BuddyLiveFeed =
+    try {
+      if (recorderFacade === RealSentryBuddyRecorderFacade) {
+        SentryBuddy.dismissLiveFeedItem(id)
       } else {
         BuddyLiveFeed()
       }

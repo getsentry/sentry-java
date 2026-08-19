@@ -16,6 +16,7 @@ internal data class BuddyLiveFeedItem(
   val severity: Severity = Severity.LOW,
   val adverse: Boolean = false,
   val viewed: Boolean = false,
+  val dismissed: Boolean = false,
   val visibleScreens: List<String> = emptyList(),
 ) {
   enum class Category(val label: String) {
