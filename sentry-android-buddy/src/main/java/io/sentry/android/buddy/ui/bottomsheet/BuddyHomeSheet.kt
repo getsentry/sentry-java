@@ -57,7 +57,7 @@ import io.sentry.android.buddy.ui.common.openLinkLabelFor
 import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
-import io.sentry.android.buddy.ui.common.theme.BuddyPurple
+import io.sentry.android.buddy.ui.common.theme.BuddySeerSweatshirtPink
 import io.sentry.android.buddy.ui.common.theme.BuddySheetHorizontalPadding
 import io.sentry.android.buddy.ui.common.theme.LIVE_FEED_VISIBLE_ITEM_LIMIT
 import io.sentry.android.buddy.ui.common.timeline.BuddyTimeline
@@ -341,7 +341,7 @@ internal fun RecordFlowTabContent(onStartRecording: () -> Unit) {
   )
   Button(
     modifier = Modifier.fillMaxWidth().height(56.dp),
-    colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
+    colors = ButtonDefaults.buttonColors(containerColor = BuddySeerSweatshirtPink),
     onClick = onStartRecording,
   ) {
     BuddyButtonText("Start Recording")
