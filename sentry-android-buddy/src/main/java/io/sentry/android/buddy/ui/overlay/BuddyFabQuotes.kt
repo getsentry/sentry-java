@@ -48,7 +48,7 @@ internal val BuddyFabQuotes =
     "You need a bigger dungeon.",
     "Are you a bad enough dude to rescue the president?",
     "Say fuzzy pickles!",
-    "You cannot grasp the grue form of Giygas' attack!",
+    "You cannot grasp the true form of Giygas' attack!",
     "Ness dug around in the trash can. There's a hamburger inside.",
     "Pictures taken instantaneously!",
     "I'm a photographic genius, if I do say so myself.",
