@@ -46,8 +46,9 @@ internal fun BuddySheet(
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onAnalyze: () -> Unit,
-  onResolveRecommendation: (String) -> Unit,
-  onResolveHomeRecommendation: (String) -> Unit,
+  onExecuteRecommendationAction: (String, String) -> Unit,
+  onDismissRecommendation: (String) -> Unit,
+  onExecuteHomeRecommendationAction: (String, String) -> Unit,
   onDismissHomeRecommendation: (String) -> Unit,
   onMarkHomeRecommendationRead: (String) -> Unit,
   onSelectHomeTab: (BuddyHomeTab) -> Unit,
@@ -100,7 +101,7 @@ internal fun BuddySheet(
             nowMs,
             onDispatch,
             ::startRecordingAfterSheetExit,
-            onResolveHomeRecommendation,
+            onExecuteHomeRecommendationAction,
             onDismissHomeRecommendation,
             onMarkHomeRecommendationRead,
             onSelectHomeTab,
@@ -115,7 +116,14 @@ internal fun BuddySheet(
         is SentryBuddySessionState.Briefing -> BriefingSheet(state, onDispatch, onAnalyze)
         is SentryBuddySessionState.Analyzing -> AnalyzingSheet(state)
         is SentryBuddySessionState.Insights ->
-          InsightsSheet(state, sentryUiLinks, onDispatch, onResolveRecommendation, onOpenUrl)
+          InsightsSheet(
+            state,
+            sentryUiLinks,
+            onDispatch,
+            onExecuteRecommendationAction,
+            onDismissRecommendation,
+            onOpenUrl,
+          )
 
         is SentryBuddySessionState.Error -> ErrorSheet(state, onDispatch)
         is SentryBuddySessionState.Recording,

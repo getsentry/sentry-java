@@ -60,6 +60,7 @@ import io.sentry.android.buddy.ui.common.theme.BuddySheetHorizontalPadding
 import io.sentry.android.buddy.ui.common.theme.LIVE_FEED_VISIBLE_ITEM_LIMIT
 import io.sentry.android.buddy.ui.common.timeline.BuddyTimeline
 import io.sentry.android.buddy.ui.common.timeline.toTimelineRow
+import io.sentry.android.buddy.ui.common.toActionModels
 import io.sentry.android.buddy.ui.common.toCardModel
 import io.sentry.android.buddy.ui.healthcheck.HealthCheckStatusCard
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
@@ -79,7 +80,7 @@ internal fun BuddyHomeSheet(
   nowMs: Long,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onStartRecording: () -> Unit,
-  onResolveHomeRecommendation: (String) -> Unit,
+  onExecuteHomeRecommendationAction: (String, String) -> Unit,
   onDismissHomeRecommendation: (String) -> Unit,
   onMarkHomeRecommendationRead: (String) -> Unit,
   onSelectHomeTab: (BuddyHomeTab) -> Unit,
@@ -130,7 +131,7 @@ internal fun BuddyHomeSheet(
             recommendations = homeRecommendations,
             healthCheckState = healthCheckState,
             nowMs = nowMs,
-            onResolve = onResolveHomeRecommendation,
+            onExecuteAction = onExecuteHomeRecommendationAction,
             onDismiss = onDismissHomeRecommendation,
             onMarkRead = onMarkHomeRecommendationRead,
             onRetryHealthCheck = onRunHealthCheck,
@@ -248,7 +249,7 @@ internal fun RecommendationsTabContent(
   recommendations: List<BuddyHomeRecommendation>,
   healthCheckState: BuddyHealthCheckState,
   nowMs: Long,
-  onResolve: (String) -> Unit,
+  onExecuteAction: (String, String) -> Unit,
   onDismiss: (String) -> Unit,
   onMarkRead: (String) -> Unit,
   onRetryHealthCheck: () -> Unit,
@@ -286,7 +287,21 @@ internal fun RecommendationsTabContent(
               onMarkRead(recommendation.id)
               primaryLink?.let { onOpenUrl(context, it) }
             },
-          onResolve = if (recommendation.isOpen) ({ onResolve(recommendation.id) }) else null,
+          actions =
+            if (recommendation.isOpen) {
+              recommendation.actions.toActionModels(
+                onExecute = { actionId ->
+                  onMarkRead(recommendation.id)
+                  onExecuteAction(recommendation.id, actionId)
+                },
+                onOpenLink = { link ->
+                  onMarkRead(recommendation.id)
+                  onOpenUrl(context, link)
+                },
+              )
+            } else {
+              emptyList()
+            },
           onDismiss = if (recommendation.isOpen) ({ onDismiss(recommendation.id) }) else null,
           onOpenLink =
             primaryLink?.let { link ->
@@ -354,7 +369,7 @@ private fun BuddyHomeSheetPreviewFrame(
       nowMs = PREVIEW_NOW_MS,
       onDispatch = {},
       onStartRecording = {},
-      onResolveHomeRecommendation = {},
+      onExecuteHomeRecommendationAction = { _, _ -> },
       onDismissHomeRecommendation = {},
       onMarkHomeRecommendationRead = {},
       onSelectHomeTab = {},

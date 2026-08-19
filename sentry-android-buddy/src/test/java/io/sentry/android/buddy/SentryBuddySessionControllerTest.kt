@@ -119,7 +119,7 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
-  fun `resolving a recommendation updates the insights state`() {
+  fun `executing an action updates the insights state`() {
     val flowAnalysesApi = FakeFlowAnalysesApi()
     val controller =
       SentryBuddySessionController(
@@ -131,22 +131,21 @@ class SentryBuddySessionControllerTest {
     controller.stopRecording()
     controller.briefRecording()
     controller.analyze()
-    controller.resolveRecommendation("recommendation-1")
+    controller.executeRecommendationAction("recommendation-1", "action-1")
 
-    assertThat(flowAnalysesApi.resolvedRecommendationIds).containsExactly("recommendation-1")
+    assertThat(flowAnalysesApi.executedActionIds).containsExactly("action-1")
     val state = controller.state as SentryBuddySessionState.Insights
-    assertThat(state.analysis.recommendations.single().status)
-      .isEqualTo(RecommendationStatus.RESOLVED)
-    assertThat(state.response.recommendations.single().status)
-      .isEqualTo(RecommendationStatus.RESOLVED)
-    assertThat(state.analysis.recommendations.single().seerRunUrl)
+    val action = state.analysis.recommendations.single().actions.single()
+    assertThat(action.status).isEqualTo(ActionStatus.EXECUTED)
+    assertThat(action.seerRunUrl).isEqualTo("https://sentry.io/seer/runs/1")
+    assertThat(state.response.recommendations.single().actions.single().status)
+      .isEqualTo(ActionStatus.EXECUTED)
+    assertThat(controller.homeRecommendations.single().seerRunUrl)
       .isEqualTo("https://sentry.io/seer/runs/1")
-    assertThat(controller.homeRecommendations.single().status)
-      .isEqualTo(RecommendationStatus.RESOLVED)
   }
 
   @Test
-  fun `home resolve updates aggregate recommendation state`() {
+  fun `home action execution updates aggregate recommendation state`() {
     var nowMs = 100L
     val flowAnalysesApi = FakeFlowAnalysesApi()
     val controller =
@@ -161,32 +160,32 @@ class SentryBuddySessionControllerTest {
     controller.briefRecording()
     controller.analyze()
     nowMs = 200L
-    controller.resolveHomeRecommendation("flow-analysis:recommendation-1")
+    controller.executeHomeRecommendationAction("flow-analysis:recommendation-1", "action-1")
 
-    assertThat(flowAnalysesApi.resolvedRecommendationIds).containsExactly("recommendation-1")
-    assertThat(controller.homeRecommendations.single().status)
-      .isEqualTo(RecommendationStatus.RESOLVED)
+    assertThat(flowAnalysesApi.executedActionIds).containsExactly("action-1")
+    assertThat(controller.homeRecommendations.single().actions.single().status)
+      .isEqualTo(ActionStatus.EXECUTED)
     assertThat(controller.homeRecommendations.single().unread).isFalse()
   }
 
   @Test
-  fun `recommendation resolve failure enters error state`() {
+  fun `action execution failure enters error state`() {
     val controller =
       SentryBuddySessionController(
         recorderFacade = FakeRecorderFacade(),
         flowAnalysesApi =
-          FakeFlowAnalysesApi(resolveFailure = IllegalStateException("Resolve failed")),
+          FakeFlowAnalysesApi(actionFailure = IllegalStateException("Execute failed")),
       )
 
     controller.startRecording(flowName = "Login")
     controller.stopRecording()
     controller.briefRecording()
     controller.analyze()
-    controller.resolveRecommendation("recommendation-1")
+    controller.executeRecommendationAction("recommendation-1", "action-1")
 
     assertThat(controller.state).isInstanceOf(SentryBuddySessionState.Error::class.java)
     assertThat((controller.state as SentryBuddySessionState.Error).message)
-      .isEqualTo("Resolve failed")
+      .isEqualTo("Execute failed")
   }
 
   @Test
@@ -463,12 +462,13 @@ class SentryBuddySessionControllerTest {
   private class FakeFlowAnalysesApi(
     private val submitFailure: RuntimeException? = null,
     private val status: AnalysisStatus = AnalysisStatus.COMPLETED,
-    private val resolveFailure: RuntimeException? = null,
+    private val actionFailure: RuntimeException? = null,
   ) : SentryBuddyFlowAnalysesApi {
     var request: FlowAnalysisRequest? = null
     var submitted = false
     val polledIds = mutableListOf<String>()
-    val resolvedRecommendationIds = mutableListOf<String>()
+    val dismissedRecommendationIds = mutableListOf<String>()
+    val executedActionIds = mutableListOf<String>()
     private var recommendations =
       listOf(
         Recommendation(
@@ -476,6 +476,14 @@ class SentryBuddySessionControllerTest {
           title = "Add spans around key flow work",
           description = "Use explicit spans to explain the flow.",
           severity = Severity.HIGH,
+          actions =
+            listOf(
+              RecommendationAction(
+                id = "action-1",
+                actionLabel = "Add the spans",
+                description = "Wrap the slowest steps in explicit spans.",
+              )
+            ),
         )
       )
 
@@ -499,18 +507,45 @@ class SentryBuddySessionControllerTest {
       )
     }
 
-    override fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation {
-      resolveFailure?.let { throw it }
-      resolvedRecommendationIds += recommendationId
-      val resolved =
+    override fun dismissRecommendation(flowId: String, recommendationId: String): Recommendation {
+      actionFailure?.let { throw it }
+      dismissedRecommendationIds += recommendationId
+      val dismissed =
         recommendations
           .first { it.id == recommendationId }
+          .copy(status = RecommendationStatus.DISMISSED)
+      recommendations = recommendations.map { if (it.id == dismissed.id) dismissed else it }
+      return dismissed
+    }
+
+    override fun executeAction(
+      flowId: String,
+      recommendationId: String,
+      actionId: String,
+    ): RecommendationAction {
+      actionFailure?.let { throw it }
+      executedActionIds += actionId
+      val recommendation = recommendations.first { it.id == recommendationId }
+      val executed =
+        recommendation.actions
+          .first { it.id == actionId }
           .copy(
-            status = RecommendationStatus.RESOLVED,
+            status = ActionStatus.EXECUTED,
             seerRunUrl = "https://sentry.io/seer/runs/1",
           )
-      recommendations = recommendations.map { if (it.id == resolved.id) resolved else it }
-      return resolved
+      recommendations = recommendations.map {
+        if (it.id != recommendation.id) {
+          it
+        } else {
+          it.copy(
+            actions =
+              it.actions.map { action ->
+                if (action.id == executed.id) executed else action
+              }
+          )
+        }
+      }
+      return executed
     }
   }
 

@@ -7,10 +7,12 @@ import io.sentry.JsonSerializer
 import io.sentry.NoOpLogger
 import io.sentry.ObjectReader
 import io.sentry.SentryOptions
+import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.AnalysisStatus
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
 import io.sentry.android.buddy.model.Recommendation
+import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.SentryIssue
 import io.sentry.android.buddy.model.Severity
@@ -49,13 +51,35 @@ public constructor(
     return execute(httpRequest, FlowAnalysisResponseDeserializer)
   }
 
-  override fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation {
+  override fun dismissRecommendation(flowId: String, recommendationId: String): Recommendation {
     val httpRequest =
       Request.Builder()
-        .url(flowAnalysisUrl(flowId, "recommendations", recommendationId, "resolve"))
+        .url(flowAnalysisUrl(flowId, "recommendations", recommendationId, "dismiss"))
         .post(ByteArray(0).toRequestBody(null))
         .build()
     return execute(httpRequest, RecommendationDeserializer)
+  }
+
+  override fun executeAction(
+    flowId: String,
+    recommendationId: String,
+    actionId: String,
+  ): RecommendationAction {
+    val httpRequest =
+      Request.Builder()
+        .url(
+          flowAnalysisUrl(
+            flowId,
+            "recommendations",
+            recommendationId,
+            "actions",
+            actionId,
+            "execute",
+          )
+        )
+        .post(ByteArray(0).toRequestBody(null))
+        .build()
+    return execute(httpRequest, RecommendationActionDeserializer)
   }
 
   private fun flowAnalysisUrl(vararg pathSegments: String): okhttp3.HttpUrl {
@@ -173,9 +197,8 @@ internal object RecommendationDeserializer : JsonDeserializer<Recommendation> {
     var description: String? = null
     var link: String? = null
     var severity: Severity = Severity.MEDIUM
-    var resolvable = true
     var status: RecommendationStatus = RecommendationStatus.OPEN
-    var seerRunUrl: String? = null
+    var actions: List<RecommendationAction> = emptyList()
 
     reader.beginObject()
     while (reader.hasNext()) {
@@ -185,11 +208,12 @@ internal object RecommendationDeserializer : JsonDeserializer<Recommendation> {
         "description" -> description = reader.nextStringOrNull()
         "link" -> link = reader.nextStringOrNull()
         "severity" -> severity = reader.nextStringOrNull()?.let { Severity.valueOf(it) } ?: severity
-        "resolvable" -> resolvable = reader.nextBooleanOrNull() ?: resolvable
         "status" ->
           status = reader.nextStringOrNull()?.let { RecommendationStatus.valueOf(it) } ?: status
 
-        "seer_run_url" -> seerRunUrl = reader.nextStringOrNull()
+        "actions" ->
+          actions = reader.nextListOrNull(logger, RecommendationActionDeserializer).orEmpty()
+
         else -> reader.skipValue()
       }
     }
@@ -201,7 +225,40 @@ internal object RecommendationDeserializer : JsonDeserializer<Recommendation> {
       description = requireNotNull(description) { "recommendation description is required" },
       link = link,
       severity = severity,
-      resolvable = resolvable,
+      status = status,
+      actions = actions,
+    )
+  }
+}
+
+internal object RecommendationActionDeserializer : JsonDeserializer<RecommendationAction> {
+  override fun deserialize(reader: ObjectReader, logger: ILogger): RecommendationAction {
+    var id: String? = null
+    var actionLabel: String? = null
+    var description: String? = null
+    var link: String? = null
+    var status: ActionStatus = ActionStatus.OPEN
+    var seerRunUrl: String? = null
+
+    reader.beginObject()
+    while (reader.hasNext()) {
+      when (reader.nextName()) {
+        "id" -> id = reader.nextStringOrNull()
+        "action_label" -> actionLabel = reader.nextStringOrNull()
+        "description" -> description = reader.nextStringOrNull()
+        "link" -> link = reader.nextStringOrNull()
+        "status" -> status = reader.nextStringOrNull()?.let { ActionStatus.valueOf(it) } ?: status
+        "seer_run_url" -> seerRunUrl = reader.nextStringOrNull()
+        else -> reader.skipValue()
+      }
+    }
+    reader.endObject()
+
+    return RecommendationAction(
+      id = requireNotNull(id) { "action id is required" },
+      actionLabel = requireNotNull(actionLabel) { "action label is required" },
+      description = requireNotNull(description) { "action description is required" },
+      link = link,
       status = status,
       seerRunUrl = seerRunUrl,
     )

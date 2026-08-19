@@ -55,9 +55,14 @@ class SentryBuddyHttpFlowAnalysesApiTest {
               "description": "Add spans around checkout.",
               "link": "https://example.com",
               "severity": "HIGH",
-              "resolvable": false,
               "status": "OPEN",
-              "seer_run_url": null
+              "actions": [{
+                "id": "act-1",
+                "action_label": "Add the spans",
+                "description": "Wrap checkout in explicit spans.",
+                "status": "OPEN",
+                "seer_run_url": null
+              }]
             }],
             "issues": [{
               "id": "issue-1",
@@ -79,15 +84,18 @@ class SentryBuddyHttpFlowAnalysesApiTest {
 
     assertThat(response.status).isEqualTo(AnalysisStatus.COMPLETED)
     assertThat(response.title).isEqualTo("Checkout flow")
-    assertThat(response.recommendations.single().resolvable).isFalse()
     assertThat(response.recommendations.single().severity).isEqualTo(Severity.HIGH)
+    val action = response.recommendations.single().actions.single()
+    assertThat(action.id).isEqualTo("act-1")
+    assertThat(action.actionLabel).isEqualTo("Add the spans")
+    assertThat(action.status).isEqualTo(ActionStatus.OPEN)
     assertThat(response.issues.single().id).isEqualTo("issue-1")
     assertThat(response.enrichmentErrors).containsExactly("IssueEnrichment: boom")
     assertThat(server.takeRequest().path).isEqualTo("/v1/flow-analysis/flow-1")
   }
 
   @Test
-  fun `resolve recommendation posts to bridge resolve endpoint and parses the recommendation`() {
+  fun `dismiss recommendation posts to bridge dismiss endpoint and parses the recommendation`() {
     server.enqueue(
       MockResponse()
         .setResponseCode(200)
@@ -97,7 +105,34 @@ class SentryBuddyHttpFlowAnalysesApiTest {
             "id": "rec-1",
             "title": "Add spans",
             "description": "Add spans around checkout.",
-            "status": "RESOLVED",
+            "status": "DISMISSED"
+          }
+          """
+            .trimIndent()
+        )
+    )
+    val api = SentryBuddyHttpFlowAnalysesApi(server.url("/").toString())
+
+    val dismissed = api.dismissRecommendation("flow-1", "rec-1")
+
+    assertThat(dismissed.status).isEqualTo(RecommendationStatus.DISMISSED)
+    val request = server.takeRequest()
+    assertThat(request.method).isEqualTo("POST")
+    assertThat(request.path).isEqualTo("/v1/flow-analysis/flow-1/recommendations/rec-1/dismiss")
+  }
+
+  @Test
+  fun `execute action posts to bridge execute endpoint and parses the action`() {
+    server.enqueue(
+      MockResponse()
+        .setResponseCode(200)
+        .setBody(
+          """
+          {
+            "id": "act-1",
+            "action_label": "Add the spans",
+            "description": "Wrap checkout in explicit spans.",
+            "status": "EXECUTED",
             "seer_run_url": "https://sentry.io/seer/runs/1"
           }
           """
@@ -106,13 +141,14 @@ class SentryBuddyHttpFlowAnalysesApiTest {
     )
     val api = SentryBuddyHttpFlowAnalysesApi(server.url("/").toString())
 
-    val resolved = api.resolveRecommendation("flow-1", "rec-1")
+    val executed = api.executeAction("flow-1", "rec-1", "act-1")
 
-    assertThat(resolved.status).isEqualTo(RecommendationStatus.RESOLVED)
-    assertThat(resolved.seerRunUrl).isEqualTo("https://sentry.io/seer/runs/1")
+    assertThat(executed.status).isEqualTo(ActionStatus.EXECUTED)
+    assertThat(executed.seerRunUrl).isEqualTo("https://sentry.io/seer/runs/1")
     val request = server.takeRequest()
     assertThat(request.method).isEqualTo("POST")
-    assertThat(request.path).isEqualTo("/v1/flow-analysis/flow-1/recommendations/rec-1/resolve")
+    assertThat(request.path)
+      .isEqualTo("/v1/flow-analysis/flow-1/recommendations/rec-1/actions/act-1/execute")
   }
 
   @Test

@@ -31,14 +31,16 @@ import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
 import io.sentry.android.buddy.ui.common.MetricCard
 import io.sentry.android.buddy.ui.common.SheetTitle
 import io.sentry.android.buddy.ui.common.formatElapsed
-import io.sentry.android.buddy.ui.common.isResolvableNow
+import io.sentry.android.buddy.ui.common.isOpen
 import io.sentry.android.buddy.ui.common.openLinkLabelFor
+import io.sentry.android.buddy.ui.common.seerRunUrl
 import io.sentry.android.buddy.ui.common.theme.BuddyBorder
 import io.sentry.android.buddy.ui.common.theme.BuddyGold
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
 import io.sentry.android.buddy.ui.common.theme.BuddyPurple
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
+import io.sentry.android.buddy.ui.common.toActionModels
 import io.sentry.android.buddy.ui.common.toCardModel
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
 import io.sentry.android.buddy.ui.preview.previewAnalysisResponse
@@ -52,7 +54,8 @@ internal fun InsightsSheet(
   state: SentryBuddySessionState.Insights,
   sentryUiLinks: BuddySentryUiLinks,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
-  onResolveRecommendation: (String) -> Unit,
+  onExecuteRecommendationAction: (String, String) -> Unit,
+  onDismissRecommendation: (String) -> Unit,
   onOpenUrl: (Context, String) -> Unit,
 ) {
   val context = LocalContext.current
@@ -102,19 +105,29 @@ internal fun InsightsSheet(
   } else {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
       state.response.recommendations.forEach { recommendation ->
+        val seerRunUrl = recommendation.seerRunUrl()
         BuddyRecommendationCard(
           model = recommendation.toCardModel(),
-          onResolve =
-            if (recommendation.isResolvableNow()) {
-              { onResolveRecommendation(recommendation.id) }
+          actions =
+            if (recommendation.isOpen()) {
+              recommendation.actions.toActionModels(
+                onExecute = { actionId ->
+                  onExecuteRecommendationAction(recommendation.id, actionId)
+                },
+                onOpenLink = { link -> onOpenUrl(context, link) },
+              )
+            } else {
+              emptyList()
+            },
+          onDismiss =
+            if (recommendation.isOpen()) {
+              { onDismissRecommendation(recommendation.id) }
             } else {
               null
             },
           onOpenLink =
-            (recommendation.seerRunUrl ?: recommendation.link)?.let { link ->
-              { onOpenUrl(context, link) }
-            },
-          openLinkLabel = openLinkLabelFor(recommendation.seerRunUrl),
+            (seerRunUrl ?: recommendation.link)?.let { link -> { onOpenUrl(context, link) } },
+          openLinkLabel = openLinkLabelFor(seerRunUrl),
         )
       }
     }
@@ -152,7 +165,8 @@ private fun InsightsSheetPreview() {
         ),
       sentryUiLinks = previewSentryUiLinks,
       onDispatch = {},
-      onResolveRecommendation = {},
+      onExecuteRecommendationAction = { _, _ -> },
+      onDismissRecommendation = {},
       onOpenUrl = { _, _ -> },
     )
   }

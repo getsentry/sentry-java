@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
 import io.sentry.android.buddy.model.Recommendation
+import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
@@ -50,15 +51,23 @@ internal data class BuddyRecommendationCardModel(
   val unread: Boolean = false,
 )
 
+/** One button of the card: an action of the recommendation, with the label the bridge gave it. */
+internal data class BuddyRecommendationActionModel(
+  val id: String,
+  val label: String,
+  val onClick: () -> Unit,
+)
+
 /**
- * A recommendation card. Every action is optional: pass null and the button is left out, so the
- * caller decides what a recommendation can do rather than the card guessing.
+ * A recommendation card. Every button is optional: pass null, or an empty action list, and the
+ * button is left out, so the caller decides what a recommendation can do rather than the card
+ * guessing.
  */
 @Composable
 internal fun BuddyRecommendationCard(
   model: BuddyRecommendationCardModel,
   modifier: Modifier = Modifier,
-  onResolve: (() -> Unit)? = null,
+  actions: List<BuddyRecommendationActionModel> = emptyList(),
   onDismiss: (() -> Unit)? = null,
   onOpenLink: (() -> Unit)? = null,
   openLinkLabel: String = "Open Link",
@@ -117,9 +126,15 @@ internal fun BuddyRecommendationCard(
           }
         }
       }
-      if (onResolve != null || onDismiss != null || onOpenLink != null) {
+      if (actions.isNotEmpty()) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-          onResolve?.let { OutlinedButton(onClick = it) { BuddyButtonText("Resolve") } }
+          actions.forEach { action ->
+            OutlinedButton(onClick = action.onClick) { BuddyButtonText(action.label) }
+          }
+        }
+      }
+      if (onDismiss != null || onOpenLink != null) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
           onDismiss?.let { TextButton(onClick = it) { BuddyButtonText("Dismiss") } }
           onOpenLink?.let { TextButton(onClick = it) { BuddyButtonText(openLinkLabel) } }
         }
@@ -156,8 +171,30 @@ internal fun BuddyHomeRecommendation.toCardModel(nowMs: Long): BuddyRecommendati
 internal fun openLinkLabelFor(seerRunUrl: String?): String =
   if (seerRunUrl != null) "Open Seer Run" else "Open Link"
 
-internal fun Recommendation.isResolvableNow(): Boolean =
-  resolvable && status == RecommendationStatus.OPEN
+/**
+ * A link on an action points at something that already exists — a dashboard, a trace, an explore
+ * query — so the button opens it rather than asking the bridge to start a Seer run.
+ */
+internal fun List<RecommendationAction>.toActionModels(
+  onExecute: (String) -> Unit,
+  onOpenLink: (String) -> Unit,
+): List<BuddyRecommendationActionModel> = map { action ->
+  BuddyRecommendationActionModel(action.id, action.actionLabel) {
+    val link = action.link
+    if (link != null) {
+      onOpenLink(link)
+    } else {
+      onExecute(action.id)
+    }
+  }
+}
+
+/** A dismissed recommendation keeps its card, but offers no buttons any more. */
+internal fun Recommendation.isOpen(): Boolean = status == RecommendationStatus.OPEN
+
+/** The newest Seer run of the recommendation, so the card can offer one link to it. */
+internal fun Recommendation.seerRunUrl(): String? =
+  actions.lastOrNull { it.seerRunUrl != null }?.seerRunUrl
 
 @Preview(name = "Recommendation · flow analysis", showBackground = true, widthDp = 380)
 @Composable
@@ -165,7 +202,8 @@ private fun BuddyRecommendationCardPreview() {
   BuddyPreviewSurface {
     BuddyRecommendationCard(
       model = previewRecommendation.toCardModel(),
-      onResolve = {},
+      actions = previewRecommendation.actions.toActionModels(onExecute = {}, onOpenLink = {}),
+      onDismiss = {},
       onOpenLink = {},
     )
   }
@@ -192,7 +230,7 @@ private fun BuddyRecommendationCardHomePreview() {
   BuddyPreviewSurface {
     BuddyRecommendationCard(
       model = previewHomeRecommendation.toCardModel(PREVIEW_NOW_MS),
-      onResolve = {},
+      actions = previewHomeRecommendation.actions.toActionModels(onExecute = {}, onOpenLink = {}),
       onDismiss = {},
       onOpenLink = {},
     )

@@ -22,15 +22,20 @@ internal data class BuddyHomeRecommendation(
   val unread: Boolean = true,
   val updatedAtMs: Long,
   val primaryLink: String? = null,
-  val seerRunUrl: String? = null,
+  val actions: List<RecommendationAction> = emptyList(),
   val flowId: String? = null,
   val sourceRecommendationId: String? = null,
 ) {
   val isOpen: Boolean
     get() = status == RecommendationStatus.OPEN
 
-  val supportsRemoteResolve: Boolean
+  /** The bridge only knows recommendations that belong to a flow analysis. */
+  val supportsRemoteActions: Boolean
     get() = flowId != null && sourceRecommendationId != null
+
+  /** The newest Seer run of the recommendation, so the card can offer one link to it. */
+  val seerRunUrl: String?
+    get() = actions.lastOrNull { it.seerRunUrl != null }?.seerRunUrl
 }
 
 internal fun FlowAnalysisResponse.toHomeRecommendations(
@@ -47,7 +52,7 @@ internal fun FlowAnalysisResponse.toHomeRecommendations(
       unread = recommendation.status == RecommendationStatus.OPEN,
       updatedAtMs = nowMs,
       primaryLink = recommendation.link,
-      seerRunUrl = recommendation.seerRunUrl,
+      actions = recommendation.actions,
       flowId = flowId,
       sourceRecommendationId = recommendation.id,
     )
@@ -68,7 +73,7 @@ internal fun BuddyHealthCheckResponse.toHomeRecommendations(
       unread = recommendation.status == RecommendationStatus.OPEN,
       updatedAtMs = nowMs,
       primaryLink = recommendation.link,
-      seerRunUrl = recommendation.seerRunUrl,
+      actions = recommendation.actions,
     )
   }
 }

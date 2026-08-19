@@ -10,6 +10,7 @@ import io.sentry.android.buddy.bridge.DummySentryBuddyOpenUrlApi
 import io.sentry.android.buddy.bridge.SentryBuddyFlowAnalysesApi
 import io.sentry.android.buddy.bridge.SentryBuddyHealthCheckApi
 import io.sentry.android.buddy.bridge.SentryBuddyOpenUrlApi
+import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.AnalysisStatus
 import io.sentry.android.buddy.model.BuddyAnalysisResponse
 import io.sentry.android.buddy.model.BuddyFlowImportance
@@ -29,6 +30,7 @@ import io.sentry.android.buddy.model.FlowAnalysisEvent
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
 import io.sentry.android.buddy.model.Recommendation
+import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.model.toHomeRecommendations
@@ -179,36 +181,67 @@ public constructor(
   }
 
   internal fun dismissHomeRecommendation(recommendationId: String) {
-    updateHomeRecommendation(recommendationId) {
-      it.copy(status = RecommendationStatus.DISMISSED, unread = false, updatedAtMs = clock())
-    }
-  }
-
-  internal fun resolveHomeRecommendation(recommendationId: String) {
     val recommendation = homeRecommendations.firstOrNull { it.id == recommendationId } ?: return
     if (!recommendation.isOpen) {
       return
     }
-    if (recommendation.supportsRemoteResolve) {
+    if (recommendation.supportsRemoteActions) {
+      val flowId = requireNotNull(recommendation.flowId)
       val previousState = state
       try {
-        val resolved =
-          flowAnalysesApi.resolveRecommendation(
-            requireNotNull(recommendation.flowId),
+        val dismissed =
+          flowAnalysesApi.dismissRecommendation(
+            flowId,
             requireNotNull(recommendation.sourceRecommendationId),
           )
-        applyResolvedFlowRecommendation(requireNotNull(recommendation.flowId), resolved)
+        applyFlowRecommendation(flowId, dismissed)
       } catch (exception: IllegalStateException) {
         state =
           SentryBuddySessionState.Error(
-            exception.message ?: "Failed to resolve recommendation.",
+            exception.message ?: "Failed to dismiss recommendation.",
             previousState,
           )
       }
       return
     }
     updateHomeRecommendation(recommendationId) {
-      it.copy(status = RecommendationStatus.RESOLVED, unread = false, updatedAtMs = clock())
+      it.copy(status = RecommendationStatus.DISMISSED, unread = false, updatedAtMs = clock())
+    }
+  }
+
+  internal fun executeHomeRecommendationAction(recommendationId: String, actionId: String) {
+    val recommendation = homeRecommendations.firstOrNull { it.id == recommendationId } ?: return
+    if (!recommendation.isOpen) {
+      return
+    }
+    if (recommendation.supportsRemoteActions) {
+      val flowId = requireNotNull(recommendation.flowId)
+      val previousState = state
+      try {
+        val executed =
+          flowAnalysesApi.executeAction(
+            flowId,
+            requireNotNull(recommendation.sourceRecommendationId),
+            actionId,
+          )
+        applyFlowAction(flowId, requireNotNull(recommendation.sourceRecommendationId), executed)
+      } catch (exception: IllegalStateException) {
+        state =
+          SentryBuddySessionState.Error(
+            exception.message ?: "Failed to execute the action.",
+            previousState,
+          )
+      }
+      return
+    }
+    // A recommendation that no flow analysis owns has no Seer run to start, so the action is only
+    // marked off locally.
+    updateHomeRecommendation(recommendationId) {
+      it.copy(
+        actions = it.actions.markExecuted(actionId),
+        unread = false,
+        updatedAtMs = clock(),
+      )
     }
   }
 
@@ -359,16 +392,31 @@ public constructor(
     state = SentryBuddySessionState.Intro
   }
 
-  public fun resolveRecommendation(recommendationId: String) {
+  public fun dismissRecommendation(recommendationId: String) {
     val insightsState = state as? SentryBuddySessionState.Insights ?: return
     try {
-      val resolved =
-        flowAnalysesApi.resolveRecommendation(insightsState.request.flowId, recommendationId)
-      applyResolvedFlowRecommendation(insightsState.request.flowId, resolved)
+      val dismissed =
+        flowAnalysesApi.dismissRecommendation(insightsState.request.flowId, recommendationId)
+      applyFlowRecommendation(insightsState.request.flowId, dismissed)
     } catch (exception: IllegalStateException) {
       state =
         SentryBuddySessionState.Error(
-          exception.message ?: "Failed to resolve recommendation.",
+          exception.message ?: "Failed to dismiss recommendation.",
+          insightsState,
+        )
+    }
+  }
+
+  public fun executeRecommendationAction(recommendationId: String, actionId: String) {
+    val insightsState = state as? SentryBuddySessionState.Insights ?: return
+    try {
+      val executed =
+        flowAnalysesApi.executeAction(insightsState.request.flowId, recommendationId, actionId)
+      applyFlowAction(insightsState.request.flowId, recommendationId, executed)
+    } catch (exception: IllegalStateException) {
+      state =
+        SentryBuddySessionState.Error(
+          exception.message ?: "Failed to execute the action.",
           insightsState,
         )
     }
@@ -519,29 +567,33 @@ public constructor(
       else -> lastSelectedHomeTab
     }
 
-  private fun applyResolvedFlowRecommendation(flowId: String, resolved: Recommendation) {
+  /**
+   * The dismiss and execute endpoints answer with one recommendation or one action, so the answer
+   * is folded back into both the home list and the open insights sheet.
+   */
+  private fun applyFlowRecommendation(flowId: String, updated: Recommendation) {
     val nowMs = clock()
-    val resolvedAggregate =
+    val aggregate =
       BuddyHomeRecommendation(
-        id = "flow-analysis:${resolved.id}",
+        id = "flow-analysis:${updated.id}",
         source = BuddyRecommendationSource.FLOW_ANALYSIS,
-        title = resolved.title,
-        description = resolved.description,
-        severity = resolved.severity,
-        status = resolved.status,
+        title = updated.title,
+        description = updated.description,
+        severity = updated.severity,
+        status = updated.status,
         unread = false,
         updatedAtMs = nowMs,
-        primaryLink = resolved.link,
-        seerRunUrl = resolved.seerRunUrl,
+        primaryLink = updated.link,
+        actions = updated.actions,
         flowId = flowId,
-        sourceRecommendationId = resolved.id,
+        sourceRecommendationId = updated.id,
       )
-    val existing = homeRecommendations.firstOrNull { it.id == resolvedAggregate.id }
+    val existing = homeRecommendations.firstOrNull { it.id == aggregate.id }
     val refreshedAggregate =
       if (existing == null) {
-        resolvedAggregate
+        aggregate
       } else {
-        resolvedAggregate.copy(updatedAtMs = maxOf(nowMs, existing.updatedAtMs + 1))
+        aggregate.copy(updatedAtMs = maxOf(nowMs, existing.updatedAtMs + 1))
       }
     homeRecommendations =
       listOf(refreshedAggregate) + homeRecommendations.filterNot { it.id == refreshedAggregate.id }
@@ -549,12 +601,40 @@ public constructor(
     if (insightsState.request.flowId != flowId) {
       return
     }
-    val analysis = insightsState.analysis.withRecommendation(resolved)
+    val analysis = insightsState.analysis.withRecommendation(updated)
     state =
       insightsState.copy(
         analysis = analysis,
         response = analysis.toBuddyAnalysisResponse(insightsState.request),
       )
+  }
+
+  private fun applyFlowAction(
+    flowId: String,
+    recommendationId: String,
+    executed: RecommendationAction,
+  ) {
+    val recommendation = currentFlowRecommendation(flowId, recommendationId)
+    if (recommendation != null) {
+      applyFlowRecommendation(
+        flowId,
+        recommendation.copy(actions = recommendation.actions.replacing(executed)),
+      )
+      return
+    }
+    // The insights sheet is not open, so the home entry is the only copy that has to learn about
+    // the started Seer run.
+    updateHomeRecommendation("flow-analysis:$recommendationId") {
+      it.copy(actions = it.actions.replacing(executed), unread = false, updatedAtMs = clock())
+    }
+  }
+
+  private fun currentFlowRecommendation(flowId: String, recommendationId: String): Recommendation? {
+    val insightsState = state as? SentryBuddySessionState.Insights
+    if (insightsState != null && insightsState.request.flowId == flowId) {
+      return insightsState.analysis.recommendations.firstOrNull { it.id == recommendationId }
+    }
+    return null
   }
 
   private fun BuddyHomeRecommendation.isMoreRecentThan(existing: BuddyHomeRecommendation): Boolean {
@@ -663,3 +743,12 @@ private fun io.sentry.SentryOptions.sdkIdentifier(): String {
   }
   return sentryClientName?.takeIf { it.isNotBlank() } ?: "unknown"
 }
+
+private fun List<RecommendationAction>.replacing(
+  action: RecommendationAction
+): List<RecommendationAction> = map { if (it.id == action.id) action else it }
+
+private fun List<RecommendationAction>.markExecuted(actionId: String): List<RecommendationAction> =
+  map {
+    if (it.id == actionId) it.copy(status = ActionStatus.EXECUTED) else it
+  }

@@ -31,8 +31,12 @@ class SentryBuddyHttpHealthCheckApiTest {
               "description": "Version io.sentry.android@8.39.0 detected, but sentry-java 8.40.0 is available.",
               "link": "https://github.com/getsentry/sentry-java/releases/tag/8.40.0",
               "severity": "LOW",
-              "resolvable": true,
-              "status": "OPEN"
+              "status": "OPEN",
+              "actions": [{
+                "id": "sdk-outdated:fix",
+                "action_label": "Upgrade the SDK",
+                "description": "Raise the io.sentry dependency to the newest release."
+              }]
             }]
           }
           """
@@ -51,6 +55,8 @@ class SentryBuddyHttpHealthCheckApiTest {
     assertThat(recommendation.status).isEqualTo(RecommendationStatus.OPEN)
     assertThat(recommendation.link)
       .isEqualTo("https://github.com/getsentry/sentry-java/releases/tag/8.40.0")
+    assertThat(recommendation.actions.single().actionLabel).isEqualTo("Upgrade the SDK")
+    assertThat(recommendation.actions.single().status).isEqualTo(ActionStatus.OPEN)
     val recordedRequest = server.takeRequest()
     assertThat(recordedRequest.method).isEqualTo("POST")
     assertThat(recordedRequest.path).isEqualTo("/v1/health-check")

@@ -7,6 +7,7 @@ import io.sentry.android.buddy.model.BuddyHealthCheckRequest
 import io.sentry.android.buddy.model.BuddyHealthCheckResponse
 import io.sentry.android.buddy.model.BuddySdkConfigSnapshot
 import io.sentry.android.buddy.model.Recommendation
+import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.Severity
 import org.jetbrains.annotations.ApiStatus
 
@@ -33,7 +34,15 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           description =
             "The SDK is initialized without a DSN, so Buddy cannot correlate this app with a Sentry project. Set options.dsn.",
           severity = Severity.HIGH,
-          resolvable = false,
+          actions =
+            listOf(
+              RecommendationAction(
+                id = "dsn-missing:fix",
+                actionLabel = "Set the DSN",
+                description =
+                  "Set options.dsn in the Sentry SDK options so events reach a Sentry project.",
+              )
+            ),
         )
     }
 
@@ -47,7 +56,15 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           link =
             "https://github.com/getsentry/sentry-java/releases/tag/${BuildConfig.VERSION_NAME}",
           severity = Severity.LOW,
-          resolvable = false,
+          actions =
+            listOf(
+              RecommendationAction(
+                id = "sdk-outdated:fix",
+                actionLabel = "Upgrade the SDK",
+                description =
+                  "Raise the io.sentry dependency to the newest release and rebuild the app.",
+              )
+            ),
         )
     }
 
@@ -59,7 +76,15 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           description =
             "Buddy could not find a traces sample rate or traces sampler, so transaction tracing is likely off. Set options.tracesSampleRate or options.tracesSampler.",
           severity = Severity.MEDIUM,
-          resolvable = false,
+          actions =
+            listOf(
+              RecommendationAction(
+                id = "tracing-disabled:fix",
+                actionLabel = "Turn on tracing",
+                description =
+                  "Set options.tracesSampleRate, or install a tracesSampler, so transactions are recorded.",
+              )
+            ),
         )
     }
 
@@ -71,7 +96,15 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           description =
             "Replay is off for both full sessions and error-triggered captures, so visual debugging context is unavailable. Set options.sessionReplay.sessionSampleRate or onErrorSampleRate.",
           severity = Severity.LOW,
-          resolvable = false,
+          actions =
+            listOf(
+              RecommendationAction(
+                id = "replay-disabled:fix",
+                actionLabel = "Turn on Session Replay",
+                description =
+                  "Set a sessionSampleRate or an onErrorSampleRate in options.sessionReplay.",
+              )
+            ),
         )
     }
 
@@ -83,7 +116,15 @@ public object DummySentryBuddyHealthCheckApi : SentryBuddyHealthCheckApi {
           description =
             "Android ANR detection is turned off, so app hangs will be harder to diagnose in Sentry. Set options.isAnrEnabled = true.",
           severity = Severity.LOW,
-          resolvable = false,
+          actions =
+            listOf(
+              RecommendationAction(
+                id = "anr-disabled:fix",
+                actionLabel = "Turn on ANR reporting",
+                description =
+                  "Set options.isAnrEnabled to true so app hangs are reported to Sentry.",
+              )
+            ),
         )
     }
 

@@ -1,9 +1,11 @@
 package io.sentry.android.buddy.bridge
 
+import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.AnalysisStatus
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
 import io.sentry.android.buddy.model.Recommendation
+import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.model.withRecommendation
@@ -18,10 +20,20 @@ public interface SentryBuddyFlowAnalysesApi {
   public fun get(flowId: String): FlowAnalysisResponse
 
   /**
-   * Models `POST /v1/flow-analysis/{flowId}/recommendations/{id}/resolve`, which answers with the
-   * resolved recommendation only.
+   * Models `POST /v1/flow-analysis/{flowId}/recommendations/{id}/dismiss`, which answers with the
+   * dismissed recommendation only.
    */
-  public fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation
+  public fun dismissRecommendation(flowId: String, recommendationId: String): Recommendation
+
+  /**
+   * Models `POST /v1/flow-analysis/{flowId}/recommendations/{id}/actions/{actionId}/execute`, which
+   * starts the Seer run and answers with the executed action only.
+   */
+  public fun executeAction(
+    flowId: String,
+    recommendationId: String,
+    actionId: String,
+  ): RecommendationAction
 }
 
 @ApiStatus.Experimental
@@ -42,17 +54,37 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
       )
   }
 
-  override fun resolveRecommendation(flowId: String, recommendationId: String): Recommendation {
+  override fun dismissRecommendation(flowId: String, recommendationId: String): Recommendation {
     val analysis = get(flowId)
-    val resolved =
+    val dismissed =
       analysis.recommendations
         .first { it.id == recommendationId }
+        .copy(status = RecommendationStatus.DISMISSED)
+    analyses[flowId] = analysis.withRecommendation(dismissed)
+    return dismissed
+  }
+
+  override fun executeAction(
+    flowId: String,
+    recommendationId: String,
+    actionId: String,
+  ): RecommendationAction {
+    val analysis = get(flowId)
+    val recommendation = analysis.recommendations.first { it.id == recommendationId }
+    val executed =
+      recommendation.actions
+        .first { it.id == actionId }
         .copy(
-          status = RecommendationStatus.RESOLVED,
-          seerRunUrl = "https://sentry.io/seer/runs/$recommendationId",
+          status = ActionStatus.EXECUTED,
+          seerRunUrl = "https://sentry.io/seer/runs/$actionId",
         )
-    analyses[flowId] = analysis.withRecommendation(resolved)
-    return resolved
+    analyses[flowId] =
+      analysis.withRecommendation(
+        recommendation.copy(
+          actions = recommendation.actions.map { if (it.id == executed.id) executed else it }
+        )
+      )
+    return executed
   }
 
   private fun completedAnalysis(request: FlowAnalysisRequest): FlowAnalysisResponse {
@@ -69,6 +101,16 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
               "The recording identifies the flow, but explicit spans will make the risky work " +
                 "easier to explain in Sentry.",
             severity = Severity.HIGH,
+            actions =
+              listOf(
+                RecommendationAction(
+                  id = "add-flow-spans:instrument",
+                  actionLabel = "Add the spans",
+                  description =
+                    "Wrap the slowest steps of this flow in explicit spans so the work shows up " +
+                      "in the trace.",
+                )
+              ),
           ),
           Recommendation(
             id = "set-flow-budget",
@@ -76,6 +118,15 @@ public object DummySentryBuddyFlowAnalysesApi : SentryBuddyFlowAnalysesApi {
             description =
               "Use this recording as the first baseline for future local or CI comparisons.",
             severity = Severity.MEDIUM,
+            actions =
+              listOf(
+                RecommendationAction(
+                  id = "set-flow-budget:add-alert",
+                  actionLabel = "Create the budget",
+                  description =
+                    "Add a duration budget for this flow based on the recorded baseline.",
+                )
+              ),
           ),
           Recommendation(
             id = "keep-buddy-tags",

@@ -212,14 +212,17 @@ internal fun SentryBuddyOverlayContent(
       nowMs = nowMs,
       onDispatch = { dispatch(it) },
       onAnalyze = { dispatchAnalysis { analyze() } },
-      onResolveRecommendation = { recommendationId ->
-        dispatchAnalysis { resolveRecommendation(recommendationId) }
+      onExecuteRecommendationAction = { recommendationId, actionId ->
+        dispatchAnalysis { executeRecommendationAction(recommendationId, actionId) }
       },
-      onResolveHomeRecommendation = { recommendationId ->
-        dispatchAnalysis { resolveHomeRecommendation(recommendationId) }
+      onDismissRecommendation = { recommendationId ->
+        dispatchAnalysis { dismissRecommendation(recommendationId) }
+      },
+      onExecuteHomeRecommendationAction = { recommendationId, actionId ->
+        dispatchAnalysis { executeHomeRecommendationAction(recommendationId, actionId) }
       },
       onDismissHomeRecommendation = { recommendationId ->
-        dispatch { dismissHomeRecommendation(recommendationId) }
+        dispatchAnalysis { dismissHomeRecommendation(recommendationId) }
       },
       onMarkHomeRecommendationRead = { recommendationId ->
         dispatch { markHomeRecommendationRead(recommendationId) }

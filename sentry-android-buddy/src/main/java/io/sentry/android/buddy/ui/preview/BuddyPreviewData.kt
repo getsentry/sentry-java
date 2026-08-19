@@ -31,6 +31,7 @@ import io.sentry.android.buddy.model.BuddyTimelineItem
 import io.sentry.android.buddy.model.FlowAnalysisRequest
 import io.sentry.android.buddy.model.FlowAnalysisResponse
 import io.sentry.android.buddy.model.Recommendation
+import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.SentryIssue
 import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.ui.common.timeline.BuddyTimelineRow
@@ -142,7 +143,16 @@ internal val previewRecommendation: Recommendation =
       "Buddy could not find a traces sample rate or traces sampler, so transaction tracing is " +
         "likely off. Set options.tracesSampleRate or options.tracesSampler.",
     severity = Severity.MEDIUM,
-    resolvable = false,
+    actions =
+      listOf(
+        RecommendationAction(
+          id = "tracing-disabled:fix",
+          actionLabel = "Turn on tracing",
+          description =
+            "Set options.tracesSampleRate, or install a tracesSampler, so transactions are " +
+              "recorded.",
+        )
+      ),
   )
 
 internal val previewHomeRecommendation: BuddyHomeRecommendation =
@@ -153,6 +163,7 @@ internal val previewHomeRecommendation: BuddyHomeRecommendation =
     description = previewRecommendation.description,
     severity = previewRecommendation.severity,
     updatedAtMs = PREVIEW_NOW_MS - 60_000,
+    actions = previewRecommendation.actions,
   )
 
 private fun previewLiveFeedItem(
