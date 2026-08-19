@@ -4,31 +4,41 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import io.sentry.android.buddy.SentryBuddySessionController
 import io.sentry.android.buddy.SentryBuddySessionState
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.model.FlowAction
@@ -36,6 +46,7 @@ import io.sentry.android.buddy.ui.common.BuddyButtonText
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCardStyle
 import io.sentry.android.buddy.ui.common.BuddyRecommendationErrorCard
+import io.sentry.android.buddy.ui.common.Icons
 import io.sentry.android.buddy.ui.common.MetricCard
 import io.sentry.android.buddy.ui.common.SheetTitle
 import io.sentry.android.buddy.ui.common.formatElapsed
@@ -61,7 +72,6 @@ internal fun InsightsSheet(
   state: SentryBuddySessionState.Insights,
   sentryUiLinks: BuddySentryUiLinks,
   recommendationError: String?,
-  onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onExecuteFlowAction: (String) -> Unit,
   onExecuteRecommendationAction: (String, String) -> Unit,
   onDismissRecommendation: (String) -> Unit,
@@ -163,21 +173,13 @@ internal fun InsightsSheet(
       }
     }
   }
-  Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-    OutlinedButton(
-      modifier = Modifier.weight(1f).height(52.dp),
-      onClick = { onDispatch { recordAgain() } },
+  if (traceLink != null) {
+    Button(
+      modifier = Modifier.fillMaxWidth().height(52.dp),
+      colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
+      onClick = { onOpenUrl(context, traceLink) },
     ) {
-      BuddyButtonText("Record Again")
-    }
-    if (traceLink != null) {
-      Button(
-        modifier = Modifier.weight(1f).height(52.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
-        onClick = { onOpenUrl(context, traceLink) },
-      ) {
-        BuddyButtonText("Open in Sentry", color = Color.White)
-      }
+      BuddyButtonText("Open flow in Sentry", color = Color.White)
     }
   }
 }
@@ -196,7 +198,6 @@ private fun InsightsSheetPreview() {
         ),
       sentryUiLinks = previewSentryUiLinks,
       recommendationError = null,
-      onDispatch = {},
       onExecuteFlowAction = {},
       onExecuteRecommendationAction = { _, _ -> },
       onDismissRecommendation = {},
@@ -210,19 +211,51 @@ private fun FlowActionRow(actions: List<BuddyFlowActionModel>) {
   if (actions.isEmpty()) {
     return
   }
-  Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-    actions.forEach { action ->
-      OutlinedButton(
-        modifier = Modifier.weight(1f).height(48.dp),
-        onClick = action.onClick,
-      ) {
-        BuddyButtonText(action.label)
-      }
+  Row(
+    modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+  ) {
+    actions.forEachIndexed { index, action ->
+      FlowActionButton(action, isPrimary = index == 0)
     }
   }
 }
 
-private data class BuddyFlowActionModel(val label: String, val onClick: () -> Unit)
+@Composable
+private fun FlowActionButton(action: BuddyFlowActionModel, isPrimary: Boolean) {
+  val shape = RoundedCornerShape(16.dp)
+  val background = if (isPrimary) BuddyPurple else BuddyPurple.copy(alpha = 0.10f)
+  val contentColor = if (isPrimary) Color.White else BuddyPurple
+  val border = if (isPrimary) null else BorderStroke(1.dp, BuddyPurple.copy(alpha = 0.20f))
+  Surface(
+    modifier =
+      Modifier.size(48.dp)
+        .clip(shape)
+        .semantics {
+          contentDescription = action.label
+          role = Role.Button
+        }
+        .clickable(onClick = action.onClick),
+    color = background,
+    shape = shape,
+    border = border,
+  ) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      Icon(
+        imageVector = action.icon,
+        contentDescription = null,
+        tint = contentColor,
+        modifier = Modifier.size(21.dp),
+      )
+    }
+  }
+}
+
+private data class BuddyFlowActionModel(
+  val label: String,
+  val icon: ImageVector,
+  val onClick: () -> Unit,
+)
 
 private fun List<FlowAction>.toPermaActionModels(
   context: Context,
@@ -234,7 +267,7 @@ private fun List<FlowAction>.toPermaActionModels(
       when (action.id) {
         FLOW_ACTION_GENERATE_DASHBOARD,
         FLOW_ACTION_GENERATE_MONITORS ->
-          BuddyFlowActionModel(action.actionLabel) {
+          BuddyFlowActionModel(action.actionLabel, action.permaActionIcon()) {
             val link = action.seerRunUrl ?: action.link
             if (link != null) {
               onOpenUrl(context, link)
@@ -244,12 +277,22 @@ private fun List<FlowAction>.toPermaActionModels(
           }
 
         FLOW_ACTION_SHARE_RECORDING_JSON ->
-          BuddyFlowActionModel(action.actionLabel) { shareRecordingJson(context, recordingJson) }
+          BuddyFlowActionModel(action.actionLabel, action.permaActionIcon()) {
+            shareRecordingJson(context, recordingJson)
+          }
 
         else -> null
       }
     }
     .take(MAX_FLOW_ACTIONS)
+
+private fun FlowAction.permaActionIcon(): ImageVector =
+  when (id) {
+    FLOW_ACTION_GENERATE_DASHBOARD -> Icons.dashboard
+    FLOW_ACTION_GENERATE_MONITORS -> Icons.monitor
+    FLOW_ACTION_SHARE_RECORDING_JSON -> Icons.open_in_new
+    else -> Icons.open_in_new
+  }
 
 private fun shareRecordingJson(context: Context, recordingJson: String) {
   val sendIntent =

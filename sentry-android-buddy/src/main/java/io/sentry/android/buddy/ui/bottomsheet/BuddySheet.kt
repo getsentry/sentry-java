@@ -166,7 +166,6 @@ internal fun BuddySheet(
               it,
               sentryUiLinks,
               recommendationError,
-              onDispatch,
               onExecuteFlowAction,
               onExecuteRecommendationAction,
               onDismissRecommendation,
