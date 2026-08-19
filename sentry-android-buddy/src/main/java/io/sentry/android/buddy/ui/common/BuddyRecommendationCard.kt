@@ -132,9 +132,9 @@ internal fun BuddyRecommendationCard(
         }
         Text(
           model.title,
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
           color = BuddyInk,
-          style = MaterialTheme.typography.titleMedium,
+          style = MaterialTheme.typography.titleLarge,
           fontWeight = FontWeight.Bold,
         )
         RecommendationActionRow(
@@ -188,7 +188,7 @@ private fun RecommendationMetadataPill(label: String, color: Color) {
   Surface(color = color.copy(alpha = 0.12f), shape = RoundedCornerShape(18.dp)) {
     Text(
       label,
-      modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+      modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
       color = color,
       style = MaterialTheme.typography.labelSmall,
       fontWeight = FontWeight.Bold,
@@ -257,7 +257,7 @@ private fun RecommendationActionPill(
   emphasis: BuddyRecommendationPillEmphasis,
   icon: ImageVector?,
 ) {
-  val shape = RoundedCornerShape(22.dp)
+  val shape = RoundedCornerShape(18.dp)
   val background =
     when (emphasis) {
       BuddyRecommendationPillEmphasis.PRIMARY -> BuddyPurple
@@ -284,14 +284,14 @@ private fun RecommendationActionPill(
     border = border,
   ) {
     Row(
-      modifier = Modifier.padding(horizontal = 13.dp, vertical = 9.dp),
+      modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(5.dp),
+      horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
       Text(
         label,
         color = contentColor,
-        style = MaterialTheme.typography.labelLarge,
+        style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.Bold,
       )
       if (icon != null) {
@@ -299,7 +299,7 @@ private fun RecommendationActionPill(
           imageVector = icon,
           contentDescription = null,
           tint = contentColor,
-          modifier = Modifier.size(15.dp),
+          modifier = Modifier.size(13.dp),
         )
       }
     }
