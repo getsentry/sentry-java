@@ -7,13 +7,17 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public interface ReplayController extends IReplayApi {
-  void start();
+  /**
+   * Handles app foregrounding. When a new app session begins, starts a sampled replay unless one is
+   * already recording. An existing replay is never restarted or replaced.
+   */
+  void onAppForegrounded(boolean startNewSession);
 
-  void stop();
-
-  void pause();
-
-  void resume();
+  /**
+   * Handles app backgrounding with a temporary lifecycle pause. Unlike {@link #pause()}, this pause
+   * is automatically resumed on foreground and does not override an explicit user pause.
+   */
+  void onAppBackgrounded();
 
   boolean isRecording();
 

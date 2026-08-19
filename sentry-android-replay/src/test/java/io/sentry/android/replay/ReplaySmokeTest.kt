@@ -184,7 +184,7 @@ class ReplaySmokeTest {
     val controller = buildActivity(ExampleActivity::class.java, null).setup()
     controller.create().start().resume()
 
-    replay.start()
+    replay.onAppForegrounded(true)
     // wait for windows to be registered in our listeners
     shadowOf(Looper.getMainLooper()).idle()
 

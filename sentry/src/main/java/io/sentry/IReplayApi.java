@@ -1,6 +1,38 @@
 package io.sentry;
 
+/**
+ * Controls Session Replay. Methods may be called from any thread and return before the requested
+ * operation completes.
+ */
 public interface IReplayApi {
+
+  /** Starts a new replay session. Does nothing if a replay is already being recorded. */
+  void start();
+
+  /**
+   * Starts replay buffering. The rolling buffer is sent when {@link #flush()} is called or an error
+   * is captured. After the buffer is sent, recording continues in session mode unless the process
+   * is terminating.
+   */
+  void startBuffering();
+
+  /** Stops the current replay. A subsequent {@link #start()} begins a new replay session. */
+  void stop();
+
+  /**
+   * Pauses the current replay until {@link #resume()} is called. This can be used to avoid
+   * recording sensitive screens, such as PIN entry.
+   */
+  void pause();
+
+  /** Resumes a replay paused with {@link #pause()}. */
+  void resume();
+
+  /**
+   * Flushes replay data. A buffering replay continues in session mode after the buffer is sent. If
+   * replay is not recording, starts a new replay session.
+   */
+  void flush();
 
   /**
    * Draws a masking overlay on top of the screen to help visualize which parts of the screen are
