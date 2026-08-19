@@ -7,6 +7,8 @@ internal val BuddyPurple = Color(0xFF7553FF)
 
 internal val BuddyReplayBlue = Color(0xFF2F80ED)
 
+internal val BuddyReplayBlueHighlight = Color(0xFF4B9BFF)
+
 internal val BuddyAccentBubbleChonk = Color(0xFF5827D6)
 
 internal val BuddyAccentBubbleShadow = Color(0xFF44208F)

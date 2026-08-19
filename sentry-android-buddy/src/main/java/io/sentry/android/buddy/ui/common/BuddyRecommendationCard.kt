@@ -54,6 +54,7 @@ import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
 import io.sentry.android.buddy.ui.common.theme.BuddyReplayBlue
+import io.sentry.android.buddy.ui.common.theme.BuddyReplayBlueHighlight
 import io.sentry.android.buddy.ui.common.theme.severityColor
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
 import io.sentry.android.buddy.ui.preview.PREVIEW_NOW_MS
@@ -237,7 +238,7 @@ private fun metadataColor(label: String, severity: Severity): Color =
 
 private fun recommendationSeverityColor(severity: Severity): Color =
   when (severity) {
-    Severity.LOW -> BuddyReplayBlue
+    Severity.LOW -> BuddyReplayBlueHighlight
     else -> severityColor(severity)
   }
 
@@ -298,7 +299,7 @@ private fun RecommendationActionPill(
   val shape = RoundedCornerShape(18.dp)
   val background =
     when (emphasis) {
-      BuddyRecommendationPillEmphasis.PRIMARY -> BuddyReplayBlue
+      BuddyRecommendationPillEmphasis.PRIMARY -> BuddyReplayBlueHighlight
       BuddyRecommendationPillEmphasis.SECONDARY -> BuddyReplayBlue.copy(alpha = 0.10f)
       BuddyRecommendationPillEmphasis.GHOST -> Color.Transparent
     }
