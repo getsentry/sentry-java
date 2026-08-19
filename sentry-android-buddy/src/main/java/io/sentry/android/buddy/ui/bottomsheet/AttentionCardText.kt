@@ -10,13 +10,15 @@ import io.sentry.android.buddy.ui.common.stringValue
 import io.sentry.android.buddy.ui.common.timeline.BuddyTimelineRow
 import io.sentry.android.buddy.ui.common.timeline.toTimelineRow
 
-internal fun BuddyLiveFeedItem.isPerformanceIssue(): Boolean =
-  category == BuddyLiveFeedItem.Category.SLOW_SPAN ||
+internal fun BuddyLiveFeedItem.usesRichAttentionLayout(): Boolean =
+  category == BuddyLiveFeedItem.Category.ERROR ||
+    category == BuddyLiveFeedItem.Category.SLOW_SPAN ||
     category == BuddyLiveFeedItem.Category.FAILED_SPAN ||
     category == BuddyLiveFeedItem.Category.FAILED_HTTP
 
 internal fun BuddyLiveFeedItem.performanceHeadline(): String =
   when (category) {
+    BuddyLiveFeedItem.Category.ERROR -> "Unhandled error captured"
     BuddyLiveFeedItem.Category.SLOW_SPAN -> "Performance issue detected"
     BuddyLiveFeedItem.Category.FAILED_SPAN -> "Instrumented work failed"
     BuddyLiveFeedItem.Category.FAILED_HTTP -> "Request returned an error"
@@ -25,6 +27,7 @@ internal fun BuddyLiveFeedItem.performanceHeadline(): String =
 
 internal fun BuddyLiveFeedItem.performanceSourceLabel(): String? =
   when (category) {
+    BuddyLiveFeedItem.Category.ERROR -> "Exception"
     BuddyLiveFeedItem.Category.FAILED_HTTP -> "HTTP"
     BuddyLiveFeedItem.Category.SLOW_SPAN,
     BuddyLiveFeedItem.Category.FAILED_SPAN -> timelineItem.data.stringValue("op")?.humanizeDotKey()
@@ -32,7 +35,7 @@ internal fun BuddyLiveFeedItem.performanceSourceLabel(): String? =
     else -> null
   }
 
-internal fun BuddyLiveFeedItem.performancePrimaryStat(): PerformanceStat? {
+internal fun BuddyLiveFeedItem.attentionPrimaryStat(liveFeed: BuddyLiveFeed): PerformanceStat? {
   val duration = timelineItem.data.longValue("duration_ms")
   if (duration != null) {
     return PerformanceStat(formatDurationValue(duration), "Duration")
@@ -40,7 +43,18 @@ internal fun BuddyLiveFeedItem.performancePrimaryStat(): PerformanceStat? {
   val statusCode =
     timelineItem.data.mapValue("data").longValue("status_code")
       ?: timelineItem.data.longValue("status_code")
-  return statusCode?.let { PerformanceStat(it.toString(), "Status") }
+  if (statusCode != null) {
+    return PerformanceStat(statusCode.toString(), "Status")
+  }
+  if (category == BuddyLiveFeedItem.Category.ERROR) {
+    val errorCount =
+      liveFeed.items
+        .count { it.adverse && it.category == BuddyLiveFeedItem.Category.ERROR }
+        .coerceAtLeast(1)
+    val label = if (errorCount == 1) "Error" else "Errors"
+    return PerformanceStat(errorCount.toString(), label)
+  }
+  return null
 }
 
 internal fun BuddyLiveFeedItem.performanceNarrative(liveFeed: BuddyLiveFeed): String {

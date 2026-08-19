@@ -173,13 +173,13 @@ internal fun AttentionItemContent(
   backgroundColor: Color,
   modifier: Modifier = Modifier,
 ) {
-  // Performance issues earn the extra detail: a headline, a hero stat and the surrounding trace.
+  // Important issues earn the extra detail: a headline, a hero stat and the surrounding trace.
   // Everything else keeps the compact shape.
-  val performance = item.isPerformanceIssue()
+  val richAttention = item.usesRichAttentionLayout()
   AttentionCardBackground(modifier = modifier, backgroundColor = backgroundColor) {
     Column(
       modifier = Modifier.fillMaxWidth().padding(16.dp),
-      verticalArrangement = Arrangement.spacedBy(if (performance) 12.dp else 10.dp),
+      verticalArrangement = Arrangement.spacedBy(if (richAttention) 12.dp else 10.dp),
     ) {
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -205,11 +205,11 @@ internal fun AttentionItemContent(
         verticalAlignment = Alignment.CenterVertically,
       ) {
         BuddyLabelPill(item.category.label, color)
-        if (performance) {
+        if (richAttention) {
           item.performanceSourceLabel()?.let { AttentionSourcePill(it) }
         }
       }
-      if (performance) {
+      if (richAttention) {
         Text(
           item.performanceHeadline(),
           modifier = Modifier.fillMaxWidth(),
@@ -223,12 +223,12 @@ internal fun AttentionItemContent(
         modifier = Modifier.fillMaxWidth(),
         color = BuddyInk,
         style =
-          if (performance) MaterialTheme.typography.bodyLarge
+          if (richAttention) MaterialTheme.typography.bodyLarge
           else MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Normal,
       )
-      if (performance) {
-        item.performancePrimaryStat()?.let { stat -> PerformanceHeroStatCard(stat, color) }
+      if (richAttention) {
+        item.attentionPrimaryStat(liveFeed)?.let { stat -> PerformanceHeroStatCard(stat, color) }
         PerformanceContextCards(item, color)
         Text(
           item.performanceNarrative(liveFeed),
