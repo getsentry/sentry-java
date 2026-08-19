@@ -19,9 +19,7 @@ import io.sentry.android.buddy.ANALYSIS_TIMEOUT_MS
 import io.sentry.android.buddy.SentryBuddySessionController
 import io.sentry.android.buddy.SentryBuddySessionState
 import io.sentry.android.buddy.TransientRecordingEvent
-import io.sentry.android.buddy.model.BuddyScreenScanState
 import io.sentry.android.buddy.ui.bottomsheet.BuddySheet
-import io.sentry.android.buddy.ui.common.theme.SCREEN_SCAN_DURATION_MS
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -86,7 +84,6 @@ internal fun SentryBuddyOverlayContent(
   var healthCheckState by remember { mutableStateOf(controller.healthCheckState) }
   var homeTab by remember { mutableStateOf(controller.homeTab) }
   var homeRecommendations by remember { mutableStateOf(controller.homeRecommendations) }
-  var screenScanState by remember { mutableStateOf(controller.screenScanState) }
   var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
   var transientRecordingEvent by remember { mutableStateOf<TransientRecordingEvent?>(null) }
   val transientRecordingEventScope = rememberCoroutineScope()
@@ -98,7 +95,6 @@ internal fun SentryBuddyOverlayContent(
     healthCheckState = controller.healthCheckState
     homeTab = controller.homeTab
     homeRecommendations = controller.homeRecommendations
-    screenScanState = controller.screenScanState
     nowMs = System.currentTimeMillis()
   }
 
@@ -180,20 +176,11 @@ internal fun SentryBuddyOverlayContent(
     }
   }
 
-  LaunchedEffect(screenScanState) {
-    if (screenScanState is BuddyScreenScanState.Scanning) {
-      delay(SCREEN_SCAN_DURATION_MS)
-      controller.completeScreenScan()
-      syncUiState()
-    }
-  }
-
   BoxWithConstraints(modifier = modifier.fillMaxSize()) {
     val density = LocalDensity.current
     val maxWidthPx = with(density) { maxWidth.toPx() }
     val maxHeightPx = with(density) { maxHeight.toPx() }
     content()
-    ScreenScanElectricityOverlay(screenScanState = screenScanState)
     BuddyBubble(
       state = state,
       liveFeed = liveFeed,
@@ -214,13 +201,11 @@ internal fun SentryBuddyOverlayContent(
           else -> dispatch { close() }
         }
       },
-      onLongClick = { dispatch { startScreenScan() } },
     )
     BuddySheet(
       state = state,
       liveFeed = liveFeed,
       healthCheckState = healthCheckState,
-      screenScanState = screenScanState,
       homeTab = homeTab,
       homeRecommendations = homeRecommendations,
       sentryUiLinks = controller.sentryUiLinks,
@@ -241,7 +226,6 @@ internal fun SentryBuddyOverlayContent(
       },
       onSelectHomeTab = { tab -> dispatch { selectHomeTab(tab) } },
       onRunHealthCheck = { dispatchHealthCheck { runHealthCheck() } },
-      onDismissScreenScan = { dispatch { dismissScreenScan() } },
       onOpenUrl = { context, url -> openUrl(context, url) },
     )
   }
