@@ -46,6 +46,7 @@ import io.sentry.android.buddy.ui.common.BuddyButtonText
 import io.sentry.android.buddy.ui.common.BuddyLabelPill
 import io.sentry.android.buddy.ui.common.SheetTitle
 import io.sentry.android.buddy.ui.common.formatElapsed
+import io.sentry.android.buddy.ui.common.theme.BuddyGreen
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
 import io.sentry.android.buddy.ui.common.theme.BuddyPurple
@@ -107,7 +108,7 @@ internal fun BriefingSheet(
   Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
     Button(
       modifier = Modifier.weight(1f).height(56.dp),
-      colors = ButtonDefaults.buttonColors(containerColor = BuddyPurple),
+      colors = ButtonDefaults.buttonColors(containerColor = BuddyGreen),
       onClick = {
         updateController(notes.withQuickDecisionAnswers(quickDecisionCards, quickDecisionAnswers))
         onAnalyze()

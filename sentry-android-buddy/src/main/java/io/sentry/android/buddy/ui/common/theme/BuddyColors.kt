@@ -43,9 +43,11 @@ internal val BuddyGold = Color(0xFFC47A00)
 
 internal val BuddyGreen = Color(0xFF0F9D58)
 
-internal val BuddyQuickDecisionCard = Color(0xFFF0EAFF)
+internal val BuddyBugGreen = Color(0xFF65D77A)
 
-internal val BuddyQuickDecisionPeek = Color(0xFFF8F5FF)
+internal val BuddyQuickDecisionCard = Color(0xFFEAF8EE)
+
+internal val BuddyQuickDecisionPeek = Color(0xFFF5FCF7)
 
 internal val BuddyInk = Color(0xFF171426)
 
@@ -55,7 +57,7 @@ internal val BuddyBorder = Color(0xFFE0DDE6)
 
 internal val BuddyCode = Color(0xFFF3F1F6)
 
-internal val BuddySeerSweatshirtPink = Color(0xFFEF6CB7)
+internal val BuddySweatshirtPink = Color(0xFFEF6CB7)
 
 internal fun severityColor(severity: Severity): Color =
   when (severity) {
