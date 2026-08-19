@@ -576,14 +576,36 @@ class ReplayIntegrationTest {
       fixture.getSut(
         context,
         sessionSampleRate = 0.0,
+        onErrorSampleRate = 1.0,
+        replayCaptureStrategyProvider = { captureStrategy },
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.onAppForegrounded(true)
+    fixture.options.sessionReplay.onErrorSampleRate = 0.0
+
+    assertThat(replay.captureReplay(false)).isEqualTo(SentryId.EMPTY_ID)
+    verify(captureStrategy, never()).captureReplay(any(), any())
+  }
+
+  @Test
+  fun `manual buffer capture bypasses error sampling`() {
+    val replayId = SentryId()
+    val captureStrategy = mock<BufferCaptureStrategy>()
+    whenever(captureStrategy.currentReplayId).thenReturn(replayId)
+    whenever(captureStrategy.convert()).thenReturn(captureStrategy)
+    val replay =
+      fixture.getSut(
+        context,
+        sessionSampleRate = 0.0,
         onErrorSampleRate = 0.0,
         replayCaptureStrategyProvider = { captureStrategy },
       )
     replay.register(fixture.scopes, fixture.options)
-    replay.start()
+    replay.startBuffering()
 
-    assertThat(replay.captureReplay(false)).isEqualTo(SentryId.EMPTY_ID)
-    verify(captureStrategy, never()).captureReplay(any(), any())
+    assertThat(replay.captureReplay(false)).isEqualTo(replayId)
+    verify(captureStrategy).captureReplay(eq(false), any())
+    verify(captureStrategy).convert()
   }
 
   @Test

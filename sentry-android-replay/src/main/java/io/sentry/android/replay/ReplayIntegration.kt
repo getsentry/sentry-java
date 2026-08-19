@@ -159,11 +159,11 @@ public class ReplayIntegration(
   override fun isRecording(): Boolean = state.get().isRecording
 
   override fun start() {
-    enqueueOnMainThread { startInternal(isFullSession = true) }
+    enqueueOnMainThread { startInternal(isFullSession = true, shouldSampleOnError = false) }
   }
 
   override fun startBuffering() {
-    enqueueOnMainThread { startInternal(isFullSession = false) }
+    enqueueOnMainThread { startInternal(isFullSession = false, shouldSampleOnError = false) }
   }
 
   override fun onAppForegrounded(startNewSession: Boolean) {
@@ -179,7 +179,7 @@ public class ReplayIntegration(
             "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified",
           )
         } else {
-          startInternal(isFullSession)
+          startInternal(isFullSession, shouldSampleOnError = !isFullSession)
         }
       }
       resumeInternal()
@@ -190,7 +190,7 @@ public class ReplayIntegration(
     enqueueOnMainThread { pauseInternal() }
   }
 
-  private fun startInternal(isFullSession: Boolean) {
+  private fun startInternal(isFullSession: Boolean, shouldSampleOnError: Boolean) {
     if (!isEnabled.get()) {
       return
     }
@@ -235,6 +235,7 @@ public class ReplayIntegration(
         lifecycleState = STARTED,
         replayId = replayId ?: SentryId.EMPTY_ID,
         captureStrategy = strategy,
+        shouldSampleOnError = shouldSampleOnError,
       )
     )
 
@@ -279,7 +280,11 @@ public class ReplayIntegration(
       return SentryId.EMPTY_ID
     }
 
-    if (current.isBuffering && !sample(options.sessionReplay.onErrorSampleRate)) {
+    if (
+      current.isBuffering &&
+        current.shouldSampleOnError &&
+        !sample(options.sessionReplay.onErrorSampleRate)
+    ) {
       options.logger.log(
         INFO,
         "Replay wasn't sampled by onErrorSampleRate, not capturing for event",
@@ -355,7 +360,7 @@ public class ReplayIntegration(
     enqueueOnMainThread {
       val current = state.get()
       if (!current.isRecording) {
-        startInternal(isFullSession = true)
+        startInternal(isFullSession = true, shouldSampleOnError = false)
       } else {
         captureReplayInternal(current.generation, current.replayId, false)
       }
@@ -729,6 +734,7 @@ public class ReplayIntegration(
     val lifecycleState: ReplayLifecycleState = ReplayLifecycleState.INITIAL,
     val replayId: SentryId = SentryId.EMPTY_ID,
     val captureStrategy: CaptureStrategy? = null,
+    val shouldSampleOnError: Boolean = false,
   ) {
     val isBuffering: Boolean
       get() = captureStrategy is BufferCaptureStrategy
