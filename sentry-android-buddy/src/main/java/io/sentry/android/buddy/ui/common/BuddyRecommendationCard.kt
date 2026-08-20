@@ -72,6 +72,7 @@ import io.sentry.android.buddy.ui.common.theme.BuddyPurple
 import io.sentry.android.buddy.ui.common.theme.BuddyRecommendationRed
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
 import io.sentry.android.buddy.ui.common.theme.BuddyReplayBlueHighlight
+import io.sentry.android.buddy.ui.common.theme.EMPTY_ATTENTION_ART_VARIANTS
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
 import io.sentry.android.buddy.ui.preview.PREVIEW_NOW_MS
 import io.sentry.android.buddy.ui.preview.previewHomeRecommendation
@@ -154,6 +155,8 @@ internal fun BuddyRecommendationCard(
   var dismissing by rememberSaveable(model.title, model.description) { mutableStateOf(false) }
   val dismissOffset = remember(model.title, model.description) { Animatable(0f) }
   val dismissScope = rememberCoroutineScope()
+  val dismissArtResource =
+    remember(model.title, model.description) { recommendationDismissArt(model) }
   val currentOnDismiss by rememberUpdatedState(onDismiss)
   val canDismiss = onDismiss != null
   LaunchedEffect(dismissing) {
@@ -176,7 +179,7 @@ internal fun BuddyRecommendationCard(
       val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
       if (canDismiss) {
         Image(
-          painter = painterResource(id = R.drawable.buddy_attention_seer_helps),
+          painter = painterResource(id = dismissArtResource),
           contentDescription = null,
           contentScale = ContentScale.Crop,
           modifier =
@@ -242,6 +245,24 @@ internal fun BuddyRecommendationCard(
     }
   }
 }
+
+private fun recommendationDismissArt(model: BuddyRecommendationCardModel): Int {
+  val key = listOf(model.title, model.description, model.statusLabel).joinToString("|")
+  val index = key.hashCode().floorMod(EMPTY_ATTENTION_ART_VARIANTS)
+  return when (index) {
+    0 -> R.drawable.buddy_attention_android_anr
+    1 -> R.drawable.buddy_attention_tombstone_support
+    2 -> R.drawable.buddy_attention_ai_momentum
+    3 -> R.drawable.buddy_attention_seer_helps
+    4 -> R.drawable.buddy_attention_snapshot
+    5 -> R.drawable.buddy_attention_nextjs_otel
+    6 -> R.drawable.buddy_attention_auth_doorway
+    7 -> R.drawable.buddy_attention_black_friday
+    else -> R.drawable.buddy_attention_startups
+  }
+}
+
+private fun Int.floorMod(divisor: Int): Int = ((this % divisor) + divisor) % divisor
 
 private fun Modifier.swipeToDismissRecommendation(
   enabled: Boolean,
