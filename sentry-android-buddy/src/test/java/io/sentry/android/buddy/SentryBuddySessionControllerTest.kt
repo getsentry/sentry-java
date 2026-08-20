@@ -420,6 +420,23 @@ class SentryBuddySessionControllerTest {
   }
 
   @Test
+  fun `open live feed selects live feed once for new needs attention item`() {
+    val controller = SentryBuddySessionController(recorderFacade = FakeRecorderFacade())
+
+    controller.selectHomeTab(BuddyHomeTab.RECORD_FLOW)
+    controller.updateLiveFeed(liveFeedWithUnviewedAttention())
+    controller.openLiveFeed()
+
+    assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.LIVE_FEED)
+    assertThat(controller.liveFeed.latestUnviewedAdverseItem).isNull()
+
+    controller.close()
+    controller.openLiveFeed()
+
+    assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.RECORD_FLOW)
+  }
+
+  @Test
   fun `open live feed clears previous health check recommendations before rerunning`() {
     val controller =
       SentryBuddySessionController(
@@ -748,5 +765,29 @@ class SentryBuddySessionControllerTest {
             tags = linkedMapOf("sentry.buddy.recording_id" to "recording-1"),
           ),
       )
+
+    private fun liveFeedWithUnviewedAttention(): BuddyLiveFeed {
+      val item =
+        BuddyLiveFeedItem(
+          id = 1L,
+          timelineItem =
+            BuddyTimelineItem(
+              type = BuddyTimelineItem.Type.EVENT,
+              timestamp = Date(2000),
+              elapsedMs = 2000,
+              name = "Crash",
+            ),
+          category = BuddyLiveFeedItem.Category.ERROR,
+          severity = Severity.HIGH,
+          adverse = true,
+          viewed = false,
+        )
+      return BuddyLiveFeed(
+        items = listOf(item),
+        unviewedAdverseCount = 1,
+        latestAdverseItem = item,
+        latestUnviewedAdverseItem = item,
+      )
+    }
   }
 }

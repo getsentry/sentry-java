@@ -134,7 +134,7 @@ public constructor(
   public var state: SentryBuddySessionState = SentryBuddySessionState.Closed
     private set
 
-  internal var liveFeed: BuddyLiveFeed = safeLiveFeed()
+  internal var liveFeed: BuddyLiveFeed = BuddyLiveFeed()
     private set
 
   internal var sentryUiLinks: BuddySentryUiLinks = BuddySentryUiLinks()
@@ -171,10 +171,14 @@ public constructor(
   internal fun openLiveFeed() {
     dismissHealthCheck()
     liveFeed = safeLiveFeed()
+    val shouldShowNewAttention = liveFeed.latestUnviewedAdverseItem != null
+    if (shouldShowNewAttention) {
+      liveFeed = safeMarkLiveFeedSeen()
+    }
     clearHealthCheckRecommendations()
     ingestHomeRecommendations(liveFeed.toHomeRecommendations(sentryUiLinks))
     hasPendingHealthCheck = true
-    homeTab = lastSelectedHomeTab
+    homeTab = if (shouldShowNewAttention) BuddyHomeTab.LIVE_FEED else lastSelectedHomeTab
     state = SentryBuddySessionState.LiveFeed
   }
 
@@ -555,8 +559,7 @@ public constructor(
         noOp
       } else {
         SentryBuddy.addLiveFeedListener { feed ->
-          liveFeed = feed
-          ingestHomeRecommendations(feed.toHomeRecommendations(sentryUiLinks))
+          updateLiveFeed(feed)
           listener(feed)
         }
       }
@@ -571,7 +574,7 @@ public constructor(
       if (recorderFacade === RealSentryBuddyRecorderFacade) {
         SentryBuddy.liveFeedSnapshot()
       } else {
-        BuddyLiveFeed()
+        liveFeed
       }
     } catch (_: IllegalStateException) {
       BuddyLiveFeed()
@@ -582,11 +585,23 @@ public constructor(
       if (recorderFacade === RealSentryBuddyRecorderFacade) {
         SentryBuddy.markLiveFeedSeen()
       } else {
-        BuddyLiveFeed()
+        liveFeed.markAdverseViewed()
       }
     } catch (_: IllegalStateException) {
       BuddyLiveFeed()
     }
+
+  internal fun updateLiveFeed(feed: BuddyLiveFeed) {
+    liveFeed = feed
+    ingestHomeRecommendations(feed.toHomeRecommendations(sentryUiLinks))
+  }
+
+  private fun BuddyLiveFeed.markAdverseViewed(): BuddyLiveFeed =
+    copy(
+      items = items.map { item -> if (item.adverse) item.copy(viewed = true) else item },
+      unviewedAdverseCount = 0,
+      latestUnviewedAdverseItem = null,
+    )
 
   private fun safeDismissLiveFeedItem(id: Long): BuddyLiveFeed =
     try {
