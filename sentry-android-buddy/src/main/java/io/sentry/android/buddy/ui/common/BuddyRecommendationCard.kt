@@ -78,6 +78,7 @@ import io.sentry.android.buddy.ui.preview.PREVIEW_NOW_MS
 import io.sentry.android.buddy.ui.preview.previewHomeRecommendation
 import io.sentry.android.buddy.ui.preview.previewRecommendation
 import io.sentry.android.buddy.ui.preview.previewSpanRecommendation
+import java.security.MessageDigest
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
@@ -155,8 +156,9 @@ internal fun BuddyRecommendationCard(
   var dismissing by rememberSaveable(model.title, model.description) { mutableStateOf(false) }
   val dismissOffset = remember(model.title, model.description) { Animatable(0f) }
   val dismissScope = rememberCoroutineScope()
+  val dismissArtActionKey = remember(actions) { actions.dismissArtKey() }
   val dismissArtResource =
-    remember(model.title, model.description) { recommendationDismissArt(model) }
+    remember(model, dismissArtActionKey) { recommendationDismissArt(model, dismissArtActionKey) }
   val currentOnDismiss by rememberUpdatedState(onDismiss)
   val canDismiss = onDismiss != null
   LaunchedEffect(dismissing) {
@@ -246,9 +248,22 @@ internal fun BuddyRecommendationCard(
   }
 }
 
-private fun recommendationDismissArt(model: BuddyRecommendationCardModel): Int {
-  val key = listOf(model.title, model.description, model.statusLabel).joinToString("|")
-  val index = key.hashCode().floorMod(EMPTY_ATTENTION_ART_VARIANTS)
+private fun recommendationDismissArt(model: BuddyRecommendationCardModel, actionKey: String): Int {
+  val key =
+    listOf(
+        model.title,
+        model.description,
+        model.severity.value,
+        model.statusLabel.orEmpty(),
+        model.timestampLabel.orEmpty(),
+        model.unread.toString(),
+        model.performance?.spanOp.orEmpty(),
+        model.performance?.link.orEmpty(),
+        model.performance?.stats.toString(),
+        actionKey,
+      )
+      .joinToString("|")
+  val index = key.stableHashIndex()
   return when (index) {
     0 -> R.drawable.buddy_attention_android_anr
     1 -> R.drawable.buddy_attention_tombstone_support
@@ -262,7 +277,15 @@ private fun recommendationDismissArt(model: BuddyRecommendationCardModel): Int {
   }
 }
 
-private fun Int.floorMod(divisor: Int): Int = ((this % divisor) + divisor) % divisor
+private fun List<BuddyRecommendationActionModel>.dismissArtKey(): String =
+  joinToString("|") { action -> "${action.id}:${action.label}:${action.isActionableForSeer}" }
+
+private fun String.stableHashIndex(): Int {
+  val digest = MessageDigest.getInstance("SHA-256").digest(toByteArray(Charsets.UTF_8))
+  val hash =
+    digest.fold(0) { acc, byte -> ((acc * 31) + (byte.toInt() and 0xff)) and Int.MAX_VALUE }
+  return hash % EMPTY_ATTENTION_ART_VARIANTS
+}
 
 private fun Modifier.swipeToDismissRecommendation(
   enabled: Boolean,
