@@ -24,6 +24,7 @@ import io.sentry.android.buddy.ui.common.theme.BuddyPurple
 internal fun SheetTitle(
   title: String,
   subtitle: String,
+  subtitleContent: (@Composable () -> Unit)? = null,
   trailingContent: (@Composable () -> Unit)? = null,
 ) {
   Row(
@@ -39,7 +40,11 @@ internal fun SheetTitle(
     }
     Column {
       Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-      Text(subtitle, color = BuddyMuted, style = MaterialTheme.typography.bodyMedium)
+      if (subtitleContent != null) {
+        subtitleContent()
+      } else {
+        Text(subtitle, color = BuddyMuted, style = MaterialTheme.typography.bodyMedium)
+      }
     }
     Spacer(Modifier.weight(1f))
     trailingContent?.invoke()

@@ -15,11 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.SentryBuddySessionState
 import io.sentry.android.buddy.model.BuddySentryUiLinks
 import io.sentry.android.buddy.model.FlowAction
-import io.sentry.android.buddy.ui.common.BuddyButtonText
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCard
 import io.sentry.android.buddy.ui.common.BuddyRecommendationCardStyle
 import io.sentry.android.buddy.ui.common.BuddyRecommendationErrorCard
@@ -86,8 +82,16 @@ internal fun InsightsSheet(
       sentryUiLinks.linkFor(state.result.recording)
     }
   SheetTitle(
-    "Flow insights",
-    "$flowName • ${formatElapsed(state.result.recording.summary.durationMs)}",
+    title = "Flow insights",
+    subtitle = "$flowName • ${formatElapsed(state.result.recording.summary.durationMs)}",
+    subtitleContent = {
+      FlowInsightsSubtitle(
+        flowName = flowName,
+        elapsed = formatElapsed(state.result.recording.summary.durationMs),
+        traceLink = traceLink,
+        onOpen = { link -> onOpenUrl(context, link) },
+      )
+    },
   )
   Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
     MetricCard(
@@ -179,14 +183,49 @@ internal fun InsightsSheet(
       }
     }
   }
-  if (traceLink != null) {
-    OutlinedButton(
-      modifier = Modifier.fillMaxWidth().height(56.dp),
-      colors = ButtonDefaults.outlinedButtonColors(contentColor = BuddyPurple),
-      onClick = { onOpenUrl(context, traceLink) },
+}
+
+@Composable
+private fun FlowInsightsSubtitle(
+  flowName: String,
+  elapsed: String,
+  traceLink: String?,
+  onOpen: (String) -> Unit,
+) {
+  Row(
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(4.dp),
+  ) {
+    Row(
+      modifier =
+        if (traceLink != null) {
+          Modifier.clip(RoundedCornerShape(8.dp)).clickable { onOpen(traceLink) }
+        } else {
+          Modifier
+        },
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
-      BuddyButtonText("Open flow in Sentry", color = BuddyPurple)
+      Text(
+        flowName,
+        color = if (traceLink != null) BuddyPurple else BuddyInk,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = if (traceLink != null) FontWeight.Bold else FontWeight.Normal,
+      )
+      if (traceLink != null) {
+        Icon(
+          imageVector = Icons.open_in_new,
+          contentDescription = null,
+          tint = BuddyPurple,
+          modifier = Modifier.size(13.dp),
+        )
+      }
     }
+    Text(
+      "• $elapsed",
+      color = BuddyInk.copy(alpha = 0.62f),
+      style = MaterialTheme.typography.bodyMedium,
+    )
   }
 }
 

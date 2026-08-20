@@ -3,6 +3,7 @@ package io.sentry.android.buddy.ui.common
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -12,6 +13,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +35,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -40,8 +45,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
@@ -64,7 +71,11 @@ import io.sentry.android.buddy.ui.preview.PREVIEW_NOW_MS
 import io.sentry.android.buddy.ui.preview.previewHomeRecommendation
 import io.sentry.android.buddy.ui.preview.previewRecommendation
 import io.sentry.android.buddy.ui.preview.previewSpanRecommendation
+import kotlin.math.abs
+import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private const val RECOMMENDATION_DISMISS_ANIMATION_MS = 220
 
@@ -135,6 +146,8 @@ internal fun BuddyRecommendationCard(
     else color.copy(alpha = 0.08f)
   var detailsExpanded by rememberSaveable(model.title, model.description) { mutableStateOf(false) }
   var dismissing by rememberSaveable(model.title, model.description) { mutableStateOf(false) }
+  val dismissOffset = remember(model.title, model.description) { Animatable(0f) }
+  val dismissScope = rememberCoroutineScope()
   val currentOnDismiss by rememberUpdatedState(onDismiss)
   LaunchedEffect(dismissing) {
     if (dismissing) {
@@ -158,7 +171,13 @@ internal fun BuddyRecommendationCard(
         fadeOut(animationSpec = tween(durationMillis = 120)),
   ) {
     Surface(
-      modifier = modifier.fillMaxWidth(),
+      modifier =
+        modifier
+          .fillMaxWidth()
+          .offset { IntOffset(dismissOffset.value.roundToInt(), 0) }
+          .swipeToDismissRecommendation(onDismiss != null, dismissOffset, dismissScope) {
+            dismissing = true
+          },
       color = cardColor,
       shape = RoundedCornerShape(18.dp),
       border = CardDefaults.outlinedCardBorder(),
@@ -195,7 +214,6 @@ internal fun BuddyRecommendationCard(
             actions = actions,
             onOpenLink = onOpenLink,
             openLinkLabel = openLinkLabel,
-            onDismiss = onDismiss?.let { { if (!dismissing) dismissing = true } },
             accentColor = color,
           )
           RecommendationDetailsDisclosure(
@@ -206,6 +224,44 @@ internal fun BuddyRecommendationCard(
           )
         }
       }
+    }
+  }
+}
+
+private fun Modifier.swipeToDismissRecommendation(
+  enabled: Boolean,
+  dismissOffset: Animatable<Float, *>,
+  dismissScope: CoroutineScope,
+  onDismiss: () -> Unit,
+): Modifier {
+  if (!enabled) {
+    return this
+  }
+  return pointerInput(dismissOffset) {
+    detectDragGestures(
+      onDragEnd = {
+        val dismissDistance = size.width.toFloat()
+        val shouldDismiss = abs(dismissOffset.value) > dismissDistance * 0.35f
+        dismissScope.launch {
+          if (shouldDismiss) {
+            dismissOffset.animateTo(
+              -dismissDistance,
+              animationSpec = tween(durationMillis = RECOMMENDATION_DISMISS_ANIMATION_MS),
+            )
+            onDismiss()
+          } else {
+            dismissOffset.animateTo(0f, animationSpec = tween(durationMillis = 160))
+          }
+        }
+      },
+      onDragCancel = {
+        dismissScope.launch { dismissOffset.animateTo(0f, animationSpec = tween(160)) }
+      },
+    ) { change, dragAmount ->
+      change.consume()
+      val dismissDistance = size.width.toFloat()
+      val nextOffset = (dismissOffset.value + dragAmount.x).coerceIn(-dismissDistance, 0f)
+      dismissScope.launch { dismissOffset.snapTo(nextOffset) }
     }
   }
 }
@@ -271,10 +327,9 @@ private fun RecommendationActionRow(
   actions: List<BuddyRecommendationActionModel>,
   onOpenLink: (() -> Unit)?,
   openLinkLabel: String,
-  onDismiss: (() -> Unit)?,
   accentColor: Color,
 ) {
-  if (actions.isEmpty() && onOpenLink == null && onDismiss == null) {
+  if (actions.isEmpty() && onOpenLink == null) {
     return
   }
   FlowRow(
@@ -301,15 +356,6 @@ private fun RecommendationActionRow(
           if (actions.isEmpty()) BuddyRecommendationPillEmphasis.PRIMARY
           else BuddyRecommendationPillEmphasis.SECONDARY,
         icon = Icons.open_in_new,
-        accentColor = accentColor,
-      )
-    }
-    onDismiss?.let {
-      RecommendationActionPill(
-        label = "Dismiss",
-        onClick = it,
-        emphasis = BuddyRecommendationPillEmphasis.GHOST,
-        icon = null,
         accentColor = accentColor,
       )
     }
