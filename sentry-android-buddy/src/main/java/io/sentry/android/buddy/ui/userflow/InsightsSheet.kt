@@ -361,8 +361,8 @@ internal fun List<FlowAction>.toPermaActionModels(
 
 private fun FlowAction.permaActionIcon(): ImageVector =
   when (id) {
-    FLOW_ACTION_GENERATE_DASHBOARD -> Icons.dashboard
-    FLOW_ACTION_GENERATE_MONITORS -> Icons.monitor
+    FLOW_ACTION_GENERATE_DASHBOARD -> Icons.monitor
+    FLOW_ACTION_GENERATE_MONITORS -> Icons.siren
     FLOW_ACTION_SHARE_RECORDING_JSON -> Icons.open_in_new
     else -> Icons.open_in_new
   }

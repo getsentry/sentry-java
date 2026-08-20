@@ -224,6 +224,76 @@ internal object Icons {
   private var _monitor: ImageVector? = null
 
   @Suppress("CheckReturnValue")
+  val siren: ImageVector
+    get() {
+      if (_siren != null) {
+        return _siren!!
+      }
+      _siren =
+        ImageVector.Builder(
+            name = "siren",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f,
+          )
+          .apply {
+            path(
+              fill = SolidColor(Color.Black),
+              fillAlpha = 1f,
+              stroke = null,
+              strokeAlpha = 1f,
+              strokeLineWidth = 1f,
+              strokeLineCap = StrokeCap.Butt,
+              strokeLineJoin = StrokeJoin.Bevel,
+              strokeLineMiter = 1f,
+              pathFillType = PathFillType.Companion.NonZero,
+            ) {
+              moveTo(4f, 21f)
+              verticalLineTo(19f)
+              horizontalLineTo(20f)
+              verticalLineTo(21f)
+              close()
+              moveTo(6f, 17f)
+              verticalLineTo(11f)
+              quadTo(6f, 8.5f, 7.75f, 6.75f)
+              quadTo(9.5f, 5f, 12f, 5f)
+              quadTo(14.5f, 5f, 16.25f, 6.75f)
+              quadTo(18f, 8.5f, 18f, 11f)
+              verticalLineTo(17f)
+              close()
+              moveTo(8f, 15f)
+              horizontalLineTo(16f)
+              verticalLineTo(11f)
+              quadTo(16f, 9.35f, 14.83f, 8.18f)
+              quadTo(13.65f, 7f, 12f, 7f)
+              quadTo(10.35f, 7f, 9.18f, 8.18f)
+              quadTo(8f, 9.35f, 8f, 11f)
+              close()
+              moveTo(11f, 3f)
+              verticalLineTo(1f)
+              horizontalLineTo(13f)
+              verticalLineTo(3f)
+              close()
+              moveTo(3.55f, 6.05f)
+              lineTo(2.15f, 4.65f)
+              lineTo(3.55f, 3.25f)
+              lineTo(4.95f, 4.65f)
+              close()
+              moveTo(20.45f, 6.05f)
+              lineTo(19.05f, 4.65f)
+              lineTo(20.45f, 3.25f)
+              lineTo(21.85f, 4.65f)
+              close()
+            }
+          }
+          .build()
+      return _siren!!
+    }
+
+  private var _siren: ImageVector? = null
+
+  @Suppress("CheckReturnValue")
   val bug: ImageVector
     get() {
       if (_bug != null) {
