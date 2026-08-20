@@ -9,13 +9,14 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -43,13 +44,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import io.sentry.android.buddy.R
 import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
 import io.sentry.android.buddy.model.PerformanceCharacteristics
@@ -149,6 +155,7 @@ internal fun BuddyRecommendationCard(
   val dismissOffset = remember(model.title, model.description) { Animatable(0f) }
   val dismissScope = rememberCoroutineScope()
   val currentOnDismiss by rememberUpdatedState(onDismiss)
+  val canDismiss = onDismiss != null
   LaunchedEffect(dismissing) {
     if (dismissing) {
       delay(RECOMMENDATION_DISMISS_ANIMATION_MS.toLong())
@@ -160,68 +167,76 @@ internal fun BuddyRecommendationCard(
     visible = !dismissing,
     enter = EnterTransition.None,
     exit =
-      slideOutHorizontally(
+      shrinkVertically(
         animationSpec = tween(RECOMMENDATION_DISMISS_ANIMATION_MS),
-        targetOffsetX = { fullWidth -> -fullWidth },
-      ) +
-        shrinkVertically(
-          animationSpec = tween(RECOMMENDATION_DISMISS_ANIMATION_MS),
-          shrinkTowards = Alignment.Top,
-        ) +
-        fadeOut(animationSpec = tween(durationMillis = 120)),
+        shrinkTowards = Alignment.Top,
+      ) + fadeOut(animationSpec = tween(durationMillis = 120)),
   ) {
-    Surface(
-      modifier =
-        modifier
-          .fillMaxWidth()
-          .offset { IntOffset(dismissOffset.value.roundToInt(), 0) }
-          .swipeToDismissRecommendation(onDismiss != null, dismissOffset, dismissScope) {
-            dismissing = true
-          },
-      color = cardColor,
-      shape = RoundedCornerShape(18.dp),
-      border = CardDefaults.outlinedCardBorder(),
-      shadowElevation = 3.dp,
-    ) {
-      Column(modifier = Modifier.fillMaxWidth()) {
-        Box(modifier = Modifier.fillMaxWidth().height(5.dp).background(color))
-        Column(
+    BoxWithConstraints(modifier = modifier.fillMaxWidth().clipToBounds()) {
+      val widthPx = with(LocalDensity.current) { maxWidth.toPx() }
+      if (canDismiss) {
+        Image(
+          painter = painterResource(id = R.drawable.buddy_attention_seer_helps),
+          contentDescription = null,
+          contentScale = ContentScale.Crop,
           modifier =
-            Modifier.fillMaxWidth().padding(16.dp).animateContentSize(animationSpec = tween(120)),
-          verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-          if (model.timestampLabel != null || metadataLabels.isNotEmpty()) {
-            RecommendationMetadataRow(
-              timestampLabel = model.timestampLabel,
-              labels = metadataLabels,
-              severity = model.severity,
+            Modifier.matchParentSize().offset {
+              IntOffset((dismissOffset.value + widthPx).roundToInt(), 0)
+            },
+        )
+      }
+      Surface(
+        modifier =
+          Modifier.fillMaxWidth()
+            .offset { IntOffset(dismissOffset.value.roundToInt(), 0) }
+            .swipeToDismissRecommendation(canDismiss, dismissOffset, dismissScope) {
+              dismissing = true
+            },
+        color = cardColor,
+        shape = RoundedCornerShape(18.dp),
+        border = CardDefaults.outlinedCardBorder(),
+        shadowElevation = 3.dp,
+      ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+          Box(modifier = Modifier.fillMaxWidth().height(5.dp).background(color))
+          Column(
+            modifier =
+              Modifier.fillMaxWidth().padding(16.dp).animateContentSize(animationSpec = tween(120)),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+          ) {
+            if (model.timestampLabel != null || metadataLabels.isNotEmpty()) {
+              RecommendationMetadataRow(
+                timestampLabel = model.timestampLabel,
+                labels = metadataLabels,
+                severity = model.severity,
+              )
+            }
+            Text(
+              model.title,
+              modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+              color = BuddyInk,
+              style = MaterialTheme.typography.titleLarge,
+              fontWeight = FontWeight.Bold,
+            )
+            model.performance?.let { performance ->
+              RecommendationPerformanceSection(
+                performance = performance,
+                onOpenLink = onOpenPerformanceLink,
+              )
+            }
+            RecommendationActionRow(
+              actions = actions,
+              onOpenLink = onOpenLink,
+              openLinkLabel = openLinkLabel,
+              accentColor = color,
+            )
+            RecommendationDetailsDisclosure(
+              label = detailsLabel,
+              description = model.description,
+              expanded = detailsExpanded,
+              onExpandedChange = { detailsExpanded = it },
             )
           }
-          Text(
-            model.title,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-            color = BuddyInk,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-          )
-          model.performance?.let { performance ->
-            RecommendationPerformanceSection(
-              performance = performance,
-              onOpenLink = onOpenPerformanceLink,
-            )
-          }
-          RecommendationActionRow(
-            actions = actions,
-            onOpenLink = onOpenLink,
-            openLinkLabel = openLinkLabel,
-            accentColor = color,
-          )
-          RecommendationDetailsDisclosure(
-            label = detailsLabel,
-            description = model.description,
-            expanded = detailsExpanded,
-            onExpandedChange = { detailsExpanded = it },
-          )
         }
       }
     }
