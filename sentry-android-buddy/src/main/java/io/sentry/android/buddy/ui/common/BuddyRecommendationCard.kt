@@ -51,13 +51,14 @@ import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
 import io.sentry.android.buddy.ui.common.theme.BuddyBorder
+import io.sentry.android.buddy.ui.common.theme.BuddyBridgeOrange
 import io.sentry.android.buddy.ui.common.theme.BuddyCode
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyMuted
 import io.sentry.android.buddy.ui.common.theme.BuddyPurple
+import io.sentry.android.buddy.ui.common.theme.BuddyRecommendationRed
 import io.sentry.android.buddy.ui.common.theme.BuddyRed
 import io.sentry.android.buddy.ui.common.theme.BuddyReplayBlueHighlight
-import io.sentry.android.buddy.ui.common.theme.severityColor
 import io.sentry.android.buddy.ui.preview.BuddyPreviewSurface
 import io.sentry.android.buddy.ui.preview.PREVIEW_NOW_MS
 import io.sentry.android.buddy.ui.preview.previewHomeRecommendation
@@ -260,7 +261,8 @@ private fun metadataColor(label: String, severity: Severity): Color =
 private fun recommendationAccentColor(severity: Severity): Color =
   when (severity) {
     Severity.LOW -> BuddyReplayBlueHighlight
-    else -> severityColor(severity)
+    Severity.MEDIUM -> BuddyBridgeOrange
+    Severity.HIGH -> BuddyRecommendationRed
   }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -412,7 +414,7 @@ private fun RecommendationPerformanceSection(
             onClick = { onOpenLink(link) },
             emphasis = BuddyRecommendationPillEmphasis.SECONDARY,
             icon = Icons.open_in_new,
-            accentColor = BuddyPurple
+            accentColor = BuddyPurple,
           )
         }
       }

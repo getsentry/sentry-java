@@ -9,6 +9,10 @@ internal val BuddyReplayBlue = Color(0xFF2F80ED)
 
 internal val BuddyReplayBlueHighlight = Color(0xFF4B9BFF)
 
+internal val BuddyBridgeOrange = Color(0xFFFF8A3D)
+
+internal val BuddyRecommendationRed = Color(0xFFE94F70)
+
 internal val BuddyAccentBubbleChonk = Color(0xFF5827D6)
 
 internal val BuddyAccentBubbleShadow = Color(0xFF44208F)
