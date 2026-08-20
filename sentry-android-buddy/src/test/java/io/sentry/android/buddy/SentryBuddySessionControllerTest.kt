@@ -428,12 +428,14 @@ class SentryBuddySessionControllerTest {
     controller.openLiveFeed()
 
     assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.LIVE_FEED)
-    assertThat(controller.liveFeed.latestUnviewedAdverseItem).isNull()
+    assertThat(controller.liveFeed.latestUnviewedAdverseItem).isNotNull()
+    assertThat(controller.liveFeed.unviewedAdverseCount).isEqualTo(1)
 
     controller.close()
     controller.openLiveFeed()
 
     assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.RECORD_FLOW)
+    assertThat(controller.liveFeed.latestUnviewedAdverseItem).isNotNull()
   }
 
   @Test

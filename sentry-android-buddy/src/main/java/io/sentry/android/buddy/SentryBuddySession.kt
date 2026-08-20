@@ -155,6 +155,7 @@ public constructor(
     get() = latestSeenInsightsState != null
 
   private var lastSelectedHomeTab: BuddyHomeTab = BuddyHomeTab.LIVE_FEED
+  private var lastPromptedAttentionItemId: Long? = null
   private var hasPendingHealthCheck: Boolean = false
   private var latestSeenInsightsState: SentryBuddySessionState.Insights? = null
   private val knownFlowIds = linkedSetOf<String>()
@@ -171,9 +172,11 @@ public constructor(
   internal fun openLiveFeed() {
     dismissHealthCheck()
     liveFeed = safeLiveFeed()
-    val shouldShowNewAttention = liveFeed.latestUnviewedAdverseItem != null
+    val attentionItemId = liveFeed.latestUnviewedAdverseItem?.id
+    val shouldShowNewAttention =
+      attentionItemId != null && attentionItemId != lastPromptedAttentionItemId
     if (shouldShowNewAttention) {
-      liveFeed = safeMarkLiveFeedSeen()
+      lastPromptedAttentionItemId = attentionItemId
     }
     clearHealthCheckRecommendations()
     ingestHomeRecommendations(liveFeed.toHomeRecommendations(sentryUiLinks))
@@ -580,28 +583,10 @@ public constructor(
       BuddyLiveFeed()
     }
 
-  private fun safeMarkLiveFeedSeen(): BuddyLiveFeed =
-    try {
-      if (recorderFacade === RealSentryBuddyRecorderFacade) {
-        SentryBuddy.markLiveFeedSeen()
-      } else {
-        liveFeed.markAdverseViewed()
-      }
-    } catch (_: IllegalStateException) {
-      BuddyLiveFeed()
-    }
-
   internal fun updateLiveFeed(feed: BuddyLiveFeed) {
     liveFeed = feed
     ingestHomeRecommendations(feed.toHomeRecommendations(sentryUiLinks))
   }
-
-  private fun BuddyLiveFeed.markAdverseViewed(): BuddyLiveFeed =
-    copy(
-      items = items.map { item -> if (item.adverse) item.copy(viewed = true) else item },
-      unviewedAdverseCount = 0,
-      latestUnviewedAdverseItem = null,
-    )
 
   private fun safeDismissLiveFeedItem(id: Long): BuddyLiveFeed =
     try {
