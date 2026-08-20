@@ -14,7 +14,7 @@ class BuddySentryUiLinksTest {
     val item = liveFeedItem(BuddyLiveFeedItem.Category.ERROR, mapOf("event_id" to "abc123"))
 
     assertThat(links.linkFor(item))
-      .isEqualTo("https://sentry-sdks.sentry.io/issues/?project=5428559&query=event.id%3Aabc123")
+      .isEqualTo("https://sentry-sdks.sentry.io/issues/?project=5428559&query=id%3Aabc123")
   }
 
   @Test
@@ -38,7 +38,7 @@ class BuddySentryUiLinksTest {
     val item = liveFeedItem(BuddyLiveFeedItem.Category.ERROR, mapOf("event_id" to "abc123"))
 
     assertThat(links.linkFor(item))
-      .isEqualTo("https://sentry-sdks.sentry.io/issues/?project=5428559&query=event.id%3Aabc123")
+      .isEqualTo("https://sentry-sdks.sentry.io/issues/?project=5428559&query=id%3Aabc123")
   }
 
   @Test

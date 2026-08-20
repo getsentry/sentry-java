@@ -939,9 +939,8 @@ public final class io/sentry/android/buddy/ui/bottomsheet/ComposableSingletons$A
 public final class io/sentry/android/buddy/ui/bottomsheet/ComposableSingletons$BuddyHomeSheetKt {
 	public static final field INSTANCE Lio/sentry/android/buddy/ui/bottomsheet/ComposableSingletons$BuddyHomeSheetKt;
 	public fun <init> ()V
+	public final fun getLambda$-1104338928$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-1642665903$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-1772764521$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
-	public final fun getLambda$-381783655$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
 	public final fun getLambda$-750012649$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1551431938$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function2;
 	public final fun getLambda$1755165875$sentry_android_buddy_release ()Lkotlin/jvm/functions/Function3;
