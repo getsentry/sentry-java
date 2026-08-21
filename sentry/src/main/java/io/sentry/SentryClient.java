@@ -1618,8 +1618,13 @@ public final class SentryClient implements ISentryClient {
           }
         }
       }
-      if (sentryBaseEvent.getBreadcrumbs() == null) {
-        sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+      final List<Breadcrumb> eventBreadcrumbs = sentryBaseEvent.getBreadcrumbs();
+      if (eventBreadcrumbs == null || eventBreadcrumbs.isEmpty()) {
+        // A cached event comes from the outbox; its breadcrumbs (even if empty) belong to a
+        // past session, so the current scope's breadcrumbs are unrelated and must not be applied.
+        if (!isCached) {
+          sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+        }
       } else if (!isCached) {
         // A Cached event comes from the outbox and already carries its own breadcrumbs (e.g. native
         // events written by sentry-native). Appending the scope's breadcrumbs would duplicate them.
