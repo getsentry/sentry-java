@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Prevents inclusion of `null.` prefix before default-package class names when parsing Java and JNI frames from Android ANR thread dumps ([#5979](https://github.com/getsentry/sentry-java/pull/5979))
+
 ### Dependencies
 
 - Bump Native SDK from v0.16.2 to v0.16.3 ([#5962](https://github.com/getsentry/sentry-java/pull/5962))
