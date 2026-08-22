@@ -1,6 +1,7 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.IScopes
@@ -33,6 +34,7 @@ import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
+import java.util.concurrent.ScheduledExecutorService
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -108,20 +110,21 @@ class SessionCaptureStrategyTest {
     fun getSut(
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
       replayCacheDir: File? = null,
+      replayExecutor: ScheduledExecutorService = mock {
+        doAnswer { invocation ->
+            (invocation.arguments[0] as Runnable).run()
+            null
+          }
+          .whenever(it)
+          .submit(any<Runnable>())
+      },
     ): SessionCaptureStrategy {
       replayCacheDir?.let { whenever(replayCache.replayCacheDir).thenReturn(it) }
       return SessionCaptureStrategy(
         options,
         scopes,
         dateProvider,
-        mock {
-          doAnswer { invocation ->
-              (invocation.arguments[0] as Runnable).run()
-              null
-            }
-            .whenever(it)
-            .submit(any<Runnable>())
-        },
+        replayExecutor,
         mock {
           doAnswer { invocation ->
               (invocation.arguments[0] as Runnable).run()
@@ -211,6 +214,31 @@ class SessionCaptureStrategyTest {
     assertEquals(-1, strategy.currentSegment)
     assertFalse(currentReplay.exists())
     verify(fixture.replayCache).close()
+  }
+
+  @Test
+  fun `stop closes cache after queued replay work`() {
+    val tasks = mutableListOf<Runnable>()
+    val calls = mutableListOf<String>()
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    doAnswer { calls += "close" }.whenever(fixture.replayCache).close()
+    val strategy = fixture.getSut(replayExecutor = replayExecutor)
+    strategy.start()
+    replayExecutor.submit(Runnable { calls += "encode" })
+
+    strategy.stop()
+
+    verify(fixture.replayCache, never()).close()
+    tasks.forEach(Runnable::run)
+    assertThat(calls).containsExactly("encode", "close").inOrder()
   }
 
   @Test
