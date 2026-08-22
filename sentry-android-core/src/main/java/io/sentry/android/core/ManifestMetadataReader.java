@@ -18,12 +18,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Class responsible for reading values from manifest and setting them to the options */
 final class ManifestMetadataReader {
+
+  // Populated by the Sentry Android Gradle plugin from the merged manifest at build time.
+  static @Nullable Map<String, Object> manifestMetadata;
 
   static final String DSN = "io.sentry.dsn";
   static final String DEBUG = "io.sentry.debug";
@@ -217,7 +221,7 @@ final class ManifestMetadataReader {
     Objects.requireNonNull(options, "The options object is required.");
 
     try {
-      final Bundle metadata = getMetadata(context, options.getLogger(), buildInfoProvider);
+      final Object metadata = getMetadata(context, options.getLogger(), buildInfoProvider);
       final ILogger logger = options.getLogger();
 
       if (metadata != null) {
@@ -491,7 +495,7 @@ final class ManifestMetadataReader {
         List<String> tracePropagationTargets =
             readList(metadata, logger, TRACE_PROPAGATION_TARGETS);
 
-        if (metadata.containsKey(TRACE_PROPAGATION_TARGETS) && tracePropagationTargets == null) {
+        if (containsKey(metadata, TRACE_PROPAGATION_TARGETS) && tracePropagationTargets == null) {
           options.setTracePropagationTargets(Collections.emptyList());
         } else if (tracePropagationTargets != null) {
           options.setTracePropagationTargets(tracePropagationTargets);
@@ -779,11 +783,17 @@ final class ManifestMetadataReader {
   }
 
   private static boolean readBool(
-      final @NotNull Bundle metadata,
+      final @NotNull Object metadata,
       final @NotNull ILogger logger,
       final @NotNull String key,
       final boolean defaultValue) {
-    final boolean value = metadata.getBoolean(key, defaultValue);
+    final boolean value;
+    if (metadata instanceof Bundle) {
+      value = ((Bundle) metadata).getBoolean(key, defaultValue);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof Boolean ? (Boolean) raw : defaultValue;
+    }
     if (logger.isEnabled(SentryLevel.DEBUG)) {
       logger.log(SentryLevel.DEBUG, key + " read: " + value);
     }
@@ -791,11 +801,17 @@ final class ManifestMetadataReader {
   }
 
   private static @Nullable String readString(
-      final @NotNull Bundle metadata,
+      final @NotNull Object metadata,
       final @NotNull ILogger logger,
       final @NotNull String key,
       final @Nullable String defaultValue) {
-    final String value = metadata.getString(key, defaultValue);
+    final String value;
+    if (metadata instanceof Bundle) {
+      value = ((Bundle) metadata).getString(key, defaultValue);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof String ? (String) raw : defaultValue;
+    }
     if (logger.isEnabled(SentryLevel.DEBUG)) {
       logger.log(SentryLevel.DEBUG, key + " read: " + value);
     }
@@ -803,11 +819,17 @@ final class ManifestMetadataReader {
   }
 
   private static @NotNull String readStringNotNull(
-      final @NotNull Bundle metadata,
+      final @NotNull Object metadata,
       final @NotNull ILogger logger,
       final @NotNull String key,
       final @NotNull String defaultValue) {
-    final String value = metadata.getString(key, defaultValue);
+    final String value;
+    if (metadata instanceof Bundle) {
+      value = ((Bundle) metadata).getString(key, defaultValue);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof String ? (String) raw : defaultValue;
+    }
     if (logger.isEnabled(SentryLevel.DEBUG)) {
       logger.log(SentryLevel.DEBUG, key + " read: " + value);
     }
@@ -815,8 +837,14 @@ final class ManifestMetadataReader {
   }
 
   private static @Nullable List<String> readList(
-      final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
-    final String value = metadata.getString(key);
+      final @NotNull Object metadata, final @NotNull ILogger logger, final @NotNull String key) {
+    final String value;
+    if (metadata instanceof Bundle) {
+      value = ((Bundle) metadata).getString(key);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof String ? (String) raw : null;
+    }
     if (logger.isEnabled(SentryLevel.DEBUG)) {
       logger.log(SentryLevel.DEBUG, key + " read: " + value);
     }
@@ -828,11 +856,21 @@ final class ManifestMetadataReader {
   }
 
   private static double readDouble(
-      final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
-    // manifest meta-data only reads float
-    double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
-    if (value == -1) {
-      value = ((Integer) metadata.getInt(key, -1)).doubleValue();
+      final @NotNull Object metadata, final @NotNull ILogger logger, final @NotNull String key) {
+    final double value;
+    if (metadata instanceof Bundle) {
+      // manifest meta-data only reads float
+      double bundleValue = ((Float) ((Bundle) metadata).getFloat(key, -1)).doubleValue();
+      if (bundleValue == -1) {
+        bundleValue = ((Integer) ((Bundle) metadata).getInt(key, -1)).doubleValue();
+      }
+      value = bundleValue;
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value =
+          raw instanceof Float
+              ? ((Float) raw).doubleValue()
+              : raw instanceof Integer ? ((Integer) raw).doubleValue() : -1;
     }
     if (logger.isEnabled(SentryLevel.DEBUG)) {
       logger.log(SentryLevel.DEBUG, key + " read: " + value);
@@ -841,12 +879,18 @@ final class ManifestMetadataReader {
   }
 
   private static long readLong(
-      final @NotNull Bundle metadata,
+      final @NotNull Object metadata,
       final @NotNull ILogger logger,
       final @NotNull String key,
       final long defaultValue) {
-    // manifest meta-data only reads int if the value is not big enough
-    final long value = metadata.getInt(key, (int) defaultValue);
+    final long value;
+    if (metadata instanceof Bundle) {
+      // manifest meta-data only reads int if the value is not big enough
+      value = ((Bundle) metadata).getInt(key, (int) defaultValue);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof Integer ? (Integer) raw : defaultValue;
+    }
     if (logger.isEnabled(SentryLevel.DEBUG)) {
       logger.log(SentryLevel.DEBUG, key + " read: " + value);
     }
@@ -865,7 +909,7 @@ final class ManifestMetadataReader {
 
     boolean autoInit = true;
     try {
-      final Bundle metadata = getMetadata(context, logger, null);
+      final Object metadata = getMetadata(context, logger, null);
       if (metadata != null) {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
@@ -876,18 +920,28 @@ final class ManifestMetadataReader {
   }
 
   /**
-   * Returns the Bundle attached from the given Context
+   * Returns build-time metadata when available, otherwise metadata attached to the given Context.
    *
    * @param context the application context
-   * @return the Bundle attached to the PackageManager
+   * @return metadata as a Map or PackageManager Bundle
    */
-  private static @Nullable Bundle getMetadata(
+  private static @Nullable Object getMetadata(
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @Nullable BuildInfoProvider buildInfoProvider) {
+    final @Nullable Map<String, Object> injected = manifestMetadata;
+    if (injected != null) {
+      return injected;
+    }
     final ApplicationInfo app =
         ContextUtils.getApplicationInfo(
             context, buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
     return app != null ? app.metaData : null;
+  }
+
+  private static boolean containsKey(final @NotNull Object metadata, final @NotNull String key) {
+    return metadata instanceof Bundle
+        ? ((Bundle) metadata).containsKey(key)
+        : ((Map<?, ?>) metadata).containsKey(key);
   }
 }

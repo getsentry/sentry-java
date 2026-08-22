@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Performance
+
+- Use manifest metadata resolved at build time to reduce Android SDK initialization overhead ([#5976](https://github.com/getsentry/sentry-java/pull/5976))
+
 ### Dependencies
 
 - Bump Native SDK from v0.16.2 to v0.16.3 ([#5962](https://github.com/getsentry/sentry-java/pull/5962))
