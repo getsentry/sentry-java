@@ -224,7 +224,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
   @ApiStatus.Internal
   public boolean recordNonTerminatingUnhandledError() {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
-      if (status != State.Ok) {
+      if (isTerminal(status)) {
         return false;
       }
       hasNonTerminatingUnhandledError = true;
@@ -310,9 +310,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
         this.status = status;
-        // the flag only decides how an Ok session is finalized, so an explicit terminal status
-        // such as a crash or an ANR takes precedence over a non-terminating error.
-        if (status != State.Ok) {
+        // the marker only decides how an Ok session is finalized, so a terminal status such as a
+        // crash or an ANR takes precedence over a non-terminating error.
+        if (isTerminal(status)) {
           hasNonTerminatingUnhandledError = false;
         }
         sessionHasBeenUpdated = true;
@@ -345,6 +345,11 @@ public final class Session implements JsonUnknown, JsonSerializable {
       }
       return sessionHasBeenUpdated;
     }
+  }
+
+  /** A session can only leave {@link State#Ok}, every other status is final. */
+  private static boolean isTerminal(final @NotNull State state) {
+    return state != State.Ok;
   }
 
   /**
