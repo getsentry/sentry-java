@@ -119,10 +119,15 @@ internal abstract class BaseCaptureStrategy(
   override fun pause() = Unit
 
   override fun stop() {
-    cache?.close()
-    replayStartTimestamp.set(0)
-    segmentTimestamp = null
-    currentReplayId = SentryId.EMPTY_ID
+    // Keep cleanup behind queued frames; a later start uses a new capture strategy instance.
+    replayExecutor.submit(
+      ReplayRunnable("$TAG.stop") {
+        cache?.close()
+        replayStartTimestamp.set(0)
+        segmentTimestamp = null
+        currentReplayId = SentryId.EMPTY_ID
+      }
+    )
   }
 
   protected fun createSegmentInternal(

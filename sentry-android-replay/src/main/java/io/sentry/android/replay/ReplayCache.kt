@@ -22,7 +22,6 @@ import java.io.File
 import java.io.StringReader
 import java.util.Date
 import java.util.LinkedList
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -41,7 +40,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 public class ReplayCache(private val options: SentryOptions, private val replayId: SentryId) :
   Closeable {
   private val isClosed = AtomicBoolean(false)
-  private val encoderLock = AutoClosableReentrantLock()
   private val lock = AutoClosableReentrantLock()
   private val framesLock = AutoClosableReentrantLock()
   private var encoder: SimpleVideoEncoder? = null
@@ -152,28 +150,26 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     }
 
     encoder =
-      encoderLock.acquire().use {
-        SimpleVideoEncoder(
-            options,
-            MuxerConfig(
-              file = videoFile,
-              recordingHeight = height,
-              recordingWidth = width,
-              frameRate = frameRate,
-              bitRate = bitRate,
-            ),
-          )
-          .apply {
-            // the constructor already opened the MediaMuxer, so release it if start() fails,
-            // otherwise the encoder is never assigned and its resources leak (CloseGuard warning)
-            try {
-              start()
-            } catch (t: Throwable) {
-              release()
-              throw t
-            }
+      SimpleVideoEncoder(
+          options,
+          MuxerConfig(
+            file = videoFile,
+            recordingHeight = height,
+            recordingWidth = width,
+            frameRate = frameRate,
+            bitRate = bitRate,
+          ),
+        )
+        .apply {
+          // the constructor already opened the MediaMuxer, so release it if start() fails,
+          // otherwise the encoder is never assigned and its resources leak (CloseGuard warning)
+          try {
+            start()
+          } catch (t: Throwable) {
+            release()
+            throw t
           }
-      }
+        }
 
     val step = 1000 / frameRate.toLong()
     var frameCount = 0
@@ -209,20 +205,15 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
 
     if (frameCount == 0) {
       options.logger.log(DEBUG, "Generated a video with no frames, not capturing a replay segment")
-      encoderLock.acquire().use {
-        encoder?.release()
-        encoder = null
-      }
+      encoder?.release()
+      encoder = null
       deleteFile(videoFile)
       return null
     }
 
-    var videoDuration: Long
-    encoderLock.acquire().use {
-      encoder?.release()
-      videoDuration = encoder?.duration ?: 0
-      encoder = null
-    }
+    encoder?.release()
+    val videoDuration = encoder?.duration ?: 0
+    encoder = null
 
     rotate(until = (from + duration))
 
@@ -235,7 +226,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     }
     return try {
       val bitmap = BitmapFactory.decodeFile(frame.screenshot.absolutePath)
-      encoderLock.acquire().use { encoder?.encode(bitmap) }
+      encoder?.encode(bitmap)
       bitmap.recycle()
       true
     } catch (e: Throwable) {
@@ -281,27 +272,10 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
   }
 
   override fun close() {
-    // close() is called inline from the lifecycle path (ReplayIntegration.stop/close), which holds
-    // its own lock, so blocking here can freeze the main thread. If the encoder is wedged in a
-    // native MediaCodec call we'd never get the lock, so we give up instead: the already-dead codec
-    // is not released (leaking a native handle), which beats an ANR.
     try {
-      val token = encoderLock.tryAcquire(ENCODER_RELEASE_TIMEOUT_MS, MILLISECONDS)
-      if (token == null) {
-        options.logger.log(
-          WARNING,
-          "Timed out waiting for the video encoder, skipping its release to not block the caller",
-        )
-      } else {
-        token.use {
-          encoder?.release()
-          encoder = null
-        }
-      }
-    } catch (e: InterruptedException) {
-      Thread.currentThread().interrupt()
+      encoder?.release()
+      encoder = null
     } finally {
-      // has to happen on all paths, callers rely on it to stop persisting segment values
       isClosed.set(true)
     }
   }
@@ -333,13 +307,6 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
   }
 
   internal companion object {
-    /**
-     * How long [close] waits for the video encoder to become available. Below Android's ~5s ANR
-     * budget, and above the encoder's own bail-out (see MAX_EOS_STALL_ITERATIONS), so an encoder
-     * that's merely slow is still awaited rather than abandoned.
-     */
-    private const val ENCODER_RELEASE_TIMEOUT_MS = 2000L
-
     internal const val ONGOING_SEGMENT = ".ongoing_segment"
 
     internal const val SEGMENT_KEY_HEIGHT = "config.height"
