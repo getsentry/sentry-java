@@ -251,23 +251,18 @@ public final class InternalSentrySdk {
       if (eventState != EnvelopeEventState.NONE) {
         scopes.configureScope(
             scope -> {
-              scope.withSession(
-                  session -> {
-                    if (session != null) {
-                      final boolean updated =
-                          eventState == EnvelopeEventState.UNHANDLED
-                              ? session.recordNonTerminatingUnhandledError()
-                              : session.update(null, null, true, null);
-                      if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
-                        ((EnvelopeCache) options.getEnvelopeDiskCache())
-                            .persistCurrentSession(session);
-                      }
-                    } else {
-                      options
-                          .getLogger()
-                          .log(INFO, "Session is null on captureEnvelopeNonTerminating");
-                    }
-                  });
+              final @Nullable Session session = scope.getSession();
+              if (session != null) {
+                final boolean updated =
+                    eventState == EnvelopeEventState.UNHANDLED
+                        ? session.recordNonTerminatingUnhandledError()
+                        : session.update(null, null, true, null);
+                if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
+                  ((EnvelopeCache) options.getEnvelopeDiskCache()).persistCurrentSession(session);
+                }
+              } else {
+                options.getLogger().log(INFO, "Session is null on captureEnvelopeNonTerminating");
+              }
             });
       }
 

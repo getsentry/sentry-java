@@ -1018,7 +1018,7 @@ public final class Scope implements IScope {
   }
 
   /** The IWithSession callback */
-  public interface IWithSession {
+  interface IWithSession {
 
     /**
      * The accept method of the callback
