@@ -213,8 +213,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
   /**
    * Records that an active session experienced an unhandled error which did not terminate the
    * process, counting the error and advancing the session's sequence without ending it. On {@link
-   * #end()} the session is finalized as {@link State#Unhandled} unless a crash escalated it to
-   * {@link State#Crashed} first.
+   * #end()} the session is finalized as {@link State#Unhandled} unless a terminal status such as
+   * {@link State#Crashed} or {@link State#Abnormal} took over first.
    *
    * <p>Hybrid SDKs whose unhandled errors do not kill the process. Native Java/Android capture
    * should not call this.
@@ -310,8 +310,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
         this.status = status;
-        // a crash terminates the process, so it takes precedence over a non-terminating one.
-        if (status == State.Crashed) {
+        // the flag only decides how an Ok session is finalized, so an explicit terminal status
+        // such as a crash or an ANR takes precedence over a non-terminating error.
+        if (status != State.Ok) {
           hasNonTerminatingUnhandledError = false;
         }
         sessionHasBeenUpdated = true;

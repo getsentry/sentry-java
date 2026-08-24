@@ -39,8 +39,8 @@ class SessionSerializationTest {
     /**
      * An unhandled session cannot be built by mutating [getSut]: the flag is only reachable through
      * [Session.recordNonTerminatingUnhandledError], which no-ops unless the session is still `Ok`,
-     * and a crash would clear it again. Ending on a fixed timestamp keeps `seq` and `duration`
-     * deterministic.
+     * and a terminal status would clear it again. Ending on a fixed timestamp keeps `seq` and
+     * `duration` deterministic.
      */
     fun getUnhandledSut() =
       Session(

@@ -373,7 +373,7 @@ class EnvelopeCacheTest {
       )
     assertEquals(State.Abnormal, updatedSession!!.status)
     assertEquals("abnormal_mechanism", updatedSession.abnormalMechanism)
-    assertTrue(updatedSession.hasNonTerminatingUnhandledError())
+    assertFalse(updatedSession.hasNonTerminatingUnhandledError())
   }
 
   @Test
