@@ -225,8 +225,8 @@ public final class InternalSentrySdk {
    * </ul>
    *
    * <p>The session is finalized later by normal lifecycle ({@code endSession} / background /
-   * previous-session recovery) as {@code unhandled}, unless a native crash escalates it to {@code
-   * crashed}.
+   * previous-session recovery) as {@code unhandled}, unless a terminal status takes over first,
+   * such as {@code crashed} for a native crash or {@code abnormal} for an ANR.
    *
    * <p>Same as {@link #captureEnvelope(byte[], boolean)}, this method will not enrich events, run
    * {@code beforeSend}, or sample — the caller is responsible for that.
@@ -251,6 +251,9 @@ public final class InternalSentrySdk {
       if (eventState != EnvelopeEventState.NONE) {
         scopes.configureScope(
             scope -> {
+              // the write stays inside the callback so the mutation and the persist are one
+              // critical section. Persisting outside it lets a concurrent caller's older snapshot
+              // land last and drop the unhandled marker.
               scope.withSession(
                   session -> {
                     if (session != null) {
