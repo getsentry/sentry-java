@@ -41,7 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -250,10 +249,26 @@ public final class InternalSentrySdk {
       final @NotNull EnvelopeEventState eventState = eventStateOf(envelope, serializer);
 
       if (eventState != EnvelopeEventState.NONE) {
-        final @Nullable Session session = recordSessionError(scopes, options, eventState);
-        if (session != null && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
-          ((EnvelopeCache) options.getEnvelopeDiskCache()).persistCurrentSession(session);
-        }
+        scopes.configureScope(
+            scope -> {
+              scope.withSession(
+                  session -> {
+                    if (session != null) {
+                      final boolean updated =
+                          eventState == EnvelopeEventState.UNHANDLED
+                              ? session.recordNonTerminatingUnhandledError()
+                              : session.update(null, null, true, null);
+                      if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
+                        ((EnvelopeCache) options.getEnvelopeDiskCache())
+                            .persistCurrentSession(session);
+                      }
+                    } else {
+                      options
+                          .getLogger()
+                          .log(INFO, "Session is null on captureEnvelopeNonTerminating");
+                    }
+                  });
+            });
       }
 
       return scopes.captureEnvelope(envelope);
@@ -261,40 +276,6 @@ public final class InternalSentrySdk {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", e);
     }
     return null;
-  }
-
-  /**
-   * Records the envelope's error on the current session under the scope lock and returns the
-   * snapshot taken while holding it, so the caller can persist it without keeping the lock during
-   * disk I/O. Returns null when there is no session or it had already reached a terminal state.
-   */
-  private static @Nullable Session recordSessionError(
-      final @NotNull IScopes scopes,
-      final @NotNull SentryOptions options,
-      final @NotNull EnvelopeEventState eventState) {
-    final @NotNull AtomicReference<Session> snapshotRef = new AtomicReference<>();
-    scopes.configureScope(
-        scope -> {
-          final @NotNull AtomicBoolean updated = new AtomicBoolean(false);
-          final @Nullable Session snapshot =
-              scope.withSession(
-                  session -> {
-                    if (session != null) {
-                      updated.set(
-                          eventState == EnvelopeEventState.UNHANDLED
-                              ? session.recordNonTerminatingUnhandledError()
-                              : session.update(null, null, true, null));
-                    } else {
-                      options
-                          .getLogger()
-                          .log(INFO, "Session is null on captureEnvelopeNonTerminating");
-                    }
-                  });
-          if (updated.get()) {
-            snapshotRef.set(snapshot);
-          }
-        });
-    return snapshotRef.get();
   }
 
   /** What the events inside an envelope amount to, from the session's point of view. */
