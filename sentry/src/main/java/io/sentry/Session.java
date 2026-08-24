@@ -23,8 +23,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
     Crashed,
     Abnormal,
     /**
-     * Unhandled error the process survived. Not used while the session is alive; {@link
-     * Session#end()} sets this. Native crashes still end as {@link #Crashed}.
+     * Final status when an unhandled error did not kill the process, such as a Flutter exception.
+     * The session stays {@link #Ok} until {@link Session#end()}. Native crashes still end as {@link
+     * #Crashed}.
      */
     Unhandled
   }
