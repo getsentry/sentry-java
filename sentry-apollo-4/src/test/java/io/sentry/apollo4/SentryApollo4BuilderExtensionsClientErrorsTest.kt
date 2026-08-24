@@ -470,6 +470,23 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
   }
 
   @Test
+  fun `data collection filters response headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.denyList("content-length")
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("[Filtered]", it.contexts.response!!.headers?.get("Content-Length"))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `data collection can disable response headers`() {
     val sut =
       fixture.getSut(responseBody = fixture.responseBodyNotOk) {
