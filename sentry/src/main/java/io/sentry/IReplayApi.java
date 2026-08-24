@@ -11,17 +11,20 @@ public interface IReplayApi {
 
   /**
    * Starts replay buffering. The rolling buffer is sent when {@link #flush()} is called or an error
-   * is captured. After the buffer is sent, recording continues in session mode unless the process
-   * is terminating.
+   * is captured and selected by {@link SentryReplayOptions#getOnErrorSampleRate()}. After the
+   * buffer is sent, recording continues in session mode unless the process is terminating.
    */
   void startBuffering();
 
-  /** Stops the current replay. A subsequent {@link #start()} begins a new replay session. */
+  /**
+   * Stops the current replay in either session or buffer mode. A subsequent {@link #start()} begins
+   * a new replay session.
+   */
   void stop();
 
   /**
-   * Pauses the current replay until {@link #resume()} is called. This can be used to avoid
-   * recording sensitive screens, such as PIN entry.
+   * Pauses the current replay in either session or buffer mode until {@link #resume()} is called.
+   * This can be used to avoid recording sensitive screens, such as PIN entry.
    */
   void pause();
 
