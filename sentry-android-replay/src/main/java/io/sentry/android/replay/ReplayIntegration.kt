@@ -296,6 +296,11 @@ public class ReplayIntegration(
     val current = state.get()
     val strategy = current.captureStrategy
     if (!current.matches(expectedGeneration, expectedReplayId) || strategy == null) {
+      scopes?.configureScope {
+        if (it.replayId == expectedReplayId) {
+          it.replayId = SentryId.EMPTY_ID
+        }
+      }
       options.logger.log(
         INFO,
         "Replay was stopped or restarted before capture could run, not capturing for event",

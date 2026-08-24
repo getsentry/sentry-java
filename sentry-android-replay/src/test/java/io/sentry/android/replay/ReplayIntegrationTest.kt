@@ -481,6 +481,7 @@ class ReplayIntegrationTest {
 
     assertThat(replay.isRecording).isFalse()
     assertThat(replay.replayId).isEqualTo(SentryId.EMPTY_ID)
+    assertThat(fixture.scope.replayId).isEqualTo(SentryId.EMPTY_ID)
     verify(captureStrategy, never()).captureReplay(any(), any())
   }
 
