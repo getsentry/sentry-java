@@ -22,6 +22,10 @@ public final class Session implements JsonUnknown, JsonSerializable {
     Exited,
     Crashed,
     Abnormal,
+    /**
+     * Unhandled error the process survived. Not used while the session is alive; {@link
+     * Session#end()} sets this. Native crashes still end as {@link #Crashed}.
+     */
     Unhandled
   }
 
@@ -210,6 +214,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
    * process, counting the error and advancing the session's sequence without ending it. On {@link
    * #end()} the session is finalized as {@link State#Unhandled} unless a crash escalated it to
    * {@link State#Crashed} first.
+   *
+   * <p>Hybrid SDKs whose unhandled errors do not kill the process. Native Java/Android capture
+   * should not call this.
    *
    * @return whether the session was updated, i.e. false if it had already reached a terminal state
    */
