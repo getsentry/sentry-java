@@ -167,10 +167,10 @@ public class ReplayIntegration(
   }
 
   override fun onAppForegrounded(startNewSession: Boolean) {
-    if (!isEnabled.get()) {
-      return
-    }
     enqueueOnMainThread {
+      if (!isEnabled.get()) {
+        return@enqueueOnMainThread
+      }
       if (startNewSession) {
         val isFullSession = sample(options.sessionReplay.sessionSampleRate)
         if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
@@ -187,9 +187,6 @@ public class ReplayIntegration(
   }
 
   override fun onAppBackgrounded() {
-    if (!isEnabled.get()) {
-      return
-    }
     enqueueOnMainThread { pauseInternal() }
   }
 

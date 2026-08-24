@@ -226,14 +226,23 @@ class ReplayIntegrationTest {
   }
 
   @Test
-  fun `lifecycle callbacks before register are not enqueued`() {
-    val mainLooperHandler = mock<MainLooperHandler>()
-    val replay = fixture.getSut(context, mainLooperHandler = mainLooperHandler)
+  fun `foreground before register does nothing`() {
+    val replay = fixture.getSut(context)
 
     replay.onAppForegrounded(true)
-    replay.onAppBackgrounded()
 
-    verify(mainLooperHandler, never()).post(any())
+    assertThat(replay.isRecording).isFalse()
+  }
+
+  @Test
+  fun `foreground queued before register starts replay after register`() {
+    val replay = fixture.getSut(context, mainLooperHandler = MainLooperHandler())
+
+    replay.onAppForegrounded(true)
+    replay.register(fixture.scopes, fixture.options)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertThat(replay.isRecording).isTrue()
   }
 
   @Test
