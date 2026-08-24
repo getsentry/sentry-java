@@ -584,12 +584,12 @@ public class SentryUserFeedbackForm extends AlertDialog {
   private static byte[] readUriBytes(
       final @NotNull ContentResolver resolver, final @NotNull Uri uri, final long maxSize)
       throws IOException {
-    try (final @Nullable InputStream inputStream = resolver.openInputStream(uri)) {
-      if (inputStream == null) {
-        throw new IOException("Unable to open image attachment: " + uri);
-      }
-      return FileUtils.inputStreamToByteArray(inputStream, maxSize);
+    final @Nullable InputStream inputStream = resolver.openInputStream(uri);
+    if (inputStream == null) {
+      throw new IOException("Unable to open image attachment: " + uri);
     }
+    // inputStreamToByteArray closes the stream
+    return FileUtils.inputStreamToByteArray(inputStream, maxSize);
   }
 
   @Override

@@ -94,7 +94,7 @@ public final class SentryFeedbackOptions {
 
   /**
    * The message displayed when the selected screenshot exceeds the maximum attachment size.
-   * Defaults to "Image is too large".
+   * Defaults to "Screenshot is too large".
    */
   private @NotNull CharSequence screenshotTooLargeMessageText = "Screenshot is too large";
 
@@ -552,7 +552,7 @@ public final class SentryFeedbackOptions {
 
   /**
    * The message displayed when the selected screenshot exceeds the maximum attachment size.
-   * Defaults to "Image is too large".
+   * Defaults to "Screenshot is too large".
    *
    * @return the message displayed when the selected screenshot is too large
    */
@@ -756,7 +756,7 @@ public final class SentryFeedbackOptions {
   }
 
   @ApiStatus.Internal
-  public @NotNull void setLoadClass(final @NotNull LoadClass loadClass) {
+  public void setLoadClass(final @NotNull LoadClass loadClass) {
     this.loadClass = loadClass;
   }
 

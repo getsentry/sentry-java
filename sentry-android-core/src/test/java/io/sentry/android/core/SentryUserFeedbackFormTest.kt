@@ -9,6 +9,7 @@ import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.os.Looper
+import android.provider.OpenableColumns
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
@@ -51,6 +52,7 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.fakes.RoboCursor
 import org.robolectric.shadows.ShadowContentResolver
 
 @RunWith(AndroidJUnit4::class)
@@ -307,6 +309,40 @@ class SentryUserFeedbackFormTest {
   }
 
   @Test
+  fun `an over-sized image is dropped and not attached to the feedback`() {
+    fixture.options.isEnabled = true
+    fixture.options.maxAttachmentSize = 10
+    whenever(fixture.mockFeedbackApi.capture(any<Feedback>(), anyOrNull()))
+      .thenReturn(SentryId(java.util.UUID.randomUUID()))
+    val activity = componentActivity()
+    val uri = Uri.parse("content://media/external/images/media/1")
+    shadowOf(activity.contentResolver).setCursor(uri, sizeCursor(11))
+    val sut = fixture.getSut(context = activity)
+    sut.show()
+    val button = addScreenshotButton(sut)
+
+    button.performClick()
+    deliverPickerResult(activity, uri)
+
+    // The image is not selected, so the button keeps its initial label
+    assertThat(button.text.toString())
+      .isEqualTo(fixture.options.feedbackOptions.addScreenshotButtonLabel.toString())
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq("Selected screenshot is larger than the maxAttachmentSize of %d bytes, dropping it."),
+        eq(fixture.options.maxAttachmentSize),
+      )
+
+    sut.findViewById<EditText>(R.id.sentry_dialog_user_feedback_edt_description).setText("message")
+    sut.findViewById<Button>(R.id.sentry_dialog_user_feedback_btn_send).performClick()
+
+    val hintCaptor = argumentCaptor<Hint>()
+    verify(fixture.mockFeedbackApi).capture(any<Feedback>(), hintCaptor.capture())
+    assertThat(hintCaptor.firstValue.attachments).isEmpty()
+  }
+
+  @Test
   fun `feedback is captured with an image attachment when an image is picked`() {
     fixture.options.isEnabled = true
     whenever(fixture.mockFeedbackApi.capture(any<Feedback>(), anyOrNull()))
@@ -441,6 +477,12 @@ class SentryUserFeedbackFormTest {
 
   private fun componentActivity(): ComponentActivity =
     Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+
+  private fun sizeCursor(size: Long): RoboCursor =
+    RoboCursor().apply {
+      setColumnNames(listOf(OpenableColumns.SIZE))
+      setResults(arrayOf(arrayOf<Any>(size)))
+    }
 
   private fun addScreenshotButton(sut: SentryUserFeedbackForm): Button =
     sut.findViewById(R.id.sentry_dialog_user_feedback_btn_add_screenshot)
