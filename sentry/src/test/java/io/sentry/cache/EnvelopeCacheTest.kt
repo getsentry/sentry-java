@@ -215,6 +215,35 @@ class EnvelopeCacheTest {
   }
 
   @Test
+  fun `failed persist stops the delayed same SID SessionStart from being skipped`() {
+    val cache = fixture.getSUT()
+    val sid = SentryUUID.generateSentryId()
+    val currentSessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val newerSession = createSession(sessionId = sid)
+    newerSession.recordNonTerminatingUnhandledError()
+    cache.persistCurrentSession(newerSession)
+
+    // a directory where the session file belongs makes the write fail
+    assertTrue(currentSessionFile.delete())
+    assertTrue(currentSessionFile.mkdir())
+    cache.persistCurrentSession(newerSession)
+    assertTrue(currentSessionFile.delete())
+
+    val delayedStart = createSession(sessionId = sid)
+    val envelope = SentryEnvelope.from(fixture.options.serializer, delayedStart, null)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(SessionStartHint()))
+
+    val persistedSession =
+      fixture.options.serializer.deserialize(
+        currentSessionFile.bufferedReader(),
+        Session::class.java,
+      )!!
+    assertThat(persistedSession.sessionId).isEqualTo(sid)
+    assertThat(persistedSession.hasNonTerminatingUnhandledError()).isFalse()
+    assertThat(persistedSession.errorCount()).isEqualTo(0)
+  }
+
+  @Test
   fun `null SIDs on SessionStart rotate instead of preserving as same session`() {
     val cache = fixture.getSUT()
     val currentSession = createSession(sessionId = null)

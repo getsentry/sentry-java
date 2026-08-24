@@ -391,9 +391,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       final boolean written =
           writeSessionToDisk(
               getCurrentSessionFile(directory.getOrCreate().getAbsolutePath()), session);
-      if (written) {
-        lastPersistedSessionId = session.getSessionId();
-      }
+      // a failed write truncates the file, so there is no good copy left to protect
+      lastPersistedSessionId = written ? session.getSessionId() : null;
     }
   }
 
