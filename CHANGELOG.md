@@ -50,6 +50,10 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0164)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.16.2...0.16.4)
 
+### Internal
+
+- Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed` ([#5921](https://github.com/getsentry/sentry-java/pull/5921))
+
 ## 8.53.0
 
 ### Features
@@ -81,10 +85,6 @@
 - Bump Native SDK from v0.16.1 to v0.16.2 ([#5910](https://github.com/getsentry/sentry-java/pull/5910))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0162)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.16.1...0.16.2)
-
-### Internal
-
-- Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed` ([#5921](https://github.com/getsentry/sentry-java/pull/5921))
 
 ## 8.52.0
 
