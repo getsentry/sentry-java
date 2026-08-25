@@ -8,6 +8,12 @@
 - Prevent a class of Session Replay deadlocks by confining lifecycle state changes to Android's main thread ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
 - Symbolicate tombstone native frames for libraries loaded directly from APKs ([#5992](https://github.com/getsentry/sentry-java/pull/5992))
 
+### Internal
+
+- Seal `SentryOptions` once `Sentry.init` has finished ([#5999](https://github.com/getsentry/sentry-java/pull/5999))
+  - Configuring options after `Sentry.init` returns never took effect reliably, because the logger, serializer, executors, transport and profilers are already built from the values they read during init. Such writes are now dropped with an error log, and throw when `debug` is enabled.
+  - Configure the SDK from the `Sentry.init` callback instead.
+
 ### Features
 
 - Add screenshot attachment button to the Android user feedback widget ([#5828](https://github.com/getsentry/sentry-java/pull/5828))
