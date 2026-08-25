@@ -266,7 +266,7 @@ public final class InternalSentrySdk {
 
   /**
    * Session side effects of {@link #captureEnvelopeNonTerminating(byte[])} without sending the
-   * event. Hybrid SDKs should call this when an error is dropped by sample rate or rate limiting.
+   * event. Hybrid SDKs should call this when an error is dropped by sampling.
    *
    * <p>Do not call this for events dropped by {@code beforeSend} or ignored exception types.
    *
