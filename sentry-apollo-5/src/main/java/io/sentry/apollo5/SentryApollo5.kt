@@ -1,0 +1,15 @@
+package io.sentry.apollo5
+
+/** Common constants used across the module */
+internal const val OPERATION_ID_HEADER_NAME = "SENTRY-APOLLO-5-OPERATION-ID"
+internal const val OPERATION_NAME_HEADER_NAME = "SENTRY-APOLLO-5-OPERATION-NAME"
+internal const val OPERATION_TYPE_HEADER_NAME = "SENTRY-APOLLO-5-OPERATION-TYPE"
+internal const val VARIABLES_HEADER_NAME = "SENTRY-APOLLO-5-VARIABLES"
+internal val INTERNAL_HEADER_NAMES by lazy {
+  listOf(
+    OPERATION_ID_HEADER_NAME,
+    OPERATION_NAME_HEADER_NAME,
+    OPERATION_TYPE_HEADER_NAME,
+    VARIABLES_HEADER_NAME,
+  )
+}
