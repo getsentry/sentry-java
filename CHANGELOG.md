@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Prevent crashes when feature flags are merged during concurrent scope updates ([#5994](https://github.com/getsentry/sentry-java/pull/5994))
 - Prevent duplicated breadcrumbs on tombstone-merged native crash events ([#5888](https://github.com/getsentry/sentry-java/pull/5888))
 - Prevent a class of Session Replay deadlocks by confining lifecycle state changes to Android's main thread ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
 
