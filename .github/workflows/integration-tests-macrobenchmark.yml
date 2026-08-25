@@ -4,12 +4,6 @@ name: 'Integration Tests - Macrobenchmark'
 #
 on:
   workflow_dispatch:
-  # Temporary scaffolding: workflow_dispatch cannot target a workflow that does not exist on
-  # the default branch yet, so trigger on pushes to this branch while we validate the flow.
-  # Remove before merge.
-  push:
-    branches:
-      - no/macrobenchmark-sauce-results
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
