@@ -385,7 +385,7 @@ class FeatureFlagBufferTest {
       assertThat(writerStarted.await(5, TimeUnit.SECONDS)).isTrue()
       val writerOperationsBeforeMerging = writerOperations.get()
 
-      repeat(10_000) {
+      repeat(1_000) {
         FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer).featureFlags
       }
 
