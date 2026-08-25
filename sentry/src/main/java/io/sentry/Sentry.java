@@ -407,6 +407,10 @@ public final class Sentry {
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "Using scopes storage %s", scopesStorage.getClass().getName());
+
+        // Everything is wired up and every integration has registered: from here on the options
+        // describe how the SDK was built, and writing to them can no longer take effect.
+        options.seal();
       } else {
         options
             .getLogger()

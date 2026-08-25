@@ -57,7 +57,6 @@ public final class SentryClient implements ISentryClient {
     ITransportFactory transportFactory = options.getTransportFactory();
     if (transportFactory instanceof NoOpTransportFactory) {
       transportFactory = new AsyncHttpTransportFactory();
-      options.setTransportFactory(transportFactory);
     }
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);

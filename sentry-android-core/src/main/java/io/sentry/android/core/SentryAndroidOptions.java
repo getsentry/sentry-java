@@ -314,6 +314,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @param anrEnabled true for enabled and false for disabled
    */
   public void setAnrEnabled(boolean anrEnabled) {
+    if (rejectAfterSeal("setAnrEnabled")) {
+      return;
+    }
     this.anrEnabled = anrEnabled;
   }
 
@@ -332,6 +335,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @param anrTimeoutIntervalMillis the timeout internal in Millis
    */
   public void setAnrTimeoutIntervalMillis(long anrTimeoutIntervalMillis) {
+    if (rejectAfterSeal("setAnrTimeoutIntervalMillis")) {
+      return;
+    }
     this.anrTimeoutIntervalMillis = anrTimeoutIntervalMillis;
   }
 
@@ -351,6 +357,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @param anrReportInDebug true for enabled and false for disabled
    */
   public void setAnrReportInDebug(boolean anrReportInDebug) {
+    if (rejectAfterSeal("setAnrReportInDebug")) {
+      return;
+    }
     this.anrReportInDebug = anrReportInDebug;
   }
 
@@ -373,6 +382,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   @ApiStatus.Experimental
   public void setEnableNdkAppHangTracking(boolean enableNdkAppHangTracking) {
+    if (rejectAfterSeal("setEnableNdkAppHangTracking")) {
+      return;
+    }
     this.enableNdkAppHangTracking = enableNdkAppHangTracking;
   }
 
@@ -395,6 +407,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   @ApiStatus.Experimental
   public void setNdkAppHangTimeoutIntervalMillis(long ndkAppHangTimeoutIntervalMillis) {
+    if (rejectAfterSeal("setNdkAppHangTimeoutIntervalMillis")) {
+      return;
+    }
     this.ndkAppHangTimeoutIntervalMillis = ndkAppHangTimeoutIntervalMillis;
   }
 
@@ -404,6 +419,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @param enableTombstone true for enabled and false for disabled
    */
   public void setTombstoneEnabled(boolean enableTombstone) {
+    if (rejectAfterSeal("setTombstoneEnabled")) {
+      return;
+    }
     this.enableTombstone = enableTombstone;
   }
 
@@ -422,6 +440,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setEnableActivityLifecycleBreadcrumbs(boolean enableActivityLifecycleBreadcrumbs) {
+    if (rejectAfterSeal("setEnableActivityLifecycleBreadcrumbs")) {
+      return;
+    }
     this.enableActivityLifecycleBreadcrumbs = enableActivityLifecycleBreadcrumbs;
   }
 
@@ -430,6 +451,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setEnableAppLifecycleBreadcrumbs(boolean enableAppLifecycleBreadcrumbs) {
+    if (rejectAfterSeal("setEnableAppLifecycleBreadcrumbs")) {
+      return;
+    }
     this.enableAppLifecycleBreadcrumbs = enableAppLifecycleBreadcrumbs;
   }
 
@@ -438,6 +462,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setEnableSystemEventBreadcrumbs(boolean enableSystemEventBreadcrumbs) {
+    if (rejectAfterSeal("setEnableSystemEventBreadcrumbs")) {
+      return;
+    }
     this.enableSystemEventBreadcrumbs = enableSystemEventBreadcrumbs;
   }
 
@@ -446,6 +473,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setEnableAppComponentBreadcrumbs(boolean enableAppComponentBreadcrumbs) {
+    if (rejectAfterSeal("setEnableAppComponentBreadcrumbs")) {
+      return;
+    }
     this.enableAppComponentBreadcrumbs = enableAppComponentBreadcrumbs;
   }
 
@@ -454,6 +484,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setEnableNetworkEventBreadcrumbs(boolean enableNetworkEventBreadcrumbs) {
+    if (rejectAfterSeal("setEnableNetworkEventBreadcrumbs")) {
+      return;
+    }
     this.enableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs;
   }
 
@@ -486,6 +519,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @param debugImagesLoader the image loader
    */
   public void setDebugImagesLoader(final @NotNull IDebugImagesLoader debugImagesLoader) {
+    if (rejectAfterSeal("setDebugImagesLoader")) {
+      return;
+    }
     this.debugImagesLoader =
         debugImagesLoader != null ? debugImagesLoader : NoOpDebugImagesLoader.getInstance();
   }
@@ -495,6 +531,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setEnableAutoActivityLifecycleTracing(boolean enableAutoActivityLifecycleTracing) {
+    if (rejectAfterSeal("setEnableAutoActivityLifecycleTracing")) {
+      return;
+    }
     this.enableAutoActivityLifecycleTracing = enableAutoActivityLifecycleTracing;
   }
 
@@ -504,6 +543,9 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableActivityLifecycleTracingAutoFinish(
       boolean enableActivityLifecycleTracingAutoFinish) {
+    if (rejectAfterSeal("setEnableActivityLifecycleTracingAutoFinish")) {
+      return;
+    }
     this.enableActivityLifecycleTracingAutoFinish = enableActivityLifecycleTracingAutoFinish;
   }
 
@@ -512,6 +554,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setAttachScreenshot(boolean attachScreenshot) {
+    if (rejectAfterSeal("setAttachScreenshot")) {
+      return;
+    }
     this.attachScreenshot = attachScreenshot;
   }
 
@@ -520,6 +565,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setAttachViewHierarchy(boolean attachViewHierarchy) {
+    if (rejectAfterSeal("setAttachViewHierarchy")) {
+      return;
+    }
     this.attachViewHierarchy = attachViewHierarchy;
   }
 
@@ -528,6 +576,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setCollectAdditionalContext(boolean collectAdditionalContext) {
+    if (rejectAfterSeal("setCollectAdditionalContext")) {
+      return;
+    }
     this.collectAdditionalContext = collectAdditionalContext;
   }
 
@@ -536,6 +587,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setCollectExternalStorageContext(final boolean collectExternalStorageContext) {
+    if (rejectAfterSeal("setCollectExternalStorageContext")) {
+      return;
+    }
     this.collectExternalStorageContext = collectExternalStorageContext;
   }
 
@@ -549,6 +603,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @param enableFramesTracking true if frames tracking should be enabled, false otherwise.
    */
   public void setEnableFramesTracking(boolean enableFramesTracking) {
+    if (rejectAfterSeal("setEnableFramesTracking")) {
+      return;
+    }
     this.enableFramesTracking = enableFramesTracking;
   }
 
@@ -590,11 +647,17 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   @ApiStatus.Internal
   public void setNativeSdkName(final @Nullable String nativeSdkName) {
+    if (rejectAfterSeal("setNativeSdkName")) {
+      return;
+    }
     this.nativeSdkName = nativeSdkName;
   }
 
   @ApiStatus.Internal
   public void setNativeHandlerStrategy(final @NotNull NdkHandlerStrategy ndkHandlerStrategy) {
+    if (rejectAfterSeal("setNativeHandlerStrategy")) {
+      return;
+    }
     this.ndkHandlerStrategy = ndkHandlerStrategy;
   }
 
@@ -618,6 +681,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setEnableRootCheck(final boolean enableRootCheck) {
+    if (rejectAfterSeal("setEnableRootCheck")) {
+      return;
+    }
     this.enableRootCheck = enableRootCheck;
   }
 
@@ -633,6 +699,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setBeforeScreenshotCaptureCallback(
       final @NotNull BeforeCaptureCallback beforeScreenshotCaptureCallback) {
+    if (rejectAfterSeal("setBeforeScreenshotCaptureCallback")) {
+      return;
+    }
     this.beforeScreenshotCaptureCallback = beforeScreenshotCaptureCallback;
   }
 
@@ -648,6 +717,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setBeforeViewHierarchyCaptureCallback(
       final @NotNull BeforeCaptureCallback beforeViewHierarchyCaptureCallback) {
+    if (rejectAfterSeal("setBeforeViewHierarchyCaptureCallback")) {
+      return;
+    }
     this.beforeViewHierarchyCaptureCallback = beforeViewHierarchyCaptureCallback;
   }
 
@@ -692,6 +764,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setReportHistoricalAnrs(final boolean reportHistoricalAnrs) {
+    if (rejectAfterSeal("setReportHistoricalAnrs")) {
+      return;
+    }
     this.reportHistoricalAnrs = reportHistoricalAnrs;
   }
 
@@ -700,6 +775,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setReportHistoricalTombstones(final boolean reportHistoricalTombstones) {
+    if (rejectAfterSeal("setReportHistoricalTombstones")) {
+      return;
+    }
     this.reportHistoricalTombstones = reportHistoricalTombstones;
   }
 
@@ -708,6 +786,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setAttachAnrThreadDump(final boolean attachAnrThreadDump) {
+    if (rejectAfterSeal("setAttachAnrThreadDump")) {
+      return;
+    }
     this.attachAnrThreadDump = attachAnrThreadDump;
   }
 
@@ -716,6 +797,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setAttachRawTombstone(final boolean attachRawTombstone) {
+    if (rejectAfterSeal("setAttachRawTombstone")) {
+      return;
+    }
     this.attachRawTombstone = attachRawTombstone;
   }
 
@@ -736,6 +820,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @param enablePerformanceV2 true if enabled or false otherwise
    */
   public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
+    if (rejectAfterSeal("setEnablePerformanceV2")) {
+      return;
+    }
     this.enablePerformanceV2 = enablePerformanceV2;
   }
 
@@ -783,6 +870,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   @ApiStatus.Experimental
   public void setEnableStandaloneAppStartTracing(final boolean enableStandaloneAppStartTracing) {
+    if (rejectAfterSeal("setEnableStandaloneAppStartTracing")) {
+      return;
+    }
     this.enableStandaloneAppStartTracing = enableStandaloneAppStartTracing;
   }
 
@@ -794,6 +884,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   @ApiStatus.Internal
   public void setFrameMetricsCollector(
       final @Nullable SentryFrameMetricsCollector frameMetricsCollector) {
+    if (rejectAfterSeal("setFrameMetricsCollector")) {
+      return;
+    }
     this.frameMetricsCollector = frameMetricsCollector;
   }
 
@@ -802,6 +895,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setEnableAutoTraceIdGeneration(final boolean enableAutoTraceIdGeneration) {
+    if (rejectAfterSeal("setEnableAutoTraceIdGeneration")) {
+      return;
+    }
     this.enableAutoTraceIdGeneration = enableAutoTraceIdGeneration;
   }
 
@@ -811,6 +907,9 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableSystemEventBreadcrumbsExtras(
       final boolean enableSystemEventBreadcrumbsExtras) {
+    if (rejectAfterSeal("setEnableSystemEventBreadcrumbsExtras")) {
+      return;
+    }
     this.enableSystemEventBreadcrumbsExtras = enableSystemEventBreadcrumbsExtras;
   }
 
@@ -828,6 +927,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   public void setAnrProfilingSampleRate(final @Nullable Double anrProfilingSampleRate) {
+    if (rejectAfterSeal("setAnrProfilingSampleRate")) {
+      return;
+    }
     if (!SampleRateUtils.isValidSampleRate(anrProfilingSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
@@ -861,6 +963,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * @param enableAnrFingerprinting true to enable ANR fingerprinting
    */
   public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
+    if (rejectAfterSeal("setEnableAnrFingerprinting")) {
+      return;
+    }
     this.enableAnrFingerprinting = enableAnrFingerprinting;
   }
 

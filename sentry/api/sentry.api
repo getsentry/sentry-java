@@ -3809,6 +3809,8 @@ public class io/sentry/SentryOptions {
 	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
 	public fun merge (Lio/sentry/ExternalOptions;)V
+	protected final fun rejectAfterSeal (Ljava/lang/String;)Z
+	public fun seal ()V
 	public fun setAppStartExtender (Lio/sentry/IAppStartExtender;)V
 	public fun setAttachServerName (Z)V
 	public fun setAttachStacktrace (Z)V
@@ -3939,6 +3941,7 @@ public class io/sentry/SentryOptions {
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
 	public fun setVersionDetector (Lio/sentry/IVersionDetector;)V
 	public fun setViewHierarchyExporters (Ljava/util/List;)V
+	public fun unseal ()V
 }
 
 public abstract interface class io/sentry/SentryOptions$BeforeBreadcrumbCallback {

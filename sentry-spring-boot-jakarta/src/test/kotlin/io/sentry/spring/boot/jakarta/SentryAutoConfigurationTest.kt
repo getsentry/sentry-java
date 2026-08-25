@@ -2,7 +2,6 @@ package io.sentry.spring.boot.jakarta
 
 import com.acme.MainBootClass
 import io.opentelemetry.api.OpenTelemetry
-import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory
 import io.sentry.EventProcessor
@@ -818,8 +817,10 @@ class SentryAutoConfigurationTest {
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withClassLoader(FilteredClassLoader(ApacheHttpClientTransportFactory::class.java))
       .run {
+        // Spring installs no factory here; SentryClient resolves the async http one internally
+        // without writing it back to the options.
         assertThat(it.getBean(SentryOptions::class.java).transportFactory)
-          .isInstanceOf(AsyncHttpTransportFactory::class.java)
+          .isInstanceOf(NoOpTransportFactory::class.java)
       }
   }
 

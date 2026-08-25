@@ -31,7 +31,9 @@ import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.protocol.ViewHierarchy
 import io.sentry.test.callMethod
+import io.sentry.test.getProperty
 import io.sentry.test.injectForField
+import io.sentry.transport.AsyncHttpTransport
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
 import io.sentry.util.HintUtils
@@ -1139,10 +1141,10 @@ class SentryClientTest {
   }
 
   @Test
-  fun `when transport factory is NoOp, it should initialize it`() {
+  fun `when transport factory is NoOp, the client falls back to the async http transport`() {
     fixture.sentryOptions.setTransportFactory(NoOpTransportFactory.getInstance())
-    fixture.getSut()
-    assertTrue(fixture.sentryOptions.transportFactory is AsyncHttpTransportFactory)
+    val sut = fixture.getSut()
+    assertTrue(sut.getProperty<ITransport>("transport") is AsyncHttpTransport)
   }
 
   @Test

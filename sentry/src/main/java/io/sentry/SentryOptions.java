@@ -688,7 +688,61 @@ public class SentryOptions {
   }
 
   public void setProfilerConverter(@NotNull IProfileConverter profilerConverter) {
+    if (rejectAfterSeal("setProfilerConverter")) {
+      return;
+    }
     this.profilerConverter = profilerConverter;
+  }
+
+  /**
+   * Set by {@link #seal()} once Sentry.init has finished wiring the SDK up. Writes that arrive
+   * after that point cannot take effect consistently: collaborators have already been constructed
+   * from the values they read during init.
+   */
+  private volatile boolean sealed = false;
+
+  /**
+   * Marks the end of the configuration phase. Called by Sentry.init once every integration has been
+   * registered.
+   */
+  @ApiStatus.Internal
+  public void seal() {
+    sealed = true;
+  }
+
+  /**
+   * Reverts {@link #seal()}. Test fixtures routinely configure options after standing the SDK up,
+   * which production code must not do.
+   */
+  @ApiStatus.Internal
+  @TestOnly
+  public void unseal() {
+    sealed = false;
+  }
+
+  /**
+   * Guards a mutator against writes that arrive after {@link #seal()}. Throws when debug is enabled
+   * so the mistake is loud during development, and otherwise drops the write with an error log
+   * rather than risking a crash in a host application.
+   *
+   * @param mutator name of the calling mutator, for the diagnostic message
+   * @return true when the caller should skip the write
+   */
+  @ApiStatus.Internal
+  protected final boolean rejectAfterSeal(final @NotNull String mutator) {
+    if (!sealed) {
+      return false;
+    }
+    final String message =
+        "Ignoring "
+            + mutator
+            + "(): SentryOptions are sealed once Sentry.init has finished. Configure the SDK from"
+            + " the Sentry.init callback instead.";
+    if (debug) {
+      throw new IllegalStateException(message);
+    }
+    logger.log(SentryLevel.ERROR, message);
+    return true;
   }
 
   /** Starts expensive parts of the options during Sentry.init */
@@ -756,6 +810,9 @@ public class SentryOptions {
    * @param eventProcessor the event processor
    */
   public void addEventProcessor(@NotNull EventProcessor eventProcessor) {
+    if (rejectAfterSeal("addEventProcessor")) {
+      return;
+    }
     eventProcessors.add(eventProcessor);
   }
 
@@ -774,6 +831,9 @@ public class SentryOptions {
    * @param integration the integration
    */
   public void addIntegration(@NotNull Integration integration) {
+    if (rejectAfterSeal("addIntegration")) {
+      return;
+    }
     integrations.add(integration);
   }
 
@@ -814,6 +874,9 @@ public class SentryOptions {
    * @param dsn the DSN
    */
   public void setDsn(final @Nullable String dsn) {
+    if (rejectAfterSeal("setDsn")) {
+      return;
+    }
     this.dsn = dsn != null ? dsn.trim() : null;
     this.parsedDsn.resetValue();
 
@@ -835,6 +898,9 @@ public class SentryOptions {
    * @param debug true if ON or false otherwise
    */
   public void setDebug(final boolean debug) {
+    if (rejectAfterSeal("setDebug")) {
+      return;
+    }
     this.debug = debug;
   }
 
@@ -853,6 +919,9 @@ public class SentryOptions {
    * @param logger the logger interface
    */
   public void setLogger(final @Nullable ILogger logger) {
+    if (rejectAfterSeal("setLogger")) {
+      return;
+    }
     this.logger = (logger == null) ? NoOpLogger.getInstance() : new DiagnosticLogger(this, logger);
   }
 
@@ -873,6 +942,9 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental
   public void setFatalLogger(final @Nullable ILogger logger) {
+    if (rejectAfterSeal("setFatalLogger")) {
+      return;
+    }
     this.fatalLogger = (logger == null) ? NoOpLogger.getInstance() : logger;
   }
 
@@ -891,6 +963,9 @@ public class SentryOptions {
    * @param diagnosticLevel the log level
    */
   public void setDiagnosticLevel(@Nullable final SentryLevel diagnosticLevel) {
+    if (rejectAfterSeal("setDiagnosticLevel")) {
+      return;
+    }
     this.diagnosticLevel = (diagnosticLevel != null) ? diagnosticLevel : DEFAULT_DIAGNOSTIC_LEVEL;
   }
 
@@ -909,6 +984,9 @@ public class SentryOptions {
    * @param serializer the serializer
    */
   public void setSerializer(@Nullable ISerializer serializer) {
+    if (rejectAfterSeal("setSerializer")) {
+      return;
+    }
     this.serializer.setValue(serializer != null ? serializer : NoOpSerializer.getInstance());
   }
 
@@ -927,6 +1005,9 @@ public class SentryOptions {
    * @param maxDepth the max depth
    */
   public void setMaxDepth(int maxDepth) {
+    if (rejectAfterSeal("setMaxDepth")) {
+      return;
+    }
     this.maxDepth = maxDepth;
   }
 
@@ -935,6 +1016,9 @@ public class SentryOptions {
   }
 
   public void setEnvelopeReader(final @Nullable IEnvelopeReader envelopeReader) {
+    if (rejectAfterSeal("setEnvelopeReader")) {
+      return;
+    }
     this.envelopeReader.setValue(
         envelopeReader != null ? envelopeReader : NoOpEnvelopeReader.getInstance());
   }
@@ -954,6 +1038,9 @@ public class SentryOptions {
    * @param shutdownTimeoutMillis the shutdown timeout in millis
    */
   public void setShutdownTimeoutMillis(long shutdownTimeoutMillis) {
+    if (rejectAfterSeal("setShutdownTimeoutMillis")) {
+      return;
+    }
     this.shutdownTimeoutMillis = shutdownTimeoutMillis;
   }
 
@@ -972,6 +1059,9 @@ public class SentryOptions {
    * @param sentryClientName the Sentry client name
    */
   public void setSentryClientName(@Nullable String sentryClientName) {
+    if (rejectAfterSeal("setSentryClientName")) {
+      return;
+    }
     this.sentryClientName = sentryClientName;
   }
 
@@ -990,6 +1080,9 @@ public class SentryOptions {
    * @param beforeSend the beforeSend callback
    */
   public void setBeforeSend(@Nullable BeforeSendCallback beforeSend) {
+    if (rejectAfterSeal("setBeforeSend")) {
+      return;
+    }
     this.beforeSend = beforeSend;
   }
 
@@ -1009,6 +1102,9 @@ public class SentryOptions {
    */
   public void setBeforeSendTransaction(
       @Nullable BeforeSendTransactionCallback beforeSendTransaction) {
+    if (rejectAfterSeal("setBeforeSendTransaction")) {
+      return;
+    }
     this.beforeSendTransaction = beforeSendTransaction;
   }
 
@@ -1027,6 +1123,9 @@ public class SentryOptions {
    * @param beforeSendFeedback the beforeSendFeedback callback
    */
   public void setBeforeSendFeedback(@Nullable BeforeSendCallback beforeSendFeedback) {
+    if (rejectAfterSeal("setBeforeSendFeedback")) {
+      return;
+    }
     this.beforeSendFeedback = beforeSendFeedback;
   }
 
@@ -1045,6 +1144,9 @@ public class SentryOptions {
    * @param beforeSendReplay the beforeSend callback
    */
   public void setBeforeSendReplay(@Nullable BeforeSendReplayCallback beforeSendReplay) {
+    if (rejectAfterSeal("setBeforeSendReplay")) {
+      return;
+    }
     this.beforeSendReplay = beforeSendReplay;
   }
 
@@ -1063,6 +1165,9 @@ public class SentryOptions {
    * @param beforeBreadcrumb the beforeBreadcrumb callback
    */
   public void setBeforeBreadcrumb(@Nullable BeforeBreadcrumbCallback beforeBreadcrumb) {
+    if (rejectAfterSeal("setBeforeBreadcrumb")) {
+      return;
+    }
     this.beforeBreadcrumb = beforeBreadcrumb;
   }
 
@@ -1081,6 +1186,9 @@ public class SentryOptions {
    * @param onDiscard the onDiscard callback
    */
   public void setOnDiscard(@Nullable OnDiscardCallback onDiscard) {
+    if (rejectAfterSeal("setOnDiscard")) {
+      return;
+    }
     this.onDiscard = onDiscard;
   }
 
@@ -1134,6 +1242,9 @@ public class SentryOptions {
    * @param cacheDirPath the cache dir. path
    */
   public void setCacheDirPath(final @Nullable String cacheDirPath) {
+    if (rejectAfterSeal("setCacheDirPath")) {
+      return;
+    }
     this.cacheDirPath = cacheDirPath;
   }
 
@@ -1152,6 +1263,9 @@ public class SentryOptions {
    * @param maxBreadcrumbs the max breadcrumbs
    */
   public void setMaxBreadcrumbs(int maxBreadcrumbs) {
+    if (rejectAfterSeal("setMaxBreadcrumbs")) {
+      return;
+    }
     this.maxBreadcrumbs = maxBreadcrumbs;
   }
 
@@ -1170,6 +1284,9 @@ public class SentryOptions {
    * @param maxFeatureFlags the max feature flags
    */
   public void setMaxFeatureFlags(int maxFeatureFlags) {
+    if (rejectAfterSeal("setMaxFeatureFlags")) {
+      return;
+    }
     this.maxFeatureFlags = maxFeatureFlags;
   }
 
@@ -1188,6 +1305,9 @@ public class SentryOptions {
    * @param release the release
    */
   public void setRelease(@Nullable String release) {
+    if (rejectAfterSeal("setRelease")) {
+      return;
+    }
     this.release = release;
   }
 
@@ -1206,6 +1326,9 @@ public class SentryOptions {
    * @param environment the environment
    */
   public void setEnvironment(@Nullable String environment) {
+    if (rejectAfterSeal("setEnvironment")) {
+      return;
+    }
     this.environment = environment;
   }
 
@@ -1224,6 +1347,9 @@ public class SentryOptions {
    * @param proxy the proxy
    */
   public void setProxy(@Nullable Proxy proxy) {
+    if (rejectAfterSeal("setProxy")) {
+      return;
+    }
     this.proxy = proxy;
   }
 
@@ -1242,6 +1368,9 @@ public class SentryOptions {
    * @param sampleRate the sample rate
    */
   public void setSampleRate(@Nullable Double sampleRate) {
+    if (rejectAfterSeal("setSampleRate")) {
+      return;
+    }
     if (!SampleRateUtils.isValidSampleRate(sampleRate)) {
       throw new IllegalArgumentException(
           "The value "
@@ -1266,6 +1395,9 @@ public class SentryOptions {
    * @param tracesSampleRate the sample rate
    */
   public void setTracesSampleRate(final @Nullable Double tracesSampleRate) {
+    if (rejectAfterSeal("setTracesSampleRate")) {
+      return;
+    }
     if (!SampleRateUtils.isValidTracesSampleRate(tracesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
@@ -1290,6 +1422,9 @@ public class SentryOptions {
    * @param tracesSampler the callback
    */
   public void setTracesSampler(final @Nullable TracesSamplerCallback tracesSampler) {
+    if (rejectAfterSeal("setTracesSampler")) {
+      return;
+    }
     this.tracesSampler = tracesSampler;
   }
 
@@ -1320,6 +1455,9 @@ public class SentryOptions {
    * @param exclude the inApp exclude module/package
    */
   public void addInAppExclude(@NotNull String exclude) {
+    if (rejectAfterSeal("addInAppExclude")) {
+      return;
+    }
     inAppExcludes.add(exclude);
   }
 
@@ -1338,6 +1476,9 @@ public class SentryOptions {
    * @param include the inApp include module/package
    */
   public void addInAppInclude(@NotNull String include) {
+    if (rejectAfterSeal("addInAppInclude")) {
+      return;
+    }
     inAppIncludes.add(include);
   }
 
@@ -1356,6 +1497,9 @@ public class SentryOptions {
    * @param transportFactory the transport factory
    */
   public void setTransportFactory(@Nullable ITransportFactory transportFactory) {
+    if (rejectAfterSeal("setTransportFactory")) {
+      return;
+    }
     this.transportFactory =
         transportFactory != null ? transportFactory : NoOpTransportFactory.getInstance();
   }
@@ -1375,6 +1519,9 @@ public class SentryOptions {
    * @param dist the distribution
    */
   public void setDist(@Nullable String dist) {
+    if (rejectAfterSeal("setDist")) {
+      return;
+    }
     this.dist = dist;
   }
 
@@ -1393,6 +1540,9 @@ public class SentryOptions {
    * @param transportGate the transport gate
    */
   public void setTransportGate(@Nullable ITransportGate transportGate) {
+    if (rejectAfterSeal("setTransportGate")) {
+      return;
+    }
     this.transportGate = (transportGate != null) ? transportGate : NoOpTransportGate.getInstance();
   }
 
@@ -1411,6 +1561,9 @@ public class SentryOptions {
    * @param attachStacktrace true if enabled or false otherwise
    */
   public void setAttachStacktrace(boolean attachStacktrace) {
+    if (rejectAfterSeal("setAttachStacktrace")) {
+      return;
+    }
     this.attachStacktrace = attachStacktrace;
   }
 
@@ -1429,6 +1582,9 @@ public class SentryOptions {
    * @param attachThreads true if enabled or false otherwise
    */
   public void setAttachThreads(boolean attachThreads) {
+    if (rejectAfterSeal("setAttachThreads")) {
+      return;
+    }
     this.attachThreads = attachThreads;
   }
 
@@ -1447,6 +1603,9 @@ public class SentryOptions {
    * @param enableAutoSessionTracking true if enabled or false otherwise
    */
   public void setEnableAutoSessionTracking(final boolean enableAutoSessionTracking) {
+    if (rejectAfterSeal("setEnableAutoSessionTracking")) {
+      return;
+    }
     this.enableAutoSessionTracking = enableAutoSessionTracking;
   }
 
@@ -1465,6 +1624,9 @@ public class SentryOptions {
    * @param serverName the default server name or null if none should be used
    */
   public void setServerName(@Nullable String serverName) {
+    if (rejectAfterSeal("setServerName")) {
+      return;
+    }
     this.serverName = serverName;
   }
 
@@ -1483,6 +1645,9 @@ public class SentryOptions {
    * @param attachServerName true if enabled false if otherwise
    */
   public void setAttachServerName(boolean attachServerName) {
+    if (rejectAfterSeal("setAttachServerName")) {
+      return;
+    }
     this.attachServerName = attachServerName;
   }
 
@@ -1501,6 +1666,9 @@ public class SentryOptions {
    * @param sessionTrackingIntervalMillis the interval in millis
    */
   public void setSessionTrackingIntervalMillis(long sessionTrackingIntervalMillis) {
+    if (rejectAfterSeal("setSessionTrackingIntervalMillis")) {
+      return;
+    }
     this.sessionTrackingIntervalMillis = sessionTrackingIntervalMillis;
   }
 
@@ -1519,6 +1687,9 @@ public class SentryOptions {
    * @param distinctId the distinct Id
    */
   public void setDistinctId(final @Nullable String distinctId) {
+    if (rejectAfterSeal("setDistinctId")) {
+      return;
+    }
     this.distinctId = distinctId;
   }
 
@@ -1537,6 +1708,9 @@ public class SentryOptions {
    * @param flushTimeoutMillis the timeout in millis
    */
   public void setFlushTimeoutMillis(long flushTimeoutMillis) {
+    if (rejectAfterSeal("setFlushTimeoutMillis")) {
+      return;
+    }
     this.flushTimeoutMillis = flushTimeoutMillis;
   }
 
@@ -1555,6 +1729,9 @@ public class SentryOptions {
    * @param enableUncaughtExceptionHandler true if enabled or false otherwise.
    */
   public void setEnableUncaughtExceptionHandler(final boolean enableUncaughtExceptionHandler) {
+    if (rejectAfterSeal("setEnableUncaughtExceptionHandler")) {
+      return;
+    }
     this.enableUncaughtExceptionHandler = enableUncaughtExceptionHandler;
   }
 
@@ -1573,6 +1750,9 @@ public class SentryOptions {
    * @param printUncaughtStackTrace true if enabled or false otherwise.
    */
   public void setPrintUncaughtStackTrace(final boolean printUncaughtStackTrace) {
+    if (rejectAfterSeal("setPrintUncaughtStackTrace")) {
+      return;
+    }
     this.printUncaughtStackTrace = printUncaughtStackTrace;
   }
 
@@ -1595,6 +1775,9 @@ public class SentryOptions {
   @ApiStatus.Internal
   @TestOnly
   public void setExecutorService(final @NotNull ISentryExecutorService executorService) {
+    if (rejectAfterSeal("setExecutorService")) {
+      return;
+    }
     if (executorService != null) {
       this.executorService = executorService;
     }
@@ -1619,6 +1802,9 @@ public class SentryOptions {
   @ApiStatus.Internal
   @TestOnly
   public void setTimerExecutorService(final @NotNull ISentryExecutorService timerExecutorService) {
+    if (rejectAfterSeal("setTimerExecutorService")) {
+      return;
+    }
     if (timerExecutorService != null) {
       this.timerExecutorService = timerExecutorService;
     }
@@ -1639,6 +1825,9 @@ public class SentryOptions {
    * @param connectionTimeoutMillis the connectionTimeoutMillis
    */
   public void setConnectionTimeoutMillis(int connectionTimeoutMillis) {
+    if (rejectAfterSeal("setConnectionTimeoutMillis")) {
+      return;
+    }
     this.connectionTimeoutMillis = connectionTimeoutMillis;
   }
 
@@ -1657,6 +1846,9 @@ public class SentryOptions {
    * @param readTimeoutMillis the readTimeoutMillis
    */
   public void setReadTimeoutMillis(int readTimeoutMillis) {
+    if (rejectAfterSeal("setReadTimeoutMillis")) {
+      return;
+    }
     this.readTimeoutMillis = readTimeoutMillis;
   }
 
@@ -1675,6 +1867,9 @@ public class SentryOptions {
    * @param envelopeDiskCache the EnvelopeCache object
    */
   public void setEnvelopeDiskCache(final @Nullable IEnvelopeCache envelopeDiskCache) {
+    if (rejectAfterSeal("setEnvelopeDiskCache")) {
+      return;
+    }
     this.envelopeDiskCache =
         envelopeDiskCache != null ? envelopeDiskCache : NoOpEnvelopeCache.getInstance();
   }
@@ -1694,6 +1889,9 @@ public class SentryOptions {
    * @param maxQueueSize max queue size
    */
   public void setMaxQueueSize(int maxQueueSize) {
+    if (rejectAfterSeal("setMaxQueueSize")) {
+      return;
+    }
     if (maxQueueSize > 0) {
       this.maxQueueSize = maxQueueSize;
     }
@@ -1723,6 +1921,9 @@ public class SentryOptions {
    * @param sslSocketFactory SSLSocketFactory object
    */
   public void setSslSocketFactory(final @Nullable SSLSocketFactory sslSocketFactory) {
+    if (rejectAfterSeal("setSslSocketFactory")) {
+      return;
+    }
     this.sslSocketFactory = sslSocketFactory;
   }
 
@@ -1733,6 +1934,9 @@ public class SentryOptions {
    */
   @ApiStatus.Internal
   public void setSdkVersion(final @Nullable SdkVersion sdkVersion) {
+    if (rejectAfterSeal("setSdkVersion")) {
+      return;
+    }
     final @Nullable SdkVersion replaySdkVersion = getSessionReplay().getSdkVersion();
     if (this.sdkVersion != null
         && replaySdkVersion != null
@@ -1748,6 +1952,9 @@ public class SentryOptions {
   }
 
   public void setSendDefaultPii(boolean sendDefaultPii) {
+    if (rejectAfterSeal("setSendDefaultPii")) {
+      return;
+    }
     this.sendDefaultPii = sendDefaultPii;
   }
 
@@ -1757,6 +1964,9 @@ public class SentryOptions {
    * @param observer the Observer
    */
   public void addScopeObserver(final @NotNull IScopeObserver observer) {
+    if (rejectAfterSeal("addScopeObserver")) {
+      return;
+    }
     observers.add(observer);
   }
 
@@ -1787,6 +1997,9 @@ public class SentryOptions {
    * @param observer the Observer
    */
   public void addOptionsObserver(final @NotNull IOptionsObserver observer) {
+    if (rejectAfterSeal("addOptionsObserver")) {
+      return;
+    }
     optionsObservers.add(observer);
   }
 
@@ -1816,6 +2029,9 @@ public class SentryOptions {
    * @param enableExternalConfiguration true if enabled or false otherwise
    */
   public void setEnableExternalConfiguration(boolean enableExternalConfiguration) {
+    if (rejectAfterSeal("setEnableExternalConfiguration")) {
+      return;
+    }
     this.enableExternalConfiguration = enableExternalConfiguration;
   }
 
@@ -1835,6 +2051,9 @@ public class SentryOptions {
    * @param value the value
    */
   public void setTag(final @Nullable String key, final @Nullable String value) {
+    if (rejectAfterSeal("setTag")) {
+      return;
+    }
     if (key == null) {
       return;
     }
@@ -1862,6 +2081,9 @@ public class SentryOptions {
    * @param maxAttachmentSize the max attachment size in bytes.
    */
   public void setMaxAttachmentSize(long maxAttachmentSize) {
+    if (rejectAfterSeal("setMaxAttachmentSize")) {
+      return;
+    }
     this.maxAttachmentSize = maxAttachmentSize;
   }
 
@@ -1880,6 +2102,9 @@ public class SentryOptions {
    * @param enableDeduplication true if enabled false otherwise
    */
   public void setEnableDeduplication(final boolean enableDeduplication) {
+    if (rejectAfterSeal("setEnableDeduplication")) {
+      return;
+    }
     this.enableDeduplication = enableDeduplication;
   }
 
@@ -1899,6 +2124,9 @@ public class SentryOptions {
    * @param enableEventSizeLimiting true to enable, false to disable
    */
   public void setEnableEventSizeLimiting(final boolean enableEventSizeLimiting) {
+    if (rejectAfterSeal("setEnableEventSizeLimiting")) {
+      return;
+    }
     this.enableEventSizeLimiting = enableEventSizeLimiting;
   }
 
@@ -1918,6 +2146,9 @@ public class SentryOptions {
    * @param onOversizedEvent the onOversizedEvent callback
    */
   public void setOnOversizedEvent(@Nullable OnOversizedEventCallback onOversizedEvent) {
+    if (rejectAfterSeal("setOnOversizedEvent")) {
+      return;
+    }
     this.onOversizedEvent = onOversizedEvent;
   }
 
@@ -1948,6 +2179,9 @@ public class SentryOptions {
    * @param exceptionType - the exception type
    */
   public void addIgnoredExceptionForType(final @NotNull Class<? extends Throwable> exceptionType) {
+    if (rejectAfterSeal("addIgnoredExceptionForType")) {
+      return;
+    }
     this.ignoredExceptionsForType.add(exceptionType);
   }
 
@@ -1982,6 +2216,9 @@ public class SentryOptions {
    * @param ignoredErrors the list of strings/regex patterns
    */
   public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
+    if (rejectAfterSeal("setIgnoredErrors")) {
+      return;
+    }
     if (ignoredErrors == null) {
       this.ignoredErrors = null;
     } else {
@@ -2004,6 +2241,9 @@ public class SentryOptions {
    * @param pattern the string/regex pattern
    */
   public void addIgnoredError(final @NotNull String pattern) {
+    if (rejectAfterSeal("addIgnoredError")) {
+      return;
+    }
     if (ignoredErrors == null) {
       ignoredErrors = new ArrayList<>();
     }
@@ -2027,6 +2267,9 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental
   public void setMaxSpans(int maxSpans) {
+    if (rejectAfterSeal("setMaxSpans")) {
+      return;
+    }
     this.maxSpans = maxSpans;
   }
 
@@ -2045,6 +2288,9 @@ public class SentryOptions {
    * @param enableShutdownHook true if enabled or false otherwise.
    */
   public void setEnableShutdownHook(boolean enableShutdownHook) {
+    if (rejectAfterSeal("setEnableShutdownHook")) {
+      return;
+    }
     this.enableShutdownHook = enableShutdownHook;
   }
 
@@ -2063,6 +2309,9 @@ public class SentryOptions {
    * @param maxCacheItems the maxCacheItems
    */
   public void setMaxCacheItems(int maxCacheItems) {
+    if (rejectAfterSeal("setMaxCacheItems")) {
+      return;
+    }
     this.maxCacheItems = maxCacheItems;
   }
 
@@ -2071,6 +2320,9 @@ public class SentryOptions {
   }
 
   public void setMaxRequestBodySize(final @NotNull RequestSize maxRequestBodySize) {
+    if (rejectAfterSeal("setMaxRequestBodySize")) {
+      return;
+    }
     this.maxRequestBodySize = maxRequestBodySize;
   }
 
@@ -2098,6 +2350,9 @@ public class SentryOptions {
    */
   @Deprecated
   public void setTraceSampling(boolean traceSampling) {
+    if (rejectAfterSeal("setTraceSampling")) {
+      return;
+    }
     this.traceSampling = traceSampling;
   }
 
@@ -2116,6 +2371,9 @@ public class SentryOptions {
    * @param maxTraceFileSize the max trace file size in bytes.
    */
   public void setMaxTraceFileSize(long maxTraceFileSize) {
+    if (rejectAfterSeal("setMaxTraceFileSize")) {
+      return;
+    }
     this.maxTraceFileSize = maxTraceFileSize;
   }
 
@@ -2135,6 +2393,9 @@ public class SentryOptions {
    * @param transactionProfiler - the listener for operations when a transaction is started or ended
    */
   public void setTransactionProfiler(final @Nullable ITransactionProfiler transactionProfiler) {
+    if (rejectAfterSeal("setTransactionProfiler")) {
+      return;
+    }
     // We allow to set the profiler only if it was not set before, and we don't allow to unset it.
     if (this.transactionProfiler == NoOpTransactionProfiler.getInstance()
         && transactionProfiler != null) {
@@ -2157,6 +2418,9 @@ public class SentryOptions {
    * @param continuousProfiler - the continuous profiler
    */
   public void setContinuousProfiler(final @Nullable IContinuousProfiler continuousProfiler) {
+    if (rejectAfterSeal("setContinuousProfiler")) {
+      return;
+    }
     // We allow to set the profiler only if it was not set before, and we don't allow to unset it.
     if (this.continuousProfiler == NoOpContinuousProfiler.getInstance()
         && continuousProfiler != null) {
@@ -2202,6 +2466,9 @@ public class SentryOptions {
    * @param profilesSampler the callback
    */
   public void setProfilesSampler(final @Nullable ProfilesSamplerCallback profilesSampler) {
+    if (rejectAfterSeal("setProfilesSampler")) {
+      return;
+    }
     this.profilesSampler = profilesSampler;
   }
 
@@ -2222,6 +2489,9 @@ public class SentryOptions {
    * @param profilesSampleRate the sample rate
    */
   public void setProfilesSampleRate(final @Nullable Double profilesSampleRate) {
+    if (rejectAfterSeal("setProfilesSampleRate")) {
+      return;
+    }
     if (!SampleRateUtils.isValidProfilesSampleRate(profilesSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
@@ -2248,6 +2518,9 @@ public class SentryOptions {
    * set them to null.
    */
   public void setProfileSessionSampleRate(final @Nullable Double profileSessionSampleRate) {
+    if (rejectAfterSeal("setProfileSessionSampleRate")) {
+      return;
+    }
     if (!SampleRateUtils.isValidContinuousProfilesSampleRate(profileSessionSampleRate)) {
       throw new IllegalArgumentException(
           "The value "
@@ -2269,6 +2542,9 @@ public class SentryOptions {
 
   /** Sets the profiling lifecycle. */
   public void setProfileLifecycle(final @NotNull ProfileLifecycle profileLifecycle) {
+    if (rejectAfterSeal("setProfileLifecycle")) {
+      return;
+    }
     this.profileLifecycle = profileLifecycle;
     if (profileLifecycle == ProfileLifecycle.TRACE && !isTracingEnabled()) {
       logger.log(
@@ -2289,6 +2565,9 @@ public class SentryOptions {
    * Set if profiling can automatically be started as early as possible during the app lifecycle.
    */
   public void setStartProfilerOnAppStart(final boolean startProfilerOnAppStart) {
+    if (rejectAfterSeal("setStartProfilerOnAppStart")) {
+      return;
+    }
     this.startProfilerOnAppStart = startProfilerOnAppStart;
   }
 
@@ -2319,6 +2598,9 @@ public class SentryOptions {
    * @param enableLegacyProfiling false to disable legacy profiling.
    */
   public void setEnableLegacyProfiling(final boolean enableLegacyProfiling) {
+    if (rejectAfterSeal("setEnableLegacyProfiling")) {
+      return;
+    }
     this.enableLegacyProfiling = enableLegacyProfiling;
   }
 
@@ -2337,6 +2619,9 @@ public class SentryOptions {
    * @param deadlineTimeout the timeout in milliseconds
    */
   public void setDeadlineTimeout(long deadlineTimeout) {
+    if (rejectAfterSeal("setDeadlineTimeout")) {
+      return;
+    }
     this.deadlineTimeout = deadlineTimeout;
   }
 
@@ -2362,6 +2647,9 @@ public class SentryOptions {
   }
 
   public void setProfilingTracesDirPath(final @Nullable String profilingTracesDirPath) {
+    if (rejectAfterSeal("setProfilingTracesDirPath")) {
+      return;
+    }
     this.profilingTracesDirPath = profilingTracesDirPath;
   }
 
@@ -2378,6 +2666,9 @@ public class SentryOptions {
   }
 
   public void setTracePropagationTargets(final @Nullable List<String> tracePropagationTargets) {
+    if (rejectAfterSeal("setTracePropagationTargets")) {
+      return;
+    }
     if (tracePropagationTargets == null) {
       this.tracePropagationTargets = null;
     } else {
@@ -2407,6 +2698,9 @@ public class SentryOptions {
    * @param propagateTraceparent true if enabled false otherwise
    */
   public void setPropagateTraceparent(final boolean propagateTraceparent) {
+    if (rejectAfterSeal("setPropagateTraceparent")) {
+      return;
+    }
     this.propagateTraceparent = propagateTraceparent;
   }
 
@@ -2415,6 +2709,9 @@ public class SentryOptions {
   }
 
   public void setStrictTraceContinuation(final boolean strictTraceContinuation) {
+    if (rejectAfterSeal("setStrictTraceContinuation")) {
+      return;
+    }
     this.strictTraceContinuation = strictTraceContinuation;
   }
 
@@ -2423,6 +2720,9 @@ public class SentryOptions {
   }
 
   public void setOrgId(final @Nullable String orgId) {
+    if (rejectAfterSeal("setOrgId")) {
+      return;
+    }
     this.orgId = orgId;
   }
 
@@ -2461,6 +2761,9 @@ public class SentryOptions {
    * @param proguardUuid - the Proguard UUID
    */
   public void setProguardUuid(final @Nullable String proguardUuid) {
+    if (rejectAfterSeal("setProguardUuid")) {
+      return;
+    }
     this.proguardUuid = proguardUuid;
   }
 
@@ -2472,6 +2775,9 @@ public class SentryOptions {
    * @param bundleId Bundle ID generated by sentry-cli or the sentry-android-gradle-plugin
    */
   public void addBundleId(final @Nullable String bundleId) {
+    if (rejectAfterSeal("addBundleId")) {
+      return;
+    }
     if (bundleId != null) {
       final @NotNull String trimmedBundleId = bundleId.trim();
       if (!trimmedBundleId.isEmpty()) {
@@ -2504,6 +2810,9 @@ public class SentryOptions {
    * @param contextTag - the context tag
    */
   public void addContextTag(final @NotNull String contextTag) {
+    if (rejectAfterSeal("addContextTag")) {
+      return;
+    }
     this.contextTags.add(contextTag);
   }
 
@@ -2522,6 +2831,9 @@ public class SentryOptions {
    * @param idleTimeout the idle timeout in millis or null.
    */
   public void setIdleTimeout(final @Nullable Long idleTimeout) {
+    if (rejectAfterSeal("setIdleTimeout")) {
+      return;
+    }
     this.idleTimeout = idleTimeout;
   }
 
@@ -2540,6 +2852,9 @@ public class SentryOptions {
    * @param sendClientReports true enables client reports; false disables them
    */
   public void setSendClientReports(boolean sendClientReports) {
+    if (rejectAfterSeal("setSendClientReports")) {
+      return;
+    }
     this.sendClientReports = sendClientReports;
 
     if (sendClientReports) {
@@ -2554,6 +2869,9 @@ public class SentryOptions {
   }
 
   public void setEnableUserInteractionTracing(boolean enableUserInteractionTracing) {
+    if (rejectAfterSeal("setEnableUserInteractionTracing")) {
+      return;
+    }
     this.enableUserInteractionTracing = enableUserInteractionTracing;
   }
 
@@ -2562,6 +2880,9 @@ public class SentryOptions {
   }
 
   public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
+    if (rejectAfterSeal("setEnableUserInteractionBreadcrumbs")) {
+      return;
+    }
     this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
   }
 
@@ -2579,6 +2900,9 @@ public class SentryOptions {
    */
   @Deprecated
   public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
+    if (rejectAfterSeal("setInstrumenter")) {
+      return;
+    }
     this.instrumenter = instrumenter;
   }
 
@@ -2613,6 +2937,9 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public void setModulesLoader(final @Nullable IModulesLoader modulesLoader) {
+    if (rejectAfterSeal("setModulesLoader")) {
+      return;
+    }
     this.modulesLoader = modulesLoader != null ? modulesLoader : NoOpModulesLoader.getInstance();
   }
 
@@ -2629,6 +2956,9 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public void setDebugMetaLoader(final @Nullable IDebugMetaLoader debugMetaLoader) {
+    if (rejectAfterSeal("setDebugMetaLoader")) {
+      return;
+    }
     this.debugMetaLoader =
         debugMetaLoader != null ? debugMetaLoader : NoOpDebugMetaLoader.getInstance();
   }
@@ -2650,6 +2980,9 @@ public class SentryOptions {
    * @param locators a list of {@link GestureTargetLocator}
    */
   public void setGestureTargetLocators(@NotNull final List<GestureTargetLocator> locators) {
+    if (rejectAfterSeal("setGestureTargetLocators")) {
+      return;
+    }
     gestureTargetLocators.clear();
     gestureTargetLocators.addAll(locators);
   }
@@ -2671,6 +3004,9 @@ public class SentryOptions {
    * @param exporters a list of {@link ViewHierarchyExporter}
    */
   public void setViewHierarchyExporters(@NotNull final List<ViewHierarchyExporter> exporters) {
+    if (rejectAfterSeal("setViewHierarchyExporters")) {
+      return;
+    }
     viewHierarchyExporters.clear();
     viewHierarchyExporters.addAll(exporters);
   }
@@ -2680,6 +3016,9 @@ public class SentryOptions {
   }
 
   public void setThreadChecker(final @NotNull IThreadChecker threadChecker) {
+    if (rejectAfterSeal("setThreadChecker")) {
+      return;
+    }
     this.threadChecker = threadChecker;
   }
 
@@ -2701,6 +3040,9 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setCompositePerformanceCollector(
       final @NotNull CompositePerformanceCollector compositePerformanceCollector) {
+    if (rejectAfterSeal("setCompositePerformanceCollector")) {
+      return;
+    }
     this.compositePerformanceCollector = compositePerformanceCollector;
   }
 
@@ -2719,6 +3061,9 @@ public class SentryOptions {
    * @param enableTimeToFullDisplayTracing if the time-to-full-display spans should be tracked.
    */
   public void setEnableTimeToFullDisplayTracing(final boolean enableTimeToFullDisplayTracing) {
+    if (rejectAfterSeal("setEnableTimeToFullDisplayTracing")) {
+      return;
+    }
     this.enableTimeToFullDisplayTracing = enableTimeToFullDisplayTracing;
   }
 
@@ -2736,6 +3081,9 @@ public class SentryOptions {
   @TestOnly
   public void setFullyDisplayedReporter(
       final @NotNull FullyDisplayedReporter fullyDisplayedReporter) {
+    if (rejectAfterSeal("setFullyDisplayedReporter")) {
+      return;
+    }
     this.fullyDisplayedReporter = fullyDisplayedReporter;
   }
 
@@ -2751,6 +3099,9 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public void setAppStartExtender(final @Nullable IAppStartExtender appStartExtender) {
+    if (rejectAfterSeal("setAppStartExtender")) {
+      return;
+    }
     this.appStartExtender =
         appStartExtender != null ? appStartExtender : NoOpAppStartExtender.getInstance();
   }
@@ -2770,6 +3121,9 @@ public class SentryOptions {
    * @param traceOptionsRequests true if OPTIONS requests should be traced
    */
   public void setTraceOptionsRequests(boolean traceOptionsRequests) {
+    if (rejectAfterSeal("setTraceOptionsRequests")) {
+      return;
+    }
     this.traceOptionsRequests = traceOptionsRequests;
   }
 
@@ -2788,6 +3142,9 @@ public class SentryOptions {
    * @param enableDatabaseTransactionTracing true if database transaction spans should be traced
    */
   public void setEnableDatabaseTransactionTracing(boolean enableDatabaseTransactionTracing) {
+    if (rejectAfterSeal("setEnableDatabaseTransactionTracing")) {
+      return;
+    }
     this.enableDatabaseTransactionTracing = enableDatabaseTransactionTracing;
   }
 
@@ -2806,6 +3163,9 @@ public class SentryOptions {
    * @param enableCacheTracing true if cache operations should be traced
    */
   public void setEnableCacheTracing(boolean enableCacheTracing) {
+    if (rejectAfterSeal("setEnableCacheTracing")) {
+      return;
+    }
     this.enableCacheTracing = enableCacheTracing;
   }
 
@@ -2826,6 +3186,9 @@ public class SentryOptions {
    * @param enableQueueTracing true to enable queue tracing
    */
   public void setEnableQueueTracing(boolean enableQueueTracing) {
+    if (rejectAfterSeal("setEnableQueueTracing")) {
+      return;
+    }
     this.enableQueueTracing = enableQueueTracing;
   }
 
@@ -2844,6 +3207,9 @@ public class SentryOptions {
    * @param enabled true if Sentry should be enabled
    */
   public void setEnabled(boolean enabled) {
+    if (rejectAfterSeal("setEnabled")) {
+      return;
+    }
     this.enabled = enabled;
   }
 
@@ -2871,6 +3237,9 @@ public class SentryOptions {
    * @param enablePrettySerializationOutput true if output should be pretty printed
    */
   public void setEnablePrettySerializationOutput(boolean enablePrettySerializationOutput) {
+    if (rejectAfterSeal("setEnablePrettySerializationOutput")) {
+      return;
+    }
     this.enablePrettySerializationOutput = enablePrettySerializationOutput;
   }
 
@@ -2892,6 +3261,9 @@ public class SentryOptions {
    * @param enableAppStartProfiling true if app launches should be profiled.
    */
   public void setEnableAppStartProfiling(boolean enableAppStartProfiling) {
+    if (rejectAfterSeal("setEnableAppStartProfiling")) {
+      return;
+    }
     this.enableAppStartProfiling = enableAppStartProfiling;
   }
 
@@ -2901,6 +3273,9 @@ public class SentryOptions {
    * @param sendModules true if modules should be sent.
    */
   public void setSendModules(boolean sendModules) {
+    if (rejectAfterSeal("setSendModules")) {
+      return;
+    }
     this.sendModules = sendModules;
   }
 
@@ -2923,6 +3298,9 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental
   public void addIgnoredSpanOrigin(String ignoredSpanOrigin) {
+    if (rejectAfterSeal("addIgnoredSpanOrigin")) {
+      return;
+    }
     if (ignoredSpanOrigins == null) {
       ignoredSpanOrigins = new ArrayList<>();
     }
@@ -2937,6 +3315,9 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental
   public void setIgnoredSpanOrigins(final @Nullable List<String> ignoredSpanOrigins) {
+    if (rejectAfterSeal("setIgnoredSpanOrigins")) {
+      return;
+    }
     if (ignoredSpanOrigins == null) {
       this.ignoredSpanOrigins = null;
     } else {
@@ -2969,6 +3350,9 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental
   public void addIgnoredCheckIn(String ignoredCheckIn) {
+    if (rejectAfterSeal("addIgnoredCheckIn")) {
+      return;
+    }
     if (ignoredCheckIns == null) {
       ignoredCheckIns = new ArrayList<>();
     }
@@ -2982,6 +3366,9 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
+    if (rejectAfterSeal("setIgnoredCheckIns")) {
+      return;
+    }
     if (ignoredCheckIns == null) {
       this.ignoredCheckIns = null;
     } else {
@@ -3014,6 +3401,9 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental
   public void addIgnoredTransaction(String ignoredTransaction) {
+    if (rejectAfterSeal("addIgnoredTransaction")) {
+      return;
+    }
     if (ignoredTransactions == null) {
       ignoredTransactions = new ArrayList<>();
     }
@@ -3028,6 +3418,9 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental
   public void setIgnoredTransactions(final @Nullable List<String> ignoredTransactions) {
+    if (rejectAfterSeal("setIgnoredTransactions")) {
+      return;
+    }
     if (ignoredTransactions == null) {
       this.ignoredTransactions = null;
     } else {
@@ -3056,6 +3449,9 @@ public class SentryOptions {
    */
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
+    if (rejectAfterSeal("setDateProvider")) {
+      return;
+    }
     this.dateProvider.setValue(dateProvider);
   }
 
@@ -3066,6 +3462,9 @@ public class SentryOptions {
    */
   @ApiStatus.Internal
   public void addPerformanceCollector(final @NotNull IPerformanceCollector collector) {
+    if (rejectAfterSeal("addPerformanceCollector")) {
+      return;
+    }
     performanceCollectors.add(collector);
   }
 
@@ -3086,6 +3485,9 @@ public class SentryOptions {
 
   public void setConnectionStatusProvider(
       final @NotNull IConnectionStatusProvider connectionStatusProvider) {
+    if (rejectAfterSeal("setConnectionStatusProvider")) {
+      return;
+    }
     this.connectionStatusProvider = connectionStatusProvider;
   }
 
@@ -3097,11 +3499,17 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public void setBackpressureMonitor(final @NotNull IBackpressureMonitor backpressureMonitor) {
+    if (rejectAfterSeal("setBackpressureMonitor")) {
+      return;
+    }
     this.backpressureMonitor = backpressureMonitor;
   }
 
   @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
+    if (rejectAfterSeal("setEnableBackpressureHandling")) {
+      return;
+    }
     this.enableBackpressureHandling = enableBackpressureHandling;
   }
 
@@ -3113,6 +3521,9 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public void setVersionDetector(final @NotNull IVersionDetector versionDetector) {
+    if (rejectAfterSeal("setVersionDetector")) {
+      return;
+    }
     this.versionDetector = versionDetector;
   }
 
@@ -3129,6 +3540,9 @@ public class SentryOptions {
   /** Sets the rate the profiler will sample rates at. 100 hz means 100 traces in 1 second. */
   @ApiStatus.Internal
   public void setProfilingTracesHz(final int profilingTracesHz) {
+    if (rejectAfterSeal("setProfilingTracesHz")) {
+      return;
+    }
     this.profilingTracesHz = profilingTracesHz;
   }
 
@@ -3144,6 +3558,9 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public void setSessionFlushTimeoutMillis(final long sessionFlushTimeoutMillis) {
+    if (rejectAfterSeal("setSessionFlushTimeoutMillis")) {
+      return;
+    }
     this.sessionFlushTimeoutMillis = sessionFlushTimeoutMillis;
   }
 
@@ -3167,6 +3584,9 @@ public class SentryOptions {
 
   @ApiStatus.Experimental
   public void setSpotlightConnectionUrl(final @Nullable String spotlightConnectionUrl) {
+    if (rejectAfterSeal("setSpotlightConnectionUrl")) {
+      return;
+    }
     this.spotlightConnectionUrl = spotlightConnectionUrl;
   }
 
@@ -3177,6 +3597,9 @@ public class SentryOptions {
 
   @ApiStatus.Experimental
   public void setEnableSpotlight(final boolean enableSpotlight) {
+    if (rejectAfterSeal("setEnableSpotlight")) {
+      return;
+    }
     this.enableSpotlight = enableSpotlight;
   }
 
@@ -3185,6 +3608,9 @@ public class SentryOptions {
   }
 
   public void setEnableScopePersistence(final boolean enableScopePersistence) {
+    if (rejectAfterSeal("setEnableScopePersistence")) {
+      return;
+    }
     this.enableScopePersistence = enableScopePersistence;
   }
 
@@ -3194,6 +3620,9 @@ public class SentryOptions {
 
   @ApiStatus.Experimental
   public void setCron(@Nullable Cron cron) {
+    if (rejectAfterSeal("setCron")) {
+      return;
+    }
     this.cron = cron;
   }
 
@@ -3207,6 +3636,9 @@ public class SentryOptions {
   }
 
   public void setReplayController(final @Nullable ReplayController replayController) {
+    if (rejectAfterSeal("setReplayController")) {
+      return;
+    }
     this.replayController =
         replayController != null ? replayController : NoOpReplayController.getInstance();
   }
@@ -3218,6 +3650,9 @@ public class SentryOptions {
 
   @ApiStatus.Experimental
   public void setDistributionController(final @Nullable IDistributionApi distributionController) {
+    if (rejectAfterSeal("setDistributionController")) {
+      return;
+    }
     this.distributionController =
         distributionController != null ? distributionController : NoOpDistributionApi.getInstance();
   }
@@ -3229,10 +3664,16 @@ public class SentryOptions {
 
   @ApiStatus.Experimental
   public void setEnableScreenTracking(final boolean enableScreenTracking) {
+    if (rejectAfterSeal("setEnableScreenTracking")) {
+      return;
+    }
     this.enableScreenTracking = enableScreenTracking;
   }
 
   public void setDefaultScopeType(final @NotNull ScopeType scopeType) {
+    if (rejectAfterSeal("setDefaultScopeType")) {
+      return;
+    }
     this.defaultScopeType = scopeType;
   }
 
@@ -3242,6 +3683,9 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public void setInitPriority(final @NotNull InitPriority initPriority) {
+    if (rejectAfterSeal("setInitPriority")) {
+      return;
+    }
     this.initPriority = initPriority;
   }
 
@@ -3260,6 +3704,9 @@ public class SentryOptions {
    * @param forceInit true = replace previous init and options
    */
   public void setForceInit(final boolean forceInit) {
+    if (rejectAfterSeal("setForceInit")) {
+      return;
+    }
     this.forceInit = forceInit;
   }
 
@@ -3281,6 +3728,9 @@ public class SentryOptions {
    * @param globalHubMode true = automatic scope forking is disabled
    */
   public void setGlobalHubMode(final @Nullable Boolean globalHubMode) {
+    if (rejectAfterSeal("setGlobalHubMode")) {
+      return;
+    }
     this.globalHubMode = globalHubMode;
   }
 
@@ -3300,6 +3750,9 @@ public class SentryOptions {
    * @param openTelemetryMode the mode
    */
   public void setOpenTelemetryMode(final @NotNull SentryOpenTelemetryMode openTelemetryMode) {
+    if (rejectAfterSeal("setOpenTelemetryMode")) {
+      return;
+    }
     this.openTelemetryMode = openTelemetryMode;
   }
 
@@ -3313,6 +3766,9 @@ public class SentryOptions {
   }
 
   public void setSessionReplay(final @NotNull SentryReplayOptions sessionReplayOptions) {
+    if (rejectAfterSeal("setSessionReplay")) {
+      return;
+    }
     this.sessionReplay = sessionReplayOptions;
   }
 
@@ -3321,11 +3777,17 @@ public class SentryOptions {
   }
 
   public void setFeedbackOptions(final @NotNull SentryFeedbackOptions feedbackOptions) {
+    if (rejectAfterSeal("setFeedbackOptions")) {
+      return;
+    }
     this.feedbackOptions = feedbackOptions;
   }
 
   @ApiStatus.Experimental
   public void setCaptureOpenTelemetryEvents(final boolean captureOpenTelemetryEvents) {
+    if (rejectAfterSeal("setCaptureOpenTelemetryEvents")) {
+      return;
+    }
     this.captureOpenTelemetryEvents = captureOpenTelemetryEvents;
   }
 
@@ -3349,6 +3811,9 @@ public class SentryOptions {
    * @param socketTagger the socket tagger
    */
   public void setSocketTagger(final @Nullable ISocketTagger socketTagger) {
+    if (rejectAfterSeal("setSocketTagger")) {
+      return;
+    }
     this.socketTagger = socketTagger != null ? socketTagger : NoOpSocketTagger.getInstance();
   }
 
@@ -3798,6 +4263,9 @@ public class SentryOptions {
 
   @ApiStatus.Internal
   public void setSpanFactory(final @NotNull ISpanFactory spanFactory) {
+    if (rejectAfterSeal("setSpanFactory")) {
+      return;
+    }
     this.spanFactory = spanFactory;
   }
 
@@ -3819,6 +4287,9 @@ public class SentryOptions {
    */
   @ApiStatus.Experimental
   public void setScopesStorageFactory(final @Nullable IScopesStorageFactory scopesStorageFactory) {
+    if (rejectAfterSeal("setScopesStorageFactory")) {
+      return;
+    }
     this.scopesStorageFactory = scopesStorageFactory;
   }
 
@@ -3829,6 +4300,9 @@ public class SentryOptions {
 
   @ApiStatus.Experimental
   public void setLogs(@NotNull SentryOptions.Logs logs) {
+    if (rejectAfterSeal("setLogs")) {
+      return;
+    }
     this.logs = logs;
   }
 
@@ -3837,6 +4311,9 @@ public class SentryOptions {
   }
 
   public void setMetrics(@NotNull SentryOptions.Metrics metrics) {
+    if (rejectAfterSeal("setMetrics")) {
+      return;
+    }
     this.metrics = metrics;
   }
 
@@ -4134,6 +4611,9 @@ public class SentryOptions {
 
   @ApiStatus.Experimental
   public void setDistribution(final @NotNull DistributionOptions distribution) {
+    if (rejectAfterSeal("setDistribution")) {
+      return;
+    }
     this.distribution = distribution != null ? distribution : new DistributionOptions();
   }
 
