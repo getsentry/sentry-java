@@ -113,7 +113,7 @@ class SpanDescriptionExtractorTest {
     val info = whenExtractingSpanInfo()
 
     assertEquals("http.server", info.op)
-    assertEquals("GET https://sentry.io/some/path?q=1#top", info.description)
+    assertEquals("GET https://sentry.io/some/path", info.description)
     assertEquals(TransactionNameSource.URL, info.transactionNameSource)
   }
 
