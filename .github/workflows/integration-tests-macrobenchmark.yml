@@ -48,7 +48,7 @@ jobs:
       # Runs even when the suite fails: a failed benchmark still logs whatever it managed to
       # measure, and the parser's own error explains what was missing.
       - name: Recover benchmark results from the device log
-        if: always() && env.SAUCE_USERNAME != null
+        if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
         run: |
           # Without pipefail the step passes on `tee`'s exit code, so a failed recovery
           # would report success while silently producing no results.
@@ -58,7 +58,7 @@ jobs:
 
       - name: Upload Sauce artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           name: macrobenchmark-results
           path: ./artifacts/
