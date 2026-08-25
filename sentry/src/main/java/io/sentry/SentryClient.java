@@ -254,16 +254,18 @@ public final class SentryClient implements ISentryClient {
         }
       }
       if (shouldCaptureReplay) {
-        options.getReplayController().captureReplay(event.isCrashed());
-        if (scope != null) {
-          final @Nullable SentryId replayId = scope.getReplayId();
-          if (replayId != null && !replayId.equals(SentryId.EMPTY_ID)) {
-            final @Nullable ITransaction transaction = scope.getTransaction();
-            if (transaction != null) {
-              final @Nullable Baggage baggage = transaction.getSpanContext().getBaggage();
-              if (baggage != null) {
-                baggage.forceSetReplayId(replayId);
-              }
+        final @NotNull SentryId scopeReplayId =
+            scope != null ? scope.getReplayId() : SentryId.EMPTY_ID;
+        final @NotNull SentryId capturedReplayId =
+            options.getReplayController().captureReplay(event.isCrashed());
+        final @NotNull SentryId replayId =
+            !capturedReplayId.equals(SentryId.EMPTY_ID) ? capturedReplayId : scopeReplayId;
+        if (scope != null && !replayId.equals(SentryId.EMPTY_ID)) {
+          final @Nullable ITransaction transaction = scope.getTransaction();
+          if (transaction != null) {
+            final @Nullable Baggage baggage = transaction.getSpanContext().getBaggage();
+            if (baggage != null) {
+              baggage.forceSetReplayId(replayId);
             }
           }
         }
@@ -1272,8 +1274,10 @@ public final class SentryClient implements ISentryClient {
 
     // If feedback already has a replayId, we don't want to overwrite it.
     if (feedback.getReplayId() == null) {
-      options.getReplayController().captureReplay(false);
-      final @NotNull SentryId replayId = scope.getReplayId();
+      final @NotNull SentryId scopeReplayId = scope.getReplayId();
+      final @NotNull SentryId capturedReplayId = options.getReplayController().captureReplay(false);
+      final @NotNull SentryId replayId =
+          !capturedReplayId.equals(SentryId.EMPTY_ID) ? capturedReplayId : scopeReplayId;
       if (!replayId.equals(SentryId.EMPTY_ID)) {
         feedback.setReplayId(replayId);
       }
