@@ -147,6 +147,12 @@ public class TombstoneParser implements Closeable {
       stackFrame.setPackage(frame.fileName);
       stackFrame.setFunction(frame.functionName);
       stackFrame.setInstructionAddr(formatHex(frame.pc));
+      if (!frame.buildId.isEmpty() && frame.pc >= frame.relPc) {
+        // libunwindstack has already resolved rel_pc against the embedded or standalone ELF.
+        // The containing file offset (for example, the offset inside an APK) is irrelevant to the
+        // ELF's runtime image address.
+        stackFrame.setImageAddr(formatHex(frame.pc - frame.relPc));
+      }
 
       // inAppIncludes/inAppExcludes filter by Java/Kotlin package names, which don't overlap
       // with native C/C++ function names (e.g., "crash", "__libc_init"). For native frames,
@@ -260,12 +266,34 @@ public class TombstoneParser implements Closeable {
     String buildId;
     long beginAddress;
     long endAddress;
+    long startOffset;
 
     ModuleAccumulator(MemoryMapping mapping) {
       this.mappingName = mapping.mappingName;
       this.buildId = mapping.buildId;
       this.beginAddress = mapping.beginAddress;
       this.endAddress = mapping.endAddress;
+      this.startOffset = mapping.offset;
+    }
+
+    boolean isSameModule(MemoryMapping mapping) {
+      return mappingName.equals(mapping.mappingName) && buildId.equals(mapping.buildId);
+    }
+
+    boolean canExtendTo(MemoryMapping mapping, long pageSize) {
+      if (!mappingName.equals(mapping.mappingName)
+          || mapping.beginAddress < beginAddress
+          || mapping.offset < startOffset) {
+        return false;
+      }
+
+      // PT_LOAD virtual addresses and file offsets grow together, modulo page alignment. This
+      // distinguishes a continuation from another ELF without build-id in the same APK.
+      final long addressDelta = mapping.beginAddress - beginAddress;
+      final long fileOffsetDelta = mapping.offset - startOffset;
+      final long delta = addressDelta - fileOffsetDelta;
+      final long alignmentTolerance = pageSize > 0 ? pageSize : 4096;
+      return delta >= -alignmentTolerance && delta <= alignmentTolerance;
     }
 
     void extendTo(long newEndAddress) {
@@ -295,11 +323,9 @@ public class TombstoneParser implements Closeable {
     final List<DebugImage> images = new ArrayList<>();
 
     // Coalesce memory mappings into modules similar to how sentry-native does it.
-    // A module consists of all readable mappings for the same file, starting from
-    // the first mapping that has a valid ELF header (indicated by offset 0 with build_id).
-    // In sentry-native, is_valid_elf_header() reads the ELF magic bytes from memory,
-    // which is only present at the start of the file (offset 0). We use offset == 0
-    // combined with non-empty build_id as a proxy for this check.
+    // Android's libunwindstack has already parsed each ELF and records its build ID in the
+    // tombstone. An ELF stored uncompressed inside an APK starts at a non-zero container offset,
+    // so the mapping offset cannot be used to validate whether the mapping starts an ELF.
     ModuleAccumulator currentModule = null;
 
     for (MemoryMapping mapping : tombstone.memoryMappings) {
@@ -315,18 +341,16 @@ public class TombstoneParser implements Closeable {
       }
 
       final boolean hasBuildId = !mapping.buildId.isEmpty();
-      final boolean isFileStart = mapping.offset == 0;
 
-      if (hasBuildId && isFileStart) {
-        // Check for duplicated mappings: On Android, the same ELF can have multiple
-        // mappings at offset 0 with different permissions (r--p, r-xp, r--p).
-        // If it's the same file as the current module, just extend it.
-        if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
+      if (hasBuildId) {
+        // The same ELF can have multiple mappings with its build ID. APK-embedded ELFs all share
+        // the APK mapping name, so the build ID is also required to distinguish their modules.
+        if (currentModule != null && currentModule.isSameModule(mapping)) {
           currentModule.extendTo(mapping.endAddress);
           continue;
         }
 
-        // Flush the previous module (different file)
+        // Flush the previous module (different ELF)
         if (currentModule != null) {
           final DebugImage image = currentModule.toDebugImage();
           if (image != null) {
@@ -336,8 +360,8 @@ public class TombstoneParser implements Closeable {
 
         // Start a new module
         currentModule = new ModuleAccumulator(mapping);
-      } else if (currentModule != null && mappingName.equals(currentModule.mappingName)) {
-        // Extend the current module with this mapping (same file, continuation)
+      } else if (currentModule != null && currentModule.canExtendTo(mapping, tombstone.pageSize)) {
+        // Extend the current module with this mapping (same ELF, continuation).
         currentModule.extendTo(mapping.endAddress);
       }
     }

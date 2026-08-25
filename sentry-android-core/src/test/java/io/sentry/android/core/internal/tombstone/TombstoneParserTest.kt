@@ -5,6 +5,7 @@ import com.abovevacant.epitaph.core.MemoryMapping
 import com.abovevacant.epitaph.core.Signal
 import com.abovevacant.epitaph.core.Tombstone
 import com.abovevacant.epitaph.core.TombstoneThread
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.JsonObjectWriter
 import io.sentry.protocol.DebugMeta
@@ -319,6 +320,232 @@ class TombstoneParserTest {
   }
 
   @Test
+  fun `creates images for multiple ELF files embedded in same APK`() {
+    val apkPath = "/data/app/io.sentry.sample/base.apk"
+    val firstBuildId = "f1c3bcc0279865fe3058404b2831d9e64135386c"
+    val secondBuildId = "a1647a1813da20ea7e0dad6cbc11486dfaeaeb8e"
+
+    val tombstone =
+      Tombstone.Builder()
+        .pid(1234)
+        .tid(1234)
+        .signal(Signal(11, "SIGSEGV", 1, "SEGV_MAPERR", false, 0, 0, false, 0, null))
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000000000,
+            0x7000001000,
+            0x156c000,
+            true,
+            false,
+            true,
+            apkPath,
+            firstBuildId,
+            0,
+          )
+        )
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000001000,
+            0x7000002000,
+            0x156d000,
+            true,
+            false,
+            false,
+            apkPath,
+            firstBuildId,
+            0,
+          )
+        )
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7100000000,
+            0x7100001000,
+            0x1578000,
+            true,
+            false,
+            true,
+            apkPath,
+            secondBuildId,
+            0,
+          )
+        )
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7100001000,
+            0x7100003000,
+            0x1579000,
+            true,
+            false,
+            false,
+            apkPath,
+            secondBuildId,
+            0,
+          )
+        )
+        .build()
+
+    val images = parser.parse(tombstone).debugMeta!!.images!!
+
+    assertThat(images).hasSize(2)
+    assertThat(images.map { it.codeFile }).containsExactly(apkPath, apkPath)
+    assertThat(images.map { it.codeId }).containsExactly(firstBuildId, secondBuildId).inOrder()
+    assertThat(images.map { it.imageAddr })
+      .containsExactly("0x7000000000", "0x7100000000")
+      .inOrder()
+    assertThat(images.map { it.imageSize }).containsExactly(0x2000L, 0x3000L).inOrder()
+  }
+
+  @Test
+  fun `coalesces ELF continuation aligned for 16 KiB pages`() {
+    val apkPath = "/data/app/io.sentry.sample/base.apk"
+    val buildId = "f1c3bcc0279865fe3058404b2831d9e64135386c"
+
+    val tombstone =
+      Tombstone.Builder()
+        .pid(1234)
+        .tid(1234)
+        .signal(Signal(11, "SIGSEGV", 1, "SEGV_MAPERR", false, 0, 0, false, 0, null))
+        .pageSize(0x4000)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000000000,
+            0x7000001000,
+            0x156c000,
+            true,
+            false,
+            true,
+            apkPath,
+            buildId,
+            0,
+          )
+        )
+        // The virtual-address progression can differ from the file-offset progression by one page.
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000005000,
+            0x7000007000,
+            0x156d000,
+            true,
+            false,
+            false,
+            apkPath,
+            "",
+            0,
+          )
+        )
+        .build()
+
+    val image = parser.parse(tombstone).debugMeta!!.images!!.single()
+
+    assertThat(image.imageAddr).isEqualTo("0x7000000000")
+    assertThat(image.imageSize).isEqualTo(0x7000)
+  }
+
+  @Test
+  fun `does not include a different embedded ELF without build ID in previous image`() {
+    val apkPath = "/data/app/io.sentry.sample/base.apk"
+    val buildId = "f1c3bcc0279865fe3058404b2831d9e64135386c"
+
+    val tombstone =
+      Tombstone.Builder()
+        .pid(1234)
+        .tid(1234)
+        .signal(Signal(11, "SIGSEGV", 1, "SEGV_MAPERR", false, 0, 0, false, 0, null))
+        .pageSize(0x4000)
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7000000000,
+            0x7000001000,
+            0x156c000,
+            true,
+            false,
+            true,
+            apkPath,
+            buildId,
+            0,
+          )
+        )
+        // A different ELF in the APK that does not have a GNU build ID.
+        .addMemoryMapping(
+          MemoryMapping(
+            0x7100000000,
+            0x7100010000,
+            0x163c000,
+            true,
+            false,
+            true,
+            apkPath,
+            "",
+            0x4000,
+          )
+        )
+        .build()
+
+    val image = parser.parse(tombstone).debugMeta!!.images!!.single()
+
+    assertThat(image.codeId).isEqualTo(buildId)
+    assertThat(image.imageAddr).isEqualTo("0x7000000000")
+    assertThat(image.imageSize).isEqualTo(0x1000)
+  }
+
+  @Test
+  fun `sets image address on frame for ELF embedded in APK`() {
+    val apkPath = "/data/app/io.sentry.sample/base.apk"
+    val buildId = "a1647a1813da20ea7e0dad6cbc11486dfaeaeb8e"
+    val imageAddress = 0x7000000000
+    val relativePc = 0xac4L
+
+    val tombstone =
+      Tombstone.Builder()
+        .pid(1234)
+        .tid(1234)
+        .signal(Signal(11, "SIGSEGV", 1, "SEGV_MAPERR", false, 0, 0, false, 0, null))
+        .addMemoryMapping(
+          MemoryMapping(
+            imageAddress,
+            imageAddress + 0x1000,
+            0x156c000,
+            true,
+            false,
+            true,
+            apkPath,
+            buildId,
+            0,
+          )
+        )
+        .addThread(
+          TombstoneThread(
+            1234,
+            "main",
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            listOf(
+              BacktraceFrame(
+                relativePc,
+                imageAddress + relativePc,
+                0,
+                "crash",
+                0,
+                "$apkPath!libnative-sample.so",
+                0x156c000,
+                buildId,
+              )
+            ),
+            emptyList(),
+            0,
+            0,
+          )
+        )
+        .build()
+
+    val frame = parser.parse(tombstone).threads!!.single().stacktrace!!.frames!!.single()
+
+    assertThat(frame.instructionAddr).isEqualTo("0x7000000ac4")
+    assertThat(frame.imageAddr).isEqualTo("0x7000000000")
+  }
+
+  @Test
   fun `debugId falls back to codeId when OleGuidFormatter conversion fails`() {
     // Create a tombstone with a memory mapping that has an invalid buildId
     // (contains 'ZZ' which are not valid hex characters)
@@ -385,6 +612,34 @@ class TombstoneParserTest {
     val validImage = images.find { it.codeFile == "/system/lib64/libm.so" }!!
     assertEquals(validBuildId, validImage.codeId)
     assertEquals("c0bcc3f1-9827-fe65-3058-404b2831d9e6", validImage.debugId)
+  }
+
+  @Test
+  fun `parses APK embedded ELF from full tombstone fixture`() {
+    val tombstoneStream =
+      GZIPInputStream(
+        TombstoneParserTest::class.java.getResourceAsStream("/tombstone_apk_embedded.pb.gz")
+      )
+    val event =
+      TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir).parse()
+    val buildId = "a1647a1813da20ea7e0dad6cbc11486dfaeaeb8e"
+
+    val image = event.debugMeta!!.images!!.single { it.codeId == buildId }
+
+    assertThat(image.type).isEqualTo("elf")
+    assertThat(image.codeFile).endsWith("/base.apk")
+    assertThat(image.debugId).isEqualTo("187a64a1-da13-ea20-7e0d-ad6cbc11486d")
+    assertThat(image.imageAddr).isEqualTo("0x7646619000")
+    assertThat(image.imageSize).isEqualTo(0x5000)
+
+    val frames =
+      event.threads!!
+        .flatMap { it.stacktrace!!.frames!! }
+        .filter { it.`package`!!.endsWith("base.apk!libnative-sample.so") }
+
+    assertThat(frames).hasSize(2)
+    assertThat(frames.map { it.imageAddr }).containsExactly("0x7646619000", "0x7646619000")
+    assertThat(frames.map { it.instructionAddr }).containsExactly("0x7646619ac4", "0x7646619ae4")
   }
 
   @Test
