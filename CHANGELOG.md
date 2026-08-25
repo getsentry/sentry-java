@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Drop the `profiler_id` from in-flight transactions when Android's `ProfilingManager` reports that no profile will be produced ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+- Drop the `profiler_id` from in-flight transactions when Android's `ProfilingManager` reports that no profile will be produced ([#5993](https://github.com/getsentry/sentry-java/pull/5993))
   - Previously a rate-limited or failed Perfetto profiling request still left a `profiler_id` on transactions, pointing at a profile that never arrived
 
 ### Performance
