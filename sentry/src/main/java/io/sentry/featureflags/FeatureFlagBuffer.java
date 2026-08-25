@@ -135,7 +135,9 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
       final @Nullable FeatureFlagBuffer isolationBuffer,
       final @Nullable FeatureFlagBuffer currentBuffer) {
 
-    // Capture snapshots to avoid inconsistencies from concurrent modifications
+    // Capture structurally stable snapshots before indexed traversal. Passing a
+    // CopyOnWriteArrayList directly allows its collection constructor to reuse the immutable
+    // backing array instead of copying the elements on runtimes that support this optimization.
     final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> globalFlags =
         globalBuffer == null ? null : new CopyOnWriteArrayList<>(globalBuffer.flags);
     final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> isolationFlags =
