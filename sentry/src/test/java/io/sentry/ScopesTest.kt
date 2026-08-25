@@ -4328,7 +4328,7 @@ class ScopesTest {
       .captureEvent(
         any(),
         check {
-          val featureFlags = it.featureFlags
+          val featureFlags = it.featureFlagBuffer.featureFlags
           assertNotNull(featureFlags)
 
           val flag0 = featureFlags.values[0]
@@ -4373,7 +4373,8 @@ class ScopesTest {
 
     sut.captureException(RuntimeException("test exception"))
 
-    verify(mockClient).captureEvent(any(), check { assertNull(it.featureFlags) }, anyOrNull())
+    verify(mockClient)
+      .captureEvent(any(), check { assertNull(it.featureFlagBuffer.featureFlags) }, anyOrNull())
   }
 
   private val dsnTest = "https://key@sentry.io/proj"

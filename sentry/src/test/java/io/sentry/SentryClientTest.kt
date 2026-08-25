@@ -7,6 +7,7 @@ import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientRepor
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.exception.SentryEnvelopeException
+import io.sentry.featureflags.NoOpFeatureFlagBuffer
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Backfillable
@@ -3070,6 +3071,7 @@ class SentryClientTest {
 
     // scope
     val scope = mock<IScope>()
+    whenever(scope.featureFlagBuffer).thenReturn(NoOpFeatureFlagBuffer.getInstance())
     whenever(scope.transaction).thenReturn(transaction)
     whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
     whenever(scope.extras).thenReturn(emptyMap())
@@ -3105,6 +3107,7 @@ class SentryClientTest {
 
     // scope
     val scope = mock<Scope>()
+    whenever(scope.featureFlagBuffer).thenReturn(NoOpFeatureFlagBuffer.getInstance())
     whenever(scope.transaction).thenReturn(transaction)
     whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
     whenever(scope.extras).thenReturn(emptyMap())
@@ -3151,6 +3154,7 @@ class SentryClientTest {
 
     // scope
     val scope = mock<IScope>()
+    whenever(scope.featureFlagBuffer).thenReturn(NoOpFeatureFlagBuffer.getInstance())
     whenever(scope.transaction).thenReturn(transaction)
     whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
     whenever(scope.extras).thenReturn(emptyMap())
@@ -3182,6 +3186,7 @@ class SentryClientTest {
 
     // scope
     val scope = mock<IScope>()
+    whenever(scope.featureFlagBuffer).thenReturn(NoOpFeatureFlagBuffer.getInstance())
     whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
     whenever(scope.extras).thenReturn(emptyMap())
     whenever(scope.contexts).thenReturn(Contexts())
@@ -3216,6 +3221,7 @@ class SentryClientTest {
 
     // scope
     val scope = mock<IScope>()
+    whenever(scope.featureFlagBuffer).thenReturn(NoOpFeatureFlagBuffer.getInstance())
     whenever(scope.transaction).thenReturn(transaction)
     whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
     whenever(scope.extras).thenReturn(emptyMap())
@@ -3251,6 +3257,7 @@ class SentryClientTest {
 
     // scope
     val scope = mock<IScope>()
+    whenever(scope.featureFlagBuffer).thenReturn(NoOpFeatureFlagBuffer.getInstance())
     whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
     whenever(scope.extras).thenReturn(emptyMap())
     whenever(scope.contexts).thenReturn(Contexts())
@@ -3299,6 +3306,7 @@ class SentryClientTest {
 
     // scope
     val scope = mock<IScope>()
+    whenever(scope.featureFlagBuffer).thenReturn(NoOpFeatureFlagBuffer.getInstance())
     whenever(scope.transaction).thenReturn(transaction)
     whenever(scope.breadcrumbs).thenReturn(LinkedList<Breadcrumb>())
     whenever(scope.extras).thenReturn(emptyMap())
@@ -3563,6 +3571,7 @@ class SentryClientTest {
     whenever(transaction.traceContext()).thenReturn(baggage.toTraceContext())
 
     val scope = mock<IScope>()
+    whenever(scope.featureFlagBuffer).thenReturn(NoOpFeatureFlagBuffer.getInstance())
     whenever(scope.transaction).thenReturn(transaction)
     whenever(scope.span).thenReturn(transaction)
     whenever(scope.replayId).thenReturn(replayId)

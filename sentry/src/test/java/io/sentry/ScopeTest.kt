@@ -312,7 +312,7 @@ class ScopeTest {
     assertTrue(scope.contexts.isEmpty)
     assertEquals(0, scope.eventProcessors.size)
     assertEquals(0, scope.attachments.size)
-    assertEquals(0, scope.featureFlags!!.values.size)
+    assertEquals(0, scope.featureFlagBuffer.featureFlags!!.values.size)
   }
 
   @Test
@@ -1170,7 +1170,7 @@ class ScopeTest {
     scope.addFeatureFlag("flag1", true)
     scope.addFeatureFlag("flag1", false)
 
-    val flags = scope.featureFlags
+    val flags = scope.featureFlagBuffer.featureFlags
     assertNotNull(flags)
     assertEquals(1, flags.values.size)
 
@@ -1187,7 +1187,7 @@ class ScopeTest {
     scope.addFeatureFlag("flag1", null)
     scope.addFeatureFlag(null, null)
 
-    val flags = scope.featureFlags
+    val flags = scope.featureFlagBuffer.featureFlags
     assertNotNull(flags)
 
     assertEquals(0, flags.values.size)
@@ -1200,7 +1200,7 @@ class ScopeTest {
     scope.addFeatureFlag("flag1", true)
     scope.clearFeatureFlags()
 
-    val flags = scope.featureFlags
+    val flags = scope.featureFlagBuffer.featureFlags
     assertNotNull(flags)
     assertEquals(0, flags.values.size)
   }

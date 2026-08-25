@@ -3,7 +3,6 @@ package io.sentry;
 import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.Contexts;
-import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
@@ -466,10 +465,6 @@ public interface IScope {
   void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result);
 
   void clearFeatureFlags();
-
-  @ApiStatus.Internal
-  @Nullable
-  FeatureFlags getFeatureFlags();
 
   @ApiStatus.Internal
   @NotNull

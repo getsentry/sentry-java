@@ -5,7 +5,6 @@ import io.sentry.featureflags.IFeatureFlagBuffer;
 import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
-import io.sentry.protocol.FeatureFlags;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
@@ -1226,11 +1225,6 @@ public final class Scope implements IScope {
   @Override
   public void clearFeatureFlags() {
     featureFlags.clear();
-  }
-
-  @Override
-  public @Nullable FeatureFlags getFeatureFlags() {
-    return featureFlags.getFeatureFlags();
   }
 
   @Override

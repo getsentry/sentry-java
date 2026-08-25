@@ -1498,7 +1498,7 @@ public final class SentryClient implements ISentryClient {
       }
 
       if (event.getContexts().getFeatureFlags() == null) {
-        final @Nullable FeatureFlags featureFlags = scope.getFeatureFlags();
+        final @Nullable FeatureFlags featureFlags = scope.getFeatureFlagBuffer().getFeatureFlags();
         if (featureFlags != null) {
           event.getContexts().setFeatureFlags(featureFlags);
         }

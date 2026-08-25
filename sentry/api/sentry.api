@@ -291,7 +291,6 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public fun getExtras ()Ljava/util/Map;
 	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
-	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public fun getFingerprint ()Ljava/util/List;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLevel ()Lio/sentry/SentryLevel;
@@ -930,7 +929,6 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public abstract fun getExtras ()Ljava/util/Map;
 	public abstract fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
-	public abstract fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public abstract fun getFingerprint ()Ljava/util/List;
 	public abstract fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public abstract fun getLevel ()Lio/sentry/SentryLevel;
@@ -1756,7 +1754,6 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public fun getExtras ()Ljava/util/Map;
 	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
-	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public fun getFingerprint ()Ljava/util/List;
 	public static fun getInstance ()Lio/sentry/NoOpScope;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
@@ -2453,7 +2450,6 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public fun getExtras ()Ljava/util/Map;
 	public fun getFeatureFlagBuffer ()Lio/sentry/featureflags/IFeatureFlagBuffer;
-	public fun getFeatureFlags ()Lio/sentry/protocol/FeatureFlags;
 	public fun getFingerprint ()Ljava/util/List;
 	public fun getLastEventId ()Lio/sentry/protocol/SentryId;
 	public fun getLevel ()Lio/sentry/SentryLevel;
