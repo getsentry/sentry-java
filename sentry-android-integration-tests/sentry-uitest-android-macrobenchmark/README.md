@@ -2,7 +2,7 @@
 
 Jetpack Macrobenchmark for cold-start of `sentry-samples-android`, used to evaluate SDK-init
 performance changes on a real device in a **stable, reproducible** way. Runs on Sauce Labs from the
-`Integration Tests - Macrobenchmark` workflow, on a manual trigger only.
+`Integration Tests - Macrobenchmark` workflow, on any PR labelled `run-macrobenchmark`.
 
 ## What it measures
 
@@ -30,8 +30,11 @@ conditions, so the benchmark measures **two builds of the sample app at once**:
 
 | Variant | Package | Built from |
 |---|---|---|
-| `CANDIDATE` | `io.sentry.samples.android` | the ref under test |
-| `BASELINE` | `io.sentry.samples.android.baseline` | its merge base with `main` |
+| `CANDIDATE` | `io.sentry.samples.android` | the PR merged into its base |
+| `BASELINE` | `io.sentry.samples.android.baseline` | the base commit alone |
+
+Because the candidate is the *merge* of the PR into its base, anything that landed on the base
+since the PR forked is present in both arms and cancels out, leaving the PR's own contribution.
 
 Both are installed on the same device and the run alternates between them, so whatever the device
 does over the session — thermal throttling above all — lands on both and cancels out in the
@@ -44,9 +47,14 @@ difference. Two things follow from that, and both are deliberate:
   class of device where 12 back-to-back ones only start to. Read the delta, not the medians either
   side of it.
 
-The suffixed applicationId comes from `scripts/baseline-app-id.init.gradle`, applied with `-I` when
-building the baseline. It is injected rather than committed to the sample's build script because
-the baseline is built from a checkout of the merge base, which predates the file.
+The suffixed applicationId comes from the `sampleAppIdSuffix` Gradle property, which
+`sentry-samples-android` reads in its `defaultConfig`. The baseline build passes
+`-PsampleAppIdSuffix=.baseline`; every ordinary build leaves it unset.
+
+That property has to exist in the **base** commit's build script, since that is what the baseline
+is built from. Against a base predating it, both builds produce the same package and the workflow
+fails with an explicit error rather than installing one over the other and comparing the app
+against itself.
 
 If only the candidate is installed, the baseline steps are **skipped** (not failed) and the report
 falls back to single-build numbers.
@@ -62,13 +70,14 @@ Connect a device, then:
 Results print to the console and are written to
 `build/outputs/connected_android_test_additional_output/.../*-benchmarkData.json`.
 
-That measures the candidate only. To get the comparison locally, build the baseline out of a
-worktree at the merge base and install it alongside:
+That measures the candidate only. To get the comparison locally, build a second copy of the app
+with the suffix and install it alongside. Point the worktree at whatever you want as the baseline
+— the merge base, or just `origin/main`:
 
 ```bash
-git worktree add ../baseline "$(git merge-base HEAD origin/main)"
+git worktree add ../baseline origin/main
 (cd ../baseline && ./gradlew :sentry-samples:sentry-samples-android:assembleRelease \
-  -I "$OLDPWD/scripts/baseline-app-id.init.gradle")
+  -PsampleAppIdSuffix=.baseline)
 adb install -r ../baseline/sentry-samples/sentry-samples-android/build/outputs/apk/release/sentry-samples-android-release.apk
 ```
 
@@ -90,10 +99,16 @@ the same base-vs-PR table can be produced from a local run.
 
 ## Running on Sauce Labs
 
-The `Integration Tests - Macrobenchmark` workflow (manual trigger) runs the same benchmark on a
-Sauce Labs real device: it builds the sample app from the dispatched ref and from its merge base,
-ships both, and posts the comparison to the job summary and to a PR comment it keeps updating.
-It reports numbers only and never fails on them.
+The `Integration Tests - Macrobenchmark` workflow runs the same benchmark on a Sauce Labs real
+device: it builds the sample app from the PR merge and from the base commit, ships both, and posts
+the comparison to the job summary and to a PR comment it keeps updating. It reports numbers only
+and never fails on them.
+
+It runs only on PRs carrying the **`run-macrobenchmark`** label — add the label to start a run,
+and subsequent pushes to that PR re-run it. A full run costs two Gradle builds and up to an hour
+of a Sauce device at concurrency 1, which is far too much to spend on every push. PRs from forks
+get no secrets, so the Sauce steps skip; do not reach for `pull_request_target` to change that, as
+it would run a fork's build scripts with our Sauce credentials in scope.
 
 Two configuration details in `.sauce/sentry-uitest-android-macrobenchmark.yml` are load-bearing:
 
@@ -127,7 +142,7 @@ local device.
 
 ## Known limitations
 
-- **A merge base older than the `SentryAndroid.init` trace section** (added in #5901) has no such
+- **A base commit older than the `SentryAndroid.init` trace section** (added in #5901) has no such
   section for `TraceSectionMetric` to find, and Macrobenchmark fails the whole run rather than
   reporting the other metric. Rebase onto a newer `main` if you hit this.
 - Both builds carry the same DSN, so baseline launches also send events to the sample project.

@@ -5,7 +5,7 @@ Sauce Labs cannot pull arbitrary files off a real device, so SentryStartupBenchm
 `<pkg>-benchmarkData.json` into logcat as numbered chunks. This reassembles those chunks and
 prints a Markdown summary.
 
-When the run alternated between the merge-base build and the build under test, the summary is a
+When the run alternated between the base build and the build under test, the summary is a
 base-vs-PR comparison. When only one build was installed -- a plain local run -- it falls back to
 reporting that build on its own.
 
@@ -166,7 +166,7 @@ def format_runs_details(label, runs):
 
 
 def format_comparison(data, pooled, base_sha, head_sha):
-    lines = ["## Macrobenchmark: PR vs merge base", ""]
+    lines = ["## Macrobenchmark: PR vs base", ""]
     lines += format_header(data, base_sha, head_sha)
 
     if not data["context"]["cpuLocked"]:
@@ -253,11 +253,9 @@ def format_summary(data, base_sha=None, head_sha=None):
     pooled = pool_runs(data["benchmarks"])
     if not pooled:
         sys.exit("Benchmark data contains no results")
-    # The marker lets the workflow find and update its own PR comment instead of adding another.
-    marker = "<!-- macrobenchmark-comparison -->"
     if BASELINE in pooled and CANDIDATE in pooled:
-        return f"{marker}\n{format_comparison(data, pooled, base_sha, head_sha)}"
-    return f"{marker}\n{format_single(data, pooled, base_sha, head_sha)}"
+        return format_comparison(data, pooled, base_sha, head_sha)
+    return format_single(data, pooled, base_sha, head_sha)
 
 
 def main():

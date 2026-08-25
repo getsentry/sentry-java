@@ -47,6 +47,9 @@ android {
 
   defaultConfig {
     applicationId = "io.sentry.samples.android"
+    // Lets the macrobenchmark workflow build a second copy of this app that installs alongside the
+    // normal one, so it can cold-start both in a single session. Unset for every ordinary build.
+    applicationIdSuffix = providers.gradleProperty("sampleAppIdSuffix").orNull
     // androidx.sqlite 2.6+ require minSdk 23; the Sentry SDK still supports 21.
     minSdk = 23
     targetSdk = libs.versions.targetSdk.get().toInt()

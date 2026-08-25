@@ -20,9 +20,7 @@ import org.junit.runners.Parameterized
 
 /** The two builds of the sample app a run can measure. */
 enum class Variant(val packageName: String) {
-  /**
-   * The merge-base build, suffixed by `scripts/baseline-app-id.init.gradle` so both can coexist.
-   */
+  /** The base-commit build, suffixed via the `sampleAppIdSuffix` property so both can coexist. */
   BASELINE("io.sentry.samples.android.baseline"),
 
   /** The build under test. The only variant present on a plain local run. */

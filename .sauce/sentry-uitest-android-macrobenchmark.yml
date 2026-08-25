@@ -19,7 +19,7 @@ espresso:
   app: ./sentry-samples/sentry-samples-android/build/outputs/apk/release/sentry-samples-android-release.apk
   testApp: ./sentry-android-integration-tests/sentry-uitest-android-macrobenchmark/build/outputs/apk/benchmark/sentry-uitest-android-macrobenchmark-benchmark.apk
   otherApps:
-    # The merge-base build of the same app, applicationId suffixed `.baseline` so it installs
+    # The base-commit build of the same app, applicationId suffixed `.baseline` so it installs
     # alongside the one above. The workflow stages it here; when it is missing, saucectl fails
     # rather than silently measuring one build.
     - ./build/macrobenchmark-baseline/sentry-samples-android-release.apk

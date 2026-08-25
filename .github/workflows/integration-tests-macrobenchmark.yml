@@ -2,28 +2,33 @@ name: 'Integration Tests - Macrobenchmark'
 # Runs the sentry-uitest-android-macrobenchmark cold-start benchmark on a Sauce Labs real
 # device and recovers its metrics from the device log.
 #
-# The sample app is built twice -- once from this ref, once from its merge base with main -- and
-# both are installed on the device so the benchmark can alternate between them. Absolute numbers
-# from a cloud device with unlocked CPU clocks are close to unreadable; a delta measured against
-# a baseline on the same device in the same session is not.
+# The sample app is built twice -- once from the PR merged into its base, once from the base
+# alone -- and both are installed on the device so the benchmark can alternate between them.
+# Absolute numbers from a cloud device with unlocked CPU clocks are close to unreadable; a delta
+# measured against a baseline on the same device in the same session is not.
 #
+# Opt-in per PR: a full run costs two Gradle builds and up to an hour of a Sauce device at
+# concurrency 1, which is far too much to spend on every push.
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [labeled, synchronize]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
   macrobenchmark:
     name: Macrobenchmark
     runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'run-macrobenchmark')
 
     permissions:
       contents: read
       pull-requests: write # to post the comparison back onto the PR
 
     # we copy the secret to the env variable in order to access it in the workflow
+    # Note this is empty for pull requests from forks, which skips every step that needs Sauce.
     env:
       SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
 
@@ -31,18 +36,19 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Full history: the baseline is the merge base with main, which shallow clones can't find.
-          fetch-depth: 0
+          # This checks out refs/pull/N/merge, the PR already merged into its base, so the
+          # candidate is what main will actually look like. Depth 2 is enough to resolve its
+          # first parent below.
+          fetch-depth: 2
 
-      - name: Resolve the merge base
+      # First parent of the merge commit is the base branch tip, which is therefore common to
+      # both arms: anything that landed on the base since the PR forked is present in each and
+      # cancels out, leaving the PR's own contribution.
+      - name: Resolve the base commit
         id: base
-        run: |
-          git fetch --no-tags origin main
-          echo "sha=$(git merge-base HEAD origin/main)" >> "$GITHUB_OUTPUT"
+        run: echo "sha=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
 
-      # Comparing against the merge base rather than main's tip keeps commits that landed on main
-      # in the meantime out of the delta.
-      - name: Git checkout the merge base
+      - name: Git checkout the base commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ steps.base.outputs.sha }}
@@ -61,19 +67,33 @@ jobs:
         if: env.SAUCE_USERNAME != null
         run: ./gradlew :sentry-samples:sentry-samples-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android-macrobenchmark:assembleBenchmark
 
-      # The init script lives in this checkout, not the baseline one, because the merge base
-      # predates it. Both builds share a Gradle user home, so this one starts with a warm cache.
+      # Both builds share a Gradle user home, so this one starts with a warm cache.
       - name: Assemble the baseline target app
         if: env.SAUCE_USERNAME != null
         working-directory: baseline
-        run: ./gradlew --build-cache :sentry-samples:sentry-samples-android:assembleRelease -I "$GITHUB_WORKSPACE/scripts/baseline-app-id.init.gradle"
+        run: ./gradlew --build-cache :sentry-samples:sentry-samples-android:assembleRelease -PsampleAppIdSuffix=.baseline
 
       - name: Stage the baseline apk for Sauce
         if: env.SAUCE_USERNAME != null
         run: |
+          candidate=sentry-samples/sentry-samples-android/build/outputs/apk/release
+          base=baseline/$candidate
+
+          # sampleAppIdSuffix has to exist in the *base* commit's build script for the baseline to
+          # get its own application id. A base predating that support silently builds a second copy
+          # of the same package, which Sauce would install over the candidate -- and the benchmark
+          # would then compare an app against itself and report a delta of roughly zero. Fail loudly
+          # instead.
+          base_id=$(jq -r .applicationId "$base/output-metadata.json")
+          candidate_id=$(jq -r .applicationId "$candidate/output-metadata.json")
+          if [ "$base_id" = "$candidate_id" ]; then
+            echo "::error::Baseline and candidate share the application id $base_id, so they cannot be installed side by side. The base commit ${{ steps.base.outputs.sha }} is missing the sampleAppIdSuffix property; rebase onto a base that has it."
+            exit 1
+          fi
+          echo "baseline=$base_id candidate=$candidate_id"
+
           mkdir -p build/macrobenchmark-baseline
-          cp baseline/sentry-samples/sentry-samples-android/build/outputs/apk/release/sentry-samples-android-release.apk \
-            build/macrobenchmark-baseline/
+          cp "$base/sentry-samples-android-release.apk" build/macrobenchmark-baseline/
 
       - name: Run Macrobenchmark in SauceLab
         uses: saucelabs/saucectl-run-action@283660aa934c02723c497efa151d582a3acc5801 # pin@v3
@@ -86,63 +106,26 @@ jobs:
           config-file: .sauce/sentry-uitest-android-macrobenchmark.yml
 
       # Runs even when the suite fails: a failed benchmark still logs whatever it managed to
-      # measure, and the parser's own error explains what was missing.
+      # measure, and the parser's own error explains what was missing. summary.md is written only
+      # once the parser succeeds, so a failed recovery leaves no half-written report to post.
       - name: Recover benchmark results from the device log
         if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
         run: |
-          # Without pipefail the step passes on `tee`'s exit code, so a failed recovery
-          # would report success while silently producing no results.
-          set -o pipefail
+          mkdir -p ./artifacts
           python3 scripts/parse-macrobenchmark-log.py ./artifacts \
             --json-out ./artifacts/benchmarkData.json \
             --base-sha "${{ steps.base.outputs.sha }}" \
-            --head-sha "${{ github.sha }}" \
-            | tee ./artifacts/summary.md >> "$GITHUB_STEP_SUMMARY"
+            --head-sha "${{ github.event.pull_request.head.sha }}" \
+            > ./artifacts/summary.md.tmp
+          mv ./artifacts/summary.md.tmp ./artifacts/summary.md
+          cat ./artifacts/summary.md >> "$GITHUB_STEP_SUMMARY"
 
-      # workflow_dispatch has no PR context, so the PR is looked up from the dispatched branch.
-      # Dispatching on a branch without an open PR is fine -- the job summary still has the table.
       - name: Comment the comparison on the PR
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        if: ${{ !cancelled() && env.SAUCE_USERNAME != null && hashFiles('./artifacts/summary.md') != '' }}
         with:
-          script: |
-            const fs = require('fs');
-            const marker = '<!-- macrobenchmark-comparison -->';
-
-            let body;
-            try {
-              body = fs.readFileSync('./artifacts/summary.md', 'utf8');
-            } catch {
-              core.info('No summary to post; the benchmark did not report results.');
-              return;
-            }
-            // The recovery step is allowed to fail, and `tee` leaves a truncated file behind when
-            // it does. Only a report that got as far as writing its marker is worth posting.
-            if (!body.startsWith(marker)) {
-              core.info('Summary is incomplete; leaving the PR comment alone.');
-              return;
-            }
-
-            const head = `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`;
-            const { data: prs } = await github.rest.pulls.list({ ...context.repo, head, state: 'open' });
-            if (prs.length === 0) {
-              core.info(`No open PR for ${head}; results are in the job summary only.`);
-              return;
-            }
-            const issue_number = prs[0].number;
-
-            // Update this workflow's own comment rather than stacking a new one on every dispatch.
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              ...context.repo,
-              issue_number,
-            });
-            const existing = comments.find((comment) => comment.body?.startsWith(marker));
-
-            if (existing) {
-              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
-            } else {
-              await github.rest.issues.createComment({ ...context.repo, issue_number, body });
-            }
+          header: macrobenchmark
+          path: ./artifacts/summary.md
 
       - name: Upload Sauce artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
