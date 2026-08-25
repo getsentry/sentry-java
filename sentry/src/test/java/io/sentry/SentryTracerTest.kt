@@ -296,6 +296,128 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `when profiling is canceled, profile context and profiler id span data are removed`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    val profilerId = SentryId()
+    whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+    val span = tracer.startChild("span.op")
+    assertEquals(profilerId.toString(), span.getData(SpanDataConvention.PROFILER_ID))
+
+    tracer.onProfilingCanceled(profilerId)
+
+    assertNull(span.getData(SpanDataConvention.PROFILER_ID))
+    assertNull(tracer.root.getData(SpanDataConvention.PROFILER_ID))
+    // Spans started after the cancellation must not pick the id up again
+    assertNull(tracer.startChild("later.op").getData(SpanDataConvention.PROFILER_ID))
+
+    tracer.finish()
+    verify(fixture.scopes)
+      .captureTransaction(
+        check { assertNull(it.contexts.profile) },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `when profiling is canceled for another profiler id, nothing is removed`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    val profilerId = SentryId()
+    whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+    val span = tracer.startChild("span.op")
+
+    tracer.onProfilingCanceled(SentryId())
+
+    assertEquals(profilerId.toString(), span.getData(SpanDataConvention.PROFILER_ID))
+    tracer.finish()
+    verify(fixture.scopes)
+      .captureTransaction(
+        check { assertNotNull(it.contexts.profile) { assertEquals(profilerId, it.profilerId) } },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `when continuous profiler is running, tracer registers the canceled callback`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    whenever(continuousProfiler.profilerId).thenReturn(SentryId())
+
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+
+    verify(continuousProfiler).registerProfilingCanceledCallback(tracer)
+  }
+
+  @Test
+  fun `when transaction is not sampled, tracer does not register the canceled callback`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    whenever(continuousProfiler.profilerId).thenReturn(SentryId())
+
+    fixture.getSut(
+      optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+      samplingDecision = TracesSamplingDecision(false),
+    )
+
+    verify(continuousProfiler, never()).registerProfilingCanceledCallback(any())
+  }
+
+  @Test
+  fun `finish unregisters the canceled callback`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    whenever(continuousProfiler.profilerId).thenReturn(SentryId())
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+
+    tracer.finish()
+
+    verify(continuousProfiler).unregisterProfilingCanceledCallback(tracer)
+  }
+
+  @Test
+  fun `finish does not unregister while waiting for unfinished children`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    val profilerId = SentryId()
+    whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+        waitForChildren = true,
+      )
+    val child = tracer.startChild("span.op")
+
+    tracer.finish()
+
+    // The transaction has not been captured yet, so a cancellation must still be able to reach it
+    verify(continuousProfiler, never()).unregisterProfilingCanceledCallback(any())
+    tracer.onProfilingCanceled(profilerId)
+    assertNull(child.getData(SpanDataConvention.PROFILER_ID))
+
+    child.finish()
+
+    verify(continuousProfiler).unregisterProfilingCanceledCallback(tracer)
+  }
+
+  @Test
   fun `when continuous profiler is not running, profile context is not set`() {
     val tracer =
       fixture.getSut(

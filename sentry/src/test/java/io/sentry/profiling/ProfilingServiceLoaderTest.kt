@@ -3,6 +3,7 @@ package io.sentry.profiling
 import io.sentry.IContinuousProfiler
 import io.sentry.ILogger
 import io.sentry.IProfileConverter
+import io.sentry.IProfilingCanceledCallback
 import io.sentry.ISentryExecutorService
 import io.sentry.ProfileLifecycle
 import io.sentry.TracesSampler
@@ -60,6 +61,14 @@ class ContinuousProfilerStub() : IContinuousProfiler {
   }
 
   override fun stopProfiler(profileLifecycle: ProfileLifecycle) {
+    TODO("Not yet implemented")
+  }
+
+  override fun registerProfilingCanceledCallback(callback: IProfilingCanceledCallback) {
+    TODO("Not yet implemented")
+  }
+
+  override fun unregisterProfilingCanceledCallback(callback: IProfilingCanceledCallback) {
     TODO("Not yet implemented")
   }
 

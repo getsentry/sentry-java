@@ -14,6 +14,10 @@ public interface IContinuousProfiler {
 
   void stopProfiler(final @NotNull ProfileLifecycle profileLifecycle);
 
+  void registerProfilingCanceledCallback(final @NotNull IProfilingCanceledCallback callback);
+
+  void unregisterProfilingCanceledCallback(final @NotNull IProfilingCanceledCallback callback);
+
   /**
    * Cancel the profiler and stops it.
    *

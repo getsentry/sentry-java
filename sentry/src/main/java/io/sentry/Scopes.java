@@ -992,9 +992,6 @@ public final class Scopes implements IScopes {
       transaction =
           spanFactory.createTransaction(
               transactionContext, this, transactionOptions, compositePerformanceCollector);
-      //          new SentryTracer(
-      //              transactionContext, this, transactionOptions,
-      // compositePerformanceCollector);
 
       // The listener is called only if the transaction exists, as the transaction is needed to
       // stop it

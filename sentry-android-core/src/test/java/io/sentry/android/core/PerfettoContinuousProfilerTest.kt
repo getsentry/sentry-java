@@ -3,14 +3,17 @@ package io.sentry.android.core
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
+import io.sentry.IProfilingCanceledCallback
 import io.sentry.IScopes
 import io.sentry.ProfileLifecycle
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.TracesSampler
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
+import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -219,5 +222,159 @@ class PerfettoContinuousProfilerTest {
         eq(SentryLevel.WARNING),
         eq("Unexpected call to startProfiler(MANUAL) while profiler already running. Skipping."),
       )
+  }
+
+  private fun captureCanceledCallback(): () -> Runnable? {
+    var captured: Runnable? = null
+    doAnswer { invocation ->
+        captured = invocation.getArgument<Runnable>(0)
+        null
+      }
+      .whenever(fixture.mockPerfettoProfiler)
+      .setOnCanceledCallback(any())
+    return { captured }
+  }
+
+  @Test
+  fun `registered callback is notified with the profiler id of the running chunk`() {
+    val canceledCallback = captureCanceledCallback()
+    val profiler = fixture.getSut()
+    val notified = mutableListOf<SentryId>()
+    profiler.registerProfilingCanceledCallback(IProfilingCanceledCallback { notified.add(it) })
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    val runningProfilerId = profiler.profilerId
+    assertThat(runningProfilerId).isNotEqualTo(SentryId.EMPTY_ID)
+
+    canceledCallback()!!.run()
+
+    assertThat(notified).containsExactly(runningProfilerId)
+  }
+
+  @Test
+  fun `unregistered callback is not notified`() {
+    val canceledCallback = captureCanceledCallback()
+    val profiler = fixture.getSut()
+    val notified = mutableListOf<SentryId>()
+    val callback = IProfilingCanceledCallback { notified.add(it) }
+    profiler.registerProfilingCanceledCallback(callback)
+    profiler.unregisterProfilingCanceledCallback(callback)
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    canceledCallback()!!.run()
+
+    assertThat(notified).isEmpty()
+  }
+
+  @Test
+  fun `profiler id is assigned before the canceled callback is installed`() {
+    // Guards against the OS reporting a failure while start() is still on the stack, which would
+    // otherwise notify with an id nobody has been given yet.
+    var idAtInstallTime: SentryId? = null
+    val profiler = fixture.getSut()
+    val notified = mutableListOf<SentryId>()
+    profiler.registerProfilingCanceledCallback(IProfilingCanceledCallback { notified.add(it) })
+    doAnswer { invocation ->
+        idAtInstallTime = profiler.profilerId
+        invocation.getArgument<Runnable>(0).run()
+        null
+      }
+      .whenever(fixture.mockPerfettoProfiler)
+      .setOnCanceledCallback(any())
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+
+    assertThat(idAtInstallTime).isNotEqualTo(SentryId.EMPTY_ID)
+    assertThat(notified).containsExactly(idAtInstallTime)
+  }
+
+  @Test
+  fun `profiler id is restored and callbacks notified when the profiler fails to start`() {
+    val profiler = fixture.getSut()
+    val notified = mutableListOf<SentryId>()
+    profiler.registerProfilingCanceledCallback(IProfilingCanceledCallback { notified.add(it) })
+    whenever(fixture.mockPerfettoProfiler.start(any())).thenReturn(false)
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+
+    assertFalse(profiler.isRunning)
+    assertThat(profiler.profilerId).isEqualTo(SentryId.EMPTY_ID)
+    assertThat(notified).hasSize(1)
+    assertThat(notified.first()).isNotEqualTo(SentryId.EMPTY_ID)
+  }
+
+  @Test
+  fun `close while terminating notifies callbacks once and then drops them`() {
+    val canceledCallback = captureCanceledCallback()
+    val profiler = fixture.getSut()
+    val notified = mutableListOf<SentryId>()
+    profiler.registerProfilingCanceledCallback(IProfilingCanceledCallback { notified.add(it) })
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    val runningProfilerId = profiler.profilerId
+    val runnable = canceledCallback()!!
+
+    // The pending chunk is dropped by sendChunk once closed, so callbacks have to hear about it
+    profiler.close(true)
+    assertThat(notified).containsExactly(runningProfilerId)
+
+    runnable.run()
+
+    assertThat(notified).containsExactly(runningProfilerId)
+  }
+
+  @Test
+  fun `a throwing callback neither escapes nor stops the remaining callbacks`() {
+    val canceledCallback = captureCanceledCallback()
+    val profiler = fixture.getSut()
+    val notified = mutableListOf<SentryId>()
+    profiler.registerProfilingCanceledCallback { throw RuntimeException("listener blew up") }
+    profiler.registerProfilingCanceledCallback { notified.add(it) }
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    canceledCallback()!!.run()
+
+    assertThat(notified).hasSize(1)
+  }
+
+  @Test
+  fun `a throwing callback does not escape the start failure path`() {
+    val profiler = fixture.getSut()
+    profiler.registerProfilingCanceledCallback { throw RuntimeException("listener blew up") }
+    whenever(fixture.mockPerfettoProfiler.start(any())).thenReturn(false)
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+
+    assertFalse(profiler.isRunning)
+  }
+
+  @Test
+  fun `cancellation tears the running chunk down so later transactions cannot reuse the id`() {
+    val canceledCallback = captureCanceledCallback()
+    val profiler = fixture.getSut()
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+
+    canceledCallback()!!.run()
+
+    assertFalse(profiler.isRunning)
+    assertThat(profiler.profilerId).isEqualTo(SentryId.EMPTY_ID)
+  }
+
+  @Test
+  fun `close without terminating keeps registered callbacks`() {
+    val canceledCallback = captureCanceledCallback()
+    val profiler = fixture.getSut()
+    val notified = mutableListOf<SentryId>()
+    profiler.registerProfilingCanceledCallback { notified.add(it) }
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    val runnable = canceledCallback()!!
+    profiler.close(false)
+
+    runnable.run()
+
+    assertThat(notified).hasSize(1)
   }
 }

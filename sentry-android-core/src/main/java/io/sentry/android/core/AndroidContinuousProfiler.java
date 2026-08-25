@@ -9,6 +9,7 @@ import io.sentry.CompositePerformanceCollector;
 import io.sentry.DataCategory;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
+import io.sentry.IProfilingCanceledCallback;
 import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
@@ -262,6 +263,12 @@ public class AndroidContinuousProfiler
       }
     }
   }
+
+  @Override
+  public void registerProfilingCanceledCallback(@NotNull IProfilingCanceledCallback callback) {}
+
+  @Override
+  public void unregisterProfilingCanceledCallback(@NotNull IProfilingCanceledCallback callback) {}
 
   private void stop(final boolean restartProfiler) {
     initScopes();

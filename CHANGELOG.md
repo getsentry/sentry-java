@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Fixes
+
+- Drop the `profiler_id` from in-flight transactions when Android's `ProfilingManager` reports that no profile will be produced ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+  - Previously a rate-limited or failed Perfetto profiling request still left a `profiler_id` on transactions, pointing at a profile that never arrived
+
 ### Performance
 
 - Use manifest metadata resolved at build time to reduce Android SDK initialization overhead ([#5976](https://github.com/getsentry/sentry-java/pull/5976))

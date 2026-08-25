@@ -17,6 +17,12 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   public void stopProfiler(final @NotNull ProfileLifecycle profileLifecycle) {}
 
   @Override
+  public void registerProfilingCanceledCallback(@NotNull IProfilingCanceledCallback callback) {}
+
+  @Override
+  public void unregisterProfilingCanceledCallback(@NotNull IProfilingCanceledCallback callback) {}
+
+  @Override
   public boolean isRunning() {
     return false;
   }

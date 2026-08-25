@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
-public final class SentryTracer implements ITransaction {
+public final class SentryTracer implements ITransaction, IProfilingCanceledCallback {
   private final @NotNull SentryId eventId = new SentryId();
   private final @NotNull Span root;
   private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
@@ -53,6 +53,11 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull Contexts contexts = new Contexts();
   private final @Nullable CompositePerformanceCollector compositePerformanceCollector;
   private final @NotNull TransactionOptions transactionOptions;
+
+  /**
+   * Set once the profiler reports that no profile will exist for the id this transaction carries.
+   */
+  private volatile boolean profilingCanceled = false;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IScopes scopes) {
     this(context, scopes, new TransactionOptions(), null);
@@ -89,7 +94,8 @@ public final class SentryTracer implements ITransaction {
     final @NotNull SentryId continuousProfilerId = getProfilerId();
 
     if (!continuousProfilerId.equals(SentryId.EMPTY_ID) && Boolean.TRUE.equals(isSampled())) {
-      this.contexts.setProfile(new ProfileContext(continuousProfilerId));
+      contexts.setProfile(new ProfileContext(continuousProfilerId));
+      scopes.getOptions().getContinuousProfiler().registerProfilingCanceledCallback(this);
     }
 
     // We are currently sending the performance data only in profiles, but we are always sending
@@ -261,6 +267,8 @@ public final class SentryTracer implements ITransaction {
                   }
                 });
           });
+      scopes.getOptions().getContinuousProfiler().unregisterProfilingCanceledCallback(this);
+
       final SentryTransaction transaction = new SentryTransaction(this);
 
       if (timersEnabled) {
@@ -541,7 +549,9 @@ public final class SentryTracer implements ITransaction {
   private void setDefaultSpanData(final @NotNull ISpan span) {
     final @NotNull IThreadChecker threadChecker = scopes.getOptions().getThreadChecker();
     final @NotNull SentryId profilerId = getProfilerId();
-    if (!profilerId.equals(SentryId.EMPTY_ID) && Boolean.TRUE.equals(span.isSampled())) {
+    if (!profilingCanceled
+        && !profilerId.equals(SentryId.EMPTY_ID)
+        && Boolean.TRUE.equals(span.isSampled())) {
       span.setData(SpanDataConvention.PROFILER_ID, profilerId.toString());
     }
     span.setData(
@@ -1019,6 +1029,31 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     this.root.addFeatureFlag(flag, result);
+  }
+
+  @Override
+  public void onProfilingCanceled(final @NotNull SentryId profilerId) {
+    final @Nullable ProfileContext context = contexts.getProfile();
+    if (context == null || !context.getProfilerId().equals(profilerId)) {
+      return;
+    }
+
+    // Stops setDefaultSpanData from tagging spans started after this point
+    profilingCanceled = true;
+    contexts.remove(ProfileContext.TYPE);
+    root.setData(SpanDataConvention.PROFILER_ID, null);
+    for (final @NotNull Span child : children) {
+      child.setData(SpanDataConvention.PROFILER_ID, null);
+    }
+
+    scopes
+        .getOptions()
+        .getLogger()
+        .log(
+            SentryLevel.DEBUG,
+            "Profiling was canceled for profiler id %s, dropping it from transaction %s.",
+            profilerId,
+            eventId);
   }
 
   private static final class FinishStatus {

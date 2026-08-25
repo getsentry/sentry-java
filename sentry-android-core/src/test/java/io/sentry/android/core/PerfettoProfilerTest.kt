@@ -5,6 +5,7 @@ import android.os.ProfilingManager
 import android.os.ProfilingResult
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.test.DeferredExecutorService
 import java.io.File
@@ -264,5 +265,97 @@ class PerfettoProfilerTest {
     profiler.endAndCollect { result.set(it) }
 
     assertNull(result.get())
+  }
+
+  @Test
+  fun `canceled callback is invoked as soon as the OS reports an error`() {
+    val profiler = getSut()
+    val canceledCount = AtomicInteger(0)
+    profiler.setOnCanceledCallback { canceledCount.incrementAndGet() }
+    profiler.start(60000)
+
+    capturedCallback.accept(mockResult(errorCode = ProfilingResult.ERROR_FAILED_RATE_LIMIT_PROCESS))
+
+    // Fired without waiting for endAndCollect, which is what lets in-flight transactions react
+    assertThat(canceledCount.get()).isEqualTo(1)
+  }
+
+  @Test
+  fun `canceled callback is invoked only once when endAndCollect follows an error`() {
+    val profiler = getSut()
+    val canceledCount = AtomicInteger(0)
+    profiler.setOnCanceledCallback { canceledCount.incrementAndGet() }
+    profiler.start(60000)
+
+    capturedCallback.accept(mockResult(errorCode = ProfilingResult.ERROR_UNKNOWN))
+    profiler.endAndCollect {}
+
+    assertThat(canceledCount.get()).isEqualTo(1)
+  }
+
+  @Test
+  fun `canceled callback is not invoked when a trace file is produced`() {
+    val traceFile = createTraceFile()
+    val profiler = getSut()
+    val canceledCount = AtomicInteger(0)
+    profiler.setOnCanceledCallback { canceledCount.incrementAndGet() }
+    profiler.start(60000)
+
+    capturedCallback.accept(mockResult(filePath = traceFile.absolutePath))
+    profiler.endAndCollect {}
+
+    assertThat(canceledCount.get()).isEqualTo(0)
+  }
+
+  @Test
+  fun `canceled callback is invoked when result file path is null`() {
+    val profiler = getSut()
+    val canceledCount = AtomicInteger(0)
+    profiler.setOnCanceledCallback { canceledCount.incrementAndGet() }
+    profiler.start(60000)
+
+    capturedCallback.accept(mockResult(filePath = null))
+    profiler.endAndCollect {}
+
+    assertThat(canceledCount.get()).isEqualTo(1)
+  }
+
+  @Test
+  fun `canceled callback is invoked when the trace file does not exist`() {
+    val profiler = getSut()
+    val canceledCount = AtomicInteger(0)
+    profiler.setOnCanceledCallback { canceledCount.incrementAndGet() }
+    profiler.start(60000)
+
+    capturedCallback.accept(mockResult(filePath = "/non/existent/path.pftrace"))
+    profiler.endAndCollect {}
+
+    assertThat(canceledCount.get()).isEqualTo(1)
+  }
+
+  @Test
+  fun `canceled callback is invoked when the result times out`() {
+    val profiler = getSut()
+    val canceledCount = AtomicInteger(0)
+    profiler.setOnCanceledCallback { canceledCount.incrementAndGet() }
+    profiler.start(60000)
+
+    profiler.endAndCollect {}
+    assertThat(canceledCount.get()).isEqualTo(0)
+
+    executor.runAll()
+
+    assertThat(canceledCount.get()).isEqualTo(1)
+  }
+
+  @Test
+  fun `canceled callback is invoked when endAndCollect is called without start`() {
+    val profiler = getSut()
+    val canceledCount = AtomicInteger(0)
+    profiler.setOnCanceledCallback { canceledCount.incrementAndGet() }
+
+    profiler.endAndCollect {}
+
+    assertThat(canceledCount.get()).isEqualTo(1)
   }
 }

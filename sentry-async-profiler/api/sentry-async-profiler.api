@@ -26,8 +26,10 @@ public final class io/sentry/asyncprofiler/profiling/JavaContinuousProfiler : io
 	public fun isRunning ()Z
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 	public fun reevaluateSampling ()V
+	public fun registerProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
 	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+	public fun unregisterProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 }
 
 public final class io/sentry/asyncprofiler/provider/AsyncProfilerContinuousProfilerProvider : io/sentry/profiling/JavaContinuousProfilerProvider {

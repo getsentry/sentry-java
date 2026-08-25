@@ -11,8 +11,10 @@ import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
+import io.sentry.util.ExceptionUtils;
 import java.io.File;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -49,7 +51,10 @@ public class PerfettoProfiler {
   private final @NotNull Object profilingResultLock = new Object();
   private volatile @Nullable ProfilingResult profilingResult = null;
 
-  private @Nullable Consumer<@Nullable File> resultListener = null;
+  private volatile @Nullable Consumer<@Nullable File> resultListener = null;
+  private volatile @Nullable Runnable onCanceledCallback;
+  private final @NotNull AtomicBoolean canceledCallbackInvoked = new AtomicBoolean(false);
+
   private volatile boolean started = false;
 
   @SuppressLint("WrongConstant")
@@ -105,6 +110,41 @@ public class PerfettoProfiler {
   }
 
   /**
+   * Sets the callback invoked once it is known that this session will not produce a trace file,
+   * either because the OS reported an error or because the result never arrived. Must be set before
+   * {@link #start}, so that an immediate failure (e.g. rate limiting) is not missed.
+   *
+   * <p>The callback runs at most once per instance, on whichever thread learns about the failure —
+   * an OS binder thread, the executor thread running the result timeout, or the caller of {@link
+   * #endAndCollect}.
+   */
+  public void setOnCanceledCallback(final @NotNull Runnable onCanceledCallback) {
+    this.onCanceledCallback = onCanceledCallback;
+  }
+
+  /**
+   * Invoked at most once per instance, and never while {@link #profilingResultLock} is held, as the
+   * callback runs listener code that takes locks of its own.
+   */
+  private void notifyCanceled() {
+    if (!canceledCallbackInvoked.compareAndSet(false, true)) {
+      return;
+    }
+    final @Nullable Runnable callback = onCanceledCallback;
+    if (callback == null) {
+      return;
+    }
+    try {
+      callback.run();
+    } catch (Throwable t) {
+      // The OS delivers results on a binder thread, where an escaping exception ends the process,
+      // and the callback runs listener code we do not control.
+      ExceptionUtils.rethrowIfFatal(t);
+      logger.log(SentryLevel.ERROR, "Failed to notify profiling canceled callback.", t);
+    }
+  }
+
+  /**
    * Cancels the current profiling session. The listener is called with the trace file (or null on
    * error) once the OS delivers the result. The listener may be called synchronously if the result
    * has already arrived, or asynchronously on an OS-managed thread otherwise.
@@ -112,31 +152,49 @@ public class PerfettoProfiler {
   public void endAndCollect(final @NotNull Consumer<@Nullable File> listener) {
     if (!started) {
       logger.log(SentryLevel.WARNING, "PerfettoProfiler was never started");
+      notifyCanceled();
       listener.accept(null);
       return;
     }
 
     cancellationSignal.cancel();
 
+    final boolean resultAlreadyAvailable;
+    boolean noTraceFile = false;
     synchronized (profilingResultLock) {
       final @Nullable ProfilingResult result = profilingResult;
+      resultAlreadyAvailable = result != null;
       if (result != null) {
-        listener.accept(processResult(result));
-        return;
+        final @Nullable File traceFile = processResult(result);
+        noTraceFile = traceFile == null;
+        listener.accept(traceFile);
+      } else {
+        resultListener = listener;
       }
-      resultListener = listener;
+    }
+
+    if (resultAlreadyAvailable) {
+      if (noTraceFile) {
+        notifyCanceled();
+      }
+      return;
     }
 
     try {
       executorService.schedule(
           () -> {
+            boolean timedOut = false;
             synchronized (profilingResultLock) {
               if (resultListener != null) {
                 logger.log(SentryLevel.WARNING, "Timed out waiting for Perfetto profiling result.");
                 resultListener.accept(null);
                 // Nobody consumes a late result anymore, so delete the trace file instead
                 resultListener = this::deleteTraceFile;
+                timedOut = true;
               }
+            }
+            if (timedOut) {
+              notifyCanceled();
             }
           },
           RESULT_TIMEOUT_MS);
@@ -146,18 +204,33 @@ public class PerfettoProfiler {
   }
 
   private void onProfilingResult(final @NotNull ProfilingResult result) {
+    final int errorCode = result.getErrorCode();
+
     logger.log(
         SentryLevel.DEBUG,
         "Perfetto ProfilingResult received: errorCode=%d, filePath=%s",
-        result.getErrorCode(),
+        errorCode,
         result.getResultFilePath());
 
+    // Notify as early as possible: on a rate limit the OS reports back within a few ms, long before
+    // the chunk would have ended, so transactions still in flight can drop the profiler id.
+    if (errorCode != ProfilingResult.ERROR_NONE) {
+      notifyCanceled();
+    }
+
+    boolean noTraceFile = false;
     synchronized (profilingResultLock) {
       profilingResult = result;
       if (resultListener != null) {
-        resultListener.accept(processResult(result));
+        final @Nullable File traceFile = processResult(result);
+        noTraceFile = traceFile == null;
+        resultListener.accept(traceFile);
         resultListener = null;
       }
+    }
+
+    if (noTraceFile) {
+      notifyCanceled();
     }
   }
 

@@ -10,6 +10,7 @@ import io.sentry.CompositePerformanceCollector;
 import io.sentry.DataCategory;
 import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
+import io.sentry.IProfilingCanceledCallback;
 import io.sentry.IScopes;
 import io.sentry.ISentryExecutorService;
 import io.sentry.ISentryLifecycleToken;
@@ -29,14 +30,17 @@ import io.sentry.profilemeasurements.ProfileMeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.SentryRandom;
 import java.io.File;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -60,10 +64,9 @@ import org.jetbrains.annotations.VisibleForTesting;
  * created during {@code Sentry.init()}.
  *
  * <p>Thread safety: all mutable state is guarded by a single {@link
- * io.sentry.util.AutoClosableReentrantLock}. Public entry points ({@link #startProfiler}, {@link
- * #stopProfiler}, {@link #close}, {@link #onRateLimitChanged}, {@link #reevaluateSampling}, and the
- * getters) acquire the lock themselves and are thread-safe. Private methods {@code startInternal}
- * and {@code stopInternal} require the caller to hold the lock.
+ * io.sentry.util.AutoClosableReentrantLock}. Every public entry point acquires the lock itself and
+ * is thread-safe. Private methods tagged {@code Caller must hold the lock} do not, and must only be
+ * reached from a frame that already holds it.
  */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
@@ -95,6 +98,8 @@ public class PerfettoContinuousProfiler
   private int activeTraceCount = 0;
 
   private final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  private final @NotNull Set<IProfilingCanceledCallback> profilingCanceledCallbacks =
+      new HashSet<>();
 
   public PerfettoContinuousProfiler(
       final @NotNull ILogger logger,
@@ -162,6 +167,60 @@ public class PerfettoContinuousProfiler
     }
   }
 
+  @Override
+  public void registerProfilingCanceledCallback(@NotNull IProfilingCanceledCallback callback) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      this.profilingCanceledCallbacks.add(callback);
+    }
+  }
+
+  @Override
+  public void unregisterProfilingCanceledCallback(@NotNull IProfilingCanceledCallback callback) {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      this.profilingCanceledCallbacks.remove(callback);
+    }
+  }
+
+  /**
+   * Invoked once it is known that no profile chunk will be produced for the given profiler id, so
+   * that anything already tagged with it can drop the reference before being sent.
+   *
+   * <p>The id outlives a single chunk, so this may fire more than once for the same id, and it also
+   * invalidates transactions covered by an earlier chunk that was sent successfully. Losing a valid
+   * profile link is preferred over sending a link that resolves to nothing.
+   */
+  private void notifyProfilingCanceled(final @NotNull SentryId canceledProfilerId) {
+    if (canceledProfilerId.equals(SentryId.EMPTY_ID)) {
+      return;
+    }
+    logger.log(
+        SentryLevel.DEBUG,
+        "No profile chunk will be produced for profiler id %s, dropping it.",
+        canceledProfilerId);
+
+    final @NotNull List<IProfilingCanceledCallback> callbacks;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      // The OS can report the failure a few ms into a chunk that would otherwise run for another
+      // minute. Without tearing it down here, transactions started in the meantime would read the
+      // id that was just invalidated, and register too late to ever be told about it.
+      if (isRunning) {
+        stopInternal(false);
+      }
+      // Iterated from a copy, as a listener may unregister itself while being notified.
+      callbacks = new ArrayList<>(profilingCanceledCallbacks);
+    }
+    for (final @NotNull IProfilingCanceledCallback callback : callbacks) {
+      try {
+        callback.onProfilingCanceled(canceledProfilerId);
+      } catch (Throwable t) {
+        // Reachable from an OS binder thread, where an escaping exception ends the process, and one
+        // failing listener must not cost the others their notification.
+        ExceptionUtils.rethrowIfFatal(t);
+        logger.log(SentryLevel.ERROR, "Profiling canceled callback failed.", t);
+      }
+    }
+  }
+
   /**
    * Stop the profiler as soon as we are rate limited, to avoid the performance overhead.
    *
@@ -186,8 +245,12 @@ public class PerfettoContinuousProfiler
       activeTraceCount = 0;
       shouldStop = true;
       if (isTerminating) {
+        final @NotNull SentryId closingProfilerId = profilerId;
         stopInternal(false);
         isClosed.set(true);
+        // sendChunk drops everything once isClosed is set, so the pending chunk is already lost.
+        notifyProfilingCanceled(closingProfilerId);
+        profilingCanceledCallbacks.clear();
       }
     }
   }
@@ -218,7 +281,7 @@ public class PerfettoContinuousProfiler
    * and never used for app-start profiling, scopes is guaranteed to be available by the time
    * startProfiler is called.
    *
-   * <p>Caller must hold {@link #lock}.
+   * <p>Caller must hold the lock.
    */
   private @NotNull IScopes resolveScopes() {
     if (scopes != null && scopes != NoOpScopes.getInstance()) {
@@ -240,9 +303,13 @@ public class PerfettoContinuousProfiler
     return scopes;
   }
 
-  /** Caller must hold {@link #lock}. */
+  /** Caller must hold the lock. */
   private void startInternal() {
     final @NotNull IScopes scopes = resolveScopes();
+
+    // On a restart the id carries over from the previous chunk, so transactions may already be
+    // tagged with it when any of the bail-outs below hit.
+    final @NotNull SentryId profilerIdBeforeStart = profilerId;
 
     final @Nullable RateLimiter rateLimiter = scopes.getRateLimiter();
     if (rateLimiter != null
@@ -250,6 +317,7 @@ public class PerfettoContinuousProfiler
             || rateLimiter.isActiveForCategory(DataCategory.ProfileChunkUi))) {
       logger.log(SentryLevel.WARNING, "SDK is rate limited. Stopping profiler.");
       stopInternal(false);
+      notifyProfilingCanceled(profilerIdBeforeStart);
       return;
     }
 
@@ -257,26 +325,37 @@ public class PerfettoContinuousProfiler
     if (scopes.getOptions().getConnectionStatusProvider().getConnectionStatus() == DISCONNECTED) {
       logger.log(SentryLevel.WARNING, "Device is offline. Stopping profiler.");
       stopInternal(false);
+      notifyProfilingCanceled(profilerIdBeforeStart);
       return;
     }
     startProfileChunkTimestamp = scopes.getOptions().getDateProvider().now();
 
     perfettoProfiler = perfettoProfilerFactory.get();
     if (perfettoProfiler == null) {
+      logger.log(SentryLevel.ERROR, "PerfettoProfiler is not available. Stopping profiler.");
+      profilerId = SentryId.EMPTY_ID;
+      notifyProfilingCanceled(profilerIdBeforeStart);
       return;
     }
+    // The id has to exist before the callback is installed: the OS may report a rate limit while
+    // start() is still on the stack, and the callback needs to name the id it is invalidating.
+    if (profilerId.equals(SentryId.EMPTY_ID)) {
+      profilerId = new SentryId();
+    }
+    final @NotNull SentryId chunkProfilerId = profilerId;
+
+    perfettoProfiler.setOnCanceledCallback(() -> notifyProfilingCanceled(chunkProfilerId));
+
     if (!perfettoProfiler.start(MAX_CHUNK_DURATION_MILLIS)) {
       logger.log(
           SentryLevel.ERROR,
           "Failed to start Perfetto profiling. PerfettoProfiler.start() returned false.");
+      profilerId = SentryId.EMPTY_ID;
+      notifyProfilingCanceled(chunkProfilerId);
       return;
     }
 
     isRunning = true;
-
-    if (profilerId.equals(SentryId.EMPTY_ID)) {
-      profilerId = new SentryId();
-    }
 
     if (chunkId.equals(SentryId.EMPTY_ID)) {
       chunkId = new SentryId();
@@ -304,7 +383,7 @@ public class PerfettoContinuousProfiler
     }
   }
 
-  /** Caller must hold {@link #lock}. */
+  /** Caller must hold the lock. */
   private void stopInternal(final boolean restartProfiler) {
     final @Nullable PerfettoProfiler currentProfiler = perfettoProfiler;
 

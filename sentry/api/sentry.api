@@ -831,8 +831,10 @@ public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRunning ()Z
 	public abstract fun reevaluateSampling ()V
+	public abstract fun registerProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 	public abstract fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
 	public abstract fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+	public abstract fun unregisterProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 }
 
 public abstract interface class io/sentry/IDistributionApi {
@@ -898,6 +900,10 @@ public abstract interface class io/sentry/IPerformanceSnapshotCollector : io/sen
 
 public abstract interface class io/sentry/IProfileConverter {
 	public abstract fun convertFromFile (Ljava/lang/String;)Lio/sentry/protocol/profiling/SentryProfile;
+}
+
+public abstract interface class io/sentry/IProfilingCanceledCallback {
+	public abstract fun onProfilingCanceled (Lio/sentry/protocol/SentryId;)V
 }
 
 public abstract interface class io/sentry/IReplayApi {
@@ -1587,8 +1593,10 @@ public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfi
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
 	public fun reevaluateSampling ()V
+	public fun registerProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
 	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+	public fun unregisterProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 }
 
 public final class io/sentry/NoOpDistributionApi : io/sentry/IDistributionApi {
@@ -4211,7 +4219,7 @@ public final class io/sentry/SentryTraceHeader {
 	public fun isSampled ()Ljava/lang/Boolean;
 }
 
-public final class io/sentry/SentryTracer : io/sentry/ITransaction {
+public final class io/sentry/SentryTracer : io/sentry/IProfilingCanceledCallback, io/sentry/ITransaction {
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IScopes;)V
 	public fun <init> (Lio/sentry/TransactionContext;Lio/sentry/IScopes;Lio/sentry/TransactionOptions;)V
 	public fun addFeatureFlag (Ljava/lang/String;Ljava/lang/Boolean;)V
@@ -4243,6 +4251,7 @@ public final class io/sentry/SentryTracer : io/sentry/ITransaction {
 	public fun isProfileSampled ()Ljava/lang/Boolean;
 	public fun isSampled ()Ljava/lang/Boolean;
 	public fun makeCurrent ()Lio/sentry/ISentryLifecycleToken;
+	public fun onProfilingCanceled (Lio/sentry/protocol/SentryId;)V
 	public fun scheduleFinish ()V
 	public fun setContext (Ljava/lang/String;Ljava/lang/Object;)V
 	public fun setData (Ljava/lang/String;Ljava/lang/Object;)V

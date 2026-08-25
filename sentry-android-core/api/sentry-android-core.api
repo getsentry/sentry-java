@@ -49,8 +49,10 @@ public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IConti
 	public fun isRunning ()Z
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 	public fun reevaluateSampling ()V
+	public fun registerProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
 	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+	public fun unregisterProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 }
 
 public final class io/sentry/android/core/AndroidCpuCollector : io/sentry/IPerformanceSnapshotCollector {
@@ -373,13 +375,16 @@ public class io/sentry/android/core/PerfettoContinuousProfiler : io/sentry/ICont
 	public fun isRunning ()Z
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
 	public fun reevaluateSampling ()V
+	public fun registerProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
 	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+	public fun unregisterProfilingCanceledCallback (Lio/sentry/IProfilingCanceledCallback;)V
 }
 
 public class io/sentry/android/core/PerfettoProfiler {
 	public fun <init> (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/ISentryExecutorService;)V
 	public fun endAndCollect (Ljava/util/function/Consumer;)V
+	public fun setOnCanceledCallback (Ljava/lang/Runnable;)V
 	public fun start (J)Z
 }
 
