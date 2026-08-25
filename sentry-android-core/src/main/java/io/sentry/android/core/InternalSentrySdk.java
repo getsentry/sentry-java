@@ -265,6 +265,19 @@ public final class InternalSentrySdk {
   }
 
   /**
+   * Session side effects of {@link #captureEnvelopeNonTerminating(byte[])} without sending the
+   * event. Hybrid SDKs should call this when an error is dropped by sample rate or rate limiting.
+   *
+   * <p>Do not call this for events dropped by {@code beforeSend} or ignored exception types.
+   *
+   * @param crashed {@code true} if the dropped error was unhandled ({@code
+   *     mechanism.handled=false})
+   */
+  public static void updateSessionForDroppedEventNonTerminating(final boolean crashed) {
+    updateSessionNonTerminating(crashed);
+  }
+
+  /**
    * Flags the current session for a non-terminating hybrid error and persists it before returning,
    * so the marker survives an immediate process death.
    *
