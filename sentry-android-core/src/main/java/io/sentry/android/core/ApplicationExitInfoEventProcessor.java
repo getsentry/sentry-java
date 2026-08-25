@@ -349,16 +349,19 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
   @SuppressWarnings("unchecked")
   private void setBreadcrumbs(final @NotNull SentryBaseEvent event) {
+    final List<Breadcrumb> eventBreadcrumbs = event.getBreadcrumbs();
+    if (eventBreadcrumbs != null && !eventBreadcrumbs.isEmpty()) {
+      // the event already carries its own breadcrumbs (e.g. a tombstone-merged native
+      // crash event), so appending the persisted ones here would duplicate entries. Skip the
+      // disk read altogether since the result would be discarded anyway.
+      return;
+    }
     final List<Breadcrumb> breadcrumbs =
         (List<Breadcrumb>) readFromDisk(options, BREADCRUMBS_FILENAME, List.class);
     if (breadcrumbs == null) {
       return;
     }
-    if (event.getBreadcrumbs() == null) {
-      event.setBreadcrumbs(breadcrumbs);
-    } else {
-      event.getBreadcrumbs().addAll(breadcrumbs);
-    }
+    event.setBreadcrumbs(breadcrumbs);
   }
 
   @SuppressWarnings("unchecked")

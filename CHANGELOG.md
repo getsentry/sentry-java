@@ -4,11 +4,20 @@
 
 ### Fixes
 
-- Drop the `profiler_id` from in-flight transactions when Android's `ProfilingManager` reports that no profile will be produced ([#5993](https://github.com/getsentry/sentry-java/pull/5993))
-  - Previously a rate-limited or failed Perfetto profiling request still left a `profiler_id` on transactions, pointing at a profile that never arrived
+- Prevent duplicated breadcrumbs on tombstone-merged native crash events ([#5888](https://github.com/getsentry/sentry-java/pull/5888))
+- Prevent a class of Session Replay deadlocks by confining lifecycle state changes to Android's main thread ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
+- Drop the `profiler_id` from in-flight transactions when Android's `ProfilingManager` rejects profiling requests ([#5993](https://github.com/getsentry/sentry-java/pull/5993))
+  - Previously a rate-limited or failed Perfetto profiling request still left a `profiler_id` on transactions, pointing to non-existent profiles
+
+### Features
+
+- Add screenshot attachment button to the Android user feedback widget ([#5828](https://github.com/getsentry/sentry-java/pull/5828))
+  - Users can now attach a screenshot when submitting feedback. Enabled by default; can be disabled via `SentryFeedbackOptions.setEnableAttachScreenshot(false)` or the `io.sentry.feedback.enable-attach-screenshot` manifest flag.
+  - Requires the `androidx.activity` `>=1.8.2` dependency
 
 ### Performance
 
+- Defer starting Session Replay off the SDK initialization critical path ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
 - Use manifest metadata resolved at build time to reduce Android SDK initialization overhead ([#5976](https://github.com/getsentry/sentry-java/pull/5976))
 
 ### Dependencies

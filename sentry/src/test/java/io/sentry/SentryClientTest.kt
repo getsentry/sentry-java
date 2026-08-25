@@ -3508,8 +3508,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3524,8 +3525,9 @@ class SentryClientTest {
     var terminated: Boolean? = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           terminated = isTerminating
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3545,7 +3547,7 @@ class SentryClientTest {
     val replayId = SentryId()
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {}
+        override fun captureReplay(isTerminating: Boolean?): SentryId = replayId
       }
     )
     val sut = fixture.getSut()
@@ -3603,8 +3605,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3625,8 +3628,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3665,8 +3669,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3685,8 +3690,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3705,8 +3711,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3721,8 +3728,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3742,7 +3750,7 @@ class SentryClientTest {
     var receivedHint: Hint? = null
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {}
+        override fun captureReplay(isTerminating: Boolean?): SentryId = SentryId.EMPTY_ID
       }
     )
     fixture.sentryOptions.sessionReplay.beforeErrorSampling =
@@ -3765,8 +3773,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3928,7 +3937,7 @@ class SentryClientTest {
     val replayController = mock<ReplayController>()
     val replayId = SentryId()
     val scope = createScope()
-    whenever(replayController.captureReplay(any())).thenAnswer { run { scope.replayId = replayId } }
+    whenever(replayController.captureReplay(any())).thenReturn(replayId)
     val sut = fixture.getSut { it.setReplayController(replayController) }
     // When there is no replay id in the feedback
     sut.captureFeedback(Feedback("message"), null, scope)
@@ -3938,7 +3947,7 @@ class SentryClientTest {
 
     val sentFeedback = sentEvent!!.contexts.feedback
     assertNotNull(sentFeedback)
-    // And the replay id is set to the one from the scope (coming from the replay controller)
+    // And the replay id returned by the replay controller is set
     assertEquals(replayId, sentFeedback.replayId)
   }
 
@@ -3952,7 +3961,7 @@ class SentryClientTest {
     val replayController = mock<ReplayController>()
     val replayId = SentryId()
     val scope = createScope()
-    whenever(replayController.captureReplay(any())).thenAnswer { run { scope.replayId = replayId } }
+    whenever(replayController.captureReplay(any())).thenReturn(replayId)
     val sut = fixture.getSut { it.setReplayController(replayController) }
     // When there is replay id in the feedback
     val feedback = Feedback("message")

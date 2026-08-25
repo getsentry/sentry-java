@@ -26,7 +26,6 @@ import io.sentry.protocol.SentryId
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
-import io.sentry.util.Random
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -110,17 +109,14 @@ class BufferCaptureStrategyTest {
         .orEmpty()
 
     fun getSut(
-      onErrorSampleRate: Double = 1.0,
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
       replayCacheDir: File? = null,
     ): BufferCaptureStrategy {
       replayCacheDir?.let { whenever(replayCache.replayCacheDir).thenReturn(it) }
-      options.run { sessionReplay.onErrorSampleRate = onErrorSampleRate }
       return BufferCaptureStrategy(
         options,
         scopes,
         dateProvider,
-        Random(),
         mock {
           whenever(it.submit(any<Runnable>())).doAnswer { invocation ->
             (invocation.arguments[0] as Runnable).run()
@@ -356,16 +352,6 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
-  fun `captureReplay does not replayId to scope when not sampled`() {
-    val strategy = fixture.getSut(onErrorSampleRate = 0.0)
-    strategy.start()
-
-    strategy.captureReplay(false) {}
-
-    assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
-  }
-
-  @Test
   fun `captureReplay does not capture segments when rate-limited`() {
     val rateLimiter = mock<RateLimiter> { on { isActiveForCategory(any()) }.thenReturn(true) }
     whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
@@ -378,9 +364,6 @@ class BufferCaptureStrategyTest {
 
     // neither the current nor the buffered segment should be sent while rate-limited
     verify(fixture.scopes, never()).captureReplay(any(), any())
-    // the replayId is still set on the scope so the error that flushed the buffer stays linked to
-    // the replay that gets recorded once the rate limit lifts
-    assertEquals(strategy.currentReplayId, fixture.scope.replayId)
   }
 
   @Test
@@ -412,7 +395,7 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
-  fun `captureReplay sets replayId to scope and captures buffered segments`() {
+  fun `captureReplay captures buffered segments`() {
     var called = false
     val strategy = fixture.getSut()
     strategy.start()
@@ -424,7 +407,6 @@ class BufferCaptureStrategyTest {
 
     // buffered + current = 2
     verify(fixture.scopes, times(2)).captureReplay(any(), any())
-    assertEquals(strategy.currentReplayId, fixture.scope.replayId)
     assertTrue(called)
   }
 

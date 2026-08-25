@@ -4,8 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888
+import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.Hint
@@ -34,6 +36,7 @@ import io.sentry.android.replay.capture.CaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
 import io.sentry.android.replay.gestures.GestureRecorder
+import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.tape.QueueFile
@@ -47,14 +50,18 @@ import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
-import io.sentry.util.Random
+import io.sentry.util.thread.IThreadChecker
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.util.Date
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.awaitility.kotlin.await
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
@@ -73,6 +80,7 @@ import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
@@ -83,6 +91,10 @@ class ReplayIntegrationTest {
   internal class Fixture {
     val options =
       SentryOptions().apply {
+        threadChecker =
+          mock<IThreadChecker> {
+            on { isMainThread }.thenAnswer { Looper.myLooper() == Looper.getMainLooper() }
+          }
         setReplayController(
           mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) }
         )
@@ -128,6 +140,14 @@ class ReplayIntegrationTest {
       replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null,
       gestureRecorderProvider: (() -> GestureRecorder)? = null,
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
+      mainLooperHandler: MainLooperHandler = mock {
+        doAnswer {
+            (it.arguments[0] as Runnable).run()
+            true
+          }
+          .whenever(mock)
+          .post(any())
+      },
     ): ReplayIntegration {
       options.run {
         sessionReplay.onErrorSampleRate = onErrorSampleRate
@@ -142,6 +162,7 @@ class ReplayIntegrationTest {
         recorderProvider,
         replayCacheProvider = { _ -> replayCache },
         replayCaptureStrategyProvider = replayCaptureStrategyProvider,
+        mainLooperHandler = mainLooperHandler,
         gestureRecorderProvider = gestureRecorderProvider,
       )
     }
@@ -213,6 +234,25 @@ class ReplayIntegrationTest {
     replay.start()
 
     assertTrue(replay.isRecording)
+  }
+
+  @Test
+  fun `start is deferred when called on main`() {
+    val captureStrategy = mock<CaptureStrategy>()
+    val replay =
+      fixture.getSut(
+        context,
+        replayCaptureStrategyProvider = { captureStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+
+    replay.start()
+
+    assertThat(replay.isRecording).isFalse()
+    verify(captureStrategy, never()).start(any(), any(), anyOrNull())
+    shadowOf(Looper.getMainLooper()).idle()
+    assertThat(replay.isRecording).isTrue()
   }
 
   @Test
@@ -337,6 +377,7 @@ class ReplayIntegrationTest {
   fun `captureReplay calls and converts strategy`() {
     val captureStrategy =
       mock<CaptureStrategy> { whenever(mock.currentReplayId).thenReturn(SentryId()) }
+    whenever(captureStrategy.convert()).thenReturn(captureStrategy)
     val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
 
     replay.register(fixture.scopes, fixture.options)
@@ -350,6 +391,138 @@ class ReplayIntegrationTest {
 
     verify(captureStrategy).captureReplay(eq(false), any())
     verify(captureStrategy).convert()
+  }
+
+  @Test
+  fun `captureReplay returns replay id and sets scope before queued capture`() {
+    val replayId = SentryId()
+    val captureStrategy = mock<BufferCaptureStrategy>()
+    whenever(captureStrategy.currentReplayId).thenReturn(replayId)
+    whenever(captureStrategy.convert()).thenReturn(captureStrategy)
+    val replay =
+      fixture.getSut(
+        context,
+        sessionSampleRate = 0.0,
+        replayCaptureStrategyProvider = { captureStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    val returnedReplayId = replay.captureReplay(false)
+
+    assertThat(returnedReplayId).isEqualTo(replayId)
+    assertThat(fixture.scope.replayId).isEqualTo(replayId)
+    verify(captureStrategy, never()).captureReplay(any(), any())
+    shadowOf(Looper.getMainLooper()).idle()
+    verify(captureStrategy).captureReplay(eq(false), any())
+  }
+
+  @Test
+  fun `terminating capture marks strategy synchronously without conversion`() {
+    val replayId = SentryId()
+    val captureStrategy = mock<BufferCaptureStrategy>()
+    whenever(captureStrategy.currentReplayId).thenReturn(replayId)
+    val replay =
+      fixture.getSut(
+        context,
+        sessionSampleRate = 0.0,
+        replayCaptureStrategyProvider = { captureStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertThat(replay.captureReplay(true)).isEqualTo(replayId)
+
+    verify(captureStrategy).captureReplay(eq(true), any())
+    verify(captureStrategy, never()).convert()
+  }
+
+  @Test
+  fun `captureReplay returns empty id when error replay is not sampled`() {
+    val captureStrategy = mock<BufferCaptureStrategy>()
+    whenever(captureStrategy.currentReplayId).thenReturn(SentryId())
+    val replay =
+      fixture.getSut(
+        context,
+        sessionSampleRate = 0.0,
+        onErrorSampleRate = 0.0,
+        replayCaptureStrategyProvider = { captureStrategy },
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    assertThat(replay.captureReplay(false)).isEqualTo(SentryId.EMPTY_ID)
+    verify(captureStrategy, never()).captureReplay(any(), any())
+  }
+
+  @Test
+  fun `capture queued after stop cannot resurrect replay`() {
+    val replayId = SentryId()
+    val captureStrategy = mock<BufferCaptureStrategy>()
+    whenever(captureStrategy.currentReplayId).thenReturn(replayId)
+    val replay =
+      fixture.getSut(
+        context,
+        sessionSampleRate = 0.0,
+        replayCaptureStrategyProvider = { captureStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    replay.stop()
+    assertThat(replay.captureReplay(false)).isEqualTo(replayId)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertThat(replay.isRecording).isFalse()
+    assertThat(replay.replayId).isEqualTo(SentryId.EMPTY_ID)
+    assertThat(fixture.scope.replayId).isEqualTo(SentryId.EMPTY_ID)
+    verify(captureStrategy, never()).captureReplay(any(), any())
+  }
+
+  @Test
+  fun `stale capture callback cannot mutate restarted replay`() {
+    val oldReplayId = SentryId()
+    val newReplayId = SentryId()
+    var onSegmentSent: ((Date) -> Unit)? = null
+    val oldStrategy = mock<BufferCaptureStrategy>()
+    whenever(oldStrategy.currentReplayId).thenReturn(oldReplayId)
+    whenever(oldStrategy.convert()).thenReturn(oldStrategy)
+    doAnswer {
+        @Suppress("UNCHECKED_CAST")
+        onSegmentSent = it.arguments[1] as (Date) -> Unit
+      }
+      .whenever(oldStrategy)
+      .captureReplay(any(), any())
+    val newStrategy = mock<CaptureStrategy>()
+    whenever(newStrategy.currentReplayId).thenReturn(newReplayId)
+    whenever(newStrategy.currentSegment).thenThrow(AssertionError("stale callback"))
+    var starts = 0
+    val replay =
+      fixture.getSut(
+        context,
+        sessionSampleRate = 0.0,
+        replayCaptureStrategyProvider = { if (starts++ == 0) oldStrategy else newStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    shadowOf(Looper.getMainLooper()).idle()
+    replay.captureReplay(false)
+    shadowOf(Looper.getMainLooper()).idle()
+
+    replay.stop()
+    replay.start()
+    shadowOf(Looper.getMainLooper()).idle()
+    onSegmentSent?.invoke(Date())
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertThat(replay.replayId).isEqualTo(newReplayId)
   }
 
   @Test
@@ -442,6 +615,120 @@ class ReplayIntegrationTest {
     verify(recorder).close()
     verify(captureStrategy).stop()
     assertFalse(replay.isRecording())
+  }
+
+  @Test
+  fun `background lifecycle calls run on main thread in order`() {
+    val calls = mutableListOf<String>()
+    val captureStrategy =
+      mock<CaptureStrategy> {
+        doAnswer { calls += "start" }.whenever(mock).start(any(), any(), anyOrNull())
+        doAnswer { calls += "pause" }.whenever(mock).pause()
+        doAnswer { calls += "resume" }.whenever(mock).resume()
+        doAnswer { calls += "stop" }.whenever(mock).stop()
+      }
+    val replay =
+      fixture.getSut(
+        context,
+        replayCaptureStrategyProvider = { captureStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+
+    Thread { replay.start() }
+      .apply {
+        start()
+        join()
+      }
+    replay.pause()
+    replay.resume()
+    replay.stop()
+
+    assertThat(calls).isEmpty()
+    shadowOf(Looper.getMainLooper()).idle()
+    assertThat(calls).containsExactly("start", "pause", "resume", "stop").inOrder()
+  }
+
+  @Test
+  fun `background close waits for main thread teardown`() {
+    fixture.options.shutdownTimeoutMillis = TimeUnit.SECONDS.toMillis(30)
+    val recorder = mock<Recorder>()
+    val replay =
+      fixture.getSut(
+        context,
+        recorderProvider = { recorder },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    val closeThread = Thread { replay.close() }.apply { start() }
+    await.until { closeThread.state == Thread.State.TIMED_WAITING }
+
+    verify(recorder, never()).close()
+    shadowOf(Looper.getMainLooper()).idle()
+    closeThread.join(TimeUnit.SECONDS.toMillis(2))
+
+    assertThat(closeThread.isAlive).isFalse()
+    verify(recorder).close()
+  }
+
+  @Test
+  fun `background close timeout leaves cleanup queued on main thread`() {
+    fixture.options.shutdownTimeoutMillis = 1
+    val recorder = mock<Recorder>()
+    val captureStrategy = mock<CaptureStrategy>()
+    val replay =
+      fixture.getSut(
+        context,
+        recorderProvider = { recorder },
+        replayCaptureStrategyProvider = { captureStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    shadowOf(Looper.getMainLooper()).idle()
+    val replayExecutor = replay.replayExecutor
+
+    val closeThread = Thread { replay.close() }.apply { start() }
+    closeThread.join(TimeUnit.SECONDS.toMillis(2))
+
+    assertThat(closeThread.isAlive).isFalse()
+    assertThat(replayExecutor.isShutdown).isFalse()
+    verify(recorder, never()).close()
+
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(recorder).close()
+    assertThat(replayExecutor.isShutdown).isTrue()
+  }
+
+  @Test
+  fun `main thread close does not wait for replay executor`() {
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { mock() })
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+
+    val running = CountDownLatch(1)
+    val release = CountDownLatch(1)
+    val finished = CountDownLatch(1)
+    replay.replayExecutor.submit {
+      running.countDown()
+      try {
+        release.await()
+      } finally {
+        finished.countDown()
+      }
+    }
+    assertThat(running.await(10, TimeUnit.SECONDS)).isTrue()
+
+    try {
+      replay.close()
+      assertThat(finished.count).isEqualTo(1L)
+    } finally {
+      release.countDown()
+    }
+    assertThat(finished.await(10, TimeUnit.SECONDS)).isTrue()
   }
 
   @Test
@@ -746,7 +1033,6 @@ class ReplayIntegrationTest {
             ICurrentDateProvider {
               System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
             },
-            Random(),
             // run tasks synchronously in tests
             mock {
               whenever(mock.submit(any<Runnable>())).doAnswer {
