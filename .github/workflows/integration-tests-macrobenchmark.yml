@@ -7,11 +7,11 @@ name: 'Integration Tests - Macrobenchmark'
 # Absolute numbers from a cloud device with unlocked CPU clocks are close to unreadable; a delta
 # measured against a baseline on the same device in the same session is not.
 #
-# Opt-in per PR: a full run costs two Gradle builds and up to an hour of a Sauce device at
-# concurrency 1, which is far too much to spend on every push.
+# Runs on every pull request. One run costs two Gradle builds and up to an hour of a Sauce device
+# at concurrency 1, so the concurrency group below matters: a new push supersedes the in-flight
+# run for that PR rather than queueing behind it.
 on:
   pull_request:
-    types: [labeled, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -21,7 +21,6 @@ jobs:
   macrobenchmark:
     name: Macrobenchmark
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'run-macrobenchmark')
 
     permissions:
       contents: read

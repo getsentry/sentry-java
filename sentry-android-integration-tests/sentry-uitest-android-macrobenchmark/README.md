@@ -2,7 +2,7 @@
 
 Jetpack Macrobenchmark for cold-start of `sentry-samples-android`, used to evaluate SDK-init
 performance changes on a real device in a **stable, reproducible** way. Runs on Sauce Labs from the
-`Integration Tests - Macrobenchmark` workflow, on any PR labelled `run-macrobenchmark`.
+`Integration Tests - Macrobenchmark` workflow, on every pull request.
 
 ## What it measures
 
@@ -104,11 +104,13 @@ device: it builds the sample app from the PR merge and from the base commit, shi
 the comparison to the job summary and to a PR comment it keeps updating. It reports numbers only
 and never fails on them.
 
-It runs only on PRs carrying the **`run-macrobenchmark`** label — add the label to start a run,
-and subsequent pushes to that PR re-run it. A full run costs two Gradle builds and up to an hour
-of a Sauce device at concurrency 1, which is far too much to spend on every push. PRs from forks
-get no secrets, so the Sauce steps skip; do not reach for `pull_request_target` to change that, as
-it would run a fork's build scripts with our Sauce credentials in scope.
+It runs on every pull request. One run costs two Gradle builds and up to an hour of a Sauce device
+at concurrency 1, so the workflow's concurrency group cancels a PR's in-flight run when a new push
+arrives. If that turns out to be too expensive in aggregate, the cheapest lever is a `paths` filter
+or a label gate on the job — neither changes anything else here.
+
+PRs from forks get no secrets, so the Sauce steps skip. Do not reach for `pull_request_target` to
+change that: it would run a fork's build scripts with our Sauce credentials in scope.
 
 Two configuration details in `.sauce/sentry-uitest-android-macrobenchmark.yml` are load-bearing:
 
