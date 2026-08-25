@@ -32,7 +32,9 @@ public final class NoOpReplayController implements ReplayController {
   }
 
   @Override
-  public void captureReplay(@Nullable Boolean isTerminating) {}
+  public @NotNull SentryId captureReplay(@Nullable Boolean isTerminating) {
+    return SentryId.EMPTY_ID;
+  }
 
   @Override
   public @NotNull SentryId getReplayId() {

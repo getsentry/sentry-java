@@ -18,12 +18,10 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.rotateEvents
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
-import io.sentry.android.replay.util.sample
 import io.sentry.clientreport.DiscardReason.RATELIMIT_BACKOFF
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
-import io.sentry.util.Random
 import java.io.File
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
@@ -46,7 +44,6 @@ internal class BufferCaptureStrategy(
   private val options: SentryOptions,
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,
-  private val random: Random,
   executor: ScheduledExecutorService,
   persistingExecutor: ScheduledExecutorService,
   replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
@@ -91,20 +88,6 @@ internal class BufferCaptureStrategy(
   }
 
   override fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit) {
-    val sampled = random.sample(options.sessionReplay.onErrorSampleRate)
-
-    if (!sampled) {
-      options.logger.log(
-        INFO,
-        "Replay wasn't sampled by onErrorSampleRate, not capturing for event",
-      )
-      return
-    }
-
-    // write replayId to scope right away, so it gets picked up by the event that caused buffer
-    // to flush
-    scopes?.configureScope { it.replayId = currentReplayId }
-
     if (isTerminating) {
       this.isTerminating.set(true)
       // avoid capturing replay, because the video will be malformed
