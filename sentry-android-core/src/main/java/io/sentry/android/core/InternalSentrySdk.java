@@ -314,15 +314,15 @@ public final class InternalSentrySdk {
   }
 
   /**
-   * Reads an envelope from the given bytes. Besides the declared {@link IOException}, {@link
-   * io.sentry.IEnvelopeReader#read(InputStream)} also rejects malformed payloads with an unchecked
-   * {@link IllegalArgumentException}, hence the broader catch.
+   * Reads an envelope from the given bytes. {@link io.sentry.IEnvelopeReader#read(InputStream)}
+   * declares {@link IOException} and additionally rejects malformed payloads with an unchecked
+   * {@link IllegalArgumentException}.
    */
   private static @Nullable SentryEnvelope readEnvelope(
       final @NotNull SentryOptions options, final @NotNull byte[] envelopeData) {
     try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
       return options.getEnvelopeReader().read(envelopeInputStream);
-    } catch (Exception e) {
+    } catch (IOException | IllegalArgumentException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to read envelope", e);
       return null;
     }
