@@ -135,13 +135,13 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
       final @Nullable FeatureFlagBuffer isolationBuffer,
       final @Nullable FeatureFlagBuffer currentBuffer) {
 
-    // Capture references to avoid inconsistencies from concurrent modifications
+    // Capture snapshots to avoid inconsistencies from concurrent modifications
     final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> globalFlags =
-        globalBuffer == null ? null : globalBuffer.flags;
+        globalBuffer == null ? null : new CopyOnWriteArrayList<>(globalBuffer.flags);
     final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> isolationFlags =
-        isolationBuffer == null ? null : isolationBuffer.flags;
+        isolationBuffer == null ? null : new CopyOnWriteArrayList<>(isolationBuffer.flags);
     final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> currentFlags =
-        currentBuffer == null ? null : currentBuffer.flags;
+        currentBuffer == null ? null : new CopyOnWriteArrayList<>(currentBuffer.flags);
 
     final int globalSize = globalFlags == null ? 0 : globalFlags.size();
     final int isolationSize = isolationFlags == null ? 0 : isolationFlags.size();

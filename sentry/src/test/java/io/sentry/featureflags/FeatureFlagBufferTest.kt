@@ -1,6 +1,12 @@
 package io.sentry.featureflags
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryOptions
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -346,5 +352,49 @@ class FeatureFlagBufferTest {
 
     val featureFlags = buffer.featureFlags
     assertNotNull(featureFlags)
+  }
+
+  @Test
+  fun `merging is safe while another thread adds flags`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 100 }
+    val globalBuffer = FeatureFlagBuffer.create(options)
+    val isolationBuffer = FeatureFlagBuffer.create(options)
+    val currentBuffer = FeatureFlagBuffer.create(options)
+
+    repeat(options.maxFeatureFlags) { globalBuffer.add("initial$it", true) }
+
+    val stop = AtomicBoolean(false)
+    val writerFailure = AtomicReference<Throwable?>(null)
+    val writerOperations = AtomicInteger()
+    val writerStarted = CountDownLatch(1)
+    val writer = Thread {
+      try {
+        var i = 0
+        while (!stop.get()) {
+          globalBuffer.add("flag${i++ % 150}", true)
+          writerOperations.incrementAndGet()
+          writerStarted.countDown()
+        }
+      } catch (e: Exception) {
+        writerFailure.set(e)
+      }
+    }
+
+    writer.start()
+    try {
+      assertThat(writerStarted.await(5, TimeUnit.SECONDS)).isTrue()
+      val writerOperationsBeforeMerging = writerOperations.get()
+
+      repeat(10_000) {
+        FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer).featureFlags
+      }
+
+      assertThat(writerOperations.get()).isGreaterThan(writerOperationsBeforeMerging)
+    } finally {
+      stop.set(true)
+      writer.join()
+    }
+
+    assertThat(writerFailure.get()).isNull()
   }
 }
