@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
 
-  private volatile @NotNull CopyOnWriteArrayList<FeatureFlagEntry> flags;
+  private final @NotNull CopyOnWriteArrayList<FeatureFlagEntry> flags;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private int maxSize;
 
