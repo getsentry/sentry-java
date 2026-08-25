@@ -396,7 +396,7 @@ class TombstoneParserTest {
   }
 
   @Test
-  fun `coalesces ELF continuation aligned for 16 KiB pages`() {
+  fun `coalesces multiple ELF continuations aligned for 16 KiB pages`() {
     val apkPath = "/data/app/io.sentry.sample/base.apk"
     val buildId = "f1c3bcc0279865fe3058404b2831d9e64135386c"
 
@@ -433,12 +433,27 @@ class TombstoneParserTest {
             0,
           )
         )
+        // Each PT_LOAD adds one page of alignment drift. Validation must compare adjacent
+        // mappings so this drift does not accumulate from the start of the module.
+        .addMemoryMapping(
+          MemoryMapping(
+            0x700000b000,
+            0x700000d000,
+            0x156f000,
+            true,
+            true,
+            false,
+            apkPath,
+            "",
+            0,
+          )
+        )
         .build()
 
     val image = parser.parse(tombstone).debugMeta!!.images!!.single()
 
     assertThat(image.imageAddr).isEqualTo("0x7000000000")
-    assertThat(image.imageSize).isEqualTo(0x7000)
+    assertThat(image.imageSize).isEqualTo(0xd000)
   }
 
   @Test
@@ -624,7 +639,8 @@ class TombstoneParserTest {
       TombstoneParser(tombstoneStream, inAppIncludes, inAppExcludes, nativeLibraryDir).parse()
     val buildId = "a1647a1813da20ea7e0dad6cbc11486dfaeaeb8e"
 
-    val image = event.debugMeta!!.images!!.single { it.codeId == buildId }
+    val images = event.debugMeta!!.images!!
+    val image = images.single { it.codeId == buildId }
 
     assertThat(image.type).isEqualTo("elf")
     assertThat(image.codeFile).endsWith("/base.apk")
@@ -640,6 +656,13 @@ class TombstoneParserTest {
     assertThat(frames).hasSize(2)
     assertThat(frames.map { it.imageAddr }).containsExactly("0x7646619000", "0x7646619000")
     assertThat(frames.map { it.instructionAddr }).containsExactly("0x7646619ac4", "0x7646619ae4")
+
+    // This tombstone was captured on a 4 KiB device, but these ELFs use 16 KiB PT_LOAD
+    // alignment. Their mappings still need to be fully coalesced.
+    assertThat(images.single { it.codeId == "f86d542eccd3f652ab08ff210b5d009ef6c14cfe" }.imageSize)
+      .isEqualTo(0xcc000)
+    assertThat(images.single { it.codeId == "d76a948eaadeea8d0d1b17cdb026d8b4e4c39384" }.imageSize)
+      .isEqualTo(0x9000)
   }
 
   @Test

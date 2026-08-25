@@ -262,18 +262,25 @@ public class TombstoneParser implements Closeable {
    * runtime instruction addresses in the files uploaded for symbolication.
    */
   private static class ModuleAccumulator {
+    private static final long PAGE_SIZE_4KIB = 4096;
+    private static final long PAGE_SIZE_16KIB = 16384;
+
     String mappingName;
     String buildId;
     long beginAddress;
     long endAddress;
-    long startOffset;
+    long previousBeginAddress;
+    long previousEndAddress;
+    long previousOffset;
 
     ModuleAccumulator(MemoryMapping mapping) {
       this.mappingName = mapping.mappingName;
       this.buildId = mapping.buildId;
       this.beginAddress = mapping.beginAddress;
       this.endAddress = mapping.endAddress;
-      this.startOffset = mapping.offset;
+      this.previousBeginAddress = mapping.beginAddress;
+      this.previousEndAddress = mapping.endAddress;
+      this.previousOffset = mapping.offset;
     }
 
     boolean isSameModule(MemoryMapping mapping) {
@@ -282,22 +289,30 @@ public class TombstoneParser implements Closeable {
 
     boolean canExtendTo(MemoryMapping mapping, long pageSize) {
       if (!mappingName.equals(mapping.mappingName)
-          || mapping.beginAddress < beginAddress
-          || mapping.offset < startOffset) {
+          || mapping.beginAddress < previousEndAddress
+          || mapping.offset < previousOffset) {
         return false;
       }
 
-      // PT_LOAD virtual addresses and file offsets grow together, modulo page alignment. This
-      // distinguishes a continuation from another ELF without build-id in the same APK.
-      final long addressDelta = mapping.beginAddress - beginAddress;
-      final long fileOffsetDelta = mapping.offset - startOffset;
-      final long delta = addressDelta - fileOffsetDelta;
-      final long alignmentTolerance = pageSize > 0 ? pageSize : 4096;
+      // PT_LOAD virtual-address and file-offset gaps can differ by one segment-alignment unit.
+      // Compare adjacent mappings so this difference does not accumulate across the module.
+      final long previousSize = previousEndAddress - previousBeginAddress;
+      final long addressGap = mapping.beginAddress - previousEndAddress;
+      final long fileOffsetGap = mapping.offset - (previousOffset + previousSize);
+      final long delta = addressGap - fileOffsetGap;
+
+      // Android ELFs built for 16 KiB pages can also run on 4 KiB devices, so the ELF alignment
+      // can be larger than the tombstone's runtime page size.
+      final long runtimePageSize = pageSize > 0 ? pageSize : PAGE_SIZE_4KIB;
+      final long alignmentTolerance = Math.max(runtimePageSize, PAGE_SIZE_16KIB);
       return delta >= -alignmentTolerance && delta <= alignmentTolerance;
     }
 
-    void extendTo(long newEndAddress) {
-      this.endAddress = newEndAddress;
+    void extendTo(MemoryMapping mapping) {
+      this.endAddress = Math.max(endAddress, mapping.endAddress);
+      this.previousBeginAddress = mapping.beginAddress;
+      this.previousEndAddress = mapping.endAddress;
+      this.previousOffset = mapping.offset;
     }
 
     DebugImage toDebugImage() {
@@ -346,7 +361,7 @@ public class TombstoneParser implements Closeable {
         // The same ELF can have multiple mappings with its build ID. APK-embedded ELFs all share
         // the APK mapping name, so the build ID is also required to distinguish their modules.
         if (currentModule != null && currentModule.isSameModule(mapping)) {
-          currentModule.extendTo(mapping.endAddress);
+          currentModule.extendTo(mapping);
           continue;
         }
 
@@ -362,7 +377,7 @@ public class TombstoneParser implements Closeable {
         currentModule = new ModuleAccumulator(mapping);
       } else if (currentModule != null && currentModule.canExtendTo(mapping, tombstone.pageSize)) {
         // Extend the current module with this mapping (same ELF, continuation).
-        currentModule.extendTo(mapping.endAddress);
+        currentModule.extendTo(mapping);
       }
     }
 
