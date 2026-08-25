@@ -711,11 +711,10 @@ public class SentryOptions {
   }
 
   /**
-   * Reverts {@link #seal()}. Test fixtures routinely configure options after standing the SDK up,
-   * which production code must not do.
+   * Reopens the configuration phase closed by {@link #seal()}. Called by Sentry.init, which has to
+   * re-wire an options instance that a previous init already sealed when the SDK is restarted.
    */
   @ApiStatus.Internal
-  @TestOnly
   public void unseal() {
     sealed = false;
   }

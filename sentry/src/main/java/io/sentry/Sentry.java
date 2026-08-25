@@ -306,6 +306,11 @@ public final class Sentry {
                 + options.getClass().getName());
       }
 
+      // The SDK can be restarted with the same options instance, which init then has to re-wire
+      // (a closed executor service, for one). Reopen the configuration phase that a previous
+      // init sealed; the seal at the end of this method closes it again.
+      options.unseal();
+
       if (!preInitConfigurations(options)) {
         return;
       }

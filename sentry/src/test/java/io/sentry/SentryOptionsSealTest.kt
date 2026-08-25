@@ -62,6 +62,20 @@ class SentryOptionsSealTest {
     assertThat(options.beforeEnvelopeCallback).isSameInstanceAs(callback)
   }
 
+  // The SDK can be restarted with the same options instance, and init has to be able to re-wire it.
+  @Test
+  fun `restarting the SDK with the same options instance re-opens them for wiring`() {
+    val options = SentryOptions()
+    options.dsn = "https://key@sentry.io/proj"
+
+    Sentry.init(options)
+    Sentry.close()
+    Sentry.init(options)
+
+    assertThat(options.executorService.isClosed).isFalse()
+    assertThat(Sentry.isEnabled()).isTrue()
+  }
+
   @Test
   fun `Sentry init seals the options it was given`() {
     val options = SentryOptions()
