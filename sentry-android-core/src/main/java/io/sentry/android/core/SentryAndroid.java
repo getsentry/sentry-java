@@ -99,6 +99,16 @@ public final class SentryAndroid {
     // Started before acquiring the lock so it stays balanced with the endSection() in the finally
     // even if acquire() throws.
     Trace.beginSection("SentryAndroid.init");
+    // ---------------------------------------------------------------------------------------
+    // DO NOT MERGE. Deliberate 20ms regression, inside the traced section, to prove the
+    // macrobenchmark A/B harness detects a known change and attributes it to the right metric.
+    // This branch exists only to exercise that workflow and must never reach main.
+    // ---------------------------------------------------------------------------------------
+    try {
+      Thread.sleep(20);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
     try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
       Sentry.init(
           new SentryAndroidOptionsContainer(),
