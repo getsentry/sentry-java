@@ -273,7 +273,7 @@ public class TombstoneParser implements Closeable {
     long previousEndAddress;
     long previousOffset;
 
-    ModuleAccumulator(MemoryMapping mapping) {
+    ModuleAccumulator(final @NotNull MemoryMapping mapping) {
       this.mappingName = mapping.mappingName;
       this.buildId = mapping.buildId;
       this.beginAddress = mapping.beginAddress;
@@ -283,11 +283,12 @@ public class TombstoneParser implements Closeable {
       this.previousOffset = mapping.offset;
     }
 
-    boolean isSameModule(MemoryMapping mapping) {
+    boolean isSameModule(final @NotNull MemoryMapping mapping) {
       return mappingName.equals(mapping.mappingName) && buildId.equals(mapping.buildId);
     }
 
-    boolean canExtendTo(MemoryMapping mapping, long pageSize) {
+    boolean canExtendTo(final @NotNull MemoryMapping mapping, final long pageSize) {
+
       if (!mappingName.equals(mapping.mappingName)
           || mapping.beginAddress < previousEndAddress
           || mapping.offset < previousOffset) {
@@ -308,7 +309,7 @@ public class TombstoneParser implements Closeable {
       return delta >= -alignmentTolerance && delta <= alignmentTolerance;
     }
 
-    void extendTo(MemoryMapping mapping) {
+    void extendTo(final @NotNull MemoryMapping mapping) {
       this.endAddress = Math.max(endAddress, mapping.endAddress);
       this.previousBeginAddress = mapping.beginAddress;
       this.previousEndAddress = mapping.endAddress;
@@ -323,7 +324,7 @@ public class TombstoneParser implements Closeable {
       image.setCodeId(buildId);
       image.setCodeFile(mappingName);
 
-      final String debugId = NativeEventUtils.buildIdToDebugId(buildId);
+      final @Nullable String debugId = NativeEventUtils.buildIdToDebugId(buildId);
       image.setDebugId(debugId != null ? debugId : buildId);
 
       image.setImageAddr(formatHex(beginAddress));
@@ -341,9 +342,9 @@ public class TombstoneParser implements Closeable {
     // Android's libunwindstack has already parsed each ELF and records its build ID in the
     // tombstone. An ELF stored uncompressed inside an APK starts at a non-zero container offset,
     // so the mapping offset cannot be used to validate whether the mapping starts an ELF.
-    ModuleAccumulator currentModule = null;
+    @Nullable ModuleAccumulator currentModule = null;
 
-    for (MemoryMapping mapping : tombstone.memoryMappings) {
+    for (final @NotNull MemoryMapping mapping : tombstone.memoryMappings) {
       // Skip mappings that are not readable
       if (!mapping.read) {
         continue;
