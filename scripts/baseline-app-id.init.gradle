@@ -1,0 +1,20 @@
+// Suffixes the sample app's applicationId so a second build of it can be installed alongside the
+// one under test. Used by the macrobenchmark workflow to put the merge-base build and the PR
+// build on the same device at the same time.
+//
+// This is injected with `-I` rather than committed to the sample's own build script because the
+// baseline is built from a checkout of the merge base, which predates this file.
+//
+// Groovy, not Kotlin: a Kotlin init script would need AGP on its own `initscript` classpath to
+// see the types behind the `android` extension, while Groovy resolves it dynamically.
+gradle.beforeProject { project ->
+  if (project.path != ':sentry-samples:sentry-samples-android') {
+    return
+  }
+  // Registered from `beforeProject`, so it runs ahead of the afterEvaluate AGP registers when the
+  // build script applies it -- late enough to override whatever the build script set, early
+  // enough that the DSL is still writable.
+  project.afterEvaluate {
+    project.android.defaultConfig.applicationIdSuffix = '.baseline'
+  }
+}

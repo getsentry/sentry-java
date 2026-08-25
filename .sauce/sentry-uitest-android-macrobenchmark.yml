@@ -11,18 +11,30 @@ sauce:
       - macrobenchmark
 
 defaults:
-  timeout: 40m
+  # 24 cold starts plus one full AOT compile per step, against 12 cold starts before the run
+  # started measuring two builds.
+  timeout: 60m
 
 espresso:
   app: ./sentry-samples/sentry-samples-android/build/outputs/apk/release/sentry-samples-android-release.apk
   testApp: ./sentry-android-integration-tests/sentry-uitest-android-macrobenchmark/build/outputs/apk/benchmark/sentry-uitest-android-macrobenchmark-benchmark.apk
+  otherApps:
+    # The merge-base build of the same app, applicationId suffixed `.baseline` so it installs
+    # alongside the one above. The workflow stages it here; when it is missing, saucectl fails
+    # rather than silently measuring one build.
+    - ./build/macrobenchmark-baseline/sentry-samples-android-release.apk
 
 suites:
 
-  - name: "Macrobenchmark startup (api 35)"
+  - name: "Macrobenchmark startup A/B (api 35)"
     # No test orchestrator and no clearPackageData: Macrobenchmark manages its own process
     # restarts and AOT compilation, and StartupMode.COLD intentionally keeps app data and
     # permissions (it force-stops rather than `pm clear`).
+    appSettings:
+      # Sauce resigns the app under test on real devices, but never touches `otherApps`. Left on,
+      # the candidate would carry an injected agent the baseline does not and every delta would
+      # include the cost of that agent.
+      resigningEnabled: false
     devices:
       - id: Google_Pixel_9_Pro_XL_15_real_sjc1 # Google Pixel 9 Pro XL - api 35 (15) - high end
 

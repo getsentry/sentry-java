@@ -1,2 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!--
+    SentryStartupBenchmark asks the PackageManager which builds are installed so it can skip the
+    baseline steps when only the candidate is present. Package visibility hides both from us
+    otherwise. Macrobenchmark itself drives the apps over shell, so it needs no entry here.
+  -->
+  <queries>
+    <package android:name="io.sentry.samples.android" />
+    <package android:name="io.sentry.samples.android.baseline" />
+  </queries>
+
+</manifest>
