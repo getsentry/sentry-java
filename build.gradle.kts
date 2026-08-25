@@ -77,7 +77,6 @@ apiValidation {
             "sentry-samples-spring-boot-4-webflux",
             "sentry-samples-ktor-client",
             "sentry-uitest-android",
-            "sentry-uitest-android-benchmark",
             "sentry-uitest-android-critical",
             "test-app-size",
             "sentry-samples-netflix-dgs",

@@ -1,4 +1,4 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
@@ -33,10 +33,6 @@ checkFormat:
 # Binary compatibility validator
 api:
 	./gradlew apiDump
-
-# Assemble release and Android test apk of the uitest-android-benchmark module
-assembleBenchmarkTestRelease:
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleRelease :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleAndroidTest
 
 # Assemble release and Android test apk of the uitest-android module
 assembleUiTestRelease:
