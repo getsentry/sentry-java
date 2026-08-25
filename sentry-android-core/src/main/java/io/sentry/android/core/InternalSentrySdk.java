@@ -249,29 +249,7 @@ public final class InternalSentrySdk {
       final @NotNull EnvelopeEventState eventState = eventStateOf(envelope, serializer);
 
       if (eventState != EnvelopeEventState.NONE) {
-        scopes.configureScope(
-            scope -> {
-              // the write stays inside the callback so the mutation and the persist are one
-              // critical section. Persisting outside it lets a concurrent caller's older snapshot
-              // land last and drop the unhandled marker.
-              scope.withSession(
-                  session -> {
-                    if (session != null) {
-                      final boolean updated =
-                          eventState == EnvelopeEventState.UNHANDLED
-                              ? session.recordNonTerminatingUnhandledError()
-                              : session.update(null, null, true, null);
-                      if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
-                        ((EnvelopeCache) options.getEnvelopeDiskCache())
-                            .persistCurrentSession(session);
-                      }
-                    } else {
-                      options
-                          .getLogger()
-                          .log(INFO, "Session is null on captureEnvelopeNonTerminating");
-                    }
-                  });
-            });
+        updateSessionNonTerminating(eventState == EnvelopeEventState.UNHANDLED);
       }
 
       return scopes.captureEnvelope(envelope);
@@ -279,6 +257,35 @@ public final class InternalSentrySdk {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", e);
     }
     return null;
+  }
+
+  /**
+   * Mutates and persists the current session for a non-terminating hybrid error. The write stays
+   * inside {@code withSession} so the mutation and the persist are one critical section. Persisting
+   * outside it lets a concurrent caller's older snapshot land last and drop the unhandled marker.
+   *
+   * @param crashed {@code true} if the error was unhandled ({@code mechanism.handled=false})
+   */
+  private static void updateSessionNonTerminating(final boolean crashed) {
+    final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+    final @NotNull SentryOptions options = scopes.getOptions();
+    scopes.configureScope(
+        scope -> {
+          scope.withSession(
+              session -> {
+                if (session != null) {
+                  final boolean updated =
+                      crashed
+                          ? session.recordNonTerminatingUnhandledError()
+                          : session.update(null, null, true, null);
+                  if (updated && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
+                    ((EnvelopeCache) options.getEnvelopeDiskCache()).persistCurrentSession(session);
+                  }
+                } else {
+                  options.getLogger().log(INFO, "Session is null on updateSessionNonTerminating");
+                }
+              });
+        });
   }
 
   /** What the events inside an envelope amount to, from the session's point of view. */
