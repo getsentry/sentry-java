@@ -114,21 +114,24 @@ public final class Sentry {
   @ApiStatus.Internal
   @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes(final boolean ensureForked) {
+    // read the volatile rootScopes once, so a concurrent Sentry.init cannot make the check below
+    // disagree with what we return
+    final @NotNull IScopes root = rootScopes;
     @Nullable IScopes scopes = getScopesStorage().get();
     if (globalHubMode) {
       // in global hub mode we never fork implicitly, but scopes that have explicitly been made
       // current (e.g. by withScope) must still be honoured. Anything that did not originate from
       // the present rootScopes is stale (SDK closed or re-initialized) and gets ignored.
-      if (scopes != null && !scopes.isNoOp() && rootScopes.isAncestorOf(scopes)) {
+      if (scopes != null && !scopes.isNoOp() && root.isAncestorOf(scopes)) {
         return scopes;
       }
-      return rootScopes;
+      return root;
     }
     if (scopes == null || scopes.isNoOp()) {
       if (!ensureForked) {
         return NoOpScopes.getInstance();
       } else {
-        scopes = rootScopes.forkedScopes("getCurrentScopes");
+        scopes = root.forkedScopes("getCurrentScopes");
         getScopesStorage().set(scopes);
       }
     }
