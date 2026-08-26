@@ -241,15 +241,16 @@ class AppStartMetricsTest {
   }
 
   @Test
-  fun `headless app start fires HeadlessAppStartListener`() = headlessProcess {
-    val listenerCalls = AtomicInteger()
+  fun `headless app start fires HeadlessAppStartListener`() =
+    withProcessImportance(false) {
+      val listenerCalls = AtomicInteger()
 
-    AppStartMetrics.getInstance().setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
-    AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
-    waitForMainLooperIdle()
+      AppStartMetrics.getInstance().setHeadlessAppStartListener { listenerCalls.incrementAndGet() }
+      AppStartMetrics.getInstance().registerLifecycleCallbacks(mock<Application>())
+      waitForMainLooperIdle()
 
-    assertEquals(1, listenerCalls.get())
-  }
+      assertEquals(1, listenerCalls.get())
+    }
 
   @Test
   fun `foreground process does not fire HeadlessAppStartListener`() {
@@ -295,7 +296,7 @@ class AppStartMetricsTest {
 
   @Test
   fun `resolveHeadlessAppStartEndTime uses applicationOnCreate stop when Gradle plugin instrumented`() =
-    headlessProcess {
+    withProcessImportance(false) {
       val metrics = AppStartMetrics.getInstance()
       metrics.appStartTimeSpan.setStartedAt(100)
       metrics.setHeadlessAppStartListener {}
@@ -312,7 +313,7 @@ class AppStartMetricsTest {
 
   @Test
   fun `resolveHeadlessAppStartEndTime falls back to CLASS_LOADED_UPTIME_MS when no plugin and no ApplicationStartInfo`() =
-    headlessProcess {
+    withProcessImportance(false) {
       val metrics = AppStartMetrics.getInstance()
       metrics.setClassLoadedUptimeMs(200)
       metrics.appStartTimeSpan.setStartedAt(100)
@@ -371,12 +372,18 @@ class AppStartMetricsTest {
     Shadows.shadowOf(Looper.getMainLooper()).idle()
   }
 
-  // Simulates a real headless start (broadcast/service), i.e. a non-foreground-importance process.
-  // The Robolectric default importance in this test class is IMPORTANCE_FOREGROUND, so headless
-  // scenarios must opt into a background importance explicitly.
-  private fun <T> headlessProcess(block: () -> T): T =
+  /**
+   * Mocks the process importance to simulate a user initiated start (e.g. launcher) or a real
+   * headless start (broadcast/service), i.e. a non-foreground-importance process.
+   *
+   * The Robolectric default importance in this test class is IMPORTANCE_FOREGROUND, so any headless
+   * scenarios must opt into a background importance explicitly.
+   */
+  private fun <T> withProcessImportance(isForeground: Boolean, block: () -> T): T =
     mockStatic(ContextUtils::class.java).use { contextUtils ->
-      contextUtils.`when`<Boolean> { ContextUtils.isForegroundImportance() }.thenReturn(false)
+      contextUtils
+        .`when`<Boolean> { ContextUtils.isForegroundImportance() }
+        .thenReturn(isForeground)
       block()
     }
 
@@ -1123,4 +1130,20 @@ class AppStartMetricsTest {
     assertEquals(now, metrics.appStartTimeSpan.startUptimeMs)
     metrics.appStartExtension.setExtendAppStartListener(null)
   }
+
+  @Test
+  fun `broadcast starts are not considered a foreground start`() =
+    withProcessImportance(false) {
+      val metrics = AppStartMetrics.getInstance()
+      metrics.registerLifecycleCallbacks(mock<Application>())
+      assertFalse(metrics.isAppLaunchedInForeground)
+    }
+
+  @Test
+  fun `typical app starts are considered a foreground start`() =
+    withProcessImportance(true) {
+      val metrics = AppStartMetrics.getInstance()
+      metrics.registerLifecycleCallbacks(mock<Application>())
+      assertTrue(metrics.isAppLaunchedInForeground)
+    }
 }

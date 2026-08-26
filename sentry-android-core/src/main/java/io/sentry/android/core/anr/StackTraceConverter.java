@@ -34,6 +34,14 @@ public final class StackTraceConverter {
   private static final String MAIN_THREAD_NAME = "main";
 
   /**
+   * Timestamp offset used with synthetic ANR profile samples. (Currently 33 ms.)
+   *
+   * <p>Places the synthetic sample halfway to the next ANR polling tick.
+   */
+  private static final double SYNTHETIC_SAMPLE_OFFSET_SECONDS =
+      (AnrProfilingIntegration.POLLING_INTERVAL_MS / 2.0d) / 1000.0d;
+
+  /**
    * Converts a list of {@link AnrStackTrace} objects to a {@link SentryProfile}.
    *
    * @param anrProfile The ANR Profile
@@ -78,6 +86,15 @@ public final class StackTraceConverter {
       sample.setThreadId(MAIN_THREAD_ID);
 
       profile.getSamples().add(sample);
+    }
+
+    // Relay will reject ANR profiles with only one sample, even though they're still useful.
+    // (Relay's policy was defined with continuous profiles in mind, before ANR profiles were a
+    // thing.) If we only have one sample, synthesize another that only differs in its timestamp.
+    if (profile.getSamples().size() == 1) {
+      final @NotNull SentrySample originalSample = profile.getSamples().get(0);
+      final @NotNull SentrySample syntheticSample = createSyntheticSample(originalSample);
+      profile.getSamples().add(syntheticSample);
     }
 
     profile.setFrames(frames);
@@ -146,5 +163,19 @@ public final class StackTraceConverter {
       frame.setNative(true);
     }
     return frame;
+  }
+
+  /**
+   * Creates a {@link SentrySample} identical to {@code originalSample}, save that its timestamp is
+   * advanced by {@link #SYNTHETIC_SAMPLE_OFFSET_SECONDS}.
+   *
+   * <p>Lets us produce a plausible synthetic sample without misleading the user about the ANR's
+   * actual duration or cause.
+   */
+  @NotNull
+  private static SentrySample createSyntheticSample(@NotNull SentrySample originalSample) {
+    final @NotNull SentrySample syntheticSample = new SentrySample(originalSample);
+    syntheticSample.setTimestamp(originalSample.getTimestamp() + SYNTHETIC_SAMPLE_OFFSET_SECONDS);
+    return syntheticSample;
   }
 }

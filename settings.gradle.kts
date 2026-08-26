@@ -13,6 +13,7 @@ pluginManagement {
     }
     mavenCentral()
     gradlePluginPortal()
+    google()
   }
 }
 
@@ -125,11 +126,8 @@ include(
     "sentry-samples:sentry-samples-spring-boot-4-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
     "sentry-android-integration-tests:sentry-uitest-android-critical",
-    "sentry-android-integration-tests:sentry-uitest-android-benchmark",
     "sentry-android-integration-tests:sentry-uitest-android-macrobenchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
-    "sentry-android-integration-tests:test-app-plain",
-    "sentry-android-integration-tests:test-app-sentry",
     "sentry-android-integration-tests:test-app-size",
     "sentry-samples:sentry-samples-openfeign"
 )

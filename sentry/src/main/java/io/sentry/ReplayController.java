@@ -17,7 +17,12 @@ public interface ReplayController extends IReplayApi {
 
   boolean isRecording();
 
-  void captureReplay(@Nullable Boolean isTerminating);
+  /**
+   * Captures the buffered replay and returns its ID, or {@link SentryId#EMPTY_ID} if no replay was
+   * captured.
+   */
+  @NotNull
+  SentryId captureReplay(@Nullable Boolean isTerminating);
 
   @NotNull
   SentryId getReplayId();

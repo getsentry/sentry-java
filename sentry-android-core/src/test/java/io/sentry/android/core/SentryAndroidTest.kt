@@ -352,6 +352,7 @@ class SentryAndroidTest {
   @Config(sdk = [26])
   fun `init starts session replay if app is in foreground`() {
     initSentryWithForegroundImportance(true) { _ ->
+      Shadows.shadowOf(Looper.getMainLooper()).idle()
       assertTrue(Sentry.getCurrentHub().options.replayController.isRecording())
     }
   }
@@ -360,6 +361,7 @@ class SentryAndroidTest {
   @Config(sdk = [26])
   fun `init does not start session replay if the app is in background`() {
     initSentryWithForegroundImportance(false) { _ ->
+      Shadows.shadowOf(Looper.getMainLooper()).idle()
       assertFalse(Sentry.getCurrentHub().options.replayController.isRecording())
     }
   }
