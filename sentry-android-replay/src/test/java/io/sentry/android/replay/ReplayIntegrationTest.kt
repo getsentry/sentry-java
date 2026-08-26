@@ -461,6 +461,27 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `new app session replaces a manually paused replay`() {
+    val firstStrategy = mock<CaptureStrategy>()
+    val secondStrategy = mock<CaptureStrategy>()
+    val strategies = ArrayDeque(listOf(firstStrategy, secondStrategy))
+    val replay =
+      fixture.getSut(
+        context,
+        replayCaptureStrategyProvider = { strategies.removeFirst() },
+      )
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.onAppForegrounded(true)
+    replay.pause()
+    replay.onAppForegrounded(true)
+
+    verify(firstStrategy).pause()
+    verify(firstStrategy).stop()
+    verify(secondStrategy).start(any(), any(), anyOrNull())
+  }
+
+  @Test
   fun `captureReplay does nothing when not recording`() {
     val captureStrategy = mock<CaptureStrategy>()
     val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })

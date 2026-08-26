@@ -266,6 +266,37 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
+  fun `flush uses the timeline after queued segment boundaries`() {
+    val tasks = mutableListOf<Runnable>()
+    val segmentIds = mutableListOf<Int>()
+    val now = System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration * 2
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    doAnswer {
+        segmentIds += (it.arguments[0] as SentryReplayEvent).segmentId
+        SentryId.EMPTY_ID
+      }
+      .whenever(fixture.scopes)
+      .captureReplay(any(), any())
+    val strategy = fixture.getSut(dateProvider = { now }, replayExecutor = replayExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+    strategy.flush {}
+    tasks.forEach(Runnable::run)
+
+    assertThat(segmentIds).containsExactly(0, 1).inOrder()
+  }
+
+  @Test
   fun `when process is crashing, onScreenshotRecorded does not create new segment`() {
     val now =
       System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)

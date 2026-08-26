@@ -23,8 +23,9 @@ public interface IReplayApi {
   void stop();
 
   /**
-   * Pauses the current replay in either session or buffer mode until {@link #resume()} is called.
-   * This can be used to avoid recording sensitive screens, such as PIN entry.
+   * Pauses the current replay in either session or buffer mode. Recording resumes when {@link
+   * #resume()} is called or a new replay session starts. This can be used to avoid recording
+   * sensitive screens, such as PIN entry.
    */
   void pause();
 
