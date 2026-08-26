@@ -173,6 +173,7 @@ public class ReplayIntegration(
         return@enqueueOnMainThread
       }
       if (startNewSession) {
+        val wasManuallyPaused = isManualPause
         stopInternal()
         val isFullSession = sample(options.sessionReplay.sessionSampleRate)
         if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
@@ -182,6 +183,10 @@ public class ReplayIntegration(
           )
         } else {
           startInternal(isFullSession)
+        }
+        isManualPause = wasManuallyPaused
+        if (wasManuallyPaused) {
+          pauseInternal()
         }
       }
       resumeInternal()

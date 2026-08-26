@@ -461,7 +461,7 @@ class ReplayIntegrationTest {
   }
 
   @Test
-  fun `new app session replaces a manually paused replay`() {
+  fun `new app session replaces a manually paused replay and stays paused`() {
     val firstStrategy = mock<CaptureStrategy>()
     val secondStrategy = mock<CaptureStrategy>()
     val strategies = ArrayDeque(listOf(firstStrategy, secondStrategy))
@@ -479,6 +479,11 @@ class ReplayIntegrationTest {
     verify(firstStrategy).pause()
     verify(firstStrategy).stop()
     verify(secondStrategy).start(any(), any(), anyOrNull())
+    verify(secondStrategy).pause()
+    verify(secondStrategy, never()).resume()
+
+    replay.resume()
+    verify(secondStrategy).resume()
   }
 
   @Test

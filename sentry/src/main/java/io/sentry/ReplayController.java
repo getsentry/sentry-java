@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 public interface ReplayController extends IReplayApi {
   /**
    * Handles app foregrounding. When a new app session begins, stops any previous replay and starts
-   * a newly sampled one.
+   * a newly sampled one while preserving an explicit user pause.
    */
   void onAppForegrounded(boolean startNewSession);
 
