@@ -52,7 +52,7 @@ jobs:
 
             // Check if we already have a high risk code comment
             const hasExistingComment = comments.some(comment =>
-              comment.body.includes('🚨 Detected changes in high risk code 🚨')
+              comment.body?.includes('🚨 Detected changes in high risk code 🚨')
             );
 
             // Only create comment if we don't already have one
