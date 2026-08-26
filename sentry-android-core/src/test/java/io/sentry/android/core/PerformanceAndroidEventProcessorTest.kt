@@ -218,10 +218,53 @@ class PerformanceAndroidEventProcessorTest {
     val extendedSpanId = SpanId()
     val childSpanId = SpanId()
     tr.spans.add(
-      createSpan(traceId, extendedSpanId, tr.contexts.trace!!.spanId, APP_START_EXTENDED_OP)
+      SentrySpan(
+        0.0,
+        1.0,
+        traceId,
+        extendedSpanId,
+        tr.contexts.trace!!.spanId,
+        APP_START_EXTENDED_OP,
+        APP_START_EXTENDED_OP,
+        SpanStatus.OK,
+        null,
+        emptyMap(),
+        emptyMap(),
+        null,
+      )
     )
-    tr.spans.add(createSpan(traceId, childSpanId, extendedSpanId, "user.work"))
-    tr.spans.add(createSpan(traceId, SpanId(), childSpanId, "user.work.child"))
+    tr.spans.add(
+      SentrySpan(
+        0.0,
+        1.0,
+        traceId,
+        childSpanId,
+        extendedSpanId,
+        "user.work",
+        "user.work",
+        SpanStatus.OK,
+        null,
+        emptyMap(),
+        emptyMap(),
+        null,
+      )
+    )
+    tr.spans.add(
+      SentrySpan(
+        0.0,
+        1.0,
+        traceId,
+        SpanId(),
+        childSpanId,
+        "user.work.child",
+        "user.work.child",
+        SpanStatus.OK,
+        null,
+        emptyMap(),
+        emptyMap(),
+        null,
+      )
+    )
 
     tr = sut.process(tr, Hint())
 
@@ -1182,27 +1225,6 @@ class PerformanceAndroidEventProcessorTest {
         txn.contexts.trace!!.setData(APP_START_SCREEN_DATA, appStartScreen)
       }
     }
-
-  private fun createSpan(
-    traceId: SentryId,
-    spanId: SpanId,
-    parentSpanId: SpanId,
-    op: String,
-  ): SentrySpan =
-    SentrySpan(
-      0.0,
-      1.0,
-      traceId,
-      spanId,
-      parentSpanId,
-      op,
-      op,
-      SpanStatus.OK,
-      null,
-      emptyMap(),
-      emptyMap(),
-      null,
-    )
 
   private fun createTransaction(op: String): SentryTransaction {
     val txn = SentryTransaction(fixture.tracer)
