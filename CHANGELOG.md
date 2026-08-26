@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Prevents inclusion of `null.` prefix before default-package class names when parsing Java and JNI frames from Android ANR thread dumps ([#5979](https://github.com/getsentry/sentry-java/pull/5979))
 - Prevent duplicated breadcrumbs on tombstone-merged native crash events ([#5888](https://github.com/getsentry/sentry-java/pull/5888))
 - Prevent a class of Session Replay deadlocks by confining lifecycle state changes to Android's main thread ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
 - Symbolicate tombstone native frames for libraries loaded directly from APKs ([#5992](https://github.com/getsentry/sentry-java/pull/5992))
