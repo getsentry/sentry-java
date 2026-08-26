@@ -397,4 +397,47 @@ class FeatureFlagBufferTest {
 
     assertThat(writerFailure.get()).isNull()
   }
+
+  @Test
+  fun `merging does not observe a partially updated buffer`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 100 }
+    val globalBuffer = FeatureFlagBuffer.create(options)
+    val isolationBuffer = FeatureFlagBuffer.create(options)
+    val currentBuffer = FeatureFlagBuffer.create(options)
+    val expectedFlags = (0 until options.maxFeatureFlags).map { "flag$it" }
+
+    expectedFlags.forEach { globalBuffer.add(it, true) }
+
+    val stop = AtomicBoolean(false)
+    val writerFailure = AtomicReference<Throwable?>(null)
+    val writerStarted = CountDownLatch(1)
+    val writer = Thread {
+      try {
+        var i = 0
+        while (!stop.get()) {
+          globalBuffer.add(expectedFlags[i++ % expectedFlags.size], true)
+          writerStarted.countDown()
+        }
+      } catch (e: Exception) {
+        writerFailure.set(e)
+      }
+    }
+
+    writer.start()
+    try {
+      assertThat(writerStarted.await(5, TimeUnit.SECONDS)).isTrue()
+
+      repeat(1_000) {
+        val featureFlags =
+          FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer)
+            .featureFlags
+        assertThat(featureFlags?.values?.map { it?.flag }).containsExactlyElementsIn(expectedFlags)
+      }
+    } finally {
+      stop.set(true)
+      writer.join()
+    }
+
+    assertThat(writerFailure.get()).isNull()
+  }
 }

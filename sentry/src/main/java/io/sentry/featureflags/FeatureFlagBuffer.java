@@ -44,7 +44,14 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
 
   private FeatureFlagBuffer(@NotNull FeatureFlagBuffer other) {
     this.maxSize = other.maxSize;
-    this.flags = new CopyOnWriteArrayList<>(other.flags);
+    this.flags = other.snapshot();
+  }
+
+  @ApiStatus.Internal
+  private @NotNull CopyOnWriteArrayList<FeatureFlagEntry> snapshot() {
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      return new CopyOnWriteArrayList<>(flags);
+    }
   }
 
   @Override
@@ -139,11 +146,11 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
     // CopyOnWriteArrayList directly allows its collection constructor to reuse the immutable
     // backing array instead of copying the elements on runtimes that support this optimization.
     final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> globalFlags =
-        globalBuffer == null ? null : new CopyOnWriteArrayList<>(globalBuffer.flags);
+        globalBuffer == null ? null : globalBuffer.snapshot();
     final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> isolationFlags =
-        isolationBuffer == null ? null : new CopyOnWriteArrayList<>(isolationBuffer.flags);
+        isolationBuffer == null ? null : isolationBuffer.snapshot();
     final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> currentFlags =
-        currentBuffer == null ? null : new CopyOnWriteArrayList<>(currentBuffer.flags);
+        currentBuffer == null ? null : currentBuffer.snapshot();
 
     final int globalSize = globalFlags == null ? 0 : globalFlags.size();
     final int isolationSize = isolationFlags == null ? 0 : isolationFlags.size();
