@@ -135,8 +135,10 @@ internal class SessionCaptureStrategy(
           return@ReplayRunnable
         }
 
-        val now = dateProvider.currentTimeMillis
-        if ((now - currentSegmentTimestamp.time >= options.sessionReplay.sessionSegmentDuration)) {
+        if (
+          frameTimestamp - currentSegmentTimestamp.time >=
+            options.sessionReplay.sessionSegmentDuration
+        ) {
           val segment =
             createSegmentInternal(
               options.sessionReplay.sessionSegmentDuration,
@@ -156,7 +158,7 @@ internal class SessionCaptureStrategy(
           }
         }
 
-        if ((now - replayStartTimestamp.get() >= options.sessionReplay.sessionDuration)) {
+        if (frameTimestamp - replayStartTimestamp.get() >= options.sessionReplay.sessionDuration) {
           options.replayController.stop()
           options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
         }

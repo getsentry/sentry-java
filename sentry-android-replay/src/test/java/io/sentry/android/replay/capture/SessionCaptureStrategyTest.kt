@@ -334,6 +334,69 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
+  fun `resume updates the timeline after a queued pause`() {
+    val tasks = mutableListOf<Runnable>()
+    val now = System.currentTimeMillis()
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    val strategy = fixture.getSut(dateProvider = { now }, replayExecutor = replayExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val segmentStart = Date(now - fixture.options.sessionReplay.sessionSegmentDuration)
+    strategy.segmentTimestamp = segmentStart
+
+    strategy.pause()
+    strategy.resume()
+    tasks.forEach(Runnable::run)
+
+    verify(fixture.replayCache)
+      .createVideoOf(
+        eq(now - segmentStart.time),
+        eq(segmentStart.time),
+        eq(0),
+        any(),
+        any(),
+        any(),
+        any(),
+        any(),
+      )
+    assertThat(strategy.segmentTimestamp).isNotEqualTo(segmentStart)
+  }
+
+  @Test
+  fun `executor delay does not trigger a segment boundary`() {
+    val tasks = mutableListOf<Runnable>()
+    var now = System.currentTimeMillis()
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    val strategy = fixture.getSut(dateProvider = { now }, replayExecutor = replayExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    now += fixture.options.sessionReplay.sessionSegmentDuration - 1
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+    now += fixture.options.sessionReplay.sessionDuration
+    tasks.forEach(Runnable::run)
+
+    verify(fixture.scopes, never()).captureReplay(any(), any())
+    verify(fixture.options.replayController, never()).stop()
+  }
+
+  @Test
   fun `when process is crashing, onScreenshotRecorded does not create new segment`() {
     val now =
       System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
@@ -379,22 +442,11 @@ class SessionCaptureStrategyTest {
 
   @Test
   fun `onScreenshotRecorded stops replay when replay duration exceeded`() {
-    val now = System.currentTimeMillis() + (fixture.options.sessionReplay.sessionDuration * 2)
-    var count = 0
-    val strategy =
-      fixture.getSut(
-        dateProvider = {
-          // we only need to fake value for the 3rd call (first two is for replayStartTimestamp and
-          // frameTimestamp)
-          if (count++ == 2) {
-            now
-          } else {
-            System.currentTimeMillis()
-          }
-        }
-      )
+    var now = System.currentTimeMillis()
+    val strategy = fixture.getSut(dateProvider = { now })
     strategy.start()
     strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
+    now += fixture.options.sessionReplay.sessionDuration * 2
 
     strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
