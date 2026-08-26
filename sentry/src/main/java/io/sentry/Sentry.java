@@ -114,10 +114,16 @@ public final class Sentry {
   @ApiStatus.Internal
   @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes(final boolean ensureForked) {
+    @Nullable IScopes scopes = getScopesStorage().get();
     if (globalHubMode) {
+      // in global hub mode we never fork implicitly, but scopes that have explicitly been made
+      // current (e.g. by withScope) must still be honoured. Anything that did not originate from
+      // the present rootScopes is stale (SDK closed or re-initialized) and gets ignored.
+      if (scopes != null && !scopes.isNoOp() && rootScopes.isAncestorOf(scopes)) {
+        return scopes;
+      }
       return rootScopes;
     }
-    @Nullable IScopes scopes = getScopesStorage().get();
     if (scopes == null || scopes.isNoOp()) {
       if (!ensureForked) {
         return NoOpScopes.getInstance();
@@ -1060,7 +1066,13 @@ public final class Sentry {
     return getCurrentScopes().getLastEventId();
   }
 
-  /** Pushes a new scope while inheriting the current scope's data. */
+  /**
+   * Pushes a new scope while inheriting the current scope's data.
+   *
+   * <p>This is a no-op in global hub mode, as the caller may never pop the scope again, or pop it
+   * on a different thread, which would corrupt the globally shared scopes. Use {@link
+   * Sentry#withScope(ScopeCallback)} if you need forking that also works in global hub mode.
+   */
   public static @NotNull ISentryLifecycleToken pushScope() {
     // pushScope is no-op in global hub mode
     if (!globalHubMode) {
@@ -1069,7 +1081,12 @@ public final class Sentry {
     return NoOpScopesLifecycleToken.getInstance();
   }
 
-  /** Pushes a new isolation and current scope while inheriting the current scope's data. */
+  /**
+   * Pushes a new isolation and current scope while inheriting the current scope's data.
+   *
+   * <p>This is a no-op in global hub mode, for the same reason as {@link Sentry#pushScope()}. Use
+   * {@link Sentry#withIsolationScope(ScopeCallback)} instead.
+   */
   public static @NotNull ISentryLifecycleToken pushIsolationScope() {
     // pushScope is no-op in global hub mode
     if (!globalHubMode) {
@@ -1093,7 +1110,10 @@ public final class Sentry {
   }
 
   /**
-   * Runs the callback with a new current scope which gets dropped at the end
+   * Runs the callback with a new current scope which gets dropped at the end.
+   *
+   * <p>Unlike {@link Sentry#pushScope()} this also forks in global hub mode, since the previous
+   * scopes are always restored once the callback returns.
    *
    * @param callback the callback
    */
@@ -1104,6 +1124,9 @@ public final class Sentry {
   /**
    * Runs the callback with a new isolation scope which gets dropped at the end. Current scope is
    * also forked.
+   *
+   * <p>Unlike {@link Sentry#pushIsolationScope()} this also forks in global hub mode, since the
+   * previous scopes are always restored once the callback returns.
    *
    * @param callback the callback
    */
