@@ -182,6 +182,34 @@ class AppStartExtensionTest {
   }
 
   @Test
+  fun `finishTransaction and finishExtendedAppStart do not interleave`() {
+    val ext = extension(windowOpen = true)
+    val txn = mock<ITransaction>()
+    val span = mock<ISpan>()
+    ext.registerHandOver(txn = txn, span = span)
+    ext.extendAppStart()
+
+    // The end-time clamp in finishTransaction reads the span's finish date and then finishes the
+    // transaction. If finishExtendedAppStart can finish the span in between, the transaction is
+    // captured with an end earlier than its own child span.
+    val spanFinished = AtomicBoolean(false)
+    val interleaved = AtomicBoolean(false)
+    doAnswer { spanFinished.set(true) }.whenever(span).finish(any<SpanStatus>())
+    doAnswer {
+        val other = Thread { ext.finishExtendedAppStart() }
+        other.start()
+        other.join(1_000)
+        interleaved.set(spanFinished.get())
+      }
+      .whenever(txn)
+      .finish(any<SpanStatus>(), any())
+
+    ext.finishTransaction(SentryNanotimeDate())
+
+    assertFalse(interleaved.get(), "the extended span was finished mid-finishTransaction")
+  }
+
+  @Test
   fun `isActive reflects the transaction state`() {
     val ext = extension(windowOpen = true)
     assertFalse(ext.isActive)
