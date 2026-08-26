@@ -7,6 +7,7 @@ import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
+import io.sentry.hints.EventDropReason;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.logger.ILoggerBatchProcessor;
 import io.sentry.logger.NoOpLoggerBatchProcessor;
@@ -137,6 +138,7 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        HintUtils.setEventDropReason(hint, EventDropReason.IGNORED);
         return SentryId.EMPTY_ID;
       }
 
@@ -150,6 +152,7 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Error);
+        HintUtils.setEventDropReason(hint, EventDropReason.IGNORED);
         return SentryId.EMPTY_ID;
       }
     }
@@ -176,6 +179,7 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
+        HintUtils.setEventDropReason(hint, EventDropReason.BEFORE_SEND);
       }
     }
 
@@ -208,6 +212,7 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.SAMPLE_RATE, DataCategory.Error);
+        HintUtils.setEventDropReason(hint, EventDropReason.SAMPLE_RATE);
         // setting event as null to not be sent as its been discarded by sample rate
         event = null;
       }

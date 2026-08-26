@@ -5197,7 +5197,10 @@ public abstract interface class io/sentry/hints/Enqueable {
 }
 
 public final class io/sentry/hints/EventDropReason : java/lang/Enum {
+	public static final field BEFORE_SEND Lio/sentry/hints/EventDropReason;
+	public static final field IGNORED Lio/sentry/hints/EventDropReason;
 	public static final field MULTITHREADED_DEDUPLICATION Lio/sentry/hints/EventDropReason;
+	public static final field SAMPLE_RATE Lio/sentry/hints/EventDropReason;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/hints/EventDropReason;
 	public static fun values ()[Lio/sentry/hints/EventDropReason;
 }
