@@ -8,6 +8,9 @@ import io.sentry.SentryLongDate
 import io.sentry.SentryNanotimeDate
 import io.sentry.SpanStatus
 import io.sentry.android.core.performance.AppStartMetrics
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,6 +20,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -32,6 +36,26 @@ class AppStartExtensionTest {
   private fun extension(windowOpen: Boolean = true): AppStartExtension {
     whenever(metrics.canExtendAppStart()).thenReturn(windowOpen)
     return AppStartExtension(metrics)
+  }
+
+  private class ReentrantCall(val run: () -> Unit, val succeeded: AtomicBoolean)
+
+  /**
+   * Runs [call] on another thread and records whether it completed while the caller is still inside
+   * the stubbed method. Used to prove a lock is not held across that call.
+   */
+  private fun reentrantCallDuring(call: () -> Unit): ReentrantCall {
+    val succeeded = AtomicBoolean(false)
+    val done = CountDownLatch(1)
+    val run = {
+      Thread {
+          call()
+          done.countDown()
+        }
+        .start()
+      succeeded.set(done.await(2, TimeUnit.SECONDS))
+    }
+    return ReentrantCall(run, succeeded)
   }
 
   /** Simulates the integration's listener: hands a transaction + span back to the extension. */
@@ -121,6 +145,40 @@ class AppStartExtensionTest {
     ext.extendAppStart()
     ext.finishExtendedAppStart()
     verify(span, never()).finish(any<SpanStatus>())
+  }
+
+  @Test
+  fun `finishExtendedAppStart releases the lock before finishing the span`() {
+    val ext = extension(windowOpen = true)
+    val span = mock<ISpan>()
+    ext.registerHandOver(span = span)
+    ext.extendAppStart()
+
+    // Finishing the real span captures the transaction synchronously, which runs
+    // PerformanceAndroidEventProcessor, which calls back into the extension while holding its own
+    // lock. Holding this lock across the finish lets the two be taken in opposite orders and
+    // deadlock, so require another thread to get through the extension lock during the finish.
+    val reentered = reentrantCallDuring { ext.isExtended }
+    doAnswer { reentered.run() }.whenever(span).finish(any<SpanStatus>())
+
+    ext.finishExtendedAppStart()
+
+    assertTrue(reentered.succeeded.get(), "extension lock was held while finishing the span")
+  }
+
+  @Test
+  fun `finishTransaction releases the lock before finishing the transaction`() {
+    val ext = extension(windowOpen = true)
+    val txn = mock<ITransaction>()
+    ext.registerHandOver(txn = txn)
+    ext.extendAppStart()
+
+    val reentered = reentrantCallDuring { ext.isExtended }
+    doAnswer { reentered.run() }.whenever(txn).finish(any<SpanStatus>(), any())
+
+    ext.finishTransaction(SentryNanotimeDate())
+
+    assertTrue(reentered.succeeded.get(), "extension lock was held while finishing the transaction")
   }
 
   @Test

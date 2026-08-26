@@ -108,11 +108,14 @@ public final class AppStartExtension implements IAppStartExtender {
 
   @Override
   public void finishExtendedAppStart() {
+    final @Nullable ISpan span;
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      final @Nullable ISpan span = extendedSpan;
-      if (span != null && !span.isFinished()) {
-        span.finish(SpanStatus.OK);
-      }
+      span = extendedSpan;
+    }
+    // Finishing runs outside the lock, see the note on finishTransaction. Span.finish() guards
+    // itself with a CAS, so racing callers cannot finish it twice.
+    if (span != null && !span.isFinished()) {
+      span.finish(SpanStatus.OK);
     }
   }
 
@@ -145,15 +148,20 @@ public final class AppStartExtension implements IAppStartExtender {
   }
 
   public void finishTransaction(final @NotNull SentryDate endTimestamp) {
+    final @Nullable ITransaction transaction;
+    final @NotNull SentryDate end;
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      final @Nullable ITransaction transaction = extendedTransaction;
-      if (transaction != null && !transaction.isFinished()) {
-        final @Nullable ISpan span = extendedSpan;
-        final @Nullable SentryDate spanEnd = span == null ? null : span.getFinishDate();
-        final @NotNull SentryDate end =
-            spanEnd != null && spanEnd.isAfter(endTimestamp) ? spanEnd : endTimestamp;
-        transaction.finish(SpanStatus.OK, end);
-      }
+      transaction = extendedTransaction;
+      final @Nullable ISpan span = extendedSpan;
+      final @Nullable SentryDate spanEnd = span == null ? null : span.getFinishDate();
+      end = spanEnd != null && spanEnd.isAfter(endTimestamp) ? spanEnd : endTimestamp;
+    }
+    // Finishing has to run outside the lock: it captures the transaction synchronously, which runs
+    // PerformanceAndroidEventProcessor, which calls back into isExtended()/getExtendedEndTime()
+    // while holding its own lock. Holding this lock across the call would let the two locks be
+    // taken in opposite orders and deadlock.
+    if (transaction != null && !transaction.isFinished()) {
+      transaction.finish(SpanStatus.OK, end);
     }
   }
 
