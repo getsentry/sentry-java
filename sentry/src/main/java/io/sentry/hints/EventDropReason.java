@@ -8,7 +8,7 @@ public enum EventDropReason {
   MULTITHREADED_DEDUPLICATION,
   /** The event matched {@code ignoredExceptionsForType} or {@code ignoredErrors}. */
   IGNORED,
-  /** The {@code beforeSend} callback returned {@code null}. */
+  /** The {@code beforeSend} callback returned {@code null} or threw. */
   BEFORE_SEND,
   /** The event lost the {@code sampleRate} draw. */
   SAMPLE_RATE
