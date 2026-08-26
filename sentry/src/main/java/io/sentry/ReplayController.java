@@ -19,6 +19,9 @@ public interface ReplayController extends IReplayApi {
    */
   void onAppBackgrounded();
 
+  /** Stops replay when the current app session ends without clearing an explicit user pause. */
+  void onAppSessionEnded();
+
   boolean isRecording();
 
   /**

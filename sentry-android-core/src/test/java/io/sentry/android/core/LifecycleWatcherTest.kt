@@ -107,7 +107,7 @@ class LifecycleWatcherTest {
     watcher.onForeground()
     watcher.onBackground()
     verify(fixture.scopes, timeout(10000)).endSession()
-    verify(fixture.replayController, timeout(10000)).stop()
+    verify(fixture.replayController, timeout(10000)).onAppSessionEnded()
     verify(fixture.continuousProfiler, timeout(10000)).close(eq(false))
   }
 
@@ -124,7 +124,7 @@ class LifecycleWatcherTest {
     assertNull(watcher.endSessionFuture)
 
     verify(fixture.scopes, never()).endSession()
-    verify(fixture.replayController, never()).stop()
+    verify(fixture.replayController, never()).onAppSessionEnded()
   }
 
   @Test
@@ -262,6 +262,6 @@ class LifecycleWatcherTest {
     verify(fixture.replayController).onAppForegrounded(false)
 
     watcher.onBackground()
-    verify(fixture.replayController, timeout(10000)).stop()
+    verify(fixture.replayController, timeout(10000)).onAppSessionEnded()
   }
 }

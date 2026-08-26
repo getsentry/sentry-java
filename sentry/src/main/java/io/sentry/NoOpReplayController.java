@@ -39,6 +39,9 @@ public final class NoOpReplayController implements ReplayController {
   public void onAppBackgrounded() {}
 
   @Override
+  public void onAppSessionEnded() {}
+
+  @Override
   public boolean isRecording() {
     return false;
   }

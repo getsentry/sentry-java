@@ -70,6 +70,7 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun isRecording ()Z
 	public fun onAppBackgrounded ()V
 	public fun onAppForegrounded (Z)V
+	public fun onAppSessionEnded ()V
 	public final fun onConfigurationChanged (Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
 	public fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V

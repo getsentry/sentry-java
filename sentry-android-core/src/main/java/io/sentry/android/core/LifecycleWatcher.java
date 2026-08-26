@@ -109,7 +109,7 @@ final class LifecycleWatcher implements AppState.AppStateListener {
             if (enableSessionTracking) {
               scopes.endSession();
             }
-            scopes.getOptions().getReplayController().stop();
+            scopes.getOptions().getReplayController().onAppSessionEnded();
             scopes.getOptions().getContinuousProfiler().close(false);
           };
 

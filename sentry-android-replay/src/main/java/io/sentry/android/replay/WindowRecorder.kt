@@ -32,7 +32,6 @@ internal class WindowRecorder(
 ) : Recorder, OnRootViewsChangedListener, ExecutorProvider {
 
   private val isRecording = AtomicBoolean(false)
-  private val isPaused = AtomicBoolean(false)
   private val rootViews = ArrayList<WeakReference<View>>()
   private var lastKnownWindowSize: Point = Point()
   private val rootLayoutListeners = WeakHashMap<View, View.OnLayoutChangeListener>()
@@ -212,7 +211,6 @@ internal class WindowRecorder(
   }
 
   override fun start() {
-    isPaused.set(false)
     isRecording.getAndSet(true)
   }
 
@@ -241,11 +239,6 @@ internal class WindowRecorder(
     // Remove any existing callbacks to prevent concurrent capture loops
     mainLooperHandler.removeCallbacks(capturer)
 
-    if (isPaused.get()) {
-      capturer?.pause()
-      return
-    }
-
     val posted =
       mainLooperHandler.postDelayed(
         capturer,
@@ -260,12 +253,10 @@ internal class WindowRecorder(
   }
 
   override fun resume() {
-    isPaused.set(false)
     capturer?.resume()
   }
 
   override fun pause() {
-    isPaused.set(true)
     capturer?.pause()
   }
 

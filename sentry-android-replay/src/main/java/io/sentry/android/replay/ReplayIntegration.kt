@@ -197,6 +197,10 @@ public class ReplayIntegration(
     enqueueOnMainThread { pauseInternal() }
   }
 
+  override fun onAppSessionEnded() {
+    enqueueOnMainThread { stopInternal(resetManualPause = false) }
+  }
+
   private fun startInternal(isFullSession: Boolean) {
     if (!isEnabled.get()) {
       return
@@ -424,7 +428,7 @@ public class ReplayIntegration(
     enqueueOnMainThread { stopInternal() }
   }
 
-  private fun stopInternal() {
+  private fun stopInternal(resetManualPause: Boolean = true) {
     val current = state.get()
     if (!isEnabled.get() || !current.lifecycleState.isAllowed(STOPPED)) {
       return
@@ -435,7 +439,9 @@ public class ReplayIntegration(
     recorder?.stop()
     gestureRecorder?.stop()
     current.captureStrategy?.stop()
-    isManualPause = false
+    if (resetManualPause) {
+      isManualPause = false
+    }
     state.set(
       current.copy(
         lifecycleState = STOPPED,
