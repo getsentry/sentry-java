@@ -42,6 +42,9 @@ jobs:
             const highRiskFiles = process.env.high_risk_code;
             const fileList = highRiskFiles.split(',').map(file => `- [ ] ${file}`).join('\n');
 
+            const marker = '🚨 Detected changes in high risk code 🚨';
+            const body = `### ${marker} \n High-risk code has higher potential to break the SDK and may be hard to test. To prevent severe bugs, apply the rollout process for releasing such changes and be extra careful when changing and reviewing these files:\n ${fileList}`;
+
             // Get existing comments (paginate so older comments are not missed)
             const comments = await github.paginate(github.rest.issues.listComments, {
               issue_number: context.issue.number,
@@ -50,17 +53,25 @@ jobs:
               per_page: 100
             });
 
-            // Check if we already have a high risk code comment
-            const hasExistingComment = comments.some(comment =>
-              comment.body?.includes('🚨 Detected changes in high risk code 🚨')
+            const existingComment = comments.find(comment =>
+              comment.body?.includes(marker)
             );
 
-            // Only create comment if we don't already have one
-            if (!hasExistingComment) {
+            // Update the existing warning so the file list stays current, else create once
+            if (existingComment) {
+              if (existingComment.body !== body) {
+                await github.rest.issues.updateComment({
+                  comment_id: existingComment.id,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body
+                });
+              }
+            } else {
               await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `### 🚨 Detected changes in high risk code 🚨 \n High-risk code has higher potential to break the SDK and may be hard to test. To prevent severe bugs, apply the rollout process for releasing such changes and be extra careful when changing and reviewing these files:\n ${fileList}`
+                body
               });
             }
