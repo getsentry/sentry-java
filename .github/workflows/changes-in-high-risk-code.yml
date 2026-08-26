@@ -51,12 +51,12 @@ jobs:
               const fileList = files
                 .map(file => `- [${checkedFiles.has(file) ? 'x' : ' '}] ${file}`)
                 .join('\n');
-              return `${intro}\n ${fileList}`;
+              return `${intro}\n${fileList}`;
             };
 
             const parseCheckedFiles = (commentBody = '') => {
               const checked = new Set();
-              for (const match of commentBody.matchAll(/^- \[x\] (.+)$/gim)) {
+              for (const match of commentBody.matchAll(/^[ \t]*- \[x\] (.+)$/gim)) {
                 checked.add(match[1].trim());
               }
               return checked;
@@ -64,7 +64,7 @@ jobs:
 
             const parseListedFiles = (commentBody = '') => {
               const listed = [];
-              for (const match of commentBody.matchAll(/^- \[[ xX]\] (.+)$/gim)) {
+              for (const match of commentBody.matchAll(/^[ \t]*- \[[ xX]\] (.+)$/gim)) {
                 listed.push(match[1].trim());
               }
               return listed;
