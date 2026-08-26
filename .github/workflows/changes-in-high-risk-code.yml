@@ -42,15 +42,16 @@ jobs:
             const highRiskFiles = process.env.high_risk_code;
             const fileList = highRiskFiles.split(',').map(file => `- [ ] ${file}`).join('\n');
 
-            // Get existing comments
-            const comments = await github.rest.issues.listComments({
+            // Get existing comments (paginate so older comments are not missed)
+            const comments = await github.paginate(github.rest.issues.listComments, {
               issue_number: context.issue.number,
               owner: context.repo.owner,
-              repo: context.repo.repo
+              repo: context.repo.repo,
+              per_page: 100
             });
 
             // Check if we already have a high risk code comment
-            const hasExistingComment = comments.data.some(comment =>
+            const hasExistingComment = comments.some(comment =>
               comment.body.includes('🚨 Detected changes in high risk code 🚨')
             );
 
