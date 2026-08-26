@@ -52,6 +52,7 @@ import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Random
 import java.io.Closeable
 import java.io.File
+import java.util.Date
 import java.util.LinkedList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -172,6 +173,7 @@ public class ReplayIntegration(
         return@enqueueOnMainThread
       }
       if (startNewSession) {
+        stopInternal()
         val isFullSession = sample(options.sessionReplay.sessionSampleRate)
         if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
           options.logger.log(
@@ -294,16 +296,18 @@ public class ReplayIntegration(
       current.captureStrategy?.captureReplay(true) {}
     } else {
       enqueueOnMainThread {
-        captureReplayInternal(current.generation, current.replayId, false)
+        captureCurrentReplay(current.generation, current.replayId) { strategy, onSegmentSent ->
+          strategy.captureReplay(false, onSegmentSent)
+        }
       }
     }
     return current.replayId
   }
 
-  private fun captureReplayInternal(
+  private fun captureCurrentReplay(
     expectedGeneration: Long,
     expectedReplayId: SentryId,
-    isTerminating: Boolean,
+    capture: (CaptureStrategy, (Date) -> Unit) -> Unit,
   ) {
     val current = state.get()
     val strategy = current.captureStrategy
@@ -315,30 +319,27 @@ public class ReplayIntegration(
       }
       options.logger.log(
         INFO,
-        "Replay was stopped or restarted before capture could run, not capturing for event",
+        "Replay was stopped or restarted before capture could run, not capturing replay",
       )
       return
     }
 
     var activeStrategy: CaptureStrategy = strategy
-    strategy.captureReplay(
-      isTerminating,
-      onSegmentSent = { newTimestamp ->
-        enqueueOnMainThread {
-          val latest = state.get()
-          // The flush completes asynchronously; ignore it if this replay was stopped, restarted,
-          // or handed to another strategy in the meantime.
-          if (
-            latest.matches(expectedGeneration, expectedReplayId) &&
-              latest.captureStrategy === activeStrategy
-          ) {
-            activeStrategy.currentSegment++
-            activeStrategy.segmentTimestamp = newTimestamp
-            activeStrategy.isFlushed = true
-          }
+    capture(strategy) { newTimestamp ->
+      enqueueOnMainThread {
+        val latest = state.get()
+        // The flush completes asynchronously; ignore it if this replay was stopped, restarted,
+        // or handed to another strategy in the meantime.
+        if (
+          latest.matches(expectedGeneration, expectedReplayId) &&
+            latest.captureStrategy === activeStrategy
+        ) {
+          activeStrategy.currentSegment++
+          activeStrategy.segmentTimestamp = newTimestamp
+          activeStrategy.isFlushed = true
         }
-      },
-    )
+      }
+    }
     activeStrategy = strategy.convert()
     val replayId: SentryId? = activeStrategy.currentReplayId
     state.set(
@@ -357,7 +358,9 @@ public class ReplayIntegration(
       if (!current.isRecording) {
         startInternal(isFullSession = true)
       } else {
-        captureReplayInternal(current.generation, current.replayId, false)
+        captureCurrentReplay(current.generation, current.replayId) { strategy, onSegmentSent ->
+          strategy.flush(onSegmentSent)
+        }
       }
     }
   }

@@ -21,9 +21,10 @@ import java.util.concurrent.ScheduledExecutorService
  * `sessionSegmentDuration`, until the 1h `sessionDuration` deadline. Used when the session is
  * sampled by `sessionSampleRate`.
  *
- * [captureReplay] is a no-op here — there is no buffer to flush, the segment covering the error is
- * sent like any other. Because envelopes are in flight the whole time, `ReplayIntegration` pauses
- * this strategy while offline or rate-limited so the envelope cache doesn't overflow.
+ * Event-triggered [captureReplay] is a no-op here — there is no buffer to flush, so the segment
+ * covering the error is sent like any other. An explicit [flush] still sends the current segment.
+ * Because envelopes are in flight the whole time, `ReplayIntegration` pauses this strategy while
+ * offline or rate-limited so the envelope cache doesn't overflow.
  *
  * See [BufferCaptureStrategy] for the on-error counterpart.
  */
@@ -89,6 +90,17 @@ internal class SessionCaptureStrategy(
       )
     }
     this.isTerminating.set(isTerminating)
+  }
+
+  override fun flush(onSegmentSent: (Date) -> Unit) {
+    createCurrentSegment("flush") { segment ->
+      if (segment is ReplaySegment.Created) {
+        segment.capture(scopes)
+        currentSegment++
+        segmentTimestamp = segment.replay.timestamp
+        isFlushed = true
+      }
+    }
   }
 
   override fun onScreenshotRecorded(

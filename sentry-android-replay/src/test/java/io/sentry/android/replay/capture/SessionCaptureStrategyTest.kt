@@ -252,6 +252,20 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
+  fun `flush creates and captures current segment`() {
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.flush {}
+
+    verify(fixture.scopes)
+      .captureReplay(argThat { event -> event is SentryReplayEvent && event.segmentId == 0 }, any())
+    assertEquals(1, strategy.currentSegment)
+    assertTrue(strategy.isFlushed)
+  }
+
+  @Test
   fun `when process is crashing, onScreenshotRecorded does not create new segment`() {
     val now =
       System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)

@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public interface ReplayController extends IReplayApi {
   /**
-   * Handles app foregrounding. When a new app session begins, starts a sampled replay unless one is
-   * already recording. An existing replay is never restarted or replaced.
+   * Handles app foregrounding. When a new app session begins, stops any previous replay and starts
+   * a newly sampled one.
    */
   void onAppForegrounded(boolean startNewSession);
 
@@ -22,8 +22,10 @@ public interface ReplayController extends IReplayApi {
   boolean isRecording();
 
   /**
-   * Captures the buffered replay and returns its ID, or {@link SentryId#EMPTY_ID} if no replay was
-   * captured.
+   * Captures replay data for an event and returns its ID, or {@link SentryId#EMPTY_ID} if no replay
+   * was captured. In buffer mode, sends the buffered replay and continues in session mode. In
+   * session mode, the replay is already uploaded continuously, so this does not force an immediate
+   * segment upload; use {@link #flush()} for that.
    */
   @NotNull
   SentryId captureReplay(@Nullable Boolean isTerminating);

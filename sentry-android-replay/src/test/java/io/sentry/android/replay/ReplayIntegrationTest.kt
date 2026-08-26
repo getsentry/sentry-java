@@ -440,6 +440,27 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `new app session replaces an automatically paused replay`() {
+    val firstStrategy = mock<CaptureStrategy>()
+    val secondStrategy = mock<CaptureStrategy>()
+    val strategies = ArrayDeque(listOf(firstStrategy, secondStrategy))
+    val replay =
+      fixture.getSut(
+        context,
+        replayCaptureStrategyProvider = { strategies.removeFirst() },
+      )
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.onAppForegrounded(true)
+    replay.onAppBackgrounded()
+    replay.onAppForegrounded(true)
+
+    verify(firstStrategy).stop()
+    verify(firstStrategy, never()).resume()
+    verify(secondStrategy).start(any(), any(), anyOrNull())
+  }
+
+  @Test
   fun `captureReplay does nothing when not recording`() {
     val captureStrategy = mock<CaptureStrategy>()
     val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
@@ -505,8 +526,21 @@ class ReplayIntegrationTest {
     replay.startBuffering()
     replay.flush()
 
-    verify(captureStrategy).captureReplay(eq(false), any())
+    verify(captureStrategy).flush(any())
     verify(captureStrategy).convert()
+  }
+
+  @Test
+  fun `flush captures the current session segment`() {
+    val captureStrategy = mock<SessionCaptureStrategy>()
+    whenever(captureStrategy.convert()).thenReturn(captureStrategy)
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    replay.flush()
+
+    verify(captureStrategy).flush(any())
   }
 
   @Test

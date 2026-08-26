@@ -32,8 +32,9 @@ public interface IReplayApi {
   void resume();
 
   /**
-   * Flushes replay data. A buffering replay continues in session mode after the buffer is sent. If
-   * replay is not recording, starts a new replay session.
+   * Immediately sends the current replay data to Sentry in either session or buffer mode. A
+   * buffering replay continues in session mode after the buffer is sent. If replay is not
+   * recording, starts a new replay session.
    */
   void flush();
 
