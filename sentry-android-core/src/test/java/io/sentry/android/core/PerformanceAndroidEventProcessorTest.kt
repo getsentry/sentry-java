@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import android.content.ContentProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.ISpan
@@ -16,7 +17,9 @@ import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
+import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_EXTENDED_OP
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA
+import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_TYPE_DATA
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
 import io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
@@ -170,6 +173,97 @@ class PerformanceAndroidEventProcessorTest {
       assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTID))
       assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTFD))
     }
+  }
+
+  @Test
+  fun `foreground standalone app start sets screen and type on root and breakdown children`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = true
+      classLoadedUptimeMs = 50
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(100)
+      }
+      applicationOnCreateTimeSpan.apply {
+        setStartedAt(10)
+        description = "com.example.App.onCreate"
+        setStoppedAt(42)
+      }
+    }
+
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "Activity")
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.contexts.trace!!.data[APP_START_SCREEN_DATA]).isEqualTo("Activity")
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("cold")
+    assertThat(tr.spans).isNotEmpty()
+    for (span in tr.spans) {
+      assertThat(span.data?.get(APP_START_SCREEN_DATA)).isEqualTo("Activity")
+      assertThat(span.data?.get(APP_START_TYPE_DATA)).isEqualTo("cold")
+    }
+  }
+
+  @Test
+  fun `standalone app start sets screen and type on user spans under the extended span`() {
+    val sut = fixture.getSut()
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = true
+    }
+
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "Activity")
+    val traceId = tr.contexts.trace!!.traceId
+    val extendedSpanId = SpanId()
+    val childSpanId = SpanId()
+    tr.spans.add(
+      createSpan(traceId, extendedSpanId, tr.contexts.trace!!.spanId, APP_START_EXTENDED_OP)
+    )
+    tr.spans.add(createSpan(traceId, childSpanId, extendedSpanId, "user.work"))
+    tr.spans.add(createSpan(traceId, SpanId(), childSpanId, "user.work.child"))
+
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.contexts.trace!!.data[APP_START_SCREEN_DATA]).isEqualTo("Activity")
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("cold")
+    assertThat(tr.spans).hasSize(3)
+    assertThat(tr.spans.map { it.data?.get(APP_START_SCREEN_DATA) })
+      .containsExactly("Activity", "Activity", "Activity")
+    assertThat(tr.spans.map { it.data?.get(APP_START_TYPE_DATA) })
+      .containsExactly("cold", "cold", "cold")
+  }
+
+  @Test
+  fun `headless standalone app start sets type but not screen on children`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics(withApplicationOnCreate = true)
+
+    var tr = createStandaloneAppStartTransaction()
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.contexts.trace!!.data[APP_START_SCREEN_DATA]).isNull()
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("cold")
+    assertThat(tr.spans).isNotEmpty()
+    for (span in tr.spans) {
+      assertThat(span.data?.get(APP_START_SCREEN_DATA)).isNull()
+      assertThat(span.data?.get(APP_START_TYPE_DATA)).isEqualTo("cold")
+    }
+  }
+
+  @Test
+  fun `ui load attached app start child does not get standalone vitals attributes`() {
+    setAppStart(fixture.options, coldStart = true)
+
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.contexts.trace!!.data[APP_START_SCREEN_DATA]).isNull()
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isNull()
+    val appStartSpan = tr.spans.single { it.op == APP_START_COLD }
+    assertThat(appStartSpan.data?.get(APP_START_SCREEN_DATA)).isNull()
+    assertThat(appStartSpan.data?.get(APP_START_TYPE_DATA)).isNull()
   }
 
   @Test
@@ -1088,6 +1182,27 @@ class PerformanceAndroidEventProcessorTest {
         txn.contexts.trace!!.setData(APP_START_SCREEN_DATA, appStartScreen)
       }
     }
+
+  private fun createSpan(
+    traceId: SentryId,
+    spanId: SpanId,
+    parentSpanId: SpanId,
+    op: String,
+  ): SentrySpan =
+    SentrySpan(
+      0.0,
+      1.0,
+      traceId,
+      spanId,
+      parentSpanId,
+      op,
+      op,
+      SpanStatus.OK,
+      null,
+      emptyMap(),
+      emptyMap(),
+      null,
+    )
 
   private fun createTransaction(op: String): SentryTransaction {
     val txn = SentryTransaction(fixture.tracer)
