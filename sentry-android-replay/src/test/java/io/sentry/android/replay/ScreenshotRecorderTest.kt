@@ -14,8 +14,10 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [35])
 class ScreenshotRecorderTest {
 
   internal class Fixture() {

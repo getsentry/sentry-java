@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -182,6 +183,11 @@ final class AndroidOptionsInitializer {
     if (options.getCacheDirPath() != null) {
       options.addScopeObserver(new PersistingScopeObserver(options));
       options.addOptionsObserver(new PersistingOptionsObserver(options));
+      final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
+      if (packageInfo != null && packageInfo.lastUpdateTime > 0) {
+        options.addOptionsObserver(
+            new PersistingOptionsCacheGenerationObserver(options, packageInfo.lastUpdateTime));
+      }
     }
 
     options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
@@ -294,6 +300,7 @@ final class AndroidOptionsInitializer {
   }
 
   /** Setup the correct profiler (transaction or continuous) based on the options. */
+  @SuppressLint("NewApi")
   private static void setupProfiler(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
@@ -303,6 +310,28 @@ final class AndroidOptionsInitializer {
       final @NotNull CompositePerformanceCollector performanceCollector) {
     if (options.isProfilingEnabled() || options.getProfilesSampleRate() != null) {
       options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
+      // Transaction-based profiling always relies on the legacy Debug-based profiler, so it is
+      // disabled together with legacy profiling. Perfetto profiling only supports continuous
+      // profiling.
+      if (!options.isEnableLegacyProfiling()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Transaction-based profiling (profilesSampleRate/profilesSampler) is disabled "
+                    + "because enableLegacyProfiling is false. Transaction-based profiling always "
+                    + "uses the legacy profiler and is not supported by Perfetto. No profiling "
+                    + "data will be collected. Use profileSessionSampleRate for continuous "
+                    + "profiling instead.");
+        options.setTransactionProfiler(NoOpTransactionProfiler.getInstance());
+        if (appStartTransactionProfiler != null) {
+          appStartTransactionProfiler.close();
+        }
+        if (appStartContinuousProfiler != null) {
+          appStartContinuousProfiler.close(true);
+        }
+        return;
+      }
       // This is a safeguard, but it should never happen, as the app start profiler should be the
       // continuous one.
       if (appStartContinuousProfiler != null) {
@@ -336,16 +365,36 @@ final class AndroidOptionsInitializer {
           performanceCollector.start(chunkId.toString());
         }
       } else {
-        options.setContinuousProfiler(
-            new AndroidContinuousProfiler(
-                buildInfoProvider,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required"),
-                options.getLogger(),
-                options.getProfilingTracesDirPath(),
-                options.getProfilingTracesHz(),
-                () -> options.getExecutorService()));
+        final @NotNull SentryFrameMetricsCollector frameMetricsCollector =
+            Objects.requireNonNull(
+                options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
+        if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+          final @NotNull Context appContext = ContextUtils.getApplicationContext(context);
+          options.setContinuousProfiler(
+              new PerfettoContinuousProfiler(
+                  options.getLogger(),
+                  frameMetricsCollector,
+                  () -> options.getExecutorService(),
+                  () ->
+                      new PerfettoProfiler(
+                          appContext, options.getLogger(), options.getExecutorService())));
+        } else if (options.isEnableLegacyProfiling()) {
+          options.setContinuousProfiler(
+              new AndroidContinuousProfiler(
+                  buildInfoProvider,
+                  frameMetricsCollector,
+                  options.getLogger(),
+                  options.getProfilingTracesDirPath(),
+                  options.getProfilingTracesHz(),
+                  () -> options.getExecutorService()));
+        } else {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "enableLegacyProfiling is disabled and device is below API 35. "
+                      + "No profiling data will be collected.");
+        }
       }
     }
   }

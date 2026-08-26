@@ -41,7 +41,6 @@ import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
 import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
-import org.apache.logging.log4j.core.impl.ThrowableProxy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -274,13 +273,12 @@ public class SentryAppender extends AbstractAppender {
     event.setLogger(loggingEvent.getLoggerName());
     event.setLevel(formatLevel(loggingEvent.getLevel()));
 
-    final ThrowableProxy throwableInformation = loggingEvent.getThrownProxy();
-    if (throwableInformation != null) {
+    final @Nullable Throwable thrown = loggingEvent.getThrown();
+    if (thrown != null) {
       final Mechanism mechanism = new Mechanism();
       mechanism.setType(MECHANISM_TYPE);
       final Throwable mechanismException =
-          new ExceptionMechanismException(
-              mechanism, throwableInformation.getThrowable(), Thread.currentThread());
+          new ExceptionMechanismException(mechanism, thrown, Thread.currentThread());
       event.setThrowable(mechanismException);
     }
 

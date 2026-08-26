@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import io.sentry.DateUtils
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
@@ -24,10 +26,13 @@ import io.sentry.rrweb.RRWebInteractionEvent.InteractionType.TouchEnd
 import io.sentry.rrweb.RRWebInteractionEvent.InteractionType.TouchStart
 import java.io.File
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -36,6 +41,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowBitmapFactory
+import org.robolectric.shadows.ShadowCloseGuard
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [26], shadows = [ReplayShadowMediaCodec::class])
@@ -56,6 +62,9 @@ class ReplayCacheTest {
   @BeforeTest
   fun `set up`() {
     ReplayShadowMediaCodec.framesToEncode = 5
+    ReplayShadowMediaCodec.throwOnStart = false
+    ReplayShadowMediaCodec.neverSignalEos = false
+    ReplayShadowMediaCodec.released = false
     ShadowBitmapFactory.setAllowInvalidImageData(true)
   }
 
@@ -91,6 +100,26 @@ class ReplayCacheTest {
     val video = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
 
     assertNull(video)
+  }
+
+  @Test
+  fun `releases the muxer when the encoder fails to start`() {
+    ReplayShadowMediaCodec.throwOnStart = true
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 1)
+
+    ShadowCloseGuard.reset()
+    assertFailsWith<IllegalStateException> {
+      replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
+    }
+
+    val muxerLeaks =
+      ShadowCloseGuard.getErrors().filter { error ->
+        error.stackTrace.any { it.className.contains("MediaMuxer") }
+      }
+    assertTrue(muxerLeaks.isEmpty(), "MediaMuxer was not released: $muxerLeaks")
   }
 
   @Test
@@ -630,5 +659,49 @@ class ReplayCacheTest {
 
     // No crash is success
     assertNull(error.get())
+  }
+
+  @Test
+  fun `createVideoOf returns when the encoder never signals end of stream`() {
+    ReplayShadowMediaCodec.neverSignalEos = true
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 1)
+
+    val done = CountDownLatch(1)
+    val error = AtomicReference<Throwable?>()
+    val encoder =
+      thread(isDaemon = true) {
+        try {
+          replayCache.createVideoOf(1000L, 0L, 0, 100, 200, 1, 20_000)
+        } catch (t: Throwable) {
+          error.set(t)
+        } finally {
+          done.countDown()
+        }
+      }
+
+    assertWithMessage("createVideoOf did not return, the drain loop is spinning")
+      .that(done.await(30, SECONDS))
+      .isTrue()
+    encoder.join(SECONDS.toMillis(10))
+    assertThat(error.get()).isNull()
+  }
+
+  @Test
+  fun `createVideoOf releases the encoder even when EOS is never signalled`() {
+    ReplayShadowMediaCodec.neverSignalEos = true
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 1)
+
+    // the stall bound breaks the drain loop, but release() must still be called
+    replayCache.createVideoOf(1000L, 0L, 0, 100, 200, 1, 20_000)
+
+    assertWithMessage("encoder should be released even when EOS was never signalled")
+      .that(ReplayShadowMediaCodec.released)
+      .isTrue()
   }
 }

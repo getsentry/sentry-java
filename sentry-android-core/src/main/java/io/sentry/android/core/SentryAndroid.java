@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Process;
 import android.os.SystemClock;
+import android.os.Trace;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -95,6 +96,9 @@ public final class SentryAndroid {
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
+    // Started before acquiring the lock so it stays balanced with the endSection() in the finally
+    // even if acquire() throws.
+    Trace.beginSection("SentryAndroid.init");
     try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
       Sentry.init(
           new SentryAndroidOptionsContainer(),
@@ -219,6 +223,8 @@ public final class SentryAndroid {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
+    } finally {
+      Trace.endSection();
     }
   }
 

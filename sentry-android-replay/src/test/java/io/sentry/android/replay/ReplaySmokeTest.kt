@@ -23,6 +23,7 @@ import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebVideoEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.transport.RateLimiter
 import java.time.Duration
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -41,6 +42,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -61,11 +63,17 @@ class ReplaySmokeTest {
   internal class Fixture {
     val options = SentryOptions()
     val scope = Scope(options)
+    val rateLimiter =
+      mock<RateLimiter> {
+        on { isActiveForCategory(any()) }.thenReturn(false)
+      }
     val scopes =
       mock<IScopes> {
         doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
           .whenever(it)
           .configureScope(any())
+
+        on { rateLimiter }.doReturn(rateLimiter)
       }
 
     private class ImmediateHandler :
@@ -91,7 +99,10 @@ class ReplaySmokeTest {
         mainLooperHandler =
           mock {
             whenever(mock.handler).thenReturn(ImmediateHandler())
-            whenever(mock.post(any())).then { (it.arguments[0] as Runnable).run() }
+            whenever(mock.post(any())).then {
+              (it.arguments[0] as Runnable).run()
+              true
+            }
             whenever(mock.postDelayed(any(), anyLong())).then {
               // have to use another thread here otherwise it will block the test thread
               recordingThread.schedule(

@@ -2,9 +2,12 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import android.view.MotionEvent
+import io.sentry.DataCategory
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.SentryEnvelope
+import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.DefaultReplayBreadcrumbConverter
@@ -17,10 +20,12 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayFrame
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Companion.VIDEO_DURATION
+import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
-import io.sentry.util.Random
+import io.sentry.transport.RateLimiter
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -93,18 +98,25 @@ class BufferCaptureStrategyTest {
         bitRate = 20_000,
       )
 
+    // client report counts are only readable by draining them onto an envelope
+    fun discardedEvents(): List<DiscardedEvent> =
+      options.clientReportRecorder
+        .attachReportToEnvelope(SentryEnvelope(SentryEnvelopeHeader(), emptyList()))
+        .items
+        .firstOrNull()
+        ?.getClientReport(options.serializer)
+        ?.discardedEvents
+        .orEmpty()
+
     fun getSut(
-      onErrorSampleRate: Double = 1.0,
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
       replayCacheDir: File? = null,
     ): BufferCaptureStrategy {
       replayCacheDir?.let { whenever(replayCache.replayCacheDir).thenReturn(it) }
-      options.run { sessionReplay.onErrorSampleRate = onErrorSampleRate }
       return BufferCaptureStrategy(
         options,
         scopes,
         dateProvider,
-        Random(),
         mock {
           whenever(it.submit(any<Runnable>())).doAnswer { invocation ->
             (invocation.arguments[0] as Runnable).run()
@@ -240,6 +252,19 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
+  fun `convert stays in buffer mode when rate-limited`() {
+    val rateLimiter = mock<RateLimiter> { on { isActiveForCategory(any()) }.thenReturn(true) }
+    whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
+    val strategy = fixture.getSut()
+    strategy.start()
+
+    strategy.captureReplay(false) {}
+
+    val converted = strategy.convert()
+    assertTrue(converted is BufferCaptureStrategy)
+  }
+
+  @Test
   fun `convert converts to session strategy and sets replayId to scope`() {
     val strategy = fixture.getSut()
     strategy.start()
@@ -327,17 +352,50 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
-  fun `captureReplay does not replayId to scope when not sampled`() {
-    val strategy = fixture.getSut(onErrorSampleRate = 0.0)
+  fun `captureReplay does not capture segments when rate-limited`() {
+    val rateLimiter = mock<RateLimiter> { on { isActiveForCategory(any()) }.thenReturn(true) }
+    whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
+    val strategy = fixture.getSut()
     strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    strategy.pause()
 
     strategy.captureReplay(false) {}
 
-    assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
+    // neither the current nor the buffered segment should be sent while rate-limited
+    verify(fixture.scopes, never()).captureReplay(any(), any())
   }
 
   @Test
-  fun `captureReplay sets replayId to scope and captures buffered segments`() {
+  fun `captureReplay records a lost replay event when rate-limited`() {
+    val rateLimiter = mock<RateLimiter> { on { isActiveForCategory(any()) }.thenReturn(true) }
+    whenever(fixture.scopes.rateLimiter).thenReturn(rateLimiter)
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    strategy.pause()
+
+    strategy.captureReplay(false) {}
+
+    val discarded = fixture.discardedEvents()
+    assertEquals(1, discarded.size)
+    assertEquals(DiscardReason.RATELIMIT_BACKOFF.reason, discarded.first().reason)
+    assertEquals(DataCategory.Replay.category, discarded.first().category)
+  }
+
+  @Test
+  fun `captureReplay does not record a lost replay event when not rate-limited`() {
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.captureReplay(false) {}
+
+    assertTrue(fixture.discardedEvents().none { it.category == DataCategory.Replay.category })
+  }
+
+  @Test
+  fun `captureReplay captures buffered segments`() {
     var called = false
     val strategy = fixture.getSut()
     strategy.start()
@@ -349,7 +407,6 @@ class BufferCaptureStrategyTest {
 
     // buffered + current = 2
     verify(fixture.scopes, times(2)).captureReplay(any(), any())
-    assertEquals(strategy.currentReplayId, fixture.scope.replayId)
     assertTrue(called)
   }
 

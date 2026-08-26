@@ -8,9 +8,7 @@ import io.sentry.Session;
 import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.AutoClosableReentrantLock;
-import io.sentry.util.LazyEvaluator;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -22,9 +20,8 @@ final class LifecycleWatcher implements AppState.AppStateListener {
 
   private final long sessionIntervalMillis;
 
-  private @Nullable TimerTask timerTask;
-  private final @NotNull LazyEvaluator<Timer> timer = new LazyEvaluator<>(() -> new Timer(true));
-  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
+  private @Nullable Future<?> endSessionFuture;
+  private final @NotNull AutoClosableReentrantLock endSessionLock = new AutoClosableReentrantLock();
   private final @NotNull IScopes scopes;
   private final boolean enableSessionTracking;
   private final boolean enableAppLifecycleBreadcrumbs;
@@ -104,29 +101,40 @@ final class LifecycleWatcher implements AppState.AppStateListener {
   }
 
   private void scheduleEndSession() {
-    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
+    try (final @NotNull ISentryLifecycleToken ignored = endSessionLock.acquire()) {
       cancelTask();
-      timerTask =
-          new TimerTask() {
-            @Override
-            public void run() {
-              if (enableSessionTracking) {
-                scopes.endSession();
-              }
-              scopes.getOptions().getReplayController().stop();
-              scopes.getOptions().getContinuousProfiler().close(false);
+      final @NotNull Runnable endSession =
+          () -> {
+            if (enableSessionTracking) {
+              scopes.endSession();
             }
+            scopes.getOptions().getReplayController().stop();
+            scopes.getOptions().getContinuousProfiler().close(false);
           };
 
-      timer.getValue().schedule(timerTask, sessionIntervalMillis);
+      try {
+        endSessionFuture =
+            scopes
+                .getOptions()
+                .getTimerExecutorService()
+                .schedule(endSession, sessionIntervalMillis);
+      } catch (Throwable e) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.WARNING, "Failed to schedule end of session. Ending it now.", e);
+        // if we cannot re-check after the session interval, end the session right away instead of
+        // leaving it open forever
+        endSession.run();
+      }
     }
   }
 
   private void cancelTask() {
-    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      if (timerTask != null) {
-        timerTask.cancel();
-        timerTask = null;
+    try (final @NotNull ISentryLifecycleToken ignored = endSessionLock.acquire()) {
+      if (endSessionFuture != null) {
+        endSessionFuture.cancel(false);
+        endSessionFuture = null;
       }
     }
   }
@@ -144,13 +152,7 @@ final class LifecycleWatcher implements AppState.AppStateListener {
 
   @TestOnly
   @Nullable
-  TimerTask getTimerTask() {
-    return timerTask;
-  }
-
-  @TestOnly
-  @NotNull
-  Timer getTimer() {
-    return timer.getValue();
+  Future<?> getEndSessionFuture() {
+    return endSessionFuture;
   }
 }

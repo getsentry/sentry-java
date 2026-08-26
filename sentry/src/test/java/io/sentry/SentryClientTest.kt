@@ -18,6 +18,8 @@ import io.sentry.logger.ILoggerBatchProcessorFactory
 import io.sentry.metrics.IMetricsBatchProcessor
 import io.sentry.metrics.IMetricsBatchProcessorFactory
 import io.sentry.protocol.Contexts
+import io.sentry.protocol.DebugImage
+import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Message
@@ -282,6 +284,108 @@ class SentryClientTest {
       fixture.sentryOptions.clientReportRecorder,
       listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1)),
     )
+  }
+
+  @Test
+  fun `when beforeSend captures another event, the nested capture is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSend { e, _ ->
+      invocations++
+      sut.captureEvent(SentryEvent())
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    // Callback runs only for the outer event; the nested capture is dropped before its callback.
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeSend captures a log, the nested log is dropped`() {
+    val scope = createScope()
+    fixture.sentryOptions.logs.isEnabled = true
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSend { e, _ ->
+      sut.captureLog(
+        SentryLogEvent(SentryId(), SentryNanotimeDate(), "nested", SentryLogLevel.WARN),
+        scope,
+      )
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    // The shared guard spans capture types: a log emitted from beforeSend is dropped too.
+    verify(fixture.loggerBatchProcessor, never()).add(any())
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeSendLog logs again, the nested log is dropped and does not recurse`() {
+    val scope = createScope()
+    fixture.sentryOptions.logs.isEnabled = true
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.logs.setBeforeSend { l ->
+      invocations++
+      sut.captureLog(
+        SentryLogEvent(SentryId(), SentryNanotimeDate(), "nested", SentryLogLevel.WARN),
+        scope,
+      )
+      l
+    }
+    sut = fixture.getSut()
+
+    sut.captureLog(
+      SentryLogEvent(SentryId(), SentryNanotimeDate(), "outer", SentryLogLevel.WARN),
+      scope,
+    )
+
+    assertEquals(1, invocations)
+    verify(fixture.loggerBatchProcessor, times(1)).add(any())
+  }
+
+  @Test
+  fun `when beforeSend captures feedback before an event, the guard is not cleared prematurely`() {
+    val scope = createScope()
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSend { e, _ ->
+      invocations++
+      // Capturing feedback must not clear the re-entrancy guard for captures that follow it in the
+      // same callback, otherwise the captureEvent below would recurse.
+      sut.captureFeedback(Feedback("feedback"), null, scope)
+      sut.captureEvent(SentryEvent())
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent())
+
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeSendFeedback captures feedback again, the nested capture is dropped and does not recurse`() {
+    val scope = createScope()
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.setBeforeSendFeedback { e, _ ->
+      invocations++
+      sut.captureFeedback(Feedback("nested"), null, scope)
+      e
+    }
+    sut = fixture.getSut()
+
+    sut.captureFeedback(Feedback("outer"), null, scope)
+
+    assertEquals(1, invocations)
   }
 
   @Test
@@ -1892,6 +1996,56 @@ class SentryClientTest {
   }
 
   @Test
+  fun `captureProfileChunk adds options proguard debug meta`() {
+    fixture.sentryOptions.proguardUuid = "current-uuid"
+
+    val client = fixture.getSut()
+    client.captureProfileChunk(fixture.profileChunk, mock())
+
+    verify(fixture.transport)
+      .send(
+        check { actual ->
+          val profileChunk = getProfileChunkFromEnvelope(actual)
+          val images = profileChunk.debugMeta!!.images!!
+
+          assertEquals(1, images.size)
+          assertEquals(DebugImage.PROGUARD, images[0].type)
+          assertEquals("current-uuid", images[0].uuid)
+        }
+      )
+  }
+
+  @Test
+  fun `captureProfileChunk preserves existing proguard debug meta`() {
+    fixture.sentryOptions.proguardUuid = "current-uuid"
+    fixture.profileChunk.debugMeta =
+      DebugMeta().apply {
+        images =
+          listOf(
+            DebugImage().apply {
+              type = DebugImage.PROGUARD
+              uuid = "previous-uuid"
+            }
+          )
+      }
+
+    val client = fixture.getSut()
+    client.captureProfileChunk(fixture.profileChunk, mock())
+
+    verify(fixture.transport)
+      .send(
+        check { actual ->
+          val profileChunk = getProfileChunkFromEnvelope(actual)
+          val images = profileChunk.debugMeta!!.images!!
+
+          assertEquals(1, images.size)
+          assertEquals(DebugImage.PROGUARD, images[0].type)
+          assertEquals("previous-uuid", images[0].uuid)
+        }
+      )
+  }
+
+  @Test
   fun `when captureProfileChunk with empty trace file, profile chunk is not sent`() {
     val client = fixture.getSut()
     fixture.profilingTraceFile.writeText("")
@@ -3189,6 +3343,44 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when beforeEnvelopeCallback captures another event, the nested capture is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    val options = { options: SentryOptions ->
+      options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
+        invocations++
+        sut.captureEvent(SentryEvent())
+      }
+    }
+    sut = fixture.getSut(options)
+
+    sut.captureEvent(SentryEvent(), Hint())
+
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when beforeEnvelopeCallback captures an envelope, the nested envelope is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    val options = { options: SentryOptions ->
+      options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
+        invocations++
+        sut.captureEnvelope(SentryEnvelope(SentryId(UUID.randomUUID()), null, setOf()))
+      }
+    }
+    sut = fixture.getSut(options)
+
+    sut.captureEvent(SentryEvent(), Hint())
+
+    // Callback runs only for the outer envelope; the nested captureEnvelope is dropped in
+    // sendEnvelope before its callback would run.
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
   fun `beforeEnvelopeCallback may fail, but the transport is still sends the envelope `() {
     val sut = fixture.getSut { options ->
       options.beforeEnvelopeCallback = SentryOptions.BeforeEnvelopeCallback { _, _ ->
@@ -3316,8 +3508,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3332,8 +3525,9 @@ class SentryClientTest {
     var terminated: Boolean? = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           terminated = isTerminating
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3353,7 +3547,7 @@ class SentryClientTest {
     val replayId = SentryId()
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {}
+        override fun captureReplay(isTerminating: Boolean?): SentryId = replayId
       }
     )
     val sut = fixture.getSut()
@@ -3411,8 +3605,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3433,8 +3628,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3451,12 +3647,31 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when beforeErrorSampling captures another event, the nested capture is dropped and does not recurse`() {
+    var invocations = 0
+    lateinit var sut: SentryClient
+    fixture.sentryOptions.sessionReplay.beforeErrorSampling =
+      SentryReplayOptions.BeforeErrorSamplingCallback { _, _ ->
+        invocations++
+        sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+        true
+      }
+    sut = fixture.getSut()
+
+    sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
+
+    assertEquals(1, invocations)
+    verify(fixture.transport, times(1)).send(any(), anyOrNull())
+  }
+
+  @Test
   fun `beforeErrorSampling returning false skips captureReplay`() {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3475,8 +3690,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3495,8 +3711,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3511,8 +3728,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3532,7 +3750,7 @@ class SentryClientTest {
     var receivedHint: Hint? = null
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {}
+        override fun captureReplay(isTerminating: Boolean?): SentryId = SentryId.EMPTY_ID
       }
     )
     fixture.sentryOptions.sessionReplay.beforeErrorSampling =
@@ -3555,8 +3773,9 @@ class SentryClientTest {
     var called = false
     fixture.sentryOptions.setReplayController(
       object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?) {
+        override fun captureReplay(isTerminating: Boolean?): SentryId {
           called = true
+          return SentryId.EMPTY_ID
         }
       }
     )
@@ -3718,7 +3937,7 @@ class SentryClientTest {
     val replayController = mock<ReplayController>()
     val replayId = SentryId()
     val scope = createScope()
-    whenever(replayController.captureReplay(any())).thenAnswer { run { scope.replayId = replayId } }
+    whenever(replayController.captureReplay(any())).thenReturn(replayId)
     val sut = fixture.getSut { it.setReplayController(replayController) }
     // When there is no replay id in the feedback
     sut.captureFeedback(Feedback("message"), null, scope)
@@ -3728,7 +3947,7 @@ class SentryClientTest {
 
     val sentFeedback = sentEvent!!.contexts.feedback
     assertNotNull(sentFeedback)
-    // And the replay id is set to the one from the scope (coming from the replay controller)
+    // And the replay id returned by the replay controller is set
     assertEquals(replayId, sentFeedback.replayId)
   }
 
@@ -3742,7 +3961,7 @@ class SentryClientTest {
     val replayController = mock<ReplayController>()
     val replayId = SentryId()
     val scope = createScope()
-    whenever(replayController.captureReplay(any())).thenAnswer { run { scope.replayId = replayId } }
+    whenever(replayController.captureReplay(any())).thenReturn(replayId)
     val sut = fixture.getSut { it.setReplayController(replayController) }
     // When there is replay id in the feedback
     val feedback = Feedback("message")
@@ -4009,6 +4228,17 @@ class SentryClientTest {
       inputStream,
       SentryTransaction::class.java,
     )!!
+  }
+
+  private fun getProfileChunkFromData(data: ByteArray): ProfileChunk {
+    val inputStream = InputStreamReader(ByteArrayInputStream(data))
+    return fixture.sentryOptions.serializer.deserialize(inputStream, ProfileChunk::class.java)!!
+  }
+
+  private fun getProfileChunkFromEnvelope(envelope: SentryEnvelope): ProfileChunk {
+    val profileChunkItem =
+      envelope.items.first { item -> item.header.type == SentryItemType.ProfileChunk }
+    return getProfileChunkFromData(profileChunkItem.data)
   }
 
   private fun getReplayFromData(data: ByteArray): SentryReplayEvent? {

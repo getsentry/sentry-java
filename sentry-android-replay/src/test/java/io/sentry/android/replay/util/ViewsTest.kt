@@ -20,8 +20,10 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric.buildActivity
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [35])
 class ViewsTest {
 
   @BeforeTest
