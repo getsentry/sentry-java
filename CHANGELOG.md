@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Set `app.vitals.start.screen` and `app.vitals.start.type` on standalone `app.start` children ([#6005](https://github.com/getsentry/sentry-java/pull/6005))
+
 ## 8.49.0
 
 ### Features
