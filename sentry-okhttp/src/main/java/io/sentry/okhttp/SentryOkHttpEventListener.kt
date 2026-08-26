@@ -100,8 +100,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun proxySelectStart(call: Call, url: HttpUrl) {
-    originalEventListenerMap[call]?.proxySelectStart(call, url)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.proxySelectStart(call, url)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -109,8 +110,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun proxySelectEnd(call: Call, url: HttpUrl, proxies: List<Proxy>) {
-    originalEventListenerMap[call]?.proxySelectEnd(call, url, proxies)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.proxySelectEnd(call, url, proxies)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -122,8 +124,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun dnsStart(call: Call, domainName: String) {
-    originalEventListenerMap[call]?.dnsStart(call, domainName)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.dnsStart(call, domainName)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -131,8 +134,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun dnsEnd(call: Call, domainName: String, inetAddressList: List<InetAddress>) {
-    originalEventListenerMap[call]?.dnsEnd(call, domainName, inetAddressList)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.dnsEnd(call, domainName, inetAddressList)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -145,8 +149,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun connectStart(call: Call, inetSocketAddress: InetSocketAddress, proxy: Proxy) {
-    originalEventListenerMap[call]?.connectStart(call, inetSocketAddress, proxy)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.connectStart(call, inetSocketAddress, proxy)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -154,8 +159,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun secureConnectStart(call: Call) {
-    originalEventListenerMap[call]?.secureConnectStart(call)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.secureConnectStart(call)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -163,8 +169,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun secureConnectEnd(call: Call, handshake: Handshake?) {
-    originalEventListenerMap[call]?.secureConnectEnd(call, handshake)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.secureConnectEnd(call, handshake)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -177,8 +184,9 @@ public open class SentryOkHttpEventListener(
     proxy: Proxy,
     protocol: Protocol?,
   ) {
-    originalEventListenerMap[call]?.connectEnd(call, inetSocketAddress, proxy, protocol)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.connectEnd(call, inetSocketAddress, proxy, protocol)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -193,8 +201,9 @@ public open class SentryOkHttpEventListener(
     protocol: Protocol?,
     ioe: IOException,
   ) {
-    originalEventListenerMap[call]?.connectFailed(call, inetSocketAddress, proxy, protocol, ioe)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.connectFailed(call, inetSocketAddress, proxy, protocol, ioe)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -207,8 +216,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun connectionAcquired(call: Call, connection: Connection) {
-    originalEventListenerMap[call]?.connectionAcquired(call, connection)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.connectionAcquired(call, connection)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -216,8 +226,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun connectionReleased(call: Call, connection: Connection) {
-    originalEventListenerMap[call]?.connectionReleased(call, connection)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.connectionReleased(call, connection)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -225,8 +236,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun requestHeadersStart(call: Call) {
-    originalEventListenerMap[call]?.requestHeadersStart(call)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.requestHeadersStart(call)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -234,8 +246,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun requestHeadersEnd(call: Call, request: Request) {
-    originalEventListenerMap[call]?.requestHeadersEnd(call, request)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.requestHeadersEnd(call, request)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -243,8 +256,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun requestBodyStart(call: Call) {
-    originalEventListenerMap[call]?.requestBodyStart(call)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.requestBodyStart(call)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -252,8 +266,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun requestBodyEnd(call: Call, byteCount: Long) {
-    originalEventListenerMap[call]?.requestBodyEnd(call, byteCount)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.requestBodyEnd(call, byteCount)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -266,8 +281,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun requestFailed(call: Call, ioe: IOException) {
-    originalEventListenerMap[call]?.requestFailed(call, ioe)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.requestFailed(call, ioe)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -287,8 +303,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun responseHeadersStart(call: Call) {
-    originalEventListenerMap[call]?.responseHeadersStart(call)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.responseHeadersStart(call)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -296,8 +313,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun responseHeadersEnd(call: Call, response: Response) {
-    originalEventListenerMap[call]?.responseHeadersEnd(call, response)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.responseHeadersEnd(call, response)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -312,8 +330,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun responseBodyStart(call: Call) {
-    originalEventListenerMap[call]?.responseBodyStart(call)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.responseBodyStart(call)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -321,8 +340,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun responseBodyEnd(call: Call, byteCount: Long) {
-    originalEventListenerMap[call]?.responseBodyEnd(call, byteCount)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.responseBodyEnd(call, byteCount)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -335,8 +355,9 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun responseFailed(call: Call, ioe: IOException) {
-    originalEventListenerMap[call]?.responseFailed(call, ioe)
-    if (!canCreateEventSpan(call)) {
+    val originalEventListener = originalEventListenerMap[call]
+    originalEventListener?.responseFailed(call, ioe)
+    if (!canCreateEventSpan(originalEventListener)) {
       return
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
@@ -394,9 +415,6 @@ public open class SentryOkHttpEventListener(
   override fun cacheConditionalHit(call: Call, cachedResponse: Response) {
     originalEventListenerMap[call]?.cacheConditionalHit(call, cachedResponse)
   }
-
-  private fun canCreateEventSpan(call: Call): Boolean =
-    canCreateEventSpan(originalEventListenerMap[call])
 
   private fun canCreateEventSpan(originalEventListener: EventListener?): Boolean {
     // If the wrapped EventListener is ours, we shouldn't create spans, as the originalEventListener
