@@ -41,9 +41,25 @@ jobs:
           script: |
             const highRiskFiles = process.env.high_risk_code;
             const fileList = highRiskFiles.split(',').map(file => `- [ ] ${file}`).join('\n');
-            github.rest.issues.createComment({
+
+            // Get existing comments
+            const comments = await github.rest.issues.listComments({
               issue_number: context.issue.number,
               owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `### 🚨 Detected changes in high risk code 🚨 \n High-risk code has higher potential to break the SDK and may be hard to test. To prevent severe bugs, apply the rollout process for releasing such changes and be extra careful when changing and reviewing these files:\n ${fileList}`
-            })
+              repo: context.repo.repo
+            });
+
+            // Check if we already have a high risk code comment
+            const hasExistingComment = comments.data.some(comment =>
+              comment.body.includes('🚨 Detected changes in high risk code 🚨')
+            );
+
+            // Only create comment if we don't already have one
+            if (!hasExistingComment) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `### 🚨 Detected changes in high risk code 🚨 \n High-risk code has higher potential to break the SDK and may be hard to test. To prevent severe bugs, apply the rollout process for releasing such changes and be extra careful when changing and reviewing these files:\n ${fileList}`
+              });
+            }
