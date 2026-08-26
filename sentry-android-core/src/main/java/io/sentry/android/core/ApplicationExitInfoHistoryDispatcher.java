@@ -177,6 +177,7 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
     }
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.R)
   private void report(final @NotNull ApplicationExitInfo exitInfo, final boolean enrich) {
     final @Nullable Report report = policy.buildReport(exitInfo, enrich);
 
@@ -186,7 +187,12 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
 
     final @NotNull SentryId sentryId = scopes.captureEvent(report.getEvent(), report.getHint());
     final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
-    if (!isEventDropped) {
+    if (isEventDropped) {
+      // A dropped event never reaches the envelope disk cache, which is where the last reported
+      // marker is normally written. Without writing it here, the very same exit would be turned
+      // into an event again on the next app start, ignoring the user's decision to drop it.
+      policy.markReported(exitInfo.getTimestamp());
+    } else {
       final @Nullable BlockingFlushHint flushHint = report.getFlushHint();
       if (flushHint != null && !flushHint.waitFlush()) {
         options
@@ -210,6 +216,9 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
 
     @Nullable
     Long getLastReportedTimestamp();
+
+    /** Records {@code timestamp} as the last reported exit, so it is not reported again. */
+    void markReported(long timestamp);
 
     @Nullable
     Report buildReport(@NotNull ApplicationExitInfo exitInfo, boolean enrich);

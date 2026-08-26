@@ -188,6 +188,17 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
   }
 
   @Test
+  fun `when latest event was dropped, marks the exit as reported`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp, lastEventId = SentryId.EMPTY_ID)
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    assertEquals(newTimestamp.toString(), fixture.lastReportedFile.readText())
+  }
+
+  @Test
   fun `historical exits are reported non-enriched`() {
     val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
     fixture.addAppExitInfo(timestamp = newTimestamp - 2 * 60 * 1000)
