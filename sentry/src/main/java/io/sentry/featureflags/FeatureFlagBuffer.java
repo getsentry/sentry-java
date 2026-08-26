@@ -8,6 +8,7 @@ import io.sentry.protocol.FeatureFlags;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.ApiStatus;
@@ -85,9 +86,16 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
 
   @Override
   public @Nullable FeatureFlags getFeatureFlags() {
-    List<FeatureFlag> featureFlags = new ArrayList<>();
-    for (FeatureFlagEntry entry : flags) {
-      featureFlags.add(entry.toFeatureFlag());
+    final int size;
+    final @NotNull Iterator<FeatureFlagEntry> snapshot;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      size = flags.size();
+      snapshot = flags.iterator();
+    }
+
+    final @NotNull List<FeatureFlag> featureFlags = new ArrayList<>(size);
+    while (snapshot.hasNext()) {
+      featureFlags.add(snapshot.next().toFeatureFlag());
     }
     return new FeatureFlags(featureFlags);
   }

@@ -399,6 +399,50 @@ class FeatureFlagBufferTest {
   }
 
   @Test
+  fun `getting feature flags does not observe a partially updated buffer`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 100 }
+    val buffer = FeatureFlagBuffer.create(options)
+    val expectedFlags = (0 until options.maxFeatureFlags).map { "flag$it" }
+
+    expectedFlags.forEach { buffer.add(it, true) }
+
+    val stop = AtomicBoolean(false)
+    val writerFailure = AtomicReference<Throwable?>(null)
+    val writerOperations = AtomicInteger()
+    val writerStarted = CountDownLatch(1)
+    val writer = Thread {
+      try {
+        var i = 0
+        while (!stop.get()) {
+          buffer.add(expectedFlags[i++ % expectedFlags.size], true)
+          writerOperations.incrementAndGet()
+          writerStarted.countDown()
+        }
+      } catch (e: Exception) {
+        writerFailure.set(e)
+      }
+    }
+
+    writer.start()
+    try {
+      assertThat(writerStarted.await(5, TimeUnit.SECONDS)).isTrue()
+      val writerOperationsBeforeReading = writerOperations.get()
+
+      repeat(1_000) {
+        assertThat(buffer.featureFlags?.values?.map { it?.flag })
+          .containsExactlyElementsIn(expectedFlags)
+      }
+
+      assertThat(writerOperations.get()).isGreaterThan(writerOperationsBeforeReading)
+    } finally {
+      stop.set(true)
+      writer.join()
+    }
+
+    assertThat(writerFailure.get()).isNull()
+  }
+
+  @Test
   fun `merging does not observe a partially updated buffer`() {
     val options = SentryOptions().also { it.maxFeatureFlags = 100 }
     val globalBuffer = FeatureFlagBuffer.create(options)
@@ -410,12 +454,14 @@ class FeatureFlagBufferTest {
 
     val stop = AtomicBoolean(false)
     val writerFailure = AtomicReference<Throwable?>(null)
+    val writerOperations = AtomicInteger()
     val writerStarted = CountDownLatch(1)
     val writer = Thread {
       try {
         var i = 0
         while (!stop.get()) {
           globalBuffer.add(expectedFlags[i++ % expectedFlags.size], true)
+          writerOperations.incrementAndGet()
           writerStarted.countDown()
         }
       } catch (e: Exception) {
@@ -426,6 +472,7 @@ class FeatureFlagBufferTest {
     writer.start()
     try {
       assertThat(writerStarted.await(5, TimeUnit.SECONDS)).isTrue()
+      val writerOperationsBeforeMerging = writerOperations.get()
 
       repeat(1_000) {
         val featureFlags =
@@ -433,6 +480,8 @@ class FeatureFlagBufferTest {
             .featureFlags
         assertThat(featureFlags?.values?.map { it?.flag }).containsExactlyElementsIn(expectedFlags)
       }
+
+      assertThat(writerOperations.get()).isGreaterThan(writerOperationsBeforeMerging)
     } finally {
       stop.set(true)
       writer.join()
