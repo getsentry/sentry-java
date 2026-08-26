@@ -191,17 +191,18 @@ internal class SessionCaptureStrategy(
       return
     }
 
+    val requestedAt = dateProvider.currentTimeMillis
+    val replayId = currentReplayId
     replayExecutor.submit(
       ReplayRunnable("$TAG.$taskName") {
-        // Read the segment timeline on the replay executor so a queued natural segment boundary
-        // cannot make this snapshot stale.
-        val now = dateProvider.currentTimeMillis
+        // Keep the request time so executor delays do not extend the segment, but read the mutable
+        // timeline here so a queued natural boundary cannot make it stale.
         val currentSegmentTimestamp = segmentTimestamp ?: return@ReplayRunnable
         val segment =
           createSegmentInternal(
-            now - currentSegmentTimestamp.time,
+            requestedAt - currentSegmentTimestamp.time,
             currentSegmentTimestamp,
-            currentReplayId,
+            replayId,
             currentSegment,
             currentConfig.recordingHeight,
             currentConfig.recordingWidth,

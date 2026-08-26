@@ -50,6 +50,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -294,6 +295,42 @@ class SessionCaptureStrategyTest {
     tasks.forEach(Runnable::run)
 
     assertThat(segmentIds).containsExactly(0, 1).inOrder()
+  }
+
+  @Test
+  fun `flush uses request time when executor is delayed`() {
+    val tasks = mutableListOf<Runnable>()
+    var now = System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    val strategy = fixture.getSut(dateProvider = { now }, replayExecutor = replayExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val segmentStart = strategy.segmentTimestamp!!.time
+    val requestedAt = now
+
+    strategy.flush {}
+    now += fixture.options.sessionReplay.sessionSegmentDuration
+    tasks.forEach(Runnable::run)
+
+    verify(fixture.replayCache)
+      .createVideoOf(
+        eq(requestedAt - segmentStart),
+        eq(segmentStart),
+        eq(0),
+        any(),
+        any(),
+        any(),
+        any(),
+        any(),
+      )
   }
 
   @Test
