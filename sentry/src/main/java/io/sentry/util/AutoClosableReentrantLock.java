@@ -1,7 +1,6 @@
 package io.sentry.util;
 
 import io.sentry.ISentryLifecycleToken;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jetbrains.annotations.ApiStatus;
@@ -37,19 +36,6 @@ public final class AutoClosableReentrantLock implements ISentryLifecycleToken {
   public @NotNull ISentryLifecycleToken acquire() {
     getOrCreateLock().lock();
     return this;
-  }
-
-  /**
-   * Like {@link #acquire()}, but gives up after {@code timeout}. Use it when blocking forever would
-   * be worse than not doing the work at all, e.g. on a path that can run on the main thread.
-   *
-   * @return the token (this instance) if the lock was acquired, or {@code null} if it wasn't. A
-   *     {@code null} return means the lock is <b>not</b> held, so {@link #close()} must not be
-   *     called for it.
-   */
-  public @Nullable ISentryLifecycleToken tryAcquire(
-      final long timeout, final @NotNull TimeUnit unit) throws InterruptedException {
-    return getOrCreateLock().tryLock(timeout, unit) ? this : null;
   }
 
   @Override

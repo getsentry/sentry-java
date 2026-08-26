@@ -40,7 +40,6 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 
 ## Essential Commands
 
-### Development Workflow
 ```bash
 # Format code and regenerate .api files (REQUIRED before committing)
 ./gradlew spotlessApply apiDump
@@ -50,35 +49,13 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 
 # Generate documentation
 ./gradlew aggregateJavadocs
-```
-
-### Testing
-```bash
-# Run unit tests for a specific file
-./gradlew ':<module>:testReleaseUnitTest' --tests="*<file name>*" --info
-
-# Run system tests (requires Python virtual env)
-make systemTest
-
-# Run specific test suites
-./gradlew :sentry-android-core:testReleaseUnitTest
-./gradlew :sentry:test
-```
-
-### Code Quality
-```bash
-# Check code formatting
-./gradlew spotlessJavaCheck spotlessKotlinCheck
-
-# Apply code formatting
-./gradlew spotlessApply
-
-# Update API dump files (after API changes)
-./gradlew apiDump
 
 # Dependency updates check
 ./gradlew dependencyUpdates -Drevision=release
 ```
+
+To run tests, use the `test` skill rather than composing the Gradle invocation by hand — it
+resolves the per-module test task and the unit-test vs system-test split for you.
 
 ### Android-Specific Commands
 ```bash
@@ -102,11 +79,9 @@ make systemTest
 
 ## Repository Skills
 
-This repo ships task-specific skills (declared in `agents.toml`, sources under `.agents/skills`). Prefer them over performing the steps manually:
-- **`create-java-pr`**: Branch, format, `apiDump`, commit, push, open PR, and add the changelog entry (automates the PR workflow above)
-- **`test`**: Run unit or system tests for a module or a specific class
-- **`check-code-attribution`**: Verify third-party code attribution on the current branch (see Third-Party Code Attribution below)
-- **`btrace-perfetto`**: Capture and compare Perfetto traces for Android performance work
+This repo ships task-specific skills, declared in `agents.toml` with sources under
+`.agents/skills`. Your harness already lists them with their descriptions — prefer them over
+performing the steps manually.
 
 ## Module Architecture
 
@@ -150,8 +125,8 @@ The repository is organized into multiple modules:
 
 ### Code Style
 - **Languages**: Java 8+ and Kotlin
-- **Formatting**: Enforced via Spotless - always run `./gradlew spotlessApply` before committing
-- **API Compatibility**: Binary compatibility is enforced - run `./gradlew apiDump` after API changes
+- **Formatting**: Enforced via Spotless
+- **API Compatibility**: Binary compatibility is enforced. `.api` files are generated, never hand-edited
 
 ### Exception Handling
 
@@ -189,10 +164,9 @@ PR description why the broad catch is necessary.
 
 ### Contributing Guidelines
 1. Follow existing code style and language
-2. Do not modify API files (e.g. sentry.api) manually - run `./gradlew apiDump` to regenerate them
-3. Write comprehensive tests
-4. New features must be **opt-in by default** - extend `SentryOptions` or similar Option classes with getters/setters
-5. Consider backwards compatibility
+2. Write comprehensive tests
+3. New features must be **opt-in by default** - extend `SentryOptions` or similar Option classes with getters/setters
+4. Consider backwards compatibility
 
 ### Third-Party Code Attribution
 When adapting code from third-party libraries:
