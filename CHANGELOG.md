@@ -4,6 +4,10 @@
 
 ### Features
 
+- Set `app.vitals.start.screen` and `app.vitals.start.type` on standalone `app.start` children ([#6005](https://github.com/getsentry/sentry-java/pull/6005))
+- Add screenshot attachment button to the Android user feedback widget ([#5828](https://github.com/getsentry/sentry-java/pull/5828))
+  - Users can now attach a screenshot when submitting feedback. Enabled by default; can be disabled via `SentryFeedbackOptions.setEnableAttachScreenshot(false)` or the `io.sentry.feedback.enable-attach-screenshot` manifest flag.
+  - Requires the `androidx.activity` `>=1.8.2` dependency
 - Add manual Session Replay controls through `Sentry.replay()` ([#5978](https://github.com/getsentry/sentry-java/pull/5978))
   - Explicit `start()` and `startBuffering()` calls bypass the configured replay sample rates; sampling still controls automatic startup.
   - `start()` starts a full-session replay and does nothing if one is already recording.
@@ -20,13 +24,6 @@
 - Prevent a class of Session Replay deadlocks by confining lifecycle state changes to Android's main thread ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
 - Symbolicate tombstone native frames for libraries loaded directly from APKs ([#5992](https://github.com/getsentry/sentry-java/pull/5992))
 - Prevent a deadlock between the app start extension and the Android performance event processor ([#6007](https://github.com/getsentry/sentry-java/pull/6007))
-
-### Features
-
-- Set `app.vitals.start.screen` and `app.vitals.start.type` on standalone `app.start` children ([#6005](https://github.com/getsentry/sentry-java/pull/6005))
-- Add screenshot attachment button to the Android user feedback widget ([#5828](https://github.com/getsentry/sentry-java/pull/5828))
-  - Users can now attach a screenshot when submitting feedback. Enabled by default; can be disabled via `SentryFeedbackOptions.setEnableAttachScreenshot(false)` or the `io.sentry.feedback.enable-attach-screenshot` manifest flag.
-  - Requires the `androidx.activity` `>=1.8.2` dependency
 
 ### Performance
 
