@@ -1,8 +1,10 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class NoOpContinuousProfiler implements IContinuousProfiler {
 
   private static final NoOpContinuousProfiler instance = new NoOpContinuousProfiler();
