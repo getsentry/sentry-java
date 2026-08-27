@@ -311,8 +311,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
         this.status = status;
-        // the flag only decides how an Ok session is finalized, so an explicit terminal status
-        // such as a crash or an ANR takes precedence over a non-terminating error.
+        // a terminal status makes the flag meaningless, so drop it rather than serialize a crashed
+        // session that claims it did not terminate
         if (status != State.Ok) {
           hasNonTerminatingUnhandledError = false;
         }
