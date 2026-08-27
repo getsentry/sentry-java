@@ -8,6 +8,7 @@
 - Prevent duplicated breadcrumbs on tombstone-merged native crash events ([#5888](https://github.com/getsentry/sentry-java/pull/5888))
 - Prevent a class of Session Replay deadlocks by confining lifecycle state changes to Android's main thread ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
 - Symbolicate tombstone native frames for libraries loaded directly from APKs ([#5992](https://github.com/getsentry/sentry-java/pull/5992))
+- Drop the `profiler_id` from transactions and spans when no Perfetto profile covers them, e.g. when Android's `ProfilingManager` rate limits the profiling request ([#6015](https://github.com/getsentry/sentry-java/pull/6015))
 
 ### Features
 
