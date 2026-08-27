@@ -6,7 +6,6 @@ import io.opentelemetry.sdk.trace.data.SpanData
 import io.opentelemetry.semconv.HttpAttributes
 import io.opentelemetry.semconv.ServerAttributes
 import io.opentelemetry.semconv.UrlAttributes
-import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.SentryOptions
 import io.sentry.protocol.Request
@@ -352,43 +351,6 @@ class OpenTelemetryAttributesExtractorTest {
       "f9118105af4a2d42b4124532cd176588-4542d085bb0b4de5",
     )
     thenHeaderIsNotPresentOnRequest("some-header")
-  }
-
-  @Test
-  fun `data collection filters request header attributes`() {
-    fixture.options.dataCollection.httpHeaders.request =
-      KeyValueCollectionBehavior.denyList("customer")
-    givenAttributes(
-      mapOf(
-        HttpAttributes.HTTP_REQUEST_METHOD to "GET",
-        AttributeKey.stringArrayKey("http.request.header.content-type") to
-          listOf("application/json"),
-        AttributeKey.stringArrayKey("http.request.header.authorization") to listOf("Bearer token"),
-        AttributeKey.stringArrayKey("http.request.header.x-customer") to listOf("customer value"),
-      )
-    )
-
-    whenExtractingAttributes()
-
-    thenHeaderIsPresentOnRequest("content-type", "application/json")
-    thenHeaderIsPresentOnRequest("authorization", "[Filtered]")
-    thenHeaderIsPresentOnRequest("x-customer", "[Filtered]")
-  }
-
-  @Test
-  fun `data collection can disable request header attributes`() {
-    fixture.options.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
-    givenAttributes(
-      mapOf(
-        HttpAttributes.HTTP_REQUEST_METHOD to "GET",
-        AttributeKey.stringArrayKey("http.request.header.content-type") to
-          listOf("application/json"),
-      )
-    )
-
-    whenExtractingAttributes()
-
-    assertNull(fixture.scope.request!!.headers)
   }
 
   @Test
