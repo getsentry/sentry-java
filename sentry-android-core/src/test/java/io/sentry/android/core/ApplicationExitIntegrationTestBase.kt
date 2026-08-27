@@ -12,7 +12,6 @@ import io.sentry.SentryEvent
 import io.sentry.SentryLevel
 import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.DiskFlushNotification
-import io.sentry.hints.EventDropReason
 import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
@@ -189,14 +188,9 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
   }
 
   @Test
-  fun `when latest event was dropped by beforeSend, marks the exit as reported`() {
+  fun `when latest event was dropped, marks the exit as reported`() {
     val integration =
-      fixture.getSut(
-        tmpDir,
-        lastReportedTimestamp = oldTimestamp,
-        lastEventId = SentryId.EMPTY_ID,
-        eventDropReason = EventDropReason.BEFORE_SEND,
-      )
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp, lastEventId = SentryId.EMPTY_ID)
     fixture.addAppExitInfo(timestamp = newTimestamp)
 
     integration.register(fixture.scopes, fixture.options)
@@ -207,7 +201,12 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
   @Test
   fun `when capturing the latest event failed, does not mark the exit as reported`() {
     val integration =
-      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp, lastEventId = SentryId.EMPTY_ID)
+      fixture.getSut(
+        tmpDir,
+        lastReportedTimestamp = oldTimestamp,
+        lastEventId = SentryId.EMPTY_ID,
+        captureFailed = true,
+      )
     fixture.addAppExitInfo(timestamp = newTimestamp)
 
     integration.register(fixture.scopes, fixture.options)
@@ -431,7 +430,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
       sessionFlushTimeoutMillis: Long = 0L,
       lastReportedTimestamp: Long? = null,
       lastEventId: SentryId = SentryId(),
-      eventDropReason: EventDropReason? = null,
+      captureFailed: Boolean = false,
       sessionTrackingEnabled: Boolean = true,
       reportHistorical: Boolean = true,
       extraOptions: (SentryAndroidOptions) -> Unit = {},
@@ -456,7 +455,9 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
         lastReportedFile.writeText(lastReportedTimestamp.toString())
       }
       whenever(scopes.captureEvent(any(), anyOrNull<Hint>())).thenAnswer { invocation ->
-        eventDropReason?.let { HintUtils.setEventDropReason(invocation.getArgument(1), it) }
+        if (captureFailed) {
+          HintUtils.setCaptureFailed(invocation.getArgument(1))
+        }
         lastEventId
       }
       return config.createIntegration(context)

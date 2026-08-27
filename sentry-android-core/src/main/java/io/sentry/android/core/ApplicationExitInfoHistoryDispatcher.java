@@ -12,7 +12,6 @@ import io.sentry.SentryLevel;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.BlockingFlushHint;
-import io.sentry.hints.EventDropReason;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
@@ -192,18 +191,22 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
     if (isEventDropped) {
       // A dropped event never reaches the envelope disk cache, which is where the last reported
       // marker is normally written. Without writing it here, the very same exit would be turned
-      // into an event again on the next app start, ignoring the user's decision to drop it.
-      // An empty id alone is not enough: capturing also returns one when building or handing over
-      // the envelope failed, and such an exit has to stay eligible for the next app start.
-      final @Nullable EventDropReason dropReason = HintUtils.getEventDropReason(report.getHint());
-      if (dropReason != null) {
+      // into an event again on the next app start, no matter why it was dropped. Only a technical
+      // failure to hand the event over keeps the exit eligible for another attempt.
+      if (HintUtils.isCaptureFailed(report.getHint())) {
         options
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
-                "%s event was dropped (%s), marking the exit as reported.",
-                policy.getLabel(),
-                dropReason);
+                "Capturing the %s event failed, leaving the exit for the next app start.",
+                policy.getLabel());
+      } else {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "%s event was dropped, marking the exit as reported.",
+                policy.getLabel());
         policy.markReported(exitInfo.getTimestamp());
       }
     } else {
