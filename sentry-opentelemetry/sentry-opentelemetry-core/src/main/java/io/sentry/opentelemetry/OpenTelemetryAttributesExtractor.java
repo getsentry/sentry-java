@@ -52,8 +52,7 @@ public final class OpenTelemetryAttributesExtractor {
       if (request.getUrl() == null) {
         final @Nullable String url = extractUrl(attributes, options);
         if (url != null) {
-          final @NotNull UrlUtils.UrlDetails urlDetails =
-              UrlUtils.parse(url, options.getDataCollectionResolver());
+          final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(url);
           urlDetails.applyToRequest(request);
         }
       }
@@ -61,8 +60,7 @@ public final class OpenTelemetryAttributesExtractor {
       if (request.getQueryString() == null) {
         final @Nullable String query = attributes.get(UrlAttributes.URL_QUERY);
         if (query != null) {
-          request.setQueryString(
-              UrlUtils.filterQueryParams(query, options.getDataCollectionResolver()));
+          request.setQueryString(query);
         }
       }
 
