@@ -79,8 +79,6 @@ public final class OpenTelemetryAttributesExtractor {
   private static Map<String, String> collectHeaders(
       final @NotNull Attributes attributes, final @NotNull SentryOptions options) {
     Map<String, String> headers = new HashMap<>();
-    final boolean isDataCollectionConfigured =
-        options.getDataCollectionResolver().isDataCollectionConfigured();
 
     attributes.forEach(
         (key, value) -> {
@@ -88,9 +86,7 @@ public final class OpenTelemetryAttributesExtractor {
           if (attributeKeyAsString.startsWith(HTTP_REQUEST_HEADER_PREFIX)) {
             final @NotNull String headerName =
                 StringUtils.removePrefix(attributeKeyAsString, HTTP_REQUEST_HEADER_PREFIX);
-            if (isDataCollectionConfigured
-                || options.isSendDefaultPii()
-                || !HttpUtils.containsSensitiveHeader(headerName)) {
+            if (options.isSendDefaultPii() || !HttpUtils.containsSensitiveHeader(headerName)) {
               if (value instanceof List) {
                 try {
                   final @NotNull List<String> headerValues = (List<String>) value;
@@ -108,10 +104,6 @@ public final class OpenTelemetryAttributesExtractor {
             }
           }
         });
-    if (isDataCollectionConfigured) {
-      return HttpUtils.filterHeaders(
-          headers, options.getDataCollectionResolver().getHttpRequestHeaders());
-    }
     return headers;
   }
 
