@@ -581,6 +581,48 @@ fun SessionReplayScreen() {
     verticalArrangement = Arrangement.spacedBy(12.dp),
   ) {
     item {
+      SentryTraced("start_replay") {
+        OutlinedButton(onClick = { Sentry.replay().start() }, modifier = Modifier) {
+          Text("Start Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("start_replay_buffering") {
+        OutlinedButton(onClick = { Sentry.replay().startBuffering() }, modifier = Modifier) {
+          Text("Start Replay Buffering", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("pause_replay") {
+        OutlinedButton(onClick = { Sentry.replay().pause() }, modifier = Modifier) {
+          Text("Pause Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("resume_replay") {
+        OutlinedButton(onClick = { Sentry.replay().resume() }, modifier = Modifier) {
+          Text("Resume Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("flush_replay") {
+        OutlinedButton(onClick = { Sentry.replay().flush() }, modifier = Modifier) {
+          Text("Flush Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("stop_replay") {
+        OutlinedButton(onClick = { Sentry.replay().stop() }, modifier = Modifier) {
+          Text("Stop Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
       SentryTraced("enable_replay_debug") {
         OutlinedButton(
           onClick = { Sentry.replay().enableDebugMaskingOverlay() },
