@@ -904,6 +904,12 @@ public abstract interface class io/sentry/IProfileConverter {
 public abstract interface class io/sentry/IReplayApi {
 	public abstract fun disableDebugMaskingOverlay ()V
 	public abstract fun enableDebugMaskingOverlay ()V
+	public abstract fun flush ()V
+	public abstract fun pause ()V
+	public abstract fun resume ()V
+	public abstract fun start ()V
+	public abstract fun startBuffering ()V
+	public abstract fun stop ()V
 }
 
 public abstract interface class io/sentry/IScope {
@@ -1718,17 +1724,22 @@ public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public fun captureReplay (Ljava/lang/Boolean;)Lio/sentry/protocol/SentryId;
 	public fun disableDebugMaskingOverlay ()V
 	public fun enableDebugMaskingOverlay ()V
+	public fun flush ()V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public static fun getInstance ()Lio/sentry/NoOpReplayController;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isDebugMaskingOverlayEnabled ()Z
 	public fun isRecording ()Z
+	public fun onAppBackgrounded ()V
+	public fun onAppForegrounded (Z)V
+	public fun onAppSessionEnded ()V
 	public fun pause ()V
 	public fun registerSegmentName (Ljava/lang/String;)V
 	public fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun resume ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
+	public fun startBuffering ()V
 	public fun stop ()V
 }
 
@@ -2374,13 +2385,12 @@ public abstract interface class io/sentry/ReplayController : io/sentry/IReplayAp
 	public abstract fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isDebugMaskingOverlayEnabled ()Z
 	public abstract fun isRecording ()Z
-	public abstract fun pause ()V
+	public abstract fun onAppBackgrounded ()V
+	public abstract fun onAppForegrounded (Z)V
+	public abstract fun onAppSessionEnded ()V
 	public abstract fun registerSegmentName (Ljava/lang/String;)V
 	public abstract fun registerTraceId (Lio/sentry/protocol/SentryId;)V
-	public abstract fun resume ()V
 	public abstract fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
-	public abstract fun start ()V
-	public abstract fun stop ()V
 }
 
 public final class io/sentry/ReplayRecording : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
