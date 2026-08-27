@@ -4,16 +4,32 @@
 
 ### Fixes
 
-- Prevent duplicated breadcrumbs on tombstone-merged native crash events ([#5888](https://github.com/getsentry/sentry-java/pull/5888))
-- Prevent a class of Session Replay deadlocks by confining lifecycle state changes to Android's main thread ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
-- Symbolicate tombstone native frames for libraries loaded directly from APKs ([#5992](https://github.com/getsentry/sentry-java/pull/5992))
 - Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
+
+## 8.54.0
 
 ### Features
 
+- Set `app.vitals.start.screen` and `app.vitals.start.type` on standalone `app.start` children ([#6005](https://github.com/getsentry/sentry-java/pull/6005))
 - Add screenshot attachment button to the Android user feedback widget ([#5828](https://github.com/getsentry/sentry-java/pull/5828))
   - Users can now attach a screenshot when submitting feedback. Enabled by default; can be disabled via `SentryFeedbackOptions.setEnableAttachScreenshot(false)` or the `io.sentry.feedback.enable-attach-screenshot` manifest flag.
   - Requires the `androidx.activity` `>=1.8.2` dependency
+- Add manual Session Replay controls through `Sentry.replay()` ([#5978](https://github.com/getsentry/sentry-java/pull/5978))
+  - Explicit `start()` and `startBuffering()` calls bypass the configured replay sample rates; sampling still controls automatic startup.
+  - `start()` starts a full-session replay and does nothing if one is already recording.
+  - `startBuffering()` keeps a rolling buffer that is sent on `flush()` or an error, then continues in session mode.
+  - `stop()` ends the current replay; the next `start()` creates a new replay session.
+  - `pause()` suspends recording until `resume()` and remains paused across background and foreground transitions and automatic replay restarts in the same process.
+  - `resume()` continues the same manually paused replay.
+  - `flush()` sends the current replay data, or starts a full-session replay when recording is stopped.
+
+### Fixes
+
+- Prevents inclusion of `null.` prefix before default-package class names when parsing Java and JNI frames from Android ANR thread dumps ([#5979](https://github.com/getsentry/sentry-java/pull/5979))
+- Prevent duplicated breadcrumbs on tombstone-merged native crash events ([#5888](https://github.com/getsentry/sentry-java/pull/5888))
+- Prevent a class of Session Replay deadlocks by confining lifecycle state changes to Android's main thread ([#5965](https://github.com/getsentry/sentry-java/pull/5965))
+- Symbolicate tombstone native frames for libraries loaded directly from APKs ([#5992](https://github.com/getsentry/sentry-java/pull/5992))
+- Prevent a deadlock between the app start extension and the Android performance event processor ([#6007](https://github.com/getsentry/sentry-java/pull/6007))
 
 ### Performance
 
@@ -22,9 +38,9 @@
 
 ### Dependencies
 
-- Bump Native SDK from v0.16.2 to v0.16.3 ([#5962](https://github.com/getsentry/sentry-java/pull/5962))
-  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0163)
-  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.2...0.16.3)
+- Bump Native SDK from v0.16.2 to v0.16.4 ([#5962](https://github.com/getsentry/sentry-java/pull/5962), [#5996](https://github.com/getsentry/sentry-java/pull/5996))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0164)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.2...0.16.4)
 
 ## 8.53.0
 

@@ -123,6 +123,8 @@ internal class BufferCaptureStrategy(
     }
   }
 
+  override fun flush(onSegmentSent: (Date) -> Unit) = captureReplay(false, onSegmentSent)
+
   override fun onScreenshotRecorded(
     bitmap: Bitmap?,
     store: ReplayCache.(frameTimestamp: Long) -> Unit,
