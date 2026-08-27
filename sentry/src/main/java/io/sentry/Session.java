@@ -307,6 +307,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
       final boolean addErrorsCount,
       final @Nullable String abnormalMechanism) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      // TODO(buenaflor): should we reject updates if we are already in a terminal status?
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
         this.status = status;

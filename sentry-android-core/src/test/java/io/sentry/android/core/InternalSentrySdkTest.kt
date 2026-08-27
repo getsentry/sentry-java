@@ -30,6 +30,7 @@ import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
+import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.createTestScopes
 import io.sentry.transport.ITransport
 import io.sentry.transport.RateLimiter
@@ -61,6 +62,8 @@ class InternalSentrySdkTest {
       initForTest(context) { options ->
         this@Fixture.options = options
         options.dsn = "https://key@host/proj"
+        // the non-terminating path persists the session off the calling thread
+        options.executorService = ImmediateExecutorService()
         options.setTransportFactory { _, _ ->
           object : ITransport {
             override fun close(isRestarting: Boolean) {
@@ -133,6 +136,17 @@ class InternalSentrySdkTest {
         val sentryExceptions =
           factory.getSentryExceptions(ExceptionMechanismException(mechanism, Throwable(), Thread()))
         exceptions = sentryExceptions
+      }
+    }
+
+    fun createSentryEventWithHandledException(): SentryEvent {
+      return SentryEvent(RuntimeException()).apply {
+        val mechanism = Mechanism()
+        mechanism.isHandled = true
+
+        val factory = SentryExceptionFactory(mock())
+        exceptions =
+          factory.getSentryExceptions(ExceptionMechanismException(mechanism, Throwable(), Thread()))
       }
     }
 
@@ -502,6 +516,33 @@ class InternalSentrySdkTest {
     assertThat(persistedSession.status).isEqualTo(Session.State.Ok)
     assertThat(persistedSession.hasNonTerminatingUnhandledError()).isTrue()
     assertThat(persistedSession.sessionId).isEqualTo(originalSid.get())
+  }
+
+  @Test
+  fun `captureEnvelopeNonTerminating does not record onto an already terminated session`() {
+    val fixture = Fixture()
+    fixture.init(context)
+
+    // given a session already finalized on the scope, as an ANR leaves it
+    val terminatedSession = AtomicReference<Session>()
+    Sentry.configureScope { scope ->
+      scope.withSession { session ->
+        session!!.update(Session.State.Abnormal, null, false, "anr_foreground")
+        session.end()
+      }
+      terminatedSession.set(scope.session)
+    }
+    val errorCountBefore = terminatedSession.get().errorCount()
+    val sessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    sessionFile.delete()
+
+    // when a handled error arrives through the non-terminating API
+    fixture.captureEnvelopeNonTerminatingWithEvent(fixture.createSentryEventWithHandledException())
+
+    // then the finalized session is left alone and never written back to the session file
+    assertThat(terminatedSession.get().status).isEqualTo(Session.State.Abnormal)
+    assertThat(terminatedSession.get().errorCount()).isEqualTo(errorCountBefore)
+    assertThat(sessionFile.exists()).isFalse()
   }
 
   @Test
