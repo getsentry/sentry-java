@@ -23,9 +23,11 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSampler;
+import io.sentry.android.core.internal.profiling.ChunkRecord;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.profilemeasurements.ProfileMeasurementValue;
+import io.sentry.profiling.ProfileRecordingState;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
@@ -59,17 +61,27 @@ import org.jetbrains.annotations.VisibleForTesting;
  * <p>Currently, this class doesn't do app-start profiling {@link SentryPerformanceProvider}. It is
  * created during {@code Sentry.init()}.
  *
- * <p>Thread safety: all mutable state is guarded by a single {@link
- * io.sentry.util.AutoClosableReentrantLock}. Public entry points ({@link #startProfiler}, {@link
- * #stopProfiler}, {@link #close}, {@link #onRateLimitChanged}, {@link #reevaluateSampling}, and the
- * getters) acquire the lock themselves and are thread-safe. Private methods {@code startInternal}
- * and {@code stopInternal} require the caller to hold the lock.
+ * <p>Thread safety: the profiler state is guarded by {@link #lock}. Every public entry point
+ * acquires it itself and is thread-safe. Private methods that say {@code Caller must hold} a lock
+ * do not, and must only be reached from a frame that already holds it.
+ *
+ * <p>The chunk history is guarded by its own {@link #chunkHistoryLock}, so that {@link
+ * #getProfileRecordingState} — called for every span of a finishing transaction — never waits for a
+ * chunk start or a chunk stop. A frame holding {@link #lock} may take {@link #chunkHistoryLock},
+ * never the other way around. Each {@link ChunkRecord} guards its own state, as the profiler writes
+ * the outcome of a running chunk into it.
  */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public class PerfettoContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 60000;
+
+  /**
+   * How many chunks we remember the outcome of. Spans only ask about windows they were running in,
+   * so a handful of chunks (a minute each) is plenty.
+   */
+  @VisibleForTesting static final int MAX_CHUNK_HISTORY_SIZE = 10;
 
   // Matches the thread name produced by SentryExecutorService's thread factory, used to detect
   // when we are already running on the executor thread.
@@ -95,6 +107,12 @@ public class PerfettoContinuousProfiler
   private int activeTraceCount = 0;
 
   private final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+
+  private final @NotNull ArrayDeque<ChunkRecord> chunkHistory =
+      new ArrayDeque<>(MAX_CHUNK_HISTORY_SIZE);
+  private @Nullable ChunkRecord currentChunk = null;
+
+  private final AutoClosableReentrantLock chunkHistoryLock = new AutoClosableReentrantLock();
 
   public PerfettoContinuousProfiler(
       final @NotNull ILogger logger,
@@ -188,6 +206,8 @@ public class PerfettoContinuousProfiler
       if (isTerminating) {
         stopInternal(false);
         isClosed.set(true);
+        // sendChunk drops everything once isClosed is set, so the chunk that just ended is lost
+        markLastChunkNotRecordedIfUnknown();
       }
     }
   }
@@ -210,6 +230,65 @@ public class PerfettoContinuousProfiler
   public boolean isRunning() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       return isRunning;
+    }
+  }
+
+  @Override
+  public @NotNull ProfileRecordingState getProfileRecordingState(
+      final @NotNull SentryId profilerId,
+      final @NotNull SentryDate startTime,
+      final @NotNull SentryDate endTime) {
+    try (final @NotNull ISentryLifecycleToken ignored = chunkHistoryLock.acquire()) {
+      if (chunkHistory.isEmpty()) {
+        return ProfileRecordingState.UNKNOWN;
+      }
+
+      for (final @NotNull ChunkRecord chunk : chunkHistory) {
+        // A chunk that is still running, or that is still being collected, is assumed to be
+        // recorded in the end
+        if (chunk.getProfilerId().equals(profilerId)
+            && chunk.overlaps(startTime, endTime)
+            && chunk.getRecordingState() != ProfileRecordingState.NOT_RECORDED) {
+          return ProfileRecordingState.RECORDED;
+        }
+      }
+
+      // Every chunk overlapping the window failed, or no chunk ran during the window at all
+      return ProfileRecordingState.NOT_RECORDED;
+    }
+  }
+
+  /**
+   * Gives up on the newest chunk, unless its outcome is already known. Only that one can still be
+   * undecided, as a chunk is decided before the next one starts.
+   */
+  private void markLastChunkNotRecordedIfUnknown() {
+    try (final @NotNull ISentryLifecycleToken ignored = chunkHistoryLock.acquire()) {
+      final @Nullable ChunkRecord lastChunk = chunkHistory.peekLast();
+      if (lastChunk != null && lastChunk.getRecordingState() == ProfileRecordingState.UNKNOWN) {
+        lastChunk.setRecordingState(ProfileRecordingState.NOT_RECORDED);
+      }
+    }
+  }
+
+  private void addChunkRecord(final @NotNull ChunkRecord chunk) {
+    try (final @NotNull ISentryLifecycleToken ignored = chunkHistoryLock.acquire()) {
+      if (chunkHistory.size() == MAX_CHUNK_HISTORY_SIZE) {
+        chunkHistory.removeFirst();
+      }
+      currentChunk = chunk;
+      chunkHistory.addLast(chunk);
+    }
+  }
+
+  private @Nullable ChunkRecord endChunkRecord(final @NotNull SentryDate endTimestamp) {
+    try (final @NotNull ISentryLifecycleToken ignored = chunkHistoryLock.acquire()) {
+      final @Nullable ChunkRecord chunk = currentChunk;
+      if (chunk != null) {
+        chunk.setEndTimestamp(endTimestamp);
+        currentChunk = null;
+      }
+      return chunk;
     }
   }
 
@@ -265,23 +344,27 @@ public class PerfettoContinuousProfiler
     if (perfettoProfiler == null) {
       return;
     }
-    if (!perfettoProfiler.start(MAX_CHUNK_DURATION_MILLIS)) {
+    if (SentryId.EMPTY_ID.equals(profilerId)) {
+      profilerId = new SentryId();
+    }
+
+    final @Nullable ChunkRecord chunkRecord =
+        perfettoProfiler.start(startProfileChunkTimestamp, profilerId, MAX_CHUNK_DURATION_MILLIS);
+    if (chunkRecord == null) {
+      profilerId = SentryId.EMPTY_ID;
+      chunkId = SentryId.EMPTY_ID;
       logger.log(
           SentryLevel.ERROR,
-          "Failed to start Perfetto profiling. PerfettoProfiler.start() returned false.");
+          "Failed to start Perfetto profiling. PerfettoProfiler.start() returned no chunk.");
       return;
     }
 
     isRunning = true;
-
-    if (profilerId.equals(SentryId.EMPTY_ID)) {
-      profilerId = new SentryId();
-    }
-
     if (chunkId.equals(SentryId.EMPTY_ID)) {
       chunkId = new SentryId();
     }
 
+    addChunkRecord(chunkRecord);
     chunkMeasurements.start(performanceCollector, chunkId.toString());
 
     try {
@@ -328,6 +411,7 @@ public class PerfettoContinuousProfiler
     final @NotNull SentryId chunkProfilerId = profilerId;
     final @NotNull SentryId chunkChunkId = chunkId;
     final @NotNull SentryDate chunkTimestamp = startProfileChunkTimestamp;
+    final @Nullable ChunkRecord chunkRecord = endChunkRecord(options.getDateProvider().now());
 
     isRunning = false;
     perfettoProfiler = null;
@@ -348,6 +432,7 @@ public class PerfettoContinuousProfiler
                 traceFile,
                 chunkProfilerId,
                 chunkChunkId,
+                chunkRecord,
                 measurements,
                 chunkTimestamp,
                 shouldRestart,
@@ -359,11 +444,22 @@ public class PerfettoContinuousProfiler
       final @Nullable File traceFile,
       final @NotNull SentryId chunkProfilerId,
       final @NotNull SentryId chunkChunkId,
+      final @Nullable ChunkRecord chunkRecord,
       final @NotNull Map<String, ProfileMeasurement> measurements,
       final @NotNull SentryDate chunkTimestamp,
       final boolean shouldRestart,
       final @NotNull IScopes scopes,
       final @NotNull SentryOptions options) {
+    // The trace file is the last word on whether the chunk was recorded: the OS may report success
+    // and still leave no usable file behind
+    if (chunkRecord != null) {
+      // Nothing is sent once the profiler is closed, so a collected chunk still covers nothing
+      chunkRecord.setRecordingState(
+          traceFile != null && !isClosed.get()
+              ? ProfileRecordingState.RECORDED
+              : ProfileRecordingState.NOT_RECORDED);
+    }
+
     if (traceFile == null) {
       logger.log(
           SentryLevel.ERROR,

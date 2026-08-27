@@ -828,6 +828,7 @@ public abstract interface class io/sentry/IConnectionStatusProvider$IConnectionS
 public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun close (Z)V
 	public abstract fun getChunkId ()Lio/sentry/protocol/SentryId;
+	public abstract fun getProfileRecordingState (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Lio/sentry/SentryDate;)Lio/sentry/profiling/ProfileRecordingState;
 	public abstract fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isRunning ()Z
 	public abstract fun reevaluateSampling ()V
@@ -1584,6 +1585,7 @@ public final class io/sentry/NoOpContinuousProfiler : io/sentry/IContinuousProfi
 	public fun close (Z)V
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
 	public static fun getInstance ()Lio/sentry/NoOpContinuousProfiler;
+	public fun getProfileRecordingState (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Lio/sentry/SentryDate;)Lio/sentry/profiling/ProfileRecordingState;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
 	public fun reevaluateSampling ()V
@@ -5674,6 +5676,14 @@ public abstract interface class io/sentry/profiling/JavaContinuousProfilerProvid
 
 public abstract interface class io/sentry/profiling/JavaProfileConverterProvider {
 	public abstract fun getProfileConverter ()Lio/sentry/IProfileConverter;
+}
+
+public final class io/sentry/profiling/ProfileRecordingState : java/lang/Enum {
+	public static final field NOT_RECORDED Lio/sentry/profiling/ProfileRecordingState;
+	public static final field RECORDED Lio/sentry/profiling/ProfileRecordingState;
+	public static final field UNKNOWN Lio/sentry/profiling/ProfileRecordingState;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/profiling/ProfileRecordingState;
+	public static fun values ()[Lio/sentry/profiling/ProfileRecordingState;
 }
 
 public final class io/sentry/profiling/ProfilingServiceLoader {

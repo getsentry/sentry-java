@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.profiling.ProfileRecordingState;
 import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -28,4 +29,21 @@ public interface IContinuousProfiler {
 
   @NotNull
   SentryId getChunkId();
+
+  /**
+   * Tells whether a profile exists for the given profiler id, covering the given time window.
+   *
+   * <p>The result of a profiling request can arrive long after a span was tagged with the profiler
+   * id, so callers are expected to ask again when they are about to send the data.
+   *
+   * @param profilerId the profiler id the caller was tagged with
+   * @param startTime start of the time window to check
+   * @param endTime end of the time window to check
+   * @return the state of the profile recording for that window
+   */
+  @NotNull
+  ProfileRecordingState getProfileRecordingState(
+      final @NotNull SentryId profilerId,
+      final @NotNull SentryDate startTime,
+      final @NotNull SentryDate endTime);
 }

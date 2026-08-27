@@ -10,7 +10,11 @@ import android.os.ProfilingResult;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
+import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.internal.profiling.ChunkRecord;
+import io.sentry.profiling.ProfileRecordingState;
+import io.sentry.protocol.SentryId;
 import java.io.File;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
@@ -52,6 +56,8 @@ public class PerfettoProfiler {
   private @Nullable Consumer<@Nullable File> resultListener = null;
   private volatile boolean started = false;
 
+  private volatile @Nullable ChunkRecord chunkRecord = null;
+
   @SuppressLint("WrongConstant")
   public PerfettoProfiler(
       final @NotNull Context context,
@@ -72,17 +78,27 @@ public class PerfettoProfiler {
     this.profilingManager = profilingManager;
   }
 
-  public boolean start(final long durationMs) {
+  /**
+   * Starts a profiling session and returns the record of the chunk it produces, or null if the
+   * session could not be started. A failure the OS reports later is written to that record as it
+   * happens, so that whoever holds it knows that no trace file is coming.
+   */
+  @Nullable
+  ChunkRecord start(
+      final @NotNull SentryDate startTimestamp,
+      final @NotNull SentryId profilerId,
+      final long durationMs) {
     if (started) {
       logger.log(SentryLevel.WARNING, "PerfettoProfiler was already started.");
-      return false;
+      return null;
     }
     started = true;
 
     if (profilingManager == null) {
       logger.log(SentryLevel.WARNING, "ProfilingManager is not available.");
-      return false;
+      return null;
     }
+    this.chunkRecord = new ChunkRecord(profilerId, startTimestamp);
 
     final Bundle params = new Bundle();
     params.putInt(KEY_DURATION_MS, (int) durationMs);
@@ -98,10 +114,12 @@ public class PerfettoProfiler {
           this::onProfilingResult);
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Failed to request Profiling.", e);
-      return false;
+      // Nobody holds the record, so a late result from the OS must not write into it
+      chunkRecord = null;
+      return null;
     }
 
-    return true;
+    return chunkRecord;
   }
 
   /**
@@ -130,12 +148,20 @@ public class PerfettoProfiler {
     try {
       executorService.schedule(
           () -> {
+            boolean hasTimedOut = false;
             synchronized (profilingResultLock) {
               if (resultListener != null) {
                 logger.log(SentryLevel.WARNING, "Timed out waiting for Perfetto profiling result.");
                 resultListener.accept(null);
                 // Nobody consumes a late result anymore, so delete the trace file instead
                 resultListener = this::deleteTraceFile;
+                hasTimedOut = true;
+              }
+            }
+            if (hasTimedOut) {
+              final @Nullable ChunkRecord record = chunkRecord;
+              if (record != null) {
+                record.setRecordingState(ProfileRecordingState.NOT_RECORDED);
               }
             }
           },
@@ -151,6 +177,15 @@ public class PerfettoProfiler {
         "Perfetto ProfilingResult received: errorCode=%d, filePath=%s",
         result.getErrorCode(),
         result.getResultFilePath());
+
+    final @Nullable ChunkRecord record = chunkRecord;
+    if (record != null) {
+      final int errorCode = result.getErrorCode();
+      record.setRecordingState(
+          errorCode == ProfilingResult.ERROR_NONE
+              ? ProfileRecordingState.RECORDED
+              : ProfileRecordingState.NOT_RECORDED);
+    }
 
     synchronized (profilingResultLock) {
       profilingResult = result;
@@ -177,6 +212,7 @@ public class PerfettoProfiler {
 
   private @Nullable File processResult(final @NotNull ProfilingResult result) {
     final int errorCode = result.getErrorCode();
+    final @Nullable ChunkRecord record = chunkRecord;
     if (errorCode != ProfilingResult.ERROR_NONE) {
       switch (errorCode) {
         case ProfilingResult.ERROR_FAILED_RATE_LIMIT_PROCESS:
@@ -203,16 +239,25 @@ public class PerfettoProfiler {
 
     final @Nullable String resultFilePath = result.getResultFilePath();
     if (resultFilePath == null) {
+      if (record != null) {
+        record.setRecordingState(ProfileRecordingState.NOT_RECORDED);
+      }
       logger.log(SentryLevel.WARNING, "Perfetto profiling result file path is null.");
       return null;
     }
 
     final File traceFile = new File(resultFilePath);
     if (!traceFile.exists() || traceFile.length() == 0) {
+      if (record != null) {
+        record.setRecordingState(ProfileRecordingState.NOT_RECORDED);
+      }
       logger.log(SentryLevel.WARNING, "Perfetto trace file does not exist or is empty.");
       return null;
     }
 
+    if (record != null) {
+      record.setRecordingState(ProfileRecordingState.RECORDED);
+    }
     return traceFile;
   }
 
