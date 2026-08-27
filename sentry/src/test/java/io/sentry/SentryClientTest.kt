@@ -1636,6 +1636,28 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when capturing the event throws, the hint is marked as capture failed`() {
+    whenever(fixture.transport.send(any(), anyOrNull())).thenThrow(IOException())
+
+    val hint = Hint()
+    val sentryId = fixture.getSut().captureEvent(SentryEvent(), hint)
+
+    assertEquals(SentryId.EMPTY_ID, sentryId)
+    assertTrue(HintUtils.isCaptureFailed(hint))
+  }
+
+  @Test
+  fun `when the event is dropped, the hint is not marked as capture failed`() {
+    fixture.sentryOptions.setBeforeSend { _, _ -> null }
+
+    val hint = Hint()
+    val sentryId = fixture.getSut().captureEvent(SentryEvent(), hint)
+
+    assertEquals(SentryId.EMPTY_ID, sentryId)
+    assertFalse(HintUtils.isCaptureFailed(hint))
+  }
+
+  @Test
   fun `when captureEnvelope and thres an exception, returns empty sentryId`() {
     whenever(fixture.transport.send(any(), anyOrNull())).thenThrow(IOException())
 

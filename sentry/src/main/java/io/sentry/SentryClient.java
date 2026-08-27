@@ -287,6 +287,7 @@ public final class SentryClient implements ISentryClient {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
 
       // if there was an error capturing the event, we return an emptyId
+      HintUtils.setCaptureFailed(hint);
       sentryId = SentryId.EMPTY_ID;
     }
 

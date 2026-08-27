@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Keep dropped tombstone and ANR events dropped, instead of reporting the same app exit again at every app start ([#6002](https://github.com/getsentry/sentry-java/pull/6002))
 - Drop the `profiler_id` from transactions and spans when no Perfetto profile covers them, e.g. when Android's `ProfilingManager` rate limits the profiling request ([#6015](https://github.com/getsentry/sentry-java/pull/6015))
 
 ## 8.54.0
