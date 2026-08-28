@@ -422,7 +422,6 @@ public final class io/sentry/DataCollectionResolver {
 	public fun getUrlQueryParams ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun isDataCollectionConfigured ()Z
 	public fun isDatabaseQueryData ()Z
-	public fun isDatabaseQueryDataWithLegacyAlways ()Z
 	public fun isGraphqlDocument ()Z
 	public fun isGraphqlDocumentWithLegacyAlways ()Z
 	public fun isGraphqlDocumentWithLegacyBodyGate ()Z
