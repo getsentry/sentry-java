@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryFeedbackOptions.IFormHandler
 import io.sentry.SentryOptions.ProfilesSamplerCallback
 import io.sentry.SentryOptions.TracesSamplerCallback
@@ -1432,6 +1433,93 @@ class SentryTest {
     val s1 = Sentry.forkedRootScopes("s1")
     val s2 = Sentry.forkedRootScopes("s2")
     assertNotSame(s1, s2)
+  }
+
+  private fun initCapturingEvents(globalHubMode: Boolean): MutableList<SentryEvent> {
+    val events = mutableListOf<SentryEvent>()
+    initForTest(
+      { o ->
+        o.dsn = dsn
+        o.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
+          events.add(event)
+          null
+        }
+      },
+      globalHubMode,
+    )
+    return events
+  }
+
+  @Test
+  fun `withScope data is applied to events captured inside the callback`() {
+    for (globalHubMode in listOf(false, true)) {
+      val events = initCapturingEvents(globalHubMode)
+
+      Sentry.withScope { scope ->
+        scope.setTag("http-url", "https://example.com")
+        Sentry.captureException(RuntimeException("failed"))
+      }
+
+      assertThat(events.single().tags).containsEntry("http-url", "https://example.com")
+    }
+  }
+
+  @Test
+  fun `withIsolationScope data is applied to events captured inside the callback`() {
+    for (globalHubMode in listOf(false, true)) {
+      val events = initCapturingEvents(globalHubMode)
+
+      Sentry.withIsolationScope { scope ->
+        scope.setTag("http-url", "https://example.com")
+        Sentry.captureException(RuntimeException("failed"))
+      }
+
+      assertThat(events.single().tags).containsEntry("http-url", "https://example.com")
+    }
+  }
+
+  @Test
+  fun `withScope data does not leak into events captured after the callback`() {
+    for (globalHubMode in listOf(false, true)) {
+      val events = initCapturingEvents(globalHubMode)
+
+      Sentry.withScope { scope -> scope.setTag("http-url", "https://example.com") }
+      Sentry.captureException(RuntimeException("failed"))
+
+      assertThat(events.single().tags?.get("http-url")).isNull()
+    }
+  }
+
+  @Test
+  fun `in globalHubMode scopes are not forked for a thread that has none`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+
+    val fromOtherThread = CompletableFuture.supplyAsync { Sentry.getCurrentScopes() }.get()
+
+    assertSame(Sentry.getCurrentScopes(), fromOtherThread)
+  }
+
+  @Test
+  fun `in globalHubMode scopes left over from a closed SDK are ignored`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+    val stale = Sentry.forkedCurrentScope("stale")
+
+    Sentry.close()
+    // close only clears the storage of the calling thread, other threads may still hold stale ones
+    Sentry.setCurrentScopes(stale)
+
+    assertTrue(Sentry.getCurrentScopes().isNoOp)
+  }
+
+  @Test
+  fun `in globalHubMode scopes left over from a previous init are ignored`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+    val stale = Sentry.forkedCurrentScope("stale")
+
+    initForTest({ o -> o.dsn = dsn }, true)
+    Sentry.setCurrentScopes(stale)
+
+    assertNotSame(stale, Sentry.getCurrentScopes())
   }
 
   @Test
