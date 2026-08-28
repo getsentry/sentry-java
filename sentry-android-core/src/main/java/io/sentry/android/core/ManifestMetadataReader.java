@@ -10,6 +10,7 @@ import io.sentry.ScreenshotStrategyType;
 import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
+import io.sentry.SentryReplayOptions;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -638,20 +639,47 @@ final class ManifestMetadataReader {
         options
             .getSessionReplay()
             .setNetworkCaptureBodies(
-                readBoolNullable(
+                readBool(
                     metadata,
                     logger,
                     REPLAYS_NETWORK_CAPTURE_BODIES,
-                    options.getSessionReplay().getNetworkCaptureBodies()));
+                    options.getSessionReplay().isNetworkCaptureBodies() /* defaultValue */));
 
-        options
-            .getSessionReplay()
-            .setNetworkRequestHeaders(
-                readTrimmedList(metadata, logger, REPLAYS_NETWORK_REQUEST_HEADERS));
-        options
-            .getSessionReplay()
-            .setNetworkResponseHeaders(
-                readTrimmedList(metadata, logger, REPLAYS_NETWORK_RESPONSE_HEADERS));
+        if (options.getSessionReplay().getNetworkRequestHeaders().size()
+            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().size()) { // Only has defaults
+          final @Nullable List<String> requestHeaders =
+              readList(metadata, logger, REPLAYS_NETWORK_REQUEST_HEADERS);
+          if (requestHeaders != null) {
+            final List<String> filteredHeaders = new ArrayList<>();
+            for (String header : requestHeaders) {
+              final String trimmedHeader = header.trim();
+              if (!trimmedHeader.isEmpty()) {
+                filteredHeaders.add(trimmedHeader);
+              }
+            }
+            if (!filteredHeaders.isEmpty()) {
+              options.getSessionReplay().setNetworkRequestHeaders(filteredHeaders);
+            }
+          }
+        }
+
+        if (options.getSessionReplay().getNetworkResponseHeaders().size()
+            == SentryReplayOptions.getNetworkDetailsDefaultHeaders().size()) { // Only has defaults
+          final @Nullable List<String> responseHeaders =
+              readList(metadata, logger, REPLAYS_NETWORK_RESPONSE_HEADERS);
+          if (responseHeaders != null && !responseHeaders.isEmpty()) {
+            final List<String> filteredHeaders = new ArrayList<>();
+            for (String header : responseHeaders) {
+              final String trimmedHeader = header.trim();
+              if (!trimmedHeader.isEmpty()) {
+                filteredHeaders.add(trimmedHeader);
+              }
+            }
+            if (!filteredHeaders.isEmpty()) {
+              options.getSessionReplay().setNetworkResponseHeaders(filteredHeaders);
+            }
+          }
+        }
 
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
 
@@ -755,21 +783,6 @@ final class ManifestMetadataReader {
     return value;
   }
 
-  private static @Nullable Boolean readBoolNullable(
-      final @NotNull Bundle metadata,
-      final @NotNull ILogger logger,
-      final @NotNull String key,
-      final @Nullable Boolean defaultValue) {
-    final @Nullable Boolean value;
-    if (metadata.containsKey(key)) {
-      value = metadata.getBoolean(key);
-    } else {
-      value = defaultValue;
-    }
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
-    return value;
-  }
-
   private static @Nullable String readString(
       final @NotNull Bundle metadata,
       final @NotNull ILogger logger,
@@ -799,23 +812,6 @@ final class ManifestMetadataReader {
     } else {
       return null;
     }
-  }
-
-  private static @Nullable List<String> readTrimmedList(
-      final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
-    final @Nullable List<String> values = readList(metadata, logger, key);
-    if (values == null) {
-      return null;
-    }
-
-    final @NotNull List<String> filteredValues = new ArrayList<>();
-    for (final String value : values) {
-      final @NotNull String trimmedValue = value.trim();
-      if (!trimmedValue.isEmpty()) {
-        filteredValues.add(trimmedValue);
-      }
-    }
-    return filteredValues.isEmpty() ? null : filteredValues;
   }
 
   private static double readDouble(
