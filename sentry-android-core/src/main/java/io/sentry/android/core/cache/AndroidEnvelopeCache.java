@@ -85,7 +85,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     }
 
     for (TimestampMarkerHandler<?> handler : TIMESTAMP_MARKER_HANDLERS) {
-      handler.handle(this, hint, options);
+      handler.handle(hint, options);
     }
 
     return didStore;
@@ -182,7 +182,8 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return null;
   }
 
-  private void writeLastReportedMarker(
+  private static void writeLastReportedMarker(
+      final @NotNull SentryOptions options,
       final @Nullable Long timestamp,
       @NotNull String reportFilename,
       @NotNull String markerCategory) {
@@ -215,6 +216,15 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return lastReportedMarker(options, LAST_TOMBSTONE_REPORT, LAST_TOMBSTONE_MARKER_LABEL);
   }
 
+  public static void markAnrReported(final @NotNull SentryOptions options, final long timestamp) {
+    writeLastReportedMarker(options, timestamp, LAST_ANR_REPORT, LAST_ANR_MARKER_LABEL);
+  }
+
+  public static void markTombstoneReported(
+      final @NotNull SentryOptions options, final long timestamp) {
+    writeLastReportedMarker(options, timestamp, LAST_TOMBSTONE_REPORT, LAST_TOMBSTONE_MARKER_LABEL);
+  }
+
   private static final class TimestampMarkerHandler<T> {
     interface TimestampExtractor<T> {
       @NotNull
@@ -237,10 +247,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       this.timestampProvider = timestampProvider;
     }
 
-    void handle(
-        final @NotNull AndroidEnvelopeCache cache,
-        final @NotNull Hint hint,
-        final @NotNull SentryAndroidOptions options) {
+    void handle(final @NotNull Hint hint, final @NotNull SentryAndroidOptions options) {
       HintUtils.runIfHasType(
           hint,
           type,
@@ -253,7 +260,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
                     "Writing last reported %s marker with timestamp %d",
                     label,
                     timestamp);
-            cache.writeLastReportedMarker(timestamp, reportFilename, label);
+            writeLastReportedMarker(options, timestamp, reportFilename, label);
           });
     }
   }
