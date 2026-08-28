@@ -33,7 +33,6 @@ import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
-import io.sentry.vendor.Base64
 import java.util.Locale
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
@@ -60,14 +59,16 @@ constructor(
   override suspend fun intercept(request: HttpRequest, chain: HttpInterceptorChain): HttpResponse {
     val activeSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
 
-    val operationId = decodeHeaderValue(request, OPERATION_ID_HEADER_NAME)
-    val operationName = decodeHeaderValue(request, OPERATION_NAME_HEADER_NAME)
-    val operationType = decodeHeaderValue(request, OPERATION_TYPE_HEADER_NAME)
+    val operationContext = request.executionContext[SentryApollo5OperationContext]
+    val operationId = operationContext?.operationId
+    val operationName = operationContext?.operationName
+    val operationType = operationContext?.operationType
+    val variables = operationContext?.variables
 
     var span: ISpan? = null
 
     if (activeSpan != null) {
-      span = startChild(request, activeSpan, operationName, operationType, operationId)
+      span = startChild(request, activeSpan, operationName, operationType, operationId, variables)
     }
 
     val modifiedRequest = maybeAddTracingHeaders(scopes, request, span)
@@ -116,42 +117,38 @@ constructor(
     request: HttpRequest,
     span: ISpan?,
   ): HttpRequest {
-    var cleanedHeaders = removeSentryInternalHeaders(request.headers).toMutableList()
-
-    if (!isIgnored()) {
-      TracingUtils.traceIfAllowed(
-          scopes,
-          request.url,
-          request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value },
-          span,
-        )
-        ?.let {
-          cleanedHeaders.add(HttpHeader(it.sentryTraceHeader.name, it.sentryTraceHeader.value))
-          it.baggageHeader?.let { baggageHeader ->
-            cleanedHeaders =
-              cleanedHeaders
-                .filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }
-                .toMutableList()
-                .apply { add(HttpHeader(baggageHeader.name, baggageHeader.value)) }
-          }
-          it.w3cTraceparentHeader?.let { w3cHeader ->
-            cleanedHeaders.add(HttpHeader(w3cHeader.name, w3cHeader.value))
-          }
-        }
+    if (isIgnored()) {
+      return request
     }
 
-    val requestBuilder = request.newBuilder().apply { headers(cleanedHeaders) }
+    val tracingHeaders =
+      TracingUtils.traceIfAllowed(
+        scopes,
+        request.url,
+        request.headers.filter { it.name == BaggageHeader.BAGGAGE_HEADER }.map { it.value },
+        span,
+      ) ?: return request
 
-    return requestBuilder.build()
+    var headers = request.headers.toMutableList()
+    headers.add(
+      HttpHeader(tracingHeaders.sentryTraceHeader.name, tracingHeaders.sentryTraceHeader.value)
+    )
+    tracingHeaders.baggageHeader?.let { baggageHeader ->
+      headers =
+        headers
+          .filterNot { it.name == BaggageHeader.BAGGAGE_HEADER }
+          .toMutableList()
+          .apply { add(HttpHeader(baggageHeader.name, baggageHeader.value)) }
+    }
+    tracingHeaders.w3cTraceparentHeader?.let { w3cHeader ->
+      headers.add(HttpHeader(w3cHeader.name, w3cHeader.value))
+    }
+
+    return request.newBuilder().headers(headers).build()
   }
 
   private fun isIgnored(): Boolean =
     SpanUtils.isIgnored(scopes.getOptions().ignoredSpanOrigins, TRACE_ORIGIN)
-
-  private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> =
-    headers.filterNot { header ->
-      INTERNAL_HEADER_NAMES.any { internalHeader -> header.name.equals(internalHeader, true) }
-    }
 
   private fun startChild(
     request: HttpRequest,
@@ -159,12 +156,12 @@ constructor(
     operationName: String?,
     operationType: String?,
     operationId: String?,
+    variables: String?,
   ): ISpan {
     val urlDetails = UrlUtils.parse(request.url)
     val method = request.method.name
 
     val operation = if (operationType != null) "http.graphql.$operationType" else "http.graphql"
-    val variables = decodeHeaderValue(request, VARIABLES_HEADER_NAME)
 
     val description = "${operationType ?: method} ${operationName ?: urlDetails.urlOrFallback}"
 
@@ -177,21 +174,6 @@ constructor(
 
       variables?.let { setData("variables", it) }
       setData(HTTP_METHOD_KEY, method.uppercase(Locale.ROOT))
-    }
-  }
-
-  private fun decodeHeaderValue(request: HttpRequest, headerName: String): String? {
-    return getHeader(headerName, request.headers)?.let {
-      try {
-        String(Base64.decode(it, Base64.NO_WRAP))
-      } catch (e: IllegalArgumentException) {
-        scopes.options.logger.log(
-          SentryLevel.ERROR,
-          "Error decoding internal apolloHeader $headerName",
-          e,
-        )
-        return null
-      }
     }
   }
 

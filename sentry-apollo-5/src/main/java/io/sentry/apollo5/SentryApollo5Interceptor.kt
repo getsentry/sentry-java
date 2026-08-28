@@ -12,13 +12,12 @@ import com.apollographql.apollo.interceptor.ApolloInterceptor
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
-import io.sentry.vendor.Base64
 import kotlinx.coroutines.flow.Flow
 import org.jetbrains.annotations.ApiStatus
 
 /**
- * Interceptor that adds the GraphQL request information to the outgoing HTTP request's headers so
- * that the information can be accessed by {@link SentryApollo5HttpInterceptor}
+ * Interceptor that adds GraphQL request information to Apollo's execution context so that it can be
+ * accessed by {@link SentryApollo5HttpInterceptor}.
  */
 class SentryApollo5Interceptor
 @JvmOverloads
@@ -28,26 +27,19 @@ constructor(@ApiStatus.Internal private val scopes: IScopes = ScopesAdapter.getI
     request: ApolloRequest<D>,
     chain: ApolloInterceptorChain,
   ): Flow<ApolloResponse<D>> {
-    val builder =
-      request
-        .newBuilder()
-        .addHttpHeader(OPERATION_ID_HEADER_NAME, encodeHeaderValue(request.operation.id()))
-        .addHttpHeader(OPERATION_NAME_HEADER_NAME, encodeHeaderValue(request.operation.name()))
-        .addHttpHeader(OPERATION_TYPE_HEADER_NAME, encodeHeaderValue(operationType(request)))
-
-    request.scalarAdapters?.let {
-      builder.addHttpHeader(
-        VARIABLES_HEADER_NAME,
-        encodeHeaderValue(request.operation.variables(it).valueMap.toString()),
+    val variables =
+      request.scalarAdapters?.let { request.operation.variables(it).valueMap.toString() }
+    val operationContext =
+      SentryApollo5OperationContext(
+        operationId = request.operation.id(),
+        operationName = request.operation.name(),
+        operationType = operationType(request),
+        variables = variables,
       )
-    }
 
-    return chain.proceed(builder.build())
+    return chain.proceed(request.newBuilder().addExecutionContext(operationContext).build())
   }
 }
-
-private fun encodeHeaderValue(value: String): String =
-  Base64.encodeToString(value.toByteArray(), Base64.NO_WRAP)
 
 private fun <D : Operation.Data> operationType(apolloRequest: ApolloRequest<D>) =
   when (apolloRequest.operation) {

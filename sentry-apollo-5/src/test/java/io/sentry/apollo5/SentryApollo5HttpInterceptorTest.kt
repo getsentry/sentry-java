@@ -363,7 +363,7 @@ abstract class SentryApollo5HttpInterceptorTest(
   }
 
   @Test
-  fun `adds breadcrumb when http calls succeeds`() {
+  fun `missing operation context adds a generic HTTP breadcrumb`() {
     executeQuery(fixture.getSut())
     verify(fixture.scopes)
       .addBreadcrumb(
@@ -372,6 +372,9 @@ abstract class SentryApollo5HttpInterceptorTest(
           // response_body_size is added but mock webserver returns 0 always
           assertEquals(0L, it.data["response_body_size"])
           assertEquals(193L, it.data["request_body_size"])
+          assertNull(it.data["operation_name"])
+          assertNull(it.data["operation_type"])
+          assertNull(it.data["operation_id"])
         },
         anyOrNull(),
       )

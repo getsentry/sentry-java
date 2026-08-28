@@ -20,6 +20,16 @@ The builder extension installs the Apollo interceptor before the cache and the S
 
 Apollo rejects builder HTTP interceptors when a custom `NetworkTransport` is configured, so do not use `sentryTracing()` in that case. Add `SentryApollo5Interceptor` to the client builder and `SentryApollo5HttpInterceptor` to the custom transport manually.
 
+Operation metadata is propagated between these interceptors through Apollo's execution context. Apollo's default HTTP request composer copies this context automatically. A custom `HttpRequestComposer` must copy it explicitly when building the HTTP request:
+
+```kotlin
+HttpRequest.Builder(method, url)
+  .addExecutionContext(apolloRequest.executionContext)
+  .build()
+```
+
+An entirely custom `NetworkTransport` must expose the metadata to `SentryApollo5HttpInterceptor` in the same way.
+
 ## Known limitations
 
 - Failed GraphQL request detection matches the raw JSON response body for an `errors` field.

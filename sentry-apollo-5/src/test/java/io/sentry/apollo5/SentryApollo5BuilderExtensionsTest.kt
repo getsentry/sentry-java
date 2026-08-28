@@ -2,10 +2,17 @@ package io.sentry.apollo5
 
 import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.api.ApolloRequest
 import com.apollographql.apollo.api.ApolloResponse
 import com.apollographql.apollo.api.Operation
+import com.apollographql.apollo.api.http.DefaultHttpRequestComposer
+import com.apollographql.apollo.api.http.HttpRequest
+import com.apollographql.apollo.api.http.HttpRequestComposer
+import com.apollographql.apollo.api.http.HttpResponse
 import com.apollographql.apollo.exception.ApolloException
 import com.apollographql.apollo.interceptor.ApolloInterceptor
+import com.apollographql.apollo.network.http.HttpInterceptor
+import com.apollographql.apollo.network.http.HttpInterceptorChain
 import com.apollographql.apollo.network.http.HttpNetworkTransport
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
@@ -29,7 +36,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
@@ -74,6 +80,7 @@ abstract class SentryApollo5BuilderExtensionsTest(
 }""",
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
       beforeSpan: BeforeSpanCallback? = null,
+      interceptor: HttpInterceptor? = null,
     ): ApolloClient {
       whenever(scopes.options)
         .thenReturn(SentryOptions().apply { dsn = "http://key@localhost/proj" })
@@ -85,20 +92,47 @@ abstract class SentryApollo5BuilderExtensionsTest(
           .setResponseCode(httpStatusCode)
       )
 
-      return ApolloClient.Builder()
-        .serverUrl(server.url("/").toString())
-        // keep the request body deterministic across Apollo versions for exact body assertions
-        .sendEnhancedClientAwareness(false)
-        .sentryTracing(scopes = scopes, beforeSpan = beforeSpan, captureFailedRequests = false)
-        .build()
+      val builder =
+        ApolloClient.Builder()
+          .serverUrl(server.url("/").toString())
+          // keep the request body deterministic across Apollo versions for exact body assertions
+          .sendEnhancedClientAwareness(false)
+          .sentryTracing(scopes = scopes, beforeSpan = beforeSpan, captureFailedRequests = false)
+
+      interceptor?.let { builder.addHttpInterceptor(it) }
+
+      return builder.build()
     }
 
-    fun getSutWithCustomNetworkTransport(manuallyInstallHttpInterceptor: Boolean): ApolloClient {
+    fun getSutWithCustomNetworkTransport(
+      manuallyInstallHttpInterceptor: Boolean,
+      useCustomRequestComposer: Boolean = false,
+    ): ApolloClient {
       whenever(scopes.options)
         .thenReturn(SentryOptions().apply { dsn = "http://key@localhost/proj" })
       server.enqueue(MockResponse().setBody("{\"data\":{\"launch\":null}}"))
 
-      val transportBuilder = HttpNetworkTransport.Builder().serverUrl(server.url("/").toString())
+      val serverUrl = server.url("/").toString()
+      val transportBuilder = HttpNetworkTransport.Builder()
+      if (useCustomRequestComposer) {
+        val defaultComposer = DefaultHttpRequestComposer(serverUrl)
+        transportBuilder.httpRequestComposer(
+          object : HttpRequestComposer {
+            override fun <D : Operation.Data> compose(
+              apolloRequest: ApolloRequest<D>
+            ): HttpRequest {
+              val request = defaultComposer.compose(apolloRequest)
+              return HttpRequest.Builder(request.method, request.url)
+                .addHeaders(request.headers)
+                .apply { request.body?.let { body(it) } }
+                .addExecutionContext(apolloRequest.executionContext)
+                .build()
+            }
+          }
+        )
+      } else {
+        transportBuilder.serverUrl(serverUrl)
+      }
       if (manuallyInstallHttpInterceptor) {
         transportBuilder.addInterceptor(
           SentryApollo5HttpInterceptor(scopes = scopes, captureFailedRequests = false)
@@ -199,6 +233,60 @@ abstract class SentryApollo5BuilderExtensionsTest(
   }
 
   @Test
+  fun `custom request composer propagates operation context when copied explicitly`() {
+    executeQuery(
+      fixture.getSutWithCustomNetworkTransport(
+        manuallyInstallHttpInterceptor = true,
+        useCustomRequestComposer = true,
+      )
+    )
+
+    verify(fixture.scopes)
+      .captureTransaction(
+        check { assertTransactionDetails(it) },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `default request composer propagates operation context`() {
+    var operationContext: SentryApollo5OperationContext? = null
+    val recordingInterceptor =
+      object : HttpInterceptor {
+        override suspend fun intercept(
+          request: HttpRequest,
+          chain: HttpInterceptorChain,
+        ): HttpResponse {
+          operationContext = request.executionContext[SentryApollo5OperationContext]
+          return chain.proceed(request)
+        }
+      }
+
+    executeQuery(
+      fixture.getSut(interceptor = recordingInterceptor),
+      initialOperationContext =
+        SentryApollo5OperationContext(
+          operationId = "stale-id",
+          operationName = "StaleOperation",
+          operationType = "mutation",
+          variables = null,
+        ),
+    )
+
+    assertThat(operationContext)
+      .isEqualTo(
+        SentryApollo5OperationContext(
+          operationId = LaunchDetailsQuery.OPERATION_ID,
+          operationName = LaunchDetailsQuery.OPERATION_NAME,
+          operationType = "query",
+          variables = "{id=83}",
+        )
+      )
+  }
+
+  @Test
   fun `adds breadcrumb when http call succeeds`() {
     executeQuery(fixture.getSut())
 
@@ -210,7 +298,9 @@ abstract class SentryApollo5BuilderExtensionsTest(
           // response_body_size is added but mock webserver returns 0 always
           assertEquals(0L, it.data["response_body_size"])
           assertEquals(193L, it.data["request_body_size"])
+          assertEquals("LaunchDetails", it.data["operation_name"])
           assertEquals("query", it.data["operation_type"])
+          assertEquals(LaunchDetailsQuery.OPERATION_ID, it.data["operation_id"])
         },
         anyOrNull(),
       )
@@ -225,20 +315,22 @@ abstract class SentryApollo5BuilderExtensionsTest(
         check<Breadcrumb> {
           assertEquals("http", it.type)
           assertEquals(193L, it.data["request_body_size"])
+          assertEquals("LaunchDetails", it.data["operation_name"])
           assertEquals("query", it.data["operation_type"])
+          assertEquals(LaunchDetailsQuery.OPERATION_ID, it.data["operation_id"])
         },
         anyOrNull(),
       )
   }
 
   @Test
-  fun `handles non-ascii header values correctly`() {
+  fun `handles non-ascii variables correctly`() {
     executeQuery(id = "á")
 
     verify(fixture.scopes)
       .captureTransaction(
         check {
-          assertTransactionDetails(it)
+          assertTransactionDetails(it, expectedVariables = "{id=á}")
           assertEquals(SpanStatus.OK, it.spans.first().status)
         },
         anyOrNull<TraceContext>(),
@@ -252,20 +344,27 @@ abstract class SentryApollo5BuilderExtensionsTest(
     executeQuery(fixture.getSut())
     val recordedRequest =
       fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
-    for (sentryHeader in INTERNAL_HEADER_NAMES) {
-      assertTrue(recordedRequest.headers.none { header -> header.first.equals(sentryHeader, true) })
-    }
+
+    assertThat(
+        recordedRequest.headers.names().none {
+          it.startsWith("SENTRY-APOLLO-5-", ignoreCase = true)
+        }
+      )
+      .isTrue()
   }
 
-  private fun assertTransactionDetails(it: SentryTransaction) {
+  private fun assertTransactionDetails(
+    it: SentryTransaction,
+    expectedVariables: String = "{id=83}",
+  ) {
     assertEquals(1, it.spans.size)
     val httpClientSpan = it.spans.first()
     assertEquals("http.graphql.query", httpClientSpan.op)
     assertEquals("query LaunchDetails", httpClientSpan.description)
     assertEquals("auto.graphql.apollo5", httpClientSpan.origin)
     assertNotNull(httpClientSpan.data) {
-      assertNotNull(it["operationId"])
-      assertNotNull(it["variables"])
+      assertEquals(LaunchDetailsQuery.OPERATION_ID, it["operationId"])
+      assertEquals(expectedVariables, it["variables"])
     }
   }
 
@@ -273,6 +372,7 @@ abstract class SentryApollo5BuilderExtensionsTest(
     sut: ApolloClient = fixture.getSut(),
     isSpanActive: Boolean = true,
     id: String = "83",
+    initialOperationContext: SentryApollo5OperationContext? = null,
   ) = runBlocking {
     var tx: ITransaction? = null
     if (isSpanActive) {
@@ -283,7 +383,9 @@ abstract class SentryApollo5BuilderExtensionsTest(
 
     val coroutine = launch {
       try {
-        executeQueryImplementation(sut.query(LaunchDetailsQuery(id)))
+        val call = sut.query(LaunchDetailsQuery(id))
+        initialOperationContext?.let { call.addExecutionContext(it) }
+        executeQueryImplementation(call)
       } catch (e: ApolloException) {
         return@launch
       }
