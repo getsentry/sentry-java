@@ -197,10 +197,11 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   private @NotNull List<String> networkDetailDenyUrls = Collections.emptyList();
 
   /**
-   * Explicitly controls whether to capture request and response bodies for URLs defined in
-   * networkDetailAllowUrls. A null value inherits from Data Collection or the legacy default.
+   * Decide whether to capture request and response bodies for URLs defined in
+   * networkDetailAllowUrls. Default is true, but capturing bodies requires at least one url
+   * specified via {@link #setNetworkDetailAllowUrls(List)}.
    */
-  private @Nullable Boolean networkCaptureBodies;
+  private boolean networkCaptureBodies = true;
 
   /** Default headers that are always captured for URLs defined in networkDetailAllowUrls. */
   private static final @NotNull List<String> DEFAULT_HEADERS =
@@ -216,11 +217,17 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
     return DEFAULT_HEADERS;
   }
 
-  /** Explicit request-header collection behavior, or null to inherit. */
-  private @Nullable KeyValueCollectionBehavior networkRequestHeaderBehavior;
+  /**
+   * Additional request headers to capture for URLs defined in networkDetailAllowUrls. The default
+   * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
+   */
+  private @NotNull List<String> networkRequestHeaders = DEFAULT_HEADERS;
 
-  /** Explicit response-header collection behavior, or null to inherit. */
-  private @Nullable KeyValueCollectionBehavior networkResponseHeaderBehavior;
+  /**
+   * Additional response headers to capture for URLs defined in networkDetailAllowUrls. The default
+   * headers (Content-Type, Content-Length, Accept) are always included in addition to these.
+   */
+  private @NotNull List<String> networkResponseHeaders = DEFAULT_HEADERS;
 
   /**
    * A callback that is called before the error sample rate is checked for session replay. Can be
@@ -476,183 +483,61 @@ public final class SentryReplayOptions extends SentryMaskingOptions {
   }
 
   /**
-   * Gets whether Session Replay explicitly enables or disables request and response body capture. A
-   * {@code null} value inherits the matching Data Collection option, or the legacy default when
-   * Data Collection is not configured.
+   * Gets whether to capture request and response bodies for URLs defined in networkDetailAllowUrls.
+   *
+   * @return true if network capture bodies is enabled, false otherwise
    */
-  public @Nullable Boolean getNetworkCaptureBodies() {
+  public boolean isNetworkCaptureBodies() {
     return networkCaptureBodies;
   }
 
   /**
-   * Gets whether to capture request and response bodies for URLs defined in networkDetailAllowUrls.
+   * Sets whether to capture request and response bodies for URLs defined in networkDetailAllowUrls.
    *
-   * @return the explicit value, or the legacy default of {@code true} when unset
-   * @deprecated Use {@link #getNetworkCaptureBodies()} to distinguish an explicit value from
-   *     inheritance.
-   */
-  @Deprecated
-  public boolean isNetworkCaptureBodies() {
-    return networkCaptureBodies == null || networkCaptureBodies;
-  }
-
-  /**
-   * Sets whether to capture request and response bodies for URLs defined in networkDetailAllowUrls.
-   * A {@code null} value inherits from Data Collection.
-   */
-  public void setNetworkCaptureBodies(final @Nullable Boolean networkCaptureBodies) {
-    this.networkCaptureBodies = networkCaptureBodies;
-  }
-
-  /**
-   * Sets whether to capture request and response bodies for URLs defined in networkDetailAllowUrls.
+   * @param networkCaptureBodies true to enable network capture bodies, false otherwise
    */
   public void setNetworkCaptureBodies(final boolean networkCaptureBodies) {
     this.networkCaptureBodies = networkCaptureBodies;
   }
 
   /**
-   * Gets the explicit request-header collection behavior. A {@code null} value inherits the Data
-   * Collection request-header behavior, or the legacy default when Data Collection is not
-   * configured.
-   */
-  public @Nullable KeyValueCollectionBehavior getNetworkRequestHeaderBehavior() {
-    return networkRequestHeaderBehavior;
-  }
-
-  /** Sets the explicit request-header collection behavior, or {@code null} to inherit. */
-  public void setNetworkRequestHeaderBehavior(
-      final @Nullable KeyValueCollectionBehavior networkRequestHeaderBehavior) {
-    this.networkRequestHeaderBehavior = networkRequestHeaderBehavior;
-  }
-
-  /**
-   * Gets request header allow-list terms for URLs defined in networkDetailAllowUrls.
+   * Gets all request headers to capture for URLs defined in networkDetailAllowUrls. This includes
+   * both the default headers (Content-Type, Content-Length, Accept) and any additional headers.
    *
-   * @return the configured allow-list, the legacy default headers when unset, or an empty list when
-   *     the configured behavior cannot be represented as an allow-list
-   * @deprecated Use {@link #getNetworkRequestHeaderBehavior()} to retain the collection mode.
+   * @return an unmodifiable list of the request headers to extract
    */
-  @Deprecated
   public @NotNull List<String> getNetworkRequestHeaders() {
-    return getLegacyHeaderList(networkRequestHeaderBehavior);
+    return networkRequestHeaders;
   }
 
   /**
    * Sets request headers to capture for URLs defined in networkDetailAllowUrls. The default headers
-   * (Content-Type, Content-Length, Accept) are always included automatically. Pass {@code null} to
-   * inherit from Data Collection.
+   * (Content-Type, Content-Length, Accept) are always included automatically.
    *
-   * @deprecated Use {@link #setNetworkRequestHeaderBehavior(KeyValueCollectionBehavior)}.
+   * @param networkRequestHeaders additional network request headers list
    */
-  @Deprecated
-  public void setNetworkRequestHeaders(final @Nullable List<String> networkRequestHeaders) {
-    this.networkRequestHeaderBehavior =
-        networkRequestHeaders == null
-            ? null
-            : KeyValueCollectionBehavior.allowList(
-                mergeHeaders(DEFAULT_HEADERS, networkRequestHeaders).toArray(new String[0]));
+  public void setNetworkRequestHeaders(final @NotNull List<String> networkRequestHeaders) {
+    this.networkRequestHeaders = mergeHeaders(DEFAULT_HEADERS, networkRequestHeaders);
   }
 
   /**
-   * Gets the explicit response-header collection behavior. A {@code null} value inherits the Data
-   * Collection response-header behavior, or the legacy default when Data Collection is not
-   * configured.
-   */
-  public @Nullable KeyValueCollectionBehavior getNetworkResponseHeaderBehavior() {
-    return networkResponseHeaderBehavior;
-  }
-
-  /** Sets the explicit response-header collection behavior, or {@code null} to inherit. */
-  public void setNetworkResponseHeaderBehavior(
-      final @Nullable KeyValueCollectionBehavior networkResponseHeaderBehavior) {
-    this.networkResponseHeaderBehavior = networkResponseHeaderBehavior;
-  }
-
-  /**
-   * Gets response header allow-list terms for URLs defined in networkDetailAllowUrls.
+   * Gets all response headers to capture for URLs defined in networkDetailAllowUrls. This includes
+   * both the default headers (Content-Type, Content-Length, Accept) and any additional headers.
    *
-   * @return the configured allow-list, the legacy default headers when unset, or an empty list when
-   *     the configured behavior cannot be represented as an allow-list
-   * @deprecated Use {@link #getNetworkResponseHeaderBehavior()} to retain the collection mode.
+   * @return an unmodifiable list of the response headers to extract
    */
-  @Deprecated
   public @NotNull List<String> getNetworkResponseHeaders() {
-    return getLegacyHeaderList(networkResponseHeaderBehavior);
+    return networkResponseHeaders;
   }
 
   /**
    * Sets response headers to capture for URLs defined in networkDetailAllowUrls. The default
-   * headers (Content-Type, Content-Length, Accept) are always included automatically. Pass {@code
-   * null} to inherit from Data Collection.
+   * headers (Content-Type, Content-Length, Accept) are always included automatically.
    *
-   * @deprecated Use {@link #setNetworkResponseHeaderBehavior(KeyValueCollectionBehavior)}.
+   * @param networkResponseHeaders the additional network response headers list
    */
-  @Deprecated
-  public void setNetworkResponseHeaders(final @Nullable List<String> networkResponseHeaders) {
-    this.networkResponseHeaderBehavior =
-        networkResponseHeaders == null
-            ? null
-            : KeyValueCollectionBehavior.allowList(
-                mergeHeaders(DEFAULT_HEADERS, networkResponseHeaders).toArray(new String[0]));
-  }
-
-  private static @NotNull List<String> getLegacyHeaderList(
-      final @Nullable KeyValueCollectionBehavior behavior) {
-    if (behavior == null) {
-      return DEFAULT_HEADERS;
-    }
-    return behavior.getMode() == KeyValueCollectionBehavior.Mode.ALLOW_LIST
-        ? behavior.getTerms()
-        : Collections.<String>emptyList();
-  }
-
-  @ApiStatus.Internal
-  public boolean isNetworkRequestBodyCaptureEnabled(
-      final @NotNull DataCollectionResolver dataCollectionResolver) {
-    if (networkCaptureBodies != null) {
-      return networkCaptureBodies;
-    }
-    return dataCollectionResolver.isDataCollectionConfigured()
-        ? dataCollectionResolver.isOutgoingRequestBody()
-        : true;
-  }
-
-  @ApiStatus.Internal
-  public boolean isNetworkResponseBodyCaptureEnabled(
-      final @NotNull DataCollectionResolver dataCollectionResolver) {
-    if (networkCaptureBodies != null) {
-      return networkCaptureBodies;
-    }
-    return dataCollectionResolver.isDataCollectionConfigured()
-        ? dataCollectionResolver.isIncomingResponseBody()
-        : true;
-  }
-
-  @ApiStatus.Internal
-  public @NotNull KeyValueCollectionBehavior resolveNetworkRequestHeaders(
-      final @NotNull DataCollectionResolver dataCollectionResolver) {
-    if (networkRequestHeaderBehavior != null) {
-      return networkRequestHeaderBehavior;
-    }
-    return dataCollectionResolver.isDataCollectionConfigured()
-        ? dataCollectionResolver.getHttpRequestHeaders()
-        : legacyNetworkHeaders();
-  }
-
-  @ApiStatus.Internal
-  public @NotNull KeyValueCollectionBehavior resolveNetworkResponseHeaders(
-      final @NotNull DataCollectionResolver dataCollectionResolver) {
-    if (networkResponseHeaderBehavior != null) {
-      return networkResponseHeaderBehavior;
-    }
-    return dataCollectionResolver.isDataCollectionConfigured()
-        ? dataCollectionResolver.getHttpResponseHeaders()
-        : legacyNetworkHeaders();
-  }
-
-  private static @NotNull KeyValueCollectionBehavior legacyNetworkHeaders() {
-    return KeyValueCollectionBehavior.allowList(DEFAULT_HEADERS.toArray(new String[0]));
+  public void setNetworkResponseHeaders(final @NotNull List<String> networkResponseHeaders) {
+    this.networkResponseHeaders = mergeHeaders(DEFAULT_HEADERS, networkResponseHeaders);
   }
 
   /**
