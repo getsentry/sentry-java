@@ -32,6 +32,10 @@ class SentryOkHttpEventListenerDelegationTest {
       received += "callFailed" to call
     }
 
+    override fun canceled(call: Call) {
+      received += "canceled" to call
+    }
+
     fun mismatches(): List<Pair<String, Call>> = received.filter { it.second !== ownCall }
   }
 
@@ -117,6 +121,73 @@ class SentryOkHttpEventListenerDelegationTest {
 
     assertThat(fixture.listeners.single().received.map { it.first })
       .containsExactly("callStart", "callFailed")
+      .inOrder()
+  }
+
+  @Test
+  fun `cancel during a call is delegated to the listener of that call`() {
+    val sut = fixture.getSut()
+    val call = fixture.newCall("1")
+
+    sut.callStart(call)
+    sut.canceled(call)
+    sut.callFailed(call, IOException())
+
+    assertThat(fixture.listeners.single().received.map { it.first })
+      .containsExactly("callStart", "canceled", "callFailed")
+      .inOrder()
+  }
+
+  @Test
+  fun `cancel before callStart is delegated`() {
+    val sut = fixture.getSut()
+    val call = fixture.newCall("1")
+
+    sut.canceled(call)
+
+    assertThat(fixture.listeners.single().received).containsExactly("canceled" to call)
+  }
+
+  @Test
+  fun `cancel after callEnd is delegated`() {
+    val sut = fixture.getSut()
+    val call = fixture.newCall("1")
+
+    sut.callStart(call)
+    sut.callEnd(call)
+    sut.canceled(call)
+
+    assertThat(fixture.listeners.first().received.map { it.first })
+      .containsExactly("callStart", "callEnd")
+      .inOrder()
+    assertThat(fixture.listeners.last().received).containsExactly("canceled" to call)
+  }
+
+  @Test
+  fun `cancel outside of a call does not bind a listener to the call`() {
+    val sut = fixture.getSut()
+    val call = fixture.newCall("1")
+
+    sut.canceled(call)
+    sut.dnsStart(call, "sentry.io")
+
+    assertThat(fixture.listeners.single().received.map { it.first }).containsExactly("canceled")
+  }
+
+  @Test
+  fun `a single wrapped listener receives cancels outside of the call window`() {
+    whenever(fixture.scopes.options).thenReturn(SentryOptions())
+    val call = fixture.newCall("1")
+    val listener = RecordingListener(call)
+    val sut = SentryOkHttpEventListener(fixture.scopes, listener)
+
+    sut.canceled(call)
+    sut.callStart(call)
+    sut.callEnd(call)
+    sut.canceled(call)
+
+    assertThat(listener.received.map { it.first })
+      .containsExactly("canceled", "callStart", "callEnd", "canceled")
       .inOrder()
   }
 }

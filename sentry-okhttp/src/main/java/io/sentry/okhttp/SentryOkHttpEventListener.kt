@@ -397,7 +397,13 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun canceled(call: Call) {
-    originalEventListenerMap[call]?.canceled(call)
+    // Unlike the other callbacks, canceled() can occur before callStart() and after
+    // callEnd()/callFailed(), so there is not always a listener bound to the call. Create one on
+    // the fly in that case, but do not put it in the map: nothing would remove it again, because
+    // a call that is canceled before it starts never gets a callEnd() or callFailed().
+    val originalEventListener =
+      originalEventListenerMap[call] ?: originalEventListenerCreator?.invoke(call) ?: return
+    originalEventListener.canceled(call)
   }
 
   override fun satisfactionFailure(call: Call, response: Response) {
