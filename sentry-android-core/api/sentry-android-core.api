@@ -638,6 +638,7 @@ public class io/sentry/android/core/TombstoneIntegration$TombstonePolicy : io/se
 	public fun getLabel ()Ljava/lang/String;
 	public fun getLastReportedTimestamp ()Ljava/lang/Long;
 	public fun getTargetReason ()I
+	public fun markReported (J)V
 	public fun shouldReportHistorical ()Z
 }
 
@@ -749,6 +750,8 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public static fun lastReportedTombstone (Lio/sentry/SentryOptions;)Ljava/lang/Long;
+	public static fun markAnrReported (Lio/sentry/SentryOptions;J)V
+	public static fun markTombstoneReported (Lio/sentry/SentryOptions;J)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }

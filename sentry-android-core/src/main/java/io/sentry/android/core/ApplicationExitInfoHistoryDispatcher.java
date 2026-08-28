@@ -14,6 +14,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.HintUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -177,6 +178,7 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
     }
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.R)
   private void report(final @NotNull ApplicationExitInfo exitInfo, final boolean enrich) {
     final @Nullable Report report = policy.buildReport(exitInfo, enrich);
 
@@ -186,7 +188,28 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
 
     final @NotNull SentryId sentryId = scopes.captureEvent(report.getEvent(), report.getHint());
     final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
-    if (!isEventDropped) {
+    if (isEventDropped) {
+      // A dropped event never reaches the envelope disk cache, which is where the last reported
+      // marker is normally written. Without writing it here, the very same exit would be turned
+      // into an event again on the next app start, no matter why it was dropped. Only a technical
+      // failure to hand the event over keeps the exit eligible for another attempt.
+      if (HintUtils.isCaptureFailed(report.getHint())) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Capturing the %s event failed, leaving the exit for the next app start.",
+                policy.getLabel());
+      } else {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "%s event was dropped, marking the exit as reported.",
+                policy.getLabel());
+        policy.markReported(exitInfo.getTimestamp());
+      }
+    } else {
       final @Nullable BlockingFlushHint flushHint = report.getFlushHint();
       if (flushHint != null && !flushHint.waitFlush()) {
         options
@@ -210,6 +233,9 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
 
     @Nullable
     Long getLastReportedTimestamp();
+
+    /** Records {@code timestamp} as the last reported exit, so it is not reported again. */
+    void markReported(long timestamp);
 
     @Nullable
     Report buildReport(@NotNull ApplicationExitInfo exitInfo, boolean enrich);
