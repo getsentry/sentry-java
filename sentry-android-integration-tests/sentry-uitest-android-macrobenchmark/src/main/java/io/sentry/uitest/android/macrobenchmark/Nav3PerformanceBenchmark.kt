@@ -339,27 +339,40 @@ class Nav3PerformanceBenchmark {
         traceSession
           .query(
             """
+            WITH named_slices AS (
+              SELECT
+                slice.name,
+                slice.ts,
+                slice.dur,
+                COALESCE(thread_process.name, process_process.name) AS process_name
+              FROM slice
+              LEFT JOIN thread_track ON slice.track_id = thread_track.id
+              LEFT JOIN thread USING (utid)
+              LEFT JOIN process AS thread_process ON thread.upid = thread_process.upid
+              LEFT JOIN process_track ON slice.track_id = process_track.id
+              LEFT JOIN process AS process_process ON process_track.upid = process_process.upid
+              WHERE slice.name IN (
+                '$AB_DISABLED_SECTION',
+                '$AB_ENABLED_SECTION',
+                '$NAVIGATION_TO_COMPOSITION_SECTION',
+                '$NAVIGATION_TO_FIRST_DRAW_SECTION'
+              )
+            )
             SELECT
               phase.name AS phase_name,
               operation.name AS operation_name,
               operation.dur AS duration_ns
-            FROM slice AS phase
-            INNER JOIN thread_track AS phase_track ON phase.track_id = phase_track.id
-            INNER JOIN thread AS phase_thread ON phase_track.utid = phase_thread.utid
-            INNER JOIN process AS phase_process ON phase_thread.upid = phase_process.upid
-            INNER JOIN slice AS operation
+            FROM named_slices AS phase
+            INNER JOIN named_slices AS operation
               ON operation.ts >= phase.ts
               AND operation.ts + operation.dur <= phase.ts + phase.dur
-            INNER JOIN thread_track AS operation_track ON operation.track_id = operation_track.id
-            INNER JOIN thread AS operation_thread ON operation_track.utid = operation_thread.utid
-            INNER JOIN process AS operation_process ON operation_thread.upid = operation_process.upid
             WHERE phase.name IN ('$AB_DISABLED_SECTION', '$AB_ENABLED_SECTION')
               AND operation.name IN (
                 '$NAVIGATION_TO_COMPOSITION_SECTION',
                 '$NAVIGATION_TO_FIRST_DRAW_SECTION'
               )
-              AND phase_process.name = '$packageName'
-              AND operation_process.name = '$packageName'
+              AND phase.process_name = '$packageName'
+              AND operation.process_name = '$packageName'
               AND phase.dur > 0
               AND operation.dur > 0
             ORDER BY operation.ts
