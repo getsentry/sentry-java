@@ -41,7 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -175,39 +174,45 @@ public final class InternalSentrySdk {
       return null;
     }
 
+    final @NotNull ISerializer serializer = options.getSerializer();
+    final @NotNull EnvelopeEventState eventState;
     try {
-      final @NotNull ISerializer serializer = options.getSerializer();
-      final @NotNull EnvelopeEventState eventState = eventStateOf(envelope, serializer);
-
-      final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
-      for (SentryEnvelopeItem item : envelope.getItems()) {
-        envelopeItems.add(item);
-      }
-
-      // update session and add it to envelope if necessary
-      final @Nullable Session.State status =
-          eventState == EnvelopeEventState.UNHANDLED ? Session.State.Crashed : null;
-      final @Nullable Session session =
-          updateSession(scopes, options, status, eventState != EnvelopeEventState.NONE);
-      if (session != null) {
-        final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
-        envelopeItems.add(sessionItem);
-        deleteCurrentSessionFile(
-            options,
-            // should be sync if going to crash or already not a main thread
-            !maybeStartNewSession || !scopes.getOptions().getThreadChecker().isMainThread());
-        if (maybeStartNewSession) {
-          scopes.startSession();
-        }
-      }
-
-      final SentryEnvelope repackagedEnvelope =
-          new SentryEnvelope(envelope.getHeader(), envelopeItems);
-      return scopes.captureEnvelope(repackagedEnvelope);
-    } catch (Throwable t) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
+      eventState = eventStateOf(envelope, serializer);
+    } catch (Exception e) {
+      // getEvent reads through a Callable, whose call() declares Exception
+      options.getLogger().log(SentryLevel.ERROR, "Failed to inspect envelope events", e);
+      return null;
     }
-    return null;
+
+    final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+    for (SentryEnvelopeItem item : envelope.getItems()) {
+      envelopeItems.add(item);
+    }
+
+    // update session and add it to envelope if necessary
+    final @Nullable Session.State status =
+        eventState == EnvelopeEventState.UNHANDLED ? Session.State.Crashed : null;
+    final @Nullable Session session =
+        updateSession(scopes, options, status, eventState != EnvelopeEventState.NONE);
+    if (session != null) {
+      try {
+        envelopeItems.add(SentryEnvelopeItem.fromSession(serializer, session));
+      } catch (IOException e) {
+        options.getLogger().log(SentryLevel.ERROR, "Failed to add session to envelope", e);
+        return null;
+      }
+      deleteCurrentSessionFile(
+          options,
+          // should be sync if going to crash or already not a main thread
+          !maybeStartNewSession || !scopes.getOptions().getThreadChecker().isMainThread());
+      if (maybeStartNewSession) {
+        scopes.startSession();
+      }
+    }
+
+    final SentryEnvelope repackagedEnvelope =
+        new SentryEnvelope(envelope.getHeader(), envelopeItems);
+    return scopes.captureEnvelope(repackagedEnvelope);
   }
 
   /**
@@ -262,7 +267,11 @@ public final class InternalSentrySdk {
   }
 
   /**
-   * Flags and persists the current session for a non-terminating hybrid error.
+   * Flags the current session for a non-terminating hybrid error and persists it before returning,
+   * so the marker survives an immediate process death.
+   *
+   * <p>The write stays inside {@code withSession}: the scope's session lock is what keeps the
+   * session from being ended or replaced mid-write.
    *
    * @param unhandled {@code true} if the error was unhandled ({@code mechanism.handled=false})
    */
@@ -287,30 +296,10 @@ public final class InternalSentrySdk {
                       unhandled
                           ? session.recordNonTerminatingUnhandledError()
                           : session.update(null, null, true, null);
-                  if (recorded) {
-                    schedulePersistSession(options, session.clone());
+                  if (recorded && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
+                    ((EnvelopeCache) options.getEnvelopeDiskCache()).persistCurrentSession(session);
                   }
                 }));
-  }
-
-  /**
-   * This function is mostly called from Flutter where capturing envelope is run in a background
-   * thread.
-   *
-   * <p>Nonetheless we should run this in the same executor service as the deleteCurrentSessionFile
-   * function for consistency.
-   */
-  private static void schedulePersistSession(
-      final @NotNull SentryOptions options, final @NotNull Session session) {
-    if (!(options.getEnvelopeDiskCache() instanceof EnvelopeCache)) {
-      return;
-    }
-    final @NotNull EnvelopeCache cache = (EnvelopeCache) options.getEnvelopeDiskCache();
-    try {
-      options.getExecutorService().submit(() -> cache.persistCurrentSession(session));
-    } catch (RejectedExecutionException e) {
-      options.getLogger().log(WARNING, "Submission of session persisting rejected.", e);
-    }
   }
 
   /** What the events inside an envelope amount to, from the session's point of view. */

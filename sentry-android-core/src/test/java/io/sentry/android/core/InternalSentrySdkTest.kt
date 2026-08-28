@@ -30,7 +30,6 @@ import io.sentry.protocol.Contexts
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
-import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.createTestScopes
 import io.sentry.transport.ITransport
 import io.sentry.transport.RateLimiter
@@ -62,8 +61,6 @@ class InternalSentrySdkTest {
       initForTest(context) { options ->
         this@Fixture.options = options
         options.dsn = "https://key@host/proj"
-        // the non-terminating path persists the session off the calling thread
-        options.executorService = ImmediateExecutorService()
         options.setTransportFactory { _, _ ->
           object : ITransport {
             override fun close(isRestarting: Boolean) {
@@ -509,7 +506,8 @@ class InternalSentrySdkTest {
     assertThat(scopeSession.get().hasNonTerminatingUnhandledError()).isTrue()
     assertThat(scopeSession.get().sessionId).isEqualTo(originalSid.get())
 
-    // and it is persisted so the flag survives process death
+    // and it is persisted so the flag survives process death. The fixture leaves the real executor
+    // service in place, so this only holds if the write happened on the calling thread.
     val sessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
     val persistedSession =
       fixture.options.serializer.deserialize(sessionFile.reader(), Session::class.java)!!
