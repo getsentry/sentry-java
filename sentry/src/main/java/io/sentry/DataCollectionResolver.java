@@ -31,10 +31,6 @@ public final class DataCollectionResolver {
     return explicitOrSendDefaultPii(options.getDataCollection().getDatabaseQueryData(), true);
   }
 
-  public boolean isDatabaseQueryDataWithLegacyAlways() {
-    return explicitOrDefault(options.getDataCollection().getDatabaseQueryData(), true, true);
-  }
-
   public boolean isGraphqlDocument() {
     return explicitOrSendDefaultPii(options.getDataCollection().getGraphql().getDocument(), true);
   }

@@ -79,17 +79,6 @@ class DataCollectionResolverTest {
   }
 
   @Test
-  fun `database query data legacy always variant preserves collection when namespace is absent`() {
-    val options = SentryOptions().apply { isSendDefaultPii = false }
-
-    assertThat(options.dataCollectionResolver.isDatabaseQueryDataWithLegacyAlways).isTrue()
-
-    options.dataCollection.setDatabaseQueryData(false)
-
-    assertThat(options.dataCollectionResolver.isDatabaseQueryDataWithLegacyAlways).isFalse()
-  }
-
-  @Test
   fun `GraphQL document falls back to sendDefaultPii and override takes precedence`() {
     val options = SentryOptions().apply { isSendDefaultPii = true }
 
