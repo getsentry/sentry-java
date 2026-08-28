@@ -38,6 +38,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
+/**
+ * Legacy Android implementation of {@link IContinuousProfiler}, using Android's {@code
+ * Debug.startMethodTracingSampling} See {@link PerfettoContinuousProfiler} for the new
+ * implementation using {@code ProfilingManager}, available on API 35+.
+ */
 @ApiStatus.Internal
 public class AndroidContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {

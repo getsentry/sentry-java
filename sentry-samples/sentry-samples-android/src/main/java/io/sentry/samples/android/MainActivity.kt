@@ -581,6 +581,48 @@ fun SessionReplayScreen() {
     verticalArrangement = Arrangement.spacedBy(12.dp),
   ) {
     item {
+      SentryTraced("start_replay") {
+        OutlinedButton(onClick = { Sentry.replay().start() }, modifier = Modifier) {
+          Text("Start Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("start_replay_buffering") {
+        OutlinedButton(onClick = { Sentry.replay().startBuffering() }, modifier = Modifier) {
+          Text("Start Replay Buffering", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("pause_replay") {
+        OutlinedButton(onClick = { Sentry.replay().pause() }, modifier = Modifier) {
+          Text("Pause Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("resume_replay") {
+        OutlinedButton(onClick = { Sentry.replay().resume() }, modifier = Modifier) {
+          Text("Resume Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("flush_replay") {
+        OutlinedButton(onClick = { Sentry.replay().flush() }, modifier = Modifier) {
+          Text("Flush Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("stop_replay") {
+        OutlinedButton(onClick = { Sentry.replay().stop() }, modifier = Modifier) {
+          Text("Stop Replay", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
       SentryTraced("enable_replay_debug") {
         OutlinedButton(
           onClick = { Sentry.replay().enableDebugMaskingOverlay() },
@@ -805,21 +847,23 @@ fun UserFeedbackScreen() {
       }
     }
 
-    // Enable shake-to-show for a specific form instance
+    // Toggle shake-to-show at runtime using the global Sentry.feedback() API
     item(span = { GridItemSpan(maxLineSpan) }) {
+      var shakeEnabled by remember { mutableStateOf(Sentry.feedback().isOnShakeEnabled) }
       Button(
         modifier = Modifier,
         onClick = {
-          SentryUserFeedbackForm.Builder(activity)
-            .configurator { options ->
-              options.isUseShakeGesture = true
-              options.formTitle = "Shake Feedback"
-            }
-            .create()
-          Toast.makeText(activity, "Shake your device to open the form!", Toast.LENGTH_SHORT).show()
+          if (shakeEnabled) {
+            Sentry.feedback().disableOnShake()
+          } else {
+            Sentry.feedback().enableOnShake()
+            Toast.makeText(activity, "Shake your device to open the form!", Toast.LENGTH_SHORT)
+              .show()
+          }
+          shakeEnabled = Sentry.feedback().isOnShakeEnabled
         },
       ) {
-        Text(text = "Enable Shake-to-Show")
+        Text(text = if (shakeEnabled) "Disable Shake-to-Show" else "Enable Shake-to-Show")
       }
     }
   }

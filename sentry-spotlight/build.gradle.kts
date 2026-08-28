@@ -7,7 +7,7 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.animalsniffer)
+  id("io.sentry.animalsniffer.android")
   alias(libs.plugins.buildconfig)
 }
 
@@ -30,12 +30,7 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
   testImplementation(projects.sentryTestSupport)
-
-  val gummyBearsModule = libs.gummy.bears.api21.get().module
-  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
-
-tasks { check { dependsOn(animalsnifferMain) } }
 
 buildConfig {
   useJavaOutput()

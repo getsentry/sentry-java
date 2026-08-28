@@ -1,6 +1,7 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.DateUtils
 import io.sentry.IScopes
@@ -33,6 +34,7 @@ import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
+import java.util.concurrent.ScheduledExecutorService
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -48,6 +50,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -108,20 +111,21 @@ class SessionCaptureStrategyTest {
     fun getSut(
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
       replayCacheDir: File? = null,
+      replayExecutor: ScheduledExecutorService = mock {
+        doAnswer { invocation ->
+            (invocation.arguments[0] as Runnable).run()
+            null
+          }
+          .whenever(it)
+          .submit(any<Runnable>())
+      },
     ): SessionCaptureStrategy {
       replayCacheDir?.let { whenever(replayCache.replayCacheDir).thenReturn(it) }
       return SessionCaptureStrategy(
         options,
         scopes,
         dateProvider,
-        mock {
-          doAnswer { invocation ->
-              (invocation.arguments[0] as Runnable).run()
-              null
-            }
-            .whenever(it)
-            .submit(any<Runnable>())
-        },
+        replayExecutor,
         mock {
           doAnswer { invocation ->
               (invocation.arguments[0] as Runnable).run()
@@ -214,6 +218,31 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
+  fun `stop closes cache after queued replay work`() {
+    val tasks = mutableListOf<Runnable>()
+    val calls = mutableListOf<String>()
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    doAnswer { calls += "close" }.whenever(fixture.replayCache).close()
+    val strategy = fixture.getSut(replayExecutor = replayExecutor)
+    strategy.start()
+    replayExecutor.submit(Runnable { calls += "encode" })
+
+    strategy.stop()
+
+    verify(fixture.replayCache, never()).close()
+    tasks.forEach(Runnable::run)
+    assertThat(calls).containsExactly("encode", "close").inOrder()
+  }
+
+  @Test
   fun `captureReplay does nothing for non-crashed event`() {
     val strategy = fixture.getSut()
     strategy.start()
@@ -221,6 +250,150 @@ class SessionCaptureStrategyTest {
     strategy.captureReplay(false) {}
 
     verify(fixture.scopes, never()).captureReplay(any(), any())
+  }
+
+  @Test
+  fun `flush creates and captures current segment`() {
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.flush {}
+
+    verify(fixture.scopes)
+      .captureReplay(argThat { event -> event is SentryReplayEvent && event.segmentId == 0 }, any())
+    assertEquals(1, strategy.currentSegment)
+    assertTrue(strategy.isFlushed)
+  }
+
+  @Test
+  fun `flush uses the timeline after queued segment boundaries`() {
+    val tasks = mutableListOf<Runnable>()
+    val segmentIds = mutableListOf<Int>()
+    val now = System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration * 2
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    doAnswer {
+        segmentIds += (it.arguments[0] as SentryReplayEvent).segmentId
+        SentryId.EMPTY_ID
+      }
+      .whenever(fixture.scopes)
+      .captureReplay(any(), any())
+    val strategy = fixture.getSut(dateProvider = { now }, replayExecutor = replayExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+    strategy.flush {}
+    tasks.forEach(Runnable::run)
+
+    assertThat(segmentIds).containsExactly(0, 1).inOrder()
+  }
+
+  @Test
+  fun `flush uses request time when executor is delayed`() {
+    val tasks = mutableListOf<Runnable>()
+    var now = System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    val strategy = fixture.getSut(dateProvider = { now }, replayExecutor = replayExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val segmentStart = strategy.segmentTimestamp!!.time
+    val requestedAt = now
+
+    strategy.flush {}
+    now += fixture.options.sessionReplay.sessionSegmentDuration
+    tasks.forEach(Runnable::run)
+
+    verify(fixture.replayCache)
+      .createVideoOf(
+        eq(requestedAt - segmentStart),
+        eq(segmentStart),
+        eq(0),
+        any(),
+        any(),
+        any(),
+        any(),
+        any(),
+      )
+  }
+
+  @Test
+  fun `resume updates the timeline after a queued pause`() {
+    val tasks = mutableListOf<Runnable>()
+    val now = System.currentTimeMillis()
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    val strategy = fixture.getSut(dateProvider = { now }, replayExecutor = replayExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val segmentStart = Date(now - fixture.options.sessionReplay.sessionSegmentDuration)
+    strategy.segmentTimestamp = segmentStart
+
+    strategy.pause()
+    strategy.resume()
+    tasks.forEach(Runnable::run)
+
+    verify(fixture.replayCache)
+      .createVideoOf(
+        eq(now - segmentStart.time),
+        eq(segmentStart.time),
+        eq(0),
+        any(),
+        any(),
+        any(),
+        any(),
+        any(),
+      )
+    assertThat(strategy.segmentTimestamp).isNotEqualTo(segmentStart)
+  }
+
+  @Test
+  fun `executor delay does not trigger a segment boundary`() {
+    val tasks = mutableListOf<Runnable>()
+    var now = System.currentTimeMillis()
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    val strategy = fixture.getSut(dateProvider = { now }, replayExecutor = replayExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    now += fixture.options.sessionReplay.sessionSegmentDuration - 1
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+    now += fixture.options.sessionReplay.sessionDuration
+    tasks.forEach(Runnable::run)
+
+    verify(fixture.scopes, never()).captureReplay(any(), any())
+    verify(fixture.options.replayController, never()).stop()
   }
 
   @Test
@@ -269,22 +442,11 @@ class SessionCaptureStrategyTest {
 
   @Test
   fun `onScreenshotRecorded stops replay when replay duration exceeded`() {
-    val now = System.currentTimeMillis() + (fixture.options.sessionReplay.sessionDuration * 2)
-    var count = 0
-    val strategy =
-      fixture.getSut(
-        dateProvider = {
-          // we only need to fake value for the 3rd call (first two is for replayStartTimestamp and
-          // frameTimestamp)
-          if (count++ == 2) {
-            now
-          } else {
-            System.currentTimeMillis()
-          }
-        }
-      )
+    var now = System.currentTimeMillis()
+    val strategy = fixture.getSut(dateProvider = { now })
     strategy.start()
     strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
+    now += fixture.options.sessionReplay.sessionDuration * 2
 
     strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
@@ -559,6 +721,60 @@ class SessionCaptureStrategyTest {
     verify(fixture.scopes)
       .captureReplay(
         argThat { event -> event is SentryReplayEvent && event.traceIds.isNullOrEmpty() },
+        any(),
+      )
+  }
+
+  @Test
+  fun `registerSegmentName includes unique segment names in next segment and clears them`() {
+    val now =
+      System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.registerSegmentName("CheckoutActivity")
+    strategy.registerSegmentName("CheckoutActivity")
+    strategy.registerSegmentName("ProductDetailsActivity")
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event ->
+          event is SentryReplayEvent &&
+            event.segmentNames == listOf("CheckoutActivity", "ProductDetailsActivity")
+        },
+        any(),
+      )
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event ->
+          event is SentryReplayEvent && event.segmentId == 1 && event.segmentNames.isNullOrEmpty()
+        },
+        any(),
+      )
+  }
+
+  @Test
+  fun `registerSegmentName ignores empty names and limits names to 100`() {
+    val now =
+      System.currentTimeMillis() + (fixture.options.sessionReplay.sessionSegmentDuration * 5)
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.registerSegmentName("")
+    repeat(101) { strategy.registerSegmentName("ProductActivity$it") }
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        argThat { event -> event is SentryReplayEvent && event.segmentNames?.size == 100 },
         any(),
       )
   }

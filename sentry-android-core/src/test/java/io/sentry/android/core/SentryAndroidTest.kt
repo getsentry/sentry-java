@@ -352,6 +352,7 @@ class SentryAndroidTest {
   @Config(sdk = [26])
   fun `init starts session replay if app is in foreground`() {
     initSentryWithForegroundImportance(true) { _ ->
+      Shadows.shadowOf(Looper.getMainLooper()).idle()
       assertTrue(Sentry.getCurrentHub().options.replayController.isRecording())
     }
   }
@@ -360,6 +361,7 @@ class SentryAndroidTest {
   @Config(sdk = [26])
   fun `init does not start session replay if the app is in background`() {
     initSentryWithForegroundImportance(false) { _ ->
+      Shadows.shadowOf(Looper.getMainLooper()).idle()
       assertFalse(Sentry.getCurrentHub().options.replayController.isRecording())
     }
   }
@@ -440,7 +442,9 @@ class SentryAndroidTest {
       // clean state for a new process.
       assertEquals(
         emptyList<Breadcrumb>(),
-        options.findPersistingScopeObserver()?.read(options, BREADCRUMBS_FILENAME, List::class.java),
+        options
+          .findPersistingScopeObserver()
+          ?.read(options, BREADCRUMBS_FILENAME, List::class.java),
       )
       assertEquals(
         SentryId.EMPTY_ID.toString(),
@@ -463,7 +467,9 @@ class SentryAndroidTest {
     // assert that persisted values have changed
     assertEquals(
       "TestActivity",
-      options.findPersistingScopeObserver()?.read(options, TRANSACTION_FILENAME, String::class.java),
+      options
+        .findPersistingScopeObserver()
+        ?.read(options, TRANSACTION_FILENAME, String::class.java),
     )
     assertEquals(
       "io.sentry.sample@1.1.0+220",

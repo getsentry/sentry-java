@@ -445,15 +445,14 @@ class UncaughtExceptionHandlerIntegrationTest {
     whenever(scopes4.globalScope).thenReturn(mock<IScope>())
     whenever(scopes5.globalScope).thenReturn(mock<IScope>())
 
-    val integrations =
-      scopesList.map { scope ->
-        CompletableFuture.supplyAsync(
-          {
-            UncaughtExceptionHandlerIntegration(handler).apply { register(scope, fixture.options) }
-          },
-          executor,
-        )
-      }
+    val integrations = scopesList.map { scope ->
+      CompletableFuture.supplyAsync(
+        {
+          UncaughtExceptionHandlerIntegration(handler).apply { register(scope, fixture.options) }
+        },
+        executor,
+      )
+    }
 
     CompletableFuture.allOf(*integrations.toTypedArray()).get()
 

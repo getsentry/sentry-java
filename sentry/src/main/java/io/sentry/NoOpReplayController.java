@@ -18,6 +18,9 @@ public final class NoOpReplayController implements ReplayController {
   public void start() {}
 
   @Override
+  public void startBuffering() {}
+
+  @Override
   public void stop() {}
 
   @Override
@@ -27,12 +30,26 @@ public final class NoOpReplayController implements ReplayController {
   public void resume() {}
 
   @Override
+  public void flush() {}
+
+  @Override
+  public void onAppForegrounded(boolean startNewReplay) {}
+
+  @Override
+  public void onAppBackgrounded() {}
+
+  @Override
+  public void onAppSessionEnded() {}
+
+  @Override
   public boolean isRecording() {
     return false;
   }
 
   @Override
-  public void captureReplay(@Nullable Boolean isTerminating) {}
+  public @NotNull SentryId captureReplay(@Nullable Boolean isTerminating) {
+    return SentryId.EMPTY_ID;
+  }
 
   @Override
   public @NotNull SentryId getReplayId() {
@@ -60,4 +77,7 @@ public final class NoOpReplayController implements ReplayController {
 
   @Override
   public void registerTraceId(@NotNull SentryId traceId) {}
+
+  @Override
+  public void registerSegmentName(@NotNull String segmentName) {}
 }

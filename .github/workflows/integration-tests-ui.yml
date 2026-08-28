@@ -22,18 +22,18 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: 'recursive'
 
       - name: 'Set up Java: 17'
-        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -43,7 +43,7 @@ jobs:
         run: make assembleUiTests
 
       - name: Install SauceLabs CLI
-        uses: saucelabs/saucectl-run-action@bc81720eb01738d9c664b07fe42621bd0014283f # pin@v4.4.0
+        uses: saucelabs/saucectl-run-action@283660aa934c02723c497efa151d582a3acc5801 # pin@v4.5.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -75,7 +75,7 @@ jobs:
 
       - name: Install Sentry CLI
         if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
-        run: curl -sL https://sentry.io/get-cli/ | bash
+        uses: getsentry/action-setup-cli@70d7e587b84c2e78cf4d37cd33d7b74fb3729c1b # v1
 
       - name: Upload Replay Snapshots to Sentry
         # Skip on PRs from forks, which don't have access to the upload secret
@@ -86,7 +86,7 @@ jobs:
           if [ ${#pngs[@]} -gt 0 ]; then
             mkdir -p replay-snapshots
             cp "${pngs[@]}" replay-snapshots/
-            sentry-cli build snapshots ./replay-snapshots \
+            sentry-cli snapshots upload ./replay-snapshots \
               --app-id sentry-android-replay
           else
             echo "No replay snapshot files found, skipping upload"

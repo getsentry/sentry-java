@@ -152,8 +152,10 @@ public final class Scopes implements IScopes {
           .getLogger()
           .log(
               SentryLevel.WARNING, "Instance is disabled and this 'captureEvent' call is a no-op.");
+      HintUtils.setCaptureFailed(hint);
     } else if (event == null) {
       getOptions().getLogger().log(SentryLevel.WARNING, "captureEvent called with null parameter.");
+      HintUtils.setCaptureFailed(hint);
     } else {
       try {
         assignTraceContext(event);
@@ -166,6 +168,7 @@ public final class Scopes implements IScopes {
             .getLogger()
             .log(
                 SentryLevel.ERROR, "Error while capturing event with id: " + event.getEventId(), e);
+        HintUtils.setCaptureFailed(hint);
       }
     }
     return sentryId;
@@ -467,6 +470,12 @@ public final class Scopes implements IScopes {
         getOptions().getContinuousProfiler().close(true);
         getOptions().getCompositePerformanceCollector().close();
         getOptions().getConnectionStatusProvider().close();
+        // On restart we intentionally leave the timer executor running so that pending idle/
+        // deadline timeouts of transactions started before the restart still fire and finish
+        // those transactions. It self-terminates once idle (allowCoreThreadTimeOut).
+        if (!isRestarting) {
+          getOptions().getTimerExecutorService().close(getOptions().getShutdownTimeoutMillis());
+        }
         final @NotNull ISentryExecutorService executorService = getOptions().getExecutorService();
         if (isRestarting) {
           try {
