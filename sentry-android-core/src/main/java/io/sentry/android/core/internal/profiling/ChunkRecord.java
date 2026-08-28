@@ -34,6 +34,10 @@ public final class ChunkRecord {
     this.endTimestamp = endTimestamp;
   }
 
+  public boolean hasEnded() {
+    return endTimestamp != null;
+  }
+
   /**
    * Marks the outcome of the chunk. {@link ProfileRecordingState#NOT_RECORDED} is final: once it is
    * known that no trace file exists, a result the OS delivers late cannot revive the chunk.

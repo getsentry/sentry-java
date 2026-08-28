@@ -338,7 +338,20 @@ class PerfettoProfilerTest {
 
     capturedCallback.accept(mockResult(filePath = traceFile.absolutePath))
 
-    assertEquals(ProfileRecordingState.RECORDED, chunkRecord.recordingState)
+    assertEquals(ProfileRecordingState.UNKNOWN, chunkRecord.recordingState)
+  }
+
+  @Test
+  fun `chunk record is untouched after a successful collection`() {
+    // Only the caller that collects the trace file can tell that the chunk was recorded
+    val traceFile = createTraceFile()
+    val profiler = getSut()
+    val chunkRecord = assertNotNull(profiler.startSession())
+
+    profiler.endAndCollect {}
+    capturedCallback.accept(mockResult(filePath = traceFile.absolutePath))
+
+    assertEquals(ProfileRecordingState.UNKNOWN, chunkRecord.recordingState)
   }
 
   @Test

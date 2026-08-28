@@ -36,6 +36,16 @@ public interface IContinuousProfiler {
    * <p>The result of a profiling request can arrive long after a span was tagged with the profiler
    * id, so callers are expected to ask again when they are about to send the data.
    *
+   * <p>An implementation that keeps a history of profiling requests answers as follows:
+   *
+   * <ul>
+   *   <li>{@link ProfileRecordingState#RECORDED} if a profile covering part of the window exists
+   *   <li>{@link ProfileRecordingState#NOT_RECORDED} if every profiling request covering the window
+   *       is known to have produced nothing, or if no request covers the window at all
+   *   <li>{@link ProfileRecordingState#UNKNOWN} if no history is kept, or if a request covering the
+   *       window has no outcome yet
+   * </ul>
+   *
    * @param profilerId the profiler id the caller was tagged with
    * @param startTime start of the time window to check
    * @param endTime end of the time window to check

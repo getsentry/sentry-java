@@ -231,19 +231,19 @@ class PerfettoContinuousProfilerTest {
   }
 
   @Test
-  fun `getProfileRecordingState assumes a running chunk will be recorded`() {
+  fun `getProfileRecordingState is unknown while a chunk is still running`() {
     val profiler = fixture.getSut()
     profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     val duringChunk = fixture.options.dateProvider.now()
 
     assertEquals(
-      ProfileRecordingState.RECORDED,
+      ProfileRecordingState.UNKNOWN,
       profiler.getProfileRecordingState(profiler.profilerId, duringChunk, duringChunk),
     )
   }
 
   @Test
-  fun `getProfileRecordingState assumes a chunk that is still being collected was recorded`() {
+  fun `getProfileRecordingState is unknown while a chunk is still being collected`() {
     doAnswer { null }.whenever(fixture.mockPerfettoProfiler).endAndCollect(any())
     val profiler = fixture.getSut()
     profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
@@ -254,7 +254,7 @@ class PerfettoContinuousProfilerTest {
     fixture.executor.runAll()
 
     assertEquals(
-      ProfileRecordingState.RECORDED,
+      ProfileRecordingState.UNKNOWN,
       profiler.getProfileRecordingState(profilerId, duringChunk, duringChunk),
     )
   }
@@ -342,6 +342,29 @@ class PerfettoContinuousProfilerTest {
   }
 
   @Test
+  fun `getProfileRecordingState is unknown when a failed and an unknown chunk cover the window`() {
+    doAnswer { invocation ->
+        invocation.getArgument<java.util.function.Consumer<java.io.File?>>(0).accept(null)
+        null
+      }
+      .whenever(fixture.mockPerfettoProfiler)
+      .endAndCollect(any())
+    val profiler = fixture.getSut()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    val profilerId = profiler.profilerId
+    val duringFailedChunk = fixture.options.dateProvider.now()
+
+    // The chunk timer fires, so the failed chunk ends and the next one starts and keeps running
+    fixture.executor.runAll()
+    val duringRunningChunk = fixture.options.dateProvider.now()
+
+    assertEquals(
+      ProfileRecordingState.UNKNOWN,
+      profiler.getProfileRecordingState(profilerId, duringFailedChunk, duringRunningChunk),
+    )
+  }
+
+  @Test
   fun `getProfileRecordingState judges a window that starts before the profiler did`() {
     // An app start transaction is back-dated to before Sentry init, and still has to be judged
     val beforeProfiler = fixture.options.dateProvider.now()
@@ -374,8 +397,9 @@ class PerfettoContinuousProfilerTest {
       profiler.getProfileRecordingState(profilerId, beforeProfiler, duringLastChunk),
     )
     assertEquals(
-      ProfileRecordingState.RECORDED,
+      ProfileRecordingState.UNKNOWN,
       profiler.getProfileRecordingState(profilerId, duringLastChunk, duringLastChunk),
+      "the last chunk is still running, and the recorded ones before it are outside the window",
     )
   }
 
@@ -399,6 +423,9 @@ class PerfettoContinuousProfilerTest {
     // The chunk timer fires, so the failed chunk ends and the next one starts
     fixture.executor.runAll()
     val duringNextChunk = fixture.options.dateProvider.now()
+    // The next chunk ends with a trace file, so it is recorded
+    profiler.stopProfiler(ProfileLifecycle.MANUAL)
+    fixture.executor.runAll()
 
     assertEquals(
       ProfileRecordingState.NOT_RECORDED,

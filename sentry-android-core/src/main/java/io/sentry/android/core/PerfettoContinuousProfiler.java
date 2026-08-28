@@ -110,7 +110,6 @@ public class PerfettoContinuousProfiler
 
   private final @NotNull ArrayDeque<ChunkRecord> chunkHistory =
       new ArrayDeque<>(MAX_CHUNK_HISTORY_SIZE);
-  private @Nullable ChunkRecord currentChunk = null;
 
   private final AutoClosableReentrantLock chunkHistoryLock = new AutoClosableReentrantLock();
 
@@ -243,14 +242,24 @@ public class PerfettoContinuousProfiler
         return ProfileRecordingState.UNKNOWN;
       }
 
+      boolean hasUnknownChunk = false;
+
       for (final @NotNull ChunkRecord chunk : chunkHistory) {
-        // A chunk that is still running, or that is still being collected, is assumed to be
-        // recorded in the end
-        if (chunk.getProfilerId().equals(profilerId)
-            && chunk.overlaps(startTime, endTime)
-            && chunk.getRecordingState() != ProfileRecordingState.NOT_RECORDED) {
+        if (!chunk.getProfilerId().equals(profilerId) || !chunk.overlaps(startTime, endTime)) {
+          continue;
+        }
+        final @NotNull ProfileRecordingState state = chunk.getRecordingState();
+        if (state == ProfileRecordingState.RECORDED) {
           return ProfileRecordingState.RECORDED;
         }
+        if (state == ProfileRecordingState.UNKNOWN) {
+          hasUnknownChunk = true;
+        }
+      }
+
+      // A chunk that is still running, or that is still being collected, may yet be recorded
+      if (hasUnknownChunk) {
+        return ProfileRecordingState.UNKNOWN;
       }
 
       // Every chunk overlapping the window failed, or no chunk ran during the window at all
@@ -260,7 +269,7 @@ public class PerfettoContinuousProfiler
 
   /**
    * Gives up on the newest chunk, unless its outcome is already known. Only that one can still be
-   * undecided, as a chunk is decided before the next one starts.
+   * unknown, as a chunk gets its outcome before the next one starts.
    */
   private void markLastChunkNotRecordedIfUnknown() {
     try (final @NotNull ISentryLifecycleToken ignored = chunkHistoryLock.acquire()) {
@@ -276,18 +285,21 @@ public class PerfettoContinuousProfiler
       if (chunkHistory.size() == MAX_CHUNK_HISTORY_SIZE) {
         chunkHistory.removeFirst();
       }
-      currentChunk = chunk;
       chunkHistory.addLast(chunk);
     }
   }
 
+  /**
+   * Ends the running chunk, which is always the newest one, as a chunk only starts once the one
+   * before it ended. Returns null if there is none, or if it already ended.
+   */
   private @Nullable ChunkRecord endChunkRecord(final @NotNull SentryDate endTimestamp) {
     try (final @NotNull ISentryLifecycleToken ignored = chunkHistoryLock.acquire()) {
-      final @Nullable ChunkRecord chunk = currentChunk;
-      if (chunk != null) {
-        chunk.setEndTimestamp(endTimestamp);
-        currentChunk = null;
+      final @Nullable ChunkRecord chunk = chunkHistory.peekLast();
+      if (chunk == null || chunk.hasEnded()) {
+        return null;
       }
+      chunk.setEndTimestamp(endTimestamp);
       return chunk;
     }
   }

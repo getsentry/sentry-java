@@ -178,13 +178,11 @@ public class PerfettoProfiler {
         result.getErrorCode(),
         result.getResultFilePath());
 
+    // Only a failure is reported here. The OS can report success and still leave no usable trace
+    // file behind, so only the collection of the chunk can tell that it was recorded.
     final @Nullable ChunkRecord record = chunkRecord;
-    if (record != null) {
-      final int errorCode = result.getErrorCode();
-      record.setRecordingState(
-          errorCode == ProfilingResult.ERROR_NONE
-              ? ProfileRecordingState.RECORDED
-              : ProfileRecordingState.NOT_RECORDED);
+    if (record != null && result.getErrorCode() != ProfilingResult.ERROR_NONE) {
+      record.setRecordingState(ProfileRecordingState.NOT_RECORDED);
     }
 
     synchronized (profilingResultLock) {
@@ -255,9 +253,6 @@ public class PerfettoProfiler {
       return null;
     }
 
-    if (record != null) {
-      record.setRecordingState(ProfileRecordingState.RECORDED);
-    }
     return traceFile;
   }
 

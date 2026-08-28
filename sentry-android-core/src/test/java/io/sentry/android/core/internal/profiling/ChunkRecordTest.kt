@@ -41,6 +41,12 @@ class ChunkRecordTest {
   }
 
   @Test
+  fun `a chunk has only ended once it has an end timestamp`() {
+    assertFalse(getSut(withEnd = false).hasEnded())
+    assertTrue(getSut().hasEnded())
+  }
+
+  @Test
   fun `a window inside the chunk overlaps`() {
     assertTrue(getSut().overlaps(SentryLongDate(1200), SentryLongDate(1800)))
   }
