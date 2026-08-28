@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### Features
+
+- Sentry can now configure Log4j2 automatically for Spring Boot 4 when `sentry-log4j2` is on the classpath and Log4j2 Core is the active logging backend ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
+  - Enable automatic appender registration with:
+    ```properties
+    sentry.logging.enabled=true
+    ```
+    Automatic registration is disabled by default for now and will be enabled by default in the next major release.
+  - The appender is attached to the root logger by default. To attach it to specific loggers instead, configure one or more non-overlapping logger names:
+    ```properties
+    sentry.logging.loggers[0]=com.example
+    sentry.logging.loggers[1]=org.example
+    ```
+  - Configure the minimum level for creating breadcrumbs. The default is `INFO`:
+    ```properties
+    sentry.logging.minimum-breadcrumb-level=INFO
+    ```
+  - Configure the minimum level for creating Sentry error events. The default is `ERROR`:
+    ```properties
+    sentry.logging.minimum-event-level=ERROR
+    ```
+  - Configure the minimum level for sending Sentry structured logs. The default is `INFO`:
+    ```properties
+    sentry.logging.minimum-level=INFO
+    ```
+    Structured logs must also be enabled:
+    ```properties
+    sentry.logs.enabled=true
+    ```
+
 ### Fixes
 
 - Keep dropped tombstone and ANR events dropped, instead of reporting the same app exit again at every app start ([#6002](https://github.com/getsentry/sentry-java/pull/6002))
@@ -206,33 +236,6 @@
       <scope>import</scope>
     </dependency>
     ```
-   - Sentry can now configure Log4j2 automatically for Spring Boot 4 when `sentry-log4j2` is on the classpath and Log4j2 Core is the active logging backend ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
-     - Enable automatic appender registration with:
-       ```properties
-       sentry.logging.enabled=true
-       ```
-       Automatic registration is disabled by default for now and will be enabled by default in the next major release.
-     - The appender is attached to the root logger by default. To attach it to specific loggers instead, configure one or more non-overlapping logger names:
-       ```properties
-       sentry.logging.loggers[0]=com.example
-       sentry.logging.loggers[1]=org.example
-       ```
-     - Configure the minimum level for creating breadcrumbs. The default is `INFO`:
-       ```properties
-       sentry.logging.minimum-breadcrumb-level=INFO
-       ```
-     - Configure the minimum level for creating Sentry error events. The default is `ERROR`:
-       ```properties
-       sentry.logging.minimum-event-level=ERROR
-       ```
-     - Configure the minimum level for sending Sentry structured logs. The default is `INFO`:
-       ```properties
-       sentry.logging.minimum-level=INFO
-       ```
-       Structured logs must also be enabled:
-       ```properties
-       sentry.logs.enabled=true
-       ```
 
 ### Fixes
 
