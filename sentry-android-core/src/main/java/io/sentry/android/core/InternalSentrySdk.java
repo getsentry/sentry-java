@@ -270,6 +270,10 @@ public final class InternalSentrySdk {
    *
    * <p>Do not call this for events dropped by {@code beforeSend} or ignored exception types.
    *
+   * <p>Persisting the session is a blocking disk write on the calling thread, so call this off the
+   * main thread as the hybrid SDKs do. It is synchronous on purpose: a deferred write would not be
+   * on disk yet if the process dies right after this returns.
+   *
    * @param crashed {@code true} if the dropped error was unhandled ({@code
    *     mechanism.handled=false})
    */
