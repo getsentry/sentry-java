@@ -24,11 +24,9 @@ private const val OP_TRACE_ORIGIN = "auto.ui.jetpack_compose"
 
 @Immutable private class ImmutableHolder<T>(var item: T)
 
-@Immutable
 private class ParentSpanHolder {
   private var rootSpan: ISpan? = null
-  var span: ISpan? = null
-    private set
+  private var span: ISpan? = null
 
   fun getOrCreate(rootSpan: ISpan?, operation: String, description: String): ISpan? {
     if (rootSpan == null) {
@@ -57,12 +55,10 @@ private class ParentSpanHolder {
   }
 }
 
-private fun getRootSpan(): ISpan? {
-  var rootSpan: ISpan? = null
-  Sentry.configureScope { rootSpan = it.transaction }
-  return rootSpan
-}
+private fun getRootSpan(): ISpan? = Sentry.getCurrentScopes().transaction
 
+// CompositionLocal defaults are shared process-wide, so cached spans must be validated against
+// the root transaction active at the point of use.
 private val localSentryCompositionParentSpan = compositionLocalOf { ParentSpanHolder() }
 
 private val localSentryRenderingParentSpan = compositionLocalOf { ParentSpanHolder() }
@@ -75,12 +71,11 @@ public fun SentryTraced(
   enableUserInteractionTracing: Boolean = true,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  val rootSpan = getRootSpan()
   val parentCompositionSpan = localSentryCompositionParentSpan.current
   val parentRenderingSpan = localSentryRenderingParentSpan.current
   val compositionSpan =
     parentCompositionSpan
-      .getOrCreate(rootSpan, OP_PARENT_COMPOSITION, "Jetpack Compose Initial Composition")
+      .getOrCreate(getRootSpan(), OP_PARENT_COMPOSITION, "Jetpack Compose Initial Composition")
       ?.startChild(OP_COMPOSE, tag)
       ?.apply {
         spanContext.origin = OP_TRACE_ORIGIN
@@ -95,8 +90,9 @@ public fun SentryTraced(
         val renderSpan =
           if (!firstRendered.item) {
             parentRenderingSpan
-              .getOrCreate(rootSpan, OP_PARENT_RENDER, "Jetpack Compose Initial Render")
+              .getOrCreate(getRootSpan(), OP_PARENT_RENDER, "Jetpack Compose Initial Render")
               ?.startChild(OP_RENDER, tag)
+              ?.apply { spanContext.origin = OP_TRACE_ORIGIN }
           } else {
             null
           }
