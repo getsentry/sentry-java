@@ -227,8 +227,12 @@ public final class InternalSentrySdk {
    *   <li>keeps session status {@code Ok} and the same session id on the scope
    *   <li>does not attach a session update item to this envelope
    *   <li>does not start a new session
-   *   <li>persists the current session so the flag survives process death
+   *   <li>persists the current session before returning, so the flag survives process death
    * </ul>
+   *
+   * <p>Persisting is a blocking disk write on the calling thread, so call this off the main thread
+   * as the hybrid SDKs do. It is synchronous on purpose: a deferred write would not be on disk yet
+   * if the process dies right after this returns.
    *
    * <p>The session is finalized later by normal lifecycle ({@code endSession} / background /
    * previous-session recovery) as {@code unhandled}, unless a terminal status takes over first,
