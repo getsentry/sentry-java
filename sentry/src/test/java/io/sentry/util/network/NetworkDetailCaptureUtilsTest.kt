@@ -1,7 +1,6 @@
 package io.sentry.util.network
 
 import io.sentry.ILogger
-import io.sentry.KeyValueCollectionBehavior
 import java.util.LinkedHashMap
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -24,7 +23,7 @@ class NetworkDetailCaptureUtilsTest {
         { bytes ->
           NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
         },
-        KeyValueCollectionBehavior.off(),
+        emptyList(),
         { emptyMap() },
       )
 
@@ -44,7 +43,7 @@ class NetworkDetailCaptureUtilsTest {
         { bytes ->
           NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
         },
-        KeyValueCollectionBehavior.off(),
+        emptyList(),
         { emptyMap() },
       )
 
@@ -59,7 +58,7 @@ class NetworkDetailCaptureUtilsTest {
         null,
         false,
         { null },
-        KeyValueCollectionBehavior.off(),
+        emptyList(),
         { emptyMap() },
       )
 
@@ -67,7 +66,8 @@ class NetworkDetailCaptureUtilsTest {
   }
 
   @Test
-  fun `getCaptureHeaders matches allow list case-insensitively and filters sensitive values`() {
+  fun `getCaptureHeaders should match headers case-insensitively`() {
+    // Setup: allHeaders with mixed case keys
     val allHeaders =
       LinkedHashMap<String, String>().apply {
         put("Content-Type", "application/json")
@@ -75,21 +75,22 @@ class NetworkDetailCaptureUtilsTest {
         put("X-Custom-Header", "custom-value")
         put("accept", "application/json")
       }
-    val behavior =
-      KeyValueCollectionBehavior.allowList(
-        "content-type",
-        "AUTHORIZATION",
-        "x-custom-header",
-        "ACCEPT",
-      )
 
-    val result = NetworkDetailCaptureUtils.getCaptureHeaders(allHeaders, behavior)
+    // Test: allowedHeaders with different casing
+    val allowedHeaders = listOf("content-type", "AUTHORIZATION", "x-custom-header", "ACCEPT")
 
+    val result = NetworkDetailCaptureUtils.getCaptureHeaders(allHeaders, allowedHeaders)
+
+    // All headers should be matched despite case differences
     assertEquals(4, result.size)
+
+    // Original casing should be preserved in output
     assertEquals("application/json", result["Content-Type"])
-    assertEquals("[Filtered]", result["Authorization"])
+    assertEquals("Bearer token123", result["Authorization"])
     assertEquals("custom-value", result["X-Custom-Header"])
     assertEquals("application/json", result["accept"])
+
+    // Verify keys maintain original casing from allHeaders
     assertTrue(result.containsKey("Content-Type"))
     assertTrue(result.containsKey("Authorization"))
     assertTrue(result.containsKey("X-Custom-Header"))
@@ -97,52 +98,65 @@ class NetworkDetailCaptureUtilsTest {
   }
 
   @Test
-  fun `getCaptureHeaders handles null allHeaders`() {
-    val result =
-      NetworkDetailCaptureUtils.getCaptureHeaders(
-        null,
-        KeyValueCollectionBehavior.allowList("content-type"),
-      )
+  fun `getCaptureHeaders should handle null allHeaders`() {
+    val allowedHeaders = listOf("content-type")
+
+    val result = NetworkDetailCaptureUtils.getCaptureHeaders(null, allowedHeaders)
 
     assertTrue(result.isEmpty())
   }
 
   @Test
-  fun `getCaptureHeaders filters every value for empty allow list`() {
-    val result =
-      NetworkDetailCaptureUtils.getCaptureHeaders(
-        mapOf("Content-Type" to "application/json"),
-        KeyValueCollectionBehavior.allowList(),
-      )
+  fun `getCaptureHeaders should handle empty allowedHeaders`() {
+    val allHeaders = mapOf("Content-Type" to "application/json")
+    val allowedHeaders = emptyList<String>()
 
-    assertEquals(mapOf("Content-Type" to "[Filtered]"), result)
+    val result = NetworkDetailCaptureUtils.getCaptureHeaders(allHeaders, allowedHeaders)
+
+    assertTrue(result.isEmpty())
   }
 
   @Test
-  fun `getCaptureHeaders applies deny list`() {
-    val result =
-      NetworkDetailCaptureUtils.getCaptureHeaders(
-        mapOf(
-          "Content-Type" to "application/json",
-          "X-Debug" to "secret",
-          "X-Request-Id" to "123",
-        ),
-        KeyValueCollectionBehavior.denyList("debug"),
+  fun `getCaptureHeaders should only capture allowed headers`() {
+    val allHeaders =
+      mapOf(
+        "Content-Type" to "application/json",
+        "Authorization" to "Bearer token123",
+        "X-Unwanted-Header" to "should-not-appear",
       )
 
+    val allowedHeaders = listOf("content-type", "authorization")
+
+    val result = NetworkDetailCaptureUtils.getCaptureHeaders(allHeaders, allowedHeaders)
+
+    assertEquals(2, result.size)
     assertEquals("application/json", result["Content-Type"])
-    assertEquals("[Filtered]", result["X-Debug"])
-    assertEquals("123", result["X-Request-Id"])
+    assertEquals("Bearer token123", result["Authorization"])
+
+    // Unwanted header should not be present
+    assertTrue(!result.containsKey("X-Unwanted-Header"))
   }
 
   @Test
-  fun `getCaptureHeaders applies off mode`() {
-    val result =
-      NetworkDetailCaptureUtils.getCaptureHeaders(
-        mapOf("Content-Type" to "application/json"),
-        KeyValueCollectionBehavior.off(),
+  fun `getCaptureHeaders should handle null elements in allowedHeaders`() {
+    val allHeaders =
+      mapOf(
+        "Content-Type" to "application/json",
+        "Authorization" to "Bearer token123",
+        "X-Custom-Header" to "custom-value",
       )
 
-    assertTrue(result.isEmpty())
+    // allowedHeaders contains null elements which should be ignored
+    val allowedHeaders = listOf(null, "content-type", null, "authorization", null)
+
+    val result = NetworkDetailCaptureUtils.getCaptureHeaders(allHeaders, allowedHeaders)
+
+    // Only non-null allowed headers should be matched
+    assertEquals(2, result.size)
+    assertEquals("application/json", result["Content-Type"])
+    assertEquals("Bearer token123", result["Authorization"])
+
+    // X-Custom-Header should not be present as it's not in the allowed list
+    assertTrue(!result.containsKey("X-Custom-Header"))
   }
 }
