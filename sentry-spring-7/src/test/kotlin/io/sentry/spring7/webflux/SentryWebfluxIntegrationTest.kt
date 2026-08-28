@@ -127,11 +127,14 @@ class SentryWebfluxIntegrationTest {
       .expectStatus()
       .isOk
 
-    verify(transport)
-      .send(
-        checkTransaction { event -> assertEquals("GET /hello", event.transaction) },
-        anyOrNull(),
-      )
+    // the transaction is finished asynchronously, after the response has been sent
+    await.untilAsserted {
+      verify(transport)
+        .send(
+          checkTransaction { event -> assertEquals("GET /hello", event.transaction) },
+          anyOrNull(),
+        )
+    }
   }
 }
 
