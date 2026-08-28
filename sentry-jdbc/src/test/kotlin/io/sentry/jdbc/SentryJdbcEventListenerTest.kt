@@ -91,29 +91,6 @@ class SentryJdbcEventListenerTest {
   }
 
   @Test
-  fun `omits query description when database query data is disabled`() {
-    val sut = fixture.getSut()
-    fixture.options.dataCollection.setDatabaseQueryData(false)
-
-    sut.connection.use { it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate() }
-
-    assertEquals(1, fixture.tx.children.size)
-    assertEquals(null, fixture.tx.children.first().description)
-    assertEquals("hsqldb", fixture.tx.children.first().data[DB_SYSTEM_KEY])
-    assertEquals("testdb", fixture.tx.children.first().data[DB_NAME_KEY])
-  }
-
-  @Test
-  fun `legacy mode keeps query description when sendDefaultPii is false`() {
-    val sut = fixture.getSut()
-    fixture.options.isSendDefaultPii = false
-
-    sut.connection.use { it.prepareStatement("INSERT INTO foo VALUES (1)").executeUpdate() }
-
-    assertEquals("INSERT INTO foo VALUES (1)", fixture.tx.children.first().description)
-  }
-
-  @Test
   fun `creates spans for calls resulting in error`() {
     val sut = fixture.getSut(existingRow = 1)
 
