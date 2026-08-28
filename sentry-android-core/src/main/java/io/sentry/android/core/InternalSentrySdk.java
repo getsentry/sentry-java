@@ -174,45 +174,39 @@ public final class InternalSentrySdk {
       return null;
     }
 
-    final @NotNull ISerializer serializer = options.getSerializer();
-    final @NotNull EnvelopeEventState eventState;
     try {
-      eventState = eventStateOf(envelope, serializer);
-    } catch (Exception e) {
-      // getEvent reads through a Callable, whose call() declares Exception
-      options.getLogger().log(SentryLevel.ERROR, "Failed to inspect envelope events", e);
-      return null;
-    }
+      final @NotNull ISerializer serializer = options.getSerializer();
+      final @NotNull EnvelopeEventState eventState = eventStateOf(envelope, serializer);
 
-    final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
-    for (SentryEnvelopeItem item : envelope.getItems()) {
-      envelopeItems.add(item);
-    }
-
-    // update session and add it to envelope if necessary
-    final @Nullable Session.State status =
-        eventState == EnvelopeEventState.UNHANDLED ? Session.State.Crashed : null;
-    final @Nullable Session session =
-        updateSession(scopes, options, status, eventState != EnvelopeEventState.NONE);
-    if (session != null) {
-      try {
-        envelopeItems.add(SentryEnvelopeItem.fromSession(serializer, session));
-      } catch (IOException e) {
-        options.getLogger().log(SentryLevel.ERROR, "Failed to add session to envelope", e);
-        return null;
+      final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
+      for (SentryEnvelopeItem item : envelope.getItems()) {
+        envelopeItems.add(item);
       }
-      deleteCurrentSessionFile(
-          options,
-          // should be sync if going to crash or already not a main thread
-          !maybeStartNewSession || !scopes.getOptions().getThreadChecker().isMainThread());
-      if (maybeStartNewSession) {
-        scopes.startSession();
-      }
-    }
 
-    final SentryEnvelope repackagedEnvelope =
-        new SentryEnvelope(envelope.getHeader(), envelopeItems);
-    return scopes.captureEnvelope(repackagedEnvelope);
+      // update session and add it to envelope if necessary
+      final @Nullable Session.State status =
+          eventState == EnvelopeEventState.UNHANDLED ? Session.State.Crashed : null;
+      final @Nullable Session session =
+          updateSession(scopes, options, status, eventState != EnvelopeEventState.NONE);
+      if (session != null) {
+        final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
+        envelopeItems.add(sessionItem);
+        deleteCurrentSessionFile(
+            options,
+            // should be sync if going to crash or already not a main thread
+            !maybeStartNewSession || !scopes.getOptions().getThreadChecker().isMainThread());
+        if (maybeStartNewSession) {
+          scopes.startSession();
+        }
+      }
+
+      final SentryEnvelope repackagedEnvelope =
+          new SentryEnvelope(envelope.getHeader(), envelopeItems);
+      return scopes.captureEnvelope(repackagedEnvelope);
+    } catch (Throwable t) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
+    }
+    return null;
   }
 
   /**
