@@ -71,6 +71,7 @@ apiValidation {
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-samples-spring-boot-4",
+            "sentry-samples-spring-boot-4-log4j2",
             "sentry-samples-spring-boot-4-opentelemetry",
             "sentry-samples-spring-boot-4-opentelemetry-noagent",
             "sentry-samples-spring-boot-4-otlp",
