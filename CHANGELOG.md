@@ -14,6 +14,10 @@
   - Scopes that are explicitly made current, e.g. via `Sentry.setCurrentScopes` or the `SentryContext` coroutine integration, are now also honoured when `globalHubMode` is enabled
   - `Sentry.pushScope`, `Sentry.pushIsolationScope` and `Sentry.popScope` remain no-ops when `globalHubMode` is enabled
 
+### Internal
+
+- Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed` ([#5921](https://github.com/getsentry/sentry-java/pull/5921))
+
 ## 8.54.0
 
 ### Features
@@ -49,10 +53,6 @@
 - Bump Native SDK from v0.16.2 to v0.16.4 ([#5962](https://github.com/getsentry/sentry-java/pull/5962), [#5996](https://github.com/getsentry/sentry-java/pull/5996))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0164)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.16.2...0.16.4)
-
-### Internal
-
-- Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed` ([#5921](https://github.com/getsentry/sentry-java/pull/5921))
 
 ## 8.53.0
 
