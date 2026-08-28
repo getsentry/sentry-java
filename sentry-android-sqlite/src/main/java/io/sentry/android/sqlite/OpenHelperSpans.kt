@@ -6,7 +6,6 @@ import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.Instrumenter
 import io.sentry.ScopesAdapter
-import io.sentry.SentryDate
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
@@ -47,12 +46,12 @@ internal class OpenHelperSpans(
       if (result is CrossProcessCursor) {
         return SentryCrossProcessCursor(result, this, sql) as T
       }
-      span = startSpan(sql, startTimestamp)
+      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
       span?.spanContext?.origin = TRACE_ORIGIN
       span?.status = SpanStatus.OK
       result
     } catch (e: Throwable) {
-      span = startSpan(sql, startTimestamp)
+      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
       span?.spanContext?.origin = TRACE_ORIGIN
       span?.status = SpanStatus.INTERNAL_ERROR
       span?.throwable = e
@@ -77,12 +76,4 @@ internal class OpenHelperSpans(
       }
     }
   }
-
-  private fun startSpan(sql: String, startTimestamp: SentryDate): ISpan? =
-    scopes.span?.startChild(
-      "db.sql.query",
-      sql.takeIf { scopes.options.dataCollectionResolver.isDatabaseQueryDataWithLegacyAlways },
-      startTimestamp,
-      Instrumenter.SENTRY,
-    )
 }
