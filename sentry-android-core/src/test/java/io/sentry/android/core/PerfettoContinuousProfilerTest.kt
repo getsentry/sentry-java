@@ -443,6 +443,22 @@ class PerfettoContinuousProfilerTest {
   }
 
   @Test
+  fun `getProfileRecordingState is not recorded for a chunk collected on close`() {
+    // The trace file is already there, but a terminating close never sends it
+    val profiler = fixture.getSut()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    val profilerId = profiler.profilerId
+    val duringChunk = fixture.options.dateProvider.now()
+
+    profiler.close(true)
+
+    assertEquals(
+      ProfileRecordingState.NOT_RECORDED,
+      profiler.getProfileRecordingState(profilerId, duringChunk, duringChunk),
+    )
+  }
+
+  @Test
   fun `getProfileRecordingState is not recorded for chunks left pending on close`() {
     doAnswer { null }.whenever(fixture.mockPerfettoProfiler).endAndCollect(any())
     val profiler = fixture.getSut()

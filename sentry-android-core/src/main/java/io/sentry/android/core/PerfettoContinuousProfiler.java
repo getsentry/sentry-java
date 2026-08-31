@@ -203,9 +203,11 @@ public class PerfettoContinuousProfiler
       activeTraceCount = 0;
       shouldStop = true;
       if (isTerminating) {
-        stopInternal(false);
+        // Closing first, so that a result the OS already delivered cannot mark the chunk that
+        // stopInternal ends as recorded: nothing is sent once the profiler is closed
         isClosed.set(true);
-        // sendChunk drops everything once isClosed is set, so the chunk that just ended is lost
+        stopInternal(false);
+        // The chunk that just ended covers nothing, and a pending collection cannot change that
         markLastChunkNotRecordedIfUnknown();
       }
     }

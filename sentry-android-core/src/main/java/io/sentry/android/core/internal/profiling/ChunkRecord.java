@@ -61,11 +61,17 @@ public final class ChunkRecord {
     return startTimestamp;
   }
 
+  /**
+   * Tells whether the chunk covers any part of the given window.
+   *
+   * <p>Keep this in sync with the rules the backend uses to decide which chunks it shows for a
+   * transaction, for as long as there is no protocol for a chunk that produced nothing.
+   */
   public boolean overlaps(final @NotNull SentryDate startTime, final @NotNull SentryDate endTime) {
     if (endTime.isBefore(startTimestamp)) {
       return false;
     }
-    // A chunk that is still running has no end yet, and covers everything from its start on
+    // A chunk that is still running has no end yet, and covers everything from its start onward
     final @Nullable SentryDate endTimestamp = this.endTimestamp;
     return endTimestamp == null || !startTime.isAfter(endTimestamp);
   }
