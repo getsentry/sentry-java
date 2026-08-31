@@ -103,6 +103,7 @@ androidx-lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-commo
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" }
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
+androidx-navigation-fragment = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "androidxNavigation" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room2" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room2" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room2" }
