@@ -469,7 +469,7 @@ class SentryAndroidTest {
     // says nothing about the writes. Poll instead of reading once and racing them.
     await
       .withAlias("Persisted scope and options values are written from the Sentry executor")
-      .atMost(5, TimeUnit.SECONDS)
+      .atMost(2, TimeUnit.SECONDS)
       .untilAsserted {
         assertEquals(
           "TestActivity",
