@@ -613,6 +613,86 @@ class InternalSentrySdkTest {
   }
 
   @Test
+  fun `updateSessionForDroppedEventNonTerminating flags an unhandled error without sending an envelope`() {
+    val fixture = Fixture()
+    fixture.init(context)
+
+    val originalSid = AtomicReference<String>()
+    Sentry.configureScope { scope -> originalSid.set(scope.session!!.sessionId) }
+    fixture.capturedEnvelopes.clear()
+
+    InternalSentrySdk.updateSessionForDroppedEventNonTerminating(true)
+
+    assertThat(fixture.capturedEnvelopes).isEmpty()
+
+    val scopeSession = AtomicReference<Session>()
+    Sentry.configureScope { scope -> scopeSession.set(scope.session) }
+    assertThat(scopeSession.get().status).isEqualTo(Session.State.Ok)
+    assertThat(scopeSession.get().hasNonTerminatingUnhandledError()).isTrue()
+    assertThat(scopeSession.get().errorCount()).isEqualTo(1)
+    assertThat(scopeSession.get().sessionId).isEqualTo(originalSid.get())
+
+    val sessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val persistedSession =
+      fixture.options.serializer.deserialize(sessionFile.reader(), Session::class.java)!!
+    assertThat(persistedSession.status).isEqualTo(Session.State.Ok)
+    assertThat(persistedSession.hasNonTerminatingUnhandledError()).isTrue()
+    assertThat(persistedSession.errorCount()).isEqualTo(1)
+    assertThat(persistedSession.sessionId).isEqualTo(originalSid.get())
+  }
+
+  @Test
+  fun `updateSessionForDroppedEventNonTerminating increments errors for a handled error without sending an envelope`() {
+    val fixture = Fixture()
+    fixture.init(context)
+
+    val originalSid = AtomicReference<String>()
+    Sentry.configureScope { scope -> originalSid.set(scope.session!!.sessionId) }
+    fixture.capturedEnvelopes.clear()
+
+    InternalSentrySdk.updateSessionForDroppedEventNonTerminating(false)
+
+    assertThat(fixture.capturedEnvelopes).isEmpty()
+
+    val scopeSession = AtomicReference<Session>()
+    Sentry.configureScope { scope -> scopeSession.set(scope.session) }
+    assertThat(scopeSession.get().status).isEqualTo(Session.State.Ok)
+    assertThat(scopeSession.get().hasNonTerminatingUnhandledError()).isFalse()
+    assertThat(scopeSession.get().errorCount()).isEqualTo(1)
+    assertThat(scopeSession.get().sessionId).isEqualTo(originalSid.get())
+
+    val sessionFile = EnvelopeCache.getCurrentSessionFile(fixture.options.cacheDirPath!!)
+    val persistedSession =
+      fixture.options.serializer.deserialize(sessionFile.reader(), Session::class.java)!!
+    assertThat(persistedSession.status).isEqualTo(Session.State.Ok)
+    assertThat(persistedSession.hasNonTerminatingUnhandledError()).isFalse()
+    assertThat(persistedSession.errorCount()).isEqualTo(1)
+  }
+
+  @Test
+  fun `updateSessionForDroppedEventNonTerminating then endSession finalizes the session as unhandled`() {
+    val fixture = Fixture()
+    fixture.init(context)
+
+    InternalSentrySdk.updateSessionForDroppedEventNonTerminating(true)
+    fixture.capturedEnvelopes.clear()
+
+    Sentry.endSession()
+
+    val sessionItems =
+      fixture.capturedEnvelopes
+        .flatMap { it.items.toList() }
+        .filter { it.header.type == SentryItemType.Session }
+    assertThat(sessionItems).hasSize(1)
+    val endedSession =
+      fixture.options.serializer.deserialize(
+        InputStreamReader(ByteArrayInputStream(sessionItems[0].data)),
+        Session::class.java,
+      )!!
+    assertThat(endedSession.status).isEqualTo(Session.State.Unhandled)
+  }
+
+  @Test
   fun `getAppStartMeasurement returns correct serialized data from the app start instance`() {
     Fixture().mockFinishedAppStart()
 
