@@ -24,7 +24,7 @@ public final class Deadline {
   }
 
   /** A deadline {@code amount} of {@code unit} from now. */
-  public static @NotNull Deadline in(
+  public static @NotNull Deadline after(
       final @NotNull Ticker clock, final long amount, final @NotNull TimeUnit unit) {
     return new Deadline(clock, clock.tickNanos() + unit.toNanos(amount));
   }
