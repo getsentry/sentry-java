@@ -3784,7 +3784,6 @@ public class io/sentry/SentryOptions {
 	public fun getTransactionProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
-	public fun getUptimeClock ()Lio/sentry/time/UptimeClock;
 	public fun getVersionDetector ()Lio/sentry/IVersionDetector;
 	public final fun getViewHierarchyExporters ()Ljava/util/List;
 	public fun isAttachServerName ()Z
@@ -3956,7 +3955,6 @@ public class io/sentry/SentryOptions {
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
-	public fun setUptimeClock (Lio/sentry/time/UptimeClock;)V
 	public fun setVersionDetector (Lio/sentry/IVersionDetector;)V
 	public fun setViewHierarchyExporters (Ljava/util/List;)V
 }
