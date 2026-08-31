@@ -73,6 +73,15 @@ class GraphqlUtilsTest {
     }
   }
 
+  @Test
+  fun `returns null for a batched GraphQL request body containing a non-object entry`() {
+    val options = SentryOptions().also { it.dataCollection.graphql.setDocument(false) }
+
+    val result = GraphqlUtils.filterRequestBody("""[$REQUEST_BODY,"unexpected"]""", options)
+
+    assertThat(result).isNull()
+  }
+
   private companion object {
     const val REQUEST_BODY =
       """{"operationName":"GetUser","variables":{"id":"123"},"query":"query { viewer { name } }"}"""
