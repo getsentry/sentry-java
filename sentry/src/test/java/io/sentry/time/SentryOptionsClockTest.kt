@@ -6,29 +6,24 @@ import kotlin.test.Test
 
 class SentryOptionsClockTest {
   @Test
-  fun `defaults to the JVM clocks`() {
-    val options = SentryOptions()
-
-    assertThat(options.uptimeClock).isInstanceOf(JavaUptimeClock::class.java)
-    assertThat(options.elapsedRealtimeClock).isInstanceOf(JavaElapsedRealtimeClock::class.java)
+  fun `defaults to the JVM clock`() {
+    assertThat(SentryOptions().elapsedRealtimeClock)
+      .isInstanceOf(JavaElapsedRealtimeClock::class.java)
   }
 
   @Test
-  fun `the default clocks are singletons`() {
-    assertThat(SentryOptions().uptimeClock).isSameInstanceAs(JavaUptimeClock.getInstance())
+  fun `the default clock is a singleton`() {
     assertThat(SentryOptions().elapsedRealtimeClock)
       .isSameInstanceAs(JavaElapsedRealtimeClock.getInstance())
   }
 
   @Test
-  fun `a platform can replace either clock`() {
+  fun `a platform can replace the clock`() {
     val options = SentryOptions()
     val ticker = TestTicker()
 
-    options.uptimeClock = ticker
     options.elapsedRealtimeClock = ticker
 
-    assertThat(options.uptimeClock).isSameInstanceAs(ticker)
     assertThat(options.elapsedRealtimeClock).isSameInstanceAs(ticker)
   }
 }
