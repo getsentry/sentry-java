@@ -464,17 +464,23 @@ class SentryAndroidTest {
     // Execute all posted tasks
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    // assert that persisted values have changed
-    assertEquals(
-      "TestActivity",
-      options
-        .findPersistingScopeObserver()
-        ?.read(options, TRANSACTION_FILENAME, String::class.java),
-    )
-    assertEquals(
-      "io.sentry.sample@1.1.0+220",
-      PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java),
-    )
+    // Both values are persisted from the Sentry executor, and nothing above joins it: the
+    // beforeSend callback we awaited runs on an earlier task in the same queue, so it flipping
+    // says nothing about the writes. Poll instead of reading once and racing them.
+    await
+      .withAlias("Persisted scope and options values are written from the Sentry executor")
+      .untilAsserted {
+        assertEquals(
+          "TestActivity",
+          options
+            .findPersistingScopeObserver()
+            ?.read(options, TRANSACTION_FILENAME, String::class.java),
+        )
+        assertEquals(
+          "io.sentry.sample@1.1.0+220",
+          PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java),
+        )
+      }
   }
 
   @Test
