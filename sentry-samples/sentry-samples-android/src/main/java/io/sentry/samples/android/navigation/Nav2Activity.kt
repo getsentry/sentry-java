@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
@@ -31,9 +32,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -100,7 +105,9 @@ class Nav2Activity : AppCompatActivity() {
   private var composeCurrentRouteName = Nav2ComposeDestination.SingleStack.routeName
   private var composeCurrentRouteText = Nav2ComposeDestination.SingleStack.displayRoute()
   private var composeBackStackText = Nav2ComposeDestination.SingleStack.backStackRoute()
-  private val sentryNavigationListener = SentryNavigationListener()
+  private lateinit var sentryNavigationListener: SentryNavigationListener
+  private val enableNavigationBreadcrumbs = mutableStateOf(true)
+  private val enableNavigationTransactions = mutableStateOf(true)
   private val routeActivationAction = mutableStateOf(RouteActivationAction.NONE)
   private val performanceState = NavigationPerformanceState()
   private var routeActivationActionSpinner: Spinner? = null
@@ -122,6 +129,7 @@ class Nav2Activity : AppCompatActivity() {
       .commitNow()
 
     navController = navHostFragment.navController
+    sentryNavigationListener = createSentryNavigationListener()
     navController.addOnDestinationChangedListener(sentryNavigationListener)
     navController.addOnDestinationChangedListener { _, destination, arguments ->
       updateChrome(destination, arguments)
@@ -201,7 +209,8 @@ class Nav2Activity : AppCompatActivity() {
       setContent {
         MaterialTheme {
           Nav2ComposeSingleStackApp(
-            navListener = sentryNavigationListener,
+            enableNavigationBreadcrumbs = enableNavigationBreadcrumbs.value,
+            enableNavigationTransactions = enableNavigationTransactions.value,
             routeActivationAction = routeActivationAction.value,
             onRouteChanged = { routeName, currentRoute, backStack ->
               updateComposeChrome(routeName, currentRoute, backStack)
@@ -248,10 +257,18 @@ class Nav2Activity : AppCompatActivity() {
       orientation = LinearLayout.VERTICAL
       setPadding(24.dp, 18.dp, 24.dp, 12.dp)
       addView(
-        TextView(context).apply {
-          text = "Navigation 2"
-          textSize = 20f
-          setTextColor(color(android.R.color.black))
+        LinearLayout(context).apply {
+          orientation = LinearLayout.HORIZONTAL
+          gravity = Gravity.CENTER_VERTICAL
+          addView(
+            TextView(context).apply {
+              text = "Navigation 2"
+              textSize = 20f
+              setTextColor(color(android.R.color.black))
+              layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+            }
+          )
+          addView(sentryNavigationOptionsButton())
         }
       )
       addView(View(context), LinearLayout.LayoutParams(MATCH_PARENT, 12.dp))
@@ -424,6 +441,32 @@ class Nav2Activity : AppCompatActivity() {
     updateTabSelection(activeScenario)
   }
 
+  private fun createSentryNavigationListener(): SentryNavigationListener {
+    return SentryNavigationListener(
+      enableNavigationBreadcrumbs = enableNavigationBreadcrumbs.value,
+      enableNavigationTracing = enableNavigationTransactions.value,
+    )
+  }
+
+  private fun applySentryNavigationOptions() {
+    if (::navController.isInitialized) {
+      navController.removeOnDestinationChangedListener(sentryNavigationListener)
+      // Drop the currently bound transaction so the replacement listener can own future routes.
+      Sentry.getCurrentScopes().configureScope { scope -> scope.clearTransaction() }
+      sentryNavigationListener = createSentryNavigationListener()
+      navController.addOnDestinationChangedListener(sentryNavigationListener)
+    }
+
+    if (activeScenario == Nav2Scenario.SINGLE_STACK_COMPOSE) {
+      composeNavHostView?.let { view ->
+        view.disposeComposition()
+        contentContainer.removeView(view)
+        composeNavHostView = null
+      }
+      showComposeSingleStack()
+    }
+  }
+
   private fun buildNav2PerformanceStack() {
     traceNavigationPerformanceSection("Nav2Stress.buildStack") {
       val generation = performanceState.nextGeneration()
@@ -571,6 +614,61 @@ class Nav2Activity : AppCompatActivity() {
         }
     }
 
+  private fun sentryNavigationOptionsButton(): View =
+    ComposeView(this).apply {
+      setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+      layoutParams = LinearLayout.LayoutParams(48.dp, 48.dp)
+      setContent {
+        MaterialTheme {
+          IconButton(onClick = ::showSentryNavigationOptionsDialog) {
+            Icon(
+              imageVector = Icons.Filled.Settings,
+              contentDescription = "Sentry navigation options",
+            )
+          }
+        }
+      }
+    }
+
+  private fun showSentryNavigationOptionsDialog() {
+    val dialogContent =
+      LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(24.dp, 16.dp, 24.dp, 8.dp)
+      }
+
+    val breadcrumbsCheckbox =
+      CheckBox(this).apply {
+        text = "Navigation breadcrumbs"
+        isChecked = enableNavigationBreadcrumbs.value
+        setOnCheckedChangeListener { _, isChecked ->
+          if (enableNavigationBreadcrumbs.value != isChecked) {
+            enableNavigationBreadcrumbs.value = isChecked
+            applySentryNavigationOptions()
+          }
+        }
+      }
+    val transactionsCheckbox =
+      CheckBox(this).apply {
+        text = "Navigation transactions"
+        isChecked = enableNavigationTransactions.value
+        setOnCheckedChangeListener { _, isChecked ->
+          if (enableNavigationTransactions.value != isChecked) {
+            enableNavigationTransactions.value = isChecked
+            applySentryNavigationOptions()
+          }
+        }
+      }
+    dialogContent.addView(breadcrumbsCheckbox)
+    dialogContent.addView(transactionsCheckbox)
+
+    AlertDialog.Builder(this)
+      .setTitle("Sentry navigation options")
+      .setView(dialogContent)
+      .setNegativeButton("Close", null)
+      .show()
+  }
+
   private fun nav2RouteActivationActionSelector(): View =
     LinearLayout(this).apply {
       orientation = LinearLayout.VERTICAL
@@ -649,11 +747,17 @@ class Nav2Activity : AppCompatActivity() {
 
 @Composable
 private fun Nav2ComposeSingleStackApp(
-  navListener: SentryNavigationListener,
+  enableNavigationBreadcrumbs: Boolean,
+  enableNavigationTransactions: Boolean,
   routeActivationAction: RouteActivationAction,
   onRouteChanged: (routeName: String, currentRoute: String, backStack: String) -> Unit,
 ) {
-  val navController = rememberNavController().withSentryObservableEffect(navListener)
+  val navController =
+    rememberNavController()
+      .withSentryObservableEffect(
+        enableNavigationBreadcrumbs = enableNavigationBreadcrumbs,
+        enableNavigationTracing = enableNavigationTransactions,
+      )
   val backStack = rememberSaveableNav2ComposeBackStack()
   val currentDestination = backStack.lastOrNull() ?: Nav2ComposeDestination.SingleStack
 

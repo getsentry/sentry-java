@@ -3,7 +3,9 @@ package io.sentry.compose
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.NonRestartableComposable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
@@ -22,9 +24,11 @@ private const val TRACE_ORIGIN_APPENDIX = "jetpack_compose"
 
 internal class SentryLifecycleObserver(
   private val navController: NavController,
-  private val navListener: NavController.OnDestinationChangedListener =
+  private var navListener: NavController.OnDestinationChangedListener =
     SentryNavigationListener(traceOriginAppendix = TRACE_ORIGIN_APPENDIX),
 ) : LifecycleEventObserver {
+  private var isListening = false
+
   private companion object {
     init {
       SentryIntegrationPackageStorage.getInstance()
@@ -38,14 +42,49 @@ internal class SentryLifecycleObserver(
 
   override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
     if (event == Lifecycle.Event.ON_RESUME) {
-      navController.addOnDestinationChangedListener(navListener)
+      startListening()
     } else if (event == Lifecycle.Event.ON_PAUSE) {
-      navController.removeOnDestinationChangedListener(navListener)
+      stopListening()
+    }
+  }
+
+  fun syncWithLifecycle(lifecycle: Lifecycle) {
+    if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+      startListening()
+    } else {
+      stopListening()
+    }
+  }
+
+  fun updateNavListener(navListener: NavController.OnDestinationChangedListener) {
+    if (this.navListener === navListener) {
+      return
+    }
+
+    val wasListening = isListening
+    stopListening()
+    this.navListener = navListener
+    if (wasListening) {
+      startListening()
     }
   }
 
   fun dispose() {
+    stopListening()
+  }
+
+  private fun startListening() {
+    if (isListening) {
+      return
+    }
+
+    navController.addOnDestinationChangedListener(navListener)
+    isListening = true
+  }
+
+  private fun stopListening() {
     navController.removeOnDestinationChangedListener(navListener)
+    isListening = false
   }
 }
 
@@ -66,11 +105,18 @@ public fun NavHostController.withSentryObservableEffect(
   // As described in
   // https://developer.android.com/codelabs/jetpack-compose-advanced-state-side-effects#6
   val lifecycle = LocalLifecycleOwner.current.lifecycle
-  DisposableEffect(lifecycle, this) {
-    val observer =
+  val observer =
+    remember(lifecycle, this) {
       SentryLifecycleObserver(this@withSentryObservableEffect, navListener = navListenerSnapshot)
+    }
 
+  SideEffect {
+    observer.updateNavListener(navListenerSnapshot)
+  }
+
+  DisposableEffect(lifecycle, observer) {
     lifecycle.addObserver(observer)
+    observer.syncWithLifecycle(lifecycle)
 
     onDispose {
       observer.dispose()
@@ -96,17 +142,16 @@ public fun NavHostController.withSentryObservableEffect(
   enableNavigationBreadcrumbs: Boolean = true,
   enableNavigationTracing: Boolean = true,
 ): NavHostController {
-  val enableBreadcrumbsSnapshot by rememberUpdatedState(enableNavigationBreadcrumbs)
-  val enableTracingSnapshot by rememberUpdatedState(enableNavigationTracing)
-
-  return withSentryObservableEffect(
-    navListener =
+  val navListener =
+    remember(enableNavigationBreadcrumbs, enableNavigationTracing) {
       SentryNavigationListener(
-        enableNavigationBreadcrumbs = enableBreadcrumbsSnapshot,
-        enableNavigationTracing = enableTracingSnapshot,
+        enableNavigationBreadcrumbs = enableNavigationBreadcrumbs,
+        enableNavigationTracing = enableNavigationTracing,
         traceOriginAppendix = TRACE_ORIGIN_APPENDIX,
       )
-  )
+    }
+
+  return withSentryObservableEffect(navListener = navListener)
 }
 
 /**
