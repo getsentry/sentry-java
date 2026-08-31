@@ -287,9 +287,6 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enableAnrFingerprinting = true;
 
-  private final @NotNull ElapsedRealtimeClock elapsedRealtimeClock =
-      new AndroidElapsedRealtimeClock();
-
   public SentryAndroidOptions() {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
@@ -897,7 +894,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   @Override
   @ApiStatus.Internal
   public @NotNull ElapsedRealtimeClock getElapsedRealtimeClock() {
-    return elapsedRealtimeClock;
+    return AndroidElapsedRealtimeClock.getInstance();
   }
 
   static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
