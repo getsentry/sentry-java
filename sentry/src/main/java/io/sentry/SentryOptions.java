@@ -527,7 +527,6 @@ public class SentryOptions {
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
       new LazyEvaluator<>(() -> new SentryAutoDateProvider());
 
-  /** Clock for measuring intervals that must include time the device spent in deep sleep. */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<ElapsedRealtimeClock> elapsedRealtimeClock =
       new LazyEvaluator<>(() -> JavaElapsedRealtimeClock.getInstance());
@@ -3075,7 +3074,10 @@ public class SentryOptions {
     return elapsedRealtimeClock.getValue();
   }
 
-  /** Sets the clock used to measure intervals that must include deep sleep. */
+  /**
+   * Sets the clock. Android installs one backed by {@code SystemClock.elapsedRealtimeNanos()},
+   * which this module cannot reference.
+   */
   @ApiStatus.Internal
   public void setElapsedRealtimeClock(final @NotNull ElapsedRealtimeClock elapsedRealtimeClock) {
     this.elapsedRealtimeClock.setValue(elapsedRealtimeClock);
