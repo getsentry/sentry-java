@@ -34,6 +34,7 @@ import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
+import io.sentry.android.core.internal.time.AndroidElapsedRealtimeClock;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
@@ -126,6 +127,7 @@ final class AndroidOptionsInitializer {
     options.setDefaultScopeType(ScopeType.CURRENT);
     options.setOpenTelemetryMode(SentryOpenTelemetryMode.OFF);
     options.setDateProvider(new SentryAndroidDateProvider());
+    options.setElapsedRealtimeClock(new AndroidElapsedRealtimeClock());
     options.getLogs().setLoggerBatchProcessorFactory(new AndroidLoggerBatchProcessorFactory());
     options.getMetrics().setMetricsBatchProcessorFactory(new AndroidMetricsBatchProcessorFactory());
 
