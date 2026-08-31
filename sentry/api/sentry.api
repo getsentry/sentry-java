@@ -3704,6 +3704,7 @@ public class io/sentry/SentryOptions {
 	public fun getDistributionController ()Lio/sentry/IDistributionApi;
 	public fun getDsn ()Ljava/lang/String;
 	public fun getEffectiveOrgId ()Ljava/lang/String;
+	public fun getElapsedRealtimeClock ()Lio/sentry/time/ElapsedRealtimeClock;
 	public fun getEnvelopeDiskCache ()Lio/sentry/cache/IEnvelopeCache;
 	public fun getEnvelopeReader ()Lio/sentry/IEnvelopeReader;
 	public fun getEnvironment ()Ljava/lang/String;
@@ -3783,6 +3784,7 @@ public class io/sentry/SentryOptions {
 	public fun getTransactionProfiler ()Lio/sentry/ITransactionProfiler;
 	public fun getTransportFactory ()Lio/sentry/ITransportFactory;
 	public fun getTransportGate ()Lio/sentry/transport/ITransportGate;
+	public fun getUptimeClock ()Lio/sentry/time/UptimeClock;
 	public fun getVersionDetector ()Lio/sentry/IVersionDetector;
 	public final fun getViewHierarchyExporters ()Ljava/util/List;
 	public fun isAttachServerName ()Z
@@ -3854,6 +3856,7 @@ public class io/sentry/SentryOptions {
 	public fun setDistribution (Lio/sentry/SentryOptions$DistributionOptions;)V
 	public fun setDistributionController (Lio/sentry/IDistributionApi;)V
 	public fun setDsn (Ljava/lang/String;)V
+	public fun setElapsedRealtimeClock (Lio/sentry/time/ElapsedRealtimeClock;)V
 	public fun setEnableAppStartProfiling (Z)V
 	public fun setEnableAutoSessionTracking (Z)V
 	public fun setEnableBackpressureHandling (Z)V
@@ -3953,6 +3956,7 @@ public class io/sentry/SentryOptions {
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
 	public fun setTransportFactory (Lio/sentry/ITransportFactory;)V
 	public fun setTransportGate (Lio/sentry/transport/ITransportGate;)V
+	public fun setUptimeClock (Lio/sentry/time/UptimeClock;)V
 	public fun setVersionDetector (Lio/sentry/IVersionDetector;)V
 	public fun setViewHierarchyExporters (Ljava/util/List;)V
 }
@@ -7595,6 +7599,40 @@ public final class io/sentry/rrweb/RRWebVideoEvent$JsonKeys {
 	public static final field TOP Ljava/lang/String;
 	public static final field WIDTH Ljava/lang/String;
 	public fun <init> ()V
+}
+
+public final class io/sentry/time/Deadline {
+	public fun hasPassed ()Z
+	public static fun in (Lio/sentry/time/Ticker;JLjava/util/concurrent/TimeUnit;)Lio/sentry/time/Deadline;
+	public fun isAfter (Lio/sentry/time/Deadline;)Z
+	public static fun passed (Lio/sentry/time/Ticker;)Lio/sentry/time/Deadline;
+	public fun remaining (Ljava/util/concurrent/TimeUnit;)J
+}
+
+public abstract interface class io/sentry/time/ElapsedRealtimeClock : io/sentry/time/Ticker {
+}
+
+public final class io/sentry/time/JavaElapsedRealtimeClock : io/sentry/time/ElapsedRealtimeClock {
+	public static fun getInstance ()Lio/sentry/time/ElapsedRealtimeClock;
+	public fun tickNanos ()J
+}
+
+public final class io/sentry/time/JavaUptimeClock : io/sentry/time/UptimeClock {
+	public static fun getInstance ()Lio/sentry/time/UptimeClock;
+	public fun tickNanos ()J
+}
+
+public final class io/sentry/time/Stopwatch {
+	public fun elapsed (Ljava/util/concurrent/TimeUnit;)J
+	public fun elapsedNanos ()J
+	public static fun started (Lio/sentry/time/Ticker;)Lio/sentry/time/Stopwatch;
+}
+
+public abstract interface class io/sentry/time/Ticker {
+	public abstract fun tickNanos ()J
+}
+
+public abstract interface class io/sentry/time/UptimeClock : io/sentry/time/Ticker {
 }
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {

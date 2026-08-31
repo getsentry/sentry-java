@@ -21,6 +21,10 @@ import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
 import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.time.ElapsedRealtimeClock;
+import io.sentry.time.JavaElapsedRealtimeClock;
+import io.sentry.time.JavaUptimeClock;
+import io.sentry.time.UptimeClock;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -524,6 +528,16 @@ public class SentryOptions {
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
       new LazyEvaluator<>(() -> new SentryAutoDateProvider());
+
+  /** Clock for measuring intervals that must exclude time the device spent in deep sleep. */
+  @ApiStatus.Internal
+  private final @NotNull LazyEvaluator<UptimeClock> uptimeClock =
+      new LazyEvaluator<>(() -> JavaUptimeClock.getInstance());
+
+  /** Clock for measuring intervals that must include time the device spent in deep sleep. */
+  @ApiStatus.Internal
+  private final @NotNull LazyEvaluator<ElapsedRealtimeClock> elapsedRealtimeClock =
+      new LazyEvaluator<>(() -> JavaElapsedRealtimeClock.getInstance());
 
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
@@ -3057,6 +3071,36 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
     this.dateProvider.setValue(dateProvider);
+  }
+
+  /**
+   * Returns the clock used to measure intervals that must exclude deep sleep, such as ANR
+   * thresholds.
+   */
+  @ApiStatus.Internal
+  public @NotNull UptimeClock getUptimeClock() {
+    return uptimeClock.getValue();
+  }
+
+  /** Sets the clock used to measure intervals that must exclude deep sleep. */
+  @ApiStatus.Internal
+  public void setUptimeClock(final @NotNull UptimeClock uptimeClock) {
+    this.uptimeClock.setValue(uptimeClock);
+  }
+
+  /**
+   * Returns the clock used to measure intervals that must include deep sleep, such as rate-limit
+   * windows and cache expiry.
+   */
+  @ApiStatus.Internal
+  public @NotNull ElapsedRealtimeClock getElapsedRealtimeClock() {
+    return elapsedRealtimeClock.getValue();
+  }
+
+  /** Sets the clock used to measure intervals that must include deep sleep. */
+  @ApiStatus.Internal
+  public void setElapsedRealtimeClock(final @NotNull ElapsedRealtimeClock elapsedRealtimeClock) {
+    this.elapsedRealtimeClock.setValue(elapsedRealtimeClock);
   }
 
   /**
