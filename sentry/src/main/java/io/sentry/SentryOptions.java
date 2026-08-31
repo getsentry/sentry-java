@@ -527,10 +527,6 @@ public class SentryOptions {
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
       new LazyEvaluator<>(() -> new SentryAutoDateProvider());
 
-  @ApiStatus.Internal
-  private final @NotNull LazyEvaluator<ElapsedRealtimeClock> elapsedRealtimeClock =
-      new LazyEvaluator<>(() -> JavaElapsedRealtimeClock.getInstance());
-
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
   /** Performance collector that collect performance stats while transactions run. */
@@ -3068,19 +3064,13 @@ public class SentryOptions {
   /**
    * Returns the clock used to measure intervals that must include deep sleep, such as rate-limit
    * windows and cache expiry.
+   *
+   * <p>Android overrides this with a {@code SystemClock.elapsedRealtimeNanos()}-backed clock, which
+   * this module cannot reference. On the JVM there is no suspend state to account for.
    */
   @ApiStatus.Internal
   public @NotNull ElapsedRealtimeClock getElapsedRealtimeClock() {
-    return elapsedRealtimeClock.getValue();
-  }
-
-  /**
-   * Sets the clock. Android installs one backed by {@code SystemClock.elapsedRealtimeNanos()},
-   * which this module cannot reference.
-   */
-  @ApiStatus.Internal
-  public void setElapsedRealtimeClock(final @NotNull ElapsedRealtimeClock elapsedRealtimeClock) {
-    this.elapsedRealtimeClock.setValue(elapsedRealtimeClock);
+    return JavaElapsedRealtimeClock.getInstance();
   }
 
   /**
