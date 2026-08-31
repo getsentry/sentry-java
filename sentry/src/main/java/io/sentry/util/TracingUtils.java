@@ -18,7 +18,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@ApiStatus.Internal
 public final class TracingUtils {
 
   public static void startNewTrace(final @NotNull IScopes scopes) {

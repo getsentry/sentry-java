@@ -5,12 +5,10 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import java.util.Map;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** An Adapter for making Class.forName testable */
-@ApiStatus.Internal
 @Open
 public class LoadClass {
 
