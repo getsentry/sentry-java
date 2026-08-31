@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
+import io.sentry.android.core.internal.time.AndroidElapsedRealtimeClock
 import io.sentry.protocol.DebugImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,6 +13,11 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.mock
 
 class SentryAndroidOptionsTest {
+  @Test
+  fun `elapsed real-time clock counts through deep sleep`() {
+    assertTrue(SentryAndroidOptions().elapsedRealtimeClock is AndroidElapsedRealtimeClock)
+  }
+
   @Test
   fun `init should set clientName`() {
     val sentryOptions = SentryAndroidOptions()

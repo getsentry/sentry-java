@@ -3855,7 +3855,6 @@ public class io/sentry/SentryOptions {
 	public fun setDistribution (Lio/sentry/SentryOptions$DistributionOptions;)V
 	public fun setDistributionController (Lio/sentry/IDistributionApi;)V
 	public fun setDsn (Ljava/lang/String;)V
-	public fun setElapsedRealtimeClock (Lio/sentry/time/ElapsedRealtimeClock;)V
 	public fun setEnableAppStartProfiling (Z)V
 	public fun setEnableAutoSessionTracking (Z)V
 	public fun setEnableBackpressureHandling (Z)V
