@@ -42,7 +42,7 @@ class DataCollectionResolverTest {
   }
 
   @Test
-  fun `user info override takes precedence over sendDefaultPii`() {
+  fun `user info uses configured Data Collection value`() {
     val options = SentryOptions().apply { isSendDefaultPii = true }
 
     options.dataCollection.setUserInfo(false)
@@ -68,25 +68,53 @@ class DataCollectionResolverTest {
   }
 
   @Test
-  fun `database query data falls back to sendDefaultPii and override takes precedence`() {
-    val options = SentryOptions().apply { isSendDefaultPii = true }
+  fun `database query data uses sendDefaultPii when Data Collection is absent`() {
+    val options = SentryOptions()
+
+    assertThat(options.dataCollectionResolver.isDatabaseQueryData).isFalse()
+
+    options.isSendDefaultPii = true
 
     assertThat(options.dataCollectionResolver.isDatabaseQueryData).isTrue()
+  }
+
+  @Test
+  fun `database query data uses configured Data Collection value`() {
+    val options = SentryOptions().apply { isSendDefaultPii = true }
 
     options.dataCollection.setDatabaseQueryData(false)
 
     assertThat(options.dataCollectionResolver.isDatabaseQueryData).isFalse()
+
+    options.isSendDefaultPii = false
+    options.dataCollection.setDatabaseQueryData(true)
+
+    assertThat(options.dataCollectionResolver.isDatabaseQueryData).isTrue()
   }
 
   @Test
-  fun `GraphQL document falls back to sendDefaultPii and override takes precedence`() {
-    val options = SentryOptions().apply { isSendDefaultPii = true }
+  fun `GraphQL document uses sendDefaultPii when Data Collection is absent`() {
+    val options = SentryOptions()
+
+    assertThat(options.dataCollectionResolver.isGraphqlDocument).isFalse()
+
+    options.isSendDefaultPii = true
 
     assertThat(options.dataCollectionResolver.isGraphqlDocument).isTrue()
+  }
+
+  @Test
+  fun `GraphQL document uses configured Data Collection value`() {
+    val options = SentryOptions().apply { isSendDefaultPii = true }
 
     options.dataCollection.graphql.setDocument(false)
 
     assertThat(options.dataCollectionResolver.isGraphqlDocument).isFalse()
+
+    options.isSendDefaultPii = false
+    options.dataCollection.graphql.setDocument(true)
+
+    assertThat(options.dataCollectionResolver.isGraphqlDocument).isTrue()
   }
 
   @Test
@@ -115,7 +143,7 @@ class DataCollectionResolverTest {
   }
 
   @Test
-  fun `cookies override takes precedence over sendDefaultPii`() {
+  fun `cookies use configured Data Collection behavior`() {
     val options = SentryOptions().apply { isSendDefaultPii = false }
     val behavior = KeyValueCollectionBehavior.allowList("language", "theme")
 
@@ -133,7 +161,7 @@ class DataCollectionResolverTest {
   }
 
   @Test
-  fun `URL query params override takes precedence`() {
+  fun `URL query params use configured Data Collection behavior`() {
     val options = SentryOptions()
     val behavior = KeyValueCollectionBehavior.allowList("language", "theme")
 
@@ -151,7 +179,7 @@ class DataCollectionResolverTest {
   }
 
   @Test
-  fun `HTTP request headers override takes precedence`() {
+  fun `HTTP request headers use configured Data Collection behavior`() {
     val options = SentryOptions()
     val behavior = KeyValueCollectionBehavior.allowList("content-type")
 
@@ -169,7 +197,7 @@ class DataCollectionResolverTest {
   }
 
   @Test
-  fun `HTTP response headers override takes precedence`() {
+  fun `HTTP response headers use configured Data Collection behavior`() {
     val options = SentryOptions()
     val behavior = KeyValueCollectionBehavior.off()
 
@@ -219,13 +247,27 @@ class DataCollectionResolverTest {
   }
 
   @Test
-  fun `GraphQL variables fall back to sendDefaultPii and override takes precedence`() {
-    val options = SentryOptions().apply { isSendDefaultPii = true }
+  fun `GraphQL variables use sendDefaultPii when Data Collection is absent`() {
+    val options = SentryOptions()
+
+    assertThat(options.dataCollectionResolver.isGraphqlVariables).isFalse()
+
+    options.isSendDefaultPii = true
 
     assertThat(options.dataCollectionResolver.isGraphqlVariables).isTrue()
+  }
+
+  @Test
+  fun `GraphQL variables use configured Data Collection value`() {
+    val options = SentryOptions().apply { isSendDefaultPii = true }
 
     options.dataCollection.graphql.setVariables(false)
 
     assertThat(options.dataCollectionResolver.isGraphqlVariables).isFalse()
+
+    options.isSendDefaultPii = false
+    options.dataCollection.graphql.setVariables(true)
+
+    assertThat(options.dataCollectionResolver.isGraphqlVariables).isTrue()
   }
 }
