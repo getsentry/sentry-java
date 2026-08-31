@@ -54,6 +54,17 @@ class SentryOkHttpEventListenerDelegationTest {
 
     fun newCall(path: String): Call =
       client.newCall(Request.Builder().url("http://localhost/$path").build())
+
+    // The tests drive the listener by hand, so no call is ever really executed. canceled() branches
+    // on Call.isExecuted() to tell a cancel that precedes callStart() from one that follows the
+    // terminal event, so those cases need a Call that reports the state under test.
+    fun mockCall(path: String, isExecuted: Boolean): Call {
+      val request = Request.Builder().url("http://localhost/$path").build()
+      return mock<Call>().also {
+        whenever(it.request()).thenReturn(request)
+        whenever(it.isExecuted()).thenReturn(isExecuted)
+      }
+    }
   }
 
   private val fixture = Fixture()
@@ -139,45 +150,55 @@ class SentryOkHttpEventListenerDelegationTest {
   }
 
   @Test
-  fun `cancel before callStart is delegated`() {
+  fun `cancel before callStart binds the listener that callStart then reuses`() {
     val sut = fixture.getSut()
-    val call = fixture.newCall("1")
+    val call = fixture.mockCall("1", isExecuted = false)
 
     sut.canceled(call)
+    sut.callStart(call)
+    sut.dnsStart(call, "sentry.io")
+    sut.callEnd(call)
 
-    assertThat(fixture.listeners.single().received).containsExactly("canceled" to call)
+    assertThat(fixture.listeners).hasSize(1)
+    assertThat(fixture.listeners.single().received.map { it.first })
+      .containsExactly("canceled", "callStart", "dnsStart", "callEnd")
+      .inOrder()
   }
 
   @Test
-  fun `cancel after callEnd is delegated`() {
+  fun `cancel after the terminal event is ignored`() {
     val sut = fixture.getSut()
-    val call = fixture.newCall("1")
+    val call = fixture.mockCall("1", isExecuted = true)
 
     sut.callStart(call)
     sut.callEnd(call)
     sut.canceled(call)
 
-    assertThat(fixture.listeners.first().received.map { it.first })
+    assertThat(fixture.listeners).hasSize(1)
+    assertThat(fixture.listeners.single().received.map { it.first })
       .containsExactly("callStart", "callEnd")
       .inOrder()
-    assertThat(fixture.listeners.last().received).containsExactly("canceled" to call)
   }
 
   @Test
-  fun `cancel outside of a call does not bind a listener to the call`() {
+  fun `cancel after a failed call is ignored`() {
     val sut = fixture.getSut()
-    val call = fixture.newCall("1")
+    val call = fixture.mockCall("1", isExecuted = true)
 
+    sut.callStart(call)
+    sut.callFailed(call, IOException())
     sut.canceled(call)
-    sut.dnsStart(call, "sentry.io")
 
-    assertThat(fixture.listeners.single().received.map { it.first }).containsExactly("canceled")
+    assertThat(fixture.listeners).hasSize(1)
+    assertThat(fixture.listeners.single().received.map { it.first })
+      .containsExactly("callStart", "callFailed")
+      .inOrder()
   }
 
   @Test
   fun `a single wrapped listener receives cancels outside of the call window`() {
     whenever(fixture.scopes.options).thenReturn(SentryOptions())
-    val call = fixture.newCall("1")
+    val call = fixture.mockCall("1", isExecuted = true)
     val listener = RecordingListener(call)
     val sut = SentryOkHttpEventListener(fixture.scopes, listener)
 

@@ -45,7 +45,12 @@ public open class SentryOkHttpEventListener(
   private val scopes: IScopes = ScopesAdapter.getInstance(),
   private val originalEventListenerCreator: ((call: Call) -> EventListener)? = null,
 ) : EventListener() {
-  private val originalEventListenerMap: MutableMap<Call, EventListener> = ConcurrentHashMap()
+  private val originalEventListenerMap: ConcurrentHashMap<Call, EventListener> = ConcurrentHashMap()
+
+  // Set only by the constructors that wrap a single EventListener instance. Such a listener is
+  // shared by every Call anyway, exactly like OkHttp's own EventListener.asFactory(), so it
+  // exists independently of the callStart()..callEnd() window and can always be delegated to.
+  private var fixedOriginalEventListener: EventListener? = null
 
   public companion object {
     internal const val PROXY_SELECT_EVENT = "http.client.proxy_select_ms"
@@ -65,7 +70,9 @@ public open class SentryOkHttpEventListener(
 
   public constructor(
     originalEventListener: EventListener
-  ) : this(ScopesAdapter.getInstance(), originalEventListenerCreator = { originalEventListener })
+  ) : this(ScopesAdapter.getInstance(), originalEventListenerCreator = { originalEventListener }) {
+    fixedOriginalEventListener = originalEventListener
+  }
 
   public constructor(
     originalEventListenerFactory: Factory
@@ -77,7 +84,9 @@ public open class SentryOkHttpEventListener(
   public constructor(
     scopes: IScopes = ScopesAdapter.getInstance(),
     originalEventListener: EventListener,
-  ) : this(scopes, originalEventListenerCreator = { originalEventListener })
+  ) : this(scopes, originalEventListenerCreator = { originalEventListener }) {
+    fixedOriginalEventListener = originalEventListener
+  }
 
   public constructor(
     scopes: IScopes = ScopesAdapter.getInstance(),
@@ -87,10 +96,7 @@ public open class SentryOkHttpEventListener(
   override fun callStart(call: Call) {
     // The EventListener.Factory contract binds a listener to a single call, so the wrapped
     // listener is kept per call instead of in a field shared by all concurrent calls
-    val originalEventListener = originalEventListenerCreator?.invoke(call)
-    if (originalEventListener != null) {
-      originalEventListenerMap[call] = originalEventListener
-    }
+    val originalEventListener = getOrCreateEventListener(call)
     originalEventListener?.callStart(call)
     // If the wrapped EventListener is ours, we can just delegate the calls,
     // without creating other events that would create duplicates
@@ -397,13 +403,17 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun canceled(call: Call) {
-    // Unlike the other callbacks, canceled() can occur before callStart() and after
-    // callEnd()/callFailed(), so there is not always a listener bound to the call. Create one on
-    // the fly in that case, but do not put it in the map: nothing would remove it again, because
-    // a call that is canceled before it starts never gets a callEnd() or callFailed().
+    // canceled() is not part of the call window: OkHttp may deliver it before callStart() and
+    // after callEnd()/callFailed(), because it holds the listener for the whole Call lifetime
+    // while we only keep it for the duration of the call.
     val originalEventListener =
-      originalEventListenerMap[call] ?: originalEventListenerCreator?.invoke(call) ?: return
-    originalEventListener.canceled(call)
+      originalEventListenerMap[call]
+        ?: fixedOriginalEventListener
+        // The call already reached its terminal event, so its listener is gone. Call.cancel() is
+        // documented as a no-op for a completed request, thus there is nothing to report, and
+        // creating a second listener here would break the Factory contract and leak the entry.
+        ?: if (call.isExecuted()) null else getOrCreateEventListener(call)
+    originalEventListener?.canceled(call)
   }
 
   override fun satisfactionFailure(call: Call, response: Response) {
@@ -420,6 +430,13 @@ public open class SentryOkHttpEventListener(
 
   override fun cacheConditionalHit(call: Call, cachedResponse: Response) {
     originalEventListenerMap[call]?.cacheConditionalHit(call, cachedResponse)
+  }
+
+  // computeIfAbsent, so that a cancel racing callStart() cannot make the Factory produce two
+  // listeners for the same Call
+  private fun getOrCreateEventListener(call: Call): EventListener? {
+    val creator = originalEventListenerCreator ?: return null
+    return originalEventListenerMap.computeIfAbsent(call) { creator.invoke(it) }
   }
 
   private fun canCreateEventSpan(originalEventListener: EventListener?): Boolean {
