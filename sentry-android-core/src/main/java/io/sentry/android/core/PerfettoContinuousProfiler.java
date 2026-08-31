@@ -80,6 +80,10 @@ public class PerfettoContinuousProfiler
   /**
    * How many chunks we remember the outcome of. Spans only ask about windows they were running in,
    * so a handful of chunks (a minute each) is plenty.
+   *
+   * <p>The history is therefore assumed to be long enough for every window a span can ask about. A
+   * window whose chunks all fell out of it needs no special treatment, and is judged by the chunks
+   * that are left.
    */
   @VisibleForTesting static final int MAX_CHUNK_HISTORY_SIZE = 10;
 
