@@ -21,7 +21,13 @@ public final class Session implements JsonUnknown, JsonSerializable {
     Ok,
     Exited,
     Crashed,
-    Abnormal
+    Abnormal,
+    /**
+     * Final status when an unhandled error did not kill the process, such as a Flutter exception.
+     * The session stays {@link #Ok} until {@link Session#end()}. Native crashes still end as {@link
+     * #Crashed}.
+     */
+    Unhandled
   }
 
   /** started timestamp */
@@ -65,6 +71,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
   /** the Abnormal mechanism, e.g. what was the reason for session to become abnormal (ANR) */
   private @Nullable String abnormalMechanism;
+
+  /** Whether an unhandled error occurred that did not terminate the process */
+  private boolean hasNonTerminatingUnhandledError;
 
   /** The session lock, ops should be atomic */
   private final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
@@ -188,6 +197,45 @@ public final class Session implements JsonUnknown, JsonSerializable {
     return abnormalMechanism;
   }
 
+  /**
+   * Whether the session experienced an unhandled error that did <em>not</em> terminate the process,
+   * e.g. an unhandled Flutter exception, and so finalizes as {@link State#Unhandled} rather than
+   * {@link State#Exited}. A native crash is also unhandled, but it kills the process and ends the
+   * session as {@link State#Crashed} instead.
+   *
+   * <p>Never sent as a status while the session is alive; it is only persisted with the session.
+   */
+  @ApiStatus.Internal
+  public boolean hasNonTerminatingUnhandledError() {
+    return hasNonTerminatingUnhandledError;
+  }
+
+  /**
+   * Records that an active session experienced an unhandled error which did not terminate the
+   * process, counting the error and advancing the session's sequence without ending it. On {@link
+   * #end()} the session is finalized as {@link State#Unhandled} unless a terminal status such as
+   * {@link State#Crashed} or {@link State#Abnormal} took over first.
+   *
+   * <p>Hybrid SDKs whose unhandled errors do not kill the process. Native Java/Android capture
+   * should not call this.
+   *
+   * @return whether the session was updated, i.e. false if it had already reached a terminal state
+   */
+  @ApiStatus.Internal
+  public boolean recordNonTerminatingUnhandledError() {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      if (status != State.Ok) {
+        return false;
+      }
+      hasNonTerminatingUnhandledError = true;
+      errorCount.incrementAndGet();
+      init = null;
+      timestamp = DateUtils.getCurrentDateTime();
+      sequence = getSequenceTimestamp(timestamp);
+      return true;
+    }
+  }
+
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getTimestamp() {
     return timestamp;
@@ -209,7 +257,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
 
       // at this state it might be Crashed already, so we don't check for it.
       if (status == State.Ok) {
-        status = State.Exited;
+        status = hasNonTerminatingUnhandledError ? State.Unhandled : State.Exited;
       }
 
       if (timestamp != null) {
@@ -262,6 +310,11 @@ public final class Session implements JsonUnknown, JsonSerializable {
       boolean sessionHasBeenUpdated = false;
       if (status != null) {
         this.status = status;
+        // the flag only decides how an Ok session is finalized, so an explicit terminal status
+        // such as a crash or an ANR takes precedence over a non-terminating error.
+        if (status != State.Ok) {
+          hasNonTerminatingUnhandledError = false;
+        }
         sessionHasBeenUpdated = true;
       }
 
@@ -318,21 +371,24 @@ public final class Session implements JsonUnknown, JsonSerializable {
    */
   @SuppressWarnings("MissingOverride")
   public @NotNull Session clone() {
-    return new Session(
-        status,
-        started,
-        timestamp,
-        errorCount.get(),
-        distinctId,
-        sessionId,
-        init,
-        sequence,
-        duration,
-        ipAddress,
-        userAgent,
-        environment,
-        release,
-        abnormalMechanism);
+    final @NotNull Session session =
+        new Session(
+            status,
+            started,
+            timestamp,
+            errorCount.get(),
+            distinctId,
+            sessionId,
+            init,
+            sequence,
+            duration,
+            ipAddress,
+            userAgent,
+            environment,
+            release,
+            abnormalMechanism);
+    session.hasNonTerminatingUnhandledError = hasNonTerminatingUnhandledError;
+    return session;
   }
 
   // JsonSerializable
@@ -354,6 +410,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
     public static final String IP_ADDRESS = "ip_address";
     public static final String USER_AGENT = "user_agent";
     public static final String ABNORMAL_MECHANISM = "abnormal_mechanism";
+    public static final String NON_TERMINATING_UNHANDLED_ERROR = "non_terminating_unhandled_error";
   }
 
   @Override
@@ -383,6 +440,9 @@ public final class Session implements JsonUnknown, JsonSerializable {
     }
     if (abnormalMechanism != null) {
       writer.name(JsonKeys.ABNORMAL_MECHANISM).value(logger, abnormalMechanism);
+    }
+    if (hasNonTerminatingUnhandledError) {
+      writer.name(JsonKeys.NON_TERMINATING_UNHANDLED_ERROR).value(hasNonTerminatingUnhandledError);
     }
     writer.name(JsonKeys.ATTRS);
     writer.beginObject();
@@ -440,6 +500,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
       String environment = null;
       String release = null; // @NotNull
       String abnormalMechanism = null;
+      boolean hasNonTerminatingUnhandledError = false;
 
       Map<String, Object> unknown = null;
       while (reader.peek() == JsonToken.NAME) {
@@ -482,6 +543,12 @@ public final class Session implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.ABNORMAL_MECHANISM:
             abnormalMechanism = reader.nextStringOrNull();
+            break;
+          case JsonKeys.NON_TERMINATING_UNHANDLED_ERROR:
+            final Boolean hasNonTerminatingUnhandledErrorValue = reader.nextBooleanOrNull();
+            hasNonTerminatingUnhandledError =
+                hasNonTerminatingUnhandledErrorValue != null
+                    && hasNonTerminatingUnhandledErrorValue;
             break;
           case JsonKeys.ATTRS:
             reader.beginObject();
@@ -542,6 +609,7 @@ public final class Session implements JsonUnknown, JsonSerializable {
               environment,
               release,
               abnormalMechanism);
+      session.hasNonTerminatingUnhandledError = hasNonTerminatingUnhandledError;
       session.setUnknown(unknown);
       reader.endObject();
       return session;

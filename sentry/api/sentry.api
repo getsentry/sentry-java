@@ -4324,7 +4324,9 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserAgent ()Ljava/lang/String;
+	public fun hasNonTerminatingUnhandledError ()Z
 	public fun isTerminated ()Z
+	public fun recordNonTerminatingUnhandledError ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -4347,6 +4349,7 @@ public final class io/sentry/Session$JsonKeys {
 	public static final field ERRORS Ljava/lang/String;
 	public static final field INIT Ljava/lang/String;
 	public static final field IP_ADDRESS Ljava/lang/String;
+	public static final field NON_TERMINATING_UNHANDLED_ERROR Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
 	public static final field SEQ Ljava/lang/String;
 	public static final field SID Ljava/lang/String;
@@ -4362,6 +4365,7 @@ public final class io/sentry/Session$State : java/lang/Enum {
 	public static final field Crashed Lio/sentry/Session$State;
 	public static final field Exited Lio/sentry/Session$State;
 	public static final field Ok Lio/sentry/Session$State;
+	public static final field Unhandled Lio/sentry/Session$State;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/Session$State;
 	public static fun values ()[Lio/sentry/Session$State;
 }
