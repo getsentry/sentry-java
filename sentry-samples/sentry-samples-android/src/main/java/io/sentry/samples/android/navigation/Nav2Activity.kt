@@ -34,13 +34,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog as ComposeAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
@@ -65,10 +69,13 @@ import androidx.navigation.NavOptions
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navArgument
+import io.sentry.Breadcrumb
 import io.sentry.Sentry
+import io.sentry.SentryLevel
 import io.sentry.android.navigation.SentryNavigationListener
 import io.sentry.compose.SentryTraced
 import io.sentry.compose.withSentryObservableEffect
@@ -759,6 +766,7 @@ private fun Nav2ComposeSingleStackApp(
         enableNavigationTracing = enableNavigationTransactions,
       )
   val backStack = rememberSaveableNav2ComposeBackStack()
+  val shareSheetProductId = rememberSaveable { mutableStateOf<String?>(null) }
   val currentDestination = backStack.lastOrNull() ?: Nav2ComposeDestination.SingleStack
 
   fun navigateTo(destination: Nav2ComposeDestination) {
@@ -773,15 +781,28 @@ private fun Nav2ComposeSingleStackApp(
     }
   }
 
+  fun openShareSheet(productId: String) {
+    tagNav2ComposeOverlay("ShareSheet", "open", productId)
+    shareSheetProductId.value = productId
+  }
+
+  fun dismissShareSheet() {
+    val productId = shareSheetProductId.value ?: return
+    tagNav2ComposeOverlay("ShareSheet", "close", productId)
+    shareSheetProductId.value = null
+  }
+
   fun resetToSingleStack() {
     backStack.resetTo(Nav2ComposeDestination.SingleStack)
+    shareSheetProductId.value = null
     navController.navigate(Nav2ComposeDestination.SingleStack.route) {
       popUpTo(Nav2ComposeDestination.SingleStack.route) { inclusive = false }
       launchSingleTop = true
     }
   }
 
-  BackHandler(enabled = backStack.size > 1) { navigateBack() }
+  BackHandler(enabled = shareSheetProductId.value != null) { dismissShareSheet() }
+  BackHandler(enabled = shareSheetProductId.value == null && backStack.size > 1) { navigateBack() }
 
   LaunchedEffect(currentDestination, backStack.size) {
     onRouteChanged(
@@ -854,7 +875,7 @@ private fun Nav2ComposeSingleStackApp(
             onShowPromoDialog = {
               navigateTo(Nav2ComposeDestination.PromoDialog("detail-$productId"))
             },
-            onOpenShareSheet = { navigateTo(Nav2ComposeDestination.ShareSheet(productId)) },
+            onOpenShareSheet = { openShareSheet(productId) },
             onCheckout = { navigateTo(Nav2ComposeDestination.Checkout(productId)) },
           )
         }
@@ -884,7 +905,7 @@ private fun Nav2ComposeSingleStackApp(
           )
         }
       }
-      composable(
+      dialog(
         route = Nav2ComposeDestination.PROMO_DIALOG_ROUTE,
         arguments = listOf(navArgument(ARG_PROMO_ID) { type = NavType.StringType }),
       ) { entry ->
@@ -895,17 +916,10 @@ private fun Nav2ComposeSingleStackApp(
           )
         }
       }
-      composable(
-        route = Nav2ComposeDestination.SHARE_SHEET_ROUTE,
-        arguments = listOf(navArgument(ARG_PRODUCT_ID) { type = NavType.StringType }),
-      ) { entry ->
-        TracedNav2ComposeRoute("ShareSheet") {
-          Nav2ComposeShareSheetRoute(
-            productId = entry.arguments?.getString(ARG_PRODUCT_ID).orEmpty(),
-            onDone = { navigateBack() },
-          )
-        }
-      }
+    }
+
+    shareSheetProductId.value?.let { productId ->
+      Nav2ComposeShareSheetRoute(productId = productId, onDone = ::dismissShareSheet)
     }
   }
 }
@@ -973,6 +987,19 @@ private fun runManualNav2RouteActivationSpan(routeName: String) {
       )
   span?.setData("sample.route_activation", true)
   span?.finish()
+}
+
+private fun tagNav2ComposeOverlay(overlay: String, action: String, productId: String) {
+  Sentry.addBreadcrumb(
+    Breadcrumb().apply {
+      type = "navigation"
+      category = "navigation"
+      data["overlay"] = overlay
+      data["action"] = action
+      data[ARG_PRODUCT_ID] = productId
+      level = SentryLevel.INFO
+    }
+  )
 }
 
 @Composable
@@ -1078,33 +1105,26 @@ private fun Nav2ComposeConfirmationRoute(orderId: String, onResetBackStack: () -
 
 @Composable
 private fun Nav2ComposePromoDialogRoute(promoId: String, onDismiss: () -> Unit) {
-  Card(
-    modifier = Modifier.fillMaxWidth(),
-    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-  ) {
-    Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-      Text("Promo Dialog", style = MaterialTheme.typography.headlineSmall)
-      Text("Dialog route promoId=$promoId")
-      Button(onClick = onDismiss) { Text("Dismiss") }
-    }
-  }
+  ComposeAlertDialog(
+    onDismissRequest = onDismiss,
+    title = { Text("Promo Dialog") },
+    text = { Text("Dialog route promoId=$promoId") },
+    confirmButton = { TextButton(onClick = onDismiss) { Text("Dismiss") } },
+  )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Nav2ComposeShareSheetRoute(productId: String, onDone: () -> Unit) {
-  Column(
-    modifier = Modifier.fillMaxSize().padding(16.dp),
-    verticalArrangement = Arrangement.Bottom,
-  ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-      Column(
-        modifier = Modifier.padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-      ) {
-        Text("Share Sheet", style = MaterialTheme.typography.headlineSmall)
-        Text("Bottom sheet route for productId=$productId")
-        Button(onClick = onDone) { Text("Done") }
-      }
+  ModalBottomSheet(onDismissRequest = onDone) {
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Text("Share Sheet", style = MaterialTheme.typography.headlineSmall)
+      Text("Modal bottom sheet for productId=$productId")
+      Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Done") }
+      Spacer(Modifier.size(12.dp))
     }
   }
 }
@@ -1497,13 +1517,6 @@ private sealed class Nav2ComposeDestination(
       arguments = mapOf(ARG_PROMO_ID to promoId),
     )
 
-  data class ShareSheet(val productId: String) :
-    Nav2ComposeDestination(
-      routeName = "ShareSheet",
-      route = "ShareSheet/$productId",
-      arguments = mapOf(ARG_PRODUCT_ID to productId),
-    )
-
   fun displayRoute(): String {
     return if (arguments.isEmpty()) {
       "/$routeName"
@@ -1537,10 +1550,6 @@ private sealed class Nav2ComposeDestination(
           putString("type", "promo_dialog")
           putString(ARG_PROMO_ID, promoId)
         }
-        is Nav2ComposeDestination.ShareSheet -> {
-          putString("type", "share_sheet")
-          putString(ARG_PRODUCT_ID, productId)
-        }
       }
     }
 
@@ -1549,7 +1558,6 @@ private sealed class Nav2ComposeDestination(
     const val CHECKOUT_ROUTE = "Checkout/{product_id}"
     const val CONFIRMATION_ROUTE = "Confirmation/{order_id}"
     const val PROMO_DIALOG_ROUTE = "PromoDialog/{promo_id}"
-    const val SHARE_SHEET_ROUTE = "ShareSheet/{product_id}"
   }
 }
 
@@ -1569,8 +1577,6 @@ private fun Bundle.toNav2ComposeDestination(): Nav2ComposeDestination {
       Nav2ComposeDestination.Confirmation(orderId = requireNotNull(getString(ARG_ORDER_ID)))
     "promo_dialog" ->
       Nav2ComposeDestination.PromoDialog(promoId = requireNotNull(getString(ARG_PROMO_ID)))
-    "share_sheet" ->
-      Nav2ComposeDestination.ShareSheet(productId = requireNotNull(getString(ARG_PRODUCT_ID)))
     else -> Nav2ComposeDestination.SingleStack
   }
 }
