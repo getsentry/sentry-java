@@ -673,7 +673,10 @@ public final class SentryTracer implements ITransaction {
       if (baggage.isMutable()) {
         final AtomicReference<SentryId> replayId = new AtomicReference<>();
         final AtomicReference<String> environment = new AtomicReference<>();
+        // the combined view resolves current -> isolation -> global, matching what event capture
+        // sees, so the DSC cannot disagree with the environment on the events of the same trace
         scopes.configureScope(
+            ScopeType.COMBINED,
             scope -> {
               replayId.set(scope.getReplayId());
               environment.set(scope.getEnvironment());

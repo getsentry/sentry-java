@@ -7,6 +7,7 @@ import io.sentry.NoOpSpan
 import io.sentry.PropagationContext
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.Span
@@ -16,6 +17,7 @@ import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.W3CTraceparentHeader
 import io.sentry.protocol.SentryId
+import io.sentry.test.createTestScopes
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -25,6 +27,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -42,6 +45,9 @@ class TracingUtilsTest {
       doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
         .whenever(scopes)
         .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
       span =
         Span(
           TransactionContext("name", "op", TracesSamplingDecision(true)),
@@ -298,6 +304,23 @@ class TracingUtilsTest {
 
     assertNotEquals(propagationContextBefore.traceId, fixture.scope.propagationContext.traceId)
     assertNotEquals(propagationContextBefore.spanId, fixture.scope.propagationContext.spanId)
+  }
+
+  @Test
+  fun `baggage picks up the environment from the global scope`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        environment = "options-environment"
+      }
+    val scopes = createTestScopes(options)
+    scopes.configureScope(ScopeType.GLOBAL) { it.environment = "global-environment" }
+
+    val headers = TracingUtils.trace(scopes, null, null)
+
+    assertNotNull(headers?.baggageHeader) {
+      assertTrue(it.value.contains("sentry-environment=global-environment"))
+    }
   }
 
   @Test
