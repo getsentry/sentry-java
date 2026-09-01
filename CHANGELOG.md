@@ -19,6 +19,12 @@
 - Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed` ([#5921](https://github.com/getsentry/sentry-java/pull/5921))
 - Add `InternalSentrySdk.updateSessionForDroppedEventNonTerminating` so hybrid SDKs can still update the session when an error is dropped by sampling ([#5990](https://github.com/getsentry/sentry-java/pull/5990))
 
+### Dependencies
+
+- Bump Native SDK from v0.16.4 to v0.16.5 ([#6034](https://github.com/getsentry/sentry-java/pull/6034))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0165)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.4...0.16.5)
+
 ## 8.54.0
 
 ### Features
