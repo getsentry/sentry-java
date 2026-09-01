@@ -547,6 +547,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getBundleIds ()Ljava/util/Set;
 	public fun getContextTags ()Ljava/util/List;
 	public fun getCron ()Lio/sentry/SentryOptions$Cron;
+	public fun getDataCollection ()Lio/sentry/DataCollection;
 	public fun getDebug ()Ljava/lang/Boolean;
 	public fun getDist ()Ljava/lang/String;
 	public fun getDsn ()Ljava/lang/String;
@@ -596,6 +597,7 @@ public final class io/sentry/ExternalOptions {
 	public fun isStrictTraceContinuation ()Ljava/lang/Boolean;
 	public fun setCaptureOpenTelemetryEvents (Ljava/lang/Boolean;)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
+	public fun setDataCollection (Lio/sentry/DataCollection;)V
 	public fun setDebug (Ljava/lang/Boolean;)V
 	public fun setDist (Ljava/lang/String;)V
 	public fun setDsn (Ljava/lang/String;)V
