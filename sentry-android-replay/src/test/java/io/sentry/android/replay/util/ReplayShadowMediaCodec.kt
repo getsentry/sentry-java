@@ -16,9 +16,20 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
     var frameRate = 1
     var framesToEncode = 5
     var throwOnStart = false
+
+    /** Simulates an encoder that never emits [MediaCodec.BUFFER_FLAG_END_OF_STREAM]. */
+    var neverSignalEos = false
+
+    /** Set to `true` when [release] is called. */
+    var released = false
   }
 
   private val encoded = AtomicBoolean(false)
+
+  @Implementation
+  fun release() {
+    released = true
+  }
 
   @Implementation
   fun start() {
@@ -30,6 +41,9 @@ class ReplayShadowMediaCodec : ShadowMediaCodec() {
 
   @Implementation
   fun signalEndOfInputStream() {
+    if (neverSignalEos) {
+      return
+    }
     encodeFrame(framesToEncode, frameRate, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
   }
 

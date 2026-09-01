@@ -1,8 +1,10 @@
 package io.sentry.util;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class ClassLoaderUtils {
 
   public static @NotNull ClassLoader classLoaderOrDefault(final @Nullable ClassLoader classLoader) {

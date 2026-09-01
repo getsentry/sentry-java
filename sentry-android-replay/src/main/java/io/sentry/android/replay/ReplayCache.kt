@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 public class ReplayCache(private val options: SentryOptions, private val replayId: SentryId) :
   Closeable {
   private val isClosed = AtomicBoolean(false)
-  private val encoderLock = AutoClosableReentrantLock()
   private val lock = AutoClosableReentrantLock()
   private val framesLock = AutoClosableReentrantLock()
   private var encoder: SimpleVideoEncoder? = null
@@ -151,28 +150,26 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     }
 
     encoder =
-      encoderLock.acquire().use {
-        SimpleVideoEncoder(
-            options,
-            MuxerConfig(
-              file = videoFile,
-              recordingHeight = height,
-              recordingWidth = width,
-              frameRate = frameRate,
-              bitRate = bitRate,
-            ),
-          )
-          .apply {
-            // the constructor already opened the MediaMuxer, so release it if start() fails,
-            // otherwise the encoder is never assigned and its resources leak (CloseGuard warning)
-            try {
-              start()
-            } catch (t: Throwable) {
-              release()
-              throw t
-            }
+      SimpleVideoEncoder(
+          options,
+          MuxerConfig(
+            file = videoFile,
+            recordingHeight = height,
+            recordingWidth = width,
+            frameRate = frameRate,
+            bitRate = bitRate,
+          ),
+        )
+        .apply {
+          // the constructor already opened the MediaMuxer, so release it if start() fails,
+          // otherwise the encoder is never assigned and its resources leak (CloseGuard warning)
+          try {
+            start()
+          } catch (t: Throwable) {
+            release()
+            throw t
           }
-      }
+        }
 
     val step = 1000 / frameRate.toLong()
     var frameCount = 0
@@ -208,20 +205,15 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
 
     if (frameCount == 0) {
       options.logger.log(DEBUG, "Generated a video with no frames, not capturing a replay segment")
-      encoderLock.acquire().use {
-        encoder?.release()
-        encoder = null
-      }
+      encoder?.release()
+      encoder = null
       deleteFile(videoFile)
       return null
     }
 
-    var videoDuration: Long
-    encoderLock.acquire().use {
-      encoder?.release()
-      videoDuration = encoder?.duration ?: 0
-      encoder = null
-    }
+    encoder?.release()
+    val videoDuration = encoder?.duration ?: 0
+    encoder = null
 
     rotate(until = (from + duration))
 
@@ -234,7 +226,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     }
     return try {
       val bitmap = BitmapFactory.decodeFile(frame.screenshot.absolutePath)
-      encoderLock.acquire().use { encoder?.encode(bitmap) }
+      encoder?.encode(bitmap)
       bitmap.recycle()
       true
     } catch (e: Throwable) {
@@ -280,11 +272,12 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
   }
 
   override fun close() {
-    encoderLock.acquire().use {
+    try {
       encoder?.release()
       encoder = null
+    } finally {
+      isClosed.set(true)
     }
-    isClosed.set(true)
   }
 
   // TODO: it's awful, choose a better serialization format

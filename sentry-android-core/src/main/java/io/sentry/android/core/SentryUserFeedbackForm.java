@@ -3,17 +3,24 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import io.sentry.Attachment;
+import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryFeedbackOptions;
@@ -23,6 +30,11 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
+import io.sentry.util.FileUtils;
+import io.sentry.util.LoadClass;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +50,9 @@ public class SentryUserFeedbackForm extends AlertDialog {
 
   private @Nullable SentryShakeDetector shakeDetector;
   private @Nullable Application.ActivityLifecycleCallbacks shakeLifecycleCallbacks;
+
+  private @Nullable SentryFeedbackScreenshotPicker screenshotPicker;
+  private @Nullable Uri selectedImageUri;
 
   SentryUserFeedbackForm(
       final @NotNull Context context,
@@ -60,9 +75,12 @@ public class SentryUserFeedbackForm extends AlertDialog {
   }
 
   private void maybeStartShakeDetection(final @NotNull Context context) {
+    // Only start shake detection if it's enabled within the options,
+    // and not already running globally
     final @NotNull SentryFeedbackOptions globalFeedbackOptions =
         Sentry.getCurrentScopes().getOptions().getFeedbackOptions();
-    if (!resolvedFeedbackOptions.isUseShakeGesture() || globalFeedbackOptions.isUseShakeGesture()) {
+    if (!resolvedFeedbackOptions.isUseShakeGesture()
+        || globalFeedbackOptions.getShakeController().isOnShakeEnabled()) {
       return;
     }
     final @Nullable Activity activity = getActivity(context);
@@ -95,6 +113,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
   private @NotNull SentryShakeDetector.Listener shakeListener(
       final @NotNull WeakReference<Activity> activityRef) {
     return () -> {
+      // If shake-to-report got enabled globally in the meantime, FeedbackShakeIntegration
+      // reacts to the same shake — don't show a second dialog for it.
+      if (Sentry.getCurrentScopes()
+          .getOptions()
+          .getFeedbackOptions()
+          .getShakeController()
+          .isOnShakeEnabled()) {
+        return;
+      }
       final @Nullable Activity active = activityRef.get();
       if (active != null && !active.isFinishing() && !active.isDestroyed()) {
         active.runOnUiThread(
@@ -191,6 +218,38 @@ public class SentryUserFeedbackForm extends AlertDialog {
         findViewById(R.id.sentry_dialog_user_feedback_edt_description);
     final @NotNull Button btnSend = findViewById(R.id.sentry_dialog_user_feedback_btn_send);
     final @NotNull Button btnCancel = findViewById(R.id.sentry_dialog_user_feedback_btn_cancel);
+    final @NotNull Button btnAddScreenshot =
+        findViewById(R.id.sentry_dialog_user_feedback_btn_add_screenshot);
+
+    // The button is made visible in onStart, once the screenshot picker is registered successfully
+    btnAddScreenshot.setVisibility(View.GONE);
+    btnAddScreenshot.setOnClickListener(
+        v -> {
+          if (selectedImageUri == null) {
+            if (screenshotPicker != null) {
+              try {
+                screenshotPicker.launch();
+              } catch (LinkageError e) {
+                // androidx.activity is compileOnly, so the version in the app's apk may not have
+                // the photo picker APIs this was compiled against
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", e);
+              } catch (Throwable t) {
+                ExceptionUtils.rethrowIfFatal(t);
+                // e.g. no photo picker on the device, or the launcher is no longer registered
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "Failed to launch the screenshot picker.", t);
+              }
+            }
+          } else {
+            selectedImageUri = null;
+            btnAddScreenshot.setText(feedbackOptions.getAddScreenshotButtonLabel());
+          }
+        });
 
     if (feedbackOptions.isShowBranding()) {
       imgLogo.setVisibility(View.VISIBLE);
@@ -276,7 +335,9 @@ public class SentryUserFeedbackForm extends AlertDialog {
           }
 
           // Capture the feedback. If the ID is empty, it means that the feedback was not sent
-          final @NotNull SentryId id = Sentry.feedback().capture(feedback);
+          final @NotNull Hint hint = new Hint();
+          maybeAddImageAttachment(hint);
+          final @NotNull SentryId id = Sentry.feedback().capture(feedback, hint);
           if (!id.equals(SentryId.EMPTY_ID)) {
             Toast.makeText(
                     getContext(), feedbackOptions.getSuccessMessageText(), Toast.LENGTH_SHORT)
@@ -284,13 +345,27 @@ public class SentryUserFeedbackForm extends AlertDialog {
             final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess =
                 feedbackOptions.getOnSubmitSuccess();
             if (onSubmitSuccess != null) {
-              onSubmitSuccess.call(feedback);
+              try {
+                onSubmitSuccess.call(feedback);
+              } catch (Exception e) {
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "onSubmitSuccess callback threw an exception.", e);
+              }
             }
           } else {
             final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitError =
                 feedbackOptions.getOnSubmitError();
             if (onSubmitError != null) {
-              onSubmitError.call(feedback);
+              try {
+                onSubmitError.call(feedback);
+              } catch (Exception e) {
+                Sentry.getCurrentScopes()
+                    .getOptions()
+                    .getLogger()
+                    .log(SentryLevel.ERROR, "onSubmitError callback threw an exception.", e);
+              }
             }
           }
           cancel();
@@ -310,7 +385,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
     if (onFormClose != null) {
       super.setOnDismissListener(
           dialog -> {
-            onFormClose.run();
+            // User-provided callback: a crash in it must not take down the app or skip the
+            // cleanup and the user's own dismiss listener below
+            try {
+              onFormClose.run();
+            } catch (Exception e) {
+              options
+                  .getLogger()
+                  .log(SentryLevel.ERROR, "onFormClose callback threw an exception.", e);
+            }
             currentReplayId = null;
             if (delegate != null) {
               delegate.onDismiss(dialog);
@@ -324,20 +407,213 @@ public class SentryUserFeedbackForm extends AlertDialog {
   @Override
   protected void onStart() {
     super.onStart();
-    // Clear the message field so subsequent show() calls start with a fresh form
+    // Clear the message field so subsequent show() calls start with a fresh dialog
     final @NotNull EditText edtMessage =
         findViewById(R.id.sentry_dialog_user_feedback_edt_description);
     edtMessage.getText().clear();
     edtMessage.setError(null);
 
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
+    maybeRegisterScreenshotPicker(options);
     final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
+    // Pause shake-to-report on this dialog's activity while it is visible, so a shake can't stack
+    // a second dialog on top of it
+    final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
+    final @Nullable Activity activity = getActivity(getContext());
+    if (integration != null && activity != null) {
+      integration.onDialogVisible(activity, this);
+    }
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
-      onFormOpen.run();
+      try {
+        onFormOpen.run();
+      } catch (Exception e) {
+        options.getLogger().log(SentryLevel.ERROR, "onFormOpen callback threw an exception.", e);
+      }
     }
     options.getReplayController().captureReplay(false);
     currentReplayId = options.getReplayController().getReplayId();
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    if (screenshotPicker != null) {
+      screenshotPicker.unregister();
+      screenshotPicker = null;
+    }
+    final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
+    if (integration != null) {
+      integration.onDialogGone(this);
+    }
+  }
+
+  private void maybeRegisterScreenshotPicker(final @NotNull SentryOptions options) {
+    // Clear any previously selected image so subsequent show() calls start with a fresh form
+    final @NotNull Button btnAddScreenshot =
+        findViewById(R.id.sentry_dialog_user_feedback_btn_add_screenshot);
+    selectedImageUri = null;
+    btnAddScreenshot.setText(resolvedFeedbackOptions.getAddScreenshotButtonLabel());
+
+    if (!resolvedFeedbackOptions.isEnableAttachScreenshot()) {
+      return;
+    }
+    final @Nullable Activity activity = getActivity(getContext());
+    if (activity != null && isScreenshotPickerAvailable(options)) {
+      try {
+        screenshotPicker =
+            SentryFeedbackScreenshotPicker.register(
+                activity, uri -> onScreenshotPicked(options, btnAddScreenshot, uri));
+      } catch (LinkageError e) {
+        // This is where androidx.activity is linked for the first time. It is a compileOnly
+        // dependency, so the version in the app's apk may be older than the one we compiled
+        // against, or missing the photo picker APIs entirely.
+        options
+            .getLogger()
+            .log(SentryLevel.INFO, "androidx.activity is too old for the screenshot picker.", e);
+      } catch (Throwable t) {
+        ExceptionUtils.rethrowIfFatal(t);
+        options.getLogger().log(SentryLevel.ERROR, "Failed to register the screenshot picker.", t);
+      }
+    }
+    if (screenshotPicker != null) {
+      btnAddScreenshot.setVisibility(View.VISIBLE);
+    } else {
+      btnAddScreenshot.setVisibility(View.GONE);
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Feedback screenshot button won't be shown. It requires the androidx.activity "
+                  + "dependency and the feedback form being shown from a ComponentActivity.");
+    }
+  }
+
+  /**
+   * Must be called before {@link SentryFeedbackScreenshotPicker} is touched for the first time, as
+   * that class links against androidx.activity types.
+   */
+  private boolean isScreenshotPickerAvailable(final @NotNull SentryOptions options) {
+    final @NotNull LoadClass loadClass = resolvedFeedbackOptions.getLoadClass();
+    return loadClass.isClassAvailable("androidx.activity.ComponentActivity", options)
+        && loadClass.isClassAvailable(
+            "androidx.activity.result.contract.ActivityResultContracts$PickVisualMedia", options);
+  }
+
+  private void onScreenshotPicked(
+      final @NotNull SentryOptions options,
+      final @NotNull Button btnAddScreenshot,
+      final @NotNull Uri uri) {
+    final long size = getUriSize(options, getContext().getContentResolver(), uri);
+    if (size > options.getMaxAttachmentSize()) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Selected screenshot is larger than the maxAttachmentSize of %d bytes, dropping it.",
+              options.getMaxAttachmentSize());
+      Toast.makeText(
+              getContext(),
+              resolvedFeedbackOptions.getScreenshotTooLargeMessageText(),
+              Toast.LENGTH_SHORT)
+          .show();
+      return;
+    }
+    selectedImageUri = uri;
+    btnAddScreenshot.setText(resolvedFeedbackOptions.getRemoveScreenshotButtonLabel());
+  }
+
+  private void maybeAddImageAttachment(final @NotNull Hint hint) {
+    final @Nullable Uri imageUri = selectedImageUri;
+    if (imageUri == null) {
+      return;
+    }
+    try {
+      final @NotNull ContentResolver resolver = getContext().getContentResolver();
+      final @Nullable String resolvedMime = resolver.getType(imageUri);
+      final @NotNull String mime = resolvedMime != null ? resolvedMime : "image/png";
+      final @Nullable String resolvedExt =
+          MimeTypeMap.getSingleton().getExtensionFromMimeType(mime);
+      final @NotNull String ext = resolvedExt != null ? resolvedExt : "png";
+      hint.addAttachment(
+          new Attachment(
+              () ->
+                  readUriBytes(
+                      resolver,
+                      imageUri,
+                      Sentry.getCurrentScopes().getOptions().getMaxAttachmentSize()),
+              "screenshot." + ext,
+              mime,
+              "event.attachment",
+              false));
+    } catch (Throwable t) {
+      ExceptionUtils.rethrowIfFatal(t);
+      // The ContentResolver call crosses into the provider's process, which can fail in any number
+      // of ways, e.g. a SecurityException once the read permission for the picked Uri was revoked
+      Sentry.getCurrentScopes()
+          .getOptions()
+          .getLogger()
+          .log(SentryLevel.ERROR, "Failed to attach image to feedback.", t);
+    }
+  }
+
+  private static long getUriSize(
+      final @NotNull SentryOptions options,
+      final @NotNull ContentResolver resolver,
+      final @NotNull Uri uri) {
+    try (final @Nullable Cursor cursor = resolver.query(uri, null, null, null, null)) {
+      if (cursor != null && cursor.moveToFirst()) {
+        final int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+        if (sizeIndex != -1 && !cursor.isNull(sizeIndex)) {
+          return cursor.getLong(sizeIndex);
+        }
+      }
+    } catch (Throwable t) {
+      ExceptionUtils.rethrowIfFatal(t);
+      options
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Unable to determine the size of the selected screenshot, the attachment size limit "
+                  + "is applied when the feedback is captured.",
+              t);
+    }
+    return -1;
+  }
+
+  private static byte[] readUriBytes(
+      final @NotNull ContentResolver resolver, final @NotNull Uri uri, final long maxSize)
+      throws IOException {
+    final @Nullable InputStream inputStream = resolver.openInputStream(uri);
+    if (inputStream == null) {
+      throw new IOException("Unable to open image attachment: " + uri);
+    }
+    // inputStreamToByteArray closes the stream
+    return FileUtils.inputStreamToByteArray(inputStream, maxSize);
+  }
+
+  @Override
+  public void onDetachedFromWindow() {
+    super.onDetachedFromWindow();
+    // Runs on every teardown: on dismiss the decor view is removed before onStop(), and when the
+    // host activity is destroyed with the dialog still showing this is the only callback that
+    // fires. onDialogGone is idempotent, so reporting from both here and onStop() is safe.
+    final @Nullable FeedbackShakeIntegration integration = getFeedbackShakeIntegration();
+    if (integration != null) {
+      integration.onDialogGone(this);
+    }
+  }
+
+  /**
+   * The shake integration to report this dialog's visibility to, or null when shake-to-report isn't
+   * available (non-Android controller, or the integration was never installed).
+   */
+  private @Nullable FeedbackShakeIntegration getFeedbackShakeIntegration() {
+    final @NotNull SentryFeedbackOptions.IShakeController controller =
+        Sentry.getCurrentScopes().getOptions().getFeedbackOptions().getShakeController();
+    return controller instanceof FeedbackShakeIntegration
+        ? (FeedbackShakeIntegration) controller
+        : null;
   }
 
   @Override

@@ -59,6 +59,12 @@ public final class NoOpSpan implements ISpan {
   }
 
   @Override
+  public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
   public @NotNull SentryTraceHeader toSentryTrace() {
     return new SentryTraceHeader(SentryId.EMPTY_ID, SpanId.EMPTY_ID, false);
   }

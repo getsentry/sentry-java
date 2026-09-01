@@ -254,16 +254,18 @@ public final class SentryClient implements ISentryClient {
         }
       }
       if (shouldCaptureReplay) {
-        options.getReplayController().captureReplay(event.isCrashed());
-        if (scope != null) {
-          final @Nullable SentryId replayId = scope.getReplayId();
-          if (replayId != null && !replayId.equals(SentryId.EMPTY_ID)) {
-            final @Nullable ITransaction transaction = scope.getTransaction();
-            if (transaction != null) {
-              final @Nullable Baggage baggage = transaction.getSpanContext().getBaggage();
-              if (baggage != null) {
-                baggage.forceSetReplayId(replayId);
-              }
+        final @NotNull SentryId scopeReplayId =
+            scope != null ? scope.getReplayId() : SentryId.EMPTY_ID;
+        final @NotNull SentryId capturedReplayId =
+            options.getReplayController().captureReplay(event.isCrashed());
+        final @NotNull SentryId replayId =
+            !capturedReplayId.equals(SentryId.EMPTY_ID) ? capturedReplayId : scopeReplayId;
+        if (scope != null && !replayId.equals(SentryId.EMPTY_ID)) {
+          final @Nullable ITransaction transaction = scope.getTransaction();
+          if (transaction != null) {
+            final @Nullable Baggage baggage = transaction.getSpanContext().getBaggage();
+            if (baggage != null) {
+              baggage.forceSetReplayId(replayId);
             }
           }
         }
@@ -285,6 +287,7 @@ public final class SentryClient implements ISentryClient {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
 
       // if there was an error capturing the event, we return an emptyId
+      HintUtils.setCaptureFailed(hint);
       sentryId = SentryId.EMPTY_ID;
     }
 
@@ -1272,8 +1275,10 @@ public final class SentryClient implements ISentryClient {
 
     // If feedback already has a replayId, we don't want to overwrite it.
     if (feedback.getReplayId() == null) {
-      options.getReplayController().captureReplay(false);
-      final @NotNull SentryId replayId = scope.getReplayId();
+      final @NotNull SentryId scopeReplayId = scope.getReplayId();
+      final @NotNull SentryId capturedReplayId = options.getReplayController().captureReplay(false);
+      final @NotNull SentryId replayId =
+          !capturedReplayId.equals(SentryId.EMPTY_ID) ? capturedReplayId : scopeReplayId;
       if (!replayId.equals(SentryId.EMPTY_ID)) {
         feedback.setReplayId(replayId);
       }
@@ -1618,8 +1623,13 @@ public final class SentryClient implements ISentryClient {
           }
         }
       }
-      if (sentryBaseEvent.getBreadcrumbs() == null) {
-        sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+      final List<Breadcrumb> eventBreadcrumbs = sentryBaseEvent.getBreadcrumbs();
+      if (eventBreadcrumbs == null || eventBreadcrumbs.isEmpty()) {
+        // A cached event comes from the outbox; its breadcrumbs (even if empty) belong to a
+        // past session, so the current scope's breadcrumbs are unrelated and must not be applied.
+        if (!isCached) {
+          sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+        }
       } else if (!isCached) {
         // A Cached event comes from the outbox and already carries its own breadcrumbs (e.g. native
         // events written by sentry-native). Appending the scope's breadcrumbs would duplicate them.

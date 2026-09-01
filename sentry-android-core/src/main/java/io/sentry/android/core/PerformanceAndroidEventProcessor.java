@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA;
+import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_TYPE_DATA;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
@@ -162,6 +163,10 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
                 ? "cold"
                 : "warm";
         appContext.setStartType(appStartType);
+
+        if (isStandaloneAppStartTxn) {
+          setAppStartVitals(transaction, appStartType);
+        }
       }
 
       setContributingFlags(transaction);
@@ -183,6 +188,29 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
 
       return transaction;
+    }
+  }
+
+  private static void setAppStartVitals(
+      final @NotNull SentryTransaction transaction, final @NotNull String appStartType) {
+    final @Nullable SpanContext traceContext = transaction.getContexts().getTrace();
+    if (traceContext == null) {
+      return;
+    }
+
+    traceContext.setData(APP_START_TYPE_DATA, appStartType);
+    final @Nullable Object screen = traceContext.getData().get(APP_START_SCREEN_DATA);
+
+    for (final @NotNull SentrySpan span : transaction.getSpans()) {
+      @Nullable Map<String, Object> data = span.getData();
+      if (data == null) {
+        data = new ConcurrentHashMap<>();
+        span.setData(data);
+      }
+      data.put(APP_START_TYPE_DATA, appStartType);
+      if (screen != null) {
+        data.put(APP_START_SCREEN_DATA, screen);
+      }
     }
   }
 
