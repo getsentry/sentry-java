@@ -109,6 +109,7 @@
     <activity
       android:name=".navigation.Nav2Activity"
       android:exported="false"
+      android:screenOrientation="portrait"
       android:theme="@style/AppTheme.Main" />
 
     <activity

@@ -46,6 +46,7 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import io.sentry.Sentry
+import io.sentry.android.navigation.SentryNavigationListener
 import io.sentry.compose.SentryModifier.sentryTag
 import io.sentry.compose.SentryTraced
 import io.sentry.compose.withSentryObservableEffect
@@ -63,20 +64,14 @@ import retrofit2.HttpException
 
 @Composable
 internal fun Nav2ComposeApp(
-  enableNavigationBreadcrumbs: Boolean,
-  enableNavigationTransactions: Boolean,
+  navListener: SentryNavigationListener,
   routeWorkOptions: Set<RouteWorkOption>,
   onCaptureException: () -> Unit,
   onCrashApp: () -> Unit,
   onRouteChanged: (routeName: String, currentRoute: String, backStack: String) -> Unit,
 ) {
 
-  val navController =
-    rememberNavController()
-      .withSentryObservableEffect(
-        enableNavigationBreadcrumbs = enableNavigationBreadcrumbs,
-        enableNavigationTracing = enableNavigationTransactions,
-      )
+  val navController = rememberNavController().withSentryObservableEffect(navListener = navListener)
   val backStack = rememberSaveableNav2ComposeBackStack()
   val shareSheetProductId = rememberSaveable { mutableStateOf<String?>(null) }
   val currentDestination = backStack.lastOrNull() ?: Home

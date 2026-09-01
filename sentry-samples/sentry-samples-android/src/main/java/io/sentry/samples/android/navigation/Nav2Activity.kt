@@ -105,6 +105,8 @@ class Nav2Activity : AppCompatActivity() {
         Nav2Scenario.LANDING
       }
 
+    sentryNavigationListener = createSentryNavigationListener()
+
     val navHostId = View.generateViewId()
     setContentView(createContentView(navHostId))
 
@@ -124,7 +126,6 @@ class Nav2Activity : AppCompatActivity() {
       backStack.resetTo(Landing)
     }
 
-    sentryNavigationListener = createSentryNavigationListener()
     navController.addOnDestinationChangedListener(sentryNavigationListener)
     navController.addOnDestinationChangedListener { _, destination, arguments ->
       updateNavigationUi(destination, arguments)
@@ -141,7 +142,6 @@ class Nav2Activity : AppCompatActivity() {
   override fun onStop() {
     isTransactionHistoryActive = false
     performanceState.stopAutomaticWork()
-    transactionHistory.clear()
     super.onStop()
   }
 
@@ -195,8 +195,7 @@ class Nav2Activity : AppCompatActivity() {
       setContent {
         MaterialTheme {
           Nav2ComposeApp(
-            enableNavigationBreadcrumbs = enableNavigationBreadcrumbs.value,
-            enableNavigationTransactions = enableNavigationTransactions.value,
+            navListener = sentryNavigationListener,
             routeWorkOptions = routeWorkOptions.value,
             onCaptureException = { captureSampleException("Nav2") },
             onCrashApp = { showCrashConfirmation("Nav2") },
