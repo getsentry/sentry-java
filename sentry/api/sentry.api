@@ -7599,8 +7599,8 @@ public final class io/sentry/rrweb/RRWebVideoEvent$JsonKeys {
 }
 
 public final class io/sentry/time/Deadline {
+	public static fun after (Lio/sentry/time/Ticker;JLjava/util/concurrent/TimeUnit;)Lio/sentry/time/Deadline;
 	public fun hasPassed ()Z
-	public static fun in (Lio/sentry/time/Ticker;JLjava/util/concurrent/TimeUnit;)Lio/sentry/time/Deadline;
 	public fun isAfter (Lio/sentry/time/Deadline;)Z
 	public static fun passed (Lio/sentry/time/Ticker;)Lio/sentry/time/Deadline;
 	public fun remaining (Ljava/util/concurrent/TimeUnit;)J
