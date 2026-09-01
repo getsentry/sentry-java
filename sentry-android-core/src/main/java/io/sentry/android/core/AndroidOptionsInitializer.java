@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
@@ -378,6 +379,8 @@ final class AndroidOptionsInitializer {
                   () ->
                       new PerfettoProfiler(
                           appContext, options.getLogger(), options.getExecutorService())));
+          // Report adoption of the Perfetto continuous profiling backend (API 35+).
+          addIntegrationToSdkVersion("PerfettoContinuousProfiling");
         } else if (options.isEnableLegacyProfiling()) {
           options.setContinuousProfiler(
               new AndroidContinuousProfiler(

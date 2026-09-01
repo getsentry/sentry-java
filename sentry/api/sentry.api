@@ -903,6 +903,12 @@ public abstract interface class io/sentry/IProfileConverter {
 public abstract interface class io/sentry/IReplayApi {
 	public abstract fun disableDebugMaskingOverlay ()V
 	public abstract fun enableDebugMaskingOverlay ()V
+	public abstract fun flush ()V
+	public abstract fun pause ()V
+	public abstract fun resume ()V
+	public abstract fun start ()V
+	public abstract fun startBuffering ()V
+	public abstract fun stop ()V
 }
 
 public abstract interface class io/sentry/IScope {
@@ -1713,20 +1719,25 @@ public final class io/sentry/NoOpReplayBreadcrumbConverter : io/sentry/ReplayBre
 }
 
 public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
-	public fun captureReplay (Ljava/lang/Boolean;)V
+	public fun captureReplay (Ljava/lang/Boolean;)Lio/sentry/protocol/SentryId;
 	public fun disableDebugMaskingOverlay ()V
 	public fun enableDebugMaskingOverlay ()V
+	public fun flush ()V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public static fun getInstance ()Lio/sentry/NoOpReplayController;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isDebugMaskingOverlayEnabled ()Z
 	public fun isRecording ()Z
+	public fun onAppBackgrounded ()V
+	public fun onAppForegrounded (Z)V
+	public fun onAppSessionEnded ()V
 	public fun pause ()V
 	public fun registerSegmentName (Ljava/lang/String;)V
 	public fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun resume ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
+	public fun startBuffering ()V
 	public fun stop ()V
 }
 
@@ -2367,18 +2378,17 @@ public abstract interface class io/sentry/ReplayBreadcrumbConverter {
 }
 
 public abstract interface class io/sentry/ReplayController : io/sentry/IReplayApi {
-	public abstract fun captureReplay (Ljava/lang/Boolean;)V
+	public abstract fun captureReplay (Ljava/lang/Boolean;)Lio/sentry/protocol/SentryId;
 	public abstract fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public abstract fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public abstract fun isDebugMaskingOverlayEnabled ()Z
 	public abstract fun isRecording ()Z
-	public abstract fun pause ()V
+	public abstract fun onAppBackgrounded ()V
+	public abstract fun onAppForegrounded (Z)V
+	public abstract fun onAppSessionEnded ()V
 	public abstract fun registerSegmentName (Ljava/lang/String;)V
 	public abstract fun registerTraceId (Lio/sentry/protocol/SentryId;)V
-	public abstract fun resume ()V
 	public abstract fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
-	public abstract fun start ()V
-	public abstract fun stop ()V
 }
 
 public final class io/sentry/ReplayRecording : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
@@ -2505,6 +2515,10 @@ public final class io/sentry/Scope : io/sentry/IScope {
 
 public abstract interface class io/sentry/Scope$IWithPropagationContext {
 	public abstract fun accept (Lio/sentry/PropagationContext;)V
+}
+
+public abstract interface class io/sentry/Scope$IWithSession {
+	public abstract fun accept (Lio/sentry/Session;)V
 }
 
 public abstract interface class io/sentry/Scope$IWithTransaction {
@@ -3228,12 +3242,14 @@ public final class io/sentry/SentryExecutorService : io/sentry/ISentryExecutorSe
 
 public final class io/sentry/SentryFeedbackOptions {
 	public fun <init> (Lio/sentry/SentryFeedbackOptions;)V
+	public fun getAddScreenshotButtonLabel ()Ljava/lang/CharSequence;
 	public fun getCancelButtonLabel ()Ljava/lang/CharSequence;
 	public fun getEmailLabel ()Ljava/lang/CharSequence;
 	public fun getEmailPlaceholder ()Ljava/lang/CharSequence;
 	public fun getFormHandler ()Lio/sentry/SentryFeedbackOptions$IFormHandler;
 	public fun getFormTitle ()Ljava/lang/CharSequence;
 	public fun getIsRequiredLabel ()Ljava/lang/CharSequence;
+	public fun getLoadClass ()Lio/sentry/util/LoadClass;
 	public fun getMessageLabel ()Ljava/lang/CharSequence;
 	public fun getMessagePlaceholder ()Ljava/lang/CharSequence;
 	public fun getNameLabel ()Ljava/lang/CharSequence;
@@ -3242,23 +3258,29 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun getOnFormOpen ()Ljava/lang/Runnable;
 	public fun getOnSubmitError ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
 	public fun getOnSubmitSuccess ()Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;
+	public fun getRemoveScreenshotButtonLabel ()Ljava/lang/CharSequence;
+	public fun getScreenshotTooLargeMessageText ()Ljava/lang/CharSequence;
 	public fun getShakeController ()Lio/sentry/SentryFeedbackOptions$IShakeController;
 	public fun getSubmitButtonLabel ()Ljava/lang/CharSequence;
 	public fun getSuccessMessageText ()Ljava/lang/CharSequence;
 	public fun isEmailRequired ()Z
+	public fun isEnableAttachScreenshot ()Z
 	public fun isNameRequired ()Z
 	public fun isShowBranding ()Z
 	public fun isShowEmail ()Z
 	public fun isShowName ()Z
 	public fun isUseSentryUser ()Z
 	public fun isUseShakeGesture ()Z
+	public fun setAddScreenshotButtonLabel (Ljava/lang/CharSequence;)V
 	public fun setCancelButtonLabel (Ljava/lang/CharSequence;)V
 	public fun setEmailLabel (Ljava/lang/CharSequence;)V
 	public fun setEmailPlaceholder (Ljava/lang/CharSequence;)V
 	public fun setEmailRequired (Z)V
+	public fun setEnableAttachScreenshot (Z)V
 	public fun setFormHandler (Lio/sentry/SentryFeedbackOptions$IFormHandler;)V
 	public fun setFormTitle (Ljava/lang/CharSequence;)V
 	public fun setIsRequiredLabel (Ljava/lang/CharSequence;)V
+	public fun setLoadClass (Lio/sentry/util/LoadClass;)V
 	public fun setMessageLabel (Ljava/lang/CharSequence;)V
 	public fun setMessagePlaceholder (Ljava/lang/CharSequence;)V
 	public fun setNameLabel (Ljava/lang/CharSequence;)V
@@ -3268,6 +3290,8 @@ public final class io/sentry/SentryFeedbackOptions {
 	public fun setOnFormOpen (Ljava/lang/Runnable;)V
 	public fun setOnSubmitError (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
 	public fun setOnSubmitSuccess (Lio/sentry/SentryFeedbackOptions$SentryFeedbackCallback;)V
+	public fun setRemoveScreenshotButtonLabel (Ljava/lang/CharSequence;)V
+	public fun setScreenshotTooLargeMessageText (Ljava/lang/CharSequence;)V
 	public fun setShakeController (Lio/sentry/SentryFeedbackOptions$IShakeController;)V
 	public fun setShowBranding (Z)V
 	public fun setShowEmail (Z)V
@@ -4304,7 +4328,9 @@ public final class io/sentry/Session : io/sentry/JsonSerializable, io/sentry/Jso
 	public fun getTimestamp ()Ljava/util/Date;
 	public fun getUnknown ()Ljava/util/Map;
 	public fun getUserAgent ()Ljava/lang/String;
+	public fun hasNonTerminatingUnhandledError ()Z
 	public fun isTerminated ()Z
+	public fun recordNonTerminatingUnhandledError ()Z
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setInitAsTrue ()V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -4327,6 +4353,7 @@ public final class io/sentry/Session$JsonKeys {
 	public static final field ERRORS Ljava/lang/String;
 	public static final field INIT Ljava/lang/String;
 	public static final field IP_ADDRESS Ljava/lang/String;
+	public static final field NON_TERMINATING_UNHANDLED_ERROR Ljava/lang/String;
 	public static final field RELEASE Ljava/lang/String;
 	public static final field SEQ Ljava/lang/String;
 	public static final field SID Ljava/lang/String;
@@ -4342,6 +4369,7 @@ public final class io/sentry/Session$State : java/lang/Enum {
 	public static final field Crashed Lio/sentry/Session$State;
 	public static final field Exited Lio/sentry/Session$State;
 	public static final field Ok Lio/sentry/Session$State;
+	public static final field Unhandled Lio/sentry/Session$State;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/Session$State;
 	public static fun values ()[Lio/sentry/Session$State;
 }
@@ -4717,6 +4745,7 @@ public final class io/sentry/TypeCheckHint {
 	public static final field OPEN_FEIGN_REQUEST Ljava/lang/String;
 	public static final field OPEN_FEIGN_RESPONSE Ljava/lang/String;
 	public static final field REPLAY_FRAME_BITMAP Ljava/lang/String;
+	public static final field SENTRY_CAPTURE_FAILED Ljava/lang/String;
 	public static final field SENTRY_DART_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_DOTNET_SDK_NAME Ljava/lang/String;
 	public static final field SENTRY_EVENT_DROP_REASON Ljava/lang/String;
@@ -4876,6 +4905,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public static fun getPreviousSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public fun iterator ()Ljava/util/Iterator;
 	public fun movePreviousSession (Ljava/io/File;Ljava/io/File;)V
+	public fun persistCurrentSession (Lio/sentry/Session;)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 	public fun waitPreviousSessionFlush ()Z
@@ -7660,7 +7690,6 @@ public final class io/sentry/util/AutoClosableReentrantLock : io/sentry/ISentryL
 	public fun <init> ()V
 	public fun acquire ()Lio/sentry/ISentryLifecycleToken;
 	public fun close ()V
-	public fun tryAcquire (JLjava/util/concurrent/TimeUnit;)Lio/sentry/ISentryLifecycleToken;
 }
 
 public final class io/sentry/util/CheckInUtils {
@@ -7733,6 +7762,7 @@ public final class io/sentry/util/FileUtils {
 	public fun <init> ()V
 	public static fun createDirectory (Ljava/io/File;)Z
 	public static fun deleteRecursively (Ljava/io/File;)Z
+	public static fun inputStreamToByteArray (Ljava/io/InputStream;J)[B
 	public static fun readBytesFromFile (Ljava/lang/String;J)[B
 	public static fun readText (Ljava/io/File;)Ljava/lang/String;
 }
@@ -7742,11 +7772,13 @@ public final class io/sentry/util/HintUtils {
 	public static fun getEventDropReason (Lio/sentry/Hint;)Lio/sentry/hints/EventDropReason;
 	public static fun getSentrySdkHint (Lio/sentry/Hint;)Ljava/lang/Object;
 	public static fun hasType (Lio/sentry/Hint;Ljava/lang/Class;)Z
+	public static fun isCaptureFailed (Lio/sentry/Hint;)Z
 	public static fun isFromHybridSdk (Lio/sentry/Hint;)Z
 	public static fun runIfDoesNotHaveType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryNullableConsumer;)V
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;)V
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;Lio/sentry/util/HintUtils$SentryHintFallback;)V
 	public static fun runIfHasTypeLogIfNot (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/ILogger;Lio/sentry/util/HintUtils$SentryConsumer;)V
+	public static fun setCaptureFailed (Lio/sentry/Hint;)V
 	public static fun setEventDropReason (Lio/sentry/Hint;Lio/sentry/hints/EventDropReason;)V
 	public static fun setIsFromHybridSdk (Lio/sentry/Hint;Ljava/lang/String;)V
 	public static fun setTypeCheckHint (Lio/sentry/Hint;Ljava/lang/Object;)V

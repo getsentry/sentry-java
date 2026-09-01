@@ -201,6 +201,51 @@ class PreviousSessionFinalizerTest {
   }
 
   @Test
+  fun `if previous session has a non-terminating unhandled error and no crash marker, finalizes as unhandled`() {
+    val finalizer =
+      fixture.getSut(
+        tmpDir,
+        session =
+          Session(null, null, null, "io.sentry.sample@1.0").apply {
+            recordNonTerminatingUnhandledError()
+          },
+      )
+    finalizer.run()
+
+    verify(fixture.scopes)
+      .captureEnvelope(
+        argThat {
+          val session = fixture.sessionFromEnvelope(this)
+          session.release == "io.sentry.sample@1.0" &&
+            session.status == Session.State.Unhandled &&
+            session.hasNonTerminatingUnhandledError()
+        }
+      )
+  }
+
+  @Test
+  fun `if previous session has a non-terminating unhandled error but a native crash marker exists, finalizes as crashed`() {
+    val finalizer =
+      fixture.getSut(
+        tmpDir,
+        session =
+          Session(null, null, null, "io.sentry.sample@1.0").apply {
+            recordNonTerminatingUnhandledError()
+          },
+        nativeCrashTimestamp = DateUtils.getDateTime("2023-10-01T00:00:00.000Z"),
+      )
+    finalizer.run()
+
+    verify(fixture.scopes)
+      .captureEnvelope(
+        argThat {
+          val session = fixture.sessionFromEnvelope(this)
+          session.release == "io.sentry.sample@1.0" && session.status == Crashed
+        }
+      )
+  }
+
+  @Test
   fun `if previous session file exists, deletes previous session file`() {
     val finalizer = fixture.getSut(tmpDir, sessionFileExists = true)
     finalizer.run()

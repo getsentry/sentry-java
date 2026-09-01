@@ -335,6 +335,21 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `when backfillable event already has breadcrumbs, does not duplicate them with persisted ones`() {
+    // simulates a tombstone-merged native crash event, which already carries its own
+    // breadcrumb history captured at crash time, overlapping with what was persisted to disk
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+
+    val processed =
+      processEvent(hint, populateScopeCache = true) {
+        breadcrumbs = listOf(Breadcrumb.debug("own-crash-time-breadcrumb"))
+      }
+
+    assertEquals(1, processed.breadcrumbs!!.size)
+    assertEquals("own-crash-time-breadcrumb", processed.breadcrumbs!![0].message)
+  }
+
+  @Test
   fun `when backfillable event is enrichable, does not backfill user ip`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
     val processed = processEvent(hint, isSendDefaultPii = false, populateScopeCache = true)
@@ -670,10 +685,11 @@ class ApplicationExitInfoEventProcessorTest {
 
     assertEquals("MainActivity", processed.transaction)
     assertEquals(DEBUG, processed.level)
-    assertEquals(3, processed.breadcrumbs!!.size)
+    // breadcrumbs already set on the event are preserved as-is, not merged with the persisted
+    // ones, since the event already carries its own authoritative breadcrumb history
+    assertEquals(1, processed.breadcrumbs!!.size)
     assertEquals("debug", processed.breadcrumbs!![0].type)
-    assertEquals("debug", processed.breadcrumbs!![1].type)
-    assertEquals("navigation", processed.breadcrumbs!![2].type)
+    assertEquals("test", processed.breadcrumbs!![0].message)
 
     assertEquals("debug", processed.environment)
     assertEquals("io.sentry.samples@1.1.0+220", processed.release)

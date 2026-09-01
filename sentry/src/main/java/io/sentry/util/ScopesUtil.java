@@ -4,6 +4,7 @@ import io.sentry.IScopes;
 import io.sentry.Scopes;
 import io.sentry.ScopesAdapter;
 import io.sentry.Sentry;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>It walks up the parents of each scopes instance until it reaches a parent of null. The scopes
  * without a parent are the ones created in Sentry.init.
  */
+@ApiStatus.Internal
 public final class ScopesUtil {
 
   public static void printScopesChain(final @Nullable IScopes scopes) {
