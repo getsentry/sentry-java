@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Skip Android profiling when the installed system profiling package delivers empty traces ([#5975](https://github.com/getsentry/sentry-java/pull/5975))
+
 ### Dependencies
 
 - Bump Native SDK from v0.16.2 to v0.16.3 ([#5962](https://github.com/getsentry/sentry-java/pull/5962))
