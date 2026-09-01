@@ -149,6 +149,7 @@ class Nav2Activity : AppCompatActivity() {
     if (isFinishing) {
       previousConfig.applyToCurrentOptions()
     }
+    mainHandler.removeCallbacksAndMessages(null)
     transactionHistory.uninstall()
     super.onDestroy()
   }
