@@ -311,7 +311,7 @@ class PerfettoContinuousProfilerTest {
   }
 
   @Test
-  fun `getProfileRecordingState is not recorded for a window after the last chunk`() {
+  fun `getProfileRecordingState is unknown for a window after the last chunk`() {
     val profiler = fixture.getSut()
     profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     val profilerId = profiler.profilerId
@@ -320,13 +320,14 @@ class PerfettoContinuousProfilerTest {
     val afterChunk = fixture.options.dateProvider.now()
 
     assertEquals(
-      ProfileRecordingState.NOT_RECORDED,
+      ProfileRecordingState.UNKNOWN,
       profiler.getProfileRecordingState(profilerId, afterChunk, afterChunk),
+      "no chunk covers the window, so it is given the benefit of the doubt",
     )
   }
 
   @Test
-  fun `getProfileRecordingState is not recorded for a profiler id the history does not know`() {
+  fun `getProfileRecordingState is unknown for a profiler id the history does not know`() {
     val profiler = fixture.getSut()
     profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     val duringChunk = fixture.options.dateProvider.now()
@@ -334,8 +335,9 @@ class PerfettoContinuousProfilerTest {
     fixture.executor.runAll()
 
     assertEquals(
-      ProfileRecordingState.NOT_RECORDED,
+      ProfileRecordingState.UNKNOWN,
       profiler.getProfileRecordingState(SentryId(), duringChunk, duringChunk),
+      "the chunks of that profiler id may have fallen out of the history",
     )
   }
 

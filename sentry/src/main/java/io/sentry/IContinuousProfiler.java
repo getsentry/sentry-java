@@ -41,10 +41,13 @@ public interface IContinuousProfiler {
    * <ul>
    *   <li>{@link ProfileRecordingState#RECORDED} if a profile covering part of the window exists
    *   <li>{@link ProfileRecordingState#NOT_RECORDED} if every profiling request covering the window
-   *       is known to have produced nothing, or if no request covers the window at all
-   *   <li>{@link ProfileRecordingState#UNKNOWN} if no history is kept, or if a request covering the
-   *       window has no outcome yet
+   *       is known to have produced nothing
+   *   <li>{@link ProfileRecordingState#UNKNOWN} if no history is kept, if a request covering the
+   *       window has no outcome yet, or if no request covers the window at all
    * </ul>
+   *
+   * <p>A window no request covers is unknown rather than not recorded, as the window may reach
+   * further back than the history, or a back-dated span may read as outside the request it ran in.
    *
    * @param profilerId the profiler id the caller was tagged with
    * @param startTime start of the time window to check

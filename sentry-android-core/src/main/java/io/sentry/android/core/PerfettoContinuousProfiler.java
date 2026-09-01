@@ -82,8 +82,8 @@ public class PerfettoContinuousProfiler
    * so a handful of chunks (a minute each) is plenty.
    *
    * <p>The history is therefore assumed to be long enough for every window a span can ask about. A
-   * window whose chunks all fell out of it needs no special treatment, and is judged by the chunks
-   * that are left.
+   * window whose chunks all fell out of it needs no special treatment: it reads as a window no
+   * chunk covers, and keeps its profiler id.
    */
   @VisibleForTesting static final int MAX_CHUNK_HISTORY_SIZE = 10;
 
@@ -244,10 +244,7 @@ public class PerfettoContinuousProfiler
       final @NotNull SentryDate startTime,
       final @NotNull SentryDate endTime) {
     try (final @NotNull ISentryLifecycleToken ignored = chunkHistoryLock.acquire()) {
-      if (chunkHistory.isEmpty()) {
-        return ProfileRecordingState.UNKNOWN;
-      }
-
+      boolean hasFailedChunk = false;
       boolean hasUnknownChunk = false;
 
       for (final @NotNull ChunkRecord chunk : chunkHistory) {
@@ -260,6 +257,8 @@ public class PerfettoContinuousProfiler
         }
         if (state == ProfileRecordingState.UNKNOWN) {
           hasUnknownChunk = true;
+        } else {
+          hasFailedChunk = true;
         }
       }
 
@@ -268,8 +267,14 @@ public class PerfettoContinuousProfiler
         return ProfileRecordingState.UNKNOWN;
       }
 
-      // Every chunk overlapping the window failed, or no chunk ran during the window at all
-      return ProfileRecordingState.NOT_RECORDED;
+      // Every chunk covering the window failed
+      if (hasFailedChunk) {
+        return ProfileRecordingState.NOT_RECORDED;
+      }
+
+      // No chunk covers the window. It may have fallen out of the history, or a back-dated span may
+      // read as outside a chunk it really ran in, so the window gets the benefit of the doubt
+      return ProfileRecordingState.UNKNOWN;
     }
   }
 
