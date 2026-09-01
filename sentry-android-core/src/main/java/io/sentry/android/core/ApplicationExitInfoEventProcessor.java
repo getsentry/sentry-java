@@ -184,7 +184,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     setStaticValues(event);
 
     if (hintEnricher != null) {
-      hintEnricher.applyPostEnrichment(event, backfillable, unwrappedHint);
+      hintEnricher.applyPostEnrichment(event, backfillable, unwrappedHint, optionsSource);
     }
 
     return event;
@@ -350,16 +350,19 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
   @SuppressWarnings("unchecked")
   private void setBreadcrumbs(final @NotNull SentryBaseEvent event) {
+    final List<Breadcrumb> eventBreadcrumbs = event.getBreadcrumbs();
+    if (eventBreadcrumbs != null && !eventBreadcrumbs.isEmpty()) {
+      // the event already carries its own breadcrumbs (e.g. a tombstone-merged native
+      // crash event), so appending the persisted ones here would duplicate entries. Skip the
+      // disk read altogether since the result would be discarded anyway.
+      return;
+    }
     final List<Breadcrumb> breadcrumbs =
         (List<Breadcrumb>) readFromDisk(options, BREADCRUMBS_FILENAME, List.class);
     if (breadcrumbs == null) {
       return;
     }
-    if (event.getBreadcrumbs() == null) {
-      event.setBreadcrumbs(breadcrumbs);
-    } else {
-      event.getBreadcrumbs().addAll(breadcrumbs);
-    }
+    event.setBreadcrumbs(breadcrumbs);
   }
 
   @SuppressWarnings("unchecked")
@@ -515,10 +518,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
               PROGUARD_UUID_FILENAME, String.class, options.getProguardUuid(), optionsSource);
 
       if (proguardUuid != null) {
-        final DebugImage debugImage = new DebugImage();
-        debugImage.setType(DebugImage.PROGUARD);
-        debugImage.setUuid(proguardUuid);
-        images.add(debugImage);
+        images.add(createProguardDebugImage(proguardUuid));
       }
       event.setDebugMeta(debugMeta);
     }
@@ -801,7 +801,10 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
         @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint);
 
     void applyPostEnrichment(
-        @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint);
+        @NotNull SentryEvent event,
+        @NotNull Backfillable hint,
+        @NotNull Object rawHint,
+        @NotNull OptionsSource optionsSource);
   }
 
   private final class AnrHintEnricher implements HintEnricher {
@@ -833,11 +836,14 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
     @Override
     public void applyPostEnrichment(
-        @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint) {
+        @NotNull SentryEvent event,
+        @NotNull Backfillable hint,
+        @NotNull Object rawHint,
+        @NotNull OptionsSource optionsSource) {
       final boolean isBackgroundAnr = isBackgroundAnr(rawHint);
 
       if (options.isAnrProfilingEnabled()) {
-        applyAnrProfile(event, hint, isBackgroundAnr);
+        applyAnrProfile(event, hint, isBackgroundAnr, optionsSource);
       }
 
       setDefaultAnrFingerprint(event, isBackgroundAnr);
@@ -931,7 +937,10 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
 
     private void applyAnrProfile(
-        @NotNull SentryEvent event, @NotNull Backfillable hint, boolean isBackgroundAnr) {
+        @NotNull SentryEvent event,
+        @NotNull Backfillable hint,
+        boolean isBackgroundAnr,
+        @NotNull OptionsSource optionsSource) {
 
       // Skip background ANRs (as profiling only runs in foreground)
       if (isBackgroundAnr) {
@@ -992,7 +1001,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       }
 
       // Capture profile chunk
-      final @Nullable SentryId profilerId = captureAnrProfile(anrTimestamp, anrProfile);
+      final @Nullable SentryId profilerId =
+          captureAnrProfile(anrTimestamp, anrProfile, optionsSource);
       final @NotNull StackTraceElement[] stack = culprit.getStack();
 
       if (stack.length > 0) {
@@ -1023,7 +1033,10 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     }
 
     @Nullable
-    private SentryId captureAnrProfile(final long anrTimestampMs, @NotNull AnrProfile anrProfile) {
+    private SentryId captureAnrProfile(
+        final long anrTimestampMs,
+        @NotNull AnrProfile anrProfile,
+        final @NotNull OptionsSource optionsSource) {
       final SentryProfile profile = StackTraceConverter.convert(anrProfile);
       final ProfileChunk chunk =
           new ProfileChunk(
@@ -1032,9 +1045,10 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
               null,
               new HashMap<>(0),
               anrTimestampMs / 1000.0d,
-              ProfileChunk.PLATFORM_JAVA,
+              ProfileChunk.PLATFORM_ANDROID,
               options);
       chunk.setSentryProfile(profile);
+      chunk.setDebugMeta(createAnrProfileDebugMeta(optionsSource));
 
       final SentryId profilerId = Sentry.getCurrentScopes().captureProfileChunk(chunk);
       if (SentryId.EMPTY_ID.equals(profilerId)) {
@@ -1069,5 +1083,37 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       }
       return true;
     }
+
+    /**
+     * Creates debug metadata for an ANR profile chunk using the build metadata selected for the ANR
+     * event.
+     *
+     * <p>ANR profile chunks are captured after app relaunch. If the app was updated between the ANR
+     * and the relaunch, the current options may contain the new build's ProGuard UUID. The provided
+     * {@link OptionsSource} lets us resolve the profile chunk and ANR event to the same originating
+     * build.
+     */
+    private @Nullable DebugMeta createAnrProfileDebugMeta(
+        final @NotNull OptionsSource optionsSource) {
+      final String proguardUuid =
+          getBuildOption(
+              PROGUARD_UUID_FILENAME, String.class, options.getProguardUuid(), optionsSource);
+      if (proguardUuid == null) {
+        // If no historical UUID is available, let the generic profile chunk pipeline apply the
+        // current options UUID as its normal best-effort fallback.
+        return null;
+      }
+
+      final DebugMeta debugMeta = new DebugMeta();
+      debugMeta.setImages(Collections.singletonList(createProguardDebugImage(proguardUuid)));
+      return debugMeta;
+    }
+  }
+
+  private static @NotNull DebugImage createProguardDebugImage(final @NotNull String proguardUuid) {
+    final DebugImage debugImage = new DebugImage();
+    debugImage.setType(DebugImage.PROGUARD);
+    debugImage.setUuid(proguardUuid);
+    return debugImage;
   }
 }

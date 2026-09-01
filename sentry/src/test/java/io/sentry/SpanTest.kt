@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.protocol.SentryId
 import io.sentry.test.injectForField
 import kotlin.test.Test
@@ -92,6 +93,19 @@ class SpanTest {
     assertEquals(span.spanId, child.parentSpanId)
     assertEquals("child-op", child.operation)
     assertEquals("description", child.description)
+  }
+
+  @Test
+  fun `starting a child with timestamp uses exact timestamp`() {
+    val parent: ISpan = fixture.getSut()
+    val timestamp = SentryLongDate(1234)
+
+    val child = parent.startChild("child-op", "description", timestamp) as Span
+
+    assertThat(child.parentSpanId).isEqualTo(parent.spanContext.spanId)
+    assertThat(child.operation).isEqualTo("child-op")
+    assertThat(child.description).isEqualTo("description")
+    assertThat(child.startDate).isSameInstanceAs(timestamp)
   }
 
   @Test

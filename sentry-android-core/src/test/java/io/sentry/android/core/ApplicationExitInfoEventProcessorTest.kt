@@ -11,6 +11,7 @@ import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.IpAddressUtils
 import io.sentry.NoOpLogger
+import io.sentry.ProfileChunk
 import io.sentry.Sentry
 import io.sentry.SentryBaseEvent
 import io.sentry.SentryEvent
@@ -75,7 +76,9 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
@@ -329,6 +332,21 @@ class ApplicationExitInfoEventProcessorTest {
     // contexts
     assertEquals(1024, processed.contexts.response!!.bodySize)
     assertEquals("Google Chrome", processed.contexts.browser!!.name)
+  }
+
+  @Test
+  fun `when backfillable event already has breadcrumbs, does not duplicate them with persisted ones`() {
+    // simulates a tombstone-merged native crash event, which already carries its own
+    // breadcrumb history captured at crash time, overlapping with what was persisted to disk
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+
+    val processed =
+      processEvent(hint, populateScopeCache = true) {
+        breadcrumbs = listOf(Breadcrumb.debug("own-crash-time-breadcrumb"))
+      }
+
+    assertEquals(1, processed.breadcrumbs!!.size)
+    assertEquals("own-crash-time-breadcrumb", processed.breadcrumbs!![0].message)
   }
 
   @Test
@@ -680,10 +698,11 @@ class ApplicationExitInfoEventProcessorTest {
 
     assertEquals("MainActivity", processed.transaction)
     assertEquals(DEBUG, processed.level)
-    assertEquals(3, processed.breadcrumbs!!.size)
+    // breadcrumbs already set on the event are preserved as-is, not merged with the persisted
+    // ones, since the event already carries its own authoritative breadcrumb history
+    assertEquals(1, processed.breadcrumbs!!.size)
     assertEquals("debug", processed.breadcrumbs!![0].type)
-    assertEquals("debug", processed.breadcrumbs!![1].type)
-    assertEquals("navigation", processed.breadcrumbs!![2].type)
+    assertEquals("test", processed.breadcrumbs!![0].message)
 
     assertEquals("debug", processed.environment)
     assertEquals("io.sentry.samples@1.1.0+220", processed.release)
@@ -1022,9 +1041,69 @@ class ApplicationExitInfoEventProcessorTest {
       mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
 
       val processed = processor.process(SentryEvent(), hint)
+      val chunkCaptor = argumentCaptor<ProfileChunk>()
+      verify(scopes).captureProfileChunk(chunkCaptor.capture())
+      val sentryProfile = chunkCaptor.firstValue.sentryProfile
 
       assertNotNull(processed?.contexts?.profile)
       assertNotNull(processed.contexts.profile?.profilerId)
+      assertNotNull(sentryProfile)
+      // Two samples are present b/c the converter adds a synthetic one to keep Relay happy.
+      assertEquals(2, sentryProfile.samples.size)
+    }
+  }
+
+  @Test
+  fun `uses persisted proguard uuid for ANR profile chunk after app update`() {
+    fixture.options.anrProfilingSampleRate = 1.0
+    fixture.options.proguardUuid = "current-uuid"
+    val processor =
+      fixture.getSut(
+        tmpDir,
+        populateScopeCache = false,
+        populateOptionsCache = false,
+        isSendDefaultPii = false,
+      )
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "previous-uuid")
+    setLastUpdateTime(2_000)
+
+    val hint =
+      HintUtils.createWithTypeCheckHint(
+        AbnormalExitHint(mechanism = "anr_foreground", timestamp = 1_000)
+      )
+
+    AnrProfileManager(
+        fixture.options,
+        AnrProfileRotationHelper.getFileForRecording(File(fixture.options.cacheDirPath!!)),
+      )
+      .apply {
+        add(
+          AnrStackTrace(
+            1_000,
+            arrayOf(
+              StackTraceElement("com.example.MyApp", "blocked", "MyApp.java", 42),
+              StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
+            ),
+          )
+        )
+        close()
+      }
+    AnrProfileRotationHelper.rotate()
+
+    val scopes = mock<IScopes>()
+    whenever(scopes.captureProfileChunk(any())).thenReturn(SentryId())
+
+    mockStatic(Sentry::class.java).use { mockedSentry ->
+      mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+
+      processor.process(SentryEvent(), hint)
+
+      val chunkCaptor = argumentCaptor<ProfileChunk>()
+      verify(scopes).captureProfileChunk(chunkCaptor.capture())
+      val images = chunkCaptor.firstValue.debugMeta!!.images!!
+      assertEquals(1, images.size)
+      assertEquals(DebugImage.PROGUARD, images[0].type)
+      assertEquals("previous-uuid", images[0].uuid)
     }
   }
 

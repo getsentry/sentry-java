@@ -114,15 +114,24 @@ public final class Sentry {
   @ApiStatus.Internal
   @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes(final boolean ensureForked) {
-    if (globalHubMode) {
-      return rootScopes;
-    }
+    // read the volatile rootScopes once, so a concurrent Sentry.init cannot make the check below
+    // disagree with what we return
+    final @NotNull IScopes root = rootScopes;
     @Nullable IScopes scopes = getScopesStorage().get();
+    if (globalHubMode) {
+      // in global hub mode we never fork implicitly, but scopes that have explicitly been made
+      // current (e.g. by withScope) must still be honoured. Anything that did not originate from
+      // the present rootScopes is stale (SDK closed or re-initialized) and gets ignored.
+      if (scopes != null && !scopes.isNoOp() && root.isAncestorOf(scopes)) {
+        return scopes;
+      }
+      return root;
+    }
     if (scopes == null || scopes.isNoOp()) {
       if (!ensureForked) {
         return NoOpScopes.getInstance();
       } else {
-        scopes = rootScopes.forkedScopes("getCurrentScopes");
+        scopes = root.forkedScopes("getCurrentScopes");
         getScopesStorage().set(scopes);
       }
     }
@@ -463,8 +472,9 @@ public final class Sentry {
           () -> {
             final String cacheDirPath = options.getCacheDirPathWithoutDsn();
             if (cacheDirPath != null) {
+              final @NotNull File cacheDir = new File(cacheDirPath);
               final @NotNull File appStartProfilingConfigFile =
-                  new File(cacheDirPath, APP_START_PROFILING_CONFIG_FILE_NAME);
+                  new File(cacheDir, APP_START_PROFILING_CONFIG_FILE_NAME);
               try {
                 // We always delete the config file for app start profiling
                 FileUtils.deleteRecursively(appStartProfilingConfigFile);
@@ -479,6 +489,14 @@ public final class Sentry {
                       .log(
                           SentryLevel.INFO,
                           "Tracing is disabled and app start profiling will not start.");
+                  return;
+                }
+                // The cache dir is no longer created during init, so create it here before writing:
+                // createNewFile() fails if the parent is missing.
+                if (!FileUtils.createDirectory(cacheDir)) {
+                  options
+                      .getLogger()
+                      .log(SentryLevel.ERROR, "Failed to create cache dir %s", cacheDirPath);
                   return;
                 }
                 if (appStartProfilingConfigFile.createNewFile()) {
@@ -620,19 +638,14 @@ public final class Sentry {
     // TODO: read values from conf file, Build conf or system envs
     // eg release, distinctId, sentryClientName
 
-    // this should be after setting serializers
-    final String outboxPath = options.getOutboxPath();
-    if (outboxPath != null) {
-      final File outboxDir = new File(outboxPath);
-      outboxDir.mkdirs();
-    } else {
+    // The outbox and cache dirs are created lazily by their consumers (envelope cache, outbox file
+    // observer, native SDK) off the init thread, so we don't stat/mkdir them here.
+    if (options.getOutboxPath() == null) {
       logger.log(SentryLevel.INFO, "No outbox dir path is defined in options.");
     }
 
     final String cacheDirPath = options.getCacheDirPath();
     if (cacheDirPath != null) {
-      final File cacheDir = new File(cacheDirPath);
-      cacheDir.mkdirs();
       final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
       // only overwrite the cache impl if it's not already set
       if (envelopeCache instanceof NoOpEnvelopeCache) {
@@ -1060,7 +1073,13 @@ public final class Sentry {
     return getCurrentScopes().getLastEventId();
   }
 
-  /** Pushes a new scope while inheriting the current scope's data. */
+  /**
+   * Pushes a new scope while inheriting the current scope's data.
+   *
+   * <p>This is a no-op in global hub mode, as the caller may never pop the scope again, or pop it
+   * on a different thread, which would corrupt the globally shared scopes. Use {@link
+   * Sentry#withScope(ScopeCallback)} if you need forking that also works in global hub mode.
+   */
   public static @NotNull ISentryLifecycleToken pushScope() {
     // pushScope is no-op in global hub mode
     if (!globalHubMode) {
@@ -1069,7 +1088,12 @@ public final class Sentry {
     return NoOpScopesLifecycleToken.getInstance();
   }
 
-  /** Pushes a new isolation and current scope while inheriting the current scope's data. */
+  /**
+   * Pushes a new isolation and current scope while inheriting the current scope's data.
+   *
+   * <p>This is a no-op in global hub mode, for the same reason as {@link Sentry#pushScope()}. Use
+   * {@link Sentry#withIsolationScope(ScopeCallback)} instead.
+   */
   public static @NotNull ISentryLifecycleToken pushIsolationScope() {
     // pushScope is no-op in global hub mode
     if (!globalHubMode) {
@@ -1093,7 +1117,10 @@ public final class Sentry {
   }
 
   /**
-   * Runs the callback with a new current scope which gets dropped at the end
+   * Runs the callback with a new current scope which gets dropped at the end.
+   *
+   * <p>Unlike {@link Sentry#pushScope()} this also forks in global hub mode, since the previous
+   * scopes are always restored once the callback returns.
    *
    * @param callback the callback
    */
@@ -1104,6 +1131,9 @@ public final class Sentry {
   /**
    * Runs the callback with a new isolation scope which gets dropped at the end. Current scope is
    * also forked.
+   *
+   * <p>Unlike {@link Sentry#pushIsolationScope()} this also forks in global hub mode, since the
+   * previous scopes are always restored once the callback returns.
    *
    * @param callback the callback
    */

@@ -77,10 +77,7 @@ apiValidation {
             "sentry-samples-spring-boot-4-webflux",
             "sentry-samples-ktor-client",
             "sentry-uitest-android",
-            "sentry-uitest-android-benchmark",
             "sentry-uitest-android-critical",
-            "test-app-plain",
-            "test-app-sentry",
             "test-app-size",
             "sentry-samples-netflix-dgs",
             "sentry-samples-console-otlp",
@@ -92,7 +89,7 @@ apiValidation {
 
 allprojects {
     group = Config.Sentry.group
-    version = properties[Config.Sentry.versionNameProp].toString()
+    version = providers.gradleProperty(Config.Sentry.versionNameProp).get()
     description = Config.Sentry.description
     tasks {
         withType<Test>().configureEach {

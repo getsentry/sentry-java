@@ -27,13 +27,13 @@ jobs:
           submodules: 'recursive'
 
       - name: 'Set up Java: 17'
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -43,7 +43,7 @@ jobs:
         run: make assembleUiTests
 
       - name: Install SauceLabs CLI
-        uses: saucelabs/saucectl-run-action@bc81720eb01738d9c664b07fe42621bd0014283f # pin@v4.4.0
+        uses: saucelabs/saucectl-run-action@283660aa934c02723c497efa151d582a3acc5801 # pin@v4.5.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -75,7 +75,7 @@ jobs:
 
       - name: Install Sentry CLI
         if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
-        run: curl -sL https://sentry.io/get-cli/ | bash
+        uses: getsentry/action-setup-cli@70d7e587b84c2e78cf4d37cd33d7b74fb3729c1b # v1
 
       - name: Upload Replay Snapshots to Sentry
         # Skip on PRs from forks, which don't have access to the upload secret
