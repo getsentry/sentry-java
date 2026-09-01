@@ -1002,6 +1002,13 @@ public final class SentryClient implements ISentryClient {
 
     if (shouldApplyScopeData(transaction, hint)) {
       addScopeAttachmentsToHint(scope, hint);
+
+      if (profilingTraceData != null && scope != null) {
+        final @Nullable String scopeEnvironment = scope.getEnvironment();
+        if (scopeEnvironment != null) {
+          profilingTraceData.setEnvironment(scopeEnvironment);
+        }
+      }
     }
 
     options
@@ -1124,6 +1131,13 @@ public final class SentryClient implements ISentryClient {
     options
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing profile chunk: %s", profileChunk.getChunkId());
+
+    if (scope != null) {
+      final @Nullable String scopeEnvironment = scope.getEnvironment();
+      if (scopeEnvironment != null) {
+        profileChunk.setEnvironment(scopeEnvironment);
+      }
+    }
 
     @NotNull SentryId sentryId = profileChunk.getChunkId();
     final DebugMeta debugMeta = DebugMeta.buildDebugMeta(profileChunk.getDebugMeta(), options);

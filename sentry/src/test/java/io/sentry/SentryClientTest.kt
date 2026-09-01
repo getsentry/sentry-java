@@ -2039,6 +2039,43 @@ class SentryClientTest {
   }
 
   @Test
+  fun `captureProfileChunk applies the scope environment`() {
+    fixture.sentryOptions.environment = "options-env"
+    val scope = Scope(fixture.sentryOptions).apply { environment = "scope-env" }
+
+    fixture.getSut().captureProfileChunk(fixture.profileChunk, scope)
+
+    assertEquals("scope-env", fixture.profileChunk.environment)
+  }
+
+  @Test
+  fun `captureProfileChunk keeps the chunk environment when the scope has none`() {
+    val environmentAtCreation = fixture.profileChunk.environment
+
+    fixture.getSut().captureProfileChunk(fixture.profileChunk, Scope(fixture.sentryOptions))
+
+    assertEquals(environmentAtCreation, fixture.profileChunk.environment)
+  }
+
+  @Test
+  fun `captureTransaction applies the scope environment to the profiling trace data`() {
+    fixture.sentryOptions.environment = "options-env"
+    val scope = Scope(fixture.sentryOptions).apply { environment = "scope-env" }
+
+    fixture
+      .getSut()
+      .captureTransaction(
+        SentryTransaction(fixture.sentryTracer),
+        null,
+        scope,
+        null,
+        fixture.profilingTraceData,
+      )
+
+    assertEquals("scope-env", fixture.profilingTraceData.environment)
+  }
+
+  @Test
   fun `captureProfileChunk adds options proguard debug meta`() {
     fixture.sentryOptions.proguardUuid = "current-uuid"
 

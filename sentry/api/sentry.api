@@ -2157,6 +2157,7 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun hashCode ()I
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
+	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setSampledProfile (Ljava/lang/String;)V
 	public fun setSentryProfile (Lio/sentry/protocol/profiling/SentryProfile;)V
 	public fun setUnknown (Ljava/util/Map;)V
