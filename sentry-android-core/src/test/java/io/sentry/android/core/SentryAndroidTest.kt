@@ -46,7 +46,6 @@ import io.sentry.cache.PersistingScopeObserver.SCOPE_CACHE
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
 import io.sentry.cache.tape.QueueFile
 import io.sentry.protocol.Contexts
-import io.sentry.protocol.SentryId
 import io.sentry.spotlight.SpotlightIntegration
 import io.sentry.test.applyTestOptions
 import io.sentry.transport.NoOpEnvelopeCache
@@ -54,6 +53,7 @@ import io.sentry.util.StringUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.absolutePathString
@@ -437,20 +437,16 @@ class SentryAndroidTest {
       it.environment = "debug"
       options = it
     }
-    options.executorService.submit {
-      // verify we reset the persisted scope values after the init bg tasks have run to ensure
-      // clean state for a new process.
-      assertEquals(
-        emptyList<Breadcrumb>(),
-        options
-          .findPersistingScopeObserver()
-          ?.read(options, BREADCRUMBS_FILENAME, List::class.java),
-      )
-      assertEquals(
-        SentryId.EMPTY_ID.toString(),
-        options.findPersistingScopeObserver()?.read(options, REPLAY_FILENAME, String::class.java),
-      )
-    }
+    val scopeObserver = assertNotNull(options.findPersistingScopeObserver())
+    val resetAssertions =
+      options.executorService.submit {
+        // verify we reset the persisted scope values after the init bg tasks have run to ensure
+        // clean state for a new process.
+        assertEquals(
+          emptyList<Breadcrumb>(),
+          scopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java),
+        )
+      }
     Sentry.configureScope {
       it.setTransaction("TestActivity")
       it.addBreadcrumb(Breadcrumb.error("Error!"))
@@ -464,17 +460,30 @@ class SentryAndroidTest {
     // Execute all posted tasks
     Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-    // assert that persisted values have changed
-    assertEquals(
-      "TestActivity",
-      options
-        .findPersistingScopeObserver()
-        ?.read(options, TRANSACTION_FILENAME, String::class.java),
-    )
-    assertEquals(
-      "io.sentry.sample@1.1.0+220",
-      PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java),
-    )
+    // the reset assertions run on the executor, so nothing reports their AssertionError unless we
+    // observe the Future: without this the test would pass no matter what they found
+    try {
+      resetAssertions.get(2, TimeUnit.SECONDS)
+    } catch (e: ExecutionException) {
+      throw requireNotNull(e.cause)
+    }
+
+    // Both values are persisted from the Sentry executor, and nothing above joins it: the
+    // beforeSend callback we awaited runs on an earlier task in the same queue, so it flipping
+    // says nothing about the writes. Poll instead of reading once and racing them.
+    await
+      .withAlias("Persisted scope and options values are written from the Sentry executor")
+      .atMost(2, TimeUnit.SECONDS)
+      .untilAsserted {
+        assertEquals(
+          "TestActivity",
+          scopeObserver.read(options, TRANSACTION_FILENAME, String::class.java),
+        )
+        assertEquals(
+          "io.sentry.sample@1.1.0+220",
+          PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java),
+        )
+      }
   }
 
   @Test
