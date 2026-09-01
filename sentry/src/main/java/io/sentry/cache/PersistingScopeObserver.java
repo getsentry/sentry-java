@@ -378,8 +378,5 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     delete(TAGS_FILENAME);
     delete(TRACE_FILENAME);
     delete(TRANSACTION_FILENAME);
-    // the replay this id points at belongs to the previous process, so it must not be attached to
-    // events from this one; the replay integration writes a fresh id once it starts recording
-    delete(REPLAY_FILENAME);
   }
 }

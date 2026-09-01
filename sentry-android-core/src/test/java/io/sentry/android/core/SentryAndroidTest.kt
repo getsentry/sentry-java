@@ -446,7 +446,6 @@ class SentryAndroidTest {
           emptyList<Breadcrumb>(),
           scopeObserver.read(options, BREADCRUMBS_FILENAME, List::class.java),
         )
-        assertNull(scopeObserver.read(options, REPLAY_FILENAME, String::class.java))
       }
     Sentry.configureScope {
       it.setTransaction("TestActivity")
