@@ -24,6 +24,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.setPadding
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
@@ -158,7 +160,10 @@ class Nav2Activity : AppCompatActivity() {
     backStack.add(destination)
     try {
       navController.navigate(destination.id, destination.arguments)
-    } catch (e: RuntimeException) {
+    } catch (e: IllegalArgumentException) {
+      backStack.removeAt(backStack.lastIndex)
+      throw e
+    } catch (e: IllegalStateException) {
       backStack.removeAt(backStack.lastIndex)
       throw e
     }
@@ -214,9 +219,9 @@ class Nav2Activity : AppCompatActivity() {
       LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         layoutParams = matchParentParams()
-        setOnApplyWindowInsetsListener { view, insets ->
-          @Suppress("DEPRECATION")
-          view.setPadding(0, insets.systemWindowInsetTop, 0, insets.systemWindowInsetBottom)
+        ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+          val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+          view.setPadding(0, systemBars.top, 0, systemBars.bottom)
           insets
         }
       }
