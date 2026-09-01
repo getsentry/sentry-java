@@ -10,11 +10,9 @@ import android.os.ProfilingResult;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
-import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.profiling.ChunkRecord;
 import io.sentry.profiling.ProfileRecordingState;
-import io.sentry.protocol.SentryId;
 import java.io.File;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
@@ -79,26 +77,24 @@ public class PerfettoProfiler {
   }
 
   /**
-   * Starts a profiling session and returns the record of the chunk it produces, or null if the
-   * session could not be started. A failure the OS reports later is written to that record as it
-   * happens, so that whoever holds it knows that no trace file is coming.
+   * Starts a profiling session for the given chunk, and tells whether it could be started. A
+   * failure the OS reports later is written to that record as it happens, so that whoever holds it
+   * knows that no trace file is coming.
+   *
+   * <p>The caller creates the record, so that it can make the chunk known before profiling starts.
    */
-  @Nullable
-  ChunkRecord start(
-      final @NotNull SentryDate startTimestamp,
-      final @NotNull SentryId profilerId,
-      final long durationMs) {
+  boolean start(final @NotNull ChunkRecord chunkRecord, final long durationMs) {
     if (started) {
       logger.log(SentryLevel.WARNING, "PerfettoProfiler was already started.");
-      return null;
+      return false;
     }
     started = true;
 
     if (profilingManager == null) {
       logger.log(SentryLevel.WARNING, "ProfilingManager is not available.");
-      return null;
+      return false;
     }
-    this.chunkRecord = new ChunkRecord(profilerId, startTimestamp);
+    this.chunkRecord = chunkRecord;
 
     final Bundle params = new Bundle();
     params.putInt(KEY_DURATION_MS, (int) durationMs);
@@ -114,12 +110,12 @@ public class PerfettoProfiler {
           this::onProfilingResult);
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Failed to request Profiling.", e);
-      // Nobody holds the record, so a late result from the OS must not write into it
-      chunkRecord = null;
-      return null;
+      // No profiling was requested, so a late result from the OS must not write into the record
+      this.chunkRecord = null;
+      return false;
     }
 
-    return chunkRecord;
+    return true;
   }
 
   /**

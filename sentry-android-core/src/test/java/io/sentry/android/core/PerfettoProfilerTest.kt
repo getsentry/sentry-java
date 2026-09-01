@@ -62,8 +62,10 @@ class PerfettoProfilerTest {
     return PerfettoProfiler(mockLogger, executor, profilingManager)
   }
 
-  private fun PerfettoProfiler.startSession(): ChunkRecord? =
-    start(SentryNanotimeDate(), profilerId, 60000)
+  private fun PerfettoProfiler.startSession(): ChunkRecord? {
+    val chunkRecord = ChunkRecord(profilerId, SentryNanotimeDate())
+    return if (start(chunkRecord, 60000)) chunkRecord else null
+  }
 
   private fun createTraceFile(): File {
     return File.createTempFile("test-trace", ".pftrace").apply {

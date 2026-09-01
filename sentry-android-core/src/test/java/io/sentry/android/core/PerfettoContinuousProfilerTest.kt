@@ -66,11 +66,9 @@ class PerfettoContinuousProfilerTest {
 
     init {
       whenever(mockTracesSampler.sampleSessionProfile(any())).thenReturn(true)
-      // The profiler id is created inside PerfettoContinuousProfiler, so it is read from the call
-      whenever(mockPerfettoProfiler.start(any(), any(), any())).thenAnswer { invocation ->
-        ChunkRecord(invocation.getArgument(1), invocation.getArgument(0)).also {
-          startedChunks.add(it)
-        }
+      whenever(mockPerfettoProfiler.start(any(), any())).thenAnswer { invocation ->
+        startedChunks.add(invocation.getArgument(0))
+        true
       }
       doAnswer { invocation ->
           val listener = invocation.getArgument<java.util.function.Consumer<java.io.File?>>(0)
@@ -439,6 +437,28 @@ class PerfettoContinuousProfilerTest {
       ProfileRecordingState.RECORDED,
       profiler.getProfileRecordingState(profilerId, duringFailedChunk, duringNextChunk),
       "a window a recorded chunk covers in part keeps its profiler id",
+    )
+  }
+
+  @Test
+  fun `getProfileRecordingState knows the chunk while it is still starting`() {
+    val profiler = fixture.getSut()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+
+    var stateWhileStarting: ProfileRecordingState? = null
+    whenever(fixture.mockPerfettoProfiler.start(any(), any())).thenAnswer { invocation ->
+      val chunk = invocation.getArgument<ChunkRecord>(0)
+      val now = fixture.options.dateProvider.now()
+      stateWhileStarting = profiler.getProfileRecordingState(chunk.profilerId, now, now)
+      true
+    }
+    // The chunk timer fires, so the first chunk ends and the next one starts
+    fixture.executor.runAll()
+
+    assertEquals(
+      ProfileRecordingState.UNKNOWN,
+      stateWhileStarting,
+      "a transaction finishing while the chunk starts must not lose its profiler id",
     )
   }
 

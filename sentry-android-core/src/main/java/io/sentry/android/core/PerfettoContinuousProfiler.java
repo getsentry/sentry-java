@@ -295,6 +295,12 @@ public class PerfettoContinuousProfiler
     }
   }
 
+  private void removeChunkRecord(final @NotNull ChunkRecord chunk) {
+    try (final @NotNull ISentryLifecycleToken ignored = chunkHistoryLock.acquire()) {
+      chunkHistory.remove(chunk);
+    }
+  }
+
   /**
    * Ends the running chunk, which is always the newest one, as a chunk only starts once the one
    * before it ended. Returns null if there is none, or if it already ended.
@@ -366,14 +372,19 @@ public class PerfettoContinuousProfiler
       profilerId = new SentryId();
     }
 
-    final @Nullable ChunkRecord chunkRecord =
-        perfettoProfiler.start(startProfileChunkTimestamp, profilerId, MAX_CHUNK_DURATION_MILLIS);
-    if (chunkRecord == null) {
+    // The chunk is known before profiling starts, so that a transaction finishing right after the
+    // request cannot miss the chunk it ran in and drop its profiler id
+    final @NotNull ChunkRecord chunkRecord =
+        new ChunkRecord(profilerId, startProfileChunkTimestamp);
+    addChunkRecord(chunkRecord);
+
+    if (!perfettoProfiler.start(chunkRecord, MAX_CHUNK_DURATION_MILLIS)) {
+      // No chunk ran, so the record is dropped rather than kept as a failure: it would take a slot
+      // of the history away from the chunks that did run
+      removeChunkRecord(chunkRecord);
       profilerId = SentryId.EMPTY_ID;
       chunkId = SentryId.EMPTY_ID;
-      logger.log(
-          SentryLevel.ERROR,
-          "Failed to start Perfetto profiling. PerfettoProfiler.start() returned no chunk.");
+      logger.log(SentryLevel.ERROR, "Failed to start Perfetto profiling.");
       return;
     }
 
@@ -382,7 +393,6 @@ public class PerfettoContinuousProfiler
       chunkId = new SentryId();
     }
 
-    addChunkRecord(chunkRecord);
     chunkMeasurements.start(performanceCollector, chunkId.toString());
 
     try {
