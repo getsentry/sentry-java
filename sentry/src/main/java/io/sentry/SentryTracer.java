@@ -672,14 +672,17 @@ public final class SentryTracer implements ITransaction {
     try (final @NotNull ISentryLifecycleToken ignored = tracerLock.acquire()) {
       if (baggage.isMutable()) {
         final AtomicReference<SentryId> replayId = new AtomicReference<>();
+        final AtomicReference<String> environment = new AtomicReference<>();
         scopes.configureScope(
             scope -> {
               replayId.set(scope.getReplayId());
+              environment.set(scope.getEnvironment());
             });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
             replayId.get(),
             scopes.getOptions(),
+            environment.get(),
             this.getSamplingDecision(),
             getName(),
             getTransactionNameSource());

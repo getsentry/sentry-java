@@ -231,14 +231,17 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (baggage != null && baggage.isMutable()) {
         final AtomicReference<SentryId> replayIdAtomicReference = new AtomicReference<>();
+        final AtomicReference<String> environmentAtomicReference = new AtomicReference<>();
         scopes.configureScope(
             scope -> {
               replayIdAtomicReference.set(scope.getReplayId());
+              environmentAtomicReference.set(scope.getEnvironment());
             });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
             replayIdAtomicReference.get(),
             scopes.getOptions(),
+            environmentAtomicReference.get(),
             this.getSamplingDecision(),
             getTransactionName(),
             getTransactionNameSource());

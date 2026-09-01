@@ -514,13 +514,14 @@ public final class Baggage {
       final @NotNull SentryId traceId,
       final @Nullable SentryId replayId,
       final @NotNull SentryOptions sentryOptions,
+      final @Nullable String scopeEnvironment,
       final @Nullable TracesSamplingDecision samplingDecision,
       final @Nullable String transactionName,
       final @Nullable TransactionNameSource transactionNameSource) {
     setTraceId(traceId.toString());
     setPublicKey(sentryOptions.retrieveParsedDsn().getPublicKey());
     setRelease(sentryOptions.getRelease());
-    setEnvironment(sentryOptions.getEnvironment());
+    setEnvironment(scopeEnvironment != null ? scopeEnvironment : sentryOptions.getEnvironment());
     setTransaction(isHighQualityTransactionName(transactionNameSource) ? transactionName : null);
     if (replayId != null && !SentryId.EMPTY_ID.equals(replayId)) {
       setReplayId(replayId.toString());
@@ -557,7 +558,8 @@ public final class Baggage {
     setTraceId(propagationContext.getTraceId().toString());
     setPublicKey(options.retrieveParsedDsn().getPublicKey());
     setRelease(options.getRelease());
-    setEnvironment(options.getEnvironment());
+    final @Nullable String scopeEnvironment = scope.getEnvironment();
+    setEnvironment(scopeEnvironment != null ? scopeEnvironment : options.getEnvironment());
     if (!SentryId.EMPTY_ID.equals(replayId)) {
       setReplayId(replayId.toString());
     }
