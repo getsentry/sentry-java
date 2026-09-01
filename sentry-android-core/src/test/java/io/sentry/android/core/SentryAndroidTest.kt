@@ -464,7 +464,7 @@ class SentryAndroidTest {
     // the reset assertions run on the executor, so nothing reports their AssertionError unless we
     // observe the Future: without this the test would pass no matter what they found
     try {
-      resetAssertions.get(30, TimeUnit.SECONDS)
+      resetAssertions.get(2, TimeUnit.SECONDS)
     } catch (e: ExecutionException) {
       throw requireNotNull(e.cause)
     }
