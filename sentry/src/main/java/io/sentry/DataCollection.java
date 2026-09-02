@@ -23,7 +23,8 @@ public final class DataCollection {
     this(true);
   }
 
-  DataCollection(final boolean overridden) {
+  @ApiStatus.Internal
+  public DataCollection(final boolean overridden) {
     this.overridden = overridden;
   }
 
@@ -81,7 +82,7 @@ public final class DataCollection {
   }
 
   @ApiStatus.Internal
-  boolean isExplicitlyConfigured() {
+  public boolean isExplicitlyConfigured() {
     return overridden
         || userInfo != null
         || cookies != null

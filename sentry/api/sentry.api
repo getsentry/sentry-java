@@ -386,6 +386,7 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 
 public final class io/sentry/DataCollection {
 	public fun <init> ()V
+	public fun <init> (Z)V
 	public fun getCookies ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getDatabaseQueryData ()Ljava/lang/Boolean;
 	public fun getGraphql ()Lio/sentry/DataCollection$Graphql;
@@ -393,6 +394,7 @@ public final class io/sentry/DataCollection {
 	public fun getHttpHeaders ()Lio/sentry/DataCollection$HttpHeaders;
 	public fun getUrlQueryParams ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getUserInfo ()Ljava/lang/Boolean;
+	public fun isExplicitlyConfigured ()Z
 	public fun setCookies (Lio/sentry/KeyValueCollectionBehavior;)V
 	public fun setDatabaseQueryData (Z)V
 	public fun setHttpBodies (Ljava/util/Set;)V

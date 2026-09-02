@@ -3,8 +3,11 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
+import io.sentry.DataCollection;
+import io.sentry.HttpBodyType;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
+import io.sentry.KeyValueCollectionBehavior;
 import io.sentry.ProfileLifecycle;
 import io.sentry.ScreenshotStrategyType;
 import io.sentry.SentryFeedbackOptions;
@@ -16,8 +19,10 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -101,6 +106,22 @@ final class ManifestMetadataReader {
   static final String COLLECT_EXTERNAL_STORAGE_CONTEXT = "io.sentry.external-storage-context";
 
   static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
+
+  static final String DATA_COLLECTION_USER_INFO = "io.sentry.data-collection.user-info";
+  static final String DATA_COLLECTION_HTTP_BODIES = "io.sentry.data-collection.http-bodies";
+  static final String DATA_COLLECTION_COOKIES = "io.sentry.data-collection.cookies";
+  static final String DATA_COLLECTION_HTTP_REQUEST_HEADERS =
+      "io.sentry.data-collection.http-headers.request";
+  static final String DATA_COLLECTION_HTTP_RESPONSE_HEADERS =
+      "io.sentry.data-collection.http-headers.response";
+  static final String DATA_COLLECTION_URL_QUERY_PARAMS =
+      "io.sentry.data-collection.url-query-params";
+  static final String DATA_COLLECTION_GRAPHQL_DOCUMENT =
+      "io.sentry.data-collection.graphql.document";
+  static final String DATA_COLLECTION_GRAPHQL_VARIABLES =
+      "io.sentry.data-collection.graphql.variables";
+  static final String DATA_COLLECTION_DATABASE_QUERY_DATA =
+      "io.sentry.data-collection.database-query-data";
 
   static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
 
@@ -761,6 +782,12 @@ final class ManifestMetadataReader {
         options.setEnableAnrFingerprinting(
             readBool(
                 metadata, logger, ENABLE_ANR_FINGERPRINTING, options.isEnableAnrFingerprinting()));
+
+        final @Nullable DataCollection dataCollection =
+            readDataCollection(metadata, logger, options.getDataCollection());
+        if (dataCollection != null) {
+          mergeDataCollection(options.getDataCollection(), dataCollection);
+        }
       }
       options
           .getLogger()
@@ -771,6 +798,152 @@ final class ManifestMetadataReader {
           .log(
               SentryLevel.ERROR, "Failed to read configuration from android manifest metadata.", e);
     }
+  }
+
+  private static @Nullable DataCollection readDataCollection(
+      final @NotNull Bundle metadata,
+      final @NotNull ILogger logger,
+      final @NotNull DataCollection currentDataCollection) {
+    final @NotNull DataCollection dataCollection = new DataCollection(false);
+
+    if (metadata.containsKey(DATA_COLLECTION_USER_INFO)) {
+      dataCollection.setUserInfo(readBool(metadata, logger, DATA_COLLECTION_USER_INFO, false));
+    }
+
+    if (metadata.containsKey(DATA_COLLECTION_HTTP_BODIES)) {
+      dataCollection.setHttpBodies(readHttpBodyTypes(metadata, logger));
+    }
+
+    final @Nullable KeyValueCollectionBehavior cookies =
+        readKeyValueCollectionBehavior(
+            metadata, logger, DATA_COLLECTION_COOKIES, currentDataCollection.getCookies());
+    if (cookies != null) {
+      dataCollection.setCookies(cookies);
+    }
+
+    final @Nullable KeyValueCollectionBehavior requestHeaders =
+        readKeyValueCollectionBehavior(
+            metadata,
+            logger,
+            DATA_COLLECTION_HTTP_REQUEST_HEADERS,
+            currentDataCollection.getHttpHeaders().getRequest());
+    if (requestHeaders != null) {
+      dataCollection.getHttpHeaders().setRequest(requestHeaders);
+    }
+
+    final @Nullable KeyValueCollectionBehavior responseHeaders =
+        readKeyValueCollectionBehavior(
+            metadata,
+            logger,
+            DATA_COLLECTION_HTTP_RESPONSE_HEADERS,
+            currentDataCollection.getHttpHeaders().getResponse());
+    if (responseHeaders != null) {
+      dataCollection.getHttpHeaders().setResponse(responseHeaders);
+    }
+
+    final @Nullable KeyValueCollectionBehavior urlQueryParams =
+        readKeyValueCollectionBehavior(
+            metadata,
+            logger,
+            DATA_COLLECTION_URL_QUERY_PARAMS,
+            currentDataCollection.getUrlQueryParams());
+    if (urlQueryParams != null) {
+      dataCollection.setUrlQueryParams(urlQueryParams);
+    }
+
+    if (metadata.containsKey(DATA_COLLECTION_GRAPHQL_DOCUMENT)) {
+      dataCollection
+          .getGraphql()
+          .setDocument(readBool(metadata, logger, DATA_COLLECTION_GRAPHQL_DOCUMENT, false));
+    }
+
+    if (metadata.containsKey(DATA_COLLECTION_GRAPHQL_VARIABLES)) {
+      dataCollection
+          .getGraphql()
+          .setVariables(readBool(metadata, logger, DATA_COLLECTION_GRAPHQL_VARIABLES, false));
+    }
+
+    if (metadata.containsKey(DATA_COLLECTION_DATABASE_QUERY_DATA)) {
+      dataCollection.setDatabaseQueryData(
+          readBool(metadata, logger, DATA_COLLECTION_DATABASE_QUERY_DATA, false));
+    }
+
+    return dataCollection.isExplicitlyConfigured() ? dataCollection : null;
+  }
+
+  private static void mergeDataCollection(
+      final @NotNull DataCollection target, final @NotNull DataCollection source) {
+    if (source.getUserInfo() != null) {
+      target.setUserInfo(source.getUserInfo());
+    }
+    if (source.getHttpBodies() != null) {
+      target.setHttpBodies(source.getHttpBodies());
+    }
+    if (source.getCookies() != null) {
+      target.setCookies(source.getCookies());
+    }
+    if (source.getHttpHeaders().getRequest() != null) {
+      target.getHttpHeaders().setRequest(source.getHttpHeaders().getRequest());
+    }
+    if (source.getHttpHeaders().getResponse() != null) {
+      target.getHttpHeaders().setResponse(source.getHttpHeaders().getResponse());
+    }
+    if (source.getUrlQueryParams() != null) {
+      target.setUrlQueryParams(source.getUrlQueryParams());
+    }
+    if (source.getGraphql().getDocument() != null) {
+      target.getGraphql().setDocument(source.getGraphql().getDocument());
+    }
+    if (source.getGraphql().getVariables() != null) {
+      target.getGraphql().setVariables(source.getGraphql().getVariables());
+    }
+    if (source.getDatabaseQueryData() != null) {
+      target.setDatabaseQueryData(source.getDatabaseQueryData());
+    }
+  }
+
+  private static @NotNull Set<HttpBodyType> readHttpBodyTypes(
+      final @NotNull Bundle metadata, final @NotNull ILogger logger) {
+    final @Nullable List<String> bodyTypes =
+        readList(metadata, logger, DATA_COLLECTION_HTTP_BODIES);
+    if (bodyTypes == null || (bodyTypes.size() == 1 && bodyTypes.get(0).isEmpty())) {
+      return Collections.emptySet();
+    }
+
+    final @NotNull Set<HttpBodyType> result = EnumSet.noneOf(HttpBodyType.class);
+    for (final String bodyType : bodyTypes) {
+      result.add(HttpBodyType.valueOf(bodyType.toUpperCase(Locale.ROOT)));
+    }
+    return result;
+  }
+
+  private static @Nullable KeyValueCollectionBehavior readKeyValueCollectionBehavior(
+      final @NotNull Bundle metadata,
+      final @NotNull ILogger logger,
+      final @NotNull String key,
+      final @Nullable KeyValueCollectionBehavior currentBehavior) {
+    final @NotNull String modeKey = key + ".mode";
+    final @NotNull String termsKey = key + ".terms";
+    if (!metadata.containsKey(modeKey) && !metadata.containsKey(termsKey)) {
+      return null;
+    }
+
+    final @NotNull KeyValueCollectionBehavior behavior = new KeyValueCollectionBehavior();
+    if (currentBehavior != null) {
+      behavior.setMode(currentBehavior.getMode());
+      behavior.setTerms(currentBehavior.getTerms());
+    }
+    if (metadata.containsKey(modeKey)) {
+      final @Nullable String mode = readString(metadata, logger, modeKey, null);
+      if (mode != null) {
+        behavior.setMode(KeyValueCollectionBehavior.Mode.valueOf(mode.toUpperCase(Locale.ROOT)));
+      }
+    }
+    if (metadata.containsKey(termsKey)) {
+      final @Nullable List<String> terms = readList(metadata, logger, termsKey);
+      behavior.setTerms(terms == null ? Collections.<String>emptyList() : terms);
+    }
+    return behavior;
   }
 
   private static boolean readBool(

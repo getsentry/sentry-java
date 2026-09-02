@@ -4,8 +4,11 @@ import android.content.Context
 import android.os.Bundle
 import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.FilterString
+import io.sentry.HttpBodyType
 import io.sentry.ILogger
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
@@ -1407,6 +1410,139 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertTrue(fixture.options.isSendDefaultPii)
+  }
+
+  @Test
+  fun `applyMetadata preserves legacy data collection when metadata is absent`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isFalse()
+  }
+
+  @Test
+  fun `applyMetadata reads data collection options`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.DATA_COLLECTION_USER_INFO to false,
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_BODIES to "incoming_request,outgoing_response",
+        ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".mode" to "deny_list",
+        ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".terms" to "authorization,session",
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_REQUEST_HEADERS + ".mode" to "allow_list",
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_REQUEST_HEADERS + ".terms" to
+          "x-request-id,content-type",
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_RESPONSE_HEADERS + ".mode" to "off",
+        ManifestMetadataReader.DATA_COLLECTION_URL_QUERY_PARAMS + ".terms" to "search",
+        ManifestMetadataReader.DATA_COLLECTION_GRAPHQL_DOCUMENT to false,
+        ManifestMetadataReader.DATA_COLLECTION_GRAPHQL_VARIABLES to true,
+        ManifestMetadataReader.DATA_COLLECTION_DATABASE_QUERY_DATA to false,
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    val dataCollection = fixture.options.dataCollection
+    assertThat(dataCollection.userInfo).isFalse()
+    assertThat(dataCollection.httpBodies)
+      .containsExactly(HttpBodyType.INCOMING_REQUEST, HttpBodyType.OUTGOING_RESPONSE)
+    assertThat(dataCollection.cookies)
+      .isEqualTo(KeyValueCollectionBehavior.denyList("authorization", "session"))
+    assertThat(dataCollection.httpHeaders.request)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("x-request-id", "content-type"))
+    assertThat(dataCollection.httpHeaders.response).isEqualTo(KeyValueCollectionBehavior.off())
+    assertThat(dataCollection.urlQueryParams)
+      .isEqualTo(KeyValueCollectionBehavior.denyList("search"))
+    assertThat(dataCollection.graphql.document).isFalse()
+    assertThat(dataCollection.graphql.variables).isTrue()
+    assertThat(dataCollection.databaseQueryData).isFalse()
+  }
+
+  @Test
+  fun `applyMetadata only overrides explicitly configured data collection options`() {
+    val dataCollection =
+      fixture.options.dataCollection.apply {
+        setUserInfo(true)
+        setHttpBodies(setOf(HttpBodyType.OUTGOING_REQUEST))
+        cookies = KeyValueCollectionBehavior.allowList("existing-cookie")
+        httpHeaders.request = KeyValueCollectionBehavior.denyList("existing-request-header")
+        httpHeaders.response = KeyValueCollectionBehavior.allowList("existing-response-header")
+        urlQueryParams = KeyValueCollectionBehavior.off()
+        graphql.setDocument(true)
+        graphql.setVariables(false)
+        setDatabaseQueryData(true)
+      }
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.DATA_COLLECTION_USER_INFO to false,
+        ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".terms" to "manifest-cookie",
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_REQUEST_HEADERS + ".mode" to "allow_list",
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollection).isSameInstanceAs(dataCollection)
+    assertThat(dataCollection.userInfo).isFalse()
+    assertThat(dataCollection.httpBodies).containsExactly(HttpBodyType.OUTGOING_REQUEST)
+    assertThat(dataCollection.cookies)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("manifest-cookie"))
+    assertThat(dataCollection.httpHeaders.request)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("existing-request-header"))
+    assertThat(dataCollection.httpHeaders.response)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("existing-response-header"))
+    assertThat(dataCollection.urlQueryParams).isEqualTo(KeyValueCollectionBehavior.off())
+    assertThat(dataCollection.graphql.document).isTrue()
+    assertThat(dataCollection.graphql.variables).isFalse()
+    assertThat(dataCollection.databaseQueryData).isTrue()
+  }
+
+  @Test
+  fun `applyMetadata reads empty HTTP bodies as disabled`() {
+    val bundle = bundleOf(ManifestMetadataReader.DATA_COLLECTION_HTTP_BODIES to "")
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollection.httpBodies).isEmpty()
+  }
+
+  @Test
+  fun `applyMetadata data collection takes precedence over send default pii`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.SEND_DEFAULT_PII to false,
+        ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".mode" to "off",
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isSendDefaultPii).isFalse()
+    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isTrue()
+    assertThat(fixture.options.dataCollectionResolver.isUserInfo).isTrue()
+    assertThat(fixture.options.dataCollectionResolver.cookies)
+      .isEqualTo(KeyValueCollectionBehavior.off())
+  }
+
+  @Test
+  fun `applyMetadata ignores invalid data collection body type`() {
+    val bundle = bundleOf(ManifestMetadataReader.DATA_COLLECTION_HTTP_BODIES to "invalid")
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isFalse()
+  }
+
+  @Test
+  fun `applyMetadata ignores invalid data collection mode`() {
+    val bundle = bundleOf(ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".mode" to "invalid")
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isFalse()
   }
 
   @Test
