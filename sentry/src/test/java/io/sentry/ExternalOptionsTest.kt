@@ -33,7 +33,7 @@ class ExternalOptionsTest {
         "data-collection.http-headers.request.mode=allow_list",
         "data-collection.http-headers.request.terms=x-request-id,content-type",
         "data-collection.http-headers.response.mode=off",
-        "data-collection.query-params.terms=search",
+        "data-collection.url-query-params.terms=search",
         "data-collection.graphql.document=false",
         "data-collection.graphql.variables=true",
         "data-collection.database-query-data=false",

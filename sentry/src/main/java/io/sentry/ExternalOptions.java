@@ -282,7 +282,7 @@ public final class ExternalOptions {
     }
 
     final KeyValueCollectionBehavior queryParams =
-        parseKeyValueCollectionBehavior(propertiesProvider, "data-collection.query-params");
+        parseKeyValueCollectionBehavior(propertiesProvider, "data-collection.url-query-params");
     if (queryParams != null) {
       dataCollection.setUrlQueryParams(queryParams);
     }
