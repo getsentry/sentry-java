@@ -55,6 +55,7 @@ public final class ExternalOptions {
 
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
+  private @Nullable DataCollection dataCollection;
   private @Nullable Boolean enableBackpressureHandling;
   private @Nullable Boolean enableDatabaseTransactionTracing;
   private @Nullable Boolean enableCacheTracing;
@@ -157,6 +158,7 @@ public final class ExternalOptions {
 
     options.setSendModules(propertiesProvider.getBooleanProperty("send-modules"));
     options.setSendDefaultPii(propertiesProvider.getBooleanProperty("send-default-pii"));
+    options.setDataCollection(parseDataCollection(propertiesProvider));
 
     options.setIgnoredCheckIns(propertiesProvider.getListOrNull("ignored-checkins"));
     options.setIgnoredTransactions(propertiesProvider.getListOrNull("ignored-transactions"));
@@ -244,6 +246,101 @@ public final class ExternalOptions {
     }
 
     return options;
+  }
+
+  private static @Nullable DataCollection parseDataCollection(
+      final @NotNull PropertiesProvider propertiesProvider) {
+    final DataCollection dataCollection = new DataCollection(false);
+
+    final Boolean userInfo = propertiesProvider.getBooleanProperty("data-collection.user-info");
+    if (userInfo != null) {
+      dataCollection.setUserInfo(userInfo);
+    }
+
+    final Set<HttpBodyType> httpBodies = parseHttpBodies(propertiesProvider);
+    if (httpBodies != null) {
+      dataCollection.setHttpBodies(httpBodies);
+    }
+
+    final KeyValueCollectionBehavior cookies =
+        parseKeyValueCollectionBehavior(propertiesProvider, "data-collection.cookies");
+    if (cookies != null) {
+      dataCollection.setCookies(cookies);
+    }
+
+    final KeyValueCollectionBehavior requestHeaders =
+        parseKeyValueCollectionBehavior(propertiesProvider, "data-collection.http-headers.request");
+    if (requestHeaders != null) {
+      dataCollection.getHttpHeaders().setRequest(requestHeaders);
+    }
+
+    final KeyValueCollectionBehavior responseHeaders =
+        parseKeyValueCollectionBehavior(
+            propertiesProvider, "data-collection.http-headers.response");
+    if (responseHeaders != null) {
+      dataCollection.getHttpHeaders().setResponse(responseHeaders);
+    }
+
+    final KeyValueCollectionBehavior queryParams =
+        parseKeyValueCollectionBehavior(propertiesProvider, "data-collection.url-query-params");
+    if (queryParams != null) {
+      dataCollection.setUrlQueryParams(queryParams);
+    }
+
+    final Boolean graphqlDocument =
+        propertiesProvider.getBooleanProperty("data-collection.graphql.document");
+    if (graphqlDocument != null) {
+      dataCollection.getGraphql().setDocument(graphqlDocument);
+    }
+
+    final Boolean graphqlVariables =
+        propertiesProvider.getBooleanProperty("data-collection.graphql.variables");
+    if (graphqlVariables != null) {
+      dataCollection.getGraphql().setVariables(graphqlVariables);
+    }
+
+    final Boolean databaseQueryData =
+        propertiesProvider.getBooleanProperty("data-collection.database-query-data");
+    if (databaseQueryData != null) {
+      dataCollection.setDatabaseQueryData(databaseQueryData);
+    }
+
+    return dataCollection.isExplicitlyConfigured() ? dataCollection : null;
+  }
+
+  private static @Nullable Set<HttpBodyType> parseHttpBodies(
+      final @NotNull PropertiesProvider propertiesProvider) {
+    final List<String> bodyTypes = propertiesProvider.getListOrNull("data-collection.http-bodies");
+    if (bodyTypes == null) {
+      return null;
+    }
+    if (bodyTypes.size() == 1 && bodyTypes.get(0).isEmpty()) {
+      return Collections.emptySet();
+    }
+
+    final Set<HttpBodyType> httpBodies = EnumSet.noneOf(HttpBodyType.class);
+    for (final String bodyType : bodyTypes) {
+      httpBodies.add(HttpBodyType.valueOf(bodyType.toUpperCase(Locale.ROOT)));
+    }
+    return httpBodies;
+  }
+
+  private static @Nullable KeyValueCollectionBehavior parseKeyValueCollectionBehavior(
+      final @NotNull PropertiesProvider propertiesProvider, final @NotNull String property) {
+    final String modeValue = propertiesProvider.getProperty(property + ".mode");
+    final List<String> terms = propertiesProvider.getListOrNull(property + ".terms");
+    if (modeValue == null && terms == null) {
+      return null;
+    }
+
+    final KeyValueCollectionBehavior behavior = new KeyValueCollectionBehavior();
+    if (modeValue != null) {
+      behavior.setMode(KeyValueCollectionBehavior.Mode.valueOf(modeValue.toUpperCase(Locale.ROOT)));
+    }
+    if (terms != null) {
+      behavior.setTerms(terms);
+    }
+    return behavior;
   }
 
   public @Nullable String getDsn() {
@@ -499,6 +596,14 @@ public final class ExternalOptions {
 
   public void setSendDefaultPii(final @Nullable Boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
+  }
+
+  public @Nullable DataCollection getDataCollection() {
+    return dataCollection;
+  }
+
+  public void setDataCollection(final @Nullable DataCollection dataCollection) {
+    this.dataCollection = dataCollection;
   }
 
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {

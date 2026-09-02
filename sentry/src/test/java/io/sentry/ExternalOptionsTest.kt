@@ -1,9 +1,11 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.config.PropertiesProviderFactory
 import java.lang.RuntimeException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -15,6 +17,98 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
 class ExternalOptionsTest {
+  @Test
+  fun `does not create data collection when external properties are absent`() {
+    withPropertiesFile { assertThat(it.dataCollection).isNull() }
+  }
+
+  @Test
+  fun `creates data collection using external properties`() {
+    withPropertiesFile(
+      listOf(
+        "data-collection.user-info=false",
+        "data-collection.http-bodies=incoming_request,outgoing_response",
+        "data-collection.cookies.mode=deny_list",
+        "data-collection.cookies.terms=authorization,session",
+        "data-collection.http-headers.request.mode=allow_list",
+        "data-collection.http-headers.request.terms=x-request-id,content-type",
+        "data-collection.http-headers.response.mode=off",
+        "data-collection.url-query-params.terms=search",
+        "data-collection.graphql.document=false",
+        "data-collection.graphql.variables=true",
+        "data-collection.database-query-data=false",
+      )
+    ) { options ->
+      val dataCollection = options.dataCollection
+
+      assertThat(dataCollection).isNotNull()
+      assertThat(dataCollection!!.userInfo).isFalse()
+      assertThat(dataCollection.httpBodies)
+        .containsExactly(HttpBodyType.INCOMING_REQUEST, HttpBodyType.OUTGOING_RESPONSE)
+      assertThat(dataCollection.cookies)
+        .isEqualTo(KeyValueCollectionBehavior.denyList("authorization", "session"))
+      assertThat(dataCollection.httpHeaders.request)
+        .isEqualTo(KeyValueCollectionBehavior.allowList("x-request-id", "content-type"))
+      assertThat(dataCollection.httpHeaders.response).isEqualTo(KeyValueCollectionBehavior.off())
+      assertThat(dataCollection.urlQueryParams)
+        .isEqualTo(KeyValueCollectionBehavior.denyList("search"))
+      assertThat(dataCollection.graphql.document).isFalse()
+      assertThat(dataCollection.graphql.variables).isTrue()
+      assertThat(dataCollection.databaseQueryData).isFalse()
+    }
+  }
+
+  @Test
+  fun `empty HTTP bodies externally disables body collection`() {
+    withPropertiesFile("data-collection.http-bodies=") { options ->
+      assertThat(options.dataCollection).isNotNull()
+      assertThat(options.dataCollection!!.httpBodies).isEmpty()
+    }
+  }
+
+  @Test
+  fun `invalid HTTP body type fails external parsing`() {
+    assertFailsWith<IllegalArgumentException> {
+      withPropertiesFile("data-collection.http-bodies=invalid") {}
+    }
+  }
+
+  @Test
+  fun `invalid collection mode fails external parsing`() {
+    assertFailsWith<IllegalArgumentException> {
+      withPropertiesFile("data-collection.cookies.mode=invalid") {}
+    }
+  }
+
+  @Test
+  fun `data collection booleans use default external parsing`() {
+    withPropertiesFile(
+      listOf(
+        "data-collection.user-info=invalid",
+        "data-collection.graphql.document=invalid",
+        "data-collection.graphql.variables=invalid",
+        "data-collection.database-query-data=invalid",
+      )
+    ) { options ->
+      assertThat(options.dataCollection!!.userInfo).isFalse()
+      assertThat(options.dataCollection!!.graphql.document).isFalse()
+      assertThat(options.dataCollection!!.graphql.variables).isFalse()
+      assertThat(options.dataCollection!!.databaseQueryData).isFalse()
+    }
+  }
+
+  @Test
+  fun `external data collection takes precedence over external send default PII`() {
+    withPropertiesFile(listOf("send-default-pii=false", "data-collection.cookies.mode=off")) {
+      externalOptions ->
+      val options = SentryOptions().apply { merge(externalOptions) }
+
+      assertThat(options.isSendDefaultPii).isFalse()
+      assertThat(options.dataCollectionResolver.isUserInfo).isTrue()
+      assertThat(options.dataCollectionResolver.cookies).isEqualTo(KeyValueCollectionBehavior.off())
+    }
+  }
+
   @Test
   fun `creates options with proxy using external properties`() {
     withPropertiesFile(
