@@ -18,6 +18,7 @@
   - `globalHubMode` is enabled by default on Android, where tags, extras, contexts and level set inside the callback were silently dropped
   - Scopes that are explicitly made current, e.g. via `Sentry.setCurrentScopes` or the `SentryContext` coroutine integration, are now also honoured when `globalHubMode` is enabled
   - `Sentry.pushScope`, `Sentry.pushIsolationScope` and `Sentry.popScope` remain no-ops when `globalHubMode` is enabled
+- Drop the `profiler_id` from transactions and spans when no Perfetto profile covers them, e.g. when Android's `ProfilingManager` rate limits the profiling request ([#6015](https://github.com/getsentry/sentry-java/pull/6015))
 
 ### Internal
 

@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.profiling.ProfileRecordingState;
 import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -42,5 +43,13 @@ public final class NoOpContinuousProfiler implements IContinuousProfiler {
   @Override
   public @NotNull SentryId getChunkId() {
     return SentryId.EMPTY_ID;
+  }
+
+  @Override
+  public @NotNull ProfileRecordingState getProfileRecordingState(
+      final @NotNull SentryId profilerId,
+      final @NotNull SentryDate startTime,
+      final @NotNull SentryDate endTime) {
+    return ProfileRecordingState.UNKNOWN;
   }
 }

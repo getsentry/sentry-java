@@ -21,6 +21,7 @@ public final class io/sentry/asyncprofiler/profiling/JavaContinuousProfiler : io
 	public fun <init> (Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/ISentryExecutorService;)V
 	public fun close (Z)V
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
+	public fun getProfileRecordingState (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Lio/sentry/SentryDate;)Lio/sentry/profiling/ProfileRecordingState;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRootSpanCounter ()I
 	public fun isRunning ()Z

@@ -44,6 +44,7 @@ public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IConti
 	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun close (Z)V
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
+	public fun getProfileRecordingState (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Lio/sentry/SentryDate;)Lio/sentry/profiling/ProfileRecordingState;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRootSpanCounter ()I
 	public fun isRunning ()Z
@@ -371,6 +372,7 @@ public class io/sentry/android/core/PerfettoContinuousProfiler : io/sentry/ICont
 	public fun <init> (Lio/sentry/ILogger;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/util/LazyEvaluator$Evaluator;Ljava/util/function/Supplier;)V
 	public fun close (Z)V
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
+	public fun getProfileRecordingState (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Lio/sentry/SentryDate;)Lio/sentry/profiling/ProfileRecordingState;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun isRunning ()Z
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
@@ -382,7 +384,6 @@ public class io/sentry/android/core/PerfettoContinuousProfiler : io/sentry/ICont
 public class io/sentry/android/core/PerfettoProfiler {
 	public fun <init> (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/ISentryExecutorService;)V
 	public fun endAndCollect (Ljava/util/function/Consumer;)V
-	public fun start (J)Z
 }
 
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
