@@ -208,8 +208,75 @@ public final class HttpUtils {
   }
 
   private static boolean isValidCookiePair(final @NotNull String cookie) {
-    final int separator = cookie.indexOf('=');
-    return separator >= 0 && !cookie.substring(0, separator).trim().isEmpty();
+    final @NotNull String cookiePair = cookie.trim();
+    final int separator = cookiePair.indexOf('=');
+    if (separator <= 0 || !isValidCookieName(cookiePair.substring(0, separator))) {
+      return false;
+    }
+
+    final @NotNull String value = cookiePair.substring(separator + 1);
+    int start = 0;
+    int end = value.length();
+    if (!value.isEmpty() && value.charAt(0) == '"') {
+      if (value.length() < 2 || value.charAt(value.length() - 1) != '"') {
+        return false;
+      }
+      start++;
+      end--;
+    }
+
+    for (int i = start; i < end; i++) {
+      if (!isCookieOctet(value.charAt(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean isValidCookieName(final @NotNull String name) {
+    for (int i = 0; i < name.length(); i++) {
+      if (!isCookieNameCharacter(name.charAt(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean isCookieNameCharacter(final char value) {
+    if ((value >= 'a' && value <= 'z')
+        || (value >= 'A' && value <= 'Z')
+        || (value >= '0' && value <= '9')) {
+      return true;
+    }
+
+    switch (value) {
+      case '!':
+      case '#':
+      case '$':
+      case '%':
+      case '&':
+      case '\'':
+      case '*':
+      case '+':
+      case '-':
+      case '.':
+      case '^':
+      case '_':
+      case '`':
+      case '|':
+      case '~':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private static boolean isCookieOctet(final char value) {
+    return value == 0x21
+        || (value >= 0x23 && value <= 0x2B)
+        || (value >= 0x2D && value <= 0x3A)
+        || (value >= 0x3C && value <= 0x5B)
+        || (value >= 0x5D && value <= 0x7E);
   }
 
   public static @NotNull Map<String, String> filterHeaders(
