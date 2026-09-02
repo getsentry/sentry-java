@@ -403,16 +403,25 @@ public open class SentryOkHttpEventListener(
   }
 
   override fun canceled(call: Call) {
-    // canceled() is not part of the call window: OkHttp may deliver it before callStart() and
-    // after callEnd()/callFailed(), because it holds the listener for the whole Call lifetime
-    // while we only keep it for the duration of the call.
-    val originalEventListener =
-      originalEventListenerMap[call]
-        ?: fixedOriginalEventListener
-        // The call already reached its terminal event, so its listener is gone. Call.cancel() is
-        // documented as a no-op for a completed request, thus there is nothing to report, and
-        // creating a second listener here would break the Factory contract and leak the entry.
-        ?: if (call.isExecuted()) null else getOrCreateEventListener(call)
+    // canceled() is the only callback that is not part of the call window. OkHttp creates the
+    // listener in the Call constructor and keeps it for the whole lifetime of the Call, so it may
+    // deliver canceled() before callStart() and after callEnd()/callFailed(). We only keep the
+    // listener between callStart() and the terminal event, so out of that window there is nothing
+    // in originalEventListenerMap.
+    //
+    // We deliberately do not create a listener for such a cancel:
+    // - After the terminal event the call is over. Call.cancel() is documented as a no-op for a
+    //   request that is already complete, so there is nothing to report.
+    // - Before callStart() there may never be a call at all. A Call that is canceled and then
+    //   never executed gets no callEnd()/callFailed(), so an entry added here could never be
+    //   removed again and would leak the Call. If the Call is executed after all, OkHttp fails it
+    //   with IOException("Canceled") and the listener still learns about it through callFailed().
+    //
+    // Creating one would also hand the EventListener.Factory contract a second listener for a
+    // single Call. A listener kept in a field instead is shared by all calls by definition, the
+    // same as OkHttp's own EventListener.asFactory(), so it exists outside the window and always
+    // gets the event.
+    val originalEventListener = originalEventListenerMap[call] ?: fixedOriginalEventListener
     originalEventListener?.canceled(call)
   }
 
@@ -432,8 +441,8 @@ public open class SentryOkHttpEventListener(
     originalEventListenerMap[call]?.cacheConditionalHit(call, cachedResponse)
   }
 
-  // computeIfAbsent, so that a cancel racing callStart() cannot make the Factory produce two
-  // listeners for the same Call
+  // computeIfAbsent, so that concurrent callbacks cannot make the Factory produce two listeners
+  // for the same Call
   private fun getOrCreateEventListener(call: Call): EventListener? {
     val creator = originalEventListenerCreator ?: return null
     return originalEventListenerMap.computeIfAbsent(call) { creator.invoke(it) }

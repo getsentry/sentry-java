@@ -54,17 +54,6 @@ class SentryOkHttpEventListenerDelegationTest {
 
     fun newCall(path: String): Call =
       client.newCall(Request.Builder().url("http://localhost/$path").build())
-
-    // The tests drive the listener by hand, so no call is ever really executed. canceled() branches
-    // on Call.isExecuted() to tell a cancel that precedes callStart() from one that follows the
-    // terminal event, so those cases need a Call that reports the state under test.
-    fun mockCall(path: String, isExecuted: Boolean): Call {
-      val request = Request.Builder().url("http://localhost/$path").build()
-      return mock<Call>().also {
-        whenever(it.request()).thenReturn(request)
-        whenever(it.isExecuted()).thenReturn(isExecuted)
-      }
-    }
   }
 
   private val fixture = Fixture()
@@ -150,25 +139,34 @@ class SentryOkHttpEventListenerDelegationTest {
   }
 
   @Test
-  fun `cancel before callStart binds the listener that callStart then reuses`() {
+  fun `cancel before callStart is not delegated and creates no listener`() {
     val sut = fixture.getSut()
-    val call = fixture.mockCall("1", isExecuted = false)
+    val call = fixture.newCall("1")
+
+    sut.canceled(call)
+
+    assertThat(fixture.listeners).isEmpty()
+  }
+
+  @Test
+  fun `a call canceled before callStart still gets a single listener when it starts`() {
+    val sut = fixture.getSut()
+    val call = fixture.newCall("1")
 
     sut.canceled(call)
     sut.callStart(call)
-    sut.dnsStart(call, "sentry.io")
-    sut.callEnd(call)
+    sut.callFailed(call, IOException("Canceled"))
 
     assertThat(fixture.listeners).hasSize(1)
     assertThat(fixture.listeners.single().received.map { it.first })
-      .containsExactly("canceled", "callStart", "dnsStart", "callEnd")
+      .containsExactly("callStart", "callFailed")
       .inOrder()
   }
 
   @Test
   fun `cancel after the terminal event is ignored`() {
     val sut = fixture.getSut()
-    val call = fixture.mockCall("1", isExecuted = true)
+    val call = fixture.newCall("1")
 
     sut.callStart(call)
     sut.callEnd(call)
@@ -183,7 +181,7 @@ class SentryOkHttpEventListenerDelegationTest {
   @Test
   fun `cancel after a failed call is ignored`() {
     val sut = fixture.getSut()
-    val call = fixture.mockCall("1", isExecuted = true)
+    val call = fixture.newCall("1")
 
     sut.callStart(call)
     sut.callFailed(call, IOException())
@@ -198,7 +196,7 @@ class SentryOkHttpEventListenerDelegationTest {
   @Test
   fun `a single wrapped listener receives cancels outside of the call window`() {
     whenever(fixture.scopes.options).thenReturn(SentryOptions())
-    val call = fixture.mockCall("1", isExecuted = true)
+    val call = fixture.newCall("1")
     val listener = RecordingListener(call)
     val sut = SentryOkHttpEventListener(fixture.scopes, listener)
 
