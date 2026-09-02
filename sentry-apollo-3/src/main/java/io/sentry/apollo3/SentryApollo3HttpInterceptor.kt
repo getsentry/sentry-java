@@ -279,6 +279,21 @@ constructor(
     return getHeaders(headers)
   }
 
+  private fun getResponseHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val responseHeaders = mutableMapOf<String, String>()
+      for (header in headers) {
+        responseHeaders[header.name] = header.value
+      }
+      return HttpUtils.filterHeaders(
+          responseHeaders,
+          scopes.options.dataCollectionResolver.httpResponseHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(headers)
+  }
+
   private fun getHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     // Headers are only sent if isSendDefaultPii is enabled due to PII
     if (!scopes.options.isSendDefaultPii) {
@@ -405,7 +420,7 @@ constructor(
             } else {
               null
             }
-          headers = getHeaders(response.headers)
+          headers = getResponseHeaders(response.headers)
           statusCode = response.statusCode
 
           response.body?.buffer?.size?.ifHasValidLength { contentLength ->
