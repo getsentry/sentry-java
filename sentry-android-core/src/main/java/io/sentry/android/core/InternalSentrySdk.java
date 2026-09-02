@@ -99,8 +99,7 @@ public final class InternalSentrySdk {
         user = new User();
         scope.setUser(user);
       }
-      if (user.getId() == null
-          && options.getDataCollectionResolver().isUserInfoWithLegacyAlways()) {
+      if (user.getId() == null) {
         try {
           user.setId(Installation.id(context));
         } catch (RuntimeException e) {

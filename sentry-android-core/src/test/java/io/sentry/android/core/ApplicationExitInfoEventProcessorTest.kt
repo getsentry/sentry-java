@@ -228,13 +228,13 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `when user info is disabled, does not set device id`() {
+  fun `when user info is disabled, sets device id`() {
     fixture.options.dataCollection.setUserInfo(false)
     val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
 
     val processed = processEvent(hint)
 
-    assertNull(processed.contexts.device!!.id)
+    assertNotNull(processed.contexts.device!!.id)
   }
 
   @Test
@@ -477,7 +477,7 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `when user info is disabled, does not set installation id for missing user id`() {
+  fun `when user info is disabled, sets installation id for missing user id`() {
     fixture.options.dataCollection.setUserInfo(false)
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
     val original = SentryEvent()
@@ -486,7 +486,7 @@ class ApplicationExitInfoEventProcessorTest {
 
     val processed = processor.process(original, hint)
 
-    assertNull(processed!!.user!!.id)
+    assertEquals(Installation.deviceId, processed!!.user!!.id)
   }
 
   @Test
