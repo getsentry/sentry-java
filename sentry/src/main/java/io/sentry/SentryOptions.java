@@ -340,6 +340,9 @@ public class SentryOptions {
 
   private @NotNull DataCollection dataCollection = new DataCollection(false);
 
+  private final @NotNull DataCollectionResolver dataCollectionResolver =
+      new DataCollectionResolver(this);
+
   /** SSLSocketFactory for self-signed certificate trust * */
   private @Nullable SSLSocketFactory sslSocketFactory;
 
@@ -1718,6 +1721,12 @@ public class SentryOptions {
     if (dataCollection != null) {
       this.dataCollection = dataCollection;
     }
+  }
+
+  /** Returns the Data Collection policy resolver used by SDK integrations. */
+  @ApiStatus.Internal
+  public @NotNull DataCollectionResolver getDataCollectionResolver() {
+    return dataCollectionResolver;
   }
 
   /**
