@@ -1446,6 +1446,7 @@ public abstract interface class io/sentry/JsonUnknown {
 }
 
 public final class io/sentry/KeyValueCollectionBehavior {
+	public fun <init> ()V
 	public static fun allowList ([Ljava/lang/String;)Lio/sentry/KeyValueCollectionBehavior;
 	public static fun denyList ([Ljava/lang/String;)Lio/sentry/KeyValueCollectionBehavior;
 	public fun equals (Ljava/lang/Object;)Z
@@ -1453,6 +1454,8 @@ public final class io/sentry/KeyValueCollectionBehavior {
 	public fun getTerms ()Ljava/util/List;
 	public fun hashCode ()I
 	public static fun off ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun setMode (Lio/sentry/KeyValueCollectionBehavior$Mode;)V
+	public fun setTerms (Ljava/util/List;)V
 }
 
 public final class io/sentry/KeyValueCollectionBehavior$Mode : java/lang/Enum {

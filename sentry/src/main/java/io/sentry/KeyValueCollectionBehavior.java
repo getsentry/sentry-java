@@ -20,12 +20,15 @@ public final class KeyValueCollectionBehavior {
     ALLOW_LIST
   }
 
-  private final @NotNull Mode mode;
-  private final @NotNull List<String> terms;
+  private @NotNull Mode mode = Mode.DENY_LIST;
+  private @NotNull List<String> terms = Collections.emptyList();
+
+  /** Creates a behavior that collects values using the built-in sensitive deny-list. */
+  public KeyValueCollectionBehavior() {}
 
   private KeyValueCollectionBehavior(final @NotNull Mode mode, final @NotNull List<String> terms) {
-    this.mode = mode;
-    this.terms = Collections.unmodifiableList(new ArrayList<>(terms));
+    setMode(mode);
+    setTerms(terms);
   }
 
   /** Disables collection of the category. */
@@ -53,8 +56,16 @@ public final class KeyValueCollectionBehavior {
     return mode;
   }
 
+  public void setMode(final @NotNull Mode mode) {
+    this.mode = mode;
+  }
+
   public @NotNull List<String> getTerms() {
     return terms;
+  }
+
+  public void setTerms(final @NotNull List<String> terms) {
+    this.terms = Collections.unmodifiableList(new ArrayList<>(terms));
   }
 
   @Override
