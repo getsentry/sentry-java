@@ -10,7 +10,8 @@ import org.jetbrains.annotations.Nullable;
 /** Configures data that the SDK collects automatically. */
 public final class DataCollection {
 
-  private boolean overridden;
+  // Forces Data Collection to be used even when no individual option has been configured.
+  private boolean forceDataCollection;
   private @Nullable Boolean userInfo;
   private @Nullable KeyValueCollectionBehavior cookies;
   private @Nullable KeyValueCollectionBehavior urlQueryParams;
@@ -24,8 +25,8 @@ public final class DataCollection {
   }
 
   @ApiStatus.Internal
-  public DataCollection(final boolean overridden) {
-    this.overridden = overridden;
+  public DataCollection(final boolean forceDataCollection) {
+    this.forceDataCollection = forceDataCollection;
   }
 
   public @Nullable Boolean getUserInfo() {
@@ -83,7 +84,7 @@ public final class DataCollection {
 
   @ApiStatus.Internal
   public boolean isExplicitlyConfigured() {
-    return overridden
+    return forceDataCollection
         || userInfo != null
         || cookies != null
         || urlQueryParams != null
