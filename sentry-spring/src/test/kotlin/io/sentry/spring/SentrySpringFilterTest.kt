@@ -5,6 +5,7 @@ import io.sentry.HttpBodyType
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -202,6 +203,30 @@ class SentrySpringFilterTest {
     listener.doFilter(fixture.request, fixture.response, fixture.chain)
 
     assertNotNull(fixture.scope.request) { assertNull(it.cookies) }
+  }
+
+  @Test
+  fun `data collection filters request headers`() {
+    val sentryOptions =
+      SentryOptions().apply {
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("customer")
+      }
+    val listener =
+      fixture.getSut(
+        request =
+          MockMvcRequestBuilders.get(URI.create("http://example.com"))
+            .header("content-type", "application/json")
+            .header("authorization", "Bearer token")
+            .header("x-customer", "customer value")
+            .buildRequest(MockServletContext()),
+        options = sentryOptions,
+      )
+
+    listener.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    assertEquals("application/json", fixture.scope.request!!.headers!!["Content-Type"])
+    assertEquals("[Filtered]", fixture.scope.request!!.headers!!["authorization"])
+    assertEquals("[Filtered]", fixture.scope.request!!.headers!!["x-customer"])
   }
 
   @Test
