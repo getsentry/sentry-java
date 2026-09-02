@@ -27,6 +27,7 @@ plugins {
     alias(libs.plugins.spring.dependency.management) apply false
     id("io.sentry.javadoc.aggregate")
     alias(libs.plugins.sentry) apply false
+    alias(libs.plugins.android.application) apply false
 }
 
 buildscript {
@@ -34,8 +35,6 @@ buildscript {
         google()
     }
     dependencies {
-        classpath(Config.BuildPlugins.androidGradle)
-
         // add classpath of sentry android gradle plugin
         // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
 
@@ -51,7 +50,6 @@ apiValidation {
     )
     ignoredProjects.addAll(
         listOf(
-            "sentry-samples-android",
             "sentry-samples-console",
             "sentry-samples-console-opentelemetry-noagent",
             "sentry-samples-jul",
@@ -105,6 +103,12 @@ allprojects {
             options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try", "-Xlint:-options"))
         }
     }
+}
+
+// `subprojects` below cannot reach the Android sample, which is a separate build, so delegate to it
+// and keep a single `./gradlew spotlessApply` formatting the whole repository.
+tasks.register("spotlessApply") {
+    dependsOn(gradle.includedBuild("sentry-samples-android").task(":spotlessApply"))
 }
 
 subprojects {

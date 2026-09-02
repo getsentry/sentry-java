@@ -15,7 +15,7 @@ defaults:
 
 espresso:
   app: ./sentry-samples/sentry-samples-android/build/outputs/apk/release/sentry-samples-android-release.apk
-  testApp: ./sentry-android-integration-tests/sentry-uitest-android-macrobenchmark/build/outputs/apk/benchmark/sentry-uitest-android-macrobenchmark-benchmark.apk
+  testApp: ./sentry-samples/sentry-samples-android/macrobenchmark/build/outputs/apk/benchmark/macrobenchmark-benchmark.apk
 
 suites:
 
