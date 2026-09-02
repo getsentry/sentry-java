@@ -10,10 +10,13 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 
 ### Never crash or hang the host application
 
-- While we don't want to crash or hang the host application, we also don't want to leave the host application in a bad or unrecoverable state. Therefore catch the narrowest type the guarded code can throw.
-- Existing broad catches like `catch (Throwable)` are legacy, not precedent. Where a broad catch is genuinely unavoidable (an entry point
-  running user code or third-party callbacks), it must call `ExceptionUtils.rethrowIfFatal(t)` first
-  and the PR description must say why the broad catch is needed.
+- While we don't want to crash or hang the host application, we also don't want to leave the host
+  application in a bad or unrecoverable state. Therefore catch the narrowest type the guarded code
+  can throw.
+- Existing broad catches like `catch (Throwable)` are legacy, not precedent. Where a broad catch is
+  genuinely unavoidable (an entry point running user code or third-party callbacks), it must call
+  `ExceptionUtils.rethrowIfFatal(t)` first and the PR description must say why the broad catch is
+  needed.
 - Code probing for an optional `compileOnly` dependency must catch the specific `LinkageError`
   subclass (`NoClassDefFoundError`, `NoSuchMethodError`, ...) only.
 - The SDK must never `captureException`/`captureMessage` for its own failures or for exceptions
@@ -22,9 +25,9 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
   [Never capture your own exceptions](https://develop.sentry.dev/sdk/getting-started/principles/#never-capture-your-own-exceptions).
 - Flag `System.out`/`System.err`, `printStackTrace()`, and `android.util.Log` in SDK source; use
   `options.getLogger().log(...)`.
-- Flag resources acquired but not released: streams, files, `ExecutorService`s, `BroadcastReceiver`s,
-  lifecycle/activity callbacks, sensors, timers. Anything registered during init must be undone in
-  the integration's `close()`.
+- Flag resources acquired but not released: streams, files, `ExecutorService`s,
+  `BroadcastReceiver`s, lifecycle/activity callbacks, sensors, timers. Anything registered during
+  init must be undone in the integration's `close()`.
 
 ### Security and privacy
 
@@ -74,18 +77,24 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
   error that would also reach the global handlers (double reporting).
 
 ## Concurrency
+
 - The SDK uses raw java concurrency primitives. Ensure we are using them correctly.
 - Ensure that atomic actions are atomic.
-- Watch for possible deadlocks in general but especially when two locks are held and another thread can grab them in the opposite order.
+- Watch for possible deadlocks in general but especially when two locks are held and another thread
+  can grab them in the opposite order.
 - Prefer using existing executors over creating new threads.
 - Do not block the main thread on Android with locking, synchronization or I/O calls.
 - Watch for ordering issues when classes can be called from different threads.
-- Flag a lock held across a callback into user code, an I/O call, or an `ExecutorService` submission.
-- Mark a field `volatile` when it is written on one thread and read on another without a lock. A plain field read is a data race, not merely a stale value.
-- Read mutable shared state once per operation. Re-reading the same field for several decisions in one pass lets it change mid-pass, so the results disagree with each other.
+- Flag a lock held across a callback into user code, an I/O call, or an `ExecutorService`
+  submission.
+- Mark a field `volatile` when it is written on one thread and read on another without a lock. A
+  plain field read is a data race, not merely a stale value.
+- Read mutable shared state once per operation. Re-reading the same field for several decisions in
+  one pass lets it change mid-pass, so the results disagree with each other.
 - Prefer the `synchronized` keyword. Existing code that uses `AutoClosableReentrantLock` is legacy.
 
 ## Clocks
+
 - Ensure we are using a monotonic clock to measure time intervals.
 - Ensure we are using a wall clock for dates and timestamps.
 
