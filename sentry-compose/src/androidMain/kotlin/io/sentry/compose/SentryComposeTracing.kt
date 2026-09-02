@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -11,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import io.sentry.ISpan
 import io.sentry.Sentry
+import io.sentry.SentryDate
 import io.sentry.SpanOptions
 import io.sentry.compose.SentryModifier.sentryTag
 
@@ -21,14 +23,6 @@ private const val OP_PARENT_RENDER = "ui.compose.rendering"
 private const val OP_RENDER = "ui.render"
 
 private const val OP_TRACE_ORIGIN = "auto.ui.jetpack_compose"
-
-@Immutable private class ImmutableHolder<T>(var item: T)
-
-private fun getRootSpan(): ISpan? {
-  var rootSpan: ISpan? = null
-  Sentry.configureScope { rootSpan = it.transaction }
-  return rootSpan
-}
 
 private val localSentryCompositionParentSpan = compositionLocalOf {
   ImmutableHolder(
@@ -62,6 +56,15 @@ private val localSentryRenderingParentSpan = compositionLocalOf {
   )
 }
 
+@Immutable internal class ImmutableHolder<T>(var item: T)
+
+/**
+ * Creates spans for tracking the time required to compose the wrapped [content], and a span for its
+ * initial draw.
+ *
+ * Spans are approximate and include work performed by any composables [content] invokes. Abandoned
+ * recompositions are ignored.
+ */
 @ExperimentalComposeUiApi
 @Composable
 public fun SentryTraced(
@@ -70,32 +73,72 @@ public fun SentryTraced(
   enableUserInteractionTracing: Boolean = true,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  val parentCompositionSpan = localSentryCompositionParentSpan.current
-  val parentRenderingSpan = localSentryRenderingParentSpan.current
-  val compositionSpan =
-    parentCompositionSpan.item?.startChild(OP_COMPOSE, tag)?.apply {
-      spanContext.origin = OP_TRACE_ORIGIN
-    }
-  val firstRendered = remember { ImmutableHolder(false) }
-
+  val alreadyRendered = remember { ImmutableHolder(false) }
   val baseModifier = if (enableUserInteractionTracing) modifier.sentryTag(tag) else modifier
+
+  val parentCompositionSpan = localSentryCompositionParentSpan.current.item
+  val parentRenderingSpan = localSentryRenderingParentSpan.current.item
+  val dateProvider = Sentry.getCurrentScopes().options.dateProvider
+
+  val compositionStart = dateProvider.now()
 
   Box(
     modifier =
       baseModifier.drawWithContent {
-        val renderSpan =
-          if (!firstRendered.item) {
-            parentRenderingSpan.item?.startChild(OP_RENDER, tag)
-          } else {
-            null
-          }
-        drawContent()
-        firstRendered.item = true
-        renderSpan?.finish()
+        if (alreadyRendered.item) {
+          drawContent()
+        } else {
+          val renderStart = dateProvider.now()
+          drawContent()
+          val renderEnd = dateProvider.now()
+
+          alreadyRendered.item = true
+          recordRenderSpan(parentRenderingSpan, tag, renderStart, renderEnd)
+        }
       },
     propagateMinConstraints = true,
   ) {
     content()
   }
-  compositionSpan?.finish()
+  val compositionEnd = dateProvider.now()
+
+  if (parentCompositionSpan != null) {
+    SideEffect {
+      recordCompositionSpan(
+        parentSpan = parentCompositionSpan,
+        tag = tag,
+        startTimestamp = compositionStart,
+        endTimestamp = compositionEnd,
+      )
+    }
+  }
+}
+
+private fun getRootSpan(): ISpan? {
+  var rootSpan: ISpan? = null
+  Sentry.configureScope { rootSpan = it.transaction }
+  return rootSpan
+}
+
+private fun recordCompositionSpan(
+  parentSpan: ISpan?,
+  tag: String,
+  startTimestamp: SentryDate,
+  endTimestamp: SentryDate,
+) {
+  parentSpan?.startChild(OP_COMPOSE, tag, startTimestamp)?.apply {
+    spanContext.origin = OP_TRACE_ORIGIN
+    finish(null, endTimestamp)
+  }
+}
+
+private fun recordRenderSpan(
+  parentSpan: ISpan?,
+  tag: String,
+  startTimestamp: SentryDate,
+  endTimestamp: SentryDate,
+) {
+  parentSpan?.startChild(OP_RENDER, tag, startTimestamp)?.apply {
+    finish(null, endTimestamp)
+  }
 }
