@@ -286,6 +286,34 @@ class DefaultAndroidEventProcessorTest {
   }
 
   @Test
+  fun `when user info is disabled, does not set automatic user data`() {
+    fixture.options.dataCollection.setUserInfo(false)
+    val sut = fixture.getSut(context, isSendDefaultPii = true)
+    val event = SentryEvent().apply { user = User() }
+
+    sut.process(event, Hint())
+
+    assertNotNull(event.user) {
+      assertNull(it.id)
+      assertNull(it.ipAddress)
+    }
+  }
+
+  @Test
+  fun `when user info is enabled, sets automatic user data`() {
+    fixture.options.dataCollection.setUserInfo(true)
+    val sut = fixture.getSut(context, isSendDefaultPii = false)
+    val event = SentryEvent().apply { user = User() }
+
+    sut.process(event, Hint())
+
+    assertNotNull(event.user) {
+      assertNotNull(it.id)
+      assertEquals("{{auto}}", it.ipAddress)
+    }
+  }
+
+  @Test
   fun `when event has ip address set, keeps original ip address`() {
     val sut = fixture.getSut(context)
     val event = SentryEvent()

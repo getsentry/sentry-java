@@ -56,6 +56,17 @@ class DataCollectionResolverTest {
   }
 
   @Test
+  fun `user info legacy always variant preserves collection when namespace is absent`() {
+    val options = SentryOptions().apply { isSendDefaultPii = false }
+
+    assertThat(options.dataCollectionResolver.isUserInfoWithLegacyAlways).isTrue()
+
+    options.dataCollection.setUserInfo(false)
+
+    assertThat(options.dataCollectionResolver.isUserInfoWithLegacyAlways).isFalse()
+  }
+
+  @Test
   fun `omitted booleans use data collection defaults once namespace is explicit`() {
     val options = SentryOptions().apply { isSendDefaultPii = false }
 
