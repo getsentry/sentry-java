@@ -48,12 +48,19 @@ public class SentryRequestResolver {
         extractSecurityCookieNamesOrUseCached(httpRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest, additionalSecurityCookieNames));
 
-    if (scopes.getOptions().isSendDefaultPii()) {
-      String cookieName = HttpUtils.COOKIE_HEADER_NAME;
-      final @Nullable List<String> filteredHeaders =
-          HttpUtils.filterOutSecurityCookiesFromHeader(
-              httpRequest.getHeaders(cookieName), cookieName, additionalSecurityCookieNames);
-      sentryRequest.setCookies(toString(filteredHeaders));
+    final @NotNull String cookieName = HttpUtils.COOKIE_HEADER_NAME;
+    if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
+      sentryRequest.setCookies(
+          toString(
+              HttpUtils.filterCookiesFromHeader(
+                  httpRequest.getHeaders(cookieName),
+                  scopes.getOptions().getDataCollectionResolver().getCookies(),
+                  additionalSecurityCookieNames)));
+    } else if (scopes.getOptions().isSendDefaultPii()) {
+      sentryRequest.setCookies(
+          toString(
+              HttpUtils.filterOutSecurityCookiesFromHeader(
+                  httpRequest.getHeaders(cookieName), cookieName, additionalSecurityCookieNames)));
     }
     return sentryRequest;
   }

@@ -7805,11 +7805,15 @@ public final class io/sentry/util/HttpUtils {
 	public static final field COOKIE_HEADER_NAME Ljava/lang/String;
 	public fun <init> ()V
 	public static fun containsSensitiveHeader (Ljava/lang/String;)Z
+	public static fun filterCookies (Ljava/lang/String;Lio/sentry/KeyValueCollectionBehavior;Ljava/util/List;)Ljava/lang/String;
+	public static fun filterCookiesFromHeader (Ljava/util/Enumeration;Lio/sentry/KeyValueCollectionBehavior;Ljava/util/List;)Ljava/util/List;
+	public static fun filterCookiesFromHeader (Ljava/util/List;Lio/sentry/KeyValueCollectionBehavior;Ljava/util/List;)Ljava/util/List;
 	public static fun filterHeaders (Ljava/util/Map;Lio/sentry/KeyValueCollectionBehavior;)Ljava/util/Map;
 	public static fun filterOutSecurityCookies (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/Enumeration;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/List;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
 	public static fun filterQueryParams (Ljava/lang/String;Lio/sentry/KeyValueCollectionBehavior;)Ljava/lang/String;
+	public static fun filterSetCookie (Ljava/lang/String;Lio/sentry/KeyValueCollectionBehavior;)Ljava/lang/String;
 	public static fun isHttpClientError (I)Z
 	public static fun isHttpServerError (I)Z
 	public static fun isSecurityCookie (Ljava/lang/String;Ljava/util/List;)Z

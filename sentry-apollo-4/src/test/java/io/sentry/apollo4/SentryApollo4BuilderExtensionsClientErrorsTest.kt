@@ -87,6 +87,7 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
       httpStatusCode: Int = 200,
       responseBody: String = responseBodyOk,
       sendDefaultPii: Boolean = false,
+      includeCookies: Boolean = sendDefaultPii,
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
       configureOptions: SentryOptions.() -> Unit = {},
     ): ApolloClient {
@@ -112,8 +113,8 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
           .setSocketPolicy(socketPolicy)
           .setResponseCode(httpStatusCode)
 
-      if (sendDefaultPii) {
-        response.addHeader("Set-Cookie", "Test")
+      if (includeCookies) {
+        response.addHeader("Set-Cookie", "theme=dark; Path=/")
       }
 
       server.enqueue(response)
@@ -126,8 +127,8 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
             captureFailedRequests = captureFailedRequests,
             failedRequestTargets = failedRequestTargets,
           )
-      if (sendDefaultPii) {
-        builder.addHttpHeader("Cookie", "Test")
+      if (includeCookies) {
+        builder.addHttpHeader("Cookie", "theme=dark; sessionId=secret")
       }
 
       return builder.build()
@@ -357,6 +358,46 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
   }
 
   @Test
+  fun `data collection filters cookies`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk, includeCookies = true) {
+        dataCollection.cookies = KeyValueCollectionBehavior.denyList("theme")
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("theme=[Filtered]; sessionId=[Filtered]", it.request!!.cookies)
+          assertEquals("theme=[Filtered]; Path=/", it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable cookies`() {
+    val sut =
+      fixture.getSut(
+        responseBody = fixture.responseBodyNotOk,
+        sendDefaultPii = true,
+        includeCookies = true,
+      ) {
+        dataCollection.cookies = KeyValueCollectionBehavior.off()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertNull(it.request!!.cookies)
+          assertNull(it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `data collection filters request headers`() {
     val sut =
       fixture.getSut(responseBody = fixture.responseBodyNotOk) {
@@ -398,7 +439,7 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
         check {
           val request = it.request!!
 
-          assertEquals("Test", request.cookies)
+          assertEquals("theme=dark; sessionId=secret", request.cookies)
           assertNotNull(request.headers)
         },
         any<Hint>(),
@@ -487,7 +528,7 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
         check {
           val response = it.contexts.response!!
 
-          assertEquals("Test", response.cookies)
+          assertEquals("theme=dark; Path=/", response.cookies)
           assertNotNull(response.headers)
           assertEquals(200, response.headers?.get("Content-Length")?.toInt())
         },
