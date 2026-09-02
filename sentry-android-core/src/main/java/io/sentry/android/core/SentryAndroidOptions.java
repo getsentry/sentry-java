@@ -277,6 +277,10 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
+  /**
+   * Sample rate for capturing main-thread stack profiles when a foreground ANR is detected. {@code
+   * null} disables ANR profiling (default). Values must be between {@code 0.0} and {@code 1.0}.
+   */
   private @Nullable Double anrProfilingSampleRate;
 
   private boolean enableAnrFingerprinting = true;
@@ -823,10 +827,25 @@ public final class SentryAndroidOptions extends SentryOptions {
     return screenshot;
   }
 
+  /**
+   * Returns the sample rate used when deciding whether to capture a main-thread stack profile for a
+   * detected foreground ANR.
+   *
+   * @return the ANR profiling sample rate, or {@code null} when ANR profiling is disabled
+   */
   public @Nullable Double getAnrProfilingSampleRate() {
     return anrProfilingSampleRate;
   }
 
+  /**
+   * Sets the sample rate for capturing main-thread stack profiles when a foreground ANR is
+   * detected. The profile is attached to the ANR event on the next app start.
+   *
+   * <p>Use {@code null} to disable ANR profiling (default). Values must be between {@code 0.0} and
+   * {@code 1.0}.
+   *
+   * @param anrProfilingSampleRate the sample rate, or {@code null} to disable
+   */
   public void setAnrProfilingSampleRate(final @Nullable Double anrProfilingSampleRate) {
     if (!SampleRateUtils.isValidSampleRate(anrProfilingSampleRate)) {
       throw new IllegalArgumentException(
@@ -837,6 +856,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.anrProfilingSampleRate = anrProfilingSampleRate;
   }
 
+  /**
+   * Returns whether ANR profiling is enabled. ANR profiling is enabled when {@link
+   * #getAnrProfilingSampleRate()} is non-null and greater than {@code 0.0}.
+   *
+   * @return {@code true} if ANR profiling is enabled
+   */
   public boolean isAnrProfilingEnabled() {
     return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
   }
