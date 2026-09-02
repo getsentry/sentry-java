@@ -118,6 +118,84 @@ class DataCollectionResolverTest {
   }
 
   @Test
+  fun `GraphQL variables use sendDefaultPii when Data Collection is absent`() {
+    val options = SentryOptions()
+
+    assertThat(options.dataCollectionResolver.isGraphqlVariables).isFalse()
+
+    options.isSendDefaultPii = true
+
+    assertThat(options.dataCollectionResolver.isGraphqlVariables).isTrue()
+  }
+
+  @Test
+  fun `GraphQL variables use configured Data Collection value`() {
+    val options = SentryOptions().apply { isSendDefaultPii = true }
+
+    options.dataCollection.graphql.setVariables(false)
+
+    assertThat(options.dataCollectionResolver.isGraphqlVariables).isFalse()
+
+    options.isSendDefaultPii = false
+    options.dataCollection.graphql.setVariables(true)
+
+    assertThat(options.dataCollectionResolver.isGraphqlVariables).isTrue()
+  }
+
+  @Test
+  fun `GraphQL legacy body variants preserve the legacy size gate when namespace is absent`() {
+    val options =
+      SentryOptions().apply {
+        isSendDefaultPii = true
+        maxRequestBodySize = SentryOptions.RequestSize.NONE
+      }
+
+    assertThat(options.dataCollectionResolver.isGraphqlDocumentWithLegacyBodyGate).isFalse()
+    assertThat(options.dataCollectionResolver.isGraphqlVariablesWithLegacyBodyGate).isFalse()
+
+    options.maxRequestBodySize = SentryOptions.RequestSize.SMALL
+
+    assertThat(options.dataCollectionResolver.isGraphqlDocumentWithLegacyBodyGate).isTrue()
+    assertThat(options.dataCollectionResolver.isGraphqlVariablesWithLegacyBodyGate).isTrue()
+  }
+
+  @Test
+  fun `GraphQL legacy body variants ignore the size option when namespace is explicit`() {
+    val options =
+      SentryOptions().apply {
+        isSendDefaultPii = false
+        maxRequestBodySize = SentryOptions.RequestSize.NONE
+        dataCollection.graphql.setDocument(true)
+        dataCollection.graphql.setVariables(true)
+      }
+
+    assertThat(options.dataCollectionResolver.isGraphqlDocumentWithLegacyBodyGate).isTrue()
+    assertThat(options.dataCollectionResolver.isGraphqlVariablesWithLegacyBodyGate).isTrue()
+  }
+
+  @Test
+  fun `GraphQL document legacy always variant preserves collection when namespace is absent`() {
+    val options = SentryOptions().apply { isSendDefaultPii = false }
+
+    assertThat(options.dataCollectionResolver.isGraphqlDocumentWithLegacyAlways).isTrue()
+
+    options.dataCollection.graphql.setDocument(false)
+
+    assertThat(options.dataCollectionResolver.isGraphqlDocumentWithLegacyAlways).isFalse()
+  }
+
+  @Test
+  fun `GraphQL variables legacy always variant preserves collection when namespace is absent`() {
+    val options = SentryOptions().apply { isSendDefaultPii = false }
+
+    assertThat(options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways).isTrue()
+
+    options.dataCollection.graphql.setVariables(false)
+
+    assertThat(options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways).isFalse()
+  }
+
+  @Test
   fun `cookies are off when unset and sendDefaultPii is false`() {
     val options = SentryOptions()
 
@@ -244,30 +322,5 @@ class DataCollectionResolverTest {
     assertThat(options.dataCollectionResolver.isOutgoingRequestBody).isFalse()
     assertThat(options.dataCollectionResolver.isIncomingResponseBody).isFalse()
     assertThat(options.dataCollectionResolver.isOutgoingResponseBody).isTrue()
-  }
-
-  @Test
-  fun `GraphQL variables use sendDefaultPii when Data Collection is absent`() {
-    val options = SentryOptions()
-
-    assertThat(options.dataCollectionResolver.isGraphqlVariables).isFalse()
-
-    options.isSendDefaultPii = true
-
-    assertThat(options.dataCollectionResolver.isGraphqlVariables).isTrue()
-  }
-
-  @Test
-  fun `GraphQL variables use configured Data Collection value`() {
-    val options = SentryOptions().apply { isSendDefaultPii = true }
-
-    options.dataCollection.graphql.setVariables(false)
-
-    assertThat(options.dataCollectionResolver.isGraphqlVariables).isFalse()
-
-    options.isSendDefaultPii = false
-    options.dataCollection.graphql.setVariables(true)
-
-    assertThat(options.dataCollectionResolver.isGraphqlVariables).isTrue()
   }
 }
