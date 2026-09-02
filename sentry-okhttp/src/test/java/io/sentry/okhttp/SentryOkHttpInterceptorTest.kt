@@ -505,6 +505,26 @@ class SentryOkHttpInterceptorTest {
   }
 
   @Test
+  fun `data collection filters failed request query parameters`() {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration = { it.dataCollection.setUserInfo(false) },
+      )
+
+    sut.newCall(getRequest(url = "/hello?name=value&token=secret")).execute()
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("name=value&token=[Filtered]", it.request!!.queryString)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `captures an error event with request body size`() {
     val sut = fixture.getSut(captureFailedRequests = true, httpStatusCode = 500)
 

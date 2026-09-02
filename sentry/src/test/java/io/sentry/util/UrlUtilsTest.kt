@@ -1,10 +1,76 @@
 package io.sentry.util
 
+import com.google.common.truth.Truth.assertThat
+import io.sentry.Breadcrumb
+import io.sentry.ISpan
+import io.sentry.KeyValueCollectionBehavior
+import io.sentry.SentryOptions
+import io.sentry.SpanDataConvention
+import io.sentry.protocol.Request
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
 class UrlUtilsTest {
+  @Test
+  fun `resolver aware helpers preserve legacy query values`() {
+    val resolver = SentryOptions().dataCollectionResolver
+    val details = UrlUtils.parse("https://example.com?token=secret", resolver)
+    val request = Request()
+
+    details.applyToRequest(request)
+
+    assertThat(request.queryString).isEqualTo("token=secret")
+  }
+
+  @Test
+  fun `resolver aware helpers filter request span and breadcrumb queries`() {
+    val options = SentryOptions().also { it.dataCollection.setUserInfo(false) }
+    val details =
+      UrlUtils.parse(
+        "https://example.com?name=value&token=secret",
+        options.dataCollectionResolver,
+      )
+    val request = Request()
+    val span = mock<ISpan>()
+    val breadcrumb =
+      Breadcrumb.http(
+        "https://example.com?name=value&token=secret",
+        "GET",
+        null,
+        options.dataCollectionResolver,
+      )
+
+    details.applyToRequest(request)
+    details.applyToSpan(span)
+
+    assertThat(request.queryString).isEqualTo("name=value&token=[Filtered]")
+    verify(span).setData(SpanDataConvention.HTTP_QUERY_KEY, "name=value&token=[Filtered]")
+    assertThat(breadcrumb.getData("http.query")).isEqualTo("name=value&token=[Filtered]")
+  }
+
+  @Test
+  fun `resolver aware helpers remove query values in off mode`() {
+    val options =
+      SentryOptions().also { it.dataCollection.urlQueryParams = KeyValueCollectionBehavior.off() }
+    val details = UrlUtils.parse("https://example.com?name=value", options.dataCollectionResolver)
+    val request = Request()
+    val breadcrumb =
+      Breadcrumb.http(
+        "https://example.com?name=value",
+        "GET",
+        null,
+        options.dataCollectionResolver,
+      )
+
+    details.applyToRequest(request)
+
+    assertThat(request.queryString).isNull()
+    assertThat(breadcrumb.getData("http.query")).isNull()
+  }
+
   @Test
   fun `returns null for null`() {
     assertNull(UrlUtils.parseNullable(null))

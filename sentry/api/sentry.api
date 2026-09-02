@@ -132,6 +132,7 @@ public final class io/sentry/Breadcrumb : io/sentry/JsonSerializable, io/sentry/
 	public fun hashCode ()I
 	public static fun http (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun http (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;)Lio/sentry/Breadcrumb;
+	public static fun http (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Lio/sentry/DataCollectionResolver;)Lio/sentry/Breadcrumb;
 	public static fun info (Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun navigation (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/Breadcrumb;
 	public static fun query (Ljava/lang/String;)Lio/sentry/Breadcrumb;
@@ -7808,6 +7809,7 @@ public final class io/sentry/util/HttpUtils {
 	public static fun filterOutSecurityCookies (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/Enumeration;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/List;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
+	public static fun filterQueryParams (Ljava/lang/String;Lio/sentry/KeyValueCollectionBehavior;)Ljava/lang/String;
 	public static fun isHttpClientError (I)Z
 	public static fun isHttpServerError (I)Z
 	public static fun isSecurityCookie (Ljava/lang/String;Ljava/util/List;)Z
@@ -8066,7 +8068,9 @@ public final class io/sentry/util/UUIDStringUtils {
 public final class io/sentry/util/UrlUtils {
 	public static final field SENSITIVE_DATA_SUBSTITUTE Ljava/lang/String;
 	public fun <init> ()V
+	public static fun filterQueryParams (Ljava/lang/String;Lio/sentry/DataCollectionResolver;)Ljava/lang/String;
 	public static fun parse (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
+	public static fun parse (Ljava/lang/String;Lio/sentry/DataCollectionResolver;)Lio/sentry/util/UrlUtils$UrlDetails;
 	public static fun parseNullable (Ljava/lang/String;)Lio/sentry/util/UrlUtils$UrlDetails;
 }
 
