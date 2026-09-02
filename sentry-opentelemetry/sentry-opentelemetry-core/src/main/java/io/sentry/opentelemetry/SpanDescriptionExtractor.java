@@ -10,6 +10,7 @@ import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
 import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.UrlUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,16 +72,14 @@ public final class SpanDescriptionExtractor {
     final @Nullable String httpTarget = attributes.get(HttpIncubatingAttributes.HTTP_TARGET);
     final @Nullable String httpRoute = attributes.get(HttpAttributes.HTTP_ROUTE);
     @Nullable String httpPath = httpRoute;
-    if (httpPath == null) {
-      httpPath = httpTarget;
+    if (httpPath == null && httpTarget != null) {
+      httpPath = UrlUtils.parse(httpTarget).getUrl();
     }
     final @NotNull String op = opBuilder.toString();
 
     final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
-    if (urlFull != null) {
-      if (httpPath == null) {
-        httpPath = urlFull;
-      }
+    if (urlFull != null && httpPath == null) {
+      httpPath = UrlUtils.parse(urlFull).getUrl();
     }
 
     final @Nullable String urlPath = attributes.get(UrlAttributes.URL_PATH);

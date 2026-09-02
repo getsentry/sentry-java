@@ -113,7 +113,7 @@ class SpanDescriptionExtractorTest {
     val info = whenExtractingSpanInfo()
 
     assertEquals("http.server", info.op)
-    assertEquals("GET https://sentry.io/some/path?q=1#top", info.description)
+    assertEquals("GET https://sentry.io/some/path", info.description)
     assertEquals(TransactionNameSource.URL, info.transactionNameSource)
   }
 
@@ -132,7 +132,7 @@ class SpanDescriptionExtractorTest {
   }
 
   @Test
-  fun `uses HTTP_TARGET for description`() {
+  fun `uses HTTP_ROUTE over HTTP_TARGET for description`() {
     givenSpanKind(SpanKind.SERVER)
     givenAttributes(
       mapOf(
@@ -148,6 +148,23 @@ class SpanDescriptionExtractorTest {
     assertEquals("http.server", info.op)
     assertEquals("GET /some/{id}", info.description)
     assertEquals(TransactionNameSource.ROUTE, info.transactionNameSource)
+  }
+
+  @Test
+  fun `removes query and fragment from HTTP_TARGET description`() {
+    givenSpanKind(SpanKind.SERVER)
+    givenAttributes(
+      mapOf(
+        HttpAttributes.HTTP_REQUEST_METHOD to "GET",
+        HttpIncubatingAttributes.HTTP_TARGET to "/checkout?page=1&token=secret#details",
+      )
+    )
+
+    val info = whenExtractingSpanInfo()
+
+    assertEquals("http.server", info.op)
+    assertEquals("GET /checkout", info.description)
+    assertEquals(TransactionNameSource.URL, info.transactionNameSource)
   }
 
   @Test
