@@ -5,6 +5,7 @@ import com.apollographql.apollo3.api.http.HttpRequest
 import com.apollographql.apollo3.api.http.HttpResponse
 import com.apollographql.apollo3.exception.ApolloException
 import io.sentry.Hint
+import io.sentry.HttpBodyType
 import io.sentry.IScopes
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
@@ -263,6 +264,24 @@ class SentryApollo3InterceptorClientErrors {
           assertEquals(body, request.data)
           assertNull(request.cookies)
           assertNull(request.headers)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable outgoing request body`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpBodies = setOf(HttpBodyType.INCOMING_RESPONSE)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals(193L, it.request!!.bodySize)
+          assertNull(it.request!!.data)
         },
         any<Hint>(),
       )
