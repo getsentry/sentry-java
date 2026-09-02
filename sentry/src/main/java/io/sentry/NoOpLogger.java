@@ -1,9 +1,11 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** No-op implementation of ILogger */
+@ApiStatus.Internal
 public final class NoOpLogger implements ILogger {
 
   private static final NoOpLogger instance = new NoOpLogger();

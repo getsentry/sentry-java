@@ -1,9 +1,11 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpReplayController implements ReplayController {
 
   private static final NoOpReplayController instance = new NoOpReplayController();

@@ -1,5 +1,8 @@
 package io.sentry.backpressure;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
 public final class NoOpBackpressureMonitor implements IBackpressureMonitor {
 
   private static final NoOpBackpressureMonitor instance = new NoOpBackpressureMonitor();
