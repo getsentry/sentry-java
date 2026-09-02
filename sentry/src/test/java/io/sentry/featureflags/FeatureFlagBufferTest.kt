@@ -1,6 +1,9 @@
 package io.sentry.featureflags
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryOptions
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -346,5 +349,52 @@ class FeatureFlagBufferTest {
 
     val featureFlags = buffer.featureFlags
     assertNotNull(featureFlags)
+  }
+
+  @Test
+  fun `clone does not share later writes with the original`() {
+    val buffer = FeatureFlagBuffer.create(SentryOptions().also { it.maxFeatureFlags = 5 })
+    buffer.add("a", true)
+
+    val clone = buffer.clone()
+    clone.add("b", true)
+    buffer.add("c", true)
+
+    assertThat(buffer.featureFlags!!.values.map { it!!.flag }).containsExactly("a", "c").inOrder()
+    assertThat(clone.featureFlags!!.values.map { it!!.flag }).containsExactly("a", "b").inOrder()
+  }
+
+  @Test
+  fun `merging is safe while another thread adds flags`() {
+    val options = SentryOptions().also { it.maxFeatureFlags = 100 }
+    val globalBuffer = FeatureFlagBuffer.create(options)
+    val isolationBuffer = FeatureFlagBuffer.create(options)
+    val currentBuffer = FeatureFlagBuffer.create(options)
+
+    val stop = AtomicBoolean(false)
+    val writerFailure = AtomicReference<Throwable?>(null)
+    // more distinct names than maxFeatureFlags, so adds mix evictions in with refreshes
+    val writer = Thread {
+      try {
+        var i = 0
+        while (!stop.get()) {
+          globalBuffer.add("flag${i++ % 150}", true)
+        }
+      } catch (e: Exception) {
+        writerFailure.set(e)
+      }
+    }
+
+    writer.start()
+    try {
+      repeat(10_000) {
+        FeatureFlagBuffer.merged(options, globalBuffer, isolationBuffer, currentBuffer).featureFlags
+      }
+    } finally {
+      stop.set(true)
+      writer.join()
+    }
+
+    assertThat(writerFailure.get()).isNull()
   }
 }
