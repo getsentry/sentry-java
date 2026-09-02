@@ -12,6 +12,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import io.sentry.Hint
+import io.sentry.HttpBodyType
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.KeyValueCollectionBehavior
@@ -249,6 +250,124 @@ class ExceptionReporterTest {
           assertEquals(fixture.query, data["query"])
           assertEquals(fixture.variables, data["variables"])
         },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `legacy options can disable outgoing response data`() {
+    val options = SentryOptions().also { it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNull(it.contexts.response) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `legacy request body size can disable outgoing response data`() {
+    val options = SentryOptions().also { it.isSendDefaultPii = true }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNull(it.contexts.response) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection response ignores legacy request body options`() {
+    val options =
+      SentryOptions().also {
+        it.maxRequestBodySize = SentryOptions.RequestSize.NONE
+        it.dataCollection.httpBodies = setOf(HttpBodyType.OUTGOING_RESPONSE)
+      }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNotNull(it.contexts.response?.data) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable outgoing response data`() {
+    val options = fixture.defaultOptions.also { it.dataCollection.httpBodies = emptySet() }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNull(it.contexts.response) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection namespace default enables outgoing response data`() {
+    val options =
+      SentryOptions().also {
+        it.maxRequestBodySize = SentryOptions.RequestSize.NONE
+        it.dataCollection.cookies = KeyValueCollectionBehavior.off()
+      }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNotNull(it.contexts.response?.data) },
         any<Hint>(),
       )
   }

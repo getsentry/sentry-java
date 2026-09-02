@@ -432,6 +432,7 @@ public final class io/sentry/DataCollectionResolver {
 	public fun isIncomingResponseBody ()Z
 	public fun isOutgoingRequestBody ()Z
 	public fun isOutgoingResponseBody ()Z
+	public fun isOutgoingResponseBodyWithLegacyBodyGate ()Z
 	public fun isUserInfo ()Z
 }
 

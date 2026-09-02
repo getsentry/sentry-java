@@ -160,6 +160,37 @@ class DataCollectionResolverTest {
   }
 
   @Test
+  fun `outgoing response legacy body variant preserves the legacy size gate`() {
+    val options =
+      SentryOptions().apply {
+        isSendDefaultPii = true
+        maxRequestBodySize = SentryOptions.RequestSize.NONE
+      }
+
+    assertThat(options.dataCollectionResolver.isOutgoingResponseBodyWithLegacyBodyGate).isFalse()
+
+    options.maxRequestBodySize = SentryOptions.RequestSize.SMALL
+
+    assertThat(options.dataCollectionResolver.isOutgoingResponseBodyWithLegacyBodyGate).isTrue()
+  }
+
+  @Test
+  fun `outgoing response legacy body variant uses data collection when namespace is explicit`() {
+    val options =
+      SentryOptions().apply {
+        isSendDefaultPii = false
+        maxRequestBodySize = SentryOptions.RequestSize.NONE
+        dataCollection.graphql.setDocument(true)
+      }
+
+    assertThat(options.dataCollectionResolver.isOutgoingResponseBodyWithLegacyBodyGate).isTrue()
+
+    options.dataCollection.httpBodies = emptySet()
+
+    assertThat(options.dataCollectionResolver.isOutgoingResponseBodyWithLegacyBodyGate).isFalse()
+  }
+
+  @Test
   fun `GraphQL legacy body variants ignore the size option when namespace is explicit`() {
     val options =
       SentryOptions().apply {
