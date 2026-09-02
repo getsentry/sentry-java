@@ -40,7 +40,7 @@ internal object SentryOkHttpUtils {
         // Cookie is only sent if isSendDefaultPii is enabled
         cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
         method = request.method
-        headers = getHeaders(scopes, request.headers)
+        headers = getRequestHeaders(scopes, request.headers)
 
         request.body?.contentLength().ifHasValidLength { bodySize = it }
       }
@@ -49,7 +49,7 @@ internal object SentryOkHttpUtils {
       io.sentry.protocol.Response().apply {
         // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
         cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
-        headers = getHeaders(scopes, response.headers)
+        headers = getResponseHeaders(scopes, response.headers)
         statusCode = response.code
 
         response.body?.contentLength().ifHasValidLength { bodySize = it }
@@ -65,6 +65,42 @@ internal object SentryOkHttpUtils {
     if (this != null && this != -1L) {
       fn.invoke(this)
     }
+  }
+
+  private fun getRequestHeaders(
+    scopes: IScopes,
+    requestHeaders: Headers,
+  ): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val headers = mutableMapOf<String, String>()
+      for (i in 0 until requestHeaders.size) {
+        headers[requestHeaders.name(i)] = requestHeaders.value(i)
+      }
+      return HttpUtils.filterHeaders(
+          headers,
+          scopes.options.dataCollectionResolver.httpRequestHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, requestHeaders)
+  }
+
+  private fun getResponseHeaders(
+    scopes: IScopes,
+    responseHeaders: Headers,
+  ): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val headers = mutableMapOf<String, String>()
+      for (i in 0 until responseHeaders.size) {
+        headers[responseHeaders.name(i)] = responseHeaders.value(i)
+      }
+      return HttpUtils.filterHeaders(
+          headers,
+          scopes.options.dataCollectionResolver.httpResponseHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, responseHeaders)
   }
 
   private fun getHeaders(scopes: IScopes, requestHeaders: Headers): MutableMap<String, String>? {

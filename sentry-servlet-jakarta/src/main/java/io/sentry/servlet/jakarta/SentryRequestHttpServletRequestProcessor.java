@@ -3,6 +3,7 @@ package io.sentry.servlet.jakarta;
 import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
+import io.sentry.SentryOptions;
 import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
@@ -20,9 +21,12 @@ import org.jetbrains.annotations.Nullable;
 final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
 
   private final @NotNull HttpServletRequest httpRequest;
+  private final @NotNull SentryOptions options;
 
-  public SentryRequestHttpServletRequestProcessor(@NotNull HttpServletRequest httpRequest) {
+  public SentryRequestHttpServletRequestProcessor(
+      @NotNull HttpServletRequest httpRequest, @NotNull SentryOptions options) {
     this.httpRequest = Objects.requireNonNull(httpRequest, "httpRequest is required");
+    this.options = Objects.requireNonNull(options, "options are required");
   }
 
   // httpRequest.getRequestURL() returns StringBuffer which is considered an obsolete class.
@@ -45,10 +49,14 @@ final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
       final @NotNull HttpServletRequest request) {
     final Map<String, String> headersMap = new HashMap<>();
     for (String headerName : Collections.list(request.getHeaderNames())) {
-      // do not copy personal information identifiable headers
-      if (!HttpUtils.containsSensitiveHeader(headerName.toUpperCase(Locale.ROOT))) {
+      if (options.getDataCollectionResolver().isDataCollectionConfigured()
+          || !HttpUtils.containsSensitiveHeader(headerName.toUpperCase(Locale.ROOT))) {
         headersMap.put(headerName, toString(request.getHeaders(headerName)));
       }
+    }
+    if (options.getDataCollectionResolver().isDataCollectionConfigured()) {
+      return HttpUtils.filterHeaders(
+          headersMap, options.getDataCollectionResolver().getHttpRequestHeaders());
     }
     return headersMap;
   }

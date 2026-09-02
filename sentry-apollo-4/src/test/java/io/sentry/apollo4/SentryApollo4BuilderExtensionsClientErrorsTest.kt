@@ -8,7 +8,9 @@ import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
 import com.apollographql.apollo.exception.ApolloException
 import io.sentry.Hint
+import io.sentry.HttpBodyType
 import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
@@ -86,6 +88,7 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
       responseBody: String = responseBodyOk,
       sendDefaultPii: Boolean = false,
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+      configureOptions: SentryOptions.() -> Unit = {},
     ): ApolloClient {
       SentryIntegrationPackageStorage.getInstance().clearStorage()
 
@@ -97,6 +100,7 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
                 dsn = "https://key@sentry.io/proj"
                 sdkVersion = SdkVersion("test", "1.2.3")
                 isSendDefaultPii = sendDefaultPii
+                configureOptions()
               }
             )
         }
@@ -281,6 +285,110 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
   }
 
   @Test
+  fun `data collection can disable outgoing request body`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpBodies = setOf(HttpBodyType.INCOMING_RESPONSE)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals(193L, it.request!!.bodySize)
+          assertNull(it.request!!.data)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable the GraphQL document independently`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.graphql.setDocument(false)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val body = it.request!!.data as String
+          assertFalse(body.contains("\"query\""))
+          assertTrue(body.contains("\"variables\""))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable GraphQL variables independently`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.graphql.setVariables(false)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val body = it.request!!.data as String
+          assertTrue(body.contains("\"query\""))
+          assertFalse(body.contains("\"variables\""))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable the GraphQL request body`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.graphql.setDocument(false)
+        dataCollection.graphql.setVariables(false)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertNull(it.request!!.data) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters request headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("accept")
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("[Filtered]", it.request!!.headers?.get("Accept"))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable request headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertTrue(it.request!!.headers!!.isEmpty()) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `capture errors with more request context if sendDefaultPii is enabled`() {
     val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
     executeQuery(sut)
@@ -313,6 +421,58 @@ abstract class SentryApollo4BuilderExtensionsClientErrorsTest(
           assertNull(response.cookies)
           assertNull(response.headers)
         },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable incoming response body`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpBodies = emptySet()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val response = it.contexts.response!!
+          assertEquals(200, response.statusCode)
+          assertEquals(200, response.bodySize)
+          assertNull(response.data)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters response headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.denyList("content-length")
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("[Filtered]", it.contexts.response!!.headers?.get("Content-Length"))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable response headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertTrue(it.contexts.response!!.headers!!.isEmpty()) },
         any<Hint>(),
       )
   }

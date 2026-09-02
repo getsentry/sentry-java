@@ -384,6 +384,59 @@ public final class io/sentry/DataCategory : java/lang/Enum {
 	public static fun values ()[Lio/sentry/DataCategory;
 }
 
+public final class io/sentry/DataCollection {
+	public fun <init> ()V
+	public fun getCookies ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getDatabaseQueryData ()Ljava/lang/Boolean;
+	public fun getGraphql ()Lio/sentry/DataCollection$Graphql;
+	public fun getHttpBodies ()Ljava/util/Set;
+	public fun getHttpHeaders ()Lio/sentry/DataCollection$HttpHeaders;
+	public fun getUrlQueryParams ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getUserInfo ()Ljava/lang/Boolean;
+	public fun setCookies (Lio/sentry/KeyValueCollectionBehavior;)V
+	public fun setDatabaseQueryData (Z)V
+	public fun setHttpBodies (Ljava/util/Set;)V
+	public fun setUrlQueryParams (Lio/sentry/KeyValueCollectionBehavior;)V
+	public fun setUserInfo (Z)V
+}
+
+public final class io/sentry/DataCollection$Graphql {
+	public fun <init> ()V
+	public fun getDocument ()Ljava/lang/Boolean;
+	public fun getVariables ()Ljava/lang/Boolean;
+	public fun setDocument (Z)V
+	public fun setVariables (Z)V
+}
+
+public final class io/sentry/DataCollection$HttpHeaders {
+	public fun <init> ()V
+	public fun getRequest ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getResponse ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun setRequest (Lio/sentry/KeyValueCollectionBehavior;)V
+	public fun setResponse (Lio/sentry/KeyValueCollectionBehavior;)V
+}
+
+public final class io/sentry/DataCollectionResolver {
+	public fun getCookies ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getHttpRequestHeaders ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getHttpResponseHeaders ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun getUrlQueryParams ()Lio/sentry/KeyValueCollectionBehavior;
+	public fun isDataCollectionConfigured ()Z
+	public fun isDatabaseQueryData ()Z
+	public fun isGraphqlDocument ()Z
+	public fun isGraphqlDocumentWithLegacyAlways ()Z
+	public fun isGraphqlDocumentWithLegacyBodyGate ()Z
+	public fun isGraphqlVariables ()Z
+	public fun isGraphqlVariablesWithLegacyAlways ()Z
+	public fun isGraphqlVariablesWithLegacyBodyGate ()Z
+	public fun isIncomingRequestBody ()Z
+	public fun isIncomingResponseBody ()Z
+	public fun isOutgoingRequestBody ()Z
+	public fun isOutgoingResponseBody ()Z
+	public fun isOutgoingResponseBodyWithLegacyBodyGate ()Z
+	public fun isUserInfo ()Z
+}
+
 public final class io/sentry/DateUtils {
 	public static fun dateToSeconds (Ljava/util/Date;)D
 	public static fun doubleToBigDecimal (D)Ljava/math/BigDecimal;
@@ -634,6 +687,15 @@ public final class io/sentry/Hint {
 public final class io/sentry/HostnameCache {
 	public fun getHostname ()Ljava/lang/String;
 	public static fun getInstance ()Lio/sentry/HostnameCache;
+}
+
+public final class io/sentry/HttpBodyType : java/lang/Enum {
+	public static final field INCOMING_REQUEST Lio/sentry/HttpBodyType;
+	public static final field INCOMING_RESPONSE Lio/sentry/HttpBodyType;
+	public static final field OUTGOING_REQUEST Lio/sentry/HttpBodyType;
+	public static final field OUTGOING_RESPONSE Lio/sentry/HttpBodyType;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/HttpBodyType;
+	public static fun values ()[Lio/sentry/HttpBodyType;
 }
 
 public final class io/sentry/HttpStatusCodeRange {
@@ -1389,6 +1451,24 @@ public final class io/sentry/JsonSerializer : io/sentry/ISerializer {
 public abstract interface class io/sentry/JsonUnknown {
 	public abstract fun getUnknown ()Ljava/util/Map;
 	public abstract fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/KeyValueCollectionBehavior {
+	public static fun allowList ([Ljava/lang/String;)Lio/sentry/KeyValueCollectionBehavior;
+	public static fun denyList ([Ljava/lang/String;)Lio/sentry/KeyValueCollectionBehavior;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getMode ()Lio/sentry/KeyValueCollectionBehavior$Mode;
+	public fun getTerms ()Ljava/util/List;
+	public fun hashCode ()I
+	public static fun off ()Lio/sentry/KeyValueCollectionBehavior;
+}
+
+public final class io/sentry/KeyValueCollectionBehavior$Mode : java/lang/Enum {
+	public static final field ALLOW_LIST Lio/sentry/KeyValueCollectionBehavior$Mode;
+	public static final field DENY_LIST Lio/sentry/KeyValueCollectionBehavior$Mode;
+	public static final field OFF Lio/sentry/KeyValueCollectionBehavior$Mode;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/KeyValueCollectionBehavior$Mode;
+	public static fun values ()[Lio/sentry/KeyValueCollectionBehavior$Mode;
 }
 
 public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java/io/Closeable {
@@ -3691,6 +3771,8 @@ public class io/sentry/SentryOptions {
 	public fun getContextTags ()Ljava/util/List;
 	public fun getContinuousProfiler ()Lio/sentry/IContinuousProfiler;
 	public fun getCron ()Lio/sentry/SentryOptions$Cron;
+	public fun getDataCollection ()Lio/sentry/DataCollection;
+	public fun getDataCollectionResolver ()Lio/sentry/DataCollectionResolver;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDeadlineTimeout ()J
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
@@ -3841,6 +3923,7 @@ public class io/sentry/SentryOptions {
 	public fun setConnectionTimeoutMillis (I)V
 	public fun setContinuousProfiler (Lio/sentry/IContinuousProfiler;)V
 	public fun setCron (Lio/sentry/SentryOptions$Cron;)V
+	public fun setDataCollection (Lio/sentry/DataCollection;)V
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDeadlineTimeout (J)V
 	public fun setDebug (Z)V
@@ -7767,6 +7850,10 @@ public final class io/sentry/util/FileUtils {
 	public static fun readText (Ljava/io/File;)Ljava/lang/String;
 }
 
+public final class io/sentry/util/GraphqlUtils {
+	public static fun filterRequestBody (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
+}
+
 public final class io/sentry/util/HintUtils {
 	public static fun createWithTypeCheckHint (Ljava/lang/Object;)Lio/sentry/Hint;
 	public static fun getEventDropReason (Lio/sentry/Hint;)Lio/sentry/hints/EventDropReason;
@@ -7801,6 +7888,7 @@ public final class io/sentry/util/HttpUtils {
 	public static final field COOKIE_HEADER_NAME Ljava/lang/String;
 	public fun <init> ()V
 	public static fun containsSensitiveHeader (Ljava/lang/String;)Z
+	public static fun filterHeaders (Ljava/util/Map;Lio/sentry/KeyValueCollectionBehavior;)Ljava/util/Map;
 	public static fun filterOutSecurityCookies (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/Enumeration;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/List;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;

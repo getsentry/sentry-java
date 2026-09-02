@@ -40,7 +40,7 @@ internal object SentryKtorClientUtils {
         urlDetails.applyToRequest(this)
         cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
         method = request.method.value
-        headers = getHeaders(scopes, request.headers)
+        headers = getRequestHeaders(scopes, request.headers)
         bodySize = request.content.contentLength
       }
 
@@ -48,7 +48,7 @@ internal object SentryKtorClientUtils {
       io.sentry.protocol.Response().apply {
         // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
         cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
-        headers = getHeaders(scopes, response.headers)
+        headers = getResponseHeaders(scopes, response.headers)
         statusCode = response.status.value
         try {
           bodySize = response.bodyAsBytes().size.toLong()
@@ -65,6 +65,32 @@ internal object SentryKtorClientUtils {
       }
 
     scopes.captureEvent(event, hint)
+  }
+
+  private fun getRequestHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val requestHeaders =
+        headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
+      return HttpUtils.filterHeaders(
+          requestHeaders,
+          scopes.options.dataCollectionResolver.httpRequestHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, headers)
+  }
+
+  private fun getResponseHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val responseHeaders =
+        headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
+      return HttpUtils.filterHeaders(
+          responseHeaders,
+          scopes.options.dataCollectionResolver.httpResponseHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, headers)
   }
 
   private fun getHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {

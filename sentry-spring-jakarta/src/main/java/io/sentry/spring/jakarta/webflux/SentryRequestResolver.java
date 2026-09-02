@@ -50,9 +50,9 @@ public class SentryRequestResolver {
   Map<String, String> resolveHeadersMap(final HttpHeaders request) {
     final Map<String, String> headersMap = new HashMap<>();
     for (Map.Entry<String, List<String>> entry : request.entrySet()) {
-      // do not copy personal information identifiable headers
       String headerName = entry.getKey();
-      if (scopes.getOptions().isSendDefaultPii()
+      if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()
+          || scopes.getOptions().isSendDefaultPii()
           || !HttpUtils.containsSensitiveHeader(headerName)) {
         headersMap.put(
             headerName,
@@ -60,6 +60,10 @@ public class SentryRequestResolver {
                 HttpUtils.filterOutSecurityCookiesFromHeader(
                     entry.getValue(), headerName, Collections.emptyList())));
       }
+    }
+    if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
+      return HttpUtils.filterHeaders(
+          headersMap, scopes.getOptions().getDataCollectionResolver().getHttpRequestHeaders());
     }
     return headersMap;
   }

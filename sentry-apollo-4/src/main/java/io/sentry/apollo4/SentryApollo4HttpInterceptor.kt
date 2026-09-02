@@ -25,6 +25,7 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
+import io.sentry.util.GraphqlUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
@@ -173,7 +174,9 @@ constructor(
 
       operationId?.let { setData("operationId", it) }
 
-      variables?.let { setData("variables", it) }
+      if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+        variables?.let { setData("variables", it) }
+      }
       setData(HTTP_METHOD_KEY, method.uppercase(Locale.ROOT))
     }
   }
@@ -259,6 +262,36 @@ constructor(
 
   private fun getHeader(key: String, headers: List<HttpHeader>): String? =
     headers.firstOrNull { it.name.equals(key, true) }?.value
+
+  private fun getRequestHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val requestHeaders = mutableMapOf<String, String>()
+      for (header in headers) {
+        requestHeaders[header.name] = header.value
+      }
+      return HttpUtils.filterHeaders(
+          requestHeaders,
+          scopes.options.dataCollectionResolver.httpRequestHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(headers)
+  }
+
+  private fun getResponseHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val responseHeaders = mutableMapOf<String, String>()
+      for (header in headers) {
+        responseHeaders[header.name] = header.value
+      }
+      return HttpUtils.filterHeaders(
+          responseHeaders,
+          scopes.options.dataCollectionResolver.httpResponseHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(headers)
+  }
 
   private fun getHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     // Headers are only sent if isSendDefaultPii is enabled due to PII
@@ -355,22 +388,24 @@ constructor(
           cookies =
             if (scopes.options.isSendDefaultPii) getHeader("Cookie", request.headers) else null
           method = request.method.name
-          headers = getHeaders(request.headers)
+          headers = getRequestHeaders(request.headers)
           apiTarget = "graphql"
 
           request.body?.let {
             bodySize = it.contentLength
 
-            val buffer = Buffer()
+            if (scopes.options.dataCollectionResolver.isOutgoingRequestBody) {
+              val buffer = Buffer()
 
-            try {
-              it.writeTo(buffer)
-              data = buffer.readUtf8()
-            } catch (e: Throwable) {
-              scopes.options.logger.log(SentryLevel.ERROR, "Error reading the request body.", e)
-              // continue because the response body alone can already give some insights
-            } finally {
-              buffer.close()
+              try {
+                it.writeTo(buffer)
+                data = GraphqlUtils.filterRequestBody(buffer.readUtf8(), scopes.options)
+              } catch (e: Throwable) {
+                scopes.options.logger.log(SentryLevel.ERROR, "Error reading the request body.", e)
+                // continue because the response body alone can already give some insights
+              } finally {
+                buffer.close()
+              }
             }
           }
         }
@@ -384,13 +419,15 @@ constructor(
             } else {
               null
             }
-          headers = getHeaders(response.headers)
+          headers = getResponseHeaders(response.headers)
           statusCode = response.statusCode
 
           response.body?.buffer?.size?.ifHasValidLength { contentLength ->
             bodySize = contentLength
           }
-          data = body
+          if (scopes.options.dataCollectionResolver.isIncomingResponseBody) {
+            data = body
+          }
         }
 
       fingerprints.add(response.statusCode.toString())

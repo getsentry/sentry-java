@@ -12,8 +12,10 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import io.sentry.Hint
+import io.sentry.HttpBodyType
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -222,6 +224,155 @@ class ExceptionReporterTest {
   }
 
   @Test
+  fun `data collection ignores the legacy max request body size option`() {
+    val options =
+      SentryOptions().also {
+        it.maxRequestBodySize = SentryOptions.RequestSize.NONE
+        it.dataCollection.graphql.setDocument(true)
+        it.dataCollection.graphql.setVariables(true)
+      }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check {
+          val data = it.request!!.data as Map<Any, Any>
+          assertEquals(fixture.query, data["query"])
+          assertEquals(fixture.variables, data["variables"])
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `legacy options can disable outgoing response data`() {
+    val options = SentryOptions().also { it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNull(it.contexts.response) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `legacy request body size can disable outgoing response data`() {
+    val options = SentryOptions().also { it.isSendDefaultPii = true }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNull(it.contexts.response) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection response ignores legacy request body options`() {
+    val options =
+      SentryOptions().also {
+        it.maxRequestBodySize = SentryOptions.RequestSize.NONE
+        it.dataCollection.httpBodies = setOf(HttpBodyType.OUTGOING_RESPONSE)
+      }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNotNull(it.contexts.response?.data) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable outgoing response data`() {
+    val options = fixture.defaultOptions.also { it.dataCollection.httpBodies = emptySet() }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNull(it.contexts.response) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection namespace default enables outgoing response data`() {
+    val options =
+      SentryOptions().also {
+        it.maxRequestBodySize = SentryOptions.RequestSize.NONE
+        it.dataCollection.cookies = KeyValueCollectionBehavior.off()
+      }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNotNull(it.contexts.response?.data) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `does not attach query or variables if sendDefaultPii is false`() {
     val exceptionReporter =
       fixture.getSut(
@@ -249,6 +400,114 @@ class ExceptionReporterTest {
           val request = it.request!!
           assertNull(request.data)
           assertEquals("graphql", request.apiTarget)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable the query independently`() {
+    val options = fixture.defaultOptions
+    options.dataCollection.graphql.setDocument(false)
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check {
+          val data = it.request!!.data as Map<Any, Any>
+          assertNull(data["query"])
+          assertEquals(fixture.variables, data["variables"])
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable variables independently`() {
+    val options = fixture.defaultOptions
+    options.dataCollection.graphql.setVariables(false)
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check {
+          val data = it.request!!.data as Map<Any, Any>
+          assertEquals(fixture.query, data["query"])
+          assertNull(data["variables"])
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable both query and variables`() {
+    val options = fixture.defaultOptions
+    options.dataCollection.graphql.setDocument(false)
+    options.dataCollection.graphql.setVariables(false)
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check { assertNull(it.request!!.data) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection namespace defaults enable query and variables`() {
+    val options =
+      SentryOptions().also {
+        it.maxRequestBodySize = SentryOptions.RequestSize.ALWAYS
+        it.dataCollection.cookies = KeyValueCollectionBehavior.off()
+      }
+    val exceptionReporter = fixture.getSut(options)
+
+    exceptionReporter.captureThrowable(
+      fixture.exception,
+      ExceptionReporter.ExceptionDetails(
+        fixture.scopes,
+        fixture.instrumentationExecutionParameters,
+        false,
+      ),
+      fixture.executionResult,
+    )
+
+    verify(fixture.scopes)
+      .captureEvent(
+        org.mockito.kotlin.check {
+          val data = it.request!!.data as Map<Any, Any>
+          assertEquals(fixture.query, data["query"])
+          assertEquals(fixture.variables, data["variables"])
         },
         any<Hint>(),
       )
