@@ -13,6 +13,7 @@
   - `globalHubMode` is enabled by default on Android, where tags, extras, contexts and level set inside the callback were silently dropped
   - Scopes that are explicitly made current, e.g. via `Sentry.setCurrentScopes` or the `SentryContext` coroutine integration, are now also honoured when `globalHubMode` is enabled
   - `Sentry.pushScope`, `Sentry.pushIsolationScope` and `Sentry.popScope` remain no-ops when `globalHubMode` is enabled
+- Skip Android profiling when the installed system profiling package delivers empty traces ([#5975](https://github.com/getsentry/sentry-java/pull/5975))
 
 ### Internal
 
