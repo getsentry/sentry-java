@@ -6,7 +6,7 @@ import kotlin.test.assertFailsWith
 
 class DataCollectionTest {
   @Test
-  fun `public constructor creates explicit empty configuration`() {
+  fun `public constructor forces Data Collection for empty configuration`() {
     val dataCollection = DataCollection()
 
     assertThat(dataCollection.userInfo).isNull()
@@ -22,7 +22,7 @@ class DataCollectionTest {
   }
 
   @Test
-  fun `SDK-owned configuration starts unconfigured`() {
+  fun `SDK-owned configuration does not force Data Collection`() {
     val dataCollection = DataCollection(false)
 
     assertThat(dataCollection.isExplicitlyConfigured()).isFalse()
