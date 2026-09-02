@@ -13,6 +13,7 @@
 
 ### Fixes
 
+- Improve `SentryTraced` span timing and labeling so composition attempts are tagged as remembered or abandoned, and first-render spans are started only once per traced subtree
 - Keep dropped tombstone and ANR events dropped, instead of reporting the same app exit again at every app start ([#6002](https://github.com/getsentry/sentry-java/pull/6002))
 - Apply `Sentry.withScope` and `Sentry.withIsolationScope` data to events captured inside the callback when `globalHubMode` is enabled ([#6004](https://github.com/getsentry/sentry-java/pull/6004))
   - `globalHubMode` is enabled by default on Android, where tags, extras, contexts and level set inside the callback were silently dropped
