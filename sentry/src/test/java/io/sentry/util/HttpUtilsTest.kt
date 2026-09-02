@@ -134,6 +134,69 @@ class HttpUtilsTest {
   }
 
   @Test
+  fun `cookie filter replaces comma-separated malformed cookies`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=dark, sessionId=secret",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("[Filtered]")
+  }
+
+  @Test
+  fun `cookie filter replaces space-separated malformed cookies`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=dark sessionId=secret",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("[Filtered]")
+  }
+
+  @Test
+  fun `cookie filter preserves valid names and values`() {
+    val cookies =
+      "plain=abc123; empty=; base64=YWJjZA==; quoted=\"dark\"; quoted-empty=\"\"; encoded=hello%2Fworld; !#\$%&'*+-.^_`|~=!#\$%&'()*+-./:<=>?@[]^_`{|}~"
+
+    assertThat(
+        HttpUtils.filterCookies(
+          cookies,
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo(cookies)
+  }
+
+  @Test
+  fun `cookie filter replaces comma-separated malformed cookies in quoted values`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=\"dark, sessionId=secret\"",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("[Filtered]")
+  }
+
+  @Test
+  fun `cookie filter replaces space-separated malformed cookies in quoted values`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=\"dark sessionId=secret\"",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("[Filtered]")
+  }
+
+  @Test
   fun `cookie allow list never exposes malformed pairs`() {
     assertThat(
         HttpUtils.filterCookies(
