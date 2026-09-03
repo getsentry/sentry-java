@@ -7,6 +7,7 @@
 - Update `SentryTraced` so that it now honors `options.setIgnoredSpanOrigins` ([#6058](https://github.com/getsentry/sentry-java/pull/6058))
 - `SentryTraced` now checks for its owning transaction dynamically rather than once per app process. The latter caused `SentryTraced` spans to be dropped process-wide once the original transaction finished ([#6057](https://github.com/getsentry/sentry-java/pull/6057))
 - Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`) ([#6061](https://github.com/getsentry/sentry-java/pull/6061))
+- Populate the Android connection status cache during the first two minutes after boot, instead of treating the empty cache as up to date ([#6029](https://github.com/getsentry/sentry-java/pull/6029))
 
 ### Internal
 
