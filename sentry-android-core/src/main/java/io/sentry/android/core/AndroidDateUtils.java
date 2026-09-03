@@ -17,7 +17,10 @@ public final class AndroidDateUtils {
    * invocations.
    *
    * @return the UTC SentryDate
+   * @deprecated use {@code options.getDateProvider()}. This static holder cannot be configured or
+   *     stubbed, which is why the note above already asked callers to prefer the options.
    */
+  @Deprecated
   public static @NotNull SentryDate getCurrentSentryDateTime() {
     return dateProvider.now();
   }
