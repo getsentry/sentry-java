@@ -29,12 +29,14 @@ import static android.app.ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING;
 
 import android.app.ActivityManager;
 import android.content.Context;
-import android.os.SystemClock;
 import io.sentry.IDebugManager;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
+import io.sentry.time.Deadline;
+import io.sentry.time.MonotonicTicker;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +49,7 @@ final class ANRWatchDog extends Thread {
   private final boolean reportInDebug;
   private final ANRListener anrListener;
   private final MainLooperHandler uiHandler;
-  private final ICurrentDateProvider timeProvider;
+  private final MonotonicTicker monotonicTicker;
 
   /** the interval in which we check if there's an ANR, in ms */
   private long pollingIntervalMs;
@@ -55,7 +57,9 @@ final class ANRWatchDog extends Thread {
   private final long timeoutIntervalMillis;
   private final @NotNull ILogger logger;
 
-  private volatile long lastKnownActiveUiTimestampMs = 0;
+  /** How long the main thread has left to run the ticker before we call it an ANR. */
+  private volatile @NotNull Deadline uiResponsiveUntil;
+
   private final AtomicBoolean reported = new AtomicBoolean(false);
 
   private final @NotNull Context context;
@@ -71,10 +75,8 @@ final class ANRWatchDog extends Thread {
       @NotNull ILogger logger,
       final @NotNull Context context,
       final @Nullable IDebugManager debugManager) {
-    // avoid method refs on Android due to some issues with older AGP setups
-    // noinspection Convert2MethodRef
     this(
-        () -> SystemClock.uptimeMillis(),
+        AndroidMonotonicTicker.getInstance(),
         timeoutIntervalMillis,
         500,
         reportInDebug,
@@ -87,7 +89,7 @@ final class ANRWatchDog extends Thread {
 
   @TestOnly
   ANRWatchDog(
-      @NotNull final ICurrentDateProvider timeProvider,
+      @NotNull final MonotonicTicker monotonicTicker,
       long timeoutIntervalMillis,
       long pollingIntervalMillis,
       boolean reportInDebug,
@@ -99,7 +101,7 @@ final class ANRWatchDog extends Thread {
 
     super("|ANR-WatchDog|");
 
-    this.timeProvider = timeProvider;
+    this.monotonicTicker = monotonicTicker;
     this.timeoutIntervalMillis = timeoutIntervalMillis;
     this.pollingIntervalMs = pollingIntervalMillis;
     this.reportInDebug = reportInDebug;
@@ -108,9 +110,12 @@ final class ANRWatchDog extends Thread {
     this.uiHandler = uiHandler;
     this.context = context;
     this.debugManager = debugManager;
+    this.uiResponsiveUntil =
+        Deadline.after(monotonicTicker, timeoutIntervalMillis, TimeUnit.MILLISECONDS);
     this.ticker =
         () -> {
-          lastKnownActiveUiTimestampMs = timeProvider.getCurrentTimeMillis();
+          uiResponsiveUntil =
+              Deadline.after(monotonicTicker, timeoutIntervalMillis, TimeUnit.MILLISECONDS);
           reported.set(false);
         };
 
@@ -146,11 +151,8 @@ final class ANRWatchDog extends Thread {
         return;
       }
 
-      final long unresponsiveDurationMs =
-          timeProvider.getCurrentTimeMillis() - lastKnownActiveUiTimestampMs;
-
       // If the main thread has not handled ticker, it is blocked. ANR.
-      if (unresponsiveDurationMs > timeoutIntervalMillis) {
+      if (uiResponsiveUntil.hasPassed()) {
         if (!reportInDebug && debugManager != null && debugManager.isDebuggerConnected()) {
           logger.log(
               SentryLevel.DEBUG,
