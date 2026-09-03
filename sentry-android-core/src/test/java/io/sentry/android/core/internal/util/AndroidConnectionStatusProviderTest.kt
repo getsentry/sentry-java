@@ -26,7 +26,8 @@ import io.sentry.android.core.BuildInfoProvider
 import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.SystemEventsBreadcrumbsIntegration
 import io.sentry.test.ImmediateExecutorService
-import io.sentry.transport.ICurrentDateProvider
+import io.sentry.time.TestMonotonicClock
+import java.util.concurrent.TimeUnit.MINUTES
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -61,14 +62,12 @@ class AndroidConnectionStatusProviderTest {
   private lateinit var connectivityManager: ConnectivityManager
   private lateinit var networkInfo: NetworkInfo
   private lateinit var buildInfo: BuildInfoProvider
-  private lateinit var timeProvider: ICurrentDateProvider
+  private lateinit var clock: TestMonotonicClock
   private lateinit var options: SentryOptions
   private lateinit var network: Network
   private lateinit var networkCapabilities: NetworkCapabilities
   private lateinit var logger: ILogger
   private lateinit var contextUtilsStaticMock: MockedStatic<ContextUtils>
-
-  private var currentTime = 1000L
 
   @BeforeTest
   fun beforeTest() {
@@ -96,16 +95,12 @@ class AndroidConnectionStatusProviderTest {
     whenever(networkCapabilities.hasCapability(NET_CAPABILITY_VALIDATED)).thenReturn(true)
     whenever(networkCapabilities.hasTransport(TRANSPORT_WIFI)).thenReturn(true)
 
-    timeProvider = mock()
-    whenever(timeProvider.currentTimeMillis).thenAnswer { currentTime }
+    clock = TestMonotonicClock()
 
     logger = mock()
     options = SentryOptions()
     options.setLogger(logger)
     options.executorService = ImmediateExecutorService()
-
-    // Reset current time for each test to ensure cache isolation
-    currentTime = 1000L
 
     // Mock ContextUtils to return foreground importance
     contextUtilsStaticMock = mockStatic(ContextUtils::class.java)
@@ -120,7 +115,7 @@ class AndroidConnectionStatusProviderTest {
     AppState.getInstance().registerLifecycleObserver(options)
 
     connectionStatusProvider =
-      AndroidConnectionStatusProvider(contextMock, options, buildInfo, timeProvider)
+      AndroidConnectionStatusProvider(contextMock, options, buildInfo, clock)
   }
 
   @AfterTest
@@ -199,7 +194,7 @@ class AndroidConnectionStatusProviderTest {
 
     // Create a new provider with the null connectivity manager
     val providerWithNullConnectivity =
-      AndroidConnectionStatusProvider(nullConnectivityContext, options, buildInfo, timeProvider)
+      AndroidConnectionStatusProvider(nullConnectivityContext, options, buildInfo, clock)
 
     assertEquals(
       IConnectionStatusProvider.ConnectionStatus.UNKNOWN,
@@ -311,6 +306,27 @@ class AndroidConnectionStatusProviderTest {
   }
 
   @Test
+  fun `an unpopulated cache is not treated as fresh shortly after boot`() {
+    whenever(networkInfo.isConnected).thenReturn(true)
+
+    // elapsedRealtimeNanos() counts from boot, so a provider created moments after boot sees a
+    // tick near zero. The cache is still empty and must not be read as up to date.
+    val provider =
+      AndroidConnectionStatusProvider(contextMock, options, buildInfo, TestMonotonicClock())
+
+    val callsBefore =
+      mockingDetails(connectivityManager).invocations.count { it.method.name == "getActiveNetwork" }
+
+    assertEquals(IConnectionStatusProvider.ConnectionStatus.CONNECTED, provider.connectionStatus)
+
+    val callsAfter =
+      mockingDetails(connectivityManager).invocations.count { it.method.name == "getActiveNetwork" }
+    assertTrue(callsAfter > callsBefore, "An empty cache must be populated before it is read")
+
+    provider.close()
+  }
+
+  @Test
   fun `cache TTL works correctly`() {
     // Setup: Mock network info to return connected
     whenever(networkInfo.isConnected).thenReturn(true)
@@ -327,7 +343,7 @@ class AndroidConnectionStatusProviderTest {
       mockingDetails(connectivityManager).invocations.count { it.method.name == "getActiveNetwork" }
 
     // Advance time by 1 minute (less than 2 minute TTL)
-    currentTime += 60 * 1000L
+    clock.advance(1, MINUTES)
 
     // Second call should use cache - no additional calls to getActiveNetwork
     val secondResult = connectionStatusProvider.connectionStatus
@@ -340,7 +356,7 @@ class AndroidConnectionStatusProviderTest {
     assertEquals(initialCallCount, callCountAfterSecond, "Second call should use cache")
 
     // Advance time beyond TTL (total 3 minutes)
-    currentTime += 2 * 60 * 1000L
+    clock.advance(2, MINUTES)
 
     // Third call should refresh cache - should make new calls to getActiveNetwork
     val thirdResult = connectionStatusProvider.connectionStatus
@@ -547,7 +563,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(connectivityManager.getNetworkCapabilities(any())).thenReturn(goodCaps)
 
     // Force cache invalidation by advancing time beyond TTL
-    currentTime += 3 * 60 * 1000L // 3 minutes
+    clock.advance(3, MINUTES)
 
     // Should return CONNECTED for good capabilities
     assertEquals(
@@ -564,7 +580,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(connectivityManager.getNetworkCapabilities(any())).thenReturn(unvalidatedCaps)
 
     // Force cache invalidation again
-    currentTime += 3 * 60 * 1000L
+    clock.advance(3, MINUTES)
 
     assertEquals(
       IConnectionStatusProvider.ConnectionStatus.DISCONNECTED,

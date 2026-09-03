@@ -19,10 +19,12 @@ import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
-import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.time.Deadline;
+import io.sentry.time.MonotonicClock;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +43,7 @@ public final class AndroidConnectionStatusProvider
   private final @NotNull Context context;
   private final @NotNull SentryOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @NotNull ICurrentDateProvider timeProvider;
+  private final @NotNull MonotonicClock clock;
   private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers;
   private final @Nullable Handler handler;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
@@ -66,16 +68,16 @@ public final class AndroidConnectionStatusProvider
 
   private volatile @Nullable NetworkCapabilities cachedNetworkCapabilities;
   private volatile @Nullable Network currentNetwork;
-  private volatile long lastCacheUpdateTime = 0;
-  private static final long CACHE_TTL_MS = 2 * 60 * 1000L; // 2 minutes
+  private volatile @NotNull Deadline cacheFreshUntil;
+  private static final long CACHE_TTL_MINUTES = 2;
   private final @NotNull AtomicBoolean isConnected = new AtomicBoolean(false);
 
   public AndroidConnectionStatusProvider(
       @NotNull Context context,
       @NotNull SentryOptions options,
       @NotNull BuildInfoProvider buildInfoProvider,
-      @NotNull ICurrentDateProvider timeProvider) {
-    this(context, options, buildInfoProvider, timeProvider, null);
+      @NotNull MonotonicClock clock) {
+    this(context, options, buildInfoProvider, clock, null);
   }
 
   @SuppressLint("InlinedApi")
@@ -83,12 +85,13 @@ public final class AndroidConnectionStatusProvider
       @NotNull Context context,
       @NotNull SentryOptions options,
       @NotNull BuildInfoProvider buildInfoProvider,
-      @NotNull ICurrentDateProvider timeProvider,
+      @NotNull MonotonicClock clock,
       @Nullable Handler handler) {
     this.context = ContextUtils.getApplicationContext(context);
     this.options = options;
     this.buildInfoProvider = buildInfoProvider;
-    this.timeProvider = timeProvider;
+    this.clock = clock;
+    this.cacheFreshUntil = Deadline.passed(clock);
     this.handler = handler;
     this.connectionStatusObservers = new ArrayList<>();
 
@@ -231,7 +234,7 @@ public final class AndroidConnectionStatusProvider
               try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
                 cachedNetworkCapabilities = null;
                 currentNetwork = null;
-                lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+                cacheFreshUntil = Deadline.after(clock, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
 
                 options
                     .getLogger()
@@ -362,13 +365,13 @@ public final class AndroidConnectionStatusProvider
                     SentryLevel.INFO,
                     "No permission (ACCESS_NETWORK_STATE) to check network status.");
             cachedNetworkCapabilities = null;
-            lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+            cacheFreshUntil = Deadline.after(clock, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
             return;
           }
 
           if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.M) {
             cachedNetworkCapabilities = null;
-            lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+            cacheFreshUntil = Deadline.after(clock, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
             return;
           }
 
@@ -387,7 +390,7 @@ public final class AndroidConnectionStatusProvider
                 null; // Clear cached capabilities if connectivity manager is null
           }
         }
-        lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+        cacheFreshUntil = Deadline.after(clock, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
 
         options
             .getLogger()
@@ -400,13 +403,13 @@ public final class AndroidConnectionStatusProvider
       } catch (Throwable t) {
         options.getLogger().log(SentryLevel.WARNING, "Failed to update connection status cache", t);
         cachedNetworkCapabilities = null;
-        lastCacheUpdateTime = timeProvider.getCurrentTimeMillis();
+        cacheFreshUntil = Deadline.after(clock, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
       }
     }
   }
 
   private boolean isCacheValid() {
-    return (timeProvider.getCurrentTimeMillis() - lastCacheUpdateTime) < CACHE_TTL_MS;
+    return !cacheFreshUntil.hasPassed();
   }
 
   @Override
@@ -459,7 +462,7 @@ public final class AndroidConnectionStatusProvider
       // Clear cached state
       cachedNetworkCapabilities = null;
       currentNetwork = null;
-      lastCacheUpdateTime = 0;
+      cacheFreshUntil = Deadline.passed(clock);
     }
     options.getLogger().log(SentryLevel.DEBUG, "Network callback unregistered");
   }
