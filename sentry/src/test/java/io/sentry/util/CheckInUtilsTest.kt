@@ -1,5 +1,6 @@
 package io.sentry.util
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.CheckInStatus
 import io.sentry.FilterString
 import io.sentry.IScopes
@@ -143,6 +144,7 @@ class CheckInUtilsTest {
       sentry.`when`<Any> { Sentry.forkedScopes(any()) }.then { scopes.forkedScopes("test") }
       whenever(scopes.forkedScopes(any())).thenReturn(scopes)
       whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
+      whenever(scopes.options).thenReturn(SentryOptions())
 
       try {
         CheckInUtils.withCheckIn("monitor-1") { throw RuntimeException("thrown on purpose") }
@@ -311,5 +313,20 @@ class CheckInUtilsTest {
       assertEquals(30, monitorConfig.maxRuntime)
       assertEquals("America/Los_Angeles", monitorConfig.timezone)
     }
+  }
+
+  @Test
+  fun `resolves a ticker that ticks on System nanoTime`() {
+    // The clock the check-in path reads. Bracketing a tick between two System.nanoTime() readings
+    // pins the source, not just the resolution: a ticker on any other monotonic source reports a
+    // different epoch and would fall outside the bracket.
+    val ticker = SentryOptions().monotonicTicker
+
+    val before = System.nanoTime()
+    val tick = ticker.tickNanos()
+    val after = System.nanoTime()
+
+    assertThat(tick).isAtLeast(before)
+    assertThat(tick).isAtMost(after)
   }
 }
