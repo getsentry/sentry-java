@@ -75,6 +75,8 @@ public final class ProfilingTraceData implements JsonUnknown, JsonSerializable {
     this(new File("dummy"), NoOpTransaction.getInstance());
   }
 
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public ProfilingTraceData(
       final @NotNull File traceFile, final @NotNull ITransaction transaction) {
     this(

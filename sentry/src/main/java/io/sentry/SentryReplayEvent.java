@@ -52,6 +52,8 @@ public final class SentryReplayEvent extends SentryBaseEvent
   private @Nullable List<String> segmentNames;
   private @Nullable Map<String, Object> unknown;
 
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public SentryReplayEvent() {
     super();
     this.replayId = new SentryId();
