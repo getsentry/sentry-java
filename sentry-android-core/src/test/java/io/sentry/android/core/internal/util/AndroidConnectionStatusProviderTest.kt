@@ -144,6 +144,10 @@ class AndroidConnectionStatusProviderTest {
   @Test
   fun `When network is active but not connected with permission, return DISCONNECTED for isConnected`() {
     whenever(networkInfo.isConnected).thenReturn(false)
+    // buildInfo reports API 24, so the provider reads NetworkCapabilities rather than the legacy
+    // activeNetworkInfo. The active network has to report it cannot reach the internet too.
+    whenever(networkCapabilities.hasCapability(NET_CAPABILITY_INTERNET)).thenReturn(false)
+    whenever(networkCapabilities.hasCapability(NET_CAPABILITY_VALIDATED)).thenReturn(false)
 
     assertEquals(
       IConnectionStatusProvider.ConnectionStatus.DISCONNECTED,
