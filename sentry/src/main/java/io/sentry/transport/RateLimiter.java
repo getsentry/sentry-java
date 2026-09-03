@@ -14,6 +14,8 @@ import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.time.Deadline;
+import io.sentry.time.MonotonicClock;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.HintUtils;
 import io.sentry.util.StringUtils;
@@ -22,7 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -30,32 +31,48 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Controls retry limits on different category types sent to Sentry. */
 public final class RateLimiter implements Closeable {
 
-  private static final int HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60000;
+  private static final long HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS = 60_000;
 
-  private final @NotNull ICurrentDateProvider currentDateProvider;
-  private final @NotNull SentryOptions options;
-  private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
+  private final @NotNull MonotonicClock clock;
+  private final @NotNull RateLimiterConfig config;
+  private final @NotNull Map<DataCategory, @NotNull Deadline> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
   private final @NotNull List<IRateLimitObserver> rateLimitObservers = new CopyOnWriteArrayList<>();
   private final @NotNull List<Future<?>> notifyObserversFutures = new ArrayList<>();
   private final @NotNull AutoClosableReentrantLock notifyFuturesLock =
       new AutoClosableReentrantLock();
 
-  public RateLimiter(
-      final @NotNull ICurrentDateProvider currentDateProvider,
-      final @NotNull SentryOptions options) {
-    this.currentDateProvider = currentDateProvider;
-    this.options = options;
+  public RateLimiter(final @NotNull MonotonicClock clock, final @NotNull RateLimiterConfig config) {
+    this.clock = clock;
+    this.config = config;
   }
 
   public RateLimiter(final @NotNull SentryOptions options) {
-    this(CurrentDateProvider.getInstance(), options);
+    this(options.getMonotonicClock(), options);
+  }
+
+  /**
+   * @deprecated backoff is measured on {@link SentryOptions#getMonotonicClock()}; use {@link
+   *     #RateLimiter(SentryOptions)}. An injected wall clock is adapted so that an existing custom
+   *     transport keeps the behaviour it has today, but it is not monotonic and can step.
+   */
+  @Deprecated
+  public RateLimiter(
+      final @NotNull ICurrentDateProvider currentDateProvider,
+      final @NotNull SentryOptions options) {
+    // ICurrentDateProvider is itself a `long ()` interface, so an unadorned lambda matches this
+    // constructor as readily as the intended one. The cast is what makes the call non-recursive.
+    this(
+        (MonotonicClock)
+            () -> TimeUnit.MILLISECONDS.toNanos(currentDateProvider.getCurrentTimeMillis()),
+        options);
   }
 
   public @Nullable SentryEnvelope filter(
@@ -70,14 +87,14 @@ public final class RateLimiter implements Closeable {
         }
 
         dropItems.add(item);
-        options
+        config
             .getClientReportRecorder()
             .recordLostEnvelopeItem(DiscardReason.RATELIMIT_BACKOFF, item);
       }
     }
 
     if (dropItems != null) {
-      options
+      config
           .getLogger()
           .log(
               SentryLevel.WARNING,
@@ -94,7 +111,7 @@ public final class RateLimiter implements Closeable {
 
       // no reason to continue
       if (toSend.isEmpty()) {
-        options
+        config
             .getLogger()
             .log(SentryLevel.WARNING, "Envelope discarded due all items rate limited.");
 
@@ -107,16 +124,11 @@ public final class RateLimiter implements Closeable {
     return envelope;
   }
 
-  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public boolean isActiveForCategory(final @NotNull DataCategory dataCategory) {
-    final Date currentDate = new Date(currentDateProvider.getCurrentTimeMillis());
-
     // check all categories
-    final Date dateAllCategories = sentryRetryAfterLimit.get(DataCategory.All);
-    if (dateAllCategories != null) {
-      if (!currentDate.after(dateAllCategories)) {
-        return true;
-      }
+    final @Nullable Deadline allCategories = sentryRetryAfterLimit.get(DataCategory.All);
+    if (allCategories != null && !allCategories.hasPassed()) {
+      return true;
     }
 
     // Unknown should not be rate limited
@@ -125,24 +137,15 @@ public final class RateLimiter implements Closeable {
     }
 
     // check for specific dataCategory
-    final Date dateCategory = sentryRetryAfterLimit.get(dataCategory);
-    if (dateCategory != null) {
-      return !currentDate.after(dateCategory);
-    }
-
-    return false;
+    final @Nullable Deadline categoryLimit = sentryRetryAfterLimit.get(dataCategory);
+    return categoryLimit != null && !categoryLimit.hasPassed();
   }
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public boolean isAnyRateLimitActive() {
-    final Date currentDate = new Date(currentDateProvider.getCurrentTimeMillis());
-
-    for (DataCategory dataCategory : sentryRetryAfterLimit.keySet()) {
-      final Date dateCategory = sentryRetryAfterLimit.get(dataCategory);
-      if (dateCategory != null) {
-        if (!currentDate.after(dateCategory)) {
-          return true;
-        }
+    for (final @NotNull Deadline limit : sentryRetryAfterLimit.values()) {
+      if (!limit.hasPassed()) {
+        return true;
       }
     }
 
@@ -163,7 +166,7 @@ public final class RateLimiter implements Closeable {
         DiskFlushNotification.class,
         (diskFlushNotification) -> {
           diskFlushNotification.markFlushed();
-          options.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
+          config.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
         });
   }
 
@@ -251,14 +254,10 @@ public final class RateLimiter implements Closeable {
 
         if (rateLimit.length > 0) {
           final String retryAfter = rateLimit[0];
-          long retryAfterMillis = parseRetryAfterOrDefault(retryAfter);
+          final @NotNull Deadline deadline = parseRetryAfterOrDefault(retryAfter);
 
           if (rateLimit.length > 1) {
             final String allCategories = rateLimit[1];
-
-            // we dont care if Date is UTC as we just add the relative seconds
-            final Date date =
-                new Date(currentDateProvider.getCurrentTimeMillis() + retryAfterMillis);
 
             if (allCategories != null && !allCategories.isEmpty()) {
               final String[] categories = allCategories.split(";", -1);
@@ -270,48 +269,43 @@ public final class RateLimiter implements Closeable {
                   if (catItemCapitalized != null) {
                     dataCategory = DataCategory.valueOf(catItemCapitalized);
                   } else {
-                    options.getLogger().log(ERROR, "Couldn't capitalize: %s", catItem);
+                    config.getLogger().log(ERROR, "Couldn't capitalize: %s", catItem);
                   }
                 } catch (IllegalArgumentException e) {
-                  options.getLogger().log(INFO, e, "Unknown category: %s", catItem);
+                  config.getLogger().log(INFO, e, "Unknown category: %s", catItem);
                 }
                 // we dont apply rate limiting for unknown categories
                 if (DataCategory.Unknown.equals(dataCategory)) {
                   continue;
                 }
 
-                applyRetryAfterOnlyIfLonger(dataCategory, date, retryAfterMillis);
+                applyRetryAfterOnlyIfLonger(dataCategory, deadline);
               }
             } else {
               // if categories are empty, we should apply to "all" categories.
-              applyRetryAfterOnlyIfLonger(DataCategory.All, date, retryAfterMillis);
+              applyRetryAfterOnlyIfLonger(DataCategory.All, deadline);
             }
           }
         }
       }
     } else if (errorCode == 429) {
-      final long retryAfterMillis = parseRetryAfterOrDefault(retryAfterHeader);
-      // we dont care if Date is UTC as we just add the relative seconds
-      final Date date = new Date(currentDateProvider.getCurrentTimeMillis() + retryAfterMillis);
-      applyRetryAfterOnlyIfLonger(DataCategory.All, date, retryAfterMillis);
+      applyRetryAfterOnlyIfLonger(DataCategory.All, parseRetryAfterOrDefault(retryAfterHeader));
     }
   }
 
   /**
-   * apply new timestamp for rate limiting only if its longer than the previous one
+   * apply the new deadline for rate limiting only if it is longer than the previous one
    *
    * @param dataCategory the DataCategory
-   * @param date the Date to be applied
-   * @param delayMillis the millis until the rate limit is lifted
+   * @param deadline when the rate limit is lifted
    */
-  @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private void applyRetryAfterOnlyIfLonger(
-      final @NotNull DataCategory dataCategory, final @NotNull Date date, final long delayMillis) {
-    final Date oldDate = sentryRetryAfterLimit.get(dataCategory);
+      final @NotNull DataCategory dataCategory, final @NotNull Deadline deadline) {
+    final @Nullable Deadline oldLimit = sentryRetryAfterLimit.get(dataCategory);
 
-    // only overwrite its previous date if the limit is even longer
-    if (oldDate == null || date.after(oldDate)) {
-      sentryRetryAfterLimit.put(dataCategory, date);
+    // only overwrite the previous deadline if the limit is even longer
+    if (oldLimit == null || deadline.isAfter(oldLimit)) {
+      sentryRetryAfterLimit.put(dataCategory, deadline);
 
       notifyRateLimitObservers();
 
@@ -326,11 +320,12 @@ public final class RateLimiter implements Closeable {
         }
         try {
           notifyObserversFutures.add(
-              options
+              config
                   .getTimerExecutorService()
-                  .schedule(this::notifyRateLimitObservers, delayMillis));
+                  .schedule(
+                      this::notifyRateLimitObservers, deadline.remaining(TimeUnit.MILLISECONDS)));
         } catch (RejectedExecutionException e) {
-          options
+          config
               .getLogger()
               .log(SentryLevel.WARNING, "Failed to schedule rate limit lifted notification.", e);
         }
@@ -344,7 +339,7 @@ public final class RateLimiter implements Closeable {
    * @param retryAfterHeader the header
    * @return the millis in seconds or the default seconds value
    */
-  private long parseRetryAfterOrDefault(final @Nullable String retryAfterHeader) {
+  private @NotNull Deadline parseRetryAfterOrDefault(final @Nullable String retryAfterHeader) {
     long retryAfterMillis = HTTP_RETRY_AFTER_DEFAULT_DELAY_MILLIS;
     if (retryAfterHeader != null) {
       try {
@@ -354,7 +349,7 @@ public final class RateLimiter implements Closeable {
         // let's use the default then
       }
     }
-    return retryAfterMillis;
+    return Deadline.after(clock, retryAfterMillis, TimeUnit.MILLISECONDS);
   }
 
   private void notifyRateLimitObservers() {

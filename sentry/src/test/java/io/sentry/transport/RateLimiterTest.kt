@@ -3,6 +3,7 @@ package io.sentry.transport
 import io.sentry.Attachment
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
+import io.sentry.DataCategory
 import io.sentry.DataCategory.Replay
 import io.sentry.EnvelopeReader
 import io.sentry.Hint
@@ -38,10 +39,13 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.test.getProperty
+import io.sentry.time.TestMonotonicClock
 import io.sentry.util.HintUtils
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -61,7 +65,7 @@ import org.mockito.kotlin.whenever
 
 class RateLimiterTest {
   private class Fixture {
-    val currentDateProvider = mock<ICurrentDateProvider>()
+    val clock = TestMonotonicClock()
     val clientReportRecorder = mock<IClientReportRecorder>()
     val serializer = mock<ISerializer>()
     var executorService: SentryExecutorService? = null
@@ -75,7 +79,7 @@ class RateLimiterTest {
 
       SentryOptionsManipulator.setClientReportRecorder(options, clientReportRecorder)
 
-      return RateLimiter(currentDateProvider, options)
+      return RateLimiter(clock, options)
     }
   }
 
@@ -90,7 +94,6 @@ class RateLimiterTest {
   @Test
   fun `uses X-Sentry-Rate-Limit and allows sending if time has passed`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
     val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
 
@@ -100,6 +103,9 @@ class RateLimiterTest {
       1,
     )
 
+    // the shortest limit in the header has now lapsed
+    fixture.clock.advance(1001, MILLISECONDS)
+
     val result = rateLimiter.filter(envelope, Hint())
     assertNotNull(result)
     assertEquals(1, result.items.count())
@@ -108,7 +114,6 @@ class RateLimiterTest {
   @Test
   fun `parse X-Sentry-Rate-Limit and set its values and retry after should be true`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
     val scopes: IScopes = mock()
     whenever(scopes.options).thenReturn(SentryOptions())
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
@@ -129,7 +134,6 @@ class RateLimiterTest {
   @Test
   fun `parse X-Sentry-Rate-Limit and set its values and retry after should be false`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
     val scopes: IScopes = mock()
     whenever(scopes.options).thenReturn(SentryOptions())
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
@@ -143,6 +147,9 @@ class RateLimiterTest {
       1,
     )
 
+    // the shortest limit in the header has now lapsed
+    fixture.clock.advance(1001, MILLISECONDS)
+
     val result = rateLimiter.filter(envelope, Hint())
     assertNotNull(result)
     assertEquals(2, result.items.count())
@@ -151,7 +158,6 @@ class RateLimiterTest {
   @Test
   fun `When X-Sentry-Rate-Limit categories are empty, applies to all the categories`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
     val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
 
@@ -164,11 +170,13 @@ class RateLimiterTest {
   @Test
   fun `When all categories is set but expired, applies only for specific category`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
     val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
 
     rateLimiter.updateRetryAfterLimits("1::key, 60:default;error;security:organization", null, 1)
+
+    // the shortest limit in the header has now lapsed
+    fixture.clock.advance(1001, MILLISECONDS)
 
     val result = rateLimiter.filter(envelope, Hint())
     assertNull(result)
@@ -177,11 +185,13 @@ class RateLimiterTest {
   @Test
   fun `When category has shorter rate limiting, do not apply new timestamp`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
     val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
 
     rateLimiter.updateRetryAfterLimits("60:error:key, 1:error:organization", null, 1)
+
+    // the shortest limit in the header has now lapsed
+    fixture.clock.advance(1001, MILLISECONDS)
 
     val result = rateLimiter.filter(envelope, Hint())
     assertNull(result)
@@ -190,11 +200,13 @@ class RateLimiterTest {
   @Test
   fun `When category has longer rate limiting, apply new timestamp`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
     val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
 
     rateLimiter.updateRetryAfterLimits("1:error:key, 5:error:organization", null, 1)
+
+    // the shortest limit in the header has now lapsed
+    fixture.clock.advance(1001, MILLISECONDS)
 
     val result = rateLimiter.filter(envelope, Hint())
     assertNull(result)
@@ -203,11 +215,13 @@ class RateLimiterTest {
   @Test
   fun `When both retry headers are not present, default delay is set`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 0, 1001)
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
     val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
 
     rateLimiter.updateRetryAfterLimits(null, null, 429)
+
+    // a second in, the 60s default delay is still running
+    fixture.clock.advance(1001, MILLISECONDS)
 
     val result = rateLimiter.filter(envelope, Hint())
     assertNull(result)
@@ -373,9 +387,21 @@ class RateLimiterTest {
   }
 
   @Test
+  fun `a limit lapses exactly at its deadline, not a millisecond later`() {
+    val rateLimiter = fixture.getSUT()
+
+    rateLimiter.updateRetryAfterLimits("1:error:key", null, 1)
+
+    fixture.clock.advance(999, MILLISECONDS)
+    assertTrue(rateLimiter.isActiveForCategory(DataCategory.Error))
+
+    fixture.clock.advance(1, MILLISECONDS)
+    assertFalse(rateLimiter.isActiveForCategory(DataCategory.Error))
+  }
+
+  @Test
   fun `any limit can be checked`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
     val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
 
@@ -393,7 +419,6 @@ class RateLimiterTest {
   @Test
   fun `on rate limit DiskFlushNotification is marked as flushed`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0)
     val sentryEvent = SentryEvent()
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, sentryEvent)
     val envelope = SentryEnvelope(SentryEnvelopeHeader(sentryEvent.eventId), arrayListOf(eventItem))
@@ -668,11 +693,12 @@ class RateLimiterTest {
   @Test
   fun `apply rate limits schedules a task to notify observers of lifted limits`() {
     val rateLimiter = fixture.getSUT()
-    whenever(fixture.currentDateProvider.currentTimeMillis).thenReturn(0, 1, 2001)
-
     val applied = AtomicBoolean(true)
     rateLimiter.addRateLimitObserver { applied.set(rateLimiter.isActiveForCategory(Replay)) }
     rateLimiter.updateRetryAfterLimits("1:replay:key", null, 1)
+
+    // the notification is scheduled ~1s out in real time; by then the limit has lapsed
+    fixture.clock.advance(2, SECONDS)
 
     await.untilFalse(applied)
     assertFalse(applied.get())

@@ -3654,7 +3654,7 @@ public final class io/sentry/SentryOpenTelemetryMode : java/lang/Enum {
 	public static fun values ()[Lio/sentry/SentryOpenTelemetryMode;
 }
 
-public class io/sentry/SentryOptions {
+public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public static final field DEFAULT_PROPAGATION_TARGETS Ljava/lang/String;
 	public static final field MAX_EVENT_SIZE_BYTES J
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
@@ -7706,6 +7706,7 @@ public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/I
 
 public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
+	public fun <init> (Lio/sentry/time/MonotonicClock;Lio/sentry/transport/RateLimiterConfig;)V
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
 	public fun addRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
 	public fun close ()V
@@ -7718,6 +7719,12 @@ public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 
 public abstract interface class io/sentry/transport/RateLimiter$IRateLimitObserver {
 	public abstract fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
+}
+
+public abstract interface class io/sentry/transport/RateLimiterConfig {
+	public abstract fun getClientReportRecorder ()Lio/sentry/clientreport/IClientReportRecorder;
+	public abstract fun getLogger ()Lio/sentry/ILogger;
+	public abstract fun getTimerExecutorService ()Lio/sentry/ISentryExecutorService;
 }
 
 public final class io/sentry/transport/ReusableCountLatch {
