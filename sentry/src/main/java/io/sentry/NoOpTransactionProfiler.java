@@ -1,9 +1,11 @@
 package io.sentry;
 
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpTransactionProfiler implements ITransactionProfiler {
 
   private static final NoOpTransactionProfiler instance = new NoOpTransactionProfiler();

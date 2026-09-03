@@ -5,9 +5,11 @@ import com.p6spy.engine.common.StatementInformation;
 import io.sentry.util.StringUtils;
 import java.net.URI;
 import java.util.Locale;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class DatabaseUtils {
 
   private static final @NotNull DatabaseDetails EMPTY = new DatabaseDetails(null, null);

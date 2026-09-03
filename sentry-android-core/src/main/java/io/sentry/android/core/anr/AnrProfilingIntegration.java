@@ -27,6 +27,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
+/**
+ * Captures main-thread stack profiles while the app is unresponsive and attaches them to ANR events
+ * on the next app start.
+ *
+ * <p>Enable via {@link SentryAndroidOptions#setAnrProfilingSampleRate(Double)} or the {@code
+ * io.sentry.anr.profiling.sample-rate} manifest metadata.
+ */
 public class AnrProfilingIntegration
     implements Integration, Closeable, AppState.AppStateListener, Runnable {
 
