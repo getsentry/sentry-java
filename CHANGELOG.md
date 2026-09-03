@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Populate the Android connection status cache during the first two minutes after boot, instead of treating the empty cache as up to date ([#6029](https://github.com/getsentry/sentry-java/pull/6029))
+
 ### Internal
 
 - Add an internal `MonotonicClock` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
