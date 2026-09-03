@@ -279,6 +279,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
   }
 
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   private void writeCrashMarkerFile() {
     final File crashMarkerFile = new File(options.getCacheDirPath(), CRASH_MARKER_FILE);
     try (final OutputStream outputStream = new FileOutputStream(crashMarkerFile)) {

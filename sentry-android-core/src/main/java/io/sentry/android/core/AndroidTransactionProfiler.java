@@ -89,6 +89,8 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         () -> executorService);
   }
 
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public AndroidTransactionProfiler(
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,

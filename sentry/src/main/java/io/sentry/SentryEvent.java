@@ -103,6 +103,8 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
     this.throwable = throwable;
   }
 
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public SentryEvent() {
     this(new SentryId(), DateUtils.getCurrentDateTime());
   }
