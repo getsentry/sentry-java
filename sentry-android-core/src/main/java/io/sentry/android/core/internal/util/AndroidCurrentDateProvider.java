@@ -19,6 +19,7 @@ import org.jetbrains.annotations.ApiStatus;
 @ApiStatus.Internal
 public final class AndroidCurrentDateProvider implements ICurrentDateProvider {
 
+  @SuppressWarnings("deprecation")
   private static final ICurrentDateProvider instance = new AndroidCurrentDateProvider();
 
   /**
@@ -32,6 +33,7 @@ public final class AndroidCurrentDateProvider implements ICurrentDateProvider {
   private AndroidCurrentDateProvider() {}
 
   @Override
+  @SuppressWarnings("deprecation")
   public long getCurrentTimeMillis() {
     return SystemClock.uptimeMillis();
   }
