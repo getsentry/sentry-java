@@ -15,7 +15,7 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
   can throw.
 - Existing broad catches like `catch (Throwable)` are legacy, not precedent. Where a broad catch is
   genuinely unavoidable (an entry point running user code or third-party callbacks), it must call
-  `ExceptionUtils.rethrowIfFatal(t)` first and the PR description must say why the broad catch is
+  `ExceptionUtils.rethrowIfFatal(t)` first and a code comment must say why the broad catch is
   needed.
 - Code probing for an optional `compileOnly` dependency must catch the specific `LinkageError`
   subclass (`NoClassDefFoundError`, `NoSuchMethodError`, ...) only.
@@ -28,6 +28,9 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 - Flag resources acquired but not released: streams, files, `ExecutorService`s,
   `BroadcastReceiver`s, lifecycle/activity callbacks, sensors, timers. Anything registered during
   init must be undone in the integration's `close()`.
+- Errors in instrumented user code should bubble up so the host app's handlers see them. Flag
+  instrumentation that swallows an error without recording it, and instrumentation that captures an
+  error that would also reach the global handlers (double reporting).
 
 ### Security and privacy
 
@@ -41,18 +44,17 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 
 ### Public API and compatibility
 
-- `.api` files are generated. Flag hand edits; the fix is `./gradlew apiDump`.
-- New public API must be intentional: new internal classes/methods need `@ApiStatus.Internal`, new
-  unstable API needs `@ApiStatus.Experimental`.
+- New public API must be intentional: new classes/methods not for public use need
+  `@ApiStatus.Internal`, new unstable API needs `@ApiStatus.Experimental`.
 - Removing or changing the signature of public API, or silently changing a default, sampling rate,
   or feature toggle, without a deprecation and a `CHANGELOG.md`/`MIGRATION.md` note.
 - New features must be **opt-in by default** via `SentryOptions` (or a namespaced options class).
-- Adding a method to `IScope`/`IScopes` requires updating every implementation and stub —
-  `Scope`, `Scopes`, `CombinedScopeView`, `NoOpScope`, `NoOpScopes`, `ScopesAdapter`, `HubAdapter`.
-  Flag partial updates.
+  If a feature is added without this, ask "are you sure" as a PR comment.
 - New fields on `io.sentry.protocol` classes need both serialization and deserialization, plus a
   round-trip test.
 - Raising `minSdk`, the Java level, or a supported framework version without an explicit callout.
+- Ensure dependency bumps are intentional. For example if a dependency is bumped in part of a
+  matrix that isn't the newest version.
 
 ## Java and Android specifics
 
@@ -63,6 +65,7 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 - `Sentry.init` can be called from any thread, and on Android it runs on the main thread during app
   startup. Flag disk I/O, network calls, reflection, class loading, regex compilation, or eager
   allocation newly added to an init path — and static mutable state that is not thread-safe.
+- Ensure any new reflection calls are mirrored in the proguard keep rules.
 
 ## Instrumentation conventions
 
@@ -72,9 +75,9 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
   `[A-Za-z0-9_.]` — see the
   [trace origin spec](https://develop.sentry.dev/sdk/telemetry/traces/trace-origin/).
 - New integrations register themselves with `IntegrationUtils.addIntegrationToSdkVersion(...)`.
-- Errors in instrumented user code should bubble up so the host app's handlers see them. Flag
-  instrumentation that swallows an error without recording it, and instrumentation that captures an
-  error that would also reach the global handlers (double reporting).
+- If we're adding a feature that requires bytecode manipulation from the
+  sentry-android-gradle-plugin, make sure the code is properly commented as such to ensure it isn't
+  accidentally changed in the future.
 
 ## Concurrency
 
@@ -92,16 +95,21 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 - Read mutable shared state once per operation. Re-reading the same field for several decisions in
   one pass lets it change mid-pass, so the results disagree with each other.
 - Prefer the `synchronized` keyword. Existing code that uses `AutoClosableReentrantLock` is legacy.
+- New classes have a clear and defined threading and concurrency model as part of the javadoc if
+  needed.
 
 ## Clocks
 
 - Ensure we are using a monotonic clock to measure time intervals.
 - Ensure we are using a wall clock for dates and timestamps.
+- Ensure that time manipulations are not being misused e.g. adding or subtracting wall clocks to
+  get a duration.
 
 ## Tests
 
-- Behavior changes need tests. A `fix` PR should include a regression test that fails without the
-  fix; if the diff doesn't make that clear, ask the author to confirm.
+- Public behavior (customer facing) changes need tests. A `fix` PR should include a regression test
+  that fails without the fix; if the diff doesn't make that clear, ask the author to confirm.
+- Prefer tests against contracts. Avoid testing implementation details.
 - Flag hollow tests: assertions that only prove "did not throw", or that assert on a payload without
   checking the newly added data.
 - New assertions should use Google Truth (`com.google.common.truth.Truth.assertThat`); `kotlin.test`
