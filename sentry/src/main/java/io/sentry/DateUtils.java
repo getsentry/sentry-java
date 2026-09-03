@@ -19,8 +19,12 @@ public final class DateUtils {
    * Get the current Date (UTC)
    *
    * @return the UTC Date
+   * @deprecated use {@code options.getDateProvider().now()}, which is configurable and resolves
+   *     finer than a millisecond.
    */
-  @SuppressWarnings("JavaUtilDate")
+  @Deprecated
+  // not @InlineMe: the replacement is options.getDateProvider().now(), not this method's body
+  @SuppressWarnings({"JavaUtilDate", "InlineMeSuggester"})
   public static @NotNull Date getCurrentDateTime() {
     return new Date();
   }

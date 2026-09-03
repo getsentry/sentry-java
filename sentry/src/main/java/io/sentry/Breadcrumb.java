@@ -97,7 +97,8 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    * @param options - the sentry options
    * @return the breadcrumb
    */
-  @SuppressWarnings("unchecked")
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings({"unchecked", "deprecation"})
   public static Breadcrumb fromMap(
       @NotNull Map<String, Object> map, @NotNull SentryOptions options) {
 
@@ -882,7 +883,8 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   }
 
   public static final class Deserializer implements JsonDeserializer<Breadcrumb> {
-    @SuppressWarnings("unchecked")
+    // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+    @SuppressWarnings({"unchecked", "deprecation"})
     @Override
     public @NotNull Breadcrumb deserialize(@NotNull ObjectReader reader, @NotNull ILogger logger)
         throws Exception {

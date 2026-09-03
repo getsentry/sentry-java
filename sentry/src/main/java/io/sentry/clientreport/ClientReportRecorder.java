@@ -164,6 +164,8 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     return itemCount != null ? itemCount : 1L;
   }
 
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   @Nullable
   ClientReport resetCountsAndGenerateClientReport() {
     final Date currentDate = DateUtils.getCurrentDateTime();
