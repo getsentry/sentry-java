@@ -1,6 +1,5 @@
 package io.sentry.android.core.anr
 
-import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.ILogger
 import io.sentry.IScopes
@@ -9,6 +8,8 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.test.getProperty
+import io.sentry.time.TestMonotonicClock
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -30,9 +31,11 @@ class AnrProfilingIntegrationTest {
   private lateinit var mockScopes: IScopes
   private lateinit var mockLogger: ILogger
   private lateinit var options: SentryAndroidOptions
+  private lateinit var clock: TestMonotonicClock
 
   @BeforeTest
   fun setup() {
+    clock = TestMonotonicClock()
     mockScopes = mock()
     mockLogger = mock()
     options =
@@ -163,7 +166,6 @@ class AnrProfilingIntegrationTest {
   @Test
   fun `properly walks through state transitions and collects stack traces`() {
     val mainThread = Thread.currentThread()
-    SystemClock.setCurrentTimeMillis(1_00)
 
     val androidOptions =
       SentryAndroidOptions().apply {
@@ -172,20 +174,20 @@ class AnrProfilingIntegrationTest {
         anrProfilingSampleRate = 1.0
       }
 
-    val integration = AnrProfilingIntegration()
+    val integration = AnrProfilingIntegration(clock)
     integration.register(mockScopes, androidOptions)
     // Drive the state machine synchronously to avoid racing the background polling thread.
 
-    SystemClock.setCurrentTimeMillis(1_000)
+    clock.advance(900, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
     assertTrue(integration.profileManager.load().stacks.isEmpty())
 
-    SystemClock.setCurrentTimeMillis(3_000)
+    clock.advance(2_000, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.SUSPICIOUS, integration.state)
 
-    SystemClock.setCurrentTimeMillis(6_000)
+    clock.advance(3_000, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.ANR_DETECTED, integration.state)
     assertEquals(2, integration.profileManager.load().stacks.size)
@@ -199,7 +201,6 @@ class AnrProfilingIntegrationTest {
   @Test
   fun `background foreground transitions don't trigger an ANR`() {
     val mainThread = Thread.currentThread()
-    SystemClock.setCurrentTimeMillis(1_000)
 
     val androidOptions =
       SentryAndroidOptions().apply {
@@ -208,11 +209,11 @@ class AnrProfilingIntegrationTest {
         anrProfilingSampleRate = 1.0
       }
 
-    val integration = AnrProfilingIntegration()
+    val integration = AnrProfilingIntegration(clock)
     integration.register(mockScopes, androidOptions)
     integration.onBackground()
 
-    SystemClock.setCurrentTimeMillis(20_000)
+    clock.advance(19_000, MILLISECONDS)
     integration.onForeground()
 
     Thread.sleep(100)
@@ -266,7 +267,6 @@ class AnrProfilingIntegrationTest {
   @Test
   fun `does not collect stacks when sample rate is zero`() {
     val mainThread = Thread.currentThread()
-    SystemClock.setCurrentTimeMillis(1_00)
 
     val androidOptions =
       SentryAndroidOptions().apply {
@@ -275,17 +275,17 @@ class AnrProfilingIntegrationTest {
         anrProfilingSampleRate = 0.0
       }
 
-    val integration = AnrProfilingIntegration()
+    val integration = AnrProfilingIntegration(clock)
     integration.register(mockScopes, androidOptions)
     integration.onForeground()
 
     // Transition to suspicious
-    SystemClock.setCurrentTimeMillis(3_000)
+    clock.advance(2_900, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.SUSPICIOUS, integration.state)
 
     // Transition to ANR
-    SystemClock.setCurrentTimeMillis(6_000)
+    clock.advance(3_000, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.ANR_DETECTED, integration.state)
 
