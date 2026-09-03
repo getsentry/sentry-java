@@ -9,6 +9,7 @@
 
 ### Improvements
 
+- Emit a single `ui.compose` span per `SentryTraced` on initial composition instead of one on every recomposition, and set the origin on `ui.render` spans ([#6051](https://github.com/getsentry/sentry-java/pull/6051))
 - Move ANR profiling out of experimental ([#6042](https://github.com/getsentry/sentry-java/pull/6042))
 
 ### Fixes
