@@ -3704,7 +3704,6 @@ public class io/sentry/SentryOptions {
 	public fun getDistributionController ()Lio/sentry/IDistributionApi;
 	public fun getDsn ()Ljava/lang/String;
 	public fun getEffectiveOrgId ()Ljava/lang/String;
-	public fun getElapsedRealtimeClock ()Lio/sentry/time/ElapsedRealtimeClock;
 	public fun getEnvelopeDiskCache ()Lio/sentry/cache/IEnvelopeCache;
 	public fun getEnvelopeReader ()Lio/sentry/IEnvelopeReader;
 	public fun getEnvironment ()Ljava/lang/String;
@@ -3741,6 +3740,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxTraceFileSize ()J
 	public fun getMetrics ()Lio/sentry/SentryOptions$Metrics;
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
+	public fun getMonotonicClock ()Lio/sentry/time/MonotonicClock;
 	public fun getOnDiscard ()Lio/sentry/SentryOptions$OnDiscardCallback;
 	public fun getOnOversizedEvent ()Lio/sentry/SentryOptions$OnOversizedEventCallback;
 	public fun getOpenTelemetryMode ()Lio/sentry/SentryOpenTelemetryMode;
@@ -7599,37 +7599,26 @@ public final class io/sentry/rrweb/RRWebVideoEvent$JsonKeys {
 }
 
 public final class io/sentry/time/Deadline {
-	public static fun after (Lio/sentry/time/Ticker;JLjava/util/concurrent/TimeUnit;)Lio/sentry/time/Deadline;
+	public static fun after (Lio/sentry/time/MonotonicClock;JLjava/util/concurrent/TimeUnit;)Lio/sentry/time/Deadline;
 	public fun hasPassed ()Z
 	public fun isAfter (Lio/sentry/time/Deadline;)Z
-	public static fun passed (Lio/sentry/time/Ticker;)Lio/sentry/time/Deadline;
+	public static fun passed (Lio/sentry/time/MonotonicClock;)Lio/sentry/time/Deadline;
 	public fun remaining (Ljava/util/concurrent/TimeUnit;)J
 }
 
-public abstract interface class io/sentry/time/ElapsedRealtimeClock : io/sentry/time/Ticker {
-}
-
-public final class io/sentry/time/JavaElapsedRealtimeClock : io/sentry/time/ElapsedRealtimeClock {
-	public static fun getInstance ()Lio/sentry/time/ElapsedRealtimeClock;
+public final class io/sentry/time/JavaMonotonicClock : io/sentry/time/MonotonicClock {
+	public static fun getInstance ()Lio/sentry/time/MonotonicClock;
 	public fun tickNanos ()J
 }
 
-public final class io/sentry/time/JavaUptimeClock : io/sentry/time/UptimeClock {
-	public static fun getInstance ()Lio/sentry/time/UptimeClock;
-	public fun tickNanos ()J
+public abstract interface class io/sentry/time/MonotonicClock {
+	public abstract fun tickNanos ()J
 }
 
 public final class io/sentry/time/Stopwatch {
 	public fun elapsed (Ljava/util/concurrent/TimeUnit;)J
 	public fun elapsedNanos ()J
-	public static fun started (Lio/sentry/time/Ticker;)Lio/sentry/time/Stopwatch;
-}
-
-public abstract interface class io/sentry/time/Ticker {
-	public abstract fun tickNanos ()J
-}
-
-public abstract interface class io/sentry/time/UptimeClock : io/sentry/time/Ticker {
+	public static fun started (Lio/sentry/time/MonotonicClock;)Lio/sentry/time/Stopwatch;
 }
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {

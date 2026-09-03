@@ -4,7 +4,7 @@
 
 ### Internal
 
-- Add internal `UptimeClock` and `ElapsedRealtimeClock` abstractions with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
+- Add an internal `MonotonicClock` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
 
 ## 8.55.0
 

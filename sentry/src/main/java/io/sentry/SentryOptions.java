@@ -21,8 +21,8 @@ import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
 import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
-import io.sentry.time.ElapsedRealtimeClock;
-import io.sentry.time.JavaElapsedRealtimeClock;
+import io.sentry.time.JavaMonotonicClock;
+import io.sentry.time.MonotonicClock;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -3062,15 +3062,15 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the clock used to measure intervals that must include deep sleep, such as rate-limit
-   * windows and cache expiry.
+   * Returns the clock used to measure elapsed time, such as rate-limit windows, cache expiry and
+   * ANR thresholds.
    *
    * <p>Android overrides this with a {@code SystemClock.elapsedRealtimeNanos()}-backed clock, which
    * this module cannot reference. On the JVM there is no suspend state to account for.
    */
   @ApiStatus.Internal
-  public @NotNull ElapsedRealtimeClock getElapsedRealtimeClock() {
-    return JavaElapsedRealtimeClock.getInstance();
+  public @NotNull MonotonicClock getMonotonicClock() {
+    return JavaMonotonicClock.getInstance();
   }
 
   /**

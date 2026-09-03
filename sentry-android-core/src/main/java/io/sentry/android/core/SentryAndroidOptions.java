@@ -12,13 +12,13 @@ import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
-import io.sentry.android.core.internal.time.AndroidElapsedRealtimeClock;
+import io.sentry.android.core.internal.time.AndroidMonotonicClock;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
-import io.sentry.time.ElapsedRealtimeClock;
+import io.sentry.time.MonotonicClock;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -893,8 +893,8 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   @Override
   @ApiStatus.Internal
-  public @NotNull ElapsedRealtimeClock getElapsedRealtimeClock() {
-    return AndroidElapsedRealtimeClock.getInstance();
+  public @NotNull MonotonicClock getMonotonicClock() {
+    return AndroidMonotonicClock.getInstance();
   }
 
   static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
