@@ -28,6 +28,9 @@ final class LifecycleWatcher implements AppState.AppStateListener {
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
+  // TODO [MAJOR]: replace CurrentDateProvider (wall clock) with SentryDateProvider; the epoch
+  // comparison it feeds must stay wall time
+  @SuppressWarnings("deprecation")
   LifecycleWatcher(
       final @NotNull IScopes scopes,
       final long sessionIntervalMillis,
@@ -60,6 +63,9 @@ final class LifecycleWatcher implements AppState.AppStateListener {
     addAppBreadcrumb("foreground");
   }
 
+  // TODO [MAJOR]: replace CurrentDateProvider (wall clock) with SentryDateProvider; the epoch
+  // comparison it feeds must stay wall time
+  @SuppressWarnings("deprecation")
   private void startSession() {
     cancelTask();
 
@@ -90,6 +96,9 @@ final class LifecycleWatcher implements AppState.AppStateListener {
 
   // App went to background and triggered this callback after 700ms
   // as no new screen was shown
+  // TODO [MAJOR]: replace CurrentDateProvider (wall clock) with SentryDateProvider; the epoch
+  // comparison it feeds must stay wall time
+  @SuppressWarnings("deprecation")
   @Override
   public void onBackground() {
     final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
