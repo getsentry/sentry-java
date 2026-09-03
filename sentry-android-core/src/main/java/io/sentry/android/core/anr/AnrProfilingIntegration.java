@@ -4,7 +4,6 @@ import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 import io.sentry.IDebugManager;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
@@ -15,12 +14,16 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
+import io.sentry.time.MonotonicTicker;
+import io.sentry.time.Stopwatch;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import io.sentry.util.SentryRandom;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
@@ -44,12 +47,13 @@ public class AnrProfilingIntegration
   static final int MAX_NUM_STACKS = (int) (10_000 / POLLING_INTERVAL_MS);
 
   private final AtomicBoolean enabled = new AtomicBoolean(true);
-  private final Runnable updater = () -> lastMainThreadExecutionTime = SystemClock.uptimeMillis();
+  private final @NotNull MonotonicTicker ticker;
+  private final @NotNull Runnable updater;
   private final @NotNull AutoClosableReentrantLock lifecycleLock = new AutoClosableReentrantLock();
   private final @NotNull AutoClosableReentrantLock profileManagerLock =
       new AutoClosableReentrantLock();
 
-  private volatile long lastMainThreadExecutionTime = SystemClock.uptimeMillis();
+  private volatile long lastMainThreadExecutionNanos;
   final AtomicInteger numCollectedStacks = new AtomicInteger();
   private volatile MainThreadState mainThreadState = MainThreadState.IDLE;
   private volatile @Nullable AnrProfileManager profileManager;
@@ -61,6 +65,17 @@ public class AnrProfilingIntegration
   private volatile boolean inForeground = false;
   private volatile @Nullable Handler mainHandler;
   private volatile @Nullable Thread mainThread;
+
+  public AnrProfilingIntegration() {
+    this(AndroidMonotonicTicker.getInstance());
+  }
+
+  @TestOnly
+  AnrProfilingIntegration(final @NotNull MonotonicTicker ticker) {
+    this.ticker = ticker;
+    this.lastMainThreadExecutionNanos = ticker.tickNanos();
+    this.updater = () -> lastMainThreadExecutionNanos = ticker.tickNanos();
+  }
 
   @Override
   public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
@@ -223,8 +238,8 @@ public class AnrProfilingIntegration
       return;
     }
 
-    final long now = SystemClock.uptimeMillis();
-    final long diff = now - lastMainThreadExecutionTime;
+    final long diff =
+        TimeUnit.NANOSECONDS.toMillis(ticker.tickNanos() - lastMainThreadExecutionNanos);
 
     if (diff < THRESHOLD_SUSPICION_MS) {
       mainThreadState = MainThreadState.IDLE;
@@ -253,14 +268,15 @@ public class AnrProfilingIntegration
         && (mainThreadState == MainThreadState.SUSPICIOUS
             || mainThreadState == MainThreadState.ANR_DETECTED)) {
       if (numCollectedStacks.get() < MAX_NUM_STACKS) {
-        final long start = SystemClock.uptimeMillis();
+        final @NotNull Stopwatch stopwatch = Stopwatch.started(ticker);
         final @NotNull AnrStackTrace trace =
             new AnrStackTrace(System.currentTimeMillis(), mainThread.getStackTrace());
-        final long duration = SystemClock.uptimeMillis() - start;
         if (logger.isEnabled(SentryLevel.DEBUG)) {
           logger.log(
               SentryLevel.DEBUG,
-              "AnrWatchdog: capturing main thread stacktrace took " + duration + "ms");
+              "AnrWatchdog: capturing main thread stacktrace took "
+                  + stopwatch.elapsed(TimeUnit.MILLISECONDS)
+                  + "ms");
         }
         addStackTrace(trace);
       } else {
