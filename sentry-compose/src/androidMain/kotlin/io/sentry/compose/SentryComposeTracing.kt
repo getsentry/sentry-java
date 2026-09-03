@@ -80,12 +80,13 @@ public fun SentryTraced(
   val parentRenderingSpan = localSentryRenderingParentSpan.current.item
   val dateProvider = Sentry.getCurrentScopes().options.dateProvider
 
-  val compositionStart = dateProvider.now()
+  // Only record spans if we have a parent for them.
+  val compositionStart = parentCompositionSpan?.let { dateProvider.now() }
 
   Box(
     modifier =
       baseModifier.drawWithContent {
-        if (alreadyRendered.item) {
+        if (alreadyRendered.item || parentRenderingSpan == null) {
           drawContent()
         } else {
           val renderStart = dateProvider.now()
@@ -100,9 +101,10 @@ public fun SentryTraced(
   ) {
     content()
   }
-  val compositionEnd = dateProvider.now()
 
-  if (parentCompositionSpan != null) {
+  if (compositionStart != null) {
+    val compositionEnd = dateProvider.now()
+
     SideEffect {
       recordCompositionSpan(
         parentSpan = parentCompositionSpan,
