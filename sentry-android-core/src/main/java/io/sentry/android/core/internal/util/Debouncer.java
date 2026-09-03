@@ -30,6 +30,8 @@ public class Debouncer {
    * @return true if the execution should be debounced due to maxExecutions executions being made
    *     within waitTimeMs, otherwise false.
    */
+  // TODO [MAJOR]: replace AndroidCurrentDateProvider with MonotonicClock
+  @SuppressWarnings("deprecation")
   public boolean checkForDebounce() {
     final long now = timeProvider.getCurrentTimeMillis();
     if (lastExecutionTime.get() == 0 || (lastExecutionTime.get() + waitTimeMs) <= now) {

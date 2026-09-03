@@ -34,6 +34,8 @@ public final class AppComponentsBreadcrumbsIntegration
   private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
+  // TODO [MAJOR]: replace AndroidCurrentDateProvider with MonotonicClock
+  @SuppressWarnings("deprecation")
   private final @NotNull Debouncer trimMemoryDebouncer =
       new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
 

@@ -36,6 +36,9 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
   private final @NotNull ApplicationExitInfoPolicy policy;
   private final long threshold;
 
+  // TODO [MAJOR]: replace CurrentDateProvider (wall clock) with SentryDateProvider; the epoch
+  // comparison it feeds must stay wall time
+  @SuppressWarnings("deprecation")
   ApplicationExitInfoHistoryDispatcher(
       final @NotNull Context context,
       final @NotNull IScopes scopes,
