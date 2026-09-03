@@ -4,10 +4,11 @@ import android.app.ActivityManager
 import android.app.ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING
 import android.app.ActivityManager.ProcessErrorStateInfo.NO_ERROR
 import android.content.Context
-import io.sentry.transport.ICurrentDateProvider
+import io.sentry.time.TestMonotonicClock
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -20,12 +21,12 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class ANRWatchDogTest {
-  private var currentTimeMs = 0L
-  private val timeProvider = ICurrentDateProvider { currentTimeMs }
+  private lateinit var clock: TestMonotonicClock
 
   @Before
   fun `setup`() {
-    currentTimeMs = 12341234
+    // an arbitrary, non-zero origin: no caller may assume a tick counts from zero
+    clock = TestMonotonicClock(MILLISECONDS.toNanos(12341234))
   }
 
   @Test
@@ -42,8 +43,7 @@ class ANRWatchDogTest {
     whenever(handler.thread).thenReturn(thread)
     val interval = 10L
 
-    val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, mock())
+    val sut = ANRWatchDog(clock, interval, 1L, true, { a -> anr = a }, mock(), handler, mock())
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }
@@ -53,7 +53,7 @@ class ANRWatchDogTest {
       ) // Wait until worker posts the job for the "UI thread"
       var waitCount = 0
       do {
-        currentTimeMs += 100L
+        clock.advance(100, MILLISECONDS)
         Thread.sleep(100) // Let worker realize this is ANR
       } while (anr == null && waitCount++ < 100)
 
@@ -79,15 +79,14 @@ class ANRWatchDogTest {
     whenever(handler.thread).thenReturn(thread)
     val interval = 10L
 
-    val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, mock())
+    val sut = ANRWatchDog(clock, interval, 1L, true, { a -> anr = a }, mock(), handler, mock())
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }
 
       var waitCount = 0
       do {
-        currentTimeMs += 100L
+        clock.advance(100, MILLISECONDS)
         Thread.sleep(100) // Let worker realize his runner always runs
       } while (!invoked && waitCount++ < 100)
 
@@ -121,8 +120,7 @@ class ANRWatchDogTest {
     val anrs = listOf(stateInfo)
     whenever(am.processesInErrorState).thenReturn(anrs)
 
-    val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, context)
+    val sut = ANRWatchDog(clock, interval, 1L, true, { a -> anr = a }, mock(), handler, context)
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }
@@ -132,7 +130,7 @@ class ANRWatchDogTest {
       ) // Wait until worker posts the job for the "UI thread"
       var waitCount = 0
       do {
-        currentTimeMs += 100L
+        clock.advance(100, MILLISECONDS)
         Thread.sleep(100) // Let worker realize this is ANR
       } while (anr == null && waitCount++ < 100)
 
@@ -167,8 +165,7 @@ class ANRWatchDogTest {
     val anrs = listOf(stateInfo)
     whenever(am.processesInErrorState).thenReturn(anrs)
 
-    val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, context)
+    val sut = ANRWatchDog(clock, interval, 1L, true, { a -> anr = a }, mock(), handler, context)
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }
@@ -178,10 +175,37 @@ class ANRWatchDogTest {
       ) // Wait until worker posts the job for the "UI thread"
       var waitCount = 0
       do {
-        currentTimeMs += 100L
+        clock.advance(100, MILLISECONDS)
         Thread.sleep(100L) // Let worker realize this is ANR
       } while (anr == null && waitCount++ < 100)
       assertNull(anr) // callback never ran
+    } finally {
+      sut.interrupt()
+      es.shutdown()
+    }
+  }
+
+  @Test
+  fun `a device suspend does not trip the ANR threshold`() {
+    // The uptime clock stands still while the device is suspended, so a suspend cannot be mistaken
+    // for a blocked main thread. On an elapsed-real-time clock the suspended interval would count
+    // against the main thread and fabricate an ANR.
+    var anr: ApplicationNotResponding? = null
+    val handler = mock<MainLooperHandler>()
+    val latch = CountDownLatch(1)
+    whenever(handler.post(any())).then { latch.countDown() }
+    whenever(handler.thread).thenReturn(mock<Thread>())
+
+    // context is a mock, so ActivityManager is absent and any passed deadline reports an ANR
+    val sut = ANRWatchDog(clock, 10L, 1L, true, { a -> anr = a }, mock(), handler, mock())
+    val es = Executors.newSingleThreadExecutor()
+    try {
+      es.submit { sut.run() }
+
+      assertTrue(latch.await(10L, TimeUnit.SECONDS)) // wait until the watchdog is polling
+      Thread.sleep(200) // hundreds of polls of wall time, none of it uptime
+
+      assertNull(anr)
     } finally {
       sut.interrupt()
       es.shutdown()
