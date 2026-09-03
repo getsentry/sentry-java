@@ -62,11 +62,14 @@ kotlin {
     }
     getByName("androidUnitTest") {
       dependencies {
+        implementation(libs.androidx.compose.foundation)
+        implementation(libs.androidx.compose.foundation.layout)
         implementation(libs.androidx.compose.ui.test.junit4)
         implementation(libs.androidx.navigation.compose)
         implementation(libs.androidx.test.ext.junit)
         implementation(libs.androidx.test.rules)
         implementation(libs.androidx.test.runner)
+        implementation(libs.google.truth)
         implementation(libs.kotlin.test.junit)
         implementation(libs.mockito.inline)
         implementation(libs.mockito.kotlin)

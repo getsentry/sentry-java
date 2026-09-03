@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+`SentryTraced` now checks for its owning transaction dynamically rather than once per app process, which led to `SentryTraced` spans being dropped once the original transaction finished ([#6057](https://github.com/getsentry/sentry-java/pull/6057))
+
 ## 8.55.0
 
 ### Features
