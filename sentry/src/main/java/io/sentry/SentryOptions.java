@@ -29,6 +29,7 @@ import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.transport.RateLimiterConfig;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.LoadClass;
@@ -58,7 +59,7 @@ import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options */
 @Open
-public class SentryOptions {
+public class SentryOptions implements RateLimiterConfig {
 
   @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
 
@@ -847,6 +848,7 @@ public class SentryOptions {
    *
    * @return the logger
    */
+  @Override
   public @NotNull ILogger getLogger() {
     return logger;
   }
@@ -1610,6 +1612,7 @@ public class SentryOptions {
    * @return the timer executor service
    */
   @ApiStatus.Internal
+  @Override
   @NotNull
   public ISentryExecutorService getTimerExecutorService() {
     return timerExecutorService;
@@ -2601,6 +2604,7 @@ public class SentryOptions {
    * @return a client report recorder or NoOp
    */
   @ApiStatus.Internal
+  @Override
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
   }
