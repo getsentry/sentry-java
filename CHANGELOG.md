@@ -5,6 +5,15 @@
 ### Features
 
 - Add `Session.State.Unhandled` for unhandled errors that do not terminate the process ([#5919](https://github.com/getsentry/sentry-java/pull/5919))
+- Add `LocalSentryScopes` to `sentry-compose`, allowing `SentryTraced` to trace against a custom `IScopes` instance instead of always defaulting to `Sentry.getCurrentScopes()` ([#5838](https://github.com/getsentry/sentry-java/pull/5838))
+  - Example usage:
+  ```kotlin
+  val scopes = Scopes(options)
+  CompositionLocalProvider(LocalSentryScopes provides scopes) {
+    // this uses custom scopes now
+    SentryTraced(tag = "custom") { Box {} }
+  }
+  ```
 
 
 ### Improvements
