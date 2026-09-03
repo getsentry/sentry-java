@@ -143,6 +143,7 @@ class CheckInUtilsTest {
       sentry.`when`<Any> { Sentry.forkedScopes(any()) }.then { scopes.forkedScopes("test") }
       whenever(scopes.forkedScopes(any())).thenReturn(scopes)
       whenever(scopes.makeCurrent()).thenReturn(lifecycleToken)
+      whenever(scopes.options).thenReturn(SentryOptions())
 
       try {
         CheckInUtils.withCheckIn("monitor-1") { throw RuntimeException("thrown on purpose") }
