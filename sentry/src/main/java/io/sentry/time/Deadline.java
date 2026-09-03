@@ -5,7 +5,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A point in the future, measured on a {@link Ticker}.
+ * A point in the future, measured on a {@link MonotonicClock}.
  *
  * <p>Exists so that callers never do arithmetic on raw ticks. A tick carries no unit and no epoch,
  * so spelling out {@code now - then < ttl} at every call site is where unit mix-ups, sentinels that
@@ -15,17 +15,17 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Internal
 public final class Deadline {
 
-  private final @NotNull Ticker clock;
+  private final @NotNull MonotonicClock clock;
   private final long deadlineNanos;
 
-  private Deadline(final @NotNull Ticker clock, final long deadlineNanos) {
+  private Deadline(final @NotNull MonotonicClock clock, final long deadlineNanos) {
     this.clock = clock;
     this.deadlineNanos = deadlineNanos;
   }
 
   /** A deadline {@code amount} of {@code unit} from now. */
   public static @NotNull Deadline after(
-      final @NotNull Ticker clock, final long amount, final @NotNull TimeUnit unit) {
+      final @NotNull MonotonicClock clock, final long amount, final @NotNull TimeUnit unit) {
     return new Deadline(clock, clock.tickNanos() + unit.toNanos(amount));
   }
 
@@ -34,7 +34,7 @@ public final class Deadline {
    * "never set" needs no numeric sentinel and cannot be mistaken for fresh — {@code 0} is a real
    * and very recent instant on any boot-relative clock.
    */
-  public static @NotNull Deadline passed(final @NotNull Ticker clock) {
+  public static @NotNull Deadline passed(final @NotNull MonotonicClock clock) {
     return new Deadline(clock, clock.tickNanos());
   }
 

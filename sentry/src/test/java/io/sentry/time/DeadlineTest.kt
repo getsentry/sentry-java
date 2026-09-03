@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 class DeadlineTest {
   @Test
   fun `has not passed before the deadline`() {
-    val clock = TestTicker()
+    val clock = TestMonotonicClock()
     val deadline = Deadline.after(clock, 2, MINUTES)
 
     clock.advance(119, SECONDS)
@@ -22,7 +22,7 @@ class DeadlineTest {
 
   @Test
   fun `has passed once the deadline is reached`() {
-    val clock = TestTicker()
+    val clock = TestMonotonicClock()
     val deadline = Deadline.after(clock, 2, MINUTES)
 
     clock.advance(2, MINUTES)
@@ -32,14 +32,14 @@ class DeadlineTest {
 
   @Test
   fun `a passed deadline is never fresh, even at tick zero`() {
-    // Regression guard: elapsedRealtimeNanos and uptimeMillis both start at 0 on boot, so a
-    // numeric sentinel of 0 would read as fresh for a whole TTL after every boot.
-    assertTrue(Deadline.passed(TestTicker()).hasPassed())
+    // Regression guard: elapsedRealtimeNanos() starts at 0 on boot, so a numeric sentinel of 0
+    // would read as fresh for a whole TTL after every boot.
+    assertTrue(Deadline.passed(TestMonotonicClock()).hasPassed())
   }
 
   @Test
   fun `remaining counts down and floors at zero`() {
-    val clock = TestTicker()
+    val clock = TestMonotonicClock()
     val deadline = Deadline.after(clock, 1000, MILLISECONDS)
 
     assertEquals(1000, deadline.remaining(MILLISECONDS))
@@ -53,7 +53,7 @@ class DeadlineTest {
 
   @Test
   fun `remaining rounds up so callers never wake before the deadline`() {
-    val clock = TestTicker()
+    val clock = TestMonotonicClock()
     val deadline = Deadline.after(clock, 1000, MILLISECONDS)
 
     // half a millisecond in: 999.5ms left, which must not report as 999
@@ -64,7 +64,7 @@ class DeadlineTest {
 
   @Test
   fun `isAfter compares two deadlines`() {
-    val clock = TestTicker()
+    val clock = TestMonotonicClock()
     val shorter = Deadline.after(clock, 1, SECONDS)
     val longer = Deadline.after(clock, 5, SECONDS)
 
@@ -74,8 +74,8 @@ class DeadlineTest {
 
   @Test
   fun `isAfter rejects deadlines from different clocks`() {
-    val deadline = Deadline.after(TestTicker(), 1, SECONDS)
-    val fromAnotherClock = Deadline.after(TestTicker(), 5, SECONDS)
+    val deadline = Deadline.after(TestMonotonicClock(), 1, SECONDS)
+    val fromAnotherClock = Deadline.after(TestMonotonicClock(), 5, SECONDS)
 
     assertFailsWith<IllegalArgumentException> { deadline.isAfter(fromAnotherClock) }
   }
@@ -83,7 +83,7 @@ class DeadlineTest {
   @Test
   fun `comparisons hold when the tick origin is negative`() {
     // System.nanoTime() may start negative; only differences are meaningful.
-    val clock = TestTicker(Long.MIN_VALUE + 1)
+    val clock = TestMonotonicClock(Long.MIN_VALUE + 1)
     val deadline = Deadline.after(clock, 1, SECONDS)
 
     assertFalse(deadline.hasPassed())

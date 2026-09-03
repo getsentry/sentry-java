@@ -1,26 +1,26 @@
 package io.sentry.android.core.internal.time;
 
 import android.os.SystemClock;
-import io.sentry.time.ElapsedRealtimeClock;
+import io.sentry.time.MonotonicClock;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * {@link ElapsedRealtimeClock} backed by {@link SystemClock#elapsedRealtimeNanos()}.
+ * {@link MonotonicClock} backed by {@link SystemClock#elapsedRealtimeNanos()}.
  *
  * <p>That is {@code CLOCK_BOOTTIME}, so it keeps counting while the device is suspended — unlike
  * {@link System#nanoTime()}, which the core module falls back to and which stops in deep sleep.
  */
 @ApiStatus.Internal
-public final class AndroidElapsedRealtimeClock implements ElapsedRealtimeClock {
+public final class AndroidMonotonicClock implements MonotonicClock {
 
-  private static final AndroidElapsedRealtimeClock instance = new AndroidElapsedRealtimeClock();
+  private static final AndroidMonotonicClock instance = new AndroidMonotonicClock();
 
-  public static @NotNull ElapsedRealtimeClock getInstance() {
+  public static @NotNull MonotonicClock getInstance() {
     return instance;
   }
 
-  private AndroidElapsedRealtimeClock() {}
+  private AndroidMonotonicClock() {}
 
   @Override
   public long tickNanos() {

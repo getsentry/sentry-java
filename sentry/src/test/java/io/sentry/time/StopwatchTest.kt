@@ -9,12 +9,12 @@ import kotlin.test.assertEquals
 class StopwatchTest {
   @Test
   fun `starts at zero`() {
-    assertEquals(0, Stopwatch.started(TestTicker()).elapsedNanos())
+    assertEquals(0, Stopwatch.started(TestMonotonicClock()).elapsedNanos())
   }
 
   @Test
   fun `reports elapsed time in the requested unit`() {
-    val clock = TestTicker()
+    val clock = TestMonotonicClock()
     val stopwatch = Stopwatch.started(clock)
 
     clock.advance(1500, MILLISECONDS)
@@ -26,7 +26,7 @@ class StopwatchTest {
 
   @Test
   fun `keeps running across reads`() {
-    val clock = TestTicker()
+    val clock = TestMonotonicClock()
     val stopwatch = Stopwatch.started(clock)
 
     clock.advance(1, SECONDS)
