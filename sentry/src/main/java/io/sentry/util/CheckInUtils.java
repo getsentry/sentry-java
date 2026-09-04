@@ -9,6 +9,7 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.MonitorConfig;
 import io.sentry.Sentry;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.Stopwatch;
 import java.util.List;
 import java.util.concurrent.Callable;
 import org.jetbrains.annotations.ApiStatus;
@@ -37,7 +38,8 @@ public final class CheckInUtils {
     try (final @NotNull ISentryLifecycleToken ignored =
             Sentry.forkedScopes("CheckInUtils").makeCurrent()) {
       final @NotNull IScopes scopes = Sentry.getCurrentScopes();
-      final long startTime = System.nanoTime();
+      final @NotNull Stopwatch stopwatch =
+          Stopwatch.started(scopes.getOptions().getMonotonicClock());
       boolean didError = false;
 
       TracingUtils.startNewTrace(scopes);
@@ -61,7 +63,7 @@ public final class CheckInUtils {
         if (environment != null) {
           checkIn.setEnvironment(environment);
         }
-        checkIn.setDuration(DateUtils.nanosToSeconds(System.nanoTime() - startTime));
+        checkIn.setDuration(DateUtils.nanosToSeconds(stopwatch.elapsedNanos()));
         scopes.captureCheckIn(checkIn);
       }
     }

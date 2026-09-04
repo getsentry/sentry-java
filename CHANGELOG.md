@@ -5,6 +5,7 @@
 ### Behavioral Changes
 
 - Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
+- Measure check-in durations on the monotonic clock, so a cron job that spans device sleep reports the time a user would measure instead of the time the CPU was awake ([#6032](https://github.com/getsentry/sentry-java/pull/6032))
 
 ### Fixes
 

@@ -9,6 +9,7 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.Stopwatch;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
@@ -91,7 +92,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       TracingUtils.startNewTrace(scopes);
 
       @Nullable SentryId checkInId = null;
-      final long startTime = System.nanoTime();
+      final @NotNull Stopwatch stopwatch =
+          Stopwatch.started(scopes.getOptions().getMonotonicClock());
       boolean didError = false;
 
       try {
@@ -105,7 +107,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       } finally {
         final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
         CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
-        checkIn.setDuration(DateUtils.nanosToSeconds(System.nanoTime() - startTime));
+        checkIn.setDuration(DateUtils.nanosToSeconds(stopwatch.elapsedNanos()));
         scopes.captureCheckIn(checkIn);
       }
     }
