@@ -46,6 +46,8 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
   private static final int DEBOUNCE_MAX_EXECUTIONS = 3;
 
+  // TODO [MAJOR]: replace AndroidCurrentDateProvider with MonotonicClock
+  @SuppressWarnings("deprecation")
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.debouncer =

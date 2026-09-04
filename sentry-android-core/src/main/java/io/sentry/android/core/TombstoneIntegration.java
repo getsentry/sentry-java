@@ -54,6 +54,9 @@ public class TombstoneIntegration implements Integration, Closeable {
   private final @NotNull ICurrentDateProvider dateProvider;
   private @Nullable SentryAndroidOptions options;
 
+  // TODO [MAJOR]: replace CurrentDateProvider (wall clock) with SentryDateProvider; the epoch
+  // comparison it feeds must stay wall time
+  @SuppressWarnings("deprecation")
   public TombstoneIntegration(final @NotNull Context context) {
     // using CurrentDateProvider instead of AndroidCurrentDateProvider as AppExitInfo uses
     // System.currentTimeMillis

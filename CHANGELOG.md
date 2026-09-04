@@ -6,6 +6,7 @@
 
 - Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 - Measure check-in durations on the monotonic clock, so a cron job that spans device sleep reports the time a user would measure instead of the time the CPU was awake ([#6032](https://github.com/getsentry/sentry-java/pull/6032))
+- Deprecate `DateUtils.getCurrentDateTime()` in favour of `options.getDateProvider().now()`, which is configurable and resolves finer than a millisecond ([#6043](https://github.com/getsentry/sentry-java/pull/6043))
 
 ### Fixes
 
@@ -17,6 +18,7 @@
 - Add internal `Timestamp`, `EpochClock` and `AnchoredClock`, so related instants project from one wall-clock reading instead of each reading the clock ([#6045](https://github.com/getsentry/sentry-java/pull/6045))
 - Deprecate `RateLimiter(ICurrentDateProvider, SentryOptions)` in favour of `RateLimiter(MonotonicClock, RateLimiterConfig)` ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 - Measure ANR detection thresholds on the internal `MonotonicClock`, so the clock is named by the type instead of chosen at each call site ([#6041](https://github.com/getsentry/sentry-java/pull/6041))
+- Deprecate `ICurrentDateProvider.getCurrentTimeMillis()`, `CurrentDateProvider.getInstance()`, `AndroidCurrentDateProvider.getInstance()` and `AndroidDateUtils.getCurrentSentryDateTime()` in favour of `MonotonicClock` and `SentryDateProvider` ([#6043](https://github.com/getsentry/sentry-java/pull/6043))
 
 ## 8.55.0
 
