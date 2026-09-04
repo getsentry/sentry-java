@@ -5,6 +5,8 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.time.AnchoredClock;
+import io.sentry.time.Timestamp;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -25,6 +27,14 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class SentryTracer implements ITransaction {
   private final @NotNull SentryId eventId = new SentryId();
+
+  /**
+   * The one wall-clock reading this transaction makes. Declared before {@link #root} so that the
+   * root span, constructed inside this class's constructor, already sees a usable anchor — Java
+   * initialises fields in declaration order.
+   */
+  private final @NotNull AnchoredClock anchor;
+
   private final @NotNull Span root;
   private final @NotNull List<Span> children = new CopyOnWriteArrayList<>();
   private final @NotNull IScopes scopes;
@@ -74,6 +84,9 @@ public final class SentryTracer implements ITransaction {
     Objects.requireNonNull(context, "context is required");
     Objects.requireNonNull(scopes, "scopes are required");
 
+    this.anchor =
+        AnchoredClock.create(
+            scopes.getOptions().getEpochClock(), scopes.getOptions().getMonotonicClock());
     this.root = new Span(context, this, scopes, transactionOptions);
 
     this.name = context.getName();
@@ -160,7 +173,7 @@ public final class SentryTracer implements ITransaction {
       return;
     }
 
-    final @NotNull SentryDate finishTimestamp = scopes.getOptions().getDateProvider().now();
+    final @NotNull Timestamp finishTimestamp = anchor.now();
 
     // abort all child-spans first, this ensures the transaction can be finished,
     // even if waitForChildren is true
@@ -182,8 +195,20 @@ public final class SentryTracer implements ITransaction {
       @Nullable SentryDate finishDate,
       boolean dropIfNoChildren,
       @Nullable Hint hint) {
+    finish(
+        status,
+        finishDate == null ? null : Timestamp.ofEpochNanos(finishDate.nanoTimestamp()),
+        dropIfNoChildren,
+        hint);
+  }
+
+  void finish(
+      @Nullable SpanStatus status,
+      @Nullable Timestamp finishDate,
+      boolean dropIfNoChildren,
+      @Nullable Hint hint) {
     // try to get the high precision timestamp from the root span
-    SentryDate finishTimestamp = root.getFinishDate();
+    @Nullable Timestamp finishTimestamp = root.endTimestamp();
 
     // if a finishDate was passed in, use that instead
     if (finishDate != null) {
@@ -192,7 +217,7 @@ public final class SentryTracer implements ITransaction {
 
     // if it's not set -> fallback to the current time
     if (finishTimestamp == null) {
-      finishTimestamp = scopes.getOptions().getDateProvider().now();
+      finishTimestamp = anchor.now();
     }
 
     // auto-finish any idle spans first
@@ -344,9 +369,29 @@ public final class SentryTracer implements ITransaction {
     return children;
   }
 
+  @NotNull
+  AnchoredClock getAnchor() {
+    return anchor;
+  }
+
   @Override
   public @NotNull SentryDate getStartDate() {
     return this.root.getStartDate();
+  }
+
+  @Override
+  public @NotNull Timestamp startTimestamp() {
+    return this.root.startTimestamp();
+  }
+
+  @Override
+  public @Nullable Timestamp endTimestamp() {
+    return this.root.endTimestamp();
+  }
+
+  @Override
+  public @Nullable AnchoredClock anchor() {
+    return this.root.anchor();
   }
 
   @Override
@@ -557,7 +602,7 @@ public final class SentryTracer implements ITransaction {
    * that no profile was recorded, e.g. when the OS rate limits profiling requests. Spans that no
    * profile covers drop the reference here, so they don't point to a profile that never arrives.
    */
-  private void dropUnrecordedProfilerIds(final @NotNull SentryDate finishTimestamp) {
+  private void dropUnrecordedProfilerIds(final @NotNull Timestamp finishTimestamp) {
     final @NotNull IContinuousProfiler continuousProfiler =
         scopes.getOptions().getContinuousProfiler();
     if (continuousProfiler instanceof NoOpContinuousProfiler) {
@@ -591,7 +636,7 @@ public final class SentryTracer implements ITransaction {
   private boolean isProfileMissing(
       final @NotNull IContinuousProfiler continuousProfiler,
       final @NotNull Span span,
-      final @NotNull SentryDate finishTimestamp) {
+      final @NotNull Timestamp finishTimestamp) {
     final @Nullable Object data = span.getData(SpanDataConvention.PROFILER_ID);
     if (!(data instanceof String)) {
       return false;
@@ -604,10 +649,13 @@ public final class SentryTracer implements ITransaction {
       return false;
     }
     final @Nullable SentryDate spanFinishDate = span.getFinishDate();
+    // IContinuousProfiler is public API and still speaks SentryDate; convert at the boundary
     return continuousProfiler.getProfileRecordingState(
             profilerId,
             span.getStartDate(),
-            spanFinishDate != null ? spanFinishDate : finishTimestamp)
+            spanFinishDate != null
+                ? spanFinishDate
+                : new SentryLongDate(finishTimestamp.epochNanos()))
         == ProfileRecordingState.NOT_RECORDED;
   }
 

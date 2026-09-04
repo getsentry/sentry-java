@@ -4,6 +4,8 @@ import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.Retryable
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
+import io.sentry.time.JavaMonotonicClock
+import io.sentry.time.SystemEpochClock
 import io.sentry.util.HintUtils
 import io.sentry.util.thread.NoOpThreadChecker
 import java.io.File
@@ -38,6 +40,8 @@ class OutboxSenderTest {
     init {
       whenever(options.dsn).thenReturn("https://key@sentry.io/proj")
       whenever(options.dateProvider).thenReturn(SentryNanotimeDateProvider())
+      whenever(options.epochClock).thenReturn(SystemEpochClock.getInstance())
+      whenever(options.monotonicClock).thenReturn(JavaMonotonicClock.getInstance())
       whenever(options.threadChecker).thenReturn(NoOpThreadChecker.getInstance())
       whenever(options.continuousProfiler).thenReturn(NoOpContinuousProfiler.getInstance())
       whenever(scopes.options).thenReturn(this.options)
