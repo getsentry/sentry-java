@@ -21,8 +21,10 @@ import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
 import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.time.EpochClock;
 import io.sentry.time.JavaMonotonicClock;
 import io.sentry.time.MonotonicClock;
+import io.sentry.time.SystemEpochClock;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -526,6 +528,9 @@ public class SentryOptions {
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
       new LazyEvaluator<>(() -> new SentryAutoDateProvider());
+
+  private final @NotNull LazyEvaluator<EpochClock> epochClock =
+      new LazyEvaluator<>(() -> SystemEpochClock.getInstance());
 
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
@@ -3059,6 +3064,19 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
     this.dateProvider.setValue(dateProvider);
+  }
+
+  /**
+   * Returns the wall clock, for stamping an instant that will be serialized.
+   *
+   * <p>Reports the same epoch as {@link #getDateProvider()}, but a {@link io.sentry.time.Timestamp}
+   * carries no {@link System#nanoTime()} tick of its own the way a {@link SentryNanotimeDate} does.
+   * Instants that will be subtracted from each other come from an {@link
+   * io.sentry.time.AnchoredClock} built on this and {@link #getMonotonicClock()}.
+   */
+  @ApiStatus.Internal
+  public @NotNull EpochClock getEpochClock() {
+    return epochClock.getValue();
   }
 
   /**
