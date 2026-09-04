@@ -3707,6 +3707,7 @@ public class io/sentry/SentryOptions {
 	public fun getEnvelopeDiskCache ()Lio/sentry/cache/IEnvelopeCache;
 	public fun getEnvelopeReader ()Lio/sentry/IEnvelopeReader;
 	public fun getEnvironment ()Ljava/lang/String;
+	public fun getEpochClock ()Lio/sentry/time/EpochClock;
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getExperimental ()Lio/sentry/ExperimentalOptions;
@@ -7598,12 +7599,25 @@ public final class io/sentry/rrweb/RRWebVideoEvent$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/time/AnchoredClock {
+	public fun at (J)Lio/sentry/time/Timestamp;
+	public static fun create (Lio/sentry/time/EpochClock;Lio/sentry/time/MonotonicClock;)Lio/sentry/time/AnchoredClock;
+	public fun driftNanos ()J
+	public fun now ()Lio/sentry/time/Timestamp;
+	public fun start ()Lio/sentry/time/Timestamp;
+	public fun tickOf (Lio/sentry/time/Timestamp;)J
+}
+
 public final class io/sentry/time/Deadline {
 	public static fun after (Lio/sentry/time/MonotonicClock;JLjava/util/concurrent/TimeUnit;)Lio/sentry/time/Deadline;
 	public fun hasPassed ()Z
 	public fun isAfter (Lio/sentry/time/Deadline;)Z
 	public static fun passed (Lio/sentry/time/MonotonicClock;)Lio/sentry/time/Deadline;
 	public fun remaining (Ljava/util/concurrent/TimeUnit;)J
+}
+
+public abstract interface class io/sentry/time/EpochClock {
+	public abstract fun now ()Lio/sentry/time/Timestamp;
 }
 
 public final class io/sentry/time/JavaMonotonicClock : io/sentry/time/MonotonicClock {
@@ -7619,6 +7633,19 @@ public final class io/sentry/time/Stopwatch {
 	public fun elapsed (Ljava/util/concurrent/TimeUnit;)J
 	public fun elapsedNanos ()J
 	public static fun started (Lio/sentry/time/MonotonicClock;)Lio/sentry/time/Stopwatch;
+}
+
+public final class io/sentry/time/SystemEpochClock : io/sentry/time/EpochClock {
+	public static fun getInstance ()Lio/sentry/time/EpochClock;
+	public fun now ()Lio/sentry/time/Timestamp;
+}
+
+public final class io/sentry/time/Timestamp {
+	public fun epochNanos ()J
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public static fun ofEpochNanos (J)Lio/sentry/time/Timestamp;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
