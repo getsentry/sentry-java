@@ -1,8 +1,8 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical setupPython systemTest systemTestInteractive check checkSampleAndroid preMerge publish
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
-preMerge: check
+preMerge: check checkSampleAndroid
 publish: clean dryRelease
 
 # deep clean
@@ -63,3 +63,7 @@ systemTestInteractive: setupPython
 # Run tests and lint
 check:
 	./gradlew check
+
+# The Android sample is a separate build, so the root `check` does not reach it
+checkSampleAndroid:
+	./gradlew -p sentry-samples/sentry-samples-android assembleDebug lintDebug

@@ -1,4 +1,6 @@
 [versions]
+# Also honoured via the VERSION_AGP env var, set by the AGP compatibility matrix job.
+agp = "9.2.1"
 animalsniffer = "2.0.1"
 apollo = "2.5.9"
 androidxLifecycle = "2.2.0"
@@ -52,6 +54,7 @@ compileSdk = "37"
 minSdk = "21"
 
 [plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

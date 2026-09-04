@@ -1,13 +1,8 @@
 
 object Config {
-    val AGP = System.getenv("VERSION_AGP") ?: "9.2.1"
     val kotlinStdLib = "stdlib-jdk8"
     val kotlinStdLibVersionAndroid = "1.9.24"
     val kotlinTestJunit = "test-junit"
-
-    object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:$AGP"
-    }
 
     object Android {
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
