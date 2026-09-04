@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Behavioral Changes
+
+- Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
+
 ### Fixes
 
 - Populate the Android connection status cache during the first two minutes after boot, instead of treating the empty cache as up to date ([#6029](https://github.com/getsentry/sentry-java/pull/6029))
@@ -10,6 +14,7 @@
 
 - Add an internal `MonotonicClock` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
 - Add internal `Timestamp`, `EpochClock` and `AnchoredClock`, so related instants project from one wall-clock reading instead of each reading the clock ([#6045](https://github.com/getsentry/sentry-java/pull/6045))
+- Deprecate `RateLimiter(ICurrentDateProvider, SentryOptions)` in favour of `RateLimiter(MonotonicClock, RateLimiterConfig)` ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 
 ## 8.55.0
 
