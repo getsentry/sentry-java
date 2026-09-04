@@ -16,6 +16,7 @@
 - Add an internal `MonotonicClock` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
 - Add internal `Timestamp`, `EpochClock` and `AnchoredClock`, so related instants project from one wall-clock reading instead of each reading the clock ([#6045](https://github.com/getsentry/sentry-java/pull/6045))
 - Deprecate `RateLimiter(ICurrentDateProvider, SentryOptions)` in favour of `RateLimiter(MonotonicClock, RateLimiterConfig)` ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
+- Measure ANR detection thresholds on the internal `MonotonicClock`, so the clock is named by the type instead of chosen at each call site ([#6041](https://github.com/getsentry/sentry-java/pull/6041))
 
 ## 8.55.0
 
