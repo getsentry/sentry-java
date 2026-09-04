@@ -1002,6 +1002,13 @@ public final class SentryClient implements ISentryClient {
 
     if (shouldApplyScopeData(transaction, hint)) {
       addScopeAttachmentsToHint(scope, hint);
+
+      if (profilingTraceData != null && scope != null) {
+        final @Nullable String scopeEnvironment = scope.getEnvironment();
+        if (scopeEnvironment != null) {
+          profilingTraceData.setEnvironment(scopeEnvironment);
+        }
+      }
     }
 
     options
@@ -1125,6 +1132,13 @@ public final class SentryClient implements ISentryClient {
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing profile chunk: %s", profileChunk.getChunkId());
 
+    if (scope != null) {
+      final @Nullable String scopeEnvironment = scope.getEnvironment();
+      if (scopeEnvironment != null) {
+        profileChunk.setEnvironment(scopeEnvironment);
+      }
+    }
+
     @NotNull SentryId sentryId = profileChunk.getChunkId();
     final DebugMeta debugMeta = DebugMeta.buildDebugMeta(profileChunk.getDebugMeta(), options);
     if (debugMeta != null) {
@@ -1166,16 +1180,16 @@ public final class SentryClient implements ISentryClient {
       hint = new Hint();
     }
 
+    if (shouldApplyScopeData(checkIn, hint)) {
+      checkIn = applyScope(checkIn, scope);
+    }
+
     if (checkIn.getEnvironment() == null) {
       checkIn.setEnvironment(options.getEnvironment());
     }
 
     if (checkIn.getRelease() == null) {
       checkIn.setRelease(options.getRelease());
-    }
-
-    if (shouldApplyScopeData(checkIn, hint)) {
-      checkIn = applyScope(checkIn, scope);
     }
 
     if (CheckInUtils.isIgnored(options.getIgnoredCheckIns(), checkIn.getMonitorSlug())) {
@@ -1513,6 +1527,9 @@ public final class SentryClient implements ISentryClient {
   private @Nullable SentryEvent applyFeedbackScope(
       @NotNull SentryEvent event, final @NotNull IScope scope, final @NotNull Hint hint) {
 
+    if (event.getEnvironment() == null) {
+      event.setEnvironment(scope.getEnvironment());
+    }
     if (event.getUser() == null) {
       event.setUser(scope.getUser());
     }
@@ -1549,6 +1566,9 @@ public final class SentryClient implements ISentryClient {
 
   private @NotNull CheckIn applyScope(@NotNull CheckIn checkIn, final @Nullable IScope scope) {
     if (scope != null) {
+      if (checkIn.getEnvironment() == null) {
+        checkIn.setEnvironment(scope.getEnvironment());
+      }
       // Set trace data from active span to connect events with transactions
       final ISpan span = scope.getSpan();
       if (checkIn.getContexts().getTrace() == null) {
@@ -1573,6 +1593,9 @@ public final class SentryClient implements ISentryClient {
       }
       if (replayEvent.getUser() == null) {
         replayEvent.setUser(scope.getUser());
+      }
+      if (replayEvent.getEnvironment() == null) {
+        replayEvent.setEnvironment(scope.getEnvironment());
       }
       if (replayEvent.getTags() == null) {
         replayEvent.setTags(scope.getTags());
@@ -1613,6 +1636,9 @@ public final class SentryClient implements ISentryClient {
       }
       if (sentryBaseEvent.getUser() == null) {
         sentryBaseEvent.setUser(scope.getUser());
+      }
+      if (sentryBaseEvent.getEnvironment() == null) {
+        sentryBaseEvent.setEnvironment(scope.getEnvironment());
       }
       if (sentryBaseEvent.getTags() == null) {
         sentryBaseEvent.setTags(scope.getTags());
