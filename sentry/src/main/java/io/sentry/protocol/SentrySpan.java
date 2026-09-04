@@ -65,14 +65,15 @@ public final class SentrySpan implements JsonUnknown, JsonSerializable {
     final Map<String, MeasurementValue> measurementsCopy =
         CollectionUtils.newConcurrentHashMap(span.getMeasurements());
     this.measurements = measurementsCopy != null ? measurementsCopy : new ConcurrentHashMap<>();
-    // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
+    // Both endpoints are projections of the transaction's one anchor, so the server subtracting
+    // them yields the time this span measured. No derivation needed: the end is not a second
+    // wall-clock reading, it is the anchor plus a tick difference.
+    // We lose precision here, from nanosecond precision down to 10 microsecond precision.
     this.timestamp =
-        span.getFinishDate() == null
+        span.endTimestamp() == null
             ? null
-            : DateUtils.nanosToSeconds(
-                span.getStartDate().laterDateNanosTimestampByDiff(span.getFinishDate()));
-    // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
-    this.startTimestamp = DateUtils.nanosToSeconds(span.getStartDate().nanoTimestamp());
+            : DateUtils.nanosToSeconds(span.endTimestamp().epochNanos());
+    this.startTimestamp = DateUtils.nanosToSeconds(span.startTimestamp().epochNanos());
     this.data = data;
     final @NotNull IFeatureFlagBuffer featureFlagBuffer =
         span.getSpanContext().getFeatureFlagBuffer();

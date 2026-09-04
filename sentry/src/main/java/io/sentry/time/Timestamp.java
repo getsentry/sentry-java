@@ -47,8 +47,7 @@ public final class Timestamp {
   }
 
   /** The clock that projected this instant, or null if it was read or stated directly. */
-  @Nullable
-  AnchoredClock anchor() {
+  public @Nullable AnchoredClock anchor() {
     return anchor;
   }
 

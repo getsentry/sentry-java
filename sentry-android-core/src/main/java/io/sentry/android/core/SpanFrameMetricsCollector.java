@@ -7,11 +7,11 @@ import io.sentry.ISpan;
 import io.sentry.ITransaction;
 import io.sentry.NoOpSpan;
 import io.sentry.NoOpTransaction;
-import io.sentry.SentryDate;
-import io.sentry.SentryNanotimeDate;
 import io.sentry.SpanDataConvention;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.MeasurementValue;
+import io.sentry.time.AnchoredClock;
+import io.sentry.time.Timestamp;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.Iterator;
 import java.util.SortedSet;
@@ -32,7 +32,6 @@ public class SpanFrameMetricsCollector
   // grow indefinitely in case of a long running span
   private static final int MAX_FRAMES_COUNT = 3600;
   private static final long ONE_SECOND_NANOS = TimeUnit.SECONDS.toNanos(1);
-  private static final SentryNanotimeDate EMPTY_NANO_TIME = new SentryNanotimeDate(0, 0);
 
   private final boolean enabled;
   protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
@@ -47,7 +46,8 @@ public class SpanFrameMetricsCollector
             if (o1 == o2) {
               return 0;
             }
-            int timeDiff = o1.getStartDate().compareTo(o2.getStartDate());
+            int timeDiff =
+                Long.compare(o1.startTimestamp().epochNanos(), o2.startTimestamp().epochNanos());
             if (timeDiff != 0) {
               return timeDiff;
             }
@@ -126,7 +126,7 @@ public class SpanFrameMetricsCollector
       } else {
         // otherwise only remove old/irrelevant frames
         final @NotNull ISpan oldestSpan = runningSpans.first();
-        frames.headSet(new Frame(toNanoTime(oldestSpan.getStartDate()))).clear();
+        frames.headSet(new Frame(toNanoTime(oldestSpan, oldestSpan.startTimestamp()))).clear();
       }
     }
   }
@@ -139,13 +139,13 @@ public class SpanFrameMetricsCollector
         return;
       }
 
-      final @Nullable SentryDate spanFinishDate = span.getFinishDate();
-      if (spanFinishDate == null) {
+      final @Nullable Timestamp spanFinish = span.endTimestamp();
+      if (spanFinish == null) {
         return;
       }
 
-      final long spanStartNanos = toNanoTime(span.getStartDate());
-      final long spanEndNanos = toNanoTime(spanFinishDate);
+      final long spanStartNanos = toNanoTime(span, span.startTimestamp());
+      final long spanEndNanos = toNanoTime(span, spanFinish);
       final long spanDurationNanos = spanEndNanos - spanStartNanos;
       if (spanDurationNanos <= 0) {
         return;
@@ -306,23 +306,38 @@ public class SpanFrameMetricsCollector
   }
 
   /**
-   * Because {@link SentryNanotimeDate#nanoTimestamp()} only gives you millisecond precision, but
-   * diff does ¯\_(ツ)_/¯
+   * Places a span instant on the frame timeline, which {@link android.view.Choreographer} reports
+   * in the {@link System#nanoTime()} timebase.
    *
-   * @param date the input date
-   * @return a non-unix timestamp in nano precision, similar to {@link System#nanoTime()}.
+   * <p>An anchored span's instant inverts to the exact tick it was projected from. That tick is on
+   * {@link io.sentry.time.MonotonicClock} — {@code CLOCK_BOOTTIME} on Android — while frames are on
+   * {@code CLOCK_MONOTONIC}, so crossing between them costs one offset read. The offset changes
+   * whenever the device suspends, so a span that spanned deep sleep lands wrong by the sleep; there
+   * are no frames during sleep, so the honest fix is to skip such a span rather than to guess. That
+   * is the follow-up this method's caller wants, not a reason to keep projecting from the wall
+   * clock.
+   *
+   * @return a non-unix timestamp in nano precision, in the {@link System#nanoTime()} timebase.
    */
-  private static long toNanoTime(final @NotNull SentryDate date) {
-    // SentryNanotimeDate nanotime is based on System.nanotime(), like EMPTY_NANO_TIME,
-    // thus diff will simply return the System.nanotime() value of date
-    if (date instanceof SentryNanotimeDate) {
-      return date.diff(EMPTY_NANO_TIME);
+  private static long toNanoTime(final @NotNull ISpan span, final @NotNull Timestamp timestamp) {
+    final @Nullable AnchoredClock anchor = span.anchor();
+    if (anchor != null) {
+      // TODO [MAJOR] Cross into the frame timebase before comparing.
+      // The tick is on io.sentry.time.MonotonicClock, which is CLOCK_BOOTTIME on Android, while
+      // Choreographer reports frames on CLOCK_MONOTONIC; the two differ by however long the device
+      // has been suspended. The offset is System.nanoTime() - SystemClock.elapsedRealtimeNanos(),
+      // but reading it from statics here is untestable and it changes on every suspend, so it needs
+      // an injectable seam and a decision about what to do with a span that spanned deep sleep —
+      // there are no frames during sleep, so skipping such a span is more honest than shifting it.
+      // Left unbridged deliberately: this demonstrates the span/anchor integration, not the
+      // timebase fix.
+      return anchor.tickOf(timestamp);
     }
 
-    // e.g. SentryLongDate is unix time based - upscaled to nanos,
-    // we need to project it back to System.nanotime() format
-    long nowUnixInNanos = DateUtils.millisToNanos(System.currentTimeMillis());
-    long shiftInNanos = nowUnixInNanos - date.nanoTimestamp();
+    // A stated instant — an OTel span, an app-start projection, a SQLite driver span — carries no
+    // tick at all, so there is nothing to invert and the wall clock is all we have.
+    final long nowUnixInNanos = DateUtils.millisToNanos(System.currentTimeMillis());
+    final long shiftInNanos = nowUnixInNanos - timestamp.epochNanos();
     return System.nanoTime() - shiftInNanos;
   }
 

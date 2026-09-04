@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import io.sentry.DateUtils
 import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.NoOpSpan
@@ -8,6 +9,10 @@ import io.sentry.SentryNanotimeDate
 import io.sentry.SpanContext
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.protocol.MeasurementValue
+import io.sentry.time.AnchoredClock
+import io.sentry.time.EpochClock
+import io.sentry.time.MonotonicClock
+import io.sentry.time.Timestamp
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -49,16 +54,7 @@ class SpanFrameMetricsCollectorTest {
     val span = mock<ISpan>()
     val spanContext = SpanContext("op.fake")
     whenever(span.spanContext).thenReturn(spanContext)
-    whenever(span.startDate)
-      .thenReturn(SentryNanotimeDate(System.currentTimeMillis(), startTimeStampNanos))
-    whenever(span.finishDate)
-      .thenReturn(
-        if (endTimeStampNanos != null) {
-          SentryNanotimeDate(System.currentTimeMillis(), endTimeStampNanos)
-        } else {
-          null
-        }
-      )
+    stubAnchoredTimes(span, startTimeStampNanos, endTimeStampNanos)
     return span
   }
 
@@ -69,17 +65,37 @@ class SpanFrameMetricsCollectorTest {
     val span = mock<ITransaction>()
     val spanContext = SpanContext("op.fake")
     whenever(span.spanContext).thenReturn(spanContext)
-    whenever(span.startDate)
-      .thenReturn(SentryNanotimeDate(System.currentTimeMillis(), startTimeStampNanos))
-    whenever(span.finishDate)
-      .thenReturn(
-        if (endTimeStampNanos != null) {
-          SentryNanotimeDate(System.currentTimeMillis(), endTimeStampNanos)
-        } else {
-          null
-        }
-      )
+    stubAnchoredTimes(span, startTimeStampNanos, endTimeStampNanos)
     return span
+  }
+
+  /**
+   * Gives a mocked span the timing shape a real one now has: two instants projected from one
+   * anchor, whose ticks are the values this test feeds the frame collector.
+   */
+  private fun stubAnchoredTimes(span: ISpan, startTick: Long, endTick: Long?) {
+    val clock = FakeClock(startTick)
+    val epoch = EpochClock {
+      Timestamp.ofEpochNanos(DateUtils.millisToNanos(System.currentTimeMillis()))
+    }
+    val anchor = AnchoredClock.create(epoch, clock)
+    val start = anchor.start()
+    val end = endTick?.let {
+      clock.setNanos(it)
+      anchor.now()
+    }
+
+    whenever(span.anchor()).thenReturn(anchor)
+    whenever(span.startTimestamp()).thenReturn(start)
+    whenever(span.endTimestamp()).thenReturn(end)
+  }
+
+  private class FakeClock(private var nanos: Long) : MonotonicClock {
+    override fun tickNanos(): Long = nanos
+
+    fun setNanos(value: Long) {
+      nanos = value
+    }
   }
 
   private val fixture = Fixture()

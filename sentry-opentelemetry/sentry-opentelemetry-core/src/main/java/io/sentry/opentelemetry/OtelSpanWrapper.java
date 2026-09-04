@@ -28,6 +28,8 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.time.AnchoredClock;
+import io.sentry.time.Timestamp;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
@@ -553,5 +555,28 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
     public void close() {
       otelScope.close();
     }
+  }
+
+  /**
+   * OTel hands us epoch nanos at both ends and no tick, so these instants are stated rather than
+   * projected and {@link #anchor()} is null. A duration taken across them is a wall-clock
+   * difference — the one case the anchored design cannot improve, because the input carries nothing
+   * else.
+   */
+  @Override
+  public @NotNull Timestamp startTimestamp() {
+    return Timestamp.ofEpochNanos(startTimestamp.nanoTimestamp());
+  }
+
+  @Override
+  public @Nullable Timestamp endTimestamp() {
+    return finishedTimestamp == null
+        ? null
+        : Timestamp.ofEpochNanos(finishedTimestamp.nanoTimestamp());
+  }
+
+  @Override
+  public @Nullable AnchoredClock anchor() {
+    return null;
   }
 }

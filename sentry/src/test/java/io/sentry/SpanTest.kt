@@ -55,7 +55,7 @@ class SpanTest {
     val span = fixture.getSut()
     span.finish()
 
-    assertNotNull(span.finishDate)
+    assertNotNull(span.endTimestamp())
   }
 
   @Test
@@ -63,7 +63,7 @@ class SpanTest {
     val span = fixture.getSut()
     span.finish(SpanStatus.CANCELLED)
 
-    assertNotNull(span.finishDate)
+    assertNotNull(span.endTimestamp())
     assertEquals(SpanStatus.CANCELLED, span.status)
   }
 
@@ -105,7 +105,7 @@ class SpanTest {
     assertThat(child.parentSpanId).isEqualTo(parent.spanContext.spanId)
     assertThat(child.operation).isEqualTo("child-op")
     assertThat(child.description).isEqualTo("description")
-    assertThat(child.startDate).isSameInstanceAs(timestamp)
+    assertThat(child.startTimestamp().epochNanos()).isEqualTo(timestamp.nanoTimestamp())
   }
 
   @Test
@@ -237,14 +237,14 @@ class SpanTest {
     span.throwable = ex
 
     span.finish(SpanStatus.OK)
-    val timestamp = span.finishDate
+    val timestamp = span.endTimestamp()
 
     span.finish(SpanStatus.UNKNOWN_ERROR)
 
     // call only once
     verify(fixture.scopes).setSpanContext(any(), any(), any())
     assertEquals(SpanStatus.OK, span.status)
-    assertEquals(timestamp, span.finishDate)
+    assertEquals(timestamp, span.endTimestamp())
   }
 
   @Test
@@ -298,22 +298,22 @@ class SpanTest {
 
     // then the span start should match the child
     // but the finish date should be kept the same
-    assertEquals(child1.startDate, span.startDate)
-    assertEquals(finishDate, span.finishDate)
+    assertEquals(child1.startTimestamp(), span.startTimestamp())
+    assertEquals(finishDate.nanoTimestamp(), span.endTimestamp()!!.epochNanos())
   }
 
   @Test
   fun `when span trim-start is enabled, do not trim to start of child span if it started earlier`() {
     // when trim start is enabled
     val span = fixture.getSut(SpanOptions().apply { isTrimStart = true })
-    val startDate = span.startDate
+    val startDate = span.startTimestamp()
 
     // and a child span is created but has an earlier timestamp
     val child1 =
       span.startChild(
         "op1",
         "desc",
-        SentryLongDate(span.startDate.nanoTimestamp() - 1000L),
+        SentryLongDate(span.startTimestamp().epochNanos() - 1000L),
         Instrumenter.SENTRY,
         SpanOptions(),
       ) as Span
@@ -321,7 +321,7 @@ class SpanTest {
     span.finish(SpanStatus.OK)
 
     // then the span start should remain unchanged
-    assertEquals(startDate, span.startDate)
+    assertEquals(startDate, span.startTimestamp())
   }
 
   @Test
@@ -329,7 +329,7 @@ class SpanTest {
     // when trim end is enabled
     val span = fixture.getSut(SpanOptions().apply { isTrimEnd = true })
 
-    val startDate = span.startDate
+    val startDate = span.startTimestamp()
 
     // and a child span is created
     Thread.sleep(1)
@@ -340,8 +340,8 @@ class SpanTest {
 
     // then the start should be left unchanged
     // but the end should match the child
-    assertEquals(startDate, span.startDate)
-    assertEquals(child1.finishDate, span.finishDate)
+    assertEquals(startDate, span.startTimestamp())
+    assertEquals(child1.endTimestamp(), span.endTimestamp())
   }
 
   @Test
@@ -349,20 +349,20 @@ class SpanTest {
     // when trim end is enabled
     val span = fixture.getSut(SpanOptions().apply { isTrimEnd = true })
 
-    val startDate = span.startDate
+    val startDate = span.startTimestamp()
 
     // and a child span is created, but finished later than the parent
     val child1 = span.startChild("op1") as Span
     span.finish(SpanStatus.OK)
 
-    val finishDate = span.finishDate!!
+    val finishDate = span.endTimestamp()!!
 
     Thread.sleep(1)
     child1.finish()
 
     // then both start and finish date should be left unchanged
-    assertEquals(startDate, span.startDate)
-    assertEquals(finishDate, span.finishDate)
+    assertEquals(startDate, span.startTimestamp())
+    assertEquals(finishDate, span.endTimestamp())
   }
 
   @Test
@@ -395,9 +395,9 @@ class SpanTest {
     assertTrue(span.isFinished)
 
     // then the span start/finish should match its direct children only
-    assertEquals(child1.startDate, span.startDate)
-    assertEquals(child2.finishDate, span.finishDate)
-    assertNotEquals(subChild.finishDate, span.finishDate)
+    assertEquals(child1.startTimestamp(), span.startTimestamp())
+    assertEquals(child2.endTimestamp(), span.endTimestamp())
+    assertNotEquals(subChild.endTimestamp(), span.endTimestamp())
   }
 
   @Test
@@ -430,9 +430,9 @@ class SpanTest {
     assertTrue(span.isFinished)
 
     // then the root span start/finish should match first/last of its direct and indirect children
-    assertEquals(child1.startDate, span.startDate)
-    assertNotEquals(child2.finishDate, span.finishDate)
-    assertEquals(subChild.finishDate, span.finishDate)
+    assertEquals(child1.startTimestamp(), span.startTimestamp())
+    assertNotEquals(child2.endTimestamp(), span.endTimestamp())
+    assertEquals(subChild.endTimestamp(), span.endTimestamp())
   }
 
   @Test
@@ -467,20 +467,20 @@ class SpanTest {
   fun `updateEndDate is ignored and returns false if span is not finished`() {
     val span = fixture.getSut()
     assertFalse(span.isFinished)
-    assertNull(span.finishDate)
-    assertFalse(span.updateEndDate(mock()))
-    assertNull(span.finishDate)
+    assertNull(span.endTimestamp())
+    assertFalse(span.updateEndDate(mock<SentryDate>()))
+    assertNull(span.endTimestamp())
   }
 
   @Test
   fun `updateEndDate updates finishDate and returns true if span is finished`() {
     val span = fixture.getSut()
-    val endDate: SentryDate = mock()
+    val endDate = SentryLongDate(1_700_000_000_000_000_000)
     span.finish()
     assertTrue(span.isFinished)
-    assertNotNull(span.finishDate)
+    assertNotNull(span.endTimestamp())
     assertTrue(span.updateEndDate(endDate))
-    assertEquals(endDate, span.finishDate)
+    assertEquals(endDate.nanoTimestamp(), span.endTimestamp()!!.epochNanos())
   }
 
   @Test
@@ -532,10 +532,10 @@ class SpanTest {
     val span = fixture.getSut()
     span.setSpanFinishedCallback {
       assertFalse(span.isFinished)
-      assertNotNull(span.finishDate)
+      assertNotNull(span.endTimestamp())
     }
     assertFalse(span.isFinished)
-    assertNull(span.finishDate)
+    assertNull(span.endTimestamp())
     span.finish()
   }
 
