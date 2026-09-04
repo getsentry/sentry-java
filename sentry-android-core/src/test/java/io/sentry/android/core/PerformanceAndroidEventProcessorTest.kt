@@ -206,6 +206,63 @@ class PerformanceAndroidEventProcessorTest {
   }
 
   @Test
+  fun `cold standalone app start reports the same type on measurement, contexts and spans`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = true
+      classLoadedUptimeMs = 50
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(100)
+      }
+      applicationOnCreateTimeSpan.apply {
+        setStartedAt(10)
+        description = "com.example.App.onCreate"
+        setStoppedAt(42)
+      }
+    }
+
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "Activity")
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.measurements).containsKey(MeasurementValue.KEY_APP_START_COLD)
+    assertThat(tr.measurements).doesNotContainKey(MeasurementValue.KEY_APP_START_WARM)
+    assertThat(tr.contexts.app!!.startType).isEqualTo("cold")
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("cold")
+    // cold starts attach the process init / Application.onCreate breakdown children
+    assertThat(tr.spans).isNotEmpty()
+    for (span in tr.spans) {
+      assertThat(span.data?.get(APP_START_TYPE_DATA)).isEqualTo("cold")
+    }
+  }
+
+  @Test
+  fun `warm standalone app start reports the same type on measurement, contexts and spans`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.WARM
+      isAppLaunchedInForeground = true
+      classLoadedUptimeMs = 50
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(100)
+      }
+    }
+
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "Activity")
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.measurements).containsKey(MeasurementValue.KEY_APP_START_WARM)
+    assertThat(tr.measurements).doesNotContainKey(MeasurementValue.KEY_APP_START_COLD)
+    assertThat(tr.contexts.app!!.startType).isEqualTo("warm")
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("warm")
+    for (span in tr.spans) {
+      assertThat(span.data?.get(APP_START_TYPE_DATA)).isEqualTo("warm")
+    }
+  }
+
+  @Test
   fun `standalone app start sets screen and type on user spans under the extended span`() {
     val sut = fixture.getSut()
     AppStartMetrics.getInstance().apply {
