@@ -27,11 +27,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -313,16 +315,47 @@ private fun Nav2ComposeHomeRoute(routeSpec: Nav2RouteSpec, onBrowseProducts: () 
   Nav2ComposeActionRoute(routeSpec, buttons = listOf("Browse Products" to onBrowseProducts))
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun Nav2ComposeProductListRoute(
   routeSpec: Nav2RouteSpec,
   onOpenProduct42: () -> Unit,
   onOpenProduct7: () -> Unit,
 ) {
-  Nav2ComposeActionRoute(
-    routeSpec,
-    buttons = listOf("Open Product 42" to onOpenProduct42, "Open Product 7" to onOpenProduct7),
-  )
+  var showProductItems by rememberSaveable { mutableStateOf(false) }
+
+  Nav2ComposeRouteScaffold(
+    routeSpec = routeSpec,
+    cardContent = {
+      SentryTraced(
+        tag = "product_list_actions",
+        modifier = Modifier.fillMaxWidth(),
+        enableUserInteractionTracing = false,
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          Nav2ComposeRouteButton("Open Product 42", onOpenProduct42)
+          Nav2ComposeRouteButton("Open Product 7", onOpenProduct7)
+        }
+      }
+    },
+  ) {
+    Nav2ComposeRouteButton(
+      label = if (showProductItems) "Hide Product Items" else "Show Product Items",
+      onClick = { showProductItems = !showProductItems },
+    )
+
+    if (showProductItems) {
+      SentryTraced(
+        tag = "product_list_items",
+        modifier = Modifier.fillMaxWidth(),
+        enableUserInteractionTracing = false,
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          repeat(PRODUCT_LIST_ITEM_COUNT) { index -> Nav2ComposeProductListItem(index + 1) }
+        }
+      }
+    }
+  }
 }
 
 @Composable
@@ -489,6 +522,7 @@ private fun Nav2ComposeShareSheetRoute(
 @Composable
 private fun Nav2ComposeRouteScaffold(
   routeSpec: Nav2RouteSpec,
+  cardContent: (@Composable ColumnScope.() -> Unit)? = null,
   content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
   Column(
@@ -501,7 +535,7 @@ private fun Nav2ComposeRouteScaffold(
       fontWeight = FontWeight.Bold,
     )
     routeSpec.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-    if (content != null) {
+    if (cardContent != null) {
       Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         modifier = Modifier.fillMaxWidth(),
@@ -510,8 +544,32 @@ private fun Nav2ComposeRouteScaffold(
           modifier = Modifier.padding(16.dp),
           verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-          content()
+          cardContent()
         }
+      }
+    }
+    content?.invoke(this)
+  }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun Nav2ComposeProductListItem(index: Int) {
+  SentryTraced(
+    tag = "product_list_item_$index",
+    modifier = Modifier.fillMaxWidth(),
+    enableUserInteractionTracing = false,
+  ) {
+    Card(
+      colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+      ) {
+        Text("Product #$index", fontWeight = FontWeight.Bold)
+        Text("SKU-$index")
       }
     }
   }
@@ -533,6 +591,8 @@ private fun Nav2ComposeRouteButton(
 }
 
 private fun nav2ComposeInteractionTag(label: String): String = "Nav2 Compose $label"
+
+private const val PRODUCT_LIST_ITEM_COUNT = 20
 
 @Composable
 private fun Nav2ComposeRouteInfo(label: String, value: String) {
