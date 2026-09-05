@@ -1,3 +1,5 @@
+@file:JvmName("SentryComposeTracingKt")
+
 package io.sentry.compose
 
 import androidx.compose.foundation.layout.Box
