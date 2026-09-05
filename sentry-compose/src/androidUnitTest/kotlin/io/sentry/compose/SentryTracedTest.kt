@@ -81,6 +81,10 @@ class SentryTracedTest {
     assertThat(tx.countSpans(OP_PARENT_COMPOSITION)).isEqualTo(1)
     assertThat(tx.countSpans(OP_COMPOSE)).isEqualTo(1)
     assertThat(tx.countSpans(OP_PARENT_RENDER)).isEqualTo(0)
+    assertThat(
+        tx.singleSpan(OP_PARENT_COMPOSITION).startDate.isAfter(tx.singleSpan(OP_COMPOSE).startDate)
+      )
+      .isFalse()
   }
 
   @Test
@@ -160,6 +164,9 @@ class SentryTracedTest {
     val renderSpans = tx.spans.filter { it.operation == OP_RENDER }
     assertThat(tx.countSpans(OP_PARENT_RENDER)).isEqualTo(1)
     assertThat(renderSpans).hasSize(2)
+    renderSpans.forEach { renderSpan ->
+      assertThat(renderParent.startDate.isAfter(renderSpan.startDate)).isFalse()
+    }
     assertThat(renderSpans.map { it.parentSpanId })
       .containsExactly(
         renderParent.spanContext.spanId,

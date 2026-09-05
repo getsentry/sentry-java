@@ -9,6 +9,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import io.sentry.ISpan
+import io.sentry.Instrumenter
 import io.sentry.NoOpSpan
 import io.sentry.Sentry
 import io.sentry.SentryDate
@@ -216,8 +217,9 @@ private class ParentSpans {
       ownerSpan.startChild(
         operation,
         description,
+        startTimestamp,
+        Instrumenter.SENTRY,
         SpanOptions().apply {
-          setStartTimestamp(startTimestamp)
           isTrimStart = true
           isTrimEnd = true
           isIdle = true
