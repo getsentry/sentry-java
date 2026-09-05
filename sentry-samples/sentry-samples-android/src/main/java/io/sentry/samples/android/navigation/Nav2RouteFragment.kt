@@ -68,6 +68,7 @@ class Nav2RouteFragment : Fragment() {
                 activity.navigateTo(Nav2Destination.ProductDetail("7", "product-list"))
               },
             ),
+          trailingContent = { addProductListItemsToggle() },
         )
 
       Nav2RouteNames.PRODUCT_DETAIL -> productDetailLayout(activity)
@@ -131,7 +132,6 @@ class Nav2RouteFragment : Fragment() {
             activity.navigateTo(Nav2Destination.Checkout(productId))
           },
         ),
-      trailingContent = { addProductDetailItemsToggle(productId) },
     )
   }
 
@@ -192,7 +192,7 @@ class Nav2RouteFragment : Fragment() {
     }
   }
 
-  private fun LinearLayout.addProductDetailItemsToggle(productId: String) {
+  private fun LinearLayout.addProductListItemsToggle() {
     var itemsCreated = false
     var itemsVisible = false
     val listContainer =
@@ -215,7 +215,7 @@ class Nav2RouteFragment : Fragment() {
           itemsVisible = !itemsVisible
           text = if (itemsVisible) "Hide Product Items" else "Show Product Items"
           if (itemsVisible && !itemsCreated) {
-            populateProductDetailItems(listContainer, productId)
+            populateProductListItems(listContainer)
             itemsCreated = true
           }
           scrollView.visibility = if (itemsVisible) View.VISIBLE else View.GONE
@@ -226,23 +226,23 @@ class Nav2RouteFragment : Fragment() {
     addView(scrollView)
   }
 
-  private fun populateProductDetailItems(listContainer: LinearLayout, productId: String) {
+  private fun populateProductListItems(listContainer: LinearLayout) {
     val ownerSpan = Sentry.getSpan()
     val compositionParent =
       ownerSpan?.startChild(
         OP_PARENT_COMPOSITION,
-        "Fragment Product Detail Item List Composition",
+        "Fragment Product List Item List Composition",
       )
     try {
-      recordManualUiSpan(compositionParent, OP_COMPOSE, "fragment_product_detail_items") {
-        repeat(PRODUCT_DETAIL_ITEM_COUNT) { index ->
+      recordManualUiSpan(compositionParent, OP_COMPOSE, "fragment_product_list_items") {
+        repeat(PRODUCT_LIST_ITEM_COUNT) { index ->
           val itemNumber = index + 1
           recordManualUiSpan(
             compositionParent,
             OP_COMPOSE,
-            "fragment_product_detail_item_$itemNumber",
+            "fragment_product_list_item_$itemNumber",
           ) {
-            listContainer.addView(productDetailItemRow(productId, itemNumber))
+            listContainer.addView(productListItemRow(itemNumber))
           }
         }
       }
@@ -254,12 +254,12 @@ class Nav2RouteFragment : Fragment() {
       val renderParent =
         ownerSpan?.startChild(
           OP_PARENT_RENDER,
-          "Fragment Product Detail Item List Render",
+          "Fragment Product List Item List Render",
         )
       try {
-        recordManualUiSpan(renderParent, OP_RENDER, "fragment_product_detail_items")
-        repeat(PRODUCT_DETAIL_ITEM_COUNT) { index ->
-          recordManualUiSpan(renderParent, OP_RENDER, "fragment_product_detail_item_${index + 1}")
+        recordManualUiSpan(renderParent, OP_RENDER, "fragment_product_list_items")
+        repeat(PRODUCT_LIST_ITEM_COUNT) { index ->
+          recordManualUiSpan(renderParent, OP_RENDER, "fragment_product_list_item_${index + 1}")
         }
       } finally {
         renderParent?.finish()
@@ -282,14 +282,14 @@ class Nav2RouteFragment : Fragment() {
     }
   }
 
-  private fun productDetailItemRow(productId: String, itemNumber: Int): View =
+  private fun productListItemRow(itemNumber: Int): View =
     LinearLayout(requireContext()).apply {
       orientation = LinearLayout.HORIZONTAL
       setPadding(12.dp)
       setBackgroundColor(color(android.R.color.white))
       addView(
         TextView(context).apply {
-          text = "Product $productId item #$itemNumber"
+          text = "Product #$itemNumber"
           textSize = 14f
           setTypeface(null, Typeface.BOLD)
           layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
@@ -297,7 +297,7 @@ class Nav2RouteFragment : Fragment() {
       )
       addView(
         TextView(context).apply {
-          text = "SKU-$productId-$itemNumber"
+          text = "SKU-$itemNumber"
           textSize = 14f
         }
       )
@@ -344,7 +344,7 @@ class Nav2RouteFragment : Fragment() {
   private fun color(id: Int): Int = requireContext().getColor(id)
 
   private companion object {
-    private const val PRODUCT_DETAIL_ITEM_COUNT = 20
+    private const val PRODUCT_LIST_ITEM_COUNT = 20
     private const val OP_PARENT_COMPOSITION = "ui.compose.composition"
     private const val OP_COMPOSE = "ui.compose"
     private const val OP_PARENT_RENDER = "ui.compose.rendering"

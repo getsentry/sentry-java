@@ -421,12 +421,15 @@ private fun Nav2ComposeActionRoute(
   arguments: Map<String, Any?> = emptyMap(),
   buttons: List<Pair<String, () -> Unit>>,
 ) {
-  Nav2ComposeRouteScaffold(routeSpec) {
-    routeSpec.displayArguments(arguments).forEach { (label, value) ->
-      Nav2ComposeRouteInfo(label, value)
-    }
-    buttons.forEach { (label, onClick) -> Nav2ComposeRouteButton(label, onClick) }
-  }
+  Nav2ComposeRouteScaffold(
+    routeSpec = routeSpec,
+    cardContent = {
+      routeSpec.displayArguments(arguments).forEach { (label, value) ->
+        Nav2ComposeRouteInfo(label, value)
+      }
+      buttons.forEach { (label, onClick) -> Nav2ComposeRouteButton(label, onClick) }
+    },
+  )
 }
 
 @Composable
