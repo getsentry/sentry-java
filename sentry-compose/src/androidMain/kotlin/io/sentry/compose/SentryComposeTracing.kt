@@ -117,10 +117,15 @@ private fun recordCompositionSpan(
 ) {
   val parentSpan = ParentSpans.getOrCreateCompositionSpan(ownerSpan, startTimestamp) ?: return
 
-  parentSpan.startChild(OP_COMPOSITION_CHILD, tag, startTimestamp).apply {
-    spanContext.origin = OP_TRACE_ORIGIN
-    finish(null, endTimestamp)
-  }
+  parentSpan
+    .startChild(
+      OP_COMPOSITION_CHILD,
+      tag,
+      startTimestamp,
+      Instrumenter.SENTRY,
+      SpanOptions().apply { origin = OP_TRACE_ORIGIN },
+    )
+    .run { finish(null, endTimestamp) }
 }
 
 private fun recordRenderSpan(
@@ -131,10 +136,15 @@ private fun recordRenderSpan(
 ) {
   val parentSpan = ParentSpans.getOrCreateRenderSpan(ownerSpan, startTimestamp) ?: return
 
-  parentSpan.startChild(OP_RENDER_CHILD, tag, startTimestamp).apply {
-    spanContext.origin = OP_TRACE_ORIGIN
-    finish(null, endTimestamp)
-  }
+  parentSpan
+    .startChild(
+      OP_RENDER_CHILD,
+      tag,
+      startTimestamp,
+      Instrumenter.SENTRY,
+      SpanOptions().apply { origin = OP_TRACE_ORIGIN },
+    )
+    .run { finish(null, endTimestamp) }
 }
 
 /**
@@ -220,6 +230,7 @@ private class ParentSpans {
         startTimestamp,
         Instrumenter.SENTRY,
         SpanOptions().apply {
+          origin = OP_TRACE_ORIGIN
           isTrimStart = true
           isTrimEnd = true
           isIdle = true
@@ -229,8 +240,6 @@ private class ParentSpans {
     if (parentSpan.dropsChildSpans) {
       return null
     }
-
-    parentSpan.spanContext.origin = OP_TRACE_ORIGIN
     setCached(WeakReference(parentSpan))
     return parentSpan
   }
