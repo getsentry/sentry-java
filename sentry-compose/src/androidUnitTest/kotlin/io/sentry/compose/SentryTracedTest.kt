@@ -48,8 +48,8 @@ import org.robolectric.annotation.GraphicsMode
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class SentryTracedTest {
 
-  // workaround for robolectric tests with composeRule taken
-  // from https://github.com/robolectric/robolectric/pull/4736#issuecomment-1831034882
+  // Register ComponentActivity explicitly so Robolectric can launch createAndComposeRule.
+  // Context: https://github.com/robolectric/robolectric/pull/4736#issuecomment-1831034882
   @get:Rule(order = 1)
   val addActivityToRobolectricRule =
     object : TestWatcher() {
