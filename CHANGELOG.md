@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`)
+
 ## 8.55.0
 
 ### Features
