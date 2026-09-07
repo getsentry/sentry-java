@@ -25,6 +25,7 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
+import io.sentry.util.CookieUtils
 import io.sentry.util.GraphqlUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -272,7 +273,7 @@ constructor(
   private fun getRequestCookies(headers: List<HttpHeader>): String? {
     val cookies = getHeader("Cookie", headers)
     return if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      HttpUtils.filterCookies(cookies, scopes.options.dataCollectionResolver.cookies, null)
+      CookieUtils.filterCookies(cookies, scopes.options.dataCollectionResolver.cookies, null)
     } else if (scopes.options.isSendDefaultPii) {
       cookies
     } else {
@@ -283,7 +284,7 @@ constructor(
   private fun getResponseCookies(headers: List<HttpHeader>): String? {
     val cookies = getHeader("Set-Cookie", headers)
     return if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      HttpUtils.filterSetCookie(cookies, scopes.options.dataCollectionResolver.cookies)
+      CookieUtils.filterSetCookie(cookies, scopes.options.dataCollectionResolver.cookies)
     } else if (scopes.options.isSendDefaultPii) {
       cookies
     } else {
