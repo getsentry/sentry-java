@@ -17,6 +17,10 @@
     [
       "340cfef948204549ac07c3b353c81c50"
     ],
+    "segment_names":
+    [
+      "CheckoutActivity"
+    ],
     "event_id": "afcb46b1140ade5187c4bbb5daa804df",
     "contexts":
     {

@@ -1,9 +1,11 @@
 package io.sentry.util;
 
 import io.sentry.ISentryLifecycleToken;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class LifecycleHelper {
 
   public static void close(final @Nullable Object tokenObject) {

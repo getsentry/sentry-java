@@ -2,7 +2,6 @@ package io.sentry;
 
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -22,6 +21,12 @@ public final class SentryExecutorService implements ISentryExecutorService {
    */
   private static final int MAX_QUEUE_SIZE = 271;
 
+  /**
+   * How long the timer executor's worker thread stays alive while idle before self-terminating, so
+   * an instance abandoned on SDK restart doesn't leak a live thread once its queue drains.
+   */
+  static final long TIMER_KEEP_ALIVE_SECONDS = 30;
+
   private final @NotNull ScheduledThreadPoolExecutor executorService;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
@@ -37,6 +42,23 @@ public final class SentryExecutorService implements ISentryExecutorService {
 
   public SentryExecutorService(final @Nullable SentryOptions options) {
     this(new ScheduledThreadPoolExecutor(1, new SentryExecutorServiceThreadFactory()), options);
+  }
+
+  SentryExecutorService(
+      final @Nullable SentryOptions options,
+      final boolean removeOnCancelPolicy,
+      final long keepAliveTime,
+      final @NotNull TimeUnit keepAliveTimeUnit) {
+    this(options);
+    // removes cancelled tasks from the work queue immediately instead of leaving them until their
+    // scheduled time; useful for executors that frequently reschedule (e.g. transaction timeouts)
+    executorService.setRemoveOnCancelPolicy(removeOnCancelPolicy);
+    executorService.setKeepAliveTime(keepAliveTime, keepAliveTimeUnit);
+    executorService.allowCoreThreadTimeOut(true);
+    // by default shutdown() keeps queued delayed tasks, so awaitTermination blocks for the full
+    // shutdown timeout whenever a long timeout is still pending. Those tasks are discarded by the
+    // subsequent shutdownNow() anyway, so dropping them upfront only saves the wait.
+    executorService.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
   }
 
   public SentryExecutorService() {
@@ -134,33 +156,6 @@ public final class SentryExecutorService implements ISentryExecutorService {
   private static final class SentryExecutorServiceThread extends Thread {
     SentryExecutorServiceThread(final @NotNull Runnable r, final @NotNull String name) {
       super(r, name);
-    }
-  }
-
-  private static final class CancelledFuture<T> implements Future<T> {
-    @Override
-    public boolean cancel(final boolean mayInterruptIfRunning) {
-      return true;
-    }
-
-    @Override
-    public boolean isCancelled() {
-      return true;
-    }
-
-    @Override
-    public boolean isDone() {
-      return true;
-    }
-
-    @Override
-    public T get() {
-      throw new CancellationException();
-    }
-
-    @Override
-    public T get(final long timeout, final @NotNull TimeUnit unit) {
-      throw new CancellationException();
     }
   }
 }

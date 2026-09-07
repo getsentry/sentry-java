@@ -1,7 +1,9 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpScopesStorage implements IScopesStorage {
   private static final NoOpScopesStorage instance = new NoOpScopesStorage();
 

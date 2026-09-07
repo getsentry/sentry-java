@@ -13,6 +13,7 @@ import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
 import io.sentry.TransactionOptions
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,6 +27,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 
 @RunWith(AndroidJUnit4::class)
 class ManifestMetadataReaderTest {
@@ -43,6 +45,52 @@ class ManifestMetadataReaderTest {
   @BeforeTest
   fun `set up`() {
     ContextUtils.resetInstance()
+  }
+
+  @AfterTest
+  fun `tear down`() {
+    ManifestMetadataReader.manifestMetadata = null
+  }
+
+  @Test
+  fun `applyMetadata reads typed build-time metadata without querying context`() {
+    val context = mock<Context>()
+    ManifestMetadataReader.manifestMetadata =
+      mapOf(
+        ManifestMetadataReader.DEBUG to true,
+        ManifestMetadataReader.DIST to "dist",
+        ManifestMetadataReader.SAMPLE_RATE to 0.5f,
+        ManifestMetadataReader.MAX_BREADCRUMBS to 42,
+      )
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isDebug).isTrue()
+    assertThat(fixture.options.dist).isEqualTo("dist")
+    assertThat(fixture.options.sampleRate).isEqualTo(0.5)
+    assertThat(fixture.options.maxBreadcrumbs).isEqualTo(42)
+    verifyNoInteractions(context)
+  }
+
+  @Test
+  fun `build-time metadata is authoritative when a key is absent`() {
+    val context = mock<Context>()
+    fixture.options.dist = "configured"
+    ManifestMetadataReader.manifestMetadata = emptyMap()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dist).isEqualTo("configured")
+    verifyNoInteractions(context)
+  }
+
+  @Test
+  fun `isAutoInit reads build-time metadata without querying context`() {
+    val context = mock<Context>()
+    ManifestMetadataReader.manifestMetadata = mapOf(ManifestMetadataReader.AUTO_INIT to false)
+
+    assertThat(ManifestMetadataReader.isAutoInit(context, fixture.logger)).isFalse()
+    verifyNoInteractions(context)
   }
 
   @Test
@@ -1786,6 +1834,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads enableLegacyProfiling flag to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LEGACY_PROFILING to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isEnableLegacyProfiling)
+  }
+
+  @Test
+  fun `applyMetadata reads enableLegacyProfiling flag to options and keeps default if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableLegacyProfiling)
+  }
+
+  @Test
   fun `applyMetadata reads enableScopePersistence flag to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_SCOPE_PERSISTENCE to false)
@@ -2289,6 +2362,31 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertTrue(fixture.options.feedbackOptions.isUseShakeGesture)
+  }
+
+  @Test
+  fun `applyMetadata reads feedback enable screenshot and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.feedbackOptions.isEnableAttachScreenshot)
+  }
+
+  @Test
+  fun `applyMetadata reads feedback enable screenshot to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_ENABLE_ATTACH_SCREENSHOT to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.feedbackOptions.isEnableAttachScreenshot)
   }
 
   @Test
