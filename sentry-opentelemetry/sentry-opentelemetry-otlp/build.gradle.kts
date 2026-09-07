@@ -21,7 +21,7 @@ dependencies {
   api(libs.otel.extension.autoconfigure)
   api(libs.otel.exporter.otlp)
   compileOnly(libs.otel.extension.autoconfigure.spi)
-  //  compileOnly(libs.otel.semconv)
+  implementation(libs.otel.semconv)
   //  compileOnly(libs.otel.semconv.incubating)
 
   compileOnly(libs.jetbrains.annotations)

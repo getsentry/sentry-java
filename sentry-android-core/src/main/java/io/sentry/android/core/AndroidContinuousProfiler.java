@@ -23,6 +23,7 @@ import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSampler;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
+import io.sentry.profiling.ProfileRecordingState;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
@@ -38,6 +39,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
+/**
+ * Legacy Android implementation of {@link IContinuousProfiler}, using Android's {@code
+ * Debug.startMethodTracingSampling} See {@link PerfettoContinuousProfiler} for the new
+ * implementation using {@code ProfilingManager}, available on API 35+.
+ */
 @ApiStatus.Internal
 public class AndroidContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
@@ -351,6 +357,18 @@ public class AndroidContinuousProfiler
   @Override
   public @NotNull SentryId getChunkId() {
     return chunkId;
+  }
+
+  /**
+   * This profiler does not track the outcome of its profiling requests, so the answer is always
+   * unknown.
+   */
+  @Override
+  public @NotNull ProfileRecordingState getProfileRecordingState(
+      final @NotNull SentryId profilerId,
+      final @NotNull SentryDate startTime,
+      final @NotNull SentryDate endTime) {
+    return ProfileRecordingState.UNKNOWN;
   }
 
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
