@@ -56,7 +56,7 @@ class SentryOkHttpUtilsTest {
         MockResponse()
           .setBody(responseBody)
           .addHeader("myResponseHeader", "myValue")
-          .addHeader("Set-Cookie", "setCookie")
+          .addHeader("Set-Cookie", "theme=dark; Path=/")
           .setSocketPolicy(socketPolicy)
           .setResponseCode(httpStatusCode)
       )
@@ -138,7 +138,7 @@ class SentryOkHttpUtilsTest {
       .captureEvent(
         check {
           assertEquals("theme=[Filtered]; sessionId=[Filtered]", it.request!!.cookies)
-          assertEquals("setCookie", it.contexts.response!!.cookies)
+          assertEquals("theme=[Filtered]; Path=/", it.contexts.response!!.cookies)
         },
         any<Hint>(),
       )
@@ -174,7 +174,7 @@ class SentryOkHttpUtilsTest {
       .captureEvent(
         check {
           assertEquals("theme=dark; sessionId=[Filtered]", it.request!!.cookies)
-          assertEquals("setCookie", it.contexts.response!!.cookies)
+          assertEquals("theme=dark; Path=/", it.contexts.response!!.cookies)
         },
         any<Hint>(),
       )
