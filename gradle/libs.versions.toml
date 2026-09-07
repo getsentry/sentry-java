@@ -5,6 +5,10 @@ androidxLifecycle = "2.2.0"
 androidxNavigation = "2.4.2"
 androidxTestCore = "1.7.0"
 androidxCompose = "1.6.3"
+# Oldest material3 we support. Kept in lockstep with androidxCompose: material3 drags its own
+# transitive Compose versions onto the compile classpath, so a newer value here raises the effective
+# Compose floor of sentry-compose's published bytecode.
+androidxComposeMaterial3Floor = "1.2.1"
 asyncProfiler = "4.4"
 camerax = "1.4.0"
 composeCompiler = "1.5.14"
@@ -90,6 +94,12 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxCompose" }
 androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "androidxCompose" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version = "1.4.0" }
+# Compiling against material3 pulls its transitive compose-runtime/foundation onto the classpath, and
+# inline composables like Box bake those internals straight into our bytecode. Keep this at the oldest
+# material3 we support so sentry-compose stays loadable on androidxCompose above.
+# Note: don't change without testing backwards compatibility.
+# :sentry-android-integration-tests:compose-floor-integration-tests guards this.
+androidx-compose-material3-floor = { module = "androidx.compose.material3:material3", version.ref = "androidxComposeMaterial3Floor" }
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core", version="1.7.8" }
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version="1.7.8" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidxCompose" }
@@ -242,6 +252,10 @@ tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-j
 # test libraries
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version = "1.4.1" }
 androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version = "1.9.5" }
+# Floor-matched test harness for :sentry-android-integration-tests:compose-floor-integration-tests.
+# Must track androidxCompose, otherwise the test runtime pulls a newer Compose and the check silently
+# passes.
+androidx-compose-ui-test-junit4-floor = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidxCompose" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 androidx-test-core-ktx = { module = "androidx.test:core-ktx", version.ref = "androidxTestCore" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }

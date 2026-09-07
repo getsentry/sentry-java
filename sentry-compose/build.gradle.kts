@@ -55,7 +55,7 @@ kotlin {
         api(projects.sentry)
         api(projects.sentryAndroidNavigation)
 
-        compileOnly(libs.androidx.compose.material3)
+        compileOnly(libs.androidx.compose.material3.floor)
         compileOnly(libs.androidx.navigation.compose)
         implementation(libs.androidx.lifecycle.common.java8)
       }
