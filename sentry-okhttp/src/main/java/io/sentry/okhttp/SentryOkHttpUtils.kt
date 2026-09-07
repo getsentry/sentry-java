@@ -7,6 +7,7 @@ import io.sentry.TypeCheckHint
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
+import io.sentry.util.CookieUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.UrlUtils
 import okhttp3.Headers
@@ -67,7 +68,7 @@ internal object SentryOkHttpUtils {
 
   private fun getRequestCookies(scopes: IScopes, cookies: String?): String? =
     if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      HttpUtils.filterCookies(
+      CookieUtils.filterCookies(
         cookies,
         scopes.options.dataCollectionResolver.cookies,
         null,
@@ -80,7 +81,7 @@ internal object SentryOkHttpUtils {
 
   private fun getResponseCookies(scopes: IScopes, cookies: String?): String? =
     if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      HttpUtils.filterSetCookie(cookies, scopes.options.dataCollectionResolver.cookies)
+      CookieUtils.filterSetCookie(cookies, scopes.options.dataCollectionResolver.cookies)
     } else if (scopes.options.isSendDefaultPii) {
       cookies
     } else {
