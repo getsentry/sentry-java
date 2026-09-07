@@ -131,7 +131,11 @@ public final class HttpUtils {
 
     final @NotNull List<String> filteredHeaders = new ArrayList<>();
     for (final String header : headers) {
-      filteredHeaders.add(filterCookies(header, behavior, additionalSensitiveCookieNames));
+      final @Nullable String filteredHeader =
+          filterCookies(header, behavior, additionalSensitiveCookieNames);
+      if (filteredHeader != null) {
+        filteredHeaders.add(filteredHeader);
+      }
     }
     return filteredHeaders;
   }

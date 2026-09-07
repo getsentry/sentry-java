@@ -304,6 +304,18 @@ class HttpUtilsTest {
   }
 
   @Test
+  fun `cookie header filter skips null header values`() {
+    assertThat(
+        HttpUtils.filterCookiesFromHeader(
+          java.util.Arrays.asList("theme=dark", null),
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .containsExactly("theme=dark")
+  }
+
+  @Test
   fun `header filter disables collection in off mode`() {
     val filtered =
       HttpUtils.filterHeaders(
