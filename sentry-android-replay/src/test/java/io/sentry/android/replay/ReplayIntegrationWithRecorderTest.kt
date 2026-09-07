@@ -33,6 +33,7 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -51,7 +52,22 @@ class ReplayIntegrationWithRecorderTest {
       context: Context,
       recorder: Recorder,
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
-    ): ReplayIntegration = ReplayIntegration(context, dateProvider, recorderProvider = { recorder })
+    ): ReplayIntegration =
+      ReplayIntegration(
+        context,
+        dateProvider,
+        recorderProvider = { recorder },
+        replayCacheProvider = null,
+        mainLooperHandler =
+          mock {
+            doAnswer {
+                (it.arguments[0] as Runnable).run()
+                true
+              }
+              .whenever(mock)
+              .post(any())
+          },
+      )
   }
 
   private val fixture = Fixture()

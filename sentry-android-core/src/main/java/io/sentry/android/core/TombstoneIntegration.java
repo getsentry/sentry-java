@@ -147,6 +147,11 @@ public class TombstoneIntegration implements Integration, Closeable {
       return AndroidEnvelopeCache.lastReportedTombstone(options);
     }
 
+    @Override
+    public void markReported(final long timestamp) {
+      AndroidEnvelopeCache.markTombstoneReported(options, timestamp);
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.R)
     @Override
     public @Nullable ApplicationExitInfoHistoryDispatcher.Report buildReport(

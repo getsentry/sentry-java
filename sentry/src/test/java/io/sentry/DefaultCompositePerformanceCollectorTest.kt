@@ -173,12 +173,12 @@ class DefaultCompositePerformanceCollectorTest {
     assertNotNull(data1)
     assertNotNull(data2)
     assertNotNull(data3)
-    assertFalse(data1.mapNotNull { it.usedHeapMemory }.isEmpty())
-    assertFalse(data1.mapNotNull { it.cpuUsagePercentage }.isEmpty())
-    assertFalse(data2.mapNotNull { it.usedHeapMemory }.isEmpty())
-    assertFalse(data2.mapNotNull { it.cpuUsagePercentage }.isEmpty())
-    assertFalse(data3.mapNotNull { it.usedHeapMemory }.isEmpty())
-    assertFalse(data3.mapNotNull { it.cpuUsagePercentage }.isEmpty())
+    assertTrue(data1.any { it.hasUsedHeapMemory() })
+    assertTrue(data1.any { it.hasCpuUsagePercentage() })
+    assertTrue(data2.any { it.hasUsedHeapMemory() })
+    assertTrue(data2.any { it.hasCpuUsagePercentage() })
+    assertTrue(data3.any { it.hasUsedHeapMemory() })
+    assertTrue(data3.any { it.hasCpuUsagePercentage() })
   }
 
   @Test
@@ -266,8 +266,8 @@ class DefaultCompositePerformanceCollectorTest {
     Thread.sleep(300)
     val data1 = collector.stop(fixture.transaction1)
     assertNotNull(data1)
-    val memoryData = data1.map { it.usedHeapMemory }
-    val cpuData = data1.map { it.cpuUsagePercentage }
+    val memoryData = data1.filter { it.hasUsedHeapMemory() }
+    val cpuData = data1.filter { it.hasCpuUsagePercentage() }
 
     // The data returned by the collector is not empty
     assertFalse(memoryData.isEmpty())

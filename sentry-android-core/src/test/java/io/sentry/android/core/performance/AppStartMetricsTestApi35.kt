@@ -1,11 +1,13 @@
 package io.sentry.android.core.performance
 
+import android.app.Activity
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
 import android.app.ApplicationStartInfo
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.SentryShadowActivityManager
@@ -16,6 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
@@ -261,6 +264,115 @@ class AppStartMetricsTestApi35 {
 
     assertEquals(AppStartMetrics.AppStartType.UNKNOWN, metrics.appStartType)
     assertNull(metrics.appStartReason)
+  }
+
+  @Test
+  fun `background start reason marks app as not launched in foreground`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_PUSH)
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertFalse(metrics.isAppLaunchedInForeground)
+  }
+
+  @Test
+  fun `all background start reasons mark app as not launched in foreground`() {
+    val backgroundReasons =
+      listOf(
+        ApplicationStartInfo.START_REASON_ALARM,
+        ApplicationStartInfo.START_REASON_BACKUP,
+        ApplicationStartInfo.START_REASON_BOOT_COMPLETE,
+        ApplicationStartInfo.START_REASON_BROADCAST,
+        ApplicationStartInfo.START_REASON_CONTENT_PROVIDER,
+        ApplicationStartInfo.START_REASON_JOB,
+        ApplicationStartInfo.START_REASON_PUSH,
+        ApplicationStartInfo.START_REASON_SERVICE,
+      )
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    for (reason in backgroundReasons) {
+      AppStartMetrics.getInstance().clear()
+      SentryShadowActivityManager.reset()
+
+      val mockStartInfo = mock<ApplicationStartInfo>()
+      whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+      whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+      whenever(mockStartInfo.reason).thenReturn(reason)
+      SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+
+      AppStartMetrics.getInstance().registerLifecycleCallbacks(app)
+
+      assertFalse(
+        AppStartMetrics.getInstance().isAppLaunchedInForeground,
+        "reason $reason should not be launched in foreground",
+      )
+    }
+  }
+
+  @Test
+  fun `user-initiated start reason keeps app launched in foreground`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_LAUNCHER)
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    SentryShadowActivityManager.setImportance(RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertTrue(metrics.isAppLaunchedInForeground)
+  }
+
+  @Test
+  fun `unknown start reason falls back to foreground importance check`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_OTHER)
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    SentryShadowActivityManager.setImportance(RunningAppProcessInfo.IMPORTANCE_FOREGROUND)
+    val metrics = AppStartMetrics.getInstance()
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertTrue(metrics.isAppLaunchedInForeground)
+  }
+
+  @Test
+  fun `background-spawned start is re-classified as warm on the first activity`() {
+    val mockStartInfo = mock<ApplicationStartInfo>()
+    whenever(mockStartInfo.startupState).thenReturn(ApplicationStartInfo.STARTUP_STATE_STARTED)
+    whenever(mockStartInfo.startType).thenReturn(ApplicationStartInfo.START_TYPE_COLD)
+    whenever(mockStartInfo.reason).thenReturn(ApplicationStartInfo.START_REASON_PUSH)
+    SentryShadowActivityManager.setHistoricalProcessStartReasons(listOf(mockStartInfo))
+    val metrics = AppStartMetrics.getInstance()
+    // App start span anchored at background process creation.
+    metrics.appStartTimeSpan.setStartedAt(42)
+
+    val app = ApplicationProvider.getApplicationContext<Application>()
+    metrics.registerLifecycleCallbacks(app)
+
+    assertFalse(metrics.isAppLaunchedInForeground)
+    assertEquals(AppStartMetrics.AppStartType.COLD, metrics.appStartType)
+
+    // User opens the app 20s later (under the 1-minute warm threshold).
+    val activityCreatedUptimeMs = 20_000L
+    SystemClock.setCurrentTimeMillis(activityCreatedUptimeMs)
+    metrics.onActivityCreated(mock<Activity>(), null)
+
+    // Re-classified as a warm start re-anchored at activity creation.
+    assertEquals(AppStartMetrics.AppStartType.WARM, metrics.appStartType)
+    assertTrue(metrics.isAppLaunchedInForeground)
+    assertEquals(activityCreatedUptimeMs, metrics.appStartTimeSpan.startUptimeMs)
   }
 
   private fun waitForMainLooperIdle() {
