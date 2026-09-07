@@ -3,9 +3,11 @@ package io.sentry;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpSpan implements ISpan {
 
   private static final NoOpSpan instance = new NoOpSpan();
@@ -55,6 +57,12 @@ public final class NoOpSpan implements ISpan {
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
+    return NoOpSpan.getInstance();
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
     return NoOpSpan.getInstance();
   }
 

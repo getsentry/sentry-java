@@ -37,6 +37,7 @@ import android.media.MediaFormat
 import android.os.Build
 import android.view.Surface
 import io.sentry.SentryLevel.DEBUG
+import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.android.replay.util.SystemProperties
 import java.io.File
@@ -44,6 +45,16 @@ import java.nio.ByteBuffer
 import kotlin.LazyThreadSafetyMode.NONE
 
 private const val TIMEOUT_USEC = 100_000L
+
+/**
+ * How many consecutive [MediaCodec.dequeueOutputBuffer] calls may come back without producing
+ * anything before we give up on the encoder. At [TIMEOUT_USEC] per call that's ~1s.
+ *
+ * Some hardware encoders never emit [MediaCodec.BUFFER_FLAG_END_OF_STREAM] after
+ * [MediaCodec.signalEndOfInputStream], which used to spin the drain loop forever while holding the
+ * encoder lock, wedging the whole replay pipeline (and with it the app's lifecycle callbacks).
+ */
+private const val MAX_EOS_STALL_ITERATIONS = 10
 
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
@@ -81,7 +92,7 @@ internal class SimpleVideoEncoder(
         val videoCapabilities =
           mediaCodec.codecInfo.getCapabilitiesForType(muxerConfig.mimeType).videoCapabilities
 
-        if (!videoCapabilities.bitrateRange.contains(bitRate)) {
+        if (videoCapabilities != null && !videoCapabilities.bitrateRange.contains(bitRate)) {
           options.logger.log(
             DEBUG,
             "Encoder doesn't support the provided bitRate: $bitRate, the value will be clamped to the closest one",
@@ -214,19 +225,26 @@ internal class SimpleVideoEncoder(
       mediaCodec.signalEndOfInputStream()
     }
     var encoderOutputBuffers: Array<ByteBuffer?>? = mediaCodec.outputBuffers
+    // counts consecutive iterations that made no progress, so a codec that never signals EOS can't
+    // spin us forever, see MAX_EOS_STALL_ITERATIONS
+    var stalledIterations = 0
     while (true) {
       val encoderStatus: Int = mediaCodec.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC)
       if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
         // no output available yet
         if (!endOfStream) {
           break // out of while
-        } else if (options.sessionReplay.isDebug) {
+        }
+        stalledIterations++
+        if (options.sessionReplay.isDebug) {
           options.logger.log(DEBUG, "[Encoder]: no output available, spinning to await EOS")
         }
       } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+        stalledIterations = 0
         // not expected for an encoder
         encoderOutputBuffers = mediaCodec.outputBuffers
       } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+        stalledIterations = 0
         // should happen before receiving buffers, and should only happen once
         if (frameMuxer.isStarted()) {
           throw RuntimeException("format changed twice")
@@ -245,8 +263,10 @@ internal class SimpleVideoEncoder(
             "[Encoder]: unexpected result from encoder.dequeueOutputBuffer: $encoderStatus",
           )
         }
-        // let's ignore it
+        // let's ignore it, but still count it as no progress so we can't loop on it forever
+        stalledIterations++
       } else {
+        stalledIterations = 0
         val encodedData =
           encoderOutputBuffers?.get(encoderStatus)
             ?: throw RuntimeException("encoderOutputBuffer $encoderStatus was null")
@@ -279,6 +299,14 @@ internal class SimpleVideoEncoder(
           break // out of while
         }
       }
+
+      if (stalledIterations >= MAX_EOS_STALL_ITERATIONS) {
+        options.logger.log(
+          WARNING,
+          "[Encoder]: encoder made no progress for $stalledIterations iterations, dropping the remaining frames",
+        )
+        break // out of while
+      }
     }
   }
 
@@ -287,12 +315,25 @@ internal class SimpleVideoEncoder(
       onClose?.invoke()
       drainCodec(true)
       mediaCodec.stop()
-      mediaCodec.release()
-      surface?.release()
-
-      frameMuxer.release()
-    } catch (e: Throwable) {
+    } catch (e: RuntimeException) {
       options.logger.log(DEBUG, "Failed to properly release video encoder", e)
+    } finally {
+      // always release the native resources, even if draining/stopping the codec above threw (e.g.
+      // when the encoder failed to fully start), otherwise they leak (CloseGuard warning). guard
+      // each
+      // call so failing to release one resource neither skips the others nor propagates to callers,
+      // which treat release() as safe cleanup
+      releaseQuietly("MediaCodec") { mediaCodec.release() }
+      releaseQuietly("Surface") { surface?.release() }
+      releaseQuietly("MediaMuxer") { frameMuxer.release() }
+    }
+  }
+
+  private inline fun releaseQuietly(name: String, block: () -> Unit) {
+    try {
+      block()
+    } catch (e: RuntimeException) {
+      options.logger.log(DEBUG, "Failed to release $name", e)
     }
   }
 }
