@@ -1,10 +1,26 @@
 package io.sentry.android.core
 
+import android.app.Activity
+import android.app.Application
+import android.content.ContentProvider
+import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
+import android.database.Cursor
+import android.net.Uri
+import android.os.Looper
+import android.provider.OpenableColumns
+import android.view.View
 import android.view.WindowManager
+import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import io.sentry.Hint
+import io.sentry.IFeedbackApi
 import io.sentry.ILogger
 import io.sentry.IScope
 import io.sentry.IScopes
@@ -12,20 +28,32 @@ import io.sentry.ReplayController
 import io.sentry.Sentry
 import io.sentry.SentryFeedbackOptions
 import io.sentry.SentryLevel
+import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
+import io.sentry.util.LoadClass
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.fakes.RoboCursor
+import org.robolectric.shadows.ShadowContentResolver
 
 @RunWith(AndroidJUnit4::class)
 class SentryUserFeedbackFormTest {
@@ -38,6 +66,7 @@ class SentryUserFeedbackFormTest {
     val mockScopes = mock<IScopes>()
     val mockLogger = mock<ILogger>()
     val mockReplayController = mock<ReplayController>()
+    val mockFeedbackApi = mock<IFeedbackApi>()
 
     val options =
       SentryAndroidOptions().apply {
@@ -59,8 +88,9 @@ class SentryUserFeedbackFormTest {
       associatedEventId: SentryId? = null,
       configuration: SentryUserFeedbackForm.OptionsConfiguration? = null,
       configurator: SentryFeedbackOptions.OptionsConfigurator? = null,
+      context: Context = application,
     ): SentryUserFeedbackForm =
-      SentryUserFeedbackForm(application, 0, associatedEventId, configuration, configurator)
+      SentryUserFeedbackForm(context, 0, associatedEventId, configuration, configurator)
   }
 
   private val fixture = Fixture()
@@ -68,6 +98,7 @@ class SentryUserFeedbackFormTest {
   @BeforeTest
   fun setUp() {
     fixture.mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.mockScopes)
+    fixture.mockedSentry.`when`<Any> { Sentry.feedback() }.thenReturn(fixture.mockFeedbackApi)
   }
 
   @AfterTest
@@ -78,7 +109,7 @@ class SentryUserFeedbackFormTest {
   @Test
   fun `feedback dialog is shown when sdk is enabled`() {
     fixture.options.isEnabled = true
-    val sut = fixture.getSut()
+    val sut = fixture.getSut(context = componentActivity())
     verifyNoInteractions(fixture.mockLogger)
     sut.show()
     verifyNoInteractions(fixture.mockLogger)
@@ -142,5 +173,330 @@ class SentryUserFeedbackFormTest {
     assertNotNull(window)
     val flags = window.attributes.flags
     assertEquals(0, flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+  }
+
+  @Test
+  fun `a crashing onFormClose callback does not crash the app when the dialog is closed`() {
+    fixture.options.isEnabled = true
+    fixture.options.feedbackOptions.onFormClose = Runnable { throw RuntimeException("user bug") }
+    val sut = fixture.getSut()
+    sut.show()
+
+    sut.dismiss()
+    // The dismiss listener is dispatched via a Handler message
+    shadowOf(Looper.getMainLooper()).idle()
+
+    verify(fixture.mockLogger)
+      .log(eq(SentryLevel.ERROR), eq("onFormClose callback threw an exception."), any())
+  }
+
+  @Test
+  fun `a crashing onFormClose callback still runs the user's dismiss listener`() {
+    fixture.options.isEnabled = true
+    fixture.options.feedbackOptions.onFormClose = Runnable { throw RuntimeException("user bug") }
+    val sut = fixture.getSut()
+    var dismissed = false
+    sut.setOnDismissListener { dismissed = true }
+    sut.show()
+
+    sut.dismiss()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertTrue(dismissed)
+  }
+
+  @Test
+  fun `a crashing onFormOpen callback does not crash the app when the dialog is shown`() {
+    fixture.options.isEnabled = true
+    fixture.options.feedbackOptions.onFormOpen = Runnable { throw RuntimeException("user bug") }
+    val sut = fixture.getSut()
+
+    sut.show()
+
+    verify(fixture.mockLogger)
+      .log(eq(SentryLevel.ERROR), eq("onFormOpen callback threw an exception."), any())
+    // The form open must still complete its own work after the callback crash
+    verify(fixture.mockReplayController).captureReplay(eq(false))
+  }
+
+  @Test
+  fun `dialog reports its own host activity to the shake integration while visible`() {
+    fixture.options.isEnabled = true
+    val integration = FeedbackShakeIntegration(fixture.application as Application)
+    fixture.options.feedbackOptions.setShakeController(integration)
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+
+    val sut = SentryUserFeedbackForm(activity, 0, null, null, null)
+    sut.show()
+
+    assertEquals(activity, integration.dialogActivity)
+
+    sut.dismiss()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertNull(integration.dialogActivity)
+  }
+
+  @Test
+  fun `screenshot button is hidden when enableScreenshot is false`() {
+    fixture.options.isEnabled = true
+    val sut =
+      fixture.getSut(
+        context = componentActivity(),
+        configurator = { options -> options.isEnableAttachScreenshot = false },
+      )
+    sut.show()
+    assertThat(addScreenshotButton(sut).visibility).isEqualTo(View.GONE)
+  }
+
+  @Test
+  fun `screenshot button is hidden and a warning is logged when host is not a ComponentActivity`() {
+    fixture.options.isEnabled = true
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val sut = fixture.getSut(context = activity)
+    sut.show()
+    assertThat(addScreenshotButton(sut).visibility).isEqualTo(View.GONE)
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(
+          "Feedback screenshot button won't be shown. It requires the androidx.activity " +
+            "dependency and the feedback form being shown from a ComponentActivity."
+        ),
+      )
+  }
+
+  @Test
+  fun `screenshot button is hidden when androidx activity is not available`() {
+    fixture.options.isEnabled = true
+    val loadClass = mock<LoadClass>()
+    whenever(loadClass.isClassAvailable(any(), anyOrNull<io.sentry.SentryOptions>()))
+      .thenReturn(false)
+    fixture.options.feedbackOptions.loadClass = loadClass
+    val sut = fixture.getSut(context = componentActivity())
+    sut.show()
+    assertThat(addScreenshotButton(sut).visibility).isEqualTo(View.GONE)
+  }
+
+  @Test
+  fun `screenshot button is visible by default when hosted by a ComponentActivity`() {
+    fixture.options.isEnabled = true
+    val sut = fixture.getSut(context = componentActivity())
+    sut.show()
+    val button = addScreenshotButton(sut)
+    assertThat(button.visibility).isEqualTo(View.VISIBLE)
+    assertThat(button.text.toString())
+      .isEqualTo(fixture.options.feedbackOptions.addScreenshotButtonLabel.toString())
+  }
+
+  @Test
+  fun `screenshot button label toggles when an image is picked and removed`() {
+    fixture.options.isEnabled = true
+    val activity = componentActivity()
+    val sut = fixture.getSut(context = activity)
+    sut.show()
+    val button = addScreenshotButton(sut)
+
+    button.performClick()
+    deliverPickerResult(activity, Uri.parse("content://media/external/images/media/1"))
+    assertThat(button.text.toString())
+      .isEqualTo(fixture.options.feedbackOptions.removeScreenshotButtonLabel.toString())
+
+    // Clicking again removes the selected image
+    button.performClick()
+    assertThat(button.text.toString())
+      .isEqualTo(fixture.options.feedbackOptions.addScreenshotButtonLabel.toString())
+  }
+
+  @Test
+  fun `an over-sized image is dropped and not attached to the feedback`() {
+    fixture.options.isEnabled = true
+    fixture.options.maxAttachmentSize = 10
+    whenever(fixture.mockFeedbackApi.capture(any<Feedback>(), anyOrNull()))
+      .thenReturn(SentryId(java.util.UUID.randomUUID()))
+    val activity = componentActivity()
+    val uri = Uri.parse("content://media/external/images/media/1")
+    shadowOf(activity.contentResolver).setCursor(uri, sizeCursor(11))
+    val sut = fixture.getSut(context = activity)
+    sut.show()
+    val button = addScreenshotButton(sut)
+
+    button.performClick()
+    deliverPickerResult(activity, uri)
+
+    // The image is not selected, so the button keeps its initial label
+    assertThat(button.text.toString())
+      .isEqualTo(fixture.options.feedbackOptions.addScreenshotButtonLabel.toString())
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq("Selected screenshot is larger than the maxAttachmentSize of %d bytes, dropping it."),
+        eq(fixture.options.maxAttachmentSize),
+      )
+
+    sut.findViewById<EditText>(R.id.sentry_dialog_user_feedback_edt_description).setText("message")
+    sut.findViewById<Button>(R.id.sentry_dialog_user_feedback_btn_send).performClick()
+
+    val hintCaptor = argumentCaptor<Hint>()
+    verify(fixture.mockFeedbackApi).capture(any<Feedback>(), hintCaptor.capture())
+    assertThat(hintCaptor.firstValue.attachments).isEmpty()
+  }
+
+  @Test
+  fun `feedback is captured with an image attachment when an image is picked`() {
+    fixture.options.isEnabled = true
+    whenever(fixture.mockFeedbackApi.capture(any<Feedback>(), anyOrNull()))
+      .thenReturn(SentryId(java.util.UUID.randomUUID()))
+    val activity = componentActivity()
+    val uri = Uri.parse("content://media/external/images/media/1")
+    shadowOf(activity.contentResolver).registerInputStream(uri, "fake image".byteInputStream())
+    val sut = fixture.getSut(context = activity)
+    sut.show()
+
+    addScreenshotButton(sut).performClick()
+    deliverPickerResult(activity, uri)
+    sut.findViewById<EditText>(R.id.sentry_dialog_user_feedback_edt_description).setText("message")
+    sut.findViewById<Button>(R.id.sentry_dialog_user_feedback_btn_send).performClick()
+
+    val hintCaptor = argumentCaptor<Hint>()
+    verify(fixture.mockFeedbackApi).capture(any<Feedback>(), hintCaptor.capture())
+    val attachments = hintCaptor.firstValue.attachments
+    assertThat(attachments).hasSize(1)
+    assertThat(attachments[0].filename).startsWith("screenshot.")
+    assertThat(attachments[0].byteProvider).isNotNull()
+    assertThat(attachments[0].byteProvider!!.call()).isEqualTo("fake image".toByteArray())
+  }
+
+  @Test
+  fun `feedback is captured without attachments when no image is picked`() {
+    fixture.options.isEnabled = true
+    whenever(fixture.mockFeedbackApi.capture(any<Feedback>(), anyOrNull()))
+      .thenReturn(SentryId(java.util.UUID.randomUUID()))
+    val sut = fixture.getSut(context = componentActivity())
+    sut.show()
+
+    sut.findViewById<EditText>(R.id.sentry_dialog_user_feedback_edt_description).setText("message")
+    sut.findViewById<Button>(R.id.sentry_dialog_user_feedback_btn_send).performClick()
+
+    val hintCaptor = argumentCaptor<Hint>()
+    verify(fixture.mockFeedbackApi).capture(any<Feedback>(), hintCaptor.capture())
+    assertThat(hintCaptor.firstValue.attachments).isEmpty()
+  }
+
+  @Test
+  fun `feedback is captured with an image attachment when the size of the image is unknown`() {
+    fixture.options.isEnabled = true
+    whenever(fixture.mockFeedbackApi.capture(any<Feedback>(), anyOrNull()))
+      .thenReturn(SentryId(java.util.UUID.randomUUID()))
+    val activity = componentActivity()
+    val uri = registerFailingSizeQuery(activity, SecurityException("no read permission"))
+    val sut = fixture.getSut(context = activity)
+    sut.show()
+
+    addScreenshotButton(sut).performClick()
+    deliverPickerResult(activity, uri)
+    sut.findViewById<EditText>(R.id.sentry_dialog_user_feedback_edt_description).setText("message")
+    sut.findViewById<Button>(R.id.sentry_dialog_user_feedback_btn_send).performClick()
+
+    verify(fixture.mockLogger)
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(
+          "Unable to determine the size of the selected screenshot, the attachment size limit " +
+            "is applied when the feedback is captured."
+        ),
+        any<SecurityException>(),
+      )
+    val hintCaptor = argumentCaptor<Hint>()
+    verify(fixture.mockFeedbackApi).capture(any<Feedback>(), hintCaptor.capture())
+    assertThat(hintCaptor.firstValue.attachments).hasSize(1)
+  }
+
+  @Test
+  fun `a fatal error while reading the size of the image is not swallowed`() {
+    fixture.options.isEnabled = true
+    val activity = componentActivity()
+    val uri = registerFailingSizeQuery(activity, OutOfMemoryError())
+    val sut = fixture.getSut(context = activity)
+    sut.show()
+
+    addScreenshotButton(sut).performClick()
+    assertFailsWith<OutOfMemoryError> { deliverPickerResult(activity, uri) }
+  }
+
+  @Test
+  fun `screenshot picker can be registered again when the dialog is shown again`() {
+    fixture.options.isEnabled = true
+    val sut = fixture.getSut(context = componentActivity())
+    sut.show()
+    sut.dismiss()
+    sut.show()
+    assertThat(addScreenshotButton(sut).visibility).isEqualTo(View.VISIBLE)
+  }
+
+  /**
+   * Registers a provider whose size query fails with [failure], while the image itself can still be
+   * read, and returns the Uri served by it.
+   */
+  private fun registerFailingSizeQuery(
+    activity: ComponentActivity,
+    failure: Throwable,
+  ): Uri {
+    val authority = "io.sentry.test.${failure.javaClass.simpleName}"
+    ShadowContentResolver.registerProviderInternal(
+      authority,
+      object : ContentProvider() {
+        override fun onCreate() = true
+
+        override fun query(
+          uri: Uri,
+          projection: Array<out String>?,
+          selection: String?,
+          selectionArgs: Array<out String>?,
+          sortOrder: String?,
+        ): Cursor = throw failure
+
+        override fun getType(uri: Uri) = "image/png"
+
+        override fun insert(uri: Uri, values: ContentValues?): Uri? = null
+
+        override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?) = 0
+
+        override fun update(
+          uri: Uri,
+          values: ContentValues?,
+          selection: String?,
+          selectionArgs: Array<out String>?,
+        ) = 0
+      },
+    )
+    val uri = Uri.parse("content://$authority/1")
+    shadowOf(activity.contentResolver).registerInputStream(uri, "fake image".byteInputStream())
+    return uri
+  }
+
+  private fun componentActivity(): ComponentActivity =
+    Robolectric.buildActivity(ComponentActivity::class.java).setup().get()
+
+  private fun sizeCursor(size: Long): RoboCursor =
+    RoboCursor().apply {
+      setColumnNames(listOf(OpenableColumns.SIZE))
+      setResults(arrayOf(arrayOf<Any>(size)))
+    }
+
+  private fun addScreenshotButton(sut: SentryUserFeedbackForm): Button =
+    sut.findViewById(R.id.sentry_dialog_user_feedback_btn_add_screenshot)
+
+  private fun deliverPickerResult(activity: ComponentActivity, uri: Uri) {
+    // The photo picker activity is faked by dispatching the result directly to the launched
+    // activity result request
+    val shadowActivity = shadowOf(activity)
+    val intentForResult = shadowActivity.nextStartedActivityForResult
+    assertNotNull(intentForResult)
+    shadowActivity.receiveResult(
+      intentForResult.intent,
+      Activity.RESULT_OK,
+      Intent().setData(uri),
+    )
   }
 }

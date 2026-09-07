@@ -76,6 +76,12 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   protected final @NotNull AutoClosableReentrantLock cacheLock = new AutoClosableReentrantLock();
   protected final @NotNull AutoClosableReentrantLock sessionLock = new AutoClosableReentrantLock();
 
+  /**
+   * Session id last written to the current session file by {@link #persistCurrentSession(Session)},
+   * which bypasses the transport queue that every other write to that file goes through.
+   */
+  private @Nullable String lastPersistedSessionId;
+
   public static @NotNull IEnvelopeCache create(final @NotNull SentryOptions options) {
     final String cacheDirPath = options.getCacheDirPath();
     final int maxCacheItems = options.getMaxCacheItems();
@@ -109,14 +115,20 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   private boolean storeInternal(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
+    // Create the cache dir lazily on the first write so Sentry.init doesn't block on the mkdirs.
+    final String directoryPath = directory.getOrCreate().getAbsolutePath();
+
     rotateCacheIfNeeded(allEnvelopeFiles());
 
-    final File currentSessionFile = getCurrentSessionFile(directory.getAbsolutePath());
-    final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
+    final File currentSessionFile = getCurrentSessionFile(directoryPath);
+    final File previousSessionFile = getPreviousSessionFile(directoryPath);
 
     if (HintUtils.hasType(hint, SessionEnd.class)) {
-      if (!currentSessionFile.delete()) {
-        options.getLogger().log(WARNING, "Current envelope doesn't exist.");
+      try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+        lastPersistedSessionId = null;
+        if (!currentSessionFile.delete()) {
+          options.getLogger().log(WARNING, "Current envelope doesn't exist.");
+        }
       }
     }
 
@@ -126,8 +138,15 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
 
     if (HintUtils.hasType(hint, SessionStart.class)) {
-      movePreviousSession(currentSessionFile, previousSessionFile);
-      updateCurrentSession(currentSessionFile, envelope);
+      try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+        final @Nullable Session startingSession = readSessionFromEnvelope(envelope);
+        if (!isAlreadyPersisted(startingSession)) {
+          movePreviousSession(currentSessionFile, previousSessionFile);
+          if (startingSession != null) {
+            writeSessionToDisk(currentSessionFile, startingSession);
+          }
+        }
+      }
 
       boolean crashedLastRun = false;
       final File crashMarkerFile = new File(options.getCacheDirPath(), NATIVE_CRASH_MARKER_FILE);
@@ -199,7 +218,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   @SuppressWarnings("JavaUtilDate")
   private void tryEndPreviousSession(final @NotNull Hint hint) {
     final Object sdkHint = HintUtils.getSentrySdkHint(hint);
-    final File previousSessionFile = getPreviousSessionFile(directory.getAbsolutePath());
+    final File previousSessionFile = getPreviousSessionFile(directory.getFile().getAbsolutePath());
 
     if (previousSessionFile.exists()) {
       options.getLogger().log(WARNING, "Previous session is not ended, we'd need to end it.");
@@ -271,8 +290,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     }
   }
 
-  private void updateCurrentSession(
-      final @NotNull File currentSessionFile, final @NotNull SentryEnvelope envelope) {
+  private @Nullable Session readSessionFromEnvelope(final @NotNull SentryEnvelope envelope) {
     final Iterable<SentryEnvelopeItem> items = envelope.getItems();
 
     // we know that an envelope with a SessionStart hint has a single item inside
@@ -292,7 +310,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
                     "Item of type %s returned null by the parser.",
                     item.getHeader().getType());
           } else {
-            writeSessionToDisk(currentSessionFile, session);
+            return session;
           }
         } catch (Throwable e) {
           options.getLogger().log(ERROR, "Item failed to process.", e);
@@ -306,10 +324,26 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
                 item.getHeader().getType());
       }
     } else {
-      options
-          .getLogger()
-          .log(INFO, "Current envelope %s is empty", currentSessionFile.getAbsolutePath());
+      options.getLogger().log(INFO, "Current envelope is empty.");
     }
+    return null;
+  }
+
+  /**
+   * Whether a {@link SessionStart} envelope refers to the session {@link
+   * #persistCurrentSession(Session)} already wrote to the current session file. That copy is the
+   * live session, so it is at least as advanced as this envelope. Rotating and overwriting it would
+   * file a running session as the previous one and roll back any unhandled error it has recorded
+   * since.
+   *
+   * <p>A null session id never matches, so sessions we cannot tell apart are rotated as before.
+   */
+  private boolean isAlreadyPersisted(final @Nullable Session startingSession) {
+    if (startingSession == null) {
+      return false;
+    }
+    final @Nullable String startingSessionId = startingSession.getSessionId();
+    return startingSessionId != null && startingSessionId.equals(lastPersistedSessionId);
   }
 
   private boolean writeEnvelopeToDisk(
@@ -334,7 +368,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     return true;
   }
 
-  private void writeSessionToDisk(final @NotNull File file, final @NotNull Session session) {
+  private boolean writeSessionToDisk(final @NotNull File file, final @NotNull Session session) {
     try (final OutputStream outputStream = new FileOutputStream(file);
         final Writer writer = new BufferedWriter(new OutputStreamWriter(outputStream, UTF_8))) {
       options
@@ -346,6 +380,19 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       options
           .getLogger()
           .log(ERROR, e, "Error writing Session to offline storage: %s", session.getSessionId());
+      return false;
+    }
+    return true;
+  }
+
+  @ApiStatus.Internal
+  public void persistCurrentSession(final @NotNull Session session) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      final boolean written =
+          writeSessionToDisk(
+              getCurrentSessionFile(directory.getOrCreate().getAbsolutePath()), session);
+      // a failed write truncates the file, so there is no good copy left to protect
+      lastPersistedSessionId = written ? session.getSessionId() : null;
     }
   }
 
@@ -372,6 +419,10 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * Returns the envelope's file path. If the envelope wasn't added to the cache beforehand, a
    * random file name is assigned.
    *
+   * <p>This only computes a path and never creates the directory, so that {@link
+   * #discard(SentryEnvelope)} doesn't resurrect a cache dir it is only deleting from. Writers go
+   * through {@link #storeInternal}, which creates the directory up front.
+   *
    * @param envelope the SentryEnvelope object
    * @return the file
    */
@@ -385,7 +436,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
         fileNameMap.put(envelope, fileName);
       }
 
-      return new File(directory.getAbsolutePath(), fileName);
+      return new File(directory.getFile(), fileName);
     }
   }
 
@@ -431,7 +482,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     if (isDirectoryValid()) {
       // lets filter the session.json here
       final File[] files =
-          directory.listFiles((__, fileName) -> fileName.endsWith(SUFFIX_ENVELOPE_FILE));
+          directory.getFile().listFiles((__, fileName) -> fileName.endsWith(SUFFIX_ENVELOPE_FILE));
       if (files != null) {
         return files;
       }

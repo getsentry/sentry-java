@@ -143,6 +143,12 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
   @Override
   public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
+    return startChild(operation, description, timestamp, Instrumenter.SENTRY);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,

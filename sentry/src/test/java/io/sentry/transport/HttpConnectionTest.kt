@@ -260,6 +260,17 @@ class HttpConnectionTest {
   }
 
   @Test
+  fun `When Proxy username and password are given but host is missing, authenticator is not set`() {
+    fixture.proxy = Proxy(null, "8090", "some-user", "some-password")
+    val transport = fixture.getSUT()
+
+    transport.send(createEnvelope())
+
+    assertNull(transport.proxy)
+    verify(fixture.authenticatorWrapper, never()).setDefault(any())
+  }
+
+  @Test
   fun `sets common headers and on http connection`() {
     val transport = fixture.getSUT()
 
