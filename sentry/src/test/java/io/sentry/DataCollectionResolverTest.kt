@@ -234,6 +234,17 @@ class DataCollectionResolverTest {
   }
 
   @Test
+  fun `mutating one fallback key-value behavior does not affect other getters`() {
+    val resolver = SentryOptions().apply { dataCollection.setUserInfo(true) }.dataCollectionResolver
+
+    resolver.cookies.terms = listOf("custom-cookie")
+
+    assertThat(resolver.urlQueryParams.terms).doesNotContain("custom-cookie")
+    assertThat(resolver.httpRequestHeaders.terms).doesNotContain("custom-cookie")
+    assertThat(resolver.httpResponseHeaders.terms).doesNotContain("custom-cookie")
+  }
+
+  @Test
   fun `cookies use default deny list when unset and sendDefaultPii is true`() {
     val options = SentryOptions().apply { isSendDefaultPii = true }
 
