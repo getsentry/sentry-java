@@ -7,6 +7,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
+import kotlin.test.assertTrue
 
 class ContextsTest {
   @Test
@@ -136,5 +137,16 @@ class ContextsTest {
     contexts.putAll(map)
 
     assertEquals(listOf("a"), contexts.keys().toList())
+  }
+
+  @Test
+  fun `clear removes all entries from context`() {
+    val contexts = Contexts()
+    contexts.put("a", "1")
+    contexts.put("b", "2")
+
+    contexts.clear()
+
+    assertTrue(contexts.isEmpty)
   }
 }

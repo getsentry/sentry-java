@@ -1,8 +1,10 @@
 package io.sentry.metrics;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpMetricsApi implements IMetricsApi {
   private static final NoOpMetricsApi instance = new NoOpMetricsApi();
 

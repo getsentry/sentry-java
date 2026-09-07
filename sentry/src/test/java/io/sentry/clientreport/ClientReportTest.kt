@@ -15,7 +15,9 @@ import io.sentry.Sentry
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryEnvelopeItem
+import io.sentry.SentryEnvelopeItemHeader
 import io.sentry.SentryEvent
+import io.sentry.SentryItemType
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEvents
 import io.sentry.SentryLogLevel
@@ -46,10 +48,16 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+
+private const val LOG_CONTENT_TYPE = "application/vnd.sentry.items.log+json"
+private const val METRIC_CONTENT_TYPE = "application/vnd.sentry.items.trace-metric+json"
 
 class ClientReportTest {
   lateinit var opts: SentryOptions
@@ -312,28 +320,24 @@ class ClientReportTest {
   }
 
   @Test
-  fun `recording envelope with lost client report does not duplicate onDiscard executions`() {
-    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
-    givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
-
-    clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment)
-    clientReportRecorder.recordLostEvent(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment)
-    clientReportRecorder.recordLostEvent(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error)
-    clientReportRecorder.recordLostEvent(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error)
-    clientReportRecorder.recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Profile)
-
-    val envelope = clientReportRecorder.attachReportToEnvelope(testHelper.newEnvelope())
-    clientReportRecorder.recordLostEnvelope(DiscardReason.EVENT_PROCESSOR, envelope)
-
-    verify(onDiscardMock, times(2))
-      .execute(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment, 1)
-    verify(onDiscardMock, times(1)).execute(DiscardReason.RATELIMIT_BACKOFF, DataCategory.Error, 1)
-    verify(onDiscardMock, times(1)).execute(DiscardReason.QUEUE_OVERFLOW, DataCategory.Error, 1)
-    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Profile, 1)
+  fun `restoring counts via recordLostEnvelope does not fire onDiscard again`() {
+    assertRestoringCountsDoesNotFireOnDiscard { recorder, envelope ->
+      recorder.recordLostEnvelope(DiscardReason.EVENT_PROCESSOR, envelope)
+    }
   }
 
   @Test
-  fun `recording lost client report does not duplicate onDiscard executions`() {
+  fun `restoring counts via recordLostEnvelopeItem does not fire onDiscard again`() {
+    assertRestoringCountsDoesNotFireOnDiscard { recorder, envelope ->
+      recorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelope.items.first())
+    }
+  }
+
+  // Counts restored from an attached client report were already reported once, so replaying them
+  // must not fire onDiscard a second time. Both public entry points have to hold the property.
+  private fun assertRestoringCountsDoesNotFireOnDiscard(
+    recordLost: (ClientReportRecorder, SentryEnvelope) -> Unit
+  ) {
     val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
     givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
 
@@ -344,7 +348,7 @@ class ClientReportTest {
     clientReportRecorder.recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Profile)
 
     val envelope = clientReportRecorder.attachReportToEnvelope(testHelper.newEnvelope())
-    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, envelope.items.first())
+    recordLost(clientReportRecorder, envelope)
 
     verify(onDiscardMock, times(2))
       .execute(DiscardReason.CACHE_OVERFLOW, DataCategory.Attachment, 1)
@@ -417,6 +421,98 @@ class ClientReportTest {
     assertEquals(envelope.items.first().data.size.toLong(), metricByteItem.quantity)
   }
 
+  @Test
+  fun `recording lost log item reads count from the header without deserializing the payload`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
+
+    val payload = "irrelevant payload".toByteArray()
+    val item = mockEnvelopeItem(SentryItemType.Log, LOG_CONTENT_TYPE, itemCount = 5, data = payload)
+
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, item)
+
+    // Deserializing here is what pinned CPU cores under sustained rate limiting (JAVA-662), so the
+    // count must come from the header and the payload must stay untouched.
+    verify(item, never()).getLogs(any())
+    verify(onDiscardMock, times(1)).execute(DiscardReason.NETWORK_ERROR, DataCategory.LogItem, 5)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    assertEquals(5, clientReport.quantityOf(DataCategory.LogItem))
+    assertEquals(payload.size.toLong(), clientReport.quantityOf(DataCategory.LogByte))
+  }
+
+  @Test
+  fun `recording lost metric item reads count from the header without deserializing the payload`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
+
+    val payload = "irrelevant payload".toByteArray()
+    val item =
+      mockEnvelopeItem(
+        SentryItemType.TraceMetric,
+        METRIC_CONTENT_TYPE,
+        itemCount = 5,
+        data = payload,
+      )
+
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, item)
+
+    verify(item, never()).getMetrics(any())
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.NETWORK_ERROR, DataCategory.TraceMetric, 5)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    assertEquals(5, clientReport.quantityOf(DataCategory.TraceMetric))
+    assertEquals(payload.size.toLong(), clientReport.quantityOf(DataCategory.TraceMetricByte))
+  }
+
+  @Test
+  fun `recording lost log item without item count in header falls back to one`() {
+    givenClientReportRecorder()
+
+    val item =
+      mockEnvelopeItem(SentryItemType.Log, LOG_CONTENT_TYPE, itemCount = null, data = ByteArray(0))
+
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, item)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    assertEquals(1, clientReport.quantityOf(DataCategory.LogItem))
+  }
+
+  @Test
+  fun `recording lost metric item without item count in header falls back to one`() {
+    givenClientReportRecorder()
+
+    val item =
+      mockEnvelopeItem(
+        SentryItemType.TraceMetric,
+        METRIC_CONTENT_TYPE,
+        itemCount = null,
+        data = ByteArray(0),
+      )
+
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, item)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    assertEquals(1, clientReport.quantityOf(DataCategory.TraceMetric))
+  }
+
+  private fun mockEnvelopeItem(
+    type: SentryItemType,
+    contentType: String,
+    itemCount: Int?,
+    data: ByteArray,
+  ): SentryEnvelopeItem {
+    val itemHeader = SentryEnvelopeItemHeader(type, 0, contentType, null, null, null, itemCount)
+    return mock {
+      on { it.header } doReturn itemHeader
+      on { it.data } doReturn data
+    }
+  }
+
+  private fun ClientReport?.quantityOf(category: DataCategory): Long =
+    this!!.discardedEvents!!.first { it.category == category.category }.quantity
+
   private fun givenClientReportRecorder(
     callback: Sentry.OptionsConfiguration<SentryOptions>? = null
   ) {
@@ -469,9 +565,6 @@ class ClientReportTestHelper(val options: SentryOptions) {
     val header = SentryEnvelopeHeader(SentryId(UUID.randomUUID()))
     return SentryEnvelope(header, items.toList())
   }
-
-  fun toEnvelopeItem(clientReport: ClientReport): SentryEnvelopeItem =
-    SentryEnvelopeItem.fromClientReport(options.serializer, clientReport)
 
   companion object {
     fun retryableHint() = HintUtils.createWithTypeCheckHint(TestRetryable())
