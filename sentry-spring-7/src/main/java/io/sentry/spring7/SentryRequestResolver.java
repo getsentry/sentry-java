@@ -6,6 +6,7 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.Request;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.CookieUtils;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
@@ -48,18 +49,18 @@ public class SentryRequestResolver {
         extractSecurityCookieNamesOrUseCached(httpRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest, additionalSecurityCookieNames));
 
-    final @NotNull String cookieName = HttpUtils.COOKIE_HEADER_NAME;
+    final @NotNull String cookieName = CookieUtils.COOKIE_HEADER_NAME;
     if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
       sentryRequest.setCookies(
           toString(
-              HttpUtils.filterCookiesFromHeader(
+              CookieUtils.filterCookiesFromHeader(
                   httpRequest.getHeaders(cookieName),
                   scopes.getOptions().getDataCollectionResolver().getCookies(),
                   additionalSecurityCookieNames)));
     } else if (scopes.getOptions().isSendDefaultPii()) {
       sentryRequest.setCookies(
           toString(
-              HttpUtils.filterOutSecurityCookiesFromHeader(
+              CookieUtils.filterOutSecurityCookiesFromHeader(
                   httpRequest.getHeaders(cookieName), cookieName, additionalSecurityCookieNames)));
     }
     return sentryRequest;
@@ -75,7 +76,7 @@ public class SentryRequestResolver {
           || scopes.getOptions().isSendDefaultPii()
           || !HttpUtils.containsSensitiveHeader(headerName)) {
         final @Nullable List<String> filteredHeaders =
-            HttpUtils.filterOutSecurityCookiesFromHeader(
+            CookieUtils.filterOutSecurityCookiesFromHeader(
                 request.getHeaders(headerName), headerName, additionalSecurityCookieNames);
         headersMap.put(headerName, toString(filteredHeaders));
       }
