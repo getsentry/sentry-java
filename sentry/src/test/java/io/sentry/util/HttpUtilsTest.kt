@@ -173,6 +173,38 @@ class HttpUtilsTest {
   }
 
   @Test
+  fun `cookie filter preserves trailing whitespace after a cookie pair`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=dark ",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("theme=dark ")
+  }
+
+  @Test
+  fun `cookie filter preserves trailing blank cookie segments`() {
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=dark;",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("theme=dark;")
+    assertThat(
+        HttpUtils.filterCookies(
+          "theme=dark; ",
+          KeyValueCollectionBehavior.denyList(),
+          emptyList(),
+        )
+      )
+      .isEqualTo("theme=dark; ")
+  }
+
+  @Test
   fun `cookie filter replaces comma-separated malformed cookies in quoted values`() {
     assertThat(
         HttpUtils.filterCookies(

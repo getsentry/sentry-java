@@ -189,6 +189,10 @@ public final class HttpUtils {
       final @NotNull String cookie,
       final @NotNull KeyValueCollectionBehavior behavior,
       final @Nullable List<String> additionalSensitiveCookieNames) {
+    if (cookie.trim().isEmpty()) {
+      return cookie;
+    }
+
     if (!isValidCookiePair(cookie)) {
       return SENSITIVE_DATA_SUBSTITUTE;
     }
