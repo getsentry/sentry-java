@@ -23,6 +23,7 @@ import io.sentry.Scopes
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryDateProvider
+import io.sentry.SentryExecutorService
 import io.sentry.SentryNanotimeDate
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -919,6 +920,8 @@ class ActivityLifecycleIntegrationTest {
           it.idleTimeout = 100
         }
       )
+    // the transaction idle timeout is scheduled on the dedicated timer executor
+    fixture.options.timerExecutorService = SentryExecutorService()
     sut.register(fixture.scopes, fixture.options)
     sut.onActivityCreated(activity, fixture.bundle)
 
@@ -1972,6 +1975,8 @@ class ActivityLifecycleIntegrationTest {
     val sut = fixture.getSut()
     fixture.options.tracesSampleRate = 1.0
     fixture.options.isEnableTimeToFullDisplayTracing = true
+    // the timeout has to be really scheduled for cancelling it to be observable
+    fixture.options.executorService = DeferredExecutorService()
     sut.register(fixture.scopes, fixture.options)
     val activity = mock<Activity>()
     val activity2 = mock<Activity>()

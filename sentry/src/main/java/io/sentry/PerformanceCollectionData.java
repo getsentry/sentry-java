@@ -1,13 +1,22 @@
 package io.sentry;
 
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
 
+/**
+ * Holds a single performance measurement sample.
+ *
+ * <p>Measurements are stored as primitives with a separate presence flag, rather than as boxed
+ * nullable types, because an instance is created every 100ms for as long as a transaction or
+ * profile chunk is running.
+ */
 @ApiStatus.Internal
 public final class PerformanceCollectionData {
-  private @Nullable Double cpuUsagePercentage = null;
-  private @Nullable Long usedHeapMemory = null;
-  private @Nullable Long usedNativeMemory = null;
+  private double cpuUsagePercentage;
+  private boolean hasCpuUsagePercentage;
+  private long usedHeapMemory;
+  private boolean hasUsedHeapMemory;
+  private long usedNativeMemory;
+  private boolean hasUsedNativeMemory;
   private final long nanoTimestamp;
 
   public PerformanceCollectionData(final long nanoTimestamp) {
@@ -15,28 +24,46 @@ public final class PerformanceCollectionData {
   }
 
   /** Set the cpu usage percentage. */
-  public void setCpuUsagePercentage(final @Nullable Double cpuUsagePercentage) {
+  public void setCpuUsagePercentage(final double cpuUsagePercentage) {
     this.cpuUsagePercentage = cpuUsagePercentage;
+    this.hasCpuUsagePercentage = true;
   }
 
-  public @Nullable Double getCpuUsagePercentage() {
+  /** Only meaningful when {@link #hasCpuUsagePercentage()} is true. */
+  public double getCpuUsagePercentage() {
     return cpuUsagePercentage;
   }
 
-  public void setUsedHeapMemory(final @Nullable Long usedHeapMemory) {
-    this.usedHeapMemory = usedHeapMemory;
+  public boolean hasCpuUsagePercentage() {
+    return hasCpuUsagePercentage;
   }
 
-  public @Nullable Long getUsedHeapMemory() {
+  public void setUsedHeapMemory(final long usedHeapMemory) {
+    this.usedHeapMemory = usedHeapMemory;
+    this.hasUsedHeapMemory = true;
+  }
+
+  /** Only meaningful when {@link #hasUsedHeapMemory()} is true. */
+  public long getUsedHeapMemory() {
     return usedHeapMemory;
   }
 
-  public void setUsedNativeMemory(final @Nullable Long usedNativeMemory) {
-    this.usedNativeMemory = usedNativeMemory;
+  public boolean hasUsedHeapMemory() {
+    return hasUsedHeapMemory;
   }
 
-  public @Nullable Long getUsedNativeMemory() {
+  public void setUsedNativeMemory(final long usedNativeMemory) {
+    this.usedNativeMemory = usedNativeMemory;
+    this.hasUsedNativeMemory = true;
+  }
+
+  /** Only meaningful when {@link #hasUsedNativeMemory()} is true. */
+  public long getUsedNativeMemory() {
     return usedNativeMemory;
+  }
+
+  public boolean hasUsedNativeMemory() {
+    return hasUsedNativeMemory;
   }
 
   public long getNanoTimestamp() {

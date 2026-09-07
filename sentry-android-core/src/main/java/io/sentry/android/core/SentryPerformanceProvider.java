@@ -13,7 +13,7 @@ import io.sentry.IContinuousProfiler;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ITransactionProfiler;
-import io.sentry.JsonSerializer;
+import io.sentry.JsonObjectReader;
 import io.sentry.SentryAppStartProfilingOptions;
 import io.sentry.SentryExecutorService;
 import io.sentry.SentryLevel;
@@ -23,7 +23,6 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
-import io.sentry.util.AutoClosableReentrantLock;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,7 +45,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
 
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
-  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   @TestOnly
   SentryPerformanceProvider(
@@ -119,13 +117,29 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     try (final @NotNull Reader reader =
             new BufferedReader(new InputStreamReader(new FileInputStream(configFile)))) {
       final @Nullable SentryAppStartProfilingOptions profilingOptions =
-          new JsonSerializer(SentryOptions.empty())
-              .deserialize(reader, SentryAppStartProfilingOptions.class);
+          deserializeProfilingConfig(reader);
 
       if (profilingOptions == null) {
         logger.log(
             SentryLevel.WARNING,
             "Unable to deserialize the SentryAppStartProfilingOptions. App start profiling will not start.");
+        return;
+      }
+
+      if (buildInfoProvider.getSdkInfoVersion()
+          >= android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+        logger.log(
+            SentryLevel.DEBUG,
+            "Device is API 35+. Skipping legacy app-start profiling — "
+                + "Perfetto ProfilingManager will be initialized after Sentry.init().");
+        return;
+      }
+
+      if (!profilingOptions.isEnableLegacyProfiling()) {
+        logger.log(
+            SentryLevel.WARNING,
+            "enableLegacyProfiling is disabled and device is below API 35. "
+                + "App start profiling will not start.");
         return;
       }
 
@@ -148,6 +162,25 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
       logger.log(SentryLevel.ERROR, "App start profiling config file not found. ", e);
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Error reading app start profiling config file. ", e);
+    }
+  }
+
+  /**
+   * Parses the app start profiling config with only the deserializer it needs. Going through {@link
+   * io.sentry.JsonSerializer} would allocate a full {@link SentryOptions} plus every registered
+   * deserializer on the main thread before {@code Application.onCreate}, to use exactly one of
+   * them.
+   *
+   * <p>Returns null on malformed input, matching what {@code JsonSerializer.deserialize} did, so
+   * callers keep reporting it as a deserialization failure rather than a read error.
+   */
+  private @Nullable SentryAppStartProfilingOptions deserializeProfilingConfig(
+      final @NotNull Reader reader) {
+    try (final @NotNull JsonObjectReader jsonReader = new JsonObjectReader(reader)) {
+      return new SentryAppStartProfilingOptions.Deserializer().deserialize(jsonReader, logger);
+    } catch (Exception e) {
+      logger.log(SentryLevel.ERROR, "Error when deserializing", e);
+      return null;
     }
   }
 
