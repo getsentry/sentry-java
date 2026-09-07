@@ -7,10 +7,14 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
+import androidx.core.view.doOnPreDraw
 import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import io.sentry.ISpan
+import io.sentry.Sentry
 import io.sentry.samples.android.R
 import kotlinx.coroutines.launch
 
@@ -64,6 +68,7 @@ class Nav2RouteFragment : Fragment() {
                 activity.navigateTo(Nav2Destination.ProductDetail("7", "product-list"))
               },
             ),
+          trailingContent = { addProductListItemsToggle() },
         )
 
       Nav2RouteNames.PRODUCT_DETAIL -> productDetailLayout(activity)
@@ -163,6 +168,7 @@ class Nav2RouteFragment : Fragment() {
     routeSpec: Nav2RouteSpec,
     arguments: Bundle? = null,
     buttons: List<RouteButton> = emptyList(),
+    trailingContent: (LinearLayout.() -> Unit)? = null,
   ): View {
     val info = routeSpec.displayArguments(arguments)
     return LinearLayout(requireContext()).apply {
@@ -182,8 +188,120 @@ class Nav2RouteFragment : Fragment() {
           }
         )
       }
+      trailingContent?.invoke(this)
     }
   }
+
+  private fun LinearLayout.addProductListItemsToggle() {
+    var itemsCreated = false
+    var itemsVisible = false
+    val listContainer =
+      LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        setPadding(0, 8.dp, 0, 0)
+      }
+    val scrollView =
+      ScrollView(context).apply {
+        visibility = View.GONE
+        layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 280.dp)
+        addView(listContainer, ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+      }
+
+    addView(
+      Button(context).apply {
+        text = "Show Product Items"
+        isAllCaps = false
+        setOnClickListener {
+          itemsVisible = !itemsVisible
+          text = if (itemsVisible) "Hide Product Items" else "Show Product Items"
+          if (itemsVisible && !itemsCreated) {
+            populateProductListItems(listContainer)
+            itemsCreated = true
+          }
+          scrollView.visibility = if (itemsVisible) View.VISIBLE else View.GONE
+        }
+        layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+      }
+    )
+    addView(scrollView)
+  }
+
+  private fun populateProductListItems(listContainer: LinearLayout) {
+    val ownerSpan = Sentry.getSpan()
+    val compositionParent =
+      ownerSpan?.startChild(
+        OP_PARENT_COMPOSITION,
+        "Fragment Product List Item List Composition",
+      )
+    try {
+      recordManualUiSpan(compositionParent, OP_COMPOSE, "fragment_product_list_items") {
+        repeat(PRODUCT_LIST_ITEM_COUNT) { index ->
+          val itemNumber = index + 1
+          recordManualUiSpan(
+            compositionParent,
+            OP_COMPOSE,
+            "fragment_product_list_item_$itemNumber",
+          ) {
+            listContainer.addView(productListItemRow(itemNumber))
+          }
+        }
+      }
+    } finally {
+      compositionParent?.finish()
+    }
+
+    listContainer.doOnPreDraw {
+      val renderParent =
+        ownerSpan?.startChild(
+          OP_PARENT_RENDER,
+          "Fragment Product List Item List Render",
+        )
+      try {
+        recordManualUiSpan(renderParent, OP_RENDER, "fragment_product_list_items")
+        repeat(PRODUCT_LIST_ITEM_COUNT) { index ->
+          recordManualUiSpan(renderParent, OP_RENDER, "fragment_product_list_item_${index + 1}")
+        }
+      } finally {
+        renderParent?.finish()
+      }
+    }
+  }
+
+  private fun recordManualUiSpan(
+    parentSpan: ISpan?,
+    operation: String,
+    description: String,
+    block: () -> Unit = {},
+  ) {
+    val span = parentSpan?.startChild(operation, description)
+    span?.setData("sample.nav2_fragment_manual_ui_span", true)
+    try {
+      block()
+    } finally {
+      span?.finish()
+    }
+  }
+
+  private fun productListItemRow(itemNumber: Int): View =
+    LinearLayout(requireContext()).apply {
+      orientation = LinearLayout.HORIZONTAL
+      setPadding(12.dp)
+      setBackgroundColor(color(android.R.color.white))
+      addView(
+        TextView(context).apply {
+          text = "Product #$itemNumber"
+          textSize = 14f
+          setTypeface(null, Typeface.BOLD)
+          layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
+        }
+      )
+      addView(
+        TextView(context).apply {
+          text = "SKU-$itemNumber"
+          textSize = 14f
+        }
+      )
+    }
 
   private fun titleText(textValue: String): TextView =
     TextView(requireContext()).apply {
@@ -224,4 +342,12 @@ class Nav2RouteFragment : Fragment() {
     get() = (this * resources.displayMetrics.density).toInt()
 
   private fun color(id: Int): Int = requireContext().getColor(id)
+
+  private companion object {
+    private const val PRODUCT_LIST_ITEM_COUNT = 20
+    private const val OP_PARENT_COMPOSITION = "ui.compose.composition"
+    private const val OP_COMPOSE = "ui.compose"
+    private const val OP_PARENT_RENDER = "ui.compose.rendering"
+    private const val OP_RENDER = "ui.render"
+  }
 }
