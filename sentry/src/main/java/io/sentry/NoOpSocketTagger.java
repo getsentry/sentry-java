@@ -1,7 +1,9 @@
 package io.sentry;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class NoOpSocketTagger implements ISocketTagger {
 
   private static final NoOpSocketTagger instance = new NoOpSocketTagger();

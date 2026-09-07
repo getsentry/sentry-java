@@ -44,13 +44,13 @@ kotlin {
   }
 
   sourceSets {
-    val commonMain by getting {
+    getByName("commonMain") {
       compilerOptions {
         apiVersion.set(KotlinVersion.KOTLIN_1_9)
         languageVersion.set(KotlinVersion.KOTLIN_1_9)
       }
     }
-    val androidMain by getting {
+    getByName("androidMain") {
       dependencies {
         api(projects.sentry)
         api(projects.sentryAndroidNavigation)
@@ -60,7 +60,7 @@ kotlin {
         implementation(libs.androidx.lifecycle.common.java8)
       }
     }
-    val androidUnitTest by getting {
+    getByName("androidUnitTest") {
       dependencies {
         implementation(libs.androidx.compose.ui.test.junit4)
         implementation(libs.androidx.navigation.compose)
@@ -87,12 +87,14 @@ android {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
   }
 
-  sourceSets["main"].apply { manifest.srcFile("src/androidMain/AndroidManifest.xml") }
-
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
+
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
+  testBuildType = "release"
 
   testOptions {
     animationsDisabled = true
