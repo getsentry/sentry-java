@@ -2,8 +2,10 @@ package io.sentry;
 
 import io.sentry.protocol.profiling.SentryProfile;
 import java.io.IOException;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class NoOpProfileConverter implements IProfileConverter {
 
   private static final NoOpProfileConverter instance = new NoOpProfileConverter();

@@ -216,7 +216,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     try (final MaskRenderer maskRenderer = new MaskRenderer()) {
       // Make bitmap mutable if needed
       if (!screenshot.isMutable()) {
-        mutableBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true);
+        mutableBitmap = screenshot.copy(Bitmap.Config.RGB_565, true);
         if (mutableBitmap == null) {
           screenshot.recycle();
           return null;

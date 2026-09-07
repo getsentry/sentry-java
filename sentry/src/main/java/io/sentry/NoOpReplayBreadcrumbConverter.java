@@ -1,9 +1,11 @@
 package io.sentry;
 
 import io.sentry.rrweb.RRWebEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpReplayBreadcrumbConverter implements ReplayBreadcrumbConverter {
 
   private static final NoOpReplayBreadcrumbConverter instance = new NoOpReplayBreadcrumbConverter();

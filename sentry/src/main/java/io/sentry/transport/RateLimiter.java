@@ -23,12 +23,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,8 +43,9 @@ public final class RateLimiter implements Closeable {
   private final @NotNull Map<DataCategory, @NotNull Date> sentryRetryAfterLimit =
       new ConcurrentHashMap<>();
   private final @NotNull List<IRateLimitObserver> rateLimitObservers = new CopyOnWriteArrayList<>();
-  private @Nullable Timer timer = null;
-  private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
+  private final @NotNull List<Future<?>> notifyObserversFutures = new ArrayList<>();
+  private final @NotNull AutoClosableReentrantLock notifyFuturesLock =
+      new AutoClosableReentrantLock();
 
   public RateLimiter(
       final @NotNull ICurrentDateProvider currentDateProvider,
@@ -278,11 +280,11 @@ public final class RateLimiter implements Closeable {
                   continue;
                 }
 
-                applyRetryAfterOnlyIfLonger(dataCategory, date);
+                applyRetryAfterOnlyIfLonger(dataCategory, date, retryAfterMillis);
               }
             } else {
               // if categories are empty, we should apply to "all" categories.
-              applyRetryAfterOnlyIfLonger(DataCategory.All, date);
+              applyRetryAfterOnlyIfLonger(DataCategory.All, date, retryAfterMillis);
             }
           }
         }
@@ -291,7 +293,7 @@ public final class RateLimiter implements Closeable {
       final long retryAfterMillis = parseRetryAfterOrDefault(retryAfterHeader);
       // we dont care if Date is UTC as we just add the relative seconds
       final Date date = new Date(currentDateProvider.getCurrentTimeMillis() + retryAfterMillis);
-      applyRetryAfterOnlyIfLonger(DataCategory.All, date);
+      applyRetryAfterOnlyIfLonger(DataCategory.All, date, retryAfterMillis);
     }
   }
 
@@ -300,10 +302,11 @@ public final class RateLimiter implements Closeable {
    *
    * @param dataCategory the DataCategory
    * @param date the Date to be applied
+   * @param delayMillis the millis until the rate limit is lifted
    */
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   private void applyRetryAfterOnlyIfLonger(
-      final @NotNull DataCategory dataCategory, final @NotNull Date date) {
+      final @NotNull DataCategory dataCategory, final @NotNull Date date, final long delayMillis) {
     final Date oldDate = sentryRetryAfterLimit.get(dataCategory);
 
     // only overwrite its previous date if the limit is even longer
@@ -312,19 +315,25 @@ public final class RateLimiter implements Closeable {
 
       notifyRateLimitObservers();
 
-      try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-        if (timer == null) {
-          timer = new Timer(true);
+      // notify observers again once the rate limit is lifted, using the shared timer executor
+      // instead of a dedicated Timer thread
+      try (final @NotNull ISentryLifecycleToken ignored = notifyFuturesLock.acquire()) {
+        final @NotNull Iterator<Future<?>> iterator = notifyObserversFutures.iterator();
+        while (iterator.hasNext()) {
+          if (iterator.next().isDone()) {
+            iterator.remove();
+          }
         }
-
-        timer.schedule(
-            new TimerTask() {
-              @Override
-              public void run() {
-                notifyRateLimitObservers();
-              }
-            },
-            date);
+        try {
+          notifyObserversFutures.add(
+              options
+                  .getTimerExecutorService()
+                  .schedule(this::notifyRateLimitObservers, delayMillis));
+        } catch (RejectedExecutionException e) {
+          options
+              .getLogger()
+              .log(SentryLevel.WARNING, "Failed to schedule rate limit lifted notification.", e);
+        }
       }
     }
   }
@@ -364,11 +373,11 @@ public final class RateLimiter implements Closeable {
 
   @Override
   public void close() throws IOException {
-    try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      if (timer != null) {
-        timer.cancel();
-        timer = null;
+    try (final @NotNull ISentryLifecycleToken ignored = notifyFuturesLock.acquire()) {
+      for (Future<?> future : notifyObserversFutures) {
+        future.cancel(false);
       }
+      notifyObserversFutures.clear();
     }
     rateLimitObservers.clear();
   }

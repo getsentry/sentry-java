@@ -345,6 +345,17 @@ class ScopesTest {
   }
 
   @Test
+  fun `when captureEvent is called on disabled client, the hint is marked as capture failed`() {
+    val (sut, _) = getEnabledScopes()
+    sut.close()
+
+    val hint = Hint()
+    sut.captureEvent(SentryEvent(), hint)
+
+    assertTrue(HintUtils.isCaptureFailed(hint))
+  }
+
+  @Test
   fun `when captureEvent is called with a valid argument, captureEvent on the client should be called`() {
     val (sut, mockClient) = getEnabledScopes()
 
@@ -1944,6 +1955,32 @@ class ScopesTest {
     val sut = createScopes(options)
     sut.close(false)
     verify(executor).close(any())
+  }
+
+  @Test
+  fun `Scopes with isRestarting true should not close the timer executor`() {
+    val timerExecutor = mock<ISentryExecutorService>()
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        setTimerExecutorService(timerExecutor)
+      }
+    val sut = createScopes(options)
+    sut.close(true)
+    verify(timerExecutor, never()).close(any())
+  }
+
+  @Test
+  fun `Scopes with isRestarting false should close the timer executor`() {
+    val timerExecutor = mock<ISentryExecutorService>()
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        setTimerExecutorService(timerExecutor)
+      }
+    val sut = createScopes(options)
+    sut.close(false)
+    verify(timerExecutor).close(any())
   }
 
   @Test

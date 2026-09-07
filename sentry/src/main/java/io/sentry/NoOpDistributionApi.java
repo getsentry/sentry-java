@@ -8,6 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /** No-op implementation of IDistributionApi. Used when distribution module is not available. */
+@ApiStatus.Internal
 @ApiStatus.Experimental
 public final class NoOpDistributionApi implements IDistributionApi {
 

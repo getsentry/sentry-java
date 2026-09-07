@@ -133,6 +133,11 @@ public class AnrV2Integration implements Integration, Closeable {
     }
 
     @Override
+    public void markReported(final long timestamp) {
+      AndroidEnvelopeCache.markAnrReported(options, timestamp);
+    }
+
+    @Override
     public @Nullable ApplicationExitInfoHistoryDispatcher.Report buildReport(
         final @NotNull ApplicationExitInfo exitInfo, final boolean shouldEnrich) {
       final long anrTimestamp = exitInfo.getTimestamp();
