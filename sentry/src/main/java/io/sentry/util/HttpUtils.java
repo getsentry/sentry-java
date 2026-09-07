@@ -148,20 +148,16 @@ public final class HttpUtils {
       return null;
     }
 
-    try {
-      final @NotNull String[] cookieValues = cookies.split(";", -1);
-      final @NotNull StringBuilder filteredCookies = new StringBuilder();
-      for (int i = 0; i < cookieValues.length; i++) {
-        if (i > 0) {
-          filteredCookies.append(';');
-        }
-        filteredCookies.append(
-            filterCookie(cookieValues[i], behavior, additionalSensitiveCookieNames));
+    final @NotNull String[] cookieValues = cookies.split(";", -1);
+    final @NotNull StringBuilder filteredCookies = new StringBuilder();
+    for (int i = 0; i < cookieValues.length; i++) {
+      if (i > 0) {
+        filteredCookies.append(';');
       }
-      return filteredCookies.toString();
-    } catch (Throwable ignored) {
-      return SENSITIVE_DATA_SUBSTITUTE;
+      filteredCookies.append(
+          filterCookie(cookieValues[i], behavior, additionalSensitiveCookieNames));
     }
+    return filteredCookies.toString();
   }
 
   public static @Nullable String filterSetCookie(
@@ -170,19 +166,15 @@ public final class HttpUtils {
       return null;
     }
 
-    try {
-      final int attributesSeparator = cookie.indexOf(';');
-      final @NotNull String cookieValue =
-          attributesSeparator < 0 ? cookie : cookie.substring(0, attributesSeparator);
-      if (!isValidCookiePair(cookieValue)) {
-        return SENSITIVE_DATA_SUBSTITUTE;
-      }
-      final @NotNull String attributes =
-          attributesSeparator < 0 ? "" : cookie.substring(attributesSeparator);
-      return filterCookie(cookieValue, behavior, null) + attributes;
-    } catch (Throwable ignored) {
+    final int attributesSeparator = cookie.indexOf(';');
+    final @NotNull String cookieValue =
+        attributesSeparator < 0 ? cookie : cookie.substring(0, attributesSeparator);
+    if (!isValidCookiePair(cookieValue)) {
       return SENSITIVE_DATA_SUBSTITUTE;
     }
+    final @NotNull String attributes =
+        attributesSeparator < 0 ? "" : cookie.substring(attributesSeparator);
+    return filterCookie(cookieValue, behavior, null) + attributes;
   }
 
   private static @NotNull String filterCookie(
