@@ -248,6 +248,10 @@ public class Contexts implements JsonSerializable {
     return internalStorage.remove(key);
   }
 
+  public void clear() {
+    internalStorage.clear();
+  }
+
   public @NotNull Enumeration<String> keys() {
     return internalStorage.keys();
   }
