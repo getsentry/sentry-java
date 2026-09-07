@@ -1,6 +1,6 @@
 
 object Config {
-    val AGP = System.getenv("VERSION_AGP") ?: "8.13.1"
+    val AGP = System.getenv("VERSION_AGP") ?: "9.2.1"
     val kotlinStdLib = "stdlib-jdk8"
     val kotlinStdLibVersionAndroid = "1.9.24"
     val kotlinTestJunit = "test-junit"
@@ -12,8 +12,10 @@ object Config {
     object Android {
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
+        // Debug variants are disabled everywhere. Unit tests run against the release
+        // variant, so building the debug variant would only add overhead.
         fun shouldSkipDebugVariant(name: String?): Boolean {
-            return System.getenv("CI")?.toBoolean() ?: false && name == "debug"
+            return name == "debug"
         }
     }
 

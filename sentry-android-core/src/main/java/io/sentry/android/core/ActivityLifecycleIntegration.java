@@ -73,6 +73,7 @@ public final class ActivityLifecycleIntegration
   static final long APP_START_TO_UI_LOAD_CONTINUATION_MAX_GAP_NANOS = TimeUnit.MINUTES.toNanos(1);
   private static final String TRACE_ORIGIN = "auto.ui.activity";
   static final String APP_START_SCREEN_DATA = "app.vitals.start.screen";
+  static final String APP_START_TYPE_DATA = "app.vitals.start.type";
   static final String APP_START_REASON_DATA = "app.vitals.start.reason";
   static final String APP_START_TRACE_ORIGIN = "auto.app.start";
 

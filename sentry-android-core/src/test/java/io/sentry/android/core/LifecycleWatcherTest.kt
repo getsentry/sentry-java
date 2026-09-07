@@ -7,6 +7,7 @@ import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ReplayController
 import io.sentry.ScopeCallback
+import io.sentry.SentryExecutorService
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.Session
@@ -32,7 +33,8 @@ class LifecycleWatcherTest {
   private class Fixture {
     val scopes = mock<IScopes>()
     val dateProvider = mock<ICurrentDateProvider>()
-    val options = SentryOptions()
+    // a real executor so scheduled end-session tasks actually run
+    val options = SentryOptions().apply { setTimerExecutorService(SentryExecutorService(this)) }
     val replayController = mock<ReplayController>()
     val continuousProfiler = mock<IContinuousProfiler>()
 
@@ -75,7 +77,7 @@ class LifecycleWatcherTest {
     val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
     watcher.onForeground()
     verify(fixture.scopes).startSession()
-    verify(fixture.replayController).start()
+    verify(fixture.replayController).onAppForegrounded(true)
   }
 
   @Test
@@ -85,7 +87,7 @@ class LifecycleWatcherTest {
     watcher.onForeground()
     watcher.onForeground()
     verify(fixture.scopes, times(2)).startSession()
-    verify(fixture.replayController, times(2)).start()
+    verify(fixture.replayController, times(2)).onAppForegrounded(true)
   }
 
   @Test
@@ -95,7 +97,8 @@ class LifecycleWatcherTest {
     watcher.onForeground()
     watcher.onForeground()
     verify(fixture.scopes).startSession()
-    verify(fixture.replayController).start()
+    verify(fixture.replayController).onAppForegrounded(true)
+    verify(fixture.replayController).onAppForegrounded(false)
   }
 
   @Test
@@ -104,7 +107,7 @@ class LifecycleWatcherTest {
     watcher.onForeground()
     watcher.onBackground()
     verify(fixture.scopes, timeout(10000)).endSession()
-    verify(fixture.replayController, timeout(10000)).stop()
+    verify(fixture.replayController, timeout(10000)).onAppSessionEnded()
     verify(fixture.continuousProfiler, timeout(10000)).close(eq(false))
   }
 
@@ -115,13 +118,13 @@ class LifecycleWatcherTest {
     watcher.onForeground()
 
     watcher.onBackground()
-    assertNotNull(watcher.timerTask)
+    assertNotNull(watcher.endSessionFuture)
 
     watcher.onForeground()
-    assertNull(watcher.timerTask)
+    assertNull(watcher.endSessionFuture)
 
     verify(fixture.scopes, never()).endSession()
-    verify(fixture.replayController, never()).stop()
+    verify(fixture.replayController, never()).onAppSessionEnded()
   }
 
   @Test
@@ -187,13 +190,6 @@ class LifecycleWatcherTest {
   }
 
   @Test
-  fun `timer is created if session tracking is enabled`() {
-    val watcher =
-      fixture.getSUT(enableAutoSessionTracking = true, enableAppLifecycleBreadcrumbs = false)
-    assertNotNull(watcher.timer)
-  }
-
-  @Test
   fun `if the scopes has already a fresh session running, don't start new one`() {
     val watcher =
       fixture.getSUT(
@@ -219,7 +215,7 @@ class LifecycleWatcherTest {
 
     watcher.onForeground()
     verify(fixture.scopes, never()).startSession()
-    verify(fixture.replayController, never()).start()
+    verify(fixture.replayController).onAppForegrounded(false)
   }
 
   @Test
@@ -248,35 +244,7 @@ class LifecycleWatcherTest {
 
     watcher.onForeground()
     verify(fixture.scopes).startSession()
-    verify(fixture.replayController).start()
-  }
-
-  @Test
-  fun `if the hub has already a fresh session running, resumes replay to invalidate isManualPause flag`() {
-    val watcher =
-      fixture.getSUT(
-        enableAppLifecycleBreadcrumbs = false,
-        session =
-          Session(
-            State.Ok,
-            DateUtils.getCurrentDateTime(),
-            DateUtils.getCurrentDateTime(),
-            0,
-            "abc",
-            "3c1ffc32-f68f-4af2-a1ee-dd72f4d62d17",
-            true,
-            0,
-            10.0,
-            null,
-            null,
-            null,
-            "release",
-            null,
-          ),
-      )
-
-    watcher.onForeground()
-    verify(fixture.replayController).resume()
+    verify(fixture.replayController).onAppForegrounded(true)
   }
 
   @Test
@@ -285,15 +253,15 @@ class LifecycleWatcherTest {
     val watcher =
       fixture.getSUT(sessionIntervalMillis = 500L, enableAppLifecycleBreadcrumbs = false)
     watcher.onForeground()
-    verify(fixture.replayController).start()
+    verify(fixture.replayController).onAppForegrounded(true)
 
     watcher.onBackground()
-    verify(fixture.replayController).pause()
+    verify(fixture.replayController).onAppBackgrounded()
 
     watcher.onForeground()
-    verify(fixture.replayController, times(2)).resume()
+    verify(fixture.replayController).onAppForegrounded(false)
 
     watcher.onBackground()
-    verify(fixture.replayController, timeout(10000)).stop()
+    verify(fixture.replayController, timeout(10000)).onAppSessionEnded()
   }
 }
