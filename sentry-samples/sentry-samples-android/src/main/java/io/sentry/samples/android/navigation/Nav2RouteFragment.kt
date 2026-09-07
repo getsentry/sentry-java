@@ -182,7 +182,7 @@ class Nav2RouteFragment : Fragment() {
           LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(16.dp)
-            setBackgroundColor(color(android.R.color.darker_gray))
+            setBackgroundColor(context.themeColor(android.R.attr.colorBackgroundFloating))
             info.forEach { (label, value) -> addView(infoRow(label, value)) }
             buttons.forEach { button -> addView(routeButton(button)) }
           }
@@ -286,7 +286,7 @@ class Nav2RouteFragment : Fragment() {
     LinearLayout(requireContext()).apply {
       orientation = LinearLayout.HORIZONTAL
       setPadding(12.dp)
-      setBackgroundColor(color(android.R.color.white))
+      setBackgroundColor(context.themeColor(android.R.attr.colorBackgroundFloating))
       addView(
         TextView(context).apply {
           text = "Product #$itemNumber"
@@ -308,7 +308,7 @@ class Nav2RouteFragment : Fragment() {
       text = textValue
       textSize = 26f
       setTypeface(null, Typeface.BOLD)
-      setTextColor(color(android.R.color.black))
+      setTextColor(context.themeColor(android.R.attr.textColorPrimary))
       setPadding(0, 0, 0, 12.dp)
     }
 
@@ -316,7 +316,7 @@ class Nav2RouteFragment : Fragment() {
     TextView(requireContext()).apply {
       text = textValue
       textSize = 15f
-      setTextColor(color(android.R.color.black))
+      setTextColor(context.themeColor(android.R.attr.textColorSecondary))
       setPadding(0, 0, 0, 16.dp)
     }
 
