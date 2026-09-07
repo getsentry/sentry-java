@@ -82,6 +82,15 @@ class GraphqlUtilsTest {
     assertThat(result).isNull()
   }
 
+  @Test
+  fun `returns null for a GraphQL request body containing a malformed unicode escape`() {
+    val options = SentryOptions().also { it.dataCollection.graphql.setDocument(false) }
+
+    val result = GraphqlUtils.filterRequestBody("""{"query":"\u12G4"}""", options)
+
+    assertThat(result).isNull()
+  }
+
   private companion object {
     const val REQUEST_BODY =
       """{"operationName":"GetUser","variables":{"id":"123"},"query":"query { viewer { name } }"}"""

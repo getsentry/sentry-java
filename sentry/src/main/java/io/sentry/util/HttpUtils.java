@@ -4,6 +4,7 @@ import static io.sentry.util.UrlUtils.SENSITIVE_DATA_SUBSTITUTE;
 
 import io.sentry.HttpStatusCodeRange;
 import io.sentry.KeyValueCollectionBehavior;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -127,7 +128,7 @@ public final class HttpUtils {
   private static @NotNull String decodeQueryParamName(final @NotNull String name) {
     try {
       return URLDecoder.decode(name, "UTF-8");
-    } catch (Throwable ignored) {
+    } catch (IllegalArgumentException | UnsupportedEncodingException ignored) {
       return name;
     }
   }
