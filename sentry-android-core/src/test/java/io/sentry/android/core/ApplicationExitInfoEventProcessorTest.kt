@@ -201,8 +201,6 @@ class ApplicationExitInfoEventProcessorTest {
 
   @BeforeTest
   fun `set up`() {
-    DeviceInfoUtil.resetInstance()
-    ContextUtils.resetInstance()
     fixture.context = ApplicationProvider.getApplicationContext()
   }
 

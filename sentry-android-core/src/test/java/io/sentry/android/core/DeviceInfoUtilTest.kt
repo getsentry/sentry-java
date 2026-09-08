@@ -15,7 +15,9 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
@@ -32,7 +34,45 @@ class DeviceInfoUtilTest {
         .putExtra(BatteryManager.EXTRA_LEVEL, 75)
         .putExtra(BatteryManager.EXTRA_PLUGGED, 0)
     )
-    DeviceInfoUtil.resetInstance()
+  }
+
+  @Test
+  fun `same options reuse device info util`() {
+    val options = SentryAndroidOptions()
+
+    val first = DeviceInfoUtil.getInstance(context, options)
+    val second = DeviceInfoUtil.getInstance(context, options)
+
+    assertSame(first, second)
+  }
+
+  @Test
+  fun `different options use isolated device info utils`() {
+    val enabledOptions =
+      SentryAndroidOptions().apply {
+        dataCollection.setUserInfo(true)
+        isCollectAdditionalContext = true
+        isEnableRootCheck = true
+      }
+    val disabledOptions =
+      SentryAndroidOptions().apply {
+        dataCollection.setUserInfo(false)
+        isCollectAdditionalContext = false
+        isEnableRootCheck = false
+      }
+
+    val enabled = DeviceInfoUtil.getInstance(context, enabledOptions)
+    val disabled = DeviceInfoUtil.getInstance(context, disabledOptions)
+    val enabledDevice = enabled.collectDeviceInformation(true, false)
+    val disabledDevice = disabled.collectDeviceInformation(true, false)
+
+    assertNotSame(enabled, disabled)
+    assertNotNull(enabledDevice.id)
+    assertNotNull(enabledDevice.storageSize)
+    assertNotNull(enabled.operatingSystem.isRooted)
+    assertNull(disabledDevice.id)
+    assertNull(disabledDevice.storageSize)
+    assertNull(disabled.operatingSystem.isRooted)
   }
 
   @Test

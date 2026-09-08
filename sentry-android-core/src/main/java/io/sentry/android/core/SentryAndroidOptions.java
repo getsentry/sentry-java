@@ -3,8 +3,10 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
+import android.content.Context;
 import io.sentry.Hint;
 import io.sentry.IScope;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
@@ -141,6 +143,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enables or disables collecting of external storage context. */
   private boolean collectExternalStorageContext = false;
 
+  private volatile @Nullable DeviceInfoUtil deviceInfoUtil;
+
   /**
    * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
    * previous run. Sentry SDKs normally send events from a background queue, but in the case of
@@ -199,6 +203,18 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   /** Enable or disable intent extras reporting for system event breadcrumbs. Default is false. */
   private boolean enableSystemEventBreadcrumbsExtras = false;
+
+  @NotNull
+  DeviceInfoUtil getOrCreateDeviceInfoUtil(final @NotNull Context context) {
+    if (deviceInfoUtil == null) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        if (deviceInfoUtil == null) {
+          deviceInfoUtil = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), this);
+        }
+      }
+    }
+    return deviceInfoUtil;
+  }
 
   public interface BeforeCaptureCallback {
 

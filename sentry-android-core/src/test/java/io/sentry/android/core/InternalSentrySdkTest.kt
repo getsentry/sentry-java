@@ -259,7 +259,6 @@ class InternalSentrySdkTest {
   fun `set up`() {
     Sentry.close()
     context = ApplicationProvider.getApplicationContext()
-    DeviceInfoUtil.resetInstance()
   }
 
   @Test
