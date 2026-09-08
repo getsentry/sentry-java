@@ -125,10 +125,15 @@ private fun recordCompositionSpan(
 ) {
   val bucketSpan = BucketSpans.getOrCreateCompositionSpan(ownerSpan, startTimestamp) ?: return
 
-  bucketSpan.startChild(OP_COMPOSITION_SPAN, tag, startTimestamp).apply {
-    spanContext.origin = OP_TRACE_ORIGIN
-    finish(null, endTimestamp)
-  }
+  bucketSpan
+    .startChild(
+      OP_COMPOSITION_SPAN,
+      tag,
+      startTimestamp,
+      Instrumenter.SENTRY,
+      SpanOptions().apply { origin = OP_TRACE_ORIGIN },
+    )
+    .run { finish(null, endTimestamp) }
 }
 
 /**
@@ -145,10 +150,15 @@ private fun recordRenderSpan(
 ) {
   val bucketSpan = BucketSpans.getOrCreateRenderSpan(ownerSpan, startTimestamp) ?: return
 
-  bucketSpan.startChild(OP_RENDER_SPAN, tag, startTimestamp).apply {
-    spanContext.origin = OP_TRACE_ORIGIN
-    finish(null, endTimestamp)
-  }
+  bucketSpan
+    .startChild(
+      OP_RENDER_SPAN,
+      tag,
+      startTimestamp,
+      Instrumenter.SENTRY,
+      SpanOptions().apply { origin = OP_TRACE_ORIGIN },
+    )
+    .run { finish(null, endTimestamp) }
 }
 
 /**
@@ -237,6 +247,7 @@ private class BucketSpans {
         startTimestamp,
         Instrumenter.SENTRY,
         SpanOptions().apply {
+          origin = OP_TRACE_ORIGIN
           isTrimStart = true
           isTrimEnd = true
           isIdle = true
@@ -246,8 +257,6 @@ private class BucketSpans {
     if (bucketSpan.dropsChildSpans) {
       return null
     }
-
-    bucketSpan.spanContext.origin = OP_TRACE_ORIGIN
     setCached(WeakReference(bucketSpan))
     return bucketSpan
   }

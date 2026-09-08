@@ -129,6 +129,26 @@ class SentryTracedTest {
   }
 
   @Test
+  fun `does not create spans when origin is ignored`() {
+    val tx =
+      initSentryAndStartTransaction("tx") { options ->
+        options.setIgnoredSpanOrigins(listOf(OP_TRACE_ORIGIN))
+      }
+
+    rule.setContent {
+      SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp).testTag("content")) }
+    }
+    rule.waitForIdle()
+    drawContent()
+
+    rule.onNodeWithTag("content").assertExists()
+    assertThat(tx.countSpans(OP_PARENT_COMPOSITION)).isEqualTo(0)
+    assertThat(tx.countSpans(OP_COMPOSE)).isEqualTo(0)
+    assertThat(tx.countSpans(OP_PARENT_RENDER)).isEqualTo(0)
+    assertThat(tx.countSpans(OP_RENDER)).isEqualTo(0)
+  }
+
+  @Test
   fun `sibling traced composables with the same owner share the composition parent`() {
     val tx = initSentryAndStartTransaction("tx")
 
@@ -381,13 +401,17 @@ class SentryTracedTest {
     assertThat(renderingTx.countSpans(OP_RENDER)).isEqualTo(0)
   }
 
-  private fun initSentryAndStartTransaction(name: String): ITransaction {
+  private fun initSentryAndStartTransaction(
+    name: String,
+    configureOptions: (SentryOptions) -> Unit = {},
+  ): ITransaction {
     lateinit var tx: ITransaction
     rule.runOnUiThread {
       Sentry.init(
         { options: SentryOptions ->
           options.dsn = "https://key@sentry.io/proj"
           options.tracesSampleRate = 1.0
+          configureOptions(options)
         },
         true,
       )
