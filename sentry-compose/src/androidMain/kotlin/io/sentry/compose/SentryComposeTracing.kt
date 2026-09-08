@@ -159,6 +159,9 @@ private val ISpan.dropsChildSpans: Boolean
  */
 private class ParentSpans {
 
+  // Parent spans must be weakly held because spans keep a reference to their owning transaction. If
+  // the owning transaction is the owner span or an ancestor of it, a strong reference here would
+  // interfere with cleanup of the corresponding ownerSpanToParentSpans entry.
   private var compositionParentSpan: WeakReference<ISpan>? = null
   private var renderParentSpan: WeakReference<ISpan>? = null
 
