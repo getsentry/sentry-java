@@ -2,6 +2,109 @@
 
 ## Unreleased
 
+### Features
+
+- Add `dataCollection`, a fine-grained replacement for `sendDefaultPii`, for controlling data collected automatically by SDK integrations ([#5759](https://github.com/getsentry/sentry-java/pull/5759))
+  - `sendDefaultPii` remains supported for backwards compatibility. When `dataCollection` is not configured, the SDK preserves the existing `sendDefaultPii` behavior.
+  - Configuring any `dataCollection` option makes it the source of truth. `sendDefaultPii` is then ignored, and omitted `dataCollection` options use the defaults below.
+  - Data explicitly supplied through APIs such as `Sentry.setUser`, scopes, event processors, or `beforeSend` is not affected.
+
+  | Option | Default | Behavior |
+  | --- | --- | --- |
+  | `userInfo` | `true` | Allows integrations to populate user identity and IP address information automatically. |
+  | `cookies` | `{ mode: DENY_LIST, terms: [] }` | Collects cookies while filtering sensitive values. |
+  | `httpHeaders.request` | `{ mode: DENY_LIST, terms: [] }` | Collects request headers while filtering sensitive values. |
+  | `httpHeaders.response` | `{ mode: DENY_LIST, terms: [] }` | Collects response headers while filtering sensitive values. |
+  | `httpBodies` | All supported body types | Collects supported incoming and outgoing request and response bodies. An empty set disables body collection. |
+  | `urlQueryParams` | `{ mode: DENY_LIST, terms: [] }` | Collects URL query parameters while filtering sensitive values. |
+  | `graphql.document` | `true` | Collects GraphQL documents. |
+  | `graphql.variables` | `true` | Collects GraphQL variables. |
+  | `databaseQueryData` | `true` | Allows collection of associated query data, such as bound parameters, write payloads, and results, where supported. Sanitized query statements and structural database metadata remain available. |
+
+  Cookies, HTTP headers, and URL query parameters support three modes:
+
+  - `OFF`: Do not collect the category.
+  - `DENY_LIST`: Collect values except those matching the built-in sensitive deny-list or additional configured terms.
+  - `ALLOW_LIST`: Only send plaintext values for matching terms. The built-in sensitive deny-list still applies.
+
+  Matching is case-insensitive and partial. The built-in sensitive deny-list contains `auth`, `token`, `secret`, `password`, `passwd`, `pwd`, `key`, `jwt`, `bearer`, `sso`, `saml`, `csrf`, `xsrf`, `credentials`, `session`, `sid`, and `identity`. Filtered values are replaced with `"[Filtered]"`. Custom deny-list terms extend rather than replace this list.
+
+  Configure all HTTP body types, a custom cookie deny-list, a request-header allow-list, and disable URL query parameter collection in an options callback:
+
+  ```java
+  Sentry.init(
+      options -> {
+        options
+            .getDataCollection()
+            .setHttpBodies(
+                EnumSet.of(
+                    HttpBodyType.INCOMING_REQUEST,
+                    HttpBodyType.OUTGOING_REQUEST,
+                    HttpBodyType.INCOMING_RESPONSE,
+                    HttpBodyType.OUTGOING_RESPONSE));
+        options
+            .getDataCollection()
+            .setCookies(
+                KeyValueCollectionBehavior.denyList(
+                    "forwarded", "-ip", "remote-", "via", "-user"));
+        options
+            .getDataCollection()
+            .getHttpHeaders()
+            .setRequest(
+                KeyValueCollectionBehavior.allowList("content-type", "x-request-id"));
+        options
+            .getDataCollection()
+            .setUrlQueryParams(KeyValueCollectionBehavior.off());
+      });
+  ```
+
+  Configure the same options in `sentry.properties`:
+
+  ```properties
+  data-collection.http-bodies=incoming_request,outgoing_request,incoming_response,outgoing_response
+  data-collection.cookies.mode=deny_list
+  data-collection.cookies.terms=forwarded,-ip,remote-,via,-user
+  data-collection.http-headers.request.mode=allow_list
+  data-collection.http-headers.request.terms=content-type,x-request-id
+  data-collection.url-query-params.mode=off
+  ```
+
+  Configure them with Spring Boot properties:
+
+  ```properties
+  sentry.data-collection.http-bodies=incoming-request,outgoing-request,incoming-response,outgoing-response
+  sentry.data-collection.cookies.mode=deny-list
+  sentry.data-collection.cookies.terms=forwarded,-ip,remote-,via,-user
+  sentry.data-collection.http-headers.request.mode=allow-list
+  sentry.data-collection.http-headers.request.terms=content-type,x-request-id
+  sentry.data-collection.url-query-params.mode=off
+  ```
+
+  Configure them in `AndroidManifest.xml`:
+
+  ```xml
+  <meta-data
+      android:name="io.sentry.data-collection.http-bodies"
+      android:value="incoming_request,outgoing_request,incoming_response,outgoing_response" />
+  <meta-data
+      android:name="io.sentry.data-collection.cookies.mode"
+      android:value="deny_list" />
+  <meta-data
+      android:name="io.sentry.data-collection.cookies.terms"
+      android:value="forwarded,-ip,remote-,via,-user" />
+  <meta-data
+      android:name="io.sentry.data-collection.http-headers.request.mode"
+      android:value="allow_list" />
+  <meta-data
+      android:name="io.sentry.data-collection.http-headers.request.terms"
+      android:value="content-type,x-request-id" />
+  <meta-data
+      android:name="io.sentry.data-collection.url-query-params.mode"
+      android:value="off" />
+  ```
+
+  See the [Data Collection documentation](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection) for all configuration keys, supported integrations, and migration guidance.
+
 ### Fixes
 
 - Support `ws` and `wss` URL parsing for WebSocket instrumentation ([#6064](https://github.com/getsentry/sentry-java/pull/6064))
