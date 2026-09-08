@@ -76,14 +76,15 @@ final class LifecycleWatcher implements AppState.AppStateListener {
         });
 
     final long lastUpdatedSession = this.lastUpdatedSession.get();
-    if (lastUpdatedSession == 0L
-        || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis) {
+    final boolean startNewSession =
+        lastUpdatedSession == 0L
+            || (lastUpdatedSession + sessionIntervalMillis) <= currentTimeMillis;
+    if (startNewSession) {
       if (enableSessionTracking) {
         scopes.startSession();
       }
-      scopes.getOptions().getReplayController().start();
     }
-    scopes.getOptions().getReplayController().resume();
+    scopes.getOptions().getReplayController().onAppForegrounded(startNewSession);
     this.lastUpdatedSession.set(currentTimeMillis);
   }
 
@@ -94,7 +95,7 @@ final class LifecycleWatcher implements AppState.AppStateListener {
     final long currentTimeMillis = currentDateProvider.getCurrentTimeMillis();
     this.lastUpdatedSession.set(currentTimeMillis);
 
-    scopes.getOptions().getReplayController().pause();
+    scopes.getOptions().getReplayController().onAppBackgrounded();
     scheduleEndSession();
 
     addAppBreadcrumb("background");
@@ -108,7 +109,7 @@ final class LifecycleWatcher implements AppState.AppStateListener {
             if (enableSessionTracking) {
               scopes.endSession();
             }
-            scopes.getOptions().getReplayController().stop();
+            scopes.getOptions().getReplayController().onAppSessionEnded();
             scopes.getOptions().getContinuousProfiler().close(false);
           };
 

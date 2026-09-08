@@ -1,5 +1,7 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
+import io.sentry.profiling.ProfileRecordingState
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
@@ -20,7 +22,10 @@ import kotlin.test.assertTrue
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.check
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.spy
@@ -252,6 +257,163 @@ class SentryTracerTest {
         anyOrNull(),
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `when no profile was recorded, profile context and profiler id are dropped`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    val profilerId = SentryId()
+    whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+    whenever(continuousProfiler.getProfileRecordingState(any(), any(), any()))
+      .thenReturn(ProfileRecordingState.NOT_RECORDED)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+    val span = tracer.startChild("span.op")
+    span.finish()
+
+    tracer.finish()
+
+    assertThat(span.getData(SpanDataConvention.PROFILER_ID)).isNull()
+    assertThat(tracer.root.getData(SpanDataConvention.PROFILER_ID)).isNull()
+    verify(fixture.scopes)
+      .captureTransaction(
+        check { assertThat(it.contexts.profile).isNull() },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `when a profile was recorded, profile context and profiler id are kept`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    val profilerId = SentryId()
+    whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+    whenever(continuousProfiler.getProfileRecordingState(any(), any(), any()))
+      .thenReturn(ProfileRecordingState.RECORDED)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+    val span = tracer.startChild("span.op")
+    span.finish()
+
+    tracer.finish()
+
+    assertThat(span.getData(SpanDataConvention.PROFILER_ID)).isEqualTo(profilerId.toString())
+    verify(fixture.scopes)
+      .captureTransaction(
+        check { assertThat(it.contexts.profile?.profilerId).isEqualTo(profilerId) },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `when the profiling outcome is unknown, profile context and profiler id are kept`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    val profilerId = SentryId()
+    whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+    whenever(continuousProfiler.getProfileRecordingState(any(), any(), any()))
+      .thenReturn(ProfileRecordingState.UNKNOWN)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+    val span = tracer.startChild("span.op")
+    span.finish()
+
+    tracer.finish()
+
+    assertThat(span.getData(SpanDataConvention.PROFILER_ID)).isEqualTo(profilerId.toString())
+    verify(fixture.scopes)
+      .captureTransaction(
+        check { assertThat(it.contexts.profile?.profilerId).isEqualTo(profilerId) },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `only the spans no profile covers lose their profiler id`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    val profilerId = SentryId()
+    whenever(continuousProfiler.profilerId).thenReturn(profilerId)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+    val uncoveredSpan = tracer.startChild("uncovered.op")
+    val coveredSpan = tracer.startChild("covered.op")
+    uncoveredSpan.finish()
+    coveredSpan.finish()
+    whenever(continuousProfiler.getProfileRecordingState(any(), any(), any())).thenAnswer {
+      invocation ->
+      if (invocation.getArgument<SentryDate>(1) === uncoveredSpan.startDate)
+        ProfileRecordingState.NOT_RECORDED
+      else ProfileRecordingState.RECORDED
+    }
+
+    tracer.finish()
+
+    assertThat(uncoveredSpan.getData(SpanDataConvention.PROFILER_ID)).isNull()
+    assertThat(coveredSpan.getData(SpanDataConvention.PROFILER_ID)).isEqualTo(profilerId.toString())
+    verify(fixture.scopes)
+      .captureTransaction(
+        check { assertThat(it.contexts.profile?.profilerId).isEqualTo(profilerId) },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `a profiler id the SDK did not write is left alone`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    whenever(continuousProfiler.profilerId).thenReturn(SentryId())
+    whenever(continuousProfiler.getProfileRecordingState(any(), any(), any()))
+      .thenReturn(ProfileRecordingState.NOT_RECORDED)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+    val span = tracer.startChild("span.op")
+    // The span data key is public API, so anyone can put anything under it
+    span.setData(SpanDataConvention.PROFILER_ID, "not-an-id")
+
+    tracer.finish()
+
+    assertThat(span.getData(SpanDataConvention.PROFILER_ID)).isEqualTo("not-an-id")
+  }
+
+  @Test
+  fun `a span that never finished is judged until the end of the transaction`() {
+    val continuousProfiler = mock<IContinuousProfiler>()
+    whenever(continuousProfiler.profilerId).thenReturn(SentryId())
+    whenever(continuousProfiler.getProfileRecordingState(any(), any(), any()))
+      .thenReturn(ProfileRecordingState.UNKNOWN)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = { it.setContinuousProfiler(continuousProfiler) },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+    val unfinishedSpan = tracer.startChild("unfinished.op")
+
+    tracer.finish()
+
+    val endTimes = argumentCaptor<SentryDate>()
+    verify(continuousProfiler, atLeastOnce())
+      .getProfileRecordingState(any(), eq(unfinishedSpan.startDate), endTimes.capture())
+    assertThat(endTimes.lastValue.isAfter(unfinishedSpan.startDate)).isTrue()
   }
 
   @Test

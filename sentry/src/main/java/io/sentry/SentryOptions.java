@@ -3554,7 +3554,8 @@ public class SentryOptions {
               public boolean isOnShakeEnabled() {
                 return false;
               }
-            });
+            },
+            new LoadClass());
 
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));

@@ -113,7 +113,9 @@ internal abstract class BaseCaptureStrategy(
   }
 
   override fun resume() {
-    segmentTimestamp = DateUtils.getCurrentDateTime()
+    val resumedAt = DateUtils.getCurrentDateTime()
+    // Keep the timeline update behind queued frames and pause/flush segment creation.
+    replayExecutor.submit(ReplayRunnable("$TAG.resume") { segmentTimestamp = resumedAt })
   }
 
   override fun pause() = Unit

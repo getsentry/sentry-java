@@ -17,6 +17,7 @@ import io.sentry.ITransactionProfiler
 import io.sentry.MainEventProcessor
 import io.sentry.NoOpContinuousProfiler
 import io.sentry.NoOpTransactionProfiler
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackFormHandler
 import io.sentry.android.core.cache.AndroidEnvelopeCache
@@ -381,6 +382,32 @@ class AndroidOptionsInitializerTest {
   fun `init on API 35+ always sets PerfettoContinuousProfiler`() {
     fixture.initSut()
     assertTrue(fixture.sentryOptions.continuousProfiler is PerfettoContinuousProfiler)
+  }
+
+  @Config(sdk = [35])
+  @Test
+  fun `init on API 35+ reports PerfettoContinuousProfiling integration`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    fixture.initSut()
+
+    assertTrue(
+      SentryIntegrationPackageStorage.getInstance()
+        .integrations
+        .contains("PerfettoContinuousProfiling")
+    )
+  }
+
+  @Config(sdk = [34])
+  @Test
+  fun `init below API 35 does not report PerfettoContinuousProfiling integration`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    fixture.initSut(configureOptions = { isEnableLegacyProfiling = true })
+
+    assertFalse(
+      SentryIntegrationPackageStorage.getInstance()
+        .integrations
+        .contains("PerfettoContinuousProfiling")
+    )
   }
 
   @Config(sdk = [34])

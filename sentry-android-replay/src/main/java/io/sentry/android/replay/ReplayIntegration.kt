@@ -52,6 +52,7 @@ import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Random
 import java.io.Closeable
 import java.io.File
+import java.util.Date
 import java.util.LinkedList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -141,14 +142,6 @@ public class ReplayIntegration(
       return
     }
 
-    if (
-      !options.sessionReplay.isSessionReplayEnabled &&
-        !options.sessionReplay.isSessionReplayForErrorsEnabled
-    ) {
-      options.logger.log(INFO, "Session replay is disabled, no sample rate specified")
-      return
-    }
-
     this.scopes = scopes
     recorder =
       recorderProvider?.invoke()
@@ -167,10 +160,48 @@ public class ReplayIntegration(
   override fun isRecording(): Boolean = state.get().isRecording
 
   override fun start() {
-    enqueueOnMainThread { startInternal() }
+    enqueueOnMainThread { startInternal(isFullSession = true) }
   }
 
-  private fun startInternal() {
+  override fun startBuffering() {
+    enqueueOnMainThread { startInternal(isFullSession = false) }
+  }
+
+  override fun onAppForegrounded(startNewSession: Boolean) {
+    enqueueOnMainThread {
+      if (!isEnabled.get()) {
+        return@enqueueOnMainThread
+      }
+      if (startNewSession) {
+        val wasManuallyPaused = isManualPause
+        stopInternal()
+        val isFullSession = sample(options.sessionReplay.sessionSampleRate)
+        if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
+          options.logger.log(
+            INFO,
+            "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified",
+          )
+        } else {
+          startInternal(isFullSession)
+        }
+        isManualPause = wasManuallyPaused
+        if (wasManuallyPaused) {
+          pauseInternal()
+        }
+      }
+      resumeInternal()
+    }
+  }
+
+  override fun onAppBackgrounded() {
+    enqueueOnMainThread { pauseInternal() }
+  }
+
+  override fun onAppSessionEnded() {
+    enqueueOnMainThread { stopInternal(resetManualPause = false) }
+  }
+
+  private fun startInternal(isFullSession: Boolean) {
     if (!isEnabled.get()) {
       return
     }
@@ -184,15 +215,7 @@ public class ReplayIntegration(
       return
     }
 
-    val isFullSession = sample(options.sessionReplay.sessionSampleRate)
-    if (!isFullSession && !options.sessionReplay.isSessionReplayForErrorsEnabled) {
-      options.logger.log(
-        INFO,
-        "Session replay is not started, full session was not sampled and onErrorSampleRate is not specified",
-      )
-      return
-    }
-
+    isManualPause = false
     val strategy =
       replayCaptureStrategyProvider?.invoke(isFullSession)
         ?: if (isFullSession) {
@@ -282,16 +305,18 @@ public class ReplayIntegration(
       current.captureStrategy?.captureReplay(true) {}
     } else {
       enqueueOnMainThread {
-        captureReplayInternal(current.generation, current.replayId, false)
+        captureCurrentReplay(current.generation, current.replayId) { strategy, onSegmentSent ->
+          strategy.captureReplay(false, onSegmentSent)
+        }
       }
     }
     return current.replayId
   }
 
-  private fun captureReplayInternal(
+  private fun captureCurrentReplay(
     expectedGeneration: Long,
     expectedReplayId: SentryId,
-    isTerminating: Boolean,
+    capture: (CaptureStrategy, (Date) -> Unit) -> Unit,
   ) {
     val current = state.get()
     val strategy = current.captureStrategy
@@ -303,30 +328,27 @@ public class ReplayIntegration(
       }
       options.logger.log(
         INFO,
-        "Replay was stopped or restarted before capture could run, not capturing for event",
+        "Replay was stopped or restarted before capture could run, not capturing replay",
       )
       return
     }
 
     var activeStrategy: CaptureStrategy = strategy
-    strategy.captureReplay(
-      isTerminating,
-      onSegmentSent = { newTimestamp ->
-        enqueueOnMainThread {
-          val latest = state.get()
-          // The flush completes asynchronously; ignore it if this replay was stopped, restarted,
-          // or handed to another strategy in the meantime.
-          if (
-            latest.matches(expectedGeneration, expectedReplayId) &&
-              latest.captureStrategy === activeStrategy
-          ) {
-            activeStrategy.currentSegment++
-            activeStrategy.segmentTimestamp = newTimestamp
-            activeStrategy.isFlushed = true
-          }
+    capture(strategy) { newTimestamp ->
+      enqueueOnMainThread {
+        val latest = state.get()
+        // The flush completes asynchronously; ignore it if this replay was stopped, restarted,
+        // or handed to another strategy in the meantime.
+        if (
+          latest.matches(expectedGeneration, expectedReplayId) &&
+            latest.captureStrategy === activeStrategy
+        ) {
+          activeStrategy.currentSegment++
+          activeStrategy.segmentTimestamp = newTimestamp
+          activeStrategy.isFlushed = true
         }
-      },
-    )
+      }
+    }
     activeStrategy = strategy.convert()
     val replayId: SentryId? = activeStrategy.currentReplayId
     state.set(
@@ -338,6 +360,19 @@ public class ReplayIntegration(
   }
 
   override fun getReplayId(): SentryId = state.get().replayId
+
+  override fun flush() {
+    enqueueOnMainThread {
+      val current = state.get()
+      if (!current.isRecording) {
+        startInternal(isFullSession = true)
+      } else {
+        captureCurrentReplay(current.generation, current.replayId) { strategy, onSegmentSent ->
+          strategy.flush(onSegmentSent)
+        }
+      }
+    }
+  }
 
   override fun setBreadcrumbConverter(converter: ReplayBreadcrumbConverter) {
     replayBreadcrumbConverter = converter
@@ -393,7 +428,7 @@ public class ReplayIntegration(
     enqueueOnMainThread { stopInternal() }
   }
 
-  private fun stopInternal() {
+  private fun stopInternal(resetManualPause: Boolean = true) {
     val current = state.get()
     if (!isEnabled.get() || !current.lifecycleState.isAllowed(STOPPED)) {
       return
@@ -404,6 +439,9 @@ public class ReplayIntegration(
     recorder?.stop()
     gestureRecorder?.stop()
     current.captureStrategy?.stop()
+    if (resetManualPause) {
+      isManualPause = false
+    }
     state.set(
       current.copy(
         lifecycleState = STOPPED,

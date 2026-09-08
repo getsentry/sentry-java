@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.profiling.ProfileRecordingState;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -261,6 +262,8 @@ public final class SentryTracer implements ITransaction {
                   }
                 });
           });
+      dropUnrecordedProfilerIds(finishTimestamp);
+
       final SentryTransaction transaction = new SentryTransaction(this);
 
       if (timersEnabled) {
@@ -547,6 +550,65 @@ public final class SentryTracer implements ITransaction {
     span.setData(
         SpanDataConvention.THREAD_ID, String.valueOf(threadChecker.currentThreadSystemId()));
     span.setData(SpanDataConvention.THREAD_NAME, threadChecker.getCurrentThreadName());
+  }
+
+  /**
+   * Spans are tagged with the profiler id when they start, but the profiler may only learn later
+   * that no profile was recorded, e.g. when the OS rate limits profiling requests. Spans that no
+   * profile covers drop the reference here, so they don't point to a profile that never arrives.
+   */
+  private void dropUnrecordedProfilerIds(final @NotNull SentryDate finishTimestamp) {
+    final @NotNull IContinuousProfiler continuousProfiler =
+        scopes.getOptions().getContinuousProfiler();
+    if (continuousProfiler instanceof NoOpContinuousProfiler) {
+      // Without a profiler no span can carry a profiler id, so the children are not worth walking
+      return;
+    }
+
+    if (isProfileMissing(continuousProfiler, root, finishTimestamp)) {
+      root.setData(SpanDataConvention.PROFILER_ID, null);
+      contexts.remove(ProfileContext.TYPE);
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "No profile was recorded for transaction, dropping its profiler id.");
+    }
+
+    for (final @NotNull Span child : children) {
+      if (isProfileMissing(continuousProfiler, child, finishTimestamp)) {
+        child.setData(SpanDataConvention.PROFILER_ID, null);
+      }
+    }
+  }
+
+  /**
+   * Whether the profiler knows that no profile covers the given span.
+   *
+   * @param finishTimestamp end of the window for a span that never finished
+   */
+  private boolean isProfileMissing(
+      final @NotNull IContinuousProfiler continuousProfiler,
+      final @NotNull Span span,
+      final @NotNull SentryDate finishTimestamp) {
+    final @Nullable Object data = span.getData(SpanDataConvention.PROFILER_ID);
+    if (!(data instanceof String)) {
+      return false;
+    }
+    final @NotNull SentryId profilerId;
+    try {
+      profilerId = new SentryId((String) data);
+    } catch (IllegalArgumentException e) {
+      // The span data key is public API, so the value is not necessarily an id the SDK wrote
+      return false;
+    }
+    final @Nullable SentryDate spanFinishDate = span.getFinishDate();
+    return continuousProfiler.getProfileRecordingState(
+            profilerId,
+            span.getStartDate(),
+            spanFinishDate != null ? spanFinishDate : finishTimestamp)
+        == ProfileRecordingState.NOT_RECORDED;
   }
 
   private @NotNull SentryId getProfilerId() {

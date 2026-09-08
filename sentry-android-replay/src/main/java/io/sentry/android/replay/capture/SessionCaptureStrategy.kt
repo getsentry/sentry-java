@@ -21,9 +21,10 @@ import java.util.concurrent.ScheduledExecutorService
  * `sessionSegmentDuration`, until the 1h `sessionDuration` deadline. Used when the session is
  * sampled by `sessionSampleRate`.
  *
- * [captureReplay] is a no-op here — there is no buffer to flush, the segment covering the error is
- * sent like any other. Because envelopes are in flight the whole time, `ReplayIntegration` pauses
- * this strategy while offline or rate-limited so the envelope cache doesn't overflow.
+ * Event-triggered [captureReplay] is a no-op here — there is no buffer to flush, so the segment
+ * covering the error is sent like any other. An explicit [flush] still sends the current segment.
+ * Because envelopes are in flight the whole time, `ReplayIntegration` pauses this strategy while
+ * offline or rate-limited so the envelope cache doesn't overflow.
  *
  * See [BufferCaptureStrategy] for the on-error counterpart.
  */
@@ -91,6 +92,17 @@ internal class SessionCaptureStrategy(
     this.isTerminating.set(isTerminating)
   }
 
+  override fun flush(onSegmentSent: (Date) -> Unit) {
+    createCurrentSegment("flush") { segment ->
+      if (segment is ReplaySegment.Created) {
+        segment.capture(scopes)
+        currentSegment++
+        segmentTimestamp = segment.replay.timestamp
+        isFlushed = true
+      }
+    }
+  }
+
   override fun onScreenshotRecorded(
     bitmap: Bitmap?,
     store: ReplayCache.(frameTimestamp: Long) -> Unit,
@@ -123,8 +135,10 @@ internal class SessionCaptureStrategy(
           return@ReplayRunnable
         }
 
-        val now = dateProvider.currentTimeMillis
-        if ((now - currentSegmentTimestamp.time >= options.sessionReplay.sessionSegmentDuration)) {
+        if (
+          frameTimestamp - currentSegmentTimestamp.time >=
+            options.sessionReplay.sessionSegmentDuration
+        ) {
           val segment =
             createSegmentInternal(
               options.sessionReplay.sessionSegmentDuration,
@@ -144,7 +158,7 @@ internal class SessionCaptureStrategy(
           }
         }
 
-        if ((now - replayStartTimestamp.get() >= options.sessionReplay.sessionDuration)) {
+        if (frameTimestamp - replayStartTimestamp.get() >= options.sessionReplay.sessionDuration) {
           options.replayController.stop()
           options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
         }
@@ -179,15 +193,16 @@ internal class SessionCaptureStrategy(
       return
     }
 
-    val now = dateProvider.currentTimeMillis
-    val currentSegmentTimestamp = segmentTimestamp ?: return
-    val duration = now - currentSegmentTimestamp.time
+    val requestedAt = dateProvider.currentTimeMillis
     val replayId = currentReplayId
     replayExecutor.submit(
       ReplayRunnable("$TAG.$taskName") {
+        // Keep the request time so executor delays do not extend the segment, but read the mutable
+        // timeline here so a queued natural boundary cannot make it stale.
+        val currentSegmentTimestamp = segmentTimestamp ?: return@ReplayRunnable
         val segment =
           createSegmentInternal(
-            duration,
+            requestedAt - currentSegmentTimestamp.time,
             currentSegmentTimestamp,
             replayId,
             currentSegment,

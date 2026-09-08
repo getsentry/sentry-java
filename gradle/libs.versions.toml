@@ -81,13 +81,14 @@ animalsniffer-gradle-plugin = { module = "ru.vyarus:gradle-animalsniffer-plugin"
 apache-httpclient = { module = "org.apache.httpcomponents.client5:httpclient5", version = "5.0.4" }
 apollo2-coroutines = { module = "com.apollographql.apollo:apollo-coroutines-support", version.ref = "apollo" }
 apollo2-runtime = { module = "com.apollographql.apollo:apollo-runtime", version.ref = "apollo" }
-apollo3-kotlin = { module = "com.apollographql.apollo3:apollo-runtime", version = "3.8.2" }
+apollo3-kotlin = { module = "com.apollographql.apollo3:apollo-runtime", version = "3.8.6" }
 apollo4-kotlin = { module = "com.apollographql.apollo:apollo-runtime", version = "4.1.1" }
 # sentry-apollo-5 compiles against 5.0.0 (supported floor) and tests against the latest 5.x
 apollo5-kotlin = { module = "com.apollographql.apollo:apollo-runtime", version = "5.0.0" }
 apollo5-kotlin-latest = { module = "com.apollographql.apollo:apollo-runtime", version = "5.1.0" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.3.0" }
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.9.1" }
+androidx-activity = { module = "androidx.activity:activity", version = "1.8.2" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.8.2" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "androidxCompose" }
 androidx-compose-foundation-layout = { module = "androidx.compose.foundation:foundation-layout", version.ref = "androidxCompose" }
@@ -105,6 +106,7 @@ androidx-lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-commo
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" }
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
+androidx-navigation-fragment = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "androidxNavigation" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room2" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room2" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room2" }
@@ -120,7 +122,7 @@ async-profiler-jfr-converter = { module = "tools.profiler:jfr-converter", versio
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
 caffeine-jcache = { module = "com.github.ben-manes.caffeine:jcache", version = "3.2.0" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
-commons-compress = {module = "org.apache.commons:commons-compress", version = "1.25.0"}
+commons-compress = {module = "org.apache.commons:commons-compress", version = "1.28.0"}
 context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.11.0" }
 feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
@@ -172,7 +174,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.16.3" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.16.5" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
