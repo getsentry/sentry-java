@@ -450,6 +450,16 @@ class SentryKtorClientPluginTest {
   }
 
   @Test
+  fun `span description excludes query parameters and fragment`(): Unit = runBlocking {
+    val sut = fixture.getSut()
+    sut.get(fixture.server.url("/hello?token=secret&page=1#results").toString())
+
+    val httpClientSpan = fixture.sentryTracer.children.first()
+    assertEquals("GET ${fixture.server.url("/hello")}", httpClientSpan.description)
+    assertNull(httpClientSpan.data[SpanDataConvention.HTTP_QUERY_KEY])
+  }
+
+  @Test
   fun `finishes span setting throwable and status when request throws`(): Unit = runBlocking {
     val sut = fixture.getSut(socketPolicy = SocketPolicy.DISCONNECT_DURING_REQUEST_BODY)
 
