@@ -1,9 +1,11 @@
 package io.sentry.spring.jakarta
 
 import io.sentry.Breadcrumb
+import io.sentry.HttpBodyType
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -204,6 +206,30 @@ class SentrySpringFilterTest {
   }
 
   @Test
+  fun `data collection filters request headers`() {
+    val sentryOptions =
+      SentryOptions().apply {
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("customer")
+      }
+    val listener =
+      fixture.getSut(
+        request =
+          MockMvcRequestBuilders.get(URI.create("http://example.com"))
+            .header("content-type", "application/json")
+            .header("authorization", "Bearer token")
+            .header("x-customer", "customer value")
+            .buildRequest(MockServletContext()),
+        options = sentryOptions,
+      )
+
+    listener.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    assertEquals("application/json", fixture.scope.request!!.headers!!["Content-Type"])
+    assertEquals("[Filtered]", fixture.scope.request!!.headers!!["authorization"])
+    assertEquals("[Filtered]", fixture.scope.request!!.headers!!["x-customer"])
+  }
+
+  @Test
   fun `when sendDefaultPii is set to false, does not attach sensitive headers`() {
     val sentryOptions = SentryOptions().apply { isSendDefaultPii = false }
 
@@ -316,6 +342,52 @@ class SentrySpringFilterTest {
         throw e
       }
     }
+  }
+
+  @Test
+  fun `data collection can enable request body when sendDefaultPii is false`() {
+    val options =
+      SentryOptions().apply {
+        isSendDefaultPii = false
+        maxRequestBodySize = SMALL
+        dataCollection.httpBodies = setOf(HttpBodyType.INCOMING_REQUEST)
+      }
+    val listener =
+      fixture.getSut(
+        request =
+          MockMvcRequestBuilders.post(URI.create("http://example.com"))
+            .content("xxx")
+            .contentType("application/json")
+            .buildRequest(MockServletContext()),
+        options = options,
+      )
+
+    listener.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    verify(fixture.chain).doFilter(check { assertTrue(it is ContentCachingRequestWrapper) }, any())
+  }
+
+  @Test
+  fun `data collection can disable request body when sendDefaultPii is true`() {
+    val options =
+      SentryOptions().apply {
+        isSendDefaultPii = true
+        maxRequestBodySize = SMALL
+        dataCollection.httpBodies = emptySet()
+      }
+    val listener =
+      fixture.getSut(
+        request =
+          MockMvcRequestBuilders.post(URI.create("http://example.com"))
+            .content("xxx")
+            .contentType("application/json")
+            .buildRequest(MockServletContext()),
+        options = options,
+      )
+
+    listener.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    verify(fixture.chain).doFilter(check { assertFalse(it is ContentCachingRequestWrapper) }, any())
   }
 
   private fun servletContextWithCustomCookieName(name: String): ServletContext =

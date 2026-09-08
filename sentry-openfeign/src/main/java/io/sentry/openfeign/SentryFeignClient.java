@@ -73,7 +73,8 @@ public final class SentryFeignClient implements Client {
       final @NotNull SpanOptions spanOptions = new SpanOptions();
       spanOptions.setOrigin(TRACE_ORIGIN);
       ISpan span = activeSpan.startChild("http.client", null, spanOptions);
-      final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url());
+      final @NotNull UrlUtils.UrlDetails urlDetails =
+          UrlUtils.parse(request.url(), scopes.getOptions().getDataCollectionResolver());
       final @NotNull String method = request.httpMethod().name();
       span.setDescription(method + " " + urlDetails.getUrlOrFallback());
       span.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT));
@@ -158,7 +159,8 @@ public final class SentryFeignClient implements Client {
         Breadcrumb.http(
             request.url(),
             request.httpMethod().name(),
-            response != null ? response.status() : null);
+            response != null ? response.status() : null,
+            scopes.getOptions().getDataCollectionResolver());
     breadcrumb.setData("request_body_size", request.body() != null ? request.body().length : 0);
     if (response != null && response.body() != null && response.body().length() != null) {
       breadcrumb.setData("response_body_size", response.body().length());

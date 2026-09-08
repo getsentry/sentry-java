@@ -1,6 +1,7 @@
 package io.sentry.servlet.jakarta
 
 import io.sentry.Hint
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
 import jakarta.servlet.http.HttpServletRequest
@@ -24,7 +25,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         url = "http://example.com?param1=xyz",
         headers = mapOf("some-header" to "some-header value", "Accept" to "application/json"),
       )
-    val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
+    val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryOptions())
     val event = SentryEvent()
 
     eventProcessor.process(event, Hint())
@@ -47,7 +48,7 @@ class SentryRequestHttpServletRequestProcessorTest {
         url = "http://example.com?param1=xyz",
         headers = mapOf("another-header" to listOf("another value", "another value2")),
       )
-    val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
+    val eventProcessor = SentryRequestHttpServletRequestProcessor(request, SentryOptions())
     val event = SentryEvent()
 
     eventProcessor.process(event, Hint())
@@ -63,12 +64,57 @@ class SentryRequestHttpServletRequestProcessorTest {
       mockRequest(url = "http://example.com?param1=xyz", headers = mapOf("Cookie" to "name=value"))
     val sentryOptions = SentryOptions()
     sentryOptions.isSendDefaultPii = false
-    val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
+    val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
     val event = SentryEvent()
 
     eventProcessor.process(event, Hint())
 
     assertNotNull(event.request) { assertNull(it.cookies) }
+  }
+
+  @Test
+  fun `data collection filters request headers`() {
+    val request =
+      mockRequest(
+        url = "http://example.com",
+        headers =
+          mapOf(
+            "content-type" to "application/json",
+            "authorization" to "Bearer token",
+            "x-customer" to "customer value",
+          ),
+      )
+    val options =
+      SentryOptions().also {
+        it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("customer")
+      }
+    val event = SentryEvent()
+
+    SentryRequestHttpServletRequestProcessor(request, options).process(event, Hint())
+
+    assertEquals(
+      mapOf(
+        "content-type" to "application/json",
+        "authorization" to "[Filtered]",
+        "x-customer" to "[Filtered]",
+      ),
+      event.request!!.headers,
+    )
+  }
+
+  @Test
+  fun `data collection can disable request headers`() {
+    val request =
+      mockRequest(url = "http://example.com", headers = mapOf("content-type" to "application/json"))
+    val options =
+      SentryOptions().also {
+        it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+      }
+    val event = SentryEvent()
+
+    SentryRequestHttpServletRequestProcessor(request, options).process(event, Hint())
+
+    assertEquals(emptyMap(), event.request!!.headers)
   }
 
   @Test
@@ -87,7 +133,7 @@ class SentryRequestHttpServletRequestProcessorTest {
       )
     val sentryOptions = SentryOptions()
     sentryOptions.isSendDefaultPii = false
-    val eventProcessor = SentryRequestHttpServletRequestProcessor(request)
+    val eventProcessor = SentryRequestHttpServletRequestProcessor(request, sentryOptions)
     val event = SentryEvent()
 
     eventProcessor.process(event, Hint())

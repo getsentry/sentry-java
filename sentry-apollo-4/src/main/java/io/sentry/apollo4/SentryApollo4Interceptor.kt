@@ -35,11 +35,13 @@ constructor(@ApiStatus.Internal private val scopes: IScopes = ScopesAdapter.getI
         .addHttpHeader(OPERATION_NAME_HEADER_NAME, encodeHeaderValue(request.operation.name()))
         .addHttpHeader(OPERATION_TYPE_HEADER_NAME, encodeHeaderValue(operationType(request)))
 
-    request.scalarAdapters?.let {
-      builder.addHttpHeader(
-        VARIABLES_HEADER_NAME,
-        encodeHeaderValue(request.operation.variables(it).valueMap.toString()),
-      )
+    if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+      request.scalarAdapters?.let {
+        builder.addHttpHeader(
+          VARIABLES_HEADER_NAME,
+          encodeHeaderValue(request.operation.variables(it).valueMap.toString()),
+        )
+      }
     }
 
     return chain.proceed(builder.build())

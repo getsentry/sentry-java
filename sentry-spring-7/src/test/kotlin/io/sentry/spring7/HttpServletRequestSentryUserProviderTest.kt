@@ -46,6 +46,43 @@ class HttpServletRequestSentryUserProviderTest {
   }
 
   @Test
+  fun `when user info is disabled, does not attach user data`() {
+    val principal = mock<Principal>()
+    whenever(principal.name).thenReturn("janesmith")
+    val request = MockHttpServletRequest()
+    request.userPrincipal = principal
+    RequestContextHolder.setRequestAttributes(ServletRequestAttributes(request))
+
+    val options =
+      SentryOptions().apply {
+        isSendDefaultPii = true
+        dataCollection.setUserInfo(false)
+      }
+    val result = HttpServletRequestSentryUserProvider(options).provideUser()
+
+    assertNull(result)
+  }
+
+  @Test
+  fun `when user info is enabled, attaches user data`() {
+    val principal = mock<Principal>()
+    whenever(principal.name).thenReturn("janesmith")
+    val request = MockHttpServletRequest()
+    request.userPrincipal = principal
+    RequestContextHolder.setRequestAttributes(ServletRequestAttributes(request))
+
+    val options =
+      SentryOptions().apply {
+        isSendDefaultPii = false
+        dataCollection.setUserInfo(true)
+      }
+    val result = HttpServletRequestSentryUserProvider(options).provideUser()
+
+    assertNotNull(result)
+    assertEquals("janesmith", result.username)
+  }
+
+  @Test
   fun `when sendDefaultPii is set to false, does not attach user data Sentry Event`() {
     val principal = mock<Principal>()
     whenever(principal.name).thenReturn("janesmith")

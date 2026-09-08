@@ -25,6 +25,8 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
+import io.sentry.util.CookieUtils
+import io.sentry.util.GraphqlUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
@@ -158,7 +160,7 @@ constructor(
     operationType: String?,
     operationId: String?,
   ): ISpan {
-    val urlDetails = UrlUtils.parse(request.url)
+    val urlDetails = UrlUtils.parse(request.url, scopes.options.dataCollectionResolver)
     val method = request.method.name
 
     val operation = if (operationType != null) "http.graphql.$operationType" else "http.graphql"
@@ -173,7 +175,9 @@ constructor(
 
       operationId?.let { setData("operationId", it) }
 
-      variables?.let { setData("variables", it) }
+      if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+        variables?.let { setData("variables", it) }
+      }
       setData(HTTP_METHOD_KEY, method.uppercase(Locale.ROOT))
     }
   }
@@ -228,7 +232,13 @@ constructor(
       span.finish()
     }
 
-    val breadcrumb = Breadcrumb.http(request.url, request.method.name, statusCode)
+    val breadcrumb =
+      Breadcrumb.http(
+        request.url,
+        request.method.name,
+        statusCode,
+        scopes.options.dataCollectionResolver,
+      )
 
     request.body?.contentLength.ifHasValidLength { contentLength ->
       breadcrumb.setData("request_body_size", contentLength)
@@ -259,6 +269,36 @@ constructor(
 
   private fun getHeader(key: String, headers: List<HttpHeader>): String? =
     headers.firstOrNull { it.name.equals(key, true) }?.value
+
+  private fun getRequestHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val requestHeaders = mutableMapOf<String, String>()
+      for (header in headers) {
+        requestHeaders[header.name] = header.value
+      }
+      return HttpUtils.filterHeaders(
+          requestHeaders,
+          scopes.options.dataCollectionResolver.httpRequestHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(headers)
+  }
+
+  private fun getResponseHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val responseHeaders = mutableMapOf<String, String>()
+      for (header in headers) {
+        responseHeaders[header.name] = header.value
+      }
+      return HttpUtils.filterHeaders(
+          responseHeaders,
+          scopes.options.dataCollectionResolver.httpResponseHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(headers)
+  }
 
   private fun getHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     // Headers are only sent if isSendDefaultPii is enabled due to PII
@@ -317,7 +357,7 @@ constructor(
       // url will be: https://api.github.com/users/getsentry/repos/
       // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
       // but that's not possible
-      val urlDetails = UrlUtils.parse(request.url)
+      val urlDetails = UrlUtils.parse(request.url, scopes.options.dataCollectionResolver)
 
       // return if it's not a target match
       if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {
@@ -351,46 +391,43 @@ constructor(
       val sentryRequest =
         Request().apply {
           urlDetails.applyToRequest(this)
-          // Cookie is only sent if isSendDefaultPii is enabled
-          cookies =
-            if (scopes.options.isSendDefaultPii) getHeader("Cookie", request.headers) else null
+          cookies = CookieUtils.filterCookies(getHeader("Cookie", request.headers), scopes.options)
           method = request.method.name
-          headers = getHeaders(request.headers)
+          headers = getRequestHeaders(request.headers)
           apiTarget = "graphql"
 
           request.body?.let {
             bodySize = it.contentLength
 
-            val buffer = Buffer()
+            if (scopes.options.dataCollectionResolver.isOutgoingRequestBody) {
+              val buffer = Buffer()
 
-            try {
-              it.writeTo(buffer)
-              data = buffer.readUtf8()
-            } catch (e: Throwable) {
-              scopes.options.logger.log(SentryLevel.ERROR, "Error reading the request body.", e)
-              // continue because the response body alone can already give some insights
-            } finally {
-              buffer.close()
+              try {
+                it.writeTo(buffer)
+                data = GraphqlUtils.filterRequestBody(buffer.readUtf8(), scopes.options)
+              } catch (e: Throwable) {
+                scopes.options.logger.log(SentryLevel.ERROR, "Error reading the request body.", e)
+                // continue because the response body alone can already give some insights
+              } finally {
+                buffer.close()
+              }
             }
           }
         }
 
       val sentryResponse =
         Response().apply {
-          // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
           cookies =
-            if (scopes.options.isSendDefaultPii) {
-              getHeader("Set-Cookie", response.headers)
-            } else {
-              null
-            }
-          headers = getHeaders(response.headers)
+            CookieUtils.filterSetCookie(getHeader("Set-Cookie", response.headers), scopes.options)
+          headers = getResponseHeaders(response.headers)
           statusCode = response.statusCode
 
           response.body?.buffer?.size?.ifHasValidLength { contentLength ->
             bodySize = contentLength
           }
-          data = body
+          if (scopes.options.dataCollectionResolver.isIncomingResponseBody) {
+            data = body
+          }
         }
 
       fingerprints.add(response.statusCode.toString())

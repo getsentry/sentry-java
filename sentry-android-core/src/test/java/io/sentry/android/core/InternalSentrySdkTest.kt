@@ -258,7 +258,6 @@ class InternalSentrySdkTest {
   fun `set up`() {
     Sentry.close()
     context = ApplicationProvider.getApplicationContext()
-    DeviceInfoUtil.resetInstance()
   }
 
   @Test
@@ -351,6 +350,28 @@ class InternalSentrySdkTest {
     scope.user = null
 
     val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
+    assertTrue((serializedScope["user"] as Map<*, *>).containsKey("id"))
+  }
+
+  @Test
+  fun `serializeScope provides fallback user id when user info is disabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(false) }
+    val scope = Scope(options)
+    scope.user = null
+
+    val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
+
+    assertTrue((serializedScope["user"] as Map<*, *>).containsKey("id"))
+  }
+
+  @Test
+  fun `serializeScope provides fallback user id when user info is enabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(true) }
+    val scope = Scope(options)
+    scope.user = null
+
+    val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
+
     assertTrue((serializedScope["user"] as Map<*, *>).containsKey("id"))
   }
 

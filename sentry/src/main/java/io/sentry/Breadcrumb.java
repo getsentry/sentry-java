@@ -192,8 +192,15 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    * @return the breadcrumb
    */
   public static @NotNull Breadcrumb http(final @NotNull String url, final @NotNull String method) {
+    return createHttpBreadcrumb(url, method, null);
+  }
+
+  private static @NotNull Breadcrumb createHttpBreadcrumb(
+      final @NotNull String url,
+      final @NotNull String method,
+      final @Nullable DataCollectionResolver resolver) {
     final Breadcrumb breadcrumb = new Breadcrumb();
-    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(url);
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(url, resolver);
     breadcrumb.setType("http");
     breadcrumb.setCategory("http");
     if (urlDetails.getUrl() != null) {
@@ -220,7 +227,21 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    */
   public static @NotNull Breadcrumb http(
       final @NotNull String url, final @NotNull String method, final @Nullable Integer code) {
-    final Breadcrumb breadcrumb = http(url, method);
+    final Breadcrumb breadcrumb = createHttpBreadcrumb(url, method, null);
+    if (code != null) {
+      breadcrumb.setData("status_code", code);
+      breadcrumb.setLevel(levelFromHttpStatusCode(code));
+    }
+    return breadcrumb;
+  }
+
+  @ApiStatus.Internal
+  public static @NotNull Breadcrumb http(
+      final @NotNull String url,
+      final @NotNull String method,
+      final @Nullable Integer code,
+      final @Nullable DataCollectionResolver resolver) {
+    final Breadcrumb breadcrumb = createHttpBreadcrumb(url, method, resolver);
     if (code != null) {
       breadcrumb.setData("status_code", code);
       breadcrumb.setLevel(levelFromHttpStatusCode(code));
