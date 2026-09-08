@@ -155,6 +155,54 @@ Apply that pattern only where a broad catch is genuinely unavoidable — an entr
 arbitrary user code or third-party callbacks. Everywhere else, name the exception types. Say in the
 PR description why the broad catch is necessary.
 
+### Concurrency
+
+**Never hold a lock across a call that can re-enter the SDK.** Read what you need under the lock,
+release it, then make the call.
+
+Finishing a span or transaction, capturing an event, and invoking a user-supplied callback all run
+arbitrary SDK code on the calling thread. `SentryTracer.finish()` calls `scopes.captureTransaction(...)`
+synchronously, which runs every registered `EventProcessor` — and those processors take their own
+locks and call back into SDK components. A lock held across such a call is therefore acquired in the
+opposite order from the processor's, which is a deadlock. On Android the blocked thread is usually
+the main thread, so it surfaces to users as an ANR rather than a hang.
+
+```java
+// Wrong: the lock is held while finish() captures the transaction and runs event processors,
+// which take their own lock and then call back into this class.
+try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+  final @Nullable ITransaction transaction = ownedTransaction;
+  if (transaction != null && !transaction.isFinished()) {
+    transaction.finish(SpanStatus.OK);
+  }
+}
+
+// Right: read the field under the lock, call finish() outside it.
+final @Nullable ITransaction transaction;
+try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+  transaction = ownedTransaction;
+}
+if (transaction != null && !transaction.isFinished()) {
+  transaction.finish(SpanStatus.OK);
+}
+```
+
+The same applies to logging through `options.getLogger()`, invoking a listener, and any
+`ISpan`/`IScopes` call reachable from a component that locks.
+
+Moving the call out can break a compound operation that was atomic only because the lock spanned
+it. When that happens, do not widen the original lock again — serialize the callers with a second
+lock that the re-entrant path never acquires, and document the order the two are taken in.
+
+Two more rules that catch most of the rest:
+
+- **Mark a field `volatile` when it is written on one thread and read on another without a lock.**
+  A plain field read is a data race, not merely a stale value.
+- **Read mutable shared state once per operation.** Re-reading the same field for several
+  decisions in one pass lets it change mid-pass, so the results disagree with each other.
+
+Prefer `AutoClosableReentrantLock` over `synchronized`, matching the rest of the codebase.
+
 ### Testing Requirements
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
