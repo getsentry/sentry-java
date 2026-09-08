@@ -5,6 +5,27 @@ import kotlin.test.Test
 
 class KeyValueCollectionBehaviorTest {
   @Test
+  fun `default constructor uses deny list with no terms`() {
+    val behavior = KeyValueCollectionBehavior()
+
+    assertThat(behavior.mode).isEqualTo(KeyValueCollectionBehavior.Mode.DENY_LIST)
+    assertThat(behavior.terms).isEmpty()
+  }
+
+  @Test
+  fun `setters update mode and defensively copy terms`() {
+    val terms = mutableListOf("token")
+    val behavior = KeyValueCollectionBehavior()
+
+    behavior.mode = KeyValueCollectionBehavior.Mode.ALLOW_LIST
+    behavior.terms = terms
+    terms[0] = "password"
+
+    assertThat(behavior.mode).isEqualTo(KeyValueCollectionBehavior.Mode.ALLOW_LIST)
+    assertThat(behavior.terms).containsExactly("token")
+  }
+
+  @Test
   fun `off has no terms`() {
     val behavior = KeyValueCollectionBehavior.off()
 

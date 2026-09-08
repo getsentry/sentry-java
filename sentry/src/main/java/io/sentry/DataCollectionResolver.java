@@ -9,10 +9,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class DataCollectionResolver {
 
-  private static final @NotNull KeyValueCollectionBehavior OFF = KeyValueCollectionBehavior.off();
-  private static final @NotNull KeyValueCollectionBehavior EMPTY_DENY_LIST =
-      KeyValueCollectionBehavior.denyList();
-
   private final @NotNull SentryOptions options;
 
   DataCollectionResolver(final @NotNull SentryOptions options) {
@@ -71,9 +67,11 @@ public final class DataCollectionResolver {
       return cookies;
     }
     if (isDataCollectionConfigured()) {
-      return EMPTY_DENY_LIST;
+      return KeyValueCollectionBehavior.denyList();
     }
-    return options.isSendDefaultPii() ? EMPTY_DENY_LIST : OFF;
+    return options.isSendDefaultPii()
+        ? KeyValueCollectionBehavior.denyList()
+        : KeyValueCollectionBehavior.off();
   }
 
   public @NotNull KeyValueCollectionBehavior getUrlQueryParams() {
@@ -128,7 +126,7 @@ public final class DataCollectionResolver {
 
   private @NotNull KeyValueCollectionBehavior explicitOrEmptyDenyList(
       final @Nullable KeyValueCollectionBehavior explicit) {
-    return explicit != null ? explicit : EMPTY_DENY_LIST;
+    return explicit != null ? explicit : KeyValueCollectionBehavior.denyList();
   }
 
   private boolean isHttpBodyEnabled(
