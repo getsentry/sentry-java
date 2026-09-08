@@ -270,28 +270,6 @@ constructor(
   private fun getHeader(key: String, headers: List<HttpHeader>): String? =
     headers.firstOrNull { it.name.equals(key, true) }?.value
 
-  private fun getRequestCookies(headers: List<HttpHeader>): String? {
-    val cookies = getHeader("Cookie", headers)
-    return if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      CookieUtils.filterCookies(cookies, scopes.options.dataCollectionResolver.cookies, null)
-    } else if (scopes.options.isSendDefaultPii) {
-      cookies
-    } else {
-      null
-    }
-  }
-
-  private fun getResponseCookies(headers: List<HttpHeader>): String? {
-    val cookies = getHeader("Set-Cookie", headers)
-    return if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      CookieUtils.filterSetCookie(cookies, scopes.options.dataCollectionResolver.cookies)
-    } else if (scopes.options.isSendDefaultPii) {
-      cookies
-    } else {
-      null
-    }
-  }
-
   private fun getRequestHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
       val requestHeaders = mutableMapOf<String, String>()
@@ -413,7 +391,7 @@ constructor(
       val sentryRequest =
         Request().apply {
           urlDetails.applyToRequest(this)
-          cookies = getRequestCookies(request.headers)
+          cookies = CookieUtils.filterCookies(getHeader("Cookie", request.headers), scopes.options)
           method = request.method.name
           headers = getRequestHeaders(request.headers)
           apiTarget = "graphql"
@@ -439,7 +417,8 @@ constructor(
 
       val sentryResponse =
         Response().apply {
-          cookies = getResponseCookies(response.headers)
+          cookies =
+            CookieUtils.filterSetCookie(getHeader("Set-Cookie", response.headers), scopes.options)
           headers = getResponseHeaders(response.headers)
           statusCode = response.statusCode
 
