@@ -25,6 +25,7 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
+import io.sentry.util.CookieUtils
 import io.sentry.util.GraphqlUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -390,9 +391,7 @@ constructor(
       val sentryRequest =
         Request().apply {
           urlDetails.applyToRequest(this)
-          // Cookie is only sent if isSendDefaultPii is enabled
-          cookies =
-            if (scopes.options.isSendDefaultPii) getHeader("Cookie", request.headers) else null
+          cookies = CookieUtils.filterCookies(getHeader("Cookie", request.headers), scopes.options)
           method = request.method.name
           headers = getRequestHeaders(request.headers)
           apiTarget = "graphql"
@@ -418,13 +417,8 @@ constructor(
 
       val sentryResponse =
         Response().apply {
-          // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
           cookies =
-            if (scopes.options.isSendDefaultPii) {
-              getHeader("Set-Cookie", response.headers)
-            } else {
-              null
-            }
+            CookieUtils.filterSetCookie(getHeader("Set-Cookie", response.headers), scopes.options)
           headers = getResponseHeaders(response.headers)
           statusCode = response.statusCode
 

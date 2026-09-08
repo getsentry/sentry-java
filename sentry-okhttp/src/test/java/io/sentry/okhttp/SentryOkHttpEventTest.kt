@@ -22,6 +22,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import okhttp3.Headers
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -382,6 +383,7 @@ class SentryOkHttpEventTest {
     val sut = fixture.getSut()
     val clientErrorResponse = mock<Response>()
     whenever(clientErrorResponse.request).thenReturn(fixture.mockRequest)
+    whenever(clientErrorResponse.headers).thenReturn(Headers.headersOf())
     sut.setClientErrorResponse(clientErrorResponse)
     verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
     sut.finish()
@@ -403,6 +405,7 @@ class SentryOkHttpEventTest {
     val sut = fixture.getSut(currentSpan = null)
     val clientErrorResponse = mock<Response>()
     whenever(clientErrorResponse.request).thenReturn(fixture.mockRequest)
+    whenever(clientErrorResponse.headers).thenReturn(Headers.headersOf())
     sut.setClientErrorResponse(clientErrorResponse)
     verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
     sut.finish()

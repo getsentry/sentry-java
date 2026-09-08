@@ -7,6 +7,7 @@ import io.sentry.TypeCheckHint
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
+import io.sentry.util.CookieUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.UrlUtils
 import okhttp3.Headers
@@ -37,8 +38,7 @@ internal object SentryOkHttpUtils {
     val sentryRequest =
       io.sentry.protocol.Request().apply {
         urlDetails.applyToRequest(this)
-        // Cookie is only sent if isSendDefaultPii is enabled
-        cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
+        cookies = CookieUtils.filterCookies(request.headers["Cookie"], scopes.options)
         method = request.method
         headers = getRequestHeaders(scopes, request.headers)
 
@@ -47,8 +47,7 @@ internal object SentryOkHttpUtils {
 
     val sentryResponse =
       io.sentry.protocol.Response().apply {
-        // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-        cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
+        cookies = CookieUtils.filterSetCookie(response.headers["Set-Cookie"], scopes.options)
         headers = getResponseHeaders(scopes, response.headers)
         statusCode = response.code
 
