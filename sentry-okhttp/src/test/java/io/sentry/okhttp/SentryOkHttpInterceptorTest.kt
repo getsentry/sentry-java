@@ -8,6 +8,7 @@ import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
@@ -22,6 +23,7 @@ import io.sentry.TypeCheckHint
 import io.sentry.W3CTraceparentHeader
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
+import io.sentry.util.network.NetworkRequestData
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -45,6 +47,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
@@ -322,6 +325,35 @@ class SentryOkHttpInterceptorTest {
         },
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `data collection settings do not affect Session Replay network details`() {
+    val sut =
+      fixture.getSut(
+        optionsConfiguration = {
+          it.dataCollection.httpBodies = emptySet()
+          it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+          it.dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+          it.sessionReplay.setNetworkDetailAllowUrls(listOf(".*"))
+        }
+      )
+
+    val request = postRequest().newBuilder().addHeader("Accept", "application/json").build()
+    sut.newCall(request).execute()
+
+    val hint = argumentCaptor<Hint>()
+    verify(fixture.scopes).addBreadcrumb(any(), hint.capture())
+    val networkDetails =
+      assertNotNull(
+        hint.firstValue.getAs(
+          TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS,
+          NetworkRequestData::class.java,
+        )
+      )
+    assertEquals("request-body", networkDetails.request?.body?.body)
+    assertEquals("application/json", networkDetails.request?.headers?.get("Accept"))
+    assertNotNull(networkDetails.response)
   }
 
   @SuppressWarnings("SwallowedException")
