@@ -7832,12 +7832,14 @@ public final class io/sentry/util/CookieUtils {
 	public static final field COOKIE_HEADER_NAME Ljava/lang/String;
 	public fun <init> ()V
 	public static fun filterCookies (Ljava/lang/String;Lio/sentry/KeyValueCollectionBehavior;Ljava/util/List;)Ljava/lang/String;
+	public static fun filterCookies (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
 	public static fun filterCookiesFromHeader (Ljava/util/Enumeration;Lio/sentry/KeyValueCollectionBehavior;Ljava/util/List;)Ljava/util/List;
 	public static fun filterCookiesFromHeader (Ljava/util/List;Lio/sentry/KeyValueCollectionBehavior;Ljava/util/List;)Ljava/util/List;
 	public static fun filterOutSecurityCookies (Ljava/lang/String;Ljava/util/List;)Ljava/lang/String;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/Enumeration;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
 	public static fun filterOutSecurityCookiesFromHeader (Ljava/util/List;Ljava/lang/String;Ljava/util/List;)Ljava/util/List;
 	public static fun filterSetCookie (Ljava/lang/String;Lio/sentry/KeyValueCollectionBehavior;)Ljava/lang/String;
+	public static fun filterSetCookie (Ljava/lang/String;Lio/sentry/SentryOptions;)Ljava/lang/String;
 	public static fun isSecurityCookie (Ljava/lang/String;Ljava/util/List;)Z
 }
 
