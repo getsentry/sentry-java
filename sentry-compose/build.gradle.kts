@@ -62,7 +62,6 @@ kotlin {
     }
     getByName("androidUnitTest") {
       dependencies {
-        implementation(libs.androidx.compose.foundation)
         implementation(libs.androidx.compose.foundation.layout)
         implementation(libs.androidx.compose.ui.test.junit4)
         implementation(libs.androidx.navigation.compose)
@@ -119,6 +118,18 @@ android {
 
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+  }
+}
+
+// A constraint rather than a dependency: consumers that never touch SentryTraced should not be
+// forced onto compose, but the ones that do must not resolve below the floor its bytecode needs.
+dependencies {
+  constraints {
+    add("androidMainApi", libs.androidx.compose.foundation.layout) {
+      because(
+        "SentryTraced inlines Box, whose BoxKt.maybeCachedBoxMeasurePolicy only exists from 1.7.0"
+      )
+    }
   }
 }
 
