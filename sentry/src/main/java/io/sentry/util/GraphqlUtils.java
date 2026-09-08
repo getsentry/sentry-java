@@ -4,6 +4,7 @@ import io.sentry.DataCollectionResolver;
 import io.sentry.JsonObjectReader;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ public final class GraphqlUtils {
       final @NotNull StringWriter writer = new StringWriter();
       options.getSerializer().serialize(filtered, writer);
       return writer.toString();
-    } catch (Throwable e) {
+    } catch (IOException | NumberFormatException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to filter GraphQL request body.", e);
       return null;
     }
