@@ -67,7 +67,7 @@ class Nav2SetupActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     configuration = savedInstanceState?.nav2SampleConfiguration() ?: configuration
     setContent {
-      MaterialTheme {
+      Nav2SampleTheme {
         Nav2SetupScreen(
           configuration = configuration,
           onConfigurationChanged = { updatedConfiguration ->

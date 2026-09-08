@@ -23,15 +23,18 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -121,127 +124,129 @@ internal fun Nav2ComposeApp(
     routeWorkOptions = routeWorkOptions,
   )
 
-  Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-    NavHost(
-      navController = navController,
-      startDestination = Home.route,
-      modifier = Modifier.weight(1f),
-    ) {
-      composable(Home.route) {
-        TracedNav2ComposeRoute(Home.routeName) {
-          Nav2ComposeHomeRoute(routeSpec = Nav2RouteSpecs.home) { navigateTo(ProductList) }
+  Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Column(modifier = Modifier.fillMaxSize()) {
+      NavHost(
+        navController = navController,
+        startDestination = Home.route,
+        modifier = Modifier.weight(1f),
+      ) {
+        composable(Home.route) {
+          TracedNav2ComposeRoute(Home.routeName) {
+            Nav2ComposeHomeRoute(routeSpec = Nav2RouteSpecs.home) { navigateTo(ProductList) }
+          }
         }
-      }
 
-      composable(ProductList.route) {
-        TracedNav2ComposeRoute(ProductList.routeName) {
-          Nav2ComposeProductListRoute(
-            routeSpec = Nav2RouteSpecs.productList,
-            onOpenProduct42 = {
-              navigateTo(
-                ProductDetail(
-                  productId = "42",
-                  source = "product-list",
-                  campaign = "summer-sale",
+        composable(ProductList.route) {
+          TracedNav2ComposeRoute(ProductList.routeName) {
+            Nav2ComposeProductListRoute(
+              routeSpec = Nav2RouteSpecs.productList,
+              onOpenProduct42 = {
+                navigateTo(
+                  ProductDetail(
+                    productId = "42",
+                    source = "product-list",
+                    campaign = "summer-sale",
+                  )
                 )
-              )
-            },
-            onOpenProduct7 = {
-              navigateTo(ProductDetail(productId = "7", source = "product-list"))
-            },
-          )
+              },
+              onOpenProduct7 = {
+                navigateTo(ProductDetail(productId = "7", source = "product-list"))
+              },
+            )
+          }
+        }
+
+        composable(
+          route = Nav2ComposeDestination.PRODUCT_DETAIL_ROUTE,
+          arguments =
+            listOf(
+              navArgument(Nav2Args.PRODUCT_ID) { type = NavType.StringType },
+              navArgument(Nav2Args.SOURCE) { type = NavType.StringType },
+              navArgument(Nav2Args.CAMPAIGN) {
+                type = NavType.StringType
+                defaultValue = ""
+              },
+            ),
+        ) { entry ->
+          val productId = entry.arguments?.getString(Nav2Args.PRODUCT_ID).orEmpty()
+          val source = entry.arguments?.getString(Nav2Args.SOURCE).orEmpty()
+          val campaign = entry.arguments?.getString(Nav2Args.CAMPAIGN).orEmpty()
+          TracedNav2ComposeRoute(Nav2RouteNames.PRODUCT_DETAIL) {
+            Nav2ComposeProductDetailRoute(
+              routeSpec = Nav2RouteSpecs.productDetail,
+              productId = productId,
+              source = source,
+              campaign = campaign,
+              onShowPromoDialog = {
+                navigateTo(PromoDialog("detail-$productId"))
+              },
+              onOpenShareSheet = { openShareSheet(productId) },
+              onCheckout = { navigateTo(Checkout(productId)) },
+            )
+          }
+        }
+
+        composable(
+          route = Nav2ComposeDestination.CHECKOUT_ROUTE,
+          arguments = listOf(navArgument(Nav2Args.PRODUCT_ID) { type = NavType.StringType }),
+        ) { entry ->
+          val productId = entry.arguments?.getString(Nav2Args.PRODUCT_ID).orEmpty()
+          TracedNav2ComposeRoute(Nav2RouteNames.CHECKOUT) {
+            Nav2ComposeCheckoutRoute(
+              routeSpec = Nav2RouteSpecs.checkout,
+              productId = productId,
+              onCompleteOrder = {
+                navigateTo(Confirmation(orderId = "order-$productId"))
+              },
+            )
+          }
+        }
+
+        composable(
+          route = Nav2ComposeDestination.CONFIRMATION_ROUTE,
+          arguments = listOf(navArgument(Nav2Args.ORDER_ID) { type = NavType.StringType }),
+        ) { entry ->
+          TracedNav2ComposeRoute(Nav2RouteNames.CONFIRMATION) {
+            Nav2ComposeConfirmationRoute(
+              routeSpec = Nav2RouteSpecs.confirmation,
+              orderId = entry.arguments?.getString(Nav2Args.ORDER_ID).orEmpty(),
+              onResetBackStack = { resetToHome() },
+            )
+          }
+        }
+
+        dialog(
+          route = Nav2ComposeDestination.PROMO_DIALOG_ROUTE,
+          arguments = listOf(navArgument(Nav2Args.PROMO_ID) { type = NavType.StringType }),
+        ) { entry ->
+          // This dialog is a real Nav destination, so it participates in Nav2 the same way as the
+          // rest of the route graph. Compare it with the share sheet overlay below when inspecting
+          // Sentry's Nav2 breadcrumbs, destination arguments, and route transactions.
+          TracedNav2ComposeRoute(Nav2RouteNames.PROMO_DIALOG) {
+            Nav2ComposePromoDialogRoute(
+              routeSpec = Nav2RouteSpecs.promoDialog,
+              promoId = entry.arguments?.getString(Nav2Args.PROMO_ID).orEmpty(),
+              onCaptureException = onCaptureException,
+              onCrashApp = onCrashApp,
+              onDismiss = { navigateBack() },
+            )
+          }
         }
       }
 
-      composable(
-        route = Nav2ComposeDestination.PRODUCT_DETAIL_ROUTE,
-        arguments =
-          listOf(
-            navArgument(Nav2Args.PRODUCT_ID) { type = NavType.StringType },
-            navArgument(Nav2Args.SOURCE) { type = NavType.StringType },
-            navArgument(Nav2Args.CAMPAIGN) {
-              type = NavType.StringType
-              defaultValue = ""
-            },
-          ),
-      ) { entry ->
-        val productId = entry.arguments?.getString(Nav2Args.PRODUCT_ID).orEmpty()
-        val source = entry.arguments?.getString(Nav2Args.SOURCE).orEmpty()
-        val campaign = entry.arguments?.getString(Nav2Args.CAMPAIGN).orEmpty()
-        TracedNav2ComposeRoute(Nav2RouteNames.PRODUCT_DETAIL) {
-          Nav2ComposeProductDetailRoute(
-            routeSpec = Nav2RouteSpecs.productDetail,
-            productId = productId,
-            source = source,
-            campaign = campaign,
-            onShowPromoDialog = {
-              navigateTo(PromoDialog("detail-$productId"))
-            },
-            onOpenShareSheet = { openShareSheet(productId) },
-            onCheckout = { navigateTo(Checkout(productId)) },
-          )
-        }
+      shareSheetProductId.value?.let { productId ->
+        // This share sheet is intentionally just a screen overlay, not a Nav destination. It lets
+        // the sample compare how Sentry's Nav2 integration behaves for proper Nav destinations vs.
+        // UI layered on top of the current route.
+        Nav2ComposeShareSheetRoute(
+          routeSpec = Nav2RouteSpecs.shareSheet,
+          productId = productId,
+          onCaptureException = onCaptureException,
+          onCrashApp = onCrashApp,
+          onDone = ::dismissShareSheet,
+        )
       }
-
-      composable(
-        route = Nav2ComposeDestination.CHECKOUT_ROUTE,
-        arguments = listOf(navArgument(Nav2Args.PRODUCT_ID) { type = NavType.StringType }),
-      ) { entry ->
-        val productId = entry.arguments?.getString(Nav2Args.PRODUCT_ID).orEmpty()
-        TracedNav2ComposeRoute(Nav2RouteNames.CHECKOUT) {
-          Nav2ComposeCheckoutRoute(
-            routeSpec = Nav2RouteSpecs.checkout,
-            productId = productId,
-            onCompleteOrder = {
-              navigateTo(Confirmation(orderId = "order-$productId"))
-            },
-          )
-        }
-      }
-
-      composable(
-        route = Nav2ComposeDestination.CONFIRMATION_ROUTE,
-        arguments = listOf(navArgument(Nav2Args.ORDER_ID) { type = NavType.StringType }),
-      ) { entry ->
-        TracedNav2ComposeRoute(Nav2RouteNames.CONFIRMATION) {
-          Nav2ComposeConfirmationRoute(
-            routeSpec = Nav2RouteSpecs.confirmation,
-            orderId = entry.arguments?.getString(Nav2Args.ORDER_ID).orEmpty(),
-            onResetBackStack = { resetToHome() },
-          )
-        }
-      }
-
-      dialog(
-        route = Nav2ComposeDestination.PROMO_DIALOG_ROUTE,
-        arguments = listOf(navArgument(Nav2Args.PROMO_ID) { type = NavType.StringType }),
-      ) { entry ->
-        // This dialog is a real Nav destination, so it participates in Nav2 the same way as the
-        // rest of the route graph. Compare it with the share sheet overlay below when inspecting
-        // Sentry's Nav2 breadcrumbs, destination arguments, and route transactions.
-        TracedNav2ComposeRoute(Nav2RouteNames.PROMO_DIALOG) {
-          Nav2ComposePromoDialogRoute(
-            routeSpec = Nav2RouteSpecs.promoDialog,
-            promoId = entry.arguments?.getString(Nav2Args.PROMO_ID).orEmpty(),
-            onCaptureException = onCaptureException,
-            onCrashApp = onCrashApp,
-            onDismiss = { navigateBack() },
-          )
-        }
-      }
-    }
-
-    shareSheetProductId.value?.let { productId ->
-      // This share sheet is intentionally just a screen overlay, not a Nav destination. It lets
-      // the sample compare how Sentry's Nav2 integration behaves for proper Nav destinations vs.
-      // UI layered on top of the current route.
-      Nav2ComposeShareSheetRoute(
-        routeSpec = Nav2RouteSpecs.shareSheet,
-        productId = productId,
-        onCaptureException = onCaptureException,
-        onCrashApp = onCrashApp,
-        onDone = ::dismissShareSheet,
-      )
     }
   }
 }
@@ -313,16 +318,47 @@ private fun Nav2ComposeHomeRoute(routeSpec: Nav2RouteSpec, onBrowseProducts: () 
   Nav2ComposeActionRoute(routeSpec, buttons = listOf("Browse Products" to onBrowseProducts))
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun Nav2ComposeProductListRoute(
   routeSpec: Nav2RouteSpec,
   onOpenProduct42: () -> Unit,
   onOpenProduct7: () -> Unit,
 ) {
-  Nav2ComposeActionRoute(
-    routeSpec,
-    buttons = listOf("Open Product 42" to onOpenProduct42, "Open Product 7" to onOpenProduct7),
-  )
+  var showProductItems by rememberSaveable { mutableStateOf(false) }
+
+  Nav2ComposeRouteScaffold(
+    routeSpec = routeSpec,
+    cardContent = {
+      SentryTraced(
+        tag = "product_list_actions",
+        modifier = Modifier.fillMaxWidth(),
+        enableUserInteractionTracing = false,
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          Nav2ComposeRouteButton("Open Product 42", onOpenProduct42)
+          Nav2ComposeRouteButton("Open Product 7", onOpenProduct7)
+        }
+      }
+    },
+  ) {
+    Nav2ComposeRouteButton(
+      label = if (showProductItems) "Hide Product Items" else "Show Product Items",
+      onClick = { showProductItems = !showProductItems },
+    )
+
+    if (showProductItems) {
+      SentryTraced(
+        tag = "product_list_items",
+        modifier = Modifier.fillMaxWidth(),
+        enableUserInteractionTracing = false,
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          repeat(PRODUCT_LIST_ITEM_COUNT) { index -> Nav2ComposeProductListItem(index + 1) }
+        }
+      }
+    }
+  }
 }
 
 @Composable
@@ -388,12 +424,15 @@ private fun Nav2ComposeActionRoute(
   arguments: Map<String, Any?> = emptyMap(),
   buttons: List<Pair<String, () -> Unit>>,
 ) {
-  Nav2ComposeRouteScaffold(routeSpec) {
-    routeSpec.displayArguments(arguments).forEach { (label, value) ->
-      Nav2ComposeRouteInfo(label, value)
-    }
-    buttons.forEach { (label, onClick) -> Nav2ComposeRouteButton(label, onClick) }
-  }
+  Nav2ComposeRouteScaffold(
+    routeSpec = routeSpec,
+    cardContent = {
+      routeSpec.displayArguments(arguments).forEach { (label, value) ->
+        Nav2ComposeRouteInfo(label, value)
+      }
+      buttons.forEach { (label, onClick) -> Nav2ComposeRouteButton(label, onClick) }
+    },
+  )
 }
 
 @Composable
@@ -489,29 +528,57 @@ private fun Nav2ComposeShareSheetRoute(
 @Composable
 private fun Nav2ComposeRouteScaffold(
   routeSpec: Nav2RouteSpec,
+  cardContent: (@Composable ColumnScope.() -> Unit)? = null,
   content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
-  Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-    verticalArrangement = Arrangement.spacedBy(12.dp),
-  ) {
-    Text(
-      routeSpec.title,
-      style = MaterialTheme.typography.headlineMedium,
-      fontWeight = FontWeight.Bold,
-    )
-    routeSpec.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-    if (content != null) {
-      Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Column(
-          modifier = Modifier.padding(16.dp),
-          verticalArrangement = Arrangement.spacedBy(8.dp),
+  Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Column(
+      modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Text(
+        routeSpec.title,
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+      )
+      routeSpec.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+      if (cardContent != null) {
+        Card(
+          colors =
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+          modifier = Modifier.fillMaxWidth(),
         ) {
-          content()
+          Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+          ) {
+            cardContent()
+          }
         }
+      }
+      content?.invoke(this)
+    }
+  }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun Nav2ComposeProductListItem(index: Int) {
+  SentryTraced(
+    tag = "product_list_item_$index",
+    modifier = Modifier.fillMaxWidth(),
+    enableUserInteractionTracing = false,
+  ) {
+    Card(
+      colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+      modifier = Modifier.fillMaxWidth(),
+    ) {
+      Row(
+        modifier = Modifier.fillMaxWidth().padding(12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+      ) {
+        Text("Product #$index", fontWeight = FontWeight.Bold)
+        Text("SKU-$index")
       }
     }
   }
@@ -534,18 +601,23 @@ private fun Nav2ComposeRouteButton(
 
 private fun nav2ComposeInteractionTag(label: String): String = "Nav2 Compose $label"
 
+private const val PRODUCT_LIST_ITEM_COUNT = 20
+
 @Composable
 private fun Nav2ComposeRouteInfo(label: String, value: String) {
-  Row(
-    modifier =
-      Modifier.fillMaxWidth()
-        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-        .padding(12.dp),
-    horizontalArrangement = Arrangement.SpaceBetween,
+  Surface(
+    color = MaterialTheme.colorScheme.surface,
+    shape = RoundedCornerShape(8.dp),
+    modifier = Modifier.fillMaxWidth(),
   ) {
-    Text(label, fontWeight = FontWeight.Bold)
-    Spacer(Modifier.size(12.dp))
-    Text(value, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    Row(
+      modifier = Modifier.padding(12.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+      Text(label, fontWeight = FontWeight.Bold)
+      Spacer(Modifier.size(12.dp))
+      Text(value, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
   }
 }
 

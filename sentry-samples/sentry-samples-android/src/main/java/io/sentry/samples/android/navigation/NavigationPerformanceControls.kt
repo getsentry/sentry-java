@@ -1,7 +1,6 @@
 package io.sentry.samples.android.navigation
 
 import android.os.Trace
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -20,6 +19,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -114,60 +114,62 @@ internal fun NavigationPerformancePanel(
     }
   }
 
-  Column(
-    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-    verticalArrangement = Arrangement.spacedBy(12.dp),
-  ) {
-    Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-    Text(description, style = MaterialTheme.typography.bodyMedium)
+  Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Column(
+      modifier = Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      Text(title, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+      Text(description, style = MaterialTheme.typography.bodyMedium)
 
-    PerfCard(title = "Current State") {
-      PerfInfoRow("Current route", currentRoute)
-      PerfInfoRow("Tracked stack", backStack)
-    }
-
-    PerfCard(title = "Stress Controls") {
-      PerfStepper(
-        label = "Stack depth",
-        value = state.stackDepth,
-        onDecrement = { state.stackDepth = (state.stackDepth - 1).coerceAtLeast(1) },
-        onIncrement = { state.stackDepth = (state.stackDepth + 1).coerceAtMost(100) },
-      )
-
-      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Button(onClick = onBuildStack, modifier = Modifier.weight(1f)) { Text("Build Stack") }
-        Button(onClick = onReplaceTop, modifier = Modifier.weight(1f)) { Text("Replace Top") }
+      PerfCard(title = "Current State") {
+        PerfInfoRow("Current route", currentRoute)
+        PerfInfoRow("Tracked stack", backStack)
       }
 
-      Button(
-        onClick = { state.markRecompositionRequest() },
-        modifier = Modifier.fillMaxWidth(),
-      ) {
-        Text("Force Unrelated Recomposition")
-      }
-
-      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        PerfToggleButton(
-          selected = state.autoRecompose,
-          label = if (state.autoRecompose) "Stop Recompose" else "Auto Recompose",
-          onClick = { state.autoRecompose = !state.autoRecompose },
-          modifier = Modifier.weight(1f),
+      PerfCard(title = "Stress Controls") {
+        PerfStepper(
+          label = "Stack depth",
+          value = state.stackDepth,
+          onDecrement = { state.stackDepth = (state.stackDepth - 1).coerceAtLeast(1) },
+          onIncrement = { state.stackDepth = (state.stackDepth + 1).coerceAtMost(100) },
         )
-        PerfToggleButton(
-          selected = state.autoNavigate,
-          label = if (state.autoNavigate) "Stop Navigate" else "Auto Navigate",
-          onClick = { state.autoNavigate = !state.autoNavigate },
-          modifier = Modifier.weight(1f),
-        )
-      }
-    }
 
-    PerfCard(title = "Counters") {
-      PerfInfoRow("Recomposition requests", state.recompositionRequests.toString())
-      PerfInfoRow("Navigation mutations", state.navigationMutations.toString())
-      PerfInfoRow("Destination changes", state.destinationChanges.toString())
-      Button(onClick = { state.resetCounters() }, modifier = Modifier.fillMaxWidth()) {
-        Text("Reset Counters")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          Button(onClick = onBuildStack, modifier = Modifier.weight(1f)) { Text("Build Stack") }
+          Button(onClick = onReplaceTop, modifier = Modifier.weight(1f)) { Text("Replace Top") }
+        }
+
+        Button(
+          onClick = { state.markRecompositionRequest() },
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Text("Force Unrelated Recomposition")
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          PerfToggleButton(
+            selected = state.autoRecompose,
+            label = if (state.autoRecompose) "Stop Recompose" else "Auto Recompose",
+            onClick = { state.autoRecompose = !state.autoRecompose },
+            modifier = Modifier.weight(1f),
+          )
+          PerfToggleButton(
+            selected = state.autoNavigate,
+            label = if (state.autoNavigate) "Stop Navigate" else "Auto Navigate",
+            onClick = { state.autoNavigate = !state.autoNavigate },
+            modifier = Modifier.weight(1f),
+          )
+        }
+      }
+
+      PerfCard(title = "Counters") {
+        PerfInfoRow("Recomposition requests", state.recompositionRequests.toString())
+        PerfInfoRow("Navigation mutations", state.navigationMutations.toString())
+        PerfInfoRow("Destination changes", state.destinationChanges.toString())
+        Button(onClick = { state.resetCounters() }, modifier = Modifier.fillMaxWidth()) {
+          Text("Reset Counters")
+        }
       }
     }
   }
@@ -191,17 +193,20 @@ private fun PerfCard(title: String, content: @Composable ColumnScope.() -> Unit)
 
 @Composable
 private fun PerfInfoRow(label: String, value: String) {
-  Row(
-    modifier =
-      Modifier.fillMaxWidth()
-        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-        .padding(12.dp),
-    horizontalArrangement = Arrangement.SpaceBetween,
-    verticalAlignment = Alignment.CenterVertically,
+  Surface(
+    color = MaterialTheme.colorScheme.surface,
+    shape = RoundedCornerShape(8.dp),
+    modifier = Modifier.fillMaxWidth(),
   ) {
-    Text(label, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-    Spacer(Modifier.size(12.dp))
-    Text(value, modifier = Modifier.weight(1f))
+    Row(
+      modifier = Modifier.padding(12.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(label, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+      Spacer(Modifier.size(12.dp))
+      Text(value, modifier = Modifier.weight(1f))
+    }
   }
 }
 
