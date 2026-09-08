@@ -6,6 +6,8 @@
 
 - `SentryTraced` now checks for its owning transaction dynamically rather than once per app process. The latter caused `SentryTraced` spans to be dropped process-wide once the original transaction finished ([#6057](https://github.com/getsentry/sentry-java/pull/6057))
 - Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`) ([#6061](https://github.com/getsentry/sentry-java/pull/6061))
+- Publish an `androidx.compose.foundation:foundation-layout:1.7.0` version constraint from `sentry-compose` ([#6071](https://github.com/getsentry/sentry-java/pull/6071))
+  - `SentryTraced` inlines `Box`, so its bytecode calls a measure policy that only exists from 1.7.0. Apps resolving an older `foundation-layout` hit a `NoSuchMethodError`
 
 ## 8.55.0
 
