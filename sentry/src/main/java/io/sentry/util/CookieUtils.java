@@ -3,6 +3,7 @@ package io.sentry.util;
 import static io.sentry.util.UrlUtils.SENSITIVE_DATA_SUBSTITUTE;
 
 import io.sentry.KeyValueCollectionBehavior;
+import io.sentry.SentryOptions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,6 +59,14 @@ public final class CookieUtils {
   }
 
   public static @Nullable String filterCookies(
+      final @Nullable String cookies, final @NotNull SentryOptions options) {
+    if (!options.getDataCollectionResolver().isDataCollectionConfigured()) {
+      return options.isSendDefaultPii() ? cookies : null;
+    }
+    return filterCookies(cookies, options.getDataCollectionResolver().getCookies(), null);
+  }
+
+  public static @Nullable String filterCookies(
       final @Nullable String cookies,
       final @NotNull KeyValueCollectionBehavior behavior,
       final @Nullable List<String> additionalSensitiveCookieNames) {
@@ -75,6 +84,14 @@ public final class CookieUtils {
           filterCookie(cookieValues[i], behavior, additionalSensitiveCookieNames));
     }
     return filteredCookies.toString();
+  }
+
+  public static @Nullable String filterSetCookie(
+      final @Nullable String cookie, final @NotNull SentryOptions options) {
+    if (!options.getDataCollectionResolver().isDataCollectionConfigured()) {
+      return options.isSendDefaultPii() ? cookie : null;
+    }
+    return filterSetCookie(cookie, options.getDataCollectionResolver().getCookies());
   }
 
   public static @Nullable String filterSetCookie(

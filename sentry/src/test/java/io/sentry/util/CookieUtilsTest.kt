@@ -2,6 +2,7 @@ package io.sentry.util
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.KeyValueCollectionBehavior
+import io.sentry.SentryOptions
 import java.util.Enumeration
 import java.util.StringTokenizer
 import kotlin.test.Test
@@ -10,6 +11,48 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class CookieUtilsTest {
+  @Test
+  fun `options cookie filters omit cookies in legacy mode without default pii`() {
+    val options = SentryOptions()
+
+    assertThat(CookieUtils.filterCookies("sessionId=secret", options)).isNull()
+    assertThat(CookieUtils.filterSetCookie("sessionId=secret; Path=/", options)).isNull()
+  }
+
+  @Test
+  fun `options cookie filters preserve cookies in legacy mode with default pii`() {
+    val options = SentryOptions().apply { isSendDefaultPii = true }
+
+    assertThat(CookieUtils.filterCookies("sessionId=secret", options)).isEqualTo("sessionId=secret")
+    assertThat(CookieUtils.filterSetCookie("sessionId=secret; Path=/", options))
+      .isEqualTo("sessionId=secret; Path=/")
+  }
+
+  @Test
+  fun `options cookie filters apply configured policy`() {
+    val options =
+      SentryOptions().apply {
+        dataCollection.cookies = KeyValueCollectionBehavior.denyList("customer")
+      }
+
+    assertThat(CookieUtils.filterCookies("theme=dark; customerId=123", options))
+      .isEqualTo("theme=dark; customerId=[Filtered]")
+    assertThat(CookieUtils.filterSetCookie("customerId=123; Path=/", options))
+      .isEqualTo("customerId=[Filtered]; Path=/")
+  }
+
+  @Test
+  fun `options cookie filters honor explicitly disabled collection`() {
+    val options =
+      SentryOptions().apply {
+        isSendDefaultPii = true
+        dataCollection.cookies = KeyValueCollectionBehavior.off()
+      }
+
+    assertThat(CookieUtils.filterCookies("theme=dark", options)).isNull()
+    assertThat(CookieUtils.filterSetCookie("theme=dark; Path=/", options)).isNull()
+  }
+
   @Test
   fun `cookie filter disables collection in off mode`() {
     assertThat(
