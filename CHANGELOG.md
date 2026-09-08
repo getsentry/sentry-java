@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add `sentry-apollo-5` integration for Apollo Kotlin 5, providing HTTP tracing and failed GraphQL request reporting ([#TODO](https://github.com/getsentry/sentry-java/pull/TODO))
+- Add `sentry-apollo-5` integration for Apollo Kotlin 5, providing HTTP tracing and failed GraphQL request reporting ([#6074](https://github.com/getsentry/sentry-java/pull/6074))
 
 ### Fixes
 
