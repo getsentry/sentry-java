@@ -357,10 +357,36 @@ class UrlUtilsTest {
   }
 
   @Test
-  fun `does not extract details from websockets uri`() {
-    val urlDetails = UrlUtils.parse("wss://example.com/socket")
-    assertNull(urlDetails.url)
-    assertNull(urlDetails.query)
-    assertNull(urlDetails.fragment)
+  fun `extracts details from websocket uri`() {
+    val urlDetails = UrlUtils.parse("ws://example.com/socket?channel=updates#top")
+
+    assertThat(urlDetails.url).isEqualTo("ws://example.com/socket")
+    assertThat(urlDetails.query).isEqualTo("channel=updates")
+    assertThat(urlDetails.fragment).isEqualTo("top")
+  }
+
+  @Test
+  fun `filters query parameters from secure websocket uri`() {
+    val options = SentryOptions().also { it.dataCollection.setUserInfo(false) }
+    val urlDetails =
+      UrlUtils.parse(
+        "wss://example.com/socket?channel=updates&token=secret",
+        options.dataCollectionResolver,
+      )
+
+    assertThat(urlDetails.url).isEqualTo("wss://example.com/socket")
+    assertThat(urlDetails.query).isEqualTo("channel=updates&token=[Filtered]")
+    assertThat(urlDetails.fragment).isNull()
+  }
+
+  @Test
+  fun `does not extract details from websocket uri without authority`() {
+    listOf("ws:example.com/socket", "wss:///socket").forEach { url ->
+      val urlDetails = UrlUtils.parse(url)
+
+      assertThat(urlDetails.url).isNull()
+      assertThat(urlDetails.query).isNull()
+      assertThat(urlDetails.fragment).isNull()
+    }
   }
 }

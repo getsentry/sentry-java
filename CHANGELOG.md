@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Support `ws` and `wss` URL parsing for WebSocket instrumentation ([#6064](https://github.com/getsentry/sentry-java/pull/6064))
+
 ## 8.55.0
 
 ### Features

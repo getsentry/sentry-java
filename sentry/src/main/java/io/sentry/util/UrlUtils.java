@@ -55,6 +55,11 @@ public final class UrlUtils {
   }
 
   private static boolean isValidAbsoluteUrl(final @NotNull URI uri) {
+    final @Nullable String scheme = uri.getScheme();
+    if ("ws".equalsIgnoreCase(scheme) || "wss".equalsIgnoreCase(scheme)) {
+      return !uri.isOpaque() && uri.getRawAuthority() != null && !uri.getRawAuthority().isEmpty();
+    }
+
     try {
       uri.toURL();
     } catch (Exception e) {
