@@ -24,7 +24,8 @@ public final class DataCollection {
     this(true);
   }
 
-  DataCollection(final boolean forceDataCollection) {
+  @ApiStatus.Internal
+  public DataCollection(final boolean forceDataCollection) {
     this.forceDataCollection = forceDataCollection;
   }
 
@@ -82,7 +83,7 @@ public final class DataCollection {
   }
 
   @ApiStatus.Internal
-  boolean isExplicitlyConfigured() {
+  public boolean isExplicitlyConfigured() {
     return forceDataCollection
         || userInfo != null
         || cookies != null
