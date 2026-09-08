@@ -3744,6 +3744,9 @@ public class SentryOptions {
     if (options.isSendDefaultPii() != null) {
       setSendDefaultPii(options.isSendDefaultPii());
     }
+    if (options.getDataCollection() != null) {
+      mergeDataCollection(options.getDataCollection());
+    }
     if (options.isCaptureOpenTelemetryEvents() != null) {
       setCaptureOpenTelemetryEvents(options.isCaptureOpenTelemetryEvents());
     }
@@ -3806,6 +3809,40 @@ public class SentryOptions {
     }
     if (options.getOrgId() != null) {
       setOrgId(options.getOrgId());
+    }
+  }
+
+  private void mergeDataCollection(final @NotNull DataCollection externalDataCollection) {
+    if (externalDataCollection.getUserInfo() != null) {
+      dataCollection.setUserInfo(externalDataCollection.getUserInfo());
+    }
+    if (externalDataCollection.getHttpBodies() != null) {
+      dataCollection.setHttpBodies(externalDataCollection.getHttpBodies());
+    }
+    if (externalDataCollection.getCookies() != null) {
+      dataCollection.setCookies(externalDataCollection.getCookies());
+    }
+    if (externalDataCollection.getHttpHeaders().getRequest() != null) {
+      dataCollection
+          .getHttpHeaders()
+          .setRequest(externalDataCollection.getHttpHeaders().getRequest());
+    }
+    if (externalDataCollection.getHttpHeaders().getResponse() != null) {
+      dataCollection
+          .getHttpHeaders()
+          .setResponse(externalDataCollection.getHttpHeaders().getResponse());
+    }
+    if (externalDataCollection.getUrlQueryParams() != null) {
+      dataCollection.setUrlQueryParams(externalDataCollection.getUrlQueryParams());
+    }
+    if (externalDataCollection.getGraphql().getDocument() != null) {
+      dataCollection.getGraphql().setDocument(externalDataCollection.getGraphql().getDocument());
+    }
+    if (externalDataCollection.getGraphql().getVariables() != null) {
+      dataCollection.getGraphql().setVariables(externalDataCollection.getGraphql().getVariables());
+    }
+    if (externalDataCollection.getDatabaseQueryData() != null) {
+      dataCollection.setDatabaseQueryData(externalDataCollection.getDatabaseQueryData());
     }
   }
 

@@ -83,6 +83,87 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `merging absent external data collection preserves legacy mode`() {
+    val options = SentryOptions()
+
+    options.merge(ExternalOptions())
+
+    assertThat(options.dataCollection.isExplicitlyConfigured()).isFalse()
+  }
+
+  @Test
+  fun `merging external data collection applies only configured values`() {
+    val options =
+      SentryOptions().apply {
+        dataCollection.setUserInfo(false)
+        dataCollection.cookies = KeyValueCollectionBehavior.allowList("safe")
+      }
+    val externalOptions =
+      ExternalOptions().apply {
+        dataCollection = DataCollection().apply { graphql.setVariables(false) }
+      }
+
+    options.merge(externalOptions)
+
+    assertThat(options.dataCollection.userInfo).isFalse()
+    assertThat(options.dataCollection.cookies)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("safe"))
+    assertThat(options.dataCollection.graphql.variables).isFalse()
+  }
+
+  @Test
+  fun `merging external data collection applies every supported value`() {
+    val externalDataCollection =
+      DataCollection().apply {
+        setUserInfo(false)
+        httpBodies = setOf(HttpBodyType.INCOMING_REQUEST, HttpBodyType.OUTGOING_RESPONSE)
+        cookies = KeyValueCollectionBehavior.denyList("cookie")
+        httpHeaders.request = KeyValueCollectionBehavior.allowList("request")
+        httpHeaders.response = KeyValueCollectionBehavior.off()
+        urlQueryParams = KeyValueCollectionBehavior.denyList("query")
+        graphql.setDocument(false)
+        graphql.setVariables(false)
+        setDatabaseQueryData(false)
+      }
+    val options = SentryOptions()
+
+    options.merge(ExternalOptions().apply { dataCollection = externalDataCollection })
+
+    assertThat(options.dataCollection.userInfo).isFalse()
+    assertThat(options.dataCollection.httpBodies)
+      .containsExactly(HttpBodyType.INCOMING_REQUEST, HttpBodyType.OUTGOING_RESPONSE)
+    assertThat(options.dataCollection.cookies)
+      .isEqualTo(KeyValueCollectionBehavior.denyList("cookie"))
+    assertThat(options.dataCollection.httpHeaders.request)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("request"))
+    assertThat(options.dataCollection.httpHeaders.response)
+      .isEqualTo(KeyValueCollectionBehavior.off())
+    assertThat(options.dataCollection.urlQueryParams)
+      .isEqualTo(KeyValueCollectionBehavior.denyList("query"))
+    assertThat(options.dataCollection.graphql.document).isFalse()
+    assertThat(options.dataCollection.graphql.variables).isFalse()
+    assertThat(options.dataCollection.databaseQueryData).isFalse()
+  }
+
+  @Test
+  fun `external data collection takes precedence over send default PII`() {
+    val externalOptions =
+      ExternalOptions().apply {
+        isSendDefaultPii = false
+        dataCollection = DataCollection().apply { cookies = KeyValueCollectionBehavior.off() }
+      }
+    val options = SentryOptions()
+
+    options.merge(externalOptions)
+
+    assertThat(options.isSendDefaultPii).isFalse()
+    assertThat(options.dataCollection.isExplicitlyConfigured()).isTrue()
+    assertThat(options.dataCollectionResolver.isUserInfo).isTrue()
+    assertThat(options.dataCollectionResolver.isDatabaseQueryData).isTrue()
+    assertThat(options.dataCollectionResolver.cookies).isEqualTo(KeyValueCollectionBehavior.off())
+  }
+
+  @Test
   fun `when options is initialized, logger is not null`() {
     assertNotNull(SentryOptions().logger)
   }
