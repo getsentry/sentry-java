@@ -16,8 +16,13 @@ class SpringSecuritySentryUserProviderTest {
     fun getSut(
       isSendDefaultPii: Boolean = true,
       username: String? = null,
+      userInfo: Boolean? = null,
     ): SpringSecuritySentryUserProvider {
-      val options = SentryOptions().apply { this.isSendDefaultPii = isSendDefaultPii }
+      val options =
+        SentryOptions().apply {
+          this.isSendDefaultPii = isSendDefaultPii
+          userInfo?.let { dataCollection.setUserInfo(it) }
+        }
       val securityContext = mock<SecurityContext>()
       if (username != null) {
         val authentication = mock<Authentication>()
@@ -45,6 +50,20 @@ class SpringSecuritySentryUserProviderTest {
     val provider = fixture.getSut(false)
     val user = provider.provideUser()
     assertNull(user)
+  }
+
+  @Test
+  fun `when user info is disabled, returns null even if sendDefaultPii is true`() {
+    val provider = fixture.getSut(isSendDefaultPii = true, username = "name", userInfo = false)
+
+    assertNull(provider.provideUser())
+  }
+
+  @Test
+  fun `when user info is enabled, returns user even if sendDefaultPii is false`() {
+    val provider = fixture.getSut(isSendDefaultPii = false, username = "name", userInfo = true)
+
+    assertNotNull(provider.provideUser()) { assertEquals("name", it.username) }
   }
 
   @Test

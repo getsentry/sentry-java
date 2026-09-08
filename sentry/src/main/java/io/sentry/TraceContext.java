@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.User;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
 import java.util.Map;
@@ -79,16 +78,6 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
     this.sampled = sampled;
     this.replayId = replayId;
     this.sampleRand = sampleRand;
-  }
-
-  @SuppressWarnings("UnusedMethod")
-  private static @Nullable String getUserId(
-      final @NotNull SentryOptions options, final @Nullable User user) {
-    if (options.isSendDefaultPii() && user != null) {
-      return user.getId();
-    }
-
-    return null;
   }
 
   public @NotNull SentryId getTraceId() {

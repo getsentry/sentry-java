@@ -27,6 +27,10 @@ public final class DataCollectionResolver {
     return explicitOrSendDefaultPii(options.getDataCollection().getUserInfo(), true);
   }
 
+  public boolean isUserInfoWithLegacyAlways() {
+    return explicitOrDefault(options.getDataCollection().getUserInfo(), true, true);
+  }
+
   public boolean isDatabaseQueryData() {
     return explicitOrSendDefaultPii(options.getDataCollection().getDatabaseQueryData(), true);
   }
