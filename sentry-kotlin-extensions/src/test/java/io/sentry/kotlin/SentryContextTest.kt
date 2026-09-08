@@ -11,18 +11,20 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class SentryContextTest {
-  // TODO [HSM] In global hub mode SentryContext behaves differently
-  // because Sentry.getCurrentScopes always returns rootScopes
-  // What's the desired behaviour?
+  // SentryContext makes its scopes current, which is honoured in global hub mode as well, so it
+  // isolates the same way there. Only implicit forking stays suppressed, see the last two tests.
+
+  private val dsn = "https://key@sentry.io/123"
 
   @BeforeTest
   fun init() {
-    initForTest("https://key@sentry.io/123")
+    initForTest(dsn)
   }
 
   @AfterTest
@@ -262,6 +264,46 @@ class SentryContextTest {
     val mergedContextElement = SentryContext().mergeForChild(initialContextElement)
 
     assertEquals(initialContextElement, mergedContextElement)
+  }
+
+  @Test
+  fun `current scope is isolated between coroutines in global hub mode`() = runBlocking {
+    initForTest({ it.dsn = dsn }, true)
+    Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.setTag("parent", "parentValue") }
+
+    val c1 =
+      launch(SentryContext()) {
+        Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.setTag("c1", "c1value") }
+        assertEquals("c1value", getTag("c1", ScopeType.CURRENT))
+        assertEquals("parentValue", getTag("parent", ScopeType.CURRENT))
+        assertNull(getTag("c2", ScopeType.CURRENT))
+      }
+    val c2 =
+      launch(SentryContext()) {
+        Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.setTag("c2", "c2value") }
+        assertEquals("c2value", getTag("c2", ScopeType.CURRENT))
+        assertEquals("parentValue", getTag("parent", ScopeType.CURRENT))
+        assertNull(getTag("c1", ScopeType.CURRENT))
+      }
+    listOf(c1, c2).joinAll()
+
+    assertNotNull(getTag("parent", ScopeType.CURRENT))
+    assertNull(getTag("c1", ScopeType.CURRENT))
+    assertNull(getTag("c2", ScopeType.CURRENT))
+  }
+
+  @Test
+  fun `coroutines without SentryContext share the root scopes in global hub mode`() = runBlocking {
+    initForTest({ it.dsn = dsn }, true)
+    Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.setTag("parent", "parentValue") }
+
+    launch(Dispatchers.Default) {
+        assertEquals("parentValue", getTag("parent", ScopeType.CURRENT))
+        Sentry.configureScope(ScopeType.CURRENT) { scope -> scope.setTag("child", "childValue") }
+      }
+      .join()
+
+    assertEquals("childValue", getTag("child", ScopeType.CURRENT))
   }
 
   private fun getTag(tag: String, scopeType: ScopeType = ScopeType.ISOLATION): String? {

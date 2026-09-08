@@ -894,6 +894,20 @@ fun IntegrationsScreen() {
       }
     }
     item {
+      SentryTraced("open_nav2_activity") {
+        OutlinedButton(
+          onClick = {
+            activity.startActivity(
+              Intent(activity, io.sentry.samples.android.navigation.Nav2SetupActivity::class.java)
+            )
+          },
+          modifier = Modifier,
+        ) {
+          Text("Open Nav2Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
       SentryTraced("open_sample_fragment") {
         OutlinedButton(
           onClick = {

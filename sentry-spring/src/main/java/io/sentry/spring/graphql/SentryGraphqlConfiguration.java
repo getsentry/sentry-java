@@ -23,7 +23,7 @@ public class SentryGraphqlConfiguration {
   public SentryInstrumentation sentryInstrumentationWebMvc(
       final @NotNull ObjectProvider<SentryGraphqlInstrumentation.BeforeSpanCallback>
               beforeSpanCallback) {
-    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring5GrahQLWebMVC");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring5GraphQLWebMVC");
     return createInstrumentation(beforeSpanCallback, false);
   }
 
@@ -33,7 +33,7 @@ public class SentryGraphqlConfiguration {
   public SentryInstrumentation sentryInstrumentationWebflux(
       final @NotNull ObjectProvider<SentryGraphqlInstrumentation.BeforeSpanCallback>
               beforeSpanCallback) {
-    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring5GrahQLWebFlux");
+    SentryIntegrationPackageStorage.getInstance().addIntegration("Spring5GraphQLWebFlux");
     return createInstrumentation(beforeSpanCallback, true);
   }
 

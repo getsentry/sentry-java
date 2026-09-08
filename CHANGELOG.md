@@ -34,7 +34,42 @@
 
 ### Fixes
 
+- `SentryTraced` now checks for its owning transaction dynamically rather than once per app process. The latter caused `SentryTraced` spans to be dropped process-wide once the original transaction finished ([#6057](https://github.com/getsentry/sentry-java/pull/6057))
+- Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`) ([#6061](https://github.com/getsentry/sentry-java/pull/6061))
+
+## 8.55.0
+
+### Features
+
+- Add `Session.State.Unhandled` for unhandled errors that do not terminate the process ([#5919](https://github.com/getsentry/sentry-java/pull/5919))
+
+### Improvements
+
+- Emit a single `ui.compose` span per `SentryTraced` on initial composition instead of one on every recomposition, and set the origin on `ui.render` spans ([#6051](https://github.com/getsentry/sentry-java/pull/6051))
+- Move ANR profiling out of experimental ([#6042](https://github.com/getsentry/sentry-java/pull/6042))
+
+### Fixes
+
+- Prevent `SentryTraced` from producing dangling spans if recomposition is abandoned or drawing fails ([#6049](https://github.com/getsentry/sentry-java/pull/6049))
 - Keep dropped tombstone and ANR events dropped, instead of reporting the same app exit again at every app start ([#6002](https://github.com/getsentry/sentry-java/pull/6002))
+- Apply `Sentry.withScope` and `Sentry.withIsolationScope` data to events captured inside the callback when `globalHubMode` is enabled ([#6004](https://github.com/getsentry/sentry-java/pull/6004))
+  - `globalHubMode` is enabled by default on Android, where tags, extras, contexts and level set inside the callback were silently dropped
+  - Scopes that are explicitly made current, e.g. via `Sentry.setCurrentScopes` or the `SentryContext` coroutine integration, are now also honoured when `globalHubMode` is enabled
+  - `Sentry.pushScope`, `Sentry.pushIsolationScope` and `Sentry.popScope` remain no-ops when `globalHubMode` is enabled
+- Drop the `profiler_id` from transactions and spans when no Perfetto profile covers them, e.g. when Android's `ProfilingManager` rate limits the profiling request ([#6015](https://github.com/getsentry/sentry-java/pull/6015))
+- Prevent events from being dropped when feature flags are added while an event is being captured ([#5989](https://github.com/getsentry/sentry-java/pull/5989))
+- Report a consistent app start type across the app start measurement, `contexts.app` and the `app.start` span attributes ([#6006](https://github.com/getsentry/sentry-java/pull/6006))
+
+### Internal
+
+- Add `InternalSentrySdk.captureEnvelopeNonTerminating` for hybrid SDKs (e.g. Flutter) so unhandled exceptions that don't terminate the process no longer end the session as `crashed` ([#5921](https://github.com/getsentry/sentry-java/pull/5921))
+- Add `InternalSentrySdk.updateSessionForDroppedEventNonTerminating` so hybrid SDKs can still update the session when an error is dropped by sampling ([#5990](https://github.com/getsentry/sentry-java/pull/5990))
+
+### Dependencies
+
+- Bump Native SDK from v0.16.4 to v0.16.5 ([#6034](https://github.com/getsentry/sentry-java/pull/6034))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0165)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.4...0.16.5)
 
 ## 8.54.0
 

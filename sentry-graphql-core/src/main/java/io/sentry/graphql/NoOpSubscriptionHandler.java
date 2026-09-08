@@ -2,8 +2,10 @@ package io.sentry.graphql;
 
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import io.sentry.IScopes;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class NoOpSubscriptionHandler implements SentrySubscriptionHandler {
 
   private static final @NotNull NoOpSubscriptionHandler instance = new NoOpSubscriptionHandler();

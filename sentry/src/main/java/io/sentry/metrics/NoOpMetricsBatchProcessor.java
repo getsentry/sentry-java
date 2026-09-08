@@ -1,8 +1,10 @@
 package io.sentry.metrics;
 
 import io.sentry.SentryMetricsEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class NoOpMetricsBatchProcessor implements IMetricsBatchProcessor {
 
   private static final NoOpMetricsBatchProcessor instance = new NoOpMetricsBatchProcessor();
