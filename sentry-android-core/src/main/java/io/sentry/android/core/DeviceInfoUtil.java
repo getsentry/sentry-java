@@ -109,8 +109,7 @@ public final class DeviceInfoUtil {
     device.setBootTime(getBootTime());
     device.setTimezone(getTimeZone());
 
-    if (device.getId() == null
-        && options.getDataCollectionResolver().isUserInfoWithLegacyAlways()) {
+    if (device.getId() == null) {
       device.setId(getDeviceId());
     }
 
