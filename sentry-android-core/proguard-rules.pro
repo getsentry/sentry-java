@@ -25,9 +25,19 @@
 -dontwarn io.sentry.compose.gestures.ComposeGestureTargetLocator
 -dontwarn io.sentry.compose.viewhierarchy.ComposeViewHierarchyExporter
 
+# androidx.activity is a compileOnly dependency, used by the user feedback screenshot picker
+# its presence is checked at runtime before use
+-dontwarn androidx.activity.ComponentActivity
+-dontwarn androidx.activity.result.**
+
 # To ensure that stack traces is unambiguous
 # https://developer.android.com/studio/build/shrink-code#decode-stack-trace
 -keepattributes LineNumberTable,SourceFile
+
+# Preserve distinct runtime identities for custom Throwables. R8 horizontal class merging can
+# otherwise merge unrelated exception classes, causing the runtime type and retraced frames to
+# disagree. Unused Throwables may still be removed, and retained Throwables may still be obfuscated.
+-keep,allowshrinking,allowobfuscation class * extends java.lang.Throwable
 
 # Keep Classnames for integrations
 -keepnames class * implements io.sentry.Integration

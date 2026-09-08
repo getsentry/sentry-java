@@ -97,7 +97,7 @@ internal class CanvasStrategy(
               Bitmap.createBitmap(
                 config.recordingWidth,
                 config.recordingHeight,
-                Bitmap.Config.ARGB_8888,
+                Bitmap.Config.RGB_565,
               )
           }
         }

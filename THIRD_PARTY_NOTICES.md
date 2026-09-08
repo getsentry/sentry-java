@@ -136,13 +136,15 @@ limitations under the License.
 
 ## Square — Tape (Apache 2.0)
 
-**Source:** https://github.com/square/tape (Commit: 445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8)<br>
+**Source:** https://github.com/square/tape (Commit: 445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8, archived 2024-10-25)<br>
 **License:** Apache License 2.0<br>
 **Copyright:** Copyright (C) 2010 Square, Inc.
 
 ### Scope
 
 The Sentry Java SDK includes an adapted version of Square's Tape library, a file-based FIFO queue implementation used for reliable event storage. The code resides in the `io.sentry.cache.tape` package and includes `QueueFile`, `FileObjectQueue`, and `ObjectQueue`.
+
+Upstream was archived on 2024-10-25 and is no longer maintained. This copy is maintained in-tree and has diverged from the linked commit: it recovers from file corruption by recreating the file, bounds the queue to a maximum number of elements, and supports optional buffered writes flushed by an explicit `sync()`.
 
 ```
 Copyright (C) 2010 Square, Inc.

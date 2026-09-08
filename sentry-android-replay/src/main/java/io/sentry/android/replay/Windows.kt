@@ -83,14 +83,13 @@ internal object WindowSpy {
       }
     }
 
-  fun pullWindow(maybeDecorView: View): Window? =
-    decorViewClass?.let { decorViewClass ->
-      if (decorViewClass.isInstance(maybeDecorView)) {
-        windowField?.let { windowField -> windowField[maybeDecorView] as Window }
-      } else {
-        null
-      }
+  fun pullWindow(maybeDecorView: View): Window? = decorViewClass?.let { decorViewClass ->
+    if (decorViewClass.isInstance(maybeDecorView)) {
+      windowField?.let { windowField -> windowField[maybeDecorView] as Window }
+    } else {
+      null
     }
+  }
 }
 
 /**

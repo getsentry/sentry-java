@@ -286,11 +286,10 @@ class SentryFeignClientTest {
 
   @Test
   fun `customizer modifies span`() {
-    val sut =
-      fixture.getSut { span, _, _ ->
-        span.description = "overwritten description"
-        span
-      }
+    val sut = fixture.getSut { span, _, _ ->
+      span.description = "overwritten description"
+      span
+    }
     sut.getOk()
     assertEquals(1, fixture.sentryTracer.children.size)
     val httpClientSpan = fixture.sentryTracer.children.first()
@@ -299,13 +298,12 @@ class SentryFeignClientTest {
 
   @Test
   fun `customizer receives request and response`() {
-    val sut =
-      fixture.getSut { span, request, response ->
-        assertEquals(request.url(), request.url())
-        assertEquals(request.httpMethod().name, request.httpMethod().name)
-        assertNotNull(response) { assertEquals(201, it.status()) }
-        span
-      }
+    val sut = fixture.getSut { span, request, response ->
+      assertEquals(request.url(), request.url())
+      assertEquals(request.httpMethod().name, request.httpMethod().name)
+      assertNotNull(response) { assertEquals(201, it.status()) }
+      span
+    }
     sut.getOk()
   }
 

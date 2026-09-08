@@ -31,11 +31,10 @@ class SentryLogcatAdapterTest {
         Bundle().apply { putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123") }
       val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
       initForTest(mockContext) {
-        it.beforeBreadcrumb =
-          SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
-            breadcrumbs.add(breadcrumb)
-            breadcrumb
-          }
+        it.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
+          breadcrumbs.add(breadcrumb)
+          breadcrumb
+        }
         it.logs.isEnabled = true
         it.logs.beforeSend =
           SentryOptions.Logs.BeforeSendLogCallback { logEvent ->

@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 public class ReplayCache(private val options: SentryOptions, private val replayId: SentryId) :
   Closeable {
   private val isClosed = AtomicBoolean(false)
-  private val encoderLock = AutoClosableReentrantLock()
   private val lock = AutoClosableReentrantLock()
   private val framesLock = AutoClosableReentrantLock()
   private var encoder: SimpleVideoEncoder? = null
@@ -151,19 +150,26 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     }
 
     encoder =
-      encoderLock.acquire().use {
-        SimpleVideoEncoder(
-            options,
-            MuxerConfig(
-              file = videoFile,
-              recordingHeight = height,
-              recordingWidth = width,
-              frameRate = frameRate,
-              bitRate = bitRate,
-            ),
-          )
-          .also { it.start() }
-      }
+      SimpleVideoEncoder(
+          options,
+          MuxerConfig(
+            file = videoFile,
+            recordingHeight = height,
+            recordingWidth = width,
+            frameRate = frameRate,
+            bitRate = bitRate,
+          ),
+        )
+        .apply {
+          // the constructor already opened the MediaMuxer, so release it if start() fails,
+          // otherwise the encoder is never assigned and its resources leak (CloseGuard warning)
+          try {
+            start()
+          } catch (t: Throwable) {
+            release()
+            throw t
+          }
+        }
 
     val step = 1000 / frameRate.toLong()
     var frameCount = 0
@@ -199,20 +205,15 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
 
     if (frameCount == 0) {
       options.logger.log(DEBUG, "Generated a video with no frames, not capturing a replay segment")
-      encoderLock.acquire().use {
-        encoder?.release()
-        encoder = null
-      }
+      encoder?.release()
+      encoder = null
       deleteFile(videoFile)
       return null
     }
 
-    var videoDuration: Long
-    encoderLock.acquire().use {
-      encoder?.release()
-      videoDuration = encoder?.duration ?: 0
-      encoder = null
-    }
+    encoder?.release()
+    val videoDuration = encoder?.duration ?: 0
+    encoder = null
 
     rotate(until = (from + duration))
 
@@ -225,7 +226,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     }
     return try {
       val bitmap = BitmapFactory.decodeFile(frame.screenshot.absolutePath)
-      encoderLock.acquire().use { encoder?.encode(bitmap) }
+      encoder?.encode(bitmap)
       bitmap.recycle()
       true
     } catch (e: Throwable) {
@@ -271,11 +272,12 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
   }
 
   override fun close() {
-    encoderLock.acquire().use {
+    try {
       encoder?.release()
       encoder = null
+    } finally {
+      isClosed.set(true)
     }
-    isClosed.set(true)
   }
 
   // TODO: it's awful, choose a better serialization format
@@ -317,6 +319,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     internal const val SEGMENT_KEY_REPLAY_SCREEN_AT_START = "replay.screen-at-start"
     internal const val SEGMENT_KEY_REPLAY_RECORDING = "replay.recording"
     internal const val SEGMENT_KEY_ID = "segment.id"
+    internal const val SEGMENT_KEY_FLUSHED = "replay.flushed"
 
     fun makeReplayCacheDir(options: SentryOptions, replayId: SentryId): File? =
       if (options.cacheDirPath.isNullOrEmpty()) {
@@ -415,8 +418,11 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
       }
 
       cache.frames.sortBy { it.timestamp }
-      // TODO: this should be removed when we start sending buffered segments on next launch
-      val normalizedSegmentId = if (replayType == SESSION) segmentId else 0
+      val wasFlushed = lastSegment[SEGMENT_KEY_FLUSHED]?.toBooleanStrictOrNull() == true
+      // In buffer mode, if the buffer was never flushed (no error triggered captureReplay),
+      // no segments were ever sent, so we normalize to 0. After a flush + conversion to
+      // session mode, the persisted segmentId is the real sequence number.
+      val normalizedSegmentId = if (replayType == SESSION || wasFlushed) segmentId else 0
       val normalizedTimestamp =
         if (replayType == SESSION) {
           segmentTimestamp

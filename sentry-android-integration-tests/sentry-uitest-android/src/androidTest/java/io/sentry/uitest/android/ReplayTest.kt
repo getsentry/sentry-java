@@ -70,11 +70,10 @@ class ReplayTest : BaseUiTest() {
     initSentry {
       it.sessionReplay.sessionSampleRate = 1.0
 
-      it.beforeSendReplay =
-        SentryOptions.BeforeSendReplayCallback { event, _ ->
-          sent.set(true)
-          event
-        }
+      it.beforeSendReplay = SentryOptions.BeforeSendReplayCallback { event, _ ->
+        sent.set(true)
+        event
+      }
     }
 
     // wait until first segment is being sent

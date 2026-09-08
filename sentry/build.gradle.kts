@@ -8,7 +8,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  alias(libs.plugins.animalsniffer)
+  id("io.sentry.animalsniffer.android")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -32,26 +32,16 @@ dependencies {
   testImplementation(libs.msgpack)
   testImplementation(libs.okio)
   testImplementation(projects.sentryTestSupport)
-
-  val gummyBearsModule = libs.gummy.bears.api21.get().module
-  signature("${gummyBearsModule}:${libs.versions.gummyBears.get()}@signature")
 }
 
-animalsniffer {
-  ignore =
-    listOf(
-      // We manually check on Android if it's available (API 26+).
-      "java.time.Instant"
-    )
-}
-
-tasks.animalsnifferMain {
+sentryAnimalSniffer {
+  // We manually check on Android if it's available (API 26+).
+  ignoreClasses("java.time.Instant")
   // Uses java.util.function.Supplier, but must be manually invoked.
-  exclude("**/io/sentry/SentryWrapper.class")
+  mainExcludes("**/io/sentry/SentryWrapper.class")
 }
 
 tasks {
-  check { dependsOn(animalsnifferMain) }
   test {
     // java.lang open is needed by tests that reflectively rewrite Class names; it was previously
     // provided implicitly by the jacoco test agent, which has been removed.

@@ -783,6 +783,17 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `when options are initialized, enableLegacyProfiling is set to true by default`() {
+    assertTrue(SentryOptions().isEnableLegacyProfiling)
+  }
+
+  @Test
+  fun `when setEnableLegacyProfiling is called, value is set`() {
+    val options = SentryOptions().apply { isEnableLegacyProfiling = false }
+    assertFalse(options.isEnableLegacyProfiling)
+  }
+
+  @Test
   fun `when options are initialized, profilingTracesHz is set to 101 by default`() {
     assertEquals(101, SentryOptions().profilingTracesHz)
   }
@@ -934,6 +945,18 @@ class SentryOptionsTest {
       }
     options.feedbackOptions.formHandler.showForm(mock(), mock())
     verify(logger).log(eq(SentryLevel.WARNING), eq("showForm() can only be called in Android."))
+  }
+
+  @Test
+  fun `default shake controller logs a warning`() {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions.empty().apply {
+        setLogger(logger)
+        isDebug = true
+      }
+    options.feedbackOptions.shakeController.enableOnShake()
+    verify(logger).log(eq(SentryLevel.WARNING), eq("Shake to report is only supported on Android."))
   }
 
   @Test

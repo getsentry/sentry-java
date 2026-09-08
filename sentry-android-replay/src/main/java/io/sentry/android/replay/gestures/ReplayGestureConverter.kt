@@ -65,11 +65,10 @@ internal class ReplayGestureConverter(private val dateProvider: ICurrentDateProv
               moveEvents +=
                 RRWebInteractionMoveEvent().apply {
                   this.timestamp = now
-                  this.positions =
-                    positions.map { pos ->
-                      pos.timeOffset -= totalOffset
-                      pos
-                    }
+                  this.positions = positions.map { pos ->
+                    pos.timeOffset -= totalOffset
+                    pos
+                  }
                   this.pointerId = pointerId
                 }
               currentPositions[pointerId]!!.clear()

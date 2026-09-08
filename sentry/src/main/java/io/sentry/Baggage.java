@@ -451,6 +451,19 @@ public final class Baggage {
     set(DSCKeys.REPLAY_ID, replayId);
   }
 
+  /**
+   * Sets replay_id on the baggage bypassing the freeze check. In buffer mode the replay_id is
+   * unknown when the baggage is frozen, so it must be injected after {@link
+   * ReplayController#captureReplay} sets it on scope. This mirrors the JS SDK's <a
+   * href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/util/resetReplayIdOnDynamicSamplingContext.ts">setReplayIdOnDynamicSamplingContext</a>.
+   */
+  @ApiStatus.Internal
+  public void forceSetReplayId(final @NotNull SentryId replayId) {
+    if (!SentryId.EMPTY_ID.equals(replayId)) {
+      keyValues.put(DSCKeys.REPLAY_ID, replayId.toString());
+    }
+  }
+
   @ApiStatus.Internal
   public @Nullable String getOrgId() {
     return get(DSCKeys.ORG_ID);

@@ -2,6 +2,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
   `java-library`
+  id("io.sentry.animalsniffer")
   id("io.sentry.javadoc")
   alias(libs.plugins.shadow)
 }
