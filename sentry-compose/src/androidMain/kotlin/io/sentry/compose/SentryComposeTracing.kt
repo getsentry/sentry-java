@@ -111,6 +111,12 @@ public fun SentryTraced(
   }
 }
 
+/**
+ * Creates a [OP_COMPOSITION_SPAN] under the [ownerSpan]'s composition bucket.
+ *
+ * If the owner doesn't yet have a composition bucket, this method creates one for its own use and
+ * for use by other `SentryTraced` composables in the same owner group.
+ */
 private fun recordCompositionSpan(
   ownerSpan: ISpan,
   tag: String,
@@ -125,6 +131,12 @@ private fun recordCompositionSpan(
   }
 }
 
+/**
+ * Creates a [OP_RENDER_SPAN] under the [ownerSpan]'s composition bucket.
+ *
+ * If the owner doesn't yet have a render bucket, this method creates one for its own use and for
+ * use by other `SentryTraced` composables in the same owner group.
+ */
 private fun recordRenderSpan(
   ownerSpan: ISpan,
   tag: String,
