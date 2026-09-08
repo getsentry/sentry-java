@@ -49,12 +49,7 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     final @NotNull UrlUtils.UrlDetails urlDetails =
         UrlUtils.parse(request.url().toString(), scopes.getOptions().getDataCollectionResolver());
     final @NotNull String method = request.method().name();
-    span.setDescription(
-        method
-            + " "
-            + (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()
-                ? urlDetails.getUrlOrFallback()
-                : request.url()));
+    span.setDescription(method + " " + urlDetails.getUrlOrFallback());
     span.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT));
     if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
       urlDetails.applyToSpan(span);

@@ -38,7 +38,7 @@ internal object SentryOkHttpUtils {
     val sentryRequest =
       io.sentry.protocol.Request().apply {
         urlDetails.applyToRequest(this)
-        cookies = getRequestCookies(scopes, request.headers["Cookie"])
+        cookies = CookieUtils.filterCookies(request.headers["Cookie"], scopes.options)
         method = request.method
         headers = getRequestHeaders(scopes, request.headers)
 
@@ -47,7 +47,7 @@ internal object SentryOkHttpUtils {
 
     val sentryResponse =
       io.sentry.protocol.Response().apply {
-        cookies = getResponseCookies(scopes, response.headers["Set-Cookie"])
+        cookies = CookieUtils.filterSetCookie(response.headers["Set-Cookie"], scopes.options)
         headers = getResponseHeaders(scopes, response.headers)
         statusCode = response.code
 
@@ -65,28 +65,6 @@ internal object SentryOkHttpUtils {
       fn.invoke(this)
     }
   }
-
-  private fun getRequestCookies(scopes: IScopes, cookies: String?): String? =
-    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      CookieUtils.filterCookies(
-        cookies,
-        scopes.options.dataCollectionResolver.cookies,
-        null,
-      )
-    } else if (scopes.options.isSendDefaultPii) {
-      cookies
-    } else {
-      null
-    }
-
-  private fun getResponseCookies(scopes: IScopes, cookies: String?): String? =
-    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
-      CookieUtils.filterSetCookie(cookies, scopes.options.dataCollectionResolver.cookies)
-    } else if (scopes.options.isSendDefaultPii) {
-      cookies
-    } else {
-      null
-    }
 
   private fun getRequestHeaders(
     scopes: IScopes,
