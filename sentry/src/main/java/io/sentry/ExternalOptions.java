@@ -305,6 +305,11 @@ public final class ExternalOptions {
       dataCollection.setDatabaseQueryData(databaseQueryData);
     }
 
+    final Boolean filePaths = propertiesProvider.getBooleanProperty("data-collection.file-paths");
+    if (filePaths != null) {
+      dataCollection.setFilePaths(filePaths);
+    }
+
     return dataCollection.isExplicitlyConfigured() ? dataCollection : null;
   }
 

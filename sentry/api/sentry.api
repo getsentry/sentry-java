@@ -390,6 +390,7 @@ public final class io/sentry/DataCollection {
 	public fun <init> (Z)V
 	public fun getCookies ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun getDatabaseQueryData ()Ljava/lang/Boolean;
+	public fun getFilePaths ()Ljava/lang/Boolean;
 	public fun getGraphql ()Lio/sentry/DataCollection$Graphql;
 	public fun getHttpBodies ()Ljava/util/Set;
 	public fun getHttpHeaders ()Lio/sentry/DataCollection$HttpHeaders;
@@ -398,6 +399,7 @@ public final class io/sentry/DataCollection {
 	public fun isExplicitlyConfigured ()Z
 	public fun setCookies (Lio/sentry/KeyValueCollectionBehavior;)V
 	public fun setDatabaseQueryData (Z)V
+	public fun setFilePaths (Z)V
 	public fun setHttpBodies (Ljava/util/Set;)V
 	public fun setUrlQueryParams (Lio/sentry/KeyValueCollectionBehavior;)V
 	public fun setUserInfo (Z)V
@@ -426,6 +428,7 @@ public final class io/sentry/DataCollectionResolver {
 	public fun getUrlQueryParams ()Lio/sentry/KeyValueCollectionBehavior;
 	public fun isDataCollectionConfigured ()Z
 	public fun isDatabaseQueryData ()Z
+	public fun isFilePaths ()Z
 	public fun isGraphqlDocument ()Z
 	public fun isGraphqlDocumentWithLegacyAlways ()Z
 	public fun isGraphqlDocumentWithLegacyBodyGate ()Z

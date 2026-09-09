@@ -81,6 +81,36 @@ class SentryFileReaderTest {
   }
 
   @Test
+  fun `configured file paths false overrides sendDefaultPii true`() {
+    val reader =
+      fixture.getSut(tmpFile) {
+        it.isSendDefaultPii = true
+        it.dataCollection.setFilePaths(false)
+      }
+    reader.readText()
+    reader.close()
+
+    val fileIOSpan = fixture.sentryTracer.children.first()
+    assertEquals(fileIOSpan.spanContext.description, "***.txt (4 B)")
+    assertNull(fileIOSpan.data["file.path"])
+  }
+
+  @Test
+  fun `configured file paths true overrides sendDefaultPii false`() {
+    val reader =
+      fixture.getSut(tmpFile) {
+        it.isSendDefaultPii = false
+        it.dataCollection.setFilePaths(true)
+      }
+    reader.readText()
+    reader.close()
+
+    val fileIOSpan = fixture.sentryTracer.children.first()
+    assertEquals(fileIOSpan.spanContext.description, "test.txt (4 B)")
+    assertNotNull(fileIOSpan.data["file.path"])
+  }
+
+  @Test
   fun `captures only file extension in description when isSendDefaultPii is false`() {
     val reader = fixture.getSut(tmpFile) { it.isSendDefaultPii = false }
     reader.readText()

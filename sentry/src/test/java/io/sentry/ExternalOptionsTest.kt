@@ -37,6 +37,7 @@ class ExternalOptionsTest {
         "data-collection.graphql.document=false",
         "data-collection.graphql.variables=true",
         "data-collection.database-query-data=false",
+        "data-collection.file-paths=false",
       )
     ) { options ->
       val dataCollection = options.dataCollection
@@ -55,6 +56,7 @@ class ExternalOptionsTest {
       assertThat(dataCollection.graphql.document).isFalse()
       assertThat(dataCollection.graphql.variables).isTrue()
       assertThat(dataCollection.databaseQueryData).isFalse()
+      assertThat(dataCollection.filePaths).isFalse()
     }
   }
 
@@ -88,12 +90,14 @@ class ExternalOptionsTest {
         "data-collection.graphql.document=invalid",
         "data-collection.graphql.variables=invalid",
         "data-collection.database-query-data=invalid",
+        "data-collection.file-paths=invalid",
       )
     ) { options ->
       assertThat(options.dataCollection!!.userInfo).isFalse()
       assertThat(options.dataCollection!!.graphql.document).isFalse()
       assertThat(options.dataCollection!!.graphql.variables).isFalse()
       assertThat(options.dataCollection!!.databaseQueryData).isFalse()
+      assertThat(options.dataCollection!!.filePaths).isFalse()
     }
   }
 

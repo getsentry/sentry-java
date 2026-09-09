@@ -126,6 +126,7 @@ final class ManifestMetadataReader {
       "io.sentry.data-collection.graphql.variables";
   static final String DATA_COLLECTION_DATABASE_QUERY_DATA =
       "io.sentry.data-collection.database-query-data";
+  static final String DATA_COLLECTION_FILE_PATHS = "io.sentry.data-collection.file-paths";
 
   static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
 
@@ -886,6 +887,10 @@ final class ManifestMetadataReader {
           readBool(metadata, logger, DATA_COLLECTION_DATABASE_QUERY_DATA, false));
     }
 
+    if (containsKey(metadata, DATA_COLLECTION_FILE_PATHS)) {
+      dataCollection.setFilePaths(readBool(metadata, logger, DATA_COLLECTION_FILE_PATHS, false));
+    }
+
     return dataCollection.isExplicitlyConfigured() ? dataCollection : null;
   }
 
@@ -917,6 +922,9 @@ final class ManifestMetadataReader {
     }
     if (source.getDatabaseQueryData() != null) {
       target.setDatabaseQueryData(source.getDatabaseQueryData());
+    }
+    if (source.getFilePaths() != null) {
+      target.setFilePaths(source.getFilePaths());
     }
   }
 

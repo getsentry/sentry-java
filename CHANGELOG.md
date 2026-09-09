@@ -20,6 +20,7 @@
   | `graphql.document` | `true` | Collects GraphQL documents. |
   | `graphql.variables` | `true` | Collects GraphQL variables. |
   | `databaseQueryData` | `true` | Allows collection of associated query data, such as bound parameters, write payloads, and results, where supported. Sanitized query statements and structural database metadata remain available. |
+  | `filePaths` | `true` | Allows file-system instrumentation to collect file and directory paths. File extensions and byte counts remain available when disabled. |
 
   Cookies, HTTP headers, and URL query parameters support three modes:
 
@@ -29,7 +30,7 @@
 
   Matching is case-insensitive and partial. The built-in sensitive deny-list contains `auth`, `token`, `secret`, `password`, `passwd`, `pwd`, `key`, `jwt`, `bearer`, `sso`, `saml`, `csrf`, `xsrf`, `credentials`, `session`, `sid`, and `identity`. Filtered values are replaced with `"[Filtered]"`. Custom deny-list terms extend rather than replace this list.
 
-  Configure all HTTP body types, a custom cookie deny-list, a request-header allow-list, and disable URL query parameter collection in an options callback:
+  Configure all HTTP body types, a custom cookie deny-list, a request-header allow-list, and disable URL query parameter and file path collection in an options callback:
 
   ```java
   Sentry.init(
@@ -55,6 +56,7 @@
         options
             .getDataCollection()
             .setUrlQueryParams(KeyValueCollectionBehavior.off());
+        options.getDataCollection().setFilePaths(false);
       });
   ```
 
@@ -67,6 +69,7 @@
   data-collection.http-headers.request.mode=allow_list
   data-collection.http-headers.request.terms=content-type,x-request-id
   data-collection.url-query-params.mode=off
+  data-collection.file-paths=false
   ```
 
   Configure them with Spring Boot properties:
@@ -78,6 +81,7 @@
   sentry.data-collection.http-headers.request.mode=allow-list
   sentry.data-collection.http-headers.request.terms=content-type,x-request-id
   sentry.data-collection.url-query-params.mode=off
+  sentry.data-collection.file-paths=false
   ```
 
   Configure them in `AndroidManifest.xml`:
@@ -101,6 +105,9 @@
   <meta-data
       android:name="io.sentry.data-collection.url-query-params.mode"
       android:value="off" />
+  <meta-data
+      android:name="io.sentry.data-collection.file-paths"
+      android:value="false" />
   ```
 
   See the [Data Collection documentation](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection) for all configuration keys, supported integrations, and migration guidance.

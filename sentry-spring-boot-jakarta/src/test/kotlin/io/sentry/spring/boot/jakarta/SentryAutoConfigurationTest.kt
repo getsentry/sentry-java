@@ -316,7 +316,7 @@ class SentryAutoConfigurationTest {
   }
 
   @Test
-  fun `data collection key value properties are applied to SentryOptions`() {
+  fun `data collection properties are applied to SentryOptions`() {
     contextRunner
       .withPropertyValues(
         "sentry.dsn=http://key@localhost/proj",
@@ -327,6 +327,7 @@ class SentryAutoConfigurationTest {
         "sentry.data-collection.http-headers.request.terms=forwarded,-ip",
         "sentry.data-collection.http-headers.response.mode=allow-list",
         "sentry.data-collection.http-headers.response.terms=content-type,x-request-id",
+        "sentry.data-collection.file-paths=false",
       )
       .run {
         val dataCollection = it.getBean(SentryProperties::class.java).dataCollection
@@ -341,6 +342,7 @@ class SentryAutoConfigurationTest {
           .isEqualTo(KeyValueCollectionBehavior.Mode.ALLOW_LIST)
         assertThat(dataCollection.httpHeaders.response!!.terms)
           .containsExactly("content-type", "x-request-id")
+        assertThat(dataCollection.filePaths).isFalse()
       }
   }
 

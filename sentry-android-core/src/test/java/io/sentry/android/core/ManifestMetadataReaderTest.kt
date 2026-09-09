@@ -1485,6 +1485,7 @@ class ManifestMetadataReaderTest {
         ManifestMetadataReader.DATA_COLLECTION_GRAPHQL_DOCUMENT to false,
         ManifestMetadataReader.DATA_COLLECTION_GRAPHQL_VARIABLES to true,
         ManifestMetadataReader.DATA_COLLECTION_DATABASE_QUERY_DATA to false,
+        ManifestMetadataReader.DATA_COLLECTION_FILE_PATHS to false,
       )
     val context = fixture.getContext(metaData = bundle)
 
@@ -1504,6 +1505,7 @@ class ManifestMetadataReaderTest {
     assertThat(dataCollection.graphql.document).isFalse()
     assertThat(dataCollection.graphql.variables).isTrue()
     assertThat(dataCollection.databaseQueryData).isFalse()
+    assertThat(dataCollection.filePaths).isFalse()
   }
 
   @Test
@@ -1519,6 +1521,7 @@ class ManifestMetadataReaderTest {
         graphql.setDocument(true)
         graphql.setVariables(false)
         setDatabaseQueryData(true)
+        setFilePaths(true)
       }
     val bundle =
       bundleOf(
@@ -1543,6 +1546,7 @@ class ManifestMetadataReaderTest {
     assertThat(dataCollection.graphql.document).isTrue()
     assertThat(dataCollection.graphql.variables).isFalse()
     assertThat(dataCollection.databaseQueryData).isTrue()
+    assertThat(dataCollection.filePaths).isTrue()
   }
 
   @Test
