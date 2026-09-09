@@ -17,5 +17,11 @@ class ThirdActivityFragment : AppCompatActivity(R.layout.activity_third_fragment
         add<ThirdFragment>(R.id.fragment_container_view, args = bundle)
       }
     }
+    supportActionBar?.setDisplayHomeAsUpEnabled(true)
+  }
+
+  override fun onSupportNavigateUp(): Boolean {
+    onBackPressedDispatcher.onBackPressed()
+    return true
   }
 }

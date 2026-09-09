@@ -20,11 +20,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.mutableIntStateOf
@@ -44,29 +51,42 @@ class FrameDataForSpansActivity : ComponentActivity() {
   private val model = ViewModel()
   private var txn: ITransaction? = null
 
+  @OptIn(ExperimentalMaterial3Api::class)
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContent {
       MaterialTheme {
-        Surface {
-          val infiniteTransition = rememberInfiniteTransition(label = "infiniteTransition")
-          val progress =
-            infiniteTransition.animateFloat(
-              label = "progress",
-              initialValue = 0f,
-              targetValue = 1f,
-              animationSpec =
-                infiniteRepeatable(animation = tween(1000), repeatMode = RepeatMode.Reverse),
+        Scaffold(
+          topBar = {
+            TopAppBar(
+              title = { Text("Frame Data for Spans") },
+              navigationIcon = {
+                IconButton(onClick = { onBackPressedDispatcher.onBackPressed() }) {
+                  Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
+              },
             )
-          Column(modifier = Modifier.padding(24.dp)) {
-            Text(text = "Frame Data for Spans", style = MaterialTheme.typography.headlineMedium)
-            LinearProgressIndicator(progress = progress.value, modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.size(24.dp))
-            Text(text = "Tap to trigger a new frame render")
-            FrameControls(model)
-            Spacer(modifier = Modifier.size(24.dp))
-            Text(text = "Span Control")
-            SpanControls(model)
+          }
+        ) { innerPadding ->
+          Surface(modifier = Modifier.padding(innerPadding)) {
+            val infiniteTransition = rememberInfiniteTransition(label = "infiniteTransition")
+            val progress =
+              infiniteTransition.animateFloat(
+                label = "progress",
+                initialValue = 0f,
+                targetValue = 1f,
+                animationSpec =
+                  infiniteRepeatable(animation = tween(1000), repeatMode = RepeatMode.Reverse),
+              )
+            Column(modifier = Modifier.padding(24.dp)) {
+              LinearProgressIndicator(progress = progress.value, modifier = Modifier.fillMaxWidth())
+              Spacer(modifier = Modifier.size(24.dp))
+              Text(text = "Tap to trigger a new frame render")
+              FrameControls(model)
+              Spacer(modifier = Modifier.size(24.dp))
+              Text(text = "Span Control")
+              SpanControls(model)
+            }
           }
         }
       }

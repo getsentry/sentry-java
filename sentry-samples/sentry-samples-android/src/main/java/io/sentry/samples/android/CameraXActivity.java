@@ -42,6 +42,9 @@ public class CameraXActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     binding = ActivityCameraxBinding.inflate(getLayoutInflater());
     setContentView(binding.getRoot());
+    if (getSupportActionBar() != null) {
+      getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
 
     previewView = binding.previewView;
 
@@ -55,6 +58,12 @@ public class CameraXActivity extends AppCompatActivity {
     binding.captureButton.setOnClickListener(view -> takePhoto());
     binding.switchCameraButton.setOnClickListener(view -> switchCamera());
     binding.backButton.setOnClickListener(view -> finish());
+  }
+
+  @Override
+  public boolean onSupportNavigateUp() {
+    getOnBackPressedDispatcher().onBackPressed();
+    return true;
   }
 
   private void startCamera() {

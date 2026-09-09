@@ -37,6 +37,12 @@ class PermissionsActivity : AppCompatActivity() {
     }
 
     setContentView(binding.root)
+    supportActionBar?.setDisplayHomeAsUpEnabled(true)
     Sentry.reportFullyDisplayed()
+  }
+
+  override fun onSupportNavigateUp(): Boolean {
+    onBackPressedDispatcher.onBackPressed()
+    return true
   }
 }
