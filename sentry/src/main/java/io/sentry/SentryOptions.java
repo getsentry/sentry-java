@@ -21,6 +21,8 @@ import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
 import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.time.JavaMonotonicTicker;
+import io.sentry.time.MonotonicTicker;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -3057,6 +3059,18 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
     this.dateProvider.setValue(dateProvider);
+  }
+
+  /**
+   * Returns the ticker used to measure elapsed time, such as rate-limit windows, cache expiry and
+   * ANR thresholds.
+   *
+   * <p>Android overrides this with a {@code SystemClock.elapsedRealtimeNanos()}-backed ticker,
+   * which this module cannot reference. On the JVM there is no suspend state to account for.
+   */
+  @ApiStatus.Internal
+  public @NotNull MonotonicTicker getMonotonicTicker() {
+    return JavaMonotonicTicker.getInstance();
   }
 
   /**
