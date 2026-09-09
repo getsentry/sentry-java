@@ -18,6 +18,8 @@ public interface IScopeObserver {
 
   void addBreadcrumb(@NotNull Breadcrumb crumb);
 
+  void clearBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs);
+  @Deprecated
   void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs);
 
   void setTag(@NotNull String key, @NotNull String value);

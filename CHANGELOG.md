@@ -5,6 +5,7 @@
 ### Fixes
 
 - Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`)
+- Fix misleading IScopeObserver.setBreadcrumbs method name to clearBreadcrumbs ([#5844](https://github.com/getsentry/sentry-java/pull/6077))
 
 ## 8.55.0
 
