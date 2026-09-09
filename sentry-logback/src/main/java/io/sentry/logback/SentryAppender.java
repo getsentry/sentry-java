@@ -53,6 +53,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private @NotNull Level minimumLevel = Level.INFO;
   private @Nullable Encoder<ILoggingEvent> encoder;
+  private boolean includeUnencodedMessage = false;
 
   static {
     SentryIntegrationPackageStorage.getInstance()
@@ -118,7 +119,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final Message message = new Message();
 
     // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
-    if (encoder == null || ScopesAdapter.getInstance().getOptions().isSendDefaultPii()) {
+    if (shouldIncludeUnencodedMessage()) {
       message.setMessage(loggingEvent.getMessage());
       message.setParams(toParams(loggingEvent.getArgumentArray()));
     }
@@ -177,7 +178,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final @NotNull String formattedMessage = formatted(loggingEvent);
 
     // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
-    if (encoder == null || ScopesAdapter.getInstance().getOptions().isSendDefaultPii()) {
+    if (shouldIncludeUnencodedMessage()) {
       final @Nullable String nonFormattedMessage = loggingEvent.getMessage();
       if (nonFormattedMessage != null && !formattedMessage.equals(nonFormattedMessage)) {
         attributes.add(
@@ -195,6 +196,12 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     params.setOrigin("auto.log.logback");
 
     Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
+  }
+
+  private boolean shouldIncludeUnencodedMessage() {
+    return encoder == null
+        || includeUnencodedMessage
+        || ScopesAdapter.getInstance().getOptions().isSendDefaultPii();
   }
 
   private String formatted(@NotNull ILoggingEvent loggingEvent) {
@@ -330,5 +337,22 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   public void setEncoder(Encoder<ILoggingEvent> encoder) {
     this.encoder = encoder;
+  }
+
+  /**
+   * Whether to include the original message template and parameters when an encoder is configured.
+   */
+  public boolean isIncludeUnencodedMessage() {
+    return includeUnencodedMessage;
+  }
+
+  /**
+   * Sets whether to include the original message template and parameters when an encoder is
+   * configured.
+   *
+   * @param includeUnencodedMessage whether to include the original message and parameters
+   */
+  public void setIncludeUnencodedMessage(final boolean includeUnencodedMessage) {
+    this.includeUnencodedMessage = includeUnencodedMessage;
   }
 }

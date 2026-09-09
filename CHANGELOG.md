@@ -7,6 +7,7 @@
 - Add `dataCollection`, a fine-grained replacement for `sendDefaultPii`, for controlling data collected automatically by SDK integrations ([#5759](https://github.com/getsentry/sentry-java/pull/5759))
   - `sendDefaultPii` remains supported for backwards compatibility. When `dataCollection` is not configured, the SDK preserves the existing `sendDefaultPii` behavior.
   - Configuring any `dataCollection` option makes it the source of truth. `sendDefaultPii` is then ignored, and omitted `dataCollection` options use the defaults below.
+  - The Logback appender is a compatibility exception. When an encoder is configured, `sendDefaultPii=true` continues to include the original message template and parameters. To opt in independently of `sendDefaultPii`, set `<includeUnencodedMessage>true</includeUnencodedMessage>` on the Sentry appender in `logback.xml` or `logback-spring.xml`.
   - Data explicitly supplied through APIs such as `Sentry.setUser`, scopes, event processors, or `beforeSend` is not affected.
 
   | Option | Default | Behavior |

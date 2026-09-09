@@ -10,6 +10,7 @@ import ch.qos.logback.classic.spi.ThrowableProxy
 import ch.qos.logback.core.encoder.Encoder
 import ch.qos.logback.core.encoder.EncoderBase
 import ch.qos.logback.core.status.Status
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ITransportFactory
 import io.sentry.InitPriority
 import io.sentry.Sentry
@@ -53,6 +54,7 @@ class SentryAppenderTest {
     minimumLevel: Level? = null,
     contextTags: List<String>? = null,
     encoder: Encoder<ILoggingEvent>? = null,
+    includeUnencodedMessage: Boolean = false,
     sendDefaultPii: Boolean = false,
     enableLogs: Boolean = false,
     options: SentryOptions = SentryOptions(),
@@ -85,6 +87,7 @@ class SentryAppenderTest {
       appender.setTransportFactory(transportFactory)
       encoder?.context = loggerContext
       appender.setEncoder(encoder)
+      appender.setIncludeUnencodedMessage(includeUnencodedMessage)
       val rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME)
       rootLogger.level = Level.TRACE
       rootLogger.addAppender(appender)
@@ -200,6 +203,91 @@ class SentryAppenderTest {
             assertNull(message.params)
           }
           assertEquals("io.sentry.logback.SentryAppenderTest", event.logger)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `includes unencoded message and params if explicitly enabled`() {
+    val encoder = PatternLayoutEncoder()
+    encoder.pattern = "encoded %msg"
+    fixture =
+      Fixture(
+        minimumEventLevel = Level.DEBUG,
+        encoder = encoder,
+        includeUnencodedMessage = true,
+      )
+    fixture.logger.info("testing encoding {}", "param1")
+
+    verify(fixture.transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.message?.formatted).isEqualTo("encoded testing encoding param1")
+          assertThat(event.message?.message).isEqualTo("testing encoding {}")
+          assertThat(event.message?.params).containsExactly("param1")
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `data collection does not include unencoded message`() {
+    val encoder = PatternLayoutEncoder()
+    encoder.pattern = "encoded %msg"
+    val options = SentryOptions().apply { dataCollection.setFilePaths(false) }
+    fixture = Fixture(minimumEventLevel = Level.DEBUG, encoder = encoder, options = options)
+    fixture.logger.info("testing encoding {}", "param1")
+
+    verify(fixture.transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.message?.formatted).isEqualTo("encoded testing encoding param1")
+          assertThat(event.message?.message).isNull()
+          assertThat(event.message?.params).isNull()
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `sendDefaultPii includes unencoded message when data collection is configured`() {
+    val encoder = PatternLayoutEncoder()
+    encoder.pattern = "encoded %msg"
+    val options = SentryOptions().apply { dataCollection.setFilePaths(false) }
+    fixture =
+      Fixture(
+        minimumEventLevel = Level.DEBUG,
+        encoder = encoder,
+        sendDefaultPii = true,
+        options = options,
+      )
+    fixture.logger.info("testing encoding {}", "param1")
+
+    verify(fixture.transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.message?.formatted).isEqualTo("encoded testing encoding param1")
+          assertThat(event.message?.message).isEqualTo("testing encoding {}")
+          assertThat(event.message?.params).containsExactly("param1")
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `include unencoded message defaults to false and has no effect without encoder`() {
+    fixture = Fixture(minimumEventLevel = Level.DEBUG, includeUnencodedMessage = true)
+    fixture.logger.info("testing encoding {}", "param1")
+
+    assertThat(SentryAppender().isIncludeUnencodedMessage).isFalse()
+    assertThat(fixture.appender.isIncludeUnencodedMessage).isTrue()
+    verify(fixture.transport)
+      .send(
+        checkEvent { event ->
+          assertThat(event.message?.formatted).isEqualTo("testing encoding param1")
+          assertThat(event.message?.message).isEqualTo("testing encoding {}")
+          assertThat(event.message?.params).containsExactly("param1")
         },
         anyOrNull(),
       )
@@ -802,6 +890,33 @@ class SentryAppenderTest {
           assertEquals("encoded testing message param", log.body)
           assertNull(log.attributes?.get("sentry.message.template"))
           assertNull(log.attributes?.get("sentry.message.parameter.0"))
+        }
+      )
+  }
+
+  @Test
+  fun `sets template and attributes on log with encoder when unencoded message is included`() {
+    val encoder = PatternLayoutEncoder()
+    encoder.pattern = "encoded %msg"
+    fixture =
+      Fixture(
+        minimumLevel = Level.ERROR,
+        enableLogs = true,
+        encoder = encoder,
+        includeUnencodedMessage = true,
+      )
+    fixture.logger.error("testing message {}", "param")
+
+    Sentry.flush(1000)
+
+    verify(fixture.transport)
+      .send(
+        checkLogs { logs ->
+          val log = logs.items.first()
+          assertThat(log.body).isEqualTo("encoded testing message param")
+          assertThat(log.attributes?.get("sentry.message.template")?.value)
+            .isEqualTo("testing message {}")
+          assertThat(log.attributes?.get("sentry.message.parameter.0")?.value).isEqualTo("param")
         }
       )
   }
