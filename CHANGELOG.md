@@ -12,6 +12,12 @@
 
 - Add an internal `MonotonicTicker` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
 
+### Dependencies
+
+- Bump Native SDK from v0.16.5 to v0.16.6 ([#6079](https://github.com/getsentry/sentry-java/pull/6079))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0166)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.5...0.16.6)
+
 ## 8.55.0
 
 ### Features
