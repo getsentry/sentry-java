@@ -57,8 +57,8 @@ public final class RateLimiter implements Closeable {
   }
 
   /**
-   * Names the collaborators a rate limiter actually reads. Prefer {@link
-   * #RateLimiter(SentryOptions)} unless you have a reason to supply them separately.
+   * Names the collaborators a rate limiter actually reads, rather than handing over the whole
+   * options object. Internal only for as long as {@link MonotonicTicker} is.
    */
   @ApiStatus.Internal
   public static @NotNull RateLimiter create(
@@ -66,6 +66,11 @@ public final class RateLimiter implements Closeable {
     return new RateLimiter(ticker, config);
   }
 
+  /**
+   * The supported way to build a rate limiter from outside the SDK, kept non-deprecated only
+   * because {@link #create(MonotonicTicker, RateLimiterConfig)} cannot be called without the
+   * internal {@link MonotonicTicker}. Deprecate this once that type is public API.
+   */
   public RateLimiter(final @NotNull SentryOptions options) {
     this(options.getMonotonicTicker(), options);
   }
