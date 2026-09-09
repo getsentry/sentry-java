@@ -22,6 +22,7 @@ io.sentry.profiling
 io.sentry.protocol
 io.sentry.protocol.profiling
 io.sentry.rrweb
+io.sentry.time
 io.sentry.transport
 io.sentry.util
 io.sentry.util.network
