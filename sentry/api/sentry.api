@@ -7703,10 +7703,10 @@ public final class io/sentry/transport/NoOpTransportGate : io/sentry/transport/I
 
 public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun <init> (Lio/sentry/time/MonotonicTicker;Lio/sentry/transport/RateLimiterConfig;)V
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
 	public fun addRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
 	public fun close ()V
+	public static fun create (Lio/sentry/time/MonotonicTicker;Lio/sentry/transport/RateLimiterConfig;)Lio/sentry/transport/RateLimiter;
 	public fun filter (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
 	public fun isActiveForCategory (Lio/sentry/DataCategory;)Z
 	public fun isAnyRateLimitActive ()Z

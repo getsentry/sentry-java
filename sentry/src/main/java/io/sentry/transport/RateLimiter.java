@@ -49,20 +49,27 @@ public final class RateLimiter implements Closeable {
   private final @NotNull AutoClosableReentrantLock notifyFuturesLock =
       new AutoClosableReentrantLock();
 
-  public RateLimiter(
+  private RateLimiter(
       final @NotNull MonotonicTicker ticker, final @NotNull RateLimiterConfig config) {
     this.ticker = ticker;
     this.config = config;
   }
 
+  public static @NotNull RateLimiter create(
+      final @NotNull MonotonicTicker ticker, final @NotNull RateLimiterConfig config) {
+    return new RateLimiter(ticker, config);
+  }
+
+  /**
+   * @deprecated use the create static constructor instead
+   */
+  @Deprecated
   public RateLimiter(final @NotNull SentryOptions options) {
     this(options.getMonotonicTicker(), options);
   }
 
   /**
-   * @deprecated backoff is measured on {@link SentryOptions#getMonotonicTicker()}; use {@link
-   *     #RateLimiter(SentryOptions)}. An injected wall clock is adapted so that an existing custom
-   *     transport keeps the behaviour it has today, but it is not monotonic and can step.
+   * @deprecated use the create static constructor instead
    */
   @Deprecated
   public RateLimiter(
