@@ -221,6 +221,40 @@ class RateLimiterTest {
   }
 
   @Test
+  fun `When X-Sentry-Rate-Limit delay is negative, nothing is rate limited`() {
+    val rateLimiter = fixture.getSUT()
+    val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
+
+    rateLimiter.updateRetryAfterLimits("-1:error:key", null, 1)
+
+    assertNotNull(rateLimiter.filter(envelope, Hint()))
+  }
+
+  @Test
+  fun `When Retry-After is negative, nothing is rate limited`() {
+    val rateLimiter = fixture.getSUT()
+    val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
+
+    rateLimiter.updateRetryAfterLimits(null, "-1", 429)
+
+    assertNotNull(rateLimiter.filter(envelope, Hint()))
+  }
+
+  @Test
+  fun `A negative delay does not lift a standing rate limit`() {
+    val rateLimiter = fixture.getSUT()
+    val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(), arrayListOf(eventItem))
+
+    rateLimiter.updateRetryAfterLimits("60:error:key", null, 1)
+    rateLimiter.updateRetryAfterLimits("-1:error:key", null, 1)
+
+    assertNull(rateLimiter.filter(envelope, Hint()))
+  }
+
+  @Test
   fun `records dropped items as lost`() {
     val rateLimiter = fixture.getSUT()
 
