@@ -8,6 +8,12 @@
 - `SentryTraced` now checks for its owning transaction dynamically rather than once per app process. The latter caused `SentryTraced` spans to be dropped process-wide once the original transaction finished ([#6057](https://github.com/getsentry/sentry-java/pull/6057))
 - Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`) ([#6061](https://github.com/getsentry/sentry-java/pull/6061))
 - Populate the Android connection status cache during the first two minutes after boot, instead of treating the empty cache as up to date ([#6029](https://github.com/getsentry/sentry-java/pull/6029))
+- Prevent `SentryTraced` from producing dangling spans if recomposition is abandoned or drawing fails ([#6049](https://github.com/getsentry/sentry-java/pull/6049))
+- Report a consistent app start type across the app start measurement, `contexts.app` and the `app.start` span attributes ([#6006](https://github.com/getsentry/sentry-java/pull/6006))
+
+### Improvements
+
+- Emit a single `ui.compose` span per `SentryTraced` on initial composition instead of one on every recomposition, and set the origin on `ui.render` spans ([#6051](https://github.com/getsentry/sentry-java/pull/6051))
 
 ### Internal
 
@@ -28,12 +34,10 @@
 
 ### Improvements
 
-- Emit a single `ui.compose` span per `SentryTraced` on initial composition instead of one on every recomposition, and set the origin on `ui.render` spans ([#6051](https://github.com/getsentry/sentry-java/pull/6051))
 - Move ANR profiling out of experimental ([#6042](https://github.com/getsentry/sentry-java/pull/6042))
 
 ### Fixes
 
-- Prevent `SentryTraced` from producing dangling spans if recomposition is abandoned or drawing fails ([#6049](https://github.com/getsentry/sentry-java/pull/6049))
 - Keep dropped tombstone and ANR events dropped, instead of reporting the same app exit again at every app start ([#6002](https://github.com/getsentry/sentry-java/pull/6002))
 - Apply `Sentry.withScope` and `Sentry.withIsolationScope` data to events captured inside the callback when `globalHubMode` is enabled ([#6004](https://github.com/getsentry/sentry-java/pull/6004))
   - `globalHubMode` is enabled by default on Android, where tags, extras, contexts and level set inside the callback were silently dropped
@@ -41,7 +45,6 @@
   - `Sentry.pushScope`, `Sentry.pushIsolationScope` and `Sentry.popScope` remain no-ops when `globalHubMode` is enabled
 - Drop the `profiler_id` from transactions and spans when no Perfetto profile covers them, e.g. when Android's `ProfilingManager` rate limits the profiling request ([#6015](https://github.com/getsentry/sentry-java/pull/6015))
 - Prevent events from being dropped when feature flags are added while an event is being captured ([#5989](https://github.com/getsentry/sentry-java/pull/5989))
-- Report a consistent app start type across the app start measurement, `contexts.app` and the `app.start` span attributes ([#6006](https://github.com/getsentry/sentry-java/pull/6006))
 
 ### Internal
 
