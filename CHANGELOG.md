@@ -6,6 +6,13 @@
 
 - Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`)
 - Fix misleading IScopeObserver.setBreadcrumbs method name to clearBreadcrumbs ([#5844](https://github.com/getsentry/sentry-java/pull/6077))
+- Update `SentryTraced` so that it now honors `options.setIgnoredSpanOrigins` ([#6058](https://github.com/getsentry/sentry-java/pull/6058))
+- `SentryTraced` now checks for its owning transaction dynamically rather than once per app process. The latter caused `SentryTraced` spans to be dropped process-wide once the original transaction finished ([#6057](https://github.com/getsentry/sentry-java/pull/6057))
+- Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`) ([#6061](https://github.com/getsentry/sentry-java/pull/6061))
+
+### Internal
+
+- Add an internal `MonotonicTicker` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
 
 ## 8.55.0
 

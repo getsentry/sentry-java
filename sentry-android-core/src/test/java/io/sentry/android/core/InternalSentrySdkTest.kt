@@ -38,6 +38,7 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.BeforeTest
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -612,6 +613,14 @@ class InternalSentrySdkTest {
     assertThat(activeSession.get().sessionId).isNotEqualTo(oldSid)
   }
 
+  // Flaky: intermittently fails with FileNotFoundException reading session.json at the
+  // `sessionFile.reader()` call below, i.e. persistCurrentSession() did not leave a session file
+  // on disk by the time this test reads it back. Seen across unrelated PRs, e.g.:
+  // https://scans.gradle.com/s/55fnn6xhtfyfq/tests/task/:sentry-android-core:testReleaseUnitTest/details/io.sentry.android.core.InternalSentrySdkTest/updateSessionForDroppedEventNonTerminating%20flags%20an%20unhandled%20error%20without%20sending%20an%20envelope?top-execution=1
+  // https://scans.gradle.com/s/ojzzz4yxag7rw/tests/task/:sentry-android-core:testReleaseUnitTest/details/io.sentry.android.core.InternalSentrySdkTest/updateSessionForDroppedEventNonTerminating%20flags%20an%20unhandled%20error%20without%20sending%20an%20envelope?top-execution=1
+  // Disabling until root-caused; see https://github.com/getsentry/sentry-java/pull/5990 for the
+  // code under test.
+  @Ignore("Flaky: intermittently fails to find the persisted session.json, needs root-causing")
   @Test
   fun `updateSessionForDroppedEventNonTerminating flags an unhandled error without sending an envelope`() {
     val fixture = Fixture()
