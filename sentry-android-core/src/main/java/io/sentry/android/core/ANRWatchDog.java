@@ -32,7 +32,6 @@ import android.content.Context;
 import io.sentry.IDebugManager;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
-import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
 import io.sentry.time.Deadline;
 import io.sentry.time.MonotonicTicker;
 import java.util.List;
@@ -40,11 +39,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 /** A watchdog timer thread that detects when the UI thread has frozen. */
 @SuppressWarnings("UnusedReturnValue")
 final class ANRWatchDog extends Thread {
+
+  private static final long DEFAULT_POLLING_INTERVAL_MS = 500;
 
   private final boolean reportInDebug;
   private final ANRListener anrListener;
@@ -68,26 +68,23 @@ final class ANRWatchDog extends Thread {
   @SuppressWarnings("UnnecessaryLambda")
   private final Runnable ticker;
 
-  ANRWatchDog(
-      long timeoutIntervalMillis,
-      boolean reportInDebug,
-      @NotNull ANRListener listener,
-      @NotNull ILogger logger,
-      final @NotNull Context context,
-      final @Nullable IDebugManager debugManager) {
-    this(
-        AndroidMonotonicTicker.getInstance(),
-        timeoutIntervalMillis,
-        500,
-        reportInDebug,
+  /** Reads the timeout, the debug behavior, the logger and the ticker off {@code options}. */
+  static @NotNull ANRWatchDog create(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull ANRListener listener,
+      final @NotNull Context context) {
+    return new ANRWatchDog(
+        options.getMonotonicTicker(),
+        options.getAnrTimeoutIntervalMillis(),
+        DEFAULT_POLLING_INTERVAL_MS,
+        options.isAnrReportInDebug(),
         listener,
-        logger,
+        options.getLogger(),
         new MainLooperHandler(),
         context,
-        debugManager);
+        options.getDebugManager());
   }
 
-  @TestOnly
   ANRWatchDog(
       @NotNull final MonotonicTicker monotonicTicker,
       long timeoutIntervalMillis,

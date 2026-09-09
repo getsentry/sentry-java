@@ -24,6 +24,7 @@ import io.sentry.protocol.SentryTransaction;
 import io.sentry.time.EpochClock;
 import io.sentry.time.JavaMonotonicTicker;
 import io.sentry.time.MonotonicTicker;
+import io.sentry.time.MonotonicTickerProvider;
 import io.sentry.time.SystemEpochClock;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
@@ -62,7 +63,7 @@ import org.jetbrains.annotations.TestOnly;
 // public API.
 @SuppressWarnings("this-escape")
 @Open
-public class SentryOptions implements RateLimiterConfig {
+public class SentryOptions implements RateLimiterConfig, MonotonicTickerProvider {
 
   @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
 
@@ -3161,6 +3162,7 @@ public class SentryOptions implements RateLimiterConfig {
    * which this module cannot reference. On the JVM there is no suspend state to account for.
    */
   @ApiStatus.Internal
+  @Override
   public @NotNull MonotonicTicker getMonotonicTicker() {
     return JavaMonotonicTicker.getInstance();
   }
