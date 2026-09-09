@@ -13,8 +13,9 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.SentryAndroidOptions;
-import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
+import io.sentry.time.JavaMonotonicTicker;
 import io.sentry.time.MonotonicTicker;
+import io.sentry.time.MonotonicTickerProvider;
 import io.sentry.time.Stopwatch;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
@@ -46,8 +47,11 @@ public class AnrProfilingIntegration
   static final int MAX_NUM_STACKS = (int) (10_000 / POLLING_INTERVAL_MS);
 
   private final AtomicBoolean enabled = new AtomicBoolean(true);
-  private final @NotNull MonotonicTicker ticker;
-  private final @NotNull Runnable updater;
+  private volatile @NotNull MonotonicTicker ticker = JavaMonotonicTicker.getInstance();
+
+  @SuppressWarnings("UnnecessaryLambda")
+  private final @NotNull Runnable updater = () -> lastMainThreadExecutionNanos = ticker.tickNanos();
+
   private final @NotNull AutoClosableReentrantLock lifecycleLock = new AutoClosableReentrantLock();
   private final @NotNull AutoClosableReentrantLock profileManagerLock =
       new AutoClosableReentrantLock();
@@ -64,15 +68,16 @@ public class AnrProfilingIntegration
   private volatile @Nullable Handler mainHandler;
   private volatile @Nullable Thread mainThread;
 
-  public AnrProfilingIntegration() {
-    this(AndroidMonotonicTicker.getInstance());
-  }
-
-  @TestOnly
-  AnrProfilingIntegration(final @NotNull MonotonicTicker ticker) {
-    this.ticker = ticker;
+  /**
+   * Installs the ticker to measure main-thread stalls with. Also resets the last-execution reading,
+   * so a stall is never measured against a tick from a different ticker.
+   *
+   * <p>Package-private so a test can install a fake ticker after {@link #register}, which {@code
+   * SentryAndroidOptions} cannot supply.
+   */
+  void installTickerFrom(final @NotNull MonotonicTickerProvider provider) {
+    this.ticker = provider.getMonotonicTicker();
     this.lastMainThreadExecutionNanos = ticker.tickNanos();
-    this.updater = () -> lastMainThreadExecutionNanos = ticker.tickNanos();
   }
 
   @Override
@@ -82,6 +87,7 @@ public class AnrProfilingIntegration
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
     this.logger = options.getLogger();
+    installTickerFrom(options);
 
     if (this.options.isAnrProfilingEnabled()) {
       if (this.options.getCacheDirPath() == null) {

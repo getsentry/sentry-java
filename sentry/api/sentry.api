@@ -3654,7 +3654,7 @@ public final class io/sentry/SentryOpenTelemetryMode : java/lang/Enum {
 	public static fun values ()[Lio/sentry/SentryOpenTelemetryMode;
 }
 
-public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
+public class io/sentry/SentryOptions : io/sentry/time/MonotonicTickerProvider, io/sentry/transport/RateLimiterConfig {
 	public static final field DEFAULT_PROPAGATION_TARGETS Ljava/lang/String;
 	public static final field MAX_EVENT_SIZE_BYTES J
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
@@ -7624,6 +7624,10 @@ public final class io/sentry/time/JavaMonotonicTicker : io/sentry/time/Monotonic
 
 public abstract interface class io/sentry/time/MonotonicTicker {
 	public abstract fun tickNanos ()J
+}
+
+public abstract interface class io/sentry/time/MonotonicTickerProvider {
+	public abstract fun getMonotonicTicker ()Lio/sentry/time/MonotonicTicker;
 }
 
 public final class io/sentry/time/Stopwatch {

@@ -174,8 +174,9 @@ class AnrProfilingIntegrationTest {
         anrProfilingSampleRate = 1.0
       }
 
-    val integration = AnrProfilingIntegration(ticker)
+    val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
+    integration.installTickerFrom { ticker }
     // Drive the state machine synchronously to avoid racing the background polling thread.
 
     ticker.advance(900, MILLISECONDS)
@@ -209,8 +210,9 @@ class AnrProfilingIntegrationTest {
         anrProfilingSampleRate = 1.0
       }
 
-    val integration = AnrProfilingIntegration(ticker)
+    val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
+    integration.installTickerFrom { ticker }
     integration.onBackground()
 
     ticker.advance(19_000, MILLISECONDS)
@@ -275,8 +277,9 @@ class AnrProfilingIntegrationTest {
         anrProfilingSampleRate = 0.0
       }
 
-    val integration = AnrProfilingIntegration(ticker)
+    val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
+    integration.installTickerFrom { ticker }
     integration.onForeground()
 
     // Transition to suspicious
