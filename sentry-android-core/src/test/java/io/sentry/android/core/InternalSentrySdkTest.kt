@@ -9,6 +9,7 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScope
+import io.sentry.ISentryExecutorService
 import io.sentry.Scope
 import io.sentry.ScopeType
 import io.sentry.Sentry
@@ -58,12 +59,12 @@ class InternalSentrySdkTest {
     val capturedEnvelopes = mutableListOf<SentryEnvelope>()
     lateinit var options: SentryOptions
 
-    fun init(context: Context) {
+    fun init(context: Context, executorService: ISentryExecutorService? = null) {
       initForTest(context) { options ->
         this@Fixture.options = options
         options.dsn = "https://key@host/proj"
-        // Finish startup session rotation before tests persist and read the current session.
-        options.executorService = ImmediateExecutorService()
+        // Session persistence tests can finish startup rotation before writing session.json.
+        executorService?.let { options.executorService = it }
         options.setTransportFactory { _, _ ->
           object : ITransport {
             override fun close(isRestarting: Boolean) {
@@ -486,7 +487,7 @@ class InternalSentrySdkTest {
   @Test
   fun `captureEnvelopeNonTerminating keeps the session Ok and flags the unhandled error`() {
     val fixture = Fixture()
-    fixture.init(context)
+    fixture.init(context, executorService = ImmediateExecutorService())
 
     val originalSid = AtomicReference<String>()
     Sentry.configureScope { scope -> originalSid.set(scope.session!!.sessionId) }
@@ -618,7 +619,7 @@ class InternalSentrySdkTest {
   @Test
   fun `updateSessionForDroppedEventNonTerminating flags an unhandled error without sending an envelope`() {
     val fixture = Fixture()
-    fixture.init(context)
+    fixture.init(context, executorService = ImmediateExecutorService())
 
     val originalSid = AtomicReference<String>()
     Sentry.configureScope { scope -> originalSid.set(scope.session!!.sessionId) }
@@ -647,7 +648,7 @@ class InternalSentrySdkTest {
   @Test
   fun `updateSessionForDroppedEventNonTerminating increments errors for a handled error without sending an envelope`() {
     val fixture = Fixture()
-    fixture.init(context)
+    fixture.init(context, executorService = ImmediateExecutorService())
 
     val originalSid = AtomicReference<String>()
     Sentry.configureScope { scope -> originalSid.set(scope.session!!.sessionId) }
