@@ -2,8 +2,10 @@ package io.sentry;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -54,10 +56,12 @@ public final class DuplicateEventDetectionEventProcessor implements EventProcess
 
   private static @NotNull List<Throwable> allCauses(final @NotNull Throwable throwable) {
     final List<Throwable> causes = new ArrayList<>();
-    Throwable ex = throwable;
-    while (ex.getCause() != null) {
-      causes.add(ex.getCause());
-      ex = ex.getCause();
+    final Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+    visited.add(throwable);
+    Throwable cause = throwable.getCause();
+    while (cause != null && visited.add(cause)) {
+      causes.add(cause);
+      cause = cause.getCause();
     }
     return causes;
   }

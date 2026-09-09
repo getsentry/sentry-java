@@ -76,4 +76,29 @@ class ExceptionUtilsTest {
     ExceptionUtils.rethrowIfFatal(RuntimeException())
     assertFalse(Thread.currentThread().isInterrupted)
   }
+
+  @Test
+  fun `does not loop indefinitely for cyclic cause chain`() {
+    val first = CircularCauseThrowable()
+    val second = CircularCauseThrowable()
+    first.linkTo(second)
+    second.linkTo(first)
+
+    assertThat(ExceptionUtils.findRootCause(first)).isSameInstanceAs(second)
+  }
+
+  private class CircularCauseThrowable : RuntimeException() {
+    private var nextCause: Throwable? = null
+    private var causeReads = 0
+
+    fun linkTo(cause: Throwable) {
+      nextCause = cause
+    }
+
+    override val cause: Throwable?
+      get() {
+        check(causeReads++ < 10) { "Throwable cause cycle was not detected" }
+        return nextCause
+      }
+  }
 }

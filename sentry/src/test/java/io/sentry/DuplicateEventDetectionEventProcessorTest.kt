@@ -8,6 +8,21 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class DuplicateEventDetectionEventProcessorTest {
+  private class CircularCauseThrowable : RuntimeException() {
+    private var nextCause: Throwable? = null
+    private var causeReads = 0
+
+    fun linkTo(cause: Throwable) {
+      nextCause = cause
+    }
+
+    override val cause: Throwable?
+      get() {
+        check(causeReads++ < 10) { "Throwable cause cycle was not detected" }
+        return nextCause
+      }
+  }
+
   class Fixture {
     fun getSut(enableDeduplication: Boolean? = null): DuplicateEventDetectionEventProcessor {
       val options =
@@ -97,6 +112,19 @@ class DuplicateEventDetectionEventProcessorTest {
       processor.process(SentryEvent(RuntimeException(RuntimeException(event.throwable))), Hint())
 
     assertNull(result)
+  }
+
+  @Test
+  fun `does not loop indefinitely for cyclic cause chain`() {
+    val processor = fixture.getSut()
+    val first = CircularCauseThrowable()
+    val second = CircularCauseThrowable()
+    first.linkTo(second)
+    second.linkTo(first)
+
+    val result = processor.process(SentryEvent(first), Hint())
+
+    assertNotNull(result)
   }
 
   @Test
