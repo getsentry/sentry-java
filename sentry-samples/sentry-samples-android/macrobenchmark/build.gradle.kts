@@ -2,6 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 
 plugins {
   id("com.android.test")
+  id("io.sentry.spotless")
   alias(libs.plugins.kotlin.android)
 }
 
@@ -34,7 +35,8 @@ android {
 
   kotlin { compilerOptions.jvmTarget = JVM_11 }
 
-  targetProjectPath = ":sentry-samples:sentry-samples-android"
+  // The sample app is the root project of this build.
+  targetProjectPath = ":"
   // Run the test in its own process so it measures the target app cold, not itself.
   experimentalProperties["android.experimental.self-instrumenting"] = true
 }

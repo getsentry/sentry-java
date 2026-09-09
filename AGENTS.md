@@ -62,6 +62,9 @@ resolves the per-module test task and the unit-test vs system-test split for you
 # Assemble Android test APKs
 ./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
 
+# Build the Android sample app, which is a separate Gradle build that includes this one
+./gradlew -p sentry-samples/sentry-samples-android assembleDebug
+
 # Run critical UI tests
 ./scripts/test-ui-critical.sh
 ```
@@ -111,7 +114,7 @@ The repository is organized into multiple modules:
 ### Utility Modules
 - **`sentry-test-support`** - Shared test utilities
 - **`sentry-system-test-support`** - System testing infrastructure
-- **`sentry-samples`** - Example applications
+- **`sentry-samples`** - Example applications. `sentry-samples-android` is a separate Gradle build that includes this one, so root tasks other than `spotlessApply` do not reach it
 - **`sentry-bom`** - Bill of Materials for dependency management
 
 ### Key Architectural Patterns

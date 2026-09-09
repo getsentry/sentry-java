@@ -15,6 +15,17 @@ pluginManagement {
     gradlePluginPortal()
     google()
   }
+
+  // The AGP compatibility matrix job pins a specific AGP; the catalog version is the default.
+  System.getenv("VERSION_AGP")?.let { agpVersion ->
+    resolutionStrategy {
+      eachPlugin {
+        if (requested.id.id.startsWith("com.android")) {
+          useVersion(agpVersion)
+        }
+      }
+    }
+  }
 }
 
 plugins {
@@ -40,6 +51,9 @@ dependencyResolutionManagement {
 rootProject.name = "sentry-root"
 rootProject.buildFileName = "build.gradle.kts"
 includeBuild("build-logic")
+// The Android sample is its own build and includes this one. Including it back lets repository-wide
+// tasks such as spotlessApply reach it; it is not built by anything else here.
+includeBuild("sentry-samples/sentry-samples-android")
 include(
     "sentry",
     "sentry-spotlight",
@@ -99,7 +113,6 @@ include(
     "sentry-reactor",
     "sentry-async-profiler",
     "sentry-ktor-client",
-    "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-console-otlp",
     "sentry-samples:sentry-samples-console-opentelemetry-noagent",
@@ -126,7 +139,6 @@ include(
     "sentry-samples:sentry-samples-spring-boot-4-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
     "sentry-android-integration-tests:sentry-uitest-android-critical",
-    "sentry-android-integration-tests:sentry-uitest-android-macrobenchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
     "sentry-android-integration-tests:test-app-size",
     "sentry-samples:sentry-samples-openfeign"

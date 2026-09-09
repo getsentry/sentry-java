@@ -3,20 +3,26 @@
 Sample application demonstrating how to use the Sentry Android SDK, including core functionality (error reporting, tracing, session replay,
 profiling) and integrations (Compose, OkHttp, SQLite, etc.).
 
+This directory is its own Gradle build. It includes the SDK build (`includeBuild("../..")`), so it
+depends on plain `io.sentry:*` coordinates exactly like a real app would, and Gradle substitutes
+them with the SDK's projects — nothing needs to be published first. Every command below therefore
+runs against this build, not the repository root's.
+
 ## How to run it?
 
 Install the app on your device or emulator:
 
 ```
-./gradlew :sentry-samples:sentry-samples-android:installDebug
+./gradlew -p sentry-samples/sentry-samples-android installDebug
 ```
 
-or simply open the project in Android Studio and run the `sentry-samples-android` configuration.
+or open `sentry-samples/sentry-samples-android` in Android Studio (not the repository root) and run
+the `sentry-samples-android` configuration. The SDK sources come along through the included build.
 
 You can also apply the [Sentry Android Gradle Plugin](https://github.com/getsentry/sentry-android-gradle-plugin) (SAGP) when building (not applied by default):
 
 ```
-./gradlew :sentry-samples:sentry-samples-android:installDebug -PuseSagp
+./gradlew -p sentry-samples/sentry-samples-android installDebug -PuseSagp
 ```
 
 In Android Studio, add `useSagp=` (empty value) to `gradle.properties`, or pass `-PuseSagp` as a Gradle project property.
@@ -52,7 +58,7 @@ Re-run `publishToMavenLocal` after each SAGP change.
 Then build from sentry-java:
 
 ```
-./gradlew :sentry-samples:sentry-samples-android:installDebug -PuseSagp
+./gradlew -p sentry-samples/sentry-samples-android installDebug -PuseSagp
 ```
 
 ## Viewing SDK output

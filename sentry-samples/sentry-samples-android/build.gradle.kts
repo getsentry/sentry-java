@@ -7,13 +7,31 @@ import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.internal.extensions.stdlib.capitalized
 
 plugins {
-  id("com.android.application")
+  alias(libs.plugins.android.application)
+  id("io.sentry.spotless")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.ksp)
   alias(libs.plugins.sentry) apply false
   alias(libs.plugins.sqldelight)
 }
+
+// The SDK version lives in the SDK build's gradle.properties, which this build cannot read as a
+// Gradle property. It doubles as the sample's versionName, so an APK says which SDK it was built
+// against.
+val sentryVersion: String =
+  providers
+    .fileContents(layout.projectDirectory.dir("../..").file("gradle.properties"))
+    .asText
+    .map { properties ->
+      val match = Regex("""^versionName=(.+)$""", RegexOption.MULTILINE).find(properties)
+      checkNotNull(match) { "versionName is missing from the SDK build's gradle.properties" }
+        .groupValues[1]
+        .trim()
+    }
+    .get()
+
+version = sentryVersion
 
 if (providers.gradleProperty("useSagp").isPresent) {
   apply(plugin = "io.sentry.android.gradle")
@@ -63,7 +81,7 @@ android {
       }
     }
 
-    ndk { abiFilters.addAll(Config.Android.abiFilters) }
+    ndk { abiFilters.addAll(listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")) }
   }
 
   lint {
@@ -102,7 +120,7 @@ android {
 
   signingConfigs {
     getByName("debug") {
-      storeFile = rootProject.file("debug.keystore")
+      storeFile = rootProject.file("../../debug.keystore")
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -152,7 +170,7 @@ android {
     val toggleNativeLoggingTask =
       project.tasks.register<ToggleNativeLoggingTask>(taskName) {
         mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
-        rootDir.set(project.rootDir.absolutePath)
+        repoDir.set(project.rootDir.resolve("../..").canonicalPath)
       }
     project.afterEvaluate {
       (variant as? VariantImpl<*>)?.taskContainer?.assembleTask?.configure {
@@ -167,6 +185,10 @@ android {
   @Suppress("UnstableApiUsage") packagingOptions { jniLibs { useLegacyPackaging = true } }
 }
 
+// The SDK build drives formatting repository-wide and references one task per included build, so
+// this build's root spotlessApply has to cover its subprojects too.
+tasks.named("spotlessApply") { dependsOn(subprojects.map { "${it.path}:spotlessApply" }) }
+
 sqldelight {
   databases {
     create("SampleSQLDelightDatabase") {
@@ -179,22 +201,20 @@ sqldelight {
 }
 
 dependencies {
-  implementation(
-    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
-  )
+  implementation(kotlin("stdlib-jdk8"))
 
-  implementation(projects.sentryAndroid)
-  implementation(projects.sentryAndroidFragment)
-  implementation(projects.sentryAndroidNavigation)
-  implementation(projects.sentryAndroidSqlite)
-  implementation(projects.sentryAndroidTimber)
-  implementation(projects.sentryCompose)
-  implementation(projects.sentryKotlinExtensions)
-  implementation(projects.sentryOkhttp)
-  implementation(projects.sentrySpotlight)
+  implementation("io.sentry:sentry-android:$sentryVersion")
+  implementation("io.sentry:sentry-android-fragment:$sentryVersion")
+  implementation("io.sentry:sentry-android-navigation:$sentryVersion")
+  implementation("io.sentry:sentry-android-sqlite:$sentryVersion")
+  implementation("io.sentry:sentry-android-timber:$sentryVersion")
+  implementation("io.sentry:sentry-compose:$sentryVersion")
+  implementation("io.sentry:sentry-kotlin-extensions:$sentryVersion")
+  implementation("io.sentry:sentry-okhttp:$sentryVersion")
+  implementation("io.sentry:sentry-spotlight:$sentryVersion")
 
   //    how to exclude androidx if release health feature is disabled
-  //    implementation(projects.sentryAndroid) {
+  //    implementation("io.sentry:sentry-android:$sentryVersion") {
   //        exclude(group = "androidx.lifecycle", module = "lifecycle-process")
   //        exclude(group = "androidx.lifecycle", module = "lifecycle-common-java8")
   //        exclude(group = "androidx.core", module = "core")
@@ -232,12 +252,12 @@ dependencies {
   ksp(libs.androidx.room.compiler)
   ksp(libs.androidx.room3.compiler)
 
-  debugImplementation(projects.sentryAndroidDistribution)
+  debugImplementation("io.sentry:sentry-android-distribution:$sentryVersion")
   debugImplementation(libs.leakcanary)
 }
 
 abstract class ToggleNativeLoggingTask : Exec() {
-  @get:Input abstract val rootDir: Property<String>
+  @get:Input abstract val repoDir: Property<String>
 
   @get:InputFile abstract val mergedManifest: RegularFileProperty
 
@@ -255,7 +275,7 @@ abstract class ToggleNativeLoggingTask : Exec() {
           args.add(0, "cmd")
           args.add(1, "/c")
         }
-        args.add("${rootDir.get()}/scripts/toggle-codec-logs.sh")
+        args.add("${repoDir.get()}/scripts/toggle-codec-logs.sh")
         args.add(if (value) "enable" else "disable")
         commandLine(args)
         super.exec()
