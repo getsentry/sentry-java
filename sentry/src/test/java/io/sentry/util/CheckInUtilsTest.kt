@@ -1,6 +1,7 @@
 package io.sentry.util
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.FilterString
 import io.sentry.IScopes
@@ -10,18 +11,26 @@ import io.sentry.MonitorSchedule
 import io.sentry.MonitorScheduleUnit
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.time.MonotonicTicker
+import io.sentry.time.TestMonotonicTicker
 import java.lang.AssertionError
 import java.lang.RuntimeException
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class CheckInUtilsTest {
@@ -328,5 +337,64 @@ class CheckInUtilsTest {
 
     assertThat(tick).isAtLeast(before)
     assertThat(tick).isAtMost(after)
+  }
+
+  @Test
+  fun `reports the duration the ticker advanced by`() {
+    val ticker = TestMonotonicTicker()
+
+    val checkIns =
+      captureCheckIns(ticker) {
+        CheckInUtils.withCheckIn("monitor-1") { ticker.advance(1500, MILLISECONDS) }
+      }
+
+    assertThat(checkIns.map { it.status })
+      .containsExactly(CheckInStatus.IN_PROGRESS.apiName(), CheckInStatus.OK.apiName())
+      .inOrder()
+    assertThat(checkIns.first().duration).isNull()
+    assertThat(checkIns.last().duration).isEqualTo(1.5)
+  }
+
+  @Test
+  fun `reports the duration when the callable throws`() {
+    val ticker = TestMonotonicTicker()
+
+    val checkIns =
+      captureCheckIns(ticker) {
+        assertFailsWith<RuntimeException> {
+          CheckInUtils.withCheckIn("monitor-1") {
+            ticker.advance(2, SECONDS)
+            throw RuntimeException("thrown on purpose")
+          }
+        }
+      }
+
+    assertThat(checkIns.last().status).isEqualTo(CheckInStatus.ERROR.apiName())
+    assertThat(checkIns.last().duration).isEqualTo(2.0)
+  }
+
+  /**
+   * Runs [block] against scopes whose options tick on [ticker], and returns every check-in it
+   * captured, in order.
+   */
+  private fun captureCheckIns(ticker: MonotonicTicker, block: () -> Unit): List<CheckIn> {
+    Mockito.mockStatic(Sentry::class.java).use { sentry ->
+      val scopes = mock<IScopes>()
+      val options =
+        object : SentryOptions() {
+          override fun getMonotonicTicker(): MonotonicTicker = ticker
+        }
+      sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+      sentry.`when`<Any> { Sentry.forkedScopes(any()) }.then { scopes.forkedScopes("test") }
+      whenever(scopes.forkedScopes(any())).thenReturn(scopes)
+      whenever(scopes.makeCurrent()).thenReturn(mock<ISentryLifecycleToken>())
+      whenever(scopes.options).thenReturn(options)
+
+      block()
+
+      val captor = argumentCaptor<CheckIn>()
+      verify(scopes, times(2)).captureCheckIn(captor.capture())
+      return captor.allValues
+    }
   }
 }
