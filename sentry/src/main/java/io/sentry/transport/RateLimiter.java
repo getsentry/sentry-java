@@ -32,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,21 +56,24 @@ public final class RateLimiter implements Closeable {
     this.config = config;
   }
 
+  /**
+   * Names the collaborators a rate limiter actually reads. Prefer {@link
+   * #RateLimiter(SentryOptions)} unless you have a reason to supply them separately.
+   */
+  @ApiStatus.Internal
   public static @NotNull RateLimiter create(
       final @NotNull MonotonicTicker ticker, final @NotNull RateLimiterConfig config) {
     return new RateLimiter(ticker, config);
   }
 
-  /**
-   * @deprecated use the create static constructor instead
-   */
-  @Deprecated
   public RateLimiter(final @NotNull SentryOptions options) {
     this(options.getMonotonicTicker(), options);
   }
 
   /**
-   * @deprecated use the create static constructor instead
+   * @deprecated the date provider is only used to measure a backoff, which is now measured on
+   *     {@link SentryOptions#getMonotonicTicker()}. Use {@link #RateLimiter(SentryOptions)}, or
+   *     {@link #create(MonotonicTicker, RateLimiterConfig)} to supply a ticker of your own.
    */
   @Deprecated
   public RateLimiter(

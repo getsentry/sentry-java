@@ -62,7 +62,7 @@ public final class ApacheHttpClientTransportFactory implements ITransportFactory
                     .setResponseTimeout(options.getReadTimeoutMillis(), TimeUnit.MILLISECONDS)
                     .build())
             .build();
-    final RateLimiter rateLimiter = RateLimiter.create(options.getMonotonicTicker(), options);
+    final RateLimiter rateLimiter = new RateLimiter(options);
 
     return new ApacheHttpClientTransport(options, requestDetails, httpclient, rateLimiter);
   }

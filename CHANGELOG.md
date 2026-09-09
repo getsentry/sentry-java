@@ -23,7 +23,7 @@
 
 - Add an internal `MonotonicTicker` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
 - Add internal `Timestamp`, `EpochClock` and `AnchoredClock`, so related instants project from one wall-clock reading instead of each reading the clock ([#6045](https://github.com/getsentry/sentry-java/pull/6045))
-- Deprecate both `RateLimiter(SentryOptions)` and `RateLimiter(ICurrentDateProvider, SentryOptions)` in favor of `RateLimiter.create(MonotonicTicker, RateLimiterConfig)` ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
+- Deprecate `RateLimiter(ICurrentDateProvider, SentryOptions)` in favor of `RateLimiter(SentryOptions)`, whose backoff is measured on a monotonic ticker ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 
 ### Dependencies
 
