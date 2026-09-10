@@ -133,8 +133,8 @@ public class TombstoneIntegration implements Integration, Closeable {
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     @Override
-    public int getTargetReason() {
-      return ApplicationExitInfo.REASON_CRASH_NATIVE;
+    public boolean matches(final @NotNull ApplicationExitInfo exitInfo) {
+      return exitInfo.getReason() == ApplicationExitInfo.REASON_CRASH_NATIVE;
     }
 
     @Override

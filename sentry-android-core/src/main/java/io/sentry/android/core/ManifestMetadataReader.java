@@ -47,6 +47,9 @@ final class ManifestMetadataReader {
   static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
   static final String TOMBSTONE_ATTACH_RAW = "io.sentry.tombstone.attach-raw";
   static final String TOMBSTONE_REPORT_HISTORICAL = "io.sentry.tombstone.report-historical";
+  static final String MEMORY_LIMITER_ENABLE = "io.sentry.memory-limiter.enable";
+  static final String MEMORY_LIMITER_REPORT_HISTORICAL =
+      "io.sentry.memory-limiter.report-historical";
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
@@ -253,6 +256,14 @@ final class ManifestMetadataReader {
                 logger,
                 TOMBSTONE_REPORT_HISTORICAL,
                 options.isReportHistoricalTombstones()));
+        options.setMemoryLimiterEnabled(
+            readBool(metadata, logger, MEMORY_LIMITER_ENABLE, options.isMemoryLimiterEnabled()));
+        options.setReportHistoricalMemoryLimiterKills(
+            readBool(
+                metadata,
+                logger,
+                MEMORY_LIMITER_REPORT_HISTORICAL,
+                options.isReportHistoricalMemoryLimiterKills()));
 
         // use enableAutoSessionTracking as fallback
         options.setEnableAutoSessionTracking(

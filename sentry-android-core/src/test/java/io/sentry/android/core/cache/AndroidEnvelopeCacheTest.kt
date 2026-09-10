@@ -6,6 +6,7 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryOptions
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
+import io.sentry.android.core.MemoryLimiterIntegration.MemoryLimiterHint
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.cache.EnvelopeCache
@@ -34,6 +35,7 @@ class AndroidEnvelopeCacheTest {
     val dateProvider = mock<ICurrentDateProvider>()
     lateinit var startupCrashMarkerFile: File
     lateinit var lastReportedAnrFile: File
+    lateinit var lastReportedMemoryLimiterFile: File
 
     fun getSut(
       dir: TemporaryFolder,
@@ -48,6 +50,8 @@ class AndroidEnvelopeCacheTest {
 
       startupCrashMarkerFile = File(outboxDir, EnvelopeCache.STARTUP_CRASH_MARKER_FILE)
       lastReportedAnrFile = File(options.cacheDirPath!!, AndroidEnvelopeCache.LAST_ANR_REPORT)
+      lastReportedMemoryLimiterFile =
+        File(options.cacheDirPath!!, AndroidEnvelopeCache.LAST_MEMORY_LIMITER_REPORT)
 
       if (appStartMillis != null) {
         AppStartMetrics.getInstance().apply {
@@ -207,6 +211,41 @@ class AndroidEnvelopeCacheTest {
     val lastReportedAnr = AndroidEnvelopeCache.lastReportedAnr(fixture.options)
 
     assertEquals(87654321L, lastReportedAnr)
+  }
+
+  @Test
+  fun `when MemoryLimiter hint exists, writes last memory limiter report timestamp into file`() {
+    val cache = fixture.getSut(tmpDir)
+
+    val hints =
+      HintUtils.createWithTypeCheckHint(
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), 23456789L, false)
+      )
+    cache.storeEnvelope(fixture.envelope, hints)
+
+    assertTrue(fixture.lastReportedMemoryLimiterFile.exists())
+    assertEquals("23456789", fixture.lastReportedMemoryLimiterFile.readText())
+  }
+
+  @Test
+  fun `memory limiter and anr markers are stored independently`() {
+    val cache = fixture.getSut(tmpDir)
+
+    cache.storeEnvelope(
+      fixture.envelope,
+      HintUtils.createWithTypeCheckHint(
+        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false)
+      ),
+    )
+    cache.storeEnvelope(
+      fixture.envelope,
+      HintUtils.createWithTypeCheckHint(
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), 23456789L, false)
+      ),
+    )
+
+    assertEquals("12345678", fixture.lastReportedAnrFile.readText())
+    assertEquals("23456789", fixture.lastReportedMemoryLimiterFile.readText())
   }
 
   @Test

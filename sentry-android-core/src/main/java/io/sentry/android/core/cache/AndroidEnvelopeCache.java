@@ -9,6 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.android.core.AnrV2Integration;
+import io.sentry.android.core.MemoryLimiterIntegration;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.TombstoneIntegration;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
@@ -35,6 +36,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   public static final String LAST_ANR_REPORT = "last_anr_report";
   public static final String LAST_TOMBSTONE_REPORT = "last_tombstone_report";
+  public static final String LAST_MEMORY_LIMITER_REPORT = "last_memory_limiter_report";
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
@@ -216,6 +218,12 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return lastReportedMarker(options, LAST_TOMBSTONE_REPORT, LAST_TOMBSTONE_MARKER_LABEL);
   }
 
+  // TODO ADAM: Verify no backend changes needed.
+  public static @Nullable Long lastReportedMemoryLimiter(final @NotNull SentryOptions options) {
+    return lastReportedMarker(
+        options, LAST_MEMORY_LIMITER_REPORT, LAST_MEMORY_LIMITER_MARKER_LABEL);
+  }
+
   public static void markAnrReported(final @NotNull SentryOptions options, final long timestamp) {
     writeLastReportedMarker(options, timestamp, LAST_ANR_REPORT, LAST_ANR_MARKER_LABEL);
   }
@@ -223,6 +231,12 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   public static void markTombstoneReported(
       final @NotNull SentryOptions options, final long timestamp) {
     writeLastReportedMarker(options, timestamp, LAST_TOMBSTONE_REPORT, LAST_TOMBSTONE_MARKER_LABEL);
+  }
+
+  public static void markMemoryLimiterReported(
+      final @NotNull SentryOptions options, final long timestamp) {
+    writeLastReportedMarker(
+        options, timestamp, LAST_MEMORY_LIMITER_REPORT, LAST_MEMORY_LIMITER_MARKER_LABEL);
   }
 
   private static final class TimestampMarkerHandler<T> {
@@ -267,6 +281,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   public static final String LAST_TOMBSTONE_MARKER_LABEL = "Tombstone";
   public static final String LAST_ANR_MARKER_LABEL = "ANR";
+  public static final String LAST_MEMORY_LIMITER_MARKER_LABEL = "MemoryLimiter";
   private static final List<TimestampMarkerHandler<?>> TIMESTAMP_MARKER_HANDLERS =
       Arrays.asList(
           new TimestampMarkerHandler<>(
@@ -278,5 +293,10 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
               TombstoneIntegration.TombstoneHint.class,
               LAST_TOMBSTONE_MARKER_LABEL,
               LAST_TOMBSTONE_REPORT,
-              tombstoneHint -> tombstoneHint.timestamp()));
+              tombstoneHint -> tombstoneHint.timestamp()),
+          new TimestampMarkerHandler<>(
+              MemoryLimiterIntegration.MemoryLimiterHint.class,
+              LAST_MEMORY_LIMITER_MARKER_LABEL,
+              LAST_MEMORY_LIMITER_REPORT,
+              memoryLimiterHint -> memoryLimiterHint.timestamp()));
 }

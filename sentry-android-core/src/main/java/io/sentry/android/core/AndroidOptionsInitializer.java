@@ -434,6 +434,11 @@ final class AndroidOptionsInitializer {
       options.addIntegration(new TombstoneIntegration(context));
     }
 
+    // TODO ADAM: Note that this is a default integration.
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.CINNAMON_BUN) {
+      options.addIntegration(new MemoryLimiterIntegration(context));
+    }
+
     // this integration uses android.os.FileObserver, we can't move to sentry
     // before creating a pure java impl.
     options.addIntegration(EnvelopeFileObserverIntegration.getOutboxFileObserver());

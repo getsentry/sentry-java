@@ -251,6 +251,22 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean reportHistoricalTombstones = false;
 
   /**
+   * Controls whether to report <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> kills from
+   * the {@link ApplicationExitInfo} system API.
+   */
+  private boolean memoryLimiterEnabled = false;
+
+  // TODO ADAM: What are "historical" MemoryLimiter kills vs the plain vanilla variety controlled
+  //  by memoryLimterEnabled?
+  /**
+   * Controls whether to report historical <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> kills from
+   * the {@link ApplicationExitInfo} system API.
+   */
+  private boolean reportHistoricalMemoryLimiterKills = false;
+
+  /**
    * Controls whether to send ANR (v2) thread dump as an attachment with plain text. The thread dump
    * is being attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
    */
@@ -707,6 +723,26 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setReportHistoricalTombstones(final boolean reportHistoricalTombstones) {
     this.reportHistoricalTombstones = reportHistoricalTombstones;
+  }
+
+  // TODO ADAM: Should these be experimental?
+  // TODO ADAM: KDocs with API level limitations?
+  // TODO ADAM: Explain the public configs for MemoryLimiter
+  public boolean isMemoryLimiterEnabled() {
+    return memoryLimiterEnabled;
+  }
+
+  public void setMemoryLimiterEnabled(final boolean memoryLimiterEnabled) {
+    this.memoryLimiterEnabled = memoryLimiterEnabled;
+  }
+
+  public boolean isReportHistoricalMemoryLimiterKills() {
+    return reportHistoricalMemoryLimiterKills;
+  }
+
+  public void setReportHistoricalMemoryLimiterKills(
+      final boolean reportHistoricalMemoryLimiterKills) {
+    this.reportHistoricalMemoryLimiterKills = reportHistoricalMemoryLimiterKills;
   }
 
   public boolean isAttachAnrThreadDump() {

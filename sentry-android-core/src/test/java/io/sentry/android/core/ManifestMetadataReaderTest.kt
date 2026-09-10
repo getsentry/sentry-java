@@ -488,6 +488,26 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads memory limiter enable to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.MEMORY_LIMITER_ENABLE to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertEquals(true, fixture.options.isMemoryLimiterEnabled)
+  }
+
+  @Test
+  fun `applyMetadata reads memory limiter historical reporting to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.MEMORY_LIMITER_REPORT_HISTORICAL to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertEquals(true, fixture.options.isReportHistoricalMemoryLimiterKills)
+  }
+
+  @Test
   fun `applyMetadata reads activity breadcrumbs to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.BREADCRUMBS_ACTIVITY_LIFECYCLE_ENABLE to false)
