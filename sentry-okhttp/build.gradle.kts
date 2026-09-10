@@ -38,6 +38,7 @@ dependencies {
   testImplementation(libs.mockito.inline)
   testImplementation(libs.okhttp)
   testImplementation(libs.okhttp.mockwebserver)
+  testImplementation(libs.google.truth)
 }
 
 buildConfig {
