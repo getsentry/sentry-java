@@ -164,17 +164,22 @@ public final class SentryTracer implements ITransaction {
 
   /** When a timeout of {@code timeoutMillis}, scheduled now, falls due. */
   private @NotNull Expiry expiryIn(final long timeoutMillis) {
+    // Yeah, we can just reach in to that scopes.options and grab whatever we want. Can't even hide
+    // this one behind an interface.
     final @NotNull SentryOptions options = scopes.getOptions();
     return new Expiry(
         Deadline.after(options.getMonotonicTicker(), timeoutMillis, TimeUnit.MILLISECONDS),
+        // This is just the current Timestamp + deadline as a wall clock time.
         Timestamp.ofEpochNanos(
             options.getEpochClock().now().epochNanos()
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis)));
   }
 
+  // A little bridge between the new Timestamp API and the old SentryDate.
   private static @Nullable SentryDate finishDateOf(final @Nullable Expiry expiry) {
+    // In Kotlin it would be expiry?.expiredAt()?.sentryDate if that makes it easier to read.
     final @Nullable Timestamp expiredAt = expiry == null ? null : expiry.expiredAt();
-    return expiredAt == null ? null : expiredAt.toSentryDate();
+    return expiredAt == null ? null : expiredAt.getSentryDate();
   }
 
   /**
@@ -211,11 +216,12 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @NotNull void forceFinish(
+  public void forceFinish(
       final @NotNull SpanStatus status, final boolean dropIfNoChildren, final @Nullable Hint hint) {
     forceFinish(status, dropIfNoChildren, hint, null);
   }
 
+  // Use the finishDate provided to finish the transaction in case the timeout/deadline has passed.
   private void forceFinish(
       final @NotNull SpanStatus status,
       final boolean dropIfNoChildren,

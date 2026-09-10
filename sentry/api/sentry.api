@@ -7640,9 +7640,9 @@ public final class io/sentry/time/SystemEpochClock : io/sentry/time/EpochClock {
 public final class io/sentry/time/Timestamp {
 	public fun epochNanos ()J
 	public fun equals (Ljava/lang/Object;)Z
+	public fun getSentryDate ()Lio/sentry/SentryDate;
 	public fun hashCode ()I
 	public static fun ofEpochNanos (J)Lio/sentry/time/Timestamp;
-	public fun toSentryDate ()Lio/sentry/SentryDate;
 	public fun toString ()Ljava/lang/String;
 }
 

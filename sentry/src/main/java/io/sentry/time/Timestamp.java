@@ -62,7 +62,7 @@ public final class Timestamp {
    *
    * @return a SentryDate implemented by a SentryLongDate
    */
-  public SentryDate toSentryDate() {
+  public SentryDate getSentryDate() {
     return new SentryLongDate(epochNanos);
   }
 }
