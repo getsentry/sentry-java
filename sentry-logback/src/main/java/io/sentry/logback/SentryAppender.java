@@ -118,7 +118,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeStamp()));
     final Message message = new Message();
 
-    // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
+    // Encoders may mask or strip PII. When one is configured, include the original message and
+    // parameters only if includeUnencodedMessage or the legacy sendDefaultPii option is enabled.
     if (shouldIncludeUnencodedMessage()) {
       message.setMessage(loggingEvent.getMessage());
       message.setParams(toParams(loggingEvent.getArgumentArray()));
@@ -177,7 +178,8 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final @NotNull SentryAttributes attributes = SentryAttributes.of();
     final @NotNull String formattedMessage = formatted(loggingEvent);
 
-    // if encoder is set we treat message+params as PII as encoders may be used to mask/strip PII
+    // Encoders may mask or strip PII. When one is configured, include the original message and
+    // parameters only if includeUnencodedMessage or the legacy sendDefaultPii option is enabled.
     if (shouldIncludeUnencodedMessage()) {
       final @Nullable String nonFormattedMessage = loggingEvent.getMessage();
       if (nonFormattedMessage != null && !formattedMessage.equals(nonFormattedMessage)) {
