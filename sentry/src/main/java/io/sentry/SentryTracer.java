@@ -40,6 +40,10 @@ public final class SentryTracer implements ITransaction {
   private volatile @Nullable Future<?> idleTimeoutFuture;
   private volatile @Nullable Future<?> deadlineTimeoutFuture;
 
+  // The instant each timeout is due, projected when its timer is scheduled. See dueDate.
+  private volatile @Nullable SentryDate idleTimeoutDueDate;
+  private volatile @Nullable SentryDate deadlineTimeoutDueDate;
+
   // Whether timeout tasks may still be scheduled. Set to false once the tracer is finished. The
   // executor itself is owned by the options (shared SDK-wide) and obtained from there when needed.
   private volatile boolean timersEnabled = false;
@@ -117,6 +121,7 @@ public final class SentryTracer implements ITransaction {
         if (idleTimeout != null) {
           cancelIdleTimer();
           isIdleFinishTimerRunning.set(true);
+          idleTimeoutDueDate = dueDate(idleTimeout);
 
           try {
             idleTimeoutFuture =
@@ -140,7 +145,7 @@ public final class SentryTracer implements ITransaction {
 
   private void onIdleTimeoutReached() {
     final @Nullable SpanStatus status = getStatus();
-    finish((status != null) ? status : SpanStatus.OK);
+    finish((status != null) ? status : SpanStatus.OK, notLaterThan(idleTimeoutDueDate));
     isIdleFinishTimerRunning.set(false);
   }
 
@@ -149,18 +154,45 @@ public final class SentryTracer implements ITransaction {
     forceFinish(
         (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
         transactionOptions.getIdleTimeout() != null,
-        null);
+        null,
+        notLaterThan(deadlineTimeoutDueDate));
     isDeadlineTimerRunning.set(false);
+  }
+
+  /** The instant at which a timeout of {@code timeoutMillis}, scheduled now, falls due. */
+  private @NotNull SentryDate dueDate(final long timeoutMillis) {
+    final @NotNull SentryDate now = scopes.getOptions().getDateProvider().now();
+    return new SentryLongDate(now.nanoTimestamp() + DateUtils.millisToNanos(timeoutMillis));
+  }
+
+  /**
+   * The timeout timers run on a thread that is frozen while the device sleeps or the process is
+   * cached, so a timeout scheduled for 30s can fire hours later. Stamping the spans with the
+   * wake-up time turns an app start the user walked away from into a multi-hour transaction, so we
+   * report the instant the timeout fell due instead.
+   */
+  private @NotNull SentryDate notLaterThan(final @Nullable SentryDate dueDate) {
+    final @NotNull SentryDate now = scopes.getOptions().getDateProvider().now();
+    return dueDate != null && now.isAfter(dueDate) ? dueDate : now;
   }
 
   @Override
   public @NotNull void forceFinish(
       final @NotNull SpanStatus status, final boolean dropIfNoChildren, final @Nullable Hint hint) {
+    forceFinish(status, dropIfNoChildren, hint, null);
+  }
+
+  private void forceFinish(
+      final @NotNull SpanStatus status,
+      final boolean dropIfNoChildren,
+      final @Nullable Hint hint,
+      final @Nullable SentryDate finishDate) {
     if (isFinished()) {
       return;
     }
 
-    final @NotNull SentryDate finishTimestamp = scopes.getOptions().getDateProvider().now();
+    final @NotNull SentryDate finishTimestamp =
+        finishDate != null ? finishDate : scopes.getOptions().getDateProvider().now();
 
     // abort all child-spans first, this ensures the transaction can be finished,
     // even if waitForChildren is true
@@ -310,6 +342,7 @@ public final class SentryTracer implements ITransaction {
         if (timersEnabled) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
+          deadlineTimeoutDueDate = dueDate(deadlineTimeOut);
           try {
             deadlineTimeoutFuture =
                 scopes

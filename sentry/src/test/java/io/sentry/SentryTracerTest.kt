@@ -10,6 +10,7 @@ import io.sentry.test.getProperty
 import io.sentry.util.thread.IThreadChecker
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -78,6 +79,14 @@ class SentryTracerTest {
   }
 
   private val fixture = Fixture()
+
+  /** Lets a test place "now" wherever it likes, to stand in for a timer that fired late. */
+  private class ControllableDateProvider(var date: SentryDate) : SentryDateProvider {
+    override fun now(): SentryDate = date
+  }
+
+  private fun SentryDate.plus(amount: Long, unit: TimeUnit): SentryDate =
+    SentryLongDate(nanoTimestamp() + unit.toNanos(amount))
 
   @Test
   fun `transfer origin from transaction options to transaction context`() {
@@ -1101,6 +1110,57 @@ class SentryTracerTest {
     assertEquals(transaction.isFinished, true)
     assertEquals(SpanStatus.DEADLINE_EXCEEDED, transaction.status)
     assertEquals(SpanStatus.DEADLINE_EXCEEDED, span.status)
+  }
+
+  @Test
+  fun `when the deadline timer fires late, tx and children end when the deadline fell due`() {
+    val start = SentryLongDate(1_000_000_000L)
+    val dateProvider = ControllableDateProvider(start)
+    val transaction =
+      fixture.getSut(
+        optionsConfiguration = { it.dateProvider = dateProvider },
+        deadlineTimeout = 20,
+      )
+    val span = transaction.startChild("op")
+
+    // the device slept through the deadline, so the timer thread only runs again hours later
+    dateProvider.date = start.plus(3, TimeUnit.HOURS)
+    await.untilFalse(transaction.isDeadlineTimerRunning)
+
+    val due = start.plus(20, TimeUnit.MILLISECONDS)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(due.nanoTimestamp())
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(due.nanoTimestamp())
+  }
+
+  @Test
+  fun `when the deadline timer fires on time, the transaction ends now`() {
+    val start = SentryLongDate(1_000_000_000L)
+    val dateProvider = ControllableDateProvider(start)
+    val transaction =
+      fixture.getSut(
+        optionsConfiguration = { it.dateProvider = dateProvider },
+        deadlineTimeout = 20,
+      )
+    transaction.startChild("op")
+
+    await.untilFalse(transaction.isDeadlineTimerRunning)
+
+    // the due date is in the future here, so it must not be used to stamp the end
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(start.nanoTimestamp())
+  }
+
+  @Test
+  fun `when the idle timer fires late, the transaction ends when the idle timeout fell due`() {
+    val start = SentryLongDate(1_000_000_000L)
+    val dateProvider = ControllableDateProvider(start)
+    val transaction =
+      fixture.getSut(optionsConfiguration = { it.dateProvider = dateProvider }, idleTimeout = 20)
+
+    dateProvider.date = start.plus(3, TimeUnit.HOURS)
+    await.untilFalse(transaction.isFinishTimerRunning)
+
+    assertThat(transaction.finishDate!!.nanoTimestamp())
+      .isEqualTo(start.plus(20, TimeUnit.MILLISECONDS).nanoTimestamp())
   }
 
   @Test
