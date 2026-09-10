@@ -883,7 +883,6 @@ public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable 
 	public fun setStartedAt (J)V
 	public fun setStoppedAt (J)V
 	public fun setup (Ljava/lang/String;JJJ)V
-	public fun start ()V
 	public fun stop ()V
 }
 
