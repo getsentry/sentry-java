@@ -4,6 +4,9 @@ package io.sentry.metrics;
  * String constants for metric units.
  *
  * <p>These constants represent the API names of measurement units that can be used with metrics.
+ * Metrics APIs intentionally accept strings instead of {@link io.sentry.MeasurementUnit} because it
+ * contains units that metrics do not support. Strings also let older SDK versions use units
+ * introduced after their release.
  */
 public final class MetricsUnit {
 
