@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Deprecate `MetricsUnit` in favor of `MeasurementUnit`, which defines the same units and is now accepted directly by the `Sentry.metrics()` API ([#6086](https://github.com/getsentry/sentry-java/pull/6086))
+
 ## 8.56.0
 
 ### Behavioral Changes
