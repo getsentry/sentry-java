@@ -280,8 +280,8 @@ class SentryAppenderTest {
     fixture = Fixture(minimumEventLevel = Level.DEBUG, includeUnencodedMessage = true)
     fixture.logger.info("testing encoding {}", "param1")
 
-    assertThat(SentryAppender().isIncludeUnencodedMessage).isFalse()
-    assertThat(fixture.appender.isIncludeUnencodedMessage).isTrue()
+    assertThat(SentryAppender().includeUnencodedMessage).isFalse()
+    assertThat(fixture.appender.includeUnencodedMessage).isTrue()
     verify(fixture.transport)
       .send(
         checkEvent { event ->

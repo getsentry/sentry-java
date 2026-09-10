@@ -344,7 +344,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   /**
    * Whether to include the original message template and parameters when an encoder is configured.
    */
-  public boolean isIncludeUnencodedMessage() {
+  public boolean getIncludeUnencodedMessage() {
     return includeUnencodedMessage;
   }
 
