@@ -183,20 +183,15 @@ public final class SentryTracer implements ITransaction {
   }
 
   /**
-   * When a timeout falls due, in the two forms the tracer needs.
+   * When a timeout falls due: the instant to end at, and whether it has arrived.
    *
-   * <p>The timers run on a thread that is frozen while the device sleeps or the process is cached,
-   * so a timeout scheduled for 30s can fire hours later. Ending the transaction at the wake-up time
-   * turns an app start the user walked away from into a multi-hour transaction, so an expired
-   * timeout ends it at the instant it fell due instead.
+   * <p>The timers run on a thread frozen while the device sleeps or the process is cached, so one
+   * scheduled for 30s can fire hours later. Ending at the wake-up time turns an app start the user
+   * walked away from into a multi-hour transaction, so an expired timeout ends at the instant it
+   * fell due instead.
    *
-   * <p>Whether the timeout expired is a duration, so it is measured on a {@link Deadline}: the
-   * executor's own delay runs on a clock that stops during deep sleep, and the wall clock can step
-   * either way while the timer waits.
-   *
-   * <p>The instant to end at is a {@link Timestamp} from {@link SentryOptions#getEpochClock()},
-   * projected once from a single reading, and bridged to the {@link SentryDate} the span API takes
-   * only at the point of use.
+   * <p>Only a {@link Deadline} can say whether it expired: the executor's own delay stops during
+   * deep sleep, and the wall clock can step either way while the timer waits.
    */
   private static final class Expiry {
 
