@@ -7642,6 +7642,7 @@ public final class io/sentry/time/Timestamp {
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public static fun ofEpochNanos (J)Lio/sentry/time/Timestamp;
+	public fun toSentryDate ()Lio/sentry/SentryDate;
 	public fun toString ()Ljava/lang/String;
 }
 

@@ -6,6 +6,7 @@ import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
 import io.sentry.time.Deadline;
+import io.sentry.time.Timestamp;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -166,13 +167,14 @@ public final class SentryTracer implements ITransaction {
     final @NotNull SentryOptions options = scopes.getOptions();
     return new Expiry(
         Deadline.after(options.getMonotonicTicker(), timeoutMillis, TimeUnit.MILLISECONDS),
-        new SentryLongDate(
-            options.getDateProvider().now().nanoTimestamp()
+        Timestamp.ofEpochNanos(
+            options.getEpochClock().now().epochNanos()
                 + TimeUnit.MILLISECONDS.toNanos(timeoutMillis)));
   }
 
   private static @Nullable SentryDate finishDateOf(final @Nullable Expiry expiry) {
-    return expiry == null ? null : expiry.expiredAt();
+    final @Nullable Timestamp expiredAt = expiry == null ? null : expiry.expiredAt();
+    return expiredAt == null ? null : expiredAt.toSentryDate();
   }
 
   /**
@@ -187,24 +189,23 @@ public final class SentryTracer implements ITransaction {
    * executor's own delay runs on a clock that stops during deep sleep, and the wall clock can step
    * either way while the timer waits.
    *
-   * <p>The instant to end at stays a {@link SentryDate} rather than an {@link
-   * io.sentry.time.Timestamp}. It will be subtracted from the span timestamps around it, so it has
-   * to be read from the same clock they are, and those come from {@link
-   * SentryOptions#getDateProvider()}. It is projected once, here, from a single reading.
+   * <p>The instant to end at is a {@link Timestamp} from {@link SentryOptions#getEpochClock()},
+   * projected once from a single reading, and bridged to the {@link SentryDate} the span API takes
+   * only at the point of use.
    */
   private static final class Expiry {
 
     private final @NotNull Deadline deadline;
-    private final @NotNull SentryDate expiredAt;
+    private final @NotNull Timestamp expiredAt;
 
-    Expiry(final @NotNull Deadline deadline, final @NotNull SentryDate expiredAt) {
+    Expiry(final @NotNull Deadline deadline, final @NotNull Timestamp expiredAt) {
       this.deadline = deadline;
       this.expiredAt = expiredAt;
     }
 
     /** The instant to end at, or null to end now because the timeout has not actually expired. */
     @Nullable
-    SentryDate expiredAt() {
+    Timestamp expiredAt() {
       return deadline.hasPassed() ? expiredAt : null;
     }
   }

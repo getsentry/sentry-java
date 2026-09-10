@@ -7,6 +7,8 @@ import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import io.sentry.test.createTestScopes
 import io.sentry.test.getProperty
+import io.sentry.time.EpochClock
+import io.sentry.time.Timestamp
 import io.sentry.util.thread.IThreadChecker
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -35,8 +37,15 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class SentryTracerTest {
+  /** {@link SentryOptions#getEpochClock()} has no setter, so a test fakes it by overriding. */
+  private class TestOptions : SentryOptions() {
+    var testEpochClock: EpochClock? = null
+
+    override fun getEpochClock(): EpochClock = testEpochClock ?: super.getEpochClock()
+  }
+
   private class Fixture {
-    val options = SentryOptions()
+    val options = TestOptions()
     val scopes: Scopes
     val compositePerformanceCollector: CompositePerformanceCollector
 
@@ -80,13 +89,19 @@ class SentryTracerTest {
 
   private val fixture = Fixture()
 
-  /** Lets a test place "now" wherever it likes, to stand in for a timer that fired late. */
-  private class ControllableDateProvider(var date: SentryDate) : SentryDateProvider {
-    override fun now(): SentryDate = date
+  /**
+   * One movable "now", behind both clocks the tracer reads: the date provider that stamps spans and
+   * the epoch clock that projects when a timeout falls due.
+   */
+  private class ControllableClock(var epochNanos: Long) {
+    val dateProvider = SentryDateProvider { SentryLongDate(epochNanos) }
+    val epochClock = EpochClock { Timestamp.ofEpochNanos(epochNanos) }
   }
 
-  private fun SentryDate.plus(amount: Long, unit: TimeUnit): SentryDate =
-    SentryLongDate(nanoTimestamp() + unit.toNanos(amount))
+  private fun useClock(clock: ControllableClock) {
+    fixture.options.dateProvider = clock.dateProvider
+    fixture.options.testEpochClock = clock.epochClock
+  }
 
   @Test
   fun `transfer origin from transaction options to transaction context`() {
@@ -1114,93 +1129,82 @@ class SentryTracerTest {
 
   @Test
   fun `when the deadline timer fires late, tx and children end when the deadline fell due`() {
-    val start = SentryLongDate(1_000_000_000L)
-    val dateProvider = ControllableDateProvider(start)
-    val transaction =
-      fixture.getSut(
-        optionsConfiguration = { it.dateProvider = dateProvider },
-        deadlineTimeout = 20,
-      )
+    val start = 1_000_000_000_000L
+    val clock = ControllableClock(start)
+    useClock(clock)
+    val transaction = fixture.getSut(deadlineTimeout = 20)
     val span = transaction.startChild("op")
 
     // the device slept through the deadline, so the timer thread only runs again hours later
-    dateProvider.date = start.plus(3, TimeUnit.HOURS)
+    clock.epochNanos = start + TimeUnit.HOURS.toNanos(3)
     await.untilFalse(transaction.isDeadlineTimerRunning)
 
-    val due = start.plus(20, TimeUnit.MILLISECONDS)
-    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(due.nanoTimestamp())
-    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(due.nanoTimestamp())
+    val due = start + TimeUnit.MILLISECONDS.toNanos(20)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(due)
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(due)
   }
 
   @Test
   fun `when the wall clock steps back past the deadline, the transaction still ends when it fell due`() {
-    val start = SentryLongDate(1_000_000_000_000L)
-    val dateProvider = ControllableDateProvider(start)
-    val transaction =
-      fixture.getSut(
-        optionsConfiguration = { it.dateProvider = dateProvider },
-        deadlineTimeout = 20,
-      )
+    val start = 1_000_000_000_000L
+    val clock = ControllableClock(start)
+    useClock(clock)
+    val transaction = fixture.getSut(deadlineTimeout = 20)
 
-    // an NTP correction moves the wall clock backwards while the timer waits, so the due date now
-    // looks like it is in the future. Whether the deadline expired is not the wall clock's to say.
-    dateProvider.date = start.plus(-1, TimeUnit.HOURS)
+    // an NTP correction moves the wall clock backwards while the timer waits, so the due instant
+    // now looks like it is ahead of us. Whether the deadline expired is not the wall clock's to say
+    clock.epochNanos = start - TimeUnit.HOURS.toNanos(1)
     await.untilFalse(transaction.isDeadlineTimerRunning)
 
     assertThat(transaction.finishDate!!.nanoTimestamp())
-      .isEqualTo(start.plus(20, TimeUnit.MILLISECONDS).nanoTimestamp())
+      .isEqualTo(start + TimeUnit.MILLISECONDS.toNanos(20))
   }
 
   @Test
   fun `when the deadline timer fires on time, the transaction ends when it fell due`() {
-    val start = SentryLongDate(1_000_000_000L)
-    val dateProvider = ControllableDateProvider(start)
-    val transaction =
-      fixture.getSut(
-        optionsConfiguration = { it.dateProvider = dateProvider },
-        deadlineTimeout = 20,
-      )
+    val start = 1_000_000_000_000L
+    val clock = ControllableClock(start)
+    useClock(clock)
+    val transaction = fixture.getSut(deadlineTimeout = 20)
     transaction.startChild("op")
 
     await.untilFalse(transaction.isDeadlineTimerRunning)
 
     // an expired deadline ends the transaction at the deadline, not at whenever the timer ran
     assertThat(transaction.finishDate!!.nanoTimestamp())
-      .isEqualTo(start.plus(20, TimeUnit.MILLISECONDS).nanoTimestamp())
+      .isEqualTo(start + TimeUnit.MILLISECONDS.toNanos(20))
   }
 
   @Test
   fun `when the deadline has not expired, the transaction ends now`() {
-    val start = SentryLongDate(1_000_000_000L)
-    val dateProvider = ControllableDateProvider(start)
+    val start = 1_000_000_000_000L
+    val clock = ControllableClock(start)
+    useClock(clock)
     // scheduling fails, so the tracer finishes inline while the deadline is still in the future
     val executor = mock<ISentryExecutorService>()
     whenever(executor.schedule(any(), any())).thenThrow(RuntimeException("rejected"))
 
     val transaction =
       fixture.getSut(
-        optionsConfiguration = {
-          it.dateProvider = dateProvider
-          it.timerExecutorService = executor
-        },
+        optionsConfiguration = { it.timerExecutorService = executor },
         deadlineTimeout = 20,
       )
 
-    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(start.nanoTimestamp())
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(start)
   }
 
   @Test
   fun `when the idle timer fires late, the transaction ends when the idle timeout fell due`() {
-    val start = SentryLongDate(1_000_000_000L)
-    val dateProvider = ControllableDateProvider(start)
-    val transaction =
-      fixture.getSut(optionsConfiguration = { it.dateProvider = dateProvider }, idleTimeout = 20)
+    val start = 1_000_000_000_000L
+    val clock = ControllableClock(start)
+    useClock(clock)
+    val transaction = fixture.getSut(idleTimeout = 20)
 
-    dateProvider.date = start.plus(3, TimeUnit.HOURS)
+    clock.epochNanos = start + TimeUnit.HOURS.toNanos(3)
     await.untilFalse(transaction.isFinishTimerRunning)
 
     assertThat(transaction.finishDate!!.nanoTimestamp())
-      .isEqualTo(start.plus(20, TimeUnit.MILLISECONDS).nanoTimestamp())
+      .isEqualTo(start + TimeUnit.MILLISECONDS.toNanos(20))
   }
 
   @Test
