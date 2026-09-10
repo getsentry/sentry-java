@@ -20,6 +20,7 @@ import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.clientreport.DiscardReason.RATELIMIT_BACKOFF
 import io.sentry.protocol.SentryId
+import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import java.io.File
@@ -44,6 +45,7 @@ internal class BufferCaptureStrategy(
   private val options: SentryOptions,
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,
+  private val ticker: MonotonicTicker,
   executor: ScheduledExecutorService,
   persistingExecutor: ScheduledExecutorService,
   replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
@@ -52,6 +54,7 @@ internal class BufferCaptureStrategy(
     options,
     scopes,
     dateProvider,
+    ticker,
     executor,
     persistingExecutor,
     replayCacheProvider = replayCacheProvider,
@@ -173,7 +176,14 @@ internal class BufferCaptureStrategy(
     // we hand over replayExecutor and persistingExecutor to the new strategy to preserve order of
     // execution
     val captureStrategy =
-      SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor, persistingExecutor)
+      SessionCaptureStrategy(
+        options,
+        scopes,
+        dateProvider,
+        ticker,
+        replayExecutor,
+        persistingExecutor,
+      )
     captureStrategy.recorderConfig = recorderConfig
     captureStrategy.start(
       segmentId = currentSegment,

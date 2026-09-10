@@ -30,11 +30,14 @@ import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebOptionsEvent
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -108,6 +111,8 @@ class SessionCaptureStrategyTest {
         bitRate = 20_000,
       )
 
+    val ticker = TestMonotonicTicker()
+
     fun getSut(
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
       replayCacheDir: File? = null,
@@ -125,6 +130,7 @@ class SessionCaptureStrategyTest {
         options,
         scopes,
         dateProvider,
+        ticker,
         replayExecutor,
         mock {
           doAnswer { invocation ->
@@ -447,6 +453,37 @@ class SessionCaptureStrategyTest {
     strategy.start()
     strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
     now += fixture.options.sessionReplay.sessionDuration * 2
+    fixture.ticker.advance(fixture.options.sessionReplay.sessionDuration * 2, MILLISECONDS)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.options.replayController).stop()
+  }
+
+  @Test
+  fun `onScreenshotRecorded does not stop replay when the wall clock jumps past the deadline`() {
+    var now = System.currentTimeMillis()
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
+    // the device corrects its clock two hours forwards a second into the recording
+    now += fixture.options.sessionReplay.sessionDuration * 2
+    fixture.ticker.advance(1, SECONDS)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.options.replayController, never()).stop()
+  }
+
+  @Test
+  fun `onScreenshotRecorded stops replay when the wall clock steps backwards past the deadline`() {
+    var now = System.currentTimeMillis()
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
+    // an hour of recording, during which the device drags its clock back to before the start
+    fixture.ticker.advance(fixture.options.sessionReplay.sessionDuration, MILLISECONDS)
+    now -= 1000
 
     strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 
