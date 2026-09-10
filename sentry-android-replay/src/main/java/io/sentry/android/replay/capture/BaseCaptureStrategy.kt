@@ -48,11 +48,8 @@ import kotlin.reflect.KProperty
 internal abstract class BaseCaptureStrategy(
   private val options: SentryOptions,
   private val scopes: IScopes?,
-  // TODO [MAJOR]: every value this provider stamps is serialized — segment timestamps and
-  // durations, frame filenames, buffer cutoffs, gesture offsets — and they are all subtracted from
-  // each other, so a clock step corrupts a recording. Replacing it with an io.sentry.time
-  // .AnchoredClock re-bases those timestamps and is therefore v9-only. See JAVA-575.
-  private val dateProvider: ICurrentDateProvider,
+  // TODO [v9]: We should consider replacing this with AnchoredClock in V9.
+  dateProvider: ICurrentDateProvider,
   private val ticker: MonotonicTicker,
   protected val replayExecutor: ScheduledExecutorService,
   protected val persistingExecutor: ScheduledExecutorService,

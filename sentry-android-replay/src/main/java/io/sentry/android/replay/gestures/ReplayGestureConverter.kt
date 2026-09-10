@@ -13,8 +13,7 @@ import io.sentry.transport.ICurrentDateProvider
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 internal class ReplayGestureConverter(
-  // TODO [MAJOR]: the timestamps and timeOffsets stamped from this provider are serialized, so
-  // moving them onto an io.sentry.time.AnchoredClock is v9-only. See JAVA-575.
+  // TODO [v9]: Replace this with AnchoredClock in V9
   private val dateProvider: ICurrentDateProvider,
   private val ticker: MonotonicTicker,
 ) {
