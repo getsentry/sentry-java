@@ -7,18 +7,28 @@ import io.sentry.rrweb.RRWebInteractionEvent
 import io.sentry.rrweb.RRWebInteractionEvent.InteractionType
 import io.sentry.rrweb.RRWebInteractionMoveEvent
 import io.sentry.rrweb.RRWebInteractionMoveEvent.Position
+import io.sentry.time.Deadline
+import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
-internal class ReplayGestureConverter(private val dateProvider: ICurrentDateProvider) {
+internal class ReplayGestureConverter(
+  // TODO [MAJOR]: the timestamps and timeOffsets stamped from this provider are serialized, so
+  // moving them onto an io.sentry.time.AnchoredClock is v9-only. See JAVA-575.
+  private val dateProvider: ICurrentDateProvider,
+  private val ticker: MonotonicTicker,
+) {
   internal companion object {
     // rrweb values
-    private const val TOUCH_MOVE_DEBOUNCE_THRESHOLD = 50
+    private const val TOUCH_MOVE_DEBOUNCE_THRESHOLD = 50L
     private const val CAPTURE_MOVE_EVENT_THRESHOLD = 500
   }
 
   private val currentPositions = LinkedHashMap<Int, ArrayList<Position>>(10)
   private var touchMoveBaseline = 0L
-  private var lastCapturedMoveEvent = 0L
+
+  /** When the next move event may be captured, or `null` before the first one. */
+  private var moveDebounce: Deadline? = null
 
   fun convert(
     event: MotionEvent,
@@ -28,12 +38,10 @@ internal class ReplayGestureConverter(private val dateProvider: ICurrentDateProv
       MotionEvent.ACTION_MOVE -> {
         // we only throttle move events as those can be overwhelming
         val now = dateProvider.currentTimeMillis
-        if (
-          lastCapturedMoveEvent != 0L && lastCapturedMoveEvent + TOUCH_MOVE_DEBOUNCE_THRESHOLD > now
-        ) {
+        if (moveDebounce?.hasPassed() == false) {
           return null
         }
-        lastCapturedMoveEvent = now
+        moveDebounce = Deadline.after(ticker, TOUCH_MOVE_DEBOUNCE_THRESHOLD, MILLISECONDS)
 
         currentPositions.keys.forEach { pId ->
           val pIndex = event.findPointerIndex(pId)
