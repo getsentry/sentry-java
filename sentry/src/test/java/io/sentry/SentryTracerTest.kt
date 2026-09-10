@@ -1133,7 +1133,26 @@ class SentryTracerTest {
   }
 
   @Test
-  fun `when the deadline timer fires on time, the transaction ends now`() {
+  fun `when the wall clock steps back past the deadline, the transaction still ends when it fell due`() {
+    val start = SentryLongDate(1_000_000_000_000L)
+    val dateProvider = ControllableDateProvider(start)
+    val transaction =
+      fixture.getSut(
+        optionsConfiguration = { it.dateProvider = dateProvider },
+        deadlineTimeout = 20,
+      )
+
+    // an NTP correction moves the wall clock backwards while the timer waits, so the due date now
+    // looks like it is in the future. Whether the deadline expired is not the wall clock's to say.
+    dateProvider.date = start.plus(-1, TimeUnit.HOURS)
+    await.untilFalse(transaction.isDeadlineTimerRunning)
+
+    assertThat(transaction.finishDate!!.nanoTimestamp())
+      .isEqualTo(start.plus(20, TimeUnit.MILLISECONDS).nanoTimestamp())
+  }
+
+  @Test
+  fun `when the deadline timer fires on time, the transaction ends when it fell due`() {
     val start = SentryLongDate(1_000_000_000L)
     val dateProvider = ControllableDateProvider(start)
     val transaction =
@@ -1145,7 +1164,28 @@ class SentryTracerTest {
 
     await.untilFalse(transaction.isDeadlineTimerRunning)
 
-    // the due date is in the future here, so it must not be used to stamp the end
+    // an expired deadline ends the transaction at the deadline, not at whenever the timer ran
+    assertThat(transaction.finishDate!!.nanoTimestamp())
+      .isEqualTo(start.plus(20, TimeUnit.MILLISECONDS).nanoTimestamp())
+  }
+
+  @Test
+  fun `when the deadline has not expired, the transaction ends now`() {
+    val start = SentryLongDate(1_000_000_000L)
+    val dateProvider = ControllableDateProvider(start)
+    // scheduling fails, so the tracer finishes inline while the deadline is still in the future
+    val executor = mock<ISentryExecutorService>()
+    whenever(executor.schedule(any(), any())).thenThrow(RuntimeException("rejected"))
+
+    val transaction =
+      fixture.getSut(
+        optionsConfiguration = {
+          it.dateProvider = dateProvider
+          it.timerExecutorService = executor
+        },
+        deadlineTimeout = 20,
+      )
+
     assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(start.nanoTimestamp())
   }
 

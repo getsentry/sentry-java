@@ -5,6 +5,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.time.Deadline;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -15,6 +16,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -40,9 +42,9 @@ public final class SentryTracer implements ITransaction {
   private volatile @Nullable Future<?> idleTimeoutFuture;
   private volatile @Nullable Future<?> deadlineTimeoutFuture;
 
-  // The instant each timeout is due, projected when its timer is scheduled. See dueDate.
-  private volatile @Nullable SentryDate idleTimeoutDueDate;
-  private volatile @Nullable SentryDate deadlineTimeoutDueDate;
+  // When each timeout falls due, captured when its timer is scheduled. See Expiry.
+  private volatile @Nullable Expiry idleExpiry;
+  private volatile @Nullable Expiry deadlineExpiry;
 
   // Whether timeout tasks may still be scheduled. Set to false once the tracer is finished. The
   // executor itself is owned by the options (shared SDK-wide) and obtained from there when needed.
@@ -121,7 +123,7 @@ public final class SentryTracer implements ITransaction {
         if (idleTimeout != null) {
           cancelIdleTimer();
           isIdleFinishTimerRunning.set(true);
-          idleTimeoutDueDate = dueDate(idleTimeout);
+          idleExpiry = expiryIn(idleTimeout);
 
           try {
             idleTimeoutFuture =
@@ -145,7 +147,7 @@ public final class SentryTracer implements ITransaction {
 
   private void onIdleTimeoutReached() {
     final @Nullable SpanStatus status = getStatus();
-    finish((status != null) ? status : SpanStatus.OK, notLaterThan(idleTimeoutDueDate));
+    finish((status != null) ? status : SpanStatus.OK, finishDateOf(idleExpiry));
     isIdleFinishTimerRunning.set(false);
   }
 
@@ -155,25 +157,52 @@ public final class SentryTracer implements ITransaction {
         (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
         transactionOptions.getIdleTimeout() != null,
         null,
-        notLaterThan(deadlineTimeoutDueDate));
+        finishDateOf(deadlineExpiry));
     isDeadlineTimerRunning.set(false);
   }
 
-  /** The instant at which a timeout of {@code timeoutMillis}, scheduled now, falls due. */
-  private @NotNull SentryDate dueDate(final long timeoutMillis) {
-    final @NotNull SentryDate now = scopes.getOptions().getDateProvider().now();
-    return new SentryLongDate(now.nanoTimestamp() + DateUtils.millisToNanos(timeoutMillis));
+  /** When a timeout of {@code timeoutMillis}, scheduled now, falls due. */
+  private @NotNull Expiry expiryIn(final long timeoutMillis) {
+    final @NotNull SentryOptions options = scopes.getOptions();
+    return new Expiry(
+        Deadline.after(options.getMonotonicTicker(), timeoutMillis, TimeUnit.MILLISECONDS),
+        new SentryLongDate(
+            options.getDateProvider().now().nanoTimestamp()
+                + DateUtils.millisToNanos(timeoutMillis)));
+  }
+
+  private static @Nullable SentryDate finishDateOf(final @Nullable Expiry expiry) {
+    return expiry == null ? null : expiry.finishDate();
   }
 
   /**
-   * The timeout timers run on a thread that is frozen while the device sleeps or the process is
-   * cached, so a timeout scheduled for 30s can fire hours later. Stamping the spans with the
-   * wake-up time turns an app start the user walked away from into a multi-hour transaction, so we
-   * report the instant the timeout fell due instead.
+   * When a timeout falls due, in the two forms the tracer needs.
+   *
+   * <p>The timers run on a thread that is frozen while the device sleeps or the process is cached,
+   * so a timeout scheduled for 30s can fire hours later. Ending the transaction at the wake-up time
+   * turns an app start the user walked away from into a multi-hour transaction, so an expired
+   * timeout ends it at the instant it fell due instead.
+   *
+   * <p>Whether the timeout expired is a duration, so it is measured on a {@link Deadline}: the
+   * executor's own delay runs on a clock that stops during deep sleep, and the wall clock can step
+   * either way while the timer waits. The instant to end at is a wall-clock timestamp, so it is
+   * projected once, here, from the same reading that sets the deadline.
    */
-  private @NotNull SentryDate notLaterThan(final @Nullable SentryDate dueDate) {
-    final @NotNull SentryDate now = scopes.getOptions().getDateProvider().now();
-    return dueDate != null && now.isAfter(dueDate) ? dueDate : now;
+  private static final class Expiry {
+
+    private final @NotNull Deadline deadline;
+    private final @NotNull SentryDate instant;
+
+    Expiry(final @NotNull Deadline deadline, final @NotNull SentryDate instant) {
+      this.deadline = deadline;
+      this.instant = instant;
+    }
+
+    /** The instant to end at, or null to end now because the timeout has not actually expired. */
+    @Nullable
+    SentryDate finishDate() {
+      return deadline.hasPassed() ? instant : null;
+    }
   }
 
   @Override
@@ -342,7 +371,7 @@ public final class SentryTracer implements ITransaction {
         if (timersEnabled) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
-          deadlineTimeoutDueDate = dueDate(deadlineTimeOut);
+          deadlineExpiry = expiryIn(deadlineTimeOut);
           try {
             deadlineTimeoutFuture =
                 scopes
