@@ -5,6 +5,8 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.time.Deadline;
+import io.sentry.time.Timestamp;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -15,6 +17,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -39,6 +42,10 @@ public final class SentryTracer implements ITransaction {
 
   private volatile @Nullable Future<?> idleTimeoutFuture;
   private volatile @Nullable Future<?> deadlineTimeoutFuture;
+
+  // When each timeout falls due, captured when its timer is scheduled. See Expiry.
+  private volatile @Nullable Expiry idleExpiry;
+  private volatile @Nullable Expiry deadlineExpiry;
 
   // Whether timeout tasks may still be scheduled. Set to false once the tracer is finished. The
   // executor itself is owned by the options (shared SDK-wide) and obtained from there when needed.
@@ -117,6 +124,7 @@ public final class SentryTracer implements ITransaction {
         if (idleTimeout != null) {
           cancelIdleTimer();
           isIdleFinishTimerRunning.set(true);
+          idleExpiry = expiryIn(idleTimeout);
 
           try {
             idleTimeoutFuture =
@@ -140,7 +148,7 @@ public final class SentryTracer implements ITransaction {
 
   private void onIdleTimeoutReached() {
     final @Nullable SpanStatus status = getStatus();
-    finish((status != null) ? status : SpanStatus.OK);
+    finish((status != null) ? status : SpanStatus.OK, finishDateOf(idleExpiry));
     isIdleFinishTimerRunning.set(false);
   }
 
@@ -149,18 +157,77 @@ public final class SentryTracer implements ITransaction {
     forceFinish(
         (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
         transactionOptions.getIdleTimeout() != null,
-        null);
+        null,
+        finishDateOf(deadlineExpiry));
     isDeadlineTimerRunning.set(false);
   }
 
+  /** When a timeout of {@code timeoutMillis}, scheduled now, falls due. */
+  private @NotNull Expiry expiryIn(final long timeoutMillis) {
+    // Yeah, we can just reach in to that scopes.options and grab whatever we want. Can't even hide
+    // this one behind an interface.
+    final @NotNull SentryOptions options = scopes.getOptions();
+    return new Expiry(
+        Deadline.after(options.getMonotonicTicker(), timeoutMillis, TimeUnit.MILLISECONDS),
+        // This is just the current Timestamp + deadline as a wall clock time.
+        Timestamp.ofEpochNanos(
+            options.getEpochClock().now().epochNanos()
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis)));
+  }
+
+  // A little bridge between the new Timestamp API and the old SentryDate.
+  private static @Nullable SentryDate finishDateOf(final @Nullable Expiry expiry) {
+    // In Kotlin it would be expiry?.expiredAt()?.sentryDate if that makes it easier to read.
+    final @Nullable Timestamp expiredAt = expiry == null ? null : expiry.expiredAt();
+    return expiredAt == null ? null : expiredAt.getSentryDate();
+  }
+
+  /**
+   * When a timeout falls due: the instant to end at, and whether it has arrived.
+   *
+   * <p>The timers run on a thread frozen while the device sleeps or the process is cached, so one
+   * scheduled for 30s can fire hours later. Ending at the wake-up time turns an app start the user
+   * walked away from into a multi-hour transaction, so an expired timeout ends at the instant it
+   * fell due instead.
+   *
+   * <p>Only a {@link Deadline} can say whether it expired: the executor's own delay stops during
+   * deep sleep, and the wall clock can step either way while the timer waits.
+   */
+  private static final class Expiry {
+
+    private final @NotNull Deadline deadline;
+    private final @NotNull Timestamp expiredAt;
+
+    Expiry(final @NotNull Deadline deadline, final @NotNull Timestamp expiredAt) {
+      this.deadline = deadline;
+      this.expiredAt = expiredAt;
+    }
+
+    /** The instant to end at, or null to end now because the timeout has not actually expired. */
+    @Nullable
+    Timestamp expiredAt() {
+      return deadline.hasPassed() ? expiredAt : null;
+    }
+  }
+
   @Override
-  public @NotNull void forceFinish(
+  public void forceFinish(
       final @NotNull SpanStatus status, final boolean dropIfNoChildren, final @Nullable Hint hint) {
+    forceFinish(status, dropIfNoChildren, hint, null);
+  }
+
+  // Use the finishDate provided to finish the transaction in case the timeout/deadline has passed.
+  private void forceFinish(
+      final @NotNull SpanStatus status,
+      final boolean dropIfNoChildren,
+      final @Nullable Hint hint,
+      final @Nullable SentryDate finishDate) {
     if (isFinished()) {
       return;
     }
 
-    final @NotNull SentryDate finishTimestamp = scopes.getOptions().getDateProvider().now();
+    final @NotNull SentryDate finishTimestamp =
+        finishDate != null ? finishDate : scopes.getOptions().getDateProvider().now();
 
     // abort all child-spans first, this ensures the transaction can be finished,
     // even if waitForChildren is true
@@ -310,6 +377,7 @@ public final class SentryTracer implements ITransaction {
         if (timersEnabled) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
+          deadlineExpiry = expiryIn(deadlineTimeOut);
           try {
             deadlineTimeoutFuture =
                 scopes
