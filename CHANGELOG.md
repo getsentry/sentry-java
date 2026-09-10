@@ -34,6 +34,10 @@
 - Sentry can now configure Log4j2 automatically for Spring Boot 3 when `sentry-log4j2` is on the classpath and Log4j2 Core is the active logging backend ([#6072](https://github.com/getsentry/sentry-java/pull/6072))
   - Disabled by default for now; enable it and configure levels the same way as described in the Spring Boot 4 entry above (`sentry.logging.enabled=true`)
 
+### Fixes
+
+- Measure Session Replay's 1h recording cap and its touch-move debounce on a monotonic clock, so a device time change no longer stops a healthy recording early, keeps a finished one alive, or suppresses gesture events ([#6090](https://github.com/getsentry/sentry-java/pull/6090))
+
 ## 8.56.0
 
 ### Behavioral Changes
