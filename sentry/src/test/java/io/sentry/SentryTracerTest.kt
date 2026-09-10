@@ -5,10 +5,13 @@ import io.sentry.profiling.ProfileRecordingState
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.createTestScopes
 import io.sentry.test.getProperty
 import io.sentry.time.EpochClock
-import io.sentry.time.Timestamp
+import io.sentry.time.FixedEpochClock
+import io.sentry.time.MonotonicTicker
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.thread.IThreadChecker
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -37,11 +40,14 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class SentryTracerTest {
-  /** {@link SentryOptions#getEpochClock()} has no setter, so a test fakes it by overriding. */
+  /** The clocks have getters but no setters on options, so a test fakes them by overriding. */
   private class TestOptions : SentryOptions() {
     var testEpochClock: EpochClock? = null
+    var testTicker: MonotonicTicker? = null
 
     override fun getEpochClock(): EpochClock = testEpochClock ?: super.getEpochClock()
+
+    override fun getMonotonicTicker(): MonotonicTicker = testTicker ?: super.getMonotonicTicker()
   }
 
   private class Fixture {
@@ -89,18 +95,30 @@ class SentryTracerTest {
 
   private val fixture = Fixture()
 
-  /**
-   * One movable "now", behind both clocks the tracer reads: the date provider that stamps spans and
-   * the epoch clock that projects when a timeout falls due.
-   */
-  private class ControllableClock(var epochNanos: Long) {
-    val dateProvider = SentryDateProvider { SentryLongDate(epochNanos) }
-    val epochClock = EpochClock { Timestamp.ofEpochNanos(epochNanos) }
-  }
+  /** An arbitrary but fixed instant the clock tests measure from. */
+  private val start = 1_000_000_000_000L
 
-  private fun useClock(clock: ControllableClock) {
-    fixture.options.dateProvider = clock.dateProvider
-    fixture.options.testEpochClock = clock.epochClock
+  /**
+   * Everything the timeout logic reads, under the test's control: what time it is, how much time
+   * has passed, and when the timer gets to run.
+   */
+  private class Clocks(startEpochNanos: Long) {
+    val epoch = FixedEpochClock(startEpochNanos)
+    val ticker = TestMonotonicTicker()
+    val timer = DeferredExecutorService()
+
+    /** Time passing for real: every clock moves together, as they do on a device. */
+    fun advance(amount: Long, unit: TimeUnit) {
+      epoch.epochNanos += unit.toNanos(amount)
+      ticker.advance(amount, unit)
+    }
+
+    fun installOn(options: TestOptions) {
+      options.testEpochClock = epoch
+      options.testTicker = ticker
+      options.timerExecutorService = timer
+      options.dateProvider = SentryDateProvider { SentryLongDate(epoch.epochNanos) }
+    }
   }
 
   @Test
@@ -1129,15 +1147,14 @@ class SentryTracerTest {
 
   @Test
   fun `when the deadline timer fires late, tx and children end when the deadline fell due`() {
-    val start = 1_000_000_000_000L
-    val clock = ControllableClock(start)
-    useClock(clock)
+    val clocks = Clocks(start)
+    clocks.installOn(fixture.options)
     val transaction = fixture.getSut(deadlineTimeout = 20)
     val span = transaction.startChild("op")
 
-    // the device slept through the deadline, so the timer thread only runs again hours later
-    clock.epochNanos = start + TimeUnit.HOURS.toNanos(3)
-    await.untilFalse(transaction.isDeadlineTimerRunning)
+    // the device sleeps through the deadline; the timer thread only runs again three hours on
+    clocks.advance(3, TimeUnit.HOURS)
+    clocks.timer.runAll()
 
     val due = start + TimeUnit.MILLISECONDS.toNanos(20)
     assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(due)
@@ -1146,15 +1163,15 @@ class SentryTracerTest {
 
   @Test
   fun `when the wall clock steps back past the deadline, the transaction still ends when it fell due`() {
-    val start = 1_000_000_000_000L
-    val clock = ControllableClock(start)
-    useClock(clock)
+    val clocks = Clocks(start)
+    clocks.installOn(fixture.options)
     val transaction = fixture.getSut(deadlineTimeout = 20)
 
-    // an NTP correction moves the wall clock backwards while the timer waits, so the due instant
-    // now looks like it is ahead of us. Whether the deadline expired is not the wall clock's to say
-    clock.epochNanos = start - TimeUnit.HOURS.toNanos(1)
-    await.untilFalse(transaction.isDeadlineTimerRunning)
+    // an NTP correction drags the wall clock back while the timer waits, so the due instant now
+    // looks like it is ahead of us. Whether the deadline expired is not the wall clock's to say
+    clocks.epoch.epochNanos = start - TimeUnit.HOURS.toNanos(1)
+    clocks.ticker.advance(20, TimeUnit.MILLISECONDS)
+    clocks.timer.runAll()
 
     assertThat(transaction.finishDate!!.nanoTimestamp())
       .isEqualTo(start + TimeUnit.MILLISECONDS.toNanos(20))
@@ -1162,13 +1179,13 @@ class SentryTracerTest {
 
   @Test
   fun `when the deadline timer fires on time, the transaction ends when it fell due`() {
-    val start = 1_000_000_000_000L
-    val clock = ControllableClock(start)
-    useClock(clock)
+    val clocks = Clocks(start)
+    clocks.installOn(fixture.options)
     val transaction = fixture.getSut(deadlineTimeout = 20)
     transaction.startChild("op")
 
-    await.untilFalse(transaction.isDeadlineTimerRunning)
+    clocks.advance(20, TimeUnit.MILLISECONDS)
+    clocks.timer.runAll()
 
     // an expired deadline ends the transaction at the deadline, not at whenever the timer ran
     assertThat(transaction.finishDate!!.nanoTimestamp())
@@ -1177,9 +1194,8 @@ class SentryTracerTest {
 
   @Test
   fun `when the deadline has not expired, the transaction ends now`() {
-    val start = 1_000_000_000_000L
-    val clock = ControllableClock(start)
-    useClock(clock)
+    val clocks = Clocks(start)
+    clocks.installOn(fixture.options)
     // scheduling fails, so the tracer finishes inline while the deadline is still in the future
     val executor = mock<ISentryExecutorService>()
     whenever(executor.schedule(any(), any())).thenThrow(RuntimeException("rejected"))
@@ -1195,13 +1211,12 @@ class SentryTracerTest {
 
   @Test
   fun `when the idle timer fires late, the transaction ends when the idle timeout fell due`() {
-    val start = 1_000_000_000_000L
-    val clock = ControllableClock(start)
-    useClock(clock)
+    val clocks = Clocks(start)
+    clocks.installOn(fixture.options)
     val transaction = fixture.getSut(idleTimeout = 20)
 
-    clock.epochNanos = start + TimeUnit.HOURS.toNanos(3)
-    await.untilFalse(transaction.isFinishTimerRunning)
+    clocks.advance(3, TimeUnit.HOURS)
+    clocks.timer.runAll()
 
     assertThat(transaction.finishDate!!.nanoTimestamp())
       .isEqualTo(start + TimeUnit.MILLISECONDS.toNanos(20))
