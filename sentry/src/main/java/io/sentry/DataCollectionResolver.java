@@ -27,6 +27,10 @@ public final class DataCollectionResolver {
     return explicitOrSendDefaultPii(options.getDataCollection().getDatabaseQueryData(), true);
   }
 
+  public boolean isFilePaths() {
+    return explicitOrSendDefaultPii(options.getDataCollection().getFilePaths(), true);
+  }
+
   public boolean isGraphqlDocument() {
     return explicitOrSendDefaultPii(options.getDataCollection().getGraphql().getDocument(), true);
   }

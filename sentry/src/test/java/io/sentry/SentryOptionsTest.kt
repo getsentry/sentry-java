@@ -124,6 +124,7 @@ class SentryOptionsTest {
         graphql.setDocument(false)
         graphql.setVariables(false)
         setDatabaseQueryData(false)
+        setFilePaths(false)
       }
     val options = SentryOptions()
 
@@ -143,6 +144,7 @@ class SentryOptionsTest {
     assertThat(options.dataCollection.graphql.document).isFalse()
     assertThat(options.dataCollection.graphql.variables).isFalse()
     assertThat(options.dataCollection.databaseQueryData).isFalse()
+    assertThat(options.dataCollection.filePaths).isFalse()
   }
 
   @Test

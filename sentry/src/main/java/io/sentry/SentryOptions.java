@@ -3844,6 +3844,9 @@ public class SentryOptions {
     if (externalDataCollection.getDatabaseQueryData() != null) {
       dataCollection.setDatabaseQueryData(externalDataCollection.getDatabaseQueryData());
     }
+    if (externalDataCollection.getFilePaths() != null) {
+      dataCollection.setFilePaths(externalDataCollection.getFilePaths());
+    }
   }
 
   private @NotNull SdkVersion createSdkVersion() {

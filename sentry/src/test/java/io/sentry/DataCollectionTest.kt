@@ -14,6 +14,7 @@ class DataCollectionTest {
     assertThat(dataCollection.urlQueryParams).isNull()
     assertThat(dataCollection.httpBodies).isNull()
     assertThat(dataCollection.databaseQueryData).isNull()
+    assertThat(dataCollection.filePaths).isNull()
     assertThat(dataCollection.httpHeaders.request).isNull()
     assertThat(dataCollection.httpHeaders.response).isNull()
     assertThat(dataCollection.graphql.document).isNull()
@@ -78,6 +79,16 @@ class DataCollectionTest {
     dataCollection.setDatabaseQueryData(false)
 
     assertThat(dataCollection.databaseQueryData).isFalse()
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `file paths false is distinct from unset`() {
+    val dataCollection = DataCollection(false)
+
+    dataCollection.setFilePaths(false)
+
+    assertThat(dataCollection.filePaths).isFalse()
     assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
   }
 

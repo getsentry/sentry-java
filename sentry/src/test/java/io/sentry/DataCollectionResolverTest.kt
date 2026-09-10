@@ -63,6 +63,7 @@ class DataCollectionResolverTest {
 
     assertThat(options.dataCollectionResolver.isUserInfo).isTrue()
     assertThat(options.dataCollectionResolver.isDatabaseQueryData).isTrue()
+    assertThat(options.dataCollectionResolver.isFilePaths).isTrue()
     assertThat(options.dataCollectionResolver.isGraphqlDocument).isTrue()
     assertThat(options.dataCollectionResolver.isGraphqlVariables).isTrue()
   }
@@ -90,6 +91,31 @@ class DataCollectionResolverTest {
     options.dataCollection.setDatabaseQueryData(true)
 
     assertThat(options.dataCollectionResolver.isDatabaseQueryData).isTrue()
+  }
+
+  @Test
+  fun `file paths use sendDefaultPii when Data Collection is absent`() {
+    val options = SentryOptions()
+
+    assertThat(options.dataCollectionResolver.isFilePaths).isFalse()
+
+    options.isSendDefaultPii = true
+
+    assertThat(options.dataCollectionResolver.isFilePaths).isTrue()
+  }
+
+  @Test
+  fun `file paths use configured Data Collection value`() {
+    val options = SentryOptions().apply { isSendDefaultPii = true }
+
+    options.dataCollection.setFilePaths(false)
+
+    assertThat(options.dataCollectionResolver.isFilePaths).isFalse()
+
+    options.isSendDefaultPii = false
+    options.dataCollection.setFilePaths(true)
+
+    assertThat(options.dataCollectionResolver.isFilePaths).isTrue()
   }
 
   @Test
