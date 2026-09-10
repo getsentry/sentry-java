@@ -3402,7 +3402,7 @@ class ScopesTest {
       .count(
         "metric name",
         1.0,
-        MeasurementUnit.Information.BYTE,
+        MeasurementUnit.Information.BYTE.apiName(),
         SentryMetricsParameters().also { it.origin = "other" },
       )
 
@@ -3424,7 +3424,7 @@ class ScopesTest {
   fun `creating count metric with value and unit works`() {
     val (sut, mockClient) = getEnabledScopes()
 
-    sut.metrics().count("metric name", 1.0, MeasurementUnit.Information.BYTE)
+    sut.metrics().count("metric name", 1.0, MeasurementUnit.Information.BYTE.apiName())
 
     verify(mockClient)
       .captureMetric(
@@ -3461,7 +3461,7 @@ class ScopesTest {
   fun `creating count metric with unit works`() {
     val (sut, mockClient) = getEnabledScopes()
 
-    sut.metrics().count("metric name", MeasurementUnit.Information.BYTE)
+    sut.metrics().count("metric name", MeasurementUnit.Information.BYTE.apiName())
 
     verify(mockClient)
       .captureMetric(
@@ -3485,7 +3485,7 @@ class ScopesTest {
       .count(
         "metric name",
         1.0,
-        MeasurementUnit.Information.BYTE,
+        MeasurementUnit.Information.BYTE.apiName(),
         SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
       )
 
@@ -3515,7 +3515,7 @@ class ScopesTest {
       .count(
         "metric name",
         1.0,
-        MeasurementUnit.Information.BYTE,
+        MeasurementUnit.Information.BYTE.apiName(),
         SentryMetricsParameters.create(mapOf("attrname1" to "attrval1")),
       )
 
@@ -3545,7 +3545,7 @@ class ScopesTest {
       .count(
         "metric name",
         1.0,
-        MeasurementUnit.Information.BYTE,
+        MeasurementUnit.Information.BYTE.apiName(),
         SentryMetricsParameters.create(
           SentryAttributes.of(
             SentryAttribute.stringAttribute("strattr", "strval"),
@@ -3624,7 +3624,7 @@ class ScopesTest {
       .count(
         "metric name",
         1.0,
-        MeasurementUnit.Information.BYTE,
+        MeasurementUnit.Information.BYTE.apiName(),
         SentryMetricsParameters.create(
           SentryLongDate(123),
           SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
@@ -3649,29 +3649,10 @@ class ScopesTest {
   }
 
   @Test
-  fun `creating distribution metric with a custom string unit works`() {
-    val (sut, mockClient) = getEnabledScopes()
-
-    sut.metrics().distribution("metric name", 1.0, "frame")
-
-    verify(mockClient)
-      .captureMetric(
-        check {
-          assertEquals("metric name", it.name)
-          assertEquals(1.0, it.value)
-          assertEquals("frame", it.unit)
-          assertEquals("distribution", it.type)
-        },
-        anyOrNull(),
-        anyOrNull(),
-      )
-  }
-
-  @Test
   fun `creating distribution metric with value and unit works`() {
     val (sut, mockClient) = getEnabledScopes()
 
-    sut.metrics().distribution("metric name", 1.0, MeasurementUnit.Duration.MILLISECOND)
+    sut.metrics().distribution("metric name", 1.0, MeasurementUnit.Duration.MILLISECOND.apiName())
 
     verify(mockClient)
       .captureMetric(
@@ -3713,7 +3694,7 @@ class ScopesTest {
       .distribution(
         "metric name",
         3.7,
-        MeasurementUnit.Duration.MILLISECOND,
+        MeasurementUnit.Duration.MILLISECOND.apiName(),
         SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
       )
 
@@ -3743,7 +3724,7 @@ class ScopesTest {
       .distribution(
         "metric name",
         3.7,
-        MeasurementUnit.Duration.MILLISECOND,
+        MeasurementUnit.Duration.MILLISECOND.apiName(),
         SentryMetricsParameters.create(
           SentryAttributes.of(
             SentryAttribute.stringAttribute("strattr", "strval"),
@@ -3822,7 +3803,7 @@ class ScopesTest {
       .distribution(
         "metric name",
         3.7,
-        MeasurementUnit.Duration.MILLISECOND,
+        MeasurementUnit.Duration.MILLISECOND.apiName(),
         SentryMetricsParameters.create(
           SentryLongDate(123),
           SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),
@@ -3850,7 +3831,7 @@ class ScopesTest {
   fun `creating gauge metric with value and unit works`() {
     val (sut, mockClient) = getEnabledScopes()
 
-    sut.metrics().gauge("metric name", 128.0, MeasurementUnit.Information.BYTE)
+    sut.metrics().gauge("metric name", 128.0, MeasurementUnit.Information.BYTE.apiName())
 
     verify(mockClient)
       .captureMetric(
@@ -3892,7 +3873,7 @@ class ScopesTest {
       .gauge(
         "metric name",
         256.0,
-        MeasurementUnit.Information.BYTE,
+        MeasurementUnit.Information.BYTE.apiName(),
         SentryMetricsParameters.create(SentryAttributes.fromMap(mapOf("attrname1" to "attrval1"))),
       )
 
@@ -3922,7 +3903,7 @@ class ScopesTest {
       .gauge(
         "metric name",
         256.0,
-        MeasurementUnit.Information.BYTE,
+        MeasurementUnit.Information.BYTE.apiName(),
         SentryMetricsParameters.create(
           SentryAttributes.of(
             SentryAttribute.stringAttribute("strattr", "strval"),
@@ -4001,7 +3982,7 @@ class ScopesTest {
       .gauge(
         "metric name",
         256.0,
-        MeasurementUnit.Information.BYTE,
+        MeasurementUnit.Information.BYTE.apiName(),
         SentryMetricsParameters.create(
           SentryLongDate(123),
           SentryAttributes.of(SentryAttribute.named("attrname1", "attrval1")),

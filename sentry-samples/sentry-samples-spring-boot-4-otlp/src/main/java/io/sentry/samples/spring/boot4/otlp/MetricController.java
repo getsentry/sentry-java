@@ -22,7 +22,8 @@ public class MetricController {
 
   @GetMapping("gauge/{value}")
   String gauge(@PathVariable("value") Long value) {
-    Sentry.metrics().gauge("memory.free", value.doubleValue(), MeasurementUnit.Information.BYTE);
+    Sentry.metrics()
+        .gauge("memory.free", value.doubleValue(), MeasurementUnit.Information.BYTE.apiName());
     return "gauge metric tracked";
   }
 
@@ -30,7 +31,9 @@ public class MetricController {
   String distribution(@PathVariable("value") Long value) {
     Sentry.metrics()
         .distribution(
-            "distributionMetric", value.doubleValue(), MeasurementUnit.Duration.MILLISECOND);
+            "distributionMetric",
+            value.doubleValue(),
+            MeasurementUnit.Duration.MILLISECOND.apiName());
     return "distribution metric tracked";
   }
 }
