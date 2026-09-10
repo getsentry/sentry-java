@@ -168,11 +168,11 @@ public final class SentryTracer implements ITransaction {
         Deadline.after(options.getMonotonicTicker(), timeoutMillis, TimeUnit.MILLISECONDS),
         new SentryLongDate(
             options.getDateProvider().now().nanoTimestamp()
-                + DateUtils.millisToNanos(timeoutMillis)));
+                + TimeUnit.MILLISECONDS.toNanos(timeoutMillis)));
   }
 
   private static @Nullable SentryDate finishDateOf(final @Nullable Expiry expiry) {
-    return expiry == null ? null : expiry.finishDate();
+    return expiry == null ? null : expiry.expiredAt();
   }
 
   /**
@@ -185,23 +185,27 @@ public final class SentryTracer implements ITransaction {
    *
    * <p>Whether the timeout expired is a duration, so it is measured on a {@link Deadline}: the
    * executor's own delay runs on a clock that stops during deep sleep, and the wall clock can step
-   * either way while the timer waits. The instant to end at is a wall-clock timestamp, so it is
-   * projected once, here, from the same reading that sets the deadline.
+   * either way while the timer waits.
+   *
+   * <p>The instant to end at stays a {@link SentryDate} rather than an {@link
+   * io.sentry.time.Timestamp}. It will be subtracted from the span timestamps around it, so it has
+   * to be read from the same clock they are, and those come from {@link
+   * SentryOptions#getDateProvider()}. It is projected once, here, from a single reading.
    */
   private static final class Expiry {
 
     private final @NotNull Deadline deadline;
-    private final @NotNull SentryDate instant;
+    private final @NotNull SentryDate expiredAt;
 
-    Expiry(final @NotNull Deadline deadline, final @NotNull SentryDate instant) {
+    Expiry(final @NotNull Deadline deadline, final @NotNull SentryDate expiredAt) {
       this.deadline = deadline;
-      this.instant = instant;
+      this.expiredAt = expiredAt;
     }
 
     /** The instant to end at, or null to end now because the timeout has not actually expired. */
     @Nullable
-    SentryDate finishDate() {
-      return deadline.hasPassed() ? instant : null;
+    SentryDate expiredAt() {
+      return deadline.hasPassed() ? expiredAt : null;
     }
   }
 
