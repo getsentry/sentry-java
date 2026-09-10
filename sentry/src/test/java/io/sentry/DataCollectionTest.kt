@@ -49,6 +49,37 @@ class DataCollectionTest {
   }
 
   @Test
+  fun `nullable Boolean options are mutable Kotlin properties`() {
+    val dataCollection = DataCollection(false)
+
+    dataCollection.userInfo = false
+    dataCollection.databaseQueryData = false
+    dataCollection.filePaths = false
+    dataCollection.graphql.document = false
+    dataCollection.graphql.variables = false
+
+    assertThat(dataCollection.userInfo).isFalse()
+    assertThat(dataCollection.databaseQueryData).isFalse()
+    assertThat(dataCollection.filePaths).isFalse()
+    assertThat(dataCollection.graphql.document).isFalse()
+    assertThat(dataCollection.graphql.variables).isFalse()
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+
+    dataCollection.userInfo = null
+    dataCollection.databaseQueryData = null
+    dataCollection.filePaths = null
+    dataCollection.graphql.document = null
+    dataCollection.graphql.variables = null
+
+    assertThat(dataCollection.userInfo).isNull()
+    assertThat(dataCollection.databaseQueryData).isNull()
+    assertThat(dataCollection.filePaths).isNull()
+    assertThat(dataCollection.graphql.document).isNull()
+    assertThat(dataCollection.graphql.variables).isNull()
+    assertThat(dataCollection.isExplicitlyConfigured()).isFalse()
+  }
+
+  @Test
   fun `empty HTTP body set is distinct from unset`() {
     val dataCollection = DataCollection(false)
 

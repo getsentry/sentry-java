@@ -398,19 +398,19 @@ public final class io/sentry/DataCollection {
 	public fun getUserInfo ()Ljava/lang/Boolean;
 	public fun isExplicitlyConfigured ()Z
 	public fun setCookies (Lio/sentry/KeyValueCollectionBehavior;)V
-	public fun setDatabaseQueryData (Z)V
-	public fun setFilePaths (Z)V
+	public fun setDatabaseQueryData (Ljava/lang/Boolean;)V
+	public fun setFilePaths (Ljava/lang/Boolean;)V
 	public fun setHttpBodies (Ljava/util/Set;)V
 	public fun setUrlQueryParams (Lio/sentry/KeyValueCollectionBehavior;)V
-	public fun setUserInfo (Z)V
+	public fun setUserInfo (Ljava/lang/Boolean;)V
 }
 
 public final class io/sentry/DataCollection$Graphql {
 	public fun <init> ()V
 	public fun getDocument ()Ljava/lang/Boolean;
 	public fun getVariables ()Ljava/lang/Boolean;
-	public fun setDocument (Z)V
-	public fun setVariables (Z)V
+	public fun setDocument (Ljava/lang/Boolean;)V
+	public fun setVariables (Ljava/lang/Boolean;)V
 }
 
 public final class io/sentry/DataCollection$HttpHeaders {

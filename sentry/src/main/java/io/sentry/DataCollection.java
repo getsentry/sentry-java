@@ -34,7 +34,7 @@ public final class DataCollection {
     return userInfo;
   }
 
-  public void setUserInfo(final boolean userInfo) {
+  public void setUserInfo(final @Nullable Boolean userInfo) {
     this.userInfo = userInfo;
   }
 
@@ -71,7 +71,7 @@ public final class DataCollection {
     return databaseQueryData;
   }
 
-  public void setDatabaseQueryData(final boolean databaseQueryData) {
+  public void setDatabaseQueryData(final @Nullable Boolean databaseQueryData) {
     this.databaseQueryData = databaseQueryData;
   }
 
@@ -79,7 +79,7 @@ public final class DataCollection {
     return filePaths;
   }
 
-  public void setFilePaths(final boolean filePaths) {
+  public void setFilePaths(final @Nullable Boolean filePaths) {
     this.filePaths = filePaths;
   }
 
@@ -139,7 +139,7 @@ public final class DataCollection {
       return document;
     }
 
-    public void setDocument(final boolean document) {
+    public void setDocument(final @Nullable Boolean document) {
       this.document = document;
     }
 
@@ -147,7 +147,7 @@ public final class DataCollection {
       return variables;
     }
 
-    public void setVariables(final boolean variables) {
+    public void setVariables(final @Nullable Boolean variables) {
       this.variables = variables;
     }
 
