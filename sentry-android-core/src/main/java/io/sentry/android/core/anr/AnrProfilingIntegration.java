@@ -14,7 +14,6 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.SentryAndroidOptions;
-import io.sentry.time.JavaMonotonicTicker;
 import io.sentry.time.MonotonicTicker;
 import io.sentry.time.MonotonicTickerProvider;
 import io.sentry.time.Stopwatch;
@@ -48,10 +47,17 @@ public class AnrProfilingIntegration
   static final int MAX_NUM_STACKS = (int) (10_000 / POLLING_INTERVAL_MS);
 
   private final AtomicBoolean enabled = new AtomicBoolean(true);
-  private volatile @NotNull MonotonicTicker ticker = JavaMonotonicTicker.getInstance();
+
+  private volatile @Nullable MonotonicTicker ticker;
 
   @SuppressWarnings("UnnecessaryLambda")
-  private final @NotNull Runnable updater = () -> lastMainThreadExecutionNanos = ticker.tickNanos();
+  private final @NotNull Runnable updater =
+      () -> {
+        final @Nullable MonotonicTicker currentTicker = ticker;
+        if (currentTicker != null) {
+          lastMainThreadExecutionNanos = currentTicker.tickNanos();
+        }
+      };
 
   private final @NotNull AutoClosableReentrantLock lifecycleLock = new AutoClosableReentrantLock();
   private final @NotNull AutoClosableReentrantLock profileManagerLock =
@@ -78,8 +84,9 @@ public class AnrProfilingIntegration
    * SentryAndroidOptions} cannot supply.
    */
   void installTickerFrom(final @NotNull MonotonicTickerProvider provider) {
-    this.ticker = provider.getMonotonicTicker();
-    this.lastMainThreadExecutionNanos = ticker.tickNanos();
+    final @NotNull MonotonicTicker installedTicker = provider.getMonotonicTicker();
+    this.ticker = installedTicker;
+    this.lastMainThreadExecutionNanos = installedTicker.tickNanos();
   }
 
   @Override
@@ -244,8 +251,12 @@ public class AnrProfilingIntegration
       return;
     }
 
+    final @Nullable MonotonicTicker currentTicker = ticker;
+    if (currentTicker == null) {
+      return;
+    }
     final long diff =
-        TimeUnit.NANOSECONDS.toMillis(ticker.tickNanos() - lastMainThreadExecutionNanos);
+        TimeUnit.NANOSECONDS.toMillis(currentTicker.tickNanos() - lastMainThreadExecutionNanos);
 
     if (diff < THRESHOLD_SUSPICION_MS) {
       mainThreadState = MainThreadState.IDLE;
@@ -274,7 +285,7 @@ public class AnrProfilingIntegration
         && (mainThreadState == MainThreadState.SUSPICIOUS
             || mainThreadState == MainThreadState.ANR_DETECTED)) {
       if (numCollectedStacks.get() < MAX_NUM_STACKS) {
-        final @NotNull Stopwatch stopwatch = Stopwatch.started(ticker);
+        final @NotNull Stopwatch stopwatch = Stopwatch.started(currentTicker);
         final @NotNull AnrStackTrace trace =
             new AnrStackTrace(System.currentTimeMillis(), mainThread.getStackTrace());
         if (logger.isEnabled(SentryLevel.DEBUG)) {
