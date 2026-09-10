@@ -122,9 +122,9 @@ class TimeSpanTest {
   }
 
   @Test
-  fun `span start starts the timespan`() {
+  fun `setStartedAt starts the timespan`() {
     val span = TimeSpan()
-    span.start()
+    span.setStartedAt(1)
 
     assertTrue(span.hasStarted())
     assertFalse(span.hasNotStarted())
@@ -133,7 +133,7 @@ class TimeSpanTest {
   @Test
   fun `span stop stops the timespan`() {
     val span = TimeSpan()
-    span.start()
+    span.setStartedAt(1)
 
     assertFalse(span.hasStopped())
 
