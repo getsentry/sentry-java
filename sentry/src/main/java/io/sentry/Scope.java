@@ -510,7 +510,7 @@ public final class Scope implements IScope {
 
       for (final IScopeObserver observer : options.getScopeObservers()) {
         observer.addBreadcrumb(breadcrumb);
-        observer.setBreadcrumbs(breadcrumbs);
+        observer.clearBreadcrumbs(breadcrumbs);
       }
     } else {
       options.getLogger().log(SentryLevel.INFO, "Breadcrumb was dropped by beforeBreadcrumb");
@@ -534,7 +534,7 @@ public final class Scope implements IScope {
     breadcrumbs.clear();
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
-      observer.setBreadcrumbs(breadcrumbs);
+      observer.clearBreadcrumbs(breadcrumbs);
     }
   }
 
