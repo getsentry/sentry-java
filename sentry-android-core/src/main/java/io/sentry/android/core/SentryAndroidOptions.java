@@ -251,6 +251,25 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean reportHistoricalTombstones = false;
 
   /**
+   * Controls whether to report <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits from
+   * the {@link ApplicationExitInfo} system API.
+   *
+   * <p>If this flag is true and {@link #reportHistoricalMemoryLimiterExits} is false, then only the
+   * latest MemoryLimiter exit is reported. If both are true, then all available exits are reported.
+   */
+  private boolean memoryLimiterEnabled = false;
+
+  /**
+   * Controls whether to report historical <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits from
+   * the {@link ApplicationExitInfo} system API (where "historical" means "older than the latest").
+   *
+   * <p>No-ops if {@link #memoryLimiterEnabled} is false.
+   */
+  private boolean reportHistoricalMemoryLimiterExits = false;
+
+  /**
    * Controls whether to send ANR (v2) thread dump as an attachment with plain text. The thread dump
    * is being attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
    */
@@ -723,6 +742,54 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setAttachRawTombstone(final boolean attachRawTombstone) {
     this.attachRawTombstone = attachRawTombstone;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isMemoryLimiterEnabled() {
+    return memoryLimiterEnabled;
+  }
+
+  /**
+   * Enables or disables reporting of Android <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits.
+   * Disabled by default.
+   *
+   * <p>Enabling this flag allows the SDK to inspect retained {@link ApplicationExitInfo} records on
+   * the next app start and report the latest retained matching MemoryLimiter exit as a Sentry
+   * event.
+   *
+   * <p>See {@link #setReportHistoricalMemoryLimiterExits(boolean)} if you also want to create
+   * Sentry events from MemoryLimiter exits before the latest.
+   *
+   * <p>Available on Android API ≥ 37. No-ops if the Android API is below 37 or if the {@link
+   * #setCacheDirPath cache dir path} hasn't been set.
+   */
+  @ApiStatus.Experimental
+  public void setMemoryLimiterEnabled(final boolean memoryLimiterEnabled) {
+    this.memoryLimiterEnabled = memoryLimiterEnabled;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isReportHistoricalMemoryLimiterExits() {
+    return reportHistoricalMemoryLimiterExits;
+  }
+
+  /**
+   * Enables or disables reporting of historical retained <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits on
+   * startup (where "historical" means "older than the latest"). Disabled by default.
+   *
+   * <p>Use this together with {@link #setMemoryLimiterEnabled(boolean)} when you want the
+   * platform's complete retained exit history.
+   *
+   * <p>Available on Android API ≥ 37. No-ops if the Android API is below 37, if the {@link
+   * #setCacheDirPath cache dir path} hasn't been set, or if {@link #setMemoryLimiterEnabled the
+   * MemoryLimiter integration} hasn't been enabled.
+   */
+  @ApiStatus.Experimental
+  public void setReportHistoricalMemoryLimiterExits(
+      final boolean reportHistoricalMemoryLimiterExits) {
+    this.reportHistoricalMemoryLimiterExits = reportHistoricalMemoryLimiterExits;
   }
 
   /**
