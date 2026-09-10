@@ -24,15 +24,18 @@ public final class Deadline {
   }
 
   /**
-   * A deadline {@code amount} of {@code unit} from now.
+   * A deadline {@code amount} of {@code unit} from now, or one that has already {@link #passed} if
+   * {@code amount} is negative.
    *
-   * @throws IllegalArgumentException if {@code amount} is negative. A deadline that starts out in
-   *     the past is a sign error at the call site; {@link #passed} says it deliberately.
+   * <p>Negative amounts are tolerated because callers pass durations parsed from server headers,
+   * where a bogus value must degrade to "no wait" rather than throw out of response handling.
+   * Clamping rather than adding a negative offset also keeps the tick arithmetic away from
+   * wrapping.
    */
   public static @NotNull Deadline after(
       final @NotNull MonotonicTicker ticker, final long amount, final @NotNull TimeUnit unit) {
     if (amount < 0) {
-      throw new IllegalArgumentException("Deadline amount must not be negative, but was " + amount);
+      return passed(ticker);
     }
     return new Deadline(ticker, ticker.tickNanos() + unit.toNanos(amount));
   }

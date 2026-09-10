@@ -65,10 +65,22 @@ class DeadlineTest {
   }
 
   @Test
-  fun `after rejects a negative amount`() {
-    assertFailsWith<IllegalArgumentException> {
-      Deadline.after(TestMonotonicTicker(), -1, SECONDS)
-    }
+  fun `after treats a negative amount as already passed`() {
+    val ticker = TestMonotonicTicker()
+
+    val deadline = Deadline.after(ticker, -1, SECONDS)
+
+    assertTrue(deadline.hasPassed())
+    assertEquals(0, deadline.remaining(MILLISECONDS))
+  }
+
+  @Test
+  fun `a negative amount does not outlast a standing deadline`() {
+    // A bogus Retry-After must not be able to shorten a rate limit that is already in force.
+    val ticker = TestMonotonicTicker()
+    val standing = Deadline.after(ticker, 60, SECONDS)
+
+    assertFalse(Deadline.after(ticker, -1, SECONDS).isAfter(standing))
   }
 
   @Test
