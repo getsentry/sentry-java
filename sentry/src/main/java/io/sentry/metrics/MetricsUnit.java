@@ -4,10 +4,19 @@ package io.sentry.metrics;
  * String constants for metric units.
  *
  * <p>These constants represent the API names of measurement units that can be used with metrics.
+ *
+ * @deprecated use {@link io.sentry.MeasurementUnit} instead, which carries the same units and is
+ *     accepted directly by {@link IMetricsApi}.
  */
+@Deprecated
 public final class MetricsUnit {
 
-  /** Time duration units. */
+  /**
+   * Time duration units.
+   *
+   * @deprecated use {@link io.sentry.MeasurementUnit.Duration} instead.
+   */
+  @Deprecated
   public static final class Duration {
     /** Nanosecond, 10^-9 seconds. */
     public static final String NANOSECOND = "nanosecond";
@@ -36,7 +45,12 @@ public final class MetricsUnit {
     private Duration() {}
   }
 
-  /** Size of information derived from bytes. */
+  /**
+   * Size of information derived from bytes.
+   *
+   * @deprecated use {@link io.sentry.MeasurementUnit.Information} instead.
+   */
+  @Deprecated
   public static final class Information {
     /** Bit, corresponding to 1/8 of a byte. */
     public static final String BIT = "bit";
@@ -83,7 +97,12 @@ public final class MetricsUnit {
     private Information() {}
   }
 
-  /** Fractions such as percentages. */
+  /**
+   * Fractions such as percentages.
+   *
+   * @deprecated use {@link io.sentry.MeasurementUnit.Fraction} instead.
+   */
+  @Deprecated
   public static final class Fraction {
     /** Floating point fraction of `1`. */
     public static final String RATIO = "ratio";

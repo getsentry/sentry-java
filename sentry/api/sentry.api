@@ -5501,14 +5501,21 @@ public final class io/sentry/metrics/DefaultMetricsBatchProcessorFactory : io/se
 
 public abstract interface class io/sentry/metrics/IMetricsApi {
 	public abstract fun count (Ljava/lang/String;)V
+	public fun count (Ljava/lang/String;Lio/sentry/MeasurementUnit;)V
 	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;Lio/sentry/MeasurementUnit;)V
+	public fun count (Ljava/lang/String;Ljava/lang/Double;Lio/sentry/MeasurementUnit;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
 	public abstract fun count (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public abstract fun count (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Lio/sentry/MeasurementUnit;)V
+	public fun distribution (Ljava/lang/String;Ljava/lang/Double;Lio/sentry/MeasurementUnit;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
 	public abstract fun distribution (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public abstract fun gauge (Ljava/lang/String;Ljava/lang/Double;)V
+	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Lio/sentry/MeasurementUnit;)V
+	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Lio/sentry/MeasurementUnit;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public abstract fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
 	public abstract fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 }
