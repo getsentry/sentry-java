@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- End a timed-out transaction at the moment its timeout fell due, rather than whenever the timer thread next gets to run. A device that slept, or froze the process, through an idle or deadline timeout used to turn an abandoned app start into a multi-hour transaction ([#6091](https://github.com/getsentry/sentry-java/pull/6091))
+
 ## 8.56.0
 
 ### Behavioral Changes
