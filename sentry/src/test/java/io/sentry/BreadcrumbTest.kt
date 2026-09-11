@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import java.util.Date
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -363,6 +364,46 @@ class BreadcrumbTest {
     for (index in 0 until count) {
       assertEquals(index, breadcrumb.data["key-$index"])
     }
+  }
+
+  @Test
+  fun `breadcrumbs sharing a timestamp keep the order they were recorded in`() {
+    val timestamp = Date(1_600_000_000_000)
+    val first = Breadcrumb(timestamp).apply { message = "first" }
+    val second = Breadcrumb(timestamp).apply { message = "second" }
+    val third = Breadcrumb(timestamp).apply { message = "third" }
+
+    val sorted = listOf(third, first, second).sorted().map { it.message }
+
+    assertThat(sorted).containsExactly("first", "second", "third").inOrder()
+  }
+
+  @Test
+  fun `a deserialized breadcrumb is ordered by its own timestamp, not by when it was parsed`() {
+    val live = Breadcrumb(Date(1_600_000_000_000)).apply { message = "live" }
+    val restored =
+      Breadcrumb.fromMap(
+        mapOf(
+          Breadcrumb.JsonKeys.TIMESTAMP to DateUtils.getTimestamp(Date(1_500_000_000_000)),
+          Breadcrumb.JsonKeys.MESSAGE to "restored",
+        ),
+        SentryOptions(),
+      )
+
+    val sorted = listOf(live, restored).sorted().map { it.message }
+
+    assertThat(sorted).containsExactly("restored", "live").inOrder()
+  }
+
+  @Test
+  fun `cloning a breadcrumb keeps its position among breadcrumbs sharing its timestamp`() {
+    val timestamp = Date(1_600_000_000_000)
+    val first = Breadcrumb(timestamp).apply { message = "first" }
+    val second = Breadcrumb(timestamp).apply { message = "second" }
+
+    val sorted = listOf(second, Breadcrumb(first)).sorted().map { it.message }
+
+    assertThat(sorted).containsExactly("first", "second").inOrder()
   }
 
   class TestKey(val id: Long) {
