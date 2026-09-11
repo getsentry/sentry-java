@@ -14,6 +14,7 @@ import io.sentry.ISerializer;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.Debouncer;
@@ -51,7 +52,7 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.debouncer =
         new Debouncer(
-            io.sentry.android.core.internal.util.AndroidCurrentDateProvider.getInstance(),
+            AndroidCurrentDateProvider.getInstance(),
             DEBOUNCE_WAIT_TIME_MS,
             DEBOUNCE_MAX_EXECUTIONS);
 

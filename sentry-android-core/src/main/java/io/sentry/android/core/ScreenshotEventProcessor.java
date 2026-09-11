@@ -12,6 +12,7 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.android.core.internal.util.ScreenshotUtils;
 import io.sentry.android.replay.util.MaskRenderer;
@@ -57,7 +58,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.debouncer =
         new Debouncer(
-            io.sentry.android.core.internal.util.AndroidCurrentDateProvider.getInstance(),
+            AndroidCurrentDateProvider.getInstance(),
             DEBOUNCE_WAIT_TIME_MS,
             DEBOUNCE_MAX_EXECUTIONS);
 

@@ -11,6 +11,7 @@ import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.android.core.AnrV2Integration;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.TombstoneIntegration;
+import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.cache.EnvelopeCache;
@@ -40,7 +41,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
   // TODO: JAVA-729
   @SuppressWarnings("deprecation")
   public AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options) {
-    this(options, io.sentry.android.core.internal.util.AndroidCurrentDateProvider.getInstance());
+    this(options, AndroidCurrentDateProvider.getInstance());
   }
 
   AndroidEnvelopeCache(
