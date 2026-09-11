@@ -1254,6 +1254,7 @@ class ReplayIntegrationTest {
             ICurrentDateProvider {
               System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
             },
+            fixture.options.monotonicTicker,
             // run tasks synchronously in tests
             mock {
               whenever(mock.submit(any<Runnable>())).doAnswer {
@@ -1638,6 +1639,7 @@ class ReplayIntegrationTest {
       options,
       null,
       CurrentDateProvider.getInstance(),
+      options.monotonicTicker,
       executor =
         mock {
           whenever(mock.submit(any<Runnable>())).doAnswer {

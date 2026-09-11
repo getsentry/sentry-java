@@ -5,7 +5,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.rrweb.RRWebInteractionEvent
 import io.sentry.rrweb.RRWebInteractionMoveEvent
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -19,10 +21,17 @@ import org.robolectric.annotation.Config
 class ReplayGestureConverterTest {
   internal class Fixture {
     var now: Long = 1000L
+    val ticker = TestMonotonicTicker()
+
+    /** Time passing normally: the wall clock and the ticker move together. */
+    fun advance(millis: Long) {
+      now += millis
+      ticker.advance(millis, MILLISECONDS)
+    }
 
     fun getSut(
       dateProvider: ICurrentDateProvider = ICurrentDateProvider { now }
-    ): ReplayGestureConverter = ReplayGestureConverter(dateProvider)
+    ): ReplayGestureConverter = ReplayGestureConverter(dateProvider, ticker)
   }
 
   private val fixture = Fixture()
@@ -61,9 +70,42 @@ class ReplayGestureConverterTest {
     assertNotNull(result)
 
     // Second call within debounce threshold should be null
-    fixture.now += 40 // Increase time by 40ms
+    fixture.advance(40)
     result = sut.convert(event, recorderConfig)
     assertNull(result)
+
+    event.recycle()
+  }
+
+  @Test
+  fun `wall clock stepping backwards does not suppress move events`() {
+    val sut = fixture.getSut()
+    val recorderConfig = ScreenshotRecorderConfig(scaleFactorX = 1f, scaleFactorY = 1f)
+    val event = MotionEvent.obtain(0, 0, MotionEvent.ACTION_MOVE, 100f, 200f, 0)
+
+    assertNotNull(sut.convert(event, recorderConfig))
+
+    // an NTP correction drags the wall clock backwards while real time moves on past the threshold
+    fixture.now -= 400
+    fixture.ticker.advance(60, MILLISECONDS)
+
+    assertNotNull(sut.convert(event, recorderConfig))
+
+    event.recycle()
+  }
+
+  @Test
+  fun `wall clock stepping forwards does not lift the debounce early`() {
+    val sut = fixture.getSut()
+    val recorderConfig = ScreenshotRecorderConfig(scaleFactorX = 1f, scaleFactorY = 1f)
+    val event = MotionEvent.obtain(0, 0, MotionEvent.ACTION_MOVE, 100f, 200f, 0)
+
+    assertNotNull(sut.convert(event, recorderConfig))
+
+    fixture.now += 60_000
+    fixture.ticker.advance(10, MILLISECONDS)
+
+    assertNull(sut.convert(event, recorderConfig))
 
     event.recycle()
   }
@@ -83,7 +125,7 @@ class ReplayGestureConverterTest {
     assertNull(result)
 
     // Second call should trigger capture
-    fixture.now += 600 // Increase time by 600ms
+    fixture.advance(600)
     result = sut.convert(moveEvent, recorderConfig)
     assertNotNull(result)
     with(result[0] as RRWebInteractionMoveEvent) {
@@ -217,7 +259,7 @@ class ReplayGestureConverterTest {
         0,
         0,
       )
-    fixture.now += 100 // Increase time by 100ms
+    fixture.advance(100)
     result = sut.convert(event, recorderConfig)
     assertNotNull(result)
     assertTrue(result[0] is RRWebInteractionEvent)
@@ -254,7 +296,7 @@ class ReplayGestureConverterTest {
     result = sut.convert(event, recorderConfig)
     assertNull(result)
 
-    fixture.now += 600 // Increase time by 600ms to trigger move capture
+    fixture.advance(600)
     result = sut.convert(event, recorderConfig)
     assertNotNull(result)
     assertTrue((result[0] as RRWebInteractionMoveEvent).positions!!.size == 2)
@@ -278,7 +320,7 @@ class ReplayGestureConverterTest {
         0,
         0,
       )
-    fixture.now += 100 // Increase time by 100ms
+    fixture.advance(100)
     result = sut.convert(event, recorderConfig)
     assertNotNull(result)
     assertTrue(result[0] is RRWebInteractionEvent)
@@ -291,7 +333,7 @@ class ReplayGestureConverterTest {
 
     // Simulate first finger up
     event = MotionEvent.obtain(0, 4, MotionEvent.ACTION_UP, 90f, 90f, 0)
-    fixture.now += 100 // Increase time by 100ms
+    fixture.advance(100)
     result = sut.convert(event, recorderConfig)
     assertNotNull(result)
     assertTrue(result[0] is RRWebInteractionEvent)

@@ -11,6 +11,7 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
+import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.FileUtils
 import java.util.Date
@@ -32,6 +33,7 @@ internal class SessionCaptureStrategy(
   private val options: SentryOptions,
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,
+  ticker: MonotonicTicker,
   executor: ScheduledExecutorService,
   persistingExecutor: ScheduledExecutorService,
   replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
@@ -40,6 +42,7 @@ internal class SessionCaptureStrategy(
     options,
     scopes,
     dateProvider,
+    ticker,
     executor,
     persistingExecutor,
     replayCacheProvider,
@@ -111,6 +114,7 @@ internal class SessionCaptureStrategy(
     // reflecting the exact time of when it was captured
     val currentConfig = recorderConfig
     val frameTimestamp = dateProvider.currentTimeMillis
+    val deadlineExceeded = replayDeadline?.hasPassed() == true
     replayExecutor.submit(
       ReplayRunnable("$TAG.add_frame") {
         cache?.store(frameTimestamp)
@@ -158,7 +162,7 @@ internal class SessionCaptureStrategy(
           }
         }
 
-        if (frameTimestamp - replayStartTimestamp.get() >= options.sessionReplay.sessionDuration) {
+        if (deadlineExceeded) {
           options.replayController.stop()
           options.logger.log(INFO, "Session replay deadline exceeded (1h), stopping recording")
         }
