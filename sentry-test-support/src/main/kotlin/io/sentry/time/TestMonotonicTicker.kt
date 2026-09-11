@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
  * nanosecond ticker is off by a factor of a million and still compiles, whereas `advance(1001,
  * MILLISECONDS)` cannot be.
  */
-class TestMonotonicTicker(private var nanos: Long = 0) : MonotonicTicker {
+class TestMonotonicTicker(@Volatile private var nanos: Long = 0) : MonotonicTicker {
   override fun tickNanos(): Long = nanos
 
   fun advance(amount: Long, unit: TimeUnit) {

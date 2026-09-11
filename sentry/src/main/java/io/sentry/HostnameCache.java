@@ -1,5 +1,8 @@
 package io.sentry;
 
+import io.sentry.time.Deadline;
+import io.sentry.time.JavaMonotonicTicker;
+import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.net.InetAddress;
@@ -42,14 +45,16 @@ public final class HostnameCache {
   private static final @NotNull AutoClosableReentrantLock staticLock =
       new AutoClosableReentrantLock();
 
-  /** Time for which the cache is kept. */
-  private final long cacheDuration;
+  /** Time for which the cache is kept, in milliseconds. */
+  private final long cacheDurationMillis;
+
+  private final @NotNull MonotonicTicker ticker;
 
   /** Current value for hostname (might change over time). */
   @Nullable private volatile String hostname;
 
-  /** Time at which the cache should expire. */
-  private volatile long expirationTimestamp;
+  /** When the cached hostname goes stale. */
+  private volatile @NotNull Deadline cacheFreshUntil;
 
   /** Whether a cache update thread is currently running or not. */
   private final @NotNull AtomicBoolean updateRunning = new AtomicBoolean(false);
@@ -74,22 +79,34 @@ public final class HostnameCache {
     this(HOSTNAME_CACHE_DURATION);
   }
 
-  HostnameCache(long cacheDuration) {
+  HostnameCache(long cacheDurationMillis) {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
-    this(cacheDuration, () -> InetAddress.getLocalHost());
+    this(cacheDurationMillis, () -> InetAddress.getLocalHost());
+  }
+
+  HostnameCache(long cacheDurationMillis, final @NotNull Callable<InetAddress> getLocalhost) {
+    this(cacheDurationMillis, getLocalhost, JavaMonotonicTicker.getInstance());
   }
 
   /**
    * Sets up a cache for the hostname.
    *
-   * @param cacheDuration cache duration in milliseconds.
+   * @param cacheDurationMillis cache duration in milliseconds.
    * @param getLocalhost a callback to obtain the localhost address - this is mostly here because of
    *     testability
+   * @param ticker the ticker the cache lifetime is measured on
    */
-  HostnameCache(long cacheDuration, final @NotNull Callable<InetAddress> getLocalhost) {
-    this.cacheDuration = cacheDuration;
+  HostnameCache(
+      long cacheDurationMillis,
+      final @NotNull Callable<InetAddress> getLocalhost,
+      final @NotNull MonotonicTicker ticker) {
+    this.cacheDurationMillis = cacheDurationMillis;
     this.getLocalhost = Objects.requireNonNull(getLocalhost, "getLocalhost is required");
+    this.ticker = Objects.requireNonNull(ticker, "ticker is required");
+    // Nothing resolved yet, so the cache is stale rather than fresh until updateCache says
+    // otherwise.
+    this.cacheFreshUntil = Deadline.passed(ticker);
     // A single thread executor whose worker thread times out while idle, so no thread is kept
     // alive between the infrequent cache refreshes.
     final @NotNull ThreadPoolExecutor executor =
@@ -122,8 +139,7 @@ public final class HostnameCache {
    */
   @Nullable
   public String getHostname() {
-    if (expirationTimestamp < System.currentTimeMillis()
-        && updateRunning.compareAndSet(false, true)) {
+    if (cacheFreshUntil.hasPassed() && updateRunning.compareAndSet(false, true)) {
       updateCache();
     }
 
@@ -136,7 +152,7 @@ public final class HostnameCache {
         () -> {
           try {
             hostname = getLocalhost.call().getCanonicalHostName();
-            expirationTimestamp = System.currentTimeMillis() + cacheDuration;
+            cacheFreshUntil = Deadline.after(ticker, cacheDurationMillis, TimeUnit.MILLISECONDS);
           } finally {
             updateRunning.set(false);
           }
@@ -156,7 +172,7 @@ public final class HostnameCache {
   }
 
   private void handleCacheUpdateFailure() {
-    expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
+    cacheFreshUntil = Deadline.after(ticker, 1, TimeUnit.SECONDS);
   }
 
   private static final class HostnameCacheThreadFactory implements ThreadFactory {
