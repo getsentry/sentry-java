@@ -12,7 +12,12 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.Session
 import io.sentry.Session.State
-import io.sentry.transport.ICurrentDateProvider
+import io.sentry.time.EpochClock
+import io.sentry.time.TestMonotonicTicker
+import io.sentry.time.Timestamp
+import java.util.concurrent.TimeUnit.HOURS
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -32,7 +37,10 @@ import org.mockito.kotlin.whenever
 class LifecycleWatcherTest {
   private class Fixture {
     val scopes = mock<IScopes>()
-    val dateProvider = mock<ICurrentDateProvider>()
+    val ticker = TestMonotonicTicker()
+    // the wall clock, which only the staleness of a session already on the scope depends on
+    val nowMillis = AtomicLong(0L)
+    val epochClock = EpochClock { Timestamp.ofEpochNanos(MILLISECONDS.toNanos(nowMillis.get())) }
     // a real executor so scheduled end-session tasks actually run
     val options = SentryOptions().apply { setTimerExecutorService(SentryExecutorService(this)) }
     val replayController = mock<ReplayController>()
@@ -60,7 +68,8 @@ class LifecycleWatcherTest {
         sessionIntervalMillis,
         enableAutoSessionTracking,
         enableAppLifecycleBreadcrumbs,
-        dateProvider,
+        ticker,
+        epochClock,
       )
     }
   }
@@ -81,24 +90,65 @@ class LifecycleWatcherTest {
   }
 
   @Test
-  fun `if last started session is after interval, start new session`() {
-    val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
-    whenever(fixture.dateProvider.currentTimeMillis).thenReturn(1L, 2L)
+  fun `if the background window has elapsed, start new session`() {
+    val watcher =
+      fixture.getSUT(sessionIntervalMillis = 30000L, enableAppLifecycleBreadcrumbs = false)
     watcher.onForeground()
+    watcher.onBackground()
+    fixture.ticker.advance(30000, MILLISECONDS)
+
     watcher.onForeground()
+
     verify(fixture.scopes, times(2)).startSession()
     verify(fixture.replayController, times(2)).onAppForegrounded(true)
   }
 
   @Test
-  fun `if last started session is before interval, it should not start a new session`() {
-    val watcher = fixture.getSUT(enableAppLifecycleBreadcrumbs = false)
-    whenever(fixture.dateProvider.currentTimeMillis).thenReturn(2L, 1L)
+  fun `if the app returns within the background window, it should not start a new session`() {
+    val watcher =
+      fixture.getSUT(sessionIntervalMillis = 30000L, enableAppLifecycleBreadcrumbs = false)
     watcher.onForeground()
+    watcher.onBackground()
+    fixture.ticker.advance(29999, MILLISECONDS)
+
     watcher.onForeground()
+
     verify(fixture.scopes).startSession()
     verify(fixture.replayController).onAppForegrounded(true)
     verify(fixture.replayController).onAppForegrounded(false)
+  }
+
+  @Test
+  fun `a wall clock stepping forward during the background window does not rotate the session`() {
+    val watcher =
+      fixture.getSUT(sessionIntervalMillis = 30000L, enableAppLifecycleBreadcrumbs = false)
+    watcher.onForeground()
+    watcher.onBackground()
+
+    // the device syncs its clock an hour forward, which two wall-clock reads used to report as an
+    // hour spent in the background
+    fixture.nowMillis.addAndGet(HOURS.toMillis(1))
+    fixture.ticker.advance(1, MILLISECONDS)
+    watcher.onForeground()
+
+    verify(fixture.scopes).startSession()
+    verify(fixture.replayController).onAppForegrounded(false)
+  }
+
+  @Test
+  fun `a wall clock stepping backwards during the background window still rotates the session`() {
+    val watcher =
+      fixture.getSUT(sessionIntervalMillis = 30000L, enableAppLifecycleBreadcrumbs = false)
+    fixture.nowMillis.set(HOURS.toMillis(1))
+    watcher.onForeground()
+    watcher.onBackground()
+
+    fixture.nowMillis.set(0L)
+    fixture.ticker.advance(30000, MILLISECONDS)
+    watcher.onForeground()
+
+    verify(fixture.scopes, times(2)).startSession()
+    verify(fixture.replayController, times(2)).onAppForegrounded(true)
   }
 
   @Test
@@ -249,7 +299,6 @@ class LifecycleWatcherTest {
 
   @Test
   fun `background-foreground replay`() {
-    whenever(fixture.dateProvider.currentTimeMillis).thenReturn(1L)
     val watcher =
       fixture.getSUT(sessionIntervalMillis = 500L, enableAppLifecycleBreadcrumbs = false)
     watcher.onForeground()
