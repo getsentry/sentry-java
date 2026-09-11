@@ -4,10 +4,15 @@ import io.sentry.ISpan
 import io.sentry.ITransaction
 import io.sentry.NoOpSpan
 import io.sentry.NoOpTransaction
+import io.sentry.SentryLongDate
 import io.sentry.SentryNanotimeDate
 import io.sentry.SpanContext
+import io.sentry.SpanDataConvention
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.protocol.MeasurementValue
+import io.sentry.time.EpochClock
+import io.sentry.time.TestMonotonicTicker
+import io.sentry.time.Timestamp
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -83,6 +88,44 @@ class SpanFrameMetricsCollectorTest {
   }
 
   private val fixture = Fixture()
+
+  @Test
+  fun `a wall-clock span is placed on the frame timeline using the anchor taken at construction`() {
+    // app start spans are SentryLongDates, stamped on the wall clock rather than on nanoTime
+    val anchorEpochNanos = TimeUnit.SECONDS.toNanos(1_600_000_000)
+    val frameTicker = TestMonotonicTicker()
+
+    whenever(fixture.frameMetricsCollector.startCollection(any()))
+      .thenReturn(UUID.randomUUID().toString())
+    whenever(fixture.frameMetricsCollector.getLastKnownFrameStartTimeNanos()).thenReturn(-1)
+    fixture.options.frameMetricsCollector = fixture.frameMetricsCollector
+    fixture.options.isEnableFramesTracking = true
+    fixture.options.isEnablePerformanceV2 = true
+
+    val sut =
+      SpanFrameMetricsCollector(
+        fixture.options,
+        fixture.frameMetricsCollector,
+        EpochClock { Timestamp.ofEpochNanos(anchorEpochNanos) },
+        frameTicker,
+      )
+
+    val span = mock<ISpan>()
+    whenever(span.spanContext).thenReturn(SpanContext("op.fake"))
+    whenever(span.startDate).thenReturn(SentryLongDate(anchorEpochNanos + 1_000))
+    whenever(span.finishDate).thenReturn(SentryLongDate(anchorEpochNanos + 100_000_000))
+
+    sut.onSpanStarted(span)
+    // one slow frame, on the frame timeline, fully inside the span
+    sut.onFrameMetricCollected(2_000, 50_000_000, 49_998_000, 30_000_000, true, false, 60.0f)
+
+    // the device spends an hour suspended before the span finishes, so the offset between the
+    // wall clock and the frame timeline is no longer what it was when the span started
+    frameTicker.advance(1, TimeUnit.HOURS)
+    sut.onSpanFinished(span)
+
+    verify(span).setData(SpanDataConvention.FRAMES_SLOW, 1)
+  }
 
   @Test
   fun `When AndroidSlowFrozenFrameCollector is initialized, it doesn't register any listener`() {
