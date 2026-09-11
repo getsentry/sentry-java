@@ -73,17 +73,15 @@ final class LifecycleWatcher implements AppState.AppStateListener {
   }
 
   /**
-   * Whether the session already bound to the scope is old enough that foregrounding should rotate
-   * it.
+   * Whether the session on the scope is too old to resume, so foregrounding should start a new one.
    *
-   * <p>Only reached before the app has been backgrounded in this process — a session started during
-   * SDK init, most often. There is no tick to compare against at that point: the only record of
-   * when that session started is {@link Session#getStarted()}, which is a wall-clock instant
-   * because it is serialized and sent, so this comparison has to be a wall-clock one and inherits
-   * the clock steps that come with it.
+   * <p>Used when no background window is pending, which means the session was started by SDK init
+   * rather than by leaving and returning to the app. Nothing captured a tick back then, and the
+   * only record of when the session started is {@link Session#getStarted()} — a wall-clock instant,
+   * because it is sent to Sentry. So this check stays on the wall clock, clock steps included.
    *
-   * <p>TODO [MAJOR]: have a session record the tick it started on, so this can be a {@link
-   * Deadline} like the background window is. That tick would have to stay out of the payload.
+   * <p>TODO [MAJOR]: let a session remember the tick it started on, so this can use a {@link
+   * Deadline} too. That tick must not be serialized.
    */
   private boolean isSessionOnScopeStale() {
     final long nowMillis = TimeUnit.NANOSECONDS.toMillis(epochClock.now().epochNanos());
