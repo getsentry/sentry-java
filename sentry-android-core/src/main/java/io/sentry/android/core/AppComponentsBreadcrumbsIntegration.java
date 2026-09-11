@@ -12,7 +12,6 @@ import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.protocol.Device;
@@ -34,10 +33,13 @@ public final class AppComponentsBreadcrumbsIntegration
   private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
-  // Debouncer measures on the uptime clock; moving it to MonotonicTicker changes behavior.
+  // TODO: JAVA-729
   @SuppressWarnings("deprecation")
   private final @NotNull Debouncer trimMemoryDebouncer =
-      new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
+      new Debouncer(
+          io.sentry.android.core.internal.util.AndroidCurrentDateProvider.getInstance(),
+          DEBOUNCE_WAIT_TIME_MS,
+          0);
 
   public AppComponentsBreadcrumbsIntegration(final @NotNull Context context) {
     this.context =

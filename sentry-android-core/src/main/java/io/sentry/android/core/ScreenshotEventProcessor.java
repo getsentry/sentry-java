@@ -12,7 +12,6 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.android.core.internal.util.ScreenshotUtils;
 import io.sentry.android.replay.util.MaskRenderer;
@@ -47,7 +46,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
   private final boolean isReplayAvailable;
   private final AtomicBoolean isReplayModuleAbsenceLogged = new AtomicBoolean(false);
 
-  // Debouncer measures on the uptime clock; moving it to MonotonicTicker changes behavior.
+  // TODO: JAVA-729
   @SuppressWarnings("deprecation")
   public ScreenshotEventProcessor(
       final @NotNull SentryAndroidOptions options,
@@ -58,7 +57,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
     this.debouncer =
         new Debouncer(
-            AndroidCurrentDateProvider.getInstance(),
+            io.sentry.android.core.internal.util.AndroidCurrentDateProvider.getInstance(),
             DEBOUNCE_WAIT_TIME_MS,
             DEBOUNCE_MAX_EXECUTIONS);
 

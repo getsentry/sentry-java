@@ -35,7 +35,6 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
@@ -299,10 +298,13 @@ public final class SystemEventsBreadcrumbsIntegration
     private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
 
-    // Debouncer measures on the uptime clock; moving it to MonotonicTicker changes behavior.
+    // TODO: JAVA-729
     @SuppressWarnings("deprecation")
     private final @NotNull Debouncer batteryChangedDebouncer =
-        new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
+        new Debouncer(
+            io.sentry.android.core.internal.util.AndroidCurrentDateProvider.getInstance(),
+            DEBOUNCE_WAIT_TIME_MS,
+            0);
 
     SystemEventsBroadcastReceiver(
         final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {

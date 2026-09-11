@@ -14,7 +14,6 @@ import io.sentry.ISerializer;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.gestures.ViewUtils;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.Debouncer;
@@ -46,13 +45,13 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
   private static final int DEBOUNCE_MAX_EXECUTIONS = 3;
 
-  // Debouncer measures on the uptime clock; moving it to MonotonicTicker changes behavior.
+  // TODO: JAVA-729
   @SuppressWarnings("deprecation")
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.debouncer =
         new Debouncer(
-            AndroidCurrentDateProvider.getInstance(),
+            io.sentry.android.core.internal.util.AndroidCurrentDateProvider.getInstance(),
             DEBOUNCE_WAIT_TIME_MS,
             DEBOUNCE_MAX_EXECUTIONS);
 

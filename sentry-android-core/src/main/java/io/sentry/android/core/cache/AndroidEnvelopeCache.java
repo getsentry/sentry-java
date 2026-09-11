@@ -11,7 +11,6 @@ import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.android.core.AnrV2Integration;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.TombstoneIntegration;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.cache.EnvelopeCache;
@@ -38,11 +37,10 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
-  // Pairs with TimeSpan.getStartUptimeMs(), which is SystemClock.uptimeMillis() too, so this
-  // site cannot move to MonotonicTicker on its own without mixing two clock bases.
+  // TODO: JAVA-729
   @SuppressWarnings("deprecation")
   public AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options) {
-    this(options, AndroidCurrentDateProvider.getInstance());
+    this(options, io.sentry.android.core.internal.util.AndroidCurrentDateProvider.getInstance());
   }
 
   AndroidEnvelopeCache(
