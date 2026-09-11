@@ -1,5 +1,7 @@
 package io.sentry;
 
+import io.sentry.time.Deadline;
+import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -26,10 +28,19 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   private final boolean hasNoCollectors;
 
   private final @NotNull SentryOptions options;
+  private final @NotNull MonotonicTicker ticker;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
 
   public DefaultCompositePerformanceCollector(final @NotNull SentryOptions options) {
+    this(
+        Objects.requireNonNull(options, "The options object is required."),
+        options.getMonotonicTicker());
+  }
+
+  DefaultCompositePerformanceCollector(
+      final @NotNull SentryOptions options, final @NotNull MonotonicTicker ticker) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
+    this.ticker = Objects.requireNonNull(ticker, "The ticker is required.");
     this.snapshotCollectors = new ArrayList<>();
     this.continuousCollectors = new ArrayList<>();
 
@@ -124,7 +135,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                 // Add the enriched tempData to all transactions/profiles/objects that collect data.
                 // Then Check if that object timed out.
                 for (CompositeData data : compositeDataMap.values()) {
-                  if (data.addDataAndCheckTimeout(tempData, tempData.getNanoTimestamp())) {
+                  if (data.addDataAndCheckTimeout(tempData)) {
                     // timed out
                     if (data.transaction != null) {
                       timedOutTransactions.add(data.transaction);
@@ -212,33 +223,30 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   private class CompositeData {
     private final @NotNull List<PerformanceCollectionData> dataList;
     private final @Nullable ITransaction transaction;
-    private final long startTimestamp;
+    private final @NotNull Deadline collectUntil;
 
     private CompositeData(final @Nullable ITransaction transaction) {
       this.dataList = new ArrayList<>();
       this.transaction = transaction;
-      this.startTimestamp = options.getDateProvider().now().nanoTimestamp();
+      // On a ticker rather than the date provider: this is how long we have been collecting, and
+      // a device time change must not end a collection early or keep a finished one going.
+      this.collectUntil =
+          Deadline.after(ticker, TRANSACTION_COLLECTION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     /**
      * Adds the data to the internal list of PerformanceCollectionData. Then it checks if data
      * collection timed out (for transactions only).
      *
-     * @param nowNanos the timestamp of the current collection, passed in so a single clock reading
-     *     is shared by every transaction in this collection round.
      * @return true if data collection timed out (for transactions only).
      */
-    boolean addDataAndCheckTimeout(
-        final @NotNull PerformanceCollectionData data, final long nowNanos) {
+    boolean addDataAndCheckTimeout(final @NotNull PerformanceCollectionData data) {
       // stop() hands dataList out while this timer thread may still be writing to it, so consumers
       // synchronize on the list while iterating. We must hold the same monitor here.
       synchronized (dataList) {
         dataList.add(data);
       }
-      return transaction != null
-          && nowNanos
-              > startTimestamp
-                  + TimeUnit.MILLISECONDS.toNanos(TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
+      return transaction != null && collectUntil.hasPassed();
     }
   }
 }
