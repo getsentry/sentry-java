@@ -24,6 +24,7 @@
 - Session Replay: Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response, when network details are enabled for the URL ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
 - Session Replay: `SentryOkHttpInterceptor` now captures network request and response details only while Session Replay is recording or buffering ([#6486](https://github.com/getsentry/sentry-java/pull/6486))
 - Stop marking an OkHttp call span as failed when a connection attempt to one of the host's addresses fails but OkHttp connects on another ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
+- Place wall-clock-stamped spans, such as app start spans, on the frame timeline using a fixed anchor, so that a device time change or time spent suspended no longer shifts the frame data attributed to them ([#6098](https://github.com/getsentry/sentry-java/pull/6098))
 
 ### Dependencies
 
