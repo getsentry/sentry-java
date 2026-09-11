@@ -1,10 +1,6 @@
 # Changelog
 
-## 8.56.0
-
-### Behavioral Changes
-
-- Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
+## Unreleased
 
 ### Features
 
@@ -37,6 +33,12 @@
     ```
 - Sentry can now configure Log4j2 automatically for Spring Boot 3 when `sentry-log4j2` is on the classpath and Log4j2 Core is the active logging backend ([#6072](https://github.com/getsentry/sentry-java/pull/6072))
   - Disabled by default for now; enable it and configure levels the same way as described in the Spring Boot 4 entry above (`sentry.logging.enabled=true`)
+
+## 8.56.0
+
+### Behavioral Changes
+
+- Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 
 ### Fixes
 
