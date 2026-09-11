@@ -38,6 +38,8 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
+  // TODO: JAVA-729
+  @SuppressWarnings("deprecation")
   public AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options) {
     this(options, AndroidCurrentDateProvider.getInstance());
   }
