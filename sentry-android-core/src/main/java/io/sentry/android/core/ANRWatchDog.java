@@ -81,6 +81,8 @@ final class ANRWatchDog extends Thread {
         context);
   }
 
+  // TODO [MAJOR]: measure the stall on a MonotonicTicker instead of an injected wall clock
+  @SuppressWarnings("deprecation")
   @TestOnly
   ANRWatchDog(
       @NotNull final ICurrentDateProvider timeProvider,
@@ -116,6 +118,7 @@ final class ANRWatchDog extends Thread {
     }
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void run() {
     // right when the watchdog gets started, let's assume there's no ANR
