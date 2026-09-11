@@ -7600,9 +7600,11 @@ public final class io/sentry/rrweb/RRWebVideoEvent$JsonKeys {
 }
 
 public final class io/sentry/time/AnchoredClock {
+	public fun at (J)Lio/sentry/time/Timestamp;
 	public static fun create (Lio/sentry/time/EpochClock;Lio/sentry/time/MonotonicTicker;)Lio/sentry/time/AnchoredClock;
 	public fun now ()Lio/sentry/time/Timestamp;
 	public fun startTime ()Lio/sentry/time/Timestamp;
+	public fun tickOf (Lio/sentry/time/Timestamp;)J
 }
 
 public final class io/sentry/time/Deadline {
@@ -7638,6 +7640,7 @@ public final class io/sentry/time/SystemEpochClock : io/sentry/time/EpochClock {
 }
 
 public final class io/sentry/time/Timestamp {
+	public fun anchor ()Lio/sentry/time/AnchoredClock;
 	public fun epochNanos ()J
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
