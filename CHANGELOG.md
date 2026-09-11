@@ -36,7 +36,7 @@
 
 ### Internal
 
-- Deprecate `AndroidCurrentDateProvider` in favor of `MonotonicTicker`, which counts time spent in deep sleep and cannot be confused with the epoch-based `CurrentDateProvider` ([#6103](https://github.com/getsentry/sentry-java/pull/6103))
+- Deprecate `AndroidCurrentDateProvider.getInstance()` in favor of `MonotonicTicker`, which counts time spent in deep sleep and cannot be confused with the epoch-based `CurrentDateProvider` ([#6103](https://github.com/getsentry/sentry-java/pull/6103))
 
 ## 8.56.0
 
