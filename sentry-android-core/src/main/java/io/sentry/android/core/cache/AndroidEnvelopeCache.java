@@ -38,6 +38,9 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
+  // Pairs with TimeSpan.getStartUptimeMs(), which is SystemClock.uptimeMillis() too, so this
+  // site cannot move to MonotonicTicker on its own without mixing two clock bases.
+  @SuppressWarnings("deprecation")
   public AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options) {
     this(options, AndroidCurrentDateProvider.getInstance());
   }

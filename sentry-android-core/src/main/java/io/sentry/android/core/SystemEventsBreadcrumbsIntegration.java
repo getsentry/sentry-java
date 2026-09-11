@@ -298,6 +298,9 @@ public final class SystemEventsBreadcrumbsIntegration
     private static final long DEBOUNCE_WAIT_TIME_MS = 60 * 1000;
     private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
+
+    // Debouncer measures on the uptime clock; moving it to MonotonicTicker changes behavior.
+    @SuppressWarnings("deprecation")
     private final @NotNull Debouncer batteryChangedDebouncer =
         new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
 

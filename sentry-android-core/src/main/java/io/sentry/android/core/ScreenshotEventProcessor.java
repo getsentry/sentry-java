@@ -47,6 +47,8 @@ public final class ScreenshotEventProcessor implements EventProcessor {
   private final boolean isReplayAvailable;
   private final AtomicBoolean isReplayModuleAbsenceLogged = new AtomicBoolean(false);
 
+  // Debouncer measures on the uptime clock; moving it to MonotonicTicker changes behavior.
+  @SuppressWarnings("deprecation")
   public ScreenshotEventProcessor(
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
