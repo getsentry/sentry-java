@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Place wall-clock-stamped spans, such as app start spans, on the frame timeline using a fixed anchor, so that a device time change or time spent suspended no longer shifts the frame data attributed to them ([#6098](https://github.com/getsentry/sentry-java/pull/6098))
+
 ## 8.56.0
 
 ### Behavioral Changes
