@@ -3654,7 +3654,7 @@ public final class io/sentry/SentryOpenTelemetryMode : java/lang/Enum {
 	public static fun values ()[Lio/sentry/SentryOpenTelemetryMode;
 }
 
-public class io/sentry/SentryOptions {
+public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public static final field DEFAULT_PROPAGATION_TARGETS Ljava/lang/String;
 	public static final field MAX_EVENT_SIZE_BYTES J
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
@@ -3707,6 +3707,7 @@ public class io/sentry/SentryOptions {
 	public fun getEnvelopeDiskCache ()Lio/sentry/cache/IEnvelopeCache;
 	public fun getEnvelopeReader ()Lio/sentry/IEnvelopeReader;
 	public fun getEnvironment ()Ljava/lang/String;
+	public fun getEpochClock ()Lio/sentry/time/EpochClock;
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getExecutorService ()Lio/sentry/ISentryExecutorService;
 	public fun getExperimental ()Lio/sentry/ExperimentalOptions;
@@ -3740,6 +3741,7 @@ public class io/sentry/SentryOptions {
 	public fun getMaxTraceFileSize ()J
 	public fun getMetrics ()Lio/sentry/SentryOptions$Metrics;
 	public fun getModulesLoader ()Lio/sentry/internal/modules/IModulesLoader;
+	public fun getMonotonicTicker ()Lio/sentry/time/MonotonicTicker;
 	public fun getOnDiscard ()Lio/sentry/SentryOptions$OnDiscardCallback;
 	public fun getOnOversizedEvent ()Lio/sentry/SentryOptions$OnOversizedEventCallback;
 	public fun getOpenTelemetryMode ()Lio/sentry/SentryOpenTelemetryMode;
@@ -7597,6 +7599,52 @@ public final class io/sentry/rrweb/RRWebVideoEvent$JsonKeys {
 	public fun <init> ()V
 }
 
+public final class io/sentry/time/AnchoredClock {
+	public static fun create (Lio/sentry/time/EpochClock;Lio/sentry/time/MonotonicTicker;)Lio/sentry/time/AnchoredClock;
+	public fun now ()Lio/sentry/time/Timestamp;
+	public fun startTime ()Lio/sentry/time/Timestamp;
+}
+
+public final class io/sentry/time/Deadline {
+	public static fun after (Lio/sentry/time/MonotonicTicker;JLjava/util/concurrent/TimeUnit;)Lio/sentry/time/Deadline;
+	public fun hasPassed ()Z
+	public fun isAfter (Lio/sentry/time/Deadline;)Z
+	public static fun passed (Lio/sentry/time/MonotonicTicker;)Lio/sentry/time/Deadline;
+	public fun remaining (Ljava/util/concurrent/TimeUnit;)J
+}
+
+public abstract interface class io/sentry/time/EpochClock {
+	public abstract fun now ()Lio/sentry/time/Timestamp;
+}
+
+public final class io/sentry/time/JavaMonotonicTicker : io/sentry/time/MonotonicTicker {
+	public static fun getInstance ()Lio/sentry/time/MonotonicTicker;
+	public fun tickNanos ()J
+}
+
+public abstract interface class io/sentry/time/MonotonicTicker {
+	public abstract fun tickNanos ()J
+}
+
+public final class io/sentry/time/Stopwatch {
+	public fun elapsed (Ljava/util/concurrent/TimeUnit;)J
+	public fun elapsedNanos ()J
+	public static fun started (Lio/sentry/time/MonotonicTicker;)Lio/sentry/time/Stopwatch;
+}
+
+public final class io/sentry/time/SystemEpochClock : io/sentry/time/EpochClock {
+	public static fun getInstance ()Lio/sentry/time/EpochClock;
+	public fun now ()Lio/sentry/time/Timestamp;
+}
+
+public final class io/sentry/time/Timestamp {
+	public fun epochNanos ()J
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public static fun ofEpochNanos (J)Lio/sentry/time/Timestamp;
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/ITransport {
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/RequestDetails;)V
 	public fun <init> (Lio/sentry/transport/QueuedThreadPoolExecutor;Lio/sentry/SentryOptions;Lio/sentry/transport/RateLimiter;Lio/sentry/transport/ITransportGate;Lio/sentry/transport/HttpConnection;)V
@@ -7658,6 +7706,7 @@ public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 	public fun <init> (Lio/sentry/transport/ICurrentDateProvider;Lio/sentry/SentryOptions;)V
 	public fun addRateLimitObserver (Lio/sentry/transport/RateLimiter$IRateLimitObserver;)V
 	public fun close ()V
+	public static fun create (Lio/sentry/time/MonotonicTicker;Lio/sentry/transport/RateLimiterConfig;)Lio/sentry/transport/RateLimiter;
 	public fun filter (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Lio/sentry/SentryEnvelope;
 	public fun isActiveForCategory (Lio/sentry/DataCategory;)Z
 	public fun isAnyRateLimitActive ()Z
@@ -7667,6 +7716,12 @@ public final class io/sentry/transport/RateLimiter : java/io/Closeable {
 
 public abstract interface class io/sentry/transport/RateLimiter$IRateLimitObserver {
 	public abstract fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
+}
+
+public abstract interface class io/sentry/transport/RateLimiterConfig {
+	public abstract fun getClientReportRecorder ()Lio/sentry/clientreport/IClientReportRecorder;
+	public abstract fun getLogger ()Lio/sentry/ILogger;
+	public abstract fun getTimerExecutorService ()Lio/sentry/ISentryExecutorService;
 }
 
 public final class io/sentry/transport/ReusableCountLatch {
