@@ -597,6 +597,12 @@ public final class Sentry {
                     options.findPersistingScopeObserver();
                 if (scopeCache != null) {
                   scopeCache.resetCache();
+                  // the scope environment is configuration, not telemetry state, so we persist it
+                  // again after the reset to keep it available for the next app launch
+                  final @Nullable String environment = globalScope.getEnvironment();
+                  if (environment != null) {
+                    scopeCache.setEnvironment(environment);
+                  }
                 }
               });
     } catch (Throwable e) {

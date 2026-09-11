@@ -930,6 +930,26 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `trace state uses the scope environment when set`() {
+    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    fixture.scopes.configureScope { it.environment = "scope-environment" }
+
+    val trace = transaction.traceContext()
+
+    assertNotNull(trace) { assertEquals("scope-environment", it.environment) }
+  }
+
+  @Test
+  fun `trace state uses the global scope environment when set`() {
+    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    fixture.scopes.configureScope(ScopeType.GLOBAL) { it.environment = "global-environment" }
+
+    val trace = transaction.traceContext()
+
+    assertNotNull(trace) { assertEquals("global-environment", it.environment) }
+  }
+
+  @Test
   fun `returns trace state without userId if not send pii`() {
     val transaction = fixture.getSut({ it.isTraceSampling = true })
     fixture.scopes.setUser(User().apply { id = "user-id" })

@@ -200,7 +200,9 @@ public final class MetricsApi implements IMetricsApi {
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, sdkVersion.getVersion()));
     }
 
-    final @Nullable String environment = scopes.getOptions().getEnvironment();
+    final @Nullable String scopeEnvironment = scopes.getCombinedScopeView().getEnvironment();
+    final @Nullable String environment =
+        scopeEnvironment != null ? scopeEnvironment : scopes.getOptions().getEnvironment();
     if (environment != null) {
       attributes.put(
           "sentry.environment",
