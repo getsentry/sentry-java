@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Internal
+
+- Measure the hostname cache TTL and the 30 second performance-collection budget on a monotonic ticker, so that a device time change no longer shortens or extends either ([#6099](https://github.com/getsentry/sentry-java/pull/6099))
+
 ## 8.56.0
 
 ### Behavioral Changes
