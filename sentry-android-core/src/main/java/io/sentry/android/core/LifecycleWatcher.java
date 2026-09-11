@@ -24,9 +24,8 @@ final class LifecycleWatcher implements AppState.AppStateListener {
   /**
    * When the session the app left behind stops being resumable, or null while in the foreground.
    *
-   * <p>One deadline decides both halves of the background window: when the scheduled task ends the
-   * session, and whether a foreground arriving first is soon enough to keep it. Measuring that one
-   * window in two places used to mean two clock readings, which a clock step could make disagree.
+   * <p>Only read or written while holding {@link #endSessionLock}, which is also what lets
+   * cancelling the pending task and taking this deadline happen as one step.
    */
   private @Nullable Deadline sessionEnd;
 
