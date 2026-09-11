@@ -11,6 +11,10 @@
 
 - Recover Android 17 `MemoryLimiter` app exits recorded as `ApplicationExitInfo.REASON_MEMORY_LIMITER` ([#6174](https://github.com/getsentry/sentry-java/pull/6174))
 
+### Fixes
+
+- Decide whether foregrounding the app starts a new session on a monotonic clock instead of the wall clock, so that a device time change no longer starts a session that should have been resumed, or resumes one that should have ended ([#6096](https://github.com/getsentry/sentry-java/pull/6096))
+
 ## 8.58.0
 
 ### Features
