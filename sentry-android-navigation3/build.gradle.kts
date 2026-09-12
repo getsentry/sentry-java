@@ -22,6 +22,10 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
+  testBuildType = "release"
+
   kotlin {
     compilerOptions.jvmTarget = JVM_1_8
     compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
@@ -42,6 +46,18 @@ android {
 }
 
 kotlin { explicitApi() }
+
+dependencies {
+  implementation(projects.sentry)
+
+  compileOnly(libs.androidx.compose.runtime)
+
+  testImplementation(libs.androidx.compose.runtime)
+  testImplementation(libs.google.truth)
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.kotlin)
+}
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.
