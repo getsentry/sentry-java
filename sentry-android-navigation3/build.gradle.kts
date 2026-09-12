@@ -15,6 +15,9 @@ android {
 
   defaultConfig {
     minSdk = 23 // Nav3 requires minSdk 23
+
+    // for AGP 4.1
+    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
   }
 
   buildTypes {
@@ -32,6 +35,10 @@ android {
     compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
   }
 
+  testOptions {
+    unitTests.isReturnDefaultValues = true
+  }
+
   lint {
     warningsAsErrors = true
     checkDependencies = true
@@ -39,6 +46,8 @@ android {
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
   }
+
+  buildFeatures { buildConfig = true }
 
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
