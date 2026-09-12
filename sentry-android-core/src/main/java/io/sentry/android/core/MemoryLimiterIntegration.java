@@ -42,13 +42,17 @@ import org.jetbrains.annotations.Nullable;
 //   Android API level.
 // TODO ADAM: Other potential functionality:
 //  - Report heap dumps (discussed here:
-//  https://android-developers.googleblog.com/2026/06/prioritizing-memory-efficiency-steps-for-android-17.html)
+//
+// https://android-developers.googleblog.com/2026/06/prioritizing-memory-efficiency-steps-for-android-17.html)
 //  - Use ProfilingManager anomaly/OOM triggers for pre-kill heap-dump diagnostics.
-//  - Differentiate btw MemoryLimiter kills for visible, not-visible, and cached processes rather than
+//  - Differentiate btw MemoryLimiter kills for visible, not-visible, and cached processes rather
+// than
 //    reporting a generic synthetic fatal event. (Cf. ApplicationExitInfo.getImportance(), etc.).
 //  - React to onTrimMemory for proactive shedding.
-//  - Our existing trim-memory breadcrumb logic ignores TRIM_MEMORY_UI_HIDDEN entirely, as it only records
-//    levels >= TRIM_MEMORY_BACKGROUND. MemoryLimiter blog post linked above mentions focusing on both.
+//  - Our existing trim-memory breadcrumb logic ignores TRIM_MEMORY_UI_HIDDEN entirely, as it only
+// records
+//    levels >= TRIM_MEMORY_BACKGROUND. MemoryLimiter blog post linked above mentions focusing on
+// both.
 
 /**
  * Reports Android process deaths that the OS records as <a

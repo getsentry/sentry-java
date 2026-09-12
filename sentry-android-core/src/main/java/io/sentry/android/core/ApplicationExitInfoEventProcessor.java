@@ -587,6 +587,8 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       timestamp = ((AbnormalExit) hint).timestamp();
     } else if (hint instanceof NativeCrashExit) {
       timestamp = ((NativeCrashExit) hint).timestamp();
+    } else if (hint instanceof MemoryLimiterIntegration.MemoryLimiterHint) {
+      timestamp = ((MemoryLimiterIntegration.MemoryLimiterHint) hint).timestamp();
     } else {
       timestamp = null;
     }

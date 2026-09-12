@@ -606,6 +606,81 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `memory limiter event uses current options when cache generation is stale`() {
+    val hint = memoryLimiterHint(timestamp = 3_000)
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@2.0.0+300"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.options.proguardUuid = "current-uuid"
+    fixture.options.sdkVersion = SdkVersion("current-sdk", "2.0.0")
+    fixture.options.setTag("account", "current-tag")
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "previous-user")
+    fixture.persistOptions(DIST_FILENAME, "previous-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "previous-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("previous-sdk", "1.0.0"))
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "previous-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@2.0.0+300", processed.release)
+    assertEquals("current-user", processed.environment)
+    assertEquals("current-dist", processed.dist)
+    assertEquals("current-uuid", processed.debugMeta!!.images!![0].uuid)
+    assertEquals("current-sdk", processed.sdk!!.name)
+    assertEquals("current-tag", processed.tags!!["account"])
+  }
+
+  @Test
+  fun `memory limiter event uses persisted options when cache generation matches crashed app`() {
+    val hint = memoryLimiterHint(timestamp = 2_000)
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.0.0+100"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.options.setTag("account", "current-tag")
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "crashed-user")
+    fixture.persistOptions(DIST_FILENAME, "crashed-dist")
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "crashed-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.0.0+100", processed.release)
+    assertEquals("crashed-user", processed.environment)
+    assertEquals("crashed-dist", processed.dist)
+    assertEquals("crashed-tag", processed.tags!!["account"])
+  }
+
+  @Test
+  fun `memory limiter event ignores persisted options when cache generation is newer than exit`() {
+    val hint = memoryLimiterHint(timestamp = 2_000)
+    val processor = fixture.getSut(tmpDir)
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@2.0.0+200")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "newer-user")
+    fixture.persistOptions(DIST_FILENAME, "newer-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "newer-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("newer-sdk", "2.0.0"))
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "newer-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 2_500L).setRelease(null)
+    setLastUpdateTime(3_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+    assertNull(processed.environment)
+    assertNull(processed.dist)
+    assertTrue(processed.debugMeta!!.images!!.isEmpty())
+    assertNull(processed.sdk)
+    assertNull(processed.tags?.get("account"))
+  }
+
+  @Test
   fun `if dist is not persisted, backfills it from release`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
     val original = SentryEvent()
@@ -1292,6 +1367,20 @@ class ApplicationExitInfoEventProcessorTest {
         timestamp,
         shouldEnrich,
         mechanism == "anr_background",
+      )
+    )
+  }
+
+  private fun memoryLimiterHint(
+    shouldEnrich: Boolean = true,
+    timestamp: Long,
+  ): Hint {
+    return HintUtils.createWithTypeCheckHint(
+      MemoryLimiterIntegration.MemoryLimiterHint(
+        fixture.options.flushTimeoutMillis,
+        NoOpLogger.getInstance(),
+        timestamp,
+        shouldEnrich,
       )
     )
   }
