@@ -66,6 +66,15 @@ import org.jetbrains.annotations.Nullable;
  * can then be backfilled with persisted SDK state, such as release and environment, in the same
  * recovered-exit pipeline used for other {@link ApplicationExitInfo} based reports.
  *
+ * TODO ADAM: Refine.
+ * <p>Each matching exit is reported as a synthetic fatal event with a
+ * {@code MemoryLimitExceeded} exception. The exception mechanism stores the original Android exit
+ * description together with MemoryLimiter-specific context in {@code mechanism.data}, including
+ * the raw {@link ApplicationExitInfo#getImportance()} value and a derived visibility tier
+ * ({@code visible}, {@code not_visible}, or {@code cached}). For the latest recovered exit, the
+ * event may also be backfilled with persisted launch state from the crashed app generation,
+ * including release, environment, dist, SDK version, ProGuard UUID, tags, and scope data.
+ *
  * <p>Only available on Android API 37+.
  */
 @ApiStatus.Internal

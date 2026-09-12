@@ -132,6 +132,11 @@
       android:name=".sqlite.UiLoadActivity"
       android:exported="false" />
 
+    <activity
+      android:name=".memory.MemoryLimiterActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
     <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
     <meta-data
       android:name="io.sentry.dsn"
@@ -317,6 +322,9 @@
       android:value="true" />
     <meta-data
       android:name="io.sentry.tombstone.enable"
+      android:value="true" />
+    <meta-data
+      android:name="io.sentry.memory-limiter.enable"
       android:value="true" />
     <meta-data
       android:name="io.sentry.anr.profiling.sample-rate"

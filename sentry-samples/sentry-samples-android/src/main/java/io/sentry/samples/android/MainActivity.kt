@@ -285,6 +285,7 @@ fun CategoryNavigationRail(
 
 @Composable
 fun ErrorsScreen() {
+  val activity = LocalContext.current.getActivity()
   val crashCount = remember { mutableIntStateOf(0) }
   val mutex = remember { Object() }
 
@@ -459,6 +460,21 @@ fun ErrorsScreen() {
           modifier = Modifier,
         ) {
           Text("Out of Memory", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("memory_limiter") {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction("memory_limiter")
+            activity.startActivity(
+              Intent(activity, io.sentry.samples.android.memory.MemoryLimiterActivity::class.java)
+            )
+          },
+          modifier = Modifier,
+        ) {
+          Text("MemoryLimiter", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
     }
