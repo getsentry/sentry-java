@@ -4,6 +4,7 @@ import static io.sentry.SentryLevel.DEBUG;
 import static io.sentry.SentryLevel.INFO;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
+import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
@@ -33,6 +34,8 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -71,6 +74,8 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
   // TODO ADAM: Where does this description come from? INclude a reference.
   static final @NotNull String MEMORY_LIMITER_DESCRIPTION = "MemoryLimiter:AnonSwap";
   static final @NotNull String MEMORY_LIMITER_MESSAGE = "Android process killed by MemoryLimiter";
+  static final @NotNull String IMPORTANCE_DATA_KEY = "importance";
+  static final @NotNull String VISIBILITY_TIER_DATA_KEY = "visibility_tier";
 
   private final @NotNull Context context;
   // TODO ADAM: Use one of the new internal time APIs, eg, EpochClock or AnchoredClock instead of
@@ -227,6 +232,7 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
       mechanism.setDescription(exitInfo.getDescription());
       mechanism.setHandled(false);
       mechanism.setSynthetic(true);
+      mechanism.setData(buildMechanismData(exitInfo));
 
       final SentryException sentryException = new SentryException();
       sentryException.setType("MemoryLimitExceeded");
@@ -234,6 +240,26 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
       sentryException.setModule("io.sentry.android.core");
       sentryException.setMechanism(mechanism);
       return sentryException;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.R)
+    private @NotNull Map<String, Object> buildMechanismData(
+        final @NotNull ApplicationExitInfo exitInfo) {
+      final int importance = exitInfo.getImportance();
+      final Map<String, Object> data = new HashMap<>();
+      data.put(IMPORTANCE_DATA_KEY, importance);
+      data.put(VISIBILITY_TIER_DATA_KEY, getVisibilityTier(importance));
+      return data;
+    }
+
+    private @NotNull String getVisibilityTier(final int importance) {
+      if (importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED) {
+        return "cached";
+      }
+      if (importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_PERCEPTIBLE) {
+        return "visible";
+      }
+      return "not_visible";
     }
   }
 

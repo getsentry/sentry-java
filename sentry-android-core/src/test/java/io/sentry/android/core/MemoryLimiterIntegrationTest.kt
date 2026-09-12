@@ -98,11 +98,13 @@ class MemoryLimiterIntegrationTest {
     fun addAppExitInfo(
       reason: Int = ApplicationExitInfo.REASON_OTHER,
       timestamp: Long,
+      importance: Int? = null,
       description: String? = MemoryLimiterIntegration.MEMORY_LIMITER_DESCRIPTION,
     ) {
       val builder = ApplicationExitInfoBuilder.newBuilder()
       builder.setReason(reason)
       builder.setTimestamp(timestamp)
+      importance?.let { builder.setImportance(it) }
       val exitInfo =
         spy(builder.build()) {
           whenever(mock.description).thenReturn(description)
@@ -139,7 +141,10 @@ class MemoryLimiterIntegrationTest {
   @Test
   fun `captures matching memory limiter exit`() {
     val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
-    fixture.addAppExitInfo(timestamp = newTimestamp)
+    fixture.addAppExitInfo(
+      timestamp = newTimestamp,
+      importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+    )
 
     integration.register(fixture.scopes, fixture.options)
 
@@ -158,11 +163,73 @@ class MemoryLimiterIntegrationTest {
             MemoryLimiterIntegration.MEMORY_LIMITER_DESCRIPTION,
             exception.mechanism!!.description,
           )
+          assertEquals(
+            ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+            exception.mechanism!!.data!![MemoryLimiterIntegration.IMPORTANCE_DATA_KEY],
+          )
+          assertEquals(
+            "visible",
+            exception.mechanism!!.data!![MemoryLimiterIntegration.VISIBILITY_TIER_DATA_KEY],
+          )
         },
         argThat<Hint> {
           val hint = HintUtils.getSentrySdkHint(this) as MemoryLimiterHint
           hint.shouldEnrich() && hint.timestamp() == newTimestamp
         },
+      )
+  }
+
+  @Test
+  fun `maps service importance to not visible tier`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    fixture.addAppExitInfo(
+      timestamp = newTimestamp,
+      importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_SERVICE,
+    )
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { event ->
+          val mechanism = event.exceptions!!.single().mechanism!!
+          assertEquals(
+            ActivityManager.RunningAppProcessInfo.IMPORTANCE_SERVICE,
+            mechanism.data!![MemoryLimiterIntegration.IMPORTANCE_DATA_KEY],
+          )
+          assertEquals(
+            "not_visible",
+            mechanism.data!![MemoryLimiterIntegration.VISIBILITY_TIER_DATA_KEY],
+          )
+        },
+        anyOrNull<Hint>(),
+      )
+  }
+
+  @Test
+  fun `maps cached importance to cached tier`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    fixture.addAppExitInfo(
+      timestamp = newTimestamp,
+      importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED,
+    )
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { event ->
+          val mechanism = event.exceptions!!.single().mechanism!!
+          assertEquals(
+            ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED,
+            mechanism.data!![MemoryLimiterIntegration.IMPORTANCE_DATA_KEY],
+          )
+          assertEquals(
+            "cached",
+            mechanism.data!![MemoryLimiterIntegration.VISIBILITY_TIER_DATA_KEY],
+          )
+        },
+        anyOrNull<Hint>(),
       )
   }
 
