@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
 }
@@ -47,7 +48,10 @@ android {
     checkReleaseBuilds = false
   }
 
-  buildFeatures { buildConfig = true }
+  buildFeatures {
+    buildConfig = true
+    compose = true
+  }
 
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
@@ -62,10 +66,14 @@ dependencies {
   compileOnly(libs.androidx.compose.runtime)
 
   testImplementation(libs.androidx.compose.runtime)
+  testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.mockito.kotlin)
+  testImplementation(libs.roboelectric)
 }
 
 tasks.withType<Detekt>().configureEach {
