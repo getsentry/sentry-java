@@ -29,11 +29,13 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atMost
 import org.mockito.kotlin.check
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
@@ -267,6 +269,72 @@ class MemoryLimiterIntegrationTest {
           hint.shouldEnrich() && hint.timestamp() == newTimestamp
         },
       )
+  }
+
+  @Test
+  fun `maps ApplicationExitInfo importance to process visibility`() {
+    // (importance, expected visibility) covering every branch of getProcessVisibility, including
+    // the default fallback for an unknown/future importance value.
+    val cases =
+      listOf(
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND to
+          MemoryLimiterIntegration.PROCESS_VISIBILITY_VISIBLE,
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE to
+          MemoryLimiterIntegration.PROCESS_VISIBILITY_VISIBLE,
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING to
+          MemoryLimiterIntegration.PROCESS_VISIBILITY_VISIBLE,
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE to
+          MemoryLimiterIntegration.PROCESS_VISIBILITY_NOT_VISIBLE,
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_PERCEPTIBLE to
+          MemoryLimiterIntegration.PROCESS_VISIBILITY_NOT_VISIBLE,
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_SERVICE to
+          MemoryLimiterIntegration.PROCESS_VISIBILITY_NOT_VISIBLE,
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_CANT_SAVE_STATE to
+          MemoryLimiterIntegration.PROCESS_VISIBILITY_NOT_VISIBLE,
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE to
+          MemoryLimiterIntegration.PROCESS_VISIBILITY_NOT_VISIBLE,
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED to
+          MemoryLimiterIntegration.PROCESS_VISIBILITY_CACHED,
+        // An importance value outside the known bands must fall back to the least specific bucket.
+        Int.MAX_VALUE to MemoryLimiterIntegration.PROCESS_VISIBILITY_CACHED,
+      )
+
+    val baseTimestamp = System.currentTimeMillis() - 60_000
+    val integration =
+      fixture.getSut(
+        memoryLimiterEnabled = true,
+        reportHistoricalMemoryLimiterExits = true,
+        dir = tmpDir,
+        sdkVersion = 37,
+        lastReportedTimestamp = baseTimestamp - 10_000,
+      )
+    // The captured events are never really flushed by the mocked scopes, so don't block on the
+    // per-event flush latch (its default timeout would make this test take minutes).
+    fixture.options.flushTimeoutMillis = 0
+
+    // Give each importance a distinct timestamp so captured events can be matched back to it.
+    cases.forEachIndexed { index, (importance, _) ->
+      fixture.addAppExitInfo(timestamp = baseTimestamp + index * 1_000L, importance = importance)
+    }
+
+    integration.register(fixture.scopes, fixture.options)
+
+    val eventCaptor = argumentCaptor<SentryEvent>()
+    verify(fixture.scopes, times(cases.size)).captureEvent(eventCaptor.capture(), anyOrNull<Hint>())
+    val visibilityByTimestamp =
+      eventCaptor.allValues.associate { event ->
+        event.timestamp!!.time to
+          event.exceptions!!.single().mechanism!!.data!![
+            MemoryLimiterIntegration.PROCESS_VISIBILITY_DATA_KEY]
+      }
+
+    cases.forEachIndexed { index, (importance, expectedVisibility) ->
+      assertEquals(
+        expectedVisibility,
+        visibilityByTimestamp[baseTimestamp + index * 1_000L],
+        "importance $importance should map to $expectedVisibility",
+      )
+    }
   }
 
   @Test
