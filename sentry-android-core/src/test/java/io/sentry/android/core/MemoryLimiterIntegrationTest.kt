@@ -366,6 +366,44 @@ class MemoryLimiterIntegrationTest {
   }
 
   @Test
+  fun `captures exit for any MemoryLimiter sub-reason, not just AnonSwap`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    // A future MemoryLimiter kill sub-reason (e.g. the memory or swap limits) still lives in the
+    // "MemoryLimiter:" namespace and must be captured, with its raw sub-reason preserved.
+    fixture.addAppExitInfo(
+      reason = ApplicationExitInfo.REASON_OTHER,
+      description = "MemoryLimiter:Memory",
+      timestamp = newTimestamp,
+    )
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { event ->
+          assertEquals("MemoryLimiter:Memory", event.exceptions!!.single().mechanism!!.description)
+        },
+        anyOrNull<Hint>(),
+      )
+  }
+
+  @Test
+  fun `ignores exit when description mentions MemoryLimiter without the namespace delimiter`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    // "MemoryLimiter" without the ":" delimiter is not a MemoryLimiter kill; matching requires the
+    // namespace prefix so we don't over-capture unrelated REASON_OTHER exits.
+    fixture.addAppExitInfo(
+      reason = ApplicationExitInfo.REASON_OTHER,
+      description = "NotAMemoryLimiterKill",
+      timestamp = newTimestamp,
+    )
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
   fun `ignores exit when description is null`() {
     val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
     fixture.addAppExitInfo(

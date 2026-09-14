@@ -72,7 +72,10 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class MemoryLimiterIntegration implements Integration, Closeable {
 
-  static final @NotNull String MEMORY_LIMITER_DESCRIPTION = "MemoryLimiter:AnonSwap";
+  static final @NotNull String MEMORY_LIMITER_DESCRIPTION_PREFIX = "MemoryLimiter:";
+  static final @NotNull String MEMORY_LIMITER_DESCRIPTION =
+      MEMORY_LIMITER_DESCRIPTION_PREFIX + "AnonSwap";
+
   static final @NotNull String MEMORY_LIMITER_MESSAGE = "Android process killed by MemoryLimiter";
 
   static final @NotNull String IMPORTANCE_DATA_KEY = "importance";
@@ -186,11 +189,11 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
     }
 
     /**
-     * Matches Android exits that the system records as generic "other" deaths and annotates with
-     * the MemoryLimiter description.
+     * Returns true if the provided {@code exitInfo} looks like it comes from a
+     * MemoryLimiter-induced process death.
      *
      * <p>Criteria taken from <a
-     * href="https://developer.android.com/about/versions/17/behavior-changes-all?utm_source=android-studio-app&utm_medium=app#app-memory-limits">here</a>.
+     * href="https://developer.android.com/about/versions/17/behavior-changes-all#app-memory-limits">here</a>.
      */
     @Override
     @RequiresApi(api = Build.VERSION_CODES.R)
@@ -198,8 +201,14 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
       if (exitInfo.getReason() != ApplicationExitInfo.REASON_OTHER) {
         return false;
       }
+
       final String description = exitInfo.getDescription();
-      return description != null && description.contains(MEMORY_LIMITER_DESCRIPTION);
+      // We match on the "MemoryLimiter:" prefix rather than the full "MemoryLimiter:AnonSwap"
+      // string mentioned in the Android 17 release notes because we want to capture any future
+      // MemoryLimiter kill reason without a code change. (MemoryLimiter source already tracks
+      // MemoryLimiter:Memory and MemoryLimiter:Swap reasons, but for now doesn't kill the process
+      // because of them.)
+      return description != null && description.contains(MEMORY_LIMITER_DESCRIPTION_PREFIX);
     }
 
     @Override
@@ -276,7 +285,7 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
      * <p>The <a
      * href="https://source.android.com/docs/core/perf/memory-limiter#process-monitoring">MemoryLimiter
      * docs</a> classify exact {@code PROCESS_STATE_*} values, but {@link ApplicationExitInfo} only
-     * exposes the coarser {@link RunningAppProcessInfo#Importance} bucket.
+     * exposes the coarser {@link RunningAppProcessInfo} importance bucket.
      */
     private @NotNull String getProcessVisibility(final int importance) {
       switch (importance) {
