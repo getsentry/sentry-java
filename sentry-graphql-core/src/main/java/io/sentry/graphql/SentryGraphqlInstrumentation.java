@@ -25,6 +25,7 @@ import io.sentry.Sentry;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TypeCheckHint;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.StringUtils;
 import java.util.Arrays;
 import java.util.List;
@@ -123,8 +124,7 @@ public final class SentryGraphqlInstrumentation {
       final @NotNull List<GraphQLError> errors = result.getErrors();
       if (errors != null) {
         for (GraphQLError error : errors) {
-          String errorType = getErrorType(error);
-          if (!isIgnored(errorType)) {
+          if (!isIgnored(error)) {
             exceptionReporter.captureThrowable(
                 new RuntimeException(error.getMessage()),
                 new ExceptionReporter.ExceptionDetails(
@@ -154,19 +154,35 @@ public final class SentryGraphqlInstrumentation {
         || ignoredErrorTypes.contains(errorType);
   }
 
-  private @Nullable String getErrorType(final @Nullable GraphQLError error) {
+  private boolean isIgnored(final @Nullable GraphQLError error) {
     if (error == null) {
-      return null;
+      return false;
     }
     final @Nullable ErrorClassification errorType = error.getErrorType();
     if (errorType != null) {
-      return errorType.toString();
+      if (isIgnored(errorType.toString())) {
+        return true;
+      }
+      try {
+        final @Nullable Object specification = errorType.toSpecification(error);
+        if (specification instanceof String && isIgnored((String) specification)) {
+          return true;
+        }
+        if (specification instanceof Map) {
+          final @Nullable Object specificationType = ((Map<?, ?>) specification).get("type");
+          return specificationType instanceof String && isIgnored((String) specificationType);
+        }
+      } catch (Throwable throwable) {
+        ExceptionUtils.rethrowIfFatal(throwable);
+        // Fall back to capturing the error if a custom classification cannot be serialized.
+      }
+      return false;
     }
     final @Nullable Map<String, Object> extensions = error.getExtensions();
     if (extensions != null) {
-      return StringUtils.toString(extensions.get("errorType"));
+      return isIgnored(StringUtils.toString(extensions.get("errorType")));
     }
-    return null;
+    return false;
   }
 
   public void beginExecuteOperation(
