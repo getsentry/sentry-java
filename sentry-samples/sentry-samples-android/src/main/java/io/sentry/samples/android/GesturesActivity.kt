@@ -43,6 +43,12 @@ class GesturesActivity : AppCompatActivity() {
     binding.scrollingCrash.setOnClickListener { throw RuntimeException("Uncaught Exception") }
 
     setContentView(binding.root)
+    supportActionBar?.setDisplayHomeAsUpEnabled(true)
+  }
+
+  override fun onSupportNavigateUp(): Boolean {
+    onBackPressedDispatcher.onBackPressed()
+    return true
   }
 
   override fun onResume() {
