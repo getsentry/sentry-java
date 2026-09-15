@@ -1,9 +1,16 @@
 package io.sentry.android.core.cache
 
+import com.google.common.truth.Truth.assertThat
+import io.sentry.DateUtils
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.SentryEnvelope
+import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryUUID
+import io.sentry.Session
+import io.sentry.Session.State.Abnormal
+import io.sentry.Session.State.Ok
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
 import io.sentry.android.core.MemoryLimiterIntegration.MemoryLimiterHint
@@ -14,6 +21,7 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.HintUtils
 import java.io.File
 import java.lang.IllegalArgumentException
+import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -228,6 +236,51 @@ class AndroidEnvelopeCacheTest {
   }
 
   @Test
+  fun `memory limiter hint marks previous session abnormal at exit timestamp`() {
+    val cache = fixture.getSut(tmpDir)
+    val sessionStart = DateUtils.getCurrentDateTime()
+    val exitTimestamp = sessionStart.time + 1_000
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    fixture.options.serializer.serialize(createSession(sessionStart), previousSessionFile.writer())
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+
+    cache.storeEnvelope(
+      envelope,
+      HintUtils.createWithTypeCheckHint(
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), exitTimestamp, true)
+      ),
+    )
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(previousSessionFile.reader(), Session::class.java)!!
+    assertThat(updatedSession.status).isEqualTo(Abnormal)
+    assertThat(updatedSession.timestamp!!.time).isEqualTo(exitTimestamp)
+    assertThat(updatedSession.abnormalMechanism).isEqualTo("memory_limiter")
+  }
+
+  // Protects against misbehaved clocks, stale cached state, or mismatched recovery data.
+  @Test
+  fun `memory limiter exit before previous session start does not mark session abnormal`() {
+    val cache = fixture.getSut(tmpDir)
+    val sessionStart = DateUtils.getCurrentDateTime()
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    fixture.options.serializer.serialize(createSession(sessionStart), previousSessionFile.writer())
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+
+    cache.storeEnvelope(
+      envelope,
+      HintUtils.createWithTypeCheckHint(
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), sessionStart.time - 1_000, true)
+      ),
+    )
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(previousSessionFile.reader(), Session::class.java)!!
+    assertThat(updatedSession.status).isEqualTo(Ok)
+    assertThat(updatedSession.abnormalMechanism).isNull()
+  }
+
+  @Test
   fun `memory limiter and anr markers are stored independently`() {
     val cache = fixture.getSut(tmpDir)
 
@@ -259,6 +312,24 @@ class AndroidEnvelopeCacheTest {
     val didStore = cache.storeEnvelope(fixture.envelope, hints)
     assertFalse(didStore)
   }
+
+  private fun createSession(started: Date): Session =
+    Session(
+      Ok,
+      started,
+      started,
+      0,
+      "distinct-id",
+      SentryUUID.generateSentryId(),
+      true,
+      null,
+      null,
+      null,
+      null,
+      "environment",
+      "release",
+      null,
+    )
 
   internal class UncaughtHint : UncaughtExceptionHint(0, NoOpLogger.getInstance())
 }
