@@ -2,6 +2,8 @@ package io.sentry;
 
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.AnchoredClock;
+import io.sentry.time.Timestamp;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -200,4 +202,19 @@ public final class NoOpSpan implements ISpan {
 
   @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {}
+
+  @Override
+  public @NotNull Timestamp startTimestamp() {
+    return Timestamp.ofEpochNanos(0);
+  }
+
+  @Override
+  public @Nullable Timestamp endTimestamp() {
+    return null;
+  }
+
+  @Override
+  public @Nullable AnchoredClock anchor() {
+    return null;
+  }
 }

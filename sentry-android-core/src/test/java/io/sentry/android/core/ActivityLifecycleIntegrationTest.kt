@@ -1490,7 +1490,7 @@ class ActivityLifecycleIntegrationTest {
       uiLoadTransaction.children.single { it.operation == ActivityLifecycleIntegration.TTID_OP }
     assertTrue(ttidSpan.isFinished)
     assertTrue(appStartTransaction.isFinished)
-    assertEquals(ttidSpan.finishDate, appStartTransaction.finishDate)
+    assertEquals(ttidSpan.endTimestamp(), appStartTransaction.endTimestamp())
     assertEquals(
       ttidSpan.measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]!!.value,
       AppStartMetrics.getInstance().appStartTimeSpan.durationMs,
@@ -2078,7 +2078,7 @@ class ActivityLifecycleIntegrationTest {
     runFirstDraw(view)
     assertTrue(ttidSpan.isFinished)
     assertTrue(ttfdSpan.isFinished)
-    assertEquals(ttfdSpan.finishDate, ttidSpan.finishDate)
+    assertEquals(ttfdSpan.endTimestamp(), ttidSpan.endTimestamp())
 
     sut.onActivityDestroyed(activity)
 
@@ -2132,8 +2132,8 @@ class ActivityLifecycleIntegrationTest {
     assertNotNull(ttidSpan)
     assertNotNull(ttfdSpan)
 
-    assertEquals(ttidSpan.startDate, fixture.transaction.startDate)
-    assertEquals(ttfdSpan.startDate, fixture.transaction.startDate)
+    assertEquals(ttidSpan.startTimestamp(), fixture.transaction.startTimestamp())
+    assertEquals(ttfdSpan.startTimestamp(), fixture.transaction.startTimestamp())
   }
 
   @Test
@@ -2169,7 +2169,7 @@ class ActivityLifecycleIntegrationTest {
     // the ttfd span should be trimmed to be equal to the ttid span, and the description should end
     // with "-exceeded"
     assertEquals(SpanStatus.DEADLINE_EXCEEDED, ttfdSpan.status)
-    assertEquals(ttidSpan.finishDate, ttfdSpan.finishDate)
+    assertEquals(ttidSpan.endTimestamp(), ttfdSpan.endTimestamp())
     assertEquals(ttfdSpan.description, "Activity full display - Deadline Exceeded")
   }
 
