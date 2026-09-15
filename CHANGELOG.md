@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add a Micrometer metrics integration with opt-in Spring Boot support ([#6116](https://github.com/getsentry/sentry-java/pull/6116))
+
 ## 8.56.0
 
 ### Fixes
