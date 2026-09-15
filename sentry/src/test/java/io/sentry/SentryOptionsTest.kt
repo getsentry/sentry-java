@@ -9,9 +9,7 @@ import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.LazyEvaluator
 import io.sentry.util.StringUtils
 import java.io.File
-import java.net.InetAddress
 import java.net.Proxy
-import java.util.concurrent.Callable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -1178,45 +1176,35 @@ class SentryOptionsTest {
   private fun SentryOptions.peekHostnameCache(): HostnameCache? =
     getProperty<LazyEvaluator<HostnameCache>>("hostnameCache").getProperty("value")
 
+  /** Options whose hostname cache resolves against a ticker the test controls. */
+  private fun optionsWithTicker(ticker: MonotonicTicker): SentryOptions =
+    object : SentryOptions() {
+      override fun getMonotonicTicker(): MonotonicTicker = ticker
+    }
+
   @Test
-  fun `constructing options does not resolve the hostname`() {
-    val options = SentryOptions()
+  fun `hostname is resolved on first use, not when options are constructed`() {
+    val ticker = TestMonotonicTicker()
+    val options = optionsWithTicker(ticker)
+
     assertThat(options.peekHostnameCache()).isNull()
 
-    // Asserting that peek reports an evaluated cache keeps the check above from passing vacuously.
-    options.hostnameCache = HostnameCache(Callable { mock<InetAddress>() }, TestMonotonicTicker())
-    assertThat(options.peekHostnameCache()).isNotNull()
-  }
+    val cache = options.hostnameCache
 
-  @Test
-  fun `hostnameCache is created once and reused`() {
-    val options = SentryOptions()
-    val cache = HostnameCache(Callable { mock<InetAddress>() }, TestMonotonicTicker())
-    options.hostnameCache = cache
-
+    // Also keeps the assertion above honest: peek does report a cache once one exists.
+    assertThat(options.peekHostnameCache()).isSameInstanceAs(cache)
     assertThat(options.hostnameCache).isSameInstanceAs(cache)
-    assertThat(options.hostnameCache).isSameInstanceAs(cache)
+    assertThat(cache.getProperty<MonotonicTicker>("ticker")).isSameInstanceAs(ticker)
   }
 
   @Test
   fun `resetHostnameCache discards the cached instance`() {
-    val options = SentryOptions()
-    options.hostnameCache = HostnameCache(Callable { mock<InetAddress>() }, TestMonotonicTicker())
+    val options = optionsWithTicker(TestMonotonicTicker())
+    val cache = options.hostnameCache
 
     options.resetHostnameCache()
 
     assertThat(options.peekHostnameCache()).isNull()
-  }
-
-  @Test
-  fun `hostnameCache measures its lifetime on the options ticker`() {
-    val ticker = TestMonotonicTicker()
-    val options =
-      object : SentryOptions() {
-        override fun getMonotonicTicker(): MonotonicTicker = ticker
-      }
-
-    assertThat(options.hostnameCache.getProperty<MonotonicTicker>("ticker"))
-      .isSameInstanceAs(ticker)
+    assertThat(options.hostnameCache).isNotSameInstanceAs(cache)
   }
 }

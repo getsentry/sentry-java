@@ -54,10 +54,16 @@ public final class HostnameCache {
 
   private final @NotNull ExecutorService executorService;
 
-  HostnameCache(final @NotNull SentryOptions options) {
+  /**
+   * Names the only collaborator a hostname cache reads, rather than taking the whole {@link
+   * SentryOptions}.
+   *
+   * @param ticker the ticker the cache lifetime is measured on
+   */
+  HostnameCache(final @NotNull MonotonicTicker ticker) {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
-    this(() -> InetAddress.getLocalHost(), options.getMonotonicTicker());
+    this(() -> InetAddress.getLocalHost(), ticker);
   }
 
   /**

@@ -539,7 +539,7 @@ public class SentryOptions implements RateLimiterConfig {
    */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<HostnameCache> hostnameCache =
-      new LazyEvaluator<>(() -> new HostnameCache(this));
+      new LazyEvaluator<>(() -> new HostnameCache(getMonotonicTicker()));
 
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
@@ -3107,11 +3107,6 @@ public class SentryOptions implements RateLimiterConfig {
   @ApiStatus.Internal
   public @NotNull HostnameCache getHostnameCache() {
     return hostnameCache.getValue();
-  }
-
-  @ApiStatus.Internal
-  public void setHostnameCache(final @NotNull HostnameCache hostnameCache) {
-    this.hostnameCache.setValue(hostnameCache);
   }
 
   /**

@@ -26,16 +26,23 @@ import org.mockito.kotlin.whenever
 
 class MainEventProcessorTest {
   class Fixture {
-    val sentryOptions: SentryOptions =
-      SentryOptions().apply {
-        dsn = dsnString
-        release = "release"
-        dist = "dist"
-        sdkVersion = SdkVersion("test", "1.2.3")
-      }
     val scopes = mock<IScopes>()
     val getLocalhost = mock<InetAddress>()
     val hostnameCacheTicker = TestMonotonicTicker()
+    // Built in getSut() rather than here: the constructor resolves the hostname straight away,
+    // so it has to run after getLocalhost is stubbed.
+    lateinit var hostnameCache: HostnameCache
+    val sentryOptions: SentryOptions =
+      object : SentryOptions() {
+          // Qualified: an unqualified name here would resolve to this override, not the field.
+          override fun getHostnameCache(): HostnameCache = this@Fixture.hostnameCache
+        }
+        .apply {
+          dsn = dsnString
+          release = "release"
+          dist = "dist"
+          sdkVersion = SdkVersion("test", "1.2.3")
+        }
     lateinit var sentryTracer: SentryTracer
 
     fun getSut(
@@ -73,8 +80,7 @@ class MainEventProcessorTest {
       }
       whenever(scopes.options).thenReturn(sentryOptions)
       sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
-
-      sentryOptions.setHostnameCache(HostnameCache({ getLocalhost }, hostnameCacheTicker))
+      hostnameCache = HostnameCache({ getLocalhost }, hostnameCacheTicker)
 
       return MainEventProcessor(sentryOptions)
     }
