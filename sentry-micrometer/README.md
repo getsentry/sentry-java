@@ -40,10 +40,17 @@ Passive meters are polled every 60 seconds by default:
 | `LongTaskTimer` active tasks | `${name}.active` gauge |
 | `LongTaskTimer` active duration | `${name}.duration` gauge in milliseconds |
 | `FunctionCounter` | Positive counter delta |
+| `FunctionTimer` count | `${name}.count` positive counter delta |
+| `FunctionTimer` total time | `${name}.total_time` positive counter delta in milliseconds |
 
-The first successful finite `FunctionCounter` poll establishes its baseline and emits nothing.
-Later positive deltas are sent. A decreasing value is treated as a reset and establishes a new
-baseline.
+The first successful finite function-meter poll establishes its baseline and emits nothing. Later
+positive deltas are sent. A decreasing value is treated as a reset and establishes a new baseline.
+`FunctionTimer` tracks its count and total-time baselines independently.
+
+A `FunctionTimer` does not expose individual durations, so the integration emits neither a
+mean gauge nor a distribution. To derive a correctly weighted mean across instances, divide the
+sum of `${name}.total_time` by the sum of `${name}.count`. Percentiles cannot be derived from these
+cumulative values.
 
 Unsupported custom meters remain readable through Micrometer but are not exported to Sentry.
 

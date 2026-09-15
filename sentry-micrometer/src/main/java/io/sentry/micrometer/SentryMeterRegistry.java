@@ -15,7 +15,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.cumulative.CumulativeFunctionTimer;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.core.instrument.distribution.pause.PauseDetector;
 import io.micrometer.core.instrument.internal.DefaultGauge;
@@ -140,8 +139,16 @@ public final class SentryMeterRegistry extends MeterRegistry {
       final @NotNull ToLongFunction<T> countFunction,
       final @NotNull ToDoubleFunction<T> totalTimeFunction,
       final @NotNull TimeUnit totalTimeFunctionUnit) {
-    return new CumulativeFunctionTimer<>(
-        id, obj, countFunction, totalTimeFunction, totalTimeFunctionUnit, getBaseTimeUnit());
+    return new SentryFunctionTimer<>(
+        id,
+        obj,
+        countFunction,
+        totalTimeFunction,
+        totalTimeFunctionUnit,
+        getBaseTimeUnit(),
+        this,
+        createMetricInfo(id, ".count", null),
+        createMetricInfo(id, ".total_time", MetricsUnit.Duration.MILLISECOND));
   }
 
   @Override
@@ -238,6 +245,8 @@ public final class SentryMeterRegistry extends MeterRegistry {
       publishLongTaskTimer((LongTaskTimer) meter);
     } else if (meter instanceof SentryFunctionCounter) {
       ((SentryFunctionCounter<?>) meter).poll();
+    } else if (meter instanceof SentryFunctionTimer) {
+      ((SentryFunctionTimer<?>) meter).poll();
     }
   }
 
@@ -269,6 +278,8 @@ public final class SentryMeterRegistry extends MeterRegistry {
   private void onMeterRemoved(final @NotNull Meter meter) {
     if (meter instanceof SentryFunctionCounter) {
       ((SentryFunctionCounter<?>) meter).markRemoved();
+    } else if (meter instanceof SentryFunctionTimer) {
+      ((SentryFunctionTimer<?>) meter).markRemoved();
     }
   }
 
