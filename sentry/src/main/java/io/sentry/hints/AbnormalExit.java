@@ -5,8 +5,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Marker interface for Sessions experiencing abnormal status.
  *
- * <p>This includes exits that were not classified as normal terminations or crashes, such as
- * Android ANRs and MemoryLimiter process deaths.
+ * <p><b>Note:</b> While this interface applies to the broad category of abnormal exits (meaning any
+ * exits that weren't classified as normal terminations or crashes) it currently is exclusively used
+ * as a hint marker for Android ANRs (both watchdog and ApplicationExitInfo based). If additional
+ * categories of abnormal exits were introduced, all instances of discriminator code (`instanceof
+ * AbnormalExit`) should be carefully reviewed for ANR specifics accidentally being applied.
  */
 public interface AbnormalExit {
 

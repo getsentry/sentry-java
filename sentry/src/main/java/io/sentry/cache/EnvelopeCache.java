@@ -21,6 +21,7 @@ import io.sentry.Session;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.NativeCrashExit;
+import io.sentry.hints.PreviousSessionAbnormalExit;
 import io.sentry.hints.SessionEnd;
 import io.sentry.hints.SessionStart;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -207,75 +208,83 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
   }
 
   /**
-   * Attempts to end previous session, relying on AbnormalExit hint, marks session as abnormal with
-   * abnormal mechanism and takes its timestamp.
+   * Attempts to end the previous session using legacy envelope-store hints.
    *
    * <p>If there was no abnormal exit, the previous session will be captured by
    * PreviousSessionFinalizer.
    *
    * @param hint a hint coming with the envelope
    */
-  @SuppressWarnings("JavaUtilDate")
   private void tryEndPreviousSession(final @NotNull Hint hint) {
     final Object sdkHint = HintUtils.getSentrySdkHint(hint);
+    if (sdkHint instanceof AbnormalExit) {
+      final AbnormalExit abnormalHint = (AbnormalExit) sdkHint;
+      tryEndPreviousSession(
+          abnormalHint.timestamp(),
+          Session.State.Abnormal,
+          abnormalHint.mechanism(),
+          "Abnormal exit");
+    } else if (sdkHint instanceof NativeCrashExit) {
+      final NativeCrashExit nativeCrashHint = (NativeCrashExit) sdkHint;
+      tryEndPreviousSession(
+          nativeCrashHint.timestamp(), Session.State.Crashed, null, "Native crash exit");
+    }
+  }
+
+  /** Updates the previous persisted session for a recovered abnormal exit. */
+  @ApiStatus.Internal
+  public void updatePreviousSession(final @NotNull PreviousSessionAbnormalExit hint) {
+    if (hint.shouldUpdatePreviousSession()) {
+      tryEndPreviousSession(
+          hint.timestamp(), Session.State.Abnormal, hint.mechanism(), "Abnormal exit");
+    }
+  }
+
+  @SuppressWarnings("JavaUtilDate")
+  private void tryEndPreviousSession(
+      final @Nullable Long exitTimestamp,
+      final @NotNull Session.State state,
+      final @Nullable String abnormalMechanism,
+      final @NotNull String exitLabel) {
     final File previousSessionFile = getPreviousSessionFile(directory.getFile().getAbsolutePath());
 
-    if (previousSessionFile.exists()) {
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      if (!previousSessionFile.exists()) {
+        options.getLogger().log(DEBUG, "No previous session file to end.");
+        return;
+      }
+
       options.getLogger().log(WARNING, "Previous session is not ended, we'd need to end it.");
 
       try (final Reader reader =
           new BufferedReader(
               new InputStreamReader(new FileInputStream(previousSessionFile), UTF_8))) {
         final Session session = serializer.getValue().deserialize(reader, Session.class);
-        if (session != null) {
-          Date timestamp = null;
-          if (sdkHint instanceof AbnormalExit) {
-            final AbnormalExit abnormalHint = (AbnormalExit) sdkHint;
-            final @Nullable Long abnormalExitTimestamp = abnormalHint.timestamp();
-
-            if (abnormalExitTimestamp != null) {
-              timestamp = DateUtils.getDateTime(abnormalExitTimestamp);
-              // sanity check if the abnormal exit actually happened when the session was alive
-              final Date sessionStart = session.getStarted();
-              if (sessionStart == null || timestamp.before(sessionStart)) {
-                options
-                    .getLogger()
-                    .log(
-                        WARNING,
-                        "Abnormal exit happened before previous session start, not ending the session.");
-                return;
-              }
-            }
-
-            final String abnormalMechanism = abnormalHint.mechanism();
-            session.update(Session.State.Abnormal, null, true, abnormalMechanism);
-          } else if (sdkHint instanceof NativeCrashExit) {
-            final NativeCrashExit nativeCrashHint = (NativeCrashExit) sdkHint;
-            final @NotNull Long nativeCrashExitTimestamp = nativeCrashHint.timestamp();
-
-            timestamp = DateUtils.getDateTime(nativeCrashExitTimestamp);
-            // sanity check if the native crash exit actually happened when the session was alive
-            final Date sessionStart = session.getStarted();
-            if (sessionStart == null || timestamp.before(sessionStart)) {
-              options
-                  .getLogger()
-                  .log(
-                      WARNING,
-                      "Native crash exit happened before previous session start, not ending the session.");
-              return;
-            }
-            session.update(Session.State.Crashed, null, true, null);
-          }
-          // we have to use the actual timestamp of the Abnormal or Crash Exit here to mark the
-          // session as finished at the time it happened
-          session.end(timestamp);
-          writeSessionToDisk(previousSessionFile, session);
+        if (session == null) {
+          return;
         }
+
+        final @Nullable Date timestamp =
+            exitTimestamp == null ? null : DateUtils.getDateTime(exitTimestamp);
+        if (timestamp != null) {
+          final Date sessionStart = session.getStarted();
+          if (sessionStart == null || timestamp.before(sessionStart)) {
+            options
+                .getLogger()
+                .log(
+                    WARNING,
+                    "%s happened before previous session start, not ending the session.",
+                    exitLabel);
+            return;
+          }
+        }
+
+        session.update(state, null, true, abnormalMechanism);
+        session.end(timestamp);
+        writeSessionToDisk(previousSessionFile, session);
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.ERROR, "Error processing previous session.", e);
       }
-    } else {
-      options.getLogger().log(DEBUG, "No previous session file to end.");
     }
   }
 

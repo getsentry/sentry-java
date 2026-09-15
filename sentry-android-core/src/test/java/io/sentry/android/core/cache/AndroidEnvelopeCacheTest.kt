@@ -244,18 +244,16 @@ class AndroidEnvelopeCacheTest {
     fixture.options.serializer.serialize(createSession(sessionStart), previousSessionFile.writer())
     val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
 
-    cache.storeEnvelope(
-      envelope,
-      HintUtils.createWithTypeCheckHint(
-        MemoryLimiterHint(0, NoOpLogger.getInstance(), exitTimestamp, true)
-      ),
-    )
+    val hint = MemoryLimiterHint(0, NoOpLogger.getInstance(), exitTimestamp, true)
+    cache.updatePreviousSession(hint)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(hint))
 
     val updatedSession =
       fixture.options.serializer.deserialize(previousSessionFile.reader(), Session::class.java)!!
     assertThat(updatedSession.status).isEqualTo(Abnormal)
     assertThat(updatedSession.timestamp!!.time).isEqualTo(exitTimestamp)
     assertThat(updatedSession.abnormalMechanism).isEqualTo("memory_limiter")
+    assertThat(updatedSession.errorCount()).isEqualTo(1)
   }
 
   @Test
@@ -266,12 +264,9 @@ class AndroidEnvelopeCacheTest {
     fixture.options.serializer.serialize(createSession(sessionStart), previousSessionFile.writer())
     val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
 
-    cache.storeEnvelope(
-      envelope,
-      HintUtils.createWithTypeCheckHint(
-        MemoryLimiterHint(0, NoOpLogger.getInstance(), sessionStart.time - 1_000, true)
-      ),
-    )
+    val hint = MemoryLimiterHint(0, NoOpLogger.getInstance(), sessionStart.time - 1_000, true)
+    cache.updatePreviousSession(hint)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(hint))
 
     val updatedSession =
       fixture.options.serializer.deserialize(previousSessionFile.reader(), Session::class.java)!!

@@ -340,13 +340,13 @@ public final class io/sentry/android/core/MemoryLimiterIntegration : io/sentry/I
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/MemoryLimiterIntegration$MemoryLimiterHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/AbnormalExit, io/sentry/hints/Backfillable {
+public final class io/sentry/android/core/MemoryLimiterIntegration$MemoryLimiterHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/PreviousSessionAbnormalExit {
 	public fun <init> (JLio/sentry/ILogger;JZ)V
-	public fun ignoreCurrentThread ()Z
 	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
 	public fun mechanism ()Ljava/lang/String;
 	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
 	public fun shouldEnrich ()Z
+	public fun shouldUpdatePreviousSession ()Z
 	public fun timestamp ()Ljava/lang/Long;
 }
 

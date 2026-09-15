@@ -1,8 +1,10 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Scope.IWithPropagationContext
 import io.sentry.SentryLevel.WARNING
 import io.sentry.Session.State.Crashed
+import io.sentry.cache.EnvelopeCache
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
@@ -12,6 +14,7 @@ import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
+import io.sentry.hints.PreviousSessionAbnormalExit
 import io.sentry.hints.TransactionEnd
 import io.sentry.logger.ILoggerBatchProcessor
 import io.sentry.logger.ILoggerBatchProcessorFactory
@@ -2614,6 +2617,86 @@ class SentryClientTest {
   }
 
   @Test
+  fun `accepted recovered abnormal exit repairs previous session`() {
+    val previousSession = givenPreviousSession()
+    val sut = fixture.getSut()
+
+    sut.captureEvent(
+      SentryEvent(),
+      null,
+      HintUtils.createWithTypeCheckHint(PreviousSessionAbnormalHint(previousSession.exitTimestamp)),
+    )
+
+    assertPreviousSessionWasRepaired(previousSession)
+  }
+
+  @Test
+  fun `beforeSend drop does not repair previous session`() {
+    val previousSession = givenPreviousSession()
+    val sut = fixture.getSut { options ->
+      options.beforeSend = SentryOptions.BeforeSendCallback { _, _ -> null }
+    }
+
+    sut.captureEvent(
+      SentryEvent(),
+      null,
+      HintUtils.createWithTypeCheckHint(PreviousSessionAbnormalHint(previousSession.exitTimestamp)),
+    )
+
+    assertPreviousSessionWasNotRepaired(previousSession)
+  }
+
+  @Test
+  fun `backfilling event processor drop does not repair previous session`() {
+    val previousSession = givenPreviousSession()
+    val sut = fixture.getSut { options ->
+      options.addEventProcessor(DropBackfillableEventProcessor())
+    }
+
+    sut.captureEvent(
+      SentryEvent(),
+      null,
+      HintUtils.createWithTypeCheckHint(PreviousSessionAbnormalHint(previousSession.exitTimestamp)),
+    )
+
+    assertPreviousSessionWasNotRepaired(previousSession)
+  }
+
+  @Test
+  fun `sampling drop still repairs previous session`() {
+    val previousSession = givenPreviousSession()
+    val sut = fixture.getSut { options -> options.sampleRate = 0.000000000001 }
+
+    sut.captureEvent(
+      SentryEvent(),
+      null,
+      HintUtils.createWithTypeCheckHint(PreviousSessionAbnormalHint(previousSession.exitTimestamp)),
+    )
+
+    assertPreviousSessionWasRepaired(previousSession)
+    thenNothingIsSent()
+  }
+
+  @Test
+  fun `historical recovered abnormal exit does not repair previous session`() {
+    val previousSession = givenPreviousSession()
+    val sut = fixture.getSut()
+
+    sut.captureEvent(
+      SentryEvent(),
+      null,
+      HintUtils.createWithTypeCheckHint(
+        PreviousSessionAbnormalHint(
+          timestamp = previousSession.exitTimestamp,
+          shouldUpdatePreviousSession = false,
+        )
+      ),
+    )
+
+    assertPreviousSessionWasNotRepaired(previousSession)
+  }
+
+  @Test
   fun `dropping a captured crash via sampling updates the session and sends the session for an errored session`() {
     val sut = fixture.getSut { options -> options.sampleRate = 0.000000000001 }
     val scope = givenScopeWithStartedSession(errored = true)
@@ -4144,6 +4227,40 @@ class SentryClientTest {
     assertEquals(Session.State.Crashed, sessionAfterCapture.status)
   }
 
+  private fun givenPreviousSession(): PreviousSessionOnDisk {
+    fixture.sentryOptions.cacheDirPath = tmpDir.newFolder("previous-session").absolutePath
+    fixture.sentryOptions.setEnvelopeDiskCache(EnvelopeCache.create(fixture.sentryOptions))
+    val session = createSession()
+    val previousSessionFile =
+      EnvelopeCache.getPreviousSessionFile(fixture.sentryOptions.cacheDirPath!!)
+    previousSessionFile.parentFile!!.mkdirs()
+    previousSessionFile.writer().use { fixture.sentryOptions.serializer.serialize(session, it) }
+    return PreviousSessionOnDisk(
+      previousSessionFile,
+      session.started!!.time + 1_000,
+    )
+  }
+
+  private fun assertPreviousSessionWasRepaired(previousSession: PreviousSessionOnDisk) {
+    val session = readPreviousSession(previousSession.file)
+    assertThat(session.status).isEqualTo(Session.State.Abnormal)
+    assertThat(session.timestamp!!.time).isEqualTo(previousSession.exitTimestamp)
+    assertThat(session.abnormalMechanism).isEqualTo("memory_limiter")
+    assertThat(session.errorCount()).isEqualTo(1)
+  }
+
+  private fun assertPreviousSessionWasNotRepaired(previousSession: PreviousSessionOnDisk) {
+    val session = readPreviousSession(previousSession.file)
+    assertThat(session.status).isEqualTo(Session.State.Ok)
+    assertThat(session.abnormalMechanism).isNull()
+    assertThat(session.errorCount()).isEqualTo(0)
+  }
+
+  private fun readPreviousSession(file: File): Session =
+    file.reader().use { fixture.sentryOptions.serializer.deserialize(it, Session::class.java)!! }
+
+  private data class PreviousSessionOnDisk(val file: File, val exitTimestamp: Long)
+
   class CustomBeforeSendCallback : SentryOptions.BeforeSendCallback {
     override fun execute(event: SentryEvent, hint: Hint): SentryEvent? {
       hint.screenshot = null
@@ -4363,6 +4480,19 @@ class SentryClientTest {
     override fun shouldEnrich(): Boolean = false
   }
 
+  private class PreviousSessionAbnormalHint(
+    private val timestamp: Long,
+    private val shouldUpdatePreviousSession: Boolean = true,
+  ) : PreviousSessionAbnormalExit {
+    override fun shouldEnrich(): Boolean = true
+
+    override fun mechanism(): String = "memory_limiter"
+
+    override fun timestamp(): Long = timestamp
+
+    override fun shouldUpdatePreviousSession(): Boolean = shouldUpdatePreviousSession
+  }
+
   private class CachedHint : Cached
 
   private class CachedWithApplyScopeHint : Cached, ApplyScopeData
@@ -4381,4 +4511,8 @@ class DropEverythingEventProcessor : EventProcessor {
   override fun process(event: SentryReplayEvent, hint: Hint): SentryReplayEvent? {
     return null
   }
+}
+
+private class DropBackfillableEventProcessor : BackfillingEventProcessor {
+  override fun process(event: SentryEvent, hint: Hint): SentryEvent? = null
 }

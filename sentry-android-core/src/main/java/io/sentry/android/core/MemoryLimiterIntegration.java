@@ -21,9 +21,8 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.ApplicationExitInfoHistoryDispatcher.ApplicationExitInfoPolicy;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
-import io.sentry.hints.AbnormalExit;
-import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
+import io.sentry.hints.PreviousSessionAbnormalExit;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryException;
@@ -321,7 +320,7 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
    */
   @ApiStatus.Internal
   public static final class MemoryLimiterHint extends BlockingFlushHint
-      implements Backfillable, AbnormalExit {
+      implements PreviousSessionAbnormalExit {
 
     private final long timestamp;
     private final boolean shouldEnrich;
@@ -348,12 +347,12 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
     }
 
     @Override
-    public boolean ignoreCurrentThread() {
-      return false;
+    public boolean shouldEnrich() {
+      return shouldEnrich;
     }
 
     @Override
-    public boolean shouldEnrich() {
+    public boolean shouldUpdatePreviousSession() {
       return shouldEnrich;
     }
 

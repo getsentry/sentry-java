@@ -1,5 +1,7 @@
 package io.sentry;
 
+import io.sentry.cache.EnvelopeCache;
+import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.exception.SentryEnvelopeException;
 import io.sentry.hints.AbnormalExit;
@@ -7,6 +9,7 @@ import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
+import io.sentry.hints.PreviousSessionAbnormalExit;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.logger.ILoggerBatchProcessor;
 import io.sentry.logger.NoOpLoggerBatchProcessor;
@@ -187,6 +190,8 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
+    updatePreviousSession(hint);
+
     @Nullable
     Session sessionBeforeUpdate =
         scope != null ? scope.withSession((@Nullable Session session) -> {}) : null;
@@ -298,6 +303,17 @@ public final class SentryClient implements ISentryClient {
     }
 
     return sentryId;
+  }
+
+  private void updatePreviousSession(final @NotNull Hint hint) {
+    final Object sdkHint = HintUtils.getSentrySdkHint(hint);
+    if (sdkHint instanceof PreviousSessionAbnormalExit) {
+      final IEnvelopeCache envelopeCache = options.getEnvelopeDiskCache();
+      if (envelopeCache instanceof EnvelopeCache) {
+        ((EnvelopeCache) envelopeCache)
+            .updatePreviousSession((PreviousSessionAbnormalExit) sdkHint);
+      }
+    }
   }
 
   private void finalizeTransaction(final @NotNull IScope scope, final @NotNull Hint hint) {

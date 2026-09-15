@@ -269,7 +269,7 @@ class MemoryLimiterIntegrationTest {
           hint.shouldEnrich() &&
             hint.timestamp() == newTimestamp &&
             hint.mechanism() == MemoryLimiterIntegration.MEMORY_LIMITER_MECHANISM &&
-            !hint.ignoreCurrentThread()
+            hint.shouldUpdatePreviousSession()
         },
       )
   }

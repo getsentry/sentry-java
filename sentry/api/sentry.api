@@ -4912,6 +4912,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public fun persistCurrentSession (Lio/sentry/Session;)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
+	public fun updatePreviousSession (Lio/sentry/hints/PreviousSessionAbnormalExit;)V
 	public fun waitPreviousSessionFlush ()Z
 }
 
@@ -5231,6 +5232,12 @@ public abstract interface class io/sentry/hints/Flushable {
 }
 
 public abstract interface class io/sentry/hints/NativeCrashExit {
+	public abstract fun timestamp ()Ljava/lang/Long;
+}
+
+public abstract interface class io/sentry/hints/PreviousSessionAbnormalExit : io/sentry/hints/Backfillable {
+	public abstract fun mechanism ()Ljava/lang/String;
+	public abstract fun shouldUpdatePreviousSession ()Z
 	public abstract fun timestamp ()Ljava/lang/Long;
 }
 
