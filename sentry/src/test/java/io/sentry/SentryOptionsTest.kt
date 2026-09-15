@@ -1196,15 +1196,4 @@ class SentryOptionsTest {
     assertThat(options.hostnameCache).isSameInstanceAs(cache)
     assertThat(cache.getProperty<MonotonicTicker>("ticker")).isSameInstanceAs(ticker)
   }
-
-  @Test
-  fun `resetHostnameCache discards the cached instance`() {
-    val options = optionsWithTicker(TestMonotonicTicker())
-    val cache = options.hostnameCache
-
-    options.resetHostnameCache()
-
-    assertThat(options.peekHostnameCache()).isNull()
-    assertThat(options.hostnameCache).isNotSameInstanceAs(cache)
-  }
 }

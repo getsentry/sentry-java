@@ -3110,17 +3110,6 @@ public class SentryOptions implements RateLimiterConfig {
   }
 
   /**
-   * Discards the cached instance, so that the next {@link #getHostnameCache()} builds a new one.
-   *
-   * <p>Called after the cache has been closed, because these options outlive a restart and a closed
-   * cache can no longer resolve anything.
-   */
-  @ApiStatus.Internal
-  public void resetHostnameCache() {
-    hostnameCache.resetValue();
-  }
-
-  /**
    * Adds a ICollector.
    *
    * @param collector the ICollector.

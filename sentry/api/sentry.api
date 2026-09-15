@@ -1391,9 +1391,8 @@ public abstract interface class io/sentry/JsonUnknown {
 	public abstract fun setUnknown (Ljava/util/Map;)V
 }
 
-public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java/io/Closeable {
+public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun close ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
@@ -3827,7 +3826,6 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
 	public fun merge (Lio/sentry/ExternalOptions;)V
-	public fun resetHostnameCache ()V
 	public fun setAppStartExtender (Lio/sentry/IAppStartExtender;)V
 	public fun setAttachServerName (Z)V
 	public fun setAttachStacktrace (Z)V

@@ -81,7 +81,7 @@ public final class HostnameCache {
     // otherwise.
     this.cacheFreshUntil = Deadline.passed(ticker);
     // A single thread executor whose worker thread times out while idle, so no thread is kept
-    // alive between the infrequent cache refreshes.
+    // alive between the infrequent cache refreshes and nothing has to shut it down.
     final @NotNull ThreadPoolExecutor executor =
         new ThreadPoolExecutor(
             1,
@@ -93,14 +93,6 @@ public final class HostnameCache {
     executor.allowCoreThreadTimeOut(true);
     this.executorService = executor;
     updateCache();
-  }
-
-  void close() {
-    this.executorService.shutdown();
-  }
-
-  boolean isClosed() {
-    return this.executorService.isShutdown();
   }
 
   /**
