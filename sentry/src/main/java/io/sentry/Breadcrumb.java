@@ -26,14 +26,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   /** A timestamp representing when the breadcrumb occurred as java.util.Date. */
   private @Nullable Date timestamp;
 
-  /**
-   * The tick this breadcrumb was created at, used to order breadcrumbs that share a timestamp.
-   *
-   * <p>Null for a breadcrumb rebuilt from a serialized one. A tick is a reading of a counter whose
-   * origin is this process run, so a tick from an earlier run is a number from an unrelated origin
-   * rather than a position in this run's order.
-   */
-  private final @Nullable Long creationTick;
+  private final @NotNull Long nanos;
 
   /** If a message is provided, its rendered as text and the whitespace is preserved. */
   private @Nullable String message;
@@ -66,33 +59,23 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    *
    * @param timestamp the timestamp
    */
-  public Breadcrumb(final @NotNull Date timestamp) {
-    this(timestamp, System.nanoTime());
-  }
-
   @SuppressWarnings("JavaUtilDate")
-  private Breadcrumb(final @NotNull Date timestamp, final @Nullable Long creationTick) {
-    this.creationTick = creationTick;
+  public Breadcrumb(final @NotNull Date timestamp) {
+    this.nanos = System.nanoTime();
     this.timestamp = timestamp;
     this.timestampMs = null;
   }
 
-  /**
-   * A breadcrumb rebuilt from a serialized one — read back from disk, or handed over by a hybrid
-   * SDK. It carries the timestamp it was serialized with and no creation tick.
-   */
-  static @NotNull Breadcrumb deserialized(final @NotNull Date timestamp) {
-    return new Breadcrumb(timestamp, null);
-  }
-
   public Breadcrumb(final long timestamp) {
-    this.creationTick = System.nanoTime();
+    this.nanos = System.nanoTime();
     this.timestampMs = timestamp;
     this.timestamp = null;
   }
 
   Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
-    this.creationTick = breadcrumb.creationTick;
+    // A clone stands in for the breadcrumb it was copied from, so it inherits its tie-breaker
+    // instead of taking a fresh one and sorting after everything recorded since.
+    this.nanos = breadcrumb.nanos;
     this.timestamp = breadcrumb.timestamp;
     this.timestampMs = breadcrumb.timestampMs;
     this.message = breadcrumb.message;
@@ -189,7 +172,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
       }
     }
 
-    final Breadcrumb breadcrumb = Breadcrumb.deserialized(timestamp);
+    final Breadcrumb breadcrumb = new Breadcrumb(timestamp);
     breadcrumb.message = message;
     breadcrumb.type = type;
     if (data != null) {
@@ -850,21 +833,14 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
 
   @Override
   @SuppressWarnings("JavaUtilDate")
-  public int compareTo(final @NotNull Breadcrumb o) {
+  public int compareTo(@NotNull Breadcrumb o) {
     final int byTimestamp = getTimestamp().compareTo(o.getTimestamp());
     if (byTimestamp != 0) {
       return byTimestamp;
     }
     // Timestamps are millisecond-granular, so breadcrumbs recorded in the same millisecond tie.
-    // Creation ticks break the tie in the order they were actually recorded.
-    if (creationTick == null) {
-      // Deserialized, so from an earlier process run than anything holding a tick.
-      return o.creationTick == null ? 0 : -1;
-    }
-    if (o.creationTick == null) {
-      return 1;
-    }
-    return creationTick.compareTo(o.creationTick);
+    // nanos is only meaningful within a process run, which is all a tie-breaker has to cover.
+    return nanos.compareTo(o.nanos);
   }
 
   public static final class JsonKeys {
@@ -973,7 +949,7 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
         }
       }
 
-      Breadcrumb breadcrumb = Breadcrumb.deserialized(timestamp);
+      Breadcrumb breadcrumb = new Breadcrumb(timestamp);
       breadcrumb.message = message;
       breadcrumb.type = type;
       if (data != null) {
