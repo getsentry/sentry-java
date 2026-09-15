@@ -190,6 +190,27 @@ class AndroidEnvelopeCacheTest {
   }
 
   @Test
+  fun `migrated AnrV2 hint updates previous session only once`() {
+    val cache = fixture.getSut(tmpDir)
+    val sessionStart = DateUtils.getCurrentDateTime()
+    val exitTimestamp = sessionStart.time + 1_000
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    fixture.options.serializer.serialize(createSession(sessionStart), previousSessionFile.writer())
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+    val hint = AnrV2Hint(0, NoOpLogger.getInstance(), exitTimestamp, true, false)
+
+    cache.updatePreviousSession(hint)
+    cache.storeEnvelope(envelope, HintUtils.createWithTypeCheckHint(hint))
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(previousSessionFile.reader(), Session::class.java)!!
+    assertThat(updatedSession.status).isEqualTo(Abnormal)
+    assertThat(updatedSession.timestamp!!.time).isEqualTo(exitTimestamp)
+    assertThat(updatedSession.abnormalMechanism).isEqualTo("anr_foreground")
+    assertThat(updatedSession.errorCount()).isEqualTo(1)
+  }
+
+  @Test
   fun `when cache dir is not set, throws upon reading last reported anr file`() {
     fixture.getSut(tmpDir)
 

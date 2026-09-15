@@ -20,8 +20,8 @@ import io.sentry.android.core.internal.threaddump.Lines;
 import io.sentry.android.core.internal.threaddump.ThreadDumpParser;
 import io.sentry.android.core.internal.util.NativeEventUtils;
 import io.sentry.hints.AbnormalExit;
-import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
+import io.sentry.hints.PreviousSessionAbnormalExit;
 import io.sentry.protocol.ArtContext;
 import io.sentry.protocol.DebugImage;
 import io.sentry.protocol.DebugMeta;
@@ -237,7 +237,7 @@ public class AnrV2Integration implements Integration, Closeable {
 
   @ApiStatus.Internal
   public static final class AnrV2Hint extends BlockingFlushHint
-      implements Backfillable, AbnormalExit {
+      implements AbnormalExit, PreviousSessionAbnormalExit {
 
     private final long timestamp;
 
@@ -270,6 +270,11 @@ public class AnrV2Integration implements Integration, Closeable {
 
     @Override
     public boolean shouldEnrich() {
+      return shouldEnrich;
+    }
+
+    @Override
+    public boolean shouldUpdatePreviousSession() {
       return shouldEnrich;
     }
 

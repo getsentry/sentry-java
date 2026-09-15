@@ -133,8 +133,9 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
       }
     }
 
-    if (HintUtils.hasType(hint, AbnormalExit.class)
-        || HintUtils.hasType(hint, NativeCrashExit.class)) {
+    if ((HintUtils.hasType(hint, AbnormalExit.class)
+            || HintUtils.hasType(hint, NativeCrashExit.class))
+        && !HintUtils.hasType(hint, PreviousSessionAbnormalExit.class)) {
       tryEndPreviousSession(hint);
     }
 

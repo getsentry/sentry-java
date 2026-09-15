@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.app.ApplicationExitInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Hint
+import io.sentry.NoOpLogger
 import io.sentry.SentryEvent
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
 import io.sentry.android.core.cache.AndroidEnvelopeCache
@@ -184,9 +185,16 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
         any(),
         argThat<Hint> {
           val hint = HintUtils.getSentrySdkHint(this)
-          (hint as AnrV2Hint).mechanism() == "anr_foreground"
+          (hint as AnrV2Hint).mechanism() == "anr_foreground" && hint.shouldUpdatePreviousSession()
         },
       )
+  }
+
+  @Test
+  fun `historical ANR does not update previous session`() {
+    val hint = AnrV2Hint(0, NoOpLogger.getInstance(), newTimestamp, false, false)
+
+    assertEquals(false, hint.shouldUpdatePreviousSession())
   }
 
   @Test
