@@ -348,7 +348,7 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
 
     @Override
     public boolean ignoreCurrentThread() {
-      return true;
+      return false;
     }
 
     @Override

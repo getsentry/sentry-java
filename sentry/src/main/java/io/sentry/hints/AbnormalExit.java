@@ -5,8 +5,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Marker interface for Sessions experiencing abnormal status.
  *
- * <p>This includes exits that were not classified as normal terminations or crashes, such as
- * Android ANRs and MemoryLimiter process deaths.
+ * <p>Includes exits that were not classified as normal terminations or crashes, such as Android
+ * ANRs and MemoryLimiter process deaths.
  *
  * <p><b>Note:</b> Some existing discriminator code (`instanceof AbnormalExit`) is shaped by the
  * historical ANR-only usage of this interface. New implementations should review all of those call
@@ -18,10 +18,21 @@ public interface AbnormalExit {
   @Nullable
   String mechanism();
 
-  /** Whether the current thread should be ignored from being marked as crashed, e.g. a watchdog */
+  /**
+   * Whether the current thread (e.g., a watchdog) should be ignored by the `MainEventProcessor`
+   * when deciding which threads should from the current process should be bound to the Sentry event
+   * associated with this `AbnormalExit`.
+   *
+   * <p>This method effectively no-ops for types implementing both {@link AbnormalExit} and {@link
+   * Backfillable}, as implementors of `Backfillable` are not sent to the `MainEventProcessor`.
+   */
   boolean ignoreCurrentThread();
 
-  /** When exactly the abnormal exit happened */
+  /**
+   * When exactly the abnormal exit happened.
+   *
+   * <p>Epoch time in milliseconds, or null.
+   */
   @Nullable
   Long timestamp();
 }
