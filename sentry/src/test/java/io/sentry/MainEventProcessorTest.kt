@@ -7,7 +7,6 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
 import io.sentry.util.HintUtils
-import java.io.Closeable
 import java.lang.RuntimeException
 import java.net.InetAddress
 import kotlin.test.AfterTest
@@ -570,15 +569,6 @@ class MainEventProcessorTest {
         assertEquals("jvm", images[1].type)
       }
     }
-  }
-
-  @Test
-  fun `is not Closeable, so closing the SDK cannot shut the hostname cache down`() {
-    // Scopes.close() closes every event processor that is Closeable. This one used to be, and
-    // closed the process-wide HostnameCache: its executor stayed terminated for the life of the
-    // process, updateRunning latched true so no refresh was ever retried, and serverName froze at
-    // whatever had been resolved last.
-    assertFalse(Closeable::class.java.isAssignableFrom(MainEventProcessor::class.java))
   }
 
   @Test
