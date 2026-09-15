@@ -1,7 +1,5 @@
 package io.sentry.time;
 
-import io.sentry.SentryDate;
-import io.sentry.SentryLongDate;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,14 +53,5 @@ public final class Timestamp {
   @Override
   public @NotNull String toString() {
     return "Timestamp{epochNanos=" + epochNanos + '}';
-  }
-
-  /**
-   * This forms an easy bridge between our old API and the new API.
-   *
-   * @return a SentryDate implemented by a SentryLongDate
-   */
-  public SentryDate getSentryDate() {
-    return new SentryLongDate(epochNanos);
   }
 }
