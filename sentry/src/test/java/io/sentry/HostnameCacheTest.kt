@@ -15,7 +15,7 @@ class HostnameCacheTest {
   private fun getSut(): HostnameCache {
     val address = mock<InetAddress>()
     whenever(address.canonicalHostName).thenReturn("myhost")
-    return HostnameCache(TimeUnit.HOURS.toMillis(1)) { address }
+    return HostnameCache({ address }, TestMonotonicTicker())
   }
 
   @Test
@@ -29,7 +29,7 @@ class HostnameCacheTest {
     val ticker = TestMonotonicTicker()
     val address = mock<InetAddress>()
     whenever(address.canonicalHostName).thenReturn("first", "second")
-    val cache = HostnameCache(TimeUnit.HOURS.toMillis(5), { address }, ticker)
+    val cache = HostnameCache({ address }, ticker)
 
     assertThat(cache.hostname).isEqualTo("first")
 

@@ -24,9 +24,9 @@ import org.jetbrains.annotations.Nullable;
  * Time sensitive cache in charge of keeping track of the hostname. The {@code
  * InetAddress.getLocalHost().getCanonicalHostName()} call can be quite expensive and could be
  * called for the creation of each {@link SentryEvent}. This system will prevent unnecessary costs
- * by keeping track of the hostname for a period defined during the construction. For performance
- * purposes, the operation of retrieving the hostname will automatically fail after a period of time
- * defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
+ * by keeping track of the hostname for a period defined by {@link #HOSTNAME_CACHE_DURATION}. For
+ * performance purposes, the operation of retrieving the hostname will automatically fail after a
+ * period of time defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
  *
  * <p>HostnameCache is a singleton and its instance should be obtained through {@link
  * HostnameCache#getInstance()}.
@@ -44,9 +44,6 @@ public final class HostnameCache {
   private static volatile @Nullable HostnameCache INSTANCE;
   private static final @NotNull AutoClosableReentrantLock staticLock =
       new AutoClosableReentrantLock();
-
-  /** Time for which the cache is kept, in milliseconds. */
-  private final long cacheDurationMillis;
 
   private final @NotNull MonotonicTicker ticker;
 
@@ -76,32 +73,20 @@ public final class HostnameCache {
   }
 
   private HostnameCache() {
-    this(HOSTNAME_CACHE_DURATION);
-  }
-
-  HostnameCache(long cacheDurationMillis) {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
-    this(cacheDurationMillis, () -> InetAddress.getLocalHost());
-  }
-
-  HostnameCache(long cacheDurationMillis, final @NotNull Callable<InetAddress> getLocalhost) {
-    this(cacheDurationMillis, getLocalhost, JavaMonotonicTicker.getInstance());
+    this(() -> InetAddress.getLocalHost(), JavaMonotonicTicker.getInstance());
   }
 
   /**
    * Sets up a cache for the hostname.
    *
-   * @param cacheDurationMillis cache duration in milliseconds.
    * @param getLocalhost a callback to obtain the localhost address - this is mostly here because of
    *     testability
    * @param ticker the ticker the cache lifetime is measured on
    */
   HostnameCache(
-      long cacheDurationMillis,
-      final @NotNull Callable<InetAddress> getLocalhost,
-      final @NotNull MonotonicTicker ticker) {
-    this.cacheDurationMillis = cacheDurationMillis;
+      final @NotNull Callable<InetAddress> getLocalhost, final @NotNull MonotonicTicker ticker) {
     this.getLocalhost = Objects.requireNonNull(getLocalhost, "getLocalhost is required");
     this.ticker = Objects.requireNonNull(ticker, "ticker is required");
     // Nothing resolved yet, so the cache is stale rather than fresh until updateCache says
@@ -152,7 +137,8 @@ public final class HostnameCache {
         () -> {
           try {
             hostname = getLocalhost.call().getCanonicalHostName();
-            cacheFreshUntil = Deadline.after(ticker, cacheDurationMillis, TimeUnit.MILLISECONDS);
+            cacheFreshUntil =
+                Deadline.after(ticker, HOSTNAME_CACHE_DURATION, TimeUnit.MILLISECONDS);
           } finally {
             updateRunning.set(false);
           }
