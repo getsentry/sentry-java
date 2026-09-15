@@ -45,7 +45,7 @@ public open class SentryOkHttpEventListener(
   private val scopes: IScopes = ScopesAdapter.getInstance(),
   private val originalEventListenerCreator: ((call: Call) -> EventListener)? = null,
 ) : EventListener() {
-  private val originalEventListenerMap: ConcurrentHashMap<Call, EventListener> = ConcurrentHashMap()
+  private val originalEventListenerMap: MutableMap<Call, EventListener> = ConcurrentHashMap()
 
   // Set only by the constructors that wrap a single EventListener instance. Such a listener is
   // shared by every Call anyway, exactly like OkHttp's own EventListener.asFactory(), so it
@@ -95,8 +95,12 @@ public open class SentryOkHttpEventListener(
 
   override fun callStart(call: Call) {
     // The EventListener.Factory contract binds a listener to a single call, so the wrapped
-    // listener is kept per call instead of in a field shared by all concurrent calls
-    val originalEventListener = getOrCreateEventListener(call)
+    // listener is kept per call instead of in a field shared by all concurrent calls. callStart()
+    // is invoked only once per Call, so this creates exactly one listener per Call.
+    val originalEventListener = originalEventListenerCreator?.invoke(call)
+    if (originalEventListener != null) {
+      originalEventListenerMap[call] = originalEventListener
+    }
     originalEventListener?.callStart(call)
     // If the wrapped EventListener is ours, we can just delegate the calls,
     // without creating other events that would create duplicates
@@ -439,13 +443,6 @@ public open class SentryOkHttpEventListener(
 
   override fun cacheConditionalHit(call: Call, cachedResponse: Response) {
     originalEventListenerMap[call]?.cacheConditionalHit(call, cachedResponse)
-  }
-
-  // computeIfAbsent, so that concurrent callbacks cannot make the Factory produce two listeners
-  // for the same Call
-  private fun getOrCreateEventListener(call: Call): EventListener? {
-    val creator = originalEventListenerCreator ?: return null
-    return originalEventListenerMap.computeIfAbsent(call) { creator.invoke(it) }
   }
 
   private fun canCreateEventSpan(originalEventListener: EventListener?): Boolean {
