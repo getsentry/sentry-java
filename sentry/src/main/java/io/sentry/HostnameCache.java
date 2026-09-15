@@ -1,9 +1,7 @@
 package io.sentry;
 
 import io.sentry.time.Deadline;
-import io.sentry.time.JavaMonotonicTicker;
 import io.sentry.time.MonotonicTicker;
-import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.net.InetAddress;
 import java.util.concurrent.Callable;
@@ -28,8 +26,8 @@ import org.jetbrains.annotations.Nullable;
  * performance purposes, the operation of retrieving the hostname will automatically fail after a
  * period of time defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
  *
- * <p>HostnameCache is a singleton and its instance should be obtained through {@link
- * HostnameCache#getInstance()}.
+ * <p>One instance is held per {@link SentryOptions} and should be obtained through {@link
+ * SentryOptions#getHostnameCache()}.
  */
 @ApiStatus.Internal
 public final class HostnameCache {
@@ -40,10 +38,6 @@ public final class HostnameCache {
 
   /** How long the worker thread may stay idle before it self-terminates. */
   private static final long THREAD_KEEP_ALIVE_SECONDS = 30;
-
-  private static volatile @Nullable HostnameCache INSTANCE;
-  private static final @NotNull AutoClosableReentrantLock staticLock =
-      new AutoClosableReentrantLock();
 
   private final @NotNull MonotonicTicker ticker;
 
@@ -60,22 +54,16 @@ public final class HostnameCache {
 
   private final @NotNull ExecutorService executorService;
 
-  public static @NotNull HostnameCache getInstance() {
-    if (INSTANCE == null) {
-      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
-        if (INSTANCE == null) {
-          INSTANCE = new HostnameCache();
-        }
-      }
-    }
-
-    return INSTANCE;
-  }
-
-  private HostnameCache() {
+  /**
+   * Names the only collaborator a hostname cache reads, rather than taking the whole {@link
+   * SentryOptions}.
+   *
+   * @param ticker the ticker the cache lifetime is measured on
+   */
+  HostnameCache(final @NotNull MonotonicTicker ticker) {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
-    this(() -> InetAddress.getLocalHost(), JavaMonotonicTicker.getInstance());
+    this(() -> InetAddress.getLocalHost(), ticker);
   }
 
   /**
@@ -93,7 +81,7 @@ public final class HostnameCache {
     // otherwise.
     this.cacheFreshUntil = Deadline.passed(ticker);
     // A single thread executor whose worker thread times out while idle, so no thread is kept
-    // alive between the infrequent cache refreshes.
+    // alive between the infrequent cache refreshes and nothing has to shut it down.
     final @NotNull ThreadPoolExecutor executor =
         new ThreadPoolExecutor(
             1,
@@ -105,14 +93,6 @@ public final class HostnameCache {
     executor.allowCoreThreadTimeOut(true);
     this.executorService = executor;
     updateCache();
-  }
-
-  void close() {
-    this.executorService.shutdown();
-  }
-
-  boolean isClosed() {
-    return this.executorService.isShutdown();
   }
 
   /**

@@ -11,7 +11,6 @@ import io.sentry.util.HintUtils
 import java.lang.RuntimeException
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,7 +18,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
@@ -28,18 +26,24 @@ import org.mockito.kotlin.whenever
 
 class MainEventProcessorTest {
   class Fixture {
-    val sentryOptions: SentryOptions =
-      SentryOptions().apply {
-        dsn = dsnString
-        release = "release"
-        dist = "dist"
-        sdkVersion = SdkVersion("test", "1.2.3")
-      }
     val scopes = mock<IScopes>()
     val getLocalhost = mock<InetAddress>()
     val hostnameCacheTicker = TestMonotonicTicker()
+    // Built in getSut() rather than here: the constructor resolves the hostname straight away,
+    // so it has to run after getLocalhost is stubbed.
+    lateinit var hostnameCache: HostnameCache
+    val sentryOptions: SentryOptions =
+      object : SentryOptions() {
+          // Qualified: an unqualified name here would resolve to this override, not the field.
+          override fun getHostnameCache(): HostnameCache = this@Fixture.hostnameCache
+        }
+        .apply {
+          dsn = dsnString
+          release = "release"
+          dist = "dist"
+          sdkVersion = SdkVersion("test", "1.2.3")
+        }
     lateinit var sentryTracer: SentryTracer
-    private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
 
     fun getSut(
       attachThreads: Boolean = true,
@@ -76,21 +80,10 @@ class MainEventProcessorTest {
       }
       whenever(scopes.options).thenReturn(sentryOptions)
       sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
-
-      val hostnameCache = HostnameCache({ getLocalhost }, hostnameCacheTicker)
-      hostnameCacheMock.`when`<Any> { HostnameCache.getInstance() }.thenReturn(hostnameCache)
+      hostnameCache = HostnameCache({ getLocalhost }, hostnameCacheTicker)
 
       return MainEventProcessor(sentryOptions)
     }
-
-    fun teardown() {
-      hostnameCacheMock.close()
-    }
-  }
-
-  @AfterTest
-  fun teardown() {
-    fixture.teardown()
   }
 
   private val fixture = Fixture()
@@ -569,16 +562,6 @@ class MainEventProcessorTest {
         assertEquals("jvm", images[1].type)
       }
     }
-  }
-
-  @Test
-  fun `when processor is closed, closes hostname cache`() {
-    val sut = fixture.getSut(serverName = null)
-
-    sut.process(SentryTransaction(fixture.sentryTracer), Hint())
-
-    sut.close()
-    assertNotNull(sut.hostnameCache) { assertTrue(it.isClosed) }
   }
 
   @Test

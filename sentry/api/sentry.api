@@ -633,7 +633,6 @@ public final class io/sentry/Hint {
 
 public final class io/sentry/HostnameCache {
 	public fun getHostname ()Ljava/lang/String;
-	public static fun getInstance ()Lio/sentry/HostnameCache;
 }
 
 public final class io/sentry/HttpStatusCodeRange {
@@ -1392,9 +1391,8 @@ public abstract interface class io/sentry/JsonUnknown {
 	public abstract fun setUnknown (Ljava/util/Map;)V
 }
 
-public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor, java/io/Closeable {
+public final class io/sentry/MainEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/SentryOptions;)V
-	public fun close ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/SentryLogEvent;)Lio/sentry/SentryLogEvent;
@@ -3716,6 +3714,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getFlushTimeoutMillis ()J
 	public fun getFullyDisplayedReporter ()Lio/sentry/FullyDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
+	public fun getHostnameCache ()Lio/sentry/HostnameCache;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
