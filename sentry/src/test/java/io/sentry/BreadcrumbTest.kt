@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.google.common.truth.Truth.assertThat
+import java.io.StringReader
 import java.util.Date
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -389,6 +390,20 @@ class BreadcrumbTest {
         ),
         SentryOptions(),
       )
+
+    val sorted = listOf(live, restored).sorted().map { it.message }
+
+    assertThat(sorted).containsExactly("restored", "live").inOrder()
+  }
+
+  @Test
+  fun `a breadcrumb read back from JSON is ordered by its own timestamp, not by when it was parsed`() {
+    val live = Breadcrumb(Date(1_600_000_000_000)).apply { message = "live" }
+    val json =
+      """{"timestamp":"${DateUtils.getTimestamp(Date(1_500_000_000_000))}","message":"restored"}"""
+    val restored =
+      Breadcrumb.Deserializer()
+        .deserialize(JsonObjectReader(StringReader(json)), NoOpLogger.getInstance())
 
     val sorted = listOf(live, restored).sorted().map { it.message }
 
