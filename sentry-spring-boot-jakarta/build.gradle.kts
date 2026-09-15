@@ -33,6 +33,8 @@ dependencies {
 
   api(projects.sentry)
   api(projects.sentrySpringJakarta)
+  compileOnly(projects.sentryMicrometer)
+  compileOnly("io.micrometer:micrometer-core")
   compileOnly(projects.sentryLogback)
   compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
@@ -66,6 +68,7 @@ dependencies {
   errorprone(libs.nullaway)
 
   // tests
+  testImplementation(projects.sentryMicrometer)
   testImplementation(projects.sentryLogback)
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
@@ -89,6 +92,7 @@ dependencies {
   testImplementation(libs.otel.extension.autoconfigure.spi)
   testImplementation(libs.springboot3.otel)
   testImplementation(libs.springboot3.starter)
+  testImplementation(libs.springboot3.starter.actuator)
   testImplementation(libs.springboot3.starter.aop)
   testImplementation(libs.springboot3.starter.graphql)
   testImplementation(libs.spring.kafka3)

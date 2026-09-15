@@ -93,6 +93,18 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
     return callTyped(request, true)
   }
 
+  fun getMicrometerMetric(): String? {
+    val request = Request.Builder().url("$backendBaseUrl/metric/micrometer")
+
+    return callTyped(request, true)
+  }
+
+  fun getActuatorHealth(): String? {
+    val request = Request.Builder().url("$backendBaseUrl/actuator/health")
+
+    return callTyped(request, true)
+  }
+
   fun getGaugeMetric(value: Long): String? {
     val request = Request.Builder().url("$backendBaseUrl/metric/gauge/$value")
 
