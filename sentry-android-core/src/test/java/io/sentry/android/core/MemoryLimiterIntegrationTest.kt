@@ -276,7 +276,10 @@ class MemoryLimiterIntegrationTest {
         },
         argThat<Hint> {
           val hint = HintUtils.getSentrySdkHint(this) as MemoryLimiterHint
-          hint.shouldEnrich() && hint.timestamp() == newTimestamp
+          hint.shouldEnrich() &&
+            hint.timestamp() == newTimestamp &&
+            hint.mechanism() == MemoryLimiterIntegration.MEMORY_LIMITER_MECHANISM &&
+            !hint.ignoreCurrentThread()
         },
       )
   }
