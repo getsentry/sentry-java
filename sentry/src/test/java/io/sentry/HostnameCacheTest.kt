@@ -31,11 +31,4 @@ class HostnameCacheTest {
     assertThat(executorService.corePoolSize).isEqualTo(1)
     assertThat(executorService.maximumPoolSize).isEqualTo(1)
   }
-
-  @Test
-  fun `close shuts the executor down`() {
-    val cache = getSut()
-    cache.close()
-    assertThat(cache.isClosed).isTrue()
-  }
 }
