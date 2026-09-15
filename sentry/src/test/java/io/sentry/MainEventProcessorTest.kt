@@ -6,9 +6,11 @@ import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.HintUtils
 import java.lang.RuntimeException
 import java.net.InetAddress
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,7 +19,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import org.awaitility.kotlin.await
 import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
@@ -36,6 +37,7 @@ class MainEventProcessorTest {
       }
     val scopes = mock<IScopes>()
     val getLocalhost = mock<InetAddress>()
+    val hostnameCacheTicker = TestMonotonicTicker()
     lateinit var sentryTracer: SentryTracer
     private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
 
@@ -48,7 +50,6 @@ class MainEventProcessorTest {
       serverName: String? = "server",
       host: String? = null,
       resolveHostDelay: Long? = null,
-      hostnameCacheDuration: Long = 10,
       proguardUuid: String? = null,
       bundleIds: List<String>? = null,
       modules: Map<String, String>? = null,
@@ -76,7 +77,7 @@ class MainEventProcessorTest {
       whenever(scopes.options).thenReturn(sentryOptions)
       sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
 
-      val hostnameCache = HostnameCache(hostnameCacheDuration) { getLocalhost }
+      val hostnameCache = HostnameCache({ getLocalhost }, hostnameCacheTicker)
       hostnameCacheMock.`when`<Any> { HostnameCache.getInstance() }.thenReturn(hostnameCache)
 
       return MainEventProcessor(sentryOptions)
@@ -401,7 +402,7 @@ class MainEventProcessorTest {
 
   @Test
   fun `uses cache to retrieve servername for subsequent events`() {
-    val processor = fixture.getSut(serverName = null, host = "aHost", hostnameCacheDuration = 1000)
+    val processor = fixture.getSut(serverName = null, host = "aHost")
     val firstEvent = SentryEvent()
     processor.process(firstEvent, Hint())
     assertEquals("aHost", firstEvent.serverName)
@@ -420,12 +421,11 @@ class MainEventProcessorTest {
 
     reset(fixture.getLocalhost)
     whenever(fixture.getLocalhost.canonicalHostName).thenReturn("newHost")
+    fixture.hostnameCacheTicker.advance(6, TimeUnit.HOURS)
 
-    await.untilAsserted {
-      val secondEvent = SentryEvent()
-      processor.process(secondEvent, Hint())
-      assertEquals("newHost", secondEvent.serverName)
-    }
+    val secondEvent = SentryEvent()
+    processor.process(secondEvent, Hint())
+    assertEquals("newHost", secondEvent.serverName)
   }
 
   @Test
