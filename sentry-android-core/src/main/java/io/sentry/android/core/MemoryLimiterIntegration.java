@@ -21,6 +21,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.android.core.ApplicationExitInfoHistoryDispatcher.ApplicationExitInfoPolicy;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
+import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.protocol.Mechanism;
@@ -77,6 +78,7 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
       MEMORY_LIMITER_DESCRIPTION_PREFIX + "AnonSwap";
 
   static final @NotNull String MEMORY_LIMITER_MESSAGE = "Android process killed by MemoryLimiter";
+  static final @NotNull String MEMORY_LIMITER_MECHANISM = "memory_limiter";
 
   static final @NotNull String IMPORTANCE_DATA_KEY = "importance";
   static final @NotNull String PROCESS_VISIBILITY_DATA_KEY = "process_visibility";
@@ -318,7 +320,8 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
    * backfilled with persisted launch state or kept as a lighter historical record.
    */
   @ApiStatus.Internal
-  public static final class MemoryLimiterHint extends BlockingFlushHint implements Backfillable {
+  public static final class MemoryLimiterHint extends BlockingFlushHint
+      implements Backfillable, AbnormalExit {
 
     private final long timestamp;
     private final boolean shouldEnrich;
@@ -333,8 +336,20 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
       this.shouldEnrich = shouldEnrich;
     }
 
-    public long timestamp() {
+    @NotNull
+    @Override
+    public Long timestamp() {
       return timestamp;
+    }
+
+    @Override
+    public @NotNull String mechanism() {
+      return MEMORY_LIMITER_MECHANISM;
+    }
+
+    @Override
+    public boolean ignoreCurrentThread() {
+      return false;
     }
 
     @Override
