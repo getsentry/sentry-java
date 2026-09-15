@@ -782,6 +782,9 @@ public final class SentryAndroidOptions extends SentryOptions {
    * <p>Use this together with {@link #setMemoryLimiterEnabled(boolean)} when you want the
    * platform's complete retained exit history.
    *
+   * <p>Note: unlike the latest exit, historical exits are <b>not</b> enriched with contextual
+   * Sentry data.
+   *
    * <p>Available on Android API ≥ 37. No-ops if the Android API is below 37, if the {@link
    * #setCacheDirPath cache dir path} hasn't been set, or if {@link #setMemoryLimiterEnabled the
    * MemoryLimiter integration} hasn't been enabled.
