@@ -1,10 +1,17 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryOptions.RequestSize
 import io.sentry.logger.ILoggerBatchProcessorFactory
+import io.sentry.test.getProperty
+import io.sentry.time.MonotonicTicker
+import io.sentry.time.TestMonotonicTicker
+import io.sentry.util.LazyEvaluator
 import io.sentry.util.StringUtils
 import java.io.File
+import java.net.InetAddress
 import java.net.Proxy
+import java.util.concurrent.Callable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -1166,5 +1173,50 @@ class SentryOptionsTest {
     options.scopesStorageFactory = factory
     options.scopesStorageFactory = null
     assertNull(options.scopesStorageFactory)
+  }
+
+  private fun SentryOptions.peekHostnameCache(): HostnameCache? =
+    getProperty<LazyEvaluator<HostnameCache>>("hostnameCache").getProperty("value")
+
+  @Test
+  fun `constructing options does not resolve the hostname`() {
+    val options = SentryOptions()
+    assertThat(options.peekHostnameCache()).isNull()
+
+    // Asserting that peek reports an evaluated cache keeps the check above from passing vacuously.
+    options.hostnameCache = HostnameCache(Callable { mock<InetAddress>() }, TestMonotonicTicker())
+    assertThat(options.peekHostnameCache()).isNotNull()
+  }
+
+  @Test
+  fun `hostnameCache is created once and reused`() {
+    val options = SentryOptions()
+    val cache = HostnameCache(Callable { mock<InetAddress>() }, TestMonotonicTicker())
+    options.hostnameCache = cache
+
+    assertThat(options.hostnameCache).isSameInstanceAs(cache)
+    assertThat(options.hostnameCache).isSameInstanceAs(cache)
+  }
+
+  @Test
+  fun `resetHostnameCache discards the cached instance`() {
+    val options = SentryOptions()
+    options.hostnameCache = HostnameCache(Callable { mock<InetAddress>() }, TestMonotonicTicker())
+
+    options.resetHostnameCache()
+
+    assertThat(options.peekHostnameCache()).isNull()
+  }
+
+  @Test
+  fun `hostnameCache measures its lifetime on the options ticker`() {
+    val ticker = TestMonotonicTicker()
+    val options =
+      object : SentryOptions() {
+        override fun getMonotonicTicker(): MonotonicTicker = ticker
+      }
+
+    assertThat(options.hostnameCache.getProperty<MonotonicTicker>("ticker"))
+      .isSameInstanceAs(ticker)
   }
 }

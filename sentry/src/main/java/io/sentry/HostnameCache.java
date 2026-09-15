@@ -1,9 +1,7 @@
 package io.sentry;
 
 import io.sentry.time.Deadline;
-import io.sentry.time.JavaMonotonicTicker;
 import io.sentry.time.MonotonicTicker;
-import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.net.InetAddress;
 import java.util.concurrent.Callable;
@@ -28,8 +26,8 @@ import org.jetbrains.annotations.Nullable;
  * performance purposes, the operation of retrieving the hostname will automatically fail after a
  * period of time defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
  *
- * <p>HostnameCache is a singleton and its instance should be obtained through {@link
- * HostnameCache#getInstance()}.
+ * <p>One instance is held per {@link SentryOptions} and should be obtained through {@link
+ * SentryOptions#getHostnameCache()}.
  */
 @ApiStatus.Internal
 public final class HostnameCache {
@@ -40,10 +38,6 @@ public final class HostnameCache {
 
   /** How long the worker thread may stay idle before it self-terminates. */
   private static final long THREAD_KEEP_ALIVE_SECONDS = 30;
-
-  private static volatile @Nullable HostnameCache INSTANCE;
-  private static final @NotNull AutoClosableReentrantLock staticLock =
-      new AutoClosableReentrantLock();
 
   private final @NotNull MonotonicTicker ticker;
 
@@ -60,22 +54,10 @@ public final class HostnameCache {
 
   private final @NotNull ExecutorService executorService;
 
-  public static @NotNull HostnameCache getInstance() {
-    if (INSTANCE == null) {
-      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
-        if (INSTANCE == null) {
-          INSTANCE = new HostnameCache();
-        }
-      }
-    }
-
-    return INSTANCE;
-  }
-
-  private HostnameCache() {
+  HostnameCache(final @NotNull SentryOptions options) {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
-    this(() -> InetAddress.getLocalHost(), JavaMonotonicTicker.getInstance());
+    this(() -> InetAddress.getLocalHost(), options.getMonotonicTicker());
   }
 
   /**

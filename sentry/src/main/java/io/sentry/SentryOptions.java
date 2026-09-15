@@ -530,6 +530,17 @@ public class SentryOptions implements RateLimiterConfig {
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
       new LazyEvaluator<>(() -> new SentryAutoDateProvider());
 
+  /**
+   * Cache of the local hostname, used when {@link #isAttachServerName()} is enabled.
+   *
+   * <p>Evaluated lazily because resolving the hostname blocks on {@code
+   * InetAddress.getLocalHost()}, which no {@code Sentry.init} should pay for up front. Deferring
+   * also means {@link #getMonotonicTicker()} is read after subclasses have overridden it.
+   */
+  @ApiStatus.Internal
+  private final @NotNull LazyEvaluator<HostnameCache> hostnameCache =
+      new LazyEvaluator<>(() -> new HostnameCache(this));
+
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
   /** Performance collector that collect performance stats while transactions run. */
@@ -3090,6 +3101,28 @@ public class SentryOptions implements RateLimiterConfig {
   @ApiStatus.Internal
   public @NotNull MonotonicTicker getMonotonicTicker() {
     return JavaMonotonicTicker.getInstance();
+  }
+
+  /** Returns the hostname cache, resolving the hostname on first use. */
+  @ApiStatus.Internal
+  public @NotNull HostnameCache getHostnameCache() {
+    return hostnameCache.getValue();
+  }
+
+  @ApiStatus.Internal
+  public void setHostnameCache(final @NotNull HostnameCache hostnameCache) {
+    this.hostnameCache.setValue(hostnameCache);
+  }
+
+  /**
+   * Discards the cached instance, so that the next {@link #getHostnameCache()} builds a new one.
+   *
+   * <p>Called after the cache has been closed, because these options outlive a restart and a closed
+   * cache can no longer resolve anything.
+   */
+  @ApiStatus.Internal
+  public void resetHostnameCache() {
+    hostnameCache.resetValue();
   }
 
   /**

@@ -11,7 +11,6 @@ import io.sentry.util.HintUtils
 import java.lang.RuntimeException
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,7 +18,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
@@ -39,7 +37,6 @@ class MainEventProcessorTest {
     val getLocalhost = mock<InetAddress>()
     val hostnameCacheTicker = TestMonotonicTicker()
     lateinit var sentryTracer: SentryTracer
-    private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
 
     fun getSut(
       attachThreads: Boolean = true,
@@ -77,20 +74,10 @@ class MainEventProcessorTest {
       whenever(scopes.options).thenReturn(sentryOptions)
       sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
 
-      val hostnameCache = HostnameCache({ getLocalhost }, hostnameCacheTicker)
-      hostnameCacheMock.`when`<Any> { HostnameCache.getInstance() }.thenReturn(hostnameCache)
+      sentryOptions.setHostnameCache(HostnameCache({ getLocalhost }, hostnameCacheTicker))
 
       return MainEventProcessor(sentryOptions)
     }
-
-    fun teardown() {
-      hostnameCacheMock.close()
-    }
-  }
-
-  @AfterTest
-  fun teardown() {
-    fixture.teardown()
   }
 
   private val fixture = Fixture()
@@ -576,9 +563,14 @@ class MainEventProcessorTest {
     val sut = fixture.getSut(serverName = null)
 
     sut.process(SentryTransaction(fixture.sentryTracer), Hint())
+    val hostnameCache = assertNotNull(sut.hostnameCache)
 
     sut.close()
-    assertNotNull(sut.hostnameCache) { assertTrue(it.isClosed) }
+
+    assertTrue(hostnameCache.isClosed)
+    // Dropped on close so that a restart resolves the hostname again instead of reusing a cache
+    // whose executor is shut down.
+    assertNull(sut.hostnameCache)
   }
 
   @Test

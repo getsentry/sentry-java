@@ -172,7 +172,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   private void ensureHostnameCache() {
     if (hostnameCache == null) {
-      hostnameCache = HostnameCache.getInstance();
+      hostnameCache = options.getHostnameCache();
     }
   }
 
@@ -275,6 +275,10 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
   public void close() throws IOException {
     if (hostnameCache != null) {
       hostnameCache.close();
+      // Both this processor and the options outlive a restart, so a closed cache left in either
+      // place would never refresh the hostname again.
+      hostnameCache = null;
+      options.resetHostnameCache();
     }
   }
 

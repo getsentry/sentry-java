@@ -1,6 +1,5 @@
 package io.sentry.logger;
 
-import io.sentry.HostnameCache;
 import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
@@ -263,7 +262,7 @@ public final class LoggerApi implements ILoggerApi {
           "server.address",
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, optionsServerName));
     } else if (options.isAttachServerName()) {
-      final @Nullable String hostname = HostnameCache.getInstance().getHostname();
+      final @Nullable String hostname = options.getHostnameCache().getHostname();
       if (hostname != null) {
         attributes.put(
             "server.address",
