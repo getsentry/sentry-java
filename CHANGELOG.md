@@ -38,6 +38,7 @@
 
 - Deprecate `AndroidCurrentDateProvider.getInstance()` in favor of `MonotonicTicker`, which counts time spent in deep sleep and cannot be confused with the epoch-based `CurrentDateProvider` ([#6103](https://github.com/getsentry/sentry-java/pull/6103))
 - Measure the hostname cache TTL on a monotonic ticker, so that a device time change no longer shortens or extends it ([#6100](https://github.com/getsentry/sentry-java/pull/6100))
+- Hold the hostname cache on `SentryOptions` instead of a static singleton, so that it measures its TTL on the ticker the options provide ([#6117](https://github.com/getsentry/sentry-java/pull/6117))
 
 ## 8.56.0
 
