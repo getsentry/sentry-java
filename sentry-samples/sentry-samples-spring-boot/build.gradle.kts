@@ -70,6 +70,7 @@ dependencies {
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   implementation(projects.sentrySpringBootStarter)
+  implementation(projects.sentryMicrometer)
   implementation(projects.sentryLogback)
   if (includeGraphql) {
     implementation(projects.sentryGraphql)

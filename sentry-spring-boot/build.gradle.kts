@@ -28,6 +28,8 @@ dependencies {
 
   api(projects.sentry)
   api(projects.sentrySpring)
+  compileOnly(projects.sentryMicrometer)
+  compileOnly("io.micrometer:micrometer-core")
   compileOnly(projects.sentryLogback)
   compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(libs.jetbrains.annotations)
@@ -57,6 +59,7 @@ dependencies {
   errorprone(libs.nullaway)
 
   // tests
+  testImplementation(projects.sentryMicrometer)
   testImplementation(projects.sentryLogback)
   testImplementation(projects.sentryQuartz)
   testImplementation(projects.sentryApacheHttpClient5)
@@ -70,6 +73,7 @@ dependencies {
   testImplementation(libs.otel)
   testImplementation(libs.otel.extension.autoconfigure.spi)
   testImplementation(libs.springboot.starter)
+  testImplementation(libs.springboot.starter.actuator)
   testImplementation(libs.springboot.starter.aop)
   testImplementation(libs.springboot.starter.quartz)
   testImplementation(libs.springboot.starter.security)

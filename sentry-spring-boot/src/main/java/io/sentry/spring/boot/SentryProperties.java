@@ -37,6 +37,9 @@ public class SentryProperties extends SentryOptions {
   /** Graphql integration properties. */
   private @NotNull Graphql graphql = new Graphql();
 
+  /** Micrometer integration properties. */
+  private @NotNull Micrometer micrometer = new Micrometer();
+
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
   }
@@ -96,6 +99,36 @@ public class SentryProperties extends SentryOptions {
 
   public void setGraphql(@NotNull Graphql graphql) {
     this.graphql = graphql;
+  }
+
+  public @NotNull Micrometer getMicrometer() {
+    return micrometer;
+  }
+
+  public void setMicrometer(final @NotNull Micrometer micrometer) {
+    this.micrometer = micrometer;
+  }
+
+  @Open
+  public static class Micrometer {
+    private boolean enabled;
+    private long pollIntervalMillis = 60_000;
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setEnabled(final boolean enabled) {
+      this.enabled = enabled;
+    }
+
+    public long getPollIntervalMillis() {
+      return pollIntervalMillis;
+    }
+
+    public void setPollIntervalMillis(final long pollIntervalMillis) {
+      this.pollIntervalMillis = pollIntervalMillis;
+    }
   }
 
   @Open

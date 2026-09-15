@@ -29,6 +29,8 @@ tasks.withType<KotlinCompile>().configureEach {
 dependencies {
   api(projects.sentry)
   api(projects.sentrySpring7)
+  compileOnly(projects.sentryMicrometer)
+  compileOnly("io.micrometer:micrometer-core")
   compileOnly(projects.sentryLogback)
   compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
@@ -64,6 +66,7 @@ dependencies {
   errorprone(libs.nullaway)
 
   // tests
+  testImplementation(projects.sentryMicrometer)
   testImplementation(projects.sentryLogback)
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
@@ -95,6 +98,7 @@ dependencies {
    */
   //  testImplementation(libs.springboot4.otel)
   testImplementation(libs.springboot4.starter)
+  testImplementation(libs.springboot4.starter.actuator)
   testImplementation(libs.springboot4.starter.aspectj)
   testImplementation(libs.springboot4.starter.graphql)
   testImplementation(libs.spring.kafka4)

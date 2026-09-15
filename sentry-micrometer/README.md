@@ -21,6 +21,34 @@ SentryMeterRegistry sentryRegistry = new SentryMeterRegistry();
 Metrics.addRegistry(sentryRegistry);
 ```
 
+### Spring Boot
+
+Spring Boot 2, 3, and 4 applications can use auto-configuration by adding `sentry-micrometer`
+alongside the matching Sentry Spring Boot starter. The starter does not install this module
+transitively.
+
+```kotlin
+dependencies {
+  implementation("io.sentry:sentry-spring-boot-starter:<version>")
+  implementation("io.sentry:sentry-micrometer:<version>")
+}
+```
+
+Enable the integration explicitly and optionally configure passive polling:
+
+```properties
+sentry.micrometer.enabled=true
+sentry.micrometer.poll-interval-millis=60000
+```
+
+Auto-configuration requires Sentry to be initialized and backs off when the application provides
+its own `SentryMeterRegistry` bean. Spring Boot adds the registry to its primary composite registry,
+applies compatible `MeterRegistryCustomizer` beans, and closes it with the application context.
+Supported metrics registered automatically by Spring Boot Actuator—including HTTP server, JVM,
+process, and logging metrics—are forwarded through the same registry. Set the polling interval to
+zero to keep immediate forwarding enabled without a polling worker; passive auto-generated meters
+then remain registered but are not sent.
+
 ## Metric mappings
 
 Active meters are forwarded when they are recorded:
