@@ -73,7 +73,9 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   }
 
   Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
-    this.nanos = System.nanoTime();
+    // A clone stands in for the breadcrumb it was copied from, so it inherits its tie-breaker
+    // instead of taking a fresh one and sorting after everything recorded since.
+    this.nanos = breadcrumb.nanos;
     this.timestamp = breadcrumb.timestamp;
     this.timestampMs = breadcrumb.timestampMs;
     this.message = breadcrumb.message;
@@ -832,6 +834,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @Override
   @SuppressWarnings("JavaUtilDate")
   public int compareTo(@NotNull Breadcrumb o) {
+    final int byTimestamp = getTimestamp().compareTo(o.getTimestamp());
+    if (byTimestamp != 0) {
+      return byTimestamp;
+    }
+    // Timestamps are millisecond-granular, so breadcrumbs recorded in the same millisecond tie.
+    // nanos is only meaningful within a process run, which is all a tie-breaker has to cover.
     return nanos.compareTo(o.nanos);
   }
 
