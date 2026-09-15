@@ -435,7 +435,7 @@ final class AndroidOptionsInitializer {
     }
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.CINNAMON_BUN) {
-      options.addIntegration(new MemoryLimiterIntegration(context));
+      options.addIntegration(new MemoryLimiterIntegration(context, buildInfoProvider));
     }
 
     // this integration uses android.os.FileObserver, we can't move to sentry

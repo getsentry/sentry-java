@@ -14,7 +14,6 @@ import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.Integration;
-import io.sentry.NoOpLogger;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -40,6 +39,7 @@ import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Reports Android process deaths that the OS records as <a
@@ -89,15 +89,14 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private @Nullable SentryAndroidOptions androidOptions;
 
-  public MemoryLimiterIntegration(final @NotNull Context context) {
+  public MemoryLimiterIntegration(
+      final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     // Use CurrentDateProvider instead of AndroidCurrentDateProvider as ApplicationExitInfo uses
     // epochal System.currentTimeMillis and not time since boot.
-    this(
-        context,
-        CurrentDateProvider.getInstance(),
-        new BuildInfoProvider(NoOpLogger.getInstance()));
+    this(context, CurrentDateProvider.getInstance(), buildInfoProvider);
   }
 
+  @TestOnly
   MemoryLimiterIntegration(
       final @NotNull Context context,
       final @NotNull ICurrentDateProvider dateProvider,
@@ -320,21 +319,22 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
   @ApiStatus.Internal
   public static final class MemoryLimiterHint extends BlockingFlushHint implements Backfillable {
 
-    private final long timestamp;
+    private final long epochTimestampMs;
     private final boolean shouldEnrich;
 
     public MemoryLimiterHint(
         final long flushTimeoutMillis,
         final @NotNull ILogger logger,
-        final long timestamp,
+        final long epochTimestampMs,
         final boolean shouldEnrich) {
       super(flushTimeoutMillis, logger);
-      this.timestamp = timestamp;
+      this.epochTimestampMs = epochTimestampMs;
       this.shouldEnrich = shouldEnrich;
     }
 
+    /** Returns epoch wall-clock time, in milliseconds. */
     public long timestamp() {
-      return timestamp;
+      return epochTimestampMs;
     }
 
     @Override

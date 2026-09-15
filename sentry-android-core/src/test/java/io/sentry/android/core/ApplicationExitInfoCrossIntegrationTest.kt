@@ -33,6 +33,8 @@ import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
 
+// Our current Robolectric version (4.15) caps at API 35. All ApplicationExitInfo code paths we
+// exercise are at API 31 or below, so we use the latter.
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [31])
 class ApplicationExitInfoCrossIntegrationTest {
