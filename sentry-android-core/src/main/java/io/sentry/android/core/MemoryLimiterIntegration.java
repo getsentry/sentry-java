@@ -316,8 +316,6 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
           return MEMORY_LIMIT_CLASS_NOT_VISIBLE;
 
         case RunningAppProcessInfo.IMPORTANCE_CACHED:
-        //noinspection deprecation
-        case RunningAppProcessInfo.IMPORTANCE_EMPTY:
         default:
           // Fall back to the least specific bucket.
           return MEMORY_LIMIT_CLASS_CACHED;
@@ -325,12 +323,7 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
     }
 
     private @NotNull String toMessage(final int processImportance) {
-      return MEMORY_LIMITER_MESSAGE_PREFIX
-          + " ("
-          + toImportanceLabel(processImportance)
-          + ": "
-          + processImportance
-          + ")";
+      return MEMORY_LIMITER_MESSAGE_PREFIX + " (" + toImportanceLabel(processImportance) + ")";
     }
 
     private @NotNull String toImportanceLabel(final int processImportance) {
@@ -339,9 +332,6 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
           return "importance_cached";
         case RunningAppProcessInfo.IMPORTANCE_CANT_SAVE_STATE:
           return "importance_cant_save_state";
-        //noinspection deprecation
-        case RunningAppProcessInfo.IMPORTANCE_EMPTY:
-          return "importance_empty";
         case RunningAppProcessInfo.IMPORTANCE_FOREGROUND:
           return "importance_foreground";
         case RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE:
