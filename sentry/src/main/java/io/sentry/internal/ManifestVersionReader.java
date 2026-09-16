@@ -4,7 +4,9 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Enumeration;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -56,48 +58,55 @@ public final class ManifestVersionReader {
           ClassLoader.getSystemClassLoader().getResources("META-INF/MANIFEST.MF");
       while (resources.hasMoreElements()) {
         try {
-          final @NotNull Manifest manifest = new Manifest(resources.nextElement().openStream());
-          final @Nullable Attributes mainAttributes = manifest.getMainAttributes();
-          if (mainAttributes != null) {
-            final @Nullable String name = mainAttributes.getValue("Sentry-Opentelemetry-SDK-Name");
-            final @Nullable String version = mainAttributes.getValue("Implementation-Version");
-            final @Nullable String sdkName = mainAttributes.getValue("Sentry-SDK-Name");
-            final @Nullable String packageName = mainAttributes.getValue("Sentry-SDK-Package-Name");
+          final @NotNull URLConnection connection = resources.nextElement().openConnection();
+          connection.setUseCaches(false);
+          try (final @NotNull InputStream inputStream = connection.getInputStream()) {
+            final @NotNull Manifest manifest = new Manifest(inputStream);
+            final @Nullable Attributes mainAttributes = manifest.getMainAttributes();
+            if (mainAttributes != null) {
+              final @Nullable String name =
+                  mainAttributes.getValue("Sentry-Opentelemetry-SDK-Name");
+              final @Nullable String version = mainAttributes.getValue("Implementation-Version");
+              final @Nullable String sdkName = mainAttributes.getValue("Sentry-SDK-Name");
+              final @Nullable String packageName =
+                  mainAttributes.getValue("Sentry-SDK-Package-Name");
 
-            if (name != null && version != null) {
-              versionInfo.sdkName = name;
-              versionInfo.sdkVersion = version;
-              final @Nullable String otelVersion =
-                  mainAttributes.getValue("Sentry-Opentelemetry-Version-Name");
-              if (otelVersion != null) {
-                SentryIntegrationPackageStorage.getInstance()
-                    .addPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion);
-                SentryIntegrationPackageStorage.getInstance().addIntegration("OpenTelemetry");
+              if (name != null && version != null) {
+                versionInfo.sdkName = name;
+                versionInfo.sdkVersion = version;
+                final @Nullable String otelVersion =
+                    mainAttributes.getValue("Sentry-Opentelemetry-Version-Name");
+                if (otelVersion != null) {
+                  SentryIntegrationPackageStorage.getInstance()
+                      .addPackage("maven:io.opentelemetry:opentelemetry-sdk", otelVersion);
+                  SentryIntegrationPackageStorage.getInstance().addIntegration("OpenTelemetry");
+                }
+                final @Nullable String otelJavaagentVersion =
+                    mainAttributes.getValue("Sentry-Opentelemetry-Javaagent-Version-Name");
+                if (otelJavaagentVersion != null) {
+                  SentryIntegrationPackageStorage.getInstance()
+                      .addPackage(
+                          "maven:io.opentelemetry.javaagent:opentelemetry-javaagent",
+                          otelJavaagentVersion);
+                  SentryIntegrationPackageStorage.getInstance()
+                      .addIntegration("OpenTelemetry-Agent");
+                }
+                if (name.equals("sentry.java.opentelemetry.agentless")) {
+                  SentryIntegrationPackageStorage.getInstance()
+                      .addIntegration("OpenTelemetry-Agentless");
+                }
+                if (name.equals("sentry.java.opentelemetry.agentless-spring")) {
+                  SentryIntegrationPackageStorage.getInstance()
+                      .addIntegration("OpenTelemetry-Agentless-Spring");
+                }
               }
-              final @Nullable String otelJavaagentVersion =
-                  mainAttributes.getValue("Sentry-Opentelemetry-Javaagent-Version-Name");
-              if (otelJavaagentVersion != null) {
-                SentryIntegrationPackageStorage.getInstance()
-                    .addPackage(
-                        "maven:io.opentelemetry.javaagent:opentelemetry-javaagent",
-                        otelJavaagentVersion);
-                SentryIntegrationPackageStorage.getInstance().addIntegration("OpenTelemetry-Agent");
-              }
-              if (name.equals("sentry.java.opentelemetry.agentless")) {
-                SentryIntegrationPackageStorage.getInstance()
-                    .addIntegration("OpenTelemetry-Agentless");
-              }
-              if (name.equals("sentry.java.opentelemetry.agentless-spring")) {
-                SentryIntegrationPackageStorage.getInstance()
-                    .addIntegration("OpenTelemetry-Agentless-Spring");
-              }
-            }
 
-            if (sdkName != null
-                && version != null
-                && packageName != null
-                && sdkName.startsWith("sentry.java")) {
-              SentryIntegrationPackageStorage.getInstance().addPackage(packageName, version);
+              if (sdkName != null
+                  && version != null
+                  && packageName != null
+                  && sdkName.startsWith("sentry.java")) {
+                SentryIntegrationPackageStorage.getInstance().addPackage(packageName, version);
+              }
             }
           }
         } catch (Exception e) {
