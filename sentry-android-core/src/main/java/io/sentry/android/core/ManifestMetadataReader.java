@@ -823,7 +823,7 @@ final class ManifestMetadataReader {
       final @NotNull Object metadata,
       final @NotNull ILogger logger,
       final @NotNull DataCollection currentDataCollection) {
-    final @NotNull DataCollection dataCollection = new DataCollection(false);
+    final @NotNull DataCollection dataCollection = new DataCollection();
 
     if (containsKey(metadata, DATA_COLLECTION_USER_INFO)) {
       dataCollection.setUserInfo(readBool(metadata, logger, DATA_COLLECTION_USER_INFO, false));

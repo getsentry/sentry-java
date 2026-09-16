@@ -347,7 +347,7 @@ public class SentryOptions {
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
 
-  private @NotNull DataCollection dataCollection = new DataCollection(false);
+  private @NotNull DataCollection dataCollection = new DataCollection();
 
   private final @NotNull DataCollectionResolver dataCollectionResolver =
       new DataCollectionResolver(this);
@@ -1769,7 +1769,9 @@ public class SentryOptions {
   /**
    * Replaces the configuration for data that the SDK collects automatically.
    *
-   * <p>Passing an empty {@link DataCollection} opts into the documented data-collection defaults.
+   * <p>This discards any Data Collection options already configured on this instance. To opt into
+   * the documented defaults while preserving them, call {@link
+   * DataCollection#forceDataCollection()} on the object returned by {@link #getDataCollection()}.
    */
   public void setDataCollection(final @NotNull DataCollection dataCollection) {
     if (dataCollection != null) {

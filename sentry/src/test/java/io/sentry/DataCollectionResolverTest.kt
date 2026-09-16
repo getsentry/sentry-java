@@ -371,7 +371,7 @@ class DataCollectionResolverTest {
 
   @Test
   fun `explicit empty data collection enables every HTTP body direction`() {
-    val options = SentryOptions().apply { dataCollection = DataCollection() }
+    val options = SentryOptions().apply { dataCollection.forceDataCollection() }
 
     assertThat(options.dataCollectionResolver.isIncomingRequestBody).isTrue()
     assertThat(options.dataCollectionResolver.isOutgoingRequestBody).isTrue()

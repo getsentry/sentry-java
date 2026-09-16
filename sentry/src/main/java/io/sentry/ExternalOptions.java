@@ -250,7 +250,7 @@ public final class ExternalOptions {
 
   private static @Nullable DataCollection parseDataCollection(
       final @NotNull PropertiesProvider propertiesProvider) {
-    final DataCollection dataCollection = new DataCollection(false);
+    final DataCollection dataCollection = new DataCollection();
 
     final Boolean userInfo = propertiesProvider.getBooleanProperty("data-collection.user-info");
     if (userInfo != null) {
