@@ -39,6 +39,9 @@ import org.robolectric.annotation.Config
 @Config(sdk = [30])
 class SentryNavEffectTest {
 
+  private val defaultNameExtractor =
+    RouteNameExtractor<Any> { entry -> entry::class.simpleName ?: "unknown" }
+
   @get:Rule(order = 1)
   val addActivityToRobolectricRule =
     object : TestWatcher() {
@@ -104,7 +107,11 @@ class SentryNavEffectTest {
     val backStack = mutableStateListOf<Any>(HomeRoute())
 
     composeRule.setContent {
-      SentryNavEffect(backStack = backStack, scopes = fixture.scopes)
+      SentryNavEffect(
+        backStack = backStack,
+        scopes = fixture.scopes,
+        nameExtractor = defaultNameExtractor,
+      )
     }
 
     composeRule.waitForIdle()
@@ -122,7 +129,11 @@ class SentryNavEffectTest {
     val backStack = mutableStateListOf<Any>(HomeRoute())
 
     composeRule.setContent {
-      SentryNavEffect(backStack = backStack, scopes = fixture.scopes)
+      SentryNavEffect(
+        backStack = backStack,
+        scopes = fixture.scopes,
+        nameExtractor = defaultNameExtractor,
+      )
     }
     composeRule.waitForIdle()
 
@@ -144,7 +155,11 @@ class SentryNavEffectTest {
     val backStack = mutableStateListOf(HomeRoute(), ProfileRoute("123"))
 
     composeRule.setContent {
-      SentryNavEffect(backStack = backStack, scopes = fixture.scopes)
+      SentryNavEffect(
+        backStack = backStack,
+        scopes = fixture.scopes,
+        nameExtractor = defaultNameExtractor,
+      )
     }
     composeRule.waitForIdle()
 
@@ -166,7 +181,11 @@ class SentryNavEffectTest {
     val backStack = mutableStateListOf(HomeRoute(), ProfileRoute("123"))
 
     composeRule.setContent {
-      SentryNavEffect(backStack = backStack, scopes = fixture.scopes)
+      SentryNavEffect(
+        backStack = backStack,
+        scopes = fixture.scopes,
+        nameExtractor = defaultNameExtractor,
+      )
     }
     composeRule.waitForIdle()
 
@@ -194,7 +213,11 @@ class SentryNavEffectTest {
     val backStack = mutableStateListOf<Any>(home, profile)
 
     composeRule.setContent {
-      SentryNavEffect(backStack = backStack, scopes = fixture.scopes)
+      SentryNavEffect(
+        backStack = backStack,
+        scopes = fixture.scopes,
+        nameExtractor = defaultNameExtractor,
+      )
     }
     composeRule.waitForIdle()
 
@@ -224,7 +247,11 @@ class SentryNavEffectTest {
 
     composeRule.setContent {
       recomposeTick.intValue
-      SentryNavEffect(backStack = backStack, scopes = fixture.scopes)
+      SentryNavEffect(
+        backStack = backStack,
+        scopes = fixture.scopes,
+        nameExtractor = defaultNameExtractor,
+      )
     }
     composeRule.waitForIdle()
 
@@ -255,7 +282,11 @@ class SentryNavEffectTest {
     val observedTransactionNames = mutableListOf<String>()
 
     composeRule.setContent {
-      SentryNavEffect(backStack = backStack, scopes = fixture.scopes)
+      SentryNavEffect(
+        backStack = backStack,
+        scopes = fixture.scopes,
+        nameExtractor = defaultNameExtractor,
+      )
 
       val currentTop = backStack.last()
       LaunchedEffect(currentTop) {
@@ -275,7 +306,10 @@ class SentryNavEffectTest {
   fun `updated name extractor is used for later navigation changes`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(HomeRoute())
-    val nameExtractor = mutableStateOf<((Any) -> String)?>(null)
+    val nameExtractor =
+      mutableStateOf<RouteNameExtractor<Any>>(
+        RouteNameExtractor { entry -> entry::class.simpleName ?: "unknown" }
+      )
 
     composeRule.setContent {
       SentryNavEffect(
@@ -287,7 +321,7 @@ class SentryNavEffectTest {
     composeRule.waitForIdle()
 
     composeRule.runOnIdle {
-      nameExtractor.value = { entry ->
+      nameExtractor.value = RouteNameExtractor { entry ->
         if (entry is ProfileRoute) "profile-updated" else "home-updated"
       }
     }
@@ -306,7 +340,10 @@ class SentryNavEffectTest {
   fun `changing the name extractor alone does not re-emit Sentry data for the current top entry`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(HomeRoute(), ProfileRoute("123"))
-    val nameExtractor = mutableStateOf<((Any) -> String)?>(null)
+    val nameExtractor =
+      mutableStateOf<RouteNameExtractor<Any>>(
+        RouteNameExtractor { entry -> entry::class.simpleName ?: "unknown" }
+      )
 
     composeRule.setContent {
       SentryNavEffect(
@@ -318,7 +355,7 @@ class SentryNavEffectTest {
     composeRule.waitForIdle()
 
     composeRule.runOnIdle {
-      nameExtractor.value = { entry ->
+      nameExtractor.value = RouteNameExtractor { entry ->
         if (entry is ProfileRoute) "profile-updated" else "home-updated"
       }
     }
@@ -337,19 +374,20 @@ class SentryNavEffectTest {
   fun `updated arguments extractor is used for later navigation changes`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(HomeRoute())
-    val argumentsExtractor = mutableStateOf<((Any) -> Map<String, Any?>)?>(null)
+    val argumentsExtractor = mutableStateOf<RouteArgumentsExtractor<Any>?>(null)
 
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
         scopes = fixture.scopes,
+        nameExtractor = defaultNameExtractor,
         argumentsExtractor = argumentsExtractor.value,
       )
     }
     composeRule.waitForIdle()
 
     composeRule.runOnIdle {
-      argumentsExtractor.value = { entry ->
+      argumentsExtractor.value = RouteArgumentsExtractor { entry ->
         if (entry is ProfileRoute) mapOf("userId" to entry.userId) else emptyMap()
       }
     }
@@ -375,19 +413,20 @@ class SentryNavEffectTest {
   fun `changing the arguments extractor alone does not re-emit Sentry data for the current top entry`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(HomeRoute(), ProfileRoute("123"))
-    val argumentsExtractor = mutableStateOf<((Any) -> Map<String, Any?>)?>(null)
+    val argumentsExtractor = mutableStateOf<RouteArgumentsExtractor<Any>?>(null)
 
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
         scopes = fixture.scopes,
+        nameExtractor = defaultNameExtractor,
         argumentsExtractor = argumentsExtractor.value,
       )
     }
     composeRule.waitForIdle()
 
     composeRule.runOnIdle {
-      argumentsExtractor.value = { entry ->
+      argumentsExtractor.value = RouteArgumentsExtractor { entry ->
         if (entry is ProfileRoute) mapOf("userId" to entry.userId) else emptyMap()
       }
     }
@@ -411,7 +450,12 @@ class SentryNavEffectTest {
     val options = mutableStateOf(SentryNavOptions(captureBackStack = true))
 
     composeRule.setContent {
-      SentryNavEffect(backStack = backStack, scopes = fixture.scopes, options = options.value)
+      SentryNavEffect(
+        backStack = backStack,
+        scopes = fixture.scopes,
+        options = options.value,
+        nameExtractor = defaultNameExtractor,
+      )
     }
     composeRule.waitForIdle()
 
@@ -429,7 +473,11 @@ class SentryNavEffectTest {
 
     composeRule.setContent {
       if (isShown.value) {
-        SentryNavEffect(backStack = backStack, scopes = fixture.scopes)
+        SentryNavEffect(
+          backStack = backStack,
+          scopes = fixture.scopes,
+          nameExtractor = defaultNameExtractor,
+        )
       }
     }
     composeRule.waitForIdle()

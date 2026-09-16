@@ -40,6 +40,9 @@ class BackStackObserverTest {
   )
 
   private class Fixture {
+    private val defaultNameExtractor =
+      RouteNameExtractor<Any> { entry -> entry::class.simpleName ?: "unknown" }
+
     val logger = mock<ILogger>()
     val scope = Scope(createOptions(logger))
     val scopes = mock<IScopes>()
@@ -75,8 +78,8 @@ class BackStackObserverTest {
 
     fun getSut(
       config: ObserverConfig = ObserverConfig(),
-      nameExtractor: ((Any) -> String)? = null,
-      argumentsExtractor: ((Any) -> Map<String, Any?>)? = null,
+      nameExtractor: RouteNameExtractor<Any> = defaultNameExtractor,
+      argumentsExtractor: RouteArgumentsExtractor<Any>? = null,
     ): BackStackObserver<Any> {
       scope.options.isEnableScreenTracking = config.enableScreenTracking
 
@@ -113,13 +116,14 @@ class BackStackObserverTest {
     val sut =
       fixture.getSut(
         config = ObserverConfig(enableNavigationBreadcrumbs = true),
-        argumentsExtractor = { entry ->
-          when (entry) {
-            is HomeRoute -> mapOf("tab" to entry.id)
-            is ProfileRoute -> mapOf("userId" to entry.userId)
-            else -> emptyMap()
-          }
-        },
+        argumentsExtractor =
+          RouteArgumentsExtractor { entry ->
+            when (entry) {
+              is HomeRoute -> mapOf("tab" to entry.id)
+              is ProfileRoute -> mapOf("userId" to entry.userId)
+              else -> emptyMap()
+            }
+          },
       )
     val home = HomeRoute()
     val profile = ProfileRoute("123")
@@ -275,12 +279,13 @@ class BackStackObserverTest {
     val sut =
       fixture.getSut(
         config = ObserverConfig(enableNavigationTransactions = true),
-        argumentsExtractor = { entry ->
-          when (entry) {
-            is ProfileRoute -> mapOf("userId" to entry.userId)
-            else -> emptyMap()
-          }
-        },
+        argumentsExtractor =
+          RouteArgumentsExtractor { entry ->
+            when (entry) {
+              is ProfileRoute -> mapOf("userId" to entry.userId)
+              else -> emptyMap()
+            }
+          },
       )
 
     sut.onBackStackChanged(listOf(HomeRoute(), ProfileRoute("123")))

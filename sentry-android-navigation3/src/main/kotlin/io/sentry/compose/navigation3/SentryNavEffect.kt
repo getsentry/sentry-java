@@ -64,24 +64,12 @@ import org.jetbrains.annotations.ApiStatus
  * gestures. That means, for instance, that spans produced by predictively rendered composables can
  * show up under the current destination's transaction.
  *
- * **Privacy / PII**
- *
- * Values returned from [nameExtractor] and [argumentsExtractor] are ***not*** scrubbed by the
- * Sentry SDK before being sent to Sentry. Only return route names and arguments that are known to
- * be safe or have been pre-scrubbed.
- *
  * @param backStack The navigation backstack to observe.
  * @param scopes A scopes instance used to track generated Sentry data.
  * @param options The kinds of navigation info this effect should record.
- * @param nameExtractor Optional lambda to extract a human-readable route name from the top entry of
- *   the [backStack]. If not provided, defaults to the simple name of the entry's class.
- * @param argumentsExtractor Optional lambda to extract a map of argument name -> argument values
- *   from the top entry of the [backStack]. If not provided, no arguments are attached. The
- *   following scalar values are supported: [String], [CharSequence], [Char], [Boolean], any
- *   [Number], enums (via [Enum.name]), and `null`. Supported container values are: [Array]s,
- *   primitive arrays, [Map]s, and [Collection]s of supported values, including nested containers.
- *   All other types are stringified via `toString()`. Cyclic or deeply nested containers are
- *   skipped. Return only the arguments needed for diagnostics and avoid large structures.
+ * @param nameExtractor Extracts a human-readable route name from the top entry of the [backStack].
+ * @param argumentsExtractor Optional extractor for a map of argument name -> argument values from
+ *   the top entry of the [backStack]. If not provided, no arguments are attached.
  */
 @ApiStatus.Experimental
 @Composable
@@ -90,8 +78,8 @@ internal fun <T : Any> SentryNavEffect(
   backStack: List<T>,
   scopes: IScopes = ScopesAdapter.getInstance(),
   options: SentryNavOptions = SentryNavOptions(),
-  nameExtractor: ((T) -> String)? = null,
-  argumentsExtractor: ((T) -> Map<String, Any?>)? = null,
+  nameExtractor: RouteNameExtractor<T>,
+  argumentsExtractor: RouteArgumentsExtractor<T>? = null,
 ) {
   val routeResolvers = rememberUpdatedState(RouteResolvers(nameExtractor, argumentsExtractor))
 

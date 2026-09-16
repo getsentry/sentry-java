@@ -13,16 +13,11 @@ class RouteResolversTest {
 
   private data class ProfileRoute(val userId: String)
 
-  @Test
-  fun `getName returns null when no name extractor is configured`() {
-    val sut = RouteResolvers<HomeRoute>(nameExtractor = null, argumentsExtractor = null)
-
-    assertNull(sut.getName(HomeRoute()))
-  }
+  private val defaultNameExtractor = RouteNameExtractor<HomeRoute> { it.id }
 
   @Test
   fun `getArguments returns null when no arguments extractor is configured`() {
-    val sut = RouteResolvers<HomeRoute>(nameExtractor = null, argumentsExtractor = null)
+    val sut = RouteResolvers(nameExtractor = defaultNameExtractor, argumentsExtractor = null)
 
     assertNull(sut.getArguments(HomeRoute()))
   }
@@ -32,7 +27,7 @@ class RouteResolversTest {
     val route = ProfileRoute("123")
     val sut =
       RouteResolvers<ProfileRoute>(
-        nameExtractor = { entry -> "profile-${entry.userId}" },
+        nameExtractor = RouteNameExtractor { entry -> "profile-${entry.userId}" },
         argumentsExtractor = null,
       )
 
@@ -44,8 +39,8 @@ class RouteResolversTest {
     val route = ProfileRoute("123")
     val sut =
       RouteResolvers<ProfileRoute>(
-        nameExtractor = null,
-        argumentsExtractor = { entry -> mapOf("userId" to entry.userId) },
+        nameExtractor = RouteNameExtractor { entry -> entry.userId },
+        argumentsExtractor = RouteArgumentsExtractor { entry -> mapOf("userId" to entry.userId) },
       )
 
     assertThat(sut.getArguments(route)).isEqualTo(mapOf("userId" to "123"))
@@ -56,7 +51,7 @@ class RouteResolversTest {
     val routeName = mutableStateOf("home")
     val sut =
       RouteResolvers<HomeRoute>(
-        nameExtractor = { routeName.value },
+        nameExtractor = RouteNameExtractor { routeName.value },
         argumentsExtractor = null,
       )
 
@@ -68,8 +63,8 @@ class RouteResolversTest {
     val argumentValue = mutableStateOf("123")
     val sut =
       RouteResolvers<HomeRoute>(
-        nameExtractor = null,
-        argumentsExtractor = { mapOf("userId" to argumentValue.value) },
+        nameExtractor = defaultNameExtractor,
+        argumentsExtractor = RouteArgumentsExtractor { mapOf("userId" to argumentValue.value) },
       )
 
     assertEquals(0, observeReads { sut.getArguments(HomeRoute()) })

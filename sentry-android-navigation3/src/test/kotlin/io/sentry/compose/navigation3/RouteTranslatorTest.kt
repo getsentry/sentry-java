@@ -26,10 +26,12 @@ class RouteTranslatorTest {
   }
 
   private val logger = mock<ILogger>()
+  private val defaultNameExtractor =
+    RouteNameExtractor<Any> { entry -> entry::class.simpleName ?: "unknown" }
 
   private fun getSut(
-    nameExtractor: ((Any) -> String)? = null,
-    argumentsExtractor: ((Any) -> Map<String, Any?>)? = null,
+    nameExtractor: RouteNameExtractor<Any> = defaultNameExtractor,
+    argumentsExtractor: RouteArgumentsExtractor<Any>? = null,
     maxCapturedBackStackEntries: Int = 30,
   ): RouteTranslator<Any> =
     RouteTranslator(
@@ -54,14 +56,15 @@ class RouteTranslatorTest {
   fun `toRouteEntries preserves newer entry arguments when the shared budget overflows`() {
     val sut =
       getSut(
-        argumentsExtractor = { key ->
-          when (key) {
-            is HomeRoute -> mapOf("home" to true)
-            is ProfileRoute -> mapOf("values" to List(999) { it })
-            is SettingsRoute -> mapOf("section" to key.section)
-            else -> emptyMap()
+        argumentsExtractor =
+          RouteArgumentsExtractor { key ->
+            when (key) {
+              is HomeRoute -> mapOf("home" to true)
+              is ProfileRoute -> mapOf("values" to List(999) { it })
+              is SettingsRoute -> mapOf("section" to key.section)
+              else -> emptyMap()
+            }
           }
-        }
       )
 
     val stack =
@@ -85,14 +88,14 @@ class RouteTranslatorTest {
 
   @Test
   fun `resolveRouteName normalizes a custom name with a leading slash`() {
-    val sut = getSut(nameExtractor = { "profile" })
+    val sut = getSut(nameExtractor = RouteNameExtractor { "profile" })
 
     assertEquals("/profile", sut.resolveRouteName(ProfileRoute("123")))
   }
 
   @Test
   fun `resolveRouteName leaves leading slash on custom name if already present`() {
-    val sut = getSut(nameExtractor = { "/profile" })
+    val sut = getSut(nameExtractor = RouteNameExtractor { "/profile" })
 
     assertEquals("/profile", sut.resolveRouteName(ProfileRoute("123")))
   }
@@ -106,7 +109,7 @@ class RouteTranslatorTest {
 
   @Test
   fun `resolveRouteName falls back to class simple name when name extractor throws`() {
-    val sut = getSut(nameExtractor = { error("boom") })
+    val sut = getSut(nameExtractor = RouteNameExtractor { error("boom") })
 
     assertEquals("/HomeRoute", sut.resolveRouteName(HomeRoute()))
     verify(logger)
@@ -123,24 +126,25 @@ class RouteTranslatorTest {
   fun `resolveArguments returns supported values in serializable form`() {
     val sut =
       getSut(
-        argumentsExtractor = { _ ->
-          val text = StringBuilder("hello")
-          mapOf(
-            "str" to "hello",
-            "charSequence" to text,
-            "char" to 'x',
-            "num" to 42,
-            "bool" to true,
-            "enum" to PrivacyMode.PRIVATE,
-            "nil" to null,
-            "nested" to mapOf("inner" to "value"),
-            "tags" to listOf("a", "b", "c"),
-            "array" to arrayOf("a", 1, false, PrivacyMode.PUBLIC, 'z'),
-            "ints" to intArrayOf(1, 2, 3),
-            "chars" to charArrayOf('a', 'b'),
-            "bytes" to byteArrayOf(4, 5),
-          )
-        }
+        argumentsExtractor =
+          RouteArgumentsExtractor { _ ->
+            val text = StringBuilder("hello")
+            mapOf(
+              "str" to "hello",
+              "charSequence" to text,
+              "char" to 'x',
+              "num" to 42,
+              "bool" to true,
+              "enum" to PrivacyMode.PRIVATE,
+              "nil" to null,
+              "nested" to mapOf("inner" to "value"),
+              "tags" to listOf("a", "b", "c"),
+              "array" to arrayOf("a", 1, false, PrivacyMode.PUBLIC, 'z'),
+              "ints" to intArrayOf(1, 2, 3),
+              "chars" to charArrayOf('a', 'b'),
+              "bytes" to byteArrayOf(4, 5),
+            )
+          }
       )
 
     assertThat(sut.resolveArguments(HomeRoute()))
@@ -167,20 +171,21 @@ class RouteTranslatorTest {
   fun `resolveArguments sanitizes nested supported containers recursively`() {
     val sut =
       getSut(
-        argumentsExtractor = { _ ->
-          mapOf(
-            "nested" to
-              mapOf(
-                "items" to
-                  arrayOf(
-                    StringBuilder("x"),
-                    listOf('y', PrivacyMode.PRIVATE),
-                    booleanArrayOf(true, false),
-                    charArrayOf('q'),
-                  )
-              )
-          )
-        }
+        argumentsExtractor =
+          RouteArgumentsExtractor { _ ->
+            mapOf(
+              "nested" to
+                mapOf(
+                  "items" to
+                    arrayOf(
+                      StringBuilder("x"),
+                      listOf('y', PrivacyMode.PRIVATE),
+                      booleanArrayOf(true, false),
+                      charArrayOf('q'),
+                    )
+                )
+            )
+          }
       )
 
     assertThat(sut.resolveArguments(HomeRoute()))
@@ -198,7 +203,8 @@ class RouteTranslatorTest {
       override fun toString(): String = "opaque-value"
     }
 
-    val sut = getSut(argumentsExtractor = { _ -> mapOf("bad" to OpaqueValue()) })
+    val sut =
+      getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("bad" to OpaqueValue()) })
 
     assertThat(sut.resolveArguments(HomeRoute())).isEqualTo(mapOf("bad" to "opaque-value"))
   }
@@ -209,7 +215,8 @@ class RouteTranslatorTest {
       override fun toString(): String = "opaque-value"
     }
 
-    val sut = getSut(argumentsExtractor = { _ -> mapOf("bad" to OpaqueValue()) })
+    val sut =
+      getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("bad" to OpaqueValue()) })
     val updateWarningState = RouteTranslator.UpdateWarningState()
 
     sut.resolveArguments(HomeRoute(), updateWarningState)
@@ -234,7 +241,8 @@ class RouteTranslatorTest {
       override fun toString(): String = "opaque-value"
     }
 
-    val sut = getSut(argumentsExtractor = { _ -> mapOf("bad" to OpaqueValue()) })
+    val sut =
+      getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("bad" to OpaqueValue()) })
 
     sut.resolveArguments(HomeRoute(), RouteTranslator.UpdateWarningState())
     clearInvocations(logger)
@@ -263,7 +271,7 @@ class RouteTranslatorTest {
 
   @Test
   fun `resolveArguments returns empty when arguments extractor throws`() {
-    val sut = getSut(argumentsExtractor = { error("boom") })
+    val sut = getSut(argumentsExtractor = RouteArgumentsExtractor { error("boom") })
 
     assertThat(sut.resolveArguments(HomeRoute())).isEmpty()
     verify(logger)
@@ -279,7 +287,8 @@ class RouteTranslatorTest {
     val cyclic = mutableMapOf<String, Any?>()
     cyclic["self"] = cyclic
 
-    val sut = getSut(argumentsExtractor = { _ -> mapOf("cyclic" to cyclic) })
+    val sut =
+      getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("cyclic" to cyclic) })
 
     assertThat(sut.resolveArguments(HomeRoute())).isEmpty()
   }
@@ -289,14 +298,18 @@ class RouteTranslatorTest {
     var nested: Any? = "value"
     repeat(25) { nested = listOf(nested) }
 
-    val sut = getSut(argumentsExtractor = { _ -> mapOf("nested" to nested) })
+    val sut =
+      getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("nested" to nested) })
 
     assertThat(sut.resolveArguments(ProfileRoute("123"))).isEmpty()
   }
 
   @Test
   fun `resolveArguments drops oversized payloads instead of truncating them`() {
-    val sut = getSut(argumentsExtractor = { _ -> mapOf("values" to List(1_001) { it }) })
+    val sut =
+      getSut(
+        argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("values" to List(1_001) { it }) }
+      )
 
     assertThat(sut.resolveArguments(HomeRoute())).isEmpty()
   }
