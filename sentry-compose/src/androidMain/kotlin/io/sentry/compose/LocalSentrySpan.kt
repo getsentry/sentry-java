@@ -56,15 +56,9 @@ internal fun ISpan.orBootstrapCurrentTransaction(): ISpan =
  * Note: This must be a distinct type from [NoOpSpan] so that [isUnset] can determine whether
  * `LocalSentrySpan` was set with a `NoOpSpan` or was never set at all.
  *
- * Our own implementations need that information because:
- *
- * 1. we should always honor the value of `LocalSentrySpan` if deliberately set, even when it vends
- *    a `NoOpSpan`; but
- *
- * 2. we'll often want supply our own default parent span if `LocalSentrySpan` hasn't been set.
- *
- * A sentinel type lets us do so without complicating our public API for a distinction irrelevant to
- * host apps.
+ * Our own implementations often need to make that distinction so they can fall back to a reasonable
+ * parent span if their environment doesn't provide one. We use a sentinel to avoid complicating our
+ * public API for a distinction irrelevant to host apps.
  */
 private object UnsetSentrySpan : ISpan by NoOpSpan.getInstance()
 
