@@ -21,10 +21,15 @@ import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
 import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.time.EpochClock;
+import io.sentry.time.JavaMonotonicTicker;
+import io.sentry.time.MonotonicTicker;
+import io.sentry.time.SystemEpochClock;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.transport.RateLimiterConfig;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.LoadClass;
@@ -54,7 +59,7 @@ import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options */
 @Open
-public class SentryOptions {
+public class SentryOptions implements RateLimiterConfig {
 
   @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
 
@@ -848,6 +853,7 @@ public class SentryOptions {
    *
    * @return the logger
    */
+  @Override
   public @NotNull ILogger getLogger() {
     return logger;
   }
@@ -1611,6 +1617,7 @@ public class SentryOptions {
    * @return the timer executor service
    */
   @ApiStatus.Internal
+  @Override
   @NotNull
   public ISentryExecutorService getTimerExecutorService() {
     return timerExecutorService;
@@ -2631,6 +2638,7 @@ public class SentryOptions {
    * @return a client report recorder or NoOp
    */
   @ApiStatus.Internal
+  @Override
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
   }
@@ -3091,6 +3099,31 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
     this.dateProvider.setValue(dateProvider);
+  }
+
+  /**
+   * Returns the wall clock, for stamping an instant that will be serialized.
+   *
+   * <p>Reports the same epoch as {@link #getDateProvider()}, but a {@link io.sentry.time.Timestamp}
+   * carries no {@link System#nanoTime()} tick of its own the way a {@link SentryNanotimeDate} does.
+   * Instants that will be subtracted from each other come from an {@link
+   * io.sentry.time.AnchoredClock} built on this and {@link #getMonotonicTicker()}.
+   */
+  @ApiStatus.Internal
+  public @NotNull EpochClock getEpochClock() {
+    return SystemEpochClock.getInstance();
+  }
+
+  /**
+   * Returns the ticker used to measure elapsed time, such as rate-limit windows, cache expiry and
+   * ANR thresholds.
+   *
+   * <p>Android overrides this with a {@code SystemClock.elapsedRealtimeNanos()}-backed ticker,
+   * which this module cannot reference. On the JVM there is no suspend state to account for.
+   */
+  @ApiStatus.Internal
+  public @NotNull MonotonicTicker getMonotonicTicker() {
+    return JavaMonotonicTicker.getInstance();
   }
 
   /**

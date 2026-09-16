@@ -39,14 +39,14 @@ private fun routeWorkDialogTitle(context: Context): View =
         text = "Route work"
         textSize = 20f
         setTypeface(null, Typeface.BOLD)
-        setTextColor(context.getColor(android.R.color.black))
+        setTextColor(context.themeColor(android.R.attr.textColorPrimary))
       }
     )
     addView(
       TextView(context).apply {
         text = "Enable/disable the generation of spans by navigation destinations."
         textSize = 14f
-        setTextColor(0xFF756E89.toInt())
+        setTextColor(context.themeColor(android.R.attr.textColorSecondary))
         setPadding(0, context.dp(8), 0, 0)
       }
     )

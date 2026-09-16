@@ -990,6 +990,56 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
+  fun `MemoryLimiterIntegration added to integrations list for API 37 and above`() {
+    val options = SentryAndroidOptions()
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(37)
+    val loadClass = LoadClass()
+    val activityFramesTracker = ActivityFramesTracker(loadClass, options)
+
+    AndroidOptionsInitializer.installDefaultIntegrations(
+      fixture.context,
+      options,
+      buildInfo,
+      loadClass,
+      activityFramesTracker,
+      false,
+      false,
+      false,
+      false,
+    )
+
+    val integration = options.integrations.firstOrNull { it is MemoryLimiterIntegration }
+
+    assertNotNull(integration)
+  }
+
+  @Test
+  fun `MemoryLimiterIntegration not added to integrations list below API 37`() {
+    val options = SentryAndroidOptions()
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(36)
+    val loadClass = LoadClass()
+    val activityFramesTracker = ActivityFramesTracker(loadClass, options)
+
+    AndroidOptionsInitializer.installDefaultIntegrations(
+      fixture.context,
+      options,
+      buildInfo,
+      loadClass,
+      activityFramesTracker,
+      false,
+      false,
+      false,
+      false,
+    )
+
+    val integration = options.integrations.firstOrNull { it is MemoryLimiterIntegration }
+
+    assertNull(integration)
+  }
+
+  @Test
   fun `AndroidUserFeedbackFormHandler is set as feedback form handler`() {
     fixture.initSut()
     assertIs<AndroidUserFeedbackFormHandler>(fixture.sentryOptions.feedbackOptions.formHandler)
