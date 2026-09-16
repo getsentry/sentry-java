@@ -118,8 +118,8 @@ public class AnrV2Integration implements Integration, Closeable {
     }
 
     @Override
-    public int getTargetReason() {
-      return ApplicationExitInfo.REASON_ANR;
+    public boolean matches(final @NotNull ApplicationExitInfo exitInfo) {
+      return exitInfo.getReason() == ApplicationExitInfo.REASON_ANR;
     }
 
     @Override
