@@ -14,11 +14,13 @@ import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.MonotonicTicker;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -263,6 +265,25 @@ public final class SentryAndroidOptions extends SentryOptions {
    * {@link IScope} like breadcrumbs.
    */
   private boolean reportHistoricalTombstones = false;
+
+  /**
+   * Controls whether to report <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits from
+   * the {@link ApplicationExitInfo} system API.
+   *
+   * <p>If this flag is true and {@link #reportHistoricalMemoryLimiterExits} is false, then only the
+   * latest MemoryLimiter exit is reported. If both are true, then all available exits are reported.
+   */
+  private boolean memoryLimiterEnabled = false;
+
+  /**
+   * Controls whether to report historical <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits from
+   * the {@link ApplicationExitInfo} system API (where "historical" means "older than the latest").
+   *
+   * <p>No-ops if {@link #memoryLimiterEnabled} is false.
+   */
+  private boolean reportHistoricalMemoryLimiterExits = false;
 
   /**
    * Controls whether to send ANR (v2) thread dump as an attachment with plain text. The thread dump
@@ -739,6 +760,57 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachRawTombstone = attachRawTombstone;
   }
 
+  @ApiStatus.Experimental
+  public boolean isMemoryLimiterEnabled() {
+    return memoryLimiterEnabled;
+  }
+
+  /**
+   * Enables or disables reporting of Android <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits.
+   * Disabled by default.
+   *
+   * <p>Enabling this flag allows the SDK to inspect retained {@link ApplicationExitInfo} records on
+   * the next app start and report the latest retained matching MemoryLimiter exit as a Sentry
+   * event.
+   *
+   * <p>See {@link #setReportHistoricalMemoryLimiterExits(boolean)} if you also want to create
+   * Sentry events from MemoryLimiter exits before the latest.
+   *
+   * <p>Available on Android API ≥ 37. No-ops if the Android API is below 37 or if the {@link
+   * #setCacheDirPath cache dir path} hasn't been set.
+   */
+  @ApiStatus.Experimental
+  public void setMemoryLimiterEnabled(final boolean memoryLimiterEnabled) {
+    this.memoryLimiterEnabled = memoryLimiterEnabled;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isReportHistoricalMemoryLimiterExits() {
+    return reportHistoricalMemoryLimiterExits;
+  }
+
+  /**
+   * Enables or disables reporting of historical retained <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits on
+   * startup (where "historical" means "older than the latest"). Disabled by default.
+   *
+   * <p>Use this together with {@link #setMemoryLimiterEnabled(boolean)} when you want the
+   * platform's complete retained exit history.
+   *
+   * <p>Note: unlike the latest exit, historical exits are <b>not</b> enriched with contextual
+   * Sentry data.
+   *
+   * <p>Available on Android API ≥ 37. No-ops if the Android API is below 37, if the {@link
+   * #setCacheDirPath cache dir path} hasn't been set, or if {@link #setMemoryLimiterEnabled the
+   * MemoryLimiter integration} hasn't been enabled.
+   */
+  @ApiStatus.Experimental
+  public void setReportHistoricalMemoryLimiterExits(
+      final boolean reportHistoricalMemoryLimiterExits) {
+    this.reportHistoricalMemoryLimiterExits = reportHistoricalMemoryLimiterExits;
+  }
+
   /**
    * @return true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
    *     more details.
@@ -903,6 +975,12 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
     this.enableAnrFingerprinting = enableAnrFingerprinting;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull MonotonicTicker getMonotonicTicker() {
+    return AndroidMonotonicTicker.getInstance();
   }
 
   static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {

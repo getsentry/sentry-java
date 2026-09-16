@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -97,11 +96,13 @@ internal class Nav2TopBar(
     tabViews.forEach { (tabScenario, tabView) ->
       val selected = tabScenario == scenario
       tabView.label.setTextColor(
-        color(if (selected) R.color.colorPrimary else android.R.color.black)
+        if (selected) context.themeColor(androidx.appcompat.R.attr.colorPrimary)
+        else tabView.defaultTextColor
       )
       tabView.label.setTypeface(null, if (selected) Typeface.BOLD else Typeface.NORMAL)
       tabView.indicator.setBackgroundColor(
-        color(if (selected) R.color.colorPrimary else android.R.color.transparent)
+        if (selected) context.themeColor(androidx.appcompat.R.attr.colorPrimary)
+        else color(android.R.color.transparent)
       )
     }
   }
@@ -118,7 +119,7 @@ internal class Nav2TopBar(
             TextView(context).apply {
               text = "Navigation 2"
               textSize = 20f
-              setTextColor(color(android.R.color.black))
+              setTextColor(context.themeColor(android.R.attr.textColorPrimary))
               layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
             }
           )
@@ -156,6 +157,7 @@ internal class Nav2TopBar(
             textSize = 14f
             gravity = Gravity.CENTER
             setPadding(18.dp, 14.dp, 18.dp, 10.dp)
+            setTextColor(context.themeColor(android.R.attr.textColorPrimary))
           }
         val indicator =
           View(context).apply {
@@ -164,7 +166,7 @@ internal class Nav2TopBar(
           }
         tabContainer.addView(textView)
         tabContainer.addView(indicator)
-        tabViews[scenario] = Nav2TabView(textView, indicator)
+        tabViews[scenario] = Nav2TabView(textView, indicator, textView.currentTextColor)
         tabRow.addView(tabContainer)
       }
 
@@ -187,7 +189,7 @@ internal class Nav2TopBar(
   private fun bodyText(): TextView =
     TextView(context).apply {
       textSize = 12f
-      setTextColor(color(android.R.color.black))
+      setTextColor(context.themeColor(android.R.attr.textColorSecondary))
       maxLines = 1
       setHorizontallyScrolling(true)
     }
@@ -225,12 +227,12 @@ internal class Nav2TopBar(
       this.id = id
       setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
       setContent {
-        MaterialTheme {
+        Nav2SampleTheme {
           IconButton(onClick = onClick) {
             Icon(
               imageVector = imageVector,
               contentDescription = contentDescription,
-              tint = Color.Black,
+              tint = MaterialTheme.colorScheme.onSurface,
             )
           }
         }
@@ -245,4 +247,4 @@ internal class Nav2TopBar(
 
 private data class Nav2TopBarState(val currentRoute: String, val backStack: String)
 
-private data class Nav2TabView(val label: TextView, val indicator: View)
+private data class Nav2TabView(val label: TextView, val indicator: View, val defaultTextColor: Int)

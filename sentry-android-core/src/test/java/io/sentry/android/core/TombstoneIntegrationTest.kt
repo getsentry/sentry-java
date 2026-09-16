@@ -16,6 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.spy
@@ -134,6 +135,18 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     integration.register(fixture.scopes, fixture.options)
 
     verify(fixture.scopes).captureEvent(any(), argThat<Hint> { this.tombstone == null })
+  }
+
+  @Test
+  fun `memory limiter marker does not suppress matching tombstone exit`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    File(fixture.options.cacheDirPath!!, AndroidEnvelopeCache.LAST_MEMORY_LIMITER_REPORT)
+      .writeText(newTimestamp.toString())
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
   }
 
   @Test

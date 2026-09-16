@@ -158,7 +158,7 @@ private fun titleText(context: Context, textValue: String): TextView =
     text = textValue
     textSize = 26f
     setTypeface(null, Typeface.BOLD)
-    setTextColor(color(context, android.R.color.black))
+    setTextColor(context.themeColor(android.R.attr.textColorPrimary))
     setPadding(0, 0, 0, 8.dp(context))
   }
 
@@ -166,7 +166,7 @@ private fun bodyText(context: Context, textValue: String): TextView =
   TextView(context).apply {
     text = textValue
     textSize = 15f
-    setTextColor(0xFF5E5873.toInt())
+    setTextColor(context.themeColor(android.R.attr.textColorSecondary))
     setLineSpacing(0f, 1.12f)
     setPadding(0, 0, 0, 14.dp(context))
   }
@@ -214,14 +214,14 @@ private fun quietButton(context: Context, id: Int, label: String, onClick: () ->
     this.id = id
     text = label
     isAllCaps = false
-    setTextColor(0xFF756E89.toInt())
+    setTextColor(context.themeColor(android.R.attr.textColorSecondary))
     setOnClickListener { onClick() }
   }
 
 private fun roundedSurface(context: Context, topCornersOnly: Boolean): GradientDrawable {
   return GradientDrawable().apply {
     shape = GradientDrawable.RECTANGLE
-    setColor(color(context, android.R.color.white))
+    setColor(context.themeColor(android.R.attr.colorBackgroundFloating))
     val radius = 28.dp(context).toFloat()
     if (topCornersOnly) {
       cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)

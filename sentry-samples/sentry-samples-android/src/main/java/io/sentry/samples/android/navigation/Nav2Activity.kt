@@ -20,7 +20,6 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -195,11 +194,10 @@ class Nav2Activity : AppCompatActivity() {
 
   private fun createComposeNavHostView(): ComposeView =
     ComposeView(this).apply {
-      setBackgroundColor(color(android.R.color.white))
       setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
       setContent {
-        MaterialTheme {
+        Nav2SampleTheme {
           Nav2ComposeApp(
             navListener = sentryNavigationListener,
             routeWorkOptions = routeWorkOptions.value,
@@ -256,11 +254,10 @@ class Nav2Activity : AppCompatActivity() {
 
   private fun createPerformanceView(): ComposeView =
     ComposeView(this).apply {
-      setBackgroundColor(color(android.R.color.white))
       setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
       setContent {
-        MaterialTheme {
+        Nav2SampleTheme {
           NavigationPerformancePanel(
             title = "Performance",
             description =
@@ -287,7 +284,7 @@ class Nav2Activity : AppCompatActivity() {
       setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
       setContent {
-        MaterialTheme {
+        Nav2SampleTheme {
           if (showTransactionHistorySheet.value) {
             Nav2TransactionHistorySheet(
               transactions = transactionHistory.transactions,
