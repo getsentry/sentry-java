@@ -38,6 +38,7 @@
 ### Fixes
 
 - Keep resolving the server name after `Sentry.close()` or a re-init. Closing the SDK shut down the shared hostname cache for the life of the process, so `server_name` silently froze at the value it had last resolved ([#6119](https://github.com/getsentry/sentry-java/pull/6119))
+- Order breadcrumbs by the timestamp they carry rather than by when they were created in the current process, so breadcrumbs restored from disk or handed over by a hybrid SDK no longer sort as if they had just happened ([#6097](https://github.com/getsentry/sentry-java/pull/6097))
 
 ### Internal
 
