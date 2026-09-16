@@ -20,7 +20,7 @@ public interface AbnormalExit {
 
   /**
    * Whether the current thread (e.g., a watchdog) should be ignored by the `MainEventProcessor`
-   * when deciding which threads should from the current process should be bound to the Sentry event
+   * when deciding which threads from the current process should be bound to the Sentry event
    * associated with this `AbnormalExit`.
    *
    * <p>This method effectively no-ops for types implementing both {@link AbnormalExit} and {@link
