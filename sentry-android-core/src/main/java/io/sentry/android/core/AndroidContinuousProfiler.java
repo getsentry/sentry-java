@@ -23,6 +23,7 @@ import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
 import io.sentry.TracesSampler;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
+import io.sentry.profiling.ProfileRecordingState;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.RateLimiter;
 import io.sentry.util.AutoClosableReentrantLock;
@@ -356,6 +357,18 @@ public class AndroidContinuousProfiler
   @Override
   public @NotNull SentryId getChunkId() {
     return chunkId;
+  }
+
+  /**
+   * This profiler does not track the outcome of its profiling requests, so the answer is always
+   * unknown.
+   */
+  @Override
+  public @NotNull ProfileRecordingState getProfileRecordingState(
+      final @NotNull SentryId profilerId,
+      final @NotNull SentryDate startTime,
+      final @NotNull SentryDate endTime) {
+    return ProfileRecordingState.UNKNOWN;
   }
 
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {

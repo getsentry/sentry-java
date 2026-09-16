@@ -12,11 +12,13 @@ import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.MonotonicTicker;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -277,6 +279,10 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
+  /**
+   * Sample rate for capturing main-thread stack profiles when a foreground ANR is detected. {@code
+   * null} disables ANR profiling (default). Values must be between {@code 0.0} and {@code 1.0}.
+   */
   private @Nullable Double anrProfilingSampleRate;
 
   private boolean enableAnrFingerprinting = true;
@@ -823,10 +829,25 @@ public final class SentryAndroidOptions extends SentryOptions {
     return screenshot;
   }
 
+  /**
+   * Returns the sample rate used when deciding whether to capture a main-thread stack profile for a
+   * detected foreground ANR.
+   *
+   * @return the ANR profiling sample rate, or {@code null} when ANR profiling is disabled
+   */
   public @Nullable Double getAnrProfilingSampleRate() {
     return anrProfilingSampleRate;
   }
 
+  /**
+   * Sets the sample rate for capturing main-thread stack profiles when a foreground ANR is
+   * detected. The profile is attached to the ANR event on the next app start.
+   *
+   * <p>Use {@code null} to disable ANR profiling (default). Values must be between {@code 0.0} and
+   * {@code 1.0}.
+   *
+   * @param anrProfilingSampleRate the sample rate, or {@code null} to disable
+   */
   public void setAnrProfilingSampleRate(final @Nullable Double anrProfilingSampleRate) {
     if (!SampleRateUtils.isValidSampleRate(anrProfilingSampleRate)) {
       throw new IllegalArgumentException(
@@ -837,6 +858,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.anrProfilingSampleRate = anrProfilingSampleRate;
   }
 
+  /**
+   * Returns whether ANR profiling is enabled. ANR profiling is enabled when {@link
+   * #getAnrProfilingSampleRate()} is non-null and greater than {@code 0.0}.
+   *
+   * @return {@code true} if ANR profiling is enabled
+   */
   public boolean isAnrProfilingEnabled() {
     return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
   }
@@ -862,6 +889,12 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
     this.enableAnrFingerprinting = enableAnrFingerprinting;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull MonotonicTicker getMonotonicTicker() {
+    return AndroidMonotonicTicker.getInstance();
   }
 
   static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {

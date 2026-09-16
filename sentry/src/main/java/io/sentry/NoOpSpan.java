@@ -3,9 +3,11 @@ package io.sentry;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import java.util.List;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpSpan implements ISpan {
 
   private static final NoOpSpan instance = new NoOpSpan();

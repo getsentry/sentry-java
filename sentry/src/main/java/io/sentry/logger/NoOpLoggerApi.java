@@ -2,9 +2,11 @@ package io.sentry.logger;
 
 import io.sentry.SentryDate;
 import io.sentry.SentryLogLevel;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpLoggerApi implements ILoggerApi {
 
   private static final NoOpLoggerApi instance = new NoOpLoggerApi();

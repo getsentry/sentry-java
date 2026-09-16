@@ -67,6 +67,7 @@ kotlin {
         implementation(libs.androidx.test.ext.junit)
         implementation(libs.androidx.test.rules)
         implementation(libs.androidx.test.runner)
+        implementation(libs.google.truth)
         implementation(libs.kotlin.test.junit)
         implementation(libs.mockito.inline)
         implementation(libs.mockito.kotlin)

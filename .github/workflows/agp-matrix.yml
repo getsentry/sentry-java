@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        agp: [ '9.0.0', '9.1.1', '9.2.1' ]
+        agp: [ '9.0.0', '9.2.1', '9.4.0' ]
         integrations: [ true, false ]
 
     name: AGP Matrix Release - AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}
@@ -33,7 +33,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Setup Java Version
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:
           distribution: 'temurin'
           java-version: '17'

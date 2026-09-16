@@ -39,7 +39,7 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.reactor.core)
-  testImplementation(platform("org.junit:junit-bom:5.10.0"))
+  testImplementation(platform("org.junit:junit-bom:6.1.3"))
   testImplementation("org.junit.jupiter:junit-jupiter")
 }
 

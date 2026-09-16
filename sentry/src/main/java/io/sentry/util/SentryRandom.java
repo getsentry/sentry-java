@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * significantly. We opted for this approach as it wasn't easily possible to vendor
  * ThreadLocalRandom since it's using advanced features that can cause java.lang.IllegalAccessError.
  */
+@ApiStatus.Internal
 public final class SentryRandom {
 
   private static final @NotNull SentryRandomThreadLocal instance = new SentryRandomThreadLocal();

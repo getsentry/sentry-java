@@ -26,6 +26,7 @@ package io.sentry.util;
 
 import java.util.Arrays;
 import java.util.UUID;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Utility class to convert UUIDs and longs to Sentry ID Strings
@@ -33,6 +34,7 @@ import java.util.UUID;
  * <p>Adapted from <a href="https://github.com/jchambers/">Jon Chambers'</a> work <a
  * href="https://github.com/jchambers/fast-uuid">here</a>.
  */
+@ApiStatus.Internal
 public final class UUIDStringUtils {
 
   private static final int SENTRY_UUID_STRING_LENGTH = 32;

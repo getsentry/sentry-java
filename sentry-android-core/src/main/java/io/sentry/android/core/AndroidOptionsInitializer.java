@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
@@ -34,7 +35,6 @@ import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
@@ -177,7 +177,7 @@ final class AndroidOptionsInitializer {
     if (options.getConnectionStatusProvider() instanceof NoOpConnectionStatusProvider) {
       options.setConnectionStatusProvider(
           new AndroidConnectionStatusProvider(
-              context, options, buildInfoProvider, AndroidCurrentDateProvider.getInstance()));
+              context, options, buildInfoProvider, options.getMonotonicTicker()));
     }
 
     if (options.getCacheDirPath() != null) {
@@ -378,6 +378,8 @@ final class AndroidOptionsInitializer {
                   () ->
                       new PerfettoProfiler(
                           appContext, options.getLogger(), options.getExecutorService())));
+          // Report adoption of the Perfetto continuous profiling backend (API 35+).
+          addIntegrationToSdkVersion("PerfettoContinuousProfiling");
         } else if (options.isEnableLegacyProfiling()) {
           options.setContinuousProfiler(
               new AndroidContinuousProfiler(
