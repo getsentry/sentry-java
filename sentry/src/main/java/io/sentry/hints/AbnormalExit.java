@@ -8,9 +8,9 @@ import org.jetbrains.annotations.Nullable;
  * <p>Includes exits that were not classified as normal terminations or crashes, such as Android
  * ANRs and MemoryLimiter process deaths.
  *
- * <p><b>Note:</b> Some existing discriminator code (`instanceof AbnormalExit`) is shaped by the
- * historical ANR-only usage of this interface. New implementations should review all of those call
- * sites carefully to ensure ANR-specific behavior isn't applied accidentally.
+ * <p><b>Note:</b> Some existing discriminator code ({@code instanceof AbnormalExit}) is shaped by
+ * the historical ANR-only usage of this interface. New implementations should review all of those
+ * call sites carefully to ensure ANR-specific behavior isn't applied accidentally.
  */
 public interface AbnormalExit {
 
@@ -19,12 +19,13 @@ public interface AbnormalExit {
   String mechanism();
 
   /**
-   * Whether the current thread (e.g., a watchdog) should be ignored by the `MainEventProcessor`
-   * when deciding which threads from the current process should be bound to the Sentry event
-   * associated with this `AbnormalExit`.
+   * Whether the current thread (e.g., a watchdog) should be ignored by the {@code
+   * MainEventProcessor} when deciding which threads from the current process should be bound to the
+   * Sentry event associated with this {@code AbnormalExit}.
    *
    * <p>This method effectively no-ops for types implementing both {@link AbnormalExit} and {@link
-   * Backfillable}, as implementors of `Backfillable` are not sent to the `MainEventProcessor`.
+   * Backfillable}, as implementors of {@code Backfillable} are not sent to the {@code
+   * MainEventProcessor}.
    */
   boolean ignoreCurrentThread();
 
