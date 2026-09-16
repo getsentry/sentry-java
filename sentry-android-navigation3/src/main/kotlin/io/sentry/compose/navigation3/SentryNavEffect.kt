@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
 import io.sentry.SentryOptions
+import org.jetbrains.annotations.ApiStatus
 
 /**
  * An effect for generating Sentry data from your Nav3 backstack. Configure it via [options] and
@@ -82,6 +83,7 @@ import io.sentry.SentryOptions
  *   All other types are stringified via `toString()`. Cyclic or deeply nested containers are
  *   skipped. Return only the arguments needed for diagnostics and avoid large structures.
  */
+@ApiStatus.Experimental
 @Composable
 @Suppress("FunctionNaming")
 internal fun <T : Any> SentryNavEffect(

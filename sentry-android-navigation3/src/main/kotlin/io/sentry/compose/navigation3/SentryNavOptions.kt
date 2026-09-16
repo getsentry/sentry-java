@@ -1,12 +1,14 @@
 package io.sentry.compose.navigation3
 
 import androidx.compose.runtime.Immutable
+import org.jetbrains.annotations.ApiStatus
 
 // Keep the default low: every captured entry may require route-name extraction, argument
 // extraction, and recursive argument sanitization when navigation changes are observed.
 private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 10
 
 /** Configuration info for a [SentryNavEffect]. */
+@ApiStatus.Experimental
 @Immutable
 internal class SentryNavOptions(
   /**
