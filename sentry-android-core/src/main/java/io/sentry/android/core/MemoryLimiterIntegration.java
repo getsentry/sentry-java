@@ -33,6 +33,7 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,25 +46,19 @@ import org.jetbrains.annotations.TestOnly;
  * Reports Android process deaths that the OS records as <a
  * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> kills.
  *
- * <p>Checks Android's historical {@link ApplicationExitInfo} records on app start, finds exits that
- * match the MemoryLimiter signature, and turns them into Sentry events.
+ * <p>Checks Android's {@link ApplicationExitInfo} records on app start, finds exits that match the
+ * MemoryLimiter signature, and turns them into Sentry events.
  *
  * <p><b>Data generated</b>
  *
  * <p>Each matching exit is reported as a synthetic fatal event with a {@code MemoryLimitExceeded}
  * exception. The original Android exit description is stored together with MemoryLimiter-specific
- * context in {@code mechanism.data}, including the raw {@link ApplicationExitInfo#getImportance()}
- * value and a derived {@code process_visibility} classification ({@code visible}, {@code
- * not_visible}, or {@code cached}).
+ * context in {@code mechanism.data}, including a {@link ApplicationExitInfo#getImportance()
+ * process_importance} value and a derived {@link MemoryLimiterPolicy#toMemoryLimitClass
+ * memory_limit_class}.
  *
- * <p>The process-visibility value is a best-effort mapping of Android's <a
- * href="https://source.android.com/docs/core/perf/memory-limiter#process-monitoring">MemoryLimiter
- * process-monitoring states</a>. {@link ApplicationExitInfo} exposes process importance but not the
- * exact {@code PROCESS_STATE_*} value used by that table, so some importance bands remain
- * inherently lossy when translated back into MemoryLimiter's visibility categories.
- *
- * <p>Events may also be backfilled with persisted launch state from the crashed app generation,
- * including release info, environment, and other scope data.
+ * <p>Events may also be backfilled with state persisted from the crashed app process, including
+ * release info, environment, and other scope data.
  *
  * <p><b>Limitations</b>
  *
@@ -75,14 +70,17 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
   static final @NotNull String MEMORY_LIMITER_DESCRIPTION_PREFIX = "MemoryLimiter:";
   static final @NotNull String MEMORY_LIMITER_DESCRIPTION =
       MEMORY_LIMITER_DESCRIPTION_PREFIX + "AnonSwap";
+  static final @NotNull String MEMORY_LIMITER_FINGERPRINT = "memory-limiter";
+  static final @NotNull String MEMORY_LIMITER_MESSAGE_PREFIX =
+      "Android process killed by MemoryLimiter";
 
-  static final @NotNull String MEMORY_LIMITER_MESSAGE = "Android process killed by MemoryLimiter";
+  static final @NotNull String MEMORY_LIMIT_CLASS_DATA_KEY = "memory_limit_class";
+  static final @NotNull String MEMORY_LIMIT_CLASS_CACHED = "cached";
+  static final @NotNull String MEMORY_LIMIT_CLASS_NOT_VISIBLE = "not_visible";
+  static final @NotNull String MEMORY_LIMIT_CLASS_VISIBLE = "visible";
 
-  static final @NotNull String IMPORTANCE_DATA_KEY = "importance";
-  static final @NotNull String PROCESS_VISIBILITY_DATA_KEY = "process_visibility";
-  static final @NotNull String PROCESS_VISIBILITY_CACHED = "cached";
-  static final @NotNull String PROCESS_VISIBILITY_NOT_VISIBLE = "not_visible";
-  static final @NotNull String PROCESS_VISIBILITY_VISIBLE = "visible";
+  static final @NotNull String PROCESS_IMPORTANCE_DATA_KEY = "process_importance";
+  static final @NotNull String PROCESS_IMPORTANCE_FINGERPRINT_PREFIX = "process_importance:";
 
   private final @NotNull Context context;
   private final @NotNull ICurrentDateProvider dateProvider;
@@ -188,8 +186,8 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
     }
 
     /**
-     * Returns true if the provided {@code exitInfo} looks like it comes from a
-     * MemoryLimiter-induced process death.
+     * Returns true if the provided {@code exitInfo} looks like it came from a MemoryLimiter-induced
+     * process death.
      *
      * <p>Criteria taken from <a
      * href="https://developer.android.com/about/versions/17/behavior-changes-all#app-memory-limits">here</a>.
@@ -205,8 +203,8 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
       // We match on the "MemoryLimiter:" prefix rather than the full "MemoryLimiter:AnonSwap"
       // string mentioned in the Android 17 release notes because we want to capture any future
       // MemoryLimiter kill reason without a code change. (MemoryLimiter source already tracks
-      // MemoryLimiter:Memory and MemoryLimiter:Swap reasons, but for now doesn't kill the process
-      // because of them.)
+      // MemoryLimiter:Memory and MemoryLimiter:Swap, but for now doesn't kill the process because
+      // of them.)
       return description != null && description.contains(MEMORY_LIMITER_DESCRIPTION_PREFIX);
     }
 
@@ -236,74 +234,130 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
               options.getFlushTimeoutMillis(), options.getLogger(), timestamp, shouldEnrich);
       final Hint hint = HintUtils.createWithTypeCheckHint(memoryLimiterHint);
 
+      final int processImportance = exitInfo.getImportance();
+      final String memoryLimit = toMemoryLimitClass(processImportance);
+
       final Message message = new Message();
-      message.setFormatted(MEMORY_LIMITER_MESSAGE);
+      final String messageText = toMessage(processImportance);
+      message.setFormatted(messageText);
 
       final SentryEvent event = new SentryEvent();
-      event.setMessage(message);
       event.setLevel(SentryLevel.FATAL);
       event.setPlatform(SentryBaseEvent.DEFAULT_PLATFORM);
       event.setTimestamp(DateUtils.getDateTime(timestamp));
-      event.setExceptions(Collections.singletonList(buildException(exitInfo, shouldEnrich)));
+      event.setMessage(message);
+      event.setExceptions(
+          Collections.singletonList(
+              buildException(exitInfo, shouldEnrich, processImportance, memoryLimit, messageText)));
+      event.setFingerprints(
+          Arrays.asList(
+              MEMORY_LIMITER_FINGERPRINT,
+              PROCESS_IMPORTANCE_FINGERPRINT_PREFIX + processImportance));
 
       return new ApplicationExitInfoHistoryDispatcher.Report(event, hint, memoryLimiterHint);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     private @NotNull SentryException buildException(
-        final @NotNull ApplicationExitInfo exitInfo, final boolean shouldEnrich) {
+        final @NotNull ApplicationExitInfo exitInfo,
+        final boolean shouldEnrich,
+        final int processImportance,
+        final @NotNull String memoryLimit,
+        final @NotNull String messageText) {
       final Mechanism mechanism = new Mechanism();
       mechanism.setType(shouldEnrich ? "AppExitInfo" : "HistoricalAppExitInfo");
       mechanism.setDescription(exitInfo.getDescription());
       mechanism.setHandled(false);
       mechanism.setSynthetic(true);
-      mechanism.setData(buildMechanismData(exitInfo));
+      mechanism.setData(buildMechanismData(processImportance, memoryLimit));
 
       final SentryException sentryException = new SentryException();
       sentryException.setType("MemoryLimitExceeded");
-      sentryException.setValue(MEMORY_LIMITER_MESSAGE);
+      sentryException.setValue(messageText);
       sentryException.setModule("io.sentry.android.core");
       sentryException.setMechanism(mechanism);
       return sentryException;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.R)
     private @NotNull Map<String, Object> buildMechanismData(
-        final @NotNull ApplicationExitInfo exitInfo) {
-      final int importance = exitInfo.getImportance();
+        final int processImportance, final @NotNull String memoryLimit) {
       final Map<String, Object> data = new HashMap<>();
-      data.put(IMPORTANCE_DATA_KEY, importance);
-      data.put(PROCESS_VISIBILITY_DATA_KEY, getProcessVisibility(importance));
+      data.put(PROCESS_IMPORTANCE_DATA_KEY, processImportance);
+      data.put(MEMORY_LIMIT_CLASS_DATA_KEY, memoryLimit);
       return data;
     }
 
     /**
-     * Best-effort mapping from {@link ApplicationExitInfo#getImportance()} to MemoryLimiter's
-     * visible / not-visible / cached categories.
+     * Best-effort mapping from {@link ApplicationExitInfo#getImportance()} to MemoryLimiter's <a
+     * href="https://source.android.com/docs/core/perf/memory-limiter#process-monitoring">visible,
+     * not-visible, or cached</a> classifications.
      *
-     * <p>The <a
-     * href="https://source.android.com/docs/core/perf/memory-limiter#process-monitoring">MemoryLimiter
-     * docs</a> classify exact {@code PROCESS_STATE_*} values, but {@link ApplicationExitInfo} only
-     * exposes the coarser {@link RunningAppProcessInfo} importance bucket.
+     * <p>Mappings are inexact because MemoryLimiter determines category membership from {@code
+     * PROCESS_STATE_*} values, but {@link ApplicationExitInfo} only exposes a coarser {@link
+     * RunningAppProcessInfo} importance bucket.
      */
-    private @NotNull String getProcessVisibility(final int importance) {
-      switch (importance) {
+    private @NotNull String toMemoryLimitClass(final int processImportance) {
+      switch (processImportance) {
         case RunningAppProcessInfo.IMPORTANCE_FOREGROUND:
-        case RunningAppProcessInfo.IMPORTANCE_VISIBLE:
+        // Docs say IMPORTANCE_TOP_SLEEPING isn't visible to users but MemoryLimiter treats is as a
+        // "visible" class (cf. docs linked in this method's Javadoc).
         case RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING:
-          return PROCESS_VISIBILITY_VISIBLE;
+        // Over-classifies some exits as visible b/c IMPORTANCE_VISIBLE corresponds to
+        // PROCESS_STATE_IMPORTANT_FOREGROUND (visible) and PROCESS_STATE_IMPORTANT_BACKGROUND (not
+        // visible).
+        case RunningAppProcessInfo.IMPORTANCE_VISIBLE:
+          return MEMORY_LIMIT_CLASS_VISIBLE;
 
+        case RunningAppProcessInfo.IMPORTANCE_CANT_SAVE_STATE:
         case RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE:
+        case RunningAppProcessInfo.IMPORTANCE_GONE:
         case RunningAppProcessInfo.IMPORTANCE_PERCEPTIBLE:
         case RunningAppProcessInfo.IMPORTANCE_SERVICE:
-        case RunningAppProcessInfo.IMPORTANCE_CANT_SAVE_STATE:
-        case RunningAppProcessInfo.IMPORTANCE_GONE:
-          return PROCESS_VISIBILITY_NOT_VISIBLE;
+          return MEMORY_LIMIT_CLASS_NOT_VISIBLE;
 
         case RunningAppProcessInfo.IMPORTANCE_CACHED:
+        //noinspection deprecation
+        case RunningAppProcessInfo.IMPORTANCE_EMPTY:
         default:
           // Fall back to the least specific bucket.
-          return PROCESS_VISIBILITY_CACHED;
+          return MEMORY_LIMIT_CLASS_CACHED;
+      }
+    }
+
+    private @NotNull String toMessage(final int processImportance) {
+      return MEMORY_LIMITER_MESSAGE_PREFIX
+          + " ("
+          + toImportanceLabel(processImportance)
+          + ": "
+          + processImportance
+          + ")";
+    }
+
+    private @NotNull String toImportanceLabel(final int processImportance) {
+      switch (processImportance) {
+        case RunningAppProcessInfo.IMPORTANCE_CACHED:
+          return "importance_cached";
+        case RunningAppProcessInfo.IMPORTANCE_CANT_SAVE_STATE:
+          return "importance_cant_save_state";
+        //noinspection deprecation
+        case RunningAppProcessInfo.IMPORTANCE_EMPTY:
+          return "importance_empty";
+        case RunningAppProcessInfo.IMPORTANCE_FOREGROUND:
+          return "importance_foreground";
+        case RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE:
+          return "importance_foreground_service";
+        case RunningAppProcessInfo.IMPORTANCE_GONE:
+          return "importance_gone";
+        case RunningAppProcessInfo.IMPORTANCE_PERCEPTIBLE:
+          return "importance_perceptible";
+        case RunningAppProcessInfo.IMPORTANCE_SERVICE:
+          return "importance_service";
+        case RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING:
+          return "importance_top_sleeping";
+        case RunningAppProcessInfo.IMPORTANCE_VISIBLE:
+          return "importance_visible";
+        default:
+          return "importance_unknown";
       }
     }
   }

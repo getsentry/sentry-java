@@ -950,6 +950,11 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `memory limiter hint does not apply ANR-specific enrichment`() {
+    val expectedMessage =
+      MemoryLimiterIntegration.MEMORY_LIMITER_MESSAGE_PREFIX +
+        " (importance_foreground: " +
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND +
+        ")"
     val hint =
       HintUtils.createWithTypeCheckHint(
         MemoryLimiterIntegration.MemoryLimiterHint(
@@ -964,25 +969,35 @@ class ApplicationExitInfoEventProcessorTest {
       processEvent(hint, populateScopeCache = false, populateOptionsCache = false) {
         level = SentryLevel.FATAL
         platform = SentryBaseEvent.DEFAULT_PLATFORM
-        message = Message().apply { formatted = MemoryLimiterIntegration.MEMORY_LIMITER_MESSAGE }
+        message = Message().apply { formatted = expectedMessage }
+        fingerprints =
+          listOf(
+            MemoryLimiterIntegration.MEMORY_LIMITER_FINGERPRINT,
+            MemoryLimiterIntegration.PROCESS_IMPORTANCE_FINGERPRINT_PREFIX +
+              ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+          )
         exceptions =
           listOf(
             SentryException().apply {
               type = "MemoryLimitExceeded"
-              value = MemoryLimiterIntegration.MEMORY_LIMITER_MESSAGE
+              value = expectedMessage
               mechanism = Mechanism().apply { type = "AppExitInfo" }
             }
           )
       }
 
     assertEquals(SentryBaseEvent.DEFAULT_PLATFORM, processed.platform)
-    assertEquals(
-      MemoryLimiterIntegration.MEMORY_LIMITER_MESSAGE,
-      processed.message!!.formatted,
-    )
+    assertEquals(expectedMessage, processed.message!!.formatted)
     assertEquals("MemoryLimitExceeded", processed.exceptions!!.first().type)
     assertEquals("AppExitInfo", processed.exceptions!!.first().mechanism!!.type)
-    assertNull(processed.fingerprints)
+    assertEquals(
+      listOf(
+        MemoryLimiterIntegration.MEMORY_LIMITER_FINGERPRINT,
+        MemoryLimiterIntegration.PROCESS_IMPORTANCE_FINGERPRINT_PREFIX +
+          ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+      ),
+      processed.fingerprints,
+    )
     assertNull(processed.contexts.app?.inForeground)
     assertNull(processed.contexts.profile)
   }

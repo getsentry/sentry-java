@@ -87,7 +87,13 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
 
     waitPreviousSessionFlush();
 
-    final List<ApplicationExitInfo> exitInfos = new ArrayList<>(applicationExitInfoList);
+    final List<ApplicationExitInfo> exitInfos = new ArrayList<>(applicationExitInfoList.size());
+    for (final ApplicationExitInfo exitInfo : applicationExitInfoList) {
+      if (exitInfo != null) {
+        exitInfos.add(exitInfo);
+      }
+    }
+
     final @Nullable Long lastReportedTimestamp = policy.getLastReportedTimestamp();
 
     final ApplicationExitInfo latest = removeLatest(exitInfos);
