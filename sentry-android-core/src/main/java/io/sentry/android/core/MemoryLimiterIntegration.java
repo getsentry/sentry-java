@@ -282,7 +282,7 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
     private @NotNull Map<String, Object> buildMechanismData(
         final int processImportance, final @NotNull String memoryLimit) {
       final Map<String, Object> data = new HashMap<>();
-      data.put(PROCESS_IMPORTANCE_DATA_KEY, processImportance);
+      data.put(PROCESS_IMPORTANCE_DATA_KEY, toImportanceDescription(processImportance));
       data.put(MEMORY_LIMIT_CLASS_DATA_KEY, memoryLimit);
       return data;
     }
@@ -323,31 +323,38 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
     }
 
     private @NotNull String toMessage(final int processImportance) {
-      return MEMORY_LIMITER_MESSAGE_PREFIX + " (" + toImportanceLabel(processImportance) + ")";
+      return MEMORY_LIMITER_MESSAGE_PREFIX
+          + " (importance: "
+          + toImportanceLabel(processImportance)
+          + ")";
+    }
+
+    private @NotNull String toImportanceDescription(final int processImportance) {
+      return processImportance + " (" + toImportanceLabel(processImportance) + ")";
     }
 
     private @NotNull String toImportanceLabel(final int processImportance) {
       switch (processImportance) {
         case RunningAppProcessInfo.IMPORTANCE_CACHED:
-          return "importance_cached";
+          return "cached";
         case RunningAppProcessInfo.IMPORTANCE_CANT_SAVE_STATE:
-          return "importance_cant_save_state";
+          return "cant_save_state";
         case RunningAppProcessInfo.IMPORTANCE_FOREGROUND:
-          return "importance_foreground";
+          return "foreground";
         case RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE:
-          return "importance_foreground_service";
+          return "foreground_service";
         case RunningAppProcessInfo.IMPORTANCE_GONE:
-          return "importance_gone";
+          return "gone";
         case RunningAppProcessInfo.IMPORTANCE_PERCEPTIBLE:
-          return "importance_perceptible";
+          return "perceptible";
         case RunningAppProcessInfo.IMPORTANCE_SERVICE:
-          return "importance_service";
+          return "service";
         case RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING:
-          return "importance_top_sleeping";
+          return "top_sleeping";
         case RunningAppProcessInfo.IMPORTANCE_VISIBLE:
-          return "importance_visible";
+          return "visible";
         default:
-          return "importance_unknown";
+          return "unknown";
       }
     }
   }

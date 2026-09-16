@@ -233,10 +233,7 @@ class MemoryLimiterIntegrationTest {
     integration.register(fixture.scopes, fixture.options)
 
     val expectedMessage =
-      MemoryLimiterIntegration.MEMORY_LIMITER_MESSAGE_PREFIX +
-        " (importance_foreground: " +
-        ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND +
-        ")"
+      MemoryLimiterIntegration.MEMORY_LIMITER_MESSAGE_PREFIX + " (importance: foreground)"
 
     verify(fixture.scopes)
       .captureEvent(
@@ -268,7 +265,8 @@ class MemoryLimiterIntegrationTest {
           assertEquals(false, mechanism.isHandled)
           assertEquals(true, mechanism.synthetic)
           assertEquals(
-            ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+            ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND.toString() +
+              " (foreground)",
             mechanism.data!![MemoryLimiterIntegration.PROCESS_IMPORTANCE_DATA_KEY],
           )
           assertEquals(
