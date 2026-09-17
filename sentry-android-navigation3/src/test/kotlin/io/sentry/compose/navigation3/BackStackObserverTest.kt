@@ -55,6 +55,7 @@ class BackStackObserverTest {
     init {
       whenever(scopes.options).thenReturn(scope.options)
       whenever(scopes.getSpan()).thenAnswer { scope.span }
+      whenever(scopes.getTransaction()).thenAnswer { scope.transaction }
       doAnswer {
           (it.arguments[0] as ScopeCallback).run(scope)
           null
@@ -311,14 +312,35 @@ class BackStackObserverTest {
   }
 
   @Test
-  fun `onBackStackChanged does not create a nav transaction when an ambient span is active`() {
+  fun `onBackStackChanged creates a nav transaction when only an ambient span is active`() {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = true))
 
     fixture.scope.setActiveSpan(mock<ISpan>())
     sut.onBackStackChanged(listOf(HomeRoute()))
 
+    assertThat(fixture.startedTransactions).hasSize(1)
+    assertThat(fixture.startedTransactions.single().name).isEqualTo("/HomeRoute")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
+    assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
+  }
+
+  @Test
+  fun `onBackStackChanged does not create a nav transaction when an ambient transaction is active`() {
+    val fixture = Fixture()
+    val ambientTransaction =
+      SentryTracer(
+        TransactionContext("ambient", TransactionNameSource.CUSTOM, "ui.load"),
+        fixture.scopes,
+      )
+    ambientTransaction.startChild("db.query")
+    fixture.scope.transaction = ambientTransaction
+    val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = true))
+
+    sut.onBackStackChanged(listOf(HomeRoute()))
+
     assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(ambientTransaction)
     assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
   }
 

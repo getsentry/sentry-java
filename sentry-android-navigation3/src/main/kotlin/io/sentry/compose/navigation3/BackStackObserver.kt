@@ -271,7 +271,7 @@ private class NavTransactionManager(
 
   private var activeNavTransaction: ITransaction? = null
 
-  /** Starts an idle navigation transaction, or no-ops if another span context is already active. */
+  /** Starts an idle navigation transaction, or no-ops if another transaction is already active. */
   fun start(
     routeName: String,
     arguments: Map<String, Any?>,
@@ -279,10 +279,10 @@ private class NavTransactionManager(
   ) {
     clearFinishedScopeTransaction()
 
-    if (scopes.span != null) {
+    if (scopes.transaction != null) {
       scopes.options.logger.log(
         DEBUG,
-        "Nav3 transaction for route %s won't be created because another transaction or span is active.",
+        "Nav3 transaction for route %s won't be created because another transaction is active.",
         routeName,
       )
 
