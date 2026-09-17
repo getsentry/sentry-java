@@ -6,6 +6,14 @@ import org.jetbrains.annotations.ApiStatus
 /**
  * Extracts a human-readable route name from a back stack entry.
  *
+ * **Choosing stable route names**
+ *
+ * Implementations should return stable, low-cardinality names that don't depend on object identity,
+ * argument values, or runtime class-name preservation. E.g., `Home`, `DetailScreen`, etc.
+ *
+ * In particular, avoid `::class.simpleName` in release builds, as R8 obfuscates class names and may
+ * map them to different symbols across builds.
+ *
  * **Falls back to "/unknown"**
  *
  * If [extract] throws or returns a blank route name, Sentry records the destination as "/unknown".
@@ -23,6 +31,23 @@ import org.jetbrains.annotations.ApiStatus
  *
  * Values returned from [extract] are ***not*** scrubbed by the Sentry SDK before being sent to
  * Sentry. Only return names that are known to be safe or have been pre-scrubbed.
+ *
+ * **Using kotlinx.serialization**
+ *
+ * If your back stack contains `@Serializable` route types, you may want to consider mapping each
+ * route type to a stable serializer name. For instance:
+ * ```kotlin
+ * val nameExtractor = RouteNameExtractor<Any> { route ->
+ *   when (route) {
+ *     is HomeRoute -> HomeRoute.serializer().descriptor.serialName
+ *     is ProfileRoute -> ProfileRoute.serializer().descriptor.serialName
+ *     is SettingsRoute -> SettingsRoute.serializer().descriptor.serialName
+ *   }
+ * }
+ * ```
+ *
+ * Doing so prevents route names from being obfuscated while leaving per-route arguments to
+ * [RouteArgumentsExtractor].
  */
 @ApiStatus.Experimental
 internal fun interface RouteNameExtractor<T : Any> {
@@ -32,6 +57,14 @@ internal fun interface RouteNameExtractor<T : Any> {
 /**
  * Extracts diagnostic route arguments from a back stack entry as map of argument name -> argument
  * values.
+ *
+ * **Choosing safe route arguments**
+ *
+ * Return only the small subset of route data that's useful for diagnostics, is safe to send, and is
+ * stable enough to inspect in Sentry.
+ *
+ * For performance reasons, implementations should avoid large structures. Cyclic or deeply nested
+ * containers will be skipped.
  *
  * **Accepted value types**
  *
@@ -64,11 +97,22 @@ internal fun interface RouteNameExtractor<T : Any> {
  * Values returned from [extract] are ***not*** scrubbed by the Sentry SDK before being sent to
  * Sentry. Only return arguments that are known to be safe or have been pre-scrubbed.
  *
- * **Performance**
+ * **Using kotlinx.serialization**
  *
- * For the sake of performance, implementations should return only the arguments needed for
- * diagnostics and should avoid large structures. Cyclic or deeply nested containers will be
- * skipped.
+ * If your back stack contains `@Serializable` route types, you may want to consider mapping each
+ * route type to a small set of diagnostic arguments. For instance:
+ * ```kotlin
+ * val argumentsExtractor = RouteArgumentsExtractor<Any> { route ->
+ *   when (route) {
+ *     is HomeRoute -> emptyMap()
+ *     is ProfileRoute -> mapOf("userId" to route.userId, "tab" to route.tab)
+ *     is SettingsRoute -> mapOf("section to route.section)
+ *   }
+ * }
+ * ```
+ *
+ * Even if you use `kotlinx.serialization` in your app to help read or normalize route data, prefer
+ * returning a curated map rather than serializing and returning the entire route object.
  */
 @ApiStatus.Experimental
 internal fun interface RouteArgumentsExtractor<T : Any> {
