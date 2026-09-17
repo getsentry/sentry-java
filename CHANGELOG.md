@@ -37,6 +37,7 @@
 
 ### Fixes
 
+- Close manifest input streams after version detection to avoid retaining JAR resources ([#6125](https://github.com/getsentry/sentry-java/pull/6125))
 - Keep resolving the server name after `Sentry.close()` or a re-init. Closing the SDK shut down the shared hostname cache for the life of the process, so `server_name` silently froze at the value it had last resolved ([#6119](https://github.com/getsentry/sentry-java/pull/6119))
 
 ### Internal
