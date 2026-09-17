@@ -24,9 +24,9 @@ import org.jetbrains.annotations.ApiStatus
  *    // get attributed to the appropriate nav transaction.
  *    SentryNavEffect(
  *      backStack = navBackStack,
- *      options = SentryNavOptions(maxCapturedBackStackEntries = 10),
  *      nameExtractor = { route -> route.extractName() },
  *      argumentsExtractor = { route -> route.extractArgument() },
+ *      options = SentryNavOptions(maxCapturedBackStackEntries = 10),
  *    )
  *
  *    // Configure your NavDisplay like usual.
@@ -65,21 +65,37 @@ import org.jetbrains.annotations.ApiStatus
  * show up under the current destination's transaction.
  *
  * @param backStack The navigation backstack to observe.
- * @param scopes A scopes instance used to track generated Sentry data.
- * @param options The kinds of navigation info this effect should record.
  * @param nameExtractor Extracts a human-readable route name from the top entry of the [backStack].
  * @param argumentsExtractor Optional extractor for a map of argument name -> argument values from
  *   the top entry of the [backStack]. If not provided, no arguments are attached.
+ * @param options The kinds of navigation info this effect should record.
  */
 @ApiStatus.Experimental
 @Composable
 @Suppress("FunctionNaming")
 internal fun <T : Any> SentryNavEffect(
   backStack: List<T>,
-  scopes: IScopes = ScopesAdapter.getInstance(),
-  options: SentryNavOptions = SentryNavOptions(),
   nameExtractor: RouteNameExtractor<T>,
   argumentsExtractor: RouteArgumentsExtractor<T>? = null,
+  options: SentryNavOptions = SentryNavOptions(),
+) {
+  SentryNavEffect(
+    backStack = backStack,
+    scopes = ScopesAdapter.getInstance(),
+    nameExtractor = nameExtractor,
+    argumentsExtractor = argumentsExtractor,
+    options = options,
+  )
+}
+
+@Composable
+@Suppress("FunctionNaming")
+internal fun <T : Any> SentryNavEffect(
+  backStack: List<T>,
+  scopes: IScopes,
+  nameExtractor: RouteNameExtractor<T>,
+  argumentsExtractor: RouteArgumentsExtractor<T>? = null,
+  options: SentryNavOptions = SentryNavOptions(),
 ) {
   val routeResolvers = rememberUpdatedState(RouteResolvers(nameExtractor, argumentsExtractor))
 

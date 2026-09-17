@@ -101,24 +101,37 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `resolveRouteName falls back to class simple name when no name extractor is configured`() {
+  fun `resolveRouteName returns the configured name extractor result`() {
     val sut = getSut()
 
     assertEquals("/HomeRoute", sut.resolveRouteName(HomeRoute()))
   }
 
   @Test
-  fun `resolveRouteName falls back to class simple name when name extractor throws`() {
+  fun `resolveRouteName returns null when name extractor throws`() {
     val sut = getSut(nameExtractor = RouteNameExtractor { error("boom") })
 
-    assertEquals("/HomeRoute", sut.resolveRouteName(HomeRoute()))
+    assertNull(sut.resolveRouteName(HomeRoute()))
+    verify(logger)
+      .log(
+        eq(WARNING),
+        eq("Nav3 nameExtractor threw while resolving a route name. Skipping route name."),
+        org.mockito.kotlin.any<Throwable>(),
+      )
+  }
+
+  @Test
+  fun `resolveRouteName returns null when name extractor returns blank`() {
+    val sut = getSut(nameExtractor = RouteNameExtractor { "   " })
+
+    assertNull(sut.resolveRouteName(HomeRoute()))
     verify(logger)
       .log(
         eq(WARNING),
         eq(
-          "Nav3 nameExtractor threw while resolving a route name. Falling back to class simpleName."
+          "Nav3 nameExtractor returned a blank route name while processing this back stack update. " +
+            "Skipping route name."
         ),
-        org.mockito.kotlin.any<Throwable>(),
       )
   }
 

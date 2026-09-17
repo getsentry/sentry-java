@@ -321,6 +321,36 @@ class BackStackObserverTest {
   }
 
   @Test
+  fun `onBackStackChanged clears tracked state when the current top entry resolves to a blank route name`() {
+    val fixture = Fixture()
+    val home = HomeRoute()
+    val profile = ProfileRoute("123")
+    val sut =
+      fixture.getSut(
+        nameExtractor =
+          RouteNameExtractor { entry ->
+            when (entry) {
+              is HomeRoute -> "home"
+              is ProfileRoute -> "   "
+              else -> error("unknown route: $entry")
+            }
+          }
+      )
+
+    sut.onBackStackChanged(listOf(home))
+    val transaction = fixture.startedTransactions.single()
+
+    sut.onBackStackChanged(listOf(home, profile))
+
+    assertThat(transaction.isFinished).isTrue()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.screen).isNull()
+    assertThat(fixture.scope.contexts.app?.viewNames).isNull()
+    assertThat(fixture.breadcrumbs).hasSize(1)
+    assertThat(fixture.scope.navigationBackStack()).isEqualTo(listOf(mapOf("route" to "/home")))
+  }
+
+  @Test
   fun `onBackStackChanged does not create a nav transaction when navigation transactions are disabled`() {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = false))

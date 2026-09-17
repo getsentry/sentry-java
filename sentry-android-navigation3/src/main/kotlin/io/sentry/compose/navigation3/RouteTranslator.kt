@@ -14,6 +14,8 @@ internal class RouteTranslator<T : Any>(
 
   internal class UpdateWarningState {
     private var hasLoggedUnsupportedValueWarning = false
+    private var hasLoggedInvalidRouteNameWarning = false
+    private var hasLoggedNameExtractorFailureWarning = false
 
     fun logUnsupportedValueWarning(typeName: String?, logger: ILogger) {
       if (hasLoggedUnsupportedValueWarning) {
@@ -29,6 +31,32 @@ internal class RouteTranslator<T : Any>(
         typeName,
       )
       hasLoggedUnsupportedValueWarning = true
+    }
+
+    fun logInvalidRouteNameWarning(logger: ILogger) {
+      if (hasLoggedInvalidRouteNameWarning) {
+        return
+      }
+
+      logger.log(
+        WARNING,
+        "Nav3 nameExtractor returned a blank route name while processing this back stack update. " +
+          "Returning null route name.",
+      )
+      hasLoggedInvalidRouteNameWarning = true
+    }
+
+    fun logNameExtractorFailureWarning(logger: ILogger, throwable: Throwable) {
+      if (hasLoggedNameExtractorFailureWarning) {
+        return
+      }
+
+      logger.log(
+        WARNING,
+        "Nav3 nameExtractor threw while resolving a route name. Skipping route name.",
+        throwable,
+      )
+      hasLoggedNameExtractorFailureWarning = true
     }
   }
 
@@ -65,9 +93,11 @@ internal class RouteTranslator<T : Any>(
   ): List<RouteEntry> {
     val state = ArgumentSanitizationState()
 
-    return backStack.takeLast(maxCapturedBackStackEntries).asReversed().map { entry ->
+    return backStack.takeLast(maxCapturedBackStackEntries).asReversed().mapNotNull { entry ->
+      val routeName = resolveRouteName(entry, updateWarningState) ?: return@mapNotNull null
+
       buildMap {
-        put("route", resolveRouteName(entry))
+        put("route", routeName)
 
         val args =
           if (state.isValueBudgetExceeded()) {
@@ -91,21 +121,26 @@ internal class RouteTranslator<T : Any>(
    * convention.)
    */
   @Suppress("TooGenericExceptionCaught")
-  fun resolveRouteName(backStackEntry: T): String {
-    val name =
+  fun resolveRouteName(
+    backStackEntry: T,
+    updateWarningState: UpdateWarningState = UpdateWarningState(),
+  ): String? {
+    val name: String? =
       try {
         resolvers.invoke().getName(backStackEntry)
       } catch (t: Throwable) {
         ExceptionUtils.rethrowIfFatal(t)
-        logger.log(
-          WARNING,
-          "Nav3 nameExtractor threw while resolving a route name. Falling back to class simpleName.",
-          t,
-        )
+        updateWarningState.logNameExtractorFailureWarning(logger, t)
         null
-      } ?: backStackEntry::class.simpleName ?: "unknown"
+      }
 
-    return "/${name.removePrefix("/")}"
+    val normalizedName = name?.trim()?.takeUnless { it.isEmpty() }?.removePrefix("/")
+    if (normalizedName == null) {
+      updateWarningState.logInvalidRouteNameWarning(logger)
+      return null
+    }
+
+    return "/$normalizedName"
   }
 
   /**

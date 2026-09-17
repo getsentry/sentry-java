@@ -118,8 +118,19 @@ internal class BackStackObserver<T : Any>(
     backStack: List<T>,
     updateWarningState: RouteTranslator.UpdateWarningState,
   ) {
-    val routeName = routeTranslator.resolveRouteName(currentTop)
+    val routeName = routeTranslator.resolveRouteName(currentTop, updateWarningState)
     val arguments = routeTranslator.resolveArguments(currentTop, updateWarningState)
+
+    // If we don't have a route name for the new transaction, we still need to tear down the old
+    // transaction and screen data. We rotate propagation context and mark the back stack entry as
+    // having been visited.
+    if (routeName == null) {
+      navTransactions.stop(scope)
+      screenTracker.clear(scope)
+      scope.rotatePropagationContext()
+      previousBackStackEntry = WeakReference(currentTop)
+      return
+    }
 
     if (scopes.options.isEnableScreenTracking) {
       screenTracker.track(scope, routeName)
@@ -203,10 +214,12 @@ internal class BackStackObserver<T : Any>(
         category = NAVIGATION_OP
 
         fromEntry?.let { prev ->
-          data["from"] = routeTranslator.resolveRouteName(prev)
-          val fromArgs = routeTranslator.resolveArguments(prev, updateWarningState)
-          if (fromArgs.isNotEmpty()) {
-            data["from_arguments"] = fromArgs
+          routeTranslator.resolveRouteName(prev, updateWarningState)?.let { previousRouteName ->
+            data["from"] = previousRouteName
+            val fromArgs = routeTranslator.resolveArguments(prev, updateWarningState)
+            if (fromArgs.isNotEmpty()) {
+              data["from_arguments"] = fromArgs
+            }
           }
         }
 
