@@ -13,6 +13,7 @@ import java.util.jar.Manifest;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class ManifestVersionReader {
@@ -40,6 +41,7 @@ public final class ManifestVersionReader {
     this(ClassLoader.getSystemClassLoader());
   }
 
+  @TestOnly
   ManifestVersionReader(final @NotNull ClassLoader classLoader) {
     this.classLoader = classLoader;
   }
@@ -65,6 +67,7 @@ public final class ManifestVersionReader {
       while (resources.hasMoreElements()) {
         try {
           final @NotNull URLConnection connection = resources.nextElement().openConnection();
+          // Avoid retaining JarFile and inflater resources in the default cache for jar: URLs.
           connection.setUseCaches(false);
           try (final @NotNull InputStream inputStream = connection.getInputStream()) {
             final @NotNull Manifest manifest = new Manifest(inputStream);
