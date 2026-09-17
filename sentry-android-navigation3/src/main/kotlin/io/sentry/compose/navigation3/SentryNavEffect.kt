@@ -26,7 +26,7 @@ import org.jetbrains.annotations.ApiStatus
  *      backStack = navBackStack,
  *      nameExtractor = { route -> route.extractName() },
  *      argumentsExtractor = { route -> route.extractArgument() },
- *      options = SentryNavOptions(maxCapturedBackStackEntries = 10),
+ *      options = SentryNavOptions(),
  *    )
  *
  *    // Configure your NavDisplay like usual.
@@ -81,10 +81,10 @@ internal fun <T : Any> SentryNavEffect(
 ) {
   SentryNavEffect(
     backStack = backStack,
-    scopes = ScopesAdapter.getInstance(),
     nameExtractor = nameExtractor,
     argumentsExtractor = argumentsExtractor,
     options = options,
+    scopes = ScopesAdapter.getInstance(),
   )
 }
 
@@ -92,10 +92,10 @@ internal fun <T : Any> SentryNavEffect(
 @Suppress("FunctionNaming")
 internal fun <T : Any> SentryNavEffect(
   backStack: List<T>,
-  scopes: IScopes,
   nameExtractor: RouteNameExtractor<T>,
   argumentsExtractor: RouteArgumentsExtractor<T>? = null,
   options: SentryNavOptions = SentryNavOptions(),
+  scopes: IScopes,
 ) {
   val routeResolvers = rememberUpdatedState(RouteResolvers(nameExtractor, argumentsExtractor))
 

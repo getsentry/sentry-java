@@ -6,6 +6,19 @@ import org.jetbrains.annotations.ApiStatus
 /**
  * Extracts a human-readable route name from a back stack entry.
  *
+ * **Falls back to "/unknown"**
+ *
+ * If [extract] throws or returns a blank route name, Sentry records the destination as "/unknown".
+ * Doing so signals that name extraction needs to be fixed while avoiding misleading gaps in
+ * navigation data.
+ *
+ * For instance, if a user navigates from `/home -> /detail -> /settings`, but the name extractor
+ * for `/detail` throws, the back stack record will be `/home -> /unknown -> /settings` rather than
+ * `/home -> /settings`, as the latter would be confusing.
+ *
+ * Note that we can't reliably fall back to the simple class name because R8 obfuscates it in
+ * release builds and may obfuscate the same name differently between builds.
+ *
  * **Privacy / PII**
  *
  * Values returned from [extract] are ***not*** scrubbed by the Sentry SDK before being sent to
@@ -41,7 +54,10 @@ internal fun interface RouteNameExtractor<T : Any> {
  *
  * Container values may be nested, and they must bottom out in supported scalar types.
  *
- * All non-supported types are stringified via `toString()`.
+ * **Falls back to `toString()` or nothing**
+ *
+ * All non-supported types are stringified via `toString()`. If [extract] throws, no arguments are
+ * recorded for the destination.
  *
  * **Privacy / PII**
  *
@@ -51,7 +67,8 @@ internal fun interface RouteNameExtractor<T : Any> {
  * **Performance**
  *
  * For the sake of performance, implementations should return only the arguments needed for
- * diagnostics and should avoid large structures. Cyclic or deeply nested containers are skipped.
+ * diagnostics and should avoid large structures. Cyclic or deeply nested containers will be
+ * skipped.
  */
 @ApiStatus.Experimental
 internal fun interface RouteArgumentsExtractor<T : Any> {

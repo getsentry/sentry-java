@@ -108,29 +108,29 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `resolveRouteName returns null when name extractor throws`() {
+  fun `resolveRouteName returns unknown when name extractor throws`() {
     val sut = getSut(nameExtractor = RouteNameExtractor { error("boom") })
 
-    assertNull(sut.resolveRouteName(HomeRoute()))
+    assertEquals(RouteTranslator.UNKNOWN_ROUTE_NAME, sut.resolveRouteName(HomeRoute()))
     verify(logger)
       .log(
         eq(WARNING),
-        eq("Nav3 nameExtractor threw while resolving a route name. Skipping route name."),
+        eq("Nav3 nameExtractor threw while resolving a route name. Using /unknown instead."),
         org.mockito.kotlin.any<Throwable>(),
       )
   }
 
   @Test
-  fun `resolveRouteName returns null when name extractor returns blank`() {
+  fun `resolveRouteName returns unknown when name extractor returns blank`() {
     val sut = getSut(nameExtractor = RouteNameExtractor { "   " })
 
-    assertNull(sut.resolveRouteName(HomeRoute()))
+    assertEquals(RouteTranslator.UNKNOWN_ROUTE_NAME, sut.resolveRouteName(HomeRoute()))
     verify(logger)
       .log(
         eq(WARNING),
         eq(
           "Nav3 nameExtractor returned a blank route name while processing this back stack update. " +
-            "Skipping route name."
+            "Using /unknown instead."
         ),
       )
   }

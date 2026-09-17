@@ -109,9 +109,9 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = defaultNameExtractor,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
 
@@ -132,9 +132,9 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = defaultNameExtractor,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -159,9 +159,9 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = defaultNameExtractor,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -186,9 +186,9 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = defaultNameExtractor,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -219,9 +219,9 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = defaultNameExtractor,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -254,9 +254,9 @@ class SentryNavEffectTest {
       recomposeTick.intValue
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = defaultNameExtractor,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -290,9 +290,9 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = defaultNameExtractor,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
 
       val currentTop = backStack.last()
@@ -321,9 +321,9 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = nameExtractor.value,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -356,9 +356,9 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = nameExtractor.value,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -388,10 +388,10 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = defaultNameExtractor,
         argumentsExtractor = argumentsExtractor.value,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -428,10 +428,10 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         nameExtractor = defaultNameExtractor,
         argumentsExtractor = argumentsExtractor.value,
         options = SentryNavOptions(),
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -463,9 +463,9 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        scopes = fixture.scopes,
         options = options.value,
         nameExtractor = defaultNameExtractor,
+        scopes = fixture.scopes,
       )
     }
     composeRule.waitForIdle()
@@ -486,8 +486,8 @@ class SentryNavEffectTest {
       if (isShown.value) {
         SentryNavEffect(
           backStack = backStack,
-          scopes = fixture.scopes,
           nameExtractor = defaultNameExtractor,
+          scopes = fixture.scopes,
         )
       }
     }

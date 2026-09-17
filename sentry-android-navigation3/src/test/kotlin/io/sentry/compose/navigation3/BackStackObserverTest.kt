@@ -372,7 +372,8 @@ class BackStackObserverTest {
   }
 
   @Test
-  fun `onBackStackChanged stops prior transaction and clears Sentry data when destination route name can't be extracted`() {
+  @Suppress("LongMethod")
+  fun `onBackStackChanged records unknown route names when destination route name can't be extracted`() {
     val fixture = Fixture()
     val home = HomeRoute()
     val profile = ProfileRoute(userId = "123")
@@ -404,42 +405,82 @@ class BackStackObserverTest {
     assertThat(fixture.breadcrumbs).hasSize(1)
     assertThat(fixture.scope.navigationBackStack()).isEqualTo(listOf(mapOf("route" to "/home")))
 
-    // Navigate to the profile screen and verify the /home transaction has ended and Sentry data
-    // have been cleared. No new transaction or Sentry data are generated b/c the host app's
-    // RouteNameExtractor didn't produce a valid route name.
+    // Navigate to the profile screen and verify the invalid route name is recorded as /unknown so
+    // the transition history remains intact.
     sut.onBackStackChanged(listOf(home, profile))
     assertThat(transaction.isFinished).isTrue()
-    assertThat(fixture.scope.transaction).isNull()
-    assertThat(fixture.scope.screen).isNull()
-    assertThat(fixture.scope.contexts.app?.viewNames).isNull()
-    assertThat(fixture.breadcrumbs).hasSize(1)
-    assertThat(fixture.scope.navigationBackStack()).isEqualTo(listOf(mapOf("route" to "/home")))
+    assertThat(fixture.startedTransactions).hasSize(2)
+    val profileTransaction = fixture.startedTransactions.last()
+    assertThat(profileTransaction.isFinished).isFalse()
+    assertThat(profileTransaction.name).isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(profileTransaction)
+    assertThat(fixture.scope.screen).isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
+    assertThat(fixture.scope.contexts.app?.viewNames)
+      .isEqualTo(listOf(RouteTranslator.UNKNOWN_ROUTE_NAME))
+    assertThat(fixture.breadcrumbs).hasSize(2)
+    assertThat(fixture.breadcrumbs.last().data)
+      .containsExactly("from", "/home", "to", RouteTranslator.UNKNOWN_ROUTE_NAME)
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(
+        listOf(
+          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
+          mapOf("route" to "/home"),
+        )
+      )
 
-    // Navigate to the cart screen and verify no new transaction or Sentry data are generated b/c we
-    // (once again) didn't receive a valid route name.
+    // Navigate to the cart screen and verify the later failure is also recorded as /unknown rather
+    // than collapsing the route history.
     sut.onBackStackChanged(listOf(home, profile, cart))
-    assertThat(transaction.isFinished).isTrue()
-    assertThat(fixture.scope.transaction).isNull()
-    assertThat(fixture.scope.screen).isNull()
-    assertThat(fixture.scope.contexts.app?.viewNames).isNull()
-    assertThat(fixture.breadcrumbs).hasSize(1)
-    assertThat(fixture.scope.navigationBackStack()).isEqualTo(listOf(mapOf("route" to "/home")))
+    assertThat(profileTransaction.isFinished).isTrue()
+    assertThat(fixture.startedTransactions).hasSize(3)
+    val cartTransaction = fixture.startedTransactions.last()
+    assertThat(cartTransaction.isFinished).isFalse()
+    assertThat(cartTransaction.name).isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(cartTransaction)
+    assertThat(fixture.scope.screen).isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
+    assertThat(fixture.scope.contexts.app?.viewNames)
+      .isEqualTo(listOf(RouteTranslator.UNKNOWN_ROUTE_NAME))
+    assertThat(fixture.breadcrumbs).hasSize(3)
+    assertThat(fixture.breadcrumbs.last().data)
+      .containsExactly(
+        "from",
+        RouteTranslator.UNKNOWN_ROUTE_NAME,
+        "to",
+        RouteTranslator.UNKNOWN_ROUTE_NAME,
+      )
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(
+        listOf(
+          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
+          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
+          mapOf("route" to "/home"),
+        )
+      )
 
     // Navigate to the settings screen and verify a new /settings transaction is started and Sentry
     // data are generated again, as we received a valid route name.
     sut.onBackStackChanged(listOf(home, profile, cart, settings))
 
-    assertThat(fixture.startedTransactions).hasSize(2)
+    assertThat(cartTransaction.isFinished).isTrue()
+    assertThat(fixture.startedTransactions).hasSize(4)
     val settingsTransaction = fixture.startedTransactions.last()
     assertThat(settingsTransaction.isFinished).isFalse()
     assertThat(settingsTransaction.name).isEqualTo("/settings")
     assertThat(fixture.scope.transaction).isSameInstanceAs(settingsTransaction)
     assertThat(fixture.scope.screen).isEqualTo("/settings")
     assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf("/settings"))
-    assertThat(fixture.breadcrumbs).hasSize(2)
-    assertThat(fixture.breadcrumbs.last().data).containsExactly("to", "/settings")
+    assertThat(fixture.breadcrumbs).hasSize(4)
+    assertThat(fixture.breadcrumbs.last().data)
+      .containsExactly("from", RouteTranslator.UNKNOWN_ROUTE_NAME, "to", "/settings")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/settings"), mapOf("route" to "/home")))
+      .isEqualTo(
+        listOf(
+          mapOf("route" to "/settings"),
+          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
+          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
+          mapOf("route" to "/home"),
+        )
+      )
   }
 
   @Test

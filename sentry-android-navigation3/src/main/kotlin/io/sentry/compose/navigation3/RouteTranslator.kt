@@ -11,6 +11,32 @@ internal class RouteTranslator<T : Any>(
   private val maxCapturedBackStackEntries: Int,
   private val logger: ILogger,
 ) {
+  companion object {
+    internal const val UNKNOWN_ROUTE_NAME = "/unknown"
+
+    /**
+     * Max nesting depth allowed while sanitizing a single argument value for a given back stack
+     * entry.
+     *
+     * If exceeded, all arguments for that back stack entry are dropped.
+     */
+    private const val MAX_ARGUMENT_DEPTH = 20
+
+    /**
+     * Max number of argument values visited while sanitizing all entries in a given back stack
+     * update.
+     *
+     * If exceeded, the entry that overflows loses its arguments, as do older entries; newer entries
+     * are preserved. E.g., suppose we have the following back stack:
+     *
+     * - /Checkout -> Top of the stack and processed first
+     * - /ProductDetail -> Processed second and overflows the `MAX_ARGUMENT_VALUES` budget
+     * - /Home
+     *
+     * Then /ProductDetail and /Home will have no arguments, but /Checkout will.
+     */
+    private const val MAX_ARGUMENT_VALUES = 1_000
+  }
 
   internal class UpdateWarningState {
     private var hasLoggedUnsupportedValueWarning = false
@@ -41,7 +67,7 @@ internal class RouteTranslator<T : Any>(
       logger.log(
         WARNING,
         "Nav3 nameExtractor returned a blank route name while processing this back stack update. " +
-          "Returning null route name.",
+          "Using /unknown instead.",
       )
       hasLoggedInvalidRouteNameWarning = true
     }
@@ -53,37 +79,11 @@ internal class RouteTranslator<T : Any>(
 
       logger.log(
         WARNING,
-        "Nav3 nameExtractor threw while resolving a route name. Skipping route name.",
+        "Nav3 nameExtractor threw while resolving a route name. Using /unknown instead.",
         throwable,
       )
       hasLoggedNameExtractorFailureWarning = true
     }
-  }
-
-  companion object {
-
-    /**
-     * Max nesting depth allowed while sanitizing a single argument value for a given back stack
-     * entry.
-     *
-     * If exceeded, all arguments for that back stack entry are dropped.
-     */
-    private const val MAX_ARGUMENT_DEPTH = 20
-
-    /**
-     * Max number of argument values visited while sanitizing all entries in a given back stack
-     * update.
-     *
-     * If exceeded, the entry that overflows loses its arguments, as do older entries; newer entries
-     * are preserved. E.g., suppose we have the following back stack:
-     *
-     * - /Checkout -> Top of the stack and processed first
-     * - /ProductDetail -> Processed second and overflows the `MAX_ARGUMENT_VALUES` budget
-     * - /Home
-     *
-     * Then /ProductDetail and /Home will have no arguments, but /Checkout will.
-     */
-    private const val MAX_ARGUMENT_VALUES = 1_000
   }
 
   /** Converts the provided [backStack] into a serializable list of [RouteEntry]s. */
@@ -93,9 +93,8 @@ internal class RouteTranslator<T : Any>(
   ): List<RouteEntry> {
     val state = ArgumentSanitizationState()
 
-    return backStack.takeLast(maxCapturedBackStackEntries).asReversed().mapNotNull { entry ->
-      val routeName = resolveRouteName(entry, updateWarningState) ?: return@mapNotNull null
-
+    return backStack.takeLast(maxCapturedBackStackEntries).asReversed().map { entry ->
+      val routeName = resolveRouteName(entry, updateWarningState)
       buildMap {
         put("route", routeName)
 
@@ -124,20 +123,20 @@ internal class RouteTranslator<T : Any>(
   fun resolveRouteName(
     backStackEntry: T,
     updateWarningState: UpdateWarningState = UpdateWarningState(),
-  ): String? {
+  ): String {
     val name: String? =
       try {
         resolvers.invoke().getName(backStackEntry)
       } catch (t: Throwable) {
         ExceptionUtils.rethrowIfFatal(t)
         updateWarningState.logNameExtractorFailureWarning(logger, t)
-        null
+        return UNKNOWN_ROUTE_NAME
       }
 
     val normalizedName = name?.trim()?.takeUnless { it.isEmpty() }?.removePrefix("/")
     if (normalizedName == null) {
       updateWarningState.logInvalidRouteNameWarning(logger)
-      return null
+      return UNKNOWN_ROUTE_NAME
     }
 
     return "/$normalizedName"
