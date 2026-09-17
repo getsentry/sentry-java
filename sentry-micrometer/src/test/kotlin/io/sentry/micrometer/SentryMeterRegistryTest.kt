@@ -68,9 +68,9 @@ class SentryMeterRegistryTest {
 
     assertThat(counter.count()).isEqualTo(2.5)
     val parameters = argumentCaptor<SentryMetricsParameters>()
-    verify(metrics).count(eq("request_count"), eq(2.5), eq("requests"), parameters.capture())
+    verify(metrics).count(eq("request.count"), eq(2.5), eq("requests"), parameters.capture())
     assertThat(parameters.firstValue.origin).isEqualTo("auto.metrics.micrometer")
-    assertThat(parameters.firstValue.attributes!!.attributes["http_method"]!!.value)
+    assertThat(parameters.firstValue.attributes!!.attributes["http.method"]!!.value)
       .isEqualTo("GET")
   }
 
@@ -125,7 +125,7 @@ class SentryMeterRegistryTest {
     assertThat(timer.totalTime(TimeUnit.MILLISECONDS)).isWithin(0.0001).of(1.5)
     verify(metrics)
       .distribution(
-        eq("request_duration"),
+        eq("request.duration"),
         eq(1.5),
         eq(MetricsUnit.Duration.MILLISECOND),
         any(),
@@ -146,7 +146,7 @@ class SentryMeterRegistryTest {
     assertThat(summary.count()).isEqualTo(2)
     assertThat(summary.totalAmount()).isPositiveInfinity()
     verify(metrics)
-      .distribution(eq("payload_size"), eq(6.0), eq(MetricsUnit.Information.BYTE), any())
+      .distribution(eq("payload.size"), eq(6.0), eq(MetricsUnit.Information.BYTE), any())
     verify(metrics, times(1)).distribution(any(), anyOrNull(), anyOrNull(), any())
   }
 
@@ -253,7 +253,7 @@ class SentryMeterRegistryTest {
     assertThat(otherRegistry.counter("denied.counter").count()).isEqualTo(4.0)
     assertThat(otherRegistry.counter("allowed.counter").count()).isEqualTo(2.0)
     assertThat(sentryRegistry.find("denied.counter").counter()).isNull()
-    verify(metrics).count(eq("allowed_counter"), eq(2.0), anyOrNull(), any())
+    verify(metrics).count(eq("allowed.counter"), eq(2.0), anyOrNull(), any())
   }
 
   @Test
