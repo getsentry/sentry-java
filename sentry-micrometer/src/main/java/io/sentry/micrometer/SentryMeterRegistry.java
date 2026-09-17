@@ -14,6 +14,7 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.config.NamingConvention;
 import io.micrometer.core.instrument.cumulative.CumulativeFunctionCounter;
 import io.micrometer.core.instrument.cumulative.CumulativeFunctionTimer;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
@@ -46,6 +47,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
   /** Creates a registry that forwards active meter observations to Sentry. */
   public SentryMeterRegistry() {
     super(Clock.SYSTEM);
+    config().namingConvention(NamingConvention.dot);
     addIntegrationToSdkVersion(INTEGRATION_NAME);
   }
 
