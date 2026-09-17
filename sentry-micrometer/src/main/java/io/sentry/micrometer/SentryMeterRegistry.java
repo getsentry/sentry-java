@@ -15,6 +15,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.config.NamingConvention;
 import io.micrometer.core.instrument.cumulative.CumulativeFunctionTimer;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.core.instrument.distribution.pause.PauseDetector;
@@ -77,7 +78,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
           "A scheduler is required when passive polling is enabled.");
     }
     this.scheduler = pollIntervalMillis == 0 ? null : scheduler;
-    config().onMeterRemoved(this::onMeterRemoved);
+    config().namingConvention(NamingConvention.dot).onMeterRemoved(this::onMeterRemoved);
     addIntegrationToSdkVersion(INTEGRATION_NAME);
     if (this.scheduler == null) {
       pollingTask = null;
