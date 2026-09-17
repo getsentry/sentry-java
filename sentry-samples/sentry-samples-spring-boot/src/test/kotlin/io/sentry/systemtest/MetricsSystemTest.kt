@@ -39,10 +39,10 @@ class MetricsSystemTest {
     assertEquals(200, restClient.lastKnownStatusCode)
 
     testHelper.ensureMetricsReceived { event, header ->
-      testHelper.doesContainMetric(event, "micrometer_counter", "counter", 1.0) &&
+      testHelper.doesContainMetric(event, "micrometer.counter", "counter", 1.0) &&
         testHelper.doesMetricHaveAttribute(
           event,
-          "micrometer_counter",
+          "micrometer.counter",
           "source",
           "spring",
         ) &&
@@ -61,7 +61,7 @@ class MetricsSystemTest {
 
     testHelper.ensureMetricsReceived { event, _ ->
       event.items.any { metric ->
-        metric.name == "http_server_requests" &&
+        metric.name == "http.server.requests" &&
           metric.type == "distribution" &&
           metric.unit == "millisecond" &&
           metric.attributes?.get("method")?.value == "GET" &&
@@ -76,7 +76,7 @@ class MetricsSystemTest {
   fun `Spring Boot generated process metric is forwarded through Micrometer polling`() {
     testHelper.ensureMetricsReceived { event, header ->
       event.items.any { metric ->
-        metric.name == "process_uptime" &&
+        metric.name == "process.uptime" &&
           metric.type == "gauge" &&
           metric.unit == "millisecond" &&
           metric.value > 0.0 &&

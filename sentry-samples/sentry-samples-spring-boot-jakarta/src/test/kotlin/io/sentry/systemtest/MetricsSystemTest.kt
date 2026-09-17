@@ -36,7 +36,7 @@ class MetricsSystemTest {
 
     testHelper.ensureMetricsReceived { event, header ->
       event.items.any { metric ->
-        metric.name == "http_server_requests" &&
+        metric.name == "http.server.requests" &&
           metric.type == "distribution" &&
           metric.unit == "millisecond" &&
           metric.attributes?.get("sentry.origin")?.value == "auto.metrics.micrometer"
@@ -52,7 +52,7 @@ class MetricsSystemTest {
   fun `Spring Boot generated process metric is forwarded through Micrometer polling`() {
     testHelper.ensureMetricsReceived { event, header ->
       event.items.any { metric ->
-        metric.name == "process_uptime" &&
+        metric.name == "process.uptime" &&
           metric.type == "gauge" &&
           metric.unit == "millisecond" &&
           metric.value > 0.0 &&
