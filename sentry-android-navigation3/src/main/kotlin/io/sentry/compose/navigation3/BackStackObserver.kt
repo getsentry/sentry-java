@@ -18,6 +18,7 @@ import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import java.lang.ref.WeakReference
 
 /**
  * Observes the back stack managed by a single [SentryNavEffect] and records Sentry state as the
@@ -36,7 +37,8 @@ internal class BackStackObserver<T : Any>(
   private val routeTranslator =
     RouteTranslator(resolvers, options.maxCapturedBackStackEntries, scopes.options.logger)
 
-  private var previousSnapshot: RouteTranslator.NavigationSnapshot<T>? = null
+  private var previousTopEntry: WeakReference<T>? = null
+  private var previousTop: PreviousTopSnapshot? = null
   private val screenTracker = ScreenTracker()
 
   private val areNavigationTransactionsEnabled: Boolean
@@ -77,28 +79,27 @@ internal class BackStackObserver<T : Any>(
         scope.updateNavigationContext(snapshot, options)
 
         // Return early if there's nowhere to go or if the top of the back stack hasn't changed...
-        val previousTop = previousSnapshot?.top
         val currentTop = snapshot.top
 
         if (currentTop == null) {
           handleEmptyBackStack(scope)
-          previousSnapshot = snapshot
           return@configureScope
         }
-        if (previousTop?.entry === currentTop.entry) {
-          previousSnapshot = snapshot
+        if (previousTopEntry?.get() === currentTop.entry) {
+          storePreviousTop(currentTop)
           return@configureScope
         }
 
         // ...otherwise record data for the new nav destination.
         handleNewTop(scope, previousTop, currentTop, snapshot)
-        previousSnapshot = snapshot
+        storePreviousTop(currentTop)
       }
     }
   }
 
   internal fun cleanup() {
-    previousSnapshot = null
+    previousTopEntry = null
+    previousTop = null
 
     scopes.configureScope { scope ->
       navTransactions.stop(scope)
@@ -117,7 +118,7 @@ internal class BackStackObserver<T : Any>(
 
   private fun handleNewTop(
     scope: IScope,
-    previousTop: RouteTranslator.DestinationSnapshot<T>?,
+    previousTop: PreviousTopSnapshot?,
     currentTop: RouteTranslator.DestinationSnapshot<T>,
     snapshot: RouteTranslator.NavigationSnapshot<T>,
   ) {
@@ -143,7 +144,13 @@ internal class BackStackObserver<T : Any>(
   private fun handleEmptyBackStack(scope: IScope) {
     navTransactions.stop(scope)
     screenTracker.clear(scope)
-    previousSnapshot = null
+    previousTopEntry = null
+    previousTop = null
+  }
+
+  private fun storePreviousTop(currentTop: RouteTranslator.DestinationSnapshot<T>) {
+    previousTopEntry = WeakReference(currentTop.entry)
+    previousTop = PreviousTopSnapshot(currentTop.routeName, currentTop.arguments)
   }
 
   private fun IScope.updateNavigationContext(
@@ -183,7 +190,7 @@ internal class BackStackObserver<T : Any>(
   }
 
   private fun IScopes.addNav3Breadcrumb(
-    from: RouteTranslator.DestinationSnapshot<T>?,
+    from: PreviousTopSnapshot?,
     to: RouteTranslator.DestinationSnapshot<T>,
   ) {
     val breadcrumb =
@@ -226,6 +233,11 @@ internal class BackStackObserver<T : Any>(
     }
   }
 }
+
+private data class PreviousTopSnapshot(
+  val routeName: String,
+  val arguments: Map<String, Any?>,
+)
 
 private class ScreenTracker {
 
