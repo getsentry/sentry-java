@@ -18,7 +18,6 @@ import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
-import java.lang.ref.WeakReference
 
 /**
  * Observes the back stack managed by a single [SentryNavEffect] and records Sentry state as the
@@ -37,7 +36,7 @@ internal class BackStackObserver<T : Any>(
   private val routeTranslator =
     RouteTranslator(resolvers, options.maxCapturedBackStackEntries, scopes.options.logger)
 
-  private var previousBackStackEntry: WeakReference<T>? = null
+  private var previousSnapshot: RouteTranslator.NavigationSnapshot<T>? = null
   private val screenTracker = ScreenTracker()
 
   private val areNavigationTransactionsEnabled: Boolean
@@ -71,30 +70,35 @@ internal class BackStackObserver<T : Any>(
     val updateWarningState = RouteTranslator.UpdateWarningState()
 
     guard("onBackStackChanged") {
+      val snapshot = routeTranslator.snapshot(backStack, updateWarningState)
+
       scopes.configureScope { scope ->
         // Always update the recorded backstack, as any of its entries may have changed.
-        scope.updateNavigationContext(backStack, options, updateWarningState)
+        scope.updateNavigationContext(snapshot, options)
 
         // Return early if there's nowhere to go or if the top of the back stack hasn't changed...
-        val previousTop: T? = previousBackStackEntry?.get()
-        val currentTop: T? = backStack.lastOrNull()
+        val previousTop = previousSnapshot?.top
+        val currentTop = snapshot.top
 
         if (currentTop == null) {
           handleEmptyBackStack(scope)
+          previousSnapshot = snapshot
           return@configureScope
         }
-        if (previousTop === currentTop) {
+        if (previousTop?.entry === currentTop.entry) {
+          previousSnapshot = snapshot
           return@configureScope
         }
 
         // ...otherwise record data for the new nav destination.
-        handleNewTop(scope, previousTop, currentTop, backStack, updateWarningState)
+        handleNewTop(scope, previousTop, currentTop, snapshot)
+        previousSnapshot = snapshot
       }
     }
   }
 
   internal fun cleanup() {
-    previousBackStackEntry = null
+    previousSnapshot = null
 
     scopes.configureScope { scope ->
       navTransactions.stop(scope)
@@ -113,52 +117,45 @@ internal class BackStackObserver<T : Any>(
 
   private fun handleNewTop(
     scope: IScope,
-    previousTop: T?,
-    currentTop: T,
-    backStack: List<T>,
-    updateWarningState: RouteTranslator.UpdateWarningState,
+    previousTop: RouteTranslator.DestinationSnapshot<T>?,
+    currentTop: RouteTranslator.DestinationSnapshot<T>,
+    snapshot: RouteTranslator.NavigationSnapshot<T>,
   ) {
-    val routeName = routeTranslator.resolveRouteName(currentTop, updateWarningState)
-    val arguments = routeTranslator.resolveArguments(currentTop, updateWarningState)
-
     if (scopes.options.isEnableScreenTracking) {
-      screenTracker.track(scope, routeName)
+      screenTracker.track(scope, currentTop.routeName)
     }
 
     if (options.enableNavigationBreadcrumbs) {
-      scopes.addNav3Breadcrumb(previousTop, currentTop, routeName, arguments, updateWarningState)
+      scopes.addNav3Breadcrumb(previousTop, currentTop)
     }
 
     navTransactions.stop(scope)
 
     if (areNavigationTransactionsEnabled) {
-      navTransactions.start(routeName, arguments) { transaction ->
-        transaction.snapshotTrackedNavigationContext(routeName, backStack, updateWarningState)
+      navTransactions.start(currentTop.routeName, currentTop.arguments) { transaction ->
+        transaction.snapshotTrackedNavigationContext(snapshot)
       }
     } else {
       scope.rotatePropagationContext()
     }
-
-    previousBackStackEntry = WeakReference(currentTop)
   }
 
   private fun handleEmptyBackStack(scope: IScope) {
     navTransactions.stop(scope)
     screenTracker.clear(scope)
-    previousBackStackEntry = null
+    previousSnapshot = null
   }
 
   private fun IScope.updateNavigationContext(
-    backStack: List<T>,
+    snapshot: RouteTranslator.NavigationSnapshot<T>,
     options: SentryNavOptions,
-    updateWarningState: RouteTranslator.UpdateWarningState,
   ) {
     if (!options.captureBackStack) {
       this.removeContexts(NAVIGATION_CONTEXT_KEY)
       return
     }
 
-    val entries = routeTranslator.toRouteEntries(backStack, updateWarningState)
+    val entries = snapshot.backStackEntries
     if (entries.isEmpty()) {
       this.removeContexts(NAVIGATION_CONTEXT_KEY)
     } else {
@@ -171,18 +168,13 @@ internal class BackStackObserver<T : Any>(
    * spans cannot cause the event to inherit newer scope state from a later navigation update.
    */
   private fun ITransaction.snapshotTrackedNavigationContext(
-    routeName: String,
-    backStack: List<T>,
-    updateWarningState: RouteTranslator.UpdateWarningState,
+    snapshot: RouteTranslator.NavigationSnapshot<T>
   ) {
     val appContext = contexts.app ?: App().also { contexts.setApp(it) }
-    appContext.viewNames = listOf(routeName)
+    appContext.viewNames = listOf(snapshot.top?.routeName ?: return)
 
-    if (options.captureBackStack) {
-      val entries = routeTranslator.toRouteEntries(backStack, updateWarningState)
-      if (entries.isNotEmpty()) {
-        setContext(NAVIGATION_CONTEXT_KEY, mapOf("backstack" to entries))
-      }
+    if (options.captureBackStack && snapshot.backStackEntries.isNotEmpty()) {
+      setContext(NAVIGATION_CONTEXT_KEY, mapOf("backstack" to snapshot.backStackEntries))
     }
   }
 
@@ -191,35 +183,31 @@ internal class BackStackObserver<T : Any>(
   }
 
   private fun IScopes.addNav3Breadcrumb(
-    fromEntry: T?,
-    toEntry: T,
-    routeName: String,
-    arguments: Map<String, Any?>,
-    updateWarningState: RouteTranslator.UpdateWarningState,
+    from: RouteTranslator.DestinationSnapshot<T>?,
+    to: RouteTranslator.DestinationSnapshot<T>,
   ) {
     val breadcrumb =
       Breadcrumb().apply {
         type = NAVIGATION_OP
         category = NAVIGATION_OP
 
-        fromEntry?.let { prev ->
-          data["from"] = routeTranslator.resolveRouteName(prev, updateWarningState)
-          val fromArgs = routeTranslator.resolveArguments(prev, updateWarningState)
-          if (fromArgs.isNotEmpty()) {
-            data["from_arguments"] = fromArgs
+        from?.let {
+          data["from"] = it.routeName
+          if (it.arguments.isNotEmpty()) {
+            data["from_arguments"] = it.arguments
           }
         }
 
-        data["to"] = routeName
-        if (arguments.isNotEmpty()) {
-          data["to_arguments"] = arguments
+        data["to"] = to.routeName
+        if (to.arguments.isNotEmpty()) {
+          data["to_arguments"] = to.arguments
         }
 
         level = INFO
       }
 
     val hint = Hint()
-    hint.set(TypeCheckHint.NAV3_DESTINATION, toEntry)
+    hint.set(TypeCheckHint.NAV3_DESTINATION, to.entry)
     this.addBreadcrumb(breadcrumb, hint)
   }
 

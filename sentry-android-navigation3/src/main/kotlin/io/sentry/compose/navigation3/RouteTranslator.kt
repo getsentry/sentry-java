@@ -86,29 +86,54 @@ internal class RouteTranslator<T : Any>(
     }
   }
 
+  internal data class NavigationSnapshot<T : Any>(
+    val top: DestinationSnapshot<T>?,
+    val backStackEntries: List<RouteEntry>,
+  )
+
+  internal data class DestinationSnapshot<T : Any>(
+    val entry: T,
+    val routeName: String,
+    val arguments: Map<String, Any?>,
+  )
+
   /** Converts the provided [backStack] into a serializable list of [RouteEntry]s. */
   fun toRouteEntries(
     backStack: List<T>,
     updateWarningState: UpdateWarningState = UpdateWarningState(),
-  ): List<RouteEntry> {
+  ): List<RouteEntry> = snapshot(backStack, updateWarningState).backStackEntries
+
+  internal fun snapshot(
+    backStack: List<T>,
+    updateWarningState: UpdateWarningState = UpdateWarningState(),
+  ): NavigationSnapshot<T> {
     val state = ArgumentSanitizationState()
+    var topSnapshot: DestinationSnapshot<T>? = null
 
-    return backStack.takeLast(maxCapturedBackStackEntries).asReversed().map { entry ->
-      val routeName = resolveRouteName(entry, updateWarningState)
-      buildMap {
-        put("route", routeName)
-
+    val entries =
+      backStack.takeLast(maxCapturedBackStackEntries).asReversed().mapIndexed { index, entry ->
+        val routeName = resolveRouteName(entry, updateWarningState)
         val args =
           if (state.isValueBudgetExceeded()) {
             emptyMap()
           } else {
             resolveArguments(entry, state, updateWarningState)
           }
-        if (args.isNotEmpty()) {
-          put("args", args)
+
+        if (index == 0) {
+          topSnapshot = DestinationSnapshot(entry, routeName, args)
+        }
+
+        buildMap {
+          put("route", routeName)
+
+          if (args.isNotEmpty()) {
+            put("args", args)
+          }
         }
       }
-    }
+
+    return NavigationSnapshot(topSnapshot, entries)
   }
 
   /**

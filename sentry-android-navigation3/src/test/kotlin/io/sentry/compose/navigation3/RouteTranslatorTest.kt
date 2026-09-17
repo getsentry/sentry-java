@@ -87,6 +87,34 @@ class RouteTranslatorTest {
   }
 
   @Test
+  fun `snapshot returns the top destination and translated back stack from one pass`() {
+    val sut =
+      getSut(
+        argumentsExtractor =
+          RouteArgumentsExtractor { entry ->
+            when (entry) {
+              is HomeRoute -> mapOf("tab" to entry.id)
+              is ProfileRoute -> mapOf("userId" to entry.userId)
+              else -> emptyMap()
+            }
+          },
+        maxCapturedBackStackEntries = 2,
+      )
+
+    val snapshot = sut.snapshot(listOf(HomeRoute(), ProfileRoute("123"), SettingsRoute("privacy")))
+
+    assertThat(snapshot.top?.entry).isEqualTo(SettingsRoute("privacy"))
+    assertThat(snapshot.top?.routeName).isEqualTo("/SettingsRoute")
+    assertThat(snapshot.top?.arguments).isEmpty()
+    assertThat(snapshot.backStackEntries)
+      .containsExactly(
+        mapOf("route" to "/SettingsRoute"),
+        mapOf("route" to "/ProfileRoute", "args" to mapOf("userId" to "123")),
+      )
+      .inOrder()
+  }
+
+  @Test
   fun `resolveRouteName normalizes a custom name with a leading slash`() {
     val sut = getSut(nameExtractor = RouteNameExtractor { "profile" })
 

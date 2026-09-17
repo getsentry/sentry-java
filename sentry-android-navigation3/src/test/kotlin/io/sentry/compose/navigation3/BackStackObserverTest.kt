@@ -153,6 +153,54 @@ class BackStackObserverTest {
   }
 
   @Test
+  fun `onBackStackChanged reuses the previous top snapshot for breadcrumb from payload`() {
+    val fixture = Fixture()
+    val previousProfile = ProfileRoute("123")
+    val replacementProfile = ProfileRoute("123")
+    var profileName = "profile"
+    var profileArguments = mapOf("userId" to "123")
+    val sut =
+      fixture.getSut(
+        nameExtractor =
+          RouteNameExtractor { entry ->
+            when (entry) {
+              is HomeRoute -> "home"
+              is ProfileRoute -> profileName
+              is SettingsRoute -> "settings"
+              else -> error("unknown route: $entry")
+            }
+          },
+        argumentsExtractor =
+          RouteArgumentsExtractor { entry ->
+            when (entry) {
+              is HomeRoute -> mapOf("tab" to entry.id)
+              is ProfileRoute -> profileArguments
+              is SettingsRoute -> mapOf("section" to entry.section)
+              else -> emptyMap()
+            }
+          },
+      )
+
+    sut.onBackStackChanged(listOf(HomeRoute(), previousProfile))
+    profileName = "mutated-profile"
+    profileArguments = mapOf("userId" to "999")
+
+    sut.onBackStackChanged(listOf(HomeRoute(), replacementProfile, SettingsRoute("privacy")))
+
+    assertThat(fixture.breadcrumbs.last().data)
+      .containsExactly(
+        "from",
+        "/profile",
+        "from_arguments",
+        mapOf("userId" to "123"),
+        "to",
+        "/settings",
+        "to_arguments",
+        mapOf("section" to "privacy"),
+      )
+  }
+
+  @Test
   fun `onBackStackChanged does not emit a breadcrumb when breadcrumbs are disabled`() {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationBreadcrumbs = false))
@@ -309,6 +357,31 @@ class BackStackObserverTest {
         )
       )
     assertThat(fixture.scope.transaction).isSameInstanceAs(transaction)
+  }
+
+  @Test
+  fun `onBackStackChanged resolves top entry arguments once per update`() {
+    val fixture = Fixture()
+    val home = HomeRoute()
+    val profile = ProfileRoute("123")
+    val argumentCalls = mutableMapOf<Any, Int>()
+    val sut =
+      fixture.getSut(
+        argumentsExtractor =
+          RouteArgumentsExtractor { entry ->
+            argumentCalls[entry] = (argumentCalls[entry] ?: 0) + 1
+            when (entry) {
+              is HomeRoute -> mapOf("tab" to entry.id)
+              is ProfileRoute -> mapOf("userId" to entry.userId)
+              else -> emptyMap()
+            }
+          }
+      )
+
+    sut.onBackStackChanged(listOf(home, profile))
+
+    assertThat(argumentCalls[profile]).isEqualTo(1)
+    assertThat(argumentCalls[home]).isEqualTo(1)
   }
 
   @Test
