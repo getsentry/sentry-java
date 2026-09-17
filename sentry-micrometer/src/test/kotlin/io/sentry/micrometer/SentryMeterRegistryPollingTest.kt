@@ -133,13 +133,13 @@ class SentryMeterRegistryPollingTest {
     val parameters = argumentCaptor<SentryMetricsParameters>()
     verify(metrics)
       .gauge(
-        eq("queue_depth"),
+        eq("queue.depth"),
         eq(4.5),
         eq(MetricsUnit.Information.BYTE),
         parameters.capture(),
       )
     assertThat(parameters.firstValue.origin).isEqualTo("auto.metrics.micrometer")
-    assertThat(parameters.firstValue.attributes!!.attributes["queue_name"]!!.value)
+    assertThat(parameters.firstValue.attributes!!.attributes["queue.name"]!!.value)
       .isEqualTo("primary")
   }
 
@@ -157,8 +157,8 @@ class SentryMeterRegistryPollingTest {
     value.set(5.5)
     registry.pollMeters()
 
-    verify(first).gauge(eq("queue_depth"), eq(4.5), anyOrNull(), any())
-    verify(second).gauge(eq("queue_depth"), eq(5.5), anyOrNull(), any())
+    verify(first).gauge(eq("queue.depth"), eq(4.5), anyOrNull(), any())
+    verify(second).gauge(eq("queue.depth"), eq(5.5), anyOrNull(), any())
   }
 
   @Test
@@ -174,7 +174,7 @@ class SentryMeterRegistryPollingTest {
 
     verify(metrics)
       .gauge(
-        eq("job_duration"),
+        eq("job.duration"),
         eq(1500.0),
         eq(MetricsUnit.Duration.MILLISECOND),
         any(),
@@ -192,10 +192,10 @@ class SentryMeterRegistryPollingTest {
 
     registry.pollMeters()
 
-    verify(metrics).gauge(eq("background_jobs.active"), eq(1.0), anyOrNull(), any())
+    verify(metrics).gauge(eq("background.jobs.active"), eq(1.0), anyOrNull(), any())
     verify(metrics)
       .gauge(
-        eq("background_jobs.duration"),
+        eq("background.jobs.duration"),
         eq(1250.0),
         eq(MetricsUnit.Duration.MILLISECOND),
         any(),
@@ -260,7 +260,7 @@ class SentryMeterRegistryPollingTest {
     value.set(13.5)
     registry.pollMeters()
 
-    verify(metrics).count(eq("completed_jobs"), eq(3.5), eq("jobs"), any())
+    verify(metrics).count(eq("completed.jobs"), eq(3.5), eq("jobs"), any())
   }
 
   @Test

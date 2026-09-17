@@ -85,10 +85,10 @@ class SentryFunctionTimerTest {
     state.totalTime = 4.0
     registry.pollMeters()
 
-    verify(metrics).count(eq("request_duration.count"), eq(3.0), anyOrNull(), any())
+    verify(metrics).count(eq("request.duration.count"), eq(3.0), anyOrNull(), any())
     verify(metrics)
       .count(
-        eq("request_duration.total_time"),
+        eq("request.duration.total_time"),
         eq(1500.0),
         eq(MetricsUnit.Duration.MILLISECOND),
         any(),
