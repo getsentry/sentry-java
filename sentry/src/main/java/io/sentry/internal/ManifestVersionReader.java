@@ -59,7 +59,9 @@ public final class ManifestVersionReader {
       while (resources.hasMoreElements()) {
         try {
           final @NotNull URLConnection connection = resources.nextElement().openConnection();
+          // Disable caches to avoid leaking jar-backed inflater state.
           connection.setUseCaches(false);
+
           try (final @NotNull InputStream inputStream = connection.getInputStream()) {
             final @NotNull Manifest manifest = new Manifest(inputStream);
             final @Nullable Attributes mainAttributes = manifest.getMainAttributes();
