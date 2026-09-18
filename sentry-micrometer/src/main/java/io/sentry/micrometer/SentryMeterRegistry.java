@@ -47,7 +47,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
   /** Creates a registry that forwards active meter observations to Sentry. */
   public SentryMeterRegistry() {
     super(Clock.SYSTEM);
-    config().namingConvention(NamingConvention.dot);
+    config().namingConvention(NamingConvention.identity);
     addIntegrationToSdkVersion(INTEGRATION_NAME);
   }
 
