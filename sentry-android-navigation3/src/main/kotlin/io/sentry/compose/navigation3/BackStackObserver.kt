@@ -208,7 +208,7 @@ internal class BackStackObserver<T : Any>(
           currentTopRoute.name,
           currentTopRoute.arguments,
         )
-        ?.updateNavigationContext(currentBackStack)
+        ?.updateNavigationContext(scope, currentBackStack)
     } else {
       // Rotate the propagation context.
       scope.withPropagationContext { scope.setPropagationContext(PropagationContext()) }
@@ -255,9 +255,13 @@ internal class BackStackObserver<T : Any>(
    * past what's relevant to a given transaction. This method prevents misassociation by binding
    * proper values to the transaction context instead.
    */
-  private fun ITransaction.updateNavigationContext(backStack: BackStackData<T>) {
-    val appContext = contexts.app ?: App().also { contexts.setApp(it) }
-    appContext.viewNames = listOf(backStack.topRoute.name)
+  private fun ITransaction.updateNavigationContext(scope: IScope, backStack: BackStackData<T>) {
+    if (scopes.options.isEnableScreenTracking) {
+      val appContext = contexts.app ?: io.sentry.protocol.Contexts(scope.contexts).app ?: App()
+
+      appContext.viewNames = listOf(backStack.topRoute.name)
+      contexts.setApp(appContext)
+    }
 
     if (options.captureBackStack && backStack.capturedRoutes.isNotEmpty()) {
       setContext(NAVIGATION_CONTEXT_KEY, backStack.capturedRoutes.toNavigationContext())
@@ -303,6 +307,7 @@ internal class BackStackObserver<T : Any>(
     try {
       body()
     } catch (t: Throwable) {
+      // Nav instrumentation can invoke host code through route translation and scope mutation.
       ExceptionUtils.rethrowIfFatal(t)
       scopes.options.logger.log(
         ERROR,
