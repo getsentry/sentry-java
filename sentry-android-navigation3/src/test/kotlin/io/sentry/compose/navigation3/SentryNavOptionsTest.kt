@@ -9,14 +9,14 @@ class SentryNavOptionsTest {
 
   @Test
   fun `accepts positive max captured backstack entries`() {
-    val options = SentryNavOptions { maxCapturedBackStackEntries = 1 }
+    val options = SentryNavOptions(maxCapturedBackStackEntries = 1)
 
     assertThat(options.maxCapturedBackStackEntries).isEqualTo(1)
   }
 
   @Test
   fun `accepts zero max captured backstack entries`() {
-    val options = SentryNavOptions { maxCapturedBackStackEntries = 0 }
+    val options = SentryNavOptions(maxCapturedBackStackEntries = 0)
 
     assertThat(options.maxCapturedBackStackEntries).isEqualTo(0)
   }
@@ -25,7 +25,7 @@ class SentryNavOptionsTest {
   fun `rejects negative max captured backstack entries`() {
     val exception =
       assertFailsWith<IllegalArgumentException> {
-        SentryNavOptions { maxCapturedBackStackEntries = -1 }
+        SentryNavOptions(maxCapturedBackStackEntries = -1)
       }
 
     assertThat(exception)
@@ -68,39 +68,39 @@ class SentryNavOptionsTest {
       mapOf<String, (SentryNavOptions) -> SentryNavOptions>(
         "enableNavigationBreadcrumbs" to
           { options ->
-            SentryNavOptions {
-              enableNavigationBreadcrumbs = !options.enableNavigationBreadcrumbs
-              enableNavigationTransactions = options.enableNavigationTransactions
-              captureBackStack = options.captureBackStack
-              maxCapturedBackStackEntries = options.maxCapturedBackStackEntries
-            }
+            SentryNavOptions(
+              enableNavigationBreadcrumbs = !options.enableNavigationBreadcrumbs,
+              enableNavigationTransactions = options.enableNavigationTransactions,
+              captureBackStack = options.captureBackStack,
+              maxCapturedBackStackEntries = options.maxCapturedBackStackEntries,
+            )
           },
         "enableNavigationTransactions" to
           { options ->
-            SentryNavOptions {
-              enableNavigationBreadcrumbs = options.enableNavigationBreadcrumbs
-              enableNavigationTransactions = !options.enableNavigationTransactions
-              captureBackStack = options.captureBackStack
-              maxCapturedBackStackEntries = options.maxCapturedBackStackEntries
-            }
+            SentryNavOptions(
+              enableNavigationBreadcrumbs = options.enableNavigationBreadcrumbs,
+              enableNavigationTransactions = !options.enableNavigationTransactions,
+              captureBackStack = options.captureBackStack,
+              maxCapturedBackStackEntries = options.maxCapturedBackStackEntries,
+            )
           },
         "captureBackStack" to
           { options ->
-            SentryNavOptions {
-              enableNavigationBreadcrumbs = options.enableNavigationBreadcrumbs
-              enableNavigationTransactions = options.enableNavigationTransactions
-              captureBackStack = !options.captureBackStack
-              maxCapturedBackStackEntries = options.maxCapturedBackStackEntries
-            }
+            SentryNavOptions(
+              enableNavigationBreadcrumbs = options.enableNavigationBreadcrumbs,
+              enableNavigationTransactions = options.enableNavigationTransactions,
+              captureBackStack = !options.captureBackStack,
+              maxCapturedBackStackEntries = options.maxCapturedBackStackEntries,
+            )
           },
         "maxCapturedBackStackEntries" to
           { options ->
-            SentryNavOptions {
-              enableNavigationBreadcrumbs = options.enableNavigationBreadcrumbs
-              enableNavigationTransactions = options.enableNavigationTransactions
-              captureBackStack = options.captureBackStack
-              maxCapturedBackStackEntries = options.maxCapturedBackStackEntries + 1
-            }
+            SentryNavOptions(
+              enableNavigationBreadcrumbs = options.enableNavigationBreadcrumbs,
+              enableNavigationTransactions = options.enableNavigationTransactions,
+              captureBackStack = options.captureBackStack,
+              maxCapturedBackStackEntries = options.maxCapturedBackStackEntries + 1,
+            )
           },
       )
   }

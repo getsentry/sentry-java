@@ -801,7 +801,7 @@ private suspend fun runNav3RouteActivationAction(
     RouteActivationAction.HTTP_REQUEST -> {
       try {
         GithubAPI.service.listReposAsync("getsentry", 5)
-      } catch (e: Throwable) {
+      } catch (e: Exception) {
         Sentry.captureException(e)
       } finally {
         withContext(Dispatchers.IO) { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }
@@ -1434,8 +1434,6 @@ private fun tagNav3SampleAction(action: String, route: Nav3Route) {
   Sentry.setTag("sample_action", "nav3_$action")
   Sentry.setTag("sample_nav3_route", route.routeName)
 }
-
-private const val SENTRY_FLUSH_TIMEOUT_MILLIS = 5000L
 
 private sealed interface Nav3Route {
   val routeName: String

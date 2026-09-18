@@ -252,7 +252,7 @@ class SentryNavEffectTest {
       SentryNavEffect(
         backStack = backStack,
         nameExtractor = defaultNameExtractor,
-        options = SentryNavOptions { maxCapturedBackStackEntries = 0 },
+        options = SentryNavOptions(maxCapturedBackStackEntries = 0),
         scopes = fixture.scopes,
       )
     }
@@ -478,7 +478,7 @@ class SentryNavEffectTest {
   fun `changing options applies the new observer configuration`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(HomeRoute())
-    val options = mutableStateOf(SentryNavOptions { captureBackStack = true })
+    val options = mutableStateOf(SentryNavOptions(captureBackStack = true))
 
     composeRule.setContent {
       SentryNavEffect(
@@ -492,7 +492,7 @@ class SentryNavEffectTest {
 
     val originalTransaction = composeRule.runOnIdle { fixture.transactions.single() }
 
-    composeRule.runOnIdle { options.value = SentryNavOptions { captureBackStack = false } }
+    composeRule.runOnIdle { options.value = SentryNavOptions(captureBackStack = false) }
     composeRule.waitForIdle()
 
     assertThat(originalTransaction.isFinished).isTrue()

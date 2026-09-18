@@ -3,6 +3,7 @@ animalsniffer = "2.0.1"
 apollo = "2.5.9"
 androidxLifecycle = "2.2.0"
 androidxNavigation = "2.9.8"
+androidxNavigation3 = "1.1.5"
 androidxTestCore = "1.7.0"
 androidxCompose = "1.9.5"
 asyncProfiler = "4.4"
@@ -105,6 +106,8 @@ androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", 
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
 androidx-navigation-fragment = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "androidxNavigation" }
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "androidxNavigation3" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "androidxNavigation3" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room2" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room2" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room2" }

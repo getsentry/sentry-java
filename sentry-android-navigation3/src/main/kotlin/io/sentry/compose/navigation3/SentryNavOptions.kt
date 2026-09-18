@@ -9,76 +9,20 @@ private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 10
 
 /**
  * Configuration info for a [SentryNavEffect].
- *
- * Instances are immutable; create one with the [SentryNavOptions] DSL:
- * ```kotlin
- * val options = SentryNavOptions {
- *   captureBackStack = false
- *   maxCapturedBackStackEntries = 5
- * }
- * ```
  */
 @ApiStatus.Experimental
 @Immutable
-internal class SentryNavOptions
-private constructor(
-  val enableNavigationBreadcrumbs: Boolean,
-  val enableNavigationTransactions: Boolean,
-  val captureBackStack: Boolean,
-  val maxCapturedBackStackEntries: Int,
+public class SentryNavOptions(
+  public val enableNavigationBreadcrumbs: Boolean = true,
+  public val enableNavigationTransactions: Boolean = true,
+  public val captureBackStack: Boolean = true,
+  public val maxCapturedBackStackEntries: Int = DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES,
 ) {
 
   init {
     require(maxCapturedBackStackEntries >= 0) {
       "maxCapturedBackStackEntries must be non-negative, was $maxCapturedBackStackEntries"
     }
-  }
-
-  /**
-   * Mutable builder for [SentryNavOptions]. Prefer the [SentryNavOptions] DSL to using this
-   * directly.
-   *
-   * Lets us keep the resulting instance [Immutable] while preserving binary compatibility, should
-   * new properties be added in the future.
-   */
-  class Builder {
-
-    /**
-     * Whether navigation should produce Sentry breadcrumbs. If `true`, a new nav destination
-     * generates a breadcrumb like `from=/Home` and `to=/Profile`.
-     */
-    var enableNavigationBreadcrumbs: Boolean = true
-
-    /**
-     * Whether navigation should start a Sentry transaction. If `true`, navigating from `/Home` to
-     * `/Profile` starts a `/Profile` transaction and finishes the current `/Home` transaction.
-     */
-    var enableNavigationTransactions: Boolean = true
-
-    /**
-     * Whether Sentry should record back stack information for inclusion with crashes, errors, and
-     * other captured events. If `true`, a stack like `/Home -> /Profile` is recorded alongside the
-     * event, ordered with the current/top entry first.
-     */
-    var captureBackStack: Boolean = true
-
-    /**
-     * Maximum number of entries Sentry should record per captured back stack (starting with the
-     * most recent). Set to `0` to capture no back stack entries.
-     *
-     * Note: Sentry resolves and sanitizes up to [maxCapturedBackStackEntries] names + argument maps
-     * whenever your back stack changes. Keep name and argument extractors lightweight, and reduce
-     * the max captured count if extractor work is unusually expensive.
-     */
-    var maxCapturedBackStackEntries: Int = DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES
-
-    fun build(): SentryNavOptions =
-      SentryNavOptions(
-        enableNavigationBreadcrumbs = enableNavigationBreadcrumbs,
-        enableNavigationTransactions = enableNavigationTransactions,
-        captureBackStack = captureBackStack,
-        maxCapturedBackStackEntries = maxCapturedBackStackEntries,
-      )
   }
 
   override fun equals(other: Any?): Boolean =
@@ -97,9 +41,3 @@ private constructor(
     return result
   }
 }
-
-/** Creates [SentryNavOptions]. Optionally configure it via [configure]. */
-@ApiStatus.Experimental
-internal fun SentryNavOptions(
-  configure: SentryNavOptions.Builder.() -> Unit = {}
-): SentryNavOptions = SentryNavOptions.Builder().apply(configure).build()

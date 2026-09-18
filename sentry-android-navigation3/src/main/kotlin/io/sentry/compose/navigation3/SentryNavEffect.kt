@@ -80,18 +80,19 @@ import org.jetbrains.annotations.ApiStatus
 @ApiStatus.Experimental
 @Composable
 @Suppress("FunctionNaming")
-internal fun <T : Any> SentryNavEffect(
+public fun <T : Any> SentryNavEffect(
   backStack: List<T>,
-  nameExtractor: RouteNameExtractor<T>,
-  argumentsExtractor: RouteArgumentsExtractor<T>? = null,
+  scopes: IScopes = ScopesAdapter.getInstance(),
   options: SentryNavOptions = SentryNavOptions(),
+  nameExtractor: (T) -> String,
+  argumentsExtractor: ((T) -> Map<String, Any?>)? = null,
 ) {
   SentryNavEffect(
     backStack = backStack,
-    nameExtractor = nameExtractor,
-    argumentsExtractor = argumentsExtractor,
+    nameExtractor = RouteNameExtractor(nameExtractor),
+    argumentsExtractor = argumentsExtractor?.let(::RouteArgumentsExtractor),
     options = options,
-    scopes = ScopesAdapter.getInstance(),
+    scopes = scopes,
   )
 }
 
