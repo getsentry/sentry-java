@@ -6,7 +6,7 @@ import kotlin.test.assertFailsWith
 
 class DataCollectionTest {
   @Test
-  fun `public constructor forces Data Collection for empty configuration`() {
+  fun `public constructor does not force Data Collection for empty configuration`() {
     val dataCollection = DataCollection()
 
     assertThat(dataCollection.userInfo).isNull()
@@ -19,19 +19,21 @@ class DataCollectionTest {
     assertThat(dataCollection.httpHeaders.response).isNull()
     assertThat(dataCollection.graphql.document).isNull()
     assertThat(dataCollection.graphql.variables).isNull()
-    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
-  }
-
-  @Test
-  fun `SDK-owned configuration does not force Data Collection`() {
-    val dataCollection = DataCollection(false)
-
     assertThat(dataCollection.isExplicitlyConfigured()).isFalse()
   }
 
   @Test
-  fun `nested override makes SDK-owned configuration explicit`() {
-    val dataCollection = DataCollection(false)
+  fun `force Data Collection makes empty configuration explicit`() {
+    val dataCollection = DataCollection()
+
+    dataCollection.forceDataCollection()
+
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `nested override makes configuration explicit`() {
+    val dataCollection = DataCollection()
 
     dataCollection.graphql.setVariables(false)
 
@@ -40,7 +42,7 @@ class DataCollectionTest {
 
   @Test
   fun `explicit false is distinct from unset`() {
-    val dataCollection = DataCollection(false)
+    val dataCollection = DataCollection()
 
     dataCollection.setUserInfo(false)
 
@@ -50,7 +52,7 @@ class DataCollectionTest {
 
   @Test
   fun `nullable Boolean options are mutable Kotlin properties`() {
-    val dataCollection = DataCollection(false)
+    val dataCollection = DataCollection()
 
     dataCollection.userInfo = false
     dataCollection.databaseQueryData = false
@@ -81,7 +83,7 @@ class DataCollectionTest {
 
   @Test
   fun `empty HTTP body set is distinct from unset`() {
-    val dataCollection = DataCollection(false)
+    val dataCollection = DataCollection()
 
     dataCollection.setHttpBodies(emptySet())
 
@@ -105,7 +107,7 @@ class DataCollectionTest {
 
   @Test
   fun `database query data false is distinct from unset`() {
-    val dataCollection = DataCollection(false)
+    val dataCollection = DataCollection()
 
     dataCollection.setDatabaseQueryData(false)
 
@@ -115,7 +117,7 @@ class DataCollectionTest {
 
   @Test
   fun `file paths false is distinct from unset`() {
-    val dataCollection = DataCollection(false)
+    val dataCollection = DataCollection()
 
     dataCollection.setFilePaths(false)
 
@@ -125,7 +127,7 @@ class DataCollectionTest {
 
   @Test
   fun `nested HTTP header override marks configuration explicit`() {
-    val dataCollection = DataCollection(false)
+    val dataCollection = DataCollection()
     val behavior = KeyValueCollectionBehavior.denyList("authorization")
 
     dataCollection.httpHeaders.setRequest(behavior)
@@ -135,7 +137,7 @@ class DataCollectionTest {
 
   @Test
   fun `nested GraphQL false marks configuration explicit`() {
-    val dataCollection = DataCollection(false)
+    val dataCollection = DataCollection()
 
     dataCollection.graphql.setVariables(false)
 

@@ -48,12 +48,31 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `setting an empty data collection marks it explicitly configured`() {
+  fun `setting an empty data collection preserves legacy mode`() {
     val options = SentryOptions()
 
     options.dataCollection = DataCollection()
 
+    assertThat(options.dataCollection.isExplicitlyConfigured()).isFalse()
+  }
+
+  @Test
+  fun `forcing empty data collection marks it explicitly configured`() {
+    val options = SentryOptions()
+
+    options.dataCollection.forceDataCollection()
+
     assertThat(options.dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `forcing data collection preserves existing options`() {
+    val options = SentryOptions()
+    options.dataCollection.setUserInfo(false)
+
+    options.dataCollection.forceDataCollection()
+
+    assertThat(options.dataCollection.userInfo).isFalse()
   }
 
   @Test

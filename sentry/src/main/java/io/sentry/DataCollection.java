@@ -21,13 +21,11 @@ public final class DataCollection {
   private final @NotNull HttpHeaders httpHeaders = new HttpHeaders();
   private final @NotNull Graphql graphql = new Graphql();
 
-  public DataCollection() {
-    this(true);
-  }
+  public DataCollection() {}
 
-  @ApiStatus.Internal
-  public DataCollection(final boolean forceDataCollection) {
-    this.forceDataCollection = forceDataCollection;
+  /** Opts into the documented Data Collection defaults when no individual option is configured. */
+  public void forceDataCollection() {
+    forceDataCollection = true;
   }
 
   public @Nullable Boolean getUserInfo() {
