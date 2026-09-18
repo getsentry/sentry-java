@@ -29,7 +29,10 @@ transitively.
 
 ```kotlin
 dependencies {
-  implementation("io.sentry:sentry-spring-boot-starter:<version>")
+  implementation("io.sentry:sentry-spring-boot-4-starter:<version>")
+  // Spring Boot 3: implementation("io.sentry:sentry-spring-boot-starter-jakarta:<version>")
+  // Spring Boot 2: implementation("io.sentry:sentry-spring-boot-starter:<version>")
+
   implementation("io.sentry:sentry-micrometer:<version>")
 }
 ```
