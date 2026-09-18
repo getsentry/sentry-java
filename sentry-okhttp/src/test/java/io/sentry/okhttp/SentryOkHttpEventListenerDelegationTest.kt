@@ -138,6 +138,16 @@ class SentryOkHttpEventListenerDelegationTest {
       .inOrder()
   }
 
+  /**
+   * Deliberate deviation from the [okhttp3.EventListener.Factory] contract: OkHttp would give the
+   * listener of this call the cancellation, we do not.
+   *
+   * A cancel can arrive before [okhttp3.EventListener.callStart] and after the terminal event,
+   * while we can only bind a wrapped listener to a call between the two. Creating a listener here
+   * would either give the call a second listener, or leave an entry that no terminal event can ever
+   * remove, because a call that is canceled and never executed gets no terminal event at all. See
+   * the KDoc of [SentryOkHttpEventListener] for the full reasoning.
+   */
   @Test
   fun `cancel before callStart is not delegated and creates no listener`() {
     val sut = fixture.getSut()
@@ -148,6 +158,7 @@ class SentryOkHttpEventListenerDelegationTest {
     assertThat(fixture.listeners).isEmpty()
   }
 
+  /** The deviation costs only the cancel itself: the call still gets exactly one listener. */
   @Test
   fun `a call canceled before callStart still gets a single listener when it starts`() {
     val sut = fixture.getSut()
@@ -163,6 +174,10 @@ class SentryOkHttpEventListenerDelegationTest {
       .inOrder()
   }
 
+  /**
+   * Same deviation, on the other edge. [okhttp3.Call.cancel] is a documented no-op for a request
+   * that is already complete, so there is nothing to report.
+   */
   @Test
   fun `cancel after the terminal event is ignored`() {
     val sut = fixture.getSut()
@@ -178,6 +193,7 @@ class SentryOkHttpEventListenerDelegationTest {
       .inOrder()
   }
 
+  /** As above, with [okhttp3.EventListener.callFailed] as the terminal event. */
   @Test
   fun `cancel after a failed call is ignored`() {
     val sut = fixture.getSut()
@@ -193,6 +209,10 @@ class SentryOkHttpEventListenerDelegationTest {
       .inOrder()
   }
 
+  /**
+   * No deviation for a single wrapped instance: it is shared by every call anyway, the same as
+   * OkHttp's own `EventListener.asFactory()`, so it outlives the window and gets every cancel.
+   */
   @Test
   fun `a single wrapped listener receives cancels outside of the call window`() {
     whenever(fixture.scopes.options).thenReturn(SentryOptions())
