@@ -67,7 +67,6 @@ class SentryNavEffectTest {
         dsn = "http://key@localhost/proj"
         setTracesSampleRate(1.0)
         isEnableScreenTracking = true
-        setLogger(logger)
         idleTimeout = null
         deadlineTimeout = 0
       }
