@@ -14,6 +14,9 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
+import io.sentry.compose.navigation3.PreparedChange.BackStackHasNewTop
+import io.sentry.compose.navigation3.PreparedChange.BackStackHasSameTop
+import io.sentry.compose.navigation3.PreparedChange.BackStackIsEmpty
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.ExceptionUtils
@@ -88,18 +91,8 @@ internal class BackStackObserver<T : Any>(
    */
   internal fun onBackStackChanged(backStack: List<T>) {
     guard("onBackStackChanged") {
-      val topEntry = backStack.lastOrNull()
-
-      val status =
-        when {
-          topEntry == null -> BackStackStatus.EMPTY
-          topEntry === previousTopEntry?.get() -> BackStackStatus.SAME_TOP
-          else -> BackStackStatus.NEW_TOP
-        }
-
-      scopes.configureScope { scope ->
-        applyBackStackChange(scope, status, backStack)
-      }
+      val change = prepareChange(backStack)
+      scopes.configureScope { scope -> applyPreparedChange(scope, change) }
     }
   }
 
@@ -124,24 +117,29 @@ internal class BackStackObserver<T : Any>(
     }
   }
 
-  private fun applyBackStackChange(
-    scope: IScope,
-    status: BackStackStatus,
-    backStack: List<T>,
-  ) {
-    when (status) {
-      BackStackStatus.EMPTY -> handleEmptyBackStack(scope)
+  private fun prepareChange(backStack: List<T>): PreparedChange<T> {
+    val topEntry = backStack.lastOrNull() ?: return BackStackIsEmpty
+    val data = backStack.extractData()
 
-      BackStackStatus.NEW_TOP -> {
-        val data = backStack.extractData()
-        handleNewTop(scope, previousTopRoute, data)
-        storeAsPreviousTop(data.topEntry, data.topRoute)
+    return if (topEntry === previousTopEntry?.get()) {
+      BackStackHasSameTop(data)
+    } else {
+      BackStackHasNewTop(previousTopRoute, data)
+    }
+  }
+
+  private fun applyPreparedChange(scope: IScope, change: PreparedChange<T>) {
+    when (change) {
+      is BackStackIsEmpty -> handleEmptyBackStack(scope)
+
+      is BackStackHasNewTop -> {
+        handleNewTop(scope, change.previousTopRoute, change.data)
+        storeAsPreviousTop(change.data.topEntry, change.data.topRoute)
       }
 
-      BackStackStatus.SAME_TOP -> {
-        val data = backStack.extractData()
-        handleSameTop(scope, data)
-        storeAsPreviousTop(data.topEntry, data.topRoute)
+      is BackStackHasSameTop -> {
+        handleSameTop(scope, change.data)
+        storeAsPreviousTop(change.data.topEntry, change.data.topRoute)
       }
     }
   }
@@ -319,15 +317,29 @@ internal class BackStackObserver<T : Any>(
   }
 }
 
-private enum class BackStackStatus {
-  EMPTY,
+/**
+ * A model for applying one back stack update.
+ *
+ * Lets us separate change preparation from its application so that the [IScopes.configureScope]
+ * callback in charge of application can use already-computed navigation state. Otherwise, any
+ * exceptions thrown during state computation would be swallowed by `configureScope`'s over-broad
+ * `catch` clause.
+ */
+private sealed interface PreparedChange<out T : Any> {
+
+  /** The incoming back stack is empty. */
+  data object BackStackIsEmpty : PreparedChange<Nothing>
+
   /**
-   * The top of the back stack has changed, and one or more entries below it may have been updated
-   * as well.
+   * The top of the back stack has changed, and one or more entries below it may have been updated.
    */
-  NEW_TOP,
+  data class BackStackHasNewTop<T : Any>(
+    val previousTopRoute: Route?,
+    val data: BackStackData<T>,
+  ) : PreparedChange<T>
+
   /** The top of the back stack is unchanged, but one or more entries below it have been updated. */
-  SAME_TOP,
+  data class BackStackHasSameTop<T : Any>(val data: BackStackData<T>) : PreparedChange<T>
 }
 
 /** Info extracted from the host app's back stack in a form suitable for Sentry data. */
