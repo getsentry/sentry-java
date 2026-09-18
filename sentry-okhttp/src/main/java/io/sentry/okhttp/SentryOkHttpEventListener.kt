@@ -39,6 +39,33 @@ import okhttp3.Response
  *     .addInterceptor(SentryOkHttpInterceptor())
  *     .build()
  * ```
+ *
+ * ## Delivery of [canceled]
+ *
+ * A wrapped [okhttp3.EventListener] is not guaranteed to receive every [canceled] callback.
+ *
+ * OkHttp creates its listener in the [okhttp3.Call] constructor and keeps it for the whole lifetime
+ * of that call, so it may report [canceled] before [callStart] and after [callEnd]/[callFailed]. A
+ * single [SentryOkHttpEventListener] instead serves every call of the client, so it can only bind a
+ * wrapped listener to a call between [callStart] and the terminal [callEnd]/[callFailed] event.
+ *
+ * What that means for the wrapped listener:
+ * - A listener passed as a single [okhttp3.EventListener] instance receives every [canceled]
+ *   callback. Such a listener is shared by all calls anyway, the same as OkHttp's own
+ *   `EventListener.asFactory()`, so it exists independently of that window.
+ * - A listener created by an [okhttp3.EventListener.Factory] receives only the [canceled] callbacks
+ *   that fall between [callStart] and the terminal event. A cancellation reported outside that
+ *   window is not forwarded, because no listener is bound to the call, and creating one would give
+ *   that call a second listener and break the [okhttp3.EventListener.Factory] contract of one
+ *   listener per call.
+ *
+ * Cancellation is still observable in the common case: a call that is canceled before it runs fails
+ * with `IOException("Canceled")`, which is reported through [callFailed]. A call canceled after it
+ * has completed reports nothing, which matches [okhttp3.Call.cancel] being documented as a no-op
+ * for a request that is already complete.
+ *
+ * Use `OkHttpClient.Builder.eventListenerFactory` with your own listener if you need every
+ * cancellation, including the ones outside that window.
  */
 @Suppress("TooManyFunctions")
 public open class SentryOkHttpEventListener(
