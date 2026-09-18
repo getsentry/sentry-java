@@ -15,6 +15,7 @@ import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
+import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import kotlin.test.Test
 import kotlin.test.assertNull
@@ -230,6 +231,7 @@ class BackStackObserverTest {
 
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
+    assertThat(fixture.startedTransactions.single().contexts.app?.viewNames).isNull()
   }
 
   @Test
@@ -373,6 +375,31 @@ class BackStackObserverTest {
   }
 
   @Test
+  fun `onBackStackChanged resolves top entry arguments once per update`() {
+    val fixture = Fixture()
+    val home = HomeRoute()
+    val profile = ProfileRoute("123")
+    val argumentCalls = mutableMapOf<Any, Int>()
+    val sut =
+      fixture.getSut(
+        argumentsExtractor =
+          RouteArgumentsExtractor { entry ->
+            argumentCalls[entry] = (argumentCalls[entry] ?: 0) + 1
+            when (entry) {
+              is HomeRoute -> mapOf("tab" to entry.id)
+              is ProfileRoute -> mapOf("userId" to entry.userId)
+              else -> emptyMap()
+            }
+          }
+      )
+
+    sut.onBackStackChanged(listOf(home, profile))
+
+    assertThat(argumentCalls[profile]).isEqualTo(1)
+    assertThat(argumentCalls[home]).isEqualTo(1)
+  }
+
+  @Test
   fun `onBackStackChanged creates a nav transaction when enabled and no ambient transaction is active`() {
     val fixture = Fixture()
     val sut =
@@ -408,28 +435,24 @@ class BackStackObserverTest {
   }
 
   @Test
-  fun `onBackStackChanged resolves top entry arguments once per update`() {
+  fun `onBackStackChanged preserves scope app fields on the nav transaction`() {
     val fixture = Fixture()
-    val home = HomeRoute()
-    val profile = ProfileRoute("123")
-    val argumentCalls = mutableMapOf<Any, Int>()
-    val sut =
-      fixture.getSut(
-        argumentsExtractor =
-          RouteArgumentsExtractor { entry ->
-            argumentCalls[entry] = (argumentCalls[entry] ?: 0) + 1
-            when (entry) {
-              is HomeRoute -> mapOf("tab" to entry.id)
-              is ProfileRoute -> mapOf("userId" to entry.userId)
-              else -> emptyMap()
-            }
-          }
-      )
+    val scopeApp =
+      App().apply {
+        appName = "Demo App"
+        appIdentifier = "io.sentry.demo"
+      }
+    fixture.scope.contexts.setApp(scopeApp)
+    val sut = fixture.getSut(config = ObserverConfig(enableScreenTracking = true))
 
-    sut.onBackStackChanged(listOf(home, profile))
+    sut.onBackStackChanged(listOf(HomeRoute(), ProfileRoute("123")))
 
-    assertThat(argumentCalls[profile]).isEqualTo(1)
-    assertThat(argumentCalls[home]).isEqualTo(1)
+    val transactionApp = fixture.startedTransactions.single().contexts.app
+    assertThat(transactionApp).isNotNull()
+    assertThat(transactionApp).isNotSameInstanceAs(scopeApp)
+    assertThat(transactionApp?.appName).isEqualTo("Demo App")
+    assertThat(transactionApp?.appIdentifier).isEqualTo("io.sentry.demo")
+    assertThat(transactionApp?.viewNames).isEqualTo(listOf("/ProfileRoute"))
   }
 
   @Test
