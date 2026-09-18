@@ -2,6 +2,7 @@ package io.sentry.micrometer;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.cumulative.CumulativeFunctionTimer;
+import io.sentry.util.ExceptionUtils;
 import java.util.concurrent.TimeUnit;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
@@ -34,8 +35,19 @@ final class SentryFunctionTimer<T> extends CumulativeFunctionTimer<T> {
   }
 
   void poll() {
-    pollCount();
-    pollTotalTime();
+    try {
+      pollCount();
+    } catch (Throwable throwable) {
+      ExceptionUtils.rethrowIfFatal(throwable);
+      registry.logPollingFailure(throwable, countMetricInfo.getName());
+    }
+
+    try {
+      pollTotalTime();
+    } catch (Throwable throwable) {
+      ExceptionUtils.rethrowIfFatal(throwable);
+      registry.logPollingFailure(throwable, totalTimeMetricInfo.getName());
+    }
   }
 
   private void pollCount() {

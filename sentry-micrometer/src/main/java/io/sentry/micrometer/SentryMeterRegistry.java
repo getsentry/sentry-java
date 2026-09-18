@@ -225,16 +225,20 @@ public final class SentryMeterRegistry extends MeterRegistry {
         publishPassiveMeter(meter);
       } catch (Throwable throwable) {
         ExceptionUtils.rethrowIfFatal(throwable);
-        Sentry.getCurrentScopes()
-            .getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                throwable,
-                "Failed to publish Micrometer meter %s to Sentry.",
-                meter.getId().getName());
+        logPollingFailure(throwable, meter.getId().getName());
       }
     }
+  }
+
+  void logPollingFailure(final @NotNull Throwable throwable, final @NotNull String meterName) {
+    Sentry.getCurrentScopes()
+        .getOptions()
+        .getLogger()
+        .log(
+            SentryLevel.DEBUG,
+            throwable,
+            "Failed to publish Micrometer meter %s to Sentry.",
+            meterName);
   }
 
   private void publishPassiveMeter(final @NotNull Meter meter) {
