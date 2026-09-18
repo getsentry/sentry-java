@@ -110,7 +110,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
 
   private @NotNull HttpServletRequest resolveHttpServletRequest(
       final @NotNull IScopes scopes, final @NotNull HttpServletRequest request) {
-    if (scopes.getOptions().isSendDefaultPii()
+    if (scopes.getOptions().getDataCollectionResolver().isIncomingRequestBody()
         && qualifiesForCaching(request, scopes.getOptions().getMaxRequestBodySize())) {
       return new ContentCachingRequestWrapper(request);
     }
@@ -155,7 +155,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
     @Override
     public @NotNull SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
       if (event.getRequest() != null
-          && options.isSendDefaultPii()
+          && options.getDataCollectionResolver().isIncomingRequestBody()
           && qualifiesForCaching(request, options.getMaxRequestBodySize())) {
         event.getRequest().setData(requestPayloadExtractor.extract(request, options));
       }

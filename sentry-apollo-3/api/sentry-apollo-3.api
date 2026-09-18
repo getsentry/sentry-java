@@ -35,6 +35,8 @@ public final class io/sentry/apollo3/SentryApollo3HttpInterceptor$Companion {
 
 public final class io/sentry/apollo3/SentryApollo3Interceptor : com/apollographql/apollo3/interceptor/ApolloInterceptor {
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/IScopes;)V
+	public synthetic fun <init> (Lio/sentry/IScopes;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun intercept (Lcom/apollographql/apollo3/api/ApolloRequest;Lcom/apollographql/apollo3/interceptor/ApolloInterceptorChain;)Lkotlinx/coroutines/flow/Flow;
 }
 

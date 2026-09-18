@@ -95,7 +95,7 @@ final class FileIOSpanManager {
       if (file != null) {
         final String description = getDescription(file);
         currentSpan.setDescription(description);
-        if (options.isSendDefaultPii()) {
+        if (options.getDataCollectionResolver().isFilePaths()) {
           currentSpan.setData("file.path", file.getAbsolutePath());
         }
       } else {
@@ -115,7 +115,7 @@ final class FileIOSpanManager {
   private @NotNull String getDescription(final @NotNull File file) {
     final String byteCountToString = StringUtils.byteCountToString(byteCount);
     // if we send PII, we can send the file name directly
-    if (options.isSendDefaultPii()) {
+    if (options.getDataCollectionResolver().isFilePaths()) {
       return file.getName() + " (" + byteCountToString + ")";
     }
     final int lastDotIndex = file.getName().lastIndexOf('.');
