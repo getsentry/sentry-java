@@ -8,18 +8,15 @@ import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
-public final class MainEventProcessor implements EventProcessor, Closeable {
+public final class MainEventProcessor implements EventProcessor {
 
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
@@ -269,27 +266,6 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
    */
   private boolean isCachedHint(final @NotNull Hint hint) {
     return HintUtils.hasType(hint, Cached.class);
-  }
-
-  @Override
-  public void close() throws IOException {
-    if (hostnameCache != null) {
-      hostnameCache.close();
-    }
-  }
-
-  boolean isClosed() {
-    if (hostnameCache != null) {
-      return hostnameCache.isClosed();
-    } else {
-      return true;
-    }
-  }
-
-  @VisibleForTesting
-  @Nullable
-  HostnameCache getHostnameCache() {
-    return hostnameCache;
   }
 
   @Override

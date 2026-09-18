@@ -800,9 +800,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
     @Override
     public boolean supports(@NotNull Object hint) {
-      // While this is specifically an ANR enricher we discriminate enrichment application
-      // on the broader AbnormalExit hints for now.
-      return hint instanceof AbnormalExit;
+      return hint instanceof AnrV2Integration.AnrV2Hint;
     }
 
     // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"

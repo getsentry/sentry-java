@@ -2,8 +2,20 @@
 
 ## Unreleased
 
+### Fixes
+
+- Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
+- Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
+
+## 8.57.0
+
+### Behavioral Changes
+
+- Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
+
 ### Features
 
+- Add Android SDK support for reporting `MemoryLimiter` app exits recovered from `ApplicationExitInfo` ([#6111](https://github.com/getsentry/sentry-java/pull/6111)).
 - Sentry can now configure Log4j2 automatically for Spring Boot 4 when `sentry-log4j2` is on the classpath and Log4j2 Core is the active logging backend ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
   - Enable automatic appender registration with:
     ```properties
@@ -36,17 +48,15 @@
 
 ### Fixes
 
-- Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
+- Keep resolving the server name after `Sentry.close()` or a re-init. Closing the SDK shut down the shared hostname cache for the life of the process, so `server_name` silently froze at the value it had last resolved ([#6119](https://github.com/getsentry/sentry-java/pull/6119))
+- Order breadcrumbs by the timestamp they carry rather than by when they were created in the current process, so breadcrumbs restored from disk or handed over by a hybrid SDK no longer sort as if they had just happened ([#6097](https://github.com/getsentry/sentry-java/pull/6097))
 
 ### Internal
 
+- Deprecate `RateLimiter(ICurrentDateProvider, SentryOptions)` in favor of `RateLimiter(SentryOptions)`, whose backoff is measured on a monotonic ticker ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 - Deprecate `AndroidCurrentDateProvider.getInstance()` in favor of `MonotonicTicker`, which counts time spent in deep sleep and cannot be confused with the epoch-based `CurrentDateProvider` ([#6103](https://github.com/getsentry/sentry-java/pull/6103))
 
 ## 8.56.0
-
-### Behavioral Changes
-
-- Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 
 ### Fixes
 
@@ -65,7 +75,6 @@
 
 - Add an internal `MonotonicTicker` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
 - Add internal `Timestamp`, `EpochClock` and `AnchoredClock`, so related instants project from one wall-clock reading instead of each reading the clock ([#6045](https://github.com/getsentry/sentry-java/pull/6045))
-- Deprecate `RateLimiter(ICurrentDateProvider, SentryOptions)` in favor of `RateLimiter(SentryOptions)`, whose backoff is measured on a monotonic ticker ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 
 ### Dependencies
 
