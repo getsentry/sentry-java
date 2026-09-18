@@ -16,7 +16,6 @@ import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.TimeGauge;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.config.NamingConvention;
-import io.micrometer.core.instrument.cumulative.CumulativeFunctionTimer;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import io.micrometer.core.instrument.distribution.pause.PauseDetector;
 import io.micrometer.core.instrument.internal.DefaultGauge;
@@ -141,8 +140,16 @@ public final class SentryMeterRegistry extends MeterRegistry {
       final @NotNull ToLongFunction<T> countFunction,
       final @NotNull ToDoubleFunction<T> totalTimeFunction,
       final @NotNull TimeUnit totalTimeFunctionUnit) {
-    return new CumulativeFunctionTimer<>(
-        id, obj, countFunction, totalTimeFunction, totalTimeFunctionUnit, getBaseTimeUnit());
+    return new SentryFunctionTimer<>(
+        id,
+        obj,
+        countFunction,
+        totalTimeFunction,
+        totalTimeFunctionUnit,
+        getBaseTimeUnit(),
+        this,
+        createMetricInfo(id, ".count", null),
+        createMetricInfo(id, ".total_time", MetricsUnit.Duration.MILLISECOND));
   }
 
   @Override
@@ -218,16 +225,20 @@ public final class SentryMeterRegistry extends MeterRegistry {
         publishPassiveMeter(meter);
       } catch (Throwable throwable) {
         ExceptionUtils.rethrowIfFatal(throwable);
-        Sentry.getCurrentScopes()
-            .getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.DEBUG,
-                throwable,
-                "Failed to publish Micrometer meter %s to Sentry.",
-                meter.getId().getName());
+        logPollingFailure(throwable, meter.getId().getName());
       }
     }
+  }
+
+  void logPollingFailure(final @NotNull Throwable throwable, final @NotNull String meterName) {
+    Sentry.getCurrentScopes()
+        .getOptions()
+        .getLogger()
+        .log(
+            SentryLevel.DEBUG,
+            throwable,
+            "Failed to publish Micrometer meter %s to Sentry.",
+            meterName);
   }
 
   private void publishPassiveMeter(final @NotNull Meter meter) {
@@ -239,6 +250,8 @@ public final class SentryMeterRegistry extends MeterRegistry {
       publishLongTaskTimer((LongTaskTimer) meter);
     } else if (meter instanceof SentryFunctionCounter) {
       ((SentryFunctionCounter<?>) meter).poll();
+    } else if (meter instanceof SentryFunctionTimer) {
+      ((SentryFunctionTimer<?>) meter).poll();
     }
   }
 
