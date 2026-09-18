@@ -41,6 +41,8 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
 class SentryMeterRegistryTest {
+  private val registries = mutableListOf<SentryMeterRegistry>()
+
   @BeforeTest
   fun setUp() {
     initForTest { it.dsn = "https://key@sentry.io/proj" }
@@ -48,13 +50,14 @@ class SentryMeterRegistryTest {
 
   @AfterTest
   fun tearDown() {
+    registries.forEach(SentryMeterRegistry::close)
     Sentry.close()
   }
 
   @Test
   fun `counter forwards positive finite increments with converted metadata`() {
     val metrics = installMetricsApi()
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     val counter =
       Counter.builder("request.count")
         .tags("http.method", "GET")
@@ -74,7 +77,7 @@ class SentryMeterRegistryTest {
   @Test
   fun `uses the configured naming convention for names tags and values`() {
     val metrics = installMetricsApi()
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     registry
       .config()
       .namingConvention(
@@ -98,7 +101,7 @@ class SentryMeterRegistryTest {
   @Test
   fun `counter does not forward zero negative or non-finite increments`() {
     val metrics = installMetricsApi()
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     val counter = registry.counter("counter")
 
     counter.increment(0.0)
@@ -112,7 +115,7 @@ class SentryMeterRegistryTest {
   @Test
   fun `timer forwards accepted durations as millisecond distributions`() {
     val metrics = installMetricsApi()
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     val timer = Timer.builder("request.duration").register(registry)
 
     timer.record(1500, TimeUnit.MICROSECONDS)
@@ -133,7 +136,7 @@ class SentryMeterRegistryTest {
   @Test
   fun `distribution summary forwards scaled finite observations and remains readable`() {
     val metrics = installMetricsApi()
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     val summary =
       DistributionSummary.builder("payload.size").baseUnit("bytes").scale(2.0).register(registry)
 
@@ -151,7 +154,7 @@ class SentryMeterRegistryTest {
   fun `each recording resolves the current scopes metrics API`() {
     val first = mock<IMetricsApi>()
     val second = mock<IMetricsApi>()
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     val counter = registry.counter("counter")
 
     installMetricsApi(first)
@@ -166,7 +169,7 @@ class SentryMeterRegistryTest {
   @Test
   fun `registry created before Sentry init forwards after initialization`() {
     Sentry.close()
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     val counter = registry.counter("counter")
 
     counter.increment()
@@ -181,7 +184,7 @@ class SentryMeterRegistryTest {
   @Test
   fun `active meters stop forwarding after registry close but retain local behavior`() {
     val metrics = installMetricsApi()
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     val counter = registry.counter("counter")
     val timer = registry.timer("timer")
     val summary = registry.summary("summary")
@@ -247,7 +250,7 @@ class SentryMeterRegistryTest {
     val scopes = createTestScopes(options)
     scopes.bindClient(client)
     Sentry.setCurrentScopes(scopes)
-    val registry = SentryMeterRegistry()
+    val registry = registry()
 
     registry.counter("counter").increment()
 
@@ -264,7 +267,7 @@ class SentryMeterRegistryTest {
     val scopes = createTestScopes(SentryOptions().apply { dsn = "https://key@sentry.io/proj" })
     scopes.bindClient(client)
     Sentry.setCurrentScopes(scopes)
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     val counter = registry.counter("counter")
 
     counter.increment(3.0)
@@ -275,7 +278,7 @@ class SentryMeterRegistryTest {
   @Test
   fun `registry-local filters do not affect another composite registry`() {
     val metrics = installMetricsApi()
-    val sentryRegistry = SentryMeterRegistry()
+    val sentryRegistry = registry()
     sentryRegistry.config().meterFilter(MeterFilter.denyNameStartsWith("denied"))
     val otherRegistry = SimpleMeterRegistry()
     val composite = CompositeMeterRegistry()
@@ -294,7 +297,7 @@ class SentryMeterRegistryTest {
   @Test
   fun `custom meters remain readable and are not forwarded`() {
     val metrics = installMetricsApi()
-    val registry = SentryMeterRegistry()
+    val registry = registry()
     val meter =
       Meter.builder(
           "custom",
@@ -310,12 +313,14 @@ class SentryMeterRegistryTest {
 
   @Test
   fun `registry construction records integration and package metadata`() {
-    SentryMeterRegistry()
+    registries.add(SentryMeterRegistry())
 
     val storage = SentryIntegrationPackageStorage.getInstance()
     assertThat(storage.integrations).contains("Micrometer")
     assertThat(storage.packages.map { it.name }).contains("maven:io.sentry:sentry-micrometer")
   }
+
+  private fun registry(): SentryMeterRegistry = SentryMeterRegistry(0).also(registries::add)
 
   private fun installMetricsApi(metrics: IMetricsApi = mock()): IMetricsApi {
     val scopes = mock<IScopes>()
