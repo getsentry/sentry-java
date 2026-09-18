@@ -10,6 +10,13 @@ import io.sentry.SentryOptions
 import org.jetbrains.annotations.ApiStatus
 
 /**
+ * TODO ADAM: TO VERIFY
+ *
+ *  - Current PRs work correctly (via sample app).
+ *  - That SentryNavEffect still needs to be called before NavDisplay.
+ *  - Route*Extractor APIs + entryProvider wrapper next step.
+ */
+/**
  * An effect for generating Sentry data from your Nav3 backstack. Configure it via [options] and
  * call it before you invoke your `NavDisplay`.
  *
