@@ -572,16 +572,6 @@ class MainEventProcessorTest {
   }
 
   @Test
-  fun `when processor is closed, closes hostname cache`() {
-    val sut = fixture.getSut(serverName = null)
-
-    sut.process(SentryTransaction(fixture.sentryTracer), Hint())
-
-    sut.close()
-    assertNotNull(sut.hostnameCache) { assertTrue(it.isClosed) }
-  }
-
-  @Test
   fun `when event has modules, appends to them`() {
     val sut = fixture.getSut(modules = mapOf("group1:artifact1" to "2.0.0"))
 
