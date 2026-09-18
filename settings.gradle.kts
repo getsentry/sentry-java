@@ -81,6 +81,7 @@ include(
     "sentry-graphql-core",
     "sentry-jdbc",
     "sentry-kafka",
+    "sentry-micrometer",
     "sentry-opentelemetry:sentry-opentelemetry-bootstrap",
     "sentry-opentelemetry:sentry-opentelemetry-core",
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",

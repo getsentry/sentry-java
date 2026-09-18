@@ -1,0 +1,9 @@
+public final class io/sentry/micrometer/BuildConfig {
+	public static final field SENTRY_MICROMETER_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+
+public final class io/sentry/micrometer/SentryMeterRegistry : io/micrometer/core/instrument/MeterRegistry {
+	public fun <init> ()V
+}
+
