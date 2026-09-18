@@ -149,7 +149,7 @@ class BackStackObserverTest {
         "to_arguments",
         mapOf("userId" to "123"),
       )
-    assertThat(fixture.breadcrumbHints.last().get(TypeCheckHint.NAV3_DESTINATION))
+    assertThat(fixture.breadcrumbHints.last().get(TypeCheckHint.ANDROID_NAV3_DESTINATION))
       .isSameInstanceAs(profile)
   }
 
@@ -285,7 +285,7 @@ class BackStackObserverTest {
     assertThat(fixture.breadcrumbs).hasSize(2)
     assertThat(fixture.breadcrumbs.last().data["from"]).isEqualTo("/ProfileRoute")
     assertThat(fixture.breadcrumbs.last().data["to"]).isEqualTo("/ProfileRoute")
-    assertThat(fixture.breadcrumbHints.last().get(TypeCheckHint.NAV3_DESTINATION))
+    assertThat(fixture.breadcrumbHints.last().get(TypeCheckHint.ANDROID_NAV3_DESTINATION))
       .isSameInstanceAs(replacementProfile)
     assertThat(fixture.startedTransactions).hasSize(2)
     assertThat(fixture.startedTransactions.last().name).isEqualTo("/ProfileRoute")

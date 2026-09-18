@@ -296,7 +296,7 @@ internal class BackStackObserver<T : Any>(
       }
 
     val hint = Hint()
-    hint.set(TypeCheckHint.NAV3_DESTINATION, toEntry)
+    hint.set(TypeCheckHint.ANDROID_NAV3_DESTINATION, toEntry)
     this.addBreadcrumb(breadcrumb, hint)
   }
 
