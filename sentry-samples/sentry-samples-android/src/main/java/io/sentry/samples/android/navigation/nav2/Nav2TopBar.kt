@@ -1,4 +1,4 @@
-package io.sentry.samples.android.navigation
+package io.sentry.samples.android.navigation.nav2
 
 import android.content.Context
 import android.graphics.Typeface
@@ -19,6 +19,9 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.view.setPadding
 import io.sentry.samples.android.R
+import io.sentry.samples.android.navigation.common.RouteNames
+import io.sentry.samples.android.navigation.common.RouteWorkOption
+import io.sentry.samples.android.navigation.common.themeColor
 
 /**
  * A top bar consisting of nav info above tabs for selecting among a variety of [Nav2Scenario]s.
@@ -37,28 +40,33 @@ internal class Nav2TopBar(
     mutableMapOf(
       Nav2Scenario.LANDING to
         Nav2TopBarState(
-          currentRoute = "/${Nav2RouteNames.LANDING}",
-          backStack = "/${Nav2RouteNames.LANDING}",
+          currentRoute = "/${RouteNames.LANDING}",
+          backStack = "/${RouteNames.LANDING}",
         ),
       Nav2Scenario.COMPOSE to
         Nav2TopBarState(
-          currentRoute = "/${Nav2RouteNames.HOME}",
-          backStack = "/${Nav2RouteNames.HOME}",
+          currentRoute = "/${RouteNames.HOME}",
+          backStack = "/${RouteNames.HOME}",
         ),
       Nav2Scenario.FRAGMENTS to
         Nav2TopBarState(
-          currentRoute = "/${Nav2RouteNames.HOME}",
-          backStack = "/${Nav2RouteNames.HOME}",
+          currentRoute = "/${RouteNames.HOME}",
+          backStack = "/${RouteNames.HOME}",
         ),
       Nav2Scenario.DEEP_LINK to
         Nav2TopBarState(
-          currentRoute = "/${Nav2RouteNames.DEEP_LINK}",
-          backStack = "/${Nav2RouteNames.DEEP_LINK}",
+          currentRoute = "/${RouteNames.DEEP_LINK}",
+          backStack = "/${RouteNames.DEEP_LINK}",
+        ),
+      Nav2Scenario.CUSTOM to
+        Nav2TopBarState(
+          currentRoute = "/${RouteNames.CUSTOM}",
+          backStack = "/${RouteNames.CUSTOM}",
         ),
       Nav2Scenario.PERFORMANCE to
         Nav2TopBarState(
-          currentRoute = "/${Nav2RouteNames.HOME}",
-          backStack = "/${Nav2RouteNames.HOME}",
+          currentRoute = "/${RouteNames.HOME}",
+          backStack = "/${RouteNames.HOME}",
         ),
     )
   private val tabViews = mutableMapOf<Nav2Scenario, Nav2TabView>()
@@ -183,6 +191,7 @@ internal class Nav2TopBar(
         Nav2Scenario.COMPOSE -> R.id.nav2_tab_compose
         Nav2Scenario.FRAGMENTS -> R.id.nav2_tab_fragments
         Nav2Scenario.DEEP_LINK -> R.id.nav2_tab_deep_link
+        Nav2Scenario.CUSTOM -> R.id.nav2_tab_custom
         Nav2Scenario.PERFORMANCE -> R.id.nav2_tab_performance
       }
 

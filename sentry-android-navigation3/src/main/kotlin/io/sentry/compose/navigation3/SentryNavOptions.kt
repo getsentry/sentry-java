@@ -13,7 +13,7 @@ private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 10
  * Instances are immutable; create one with the SentryNavOptions DSL:
  * ```kotlin
  * val options = SentryNavOptions {
- *   captureBackStack = false
+ *   enableNavigationBreadcrumbs = false
  *   maxCapturedBackStackEntries = 5
  * }
  * ```
@@ -110,7 +110,7 @@ private constructor(
  * Creates [SentryNavOptions]. Optionally configure it via [configure]. E.g.:
  * ```kotlin
  * val options = SentryNavOptions {
- *   captureBackStack = false
+ *   enableNavigationBreadcrumbs = false
  *   maxCapturedBackStackEntries = 5
  * }
  * ```

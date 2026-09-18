@@ -1,5 +1,7 @@
 package io.sentry.compose.navigation3
 
+import android.os.Build
+import android.os.Trace
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -21,8 +23,8 @@ import org.jetbrains.annotations.ApiStatus
  *
  *    // Place SentryNavEffect in the same composable as your NavDisplay and call
  *    // the effect first. Doing so ensures the effect's lifecycle matches your
- *    // NavDisplay, and that any Sentry data produced by your nav destinations
- *    // get attributed to the appropriate nav transaction.
+ *    // NavDisplay, and that any Sentry data produced by your initial nav
+ *    // destination gets attributed to the appropriate nav transaction.
  *    SentryNavEffect(
  *      backStack = navBackStack,
  *      backStackEntryMapper = { entry ->
@@ -69,6 +71,8 @@ import org.jetbrains.annotations.ApiStatus
  * @param backStackEntryMapper Maps each entry of the [backStack] to a name and optional arguments
  *   for display in Sentry. See the [BackStackEntryMapper] KDoc for best practices.
  * @param options The kinds of navigation info this effect should record.
+ * @param onBackStackChanged Optional diagnostic callback invoked after Sentry synchronously
+ *   processes a changed back stack. Receives the processing duration in nanoseconds.
  */
 @ApiStatus.Experimental
 @ApiStatus.Internal
@@ -77,11 +81,13 @@ public fun <T : Any> SentryNavEffect(
   backStack: List<T>,
   backStackEntryMapper: BackStackEntryMapper<T>,
   options: SentryNavOptions = SentryNavOptions(),
+  onBackStackChanged: ((durationNanos: Long) -> Unit)? = null,
 ) {
   SentryNavEffect(
     backStack = backStack,
     backStackEntryMapper = backStackEntryMapper,
     options = options,
+    onBackStackChanged = onBackStackChanged,
     scopes = ScopesAdapter.getInstance(),
   )
 }
@@ -91,9 +97,11 @@ internal fun <T : Any> SentryNavEffect(
   backStack: List<T>,
   backStackEntryMapper: BackStackEntryMapper<T>,
   options: SentryNavOptions = SentryNavOptions(),
+  onBackStackChanged: ((durationNanos: Long) -> Unit)? = null,
   scopes: IScopes,
 ) {
   val currentBackStackEntryMapper = rememberUpdatedState(backStackEntryMapper)
+  val currentOnBackStackChanged = rememberUpdatedState(onBackStackChanged)
 
   val observer =
     remember(scopes, options) {
@@ -104,12 +112,32 @@ internal fun <T : Any> SentryNavEffect(
       )
     }
 
-  // The incoming back stack is mutable and shared with the host app; copy it so that BackStackKey
-  // and BackStackObserver are guaranteed to have the same (stable) view.
+  // Intentionally don't remember this copy. Snapshot-backed lists mutate in place, so
+  // remember(backStack) { backStack.toList() } would cache a stale copy. (The key reference
+  // retained by remember() and the backStack reference passed to this effect would point to the
+  // same instance, causing remember() to always return the originally copied list.) Making a fresh
+  // copy ensures a stable snapshot for the duration of each update and lets BackStackKey compare
+  // it with the previous one.
   val copy = backStack.toList()
 
   DisposableEffect(observer, BackStackKey(copy)) {
-    observer.onBackStackChanged(backStack = copy)
+    // Trace the observer work here: DisposableEffect runs after SentryNavEffect returns.
+    val traceEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && Trace.isEnabled()
+    val startedAtNanos = System.nanoTime()
+    try {
+      if (traceEnabled) {
+        Trace.beginSection(SENTRY_NAV_EFFECT_TRACE_SECTION)
+        try {
+          observer.onBackStackChanged(backStack = copy)
+        } finally {
+          Trace.endSection()
+        }
+      } else {
+        observer.onBackStackChanged(backStack = copy)
+      }
+    } finally {
+      currentOnBackStackChanged.value?.invoke(System.nanoTime() - startedAtNanos)
+    }
     onDispose {}
   }
 
@@ -151,3 +179,5 @@ internal class BackStackKey<T : Any>(private val backStack: List<T>) {
     return result
   }
 }
+
+private const val SENTRY_NAV_EFFECT_TRACE_SECTION = "SentryNavEffect.onBackStackChanged"

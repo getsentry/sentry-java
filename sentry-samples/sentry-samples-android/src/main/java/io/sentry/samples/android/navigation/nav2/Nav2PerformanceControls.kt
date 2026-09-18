@@ -1,4 +1,4 @@
-package io.sentry.samples.android.navigation
+package io.sentry.samples.android.navigation.nav2
 
 import android.os.Trace
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
 /** State holder backing the [Nav2Scenario.PERFORMANCE] tab. */
-internal class NavigationPerformanceState {
+internal class Nav2PerformanceState {
 
   var stackDepth by mutableIntStateOf(30)
   var autoRecompose by mutableStateOf(false)
@@ -83,12 +83,12 @@ internal class NavigationPerformanceState {
 
 /** "Performance" tab content. */
 @Composable
-internal fun NavigationPerformancePanel(
+internal fun Nav2PerformancePanel(
   title: String,
   description: String,
   currentRoute: String,
   backStack: String,
-  state: NavigationPerformanceState,
+  state: Nav2PerformanceState,
   onBuildStack: () -> Unit,
   onReplaceTop: () -> Unit,
 ) {
@@ -98,7 +98,7 @@ internal fun NavigationPerformancePanel(
       if (!state.autoRecompose) {
         break
       }
-      traceNavigationPerformanceSection("Nav2Stress.autoRecompose") {
+      traceNav2PerformanceSection("Nav2Stress.autoRecompose") {
         state.markRecompositionRequest()
       }
     }
@@ -110,7 +110,7 @@ internal fun NavigationPerformancePanel(
       if (!state.autoNavigate) {
         break
       }
-      traceNavigationPerformanceSection("Nav2Stress.autoNavigate") { onReplaceTop() }
+      traceNav2PerformanceSection("Nav2Stress.autoNavigate") { onReplaceTop() }
     }
   }
 
@@ -264,7 +264,7 @@ private fun PerfToggleButton(
   }
 }
 
-internal fun traceNavigationPerformanceSection(sectionName: String, block: () -> Unit) {
+internal fun traceNav2PerformanceSection(sectionName: String, block: () -> Unit) {
   Trace.beginSection(sectionName)
   try {
     block()
@@ -273,7 +273,7 @@ internal fun traceNavigationPerformanceSection(sectionName: String, block: () ->
   }
 }
 
-internal fun navigationPerformanceBackStackPreview(entries: List<String>): String {
+internal fun nav2PerformanceBackStackPreview(entries: List<String>): String {
   if (entries.size <= 8) {
     return entries.joinToString(" -> ")
   }

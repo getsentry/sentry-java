@@ -1,5 +1,7 @@
 package io.sentry.compose.navigation3
 
+import android.os.Build
+import android.os.Trace
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScope
@@ -172,10 +174,12 @@ internal class BackStackObserver<T : Any>(
       }
 
     val normalizedEntries =
-      backStackConverter.convert(
-        backStack = entriesToConvert,
-        retentionPolicy = RetentionPolicy.KEEP_FIRST,
-      )
+      traceSection(TRACE_BACK_STACK_CONVERSION) {
+        backStackConverter.convert(
+          backStack = entriesToConvert,
+          retentionPolicy = RetentionPolicy.KEEP_FIRST,
+        )
+      }
 
     return BackStackData(
       topEntry = topEntry,
@@ -198,19 +202,25 @@ internal class BackStackObserver<T : Any>(
     }
 
     if (options.enableNavigationBreadcrumbs) {
-      navBreadcrumbs.emit(fromEntry = previousTop, toEntry = currentBackStack.topEntryNormalized)
+      traceSection(TRACE_NAVIGATION_BREADCRUMB) {
+        navBreadcrumbs.emit(fromEntry = previousTop, toEntry = currentBackStack.topEntryNormalized)
+      }
     }
 
-    navTransaction.stop(scope)
+    traceSection(TRACE_NAVIGATION_TRANSACTION_STOP) { navTransaction.stop(scope) }
 
     if (areNavigationTransactionsEnabled) {
-      navTransaction
-        .start(
-          scope,
-          currentTop.name,
-          currentTop.arguments,
-        )
-        ?.let { transaction -> navContext.updateTransaction(transaction, scope, currentBackStack) }
+      traceSection(TRACE_NAVIGATION_TRANSACTION_START) {
+        navTransaction
+          .start(
+            scope,
+            currentTop.name,
+            currentTop.arguments,
+          )
+          ?.let { transaction ->
+            navContext.updateTransaction(transaction, scope, currentBackStack)
+          }
+      }
     } else {
       // Rotate the propagation context.
       scope.withPropagationContext { scope.setPropagationContext(PropagationContext()) }
@@ -241,6 +251,23 @@ internal class BackStackObserver<T : Any>(
     previousTopNormalized = null
   }
 }
+
+private inline fun <T> traceSection(name: String, block: () -> T): T {
+  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || !Trace.isEnabled()) {
+    return block()
+  }
+  Trace.beginSection(name)
+  return try {
+    block()
+  } finally {
+    Trace.endSection()
+  }
+}
+
+private const val TRACE_BACK_STACK_CONVERSION = "SentryNavEffect.backStackConversion"
+private const val TRACE_NAVIGATION_BREADCRUMB = "SentryNavEffect.navigationBreadcrumb"
+private const val TRACE_NAVIGATION_TRANSACTION_STOP = "SentryNavEffect.navigationTransactionStop"
+private const val TRACE_NAVIGATION_TRANSACTION_START = "SentryNavEffect.navigationTransactionStart"
 
 /**
  * A model for applying one back stack update.

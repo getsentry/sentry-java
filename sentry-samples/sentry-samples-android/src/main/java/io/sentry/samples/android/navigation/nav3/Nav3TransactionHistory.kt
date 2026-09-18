@@ -1,4 +1,4 @@
-package io.sentry.samples.android.navigation
+package io.sentry.samples.android.navigation.nav3
 
 import android.os.Handler
 import android.os.Looper
@@ -8,10 +8,10 @@ import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import io.sentry.samples.android.SampleBeforeSendTransactionHook
 
-/** State holder backing the [Nav2TransactionHistorySheet]. */
-internal class Nav2TransactionHistory(private val isActive: () -> Boolean) {
+/** State holder backing the navigation sample transaction history sheet. */
+internal class NavigationTransactionHistory(private val isActive: () -> Boolean) {
 
-  val transactions = mutableStateListOf<Nav2TransactionTrace>()
+  val transactions = mutableStateListOf<NavigationTransactionTrace>()
 
   private val mainHandler = Handler(Looper.getMainLooper())
   private val transactionListener: (SentryTransaction, String?) -> Unit = { transaction, dsn ->
@@ -38,7 +38,7 @@ internal class Nav2TransactionHistory(private val isActive: () -> Boolean) {
       return
     }
 
-    val trace = transaction.toNav2TransactionTrace(dsn)
+    val trace = transaction.toNavigationTransactionTrace(dsn)
     if (Looper.myLooper() == Looper.getMainLooper()) {
       transactions.addMostRecent(trace)
     } else {
@@ -51,7 +51,7 @@ internal class Nav2TransactionHistory(private val isActive: () -> Boolean) {
   }
 }
 
-internal data class Nav2TransactionTrace(
+internal data class NavigationTransactionTrace(
   val name: String,
   val operation: String,
   val eventId: String,
@@ -60,28 +60,31 @@ internal data class Nav2TransactionTrace(
   val tab: String,
   val durationMillis: Double,
   val sentryUrl: String?,
-  val spans: List<Nav2TraceSpan>,
+  val spans: List<NavigationTraceSpan>,
 )
 
-internal data class Nav2TraceSpan(
+internal data class NavigationTraceSpan(
   val spanId: String,
   val parentSpanId: String?,
   val operation: String,
   val description: String?,
   val startOffsetMillis: Double,
   val durationMillis: Double,
-  val children: List<Nav2TraceSpan> = emptyList(),
+  val children: List<NavigationTraceSpan> = emptyList(),
 )
 
-private fun SentryTransaction.toNav2TransactionTrace(dsn: String?): Nav2TransactionTrace {
+private fun SentryTransaction.toNavigationTransactionTrace(
+  dsn: String?
+): NavigationTransactionTrace {
   val trace = contexts.trace
   val startTimestamp = startTimestamp
-  val endTimestamp = timestamp ?: startTimestamp
+  val endTimestamp =
+    timestamp ?: spans.mapNotNull { span -> span.timestamp }.maxOrNull() ?: startTimestamp
   val durationMillis = ((endTimestamp - startTimestamp) * 1_000.0).coerceAtLeast(0.0)
   val rootSpanId = trace?.spanId?.toString()
   val traceId = trace?.traceId?.toString().orEmpty()
   val eventId = eventId?.toString().orEmpty()
-  val rawSpans = spans.map { it.toNav2TraceSpan(startTimestamp) }
+  val rawSpans = spans.map { it.toNavigationTraceSpan(startTimestamp) }
   val spanIds = rawSpans.map { it.spanId }.toSet()
   val spansByParentId = rawSpans.groupBy { span -> span.parentSpanId }
   val topLevelSpans =
@@ -93,28 +96,32 @@ private fun SentryTransaction.toNav2TransactionTrace(dsn: String?): Nav2Transact
       }
       .sortedBy { span -> span.startOffsetMillis }
 
-  return Nav2TransactionTrace(
+  return NavigationTransactionTrace(
     name = transaction ?: "<unnamed transaction>",
     operation = trace?.operation ?: "transaction",
     eventId = eventId,
     traceId = traceId,
     status = status?.name,
-    tab = nav2ScenarioLabel(),
+    tab = navigationSampleScenarioLabel(),
     durationMillis = durationMillis,
     sentryUrl = sentryTransactionUrl(dsn, traceId, rootSpanId, eventId, endTimestamp),
     spans = topLevelSpans.withChildren(spansByParentId),
   )
 }
 
-private fun MutableList<Nav2TransactionTrace>.addMostRecent(transaction: Nav2TransactionTrace) {
+private fun MutableList<NavigationTransactionTrace>.addMostRecent(
+  transaction: NavigationTransactionTrace
+) {
   add(0, transaction)
   while (size > TRANSACTION_HISTORY_LIMIT) {
     removeAt(lastIndex)
   }
 }
 
-private fun SentrySpan.toNav2TraceSpan(transactionStartTimestamp: Double): Nav2TraceSpan =
-  Nav2TraceSpan(
+private fun SentrySpan.toNavigationTraceSpan(
+  transactionStartTimestamp: Double
+): NavigationTraceSpan =
+  NavigationTraceSpan(
     spanId = spanId.toString(),
     parentSpanId = parentSpanId?.toString(),
     operation = op,
@@ -124,13 +131,13 @@ private fun SentrySpan.toNav2TraceSpan(transactionStartTimestamp: Double): Nav2T
       (((timestamp ?: startTimestamp) - startTimestamp) * 1_000.0).coerceAtLeast(0.0),
   )
 
-private fun List<Nav2TraceSpan>.withChildren(
-  spansByParentId: Map<String?, List<Nav2TraceSpan>>
-): List<Nav2TraceSpan> = map { span -> span.withChildren(spansByParentId) }
+private fun List<NavigationTraceSpan>.withChildren(
+  spansByParentId: Map<String?, List<NavigationTraceSpan>>
+): List<NavigationTraceSpan> = map { span -> span.withChildren(spansByParentId) }
 
-private fun Nav2TraceSpan.withChildren(
-  spansByParentId: Map<String?, List<Nav2TraceSpan>>
-): Nav2TraceSpan =
+private fun NavigationTraceSpan.withChildren(
+  spansByParentId: Map<String?, List<NavigationTraceSpan>>
+): NavigationTraceSpan =
   copy(
     children =
       spansByParentId[spanId]

@@ -22,7 +22,7 @@ public final class io/sentry/compose/navigation3/SentryBackStackEntry {
 }
 
 public final class io/sentry/compose/navigation3/SentryNavEffectKt {
-	public static final fun SentryNavEffect (Ljava/util/List;Lio/sentry/compose/navigation3/BackStackEntryMapper;Lio/sentry/compose/navigation3/SentryNavOptions;Landroidx/compose/runtime/Composer;II)V
+	public static final fun SentryNavEffect (Ljava/util/List;Lio/sentry/compose/navigation3/BackStackEntryMapper;Lio/sentry/compose/navigation3/SentryNavOptions;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class io/sentry/compose/navigation3/SentryNavOptions {

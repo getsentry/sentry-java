@@ -294,6 +294,34 @@ class SentryNavEffectTest {
       .isEqualTo(listOf(mapOf("entry" to "/HomeRoute")))
   }
 
+  @Test
+  fun `diagnostic callback measures only processed back stack changes`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(HomeRoute())
+    val recomposeTick = mutableIntStateOf(0)
+    val durations = mutableListOf<Long>()
+
+    composeRule.setContent {
+      recomposeTick.intValue
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = defaultEntryMapper,
+        options = SentryNavOptions(),
+        onBackStackChanged = durations::add,
+        scopes = fixture.scopes,
+      )
+    }
+    composeRule.waitForIdle()
+
+    composeRule.runOnIdle { recomposeTick.intValue++ }
+    composeRule.waitForIdle()
+    composeRule.runOnIdle { backStack.add(ProfileRoute("123")) }
+    composeRule.waitForIdle()
+
+    assertThat(durations).hasSize(2)
+    assertThat(durations.all { duration -> duration >= 0L }).isTrue()
+  }
+
   /**
    * We want to make sure any composable `*Effect`s run in the nav destination can see the new nav
    * transaction, otherwise their spans will be misparented under the previous nav transaction.

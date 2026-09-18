@@ -123,14 +123,14 @@ public class SentryBackStackEntry(
  * ```kotlin
  * @Serializable
  * @SerialName("Home")
- * data object Home(userName: String) : NavKey
+ * data class Home(userName: String) : NavKey
  *
  * @Serializable
  * @SerialName("ProductDetail")
  * data class ProductDetail(userName: String, productId: String, tab: Tab) : NavKey
  * ```
  * ```kotlin
- * val backStackItemMapper = BackStackEntryMapper<Any> { entry ->
+ * val backStackItemMapper = BackStackEntryMapper<NavKey> { entry ->
  *   when (entry) {
  *     is Home -> SentryBackStackEntry(Home.serializer().descriptor.serialName)
  *     is ProductDetail -> SentryBackStackEntry(

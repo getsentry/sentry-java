@@ -15,6 +15,7 @@ android {
     minSdk = 24
     targetSdk = libs.versions.targetSdk.get().toInt()
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR"
   }
 
   buildTypes {

@@ -1,4 +1,4 @@
-package io.sentry.samples.android.navigation
+package io.sentry.samples.android.navigation.nav2
 
 import android.app.Dialog
 import android.content.Context
@@ -16,13 +16,17 @@ import android.widget.TextView
 import androidx.core.view.setPadding
 import androidx.fragment.app.DialogFragment
 import io.sentry.samples.android.R
+import io.sentry.samples.android.navigation.common.NavArgs
+import io.sentry.samples.android.navigation.common.RouteSpecs
+import io.sentry.samples.android.navigation.common.displayArguments
+import io.sentry.samples.android.navigation.common.themeColor
 
 class Nav2PromoDialogFragment : DialogFragment() {
 
   override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
     val activity = requireActivity() as Nav2Activity
     activity.tagCurrentScenarioOnTransaction()
-    val promoId = requireArguments().getString(Nav2Args.PROMO_ID).orEmpty()
+    val promoId = requireArguments().getString(NavArgs.PROMO_ID).orEmpty()
 
     return Dialog(requireContext()).apply {
       window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -43,14 +47,14 @@ class Nav2PromoDialogFragment : DialogFragment() {
 
   private fun promoDialogContent(activity: Nav2Activity, promoId: String): View =
     LinearLayout(requireContext()).apply {
-      val routeSpec = Nav2RouteSpecs.promoDialog
+      val routeSpec = RouteSpecs.promoDialog
       orientation = LinearLayout.VERTICAL
       background = roundedSurface(context, topCornersOnly = false)
       setPadding(24.dp(context))
       addView(sectionLabel(context, "Navigation destination"))
       addView(titleText(context, routeSpec.title))
       routeSpec.description?.let { addView(bodyText(context, it)) }
-      routeSpec.displayArguments(mapOf(Nav2Args.PROMO_ID to promoId)).firstOrNull()?.let {
+      routeSpec.displayArguments(mapOf(NavArgs.PROMO_ID to promoId)).firstOrNull()?.let {
         (label, value) ->
         addView(argumentPill(context, "$label=$value"))
       }
@@ -85,7 +89,7 @@ class Nav2ShareSheetFragment : DialogFragment() {
   override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
     val activity = requireActivity() as Nav2Activity
     activity.tagCurrentScenarioOnTransaction()
-    val productId = requireArguments().getString(Nav2Args.PRODUCT_ID).orEmpty()
+    val productId = requireArguments().getString(NavArgs.PRODUCT_ID).orEmpty()
 
     return Dialog(requireContext()).apply {
       window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -109,14 +113,14 @@ class Nav2ShareSheetFragment : DialogFragment() {
 
   private fun shareSheetContent(activity: Nav2Activity, productId: String): View =
     LinearLayout(requireContext()).apply {
-      val routeSpec = Nav2RouteSpecs.shareSheet
+      val routeSpec = RouteSpecs.shareSheet
       orientation = LinearLayout.VERTICAL
       setPadding(24.dp(context))
       background = roundedSurface(context, topCornersOnly = true)
       addView(sectionLabel(context, "Overlay surface"))
       addView(titleText(context, routeSpec.title))
       routeSpec.description?.let { addView(bodyText(context, it)) }
-      routeSpec.displayArguments(mapOf(Nav2Args.PRODUCT_ID to productId)).firstOrNull()?.let {
+      routeSpec.displayArguments(mapOf(NavArgs.PRODUCT_ID to productId)).firstOrNull()?.let {
         (label, value) ->
         addView(argumentPill(context, "$label=$value"))
       }
