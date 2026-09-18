@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add `LocalSentrySpan` to `sentry-compose` so apps can provide a parent `ISpan` to a composable subtree and have nested `SentryTraced` spans attach to it ([#6112]https://github.com/getsentry/sentry-java/pull/6112)
+
 ### Fixes
 
 - Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
