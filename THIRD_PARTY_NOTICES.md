@@ -398,7 +398,7 @@ limitations under the License.
 
 ### Scope
 
-The Sentry Android sample app includes an adapted version of the Navigation 3 recipes bottom-sheet scene strategy so the Nav3 sample can exercise a real scene-strategy-based bottom sheet destination. The code resides in `io.sentry.samples.android.navigation.Nav3BottomSheetSceneStrategy`.
+The Sentry Android sample app includes an adapted version of the Navigation 3 recipes bottom-sheet scene strategy so the Nav3 sample can exercise a real scene-strategy-based bottom sheet destination. The code resides in `io.sentry.samples.android.navigation.nav3.Nav3BottomSheetSceneStrategy`.
 
 ```
 Copyright (C) 2025 The Android Open Source Project
