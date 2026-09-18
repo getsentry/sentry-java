@@ -51,6 +51,7 @@ dependencies {
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   implementation(projects.sentrySpringBoot4Starter)
+  implementation(projects.sentryMicrometer)
   implementation(projects.sentryLogback)
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)

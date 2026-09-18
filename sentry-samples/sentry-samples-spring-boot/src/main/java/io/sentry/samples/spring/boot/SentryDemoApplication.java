@@ -2,6 +2,7 @@ package io.sentry.samples.spring.boot;
 
 import static io.sentry.quartz.SentryJobListener.SENTRY_SLUG_KEY;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.sentry.samples.spring.boot.quartz.SampleJob;
 import java.util.Collections;
 import org.quartz.JobDetail;
@@ -34,6 +35,11 @@ public class SentryDemoApplication {
   @Bean
   WebClient webClient(WebClient.Builder builder) {
     return builder.build();
+  }
+
+  @Bean
+  SimpleMeterRegistry simpleMeterRegistry() {
+    return new SimpleMeterRegistry();
   }
 
   @Bean

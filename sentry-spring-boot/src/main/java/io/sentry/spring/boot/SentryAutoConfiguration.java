@@ -155,6 +155,17 @@ public class SentryAutoConfiguration {
     @ConditionalOnMissingClass("io.sentry.opentelemetry.agent.AgentMarker")
     static class OpenTelemetryNoAgentConfiguration {}
 
+    @Configuration(proxyBeanMethods = false)
+    @Import(SentryMicrometerConfiguration.class)
+    @Open
+    @ConditionalOnClass(
+        name = {
+          "io.micrometer.core.instrument.MeterRegistry",
+          "io.sentry.micrometer.SentryMeterRegistry"
+        })
+    @ConditionalOnProperty(prefix = "sentry.micrometer", name = "enabled", havingValue = "true")
+    static class MicrometerConfiguration {}
+
     @Bean
     public @NotNull IScopes sentryHub(
         final @NotNull List<Sentry.OptionsConfiguration<SentryOptions>> optionsConfigurations,
