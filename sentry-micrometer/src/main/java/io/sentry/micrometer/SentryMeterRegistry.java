@@ -268,8 +268,8 @@ public final class SentryMeterRegistry extends MeterRegistry {
   }
 
   private void onMeterRemoved(final @NotNull Meter meter) {
-    if (meter instanceof SentryFunctionCounter) {
-      ((SentryFunctionCounter<?>) meter).markRemoved();
+    if (meter instanceof SentryRemovableMeter) {
+      ((SentryRemovableMeter) meter).markRemoved();
     }
   }
 
