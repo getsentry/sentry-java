@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
@@ -68,6 +69,96 @@ class SentryFunctionTimerTest {
     registry.pollMeters()
     assertThat(countInvocations.get()).isEqualTo(1)
     assertThat(totalTimeInvocations.get()).isEqualTo(1)
+  }
+
+  @Test
+  fun `count callback failure does not suppress total time`() {
+    val metrics = installMetricsApi()
+    val registry = pollingRegistry()
+    val state = State(10, 100.0)
+    var countFails = false
+
+    FunctionTimer.builder(
+        "requests",
+        state,
+        {
+          if (countFails) {
+            throw IllegalStateException("count failed")
+          }
+          it.count
+        },
+        { it.totalTime },
+        TimeUnit.MILLISECONDS,
+      )
+      .register(registry)
+
+    registry.pollMeters()
+    countFails = true
+    state.count = 12
+    state.totalTime = 150.0
+    registry.pollMeters()
+
+    verify(metrics)
+      .count(
+        eq("requests.total_time"),
+        eq(50.0),
+        eq(MetricsUnit.Duration.MILLISECOND),
+        any(),
+      )
+    verify(metrics, never()).count(eq("requests.count"), any(), anyOrNull(), any())
+  }
+
+  @Test
+  fun `total time callback failure does not suppress count`() {
+    val metrics = installMetricsApi()
+    val registry = pollingRegistry()
+    val state = State(10, 100.0)
+    var totalTimeFails = false
+
+    FunctionTimer.builder(
+        "requests",
+        state,
+        { it.count },
+        {
+          if (totalTimeFails) {
+            throw IllegalStateException("total time failed")
+          }
+          it.totalTime
+        },
+        TimeUnit.MILLISECONDS,
+      )
+      .register(registry)
+
+    registry.pollMeters()
+    totalTimeFails = true
+    state.count = 12
+    state.totalTime = 150.0
+    registry.pollMeters()
+
+    verify(metrics).count(eq("requests.count"), eq(2.0), anyOrNull(), any())
+    verify(metrics, never()).count(eq("requests.total_time"), any(), anyOrNull(), any())
+  }
+
+  @Test
+  fun `fatal callback failures are rethrown`() {
+    val registry = pollingRegistry()
+    val state = State(10, 100.0)
+    val totalTimeInvocations = AtomicInteger()
+
+    FunctionTimer.builder(
+        "requests",
+        state,
+        { throw OutOfMemoryError("fatal") },
+        {
+          totalTimeInvocations.incrementAndGet()
+          it.totalTime
+        },
+        TimeUnit.MILLISECONDS,
+      )
+      .register(registry)
+
+    assertFailsWith<OutOfMemoryError> { registry.pollMeters() }
+    assertThat(totalTimeInvocations.get()).isEqualTo(0)
   }
 
   @Test

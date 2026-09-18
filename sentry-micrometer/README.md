@@ -78,10 +78,9 @@ The first successful finite function-meter poll establishes its baseline and emi
 positive deltas are sent. A decreasing value is treated as a reset and establishes a new baseline.
 `FunctionTimer` tracks its count and total-time baselines independently.
 
-A `FunctionTimer` does not expose individual durations, so the integration emits neither a
-mean gauge nor a distribution. To derive a correctly weighted mean across instances, divide the
-sum of `${name}.total_time` by the sum of `${name}.count`. Percentiles cannot be derived from these
-cumulative values.
+A `FunctionTimer` exposes only cumulative count and total time, not individual duration
+observations. The integration therefore exports these values as counter deltas rather than a mean
+gauge or distribution. Percentiles cannot be reconstructed from count and total time alone.
 
 Unsupported custom meters remain readable through Micrometer but are not exported to Sentry.
 
