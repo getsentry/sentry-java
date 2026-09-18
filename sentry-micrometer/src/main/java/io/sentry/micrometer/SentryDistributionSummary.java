@@ -6,9 +6,11 @@ import io.micrometer.core.instrument.cumulative.CumulativeDistributionSummary;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import org.jetbrains.annotations.NotNull;
 
-final class SentryDistributionSummary extends CumulativeDistributionSummary {
+final class SentryDistributionSummary extends CumulativeDistributionSummary
+    implements SentryRemovableMeter {
   private final @NotNull SentryMeterRegistry registry;
   private final @NotNull SentryMetricInfo metricInfo;
+  private volatile boolean removed;
 
   SentryDistributionSummary(
       final @NotNull Meter.Id id,
@@ -25,8 +27,13 @@ final class SentryDistributionSummary extends CumulativeDistributionSummary {
   @Override
   protected void recordNonNegative(final double amount) {
     super.recordNonNegative(amount);
-    if (Double.isFinite(amount)) {
+    if (Double.isFinite(amount) && !removed) {
       registry.captureDistribution(metricInfo, amount);
     }
+  }
+
+  @Override
+  public void markRemoved() {
+    removed = true;
   }
 }

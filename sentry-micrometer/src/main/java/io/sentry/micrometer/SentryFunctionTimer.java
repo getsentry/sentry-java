@@ -8,7 +8,8 @@ import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
 import org.jetbrains.annotations.NotNull;
 
-final class SentryFunctionTimer<T> extends CumulativeFunctionTimer<T> {
+final class SentryFunctionTimer<T> extends CumulativeFunctionTimer<T>
+    implements SentryRemovableMeter {
   private final @NotNull SentryMeterRegistry registry;
   private final @NotNull SentryMetricInfo countMetricInfo;
   private final @NotNull SentryMetricInfo totalTimeMetricInfo;
@@ -88,7 +89,8 @@ final class SentryFunctionTimer<T> extends CumulativeFunctionTimer<T> {
     }
   }
 
-  void markRemoved() {
+  @Override
+  public void markRemoved() {
     removed = true;
   }
 }

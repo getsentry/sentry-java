@@ -5,7 +5,8 @@ import io.micrometer.core.instrument.cumulative.CumulativeFunctionCounter;
 import java.util.function.ToDoubleFunction;
 import org.jetbrains.annotations.NotNull;
 
-final class SentryFunctionCounter<T> extends CumulativeFunctionCounter<T> {
+final class SentryFunctionCounter<T> extends CumulativeFunctionCounter<T>
+    implements SentryRemovableMeter {
   private final @NotNull SentryMeterRegistry registry;
   private final @NotNull SentryMetricInfo metricInfo;
   private volatile boolean removed;
@@ -42,7 +43,8 @@ final class SentryFunctionCounter<T> extends CumulativeFunctionCounter<T> {
     }
   }
 
-  void markRemoved() {
+  @Override
+  public void markRemoved() {
     removed = true;
   }
 }
