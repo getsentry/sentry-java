@@ -198,6 +198,44 @@ class SentryMeterRegistryTest {
   }
 
   @Test
+  fun `removed active meters stop forwarding but retain local behavior`() {
+    val metrics = installMetricsApi()
+    val registry = SentryMeterRegistry()
+    val counter = registry.counter("counter")
+    val timer = registry.timer("timer")
+    val summary = registry.summary("summary")
+
+    registry.remove(counter)
+    registry.remove(timer)
+    registry.remove(summary)
+    counter.increment()
+    timer.record(1, TimeUnit.MILLISECONDS)
+    summary.record(1.0)
+
+    assertThat(counter.count()).isEqualTo(1.0)
+    assertThat(timer.count()).isEqualTo(1)
+    assertThat(summary.count()).isEqualTo(1)
+    verifyNoInteractions(metrics)
+  }
+
+  @Test
+  fun `re-registering a removed meter does not reactivate its stale handle`() {
+    val metrics = installMetricsApi()
+    val registry = SentryMeterRegistry()
+    val staleCounter = registry.counter("counter")
+
+    registry.remove(staleCounter)
+    val replacementCounter = registry.counter("counter")
+    staleCounter.increment(2.0)
+    replacementCounter.increment(3.0)
+
+    assertThat(staleCounter.count()).isEqualTo(2.0)
+    assertThat(replacementCounter.count()).isEqualTo(3.0)
+    verify(metrics).count(eq("counter"), eq(3.0), anyOrNull(), any())
+    verify(metrics, times(1)).count(any(), anyOrNull(), anyOrNull(), any())
+  }
+
+  @Test
   fun `global Sentry metrics option disables forwarding`() {
     val client = mock<ISentryClient>()
     whenever(client.isEnabled).thenReturn(true)

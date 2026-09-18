@@ -47,7 +47,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
   /** Creates a registry that forwards active meter observations to Sentry. */
   public SentryMeterRegistry() {
     super(Clock.SYSTEM);
-    config().namingConvention(NamingConvention.identity);
+    config().namingConvention(NamingConvention.identity).onMeterRemoved(this::onMeterRemoved);
     addIntegrationToSdkVersion(INTEGRATION_NAME);
   }
 
@@ -157,6 +157,12 @@ public final class SentryMeterRegistry extends MeterRegistry {
         .metrics()
         .distribution(
             metricInfo.getName(), value, metricInfo.getUnit(), metricInfo.createParameters());
+  }
+
+  private void onMeterRemoved(final @NotNull Meter meter) {
+    if (meter instanceof SentryRemovableMeter) {
+      ((SentryRemovableMeter) meter).markRemoved();
+    }
   }
 
   private @NotNull SentryMetricInfo createMetricInfo(final @NotNull Meter.Id id) {

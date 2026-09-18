@@ -8,9 +8,10 @@ import io.micrometer.core.instrument.distribution.pause.PauseDetector;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 
-final class SentryTimer extends CumulativeTimer {
+final class SentryTimer extends CumulativeTimer implements SentryRemovableMeter {
   private final @NotNull SentryMeterRegistry registry;
   private final @NotNull SentryMetricInfo metricInfo;
+  private volatile boolean removed;
 
   SentryTimer(
       final @NotNull Meter.Id id,
@@ -28,7 +29,14 @@ final class SentryTimer extends CumulativeTimer {
   @Override
   protected void recordNonNegative(final long amount, final @NotNull TimeUnit unit) {
     super.recordNonNegative(amount, unit);
-    registry.captureDistribution(metricInfo, toMilliseconds(amount, unit));
+    if (!removed) {
+      registry.captureDistribution(metricInfo, toMilliseconds(amount, unit));
+    }
+  }
+
+  @Override
+  public void markRemoved() {
+    removed = true;
   }
 
   private static double toMilliseconds(final long amount, final @NotNull TimeUnit unit) {
