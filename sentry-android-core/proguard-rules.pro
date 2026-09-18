@@ -48,8 +48,8 @@
 -dontwarn io.sentry.apollo3.SentryApollo3HttpInterceptor
 -keepnames class io.sentry.apollo3.SentryApollo3HttpInterceptor
 
--dontwarn io.sentry.android.okhttp.SentryOkHttpInterceptor
--keepnames class io.sentry.android.okhttp.SentryOkHttpInterceptor
+-dontwarn io.sentry.okhttp.SentryOkHttpInterceptor
+-keepnames class io.sentry.okhttp.SentryOkHttpInterceptor
 
 -dontwarn io.sentry.android.navigation.SentryNavigationListener
 -keepnames class io.sentry.android.navigation.SentryNavigationListener

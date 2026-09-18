@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Fix stale ProGuard/R8 keep rule for the OkHttp integration that still referenced the pre-v8 `io.sentry.android.okhttp.SentryOkHttpInterceptor` class, and ship name-keep rules for `io.sentry.okhttp.SentryOkHttpInterceptor`/`SentryOkHttpEventListener` from the `sentry-okhttp` module so stack traces stay unambiguous ([#6127](https://github.com/getsentry/sentry-java/issues/6127))
 - Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
 
 ## 8.57.0

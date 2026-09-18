@@ -10,4 +10,10 @@
 # be interpreted by R8 automatically.
 # https://raw.githubusercontent.com/square/okhttp/master/okhttp/src/jvmMain/resources/META-INF/proguard/okhttp3.pro
 
+# Keep the class names of the Sentry OkHttp integration so stack traces stay unambiguous.
+# sentry-okhttp is a plain JVM jar, but R8/AGP still apply rules shipped under
+# META-INF/proguard, so these travel with the module regardless of sentry-android-core.
+-keepnames class io.sentry.okhttp.SentryOkHttpInterceptor
+-keepnames class io.sentry.okhttp.SentryOkHttpEventListener
+
 ##---------------End: proguard configuration for OkHttp  ----------
