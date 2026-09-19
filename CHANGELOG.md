@@ -11,6 +11,12 @@
 - Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
 - Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
 
+### Dependencies
+
+- Bump Native SDK from v0.16.6 to v0.16.7 ([#6135](https://github.com/getsentry/sentry-java/pull/6135))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0167)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.6...0.16.7)
+
 ## 8.57.0
 
 ### Behavioral Changes
