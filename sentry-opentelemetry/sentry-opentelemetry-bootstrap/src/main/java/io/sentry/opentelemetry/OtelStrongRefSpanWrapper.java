@@ -20,6 +20,8 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.time.AnchoredClock;
+import io.sentry.time.Timestamp;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -320,5 +322,20 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     delegate.addFeatureFlag(flag, result);
+  }
+
+  @Override
+  public @NotNull Timestamp startTimestamp() {
+    return delegate.startTimestamp();
+  }
+
+  @Override
+  public @Nullable Timestamp endTimestamp() {
+    return delegate.endTimestamp();
+  }
+
+  @Override
+  public @Nullable AnchoredClock anchor() {
+    return delegate.anchor();
   }
 }

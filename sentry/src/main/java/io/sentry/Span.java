@@ -3,6 +3,8 @@ package io.sentry;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.AnchoredClock;
+import io.sentry.time.Timestamp;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,11 +19,16 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class Span implements ISpan {
 
-  /** The moment in time when span was started. */
-  private @NotNull SentryDate startTimestamp;
+  /**
+   * When the span started and ended, projected from the transaction's {@link AnchoredClock} — or
+   * stated directly, when a caller supplied them.
+   *
+   * <p>One anchor per transaction is what makes {@code end - start} a tick difference rather than
+   * the difference of two independent wall-clock readings.
+   */
+  private @NotNull Timestamp start;
 
-  /** The moment in time when span has ended. */
-  private @Nullable SentryDate timestamp;
+  private @Nullable Timestamp end;
 
   private final @NotNull SpanContext context;
 
@@ -61,12 +68,7 @@ public final class Span implements ISpan {
     this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.options = options;
     this.spanFinishedCallback = spanFinishedCallback;
-    final @Nullable SentryDate startTimestamp = options.getStartTimestamp();
-    if (startTimestamp != null) {
-      this.startTimestamp = startTimestamp;
-    } else {
-      this.startTimestamp = scopes.getOptions().getDateProvider().now();
-    }
+    this.start = resolveStart(options, transaction);
   }
 
   public Span(
@@ -79,23 +81,45 @@ public final class Span implements ISpan {
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
     this.spanFinishedCallback = null;
-    final @Nullable SentryDate startTimestamp = options.getStartTimestamp();
-    if (startTimestamp != null) {
-      this.startTimestamp = startTimestamp;
-    } else {
-      this.startTimestamp = scopes.getOptions().getDateProvider().now();
-    }
+    this.start = resolveStart(options, sentryTracer);
     this.options = options;
+  }
+
+  private static @NotNull Timestamp resolveStart(
+      final @NotNull SpanOptions options, final @NotNull SentryTracer transaction) {
+    final @Nullable SentryDate stated = options.getStartTimestamp();
+    return stated != null
+        ? Timestamp.ofEpochNanos(stated.nanoTimestamp())
+        : transaction.getAnchor().now();
   }
 
   @Override
   public @NotNull SentryDate getStartDate() {
-    return startTimestamp;
+    return new SentryLongDate(start.epochNanos());
   }
 
   @Override
   public @Nullable SentryDate getFinishDate() {
-    return timestamp;
+    return end == null ? null : new SentryLongDate(end.epochNanos());
+  }
+
+  @Override
+  public @NotNull Timestamp startTimestamp() {
+    return start;
+  }
+
+  @Override
+  public @Nullable Timestamp endTimestamp() {
+    return end;
+  }
+
+  @Override
+  public @Nullable AnchoredClock anchor() {
+    // Both endpoints have to come from the anchor for a tick to mean anything; a stated one does
+    // not, and a projected end paired with a stated start would place the span wrongly.
+    final boolean anchored =
+        start.anchor() != null && (end == null || end.anchor() == start.anchor());
+    return anchored ? start.anchor() : null;
   }
 
   @Override
@@ -180,7 +204,7 @@ public final class Span implements ISpan {
 
   @Override
   public void finish(@Nullable SpanStatus status) {
-    finish(status, scopes.getOptions().getDateProvider().now());
+    finish(status, (Timestamp) null);
   }
 
   /**
@@ -191,16 +215,25 @@ public final class Span implements ISpan {
    */
   @Override
   public void finish(final @Nullable SpanStatus status, final @Nullable SentryDate timestamp) {
+    finish(status, timestamp == null ? null : Timestamp.ofEpochNanos(timestamp.nanoTimestamp()));
+  }
+
+  /**
+   * The anchored counterpart of {@link #finish(SpanStatus, SentryDate)}, used by {@link
+   * SentryTracer} so that a span it stamps keeps the transaction's anchor rather than being demoted
+   * to a stated instant.
+   */
+  void finish(final @Nullable SpanStatus status, final @Nullable Timestamp end) {
     // the span can be finished only once
     if (finished || !isFinishing.compareAndSet(false, true)) {
       return;
     }
 
     this.context.setStatus(status);
-    this.timestamp = timestamp == null ? scopes.getOptions().getDateProvider().now() : timestamp;
+    this.end = end == null ? transaction.getAnchor().now() : end;
     if (options.isTrimStart() || options.isTrimEnd()) {
-      @Nullable SentryDate minChildStart = null;
-      @Nullable SentryDate maxChildEnd = null;
+      @Nullable Timestamp minChildStart = null;
+      @Nullable Timestamp maxChildEnd = null;
 
       // The root span should be trimmed based on all children, but the other spans, like the
       // jetpack composition should be trimmed based on its direct children only
@@ -209,23 +242,25 @@ public final class Span implements ISpan {
               ? transaction.getChildren()
               : getDirectChildren();
       for (final Span child : children) {
-        if (minChildStart == null || child.getStartDate().isBefore(minChildStart)) {
-          minChildStart = child.getStartDate();
+        final @NotNull Timestamp childStart = child.startTimestamp();
+        if (minChildStart == null || childStart.epochNanos() < minChildStart.epochNanos()) {
+          minChildStart = childStart;
         }
-        if (maxChildEnd == null
-            || (child.getFinishDate() != null && child.getFinishDate().isAfter(maxChildEnd))) {
-          maxChildEnd = child.getFinishDate();
+        final @Nullable Timestamp childEnd = child.endTimestamp();
+        if (childEnd != null
+            && (maxChildEnd == null || childEnd.epochNanos() > maxChildEnd.epochNanos())) {
+          maxChildEnd = childEnd;
         }
       }
       if (options.isTrimStart()
           && minChildStart != null
-          && startTimestamp.isBefore(minChildStart)) {
-        updateStartDate(minChildStart);
+          && start.epochNanos() < minChildStart.epochNanos()) {
+        this.start = minChildStart;
       }
       if (options.isTrimEnd()
           && maxChildEnd != null
-          && (this.timestamp == null || this.timestamp.isAfter(maxChildEnd))) {
-        updateEndDate(maxChildEnd);
+          && this.end.epochNanos() > maxChildEnd.epochNanos()) {
+        this.end = maxChildEnd;
       }
     }
 
@@ -406,8 +441,12 @@ public final class Span implements ISpan {
 
   @Override
   public boolean updateEndDate(final @NotNull SentryDate date) {
-    if (this.timestamp != null) {
-      this.timestamp = date;
+    return updateEndDate(Timestamp.ofEpochNanos(date.nanoTimestamp()));
+  }
+
+  boolean updateEndDate(final @NotNull Timestamp date) {
+    if (this.end != null) {
+      this.end = date;
       return true;
     }
     return false;
@@ -435,10 +474,6 @@ public final class Span implements ISpan {
   @Nullable
   SpanFinishedCallback getSpanFinishedCallback() {
     return spanFinishedCallback;
-  }
-
-  private void updateStartDate(@NotNull SentryDate date) {
-    this.startTimestamp = date;
   }
 
   @NotNull
