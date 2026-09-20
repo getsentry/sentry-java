@@ -374,7 +374,10 @@ private fun Nav3CustomTransactionModeSelector(
     modifier = Modifier.testTag(nav3TestTag("custom_mode_label")),
   )
   SingleChoiceSegmentedButtonRow(
-    modifier = Modifier.fillMaxWidth().testTag(nav3TestTag("custom_mode_selector"))
+    modifier =
+      Modifier.fillMaxWidth()
+        .testTag(nav3TestTag("custom_mode_selector"))
+        .testTag(nav3CustomModeSelectionTag(selected))
   ) {
     Nav3CustomTransactionMode.entries.forEachIndexed { index, mode ->
       SegmentedButton(
@@ -720,3 +723,6 @@ private fun nav3InfoTag(label: String): String =
   nav3TestTag(
     "info_${label.lowercase().replace(' ', '_').replace('/', '_').replace('.', '_').replace('-', '_')}"
   )
+
+private fun nav3CustomModeSelectionTag(mode: Nav3CustomTransactionMode): String =
+  nav3TestTag("custom_mode_selected_${mode.name.lowercase()}")

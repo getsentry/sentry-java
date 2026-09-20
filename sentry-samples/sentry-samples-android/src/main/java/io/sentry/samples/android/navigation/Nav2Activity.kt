@@ -335,6 +335,7 @@ class Nav2Activity : AppCompatActivity() {
         )
       }
       Nav2Scenario.COMPOSE -> contentHosts.showCompose()
+      Nav2Scenario.CUSTOM -> contentHosts.showCompose()
       Nav2Scenario.FRAGMENTS -> {
         contentHosts.showFragments()
         resetToHome()
@@ -474,7 +475,7 @@ class Nav2Activity : AppCompatActivity() {
 
   private fun updateComposeNavigationUi(currentRoute: String, backStack: String) {
     topBar.update(
-      scenario = Nav2Scenario.COMPOSE,
+      scenario = if (currentRoute.startsWith("/${Nav2RouteNames.CUSTOM}")) Nav2Scenario.CUSTOM else Nav2Scenario.COMPOSE,
       currentRoute = currentRoute,
       backStack = backStack,
     )

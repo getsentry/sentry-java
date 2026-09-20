@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,27 +52,37 @@ internal fun NavigationTransactionHistorySheet(
 ) {
   ModalBottomSheet(onDismissRequest = onDismissRequest) {
     Column(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 24.dp),
+      modifier =
+        Modifier.fillMaxWidth()
+          .padding(horizontal = 16.dp)
+          .padding(bottom = 24.dp)
+          .testTag(historyTag(sampleName, "sheet")),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       Text(
         "Recent transactions",
         style = MaterialTheme.typography.headlineSmall,
         fontWeight = FontWeight.Bold,
+        modifier = Modifier.testTag(historyTag(sampleName, "title")),
       )
       Text(
         "Displays the last 10 finished transactions emitted by the SDK. Transactions with child work appear here after their work finishes.",
         style = MaterialTheme.typography.bodyMedium,
       )
       Column(
-        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        modifier =
+          Modifier.fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .testTag(historyTag(sampleName, "list")),
         verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         if (transactions.isEmpty()) {
-          EmptyTransactionHistory(showActivityUiLoadTransactionDelayMessage)
+          EmptyTransactionHistory(showActivityUiLoadTransactionDelayMessage, sampleName)
         } else {
-          transactions.forEach { transaction ->
+          transactions.forEachIndexed { index, transaction ->
             TransactionCard(
+              sampleName = sampleName,
+              index = index,
               transaction = transaction,
               onOpenTransaction = onOpenTransaction,
               onDumpTransactionUrl = onDumpTransactionUrl,
@@ -85,10 +96,13 @@ internal fun NavigationTransactionHistorySheet(
 }
 
 @Composable
-private fun EmptyTransactionHistory(showActivityUiLoadTransactionDelayMessage: Boolean) {
+private fun EmptyTransactionHistory(
+  showActivityUiLoadTransactionDelayMessage: Boolean,
+  sampleName: String,
+) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.fillMaxWidth().testTag(historyTag(sampleName, "empty")),
   ) {
     Text(
       if (showActivityUiLoadTransactionDelayMessage) {
@@ -104,6 +118,8 @@ private fun EmptyTransactionHistory(showActivityUiLoadTransactionDelayMessage: B
 
 @Composable
 private fun TransactionCard(
+  sampleName: String,
+  index: Int,
   transaction: NavigationTransactionTrace,
   onOpenTransaction: (String) -> Unit,
   onDumpTransactionUrl: (String) -> Unit,
@@ -111,32 +127,38 @@ private fun TransactionCard(
 ) {
   Card(
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.fillMaxWidth().testTag(historyTag(sampleName, "card_$index")),
   ) {
-    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(
+      modifier = Modifier.padding(12.dp).testTag(historyTag(sampleName, "card_${index}_content")),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
       Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.weight(1f).testTag(historyTag(sampleName, "card_${index}_summary"))) {
           Text(
             transaction.name,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_name")),
           )
           Text(
             listOfNotNull(transaction.operation, transaction.status).joinToString(" - "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_operation")),
           )
         }
         Text(
           "Tab: ${transaction.tab}",
           style = MaterialTheme.typography.labelLarge,
           fontFamily = FontFamily.Monospace,
+          modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_tab")),
         )
       }
 
-      TransactionWaterfall(transaction)
+      TransactionWaterfall(transaction, historyTag(sampleName, "card_${index}_waterfall"))
 
       if (transaction.sentryUrl == null) {
         Text(
@@ -145,14 +167,26 @@ private fun TransactionCard(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
       } else {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          TextButton(onClick = { onOpenTransaction(transaction.sentryUrl) }) {
+        Row(
+          modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_actions")),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          TextButton(
+            onClick = { onOpenTransaction(transaction.sentryUrl) },
+            modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_open")),
+          ) {
             Text("Open in Sentry")
           }
-          TextButton(onClick = { onDumpTransactionUrl(transaction.sentryUrl) }) {
+          TextButton(
+            onClick = { onDumpTransactionUrl(transaction.sentryUrl) },
+            modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_dump")),
+          ) {
             Text("Dump URL")
           }
-          TextButton(onClick = { onCopyTransactionUrl(transaction.sentryUrl) }) {
+          TextButton(
+            onClick = { onCopyTransactionUrl(transaction.sentryUrl) },
+            modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_copy")),
+          ) {
             Text("Copy URL")
           }
         }
@@ -162,10 +196,10 @@ private fun TransactionCard(
 }
 
 @Composable
-private fun TransactionWaterfall(transaction: NavigationTransactionTrace) {
+private fun TransactionWaterfall(transaction: NavigationTransactionTrace, testTag: String) {
   val rows = transaction.spans.flattenTraceRows()
   val scrollState = rememberScrollState()
-  Column(modifier = Modifier.horizontalScroll(scrollState)) {
+  Column(modifier = Modifier.horizontalScroll(scrollState).testTag(testTag)) {
     TimelineHeader(transaction.durationMillis)
     TraceRow(
       label = transaction.name,
@@ -327,3 +361,6 @@ private val CHILD_SPAN_COLORS =
 private val LABEL_WIDTH = 260.dp
 private val TIMELINE_WIDTH = 420.dp
 private val WATERFALL_WIDTH = LABEL_WIDTH + TIMELINE_WIDTH
+
+private fun historyTag(sampleName: String, suffix: String): String =
+  "${sampleName.lowercase(Locale.ROOT)}_transaction_history_$suffix"

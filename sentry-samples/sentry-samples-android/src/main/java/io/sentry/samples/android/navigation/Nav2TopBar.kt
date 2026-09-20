@@ -55,6 +55,11 @@ internal class Nav2TopBar(
           currentRoute = "/${Nav2RouteNames.DEEP_LINK}",
           backStack = "/${Nav2RouteNames.DEEP_LINK}",
         ),
+      Nav2Scenario.CUSTOM to
+        Nav2TopBarState(
+          currentRoute = "/${Nav2RouteNames.CUSTOM}",
+          backStack = "/${Nav2RouteNames.CUSTOM}",
+        ),
       Nav2Scenario.PERFORMANCE to
         Nav2TopBarState(
           currentRoute = "/${Nav2RouteNames.HOME}",
@@ -183,6 +188,7 @@ internal class Nav2TopBar(
         Nav2Scenario.COMPOSE -> R.id.nav2_tab_compose
         Nav2Scenario.FRAGMENTS -> R.id.nav2_tab_fragments
         Nav2Scenario.DEEP_LINK -> R.id.nav2_tab_deep_link
+        Nav2Scenario.CUSTOM -> R.id.nav2_tab_custom
         Nav2Scenario.PERFORMANCE -> R.id.nav2_tab_performance
       }
 

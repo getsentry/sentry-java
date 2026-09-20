@@ -14,6 +14,7 @@ internal object Nav2RouteNames {
 
   const val LANDING = "Landing"
   const val HOME = "Home"
+  const val CUSTOM = "Custom"
   const val PRODUCT_LIST = "ProductList"
   const val DEEP_LINK = "DeepLink"
   const val PRODUCT_DETAIL = "ProductDetail"
@@ -59,8 +60,17 @@ internal object Nav2RouteSpecs {
       routeName = Nav2RouteNames.HOME,
       title = "Home",
       description =
-        "Start a product flow, then use the Sentry UI to inspect route " +
+          "Start a product flow, then use the Sentry UI to inspect route " +
           "transactions, breadcrumbs, and screen tracking.",
+    )
+
+  val custom =
+    home.copy(
+      routeName = Nav2RouteNames.CUSTOM,
+      title = "Custom Transactions",
+      description =
+        "Reuses the single-stack shopping flow while simulating a power user who starts their " +
+          "own manual transactions.",
     )
 
   val deepLink =
@@ -132,6 +142,7 @@ internal object Nav2RouteSpecs {
     when (routeName) {
       Nav2RouteNames.LANDING -> landing
       Nav2RouteNames.HOME -> home
+      Nav2RouteNames.CUSTOM -> custom
       Nav2RouteNames.DEEP_LINK -> deepLink
       Nav2RouteNames.PRODUCT_LIST -> productList
       Nav2RouteNames.PRODUCT_DETAIL -> productDetail
@@ -206,6 +217,7 @@ internal enum class Nav2Scenario(val label: String, val showTab: Boolean = true)
   COMPOSE("Compose"),
   FRAGMENTS("Fragments"),
   DEEP_LINK("Deep Link (Fragments)"),
+  CUSTOM("Custom"),
   PERFORMANCE("Performance"),
 }
 
