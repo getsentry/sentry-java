@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.sentry.compose.SentryModifier.sentryTag
@@ -54,7 +55,11 @@ internal fun Nav3TopBar(
       .joinToString(" -> ")
   val selectedTabColor = MaterialTheme.colorScheme.primary
 
-  Surface(color = MaterialTheme.colorScheme.background, shadowElevation = 4.dp) {
+  Surface(
+    color = MaterialTheme.colorScheme.background,
+    shadowElevation = 4.dp,
+    modifier = Modifier.testTag(nav3TestTag("top_bar")),
+  ) {
     Column(modifier = Modifier.fillMaxWidth()) {
       Row(
         modifier = Modifier.fillMaxWidth().padding(start = 24.dp, top = 18.dp, end = 12.dp),
@@ -63,11 +68,13 @@ internal fun Nav3TopBar(
         Text(
           "Navigation 3",
           style = MaterialTheme.typography.titleLarge,
-          modifier = Modifier.weight(1f),
+          modifier = Modifier.weight(1f).testTag(nav3TestTag("title")),
         )
         IconButton(
           onClick = onTransactionHistoryClick,
-          modifier = Modifier.sentryTag(nav3InteractionTag("Recent Transactions")),
+          modifier =
+            Modifier.sentryTag(nav3InteractionTag("Recent Transactions"))
+              .testTag(nav3TestTag("top_bar_recent_transactions")),
         ) {
           Icon(
             imageVector = Icons.Filled.AccountTree,
@@ -76,25 +83,33 @@ internal fun Nav3TopBar(
         }
         IconButton(
           onClick = onRouteWorkSettingsClick,
-          modifier = Modifier.sentryTag(nav3InteractionTag("Route Work Settings")),
+          modifier =
+            Modifier.sentryTag(nav3InteractionTag("Route Work Settings"))
+              .testTag(nav3TestTag("top_bar_route_work_settings")),
         ) {
           Icon(imageVector = Icons.Filled.Settings, contentDescription = "Route work settings")
         }
       }
       Column(
-        modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
+        modifier =
+          Modifier.padding(start = 24.dp, end = 24.dp, bottom = 12.dp)
+            .testTag(nav3TestTag("route_summary")),
         verticalArrangement = Arrangement.spacedBy(2.dp),
       ) {
         Text(
           text = "Current route: $currentRouteText",
           style = MaterialTheme.typography.bodySmall,
-          modifier = Modifier.horizontalScroll(rememberScrollState()),
+          modifier =
+            Modifier.horizontalScroll(rememberScrollState())
+              .testTag(nav3TestTag("current_route")),
           maxLines = 1,
         )
         Text(
           text = "Nav3 back stack: $capturedBackStack",
           style = MaterialTheme.typography.bodySmall,
-          modifier = Modifier.horizontalScroll(rememberScrollState()),
+          modifier =
+            Modifier.horizontalScroll(rememberScrollState())
+              .testTag(nav3TestTag("back_stack")),
           maxLines = 1,
         )
       }
@@ -120,12 +135,15 @@ private fun ScenarioBar(
       Modifier.fillMaxWidth()
         .horizontalScroll(rememberScrollState())
         .padding(start = 24.dp, end = 24.dp)
+        .testTag(nav3TestTag("scenario_bar"))
   ) {
     scenarios.forEach { scenario ->
       val selected = selectedScenario == scenario
       Column(
         modifier =
-          Modifier.defaultMinSize(minWidth = 120.dp).clickable { onScenarioSelected(scenario) },
+          Modifier.defaultMinSize(minWidth = 120.dp)
+            .clickable { onScenarioSelected(scenario) }
+            .testTag(nav3ScenarioTabTag(scenario)),
         horizontalAlignment = Alignment.CenterHorizontally,
       ) {
         Text(
@@ -149,3 +167,8 @@ private fun ScenarioBar(
 }
 
 internal fun nav3InteractionTag(label: String): String = "Nav3 $label"
+
+internal fun nav3TestTag(name: String): String = "nav3_$name"
+
+internal fun nav3ScenarioTabTag(scenario: Nav3Scenario): String =
+  nav3TestTag("tab_${scenario.name.lowercase()}")

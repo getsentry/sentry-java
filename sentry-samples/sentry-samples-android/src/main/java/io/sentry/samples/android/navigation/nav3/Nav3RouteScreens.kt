@@ -37,6 +37,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -165,10 +166,11 @@ internal fun Nav3SentryButton(
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
   interactionLabel: String = label,
+  testTag: String = nav3ButtonTag(label),
 ) {
   Button(
     onClick = onClick,
-    modifier = modifier.sentryTag(nav3InteractionTag(interactionLabel)),
+    modifier = modifier.sentryTag(nav3InteractionTag(interactionLabel)).testTag(testTag),
     colors =
       ButtonDefaults.buttonColors(
         containerColor = colorResource(R.color.colorAccentSoft),
@@ -205,29 +207,43 @@ internal fun RouteScaffold(
   cardContent: (@Composable ColumnScope.() -> Unit)? = null,
   footerContent: (@Composable ColumnScope.() -> Unit)? = null,
   content: (@Composable ColumnScope.() -> Unit)? = null,
+  testTagPrefix: String = nav3RouteTag(routeSpec.routeName),
 ) {
   Column(
     modifier =
-      Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(16.dp)
+      Modifier.fillMaxSize()
+        .background(MaterialTheme.colorScheme.background)
+        .padding(16.dp)
+        .testTag("${testTagPrefix}_screen")
   ) {
     Column(
-      modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+      modifier =
+        Modifier.weight(1f)
+          .verticalScroll(rememberScrollState())
+          .testTag("${testTagPrefix}_content"),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       Text(
         routeSpec.title,
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
+        modifier = Modifier.testTag("${testTagPrefix}_title"),
       )
-      routeSpec.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+      routeSpec.description?.let {
+        Text(
+          it,
+          style = MaterialTheme.typography.bodyMedium,
+          modifier = Modifier.testTag("${testTagPrefix}_description"),
+        )
+      }
       if (cardContent != null) {
         Card(
           colors =
             CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.fillMaxWidth().testTag("${testTagPrefix}_card"),
         ) {
           Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(16.dp).testTag("${testTagPrefix}_card_content"),
             verticalArrangement = Arrangement.spacedBy(8.dp),
           ) {
             cardContent()
@@ -239,28 +255,34 @@ internal fun RouteScaffold(
 
     if (footerContent != null) {
       Spacer(Modifier.size(12.dp))
-      Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { footerContent() }
+      Column(
+        modifier = Modifier.testTag("${testTagPrefix}_footer"),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+      ) {
+        footerContent()
+      }
     }
   }
 }
 
 @Composable
-internal fun RouteButton(label: String, onClick: () -> Unit) {
+internal fun RouteButton(label: String, onClick: () -> Unit, testTag: String = nav3ButtonTag(label)) {
   Button(
     onClick = onClick,
-    modifier = Modifier.fillMaxWidth().sentryTag(nav3InteractionTag(label)),
+    modifier = Modifier.fillMaxWidth().sentryTag(nav3InteractionTag(label)).testTag(testTag),
   ) {
     Text(label)
   }
 }
 
 @Composable
-internal fun RouteInfo(label: String, value: String) {
+internal fun RouteInfo(label: String, value: String, testTag: String = nav3InfoTag(label)) {
   Row(
     modifier =
       Modifier.fillMaxWidth()
         .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-        .padding(12.dp),
+        .padding(12.dp)
+        .testTag(testTag),
     horizontalArrangement = Arrangement.SpaceBetween,
   ) {
     Text(label, fontWeight = FontWeight.Bold)
@@ -271,9 +293,17 @@ internal fun RouteInfo(label: String, value: String) {
 
 @Composable
 internal fun SingleStackRoute(backStack: SnapshotStateList<Nav3Route>) {
-  RouteScaffold(routeSpec = RouteSpecs.home) {
-    RouteButton("Browse Products") { backStack.add(Nav3Route.ProductList) }
-  }
+  RouteScaffold(
+    routeSpec = RouteSpecs.home,
+    testTagPrefix = nav3RouteTag("single_stack"),
+    cardContent = {
+      RouteButton(
+        "Browse Products",
+        onClick = { backStack.add(Nav3Route.ProductList) },
+        testTag = nav3TestTag("single_stack_browse_products"),
+      )
+    },
+  )
 }
 
 @Composable
@@ -295,9 +325,14 @@ internal fun CustomRoute(
 
   RouteScaffold(
     routeSpec = Nav3Route.Custom.routeSpec(),
+    testTagPrefix = nav3RouteTag("custom"),
     cardContent = {
       Nav3CustomTransactionModeSelector(selected = mode, onSelected = onModeSelected)
-      Text(mode.description, style = MaterialTheme.typography.bodyMedium)
+      Text(
+        mode.description,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.testTag(nav3TestTag("custom_mode_description")),
+      )
       RouteButton(
         label =
           if (mode == Nav3CustomTransactionMode.ASYNC_FROM_USER_ACTION) {
@@ -310,11 +345,19 @@ internal fun CustomRoute(
             "Browse Products"
           },
         onClick = onBrowseProducts,
+        testTag = nav3TestTag("custom_browse_products"),
       )
     },
-  ) {
-    helperText?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-  }
+    content = {
+    helperText?.let {
+      Text(
+        it,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.testTag(nav3TestTag("custom_helper_text")),
+      )
+    }
+    },
+  )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -325,11 +368,20 @@ private fun Nav3CustomTransactionModeSelector(
 ) {
   val sentryPink = colorResource(R.color.colorAccent)
 
-  Text("Mode", style = MaterialTheme.typography.titleSmall)
-  SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+  Text(
+    "Mode",
+    style = MaterialTheme.typography.titleSmall,
+    modifier = Modifier.testTag(nav3TestTag("custom_mode_label")),
+  )
+  SingleChoiceSegmentedButtonRow(
+    modifier = Modifier.fillMaxWidth().testTag(nav3TestTag("custom_mode_selector"))
+  ) {
     Nav3CustomTransactionMode.entries.forEachIndexed { index, mode ->
       SegmentedButton(
-        modifier = Modifier.weight(1f).defaultMinSize(minHeight = 72.dp),
+        modifier =
+          Modifier.weight(1f)
+            .defaultMinSize(minHeight = 72.dp)
+            .testTag(nav3TestTag("custom_mode_${mode.name.lowercase()}")),
         shape =
           SegmentedButtonDefaults.itemShape(
             index = index,
@@ -359,15 +411,20 @@ private fun Nav3CustomTransactionModeSelector(
 @Composable
 internal fun LandingRoute() {
   LaunchedEffect(Unit) { cancelCurrentActivityUiLoadTransaction() }
-  RouteScaffold(routeSpec = RouteSpecs.landing)
+  RouteScaffold(routeSpec = RouteSpecs.landing, testTagPrefix = nav3RouteTag("landing"))
 }
 
 @Composable
 internal fun DeepLinkRoute(backStack: SnapshotStateList<Nav3Route>) {
   RouteScaffold(
     routeSpec = Nav3Route.DeepLink.routeSpec(),
+    testTagPrefix = nav3RouteTag("deep_link"),
     cardContent = {
-      RouteButton("Go to deep link destination") { backStack.openSyntheticProductDeepLink() }
+      RouteButton(
+        "Go to deep link destination",
+        onClick = { backStack.openSyntheticProductDeepLink() },
+        testTag = nav3TestTag("deep_link_open_destination"),
+      )
     },
   )
 }
@@ -379,14 +436,17 @@ internal fun ProductListRoute(backStack: SnapshotStateList<Nav3Route>) {
 
   RouteScaffold(
     routeSpec = RouteSpecs.productList,
+    testTagPrefix = nav3RouteTag("product_list"),
     cardContent = {
       SentryTraced(
         tag = "product_list_actions",
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag(nav3TestTag("product_list_actions")),
         enableUserInteractionTracing = false,
       ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-          RouteButton("Open Product 42") {
+          RouteButton(
+            "Open Product 42",
+            onClick = {
             backStack.add(
               Nav3Route.ProductDetail(
                 productId = "42",
@@ -394,10 +454,16 @@ internal fun ProductListRoute(backStack: SnapshotStateList<Nav3Route>) {
                 campaign = "summer-sale",
               )
             )
-          }
-          RouteButton("Open Product 7") {
+            },
+            testTag = nav3TestTag("product_list_open_product_42"),
+          )
+          RouteButton(
+            "Open Product 7",
+            onClick = {
             backStack.add(Nav3Route.ProductDetail(productId = "7", source = "product-list"))
-          }
+            },
+            testTag = nav3TestTag("product_list_open_product_7"),
+          )
         }
       }
     },
@@ -405,7 +471,7 @@ internal fun ProductListRoute(backStack: SnapshotStateList<Nav3Route>) {
       if (showProductItems) {
         SentryTraced(
           tag = "product_list_items",
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.fillMaxWidth().testTag(nav3TestTag("product_list_items")),
           enableUserInteractionTracing = false,
         ) {
           Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -418,6 +484,7 @@ internal fun ProductListRoute(backStack: SnapshotStateList<Nav3Route>) {
       RouteButton(
         label = if (showProductItems) "Hide Product Items" else "Show Product Items",
         onClick = { showProductItems = !showProductItems },
+        testTag = nav3TestTag("product_list_toggle_items"),
       )
     },
   )
@@ -434,18 +501,33 @@ internal fun ProductDetailRoute(
 
   RouteScaffold(
     routeSpec = RouteSpecs.productDetail,
+    testTagPrefix = nav3RouteTag("product_detail"),
     cardContent = {
       RouteSpecs.productDetail.displayArguments(route.arguments).forEach { (label, value) ->
         RouteInfo(label, value)
       }
-      RouteButton("Show Promo Dialog") {
-        backStack.add(Nav3Route.PromoDialog("detail-${route.productId}"))
-      }
-      RouteButton("Open Share Sheet") { backStack.add(Nav3Route.ShareSheet(route.productId)) }
-      RouteButton("Go to Checkout") { backStack.add(Nav3Route.Checkout(route.productId)) }
+      RouteButton(
+        "Show Promo Dialog",
+        onClick = { backStack.add(Nav3Route.PromoDialog("detail-${route.productId}")) },
+        testTag = nav3TestTag("product_detail_show_promo_dialog"),
+      )
+      RouteButton(
+        "Open Share Sheet",
+        onClick = { backStack.add(Nav3Route.ShareSheet(route.productId)) },
+        testTag = nav3TestTag("product_detail_open_share_sheet"),
+      )
+      RouteButton(
+        "Go to Checkout",
+        onClick = { backStack.add(Nav3Route.Checkout(route.productId)) },
+        testTag = nav3TestTag("product_detail_go_to_checkout"),
+      )
     },
     footerContent = {
-      RouteButton("Emit a span") { emitSampleNavigationSpan(route.routeName, "Nav3") }
+      RouteButton(
+        "Emit a span",
+        onClick = { emitSampleNavigationSpan(route.routeName, "Nav3") },
+        testTag = nav3TestTag("product_detail_emit_span"),
+      )
     },
   )
 }
@@ -455,14 +537,20 @@ internal fun CheckoutRoute(
   route: Nav3Route.Checkout,
   backStack: SnapshotStateList<Nav3Route>,
 ) {
-  RouteScaffold(routeSpec = RouteSpecs.checkout) {
-    RouteSpecs.checkout.displayArguments(route.arguments).forEach { (label, value) ->
-      RouteInfo(label, value)
-    }
-    RouteButton("Complete Order") {
-      backStack.add(Nav3Route.Confirmation(orderId = "order-${route.productId}"))
-    }
-  }
+  RouteScaffold(
+    routeSpec = RouteSpecs.checkout,
+    testTagPrefix = nav3RouteTag("checkout"),
+    cardContent = {
+      RouteSpecs.checkout.displayArguments(route.arguments).forEach { (label, value) ->
+        RouteInfo(label, value)
+      }
+      RouteButton(
+        "Complete Order",
+        onClick = { backStack.add(Nav3Route.Confirmation(orderId = "order-${route.productId}")) },
+        testTag = nav3TestTag("checkout_complete_order"),
+      )
+    },
+  )
 }
 
 @Composable
@@ -471,12 +559,20 @@ internal fun ConfirmationRoute(
   backStack: SnapshotStateList<Nav3Route>,
   rootRoute: Nav3Route,
 ) {
-  RouteScaffold(routeSpec = RouteSpecs.confirmation) {
-    RouteSpecs.confirmation.displayArguments(route.arguments).forEach { (label, value) ->
-      RouteInfo(label, value)
-    }
-    RouteButton("Reset Backstack") { backStack.resetTo(rootRoute) }
-  }
+  RouteScaffold(
+    routeSpec = RouteSpecs.confirmation,
+    testTagPrefix = nav3RouteTag("confirmation"),
+    cardContent = {
+      RouteSpecs.confirmation.displayArguments(route.arguments).forEach { (label, value) ->
+        RouteInfo(label, value)
+      }
+      RouteButton(
+        "Reset Backstack",
+        onClick = { backStack.resetTo(rootRoute) },
+        testTag = nav3TestTag("confirmation_reset_backstack"),
+      )
+    },
+  )
 }
 
 @Composable
@@ -487,11 +583,11 @@ internal fun PromoDialogRoute(
   onCrashApp: () -> Unit,
 ) {
   Card(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.fillMaxWidth().testTag(nav3TestTag("promo_dialog_card")),
     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
   ) {
     Column(
-      modifier = Modifier.padding(24.dp),
+      modifier = Modifier.padding(24.dp).testTag(nav3TestTag("promo_dialog_content")),
       verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       val routeSpec = RouteSpecs.promoDialog
@@ -505,16 +601,21 @@ internal fun PromoDialogRoute(
         onClick = onCaptureException,
         modifier = Modifier.fillMaxWidth(),
         interactionLabel = "Promo Dialog Exception",
+        testTag = nav3TestTag("promo_dialog_capture_exception"),
       )
       Nav3SentryButton(
         label = "Crash App",
         onClick = onCrashApp,
         modifier = Modifier.fillMaxWidth(),
         interactionLabel = "Promo Dialog Crash App",
+        testTag = nav3TestTag("promo_dialog_crash_app"),
       )
       Button(
         onClick = { backStack.removeLastOrNull() },
-        modifier = Modifier.fillMaxWidth().sentryTag(nav3InteractionTag("Promo Dialog Dismiss")),
+        modifier =
+          Modifier.fillMaxWidth()
+            .sentryTag(nav3InteractionTag("Promo Dialog Dismiss"))
+            .testTag(nav3TestTag("promo_dialog_dismiss")),
       ) {
         Text("Dismiss")
       }
@@ -530,7 +631,10 @@ internal fun ShareSheetRoute(
   onCrashApp: () -> Unit,
 ) {
   Column(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+    modifier =
+      Modifier.fillMaxWidth()
+        .padding(horizontal = 24.dp, vertical = 12.dp)
+        .testTag(nav3TestTag("share_sheet_content")),
     verticalArrangement = Arrangement.spacedBy(12.dp),
   ) {
     val routeSpec = RouteSpecs.shareSheet
@@ -542,16 +646,21 @@ internal fun ShareSheetRoute(
       onClick = onCaptureException,
       modifier = Modifier.fillMaxWidth(),
       interactionLabel = "Share Sheet Exception",
+      testTag = nav3TestTag("share_sheet_capture_exception"),
     )
     Nav3SentryButton(
       label = "Crash App",
       onClick = onCrashApp,
       modifier = Modifier.fillMaxWidth(),
       interactionLabel = "Share Sheet Crash App",
+      testTag = nav3TestTag("share_sheet_crash_app"),
     )
     Button(
       onClick = { backStack.removeLastOrNull() },
-      modifier = Modifier.fillMaxWidth().sentryTag(nav3InteractionTag("Share Sheet Done")),
+      modifier =
+        Modifier.fillMaxWidth()
+          .sentryTag(nav3InteractionTag("Share Sheet Done"))
+          .testTag(nav3TestTag("share_sheet_done")),
     ) {
       Text("Done")
     }
@@ -569,7 +678,8 @@ internal fun FutureRoute(routeName: String, scenario: String) {
           description =
             "Reserved for a future milestone when SentryNavEffect supports $scenario navigation " +
               "state.",
-        )
+        ),
+    testTagPrefix = nav3RouteTag(routeName),
   )
 }
 
@@ -578,7 +688,7 @@ internal fun FutureRoute(routeName: String, scenario: String) {
 private fun Nav3ProductListItem(index: Int) {
   SentryTraced(
     tag = "product_list_item_$index",
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.fillMaxWidth().testTag(nav3TestTag("product_list_item_$index")),
     enableUserInteractionTracing = false,
   ) {
     Card(
@@ -597,3 +707,16 @@ private fun Nav3ProductListItem(index: Int) {
 }
 
 private const val PRODUCT_LIST_ITEM_COUNT = 20
+
+private fun nav3RouteTag(routeName: String): String =
+  nav3TestTag("route_${routeName.lowercase().replace(' ', '_').replace('/', '_')}")
+
+private fun nav3ButtonTag(label: String): String =
+  nav3TestTag(
+    "button_${label.lowercase().replace(' ', '_').replace('/', '_').replace('.', '_').replace('-', '_')}"
+  )
+
+private fun nav3InfoTag(label: String): String =
+  nav3TestTag(
+    "info_${label.lowercase().replace(' ', '_').replace('/', '_').replace('.', '_').replace('-', '_')}"
+  )
