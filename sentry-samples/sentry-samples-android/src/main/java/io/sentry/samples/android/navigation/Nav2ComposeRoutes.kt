@@ -2,11 +2,20 @@ package io.sentry.samples.android.navigation
 
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -81,7 +90,9 @@ internal fun Nav2ComposeApp(
   routeWorkOptions: Set<RouteWorkOption>,
   onCaptureException: () -> Unit,
   onCrashApp: () -> Unit,
+  selectedScenario: Nav2Scenario,
   onRouteChanged: (routeName: String, currentRoute: String, backStack: String) -> Unit,
+  onExitRoot: () -> Unit,
 ) {
 
   val navController = rememberNavController().withSentryObservableEffect(navListener = navListener)
@@ -124,7 +135,36 @@ internal fun Nav2ComposeApp(
   }
 
   BackHandler(enabled = shareSheetProductId.value != null) { dismissShareSheet() }
-  BackHandler(enabled = shareSheetProductId.value == null && backStack.size > 1) { navigateBack() }
+  BackHandler(enabled = shareSheetProductId.value == null) {
+    if (backStack.size > 1) {
+      navigateBack()
+    } else {
+      onExitRoot()
+    }
+  }
+
+  LaunchedEffect(selectedScenario) {
+    when (selectedScenario) {
+      Nav2Scenario.COMPOSE -> {
+        customTransactionController.cleanup()
+        backStack.resetTo(Home)
+        shareSheetProductId.value = null
+        navController.navigate(Home.route) {
+          popUpTo(Home.route) { inclusive = true }
+          launchSingleTop = true
+        }
+      }
+      Nav2Scenario.CUSTOM -> {
+        backStack.resetTo(Custom)
+        shareSheetProductId.value = null
+        navController.navigate(Custom.route) {
+          popUpTo(Home.route) { inclusive = true }
+          launchSingleTop = true
+        }
+      }
+      else -> Unit
+    }
+  }
 
   LaunchedEffect(currentDestination, customTransactionMode) {
     if (
@@ -162,6 +202,10 @@ internal fun Nav2ComposeApp(
         navController = navController,
         startDestination = Home.route,
         modifier = Modifier.weight(1f),
+        enterTransition = { fadeIn(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)) },
+        exitTransition = { fadeOut(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)) },
+        popEnterTransition = { fadeIn(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)) },
+        popExitTransition = { fadeOut(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)) },
       ) {
         composable(Home.route) {
           TracedNav2ComposeRoute(Home.routeName) {
@@ -189,7 +233,7 @@ internal fun Nav2ComposeApp(
                             "Nav2 Custom async browse products",
                           )
                       try {
-                        delay(450)
+                        delay(250)
                         navigateTo(ProductList)
                       } finally {
                         span?.finish()
@@ -398,11 +442,14 @@ private fun Nav2ComposeCustomRoute(
 ) {
   val helperText =
     when (mode) {
+      Nav2CustomTransactionMode.PER_SCREEN ->
+        "Starts a custom transaction for every destination so route work runs under app-owned screen-level transactions."
+      Nav2CustomTransactionMode.WHOLE_FLOW ->
+        "Keeps one custom transaction open for the whole shopping journey until the flow returns to the Custom home screen."
       Nav2CustomTransactionMode.ASYNC_FROM_USER_ACTION ->
         "This mode starts a manual transaction from the button tap, waits for async work, and then pushes Product List."
       Nav2CustomTransactionMode.LINGERING ->
         "The lingering transaction stays active until you leave the Custom tab."
-      else -> null
     }
   val sentryPink = colorResource(R.color.colorAccent)
 
@@ -413,7 +460,7 @@ private fun Nav2ComposeCustomRoute(
       SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         Nav2CustomTransactionMode.entries.forEachIndexed { index, entry ->
           SegmentedButton(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).defaultMinSize(minHeight = 72.dp),
             shape =
               SegmentedButtonDefaults.itemShape(
                 index = index,
@@ -449,9 +496,7 @@ private fun Nav2ComposeCustomRoute(
         onClick = onBrowseProducts,
       )
     },
-    content = {
-      helperText?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
-    },
+    content = { Text(helperText, style = MaterialTheme.typography.bodyMedium) },
   )
 }
 
@@ -739,6 +784,7 @@ private fun Nav2ComposeRouteButton(
 private fun nav2ComposeInteractionTag(label: String): String = "Nav2 Compose $label"
 
 private const val PRODUCT_LIST_ITEM_COUNT = 20
+private const val COMPOSE_ROUTE_TRANSITION_MILLIS = 350
 
 @Composable
 private fun Nav2ComposeRouteInfo(label: String, value: String) {

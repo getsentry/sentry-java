@@ -148,7 +148,7 @@ private fun AnimatedOverlayScrim(
   }
 }
 
-private const val OVERLAY_ENTER_MILLIS = 180
+private const val OVERLAY_ENTER_MILLIS = 120
 
 /** Displays entries with [dialog] metadata as dialog overlays inside the NavDisplay frame. */
 internal class Nav3DialogSceneStrategy<T : Any> : SceneStrategy<T> {

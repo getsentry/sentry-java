@@ -16,6 +16,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -477,6 +482,16 @@ private fun Nav3SampleApp(
           }
         },
         sceneStrategies = listOf(dialogSceneStrategy, bottomSheetSceneStrategy),
+        transitionSpec = {
+          fadeIn(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)).togetherWith(
+            fadeOut(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS))
+          )
+        },
+        popTransitionSpec = {
+          fadeIn(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)).togetherWith(
+            fadeOut(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS))
+          )
+        },
         entryProvider =
           androidx.navigation3.runtime.entryProvider {
             entry<Nav3Route.SingleStack> { route ->
@@ -505,7 +520,7 @@ private fun Nav3SampleApp(
                                 "Nav3 Custom async browse products",
                               )
                           try {
-                            delay(450)
+                            delay(250)
                             backStack.add(Nav3Route.ProductList)
                           } finally {
                             span?.finish()
@@ -657,3 +672,4 @@ private fun Nav3SampleApp(
 }
 
 private const val NAV3_TAG = "Nav3Activity"
+private const val COMPOSE_ROUTE_TRANSITION_MILLIS = 350

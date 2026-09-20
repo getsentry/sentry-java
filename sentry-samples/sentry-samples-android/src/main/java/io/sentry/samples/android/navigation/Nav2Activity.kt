@@ -73,6 +73,7 @@ class Nav2Activity : AppCompatActivity() {
     mutableStateOf(setOf(RouteWorkOption.HTTP_REQUEST, RouteWorkOption.MANUAL_CHILD_SPAN))
   private lateinit var topBar: Nav2TopBar
   private var activeScenario = Nav2Scenario.COMPOSE
+  private val composeScenario = mutableStateOf(Nav2Scenario.COMPOSE)
 
   // Main content
   private lateinit var contentHosts: Nav2ContentHosts
@@ -196,19 +197,21 @@ class Nav2Activity : AppCompatActivity() {
     ComposeView(this).apply {
       setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
-      setContent {
-        Nav2SampleTheme {
-          Nav2ComposeApp(
-            navListener = sentryNavigationListener,
-            routeWorkOptions = routeWorkOptions.value,
-            onCaptureException = { captureSampleException("Nav2") },
-            onCrashApp = { showCrashConfirmation("Nav2") },
-            onRouteChanged = { _, currentRoute, backStack ->
-              updateComposeNavigationUi(currentRoute, backStack)
-            },
-          )
+        setContent {
+          Nav2SampleTheme {
+            Nav2ComposeApp(
+              navListener = sentryNavigationListener,
+              routeWorkOptions = routeWorkOptions.value,
+              onCaptureException = { captureSampleException("Nav2") },
+              onCrashApp = { showCrashConfirmation("Nav2") },
+              selectedScenario = composeScenario.value,
+              onRouteChanged = { _, currentRoute, backStack ->
+                updateComposeNavigationUi(currentRoute, backStack)
+              },
+              onExitRoot = { finish() },
+            )
+          }
         }
-      }
     }
 
   private fun createContentView(navHostId: Int): View {
@@ -324,6 +327,7 @@ class Nav2Activity : AppCompatActivity() {
 
   private fun openScenario(scenario: Nav2Scenario) {
     activeScenario = scenario
+    composeScenario.value = scenario
     topBar.select(activeScenario)
     performanceState.stopAutomaticWork()
     when (scenario) {
@@ -334,8 +338,14 @@ class Nav2Activity : AppCompatActivity() {
           navController.currentBackStackEntry?.arguments,
         )
       }
-      Nav2Scenario.COMPOSE -> contentHosts.showCompose()
-      Nav2Scenario.CUSTOM -> contentHosts.showCompose()
+      Nav2Scenario.COMPOSE -> {
+        contentHosts.showCompose()
+        updateComposeNavigationUi("/${Nav2RouteNames.HOME}", "/${Nav2RouteNames.HOME}")
+      }
+      Nav2Scenario.CUSTOM -> {
+        contentHosts.showCompose()
+        updateComposeNavigationUi("/${Nav2RouteNames.CUSTOM}", "/${Nav2RouteNames.CUSTOM}")
+      }
       Nav2Scenario.FRAGMENTS -> {
         contentHosts.showFragments()
         resetToHome()
