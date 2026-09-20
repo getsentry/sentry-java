@@ -60,7 +60,7 @@ internal fun NavigationTransactionHistorySheet(
         fontWeight = FontWeight.Bold,
       )
       Text(
-        "Displays the last 10 finished transactions emitted by the SDK. Transactions with child work appear here after that work finishes.",
+        "Displays the last 10 finished transactions emitted by the SDK. Transactions with child work appear here after their work finishes.",
         style = MaterialTheme.typography.bodyMedium,
       )
       Column(
@@ -313,7 +313,7 @@ private fun Double.formatMillis(): String =
 private data class TraceRowData(val span: NavigationTraceSpan, val level: Int)
 
 private const val EMPTY_HISTORY_MESSAGE =
-  "No finished transactions have been emitted yet. Transactions with child work appear here after that work finishes."
+  "No finished transactions have been emitted yet. Transactions with child work appear here after their work finishes."
 private const val ACTIVITY_UI_LOAD_EMPTY_HISTORY_MESSAGE =
   "No transactions have been emitted yet. ui.load transactions can take up to 30 seconds to " +
     "appear after the last span is produced."

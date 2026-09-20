@@ -47,8 +47,9 @@ import org.jetbrains.annotations.ApiStatus
  * [RouteArgumentsExtractor].
  */
 @ApiStatus.Experimental
-internal fun interface RouteNameExtractor<T : Any> {
-  fun extract(backStackEntry: T): String
+@ApiStatus.Internal
+public fun interface RouteNameExtractor<T : Any> {
+  public fun extract(backStackEntry: T): String
 }
 
 /**
@@ -110,8 +111,9 @@ internal fun interface RouteNameExtractor<T : Any> {
  * ```
  */
 @ApiStatus.Experimental
-internal fun interface RouteArgumentsExtractor<T : Any> {
-  fun extract(backStackEntry: T): Map<String, Any?>
+@ApiStatus.Internal
+public fun interface RouteArgumentsExtractor<T : Any> {
+  public fun extract(backStackEntry: T): Map<String, Any?>
 }
 
 /**

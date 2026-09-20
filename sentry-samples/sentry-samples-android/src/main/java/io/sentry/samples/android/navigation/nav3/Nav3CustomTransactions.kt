@@ -93,7 +93,7 @@ internal class Nav3CustomTransactionController {
     finishActiveTransaction()
     activeTransaction =
       startCustomTransaction(
-        name = "power_user.tap_to_browse_products",
+        name = "custom.tap_to_browse_products",
         operation = "ui.action",
         mode = Nav3CustomTransactionMode.ASYNC_FROM_USER_ACTION,
         routeName = Nav3Route.Custom.routeName,
@@ -118,7 +118,7 @@ internal class Nav3CustomTransactionController {
     finishActiveTransaction()
     activeTransaction =
       startCustomTransaction(
-        name = "power_user.${currentRoute.routeName.lowercase()}_screen",
+        name = "custom.${currentRoute.routeName.lowercase()}_screen",
         operation = "ui.screen.manual",
         mode = Nav3CustomTransactionMode.PER_SCREEN,
         routeName = currentRoute.routeName,
@@ -139,7 +139,7 @@ internal class Nav3CustomTransactionController {
       finishActiveTransaction()
       activeTransaction =
         startCustomTransaction(
-          name = "power_user.checkout_flow",
+          name = "custom.checkout_flow",
           operation = "ui.flow.manual",
           mode = Nav3CustomTransactionMode.WHOLE_FLOW,
           routeName = currentRoute.routeName,
@@ -160,7 +160,7 @@ internal class Nav3CustomTransactionController {
     finishActiveTransaction()
     activeTransaction =
       startCustomTransaction(
-        name = "power_user.lingering_navigation_transaction",
+        name = "custom.lingering_navigation_transaction",
         operation = "ui.flow.manual",
         mode = Nav3CustomTransactionMode.LINGERING,
         routeName = currentRoute.routeName,

@@ -1,6 +1,7 @@
 package io.sentry.samples.android.navigation.nav3
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -38,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.sentry.Sentry
@@ -281,11 +283,20 @@ internal fun CustomRoute(
   isAsyncBrowseProductsRunning: Boolean,
   onBrowseProducts: () -> Unit,
 ) {
+  val helperText =
+    when (mode) {
+      Nav3CustomTransactionMode.ASYNC_FROM_USER_ACTION ->
+        "This mode starts a manual transaction from the button tap, waits for async work, and " +
+          "then pushes Product List."
+      Nav3CustomTransactionMode.LINGERING ->
+        "The lingering transaction stays active until you leave the Custom tab."
+      else -> null
+    }
+
   RouteScaffold(
     routeSpec = Nav3Route.Custom.routeSpec(),
     cardContent = {
       Nav3CustomTransactionModeSelector(selected = mode, onSelected = onModeSelected)
-      RouteInfo("Selected mode", mode.label)
       Text(mode.description, style = MaterialTheme.typography.bodyMedium)
       RouteButton(
         label =
@@ -301,22 +312,8 @@ internal fun CustomRoute(
         onClick = onBrowseProducts,
       )
     },
-    footerContent = {
-      if (mode == Nav3CustomTransactionMode.LINGERING) {
-        Text(
-          "The lingering transaction stays active until you leave the Custom tab.",
-          style = MaterialTheme.typography.bodySmall,
-        )
-      }
-    },
   ) {
-    if (mode == Nav3CustomTransactionMode.ASYNC_FROM_USER_ACTION) {
-      Text(
-        "This mode starts a manual transaction from the button tap, waits for async work, and " +
-          "then pushes Product List.",
-        style = MaterialTheme.typography.bodyMedium,
-      )
-    }
+    helperText?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
   }
 }
 
@@ -326,10 +323,13 @@ private fun Nav3CustomTransactionModeSelector(
   selected: Nav3CustomTransactionMode,
   onSelected: (Nav3CustomTransactionMode) -> Unit,
 ) {
+  val sentryPink = colorResource(R.color.colorAccent)
+
   Text("Mode", style = MaterialTheme.typography.titleSmall)
   SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
     Nav3CustomTransactionMode.entries.forEachIndexed { index, mode ->
       SegmentedButton(
+        modifier = Modifier.weight(1f).defaultMinSize(minHeight = 72.dp),
         shape =
           SegmentedButtonDefaults.itemShape(
             index = index,
@@ -337,8 +337,20 @@ private fun Nav3CustomTransactionModeSelector(
           ),
         onClick = { onSelected(mode) },
         selected = selected == mode,
+        colors =
+          SegmentedButtonDefaults.colors(
+            activeContainerColor = sentryPink,
+            activeContentColor = Color.White,
+          ),
         icon = {},
-        label = { Text(mode.label, style = MaterialTheme.typography.labelSmall) },
+        label = {
+          Text(
+            text = mode.label,
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+          )
+        },
       )
     }
   }

@@ -11,6 +11,7 @@ private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 10
  * Configuration info for a [SentryNavEffect].
  */
 @ApiStatus.Experimental
+@ApiStatus.Internal
 @Immutable
 public class SentryNavOptions(
   public val enableNavigationBreadcrumbs: Boolean = true,
