@@ -60,7 +60,7 @@ internal fun NavigationTransactionHistorySheet(
         fontWeight = FontWeight.Bold,
       )
       Text(
-        "Newest first. Open a few $sampleName routes, then return here to inspect the last 10 finished transactions emitted by the SDK. Transactions with child work appear here after that work finishes.",
+        "Displays the last 10 finished transactions emitted by the SDK. Transactions with child work appear here after that work finishes.",
         style = MaterialTheme.typography.bodyMedium,
       )
       Column(
