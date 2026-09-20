@@ -293,7 +293,7 @@ internal fun CustomRoute(
             if (isAsyncBrowseProductsRunning) {
               "Starting async custom transaction..."
             } else {
-              "Browse Products via Async Custom Transaction"
+              "Browse Products"
             }
           } else {
             "Browse Products"

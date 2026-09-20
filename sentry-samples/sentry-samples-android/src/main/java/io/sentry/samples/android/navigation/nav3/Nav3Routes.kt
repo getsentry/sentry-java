@@ -273,8 +273,8 @@ internal sealed interface Nav3Route {
 internal enum class Nav3Scenario(val label: String, val showTab: Boolean = true) {
   LANDING(RouteNames.LANDING, showTab = false),
   SINGLE_STACK("Single Stack"),
-  CUSTOM("Custom"),
   DEEP_LINK("Deep Link"),
+  CUSTOM("Custom"),
   MULTIPANE("Multipane"),
   MULTIPLE_STACKS("Multistack"),
   PERFORMANCE("Performance"),
