@@ -123,15 +123,6 @@ internal fun Nav2ComposeApp(
     }
   }
 
-  fun resetToCustom() {
-    backStack.resetTo(Custom)
-    shareSheetProductId.value = null
-    navController.navigate(Custom.route) {
-      popUpTo(Home.route) { inclusive = false }
-      launchSingleTop = true
-    }
-  }
-
   BackHandler(enabled = shareSheetProductId.value != null) { dismissShareSheet() }
   BackHandler(enabled = shareSheetProductId.value == null && backStack.size > 1) { navigateBack() }
 
