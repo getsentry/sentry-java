@@ -66,11 +66,10 @@ class SentryWrapperTest {
 
     initForTest {
       it.dsn = dsn
-      it.beforeSend =
-        SentryOptions.BeforeSendCallback { event, hint ->
-          capturedEvents.add(event)
-          event
-        }
+      it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+        capturedEvents.add(event)
+        event
+      }
     }
 
     Sentry.addBreadcrumb("MyOriginalBreadcrumbBefore")
@@ -119,11 +118,10 @@ class SentryWrapperTest {
 
     initForTest {
       it.dsn = dsn
-      it.beforeSend =
-        SentryOptions.BeforeSendCallback { event, hint ->
-          capturedEvents.add(event)
-          event
-        }
+      it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+        capturedEvents.add(event)
+        event
+      }
     }
 
     Sentry.addBreadcrumb("MyOriginalBreadcrumbBefore")
@@ -201,11 +199,10 @@ class SentryWrapperTest {
 
     initForTest {
       it.dsn = dsn
-      it.beforeSend =
-        SentryOptions.BeforeSendCallback { event, hint ->
-          capturedEvents.add(event)
-          event
-        }
+      it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+        capturedEvents.add(event)
+        event
+      }
     }
 
     Sentry.addBreadcrumb("MyOriginalBreadcrumbBefore")

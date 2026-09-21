@@ -40,9 +40,9 @@ Determine the Gradle test task:
 
 | Module Pattern | Test Task |
 |---------------|-----------|
-| `sentry-android-*` | `testDebugUnitTest` |
-| `sentry-compose*` | `testDebugUnitTest` |
-| `*-android` | `testDebugUnitTest` |
+| `sentry-android-*` | `testReleaseUnitTest` |
+| `sentry-compose*` | `testReleaseUnitTest` |
+| `*-android` | `testReleaseUnitTest` |
 | Everything else | `test` |
 
 **Interactive mode:** Before running, read the test class file and use AskUserQuestion to ask:
@@ -77,6 +77,14 @@ test -d .venv || make setupPython
 ```
 
 This starts the mock Sentry server, starts the sample app (Spring Boot/Tomcat/CLI), runs tests via `./gradlew :sentry-samples:<sample-module>:systemTest`, and cleans up afterwards.
+
+To run **every** system test instead of one module, use the Makefile targets — they also create the
+venv for you:
+
+```bash
+make systemTest             # all system tests (--all)
+make systemTestInteractive  # pick the setups to run (--interactive)
+```
 
 ## Step 4: Report Results
 

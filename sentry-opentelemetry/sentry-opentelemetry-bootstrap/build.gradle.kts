@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
+  id("io.sentry.animalsniffer")
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
@@ -27,6 +28,7 @@ dependencies {
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.awaitility.kotlin)
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
 

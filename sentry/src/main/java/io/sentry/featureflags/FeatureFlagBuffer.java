@@ -8,8 +8,9 @@ import io.sentry.protocol.FeatureFlags;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,28 +24,26 @@ import org.jetbrains.annotations.Nullable;
  *   <li>Performance of scope cloning is optimized here
  *   <li>Supports merging across scope types (GLOBAL, ISOLATION, CURRENT)
  * </ul>
+ *
+ * <p>{@link #flags} always holds an immutable list. Writers hold {@link #lock} and swap in a new
+ * list; readers take a single volatile read and are then free to iterate or index into a list that
+ * can no longer change. This is what makes {@link #clone()} free: the copy shares the list rather
+ * than duplicating it.
  */
 @ApiStatus.Internal
 public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
 
-  private volatile @NotNull CopyOnWriteArrayList<FeatureFlagEntry> flags;
+  private volatile @NotNull List<FeatureFlagEntry> flags;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-  private int maxSize;
+  private final int maxSize;
 
-  private FeatureFlagBuffer(int maxSize) {
-    this.maxSize = maxSize;
-    this.flags = new CopyOnWriteArrayList<>();
+  private FeatureFlagBuffer(final int maxSize) {
+    this(maxSize, Collections.<FeatureFlagEntry>emptyList());
   }
 
-  private FeatureFlagBuffer(
-      int maxSize, final @NotNull CopyOnWriteArrayList<FeatureFlagEntry> flags) {
+  private FeatureFlagBuffer(final int maxSize, final @NotNull List<FeatureFlagEntry> flags) {
     this.maxSize = maxSize;
     this.flags = flags;
-  }
-
-  private FeatureFlagBuffer(@NotNull FeatureFlagBuffer other) {
-    this.maxSize = other.maxSize;
-    this.flags = new CopyOnWriteArrayList<>(other.flags);
   }
 
   @Override
@@ -53,33 +52,35 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
       return;
     }
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      final int size = flags.size();
-      for (int i = 0; i < size; i++) {
-        final @NotNull FeatureFlagEntry entry = flags.get(i);
-        if (entry.flag.equals(flag)) {
-          flags.remove(i);
-          break;
+      final @NotNull List<FeatureFlagEntry> current = flags;
+      final @NotNull List<FeatureFlagEntry> updated = new ArrayList<>(current.size() + 1);
+      for (final @NotNull FeatureFlagEntry entry : current) {
+        if (!entry.flag.equals(flag)) {
+          updated.add(entry);
         }
       }
-      flags.add(new FeatureFlagEntry(flag, result, System.nanoTime()));
+      updated.add(new FeatureFlagEntry(flag, result, System.nanoTime()));
 
-      if (flags.size() > maxSize) {
-        flags.remove(0);
+      if (updated.size() > maxSize) {
+        updated.remove(0);
       }
+
+      flags = Collections.unmodifiableList(updated);
     }
   }
 
   @Override
   public void clear() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      flags.clear();
+      flags = Collections.emptyList();
     }
   }
 
   @Override
   public @Nullable FeatureFlags getFeatureFlags() {
-    List<FeatureFlag> featureFlags = new ArrayList<>();
-    for (FeatureFlagEntry entry : flags) {
+    final @NotNull List<FeatureFlagEntry> snapshot = flags;
+    final @NotNull List<FeatureFlag> featureFlags = new ArrayList<>(snapshot.size());
+    for (final @NotNull FeatureFlagEntry entry : snapshot) {
       featureFlags.add(entry.toFeatureFlag());
     }
     return new FeatureFlags(featureFlags);
@@ -87,7 +88,7 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
 
   @Override
   public @NotNull IFeatureFlagBuffer clone() {
-    return new FeatureFlagBuffer(this);
+    return new FeatureFlagBuffer(maxSize, flags);
   }
 
   public static @NotNull IFeatureFlagBuffer create(final @NotNull SentryOptions options) {
@@ -123,6 +124,9 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
    * <p>If a duplicate is found we skip it since we're iterating in reverse order and we already
    * have the latest entry.
    *
+   * <p>Entries carrying the same timestamp are resolved in favour of the most specific scope, so
+   * CURRENT wins over ISOLATION, which in turn wins over GLOBAL.
+   *
    * @param maxSize max number of feature flags
    * @param globalBuffer buffer from global scope
    * @param isolationBuffer buffer from isolation scope
@@ -135,12 +139,13 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
       final @Nullable FeatureFlagBuffer isolationBuffer,
       final @Nullable FeatureFlagBuffer currentBuffer) {
 
-    // Capture references to avoid inconsistencies from concurrent modifications
-    final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> globalFlags =
+    // One volatile read each pins an immutable list, so concurrent writers cannot shift these
+    // out from under the index arithmetic below
+    final @Nullable List<FeatureFlagEntry> globalFlags =
         globalBuffer == null ? null : globalBuffer.flags;
-    final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> isolationFlags =
+    final @Nullable List<FeatureFlagEntry> isolationFlags =
         isolationBuffer == null ? null : isolationBuffer.flags;
-    final @Nullable CopyOnWriteArrayList<FeatureFlagEntry> currentFlags =
+    final @Nullable List<FeatureFlagEntry> currentFlags =
         currentBuffer == null ? null : currentBuffer.flags;
 
     final int globalSize = globalFlags == null ? 0 : globalFlags.size();
@@ -166,8 +171,7 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
     FeatureFlagEntry currentEntry =
         currentFlags == null || currentIndex < 0 ? null : currentFlags.get(currentIndex);
 
-    final @NotNull java.util.Map<String, FeatureFlagEntry> uniqueFlags =
-        new java.util.LinkedHashMap<>(maxSize);
+    final @NotNull Map<String, FeatureFlagEntry> uniqueFlags = new LinkedHashMap<>(maxSize);
 
     // check if there is still room and remaining items to check
     while (uniqueFlags.size() < maxSize
@@ -177,66 +181,59 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
       @Nullable ScopeType selectedBuffer = null;
 
       // choose newest entry across all buffers
-      if (globalEntry != null && (entryToAdd == null || globalEntry.nanos > entryToAdd.nanos)) {
+      if (globalEntry != null) {
         entryToAdd = globalEntry;
         selectedBuffer = ScopeType.GLOBAL;
       }
       if (isolationEntry != null
-          && (entryToAdd == null || isolationEntry.nanos > entryToAdd.nanos)) {
+          && (entryToAdd == null || isolationEntry.nanos >= entryToAdd.nanos)) {
         entryToAdd = isolationEntry;
         selectedBuffer = ScopeType.ISOLATION;
       }
-      if (currentEntry != null && (entryToAdd == null || currentEntry.nanos > entryToAdd.nanos)) {
+      if (currentEntry != null && (entryToAdd == null || currentEntry.nanos >= entryToAdd.nanos)) {
         entryToAdd = currentEntry;
         selectedBuffer = ScopeType.CURRENT;
       }
 
-      if (entryToAdd != null) {
-        // no need to update existing entries since we already have the latest
-        if (!uniqueFlags.containsKey(entryToAdd.flag)) {
-          uniqueFlags.put(entryToAdd.flag, entryToAdd);
-        }
-
-        // decrement only index of buffer that was selected
-        if (ScopeType.CURRENT.equals(selectedBuffer)) {
-          currentIndex--;
-          currentEntry =
-              currentFlags != null && currentIndex >= 0 ? currentFlags.get(currentIndex) : null;
-        } else if (ScopeType.ISOLATION.equals(selectedBuffer)) {
-          isolationIndex--;
-          isolationEntry =
-              isolationFlags != null && isolationIndex >= 0
-                  ? isolationFlags.get(isolationIndex)
-                  : null;
-        } else if (ScopeType.GLOBAL.equals(selectedBuffer)) {
-          globalIndex--;
-          globalEntry =
-              globalFlags != null && globalIndex >= 0 ? globalFlags.get(globalIndex) : null;
-        }
-      } else {
-        // no need to look any further since lists are sorted and we could not find any newer
-        // entries anymore
+      if (entryToAdd == null) {
         break;
+      }
+
+      // no need to update existing entries since we already have the latest
+      if (!uniqueFlags.containsKey(entryToAdd.flag)) {
+        uniqueFlags.put(entryToAdd.flag, entryToAdd);
+      }
+
+      // decrement only index of buffer that was selected
+      if (selectedBuffer == ScopeType.CURRENT) {
+        currentIndex--;
+        currentEntry =
+            currentFlags != null && currentIndex >= 0 ? currentFlags.get(currentIndex) : null;
+      } else if (selectedBuffer == ScopeType.ISOLATION) {
+        isolationIndex--;
+        isolationEntry =
+            isolationFlags != null && isolationIndex >= 0
+                ? isolationFlags.get(isolationIndex)
+                : null;
+      } else if (selectedBuffer == ScopeType.GLOBAL) {
+        globalIndex--;
+        globalEntry = globalFlags != null && globalIndex >= 0 ? globalFlags.get(globalIndex) : null;
       }
     }
 
     // Convert to list in reverse order (oldest first, newest last)
     final @NotNull List<FeatureFlagEntry> resultList = new ArrayList<>(uniqueFlags.values());
     Collections.reverse(resultList);
-    return new FeatureFlagBuffer(maxSize, new CopyOnWriteArrayList<>(resultList));
+    return new FeatureFlagBuffer(maxSize, Collections.unmodifiableList(resultList));
   }
 
   private static class FeatureFlagEntry {
 
     private final @NotNull String flag;
     private final boolean result;
+    private final long nanos;
 
-    @SuppressWarnings("UnusedVariable")
-    @NotNull
-    private final Long nanos;
-
-    public FeatureFlagEntry(
-        final @NotNull String flag, final boolean result, final @NotNull Long nanos) {
+    public FeatureFlagEntry(final @NotNull String flag, final boolean result, final long nanos) {
       this.flag = flag;
       this.result = result;
       this.nanos = nanos;

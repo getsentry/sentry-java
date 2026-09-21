@@ -42,14 +42,13 @@ class CheckInSerializationTest {
           } else {
             MonitorConfig(MonitorSchedule.interval(42, MonitorScheduleUnit.MINUTE))
           }
-        monitorConfig =
-          monitorConfigTmp.apply {
-            checkinMargin = 8L
-            maxRuntime = 9L
-            timezone = ZoneId.of("Europe/Vienna").id
-            failureIssueThreshold = 10
-            recoveryThreshold = 20
-          }
+        monitorConfig = monitorConfigTmp.apply {
+          checkinMargin = 8L
+          maxRuntime = 9L
+          timezone = ZoneId.of("Europe/Vienna").id
+          failureIssueThreshold = 10
+          recoveryThreshold = 20
+        }
       }
   }
 

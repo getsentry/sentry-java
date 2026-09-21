@@ -17,6 +17,7 @@ import io.sentry.ITransactionProfiler
 import io.sentry.MainEventProcessor
 import io.sentry.NoOpContinuousProfiler
 import io.sentry.NoOpTransactionProfiler
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackFormHandler
 import io.sentry.android.core.cache.AndroidEnvelopeCache
@@ -376,6 +377,53 @@ class AndroidOptionsInitializerTest {
     assertTrue(fixture.sentryOptions.continuousProfiler is AndroidContinuousProfiler)
   }
 
+  @Config(sdk = [35])
+  @Test
+  fun `init on API 35+ always sets PerfettoContinuousProfiler`() {
+    fixture.initSut()
+    assertTrue(fixture.sentryOptions.continuousProfiler is PerfettoContinuousProfiler)
+  }
+
+  @Config(sdk = [35])
+  @Test
+  fun `init on API 35+ reports PerfettoContinuousProfiling integration`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    fixture.initSut()
+
+    assertTrue(
+      SentryIntegrationPackageStorage.getInstance()
+        .integrations
+        .contains("PerfettoContinuousProfiling")
+    )
+  }
+
+  @Config(sdk = [34])
+  @Test
+  fun `init below API 35 does not report PerfettoContinuousProfiling integration`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    fixture.initSut(configureOptions = { isEnableLegacyProfiling = true })
+
+    assertFalse(
+      SentryIntegrationPackageStorage.getInstance()
+        .integrations
+        .contains("PerfettoContinuousProfiling")
+    )
+  }
+
+  @Config(sdk = [34])
+  @Test
+  fun `init below API 35 with enableLegacyProfiling true sets AndroidContinuousProfiler`() {
+    fixture.initSut(configureOptions = { isEnableLegacyProfiling = true })
+    assertTrue(fixture.sentryOptions.continuousProfiler is AndroidContinuousProfiler)
+  }
+
+  @Config(sdk = [34])
+  @Test
+  fun `init below API 35 with enableLegacyProfiling false noops profiler`() {
+    fixture.initSut(configureOptions = { isEnableLegacyProfiling = false })
+    assertTrue(fixture.sentryOptions.continuousProfiler is NoOpContinuousProfiler)
+  }
+
   @Test
   fun `init with profilesSampleRate should set Android transaction profiler`() {
     fixture.initSut(configureOptions = { profilesSampleRate = 1.0 })
@@ -401,6 +449,51 @@ class AndroidOptionsInitializerTest {
     assertNotNull(fixture.sentryOptions.transactionProfiler)
     assertTrue(fixture.sentryOptions.transactionProfiler is AndroidTransactionProfiler)
     assertEquals(fixture.sentryOptions.continuousProfiler, NoOpContinuousProfiler.getInstance())
+  }
+
+  @Test
+  fun `init with profilesSampleRate and enableLegacyProfiling false noops both profilers`() {
+    fixture.initSut(
+      configureOptions = {
+        profilesSampleRate = 1.0
+        isEnableLegacyProfiling = false
+      }
+    )
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    assertEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+  }
+
+  @Test
+  fun `init with profilesSampler and enableLegacyProfiling false noops both profilers`() {
+    fixture.initSut(
+      configureOptions = {
+        profilesSampler = mock()
+        isEnableLegacyProfiling = false
+      }
+    )
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    assertEquals(NoOpContinuousProfiler.getInstance(), fixture.sentryOptions.continuousProfiler)
+  }
+
+  @Test
+  fun `init with profilesSampleRate and enableLegacyProfiling false closes app start profiler`() {
+    val appStartProfiler = mock<ITransactionProfiler>()
+    AppStartMetrics.getInstance().appStartProfiler = appStartProfiler
+    fixture.initSut(
+      configureOptions = {
+        profilesSampleRate = 1.0
+        isEnableLegacyProfiling = false
+      }
+    )
+
+    assertEquals(NoOpTransactionProfiler.getInstance(), fixture.sentryOptions.transactionProfiler)
+    verify(appStartProfiler).close()
+
+    // AppStartMetrics should be cleared
+    assertNull(AppStartMetrics.getInstance().appStartProfiler)
+    assertNull(AppStartMetrics.getInstance().appStartContinuousProfiler)
   }
 
   @Test
@@ -844,6 +937,21 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
+  fun `options cache generation observer is set when app update time is valid`() {
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
+    ContextUtils.getPackageInfo(fixture.context, buildInfo)!!.lastUpdateTime = 1_000L
+
+    fixture.initSut(useRealContext = true)
+
+    assertTrue {
+      fixture.sentryOptions.optionsObservers.any {
+        it is PersistingOptionsCacheGenerationObserver
+      }
+    }
+  }
+
+  @Test
   fun `when cacheDir is not set, persisting observers are not set to options`() {
     fixture.initSut(configureOptions = { cacheDirPath = null })
 
@@ -879,6 +987,56 @@ class AndroidOptionsInitializerTest {
 
     val anrv1Integration = fixture.sentryOptions.integrations.firstOrNull { it is AnrIntegration }
     assertNull(anrv1Integration)
+  }
+
+  @Test
+  fun `MemoryLimiterIntegration added to integrations list for API 37 and above`() {
+    val options = SentryAndroidOptions()
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(37)
+    val loadClass = LoadClass()
+    val activityFramesTracker = ActivityFramesTracker(loadClass, options)
+
+    AndroidOptionsInitializer.installDefaultIntegrations(
+      fixture.context,
+      options,
+      buildInfo,
+      loadClass,
+      activityFramesTracker,
+      false,
+      false,
+      false,
+      false,
+    )
+
+    val integration = options.integrations.firstOrNull { it is MemoryLimiterIntegration }
+
+    assertNotNull(integration)
+  }
+
+  @Test
+  fun `MemoryLimiterIntegration not added to integrations list below API 37`() {
+    val options = SentryAndroidOptions()
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(36)
+    val loadClass = LoadClass()
+    val activityFramesTracker = ActivityFramesTracker(loadClass, options)
+
+    AndroidOptionsInitializer.installDefaultIntegrations(
+      fixture.context,
+      options,
+      buildInfo,
+      loadClass,
+      activityFramesTracker,
+      false,
+      false,
+      false,
+      false,
+    )
+
+    val integration = options.integrations.firstOrNull { it is MemoryLimiterIntegration }
+
+    assertNull(integration)
   }
 
   @Test

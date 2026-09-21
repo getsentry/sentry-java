@@ -34,6 +34,10 @@ public final class AppStartExtension implements IAppStartExtender {
 
   private final @NotNull AppStartMetrics metrics;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  // Serializes the two finish paths against each other. Deliberately separate from `lock`:
+  // finishing re-enters the SDK and that re-entrant path takes `lock`, so the finish cannot run
+  // under `lock` (see finishTransaction). When both are held the order is finishLock, then `lock`.
+  private final @NotNull AutoClosableReentrantLock finishLock = new AutoClosableReentrantLock();
 
   private @Nullable ExtendAppStartListener extendAppStartListener;
   // We hold onto both the span and its transaction because they mean different things and finish
@@ -108,8 +112,12 @@ public final class AppStartExtension implements IAppStartExtender {
 
   @Override
   public void finishExtendedAppStart() {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      final @Nullable ISpan span = extendedSpan;
+    try (final @NotNull ISentryLifecycleToken ignoredFinish = finishLock.acquire()) {
+      final @Nullable ISpan span;
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        span = extendedSpan;
+      }
+      // Finishing runs outside `lock`, see the note on finishTransaction.
       if (span != null && !span.isFinished()) {
         span.finish(SpanStatus.OK);
       }
@@ -145,10 +153,19 @@ public final class AppStartExtension implements IAppStartExtender {
   }
 
   public void finishTransaction(final @NotNull SentryDate endTimestamp) {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      final @Nullable ITransaction transaction = extendedTransaction;
+    // Finishing has to run outside `lock`: it captures the transaction synchronously, which runs
+    // PerformanceAndroidEventProcessor, which calls back into isExtended()/getExtendedEndTime()
+    // while holding its own lock. Holding `lock` across the call would let the two be taken in
+    // opposite orders and deadlock. finishLock still serializes this against
+    // finishExtendedAppStart, so the end-time clamp below and the finish stay atomic.
+    try (final @NotNull ISentryLifecycleToken ignoredFinish = finishLock.acquire()) {
+      final @Nullable ITransaction transaction;
+      final @Nullable ISpan span;
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        transaction = extendedTransaction;
+        span = extendedSpan;
+      }
       if (transaction != null && !transaction.isFinished()) {
-        final @Nullable ISpan span = extendedSpan;
         final @Nullable SentryDate spanEnd = span == null ? null : span.getFinishDate();
         final @NotNull SentryDate end =
             spanEnd != null && spanEnd.isAfter(endTimestamp) ? spanEnd : endTimestamp;

@@ -29,6 +29,7 @@ internal interface CaptureStrategy {
   val replayCacheDir: File?
   var replayType: ReplayType
   var segmentTimestamp: Date?
+  var isFlushed: Boolean
 
   fun start(segmentId: Int = 0, replayId: SentryId = SentryId(), replayType: ReplayType? = null)
 
@@ -38,7 +39,14 @@ internal interface CaptureStrategy {
 
   fun resume()
 
+  /**
+   * Captures replay data for an event. Session mode may defer sending until its normal segment
+   * boundary because the replay is already being uploaded continuously.
+   */
   fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit)
+
+  /** Explicitly sends the current replay data to Sentry in either session or buffer mode. */
+  fun flush(onSegmentSent: (Date) -> Unit)
 
   fun onScreenshotRecorded(
     bitmap: Bitmap? = null,
@@ -54,6 +62,8 @@ internal interface CaptureStrategy {
   fun convert(): CaptureStrategy
 
   fun registerTraceId(traceId: SentryId)
+
+  fun registerSegmentName(segmentName: String)
 
   companion object {
     private fun Breadcrumb?.isNetworkAvailable(): Boolean =
@@ -87,6 +97,7 @@ internal interface CaptureStrategy {
       breadcrumbs: List<Breadcrumb>?,
       events: Deque<RRWebEvent>,
       traceIds: List<String> = emptyList(),
+      segmentNames: List<String> = emptyList(),
     ): ReplaySegment {
       val generatedVideo =
         cache?.createVideoOf(
@@ -126,6 +137,7 @@ internal interface CaptureStrategy {
         replayBreadcrumbs,
         events,
         traceIds,
+        segmentNames,
       )
     }
 
@@ -146,6 +158,7 @@ internal interface CaptureStrategy {
       breadcrumbs: List<Breadcrumb>,
       events: Deque<RRWebEvent>,
       traceIds: List<String>,
+      segmentNames: List<String>,
     ): ReplaySegment {
       val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + videoDuration)
       val replay =
@@ -158,6 +171,7 @@ internal interface CaptureStrategy {
           this.replayType = replayType
           this.videoFile = video
           this.traceIds = traceIds
+          this.segmentNames = segmentNames
         }
 
       val recordingPayload = mutableListOf<RRWebEvent>()

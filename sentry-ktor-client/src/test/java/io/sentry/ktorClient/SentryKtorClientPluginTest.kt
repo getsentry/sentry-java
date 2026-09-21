@@ -14,6 +14,7 @@ import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
@@ -103,6 +104,7 @@ class SentryKtorClientPluginTest {
         MockResponse()
           .setBody(responseBody)
           .addHeader("myResponseHeader", "myValue")
+          .addHeader("Set-Cookie", "theme=dark; Path=/")
           .setSocketPolicy(socketPolicy)
           .setResponseCode(httpStatusCode)
       )
@@ -256,6 +258,163 @@ class SentryKtorClientPluginTest {
   }
 
   @Test
+  fun `data collection filters cookies`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.cookies = KeyValueCollectionBehavior.denyList("theme")
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) {
+      headers["Cookie"] = "language=en; theme=dark; sessionId=secret"
+    }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertEquals(
+            "language=en; theme=[Filtered]; sessionId=[Filtered]",
+            it.request!!.cookies,
+          )
+          assertEquals("theme=[Filtered]; Path=/", it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable cookies`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        sendDefaultPii = true,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.cookies = KeyValueCollectionBehavior.off()
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) { headers["Cookie"] = "theme=dark" }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertNull(it.request!!.cookies)
+          assertNull(it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters request headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("customer")
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) {
+      headers["content-type"] = "application/json"
+      headers["authorization"] = "Bearer token"
+      headers["x-customer"] = "customer value"
+    }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertEquals("application/json", it.request!!.headers!!["content-type"])
+          assertEquals("[Filtered]", it.request!!.headers!!["authorization"])
+          assertEquals("[Filtered]", it.request!!.headers!!["x-customer"])
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable request headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) { headers["myHeader"] = "myValue" }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { assertTrue(it.request!!.headers!!.isEmpty()) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters response headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.response = KeyValueCollectionBehavior.denyList("response")
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString())
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertEquals(
+            "[Filtered]",
+            it.contexts.response!!
+              .headers!!
+              .entries
+              .firstOrNull { header ->
+                header.key.equals("myResponseHeader", ignoreCase = true)
+              }
+              ?.value,
+          )
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable response headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString())
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { assertTrue(it.contexts.response!!.headers!!.isEmpty()) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `does not capture headers when sendDefaultPii is disabled`(): Unit = runBlocking {
     val sut =
       fixture.getSut(captureFailedRequests = true, httpStatusCode = 500, sendDefaultPii = false)
@@ -288,6 +447,16 @@ class SentryKtorClientPluginTest {
     assertEquals("auto.http.ktor-client", httpClientSpan.spanContext.origin)
     assertEquals(SpanStatus.OK, httpClientSpan.status)
     assertTrue(httpClientSpan.isFinished)
+  }
+
+  @Test
+  fun `span description excludes query parameters and fragment`(): Unit = runBlocking {
+    val sut = fixture.getSut()
+    sut.get(fixture.server.url("/hello?token=secret&page=1#results").toString())
+
+    val httpClientSpan = fixture.sentryTracer.children.first()
+    assertEquals("GET ${fixture.server.url("/hello")}", httpClientSpan.description)
+    assertNull(httpClientSpan.data[SpanDataConvention.HTTP_QUERY_KEY])
   }
 
   @Test

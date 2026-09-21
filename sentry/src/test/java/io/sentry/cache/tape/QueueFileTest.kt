@@ -49,7 +49,8 @@ class QueueFileTest {
   @get:Rule val folder = TemporaryFolder()
   private lateinit var file: File
 
-  private fun newQueueFile(raf: RandomAccessFile): QueueFile = QueueFile(this.file, raf, true, -1)
+  private fun newQueueFile(raf: RandomAccessFile): QueueFile =
+    QueueFile(this.file, raf, true, -1, true)
 
   private fun newQueueFile(zero: Boolean = true, size: Int = -1): QueueFile =
     Builder(file).zero(zero).size(size).build()

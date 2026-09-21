@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
+  id("io.sentry.animalsniffer")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -28,6 +29,7 @@ dependencies {
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.logback.classic)
   testImplementation(libs.mockito.kotlin)
 }

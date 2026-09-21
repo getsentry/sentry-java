@@ -44,6 +44,7 @@ public class io/sentry/android/core/AndroidContinuousProfiler : io/sentry/IConti
 	public fun <init> (Lio/sentry/android/core/BuildInfoProvider;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/ILogger;Ljava/lang/String;ILio/sentry/util/LazyEvaluator$Evaluator;)V
 	public fun close (Z)V
 	public fun getChunkId ()Lio/sentry/protocol/SentryId;
+	public fun getProfileRecordingState (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Lio/sentry/SentryDate;)Lio/sentry/profiling/ProfileRecordingState;
 	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
 	public fun getRootSpanCounter ()I
 	public fun isRunning ()Z
@@ -282,7 +283,6 @@ public final class io/sentry/android/core/DeviceInfoUtil {
 	public fun getSplitApksInfo ()Lio/sentry/android/core/ContextUtils$SplitApksInfo;
 	public fun getTotalMemory ()Ljava/lang/Long;
 	public static fun isCharging (Landroid/content/Intent;Lio/sentry/SentryOptions;)Ljava/lang/Boolean;
-	public static fun resetInstance ()V
 }
 
 public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : io/sentry/Integration, java/io/Closeable {
@@ -293,9 +293,12 @@ public abstract class io/sentry/android/core/EnvelopeFileObserverIntegration : i
 	public final fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/FeedbackShakeIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, java/io/Closeable {
+public final class io/sentry/android/core/FeedbackShakeIntegration : android/app/Application$ActivityLifecycleCallbacks, io/sentry/Integration, io/sentry/SentryFeedbackOptions$IShakeController, java/io/Closeable {
 	public fun <init> (Landroid/app/Application;)V
 	public fun close ()V
+	public fun disableOnShake ()V
+	public fun enableOnShake ()V
+	public fun isOnShakeEnabled ()Z
 	public fun onActivityCreated (Landroid/app/Activity;Landroid/os/Bundle;)V
 	public fun onActivityDestroyed (Landroid/app/Activity;)V
 	public fun onActivityPaused (Landroid/app/Activity;)V
@@ -315,10 +318,12 @@ public abstract interface class io/sentry/android/core/IDebugImagesLoader {
 public final class io/sentry/android/core/InternalSentrySdk {
 	public fun <init> ()V
 	public static fun captureEnvelope ([BZ)Lio/sentry/protocol/SentryId;
+	public static fun captureEnvelopeNonTerminating ([B)Lio/sentry/protocol/SentryId;
 	public static fun getAppStartMeasurement ()Ljava/util/Map;
 	public static fun getCurrentScope ()Lio/sentry/IScope;
 	public static fun serializeScope (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/IScope;)Ljava/util/Map;
 	public static fun setTrace (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Double;Ljava/lang/Double;)V
+	public static fun updateSessionForDroppedEventNonTerminating (Z)V
 }
 
 public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
@@ -326,6 +331,22 @@ public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/ILogger;)Z
 	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/SentryOptions;)Z
 	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
+}
+
+public final class io/sentry/android/core/MemoryLimiterIntegration : io/sentry/Integration, java/io/Closeable {
+	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)V
+	public fun close ()V
+	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+}
+
+public final class io/sentry/android/core/MemoryLimiterIntegration$MemoryLimiterHint : io/sentry/hints/BlockingFlushHint, io/sentry/hints/AbnormalExit, io/sentry/hints/Backfillable {
+	public fun <init> (JLio/sentry/ILogger;JZ)V
+	public fun ignoreCurrentThread ()Z
+	public fun isFlushable (Lio/sentry/protocol/SentryId;)Z
+	public fun mechanism ()Ljava/lang/String;
+	public fun setFlushable (Lio/sentry/protocol/SentryId;)V
+	public fun shouldEnrich ()Z
+	public fun timestamp ()Ljava/lang/Long;
 }
 
 public final class io/sentry/android/core/NativeEventCollector {
@@ -362,6 +383,24 @@ public final class io/sentry/android/core/NetworkBreadcrumbsIntegration : io/sen
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
+public class io/sentry/android/core/PerfettoContinuousProfiler : io/sentry/IContinuousProfiler, io/sentry/transport/RateLimiter$IRateLimitObserver {
+	public fun <init> (Lio/sentry/ILogger;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/util/LazyEvaluator$Evaluator;Ljava/util/function/Supplier;)V
+	public fun close (Z)V
+	public fun getChunkId ()Lio/sentry/protocol/SentryId;
+	public fun getProfileRecordingState (Lio/sentry/protocol/SentryId;Lio/sentry/SentryDate;Lio/sentry/SentryDate;)Lio/sentry/profiling/ProfileRecordingState;
+	public fun getProfilerId ()Lio/sentry/protocol/SentryId;
+	public fun isRunning ()Z
+	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
+	public fun reevaluateSampling ()V
+	public fun startProfiler (Lio/sentry/ProfileLifecycle;Lio/sentry/TracesSampler;)V
+	public fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
+}
+
+public class io/sentry/android/core/PerfettoProfiler {
+	public fun <init> (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/ISentryExecutorService;)V
+	public fun endAndCollect (Ljava/util/function/Consumer;)V
+}
+
 public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;Z)V
 	public fun getOrder ()Ljava/lang/Long;
@@ -390,6 +429,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
+	public fun getMonotonicTicker ()Lio/sentry/time/MonotonicTicker;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkAppHangTimeoutIntervalMillis ()J
 	public fun getNdkHandlerStrategy ()I
@@ -421,7 +461,9 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableStandaloneAppStartTracing ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableSystemEventBreadcrumbsExtras ()Z
+	public fun isMemoryLimiterEnabled ()Z
 	public fun isReportHistoricalAnrs ()Z
+	public fun isReportHistoricalMemoryLimiterExits ()Z
 	public fun isReportHistoricalTombstones ()Z
 	public fun isTombstoneEnabled ()Z
 	public fun setAnrEnabled (Z)V
@@ -455,10 +497,12 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
+	public fun setMemoryLimiterEnabled (Z)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
 	public fun setNdkAppHangTimeoutIntervalMillis (J)V
 	public fun setReportHistoricalAnrs (Z)V
+	public fun setReportHistoricalMemoryLimiterExits (Z)V
 	public fun setReportHistoricalTombstones (Z)V
 	public fun setTombstoneEnabled (Z)V
 }
@@ -555,7 +599,9 @@ public abstract interface class io/sentry/android/core/SentryUserFeedbackDialog$
 
 public class io/sentry/android/core/SentryUserFeedbackForm : android/app/AlertDialog {
 	protected fun onCreate (Landroid/os/Bundle;)V
+	public fun onDetachedFromWindow ()V
 	protected fun onStart ()V
+	protected fun onStop ()V
 	public fun setCancelable (Z)V
 	public fun setOnDismissListener (Landroid/content/DialogInterface$OnDismissListener;)V
 	public fun show ()V
@@ -614,7 +660,8 @@ public class io/sentry/android/core/TombstoneIntegration$TombstonePolicy : io/se
 	public fun buildReport (Landroid/app/ApplicationExitInfo;Z)Lio/sentry/android/core/ApplicationExitInfoHistoryDispatcher$Report;
 	public fun getLabel ()Ljava/lang/String;
 	public fun getLastReportedTimestamp ()Ljava/lang/Long;
-	public fun getTargetReason ()I
+	public fun markReported (J)V
+	public fun matches (Landroid/app/ApplicationExitInfo;)Z
 	public fun shouldReportHistorical ()Z
 }
 
@@ -719,13 +766,19 @@ public final class io/sentry/android/core/anr/StackTraceConverter {
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
 	public static final field LAST_ANR_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_ANR_REPORT Ljava/lang/String;
+	public static final field LAST_MEMORY_LIMITER_MARKER_LABEL Ljava/lang/String;
+	public static final field LAST_MEMORY_LIMITER_REPORT Ljava/lang/String;
 	public static final field LAST_TOMBSTONE_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_TOMBSTONE_REPORT Ljava/lang/String;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun getDirectory ()Ljava/io/File;
 	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
+	public static fun lastReportedMemoryLimiter (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public static fun lastReportedTombstone (Lio/sentry/SentryOptions;)Ljava/lang/Long;
+	public static fun markAnrReported (Lio/sentry/SentryOptions;J)V
+	public static fun markMemoryLimiterReported (Lio/sentry/SentryOptions;J)V
+	public static fun markTombstoneReported (Lio/sentry/SentryOptions;J)V
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
@@ -853,7 +906,6 @@ public class io/sentry/android/core/performance/TimeSpan : java/lang/Comparable 
 	public fun setStartedAt (J)V
 	public fun setStoppedAt (J)V
 	public fun setup (Ljava/lang/String;JJJ)V
-	public fun start ()V
 	public fun stop ()V
 }
 

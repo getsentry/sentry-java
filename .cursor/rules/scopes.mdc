@@ -90,15 +90,20 @@ For JVM Backend applications (servers) we discourage enabling `globalHubMode` si
 
 ### Enabled
 
-If `globalHubMode` is enabled, the SDK avoids forking scopes.
+If `globalHubMode` is enabled, the SDK avoids forking scopes _implicitly_.
 
 This means, retrieving current scopes on a thread where specific scopes do not exist yet for the thread, the root scopes are not forked but returned directly.
-The SDK also doesn't fork scopes when `Sentry.pushScope`, `Sentry.pushIsolation`, `Sentry.withScope` or `Sentry.withIsolationScope` are executed.
+`Sentry.pushScope`, `Sentry.pushIsolationScope` and `Sentry.popScope` are no-ops.
+They are unbalanced API: the caller may never restore the previous scopes, or restore them on a different thread, which would corrupt the globally shared scopes.
+
+`Sentry.withScope` and `Sentry.withIsolationScope` do fork, also when `globalHubMode` is enabled.
+They are balanced by construction and always restore the previous scopes before returning, so they cannot corrupt the shared scopes.
+This matches the cross SDK spec ("fork the current scope, invoke callback, discard the fork when done") and what the SDK did before major version 8.
 
 The suppression of forking via `globalHubMode` only applies when using `Sentry` static API or `ScopesAdapter`.
 In case the `Scopes` instance is accessed directly, forking will happen as if `globalHubMode` is disabled.
-However, while it's possible to use `Sentry.setCurrentScopes` it does not have any effect due to `Sentry.getCurrentScopes` directly returning `rootScopes` if `globalHubMode` is enabled.
-This means the forked scopes have to be managed manually, e.g. by keeping a reference and accessing Sentry API via the reference instead of using static API.
+`Sentry.setCurrentScopes`, and thus `Scopes.makeCurrent`, does have an effect when `globalHubMode` is enabled, but only for scopes that descend from the current `rootScopes`.
+`Sentry.getCurrentScopes` ignores all other scopes, because scopes left over from a closed or re-initialized SDK would otherwise be read back from a thread local that the SDK cannot clean up.
 
 `ScopesAdapter` makes use of the static `Sentry` API internally. It allows us to access the correct scopes for the current context without passing it along explicitly. It also makes testing easier.
 

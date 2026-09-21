@@ -34,6 +34,7 @@ import io.sentry.util.MapObjectWriter;
 import io.sentry.util.TracingUtils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -153,7 +154,12 @@ public final class InternalSentrySdk {
    * - will not perform any sampling: it's up to the caller to take care of this<br>
    * - will enrich the envelope with a Session update if applicable<br>
    *
+   * <p>Unhandled events ({@code handled=false}) end the session as {@code crashed}. Prefer {@link
+   * #captureEnvelopeNonTerminating(byte[])} for hybrid runtimes where the process is expected to
+   * continue (e.g. Flutter).
+   *
    * @param envelopeData the serialized envelope data
+   * @param maybeStartNewSession if true, starts a new session after a crashed session is cleared
    * @return The Id (SentryId object) of the event, or null in case the envelope could not be
    *     captured
    */
@@ -163,35 +169,25 @@ public final class InternalSentrySdk {
     final @NotNull IScopes scopes = ScopesAdapter.getInstance();
     final @NotNull SentryOptions options = scopes.getOptions();
 
-    try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
+    final @Nullable SentryEnvelope envelope = readEnvelope(options, envelopeData);
+    if (envelope == null) {
+      return null;
+    }
+
+    try {
       final @NotNull ISerializer serializer = options.getSerializer();
-      final @Nullable SentryEnvelope envelope =
-          options.getEnvelopeReader().read(envelopeInputStream);
-      if (envelope == null) {
-        return null;
-      }
+      final @NotNull EnvelopeEventState eventState = eventStateOf(envelope, serializer);
 
       final @NotNull List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
-
-      // determine session state based on events inside envelope
-      @Nullable Session.State status = null;
-      boolean crashedOrErrored = false;
       for (SentryEnvelopeItem item : envelope.getItems()) {
         envelopeItems.add(item);
-
-        final SentryEvent event = item.getEvent(serializer);
-        if (event != null) {
-          if (event.isCrashed()) {
-            status = Session.State.Crashed;
-          }
-          if (event.isCrashed() || event.isErrored()) {
-            crashedOrErrored = true;
-          }
-        }
       }
 
       // update session and add it to envelope if necessary
-      final @Nullable Session session = updateSession(scopes, options, status, crashedOrErrored);
+      final @Nullable Session.State status =
+          eventState == EnvelopeEventState.UNHANDLED ? Session.State.Crashed : null;
+      final @Nullable Session session =
+          updateSession(scopes, options, status, eventState != EnvelopeEventState.NONE);
       if (session != null) {
         final SentryEnvelopeItem sessionItem = SentryEnvelopeItem.fromSession(serializer, session);
         envelopeItems.add(sessionItem);
@@ -211,6 +207,156 @@ public final class InternalSentrySdk {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope", t);
     }
     return null;
+  }
+
+  /**
+   * Captures the provided envelope for a non-terminating hybrid exception (e.g. Flutter).
+   *
+   * <p>Compared to {@link #captureEnvelope(byte[], boolean)} this method does <strong>not</strong>
+   * treat {@code handled=false} as a crash that ends the session. Instead it:
+   *
+   * <ul>
+   *   <li>flags the current session with a non-terminating unhandled error and increments the error
+   *       count
+   *   <li>keeps session status {@code Ok} and the same session id on the scope
+   *   <li>does not attach a session update item to this envelope
+   *   <li>does not start a new session
+   *   <li>persists the current session before returning, so the flag survives process death
+   * </ul>
+   *
+   * <p>Persisting is a blocking disk write on the calling thread, so call this off the main thread
+   * as the hybrid SDKs do. It is synchronous on purpose: a deferred write would not be on disk yet
+   * if the process dies right after this returns.
+   *
+   * <p>The session is finalized later by normal lifecycle ({@code endSession} / background /
+   * previous-session recovery) as {@code unhandled}, unless a terminal status takes over first,
+   * such as {@code crashed} for a native crash or {@code abnormal} for an ANR.
+   *
+   * <p>Same as {@link #captureEnvelope(byte[], boolean)}, this method will not enrich events, run
+   * {@code beforeSend}, or sample — the caller is responsible for that.
+   *
+   * @param envelopeData the serialized envelope data
+   * @return the id of the captured envelope, or null if capture failed
+   */
+  @Nullable
+  public static SentryId captureEnvelopeNonTerminating(final @NotNull byte[] envelopeData) {
+    final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+    final @NotNull SentryOptions options = scopes.getOptions();
+
+    final @Nullable SentryEnvelope envelope = readEnvelope(options, envelopeData);
+    if (envelope == null) {
+      return null;
+    }
+
+    final @NotNull EnvelopeEventState eventState;
+    try {
+      eventState = eventStateOf(envelope, options.getSerializer());
+    } catch (Exception e) {
+      // getEvent reads through a Callable, whose call() declares Exception
+      options.getLogger().log(SentryLevel.ERROR, "Failed to inspect envelope events", e);
+      return null;
+    }
+
+    if (eventState != EnvelopeEventState.NONE) {
+      updateSessionNonTerminating(eventState == EnvelopeEventState.UNHANDLED);
+    }
+
+    return scopes.captureEnvelope(envelope);
+  }
+
+  /**
+   * Session side effects of {@link #captureEnvelopeNonTerminating(byte[])} without sending the
+   * event. Hybrid SDKs should call this when an error is dropped by sampling.
+   *
+   * <p>Do not call this for events dropped by {@code beforeSend} or ignored exception types.
+   *
+   * <p>Persisting the session is a blocking disk write on the calling thread, so call this off the
+   * main thread as the hybrid SDKs do. It is synchronous on purpose: a deferred write would not be
+   * on disk yet if the process dies right after this returns.
+   *
+   * @param crashed {@code true} if the dropped error was unhandled ({@code
+   *     mechanism.handled=false})
+   */
+  public static void updateSessionForDroppedEventNonTerminating(final boolean crashed) {
+    updateSessionNonTerminating(crashed);
+  }
+
+  /**
+   * Flags the current session for a non-terminating hybrid error and persists it before returning,
+   * so the marker survives an immediate process death.
+   *
+   * <p>The write stays inside {@code withSession}: the scope's session lock is what keeps the
+   * session from being ended or replaced mid-write.
+   *
+   * @param unhandled {@code true} if the error was unhandled ({@code mechanism.handled=false})
+   */
+  private static void updateSessionNonTerminating(final boolean unhandled) {
+    final @NotNull IScopes scopes = ScopesAdapter.getInstance();
+    final @NotNull SentryOptions options = scopes.getOptions();
+    scopes.configureScope(
+        scope ->
+            scope.withSession(
+                session -> {
+                  if (session == null) {
+                    options.getLogger().log(INFO, "Session is null on updateSessionNonTerminating");
+                    return;
+                  }
+                  if (session.isTerminated()) {
+                    options
+                        .getLogger()
+                        .log(INFO, "Session already terminated, not recording the error.");
+                    return;
+                  }
+                  final boolean recorded =
+                      unhandled
+                          ? session.recordNonTerminatingUnhandledError()
+                          : session.update(null, null, true, null);
+                  if (recorded && options.getEnvelopeDiskCache() instanceof EnvelopeCache) {
+                    ((EnvelopeCache) options.getEnvelopeDiskCache()).persistCurrentSession(session);
+                  }
+                }));
+  }
+
+  /** What the events inside an envelope amount to, from the session's point of view. */
+  private enum EnvelopeEventState {
+    /** No event carried an exception. */
+    NONE,
+    /** At least one event carried an exception, none of them unhandled. */
+    ERRORED,
+    /** At least one event carried an unhandled exception. */
+    UNHANDLED
+  }
+
+  private static @NotNull EnvelopeEventState eventStateOf(
+      final @NotNull SentryEnvelope envelope, final @NotNull ISerializer serializer)
+      throws Exception {
+    boolean unhandled = false;
+    boolean errored = false;
+    for (SentryEnvelopeItem item : envelope.getItems()) {
+      final SentryEvent event = item.getEvent(serializer);
+      if (event != null) {
+        if (event.isCrashed()) {
+          unhandled = true;
+        }
+        if (event.isCrashed() || event.isErrored()) {
+          errored = true;
+        }
+      }
+    }
+    if (unhandled) {
+      return EnvelopeEventState.UNHANDLED;
+    }
+    return errored ? EnvelopeEventState.ERRORED : EnvelopeEventState.NONE;
+  }
+
+  private static @Nullable SentryEnvelope readEnvelope(
+      final @NotNull SentryOptions options, final @NotNull byte[] envelopeData) {
+    try (final InputStream envelopeInputStream = new ByteArrayInputStream(envelopeData)) {
+      return options.getEnvelopeReader().read(envelopeInputStream);
+    } catch (IOException | IllegalArgumentException e) {
+      options.getLogger().log(SentryLevel.ERROR, "Failed to read envelope", e);
+      return null;
+    }
   }
 
   public static Map<String, Object> getAppStartMeasurement() {
@@ -305,22 +451,26 @@ public final class InternalSentrySdk {
     final @NotNull AtomicReference<Session> sessionRef = new AtomicReference<>();
     scopes.configureScope(
         scope -> {
-          final @Nullable Session session = scope.getSession();
-          if (session != null) {
-            final boolean updated = session.update(status, null, crashedOrErrored, null);
-            // if we have an uncaughtExceptionHint we can end the session.
-            if (updated) {
-              if (session.getStatus() == Session.State.Crashed) {
-                session.end();
-                // Session needs to be removed from the scope, otherwise it will be send twice
-                // standalone and with the crash event
-                scope.clearSession();
-              }
-              sessionRef.set(session);
-            }
-          } else {
-            options.getLogger().log(INFO, "Session is null on updateSession");
-          }
+          scope.withSession(
+              session -> {
+                if (session != null) {
+                  final boolean updated = session.update(status, null, crashedOrErrored, null);
+                  // if we have an uncaughtExceptionHint we can end the session.
+                  if (updated) {
+                    if (session.getStatus() == Session.State.Crashed) {
+                      session.end();
+                      // Session needs to be removed from the scope, otherwise it will be send twice
+                      // standalone and with the crash event
+                      scope.clearSession();
+                    }
+                    // fromSession serializes lazily, on the transport thread, so handing out the
+                    // live session would race a later mutation
+                    sessionRef.set(session.clone());
+                  }
+                } else {
+                  options.getLogger().log(INFO, "Session is null on updateSession");
+                }
+              });
         });
     return sessionRef.get();
   }

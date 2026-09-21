@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""Recover Macrobenchmark results from a Sauce Labs device log.
+
+Sauce Labs cannot pull arbitrary files off a real device, so
+SentryStartupBenchmark echoes its `<pkg>-benchmarkData.json` into logcat as
+numbered chunks. This reassembles those chunks and prints a Markdown summary.
+
+Usage:
+    parse-macrobenchmark-log.py <artifacts-dir> [--json-out benchmarkData.json]
+"""
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+# Must match SentryStartupBenchmark.LOG_TAG and its "[index/total]" chunk prefix.
+CHUNK_RE = re.compile(r"SentryBenchmarkData\s*:\s*\[(\d+)/(\d+)\](.*)$")
+
+
+def log_messages(log_file):
+    """Yields the message text of every log entry.
+
+    Sauce hands back device.log as JSON lines -- {"tag", "message", "level", ...} -- which
+    means the payload arrives with its quotes escaped, so it has to be decoded rather than
+    regexed out of the raw line. Plain-text lines are passed through unchanged so the same
+    parser works on `adb logcat` output from a local run.
+    """
+    # Sauce device logs occasionally carry undecodable bytes; don't die on them.
+    for line in log_file.read_text(errors="replace").splitlines():
+        line = line.strip()
+        if line.startswith("{"):
+            try:
+                yield json.loads(line).get("message", "")
+                continue
+            except json.JSONDecodeError:
+                pass
+        yield line
+
+
+def collect_chunks(log_file):
+    """Returns one log's chunk texts keyed by index, plus the expected total."""
+    chunks, total = {}, None
+    for message in log_messages(log_file):
+        match = CHUNK_RE.search(message)
+        if match:
+            index, total = int(match.group(1)), int(match.group(2))
+            chunks[index] = match.group(3)
+    return chunks, total
+
+
+def reassemble(chunks, total):
+    missing = [i for i in range(1, total + 1) if i not in chunks]
+    if missing:
+        sys.exit(f"Incomplete benchmark data: missing chunk(s) {missing} of {total}")
+    return "".join(chunks[i] for i in range(1, total + 1))
+
+
+def format_summary(data):
+    context = data["context"]
+    build = context["build"]
+    lines = [
+        "## Macrobenchmark results",
+        "",
+        f"**Device:** {build['brand']} {build['model']} "
+        f"(api {build['version']['sdk']}, {context['cpuCoreCount']} cores) &middot; "
+        f"**compilation:** {context['compilationMode']} &middot; "
+        f"**CPU clocks locked:** {context['cpuLocked']}",
+        "",
+    ]
+
+    if not context["cpuLocked"]:
+        lines += [
+            "> CPU clocks are unlocked on this device, so run-to-run spread is wide. "
+            "Treat these numbers as a trend, not a regression gate.",
+            "",
+        ]
+
+    table = [
+        "| Benchmark | Metric | min | median | max | CoV | iterations |",
+        "|---|---|--:|--:|--:|--:|--:|",
+    ]
+    details = []
+    for benchmark in data["benchmarks"]:
+        name = f"{benchmark['className'].rsplit('.', 1)[-1]}.{benchmark['name']}"
+        for metric, result in sorted(benchmark["metrics"].items()):
+            table.append(
+                f"| `{name}` | {metric} "
+                f"| {result['minimum']:.1f} | {result['median']:.1f} | {result['maximum']:.1f} "
+                f"| {result['coefficientOfVariation'] * 100:.1f}% | {len(result['runs'])} |"
+            )
+            runs = ", ".join(f"{run:.1f}" for run in result["runs"])
+            details += [
+                "",
+                f"<details><summary>{metric} per iteration</summary>",
+                "",
+                runs,
+                "",
+                "</details>",
+            ]
+
+    return "\n".join(lines + table + details)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("artifacts_dir", type=Path, help="directory of downloaded Sauce artifacts")
+    parser.add_argument("--json-out", type=Path, help="where to write the recovered benchmarkData.json")
+    args = parser.parse_args()
+
+    log_files = sorted(args.artifacts_dir.rglob("*.log"))
+    if not log_files:
+        sys.exit(f"No *.log files under {args.artifacts_dir}")
+
+    # Keyed by file so chunks from two devices can never be merged into one bogus document.
+    per_log = {log: collect_chunks(log) for log in log_files}
+    with_chunks = {log: result for log, (result, total) in per_log.items() if total}
+    if not with_chunks:
+        sys.exit(
+            "No SentryBenchmarkData chunks in the device log. The benchmark most likely "
+            "failed before reporting — check junit.xml and the log for Macrobenchmark errors."
+        )
+    if len(with_chunks) > 1:
+        sys.exit(
+            "Chunks from more than one run: "
+            + ", ".join(str(log) for log in with_chunks)
+            + ". This parser reports a single device."
+        )
+    log_file = next(iter(with_chunks))
+    chunks, total = per_log[log_file]
+
+    data = json.loads(reassemble(chunks, total))
+
+    if args.json_out:
+        args.json_out.write_text(json.dumps(data, indent=2))
+
+    print(format_summary(data))
+
+
+if __name__ == "__main__":
+    main()

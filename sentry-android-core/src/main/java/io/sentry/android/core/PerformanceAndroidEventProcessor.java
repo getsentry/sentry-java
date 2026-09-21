@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA;
+import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_TYPE_DATA;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
@@ -85,6 +86,10 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
 
       final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+      // The app start type can flip (e.g. the last activity being destroyed marks the next start
+      // as warm) while this runs on the timer thread that finished the transaction. Read it once so
+      // the measurement key, contexts.app and the span attributes below cannot disagree.
+      final @NotNull AppStartMetrics.AppStartType appStartType = appStartMetrics.getAppStartType();
       // the app start measurement is only sent once and only if the transaction has
       // the app.start span, which is automatically created by the SDK.
       if (hasAppStartSpan(transaction)) {
@@ -140,14 +145,14 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
                       (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
 
               final String appStartKey =
-                  appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.COLD
+                  appStartType == AppStartMetrics.AppStartType.COLD
                       ? MeasurementValue.KEY_APP_START_COLD
                       : MeasurementValue.KEY_APP_START_WARM;
 
               transaction.getMeasurements().put(appStartKey, value);
             }
 
-            attachAppStartSpans(appStartMetrics, transaction);
+            attachAppStartSpans(appStartMetrics, appStartType, transaction);
             appStartMetrics.onAppStartSpansSent();
           }
         }
@@ -157,11 +162,13 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
           appContext = new App();
           transaction.getContexts().setApp(appContext);
         }
-        final String appStartType =
-            appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.COLD
-                ? "cold"
-                : "warm";
-        appContext.setStartType(appStartType);
+        final String appStartTypeName =
+            appStartType == AppStartMetrics.AppStartType.COLD ? "cold" : "warm";
+        appContext.setStartType(appStartTypeName);
+
+        if (isStandaloneAppStartTxn) {
+          setAppStartVitals(transaction, appStartTypeName);
+        }
       }
 
       setContributingFlags(transaction);
@@ -183,6 +190,29 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
 
       return transaction;
+    }
+  }
+
+  private static void setAppStartVitals(
+      final @NotNull SentryTransaction transaction, final @NotNull String appStartType) {
+    final @Nullable SpanContext traceContext = transaction.getContexts().getTrace();
+    if (traceContext == null) {
+      return;
+    }
+
+    traceContext.setData(APP_START_TYPE_DATA, appStartType);
+    final @Nullable Object screen = traceContext.getData().get(APP_START_SCREEN_DATA);
+
+    for (final @NotNull SentrySpan span : transaction.getSpans()) {
+      @Nullable Map<String, Object> data = span.getData();
+      if (data == null) {
+        data = new ConcurrentHashMap<>();
+        span.setData(data);
+      }
+      data.put(APP_START_TYPE_DATA, appStartType);
+      if (screen != null) {
+        data.put(APP_START_SCREEN_DATA, screen);
+      }
     }
   }
 
@@ -265,10 +295,12 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   }
 
   private void attachAppStartSpans(
-      final @NotNull AppStartMetrics appStartMetrics, final @NotNull SentryTransaction txn) {
+      final @NotNull AppStartMetrics appStartMetrics,
+      final @NotNull AppStartMetrics.AppStartType appStartType,
+      final @NotNull SentryTransaction txn) {
 
     // We include process init, content providers and application.onCreate spans only on cold start
-    if (appStartMetrics.getAppStartType() != AppStartMetrics.AppStartType.COLD) {
+    if (appStartType != AppStartMetrics.AppStartType.COLD) {
       return;
     }
 

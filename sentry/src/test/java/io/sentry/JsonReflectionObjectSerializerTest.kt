@@ -102,7 +102,8 @@ class JsonReflectionObjectSerializerTest {
         "child" to
           mapOf<String, Any?>(
             "title" to "First Child",
-            "child" to mapOf<String, Any?>("title" to "Second Child", "child" to "fixture-toString"),
+            "child" to
+              mapOf<String, Any?>("title" to "Second Child", "child" to "fixture-toString"),
           ),
       )
     val actual = fixture.getSut().serialize(root, fixture.logger)

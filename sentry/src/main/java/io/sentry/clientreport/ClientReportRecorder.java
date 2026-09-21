@@ -6,10 +6,6 @@ import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryItemType;
 import io.sentry.SentryLevel;
-import io.sentry.SentryLogEvent;
-import io.sentry.SentryLogEvents;
-import io.sentry.SentryMetricsEvent;
-import io.sentry.SentryMetricsEvents;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
@@ -105,34 +101,18 @@ public final class ClientReportRecorder implements IClientReportRecorder {
           recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
           executeOnDiscard(reason, itemCategory, 1L);
         } else if (itemCategory.equals(DataCategory.LogItem)) {
-          final @Nullable SentryLogEvents logs = envelopeItem.getLogs(options.getSerializer());
-          if (logs != null) {
-            final @NotNull List<SentryLogEvent> items = logs.getItems();
-            final long count = items.size();
-            recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), count);
-            final long logBytes = envelopeItem.getData().length;
-            recordLostEventInternal(
-                reason.getReason(), DataCategory.LogByte.getCategory(), logBytes);
-            executeOnDiscard(reason, itemCategory, count);
-          } else {
-            options.getLogger().log(SentryLevel.ERROR, "Unable to parse lost logs envelope item.");
-          }
+          final long count = itemCountFromHeader(envelopeItem);
+          recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), count);
+          final long logBytes = envelopeItem.getData().length;
+          recordLostEventInternal(reason.getReason(), DataCategory.LogByte.getCategory(), logBytes);
+          executeOnDiscard(reason, itemCategory, count);
         } else if (itemCategory.equals(DataCategory.TraceMetric)) {
-          final @Nullable SentryMetricsEvents metrics =
-              envelopeItem.getMetrics(options.getSerializer());
-          if (metrics != null) {
-            final @NotNull List<SentryMetricsEvent> items = metrics.getItems();
-            final long count = items.size();
-            recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), count);
-            final long metricBytes = envelopeItem.getData().length;
-            recordLostEventInternal(
-                reason.getReason(), DataCategory.TraceMetricByte.getCategory(), metricBytes);
-            executeOnDiscard(reason, itemCategory, count);
-          } else {
-            options
-                .getLogger()
-                .log(SentryLevel.ERROR, "Unable to parse lost metrics envelope item.");
-          }
+          final long count = itemCountFromHeader(envelopeItem);
+          recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), count);
+          final long metricBytes = envelopeItem.getData().length;
+          recordLostEventInternal(
+              reason.getReason(), DataCategory.TraceMetricByte.getCategory(), metricBytes);
+          executeOnDiscard(reason, itemCategory, count);
         } else {
           recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
           executeOnDiscard(reason, itemCategory, 1L);
@@ -174,6 +154,14 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       @NotNull String reason, @NotNull String category, @NotNull Long countToAdd) {
     final ClientReportKey key = new ClientReportKey(reason, category);
     storage.addCount(key, countToAdd);
+  }
+
+  // The number of items batched into a log or metric envelope item is stored in its header, so we
+  // read it from there instead of deserializing the payload. Deserializing on the discard path is
+  // expensive and, under sustained rate limiting, caused a CPU busy-loop (JAVA-662).
+  private long itemCountFromHeader(final @NotNull SentryEnvelopeItem envelopeItem) {
+    final @Nullable Integer itemCount = envelopeItem.getHeader().getItemCount();
+    return itemCount != null ? itemCount : 1L;
   }
 
   @Nullable

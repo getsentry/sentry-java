@@ -40,6 +40,7 @@ public final class SentryShakeDetector implements SensorEventListener {
   private @Nullable Handler handler;
   private volatile @Nullable Listener listener;
   private @NotNull ILogger logger;
+  private boolean closed;
 
   private final @NotNull SampleQueue queue = new SampleQueue();
 
@@ -52,15 +53,28 @@ public final class SentryShakeDetector implements SensorEventListener {
   }
 
   /**
+   * Re-arms the detector after a previous {@link #close()} so it can be reused when the owning
+   * integration is registered again (e.g. a second {@code Sentry.init}).
+   */
+  synchronized void reopen() {
+    closed = false;
+  }
+
+  /**
    * Initializes the sensor manager and accelerometer sensor. This is separated from start() so the
    * values can be resolved once and reused across activity transitions.
    */
-  void init(final @NotNull Context context, final @NotNull ILogger logger) {
+  synchronized void init(final @NotNull Context context, final @NotNull ILogger logger) {
     this.logger = logger;
     init(context);
   }
 
-  private void init(final @NotNull Context context) {
+  private synchronized void init(final @NotNull Context context) {
+    // A warm-up submitted to the executor can be drained after close() (integrations are closed
+    // before the executor shuts down), so bail out instead of spinning up a new HandlerThread.
+    if (closed) {
+      return;
+    }
     if (sensorManager == null) {
       sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
     }
@@ -74,7 +88,11 @@ public final class SentryShakeDetector implements SensorEventListener {
     }
   }
 
-  public void start(final @NotNull Context context, final @NotNull Listener shakeListener) {
+  public synchronized void start(
+      final @NotNull Context context, final @NotNull Listener shakeListener) {
+    if (closed) {
+      return;
+    }
     this.listener = shakeListener;
     init(context);
     if (sensorManager == null) {
@@ -89,7 +107,7 @@ public final class SentryShakeDetector implements SensorEventListener {
     sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, handler);
   }
 
-  public void stop() {
+  public synchronized void stop() {
     listener = null;
     if (sensorManager != null) {
       sensorManager.unregisterListener(this);
@@ -105,7 +123,8 @@ public final class SentryShakeDetector implements SensorEventListener {
   }
 
   /** Stops detection and releases the background thread. */
-  public void close() {
+  public synchronized void close() {
+    closed = true;
     stop();
     if (handlerThread != null) {
       // quitSafely drains pending messages (including the clear posted by stop) before exiting

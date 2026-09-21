@@ -1,11 +1,9 @@
 package io.sentry.android.core
 
 import android.os.Debug
+import com.google.common.truth.Truth.assertThat
 import io.sentry.PerformanceCollectionData
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
-import kotlin.test.assertNotNull
 
 class AndroidMemoryCollectorTest {
   private val fixture = Fixture()
@@ -21,10 +19,9 @@ class AndroidMemoryCollectorTest {
     val usedNativeMemory = Debug.getNativeHeapSize() - Debug.getNativeHeapFreeSize()
     val usedMemory = fixture.runtime.totalMemory() - fixture.runtime.freeMemory()
     fixture.collector.collect(data)
-    assertNotNull(data.usedHeapMemory)
-    assertNotNull(data.usedNativeMemory)
-    assertNotEquals(-1, data.usedNativeMemory)
-    assertEquals(usedNativeMemory, data.usedNativeMemory)
-    assertEquals(usedMemory, data.usedHeapMemory)
+    assertThat(data.hasUsedHeapMemory()).isTrue()
+    assertThat(data.hasUsedNativeMemory()).isTrue()
+    assertThat(data.usedNativeMemory).isEqualTo(usedNativeMemory)
+    assertThat(data.usedHeapMemory).isEqualTo(usedMemory)
   }
 }

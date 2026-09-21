@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -41,7 +40,6 @@ public final class SentryClient implements ISentryClient {
 
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
-  private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
   private final @NotNull ILoggerBatchProcessor loggerBatchProcessor;
   private final @NotNull IMetricsBatchProcessor metricsBatchProcessor;
 
@@ -106,6 +104,11 @@ public final class SentryClient implements ISentryClient {
   public @NotNull SentryId captureEvent(
       @NotNull SentryEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
+
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
 
     if (hint == null) {
       hint = new Hint();
@@ -236,7 +239,7 @@ public final class SentryClient implements ISentryClient {
       final SentryReplayOptions.BeforeErrorSamplingCallback beforeErrorSampling =
           options.getSessionReplay().getBeforeErrorSampling();
       if (beforeErrorSampling != null) {
-        try {
+        try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
           shouldCaptureReplay = beforeErrorSampling.execute(event, hint);
         } catch (Throwable e) {
           options
@@ -249,7 +252,21 @@ public final class SentryClient implements ISentryClient {
         }
       }
       if (shouldCaptureReplay) {
-        options.getReplayController().captureReplay(event.isCrashed());
+        final @NotNull SentryId scopeReplayId =
+            scope != null ? scope.getReplayId() : SentryId.EMPTY_ID;
+        final @NotNull SentryId capturedReplayId =
+            options.getReplayController().captureReplay(event.isCrashed());
+        final @NotNull SentryId replayId =
+            !capturedReplayId.equals(SentryId.EMPTY_ID) ? capturedReplayId : scopeReplayId;
+        if (scope != null && !replayId.equals(SentryId.EMPTY_ID)) {
+          final @Nullable ITransaction transaction = scope.getTransaction();
+          if (transaction != null) {
+            final @Nullable Baggage baggage = transaction.getSpanContext().getBaggage();
+            if (baggage != null) {
+              baggage.forceSetReplayId(replayId);
+            }
+          }
+        }
       }
     }
 
@@ -268,6 +285,7 @@ public final class SentryClient implements ISentryClient {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
 
       // if there was an error capturing the event, we return an emptyId
+      HintUtils.setCaptureFailed(hint);
       sentryId = SentryId.EMPTY_ID;
     }
 
@@ -299,6 +317,11 @@ public final class SentryClient implements ISentryClient {
   public @NotNull SentryId captureReplayEvent(
       @NotNull SentryReplayEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SessionReplay is required.");
+
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
 
     if (hint == null) {
       hint = new Hint();
@@ -925,10 +948,19 @@ public final class SentryClient implements ISentryClient {
 
   private @NotNull SentryId sendEnvelope(
       @NotNull final SentryEnvelope envelope, @Nullable final Hint hint) throws IOException {
+    // captureEnvelope and captureCheckIn have no entry-level guard, so a callback that captures
+    // one of those would recurse back into beforeEnvelopeCallback. In normal flow the guard is
+    // already inactive by the time we get here (the before* callback has exited), so an active
+    // guard means a callback triggered this send. Drop silently: a log here can re-enter through a
+    // logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
+
     final @Nullable SentryOptions.BeforeEnvelopeCallback beforeEnvelopeCallback =
         options.getBeforeEnvelopeCallback();
     if (beforeEnvelopeCallback != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         beforeEnvelopeCallback.execute(envelope, hint);
       } catch (Throwable e) {
         options
@@ -956,6 +988,11 @@ public final class SentryClient implements ISentryClient {
       @Nullable Hint hint,
       final @Nullable ProfilingTraceData profilingTraceData) {
     Objects.requireNonNull(transaction, "Transaction is required.");
+
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
 
     if (hint == null) {
       hint = new Hint();
@@ -1067,6 +1104,10 @@ public final class SentryClient implements ISentryClient {
       if (trace != null) {
         options.getReplayController().registerTraceId(trace.getTraceId());
       }
+      final @Nullable String segmentName = transaction.getTransaction();
+      if (segmentName != null && !segmentName.isEmpty()) {
+        options.getReplayController().registerSegmentName(segmentName);
+      }
     }
 
     return sentryId;
@@ -1091,12 +1132,19 @@ public final class SentryClient implements ISentryClient {
     // BeforeSend and EventProcessors are not supported at the moment for Profile Chunks
 
     try {
+      final SentryEnvelopeItem envelopeItem;
+      if (ProfileChunk.CONTENT_TYPE_PERFETTO.equals(profileChunk.getContentType())) {
+        envelopeItem =
+            SentryEnvelopeItem.fromPerfettoProfileChunk(profileChunk, options.getSerializer());
+      } else {
+        envelopeItem =
+            SentryEnvelopeItem.fromProfileChunk(
+                profileChunk, options.getSerializer(), options.getProfilerConverter());
+      }
       final @NotNull SentryEnvelope envelope =
           new SentryEnvelope(
               new SentryEnvelopeHeader(sentryId, options.getSdkVersion(), null),
-              Collections.singletonList(
-                  SentryEnvelopeItem.fromProfileChunk(
-                      profileChunk, options.getSerializer(), options.getProfilerConverter())));
+              Collections.singletonList(envelopeItem));
       sentryId = sendEnvelope(envelope, null);
     } catch (IOException | SentryEnvelopeException e) {
       options
@@ -1171,6 +1219,11 @@ public final class SentryClient implements ISentryClient {
   @Override
   public @NotNull SentryId captureFeedback(
       final @NotNull Feedback feedback, @Nullable Hint hint, final @NotNull IScope scope) {
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return SentryId.EMPTY_ID;
+    }
+
     SentryEvent event = new SentryEvent();
     event.getContexts().setFeedback(feedback);
 
@@ -1220,8 +1273,10 @@ public final class SentryClient implements ISentryClient {
 
     // If feedback already has a replayId, we don't want to overwrite it.
     if (feedback.getReplayId() == null) {
-      options.getReplayController().captureReplay(false);
-      final @NotNull SentryId replayId = scope.getReplayId();
+      final @NotNull SentryId scopeReplayId = scope.getReplayId();
+      final @NotNull SentryId capturedReplayId = options.getReplayController().captureReplay(false);
+      final @NotNull SentryId replayId =
+          !capturedReplayId.equals(SentryId.EMPTY_ID) ? capturedReplayId : scopeReplayId;
       if (!replayId.equals(SentryId.EMPTY_ID)) {
         feedback.setReplayId(replayId);
       }
@@ -1281,6 +1336,11 @@ public final class SentryClient implements ISentryClient {
   @ApiStatus.Experimental
   @Override
   public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return;
+    }
+
     if (logEvent != null && scope != null) {
       logEvent = processLogEvent(logEvent, scope.getEventProcessors());
       if (logEvent == null) {
@@ -1335,6 +1395,11 @@ public final class SentryClient implements ISentryClient {
       @Nullable SentryMetricsEvent metricsEvent,
       final @Nullable IScope scope,
       @Nullable Hint hint) {
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return;
+    }
+
     if (hint == null) {
       hint = new Hint();
     }
@@ -1556,8 +1621,13 @@ public final class SentryClient implements ISentryClient {
           }
         }
       }
-      if (sentryBaseEvent.getBreadcrumbs() == null) {
-        sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+      final List<Breadcrumb> eventBreadcrumbs = sentryBaseEvent.getBreadcrumbs();
+      if (eventBreadcrumbs == null || eventBreadcrumbs.isEmpty()) {
+        // A cached event comes from the outbox; its breadcrumbs (even if empty) belong to a
+        // past session, so the current scope's breadcrumbs are unrelated and must not be applied.
+        if (!isCached) {
+          sentryBaseEvent.setBreadcrumbs(new ArrayList<>(scope.getBreadcrumbs()));
+        }
       } else if (!isCached) {
         // A Cached event comes from the outbox and already carries its own breadcrumbs (e.g. native
         // events written by sentry-native). Appending the scope's breadcrumbs would duplicate them.
@@ -1588,7 +1658,7 @@ public final class SentryClient implements ISentryClient {
 
     if (sortedBreadcrumbs != null && !breadcrumbs.isEmpty()) {
       sortedBreadcrumbs.addAll(breadcrumbs);
-      Collections.sort(sortedBreadcrumbs, sortBreadcrumbsByDate);
+      Collections.sort(sortedBreadcrumbs);
     }
   }
 
@@ -1596,7 +1666,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendCallback beforeSend = options.getBeforeSend();
     if (beforeSend != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSend.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1618,7 +1688,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.BeforeSendTransactionCallback beforeSendTransaction =
         options.getBeforeSendTransaction();
     if (beforeSendTransaction != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         transaction = beforeSendTransaction.execute(transaction, hint);
       } catch (Throwable e) {
         options
@@ -1639,7 +1709,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendCallback beforeSendFeedback = options.getBeforeSendFeedback();
     if (beforeSendFeedback != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendFeedback.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1657,7 +1727,7 @@ public final class SentryClient implements ISentryClient {
       @NotNull SentryReplayEvent event, final @NotNull Hint hint) {
     final SentryOptions.BeforeSendReplayCallback beforeSendReplay = options.getBeforeSendReplay();
     if (beforeSendReplay != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendReplay.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1678,7 +1748,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.Logs.BeforeSendLogCallback beforeSendLog =
         options.getLogs().getBeforeSend();
     if (beforeSendLog != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendLog.execute(event);
       } catch (Throwable e) {
         options
@@ -1700,7 +1770,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.Metrics.BeforeSendMetricCallback beforeSendMetric =
         options.getMetrics().getBeforeSend();
     if (beforeSendMetric != null) {
-      try {
+      try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendMetric.execute(event, hint);
       } catch (Throwable e) {
         options
@@ -1778,14 +1848,5 @@ public final class SentryClient implements ISentryClient {
       return !(sampling < random.nextDouble()); // bad luck
     }
     return true;
-  }
-
-  private static final class SortBreadcrumbsByDate implements Comparator<Breadcrumb> {
-
-    @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-    @Override
-    public int compare(final @NotNull Breadcrumb b1, final @NotNull Breadcrumb b2) {
-      return b1.getTimestamp().compareTo(b2.getTimestamp());
-    }
   }
 }

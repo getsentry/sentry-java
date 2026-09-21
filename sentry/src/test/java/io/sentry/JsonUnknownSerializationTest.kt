@@ -145,8 +145,9 @@ class JsonUnknownSerializationTest(
       )
     }
 
-    private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T =
-      jsonUnknown.apply { unknown = mapOf("fixture-key" to "fixture-value") }
+    private fun <T : JsonUnknown> givenJsonUnknown(jsonUnknown: T): T = jsonUnknown.apply {
+      unknown = mapOf("fixture-key" to "fixture-value")
+    }
   }
 
   @Test

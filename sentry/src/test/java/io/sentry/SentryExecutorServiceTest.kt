@@ -1,5 +1,6 @@
 package io.sentry
 
+import io.sentry.test.getProperty
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Callable
 import java.util.concurrent.CancellationException
@@ -90,6 +91,22 @@ class SentryExecutorServiceTest {
     val atomicBoolean = AtomicBoolean(true)
     sentryExecutor.submit { atomicBoolean.set(false) }
     await.untilFalse(atomicBoolean)
+    sentryExecutor.close(15000)
+  }
+
+  @Test
+  fun `SentryExecutorService enables removeOnCancelPolicy when requested`() {
+    val sentryExecutor = SentryExecutorService(null, true, 30, TimeUnit.SECONDS)
+    val executor = sentryExecutor.getProperty<ScheduledThreadPoolExecutor>("executorService")
+    assertTrue(executor.removeOnCancelPolicy)
+    sentryExecutor.close(15000)
+  }
+
+  @Test
+  fun `SentryExecutorService does not enable removeOnCancelPolicy by default`() {
+    val sentryExecutor = SentryExecutorService(null)
+    val executor = sentryExecutor.getProperty<ScheduledThreadPoolExecutor>("executorService")
+    assertFalse(executor.removeOnCancelPolicy)
     sentryExecutor.close(15000)
   }
 

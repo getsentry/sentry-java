@@ -64,9 +64,10 @@ final class HttpConnection {
     if (proxy != null && options.getProxy() != null) {
       final String proxyUser = options.getProxy().getUser();
       final String proxyPassword = options.getProxy().getPass();
-
-      if (proxyUser != null && proxyPassword != null) {
-        authenticatorWrapper.setDefault(new ProxyAuthenticator(proxyUser, proxyPassword));
+      final String proxyHost = options.getProxy().getHost();
+      if (proxyUser != null && proxyPassword != null && proxyHost != null) {
+        authenticatorWrapper.setDefault(
+            new ProxyAuthenticator(proxyUser, proxyPassword, proxyHost));
       }
     }
   }

@@ -4,12 +4,16 @@ import android.content.Context
 import android.os.Bundle
 import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.FilterString
+import io.sentry.HttpBodyType
 import io.sentry.ILogger
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
 import io.sentry.TransactionOptions
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -23,6 +27,7 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 
 @RunWith(AndroidJUnit4::class)
 class ManifestMetadataReaderTest {
@@ -40,6 +45,52 @@ class ManifestMetadataReaderTest {
   @BeforeTest
   fun `set up`() {
     ContextUtils.resetInstance()
+  }
+
+  @AfterTest
+  fun `tear down`() {
+    ManifestMetadataReader.manifestMetadata = null
+  }
+
+  @Test
+  fun `applyMetadata reads typed build-time metadata without querying context`() {
+    val context = mock<Context>()
+    ManifestMetadataReader.manifestMetadata =
+      mapOf(
+        ManifestMetadataReader.DEBUG to true,
+        ManifestMetadataReader.DIST to "dist",
+        ManifestMetadataReader.SAMPLE_RATE to 0.5f,
+        ManifestMetadataReader.MAX_BREADCRUMBS to 42,
+      )
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isDebug).isTrue()
+    assertThat(fixture.options.dist).isEqualTo("dist")
+    assertThat(fixture.options.sampleRate).isEqualTo(0.5)
+    assertThat(fixture.options.maxBreadcrumbs).isEqualTo(42)
+    verifyNoInteractions(context)
+  }
+
+  @Test
+  fun `build-time metadata is authoritative when a key is absent`() {
+    val context = mock<Context>()
+    fixture.options.dist = "configured"
+    ManifestMetadataReader.manifestMetadata = emptyMap()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dist).isEqualTo("configured")
+    verifyNoInteractions(context)
+  }
+
+  @Test
+  fun `isAutoInit reads build-time metadata without querying context`() {
+    val context = mock<Context>()
+    ManifestMetadataReader.manifestMetadata = mapOf(ManifestMetadataReader.AUTO_INIT to false)
+
+    assertThat(ManifestMetadataReader.isAutoInit(context, fixture.logger)).isFalse()
+    verifyNoInteractions(context)
   }
 
   @Test
@@ -436,6 +487,26 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertEquals(false, fixture.options.isReportHistoricalAnrs)
+  }
+
+  @Test
+  fun `applyMetadata reads memory limiter enable to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.MEMORY_LIMITER_ENABLE to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertEquals(true, fixture.options.isMemoryLimiterEnabled)
+  }
+
+  @Test
+  fun `applyMetadata reads memory limiter historical reporting to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.MEMORY_LIMITER_REPORT_HISTORICAL to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertEquals(true, fixture.options.isReportHistoricalMemoryLimiterExits)
   }
 
   @Test
@@ -1410,6 +1481,143 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata preserves legacy data collection when metadata is absent`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isFalse()
+  }
+
+  @Test
+  fun `applyMetadata reads data collection options`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.DATA_COLLECTION_USER_INFO to false,
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_BODIES to "incoming_request,outgoing_response",
+        ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".mode" to "deny_list",
+        ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".terms" to "authorization,session",
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_REQUEST_HEADERS + ".mode" to "allow_list",
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_REQUEST_HEADERS + ".terms" to
+          "x-request-id,content-type",
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_RESPONSE_HEADERS + ".mode" to "off",
+        ManifestMetadataReader.DATA_COLLECTION_URL_QUERY_PARAMS + ".terms" to "search",
+        ManifestMetadataReader.DATA_COLLECTION_GRAPHQL_DOCUMENT to false,
+        ManifestMetadataReader.DATA_COLLECTION_GRAPHQL_VARIABLES to true,
+        ManifestMetadataReader.DATA_COLLECTION_DATABASE_QUERY_DATA to false,
+        ManifestMetadataReader.DATA_COLLECTION_FILE_PATHS to false,
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    val dataCollection = fixture.options.dataCollection
+    assertThat(dataCollection.userInfo).isFalse()
+    assertThat(dataCollection.httpBodies)
+      .containsExactly(HttpBodyType.INCOMING_REQUEST, HttpBodyType.OUTGOING_RESPONSE)
+    assertThat(dataCollection.cookies)
+      .isEqualTo(KeyValueCollectionBehavior.denyList("authorization", "session"))
+    assertThat(dataCollection.httpHeaders.request)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("x-request-id", "content-type"))
+    assertThat(dataCollection.httpHeaders.response).isEqualTo(KeyValueCollectionBehavior.off())
+    assertThat(dataCollection.urlQueryParams)
+      .isEqualTo(KeyValueCollectionBehavior.denyList("search"))
+    assertThat(dataCollection.graphql.document).isFalse()
+    assertThat(dataCollection.graphql.variables).isTrue()
+    assertThat(dataCollection.databaseQueryData).isFalse()
+    assertThat(dataCollection.filePaths).isFalse()
+  }
+
+  @Test
+  fun `applyMetadata only overrides explicitly configured data collection options`() {
+    val dataCollection =
+      fixture.options.dataCollection.apply {
+        setUserInfo(true)
+        setHttpBodies(setOf(HttpBodyType.OUTGOING_REQUEST))
+        cookies = KeyValueCollectionBehavior.allowList("existing-cookie")
+        httpHeaders.request = KeyValueCollectionBehavior.denyList("existing-request-header")
+        httpHeaders.response = KeyValueCollectionBehavior.allowList("existing-response-header")
+        urlQueryParams = KeyValueCollectionBehavior.off()
+        graphql.setDocument(true)
+        graphql.setVariables(false)
+        setDatabaseQueryData(true)
+        setFilePaths(true)
+      }
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.DATA_COLLECTION_USER_INFO to false,
+        ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".terms" to "manifest-cookie",
+        ManifestMetadataReader.DATA_COLLECTION_HTTP_REQUEST_HEADERS + ".mode" to "allow_list",
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollection).isSameInstanceAs(dataCollection)
+    assertThat(dataCollection.userInfo).isFalse()
+    assertThat(dataCollection.httpBodies).containsExactly(HttpBodyType.OUTGOING_REQUEST)
+    assertThat(dataCollection.cookies)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("manifest-cookie"))
+    assertThat(dataCollection.httpHeaders.request)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("existing-request-header"))
+    assertThat(dataCollection.httpHeaders.response)
+      .isEqualTo(KeyValueCollectionBehavior.allowList("existing-response-header"))
+    assertThat(dataCollection.urlQueryParams).isEqualTo(KeyValueCollectionBehavior.off())
+    assertThat(dataCollection.graphql.document).isTrue()
+    assertThat(dataCollection.graphql.variables).isFalse()
+    assertThat(dataCollection.databaseQueryData).isTrue()
+    assertThat(dataCollection.filePaths).isTrue()
+  }
+
+  @Test
+  fun `applyMetadata reads empty HTTP bodies as disabled`() {
+    val bundle = bundleOf(ManifestMetadataReader.DATA_COLLECTION_HTTP_BODIES to "")
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollection.httpBodies).isEmpty()
+  }
+
+  @Test
+  fun `applyMetadata data collection takes precedence over send default pii`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.SEND_DEFAULT_PII to false,
+        ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".mode" to "off",
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isSendDefaultPii).isFalse()
+    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isTrue()
+    assertThat(fixture.options.dataCollectionResolver.isUserInfo).isTrue()
+    assertThat(fixture.options.dataCollectionResolver.cookies)
+      .isEqualTo(KeyValueCollectionBehavior.off())
+  }
+
+  @Test
+  fun `applyMetadata ignores invalid data collection body type`() {
+    val bundle = bundleOf(ManifestMetadataReader.DATA_COLLECTION_HTTP_BODIES to "invalid")
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isFalse()
+  }
+
+  @Test
+  fun `applyMetadata ignores invalid data collection mode`() {
+    val bundle = bundleOf(ManifestMetadataReader.DATA_COLLECTION_COOKIES + ".mode" to "invalid")
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.dataCollectionResolver.isDataCollectionConfigured()).isFalse()
+  }
+
+  @Test
   fun `applyMetadata reads frames tracking flag and keeps default value if not found`() {
     // Arrange
     val context = fixture.getContext()
@@ -1647,6 +1855,31 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertFalse(fixture.options.isEnableAppStartProfiling)
+  }
+
+  @Test
+  fun `applyMetadata reads enableLegacyProfiling flag to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LEGACY_PROFILING to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.isEnableLegacyProfiling)
+  }
+
+  @Test
+  fun `applyMetadata reads enableLegacyProfiling flag to options and keeps default if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.isEnableLegacyProfiling)
   }
 
   @Test
@@ -2153,6 +2386,31 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertTrue(fixture.options.feedbackOptions.isUseShakeGesture)
+  }
+
+  @Test
+  fun `applyMetadata reads feedback enable screenshot and keep default value if not found`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.feedbackOptions.isEnableAttachScreenshot)
+  }
+
+  @Test
+  fun `applyMetadata reads feedback enable screenshot to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.FEEDBACK_ENABLE_ATTACH_SCREENSHOT to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.feedbackOptions.isEnableAttachScreenshot)
   }
 
   @Test

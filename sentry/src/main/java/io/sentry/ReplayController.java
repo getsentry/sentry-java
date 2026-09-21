@@ -7,17 +7,31 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public interface ReplayController extends IReplayApi {
-  void start();
+  /**
+   * Handles app foregrounding. When a new app session begins, stops any previous replay and starts
+   * a newly sampled one while preserving an explicit user pause.
+   */
+  void onAppForegrounded(boolean startNewSession);
 
-  void stop();
+  /**
+   * Handles app backgrounding with a temporary lifecycle pause. Unlike {@link #pause()}, this pause
+   * is automatically resumed on foreground and does not override an explicit user pause.
+   */
+  void onAppBackgrounded();
 
-  void pause();
-
-  void resume();
+  /** Stops replay when the current app session ends without clearing an explicit user pause. */
+  void onAppSessionEnded();
 
   boolean isRecording();
 
-  void captureReplay(@Nullable Boolean isTerminating);
+  /**
+   * Captures replay data for an event and returns its ID, or {@link SentryId#EMPTY_ID} if no replay
+   * was captured. In buffer mode, sends the buffered replay and continues in session mode. In
+   * session mode, the replay is already uploaded continuously, so this does not force an immediate
+   * segment upload; use {@link #flush()} for that.
+   */
+  @NotNull
+  SentryId captureReplay(@Nullable Boolean isTerminating);
 
   @NotNull
   SentryId getReplayId();
@@ -36,4 +50,7 @@ public interface ReplayController extends IReplayApi {
    * @param traceId the trace ID to associate with the current replay
    */
   void registerTraceId(@NotNull SentryId traceId);
+
+  /** Registers a segment name to be associated with the current replay segment. */
+  void registerSegmentName(@NotNull String segmentName);
 }

@@ -1,5 +1,6 @@
 package io.sentry.util
 
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -7,6 +8,32 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class LoadClassTest {
+  @Test
+  fun `isClassAvailable uses known build-time results and reflects unknown classes`() {
+    LoadClass.classAvailability =
+      mapOf(
+        "io.sentry.SentryEvent" to false,
+        "io.sentry.ThisClassDoesNotExist" to true,
+      )
+
+    try {
+      val loadClass = LoadClass()
+      assertThat(loadClass.isClassAvailable("io.sentry.SentryEvent", null as io.sentry.ILogger?))
+        .isFalse()
+      assertThat(
+          loadClass.isClassAvailable(
+            "io.sentry.ThisClassDoesNotExist",
+            null as io.sentry.ILogger?,
+          )
+        )
+        .isTrue()
+      assertThat(loadClass.isClassAvailable("io.sentry.Sentry", null as io.sentry.ILogger?))
+        .isTrue()
+    } finally {
+      LoadClass.classAvailability = null
+    }
+  }
+
   @Test
   fun `loadClass returns the class when it is available`() {
     assertNotNull(LoadClass().loadClass("io.sentry.SentryEvent", null))

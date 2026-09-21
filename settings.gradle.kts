@@ -13,12 +13,13 @@ pluginManagement {
     }
     mavenCentral()
     gradlePluginPortal()
+    google()
   }
 }
 
 plugins {
-    id("com.gradle.develocity") version "4.4.2"
-    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.6.0"
+    id("com.gradle.develocity") version "4.5.0"
+    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.8.0"
 }
 
 develocity {
@@ -114,22 +115,21 @@ include(
     "sentry-samples:sentry-samples-spring-boot-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-jakarta",
+    "sentry-samples:sentry-samples-spring-boot-jakarta-log4j2",
     "sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-webflux",
     "sentry-samples:sentry-samples-spring-boot-webflux-jakarta",
     "sentry-samples:sentry-samples-spring-boot-4",
+    "sentry-samples:sentry-samples-spring-boot-4-log4j2",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-4-otlp",
     "sentry-samples:sentry-samples-spring-boot-4-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
     "sentry-android-integration-tests:sentry-uitest-android-critical",
-    "sentry-android-integration-tests:sentry-uitest-android-benchmark",
     "sentry-android-integration-tests:sentry-uitest-android-macrobenchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
-    "sentry-android-integration-tests:test-app-plain",
-    "sentry-android-integration-tests:test-app-sentry",
     "sentry-android-integration-tests:test-app-size",
     "sentry-samples:sentry-samples-openfeign"
 )

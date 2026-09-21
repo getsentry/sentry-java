@@ -49,6 +49,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
   private @Nullable List<String> urls;
   private @Nullable List<String> errorIds;
   private @Nullable List<String> traceIds;
+  private @Nullable List<String> segmentNames;
   private @Nullable Map<String, Object> unknown;
 
   public SentryReplayEvent() {
@@ -58,6 +59,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     this.replayType = ReplayType.SESSION;
     this.errorIds = new ArrayList<>();
     this.traceIds = new ArrayList<>();
+    this.segmentNames = new ArrayList<>();
     this.urls = new ArrayList<>();
     timestamp = DateUtils.getCurrentDateTime();
   }
@@ -142,6 +144,15 @@ public final class SentryReplayEvent extends SentryBaseEvent
     this.traceIds = traceIds;
   }
 
+  @Nullable
+  public List<String> getSegmentNames() {
+    return segmentNames;
+  }
+
+  public void setSegmentNames(final @Nullable List<String> segmentNames) {
+    this.segmentNames = segmentNames;
+  }
+
   @NotNull
   public ReplayType getReplayType() {
     return replayType;
@@ -162,12 +173,14 @@ public final class SentryReplayEvent extends SentryBaseEvent
         && Objects.equals(replayId, that.replayId)
         && Objects.equals(urls, that.urls)
         && Objects.equals(errorIds, that.errorIds)
-        && Objects.equals(traceIds, that.traceIds);
+        && Objects.equals(traceIds, that.traceIds)
+        && Objects.equals(segmentNames, that.segmentNames);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(type, replayType, replayId, segmentId, urls, errorIds, traceIds);
+    return Objects.hash(
+        type, replayType, replayId, segmentId, urls, errorIds, traceIds, segmentNames);
   }
 
   // region json
@@ -181,6 +194,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
     public static final String URLS = "urls";
     public static final String ERROR_IDS = "error_ids";
     public static final String TRACE_IDS = "trace_ids";
+    public static final String SEGMENT_NAMES = "segment_names";
   }
 
   @Override
@@ -206,6 +220,9 @@ public final class SentryReplayEvent extends SentryBaseEvent
     }
     if (traceIds != null) {
       writer.name(JsonKeys.TRACE_IDS).value(logger, traceIds);
+    }
+    if (segmentNames != null) {
+      writer.name(JsonKeys.SEGMENT_NAMES).value(logger, segmentNames);
     }
 
     new SentryBaseEvent.Serializer().serialize(this, writer, logger);
@@ -250,6 +267,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
       @Nullable List<String> urls = null;
       @Nullable List<String> errorIds = null;
       @Nullable List<String> traceIds = null;
+      @Nullable List<String> segmentNames = null;
 
       reader.beginObject();
       while (reader.peek() == JsonToken.NAME) {
@@ -282,6 +300,9 @@ public final class SentryReplayEvent extends SentryBaseEvent
           case JsonKeys.TRACE_IDS:
             traceIds = (List<String>) reader.nextObjectOrNull();
             break;
+          case JsonKeys.SEGMENT_NAMES:
+            segmentNames = (List<String>) reader.nextObjectOrNull();
+            break;
           default:
             if (!baseEventDeserializer.deserializeValue(replay, nextName, reader, logger)) {
               if (unknown == null) {
@@ -311,6 +332,7 @@ public final class SentryReplayEvent extends SentryBaseEvent
       replay.setUrls(urls);
       replay.setErrorIds(errorIds);
       replay.setTraceIds(traceIds);
+      replay.setSegmentNames(segmentNames);
       replay.setUnknown(unknown);
       return replay;
     }

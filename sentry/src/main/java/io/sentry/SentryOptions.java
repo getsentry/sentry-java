@@ -21,10 +21,15 @@ import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
 import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.time.EpochClock;
+import io.sentry.time.JavaMonotonicTicker;
+import io.sentry.time.MonotonicTicker;
+import io.sentry.time.SystemEpochClock;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.transport.RateLimiterConfig;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.LoadClass;
@@ -44,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLSocketFactory;
 import org.jetbrains.annotations.ApiStatus;
@@ -53,7 +59,7 @@ import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options */
 @Open
-public class SentryOptions {
+public class SentryOptions implements RateLimiterConfig {
 
   @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
 
@@ -318,6 +324,14 @@ public class SentryOptions {
   private @NotNull ISentryExecutorService executorService = NoOpSentryExecutorService.getInstance();
 
   /**
+   * Dedicated executor for scheduling transaction idle/deadline timeouts. Kept separate from {@link
+   * #executorService} so timeout callbacks (which finish transactions) don't contend with cached
+   * event sending.
+   */
+  private @NotNull ISentryExecutorService timerExecutorService =
+      NoOpSentryExecutorService.getInstance();
+
+  /**
    * Whether SpotlightIntegration has already been loaded via reflection. This prevents re-adding it
    * if the user removed it in their configuration callback and activate() is called again.
    */
@@ -337,6 +351,11 @@ public class SentryOptions {
 
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
+
+  private @NotNull DataCollection dataCollection = new DataCollection();
+
+  private final @NotNull DataCollectionResolver dataCollectionResolver =
+      new DataCollectionResolver(this);
 
   /** SSLSocketFactory for self-signed certificate trust * */
   private @Nullable SSLSocketFactory sslSocketFactory;
@@ -649,6 +668,14 @@ public class SentryOptions {
   private boolean startProfilerOnAppStart = false;
 
   /**
+   * When false, the legacy {@code Debug}-based profiler is disabled on API &lt; 35 devices. On API
+   * 35+ devices, Android's {@code ProfilingManager} (Perfetto-based stack sampling) is always used
+   * regardless of this setting. This option will be deprecated in the next major release and
+   * removed in the one after.
+   */
+  private boolean enableLegacyProfiling = true;
+
+  /**
    * Controls the deadline timeout in milliseconds for automatic transactions. When set to a
    * positive value, that value is used as the deadline timeout. When set to a value less than or
    * equal to 0, no deadline is applied and transactions will only finish when explicitly finished
@@ -681,6 +708,15 @@ public class SentryOptions {
       // SentryExecutorService should be initialized before any
       // SendCachedEventFireAndForgetIntegration
       executorService = new SentryExecutorService(this);
+    }
+
+    if (timerExecutorService instanceof NoOpSentryExecutorService) {
+      // Not prewarmed: its single worker thread is spawned lazily on the first scheduled timeout
+      // and then reused across all transactions. removeOnCancelPolicy keeps the work queue from
+      // accumulating cancelled timeouts (idle timers are cancelled and rescheduled per child span).
+      timerExecutorService =
+          new SentryExecutorService(
+              this, true, SentryExecutorService.TIMER_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS);
     }
 
     // SpotlightIntegration is loaded via reflection to allow the sentry-spotlight module
@@ -817,6 +853,7 @@ public class SentryOptions {
    *
    * @return the logger
    */
+  @Override
   public @NotNull ILogger getLogger() {
     return logger;
   }
@@ -1086,7 +1123,11 @@ public class SentryOptions {
   }
 
   /**
-   * Returns the outbox path if cacheDirPath is set
+   * Returns the outbox path if cacheDirPath is set.
+   *
+   * <p>The directory is created lazily by the SDK on a background thread, so it is not guaranteed
+   * to exist when {@code Sentry.init} returns. Callers writing envelopes here directly (for example
+   * hybrid SDKs) must create it themselves, e.g. {@code new File(outboxPath).mkdirs()}.
    *
    * @return the outbox path or null if not set
    */
@@ -1571,6 +1612,31 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the dedicated executor used to schedule transaction idle/deadline timeouts.
+   *
+   * @return the timer executor service
+   */
+  @ApiStatus.Internal
+  @Override
+  @NotNull
+  public ISentryExecutorService getTimerExecutorService() {
+    return timerExecutorService;
+  }
+
+  /**
+   * Sets the dedicated executor used to schedule transaction idle/deadline timeouts.
+   *
+   * @param timerExecutorService the timer executor service
+   */
+  @ApiStatus.Internal
+  @TestOnly
+  public void setTimerExecutorService(final @NotNull ISentryExecutorService timerExecutorService) {
+    if (timerExecutorService != null) {
+      this.timerExecutorService = timerExecutorService;
+    }
+  }
+
+  /**
    * Returns the connection timeout in milliseconds.
    *
    * @return the connectionTimeoutMillis
@@ -1695,6 +1761,35 @@ public class SentryOptions {
 
   public void setSendDefaultPii(boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
+  }
+
+  /**
+   * Returns the configuration for data that the SDK collects automatically.
+   *
+   * <p>The returned object is always present. Accessing it does not configure data collection, but
+   * setting one of its options does.
+   */
+  public @NotNull DataCollection getDataCollection() {
+    return dataCollection;
+  }
+
+  /**
+   * Replaces the configuration for data that the SDK collects automatically.
+   *
+   * <p>This discards any Data Collection options already configured on this instance. To opt into
+   * the documented defaults while preserving them, call {@link
+   * DataCollection#forceDataCollection()} on the object returned by {@link #getDataCollection()}.
+   */
+  public void setDataCollection(final @NotNull DataCollection dataCollection) {
+    if (dataCollection != null) {
+      this.dataCollection = dataCollection;
+    }
+  }
+
+  /** Returns the Data Collection policy resolver used by SDK integrations. */
+  @ApiStatus.Internal
+  public @NotNull DataCollectionResolver getDataCollectionResolver() {
+    return dataCollectionResolver;
   }
 
   /**
@@ -2238,6 +2333,36 @@ public class SentryOptions {
     this.startProfilerOnAppStart = startProfilerOnAppStart;
   }
 
+  /**
+   * Whether the legacy {@code Debug}-based profiler is enabled. This controls continuous profiling
+   * on API &lt; 35 devices (on API 35+, Android's {@code ProfilingManager} / Perfetto is always
+   * used for continuous profiling regardless of this setting) as well as transaction-based
+   * profiling ({@code profilesSampleRate}/{@code profilesSampler}) on all devices, since
+   * transaction-based profiling always relies on the legacy profiler and is not supported by
+   * Perfetto. This option will be deprecated in the next major release and removed in the one
+   * after.
+   *
+   * @return true if legacy profiling is enabled (default).
+   */
+  public boolean isEnableLegacyProfiling() {
+    return enableLegacyProfiling;
+  }
+
+  /**
+   * Set whether the legacy {@code Debug}-based profiler is enabled. Set to {@code false} to disable
+   * continuous profiling on devices below API 35 (on API 35+ devices, Android's {@code
+   * ProfilingManager} / Perfetto is always used for continuous profiling and this setting has no
+   * effect) as well as transaction-based profiling ({@code profilesSampleRate}/{@code
+   * profilesSampler}) on all devices, since transaction-based profiling always relies on the legacy
+   * profiler and is not supported by Perfetto. This option will be deprecated in the next major
+   * release and removed in the one after.
+   *
+   * @param enableLegacyProfiling false to disable legacy profiling.
+   */
+  public void setEnableLegacyProfiling(final boolean enableLegacyProfiling) {
+    this.enableLegacyProfiling = enableLegacyProfiling;
+  }
+
   public long getDeadlineTimeout() {
     return deadlineTimeout;
   }
@@ -2513,6 +2638,7 @@ public class SentryOptions {
    * @return a client report recorder or NoOp
    */
   @ApiStatus.Internal
+  @Override
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
   }
@@ -2976,6 +3102,31 @@ public class SentryOptions {
   }
 
   /**
+   * Returns the wall clock, for stamping an instant that will be serialized.
+   *
+   * <p>Reports the same epoch as {@link #getDateProvider()}, but a {@link io.sentry.time.Timestamp}
+   * carries no {@link System#nanoTime()} tick of its own the way a {@link SentryNanotimeDate} does.
+   * Instants that will be subtracted from each other come from an {@link
+   * io.sentry.time.AnchoredClock} built on this and {@link #getMonotonicTicker()}.
+   */
+  @ApiStatus.Internal
+  public @NotNull EpochClock getEpochClock() {
+    return SystemEpochClock.getInstance();
+  }
+
+  /**
+   * Returns the ticker used to measure elapsed time, such as rate-limit windows, cache expiry and
+   * ANR thresholds.
+   *
+   * <p>Android overrides this with a {@code SystemClock.elapsedRealtimeNanos()}-backed ticker,
+   * which this module cannot reference. On the JVM there is no suspend state to account for.
+   */
+  @ApiStatus.Internal
+  public @NotNull MonotonicTicker getMonotonicTicker() {
+    return JavaMonotonicTicker.getInstance();
+  }
+
+  /**
    * Adds a ICollector.
    *
    * @param collector the ICollector.
@@ -3285,6 +3436,10 @@ public class SentryOptions {
     /**
      * Mutates or drop an event before being sent
      *
+     * <p>Do not capture from within this callback — directly, or indirectly through a logging
+     * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+     * prevent infinite recursion.
+     *
      * @param event the event
      * @param hint the hints
      * @return the original event or the mutated event or null if event was dropped
@@ -3298,6 +3453,10 @@ public class SentryOptions {
 
     /**
      * Mutates or drop a transaction before being sent
+     *
+     * <p>Do not capture from within this callback — directly, or indirectly through a logging
+     * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+     * prevent infinite recursion.
      *
      * @param transaction the transaction
      * @param hint the hints
@@ -3316,6 +3475,10 @@ public class SentryOptions {
      * for a single replay (i.e. segments), you can check {@link SentryReplayEvent#getReplayId()} to
      * identify that the segments belong to the same replay.
      *
+     * <p>Do not capture from within this callback — directly, or indirectly through a logging
+     * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+     * prevent infinite recursion.
+     *
      * @param event the event
      * @param hint the hint, contains {@link ReplayRecording}, can be accessed via {@link
      *     Hint#getReplayRecording()}
@@ -3330,6 +3493,10 @@ public class SentryOptions {
 
     /**
      * Mutates or drop a callback before being added
+     *
+     * <p>Do not capture from within this callback — directly, or indirectly through a logging
+     * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+     * prevent infinite recursion.
      *
      * @param breadcrumb the breadcrumb
      * @param hint the hints, usually the source of the breadcrumb
@@ -3438,7 +3605,24 @@ public class SentryOptions {
     feedbackOptions =
         new SentryFeedbackOptions(
             (associatedEventId, configurator) ->
-                logger.log(SentryLevel.WARNING, "showForm() can only be called in Android."));
+                logger.log(SentryLevel.WARNING, "showForm() can only be called in Android."),
+            new SentryFeedbackOptions.IShakeController() {
+              @Override
+              public void enableOnShake() {
+                logger.log(SentryLevel.WARNING, "Shake to report is only supported on Android.");
+              }
+
+              @Override
+              public void disableOnShake() {
+                logger.log(SentryLevel.WARNING, "Shake to report is only supported on Android.");
+              }
+
+              @Override
+              public boolean isOnShakeEnabled() {
+                return false;
+              }
+            },
+            new LoadClass());
 
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
@@ -3595,6 +3779,9 @@ public class SentryOptions {
     if (options.isSendDefaultPii() != null) {
       setSendDefaultPii(options.isSendDefaultPii());
     }
+    if (options.getDataCollection() != null) {
+      mergeDataCollection(options.getDataCollection());
+    }
     if (options.isCaptureOpenTelemetryEvents() != null) {
       setCaptureOpenTelemetryEvents(options.isCaptureOpenTelemetryEvents());
     }
@@ -3657,6 +3844,43 @@ public class SentryOptions {
     }
     if (options.getOrgId() != null) {
       setOrgId(options.getOrgId());
+    }
+  }
+
+  private void mergeDataCollection(final @NotNull DataCollection externalDataCollection) {
+    if (externalDataCollection.getUserInfo() != null) {
+      dataCollection.setUserInfo(externalDataCollection.getUserInfo());
+    }
+    if (externalDataCollection.getHttpBodies() != null) {
+      dataCollection.setHttpBodies(externalDataCollection.getHttpBodies());
+    }
+    if (externalDataCollection.getCookies() != null) {
+      dataCollection.setCookies(externalDataCollection.getCookies());
+    }
+    if (externalDataCollection.getHttpHeaders().getRequest() != null) {
+      dataCollection
+          .getHttpHeaders()
+          .setRequest(externalDataCollection.getHttpHeaders().getRequest());
+    }
+    if (externalDataCollection.getHttpHeaders().getResponse() != null) {
+      dataCollection
+          .getHttpHeaders()
+          .setResponse(externalDataCollection.getHttpHeaders().getResponse());
+    }
+    if (externalDataCollection.getUrlQueryParams() != null) {
+      dataCollection.setUrlQueryParams(externalDataCollection.getUrlQueryParams());
+    }
+    if (externalDataCollection.getGraphql().getDocument() != null) {
+      dataCollection.getGraphql().setDocument(externalDataCollection.getGraphql().getDocument());
+    }
+    if (externalDataCollection.getGraphql().getVariables() != null) {
+      dataCollection.getGraphql().setVariables(externalDataCollection.getGraphql().getVariables());
+    }
+    if (externalDataCollection.getDatabaseQueryData() != null) {
+      dataCollection.setDatabaseQueryData(externalDataCollection.getDatabaseQueryData());
+    }
+    if (externalDataCollection.getFilePaths() != null) {
+      dataCollection.setFilePaths(externalDataCollection.getFilePaths());
     }
   }
 
@@ -3919,6 +4143,10 @@ public class SentryOptions {
       /**
        * Mutates or drop a log event before being sent
        *
+       * <p>Do not capture from within this callback — directly, or indirectly through a logging
+       * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+       * prevent infinite recursion.
+       *
        * @param event the event
        * @return the original log event or the mutated event or null if event was dropped
        */
@@ -3992,6 +4220,10 @@ public class SentryOptions {
 
       /**
        * A callback which gets called right before a metric is about to be sent.
+       *
+       * <p>Do not capture from within this callback — directly, or indirectly through a logging
+       * integration that routes logs back into Sentry. Such nested captures are silently dropped to
+       * prevent infinite recursion.
        *
        * @param metric the metric
        * @return the original metric, mutated metric or null if metric was dropped

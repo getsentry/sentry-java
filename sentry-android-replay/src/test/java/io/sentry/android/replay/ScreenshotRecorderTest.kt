@@ -14,8 +14,10 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [35])
 class ScreenshotRecorderTest {
 
   internal class Fixture() {
@@ -42,10 +44,9 @@ class ScreenshotRecorderTest {
 
   @Test
   fun `when config uses PIXEL_COPY strategy, ScreenshotRecorder creates PixelCopyStrategy`() {
-    val recorder =
-      fixture.getSut { options ->
-        options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY
-      }
+    val recorder = fixture.getSut { options ->
+      options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.PIXEL_COPY
+    }
 
     val strategy = getStrategy(recorder)
 
@@ -57,10 +58,9 @@ class ScreenshotRecorderTest {
 
   @Test
   fun `when config uses CANVAS strategy, ScreenshotRecorder creates CanvasStrategy`() {
-    val recorder =
-      fixture.getSut { options ->
-        options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS
-      }
+    val recorder = fixture.getSut { options ->
+      options.sessionReplay.screenshotStrategy = ScreenshotStrategyType.CANVAS
+    }
     val strategy = getStrategy(recorder)
 
     assertTrue(

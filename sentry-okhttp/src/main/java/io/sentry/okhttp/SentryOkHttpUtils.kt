@@ -7,6 +7,7 @@ import io.sentry.TypeCheckHint
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
+import io.sentry.util.CookieUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.UrlUtils
 import okhttp3.Headers
@@ -21,7 +22,7 @@ internal object SentryOkHttpUtils {
     // url will be: https://api.github.com/users/getsentry/repos/
     // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
     // but that's not possible
-    val urlDetails = UrlUtils.parse(request.url.toString())
+    val urlDetails = UrlUtils.parse(request.url.toString(), scopes.options.dataCollectionResolver)
 
     val mechanism = Mechanism().apply { type = "SentryOkHttpInterceptor" }
     val exception =
@@ -37,19 +38,17 @@ internal object SentryOkHttpUtils {
     val sentryRequest =
       io.sentry.protocol.Request().apply {
         urlDetails.applyToRequest(this)
-        // Cookie is only sent if isSendDefaultPii is enabled
-        cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
+        cookies = CookieUtils.filterCookies(request.headers["Cookie"], scopes.options)
         method = request.method
-        headers = getHeaders(scopes, request.headers)
+        headers = getRequestHeaders(scopes, request.headers)
 
         request.body?.contentLength().ifHasValidLength { bodySize = it }
       }
 
     val sentryResponse =
       io.sentry.protocol.Response().apply {
-        // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-        cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
-        headers = getHeaders(scopes, response.headers)
+        cookies = CookieUtils.filterSetCookie(response.headers["Set-Cookie"], scopes.options)
+        headers = getResponseHeaders(scopes, response.headers)
         statusCode = response.code
 
         response.body?.contentLength().ifHasValidLength { bodySize = it }
@@ -65,6 +64,42 @@ internal object SentryOkHttpUtils {
     if (this != null && this != -1L) {
       fn.invoke(this)
     }
+  }
+
+  private fun getRequestHeaders(
+    scopes: IScopes,
+    requestHeaders: Headers,
+  ): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val headers = mutableMapOf<String, String>()
+      for (i in 0 until requestHeaders.size) {
+        headers[requestHeaders.name(i)] = requestHeaders.value(i)
+      }
+      return HttpUtils.filterHeaders(
+          headers,
+          scopes.options.dataCollectionResolver.httpRequestHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, requestHeaders)
+  }
+
+  private fun getResponseHeaders(
+    scopes: IScopes,
+    responseHeaders: Headers,
+  ): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val headers = mutableMapOf<String, String>()
+      for (i in 0 until responseHeaders.size) {
+        headers[responseHeaders.name(i)] = responseHeaders.value(i)
+      }
+      return HttpUtils.filterHeaders(
+          headers,
+          scopes.options.dataCollectionResolver.httpResponseHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, responseHeaders)
   }
 
   private fun getHeaders(scopes: IScopes, requestHeaders: Headers): MutableMap<String, String>? {

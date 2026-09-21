@@ -58,15 +58,19 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;)V
 	public fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Landroid/content/Context;Lio/sentry/transport/ICurrentDateProvider;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun captureReplay (Ljava/lang/Boolean;)V
+	public fun captureReplay (Ljava/lang/Boolean;)Lio/sentry/protocol/SentryId;
 	public fun close ()V
 	public fun disableDebugMaskingOverlay ()V
 	public fun enableDebugMaskingOverlay ()V
+	public fun flush ()V
 	public fun getBreadcrumbConverter ()Lio/sentry/ReplayBreadcrumbConverter;
 	public final fun getReplayCacheDir ()Ljava/io/File;
 	public fun getReplayId ()Lio/sentry/protocol/SentryId;
 	public fun isDebugMaskingOverlayEnabled ()Z
 	public fun isRecording ()Z
+	public fun onAppBackgrounded ()V
+	public fun onAppForegrounded (Z)V
+	public fun onAppSessionEnded ()V
 	public final fun onConfigurationChanged (Lio/sentry/android/replay/ScreenshotRecorderConfig;)V
 	public fun onConnectionStatusChanged (Lio/sentry/IConnectionStatusProvider$ConnectionStatus;)V
 	public fun onRateLimitChanged (Lio/sentry/transport/RateLimiter;)V
@@ -76,10 +80,12 @@ public final class io/sentry/android/replay/ReplayIntegration : io/sentry/IConne
 	public fun onWindowSizeChanged (II)V
 	public fun pause ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
+	public fun registerSegmentName (Ljava/lang/String;)V
 	public fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun resume ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
+	public fun startBuffering ()V
 	public fun stop ()V
 }
 

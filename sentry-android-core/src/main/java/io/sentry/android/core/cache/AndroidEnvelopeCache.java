@@ -9,6 +9,7 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.android.core.AnrV2Integration;
+import io.sentry.android.core.MemoryLimiterIntegration;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.android.core.TombstoneIntegration;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
@@ -35,9 +36,12 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   public static final String LAST_ANR_REPORT = "last_anr_report";
   public static final String LAST_TOMBSTONE_REPORT = "last_tombstone_report";
+  public static final String LAST_MEMORY_LIMITER_REPORT = "last_memory_limiter_report";
 
   private final @NotNull ICurrentDateProvider currentDateProvider;
 
+  // TODO: JAVA-729
+  @SuppressWarnings("deprecation")
   public AndroidEnvelopeCache(final @NotNull SentryAndroidOptions options) {
     this(options, AndroidCurrentDateProvider.getInstance());
   }
@@ -85,7 +89,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     }
 
     for (TimestampMarkerHandler<?> handler : TIMESTAMP_MARKER_HANDLERS) {
-      handler.handle(this, hint, options);
+      handler.handle(hint, options);
     }
 
     return didStore;
@@ -93,7 +97,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
 
   @TestOnly
   public @NotNull File getDirectory() {
-    return directory;
+    return directory.getFile();
   }
 
   private void writeStartupCrashMarkerFile() {
@@ -106,7 +110,14 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
           .log(DEBUG, "Outbox path is null, the startup crash marker file will not be written");
       return;
     }
-    final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
+    // The outbox dir is no longer created during Sentry.init, so create it here in case the native
+    // SDK (which normally creates it) is disabled.
+    final File outboxDir = new File(outboxPath);
+    if (!FileUtils.createDirectory(outboxDir)) {
+      options.getLogger().log(ERROR, "Failed to create outbox dir %s", outboxPath);
+      return;
+    }
+    final File crashMarkerFile = new File(outboxDir, STARTUP_CRASH_MARKER_FILE);
     try {
       crashMarkerFile.createNewFile();
     } catch (Throwable e) {
@@ -175,7 +186,8 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return null;
   }
 
-  private void writeLastReportedMarker(
+  private static void writeLastReportedMarker(
+      final @NotNull SentryOptions options,
       final @Nullable Long timestamp,
       @NotNull String reportFilename,
       @NotNull String markerCategory) {
@@ -208,6 +220,26 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return lastReportedMarker(options, LAST_TOMBSTONE_REPORT, LAST_TOMBSTONE_MARKER_LABEL);
   }
 
+  public static @Nullable Long lastReportedMemoryLimiter(final @NotNull SentryOptions options) {
+    return lastReportedMarker(
+        options, LAST_MEMORY_LIMITER_REPORT, LAST_MEMORY_LIMITER_MARKER_LABEL);
+  }
+
+  public static void markAnrReported(final @NotNull SentryOptions options, final long timestamp) {
+    writeLastReportedMarker(options, timestamp, LAST_ANR_REPORT, LAST_ANR_MARKER_LABEL);
+  }
+
+  public static void markTombstoneReported(
+      final @NotNull SentryOptions options, final long timestamp) {
+    writeLastReportedMarker(options, timestamp, LAST_TOMBSTONE_REPORT, LAST_TOMBSTONE_MARKER_LABEL);
+  }
+
+  public static void markMemoryLimiterReported(
+      final @NotNull SentryOptions options, final long timestamp) {
+    writeLastReportedMarker(
+        options, timestamp, LAST_MEMORY_LIMITER_REPORT, LAST_MEMORY_LIMITER_MARKER_LABEL);
+  }
+
   private static final class TimestampMarkerHandler<T> {
     interface TimestampExtractor<T> {
       @NotNull
@@ -230,10 +262,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       this.timestampProvider = timestampProvider;
     }
 
-    void handle(
-        final @NotNull AndroidEnvelopeCache cache,
-        final @NotNull Hint hint,
-        final @NotNull SentryAndroidOptions options) {
+    void handle(final @NotNull Hint hint, final @NotNull SentryAndroidOptions options) {
       HintUtils.runIfHasType(
           hint,
           type,
@@ -246,13 +275,14 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
                     "Writing last reported %s marker with timestamp %d",
                     label,
                     timestamp);
-            cache.writeLastReportedMarker(timestamp, reportFilename, label);
+            writeLastReportedMarker(options, timestamp, reportFilename, label);
           });
     }
   }
 
   public static final String LAST_TOMBSTONE_MARKER_LABEL = "Tombstone";
   public static final String LAST_ANR_MARKER_LABEL = "ANR";
+  public static final String LAST_MEMORY_LIMITER_MARKER_LABEL = "MemoryLimiter";
   private static final List<TimestampMarkerHandler<?>> TIMESTAMP_MARKER_HANDLERS =
       Arrays.asList(
           new TimestampMarkerHandler<>(
@@ -264,5 +294,10 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
               TombstoneIntegration.TombstoneHint.class,
               LAST_TOMBSTONE_MARKER_LABEL,
               LAST_TOMBSTONE_REPORT,
-              tombstoneHint -> tombstoneHint.timestamp()));
+              tombstoneHint -> tombstoneHint.timestamp()),
+          new TimestampMarkerHandler<>(
+              MemoryLimiterIntegration.MemoryLimiterHint.class,
+              LAST_MEMORY_LIMITER_MARKER_LABEL,
+              LAST_MEMORY_LIMITER_REPORT,
+              memoryLimiterHint -> memoryLimiterHint.timestamp()));
 }

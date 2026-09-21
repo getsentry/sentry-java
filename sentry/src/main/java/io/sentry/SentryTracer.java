@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.profiling.ProfileRecordingState;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -12,9 +13,8 @@ import io.sentry.util.thread.IThreadChecker;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -37,10 +37,12 @@ public final class SentryTracer implements ITransaction {
    */
   private @NotNull FinishStatus finishStatus = FinishStatus.NOT_FINISHED;
 
-  private volatile @Nullable TimerTask idleTimeoutTask;
-  private volatile @Nullable TimerTask deadlineTimeoutTask;
+  private volatile @Nullable Future<?> idleTimeoutFuture;
+  private volatile @Nullable Future<?> deadlineTimeoutFuture;
 
-  private volatile @Nullable Timer timer = null;
+  // Whether timeout tasks may still be scheduled. Set to false once the tracer is finished. The
+  // executor itself is owned by the options (shared SDK-wide) and obtained from there when needed.
+  private volatile boolean timersEnabled = false;
   private final @NotNull AutoClosableReentrantLock timerLock = new AutoClosableReentrantLock();
   private final @NotNull AutoClosableReentrantLock tracerLock = new AutoClosableReentrantLock();
 
@@ -99,7 +101,7 @@ public final class SentryTracer implements ITransaction {
 
     if (transactionOptions.getIdleTimeout() != null
         || transactionOptions.getDeadlineTimeout() != null) {
-      timer = new Timer(true);
+      timersEnabled = true;
 
       scheduleDeadlineTimeout();
       scheduleFinish();
@@ -109,22 +111,19 @@ public final class SentryTracer implements ITransaction {
   @Override
   public void scheduleFinish() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      if (timer != null) {
+      if (timersEnabled) {
         final @Nullable Long idleTimeout = transactionOptions.getIdleTimeout();
 
         if (idleTimeout != null) {
           cancelIdleTimer();
           isIdleFinishTimerRunning.set(true);
-          idleTimeoutTask =
-              new TimerTask() {
-                @Override
-                public void run() {
-                  onIdleTimeoutReached();
-                }
-              };
 
           try {
-            timer.schedule(idleTimeoutTask, idleTimeout);
+            idleTimeoutFuture =
+                scopes
+                    .getOptions()
+                    .getTimerExecutorService()
+                    .schedule(this::onIdleTimeoutReached, idleTimeout);
           } catch (Throwable e) {
             scopes
                 .getOptions()
@@ -263,15 +262,16 @@ public final class SentryTracer implements ITransaction {
                   }
                 });
           });
+      dropUnrecordedProfilerIds(finishTimestamp);
+
       final SentryTransaction transaction = new SentryTransaction(this);
 
-      if (timer != null) {
+      if (timersEnabled) {
         try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-          if (timer != null) {
+          if (timersEnabled) {
             cancelIdleTimer();
             cancelDeadlineTimer();
-            timer.cancel();
-            timer = null;
+            timersEnabled = false;
           }
         }
       }
@@ -295,10 +295,10 @@ public final class SentryTracer implements ITransaction {
 
   private void cancelIdleTimer() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      if (idleTimeoutTask != null) {
-        idleTimeoutTask.cancel();
+      if (idleTimeoutFuture != null) {
+        idleTimeoutFuture.cancel(false);
         isIdleFinishTimerRunning.set(false);
-        idleTimeoutTask = null;
+        idleTimeoutFuture = null;
       }
     }
   }
@@ -307,18 +307,15 @@ public final class SentryTracer implements ITransaction {
     final @Nullable Long deadlineTimeOut = transactionOptions.getDeadlineTimeout();
     if (deadlineTimeOut != null) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-        if (timer != null) {
+        if (timersEnabled) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
-          deadlineTimeoutTask =
-              new TimerTask() {
-                @Override
-                public void run() {
-                  onDeadlineTimeoutReached();
-                }
-              };
           try {
-            timer.schedule(deadlineTimeoutTask, deadlineTimeOut);
+            deadlineTimeoutFuture =
+                scopes
+                    .getOptions()
+                    .getTimerExecutorService()
+                    .schedule(this::onDeadlineTimeoutReached, deadlineTimeOut);
           } catch (Throwable e) {
             scopes
                 .getOptions()
@@ -335,10 +332,10 @@ public final class SentryTracer implements ITransaction {
 
   private void cancelDeadlineTimer() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-      if (deadlineTimeoutTask != null) {
-        deadlineTimeoutTask.cancel();
+      if (deadlineTimeoutFuture != null) {
+        deadlineTimeoutFuture.cancel(false);
         isDeadlineTimerRunning.set(false);
-        deadlineTimeoutTask = null;
+        deadlineTimeoutFuture = null;
       }
     }
   }
@@ -553,6 +550,65 @@ public final class SentryTracer implements ITransaction {
     span.setData(
         SpanDataConvention.THREAD_ID, String.valueOf(threadChecker.currentThreadSystemId()));
     span.setData(SpanDataConvention.THREAD_NAME, threadChecker.getCurrentThreadName());
+  }
+
+  /**
+   * Spans are tagged with the profiler id when they start, but the profiler may only learn later
+   * that no profile was recorded, e.g. when the OS rate limits profiling requests. Spans that no
+   * profile covers drop the reference here, so they don't point to a profile that never arrives.
+   */
+  private void dropUnrecordedProfilerIds(final @NotNull SentryDate finishTimestamp) {
+    final @NotNull IContinuousProfiler continuousProfiler =
+        scopes.getOptions().getContinuousProfiler();
+    if (continuousProfiler instanceof NoOpContinuousProfiler) {
+      // Without a profiler no span can carry a profiler id, so the children are not worth walking
+      return;
+    }
+
+    if (isProfileMissing(continuousProfiler, root, finishTimestamp)) {
+      root.setData(SpanDataConvention.PROFILER_ID, null);
+      contexts.remove(ProfileContext.TYPE);
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "No profile was recorded for transaction, dropping its profiler id.");
+    }
+
+    for (final @NotNull Span child : children) {
+      if (isProfileMissing(continuousProfiler, child, finishTimestamp)) {
+        child.setData(SpanDataConvention.PROFILER_ID, null);
+      }
+    }
+  }
+
+  /**
+   * Whether the profiler knows that no profile covers the given span.
+   *
+   * @param finishTimestamp end of the window for a span that never finished
+   */
+  private boolean isProfileMissing(
+      final @NotNull IContinuousProfiler continuousProfiler,
+      final @NotNull Span span,
+      final @NotNull SentryDate finishTimestamp) {
+    final @Nullable Object data = span.getData(SpanDataConvention.PROFILER_ID);
+    if (!(data instanceof String)) {
+      return false;
+    }
+    final @NotNull SentryId profilerId;
+    try {
+      profilerId = new SentryId((String) data);
+    } catch (IllegalArgumentException e) {
+      // The span data key is public API, so the value is not necessarily an id the SDK wrote
+      return false;
+    }
+    final @Nullable SentryDate spanFinishDate = span.getFinishDate();
+    return continuousProfiler.getProfileRecordingState(
+            profilerId,
+            span.getStartDate(),
+            spanFinishDate != null ? spanFinishDate : finishTimestamp)
+        == ProfileRecordingState.NOT_RECORDED;
   }
 
   private @NotNull SentryId getProfilerId() {
@@ -973,20 +1029,19 @@ public final class SentryTracer implements ITransaction {
 
   @TestOnly
   @Nullable
-  TimerTask getIdleTimeoutTask() {
-    return idleTimeoutTask;
+  Future<?> getIdleTimeoutFuture() {
+    return idleTimeoutFuture;
   }
 
   @TestOnly
   @Nullable
-  TimerTask getDeadlineTimeoutTask() {
-    return deadlineTimeoutTask;
+  Future<?> getDeadlineTimeoutFuture() {
+    return deadlineTimeoutFuture;
   }
 
   @TestOnly
-  @Nullable
-  Timer getTimer() {
-    return timer;
+  boolean areTimersEnabled() {
+    return timersEnabled;
   }
 
   @TestOnly

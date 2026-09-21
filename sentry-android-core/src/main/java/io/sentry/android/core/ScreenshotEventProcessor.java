@@ -47,6 +47,8 @@ public final class ScreenshotEventProcessor implements EventProcessor {
   private final boolean isReplayAvailable;
   private final AtomicBoolean isReplayModuleAbsenceLogged = new AtomicBoolean(false);
 
+  // TODO: JAVA-729
+  @SuppressWarnings("deprecation")
   public ScreenshotEventProcessor(
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
@@ -216,7 +218,7 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     try (final MaskRenderer maskRenderer = new MaskRenderer()) {
       // Make bitmap mutable if needed
       if (!screenshot.isMutable()) {
-        mutableBitmap = screenshot.copy(Bitmap.Config.ARGB_8888, true);
+        mutableBitmap = screenshot.copy(Bitmap.Config.RGB_565, true);
         if (mutableBitmap == null) {
           screenshot.recycle();
           return null;

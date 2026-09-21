@@ -1,5 +1,6 @@
 package io.sentry.util.network;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * see
  * https://github.com/getsentry/sentry-javascript/blob/632f0b953d99050c11b0edafb9f80b5f3ba88045/packages/replay-internal/src/types/performance.ts#L133-L140
  */
+@ApiStatus.Internal
 public final class NetworkRequestData {
   private @Nullable final String method;
   private @Nullable Integer statusCode;

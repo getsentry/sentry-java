@@ -3,8 +3,10 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
+import android.content.Context;
 import io.sentry.Hint;
 import io.sentry.IScope;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
@@ -12,11 +14,13 @@ import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.MonotonicTicker;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -141,6 +145,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enables or disables collecting of external storage context. */
   private boolean collectExternalStorageContext = false;
 
+  private volatile @Nullable DeviceInfoUtil deviceInfoUtil;
+
   /**
    * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
    * previous run. Sentry SDKs normally send events from a background queue, but in the case of
@@ -200,6 +206,18 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable intent extras reporting for system event breadcrumbs. Default is false. */
   private boolean enableSystemEventBreadcrumbsExtras = false;
 
+  @NotNull
+  DeviceInfoUtil getOrCreateDeviceInfoUtil(final @NotNull Context context) {
+    if (deviceInfoUtil == null) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        if (deviceInfoUtil == null) {
+          deviceInfoUtil = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), this);
+        }
+      }
+    }
+    return deviceInfoUtil;
+  }
+
   public interface BeforeCaptureCallback {
 
     /**
@@ -249,6 +267,25 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean reportHistoricalTombstones = false;
 
   /**
+   * Controls whether to report <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits from
+   * the {@link ApplicationExitInfo} system API.
+   *
+   * <p>If this flag is true and {@link #reportHistoricalMemoryLimiterExits} is false, then only the
+   * latest MemoryLimiter exit is reported. If both are true, then all available exits are reported.
+   */
+  private boolean memoryLimiterEnabled = false;
+
+  /**
+   * Controls whether to report historical <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits from
+   * the {@link ApplicationExitInfo} system API (where "historical" means "older than the latest").
+   *
+   * <p>No-ops if {@link #memoryLimiterEnabled} is false.
+   */
+  private boolean reportHistoricalMemoryLimiterExits = false;
+
+  /**
    * Controls whether to send ANR (v2) thread dump as an attachment with plain text. The thread dump
    * is being attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
    */
@@ -277,6 +314,10 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
+  /**
+   * Sample rate for capturing main-thread stack profiles when a foreground ANR is detected. {@code
+   * null} disables ANR profiling (default). Values must be between {@code 0.0} and {@code 1.0}.
+   */
   private @Nullable Double anrProfilingSampleRate;
 
   private boolean enableAnrFingerprinting = true;
@@ -719,6 +760,57 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachRawTombstone = attachRawTombstone;
   }
 
+  @ApiStatus.Experimental
+  public boolean isMemoryLimiterEnabled() {
+    return memoryLimiterEnabled;
+  }
+
+  /**
+   * Enables or disables reporting of Android <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits.
+   * Disabled by default.
+   *
+   * <p>Enabling this flag allows the SDK to inspect retained {@link ApplicationExitInfo} records on
+   * the next app start and report the latest retained matching MemoryLimiter exit as a Sentry
+   * event.
+   *
+   * <p>See {@link #setReportHistoricalMemoryLimiterExits(boolean)} if you also want to create
+   * Sentry events from MemoryLimiter exits before the latest.
+   *
+   * <p>Available on Android API ≥ 37. No-ops if the Android API is below 37 or if the {@link
+   * #setCacheDirPath cache dir path} hasn't been set.
+   */
+  @ApiStatus.Experimental
+  public void setMemoryLimiterEnabled(final boolean memoryLimiterEnabled) {
+    this.memoryLimiterEnabled = memoryLimiterEnabled;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isReportHistoricalMemoryLimiterExits() {
+    return reportHistoricalMemoryLimiterExits;
+  }
+
+  /**
+   * Enables or disables reporting of historical retained <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits on
+   * startup (where "historical" means "older than the latest"). Disabled by default.
+   *
+   * <p>Use this together with {@link #setMemoryLimiterEnabled(boolean)} when you want the
+   * platform's complete retained exit history.
+   *
+   * <p>Note: unlike the latest exit, historical exits are <b>not</b> enriched with contextual
+   * Sentry data.
+   *
+   * <p>Available on Android API ≥ 37. No-ops if the Android API is below 37, if the {@link
+   * #setCacheDirPath cache dir path} hasn't been set, or if {@link #setMemoryLimiterEnabled the
+   * MemoryLimiter integration} hasn't been enabled.
+   */
+  @ApiStatus.Experimental
+  public void setReportHistoricalMemoryLimiterExits(
+      final boolean reportHistoricalMemoryLimiterExits) {
+    this.reportHistoricalMemoryLimiterExits = reportHistoricalMemoryLimiterExits;
+  }
+
   /**
    * @return true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
    *     more details.
@@ -823,10 +915,25 @@ public final class SentryAndroidOptions extends SentryOptions {
     return screenshot;
   }
 
+  /**
+   * Returns the sample rate used when deciding whether to capture a main-thread stack profile for a
+   * detected foreground ANR.
+   *
+   * @return the ANR profiling sample rate, or {@code null} when ANR profiling is disabled
+   */
   public @Nullable Double getAnrProfilingSampleRate() {
     return anrProfilingSampleRate;
   }
 
+  /**
+   * Sets the sample rate for capturing main-thread stack profiles when a foreground ANR is
+   * detected. The profile is attached to the ANR event on the next app start.
+   *
+   * <p>Use {@code null} to disable ANR profiling (default). Values must be between {@code 0.0} and
+   * {@code 1.0}.
+   *
+   * @param anrProfilingSampleRate the sample rate, or {@code null} to disable
+   */
   public void setAnrProfilingSampleRate(final @Nullable Double anrProfilingSampleRate) {
     if (!SampleRateUtils.isValidSampleRate(anrProfilingSampleRate)) {
       throw new IllegalArgumentException(
@@ -837,6 +944,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.anrProfilingSampleRate = anrProfilingSampleRate;
   }
 
+  /**
+   * Returns whether ANR profiling is enabled. ANR profiling is enabled when {@link
+   * #getAnrProfilingSampleRate()} is non-null and greater than {@code 0.0}.
+   *
+   * @return {@code true} if ANR profiling is enabled
+   */
   public boolean isAnrProfilingEnabled() {
     return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
   }
@@ -862,6 +975,12 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnableAnrFingerprinting(final boolean enableAnrFingerprinting) {
     this.enableAnrFingerprinting = enableAnrFingerprinting;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull MonotonicTicker getMonotonicTicker() {
+    return AndroidMonotonicTicker.getInstance();
   }
 
   static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {

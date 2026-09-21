@@ -4,12 +4,16 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** An Adapter for making Class.forName testable */
 @Open
 public class LoadClass {
+
+  // Populated by the Sentry Android Gradle plugin for class names it can resolve at build time.
+  static @Nullable Map<String, Boolean> classAvailability;
 
   /**
    * Loads and initializes a class via reflection. Use this when you intend to actually use the
@@ -57,6 +61,16 @@ public class LoadClass {
    * @return true if the class is on the classpath
    */
   public boolean isClassAvailable(final @NotNull String clazz, final @Nullable ILogger logger) {
+    final @Nullable Map<String, Boolean> availability = classAvailability;
+    if (availability != null) {
+      final @Nullable Boolean available = availability.get(clazz);
+      if (available != null) {
+        if (!available && logger != null) {
+          logger.log(SentryLevel.INFO, "Class not available: " + clazz);
+        }
+        return available;
+      }
+    }
     return loadClass(clazz, logger, false) != null;
   }
 

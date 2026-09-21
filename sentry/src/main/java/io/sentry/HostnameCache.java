@@ -6,9 +6,11 @@ import java.net.InetAddress;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,6 +36,9 @@ public final class HostnameCache {
   /** Time before the get hostname operation times out (in ms). */
   private static final long GET_HOSTNAME_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
 
+  /** How long the worker thread may stay idle before it self-terminates. */
+  private static final long THREAD_KEEP_ALIVE_SECONDS = 30;
+
   private static volatile @Nullable HostnameCache INSTANCE;
   private static final @NotNull AutoClosableReentrantLock staticLock =
       new AutoClosableReentrantLock();
@@ -52,8 +57,7 @@ public final class HostnameCache {
 
   private final @NotNull Callable<InetAddress> getLocalhost;
 
-  private final @NotNull ExecutorService executorService =
-      Executors.newSingleThreadExecutor(new HostnameCacheThreadFactory());
+  private final @NotNull ExecutorService executorService;
 
   public static @NotNull HostnameCache getInstance() {
     if (INSTANCE == null) {
@@ -87,15 +91,19 @@ public final class HostnameCache {
   HostnameCache(long cacheDuration, final @NotNull Callable<InetAddress> getLocalhost) {
     this.cacheDuration = cacheDuration;
     this.getLocalhost = Objects.requireNonNull(getLocalhost, "getLocalhost is required");
+    // A single thread executor whose worker thread times out while idle, so no thread is kept
+    // alive between the infrequent cache refreshes and nothing has to shut it down.
+    final @NotNull ThreadPoolExecutor executor =
+        new ThreadPoolExecutor(
+            1,
+            1,
+            THREAD_KEEP_ALIVE_SECONDS,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(),
+            new HostnameCacheThreadFactory());
+    executor.allowCoreThreadTimeOut(true);
+    this.executorService = executor;
     updateCache();
-  }
-
-  void close() {
-    this.executorService.shutdown();
-  }
-
-  boolean isClosed() {
-    return this.executorService.isShutdown();
   }
 
   /**
@@ -129,8 +137,21 @@ public final class HostnameCache {
           return null;
         };
 
+    final Future<Void> futureTask;
     try {
-      final Future<Void> futureTask = executorService.submit(hostRetriever);
+      futureTask = executorService.submit(hostRetriever);
+    } catch (RejectedExecutionException e) {
+      // updateRunning is cleared by the callable's finally block, which never runs if the callable
+      // was never queued. Clearing it here keeps a failure to queue from latching the flag on and
+      // silencing every later refresh.
+      updateRunning.set(false);
+      handleCacheUpdateFailure();
+      return;
+    }
+
+    // A timeout or interrupt below leaves the callable running, so it still clears updateRunning
+    // itself; doing it here as well would let refreshes pile up behind a slow lookup.
+    try {
       futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

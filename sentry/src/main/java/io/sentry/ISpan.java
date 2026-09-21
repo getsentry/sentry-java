@@ -17,12 +17,25 @@ public interface ISpan {
   @NotNull
   ISpan startChild(@NotNull String operation);
 
-  @ApiStatus.Internal
+  /**
+   * Starts a child Span.
+   *
+   * @param operation - new span operation name
+   * @param description - new span description name
+   * @param spanOptions - options for the newly created span, e.g. an explicit start timestamp
+   * @return a new transaction span
+   */
   @NotNull
   ISpan startChild(
       @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions);
 
-  @ApiStatus.Internal
+  /**
+   * Starts a child Span.
+   *
+   * @param spanContext - the context for the newly created span
+   * @param spanOptions - options for the newly created span, e.g. an explicit start timestamp
+   * @return a new transaction span
+   */
   @NotNull
   ISpan startChild(@NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions);
 
@@ -52,6 +65,20 @@ public interface ISpan {
    */
   @NotNull
   ISpan startChild(@NotNull String operation, @Nullable String description);
+
+  /**
+   * Starts a child Span.
+   *
+   * @param operation - new span operation name
+   * @param description - the span description
+   * @param timestamp - the start timestamp of the span
+   * @return a new transaction span
+   */
+  @NotNull
+  default ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
+    return startChild(operation, description, timestamp, Instrumenter.SENTRY);
+  }
 
   /**
    * Returns the trace information that could be sent as a sentry-trace header.

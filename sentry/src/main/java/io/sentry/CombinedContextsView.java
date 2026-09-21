@@ -294,6 +294,11 @@ public final class CombinedContextsView extends Contexts {
   }
 
   @Override
+  public void clear() {
+    getDefaultContexts().clear();
+  }
+
+  @Override
   public @NotNull Enumeration<String> keys() {
     return mergeContexts().keys();
   }

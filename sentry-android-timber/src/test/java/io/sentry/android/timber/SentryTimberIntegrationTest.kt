@@ -1,10 +1,14 @@
 package io.sentry.android.timber
 
 import io.sentry.IScopes
+import io.sentry.ITransportFactory
+import io.sentry.ScopesAdapter
+import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.SdkVersion
+import io.sentry.transport.ITransport
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,6 +16,7 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import timber.log.Timber
 
 class SentryTimberIntegrationTest {
@@ -111,5 +116,44 @@ class SentryTimberIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertTrue(fixture.options.sdkVersion!!.integrationSet.contains("Timber"))
+  }
+
+  @Test
+  fun `a beforeSend callback that logs via Timber does not recurse`() {
+    // End-to-end guard against SDK-CRASHES-JAVA-3T3H style recursion: with a real Sentry instance,
+    // a beforeSend callback that logs through the planted SentryTimberTree must not loop back into
+    // capture forever.
+    val transport = mock<ITransport>()
+    val transportFactory = mock<ITransportFactory>()
+    whenever(transportFactory.create(any(), any())).thenReturn(transport)
+
+    var beforeSendInvocations = 0
+    Sentry.init { options ->
+      options.dsn = "https://key@sentry.io/123"
+      options.setTransportFactory(transportFactory)
+      options.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
+        beforeSendInvocations++
+        Timber.e("logging from beforeSend")
+        event
+      }
+    }
+    Timber.plant(
+      SentryTimberTree(
+        ScopesAdapter.getInstance(),
+        SentryLevel.ERROR,
+        SentryLevel.INFO,
+        SentryLogLevel.INFO,
+      )
+    )
+
+    try {
+      Timber.e("outer error")
+
+      // Without the core re-entrancy guard this recurses until a StackOverflowError. The nested
+      // Timber.e is dropped before its own beforeSend, so the callback runs exactly once.
+      assertEquals(1, beforeSendInvocations)
+    } finally {
+      Sentry.close()
+    }
   }
 }

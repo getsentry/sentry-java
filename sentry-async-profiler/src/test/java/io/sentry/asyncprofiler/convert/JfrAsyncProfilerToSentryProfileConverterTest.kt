@@ -218,13 +218,12 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     assertTrue(frames.isNotEmpty())
 
     // Find frames with complete information
-    val completeFrames =
-      frames.filter { frame ->
-        frame.function != null &&
-          frame.module != null &&
-          frame.lineno != null &&
-          frame.filename != null
-      }
+    val completeFrames = frames.filter { frame ->
+      frame.function != null &&
+        frame.module != null &&
+        frame.lineno != null &&
+        frame.filename != null
+    }
 
     assertTrue(completeFrames.isNotEmpty(), "Should have frames with complete information")
   }
@@ -238,15 +237,15 @@ class JfrAsyncProfilerToSentryProfileConverterTest {
     val frames = sentryProfile.frames
 
     // Verify system packages are marked as not in-app
-    val systemFrames =
-      frames.filter { frame ->
-        frame.module?.let {
-          it.startsWith("java.") || it.startsWith("sun.") || it.startsWith("jdk.")
-        } ?: false
-      }
+    val systemFrames = frames.filter { frame ->
+      frame.module?.let {
+        it.startsWith("java.") || it.startsWith("sun.") || it.startsWith("jdk.")
+      } ?: false
+    }
 
-    val inappSentryFrames =
-      frames.filter { frame -> frame.module?.startsWith("io.sentry.") ?: false }
+    val inappSentryFrames = frames.filter { frame ->
+      frame.module?.startsWith("io.sentry.") ?: false
+    }
 
     val emptyModuleFrames = frames.filter { it.module.isNullOrEmpty() }
 

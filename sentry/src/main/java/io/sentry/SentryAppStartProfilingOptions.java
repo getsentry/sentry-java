@@ -24,6 +24,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
   boolean continuousProfileSampled;
   boolean isEnableAppStartProfiling;
   boolean isStartProfilerOnAppStart;
+  boolean enableLegacyProfiling;
   @NotNull ProfileLifecycle profileLifecycle;
 
   private @Nullable Map<String, Object> unknown;
@@ -42,6 +43,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     profilingTracesHz = 0;
     isEnableAppStartProfiling = true;
     isStartProfilerOnAppStart = false;
+    enableLegacyProfiling = true;
   }
 
   SentryAppStartProfilingOptions(
@@ -62,6 +64,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     profilingTracesHz = options.getProfilingTracesHz();
     isEnableAppStartProfiling = options.isEnableAppStartProfiling();
     isStartProfilerOnAppStart = options.isStartProfilerOnAppStart();
+    enableLegacyProfiling = options.isEnableLegacyProfiling();
   }
 
   public void setProfileSampled(final boolean profileSampled) {
@@ -160,6 +163,14 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     return isStartProfilerOnAppStart;
   }
 
+  public void setEnableLegacyProfiling(final boolean enableLegacyProfiling) {
+    this.enableLegacyProfiling = enableLegacyProfiling;
+  }
+
+  public boolean isEnableLegacyProfiling() {
+    return enableLegacyProfiling;
+  }
+
   // JsonSerializable
 
   public static final class JsonKeys {
@@ -175,6 +186,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     public static final String PROFILING_TRACES_HZ = "profiling_traces_hz";
     public static final String IS_ENABLE_APP_START_PROFILING = "is_enable_app_start_profiling";
     public static final String IS_START_PROFILER_ON_APP_START = "is_start_profiler_on_app_start";
+    public static final String ENABLE_LEGACY_PROFILING = "enable_legacy_profiling";
   }
 
   @Override
@@ -195,6 +207,7 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
     writer.name(JsonKeys.PROFILING_TRACES_HZ).value(logger, profilingTracesHz);
     writer.name(JsonKeys.IS_ENABLE_APP_START_PROFILING).value(logger, isEnableAppStartProfiling);
     writer.name(JsonKeys.IS_START_PROFILER_ON_APP_START).value(logger, isStartProfilerOnAppStart);
+    writer.name(JsonKeys.ENABLE_LEGACY_PROFILING).value(logger, enableLegacyProfiling);
 
     if (unknown != null) {
       for (String key : unknown.keySet()) {
@@ -306,6 +319,12 @@ public final class SentryAppStartProfilingOptions implements JsonUnknown, JsonSe
             @Nullable Boolean isStartProfilerOnAppStart = reader.nextBooleanOrNull();
             if (isStartProfilerOnAppStart != null) {
               options.isStartProfilerOnAppStart = isStartProfilerOnAppStart;
+            }
+            break;
+          case JsonKeys.ENABLE_LEGACY_PROFILING:
+            @Nullable Boolean enableLegacyProfiling = reader.nextBooleanOrNull();
+            if (enableLegacyProfiling != null) {
+              options.enableLegacyProfiling = enableLegacyProfiling;
             }
             break;
           default:

@@ -1,5 +1,8 @@
 package io.sentry.transport;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
 public final class NoOpTransportGate implements ITransportGate {
 
   private static final NoOpTransportGate instance = new NoOpTransportGate();

@@ -368,8 +368,9 @@ class DefaultReplayBreadcrumbConverterTest {
       }
 
     // Set up options with a user callback that returns modified breadcrumb
-    val userBeforeBreadcrumbCallback =
-      SentryOptions.BeforeBreadcrumbCallback { _, _ -> userModifiedBreadcrumb }
+    val userBeforeBreadcrumbCallback = SentryOptions.BeforeBreadcrumbCallback { _, _ ->
+      userModifiedBreadcrumb
+    }
     val options = SentryOptions.empty()
     options.beforeBreadcrumb = userBeforeBreadcrumbCallback
 
