@@ -11,6 +11,12 @@
   - The Logback appender is a compatibility exception. When an encoder is configured, `sendDefaultPii=true` continues to include the original message template and parameters. To opt in independently of `sendDefaultPii`, set `<includeUnencodedMessage>true</includeUnencodedMessage>` on the Sentry appender in `logback.xml` or `logback-spring.xml`.
   - Data explicitly supplied through APIs such as `Sentry.setUser`, scopes, event processors, or `beforeSend` is not affected.
 
+  To opt in to the documented `dataCollection` defaults without configuring an individual option:
+
+  ```java
+  Sentry.init(options -> options.getDataCollection().forceDataCollection());
+  ```
+
   | Option | Default | Behavior |
   | --- | --- | --- |
   | `userInfo` | `true` | Allows integrations to populate user identity and IP address information automatically. |
