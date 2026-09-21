@@ -6,6 +6,7 @@ import io.sentry.okhttp.SentryOkHttpInterceptor;
 import okhttp3.OkHttpClient;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,10 +19,15 @@ import org.springframework.context.annotation.Configuration;
   SentryOkHttpInterceptor.class,
   SentryOkHttpEventListener.class
 })
+@ConditionalOnMissingClass({
+  "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider",
+  "io.sentry.opentelemetry.agent.AgentMarker"
+})
 @ConditionalOnProperty(name = "sentry.dsn")
 public class SentryOkHttpAutoConfiguration {
 
   @Bean
+  @ConditionalOnProperty(name = "sentry.clients.ok-http-enabled", havingValue = "true")
   static @NotNull SentryOkHttpClientBeanPostProcessor sentryOkHttpClientBeanPostProcessor() {
     return new SentryOkHttpClientBeanPostProcessor();
   }

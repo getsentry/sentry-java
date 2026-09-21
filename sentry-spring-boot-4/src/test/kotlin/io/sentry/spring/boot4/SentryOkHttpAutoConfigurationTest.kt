@@ -1,10 +1,13 @@
 package io.sentry.spring.boot4
 
 import com.google.common.truth.Truth.assertThat
+import io.opentelemetry.api.OpenTelemetry
 import io.sentry.ITransportFactory
 import io.sentry.NoOpTransportFactory
 import io.sentry.okhttp.SentryOkHttpEventListener
 import io.sentry.okhttp.SentryOkHttpInterceptor
+import io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider
+import io.sentry.opentelemetry.agent.AgentMarker
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
@@ -23,7 +26,7 @@ import org.springframework.context.annotation.Configuration
 
 class SentryOkHttpAutoConfigurationTest {
 
-  private val contextRunner =
+  private val baseContextRunner =
     ApplicationContextRunner()
       .withUserConfiguration(TestApplication::class.java, NoOpTransportConfiguration::class.java)
       .withPropertyValues(
@@ -35,15 +38,54 @@ class SentryOkHttpAutoConfigurationTest {
         "sentry.enable-spotlight=false",
       )
 
+  private val contextRunner =
+    baseContextRunner.withPropertyValues("sentry.clients.ok-http-enabled=true")
+
+  private val noOtelClassLoader =
+    FilteredClassLoader(
+      SentryAutoConfigurationCustomizerProvider::class.java,
+      AgentMarker::class.java,
+    )
+
+  private val noOtelContextRunner = contextRunner.withClassLoader(noOtelClassLoader)
+
+  @Test
+  fun `does not modify clients unless explicitly enabled`() {
+    for (properties in
+      listOf(emptyArray<String>(), arrayOf("sentry.clients.ok-http-enabled=false"))) {
+      val plainClient = OkHttpClient()
+      val manualClient =
+        OkHttpClient.Builder()
+          .addInterceptor(SentryOkHttpInterceptor())
+          .eventListener(SentryOkHttpEventListener())
+          .build()
+
+      baseContextRunner
+        .withClassLoader(noOtelClassLoader)
+        .withPropertyValues("sentry.dsn=http://key@localhost/proj", *properties)
+        .withBean("plainClient", OkHttpClient::class.java, { plainClient })
+        .withBean("manualClient", OkHttpClient::class.java, { manualClient })
+        .run { context ->
+          assertThat(context.getBean("plainClient")).isSameInstanceAs(plainClient)
+          assertThat(context.getBean("manualClient")).isSameInstanceAs(manualClient)
+          assertThat(context.getBeansOfType(SentryOkHttpClientBeanPostProcessor::class.java))
+            .isEmpty()
+          assertThat(context.getBean(SentryProperties::class.java).clients.isOkHttpEnabled)
+            .isFalse()
+        }
+    }
+  }
+
   @Test
   fun `instruments a Spring managed OkHttpClient`() {
-    contextRunner
+    noOtelContextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(OkHttpClientConfiguration::class.java)
       .run { context ->
         val client = context.getBean(OkHttpClient::class.java)
         val existingInterceptor = context.getBean("existingInterceptor", Interceptor::class.java)
 
+        assertThat(context.getBean(SentryProperties::class.java).clients.isOkHttpEnabled).isTrue()
         assertThat(client.connectTimeoutMillis).isEqualTo(1234)
         assertThat(client.interceptors).contains(existingInterceptor)
         assertThat(client.interceptors.filterIsInstance<SentryOkHttpInterceptor>()).hasSize(1)
@@ -62,7 +104,7 @@ class SentryOkHttpAutoConfigurationTest {
 
   @Test
   fun `instruments every Spring managed OkHttpClient`() {
-    contextRunner
+    noOtelContextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(MultipleOkHttpClientsConfiguration::class.java)
       .run { context ->
@@ -78,7 +120,7 @@ class SentryOkHttpAutoConfigurationTest {
 
   @Test
   fun `does not duplicate an existing Sentry interceptor`() {
-    contextRunner
+    noOtelContextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(ManuallyInstrumentedOkHttpClientConfiguration::class.java)
       .run { context ->
@@ -121,8 +163,41 @@ class SentryOkHttpAutoConfigurationTest {
   }
 
   @Test
+  fun `does not instrument when OpenTelemetry agent is present`() {
+    contextRunner
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withUserConfiguration(OkHttpClientConfiguration::class.java)
+      .run { context ->
+        val client = context.getBean(OkHttpClient::class.java)
+
+        assertThat(client.interceptors.filterIsInstance<SentryOkHttpInterceptor>()).isEmpty()
+        assertThat(client.eventListenerFactory.create(mock()))
+          .isNotInstanceOf(SentryOkHttpEventListener::class.java)
+      }
+  }
+
+  @Test
+  fun `does not instrument when Sentry OpenTelemetry integration is present`() {
+    contextRunner
+      .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withUserConfiguration(
+        OkHttpClientConfiguration::class.java,
+        OpenTelemetryConfiguration::class.java,
+      )
+      .run { context ->
+        val client = context.getBean(OkHttpClient::class.java)
+
+        assertThat(client.interceptors.filterIsInstance<SentryOkHttpInterceptor>()).isEmpty()
+        assertThat(client.eventListenerFactory.create(mock()))
+          .isNotInstanceOf(SentryOkHttpEventListener::class.java)
+      }
+  }
+
+  @Test
   fun `does not instrument OkHttpClient without a dsn`() {
-    contextRunner.withUserConfiguration(OkHttpClientConfiguration::class.java).run { context ->
+    noOtelContextRunner.withUserConfiguration(OkHttpClientConfiguration::class.java).run { context
+      ->
       val client = context.getBean(OkHttpClient::class.java)
 
       assertThat(client.interceptors.filterIsInstance<SentryOkHttpInterceptor>()).isEmpty()
@@ -133,7 +208,7 @@ class SentryOkHttpAutoConfigurationTest {
 
   @Test
   fun `does not create a default OkHttpClient`() {
-    contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run { context ->
+    noOtelContextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run { context ->
       assertThat(context.getBeansOfType(OkHttpClient::class.java)).isEmpty()
     }
   }
@@ -141,7 +216,13 @@ class SentryOkHttpAutoConfigurationTest {
   @Test
   fun `does not instrument when sentry-okhttp is not on the classpath`() {
     contextRunner
-      .withClassLoader(FilteredClassLoader(SentryOkHttpInterceptor::class.java))
+      .withClassLoader(
+        FilteredClassLoader(
+          SentryOkHttpInterceptor::class.java,
+          SentryAutoConfigurationCustomizerProvider::class.java,
+          AgentMarker::class.java,
+        )
+      )
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
       .withUserConfiguration(OkHttpClientConfiguration::class.java)
       .run { context ->
@@ -153,6 +234,11 @@ class SentryOkHttpAutoConfigurationTest {
   }
 
   @Configuration(proxyBeanMethods = false) @EnableAutoConfiguration open class TestApplication
+
+  @Configuration(proxyBeanMethods = false)
+  open class OpenTelemetryConfiguration {
+    @Bean open fun openTelemetry(): OpenTelemetry = OpenTelemetry.noop()
+  }
 
   @Configuration(proxyBeanMethods = false)
   open class NoOpTransportConfiguration {
