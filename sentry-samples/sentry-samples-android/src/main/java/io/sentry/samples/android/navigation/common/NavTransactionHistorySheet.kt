@@ -134,7 +134,9 @@ private fun TransactionCard(
       verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
       Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier.weight(1f).testTag(historyTag(sampleName, "card_${index}_summary"))) {
+        Column(
+          modifier = Modifier.weight(1f).testTag(historyTag(sampleName, "card_${index}_summary"))
+        ) {
           Text(
             transaction.name,
             style = MaterialTheme.typography.titleMedium,

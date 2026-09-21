@@ -70,7 +70,8 @@ internal class Nav2CustomTransactionController {
       Nav2CustomTransactionMode.PER_SCREEN -> handlePerScreen(currentRouteName)
       Nav2CustomTransactionMode.WHOLE_FLOW -> handleWholeFlow(currentRouteName)
       Nav2CustomTransactionMode.LINGERING -> handleLingering(currentRouteName)
-      Nav2CustomTransactionMode.ASYNC_FROM_USER_ACTION -> handleAsyncFromUserAction(currentRouteName)
+      Nav2CustomTransactionMode.ASYNC_FROM_USER_ACTION ->
+        handleAsyncFromUserAction(currentRouteName)
     }
   }
 

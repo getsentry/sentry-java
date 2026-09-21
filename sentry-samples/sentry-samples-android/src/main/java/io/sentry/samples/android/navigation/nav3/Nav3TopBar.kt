@@ -100,16 +100,14 @@ internal fun Nav3TopBar(
           text = "Current route: $currentRouteText",
           style = MaterialTheme.typography.bodySmall,
           modifier =
-            Modifier.horizontalScroll(rememberScrollState())
-              .testTag(nav3TestTag("current_route")),
+            Modifier.horizontalScroll(rememberScrollState()).testTag(nav3TestTag("current_route")),
           maxLines = 1,
         )
         Text(
           text = "Nav3 back stack: $capturedBackStack",
           style = MaterialTheme.typography.bodySmall,
           modifier =
-            Modifier.horizontalScroll(rememberScrollState())
-              .testTag(nav3TestTag("back_stack")),
+            Modifier.horizontalScroll(rememberScrollState()).testTag(nav3TestTag("back_stack")),
           maxLines = 1,
         )
       }

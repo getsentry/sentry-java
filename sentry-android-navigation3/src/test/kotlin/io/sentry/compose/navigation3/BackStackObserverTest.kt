@@ -87,18 +87,18 @@ class BackStackObserverTest {
     ): BackStackObserver<Any> {
       scope.options.isEnableScreenTracking = config.enableScreenTracking
 
-        return BackStackObserver(
-          scopes = scopes,
-          options =
-            SentryNavOptions(
-              enableNavigationBreadcrumbs = config.enableNavigationBreadcrumbs,
-              enableNavigationTransactions = config.enableNavigationTransactions,
-              captureBackStack = config.captureBackStack,
-              maxCapturedBackStackEntries = config.maxCapturedBackStackEntries,
-            ),
-          resolvers = { RouteResolvers(nameExtractor, argumentsExtractor) },
-        )
-      }
+      return BackStackObserver(
+        scopes = scopes,
+        options =
+          SentryNavOptions(
+            enableNavigationBreadcrumbs = config.enableNavigationBreadcrumbs,
+            enableNavigationTransactions = config.enableNavigationTransactions,
+            captureBackStack = config.captureBackStack,
+            maxCapturedBackStackEntries = config.maxCapturedBackStackEntries,
+          ),
+        resolvers = { RouteResolvers(nameExtractor, argumentsExtractor) },
+      )
+    }
 
     private companion object {
       fun createOptions(logger: ILogger): SentryOptions =

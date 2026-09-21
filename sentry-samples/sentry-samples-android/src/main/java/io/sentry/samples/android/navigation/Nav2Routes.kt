@@ -60,7 +60,7 @@ internal object Nav2RouteSpecs {
       routeName = Nav2RouteNames.HOME,
       title = "Home",
       description =
-          "Start a product flow, then use the Sentry UI to inspect route " +
+        "Start a product flow, then use the Sentry UI to inspect route " +
           "transactions, breadcrumbs, and screen tracking.",
     )
 

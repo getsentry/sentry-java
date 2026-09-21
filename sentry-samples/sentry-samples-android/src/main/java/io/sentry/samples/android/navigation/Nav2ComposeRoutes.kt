@@ -2,22 +2,17 @@ package io.sentry.samples.android.navigation
 
 import android.os.Bundle
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -77,8 +72,8 @@ import io.sentry.samples.android.navigation.Nav2ComposeDestination.ProductDetail
 import io.sentry.samples.android.navigation.Nav2ComposeDestination.ProductList
 import io.sentry.samples.android.navigation.Nav2ComposeDestination.PromoDialog
 import java.io.IOException
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -99,11 +94,14 @@ internal fun Nav2ComposeApp(
   val backStack = rememberSaveableNav2ComposeBackStack()
   val shareSheetProductId = rememberSaveable { mutableStateOf<String?>(null) }
   val currentDestination = backStack.lastOrNull() ?: Home
-  var customTransactionMode by rememberSaveable { mutableStateOf(Nav2CustomTransactionMode.PER_SCREEN) }
+  var customTransactionMode by rememberSaveable {
+    mutableStateOf(Nav2CustomTransactionMode.PER_SCREEN)
+  }
   var asyncBrowseProductsJob by rememberSaveable { mutableStateOf<Job?>(null) }
   var isAsyncBrowseProductsRunning by rememberSaveable { mutableStateOf(false) }
   val customTransactionsScope = androidx.compose.runtime.rememberCoroutineScope()
-  val customTransactionController = androidx.compose.runtime.remember { Nav2CustomTransactionController() }
+  val customTransactionController =
+    androidx.compose.runtime.remember { Nav2CustomTransactionController() }
 
   fun navigateTo(destination: Nav2ComposeDestination) {
     backStack.add(destination)
@@ -131,15 +129,6 @@ internal fun Nav2ComposeApp(
     navController.navigate(Home.route) {
       popUpTo(Home.route) { inclusive = false }
       launchSingleTop = true
-    }
-  }
-
-  BackHandler(enabled = shareSheetProductId.value != null) { dismissShareSheet() }
-  BackHandler(enabled = shareSheetProductId.value == null) {
-    if (backStack.size > 1) {
-      navigateBack()
-    } else {
-      onExitRoot()
     }
   }
 
@@ -348,6 +337,22 @@ internal fun Nav2ComposeApp(
         }
       }
 
+      // These BackHandlers are intentionally declared AFTER NavHost. NavHost installs its own
+      // internal BackHandler that pops the real NavController; if ours ran second it would let
+      // NavHost silently pop the controller while this sample's tracked back stack (which drives
+      // the
+      // header and the root-exit decision) went stale. Composing ours last gives it priority in the
+      // OnBackPressedDispatcher, so the tracked list and the NavController are only ever moved
+      // together, and backing out of the root reliably exits the activity.
+      BackHandler(enabled = shareSheetProductId.value != null) { dismissShareSheet() }
+      BackHandler(enabled = shareSheetProductId.value == null) {
+        if (backStack.size > 1) {
+          navigateBack()
+        } else {
+          onExitRoot()
+        }
+      }
+
       shareSheetProductId.value?.let { productId ->
         // This share sheet is intentionally just a screen overlay, not a Nav destination. It lets
         // the sample compare how Sentry's Nav2 integration behaves for proper Nav destinations vs.
@@ -488,7 +493,9 @@ private fun Nav2ComposeCustomRoute(
       Text(mode.description, style = MaterialTheme.typography.bodyMedium)
       Nav2ComposeRouteButton(
         label =
-          if (mode == Nav2CustomTransactionMode.ASYNC_FROM_USER_ACTION && isAsyncBrowseProductsRunning) {
+          if (
+            mode == Nav2CustomTransactionMode.ASYNC_FROM_USER_ACTION && isAsyncBrowseProductsRunning
+          ) {
             "Starting async custom transaction..."
           } else {
             "Browse Products"

@@ -1,13 +1,13 @@
 package io.sentry.samples.android.navigation.nav3
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -266,7 +266,11 @@ internal fun RouteScaffold(
 }
 
 @Composable
-internal fun RouteButton(label: String, onClick: () -> Unit, testTag: String = nav3ButtonTag(label)) {
+internal fun RouteButton(
+  label: String,
+  onClick: () -> Unit,
+  testTag: String = nav3ButtonTag(label),
+) {
   Button(
     onClick = onClick,
     modifier = Modifier.fillMaxWidth().sentryTag(nav3InteractionTag(label)).testTag(testTag),
@@ -349,13 +353,13 @@ internal fun CustomRoute(
       )
     },
     content = {
-    helperText?.let {
-      Text(
-        it,
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.testTag(nav3TestTag("custom_helper_text")),
-      )
-    }
+      helperText?.let {
+        Text(
+          it,
+          style = MaterialTheme.typography.bodyMedium,
+          modifier = Modifier.testTag(nav3TestTag("custom_helper_text")),
+        )
+      }
     },
   )
 }
@@ -450,20 +454,20 @@ internal fun ProductListRoute(backStack: SnapshotStateList<Nav3Route>) {
           RouteButton(
             "Open Product 42",
             onClick = {
-            backStack.add(
-              Nav3Route.ProductDetail(
-                productId = "42",
-                source = "product-list",
-                campaign = "summer-sale",
+              backStack.add(
+                Nav3Route.ProductDetail(
+                  productId = "42",
+                  source = "product-list",
+                  campaign = "summer-sale",
+                )
               )
-            )
             },
             testTag = nav3TestTag("product_list_open_product_42"),
           )
           RouteButton(
             "Open Product 7",
             onClick = {
-            backStack.add(Nav3Route.ProductDetail(productId = "7", source = "product-list"))
+              backStack.add(Nav3Route.ProductDetail(productId = "7", source = "product-list"))
             },
             testTag = nav3TestTag("product_list_open_product_7"),
           )

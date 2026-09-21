@@ -7,9 +7,7 @@ import org.jetbrains.annotations.ApiStatus
 // extraction, and recursive argument sanitization when navigation changes are observed.
 private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 10
 
-/**
- * Configuration info for a [SentryNavEffect].
- */
+/** Configuration info for a [SentryNavEffect]. */
 @ApiStatus.Experimental
 @ApiStatus.Internal
 @Immutable

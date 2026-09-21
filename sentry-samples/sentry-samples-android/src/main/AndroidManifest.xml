@@ -103,7 +103,7 @@
 
     <activity
       android:name=".navigation.Nav2SetupActivity"
-      android:exported="false"
+      android:exported="true"
       android:theme="@style/AppTheme.Main" />
 
     <activity

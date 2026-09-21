@@ -197,21 +197,21 @@ class Nav2Activity : AppCompatActivity() {
     ComposeView(this).apply {
       setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
 
-        setContent {
-          Nav2SampleTheme {
-            Nav2ComposeApp(
-              navListener = sentryNavigationListener,
-              routeWorkOptions = routeWorkOptions.value,
-              onCaptureException = { captureSampleException("Nav2") },
-              onCrashApp = { showCrashConfirmation("Nav2") },
-              selectedScenario = composeScenario.value,
-              onRouteChanged = { _, currentRoute, backStack ->
-                updateComposeNavigationUi(currentRoute, backStack)
-              },
-              onExitRoot = { finish() },
-            )
-          }
+      setContent {
+        Nav2SampleTheme {
+          Nav2ComposeApp(
+            navListener = sentryNavigationListener,
+            routeWorkOptions = routeWorkOptions.value,
+            onCaptureException = { captureSampleException("Nav2") },
+            onCrashApp = { showCrashConfirmation("Nav2") },
+            selectedScenario = composeScenario.value,
+            onRouteChanged = { _, currentRoute, backStack ->
+              updateComposeNavigationUi(currentRoute, backStack)
+            },
+            onExitRoot = { finish() },
+          )
         }
+      }
     }
 
   private fun createContentView(navHostId: Int): View {
@@ -485,7 +485,9 @@ class Nav2Activity : AppCompatActivity() {
 
   private fun updateComposeNavigationUi(currentRoute: String, backStack: String) {
     topBar.update(
-      scenario = if (currentRoute.startsWith("/${Nav2RouteNames.CUSTOM}")) Nav2Scenario.CUSTOM else Nav2Scenario.COMPOSE,
+      scenario =
+        if (currentRoute.startsWith("/${Nav2RouteNames.CUSTOM}")) Nav2Scenario.CUSTOM
+        else Nav2Scenario.COMPOSE,
       currentRoute = currentRoute,
       backStack = backStack,
     )

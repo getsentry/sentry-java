@@ -11,16 +11,15 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -483,14 +482,12 @@ private fun Nav3SampleApp(
         },
         sceneStrategies = listOf(dialogSceneStrategy, bottomSheetSceneStrategy),
         transitionSpec = {
-          fadeIn(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)).togetherWith(
-            fadeOut(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS))
-          )
+          fadeIn(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS))
+            .togetherWith(fadeOut(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)))
         },
         popTransitionSpec = {
-          fadeIn(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)).togetherWith(
-            fadeOut(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS))
-          )
+          fadeIn(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS))
+            .togetherWith(fadeOut(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)))
         },
         entryProvider =
           androidx.navigation3.runtime.entryProvider {
