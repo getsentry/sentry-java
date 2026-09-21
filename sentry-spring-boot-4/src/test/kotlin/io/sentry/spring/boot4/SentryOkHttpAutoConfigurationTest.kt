@@ -119,6 +119,39 @@ class SentryOkHttpAutoConfigurationTest {
   }
 
   @Test
+  fun `forwards canceled before callStart to the original event listener`() {
+    noOtelContextRunner
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withUserConfiguration(OkHttpClientConfiguration::class.java)
+      .run { context ->
+        val client = context.getBean(OkHttpClient::class.java)
+
+        // OkHttp creates the listener in the Call constructor and reports canceled() even if
+        // the call is never executed, i.e. before callStart() ever happens
+        client.newCall(Request.Builder().url("https://example.com").build()).cancel()
+
+        assertThat(context.getBean(RecordingEventListener::class.java).callCanceled.get()).isTrue()
+      }
+  }
+
+  @Test
+  fun `does not wrap a Sentry listener created by the original factory`() {
+    val sentryListener = SentryOkHttpEventListener()
+    val client = OkHttpClient.Builder().eventListenerFactory { sentryListener }.build()
+
+    noOtelContextRunner
+      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
+      .withBean("okHttpClient", OkHttpClient::class.java, { client })
+      .run { context ->
+        val instrumented = context.getBean(OkHttpClient::class.java)
+
+        assertThat(instrumented.eventListenerFactory.create(mock()))
+          .isSameInstanceAs(sentryListener)
+        assertThat(instrumented.interceptors.filterIsInstance<SentryOkHttpInterceptor>()).hasSize(1)
+      }
+  }
+
+  @Test
   fun `does not duplicate an existing Sentry interceptor`() {
     noOtelContextRunner
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
@@ -285,9 +318,14 @@ class SentryOkHttpAutoConfigurationTest {
 
   class RecordingEventListener : EventListener() {
     val callStarted = AtomicBoolean(false)
+    val callCanceled = AtomicBoolean(false)
 
     override fun callStart(call: Call) {
       callStarted.set(true)
+    }
+
+    override fun canceled(call: Call) {
+      callCanceled.set(true)
     }
   }
 }
