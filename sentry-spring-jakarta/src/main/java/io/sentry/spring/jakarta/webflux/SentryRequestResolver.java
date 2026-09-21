@@ -3,6 +3,7 @@ package io.sentry.spring.jakarta.webflux;
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IScopes;
 import io.sentry.protocol.Request;
+import io.sentry.util.CookieUtils;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.UrlUtils;
@@ -32,15 +33,23 @@ public class SentryRequestResolver {
         httpRequest.getMethod() != null ? httpRequest.getMethod().name() : "unknown";
     sentryRequest.setMethod(methodName);
     final @NotNull URI uri = httpRequest.getURI();
-    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(uri.toString());
+    final @NotNull UrlUtils.UrlDetails urlDetails =
+        UrlUtils.parse(uri.toString(), scopes.getOptions().getDataCollectionResolver());
     urlDetails.applyToRequest(sentryRequest);
     sentryRequest.setHeaders(resolveHeadersMap(httpRequest.getHeaders()));
 
-    if (scopes.getOptions().isSendDefaultPii()) {
-      String headerName = HttpUtils.COOKIE_HEADER_NAME;
+    final @NotNull String headerName = CookieUtils.COOKIE_HEADER_NAME;
+    if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
       sentryRequest.setCookies(
           toString(
-              HttpUtils.filterOutSecurityCookiesFromHeader(
+              CookieUtils.filterCookiesFromHeader(
+                  httpRequest.getHeaders().get(headerName),
+                  scopes.getOptions().getDataCollectionResolver().getCookies(),
+                  Collections.emptyList())));
+    } else if (scopes.getOptions().isSendDefaultPii()) {
+      sentryRequest.setCookies(
+          toString(
+              CookieUtils.filterOutSecurityCookiesFromHeader(
                   httpRequest.getHeaders().get(headerName), headerName, Collections.emptyList())));
     }
     return sentryRequest;
@@ -50,16 +59,20 @@ public class SentryRequestResolver {
   Map<String, String> resolveHeadersMap(final HttpHeaders request) {
     final Map<String, String> headersMap = new HashMap<>();
     for (Map.Entry<String, List<String>> entry : request.entrySet()) {
-      // do not copy personal information identifiable headers
       String headerName = entry.getKey();
-      if (scopes.getOptions().isSendDefaultPii()
+      if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()
+          || scopes.getOptions().isSendDefaultPii()
           || !HttpUtils.containsSensitiveHeader(headerName)) {
         headersMap.put(
             headerName,
             toString(
-                HttpUtils.filterOutSecurityCookiesFromHeader(
+                CookieUtils.filterOutSecurityCookiesFromHeader(
                     entry.getValue(), headerName, Collections.emptyList())));
       }
+    }
+    if (scopes.getOptions().getDataCollectionResolver().isDataCollectionConfigured()) {
+      return HttpUtils.filterHeaders(
+          headersMap, scopes.getOptions().getDataCollectionResolver().getHttpRequestHeaders());
     }
     return headersMap;
   }

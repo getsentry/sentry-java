@@ -122,6 +122,24 @@ class SentryApolloInterceptorTest {
   }
 
   @Test
+  fun `does not attach GraphQL variables when data collection disables them`() {
+    fixture.options.dataCollection.graphql.setVariables(false)
+
+    executeQuery()
+
+    verify(fixture.scopes)
+      .captureTransaction(
+        check {
+          assertNull(it.spans.first().data?.get("variables"))
+          assertNotNull(it.spans.first().data?.get("operationId"))
+        },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
   fun `creates a span around the failed request`() {
     executeQuery(fixture.getSut(httpStatusCode = 403))
 

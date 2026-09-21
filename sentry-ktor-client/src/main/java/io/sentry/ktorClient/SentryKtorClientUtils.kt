@@ -16,6 +16,7 @@ import io.sentry.TypeCheckHint
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
+import io.sentry.util.CookieUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.UrlUtils
 
@@ -25,7 +26,7 @@ internal object SentryKtorClientUtils {
     request: HttpRequest,
     response: HttpResponse,
   ) {
-    val urlDetails = UrlUtils.parse(request.url.toString())
+    val urlDetails = UrlUtils.parse(request.url.toString(), scopes.options.dataCollectionResolver)
 
     val mechanism = Mechanism().apply { type = "SentryKtorClientPlugin" }
     val exception =
@@ -36,19 +37,17 @@ internal object SentryKtorClientUtils {
 
     val sentryRequest =
       io.sentry.protocol.Request().apply {
-        // Cookie is only sent if isSendDefaultPii is enabled
         urlDetails.applyToRequest(this)
-        cookies = if (scopes.options.isSendDefaultPii) request.headers["Cookie"] else null
+        cookies = CookieUtils.filterCookies(request.headers["Cookie"], scopes.options)
         method = request.method.value
-        headers = getHeaders(scopes, request.headers)
+        headers = getRequestHeaders(scopes, request.headers)
         bodySize = request.content.contentLength
       }
 
     val sentryResponse =
       io.sentry.protocol.Response().apply {
-        // Set-Cookie is only sent if isSendDefaultPii is enabled due to PII
-        cookies = if (scopes.options.isSendDefaultPii) response.headers["Set-Cookie"] else null
-        headers = getHeaders(scopes, response.headers)
+        cookies = CookieUtils.filterSetCookie(response.headers["Set-Cookie"], scopes.options)
+        headers = getResponseHeaders(scopes, response.headers)
         statusCode = response.status.value
         try {
           bodySize = response.bodyAsBytes().size.toLong()
@@ -65,6 +64,32 @@ internal object SentryKtorClientUtils {
       }
 
     scopes.captureEvent(event, hint)
+  }
+
+  private fun getRequestHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val requestHeaders =
+        headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
+      return HttpUtils.filterHeaders(
+          requestHeaders,
+          scopes.options.dataCollectionResolver.httpRequestHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, headers)
+  }
+
+  private fun getResponseHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
+    if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
+      val responseHeaders =
+        headers.toMap().mapValues { (_, values) -> values.joinToString(",") }.toMutableMap()
+      return HttpUtils.filterHeaders(
+          responseHeaders,
+          scopes.options.dataCollectionResolver.httpResponseHeaders,
+        )
+        .toMutableMap()
+    }
+    return getHeaders(scopes, headers)
   }
 
   private fun getHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
@@ -90,7 +115,12 @@ internal object SentryKtorClientUtils {
     endTimestamp: SentryDate?,
   ) {
     val breadcrumb =
-      Breadcrumb.http(request.url.toString(), request.method.value, response.status.value)
+      Breadcrumb.http(
+        request.url.toString(),
+        request.method.value,
+        response.status.value,
+        scopes.options.dataCollectionResolver,
+      )
     breadcrumb.setData(
       SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY,
       response.contentLength(),

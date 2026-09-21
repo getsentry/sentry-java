@@ -74,7 +74,9 @@ class SentryApolloInterceptor(
       val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
 
       span.setData("operationId", requestWithHeader.operation.operationId())
-      span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
+      if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+        span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
+      }
 
       chain.proceedAsync(
         requestWithHeader,
@@ -196,7 +198,12 @@ class SentryApolloInterceptor(
         val httpRequest = httpResponse.request()
 
         val breadcrumb =
-          Breadcrumb.http(httpRequest.url().toString(), httpRequest.method(), httpResponse.code())
+          Breadcrumb.http(
+            httpRequest.url().toString(),
+            httpRequest.method(),
+            httpResponse.code(),
+            scopes.options.dataCollectionResolver,
+          )
 
         httpRequest.body()?.contentLength().ifHasValidLength { contentLength ->
           breadcrumb.setData("request_body_size", contentLength)
