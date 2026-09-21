@@ -245,6 +245,13 @@ constructor(
   private fun getHeader(key: String, headers: List<HttpHeader>): String? =
     headers.firstOrNull { it.name.equals(key, true) }?.value
 
+  private fun isStreamingResponse(response: HttpResponse): Boolean {
+    val contentType = getHeader("Content-Type", response.headers) ?: return false
+    // strip parameters such as boundary or charset, e.g. "multipart/mixed; boundary=xyz"
+    val mediaType = contentType.substringBefore(';').trim().lowercase(Locale.ROOT)
+    return mediaType in STREAMING_MEDIA_TYPES
+  }
+
   private fun getHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     // Headers are only sent if isSendDefaultPii is enabled due to PII
     if (!scopes.options.isSendDefaultPii) {
@@ -290,6 +297,12 @@ constructor(
 
       // return before reading the response body if it's not a target match
       if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {
+        return
+      }
+
+      // streaming responses (e.g. multipart incremental delivery, server-sent events) may never
+      // reach EOF or be unbounded, so peeking at them would block or buffer indefinitely
+      if (isStreamingResponse(response)) {
         return
       }
 
@@ -405,6 +418,8 @@ constructor(
 
   companion object {
     const val DEFAULT_CAPTURE_FAILED_REQUESTS = true
+
+    private val STREAMING_MEDIA_TYPES = setOf("multipart/mixed", "text/event-stream")
 
     init {
       SentryIntegrationPackageStorage.getInstance()

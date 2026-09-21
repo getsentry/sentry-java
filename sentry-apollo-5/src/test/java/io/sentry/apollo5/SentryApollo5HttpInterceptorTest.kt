@@ -14,6 +14,7 @@ import com.apollographql.apollo.network.http.HttpInterceptorChain
 import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.ITransaction
 import io.sentry.Scope
@@ -56,6 +57,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -249,6 +251,69 @@ abstract class SentryApollo5HttpInterceptorTest(
     interceptor.intercept(request, chain)
 
     assertThat(bodyRead).isFalse()
+  }
+
+  @Test
+  fun `does not read multipart mixed response body`(): Unit = runBlocking {
+    val bodyRead = interceptWithContentType("Multipart/Mixed; boundary=graphql")
+
+    assertThat(bodyRead).isFalse()
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `does not read event stream response body`(): Unit = runBlocking {
+    val bodyRead = interceptWithContentType(" text/event-stream ; charset=utf-8")
+
+    assertThat(bodyRead).isFalse()
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `reads json response body for failed request detection`(): Unit = runBlocking {
+    val bodyRead = interceptWithContentType("application/json; charset=utf-8")
+
+    assertThat(bodyRead).isTrue()
+    verify(fixture.scopes).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `reads response body without content type for failed request detection`(): Unit =
+    runBlocking {
+      val bodyRead = interceptWithContentType(null)
+
+      assertThat(bodyRead).isTrue()
+      verify(fixture.scopes).captureEvent(any(), any<Hint>())
+    }
+
+  /** Runs the interceptor against a GraphQL error body and returns whether the body was read. */
+  private suspend fun interceptWithContentType(contentType: String?): Boolean {
+    var bodyRead = false
+    val body =
+      object : ForwardingSource(Buffer().writeUtf8("{\"errors\":[]}")) {
+          override fun read(sink: Buffer, byteCount: Long): Long {
+            bodyRead = true
+            return super.read(sink, byteCount)
+          }
+        }
+        .buffer()
+    val request = HttpRequest.Builder(HttpMethod.Post, "https://target.example/graphql").build()
+    val responseBuilder = HttpResponse.Builder(200).body(body)
+    contentType?.let { responseBuilder.addHeader("content-type", it) }
+    val response = responseBuilder.build()
+    val chain =
+      object : HttpInterceptorChain {
+        override suspend fun proceed(request: HttpRequest): HttpResponse = response
+      }
+    val interceptor =
+      SentryApollo5HttpInterceptor(
+        fixture.scopes,
+        captureFailedRequests = true,
+        failedRequestTargets = listOf("target.example"),
+      )
+
+    interceptor.intercept(request, chain)
+    return bodyRead
   }
 
   @Test

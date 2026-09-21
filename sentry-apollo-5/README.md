@@ -33,7 +33,7 @@ An entirely custom `NetworkTransport` must expose the metadata to `SentryApollo5
 ## Known limitations
 
 - Failed GraphQL request detection matches the raw JSON response body for an `errors` field.
-- Multipart and incremental responses retain the Apollo 4 failed-request inspection limitation.
+- Failed GraphQL request detection is skipped for streaming responses (`multipart/mixed`, `text/event-stream`) to avoid buffering the body; spans and breadcrumbs are still recorded for them.
 - WebSocket subscriptions are not instrumented.
 - Batching behavior depends on HTTP interceptor ordering.
 - Normalized-cache hits do not create HTTP spans.
