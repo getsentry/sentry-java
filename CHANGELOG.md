@@ -4,12 +4,203 @@
 
 ### Features
 
+- Add `LocalSentrySpan` to `sentry-compose` so apps can provide a parent `ISpan` to a composable subtree and have nested `SentryTraced` spans attach to it ([#6112]https://github.com/getsentry/sentry-java/pull/6112)
+- Add `dataCollection`, a fine-grained replacement for `sendDefaultPii`, for controlling data collected automatically by SDK integrations ([#5759](https://github.com/getsentry/sentry-java/pull/5759))
+  - `sendDefaultPii` remains supported for backwards compatibility. When `dataCollection` is not configured, the SDK preserves the existing `sendDefaultPii` behavior.
+  - Configuring any `dataCollection` option makes it the source of truth. `sendDefaultPii` is then ignored, and omitted `dataCollection` options use the defaults below.
+  - The Logback appender is a compatibility exception. When an encoder is configured, `sendDefaultPii=true` continues to include the original message template and parameters. To opt in independently of `sendDefaultPii`, set `<includeUnencodedMessage>true</includeUnencodedMessage>` on the Sentry appender in `logback.xml` or `logback-spring.xml`.
+  - Data explicitly supplied through APIs such as `Sentry.setUser`, scopes, event processors, or `beforeSend` is not affected.
+
+  To opt in to the documented `dataCollection` defaults without configuring an individual option:
+
+  ```java
+  Sentry.init(options -> options.getDataCollection().forceDataCollection());
+  ```
+
+  | Option | Default | Behavior |
+  | --- | --- | --- |
+  | `userInfo` | `true` | Allows integrations to populate user identity and IP address information automatically. |
+  | `cookies` | `{ mode: DENY_LIST, terms: [] }` | Collects cookies while filtering sensitive values. |
+  | `httpHeaders.request` | `{ mode: DENY_LIST, terms: [] }` | Collects request headers while filtering sensitive values. |
+  | `httpHeaders.response` | `{ mode: DENY_LIST, terms: [] }` | Collects response headers while filtering sensitive values. |
+  | `httpBodies` | All supported body types | Collects supported incoming and outgoing request and response bodies. An empty set disables body collection. |
+  | `urlQueryParams` | `{ mode: DENY_LIST, terms: [] }` | Collects URL query parameters while filtering sensitive values. |
+  | `graphql.document` | `true` | Collects GraphQL documents. |
+  | `graphql.variables` | `true` | Collects GraphQL variables. |
+  | `databaseQueryData` | `true` | Allows collection of associated query data, such as bound parameters, write payloads, and results, where supported. Sanitized query statements and structural database metadata remain available. |
+  | `filePaths` | `true` | Allows file-system instrumentation to collect file and directory paths. File extensions and byte counts remain available when disabled. |
+
+  Cookies, HTTP headers, and URL query parameters support three modes:
+
+  - `OFF`: Do not collect the category.
+  - `DENY_LIST`: Collect values except those matching the built-in sensitive deny-list or additional configured terms.
+  - `ALLOW_LIST`: Only send plaintext values for matching terms. The built-in sensitive deny-list still applies.
+
+  Matching is case-insensitive and partial. The built-in sensitive deny-list contains `auth`, `token`, `secret`, `password`, `passwd`, `pwd`, `key`, `jwt`, `bearer`, `sso`, `saml`, `csrf`, `xsrf`, `credentials`, `session`, `sid`, and `identity`. Filtered values are replaced with `"[Filtered]"`. Custom deny-list terms extend rather than replace this list.
+
+  Configure all HTTP body types, a custom cookie deny-list, a request-header allow-list, and disable URL query parameter and file path collection in an options callback:
+
+  ```java
+  Sentry.init(
+      options -> {
+        options
+            .getDataCollection()
+            .setHttpBodies(
+                EnumSet.of(
+                    HttpBodyType.INCOMING_REQUEST,
+                    HttpBodyType.OUTGOING_REQUEST,
+                    HttpBodyType.INCOMING_RESPONSE,
+                    HttpBodyType.OUTGOING_RESPONSE));
+        options
+            .getDataCollection()
+            .setCookies(
+                KeyValueCollectionBehavior.denyList(
+                    "forwarded", "-ip", "remote-", "via", "-user"));
+        options
+            .getDataCollection()
+            .getHttpHeaders()
+            .setRequest(
+                KeyValueCollectionBehavior.allowList("content-type", "x-request-id"));
+        options
+            .getDataCollection()
+            .setUrlQueryParams(KeyValueCollectionBehavior.off());
+        options.getDataCollection().setFilePaths(false);
+      });
+  ```
+
+  Configure the same options in `sentry.properties`:
+
+  ```properties
+  data-collection.http-bodies=incoming_request,outgoing_request,incoming_response,outgoing_response
+  data-collection.cookies.mode=deny_list
+  data-collection.cookies.terms=forwarded,-ip,remote-,via,-user
+  data-collection.http-headers.request.mode=allow_list
+  data-collection.http-headers.request.terms=content-type,x-request-id
+  data-collection.url-query-params.mode=off
+  data-collection.file-paths=false
+  ```
+
+  Configure them with Spring Boot properties:
+
+  ```properties
+  sentry.data-collection.http-bodies=incoming-request,outgoing-request,incoming-response,outgoing-response
+  sentry.data-collection.cookies.mode=deny-list
+  sentry.data-collection.cookies.terms=forwarded,-ip,remote-,via,-user
+  sentry.data-collection.http-headers.request.mode=allow-list
+  sentry.data-collection.http-headers.request.terms=content-type,x-request-id
+  sentry.data-collection.url-query-params.mode=off
+  sentry.data-collection.file-paths=false
+  ```
+
+  Configure them in `AndroidManifest.xml`:
+
+  ```xml
+  <meta-data
+      android:name="io.sentry.data-collection.http-bodies"
+      android:value="incoming_request,outgoing_request,incoming_response,outgoing_response" />
+  <meta-data
+      android:name="io.sentry.data-collection.cookies.mode"
+      android:value="deny_list" />
+  <meta-data
+      android:name="io.sentry.data-collection.cookies.terms"
+      android:value="forwarded,-ip,remote-,via,-user" />
+  <meta-data
+      android:name="io.sentry.data-collection.http-headers.request.mode"
+      android:value="allow_list" />
+  <meta-data
+      android:name="io.sentry.data-collection.http-headers.request.terms"
+      android:value="content-type,x-request-id" />
+  <meta-data
+      android:name="io.sentry.data-collection.url-query-params.mode"
+      android:value="off" />
+  <meta-data
+      android:name="io.sentry.data-collection.file-paths"
+      android:value="false" />
+  ```
+
+  See the [Data Collection documentation](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection) for all configuration keys, supported integrations, and migration guidance.
 - Add `sentry-apollo-5` integration for Apollo Kotlin 5, providing HTTP tracing and failed GraphQL request reporting ([#6074](https://github.com/getsentry/sentry-java/pull/6074))
 
 ### Fixes
 
+- Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
+- Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
+
+## 8.57.0
+
+### Behavioral Changes
+
+- Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
+
+### Features
+
+- Add Android SDK support for reporting `MemoryLimiter` app exits recovered from `ApplicationExitInfo` ([#6111](https://github.com/getsentry/sentry-java/pull/6111)).
+- Sentry can now configure Log4j2 automatically for Spring Boot 4 when `sentry-log4j2` is on the classpath and Log4j2 Core is the active logging backend ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
+  - Enable automatic appender registration with:
+    ```properties
+    sentry.logging.enabled=true
+    ```
+    Automatic registration is disabled by default for now and will be enabled by default in the next major release.
+  - The appender is attached to the root logger by default. To attach it to specific loggers instead, configure one or more non-overlapping logger names:
+    ```properties
+    sentry.logging.loggers[0]=com.example
+    sentry.logging.loggers[1]=org.example
+    ```
+  - Configure the minimum level for creating breadcrumbs. The default is `INFO`:
+    ```properties
+    sentry.logging.minimum-breadcrumb-level=INFO
+    ```
+  - Configure the minimum level for creating Sentry error events. The default is `ERROR`:
+    ```properties
+    sentry.logging.minimum-event-level=ERROR
+    ```
+  - Configure the minimum level for sending Sentry structured logs. The default is `INFO`:
+    ```properties
+    sentry.logging.minimum-level=INFO
+    ```
+    Structured logs must also be enabled:
+    ```properties
+    sentry.logs.enabled=true
+    ```
+- Sentry can now configure Log4j2 automatically for Spring Boot 3 when `sentry-log4j2` is on the classpath and Log4j2 Core is the active logging backend ([#6072](https://github.com/getsentry/sentry-java/pull/6072))
+  - Disabled by default for now; enable it and configure levels the same way as described in the Spring Boot 4 entry above (`sentry.logging.enabled=true`)
+
+### Fixes
+
+- Support `ws` and `wss` URL parsing for WebSocket instrumentation ([#6064](https://github.com/getsentry/sentry-java/pull/6064))
+- Keep resolving the server name after `Sentry.close()` or a re-init. Closing the SDK shut down the shared hostname cache for the life of the process, so `server_name` silently froze at the value it had last resolved ([#6119](https://github.com/getsentry/sentry-java/pull/6119))
+- Order breadcrumbs by the timestamp they carry rather than by when they were created in the current process, so breadcrumbs restored from disk or handed over by a hybrid SDK no longer sort as if they had just happened ([#6097](https://github.com/getsentry/sentry-java/pull/6097))
+
+### Internal
+
+- Deprecate `RateLimiter(ICurrentDateProvider, SentryOptions)` in favor of `RateLimiter(SentryOptions)`, whose backoff is measured on a monotonic ticker ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
+- Deprecate `AndroidCurrentDateProvider.getInstance()` in favor of `MonotonicTicker`, which counts time spent in deep sleep and cannot be confused with the epoch-based `CurrentDateProvider` ([#6103](https://github.com/getsentry/sentry-java/pull/6103))
+
+## 8.56.0
+
+### Fixes
+
+- Update `SentryTraced` so that it now honors `options.setIgnoredSpanOrigins` ([#6058](https://github.com/getsentry/sentry-java/pull/6058))
 - `SentryTraced` now checks for its owning transaction dynamically rather than once per app process. The latter caused `SentryTraced` spans to be dropped process-wide once the original transaction finished ([#6057](https://github.com/getsentry/sentry-java/pull/6057))
 - Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`) ([#6061](https://github.com/getsentry/sentry-java/pull/6061))
+- Populate the Android connection status cache during the first two minutes after boot, instead of treating the empty cache as up to date ([#6029](https://github.com/getsentry/sentry-java/pull/6029))
+- Prevent `SentryTraced` from producing dangling spans if recomposition is abandoned or drawing fails ([#6049](https://github.com/getsentry/sentry-java/pull/6049))
+- Report a consistent app start type across the app start measurement, `contexts.app` and the `app.start` span attributes ([#6006](https://github.com/getsentry/sentry-java/pull/6006))
+
+### Improvements
+
+- Emit a single `ui.compose` span per `SentryTraced` on initial composition instead of one on every recomposition, and set the origin on `ui.render` spans ([#6051](https://github.com/getsentry/sentry-java/pull/6051))
+
+### Internal
+
+- Add an internal `MonotonicTicker` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
+- Add internal `Timestamp`, `EpochClock` and `AnchoredClock`, so related instants project from one wall-clock reading instead of each reading the clock ([#6045](https://github.com/getsentry/sentry-java/pull/6045))
+
+### Dependencies
+
+- Bump Native SDK from v0.16.5 to v0.16.6 ([#6079](https://github.com/getsentry/sentry-java/pull/6079))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0166)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.5...0.16.6)
 
 ## 8.55.0
 
@@ -19,12 +210,10 @@
 
 ### Improvements
 
-- Emit a single `ui.compose` span per `SentryTraced` on initial composition instead of one on every recomposition, and set the origin on `ui.render` spans ([#6051](https://github.com/getsentry/sentry-java/pull/6051))
 - Move ANR profiling out of experimental ([#6042](https://github.com/getsentry/sentry-java/pull/6042))
 
 ### Fixes
 
-- Prevent `SentryTraced` from producing dangling spans if recomposition is abandoned or drawing fails ([#6049](https://github.com/getsentry/sentry-java/pull/6049))
 - Keep dropped tombstone and ANR events dropped, instead of reporting the same app exit again at every app start ([#6002](https://github.com/getsentry/sentry-java/pull/6002))
 - Apply `Sentry.withScope` and `Sentry.withIsolationScope` data to events captured inside the callback when `globalHubMode` is enabled ([#6004](https://github.com/getsentry/sentry-java/pull/6004))
   - `globalHubMode` is enabled by default on Android, where tags, extras, contexts and level set inside the callback were silently dropped
@@ -32,7 +221,6 @@
   - `Sentry.pushScope`, `Sentry.pushIsolationScope` and `Sentry.popScope` remain no-ops when `globalHubMode` is enabled
 - Drop the `profiler_id` from transactions and spans when no Perfetto profile covers them, e.g. when Android's `ProfilingManager` rate limits the profiling request ([#6015](https://github.com/getsentry/sentry-java/pull/6015))
 - Prevent events from being dropped when feature flags are added while an event is being captured ([#5989](https://github.com/getsentry/sentry-java/pull/5989))
-- Report a consistent app start type across the app start measurement, `contexts.app` and the `app.start` span attributes ([#6006](https://github.com/getsentry/sentry-java/pull/6006))
 
 ### Internal
 

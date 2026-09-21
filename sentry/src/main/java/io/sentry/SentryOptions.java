@@ -21,10 +21,15 @@ import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
 import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.time.EpochClock;
+import io.sentry.time.JavaMonotonicTicker;
+import io.sentry.time.MonotonicTicker;
+import io.sentry.time.SystemEpochClock;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.transport.RateLimiterConfig;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.LoadClass;
@@ -54,7 +59,7 @@ import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options */
 @Open
-public class SentryOptions {
+public class SentryOptions implements RateLimiterConfig {
 
   @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
 
@@ -346,6 +351,11 @@ public class SentryOptions {
 
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
+
+  private @NotNull DataCollection dataCollection = new DataCollection();
+
+  private final @NotNull DataCollectionResolver dataCollectionResolver =
+      new DataCollectionResolver(this);
 
   /** SSLSocketFactory for self-signed certificate trust * */
   private @Nullable SSLSocketFactory sslSocketFactory;
@@ -843,6 +853,7 @@ public class SentryOptions {
    *
    * @return the logger
    */
+  @Override
   public @NotNull ILogger getLogger() {
     return logger;
   }
@@ -1606,6 +1617,7 @@ public class SentryOptions {
    * @return the timer executor service
    */
   @ApiStatus.Internal
+  @Override
   @NotNull
   public ISentryExecutorService getTimerExecutorService() {
     return timerExecutorService;
@@ -1749,6 +1761,35 @@ public class SentryOptions {
 
   public void setSendDefaultPii(boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
+  }
+
+  /**
+   * Returns the configuration for data that the SDK collects automatically.
+   *
+   * <p>The returned object is always present. Accessing it does not configure data collection, but
+   * setting one of its options does.
+   */
+  public @NotNull DataCollection getDataCollection() {
+    return dataCollection;
+  }
+
+  /**
+   * Replaces the configuration for data that the SDK collects automatically.
+   *
+   * <p>This discards any Data Collection options already configured on this instance. To opt into
+   * the documented defaults while preserving them, call {@link
+   * DataCollection#forceDataCollection()} on the object returned by {@link #getDataCollection()}.
+   */
+  public void setDataCollection(final @NotNull DataCollection dataCollection) {
+    if (dataCollection != null) {
+      this.dataCollection = dataCollection;
+    }
+  }
+
+  /** Returns the Data Collection policy resolver used by SDK integrations. */
+  @ApiStatus.Internal
+  public @NotNull DataCollectionResolver getDataCollectionResolver() {
+    return dataCollectionResolver;
   }
 
   /**
@@ -2597,6 +2638,7 @@ public class SentryOptions {
    * @return a client report recorder or NoOp
    */
   @ApiStatus.Internal
+  @Override
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
   }
@@ -3057,6 +3099,31 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
     this.dateProvider.setValue(dateProvider);
+  }
+
+  /**
+   * Returns the wall clock, for stamping an instant that will be serialized.
+   *
+   * <p>Reports the same epoch as {@link #getDateProvider()}, but a {@link io.sentry.time.Timestamp}
+   * carries no {@link System#nanoTime()} tick of its own the way a {@link SentryNanotimeDate} does.
+   * Instants that will be subtracted from each other come from an {@link
+   * io.sentry.time.AnchoredClock} built on this and {@link #getMonotonicTicker()}.
+   */
+  @ApiStatus.Internal
+  public @NotNull EpochClock getEpochClock() {
+    return SystemEpochClock.getInstance();
+  }
+
+  /**
+   * Returns the ticker used to measure elapsed time, such as rate-limit windows, cache expiry and
+   * ANR thresholds.
+   *
+   * <p>Android overrides this with a {@code SystemClock.elapsedRealtimeNanos()}-backed ticker,
+   * which this module cannot reference. On the JVM there is no suspend state to account for.
+   */
+  @ApiStatus.Internal
+  public @NotNull MonotonicTicker getMonotonicTicker() {
+    return JavaMonotonicTicker.getInstance();
   }
 
   /**
@@ -3712,6 +3779,9 @@ public class SentryOptions {
     if (options.isSendDefaultPii() != null) {
       setSendDefaultPii(options.isSendDefaultPii());
     }
+    if (options.getDataCollection() != null) {
+      mergeDataCollection(options.getDataCollection());
+    }
     if (options.isCaptureOpenTelemetryEvents() != null) {
       setCaptureOpenTelemetryEvents(options.isCaptureOpenTelemetryEvents());
     }
@@ -3774,6 +3844,43 @@ public class SentryOptions {
     }
     if (options.getOrgId() != null) {
       setOrgId(options.getOrgId());
+    }
+  }
+
+  private void mergeDataCollection(final @NotNull DataCollection externalDataCollection) {
+    if (externalDataCollection.getUserInfo() != null) {
+      dataCollection.setUserInfo(externalDataCollection.getUserInfo());
+    }
+    if (externalDataCollection.getHttpBodies() != null) {
+      dataCollection.setHttpBodies(externalDataCollection.getHttpBodies());
+    }
+    if (externalDataCollection.getCookies() != null) {
+      dataCollection.setCookies(externalDataCollection.getCookies());
+    }
+    if (externalDataCollection.getHttpHeaders().getRequest() != null) {
+      dataCollection
+          .getHttpHeaders()
+          .setRequest(externalDataCollection.getHttpHeaders().getRequest());
+    }
+    if (externalDataCollection.getHttpHeaders().getResponse() != null) {
+      dataCollection
+          .getHttpHeaders()
+          .setResponse(externalDataCollection.getHttpHeaders().getResponse());
+    }
+    if (externalDataCollection.getUrlQueryParams() != null) {
+      dataCollection.setUrlQueryParams(externalDataCollection.getUrlQueryParams());
+    }
+    if (externalDataCollection.getGraphql().getDocument() != null) {
+      dataCollection.getGraphql().setDocument(externalDataCollection.getGraphql().getDocument());
+    }
+    if (externalDataCollection.getGraphql().getVariables() != null) {
+      dataCollection.getGraphql().setVariables(externalDataCollection.getGraphql().getVariables());
+    }
+    if (externalDataCollection.getDatabaseQueryData() != null) {
+      dataCollection.setDatabaseQueryData(externalDataCollection.getDatabaseQueryData());
+    }
+    if (externalDataCollection.getFilePaths() != null) {
+      dataCollection.setFilePaths(externalDataCollection.getFilePaths());
     }
   }
 

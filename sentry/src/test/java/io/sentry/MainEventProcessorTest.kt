@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.protocol.DebugMeta
@@ -322,6 +323,39 @@ class MainEventProcessorTest {
   }
 
   @Test
+  fun `when user info is disabled, do not enrich ip address if sendDefaultPii is true`() {
+    fixture.sentryOptions.dataCollection.setUserInfo(false)
+    val sut = fixture.getSut(sendDefaultPii = true)
+    val event = SentryEvent()
+
+    sut.process(event, Hint())
+
+    assertThat(event.user?.ipAddress).isNull()
+  }
+
+  @Test
+  fun `when user info is enabled, enrich ip address if sendDefaultPii is false`() {
+    fixture.sentryOptions.dataCollection.setUserInfo(true)
+    val sut = fixture.getSut(sendDefaultPii = false)
+    val event = SentryEvent()
+
+    sut.process(event, Hint())
+
+    assertThat(event.user?.ipAddress).isEqualTo("{{auto}}")
+  }
+
+  @Test
+  fun `when another data collection setting is configured, omitted user info uses its default`() {
+    fixture.sentryOptions.dataCollection.cookies = KeyValueCollectionBehavior.off()
+    val sut = fixture.getSut(sendDefaultPii = false)
+    val event = SentryEvent()
+
+    sut.process(event, Hint())
+
+    assertThat(event.user?.ipAddress).isEqualTo("{{auto}}")
+  }
+
+  @Test
   fun `when event has ip address set, keeps original ip address`() {
     val sut = fixture.getSut(sendDefaultPii = true)
     val event = SentryEvent()
@@ -569,16 +603,6 @@ class MainEventProcessorTest {
         assertEquals("jvm", images[1].type)
       }
     }
-  }
-
-  @Test
-  fun `when processor is closed, closes hostname cache`() {
-    val sut = fixture.getSut(serverName = null)
-
-    sut.process(SentryTransaction(fixture.sentryTracer), Hint())
-
-    sut.close()
-    assertNotNull(sut.hostnameCache) { assertTrue(it.isClosed) }
   }
 
   @Test
