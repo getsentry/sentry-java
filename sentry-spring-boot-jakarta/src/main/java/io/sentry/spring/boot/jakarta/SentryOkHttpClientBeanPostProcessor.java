@@ -78,7 +78,11 @@ final class SentryOkHttpClientBeanPostProcessor implements BeanPostProcessor, Pr
 
     @Override
     public @NotNull EventListener create(final @NotNull Call call) {
-      return new SentryOkHttpEventListener(ScopesAdapter.getInstance(), delegate);
+      final @NotNull EventListener original = delegate.create(call);
+      if (original instanceof SentryOkHttpEventListener) {
+        return original;
+      }
+      return new SentryOkHttpEventListener(ScopesAdapter.getInstance(), original);
     }
   }
 }
