@@ -36,6 +36,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
@@ -81,9 +82,9 @@ abstract class SentryApollo5BuilderExtensionsTest(
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
       beforeSpan: BeforeSpanCallback? = null,
       interceptor: HttpInterceptor? = null,
+      options: SentryOptions = SentryOptions().apply { dsn = "http://key@localhost/proj" },
     ): ApolloClient {
-      whenever(scopes.options)
-        .thenReturn(SentryOptions().apply { dsn = "http://key@localhost/proj" })
+      whenever(scopes.options).thenReturn(options)
 
       server.enqueue(
         MockResponse()
@@ -172,6 +173,28 @@ abstract class SentryApollo5BuilderExtensionsTest(
         check {
           assertTransactionDetails(it)
           assertEquals(SpanStatus.OK, it.spans.first().status)
+        },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `does not attach GraphQL variables when data collection disables them`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "http://key@localhost/proj"
+        dataCollection.graphql.setVariables(false)
+      }
+
+    executeQuery(fixture.getSut(options = options))
+
+    verify(fixture.scopes)
+      .captureTransaction(
+        check {
+          assertNull(it.spans.first().data?.get("variables"))
+          assertNotNull(it.spans.first().data?.get("operationId"))
         },
         anyOrNull<TraceContext>(),
         anyOrNull(),

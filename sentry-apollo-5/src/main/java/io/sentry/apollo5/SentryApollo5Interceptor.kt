@@ -28,7 +28,11 @@ constructor(@ApiStatus.Internal private val scopes: IScopes = ScopesAdapter.getI
     chain: ApolloInterceptorChain,
   ): Flow<ApolloResponse<D>> {
     val variables =
-      request.scalarAdapters?.let { request.operation.variables(it).valueMap.toString() }
+      if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+        request.scalarAdapters?.let { request.operation.variables(it).valueMap.toString() }
+      } else {
+        null
+      }
     val operationContext =
       SentryApollo5OperationContext(
         operationId = request.operation.id(),
