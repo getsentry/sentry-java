@@ -6,3 +6,45 @@ public final class io/sentry/compose/navigation3/BuildConfig {
 	public fun <init> ()V
 }
 
+public abstract interface class io/sentry/compose/navigation3/RouteArgumentsExtractor {
+	public abstract fun extract (Ljava/lang/Object;)Ljava/util/Map;
+}
+
+public abstract interface class io/sentry/compose/navigation3/RouteNameExtractor {
+	public abstract fun extract (Ljava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/sentry/compose/navigation3/SentryNavEffectKt {
+	public static final fun SentryNavEffect (Ljava/util/List;Lio/sentry/compose/navigation3/RouteNameExtractor;Lio/sentry/compose/navigation3/RouteArgumentsExtractor;Lio/sentry/compose/navigation3/SentryNavOptions;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class io/sentry/compose/navigation3/SentryNavOptions {
+	public static final field $stable I
+	public synthetic fun <init> (ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCaptureBackStack ()Z
+	public final fun getEnableNavigationBreadcrumbs ()Z
+	public final fun getEnableNavigationTransactions ()Z
+	public final fun getMaxCapturedBackStackEntries ()I
+	public fun hashCode ()I
+}
+
+public final class io/sentry/compose/navigation3/SentryNavOptions$Builder {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun build ()Lio/sentry/compose/navigation3/SentryNavOptions;
+	public final fun getCaptureBackStack ()Z
+	public final fun getEnableNavigationBreadcrumbs ()Z
+	public final fun getEnableNavigationTransactions ()Z
+	public final fun getMaxCapturedBackStackEntries ()I
+	public final fun setCaptureBackStack (Z)V
+	public final fun setEnableNavigationBreadcrumbs (Z)V
+	public final fun setEnableNavigationTransactions (Z)V
+	public final fun setMaxCapturedBackStackEntries (I)V
+}
+
+public final class io/sentry/compose/navigation3/SentryNavOptionsKt {
+	public static final fun SentryNavOptions (Lkotlin/jvm/functions/Function1;)Lio/sentry/compose/navigation3/SentryNavOptions;
+	public static synthetic fun SentryNavOptions$default (Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/sentry/compose/navigation3/SentryNavOptions;
+}
+
