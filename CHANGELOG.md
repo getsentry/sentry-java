@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add `LocalSentrySpan` to `sentry-compose` so apps can provide a parent `ISpan` to a composable subtree and have nested `SentryTraced` spans attach to it ([#6112]https://github.com/getsentry/sentry-java/pull/6112)
 - Add `dataCollection`, a fine-grained replacement for `sendDefaultPii`, for controlling data collected automatically by SDK integrations ([#5759](https://github.com/getsentry/sentry-java/pull/5759))
   - `sendDefaultPii` remains supported for backwards compatibility. When `dataCollection` is not configured, the SDK preserves the existing `sendDefaultPii` behavior.
   - Configuring any `dataCollection` option makes it the source of truth. `sendDefaultPii` is then ignored, and omitted `dataCollection` options use the defaults below.
@@ -113,6 +114,19 @@
 
   See the [Data Collection documentation](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection) for all configuration keys, supported integrations, and migration guidance.
 
+### Fixes
+
+- Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
+- Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
+
+## 8.57.0
+
+### Behavioral Changes
+
+- Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
+
+### Features
+
 - Add Android SDK support for reporting `MemoryLimiter` app exits recovered from `ApplicationExitInfo` ([#6111](https://github.com/getsentry/sentry-java/pull/6111)).
 - Sentry can now configure Log4j2 automatically for Spring Boot 4 when `sentry-log4j2` is on the classpath and Log4j2 Core is the active logging backend ([#5403](https://github.com/getsentry/sentry-java/pull/5403))
   - Enable automatic appender registration with:
@@ -152,13 +166,10 @@
 
 ### Internal
 
+- Deprecate `RateLimiter(ICurrentDateProvider, SentryOptions)` in favor of `RateLimiter(SentryOptions)`, whose backoff is measured on a monotonic ticker ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 - Deprecate `AndroidCurrentDateProvider.getInstance()` in favor of `MonotonicTicker`, which counts time spent in deep sleep and cannot be confused with the epoch-based `CurrentDateProvider` ([#6103](https://github.com/getsentry/sentry-java/pull/6103))
 
 ## 8.56.0
-
-### Behavioral Changes
-
-- Measure HTTP rate-limit backoff on a monotonic clock instead of the wall clock, so that a device time change no longer lifts or extends an active rate limit ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 
 ### Fixes
 
@@ -177,7 +188,6 @@
 
 - Add an internal `MonotonicTicker` abstraction with `Deadline` and `Stopwatch` primitives ([#6028](https://github.com/getsentry/sentry-java/pull/6028))
 - Add internal `Timestamp`, `EpochClock` and `AnchoredClock`, so related instants project from one wall-clock reading instead of each reading the clock ([#6045](https://github.com/getsentry/sentry-java/pull/6045))
-- Deprecate `RateLimiter(ICurrentDateProvider, SentryOptions)` in favor of `RateLimiter(SentryOptions)`, whose backoff is measured on a monotonic ticker ([#6030](https://github.com/getsentry/sentry-java/pull/6030))
 
 ### Dependencies
 

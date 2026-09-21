@@ -28,6 +28,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ISpan
 import io.sentry.ITransaction
+import io.sentry.NoOpSpan
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.TransactionOptions
@@ -75,7 +76,9 @@ class SentryTracedTest {
   fun `records a composition span for the initial composition`() {
     val tx = initSentryAndStartTransaction("tx")
 
-    rule.setContent { SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp)) } }
+    rule.setContent {
+      ProvideSentrySpan(tx) { SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp)) } }
+    }
     tx.waitForSpanCount(OP_COMPOSE, 1)
 
     assertThat(tx.countSpans(OP_PARENT_COMPOSITION)).isEqualTo(1)
@@ -88,7 +91,7 @@ class SentryTracedTest {
   }
 
   @Test
-  fun `falls back to the current transaction when no owner span is provided`() {
+  fun `falls back to the current transaction when no owner span is provided via LocalSentrySpan`() {
     val tx = initSentryAndStartTransaction("tx")
 
     rule.setContent { SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp)) } }
@@ -112,12 +115,32 @@ class SentryTracedTest {
   }
 
   @Test
-  fun `renders content without spans when the current transaction is finished`() {
+  fun `renders content without spans when provided owner span is a no-op`() {
+    val tx = initSentryAndStartTransaction("tx")
+
+    rule.setContent {
+      ProvideSentrySpan(NoOpSpan.getInstance()) {
+        SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp).testTag("content")) }
+      }
+    }
+    rule.waitForIdle()
+
+    rule.onNodeWithTag("content").assertExists()
+    assertThat(tx.countSpans(OP_PARENT_COMPOSITION)).isEqualTo(0)
+    assertThat(tx.countSpans(OP_COMPOSE)).isEqualTo(0)
+    assertThat(tx.countSpans(OP_PARENT_RENDER)).isEqualTo(0)
+    assertThat(tx.countSpans(OP_RENDER)).isEqualTo(0)
+  }
+
+  @Test
+  fun `renders content without spans when provided owner span is finished`() {
     val tx = initSentryAndStartTransaction("tx")
     rule.runOnUiThread { tx.finish() }
 
     rule.setContent {
-      SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp).testTag("content")) }
+      ProvideSentrySpan(tx) {
+        SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp).testTag("content")) }
+      }
     }
     rule.waitForIdle()
 
@@ -136,7 +159,9 @@ class SentryTracedTest {
       }
 
     rule.setContent {
-      SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp).testTag("content")) }
+      ProvideSentrySpan(tx) {
+        SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp).testTag("content")) }
+      }
     }
     rule.waitForIdle()
     drawContent()
@@ -153,9 +178,11 @@ class SentryTracedTest {
     val tx = initSentryAndStartTransaction("tx")
 
     rule.setContent {
-      Column {
-        SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp)) }
-        SentryTraced(tag = "add_to_cart_button") { Box(Modifier.size(1.dp)) }
+      ProvideSentrySpan(tx) {
+        Column {
+          SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp)) }
+          SentryTraced(tag = "add_to_cart_button") { Box(Modifier.size(1.dp)) }
+        }
       }
     }
 
@@ -170,9 +197,11 @@ class SentryTracedTest {
     val tx = initSentryAndStartTransaction("tx")
 
     rule.setContent {
-      Column {
-        SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp)) }
-        SentryTraced(tag = "add_to_cart_button") { Box(Modifier.size(1.dp)) }
+      ProvideSentrySpan(tx) {
+        Column {
+          SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp)) }
+          SentryTraced(tag = "add_to_cart_button") { Box(Modifier.size(1.dp)) }
+        }
       }
     }
     tx.waitForSpanCount(OP_COMPOSE, 2)
@@ -200,9 +229,11 @@ class SentryTracedTest {
     val tx = initSentryAndStartTransaction("tx")
 
     rule.setContent {
-      val currentStep = step
-      SentryTraced(tag = "product_info") {
-        Box(Modifier.size((currentStep + 1).dp).testTag("content-$currentStep"))
+      ProvideSentrySpan(tx) {
+        val currentStep = step
+        SentryTraced(tag = "product_info") {
+          Box(Modifier.size((currentStep + 1).dp).testTag("content-$currentStep"))
+        }
       }
     }
     tx.waitForSpanCount(OP_COMPOSE, 1)
@@ -230,15 +261,17 @@ class SentryTracedTest {
     val tx = initSentryAndStartTransaction("tx")
 
     rule.setContent {
-      val currentStep = step
-      SentryTraced(tag = "product_info") {
-        val state = remember {
-          rememberedInstanceCount++
-          Any()
+      ProvideSentrySpan(tx) {
+        val currentStep = step
+        SentryTraced(tag = "product_info") {
+          val state = remember {
+            rememberedInstanceCount++
+            Any()
+          }
+          DisposableEffect(Unit) { onDispose { disposeCount++ } }
+          rememberedState = state
+          Box(Modifier.size((currentStep + 1).dp).testTag("content-$currentStep"))
         }
-        DisposableEffect(Unit) { onDispose { disposeCount++ } }
-        rememberedState = state
-        Box(Modifier.size((currentStep + 1).dp).testTag("content-$currentStep"))
       }
     }
     tx.waitForSpanCount(OP_COMPOSE, 1)
@@ -260,18 +293,24 @@ class SentryTracedTest {
   @Test
   fun `starts recording once an owner span becomes available`() {
     var step by mutableStateOf(0)
+    var sentrySpan by mutableStateOf<ISpan>(NoOpSpan.getInstance())
 
     rule.runOnUiThread { Sentry.close() }
     rule.setContent {
-      val currentStep = step
-      key(currentStep) {
-        SentryTraced(tag = "late-transaction-$currentStep") { Box(Modifier.size(1.dp)) }
+      ProvideSentrySpan(sentrySpan) {
+        val currentStep = step
+        key(currentStep) {
+          SentryTraced(tag = "late-transaction-$currentStep") { Box(Modifier.size(1.dp)) }
+        }
       }
     }
     rule.waitForIdle()
 
     val tx = initSentryAndStartTransaction("tx")
-    rule.runOnIdle { step = 1 }
+    rule.runOnIdle {
+      sentrySpan = tx
+      step = 1
+    }
     rule.waitForIdle()
 
     tx.waitForSpanCount(OP_COMPOSE, 1)
@@ -284,11 +323,14 @@ class SentryTracedTest {
   fun `records spans under replacement owner after previous owner finishes`() {
     var step by mutableStateOf(0)
     val firstTx = initSentryAndStartTransaction("first-tx")
+    var sentrySpan by mutableStateOf<ISpan>(firstTx)
 
     rule.setContent {
-      val currentStep = step
-      key(currentStep) {
-        SentryTraced(tag = "transaction-$currentStep") { Box(Modifier.size(1.dp)) }
+      ProvideSentrySpan(sentrySpan) {
+        val currentStep = step
+        key(currentStep) {
+          SentryTraced(tag = "transaction-$currentStep") { Box(Modifier.size(1.dp)) }
+        }
       }
     }
     firstTx.waitForSpanCount(OP_COMPOSE, 1)
@@ -298,7 +340,10 @@ class SentryTracedTest {
       firstTx.finish()
       secondTx = startBoundTransaction("second-tx")
     }
-    rule.runOnIdle { step = 1 }
+    rule.runOnIdle {
+      sentrySpan = secondTx
+      step = 1
+    }
     rule.waitForIdle()
 
     secondTx.waitForSpanCount(OP_COMPOSE, 1)
@@ -310,13 +355,12 @@ class SentryTracedTest {
 
   @Test
   fun `records a new span group when the owner span changes for the same composable node`() {
-    var step by mutableStateOf(0)
     val firstTx = initSentryAndStartTransaction("first-tx")
+    var sentrySpan by mutableStateOf<ISpan>(firstTx)
 
     rule.setContent {
-      val currentStep = step
-      SentryTraced(tag = "transaction", modifier = Modifier.testTag("content-$currentStep")) {
-        Box(Modifier.size((currentStep + 1).dp))
+      ProvideSentrySpan(sentrySpan) {
+        SentryTraced(tag = "transaction") { Box(Modifier.size(1.dp)) }
       }
     }
     firstTx.waitForSpanCount(OP_COMPOSE, 1)
@@ -328,14 +372,13 @@ class SentryTracedTest {
       firstTx.finish()
       secondTx = startBoundTransaction("second-tx")
     }
-    rule.runOnIdle { step = 1 }
+    rule.runOnIdle { sentrySpan = secondTx }
     rule.waitForIdle()
 
     secondTx.waitForSpanCount(OP_COMPOSE, 1)
     drawContent()
     secondTx.waitForSpanCount(OP_RENDER, 1)
 
-    rule.onNodeWithTag("content-1").assertExists()
     assertThat(firstTx.countSpans(OP_PARENT_COMPOSITION)).isEqualTo(1)
     assertThat(firstTx.countSpans(OP_PARENT_RENDER)).isEqualTo(1)
     assertThat(secondTx.countSpans(OP_PARENT_COMPOSITION)).isEqualTo(1)
@@ -349,7 +392,9 @@ class SentryTracedTest {
     val tx = initSentryAndStartTransaction("tx")
 
     assertFailsWith<IllegalStateException> {
-      rule.setContent { SentryTraced(tag = "throws") { error("boom") } }
+      rule.setContent {
+        ProvideSentrySpan(tx) { SentryTraced(tag = "throws") { error("boom") } }
+      }
     }
 
     assertThat(tx.countSpans(OP_PARENT_COMPOSITION)).isEqualTo(0)
