@@ -2,5 +2,4 @@ io.sentry.spring.boot.jakarta.SentryAutoConfiguration
 io.sentry.spring.boot.jakarta.SentryProfilerAutoConfiguration
 io.sentry.spring.boot.jakarta.SentryLogbackAppenderAutoConfiguration
 io.sentry.spring.boot.jakarta.SentryLog4j2AppenderAutoConfiguration
-io.sentry.spring.boot.jakarta.SentryOkHttpAutoConfiguration
 io.sentry.spring.boot.jakarta.SentryWebfluxAutoConfiguration
