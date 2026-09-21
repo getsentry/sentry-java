@@ -51,6 +51,7 @@ import okhttp3.mockwebserver.SocketPolicy
 import okio.Buffer
 import okio.ForwardingSource
 import okio.buffer
+import org.junit.After
 import org.junit.Before
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -148,6 +149,11 @@ abstract class SentryApollo5HttpInterceptorTest(
 
   @Before
   fun setup() {
+    Apollo5PlatformTestManipulator.pretendIsAndroid(false)
+  }
+
+  @After
+  fun teardown() {
     Apollo5PlatformTestManipulator.pretendIsAndroid(false)
   }
 
