@@ -1,5 +1,6 @@
 package io.sentry.clientreport
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Attachment
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
@@ -63,6 +64,11 @@ class ClientReportTest {
   lateinit var opts: SentryOptions
   lateinit var clientReportRecorder: ClientReportRecorder
   lateinit var testHelper: ClientReportTestHelper
+
+  @Test
+  fun `callback error has expected discard reason`() {
+    assertThat(DiscardReason.CALLBACK_ERROR.reason).isEqualTo("callback_error")
+  }
 
   @Test
   fun `lost envelope can be recorded`() {
