@@ -124,6 +124,7 @@
 
 - Fix SDK callback error handling ([#6140](https://github.com/getsentry/sentry-java/pull/6140))
   - Add `DiscardReason.CALLBACK_ERROR` and use it for telemetry dropped when a `beforeSend*` callback throws. `OnDiscardCallback` can now receive this value.
+  - Drop telemetry and record `callback_error` when an event processor throws instead of continuing with a potentially partially processed item.
 - Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
 - Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
 
