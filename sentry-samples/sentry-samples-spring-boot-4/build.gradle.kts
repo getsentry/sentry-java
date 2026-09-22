@@ -64,6 +64,10 @@ dependencies {
   implementation(libs.springboot4.starter.kafka)
   implementation(projects.sentryKafka)
 
+  // okhttp client instrumentation
+  implementation(projects.sentryOkhttp)
+  implementation(libs.okhttp)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)

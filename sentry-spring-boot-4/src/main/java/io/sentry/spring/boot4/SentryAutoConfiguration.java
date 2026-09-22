@@ -275,6 +275,28 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(
+        name = {
+          "okhttp3.OkHttpClient",
+          "io.sentry.okhttp.SentryOkHttpInterceptor",
+          "io.sentry.okhttp.SentryOkHttpEventListener"
+        })
+    @ConditionalOnProperty(name = "sentry.clients.ok-http-enabled", havingValue = "true")
+    @ConditionalOnMissingClass({
+      "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider",
+      "io.sentry.opentelemetry.agent.AgentMarker"
+    })
+    @Open
+    static class SentryOkHttpConfiguration {
+
+      @Bean
+      public static @NotNull SentryOkHttpClientBeanPostProcessor
+          sentryOkHttpClientBeanPostProcessor() {
+        return new SentryOkHttpClientBeanPostProcessor();
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(ProceedingJoinPoint.class)
     @ConditionalOnProperty(
         value = "sentry.enable-aot-compatibility",
