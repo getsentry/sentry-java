@@ -261,9 +261,10 @@ class SentryClientTest {
   @Test
   fun `when beforeSend throws an exception, event is dropped`() {
     val exception = Exception("test")
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
 
-    exception.stackTrace.toString()
     fixture.sentryOptions.setBeforeSend { _, _ -> throw exception }
+    fixture.sentryOptions.onDiscard = onDiscardMock
     val sut = fixture.getSut()
     val actual = SentryEvent()
     val id = sut.captureEvent(actual)
@@ -272,8 +273,9 @@ class SentryClientTest {
 
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
-      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Error.category, 1)),
+      listOf(DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Error.category, 1)),
     )
+    verify(onDiscardMock).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Error, 1)
   }
 
   @Test
@@ -418,9 +420,10 @@ class SentryClientTest {
   fun `when beforeSendLog throws an exception, log is dropped`() {
     val scope = createScope()
     val exception = Exception("test")
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
 
-    exception.stackTrace.toString()
     fixture.sentryOptions.logs.setBeforeSend { _ -> throw exception }
+    fixture.sentryOptions.onDiscard = onDiscardMock
     val sut = fixture.getSut()
     sut.captureLog(
       SentryLogEvent(SentryId(), SentryNanotimeDate(), "message", SentryLogLevel.WARN),
@@ -430,10 +433,12 @@ class SentryClientTest {
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(
-        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.LogItem.category, 1),
-        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.LogByte.category, 109),
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.LogItem.category, 1),
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.LogByte.category, 109),
       ),
     )
+    verify(onDiscardMock).execute(DiscardReason.CALLBACK_ERROR, DataCategory.LogItem, 1)
+    verify(onDiscardMock).execute(DiscardReason.CALLBACK_ERROR, DataCategory.LogByte, 109)
   }
 
   @Test
@@ -531,9 +536,10 @@ class SentryClientTest {
   fun `when beforeSendMetric throws an exception, metric is dropped`() {
     val scope = createScope()
     val exception = Exception("test")
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
 
-    exception.stackTrace.toString()
-    fixture.sentryOptions.metrics.setBeforeSend { _, hint -> throw exception }
+    fixture.sentryOptions.metrics.setBeforeSend { _, _ -> throw exception }
+    fixture.sentryOptions.onDiscard = onDiscardMock
     val sut = fixture.getSut()
     sut.captureMetric(
       SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "name", "gauge", 123.0),
@@ -544,14 +550,16 @@ class SentryClientTest {
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(
-        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.TraceMetric.category, 1),
         DiscardedEvent(
-          DiscardReason.BEFORE_SEND.reason,
+          DiscardReason.CALLBACK_ERROR.reason,
           DataCategory.TraceMetricByte.category,
           120,
         ),
       ),
     )
+    verify(onDiscardMock).execute(DiscardReason.CALLBACK_ERROR, DataCategory.TraceMetric, 1)
+    verify(onDiscardMock).execute(DiscardReason.CALLBACK_ERROR, DataCategory.TraceMetricByte, 120)
   }
 
   @Test
@@ -1552,13 +1560,14 @@ class SentryClientTest {
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
       listOf(
-        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Transaction.category, 1),
-        DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Span.category, 2),
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Transaction.category, 1),
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Span.category, 2),
       ),
     )
 
-    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Transaction, 1)
-    verify(onDiscardMock).execute(DiscardReason.BEFORE_SEND, DataCategory.Span, 2)
+    verify(onDiscardMock, times(1))
+      .execute(DiscardReason.CALLBACK_ERROR, DataCategory.Transaction, 1)
+    verify(onDiscardMock).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 2)
   }
 
   @Test
@@ -3870,10 +3879,10 @@ class SentryClientTest {
 
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
-      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Replay.category, 1)),
+      listOf(DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Replay.category, 1)),
     )
 
-    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Replay, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Replay, 1)
   }
 
   // endregion
@@ -4050,10 +4059,12 @@ class SentryClientTest {
 
     assertClientReport(
       fixture.sentryOptions.clientReportRecorder,
-      listOf(DiscardedEvent(DiscardReason.BEFORE_SEND.reason, DataCategory.Feedback.category, 1)),
+      listOf(
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Feedback.category, 1)
+      ),
     )
 
-    verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Feedback, 1)
+    verify(onDiscardMock, times(1)).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Feedback, 1)
   }
 
   @Test
