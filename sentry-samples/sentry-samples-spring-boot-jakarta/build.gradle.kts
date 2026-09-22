@@ -73,6 +73,10 @@ dependencies {
   // OpenFeature SDK
   implementation(libs.openfeature)
 
+  // okhttp client instrumentation
+  implementation(projects.sentryOkhttp)
+  implementation(libs.okhttp)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)

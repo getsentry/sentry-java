@@ -77,6 +77,10 @@ dependencies {
   implementation(projects.sentryQuartz)
   implementation(projects.sentryAsyncProfiler)
 
+  // okhttp client instrumentation
+  implementation(projects.sentryOkhttp)
+  implementation(libs.okhttp)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)
