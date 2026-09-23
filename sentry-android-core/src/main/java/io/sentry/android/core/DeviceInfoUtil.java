@@ -230,18 +230,18 @@ public final class DeviceInfoUtil {
     }
 
     if (device.getConnectionType() == null) {
-      // wifi, ethernet or cellular, null if none
-      device.setConnectionType(options.getConnectionStatusProvider().getConnectionType());
-    }
-
-    if (device.getConnectionEffectiveType() == null) {
       final @NotNull IConnectionStatusProvider connectionStatusProvider =
           options.getConnectionStatusProvider();
       if (connectionStatusProvider instanceof AndroidConnectionStatusProvider) {
+        // Reading both at once keeps the type and the technology describing the same network.
+        final AndroidConnectionStatusProvider.Connection connection =
+            ((AndroidConnectionStatusProvider) connectionStatusProvider).getConnection();
+        // wifi, ethernet or cellular, null if none
+        device.setConnectionType(connection.type);
         // 2g, 3g, 4g or 5g, null unless the device is on a known cellular technology
-        device.setConnectionEffectiveType(
-            ((AndroidConnectionStatusProvider) connectionStatusProvider)
-                .getConnectionEffectiveType());
+        device.setConnectionEffectiveType(connection.effectiveType);
+      } else {
+        device.setConnectionType(connectionStatusProvider.getConnectionType());
       }
     }
   }

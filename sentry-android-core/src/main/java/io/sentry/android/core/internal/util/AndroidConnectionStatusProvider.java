@@ -178,18 +178,38 @@ public final class AndroidConnectionStatusProvider
   }
 
   /**
-   * The generation of the cellular network technology currently used for data, for example {@code
-   * 5g}, or {@code null} when the connection is not cellular or the technology is unknown. Maps to
-   * the {@code network.connection.effective_type} attribute.
+   * The connection type and, for cellular connections, the generation of the network technology.
+   *
+   * <p>Both are derived from one cache read, so they always describe the same network instead of
+   * straddling a connectivity change.
    */
-  public @Nullable String getConnectionEffectiveType() {
+  public @NotNull Connection getConnection() {
     if (!isCacheValid()) {
       updateCache(null);
     }
-    if (!"cellular".equals(getConnectionTypeFromCache())) {
-      return null;
+    final @Nullable String connectionType = getConnectionTypeFromCache();
+    if (!"cellular".equals(connectionType)) {
+      return new Connection(connectionType, null);
     }
-    return cellularNetworkTechnologyProvider.getCellularNetworkTechnology();
+    return new Connection(
+        connectionType, cellularNetworkTechnologyProvider.getCellularNetworkTechnology());
+  }
+
+  /** The connection type and the generation of the cellular network technology, if any. */
+  public static final class Connection {
+    /** Maps to the {@code network.connection.type} attribute, {@code null} when unknown. */
+    public final @Nullable String type;
+
+    /**
+     * Maps to the {@code network.connection.effective_type} attribute, for example {@code 5g}.
+     * {@code null} when the connection is not cellular or the technology is unknown.
+     */
+    public final @Nullable String effectiveType;
+
+    Connection(final @Nullable String type, final @Nullable String effectiveType) {
+      this.type = type;
+      this.effectiveType = effectiveType;
+    }
   }
 
   private void ensureNetworkCallbackRegistered() {
