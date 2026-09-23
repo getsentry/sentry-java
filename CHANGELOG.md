@@ -4,6 +4,7 @@
 
 ### Features
 
+- Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
 - Add `LocalSentrySpan` to `sentry-compose` so apps can provide a parent `ISpan` to a composable subtree and have nested `SentryTraced` spans attach to it ([#6112]https://github.com/getsentry/sentry-java/pull/6112)
 - Add `dataCollection`, a fine-grained replacement for `sendDefaultPii`, for controlling data collected automatically by SDK integrations ([#5759](https://github.com/getsentry/sentry-java/pull/5759))
   - `sendDefaultPii` remains supported for backwards compatibility. When `dataCollection` is not configured, the SDK preserves the existing `sendDefaultPii` behavior.
