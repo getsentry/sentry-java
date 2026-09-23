@@ -764,8 +764,9 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * Sets the maximum time difference, in milliseconds, between a tombstone and a native crash event
-   * for the two to be merged into a single event.
+   * Sets the maximum time difference, in milliseconds, between a tombstone from {@link
+   * ApplicationExitInfo} and a native crash event in the outbox for the two to be merged into a
+   * single event. Defaults to 5000 ms.
    *
    * @param tombstoneMergeTimeThresholdMillis the threshold in milliseconds
    */
