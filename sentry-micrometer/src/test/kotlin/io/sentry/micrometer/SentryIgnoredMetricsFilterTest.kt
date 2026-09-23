@@ -63,6 +63,36 @@ class SentryIgnoredMetricsFilterTest {
   }
 
   @Test
+  fun `registration filtering and recording use injected scopes instead of global scopes`() {
+    options.metrics.addIgnoredMetric("global[.]blocked")
+    val injectedOptions =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        metrics.addIgnoredMetric("injected[.]blocked")
+      }
+    val injectedClient = mock<ISentryClient>()
+    whenever(injectedClient.isEnabled).thenReturn(true)
+    val scopes = createTestScopes(injectedOptions)
+    scopes.bindClient(injectedClient)
+
+    val injectedRegistry = SentryMeterRegistry(scopes, 0)
+    try {
+      injectedRegistry.counter("injected.blocked").increment()
+      injectedRegistry.counter("global.blocked").increment(2.0)
+
+      assertThat(injectedRegistry.find("injected.blocked").counter()).isNull()
+      assertThat(injectedRegistry.find("global.blocked").counter()).isNotNull()
+      val event = argumentCaptor<SentryMetricsEvent>()
+      verify(injectedClient).captureMetric(event.capture(), any(), anyOrNull())
+      assertThat(event.firstValue.name).isEqualTo("global.blocked")
+      assertThat(event.firstValue.value).isEqualTo(2.0)
+      verify(client, never()).captureMetric(any(), any(), anyOrNull())
+    } finally {
+      injectedRegistry.close()
+    }
+  }
+
+  @Test
   fun `denied counter never invokes the metrics API even under a log flood`() {
     options.metrics.addIgnoredMetric("LOGBACK.EVENTS")
     val api = mock<IMetricsApi>()

@@ -6,10 +6,17 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.sentry.IScopes
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.metrics.IMetricsApi
 import io.sentry.micrometer.SentryMeterRegistry
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration
 import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigurations
@@ -186,6 +193,25 @@ class SentryMicrometerConfigurationTest {
       }
 
     assertThat(registry!!.isClosed).isTrue()
+  }
+
+  @Test
+  fun `registry uses the injected scopes bean`() {
+    val scopes = mock<IScopes>()
+    val metrics = mock<IMetricsApi>()
+    whenever(scopes.metrics()).thenReturn(metrics)
+    val properties = SentryProperties().apply { micrometer.pollIntervalMillis = 0 }
+    whenever(scopes.options).thenReturn(properties)
+
+    ApplicationContextRunner()
+      .withUserConfiguration(SentryMicrometerConfiguration::class.java)
+      .withBean(IScopes::class.java, { scopes })
+      .withBean(SentryProperties::class.java, { properties })
+      .run {
+        it.getBean(SentryMeterRegistry::class.java).counter("requests").increment(2.0)
+
+        verify(metrics).count(eq("requests"), eq(2.0), anyOrNull(), any())
+      }
   }
 
   @Test

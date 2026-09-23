@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.config.MeterFilterReply;
 import io.sentry.FilterString;
-import io.sentry.Sentry;
+import io.sentry.IScopes;
 import io.sentry.util.MetricsUtils;
 import java.util.List;
 import java.util.Locale;
@@ -13,15 +13,18 @@ import org.jetbrains.annotations.Nullable;
 
 final class SentryIgnoredMetricsFilter implements MeterFilter {
   private final @NotNull SentryMeterRegistry registry;
+  private final @NotNull IScopes scopes;
 
-  SentryIgnoredMetricsFilter(final @NotNull SentryMeterRegistry registry) {
+  SentryIgnoredMetricsFilter(
+      final @NotNull SentryMeterRegistry registry, final @NotNull IScopes scopes) {
     this.registry = registry;
+    this.scopes = scopes;
   }
 
   @Override
   public @NotNull MeterFilterReply accept(final @NotNull Meter.Id id) {
     final @Nullable List<FilterString> ignoredMetrics =
-        Sentry.getCurrentScopes().getOptions().getMetrics().getIgnoredMetrics();
+        scopes.getOptions().getMetrics().getIgnoredMetrics();
     if (ignoredMetrics == null || ignoredMetrics.isEmpty()) {
       return MeterFilterReply.NEUTRAL;
     }

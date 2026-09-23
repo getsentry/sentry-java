@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.FunctionTimer
 import io.sentry.IScopes
+import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.metrics.IMetricsApi
@@ -357,7 +358,8 @@ class SentryFunctionTimerTest {
     val scheduler = mock<ScheduledExecutorService>()
     val task = mock<ScheduledFuture<Unit>>()
     whenever(scheduler.scheduleAtFixedRate(any(), any(), any(), any())).thenReturn(task)
-    return SentryMeterRegistry(60_000, Clock.SYSTEM, scheduler).also(registries::add)
+    return SentryMeterRegistry(ScopesAdapter.getInstance(), 60_000, Clock.SYSTEM, scheduler)
+      .also(registries::add)
   }
 
   private fun installMetricsApi(): IMetricsApi {

@@ -22,12 +22,14 @@ import io.micrometer.core.instrument.internal.DefaultGauge;
 import io.micrometer.core.instrument.internal.DefaultLongTaskTimer;
 import io.micrometer.core.instrument.internal.DefaultMeter;
 import io.micrometer.core.instrument.util.NamedThreadFactory;
-import io.sentry.Sentry;
+import io.sentry.IScopes;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryAttributes;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.metrics.MetricsUnit;
 import io.sentry.util.ExceptionUtils;
+import io.sentry.util.Objects;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -44,6 +46,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
   private static final @NotNull String INTEGRATION_NAME = "Micrometer";
   private static final long DEFAULT_POLL_INTERVAL_MILLIS = 60_000;
 
+  private final @NotNull IScopes scopes;
   private final @Nullable ScheduledExecutorService scheduler;
   private final @Nullable ScheduledFuture<?> pollingTask;
 
@@ -63,14 +66,25 @@ public final class SentryMeterRegistry extends MeterRegistry {
    * <p>A zero interval disables passive meter polling. Negative intervals are not supported.
    */
   public SentryMeterRegistry(final long pollIntervalMillis) {
-    this(pollIntervalMillis, Clock.SYSTEM, createScheduler(pollIntervalMillis));
+    this(ScopesAdapter.getInstance(), pollIntervalMillis);
+  }
+
+  /**
+   * Creates a registry with the given scopes and passive meter polling interval in milliseconds.
+   *
+   * <p>A zero interval disables passive meter polling. Negative intervals are not supported.
+   */
+  public SentryMeterRegistry(final @NotNull IScopes scopes, final long pollIntervalMillis) {
+    this(scopes, pollIntervalMillis, Clock.SYSTEM, createScheduler(pollIntervalMillis));
   }
 
   SentryMeterRegistry(
+      final @NotNull IScopes scopes,
       final long pollIntervalMillis,
       final @NotNull Clock clock,
       final @Nullable ScheduledExecutorService scheduler) {
     super(clock);
+    this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     validatePollInterval(pollIntervalMillis);
     if (pollIntervalMillis > 0 && scheduler == null) {
       throw new IllegalArgumentException(
@@ -79,7 +93,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
     this.scheduler = pollIntervalMillis == 0 ? null : scheduler;
     config()
         .namingConvention(NamingConvention.identity)
-        .meterFilter(new SentryIgnoredMetricsFilter(this))
+        .meterFilter(new SentryIgnoredMetricsFilter(this, scopes))
         .onMeterRemoved(this::onMeterRemoved);
     addIntegrationToSdkVersion(INTEGRATION_NAME);
     if (this.scheduler == null) {
@@ -168,7 +182,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
       final @NotNull Meter.Id id,
       final @NotNull Meter.Type type,
       final @NotNull Iterable<Measurement> measurements) {
-    Sentry.getCurrentScopes()
+    scopes
         .getOptions()
         .getLogger()
         .log(
@@ -192,7 +206,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
     if (isClosed()) {
       return;
     }
-    Sentry.getCurrentScopes()
+    scopes
         .metrics()
         .count(metricInfo.getName(), value, metricInfo.getUnit(), metricInfo.createParameters());
   }
@@ -201,7 +215,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
     if (isClosed()) {
       return;
     }
-    Sentry.getCurrentScopes()
+    scopes
         .metrics()
         .distribution(
             metricInfo.getName(), value, metricInfo.getUnit(), metricInfo.createParameters());
@@ -211,7 +225,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
     if (isClosed()) {
       return;
     }
-    Sentry.getCurrentScopes()
+    scopes
         .metrics()
         .gauge(metricInfo.getName(), value, metricInfo.getUnit(), metricInfo.createParameters());
   }
@@ -234,7 +248,7 @@ public final class SentryMeterRegistry extends MeterRegistry {
   }
 
   void logPollingFailure(final @NotNull Throwable throwable, final @NotNull String meterName) {
-    Sentry.getCurrentScopes()
+    scopes
         .getOptions()
         .getLogger()
         .log(

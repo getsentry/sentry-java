@@ -15,6 +15,6 @@ final class SentryMicrometerConfiguration {
   @ConditionalOnMissingBean(SentryMeterRegistry.class)
   public @NotNull SentryMeterRegistry sentryMeterRegistry(
       final @NotNull IScopes scopes, final @NotNull SentryProperties properties) {
-    return new SentryMeterRegistry(properties.getMicrometer().getPollIntervalMillis());
+    return new SentryMeterRegistry(scopes, properties.getMicrometer().getPollIntervalMillis());
   }
 }
