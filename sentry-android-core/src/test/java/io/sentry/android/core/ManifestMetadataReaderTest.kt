@@ -2017,6 +2017,48 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads ignored metrics`() {
+    val context =
+      fixture.getContext(
+        metaData = bundleOf(ManifestMetadataReader.IGNORED_METRICS to "logback.events,jvm[.].*")
+      )
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+    assertThat(fixture.options.metrics.ignoredMetrics)
+      .containsExactly(FilterString("logback.events"), FilterString("jvm[.].*"))
+  }
+
+  @Test
+  fun `applyMetadata does not ignore any metrics by default`() {
+    ManifestMetadataReader.applyMetadata(
+      fixture.getContext(),
+      fixture.options,
+      fixture.buildInfoProvider,
+    )
+    assertThat(fixture.options.metrics.ignoredMetrics).isNull()
+  }
+
+  @Test
+  fun `absent manifest ignored metrics preserve configured filters`() {
+    fixture.options.metrics.addIgnoredMetric("logback.events")
+    ManifestMetadataReader.applyMetadata(
+      fixture.getContext(),
+      fixture.options,
+      fixture.buildInfoProvider,
+    )
+    assertThat(fixture.options.metrics.ignoredMetrics)
+      .containsExactly(FilterString("logback.events"))
+  }
+
+  @Test
+  fun `empty manifest ignored metrics clear configured filters`() {
+    fixture.options.metrics.addIgnoredMetric("logback.events")
+    val context =
+      fixture.getContext(metaData = bundleOf(ManifestMetadataReader.IGNORED_METRICS to ""))
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+    assertThat(fixture.options.metrics.ignoredMetrics).isEmpty()
+  }
+
+  @Test
   fun `applyMetadata reads metrics enabled and keep default value if not found`() {
     // Arrange
     val context = fixture.getContext()

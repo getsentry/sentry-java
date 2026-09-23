@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.sentry.IScopes
 import io.sentry.Sentry
+import io.sentry.SentryOptions
 import io.sentry.micrometer.SentryMeterRegistry
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -43,6 +44,121 @@ class SentryMicrometerConfigurationTest {
     }
     contextRunner.withPropertyValues("sentry.micrometer.enabled=false").run {
       assertThat(it).doesNotHaveBean(SentryMeterRegistry::class.java)
+    }
+  }
+
+  @Test
+  fun `logging metrics are ignored by default before meter registration`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.micrometer.enabled=true",
+        "sentry.micrometer.poll-interval-millis=0",
+      )
+      .run {
+        val registry = it.getBean(SentryMeterRegistry::class.java)
+        assertThat(
+            it.getBean(IScopes::class.java).options.metrics.ignoredMetrics?.map { it.filterString }
+          )
+          .containsExactly("logback[.]events", "log4j2[.]events")
+        for (name in listOf("logback.events", "log4j2.events")) {
+          val counter = registry.counter(name)
+          counter.increment()
+          assertThat(counter.count()).isZero()
+          assertThat(registry.find(name).counter()).isNull()
+        }
+        for (name in listOf("business.operations", "logbackXevents", "log4j2Xevents")) {
+          val counter = registry.counter(name)
+          counter.increment()
+          assertThat(counter.count()).isEqualTo(1.0)
+        }
+      }
+  }
+
+  @Test
+  fun `empty ignored metrics property disables logging defaults`() {
+    contextRunner
+      .withPropertyValues("sentry.micrometer.enabled=true", "sentry.metrics.ignored-metrics=")
+      .run {
+        assertThat(it.getBean(IScopes::class.java).options.metrics.ignoredMetrics).isEmpty()
+        val registry = it.getBean(SentryMeterRegistry::class.java)
+        for (name in listOf("logback.events", "log4j2.events")) {
+          val counter = registry.counter(name)
+          counter.increment()
+          assertThat(counter.count()).isEqualTo(1.0)
+        }
+      }
+  }
+
+  @Test
+  fun `custom ignored metrics property replaces logging defaults`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.micrometer.enabled=true",
+        "sentry.metrics.ignored-metrics=business[.]operations",
+      )
+      .run {
+        assertThat(
+            it.getBean(IScopes::class.java).options.metrics.ignoredMetrics?.map { it.filterString }
+          )
+          .containsExactly("business[.]operations")
+        val registry = it.getBean(SentryMeterRegistry::class.java)
+        val business = registry.counter("business.operations")
+        business.increment()
+        assertThat(business.count()).isZero()
+        for (name in listOf("logback.events", "log4j2.events")) {
+          val counter = registry.counter(name)
+          counter.increment()
+          assertThat(counter.count()).isEqualTo(1.0)
+        }
+      }
+  }
+
+  @Test
+  fun `options callback can append to logging defaults`() {
+    contextRunner
+      .withBean(
+        Sentry.OptionsConfiguration::class.java,
+        {
+          Sentry.OptionsConfiguration<SentryOptions> { options ->
+            options.metrics.addIgnoredMetric("business[.]operations")
+          }
+        },
+      )
+      .run {
+        assertThat(
+            it.getBean(IScopes::class.java).options.metrics.ignoredMetrics?.map { it.filterString }
+          )
+          .containsExactly("logback[.]events", "log4j2[.]events", "business[.]operations")
+      }
+  }
+
+  @Test
+  fun `options callback can replace or clear logging defaults`() {
+    for (names in listOf(null, emptyList(), listOf("business[.]operations"))) {
+      contextRunner
+        .withPropertyValues("sentry.micrometer.enabled=true")
+        .withBean(
+          Sentry.OptionsConfiguration::class.java,
+          {
+            Sentry.OptionsConfiguration<SentryOptions> { options ->
+              options.metrics.setIgnoredMetrics(names)
+            }
+          },
+        )
+        .run {
+          assertThat(
+              it.getBean(IScopes::class.java).options.metrics.ignoredMetrics?.map {
+                it.filterString
+              }
+            )
+            .isEqualTo(names)
+          val registry = it.getBean(SentryMeterRegistry::class.java)
+          for (name in listOf("logback.events", "log4j2.events")) {
+            val counter = registry.counter(name)
+            counter.increment()
+            assertThat(counter.count()).isEqualTo(1.0)
+          }
+        }
     }
   }
 
@@ -132,6 +248,11 @@ class SentryMicrometerConfigurationTest {
 
         assertThat(sentry.get("requests").counter().count()).isEqualTo(1.0)
         assertThat(simple.get("requests").counter().count()).isEqualTo(1.0)
+        for (name in listOf("logback.events", "log4j2.events")) {
+          primary.counter(name).increment()
+          assertThat(sentry.find(name).counter()).isNull()
+          assertThat(simple.get(name).counter().count()).isEqualTo(1.0)
+        }
       }
   }
 

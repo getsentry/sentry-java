@@ -3307,6 +3307,53 @@ class ScopesTest {
   // region metrics
 
   @Test
+  fun `ignored metric names are dropped for all metric types before timestamps and capture`() {
+    val (sut, client) = getEnabledScopes { it.metrics.setIgnoredMetrics(listOf("ignored[.].*")) }
+    val dateProvider = mock<SentryDateProvider>()
+    sut.options.setDateProvider(dateProvider)
+
+    sut.metrics().count("ignored.counter")
+    sut.metrics().distribution("ignored.distribution", 1.0)
+    sut.metrics().gauge("ignored.gauge", 1.0)
+
+    verify(dateProvider, never()).now()
+    verify(client, never()).captureMetric(any(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `ignored metric names apply to both manual and integration origins`() {
+    val (sut, client) = getEnabledScopes { it.metrics.addIgnoredMetric("logback.events") }
+    sut.metrics().count("logback.events")
+    sut
+      .metrics()
+      .count(
+        "LOGBACK.EVENTS",
+        1.0,
+        null,
+        SentryMetricsParameters.create(null, null).apply { origin = "auto.metrics.micrometer" },
+      )
+    verify(client, never()).captureMetric(any(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `ignored metric rules do not drop other names`() {
+    val (sut, client) = getEnabledScopes { it.metrics.addIgnoredMetric("logback.events") }
+    sut.metrics().count("business.operations")
+    verify(client).captureMetric(any(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `changing ignored metric rules affects subsequent captures`() {
+    val (sut, client) = getEnabledScopes()
+    sut.metrics().count("metric")
+    sut.options.metrics.addIgnoredMetric("metric")
+    sut.metrics().count("metric")
+    sut.options.metrics.setIgnoredMetrics(null)
+    sut.metrics().count("metric")
+    verify(client, times(2)).captureMetric(any(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
   fun `when captureMetric is called on disabled client, do nothing`() {
     val (sut, mockClient) = getEnabledScopes()
     sut.close()

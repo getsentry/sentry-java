@@ -77,7 +77,10 @@ public final class SentryMeterRegistry extends MeterRegistry {
           "A scheduler is required when passive polling is enabled.");
     }
     this.scheduler = pollIntervalMillis == 0 ? null : scheduler;
-    config().namingConvention(NamingConvention.identity).onMeterRemoved(this::onMeterRemoved);
+    config()
+        .namingConvention(NamingConvention.identity)
+        .meterFilter(new SentryIgnoredMetricsFilter(this))
+        .onMeterRemoved(this::onMeterRemoved);
     addIntegrationToSdkVersion(INTEGRATION_NAME);
     if (this.scheduler == null) {
       pollingTask = null;
