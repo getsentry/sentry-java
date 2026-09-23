@@ -435,6 +435,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getNdkHandlerStrategy ()I
 	public fun getScreenshot ()Lio/sentry/android/core/SentryScreenshotOptions;
 	public fun getStartupCrashDurationThresholdMillis ()J
+	public fun getTombstoneMergeTimeThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrProfilingEnabled ()Z
 	public fun isAnrReportInDebug ()Z
@@ -505,6 +506,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setReportHistoricalMemoryLimiterExits (Z)V
 	public fun setReportHistoricalTombstones (Z)V
 	public fun setTombstoneEnabled (Z)V
+	public fun setTombstoneMergeTimeThresholdMillis (J)V
 }
 
 public abstract interface class io/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback {

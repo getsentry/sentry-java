@@ -306,6 +306,13 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean enableTombstone = false;
 
   /**
+   * The maximum time difference, in milliseconds, between a tombstone from {@link
+   * ApplicationExitInfo} and a native crash event in the outbox for the two to be merged into a
+   * single event.
+   */
+  private long tombstoneMergeTimeThresholdMillis = 5000;
+
+  /**
    * Screenshot masking options. Configure which views should be masked when capturing screenshots
    * on error events.
    *
@@ -750,6 +757,20 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setAttachAnrThreadDump(final boolean attachAnrThreadDump) {
     this.attachAnrThreadDump = attachAnrThreadDump;
+  }
+
+  public long getTombstoneMergeTimeThresholdMillis() {
+    return tombstoneMergeTimeThresholdMillis;
+  }
+
+  /**
+   * Sets the maximum time difference, in milliseconds, between a tombstone and a native crash event
+   * for the two to be merged into a single event.
+   *
+   * @param tombstoneMergeTimeThresholdMillis the threshold in milliseconds
+   */
+  public void setTombstoneMergeTimeThresholdMillis(final long tombstoneMergeTimeThresholdMillis) {
+    this.tombstoneMergeTimeThresholdMillis = tombstoneMergeTimeThresholdMillis;
   }
 
   public boolean isAttachRawTombstone() {
