@@ -170,28 +170,26 @@ public final class AndroidConnectionStatusProvider
   private @Nullable String getConnectionTypeFromCache() {
     final NetworkCapabilities capabilities = cachedNetworkCapabilities;
     if (capabilities != null) {
-      return withCellularNetworkTechnology(getConnectionType(capabilities));
+      return getConnectionType(capabilities);
     }
 
     // Fallback to legacy method when NetworkCapabilities not available
-    return withCellularNetworkTechnology(
-        getConnectionType(context, options.getLogger(), buildInfoProvider));
+    return getConnectionType(context, options.getLogger(), buildInfoProvider);
   }
 
   /**
-   * Refines a cellular connection type with the network technology, for example {@code
-   * cellular_5g}. Other connection types and unknown technologies are returned unchanged.
+   * The generation of the cellular network technology currently used for data, for example {@code
+   * 5g}, or {@code null} when the connection is not cellular or the technology is unknown. Maps to
+   * the {@code network.connection.effective_type} attribute.
    */
-  private @Nullable String withCellularNetworkTechnology(final @Nullable String connectionType) {
-    if (!"cellular".equals(connectionType)) {
-      return connectionType;
+  public @Nullable String getConnectionEffectiveType() {
+    if (!isCacheValid()) {
+      updateCache(null);
     }
-    final @Nullable String technology =
-        cellularNetworkTechnologyProvider.getCellularNetworkTechnology();
-    if (technology == null) {
-      return connectionType;
+    if (!"cellular".equals(getConnectionTypeFromCache())) {
+      return null;
     }
-    return connectionType + "_" + technology;
+    return cellularNetworkTechnologyProvider.getCellularNetworkTechnology();
   }
 
   private void ensureNetworkCallbackRegistered() {

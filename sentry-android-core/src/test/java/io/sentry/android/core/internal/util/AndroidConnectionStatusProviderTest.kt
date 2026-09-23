@@ -275,7 +275,7 @@ class AndroidConnectionStatusProviderTest {
   }
 
   @Test
-  fun `When the cellular network technology is known, it refines the connection type`() {
+  fun `When on cellular with a known technology, the effective type is the generation`() {
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(false)
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(false)
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
@@ -286,11 +286,13 @@ class AndroidConnectionStatusProviderTest {
       .thenReturn(PERMISSION_GRANTED)
     whenever(telephonyManager.dataNetworkType).thenReturn(TelephonyManager.NETWORK_TYPE_NR)
 
-    assertEquals("cellular_5g", connectionStatusProvider.connectionType)
+    // The connection type keeps its documented values, the generation is reported separately.
+    assertEquals("cellular", connectionStatusProvider.connectionType)
+    assertEquals("5g", connectionStatusProvider.connectionEffectiveType)
   }
 
   @Test
-  fun `When the cellular network technology is unknown, the connection type stays cellular`() {
+  fun `When the cellular network technology is unknown, the effective type is null`() {
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(false)
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(false)
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
@@ -305,11 +307,12 @@ class AndroidConnectionStatusProviderTest {
       .thenReturn(PERMISSION_DENIED)
 
     assertEquals("cellular", connectionStatusProvider.connectionType)
+    assertNull(connectionStatusProvider.connectionEffectiveType)
     verify(telephonyManager, never()).dataNetworkType
   }
 
   @Test
-  fun `The cellular network technology does not refine other connection types`() {
+  fun `When not on cellular, the effective type is null`() {
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(true)
     val telephonyManager = mock<TelephonyManager>()
     whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
@@ -319,6 +322,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(telephonyManager.dataNetworkType).thenReturn(TelephonyManager.NETWORK_TYPE_NR)
 
     assertEquals("wifi", connectionStatusProvider.connectionType)
+    assertNull(connectionStatusProvider.connectionEffectiveType)
   }
 
   @Test
