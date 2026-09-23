@@ -8,6 +8,7 @@ import io.micrometer.core.instrument.LongTaskTimer
 import io.micrometer.core.instrument.MockClock
 import io.micrometer.core.instrument.TimeGauge
 import io.sentry.IScopes
+import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.metrics.IMetricsApi
@@ -66,7 +67,8 @@ class SentryMeterRegistryPollingTest {
       )
       .thenReturn(task)
 
-    val registry = track(SentryMeterRegistry(2500, Clock.SYSTEM, scheduler))
+    val registry =
+      track(SentryMeterRegistry(ScopesAdapter.getInstance(), 2500, Clock.SYSTEM, scheduler))
     val value = AtomicReference(4.5)
     Gauge.builder("scheduled", value) { it.get() }.strongReference(true).register(registry)
     val scheduledPoll = argumentCaptor<Runnable>()
@@ -107,7 +109,7 @@ class SentryMeterRegistryPollingTest {
   @Test
   fun `zero interval ignores an available scheduler`() {
     val scheduler = mock<ScheduledExecutorService>()
-    track(SentryMeterRegistry(0, Clock.SYSTEM, scheduler))
+    track(SentryMeterRegistry(ScopesAdapter.getInstance(), 0, Clock.SYSTEM, scheduler))
 
     verifyNoInteractions(scheduler)
   }
@@ -406,7 +408,7 @@ class SentryMeterRegistryPollingTest {
     val scheduler = mock<ScheduledExecutorService>()
     val task = mock<ScheduledFuture<Unit>>()
     whenever(scheduler.scheduleAtFixedRate(any(), any(), any(), any())).thenReturn(task)
-    return track(SentryMeterRegistry(60_000, clock, scheduler))
+    return track(SentryMeterRegistry(ScopesAdapter.getInstance(), 60_000, clock, scheduler))
   }
 
   private fun track(registry: SentryMeterRegistry): SentryMeterRegistry {

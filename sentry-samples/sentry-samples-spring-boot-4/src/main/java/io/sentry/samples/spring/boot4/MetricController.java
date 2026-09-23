@@ -1,5 +1,7 @@
 package io.sentry.samples.spring.boot4;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.sentry.Sentry;
 import io.sentry.metrics.MetricsUnit;
 import org.slf4j.Logger;
@@ -14,12 +16,28 @@ import org.springframework.web.bind.annotation.RestController;
 public class MetricController {
   private static final Logger LOGGER = LoggerFactory.getLogger(MetricController.class);
 
+  private final MeterRegistry meterRegistry;
+  private final SimpleMeterRegistry simpleMeterRegistry;
+
+  public MetricController(MeterRegistry meterRegistry, SimpleMeterRegistry simpleMeterRegistry) {
+    this.meterRegistry = meterRegistry;
+    this.simpleMeterRegistry = simpleMeterRegistry;
+  }
+
   @GetMapping("count")
   String count() {
     Sentry.setAttribute("user.type", "admin");
     Sentry.setAttribute("feature.version", 2);
     Sentry.metrics().count("countMetric");
     return "count metric increased";
+  }
+
+  @GetMapping("micrometer")
+  String micrometer() {
+    meterRegistry.counter("micrometer.counter", "source", "spring").increment();
+    double simpleRegistryCount =
+        simpleMeterRegistry.get("micrometer.counter").tag("source", "spring").counter().count();
+    return "micrometer metric increased: " + simpleRegistryCount;
   }
 
   @GetMapping("gauge/{value}")
