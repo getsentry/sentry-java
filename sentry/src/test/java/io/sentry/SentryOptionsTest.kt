@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryOptions.RequestSize
 import io.sentry.logger.ILoggerBatchProcessorFactory
 import io.sentry.util.StringUtils
@@ -20,6 +21,48 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
 class SentryOptionsTest {
+  @Test
+  fun `no metrics are ignored by default`() {
+    assertThat(SentryOptions().metrics.ignoredMetrics).isNull()
+  }
+
+  @Test
+  fun `ignored metrics can be added replaced and cleared`() {
+    val metrics = SentryOptions().metrics
+    metrics.addIgnoredMetric("logback.events")
+    assertThat(metrics.ignoredMetrics).containsExactly(FilterString("logback.events"))
+    val names = mutableListOf("jvm[.].*", "", "metric[")
+    metrics.setIgnoredMetrics(names)
+    names.clear()
+    assertThat(metrics.ignoredMetrics)
+      .containsExactly(FilterString("jvm[.].*"), FilterString("metric["))
+    metrics.setIgnoredMetrics(emptyList())
+    assertThat(metrics.ignoredMetrics).isEmpty()
+    metrics.setIgnoredMetrics(null)
+    assertThat(metrics.ignoredMetrics).isNull()
+  }
+
+  @Test
+  fun `external ignored metrics replace existing filters and are copied`() {
+    val options = SentryOptions()
+    options.metrics.addIgnoredMetric("old")
+    val names = mutableListOf("logback.events", "jvm[.].*")
+    options.merge(ExternalOptions().apply { ignoredMetrics = names })
+    names.clear()
+    assertThat(options.metrics.ignoredMetrics)
+      .containsExactly(FilterString("logback.events"), FilterString("jvm[.].*"))
+  }
+
+  @Test
+  fun `unset external ignored metrics preserve filters but empty list clears them`() {
+    val options = SentryOptions()
+    options.metrics.addIgnoredMetric("logback.events")
+    options.merge(ExternalOptions())
+    assertThat(options.metrics.ignoredMetrics).containsExactly(FilterString("logback.events"))
+    options.merge(ExternalOptions().apply { ignoredMetrics = emptyList() })
+    assertThat(options.metrics.ignoredMetrics).isEmpty()
+  }
+
   @Test
   fun `when options is initialized, logger is not null`() {
     assertNotNull(SentryOptions().logger)

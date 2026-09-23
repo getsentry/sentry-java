@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.config.PropertiesProviderFactory
 import java.lang.RuntimeException
 import kotlin.test.Test
@@ -15,6 +16,28 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
 class ExternalOptionsTest {
+  @Test
+  fun `reads ignored metrics from external properties`() {
+    withPropertiesFile("metrics.ignored-metrics=logback.events,jvm[.].*") {
+      assertThat(it.ignoredMetrics).containsExactly("logback.events", "jvm[.].*")
+    }
+  }
+
+  @Test
+  fun `ignored metrics remain unset when external property is absent`() {
+    withPropertiesFile { assertThat(it.ignoredMetrics).isNull() }
+  }
+
+  @Test
+  fun `empty external ignored metrics clear configured filters`() {
+    withPropertiesFile("metrics.ignored-metrics=") { external ->
+      val options = SentryOptions()
+      options.metrics.addIgnoredMetric("logback.events")
+      options.merge(external)
+      assertThat(options.metrics.ignoredMetrics).isEmpty()
+    }
+  }
+
   @Test
   fun `creates options with proxy using external properties`() {
     withPropertiesFile(

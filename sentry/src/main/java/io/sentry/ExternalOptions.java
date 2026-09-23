@@ -48,6 +48,7 @@ public final class ExternalOptions {
   private @Nullable Boolean enableSpotlight;
   private @Nullable Boolean enableLogs;
   private @Nullable Boolean enableMetrics;
+  private @Nullable List<String> ignoredMetrics;
   private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
@@ -179,6 +180,7 @@ public final class ExternalOptions {
     options.setEnableLogs(propertiesProvider.getBooleanProperty("logs.enabled"));
 
     options.setEnableMetrics(propertiesProvider.getBooleanProperty("metrics.enabled"));
+    options.setIgnoredMetrics(propertiesProvider.getListOrNull("metrics.ignored-metrics"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -621,6 +623,14 @@ public final class ExternalOptions {
 
   public @Nullable Boolean isEnableMetrics() {
     return enableMetrics;
+  }
+
+  public @Nullable List<String> getIgnoredMetrics() {
+    return ignoredMetrics;
+  }
+
+  public void setIgnoredMetrics(final @Nullable List<String> ignoredMetrics) {
+    this.ignoredMetrics = ignoredMetrics;
   }
 
   public @Nullable Double getProfileSessionSampleRate() {

@@ -17,6 +17,7 @@ import io.sentry.SpanId;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.MetricsUtils;
 import io.sentry.util.Platform;
 import io.sentry.util.TracingUtils;
 import java.util.HashMap;
@@ -127,7 +128,7 @@ public final class MetricsApi implements IMetricsApi {
         return;
       }
 
-      if (name == null) {
+      if (name == null || MetricsUtils.isIgnored(options.getMetrics().getIgnoredMetrics(), name)) {
         return;
       }
 

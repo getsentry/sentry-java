@@ -504,6 +504,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
+	public fun getIgnoredMetrics ()Ljava/util/List;
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
@@ -563,6 +564,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
+	public fun setIgnoredMetrics (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setOrgId (Ljava/lang/String;)V
@@ -4019,11 +4021,14 @@ public abstract interface class io/sentry/SentryOptions$Logs$BeforeSendLogCallba
 
 public final class io/sentry/SentryOptions$Metrics {
 	public fun <init> ()V
+	public fun addIgnoredMetric (Ljava/lang/String;)V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;
+	public fun getIgnoredMetrics ()Ljava/util/List;
 	public fun getMetricsBatchProcessorFactory ()Lio/sentry/metrics/IMetricsBatchProcessorFactory;
 	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;)V
 	public fun setEnabled (Z)V
+	public fun setIgnoredMetrics (Ljava/util/List;)V
 	public fun setMetricsBatchProcessorFactory (Lio/sentry/metrics/IMetricsBatchProcessorFactory;)V
 }
 
@@ -7997,6 +8002,10 @@ public final class io/sentry/util/MapObjectWriter : io/sentry/ObjectWriter {
 	public fun value (Ljava/lang/String;)Lio/sentry/util/MapObjectWriter;
 	public synthetic fun value (Z)Lio/sentry/ObjectWriter;
 	public fun value (Z)Lio/sentry/util/MapObjectWriter;
+}
+
+public final class io/sentry/util/MetricsUtils {
+	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
 }
 
 public final class io/sentry/util/Objects {

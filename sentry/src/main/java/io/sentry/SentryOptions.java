@@ -3786,6 +3786,9 @@ public class SentryOptions {
     if (options.isEnableMetrics() != null) {
       getMetrics().setEnabled(options.isEnableMetrics());
     }
+    if (options.getIgnoredMetrics() != null) {
+      getMetrics().setIgnoredMetrics(options.getIgnoredMetrics());
+    }
 
     if (options.getProfileSessionSampleRate() != null) {
       setProfileSessionSampleRate(options.getProfileSessionSampleRate());
@@ -4090,6 +4093,53 @@ public class SentryOptions {
 
     private @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory =
         new DefaultMetricsBatchProcessorFactory();
+
+    private @Nullable List<FilterString> ignoredMetrics;
+
+    /**
+     * Returns the filters applied to final metric names. No metrics are ignored by default.
+     *
+     * @return the configured name filters, or null if unset
+     */
+    public @Nullable List<FilterString> getIgnoredMetrics() {
+      return ignoredMetrics;
+    }
+
+    /**
+     * Sets metric names or regular expressions to ignore before processing metrics. Exact matches
+     * are case-insensitive; regular expressions must match the entire name. This applies to both
+     * manual and automatically captured metrics.
+     *
+     * <p>Micrometer also uses these filters when registering meters. Changing the list does not
+     * remove existing meters or reactivate meters previously denied registration.
+     *
+     * @param ignoredMetrics the names or regex patterns, or null to clear the filters
+     */
+    public void setIgnoredMetrics(final @Nullable List<String> ignoredMetrics) {
+      if (ignoredMetrics == null) {
+        this.ignoredMetrics = null;
+      } else {
+        final List<FilterString> filters = new ArrayList<>();
+        for (final String name : ignoredMetrics) {
+          if (name != null && !name.isEmpty()) {
+            filters.add(new FilterString(name));
+          }
+        }
+        this.ignoredMetrics = filters;
+      }
+    }
+
+    /**
+     * Adds a metric name or regular expression to ignore.
+     *
+     * @param ignoredMetric the name or regex pattern
+     */
+    public void addIgnoredMetric(final @NotNull String ignoredMetric) {
+      if (ignoredMetrics == null) {
+        ignoredMetrics = new ArrayList<>();
+      }
+      ignoredMetrics.add(new FilterString(ignoredMetric));
+    }
 
     /**
      * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.

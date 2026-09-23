@@ -175,6 +175,7 @@ class SentryMeterRegistryTest {
     val metrics = mock<IMetricsApi>()
     val scopes = mock<IScopes>()
     whenever(scopes.metrics()).thenReturn(metrics)
+    whenever(scopes.options).thenReturn(SentryOptions())
     val registry = SentryMeterRegistry(scopes, 0).also(registries::add)
 
     registry.counter("counter").increment(2.0)

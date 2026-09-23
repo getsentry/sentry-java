@@ -48,9 +48,10 @@ Auto-configuration requires Sentry to be initialized and backs off when the appl
 its own `SentryMeterRegistry` bean. Spring Boot adds the registry to its primary composite registry,
 applies compatible `MeterRegistryCustomizer` beans, and closes it with the application context.
 Supported metrics registered automatically by Spring Boot Actuator—including HTTP server, JVM,
-process, and logging metrics—are forwarded through the same registry. Set the polling interval to
-zero to keep immediate forwarding enabled without a polling worker; passive auto-generated meters
-then remain registered but are not sent.
+and process metrics—are forwarded through the same registry. Sentry's Spring Boot auto-configuration
+ignores Logback and Log4j2 logging counters by default; see [Filtering and volume](#filtering-and-volume).
+Set the polling interval to zero to keep immediate forwarding enabled without a polling worker;
+passive auto-generated meters then remain registered but are not sent.
 
 ## Metric mappings
 
@@ -108,9 +109,60 @@ context that changed a backing value.
 
 ## Filtering and volume
 
-Each active timer or distribution-summary recording creates one Sentry metric before the existing
-Sentry metrics batch processor batches it for transport. Apply Micrometer `MeterFilter`s directly
-to the Sentry registry to control volume and cardinality without affecting other registries:
+Each counter increment, timer recording, or distribution-summary recording creates one Sentry
+metric before the metrics batch processor batches it for transport. This includes each log event
+counted by Micrometer's Logback or Log4j2 binders. High logging volume can fill the shared metrics
+queue and cause other metrics to be dropped.
+
+Outside Spring Boot, no metric names are ignored by default. Configure ignored names before
+registering meters:
+
+```java
+options.getMetrics().setIgnoredMetrics(Arrays.asList("logback[.]events", "log4j2[.]events"));
+```
+
+Sentry's Spring Boot 2, 3, and 4 auto-configuration defaults to `logback[.]events` and
+`log4j2[.]events` when the ignored-metrics list is unset. These patterns match the logging counters
+`logback.events` and `log4j2.events` without treating the dots as regex wildcards. This filters only
+metrics, not actual log messages, Sentry Logs, breadcrumbs, or error events.
+
+An explicit list replaces these defaults. Include them to retain logging exclusions alongside
+custom filters:
+
+```properties
+sentry.metrics.ignored-metrics=logback[.]events,log4j2[.]events,my.noisy.metric
+```
+
+To disable all name filters, including the logging defaults:
+
+```properties
+sentry.metrics.ignored-metrics=
+```
+
+Defaults are applied before `Sentry.OptionsConfiguration` callbacks. A callback can append filters
+with `options.getMetrics().addIgnoredMetric(...)`, replace them with `setIgnoredMetrics(...)`, or
+clear them with an empty list or `null`. Enabled external configuration is merged afterward.
+These Boot defaults apply only when Micrometer export is enabled. While enabled, manually recorded
+Sentry metrics with the same names are also filtered.
+
+For `sentry.properties`, use `metrics.ignored-metrics`; the environment variable is
+`SENTRY_METRICS_IGNORED_METRICS`. Android supports the manifest metadata key
+`io.sentry.metrics.ignored-metrics` with a comma-separated string value.
+
+Patterns match final exported Sentry names after Micrometer naming conventions, using
+case-insensitive exact matches or full regular-expression matches. Derived names such as
+`task.active`, `task.duration`, `task.count`, and `task.total_time` are matched individually.
+The option applies to manual metrics too, but does not affect other Micrometer registries.
+All Micrometer metrics share `auto.metrics.micrometer` as their origin, so origin cannot
+select just logging metrics.
+
+Sentry checks ignored names before creating metric events. The registry also denies registration
+when all possible exported names of a meter are ignored, avoiding recording and polling overhead.
+Changing the list later still filters captured metrics, but does not remove existing meters or
+reactivate previously returned no-op meters. Configure filters before registration for the lowest
+overhead. Intentional ignores do not generate client reports.
+
+Apply Micrometer `MeterFilter`s directly to the Sentry registry for Micrometer-only filtering:
 
 ```java
 sentryRegistry.config().meterFilter(MeterFilter.denyNameStartsWith("jvm.buffer"));
