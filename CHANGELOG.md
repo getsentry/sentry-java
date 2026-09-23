@@ -5,7 +5,7 @@
 ### Features
 
 - Add a Micrometer metrics integration with opt-in Spring Boot support ([#6116](https://github.com/getsentry/sentry-java/pull/6116))
-- Add `options.getMetrics().setIgnoredMetrics(...)` to filter metric names before processing, including early Micrometer filtering
+- Add `options.getMetrics().setIgnoredMetrics(...)` to filter metric names before processing, including early Micrometer filtering ([#6155](https://github.com/getsentry/sentry-java/pull/6155))
   - Configure names or full regular-expression patterns through the Java API, Android manifest, `sentry.properties`, or Spring Boot's `application.properties`. Use `[.]` to match a literal dot in a pattern.
   - **Spring Boot 2, 3, and 4 default:** ignore `logback.events` and `log4j2.events` metrics to avoid logging-driven metric queue overload. An explicit list replaces these defaults; an empty list disables filtering. Outside Spring Boot, no metric names are ignored by default. Actual log messages are unaffected.
   - **AndroidManifest.xml:** add `io.sentry.metrics.ignored-metrics` under `<application>`:
