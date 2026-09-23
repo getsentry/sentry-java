@@ -175,7 +175,7 @@ public class SentryAutoConfiguration {
         final @NotNull SentryProperties options,
         final @NotNull ObjectProvider<ISpanFactory> spanFactory,
         final @NotNull ObjectProvider<GitProperties> gitProperties) {
-      if (options.getMetrics().getIgnoredMetrics() == null) {
+      if (options.getMicrometer().isEnabled() && options.getMetrics().getIgnoredMetrics() == null) {
         options
             .getMetrics()
             .setIgnoredMetrics(Arrays.asList("logback[.]events", "log4j2[.]events"));

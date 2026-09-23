@@ -142,8 +142,8 @@ sentry.metrics.ignored-metrics=
 Defaults are applied before `Sentry.OptionsConfiguration` callbacks. A callback can append filters
 with `options.getMetrics().addIgnoredMetric(...)`, replace them with `setIgnoredMetrics(...)`, or
 clear them with an empty list or `null`. Enabled external configuration is merged afterward.
-These Boot defaults apply even when Micrometer export is disabled, so manually recorded Sentry
-metrics with the same names are also filtered.
+These Boot defaults apply only when Micrometer export is enabled. While enabled, manually recorded
+Sentry metrics with the same names are also filtered.
 
 For `sentry.properties`, use `metrics.ignored-metrics`; the environment variable is
 `SENTRY_METRICS_IGNORED_METRICS`. Android supports the manifest metadata key

@@ -48,9 +48,11 @@ class SentryMicrometerConfigurationTest {
       assertThat(it.getBean(SentryProperties::class.java).micrometer.isEnabled).isFalse()
       assertThat(it.getBean(SentryProperties::class.java).micrometer.pollIntervalMillis)
         .isEqualTo(60_000)
+      assertThat(it.getBean(SentryProperties::class.java).metrics.ignoredMetrics).isNull()
     }
     contextRunner.withPropertyValues("sentry.micrometer.enabled=false").run {
       assertThat(it).doesNotHaveBean(SentryMeterRegistry::class.java)
+      assertThat(it.getBean(SentryProperties::class.java).metrics.ignoredMetrics).isNull()
     }
   }
 
@@ -123,6 +125,7 @@ class SentryMicrometerConfigurationTest {
   @Test
   fun `options callback can append to logging defaults`() {
     contextRunner
+      .withPropertyValues("sentry.micrometer.enabled=true")
       .withBean(
         Sentry.OptionsConfiguration::class.java,
         {
