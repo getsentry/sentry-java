@@ -10,9 +10,11 @@ import android.telephony.TelephonyManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
+import io.sentry.util.AutoClosableReentrantLock;
 import java.util.concurrent.Executor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +42,7 @@ public final class CellularNetworkTechnologyProvider {
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull Executor executor;
+  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   /**
    * Set from {@link TelephonyCallback.DisplayInfoListener} on API 31 and above. Declared as {@link
@@ -81,44 +84,54 @@ public final class CellularNetworkTechnologyProvider {
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.S) {
       return;
     }
-    if (displayInfoCallback != null) {
-      return;
-    }
-    final @Nullable TelephonyManager telephonyManager = getTelephonyManager();
-    if (telephonyManager == null) {
-      return;
-    }
-    try {
-      final @NotNull DisplayInfoCallback callback = new DisplayInfoCallback(this);
-      telephonyManager.registerTelephonyCallback(executor, callback);
-      displayInfoCallback = callback;
-      logger.log(SentryLevel.DEBUG, "Started listening for cellular network technology changes.");
-    } catch (SecurityException | IllegalStateException | UnsupportedOperationException e) {
-      // Devices without telephony support and processes that are not allowed to listen throw
-      // here, and the technology is optional data.
-      logger.log(SentryLevel.INFO, "Could not listen for cellular network technology changes.", e);
+    // Checking and storing the callback has to be atomic, otherwise concurrent callers can each
+    // register a listener while only the last one is kept and can ever be unregistered.
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      if (displayInfoCallback != null) {
+        return;
+      }
+      final @Nullable TelephonyManager telephonyManager = getTelephonyManager();
+      if (telephonyManager == null) {
+        return;
+      }
+      try {
+        final @NotNull DisplayInfoCallback callback = new DisplayInfoCallback(this);
+        telephonyManager.registerTelephonyCallback(executor, callback);
+        displayInfoCallback = callback;
+        logger.log(SentryLevel.DEBUG, "Started listening for cellular network technology changes.");
+      } catch (SecurityException | IllegalStateException | UnsupportedOperationException e) {
+        // Devices without telephony support and processes that are not allowed to listen throw
+        // here, and the technology is optional data.
+        logger.log(
+            SentryLevel.INFO, "Could not listen for cellular network technology changes.", e);
+      }
     }
   }
 
   /** Stops listening for display info changes and forgets the last reported technology. */
   @SuppressLint("NewApi")
   public void unregister() {
-    final @Nullable Object callback = displayInfoCallback;
-    displayInfoCallback = null;
-    displayInfoTechnology = null;
-    if (callback == null) {
-      return;
-    }
-    final @Nullable TelephonyManager telephonyManager = getTelephonyManager();
-    if (telephonyManager == null) {
-      return;
-    }
-    try {
-      telephonyManager.unregisterTelephonyCallback((TelephonyCallback) callback);
-      logger.log(SentryLevel.DEBUG, "Stopped listening for cellular network technology changes.");
-    } catch (SecurityException | IllegalStateException | UnsupportedOperationException e) {
-      logger.log(
-          SentryLevel.INFO, "Could not stop listening for cellular network technology changes.", e);
+    final @Nullable Object callback;
+    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      callback = displayInfoCallback;
+      displayInfoCallback = null;
+      displayInfoTechnology = null;
+      if (callback == null) {
+        return;
+      }
+      final @Nullable TelephonyManager telephonyManager = getTelephonyManager();
+      if (telephonyManager == null) {
+        return;
+      }
+      try {
+        telephonyManager.unregisterTelephonyCallback((TelephonyCallback) callback);
+        logger.log(SentryLevel.DEBUG, "Stopped listening for cellular network technology changes.");
+      } catch (SecurityException | IllegalStateException | UnsupportedOperationException e) {
+        logger.log(
+            SentryLevel.INFO,
+            "Could not stop listening for cellular network technology changes.",
+            e);
+      }
     }
   }
 

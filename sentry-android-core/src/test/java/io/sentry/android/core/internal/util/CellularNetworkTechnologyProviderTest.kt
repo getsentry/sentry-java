@@ -11,7 +11,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.android.core.BuildInfoProvider
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.junit.runner.RunWith
@@ -204,6 +206,27 @@ class CellularNetworkTechnologyProviderTest {
 
     provider.register()
     provider.register()
+
+    verify(fixture.telephonyManager).registerTelephonyCallback(eq(fixture.executor), any())
+  }
+
+  @Test
+  fun `concurrent registration only registers one callback`() {
+    val provider = fixture.getSut(sdkVersion = Build.VERSION_CODES.S)
+    val threadCount = 8
+    val start = CountDownLatch(1)
+    val done = CountDownLatch(threadCount)
+    repeat(threadCount) {
+      Thread {
+          start.await()
+          provider.register()
+          done.countDown()
+        }
+        .start()
+    }
+
+    start.countDown()
+    assertThat(done.await(10, TimeUnit.SECONDS)).isTrue()
 
     verify(fixture.telephonyManager).registerTelephonyCallback(eq(fixture.executor), any())
   }
