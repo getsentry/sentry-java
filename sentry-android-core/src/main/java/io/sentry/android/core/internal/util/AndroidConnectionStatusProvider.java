@@ -45,6 +45,7 @@ public final class AndroidConnectionStatusProvider
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull MonotonicTicker ticker;
   private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers;
+  private final @NotNull CellularNetworkTechnologyProvider cellularNetworkTechnologyProvider;
   private final @Nullable Handler handler;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private volatile @Nullable NetworkCallback networkCallback;
@@ -94,6 +95,12 @@ public final class AndroidConnectionStatusProvider
     this.cacheFreshUntil = Deadline.passed(ticker);
     this.handler = handler;
     this.connectionStatusObservers = new ArrayList<>();
+    this.cellularNetworkTechnologyProvider =
+        new CellularNetworkTechnologyProvider(
+            this.context,
+            options.getLogger(),
+            buildInfoProvider,
+            runnable -> options.getExecutorService().submit(runnable));
 
     capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
@@ -163,11 +170,28 @@ public final class AndroidConnectionStatusProvider
   private @Nullable String getConnectionTypeFromCache() {
     final NetworkCapabilities capabilities = cachedNetworkCapabilities;
     if (capabilities != null) {
-      return getConnectionType(capabilities);
+      return withCellularNetworkTechnology(getConnectionType(capabilities));
     }
 
     // Fallback to legacy method when NetworkCapabilities not available
-    return getConnectionType(context, options.getLogger(), buildInfoProvider);
+    return withCellularNetworkTechnology(
+        getConnectionType(context, options.getLogger(), buildInfoProvider));
+  }
+
+  /**
+   * Refines a cellular connection type with the network technology, for example {@code
+   * cellular_5g}. Other connection types and unknown technologies are returned unchanged.
+   */
+  private @Nullable String withCellularNetworkTechnology(final @Nullable String connectionType) {
+    if (!"cellular".equals(connectionType)) {
+      return connectionType;
+    }
+    final @Nullable String technology =
+        cellularNetworkTechnologyProvider.getCellularNetworkTechnology();
+    if (technology == null) {
+      return connectionType;
+    }
+    return connectionType + "_" + technology;
   }
 
   private void ensureNetworkCallbackRegistered() {
@@ -178,6 +202,8 @@ public final class AndroidConnectionStatusProvider
     if (networkCallback != null) {
       return; // Already registered
     }
+
+    cellularNetworkTechnologyProvider.register();
 
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (networkCallback != null) {
@@ -459,6 +485,7 @@ public final class AndroidConnectionStatusProvider
       if (callbackRef != null) {
         unregisterNetworkCallback(context, options.getLogger(), callbackRef);
       }
+      cellularNetworkTechnologyProvider.unregister();
       // Clear cached state
       cachedNetworkCapabilities = null;
       currentNetwork = null;

@@ -17,6 +17,7 @@ import android.net.NetworkInfo
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.telephony.TelephonyManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
@@ -47,6 +48,7 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.mockingDetails
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -250,6 +252,53 @@ class AndroidConnectionStatusProviderTest {
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
 
     assertEquals("cellular", connectionStatusProvider.connectionType)
+  }
+
+  @Test
+  fun `When the cellular network technology is known, it refines the connection type`() {
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(false)
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(false)
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
+    val telephonyManager = mock<TelephonyManager>()
+    whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
+      .thenReturn(telephonyManager)
+    whenever(contextMock.checkPermission(eq(Manifest.permission.READ_PHONE_STATE), any(), any()))
+      .thenReturn(PERMISSION_GRANTED)
+    whenever(telephonyManager.dataNetworkType).thenReturn(TelephonyManager.NETWORK_TYPE_NR)
+
+    assertEquals("cellular_5g", connectionStatusProvider.connectionType)
+  }
+
+  @Test
+  fun `When the cellular network technology is unknown, the connection type stays cellular`() {
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(false)
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(false)
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
+    val telephonyManager = mock<TelephonyManager>()
+    whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
+      .thenReturn(telephonyManager)
+    whenever(contextMock.checkPermission(eq(Manifest.permission.READ_PHONE_STATE), any(), any()))
+      .thenReturn(PERMISSION_DENIED)
+    whenever(
+        contextMock.checkPermission(eq(Manifest.permission.READ_BASIC_PHONE_STATE), any(), any())
+      )
+      .thenReturn(PERMISSION_DENIED)
+
+    assertEquals("cellular", connectionStatusProvider.connectionType)
+    verify(telephonyManager, never()).dataNetworkType
+  }
+
+  @Test
+  fun `The cellular network technology does not refine other connection types`() {
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(true)
+    val telephonyManager = mock<TelephonyManager>()
+    whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
+      .thenReturn(telephonyManager)
+    whenever(contextMock.checkPermission(eq(Manifest.permission.READ_PHONE_STATE), any(), any()))
+      .thenReturn(PERMISSION_GRANTED)
+    whenever(telephonyManager.dataNetworkType).thenReturn(TelephonyManager.NETWORK_TYPE_NR)
+
+    assertEquals("wifi", connectionStatusProvider.connectionType)
   }
 
   @Test
