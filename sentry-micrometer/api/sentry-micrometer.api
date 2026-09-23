@@ -6,6 +6,7 @@ public final class io/sentry/micrometer/BuildConfig {
 public final class io/sentry/micrometer/SentryMeterRegistry : io/micrometer/core/instrument/MeterRegistry {
 	public fun <init> ()V
 	public fun <init> (J)V
+	public fun <init> (Lio/sentry/IScopes;J)V
 	public fun close ()V
 }
 

@@ -3,6 +3,7 @@ package io.sentry.micrometer
 import com.google.common.truth.Truth.assertThat
 import io.micrometer.core.instrument.Counter
 import io.micrometer.core.instrument.DistributionSummary
+import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.Measurement
 import io.micrometer.core.instrument.Meter
 import io.micrometer.core.instrument.Statistic
@@ -12,10 +13,12 @@ import io.micrometer.core.instrument.config.MeterFilter
 import io.micrometer.core.instrument.config.NamingConvention
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.sentry.Hint
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISentryClient
 import io.sentry.Sentry
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.SentryMetricsEvent
 import io.sentry.SentryOptions
 import io.sentry.metrics.IMetricsApi
@@ -164,6 +167,58 @@ class SentryMeterRegistryTest {
 
     verify(first).count(eq("counter"), eq(1.0), anyOrNull(), any())
     verify(second).count(eq("counter"), eq(2.0), anyOrNull(), any())
+  }
+
+  @Test
+  fun `injected scopes receive active and passive metrics instead of global scopes`() {
+    val globalMetrics = installMetricsApi()
+    val metrics = mock<IMetricsApi>()
+    val scopes = mock<IScopes>()
+    whenever(scopes.metrics()).thenReturn(metrics)
+    val registry = SentryMeterRegistry(scopes, 0).also(registries::add)
+
+    registry.counter("counter").increment(2.0)
+    registry.timer("timer").record(3, TimeUnit.MILLISECONDS)
+    registry.summary("summary").record(4.0)
+    Gauge.builder("gauge", Supplier { 5.0 }).register(registry)
+    registry.pollMeters()
+
+    verify(metrics).count(eq("counter"), eq(2.0), anyOrNull(), any())
+    verify(metrics).distribution(eq("timer"), eq(3.0), eq(MetricsUnit.Duration.MILLISECOND), any())
+    verify(metrics).distribution(eq("summary"), eq(4.0), anyOrNull(), any())
+    verify(metrics).gauge(eq("gauge"), eq(5.0), anyOrNull(), any())
+    verifyNoInteractions(globalMetrics)
+  }
+
+  @Test
+  fun `diagnostic logging uses injected scopes`() {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions().apply {
+        isDebug = true
+        setLogger(logger)
+      }
+    val scopes = mock<IScopes>()
+    whenever(scopes.options).thenReturn(options)
+    val registry = SentryMeterRegistry(scopes, 0).also(registries::add)
+    val failure = IllegalStateException("poll failed")
+
+    Meter.builder(
+        "custom",
+        Meter.Type.OTHER,
+        listOf(Measurement(Supplier { 7.0 }, Statistic.VALUE)),
+      )
+      .register(registry)
+    registry.logPollingFailure(failure, "gauge")
+
+    verify(logger)
+      .log(
+        SentryLevel.DEBUG,
+        "Micrometer meter type %s is not supported for Sentry export.",
+        Meter.Type.OTHER,
+      )
+    verify(logger)
+      .log(SentryLevel.DEBUG, failure, "Failed to publish Micrometer meter %s to Sentry.", "gauge")
   }
 
   @Test
