@@ -288,7 +288,7 @@ class AndroidConnectionStatusProviderTest {
 
     // The connection type keeps its documented values, the generation is reported separately.
     assertEquals("cellular", connectionStatusProvider.connectionType)
-    assertEquals("5g", connectionStatusProvider.connectionEffectiveType)
+    assertEquals("5g", connectionStatusProvider.connection.effectiveType)
   }
 
   @Test
@@ -307,7 +307,7 @@ class AndroidConnectionStatusProviderTest {
       .thenReturn(PERMISSION_DENIED)
 
     assertEquals("cellular", connectionStatusProvider.connectionType)
-    assertNull(connectionStatusProvider.connectionEffectiveType)
+    assertNull(connectionStatusProvider.connection.effectiveType)
     verify(telephonyManager, never()).dataNetworkType
   }
 
@@ -322,7 +322,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(telephonyManager.dataNetworkType).thenReturn(TelephonyManager.NETWORK_TYPE_NR)
 
     assertEquals("wifi", connectionStatusProvider.connectionType)
-    assertNull(connectionStatusProvider.connectionEffectiveType)
+    assertNull(connectionStatusProvider.connection.effectiveType)
   }
 
   @Test
