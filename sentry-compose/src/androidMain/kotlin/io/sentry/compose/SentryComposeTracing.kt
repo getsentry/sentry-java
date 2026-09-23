@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import io.sentry.ISpan
 import io.sentry.Instrumenter
-import io.sentry.NoOpSpan
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SpanOptions
@@ -71,7 +70,7 @@ public fun SentryTraced(
 ) {
   val baseModifier = if (enableUserInteractionTracing) modifier.sentryTag(tag) else modifier
   val scopes = Sentry.getCurrentScopes()
-  val ownerSpan = scopes.transaction ?: NoOpSpan.getInstance()
+  val ownerSpan = LocalSentrySpan.current.orBootstrapCurrentTransaction()
 
   val alreadyComposed = remember(ownerSpan) { MutableRef(false) }
   val alreadyRendered = remember(ownerSpan) { MutableRef(false) }

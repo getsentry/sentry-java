@@ -681,7 +681,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     if (user.getId() == null) {
       user.setId(getDeviceId());
     }
-    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
+    if (user.getIpAddress() == null && options.getDataCollectionResolver().isUserInfo()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }

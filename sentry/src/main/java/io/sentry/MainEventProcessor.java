@@ -203,7 +203,7 @@ public final class MainEventProcessor implements EventProcessor {
       user = new User();
       event.setUser(user);
     }
-    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
+    if (user.getIpAddress() == null && options.getDataCollectionResolver().isUserInfo()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
