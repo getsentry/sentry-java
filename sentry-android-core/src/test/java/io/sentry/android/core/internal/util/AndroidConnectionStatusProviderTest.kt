@@ -255,6 +255,26 @@ class AndroidConnectionStatusProviderTest {
   }
 
   @Test
+  @Config(sdk = [Build.VERSION_CODES.S])
+  fun `When the network callback cannot be registered, the telephony listener is not started`() {
+    // Without ACCESS_NETWORK_STATE the network callback registration fails, and onBackground skips
+    // unregistering while there is no network callback, so the listener must not be started here.
+    val telephonyManager = mock<TelephonyManager>()
+    whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
+      .thenReturn(telephonyManager)
+    whenever(
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+      )
+      .thenReturn(PERMISSION_DENIED)
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
+
+    val provider = AndroidConnectionStatusProvider(contextMock, options, buildInfo, ticker)
+
+    verify(telephonyManager, never()).registerTelephonyCallback(any(), any())
+    provider.close()
+  }
+
+  @Test
   fun `When the cellular network technology is known, it refines the connection type`() {
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(false)
     whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(false)

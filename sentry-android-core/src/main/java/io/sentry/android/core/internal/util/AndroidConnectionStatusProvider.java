@@ -203,8 +203,6 @@ public final class AndroidConnectionStatusProvider
       return; // Already registered
     }
 
-    cellularNetworkTechnologyProvider.register();
-
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (networkCallback != null) {
         return;
@@ -370,6 +368,9 @@ public final class AndroidConnectionStatusProvider
       if (registerNetworkCallback(
           context, options.getLogger(), buildInfoProvider, handler, callback)) {
         networkCallback = callback;
+        // Only start listening once the network callback is registered, because unregistering is
+        // skipped while there is no network callback, which would leave the listener running.
+        cellularNetworkTechnologyProvider.register();
         options.getLogger().log(SentryLevel.DEBUG, "Network callback registered successfully");
       } else {
         options.getLogger().log(SentryLevel.WARNING, "Failed to register network callback");
