@@ -120,7 +120,7 @@
 
   See the [Data Collection documentation](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection) for all configuration keys, supported integrations, and migration guidance.
 
-- Report the cellular network technology in `device.connection_type`, for example `cellular_4g` or `cellular_5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
+- Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
 
 ### Fixes
 
