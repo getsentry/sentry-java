@@ -7,8 +7,8 @@
 - Add `LocalSentrySpan` to `sentry-compose` so apps can provide a parent `ISpan` to a composable subtree and have nested `SentryTraced` spans attach to it ([#6112]https://github.com/getsentry/sentry-java/pull/6112)
 - Add `dataCollection`, a fine-grained replacement for `sendDefaultPii`, for controlling data collected automatically by SDK integrations ([#5759](https://github.com/getsentry/sentry-java/pull/5759))
 
-  > [!WARNING]
-  > `sendDefaultPii` will be removed in the next major SDK version. Migrate to `dataCollection` before upgrading.
+> [!WARNING]
+> `sendDefaultPii` will be removed in the next major SDK version. Migrate to `dataCollection` before upgrading.
 
   - Until then, when `dataCollection` is not configured, the SDK preserves the existing `sendDefaultPii` behavior.
   - Configuring any `dataCollection` option makes it the source of truth. `sendDefaultPii` is then ignored, and omitted `dataCollection` options use the defaults below.
