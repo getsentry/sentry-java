@@ -47,6 +47,18 @@ android {
 
 kotlin { explicitApi() }
 
+dependencies {
+  implementation(projects.sentry)
+
+  compileOnly(libs.androidx.compose.runtime)
+
+  testImplementation(libs.androidx.compose.runtime)
+  testImplementation(libs.google.truth)
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.kotlin)
+}
+
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.
   jvmTarget = JavaVersion.VERSION_1_8.toString()
