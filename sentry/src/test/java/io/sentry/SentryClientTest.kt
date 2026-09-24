@@ -14,6 +14,7 @@ import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
+import io.sentry.internal.eventprocessor.SentryEventProcessor
 import io.sentry.logger.ILoggerBatchProcessor
 import io.sentry.logger.ILoggerBatchProcessorFactory
 import io.sentry.metrics.IMetricsBatchProcessor
@@ -3696,6 +3697,48 @@ class SentryClientTest {
       listOf(DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Replay.category, 1)),
     )
     verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Replay, 1)
+  }
+
+  @Test
+  fun `throwing SDK replay processor keeps replay and runs remaining callbacks`() {
+    val processor = mock<SentryEventProcessor>()
+    val nextProcessor = mock<EventProcessor>()
+    val beforeSend = mock<SentryOptions.BeforeSendReplayCallback>()
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    val logger = mock<ILogger>()
+    val failure = IllegalStateException("SDK processor failed")
+    val replay = createReplayEvent()
+    whenever(processor.process(any<SentryReplayEvent>(), any())).thenThrow(failure)
+    whenever(nextProcessor.process(any<SentryReplayEvent>(), any())).thenAnswer { it.arguments[0] }
+    whenever(beforeSend.execute(any(), any())).thenAnswer { it.arguments[0] }
+    fixture.sentryOptions.addEventProcessor(processor)
+    fixture.sentryOptions.addEventProcessor(nextProcessor)
+    fixture.sentryOptions.beforeSendReplay = beforeSend
+    fixture.sentryOptions.onDiscard = onDiscard
+    fixture.sentryOptions.setLogger(logger)
+
+    val id = fixture.getSut().captureReplayEvent(replay, createScope(), null)
+
+    assertThat(id).isEqualTo(replay.eventId)
+    verify(nextProcessor).process(eq(replay), any())
+    verify(beforeSend).execute(eq(replay), any())
+    verify(fixture.transport)
+      .send(
+        check {
+          assertThat(it.header.eventId).isEqualTo(id)
+          assertThat(it.items.first().header.type).isEqualTo(SentryItemType.ReplayVideo)
+        },
+        anyOrNull(),
+      )
+    verify(logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq(failure),
+        eq("An exception occurred while processing replay event by processor: %s"),
+        eq(processor.javaClass.name),
+      )
+    assertClientReport(fixture.sentryOptions.clientReportRecorder, emptyList())
+    verifyNoInteractions(onDiscard)
   }
 
   @Test

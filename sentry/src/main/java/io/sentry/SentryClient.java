@@ -8,6 +8,7 @@ import io.sentry.hints.Backfillable;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.logger.ILoggerBatchProcessor;
 import io.sentry.logger.NoOpLoggerBatchProcessor;
 import io.sentry.metrics.IMetricsBatchProcessor;
@@ -506,10 +507,12 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing event by processor: %s",
                 processor.getClass().getName());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Error);
-        return null;
+        if (!(processor instanceof SentryEventProcessor)) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Error);
+          return null;
+        }
       }
 
       if (event == null) {
@@ -561,8 +564,10 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing log event by processor: %s",
                 processor.getClass().getName());
-        recordLostLogEvent(DiscardReason.CALLBACK_ERROR, eventBeforeProcessor);
-        return null;
+        if (!(processor instanceof SentryEventProcessor)) {
+          recordLostLogEvent(DiscardReason.CALLBACK_ERROR, eventBeforeProcessor);
+          return null;
+        }
       }
 
       if (event == null) {
@@ -596,8 +601,10 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing metrics event by processor: %s",
                 processor.getClass().getName());
-        recordLostMetricsEvent(DiscardReason.CALLBACK_ERROR, eventBeforeProcessor);
-        return null;
+        if (!(processor instanceof SentryEventProcessor)) {
+          recordLostMetricsEvent(DiscardReason.CALLBACK_ERROR, eventBeforeProcessor);
+          return null;
+        }
       }
 
       if (event == null) {
@@ -630,14 +637,16 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing transaction by processor: %s",
                 processor.getClass().getName());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Transaction);
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(
-                DiscardReason.CALLBACK_ERROR, DataCategory.Span, spanCountBeforeProcessor + 1);
-        return null;
+        if (!(processor instanceof SentryEventProcessor)) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Transaction);
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(
+                  DiscardReason.CALLBACK_ERROR, DataCategory.Span, spanCountBeforeProcessor + 1);
+          return null;
+        }
       }
       final int spanCountAfterProcessor = transaction == null ? 0 : transaction.getSpans().size();
 
@@ -691,10 +700,12 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing replay event by processor: %s",
                 processor.getClass().getName());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Replay);
-        return null;
+        if (!(processor instanceof SentryEventProcessor)) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Replay);
+          return null;
+        }
       }
 
       if (replayEvent == null) {
@@ -729,10 +740,12 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing feedback event by processor: %s",
                 processor.getClass().getName());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Feedback);
-        return null;
+        if (!(processor instanceof SentryEventProcessor)) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Feedback);
+          return null;
+        }
       }
 
       if (feedbackEvent == null) {
