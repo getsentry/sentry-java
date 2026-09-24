@@ -1,9 +1,9 @@
 package io.sentry.spring.jakarta;
 
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.util.CollectionUtils;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
@@ -14,7 +14,7 @@ import org.slf4j.MDC;
  * Attaches context tags defined in {@link SentryOptions#getContextTags()} from {@link MDC} to
  * {@link SentryEvent#getTags()}.
  */
-public final class ContextTagsEventProcessor implements EventProcessor {
+public final class ContextTagsEventProcessor implements SentryEventProcessor {
   private final SentryOptions options;
 
   public ContextTagsEventProcessor(final @NotNull SentryOptions options) {

@@ -6,7 +6,6 @@ import static io.sentry.TypeCheckHint.SPRING_REQUEST_FILTER_RESPONSE;
 
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Breadcrumb;
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -15,6 +14,7 @@ import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryOptions.RequestSize;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.spring7.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.spring7.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
@@ -140,7 +140,7 @@ public class SentrySpringFilter extends OncePerRequestFilter {
     }
   }
 
-  static final class RequestBodyExtractingEventProcessor implements EventProcessor {
+  static final class RequestBodyExtractingEventProcessor implements SentryEventProcessor {
     private final @NotNull RequestPayloadExtractor requestPayloadExtractor =
         new RequestPayloadExtractor();
     private final @NotNull HttpServletRequest request;

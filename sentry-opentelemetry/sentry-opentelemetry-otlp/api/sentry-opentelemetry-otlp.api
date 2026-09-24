@@ -1,4 +1,4 @@
-public final class io/sentry/opentelemetry/otlp/OpenTelemetryOtlpEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/opentelemetry/otlp/OpenTelemetryOtlpEventProcessor : io/sentry/internal/eventprocessor/SentryEventProcessor {
 	public fun <init> ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
