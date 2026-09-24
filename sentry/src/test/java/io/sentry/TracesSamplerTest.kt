@@ -191,7 +191,7 @@ class TracesSamplerTest {
 
   @Test
   fun `when profilesSampler returns null and parentSampled is set sampler uses it as a sampling decision`() {
-    val sampler = fixture.getSut(tracesSampleRate = 1.0, profilesSamplerCallback = null)
+    val sampler = fixture.getSut(tracesSampleRate = 1.0, profilesSamplerCallback = { null })
     val transactionContextParentSampled = TransactionContext("name", "op")
     transactionContextParentSampled.setParentSampled(true, true)
     val samplingDecision =
@@ -222,7 +222,7 @@ class TracesSamplerTest {
       fixture.getSut(
         tracesSampleRate = 1.0,
         profilesSampleRate = 0.2,
-        profilesSamplerCallback = null,
+        profilesSamplerCallback = { null },
       )
     val samplingDecision =
       sampler.sample(
@@ -355,18 +355,93 @@ class TracesSamplerTest {
   }
 
   @Test
-  fun `when a profilingRate and a ProfilesSamplerCallback is set but the callback throws an exception then profiling should still be enabled`() {
-    val exception = Exception("faulty ProfilesSamplerCallback")
+  fun `when profilesSampler throws then static profile rates are ignored`() {
+    for (profilesSampleRate in listOf(null, 0.0, 1.0)) {
+      val sampler =
+        fixture.getSut(
+          tracesSampleRate = 1.0,
+          profilesSampleRate = profilesSampleRate,
+          profilesSamplerCallback = {
+            throw IllegalStateException("faulty ProfilesSamplerCallback")
+          },
+        )
+      val decision =
+        sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.0, null))
+
+      assertThat(decision.sampled).isTrue()
+      assertThat(decision.sampleRate).isEqualTo(1.0)
+      assertThat(decision.sampleRand).isEqualTo(0.0)
+      assertThat(decision.profileSampled).isFalse()
+      assertThat(decision.profileSampleRate).isNull()
+    }
+  }
+
+  @Test
+  fun `when profilesSampler throws then tracesSampler still determines trace sampling`() {
+    val sampler =
+      fixture.getSut(
+        tracesSampleRate = 0.0,
+        profilesSampleRate = 1.0,
+        tracesSamplerCallback = { 0.5 },
+        profilesSamplerCallback = { throw IllegalStateException("faulty ProfilesSamplerCallback") },
+      )
+    val decision =
+      sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.1, null))
+
+    assertThat(decision.sampled).isTrue()
+    assertThat(decision.sampleRate).isEqualTo(0.5)
+    assertThat(decision.sampleRand).isEqualTo(0.1)
+    assertThat(decision.profileSampled).isFalse()
+    assertThat(decision.profileSampleRate).isNull()
+  }
+
+  @Test
+  fun `when profilesSampler throws then parent trace sampling is preserved without profiling`() {
     val sampler =
       fixture.getSut(
         tracesSampleRate = 1.0,
         profilesSampleRate = 1.0,
-        profilesSamplerCallback = { throw exception },
+        profilesSamplerCallback = { throw IllegalStateException("faulty ProfilesSamplerCallback") },
       )
-    val decision =
-      sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.0, null))
-    assertTrue(decision.profileSampled)
-    assertEquals(0.0, decision.sampleRand)
+    for (sampled in listOf(true, false)) {
+      val sampleRand = if (sampled) 0.1 else 0.9
+      val parentDecision = TracesSamplingDecision(sampled, 0.5, sampleRand, true, 1.0)
+      val transactionContext =
+        TransactionContext(SentryId(), SpanId(), SpanId(), parentDecision, null)
+
+      val decision = sampler.sample(SamplingContext(transactionContext, null, sampleRand, null))
+
+      assertThat(decision.sampled).isEqualTo(sampled)
+      assertThat(decision.sampleRate).isEqualTo(0.5)
+      assertThat(decision.sampleRand).isEqualTo(sampleRand)
+      assertThat(decision.profileSampled).isFalse()
+      assertThat(decision.profileSampleRate).isNull()
+      assertThat(parentDecision.profileSampled).isEqualTo(sampled)
+      assertThat(parentDecision.profileSampleRate).isEqualTo(1.0)
+    }
+  }
+
+  @Test
+  fun `when both samplers throw then parent trace sampling is backfilled without profiling`() {
+    val sampler =
+      fixture.getSut(
+        tracesSampleRate = 0.0,
+        profilesSampleRate = 1.0,
+        tracesSamplerCallback = { throw IllegalStateException("faulty TracesSamplerCallback") },
+        profilesSamplerCallback = { throw IllegalStateException("faulty ProfilesSamplerCallback") },
+      )
+    val parentDecision = TracesSamplingDecision(true, 0.5, true, 1.0)
+    val transactionContext =
+      TransactionContext(SentryId(), SpanId(), SpanId(), parentDecision, null)
+
+    val decision = sampler.sample(SamplingContext(transactionContext, null, 0.9, null))
+
+    assertThat(decision.sampled).isTrue()
+    assertThat(decision.sampleRate).isEqualTo(0.5)
+    assertThat(decision.sampleRand).isAtLeast(0.0)
+    assertThat(decision.sampleRand).isLessThan(0.5)
+    assertThat(decision.profileSampled).isFalse()
+    assertThat(decision.profileSampleRate).isNull()
   }
 
   @Test
