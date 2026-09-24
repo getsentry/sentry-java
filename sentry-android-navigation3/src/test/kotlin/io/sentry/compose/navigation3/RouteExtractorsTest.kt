@@ -4,8 +4,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class RouteExtractorsTest {
 
@@ -19,7 +17,7 @@ class RouteExtractorsTest {
   fun `getArguments returns null when no arguments extractor is configured`() {
     val sut = RouteExtractors(nameExtractor = defaultNameExtractor, argumentsExtractor = null)
 
-    assertNull(sut.getArguments(HomeRoute()))
+    assertThat(sut.getArguments(HomeRoute())).isNull()
   }
 
   @Test
@@ -31,7 +29,7 @@ class RouteExtractorsTest {
         argumentsExtractor = null,
       )
 
-    assertEquals("profile-123", sut.getName(route))
+    assertThat(sut.getName(route)).isEqualTo("profile-123")
   }
 
   @Test
@@ -55,7 +53,7 @@ class RouteExtractorsTest {
         argumentsExtractor = null,
       )
 
-    assertEquals(0, observeReads { sut.getName(HomeRoute()) })
+    assertThat(observeReads { sut.getName(HomeRoute()) }).isEqualTo(0)
   }
 
   @Test
@@ -67,7 +65,7 @@ class RouteExtractorsTest {
         argumentsExtractor = RouteArgumentsExtractor { mapOf("userId" to argumentValue.value) },
       )
 
-    assertEquals(0, observeReads { sut.getArguments(HomeRoute()) })
+    assertThat(observeReads { sut.getArguments(HomeRoute()) }).isEqualTo(0)
   }
 
   private fun observeReads(block: () -> Unit): Int {

@@ -7,7 +7,6 @@ import io.sentry.compose.navigation3.RouteTranslator.ArgumentSanitizer
 import io.sentry.compose.navigation3.RouteTranslator.WarningState
 import java.util.AbstractCollection
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -139,31 +138,29 @@ class RouteTranslatorTest {
   fun `extractRouteName normalizes a custom name with a leading slash`() {
     val sut = getSut(nameExtractor = { "profile" })
 
-    assertEquals("/profile", sut.extractRouteName(ProfileRoute("123"), WarningState()))
+    assertThat(sut.extractRouteName(ProfileRoute("123"), WarningState())).isEqualTo("/profile")
   }
 
   @Test
   fun `extractRouteName leaves leading slash on custom name if already present`() {
     val sut = getSut(nameExtractor = { "/profile" })
 
-    assertEquals("/profile", sut.extractRouteName(ProfileRoute("123"), WarningState()))
+    assertThat(sut.extractRouteName(ProfileRoute("123"), WarningState())).isEqualTo("/profile")
   }
 
   @Test
   fun `extractRouteName returns the configured name extractor result`() {
     val sut = getSut()
 
-    assertEquals("/HomeRoute", sut.extractRouteName(HomeRoute(), WarningState()))
+    assertThat(sut.extractRouteName(HomeRoute(), WarningState())).isEqualTo("/HomeRoute")
   }
 
   @Test
   fun `extractRouteName returns unknown when name extractor throws`() {
     val sut = getSut(nameExtractor = { error("boom") })
 
-    assertEquals(
-      RouteTranslator.UNKNOWN_ROUTE_NAME,
-      sut.extractRouteName(HomeRoute(), WarningState()),
-    )
+    assertThat(sut.extractRouteName(HomeRoute(), WarningState()))
+      .isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
     verify(logger)
       .log(
         eq(WARNING),
@@ -176,10 +173,8 @@ class RouteTranslatorTest {
   fun `extractRouteName returns unknown when name extractor returns blank`() {
     val sut = getSut(nameExtractor = { "   " })
 
-    assertEquals(
-      RouteTranslator.UNKNOWN_ROUTE_NAME,
-      sut.extractRouteName(HomeRoute(), WarningState()),
-    )
+    assertThat(sut.extractRouteName(HomeRoute(), WarningState()))
+      .isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
     verify(logger)
       .log(
         eq(WARNING),
