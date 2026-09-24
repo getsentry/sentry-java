@@ -130,6 +130,8 @@
 
   See the [Data Collection documentation](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection) for all configuration keys, supported integrations, and migration guidance.
 
+- Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
+
 ### Fixes
 
 - Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)

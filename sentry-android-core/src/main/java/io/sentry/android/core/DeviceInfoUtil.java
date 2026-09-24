@@ -15,8 +15,10 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
+import io.sentry.IConnectionStatusProvider;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.android.core.internal.util.RootChecker;
@@ -228,8 +230,19 @@ public final class DeviceInfoUtil {
     }
 
     if (device.getConnectionType() == null) {
-      // wifi, ethernet or cellular, null if none
-      device.setConnectionType(options.getConnectionStatusProvider().getConnectionType());
+      final @NotNull IConnectionStatusProvider connectionStatusProvider =
+          options.getConnectionStatusProvider();
+      if (connectionStatusProvider instanceof AndroidConnectionStatusProvider) {
+        // Reading both at once keeps the type and the technology describing the same network.
+        final AndroidConnectionStatusProvider.Connection connection =
+            ((AndroidConnectionStatusProvider) connectionStatusProvider).getConnection();
+        // wifi, ethernet or cellular, null if none
+        device.setConnectionType(connection.type);
+        // 2g, 3g, 4g or 5g, null unless the device is on a known cellular technology
+        device.setConnectionEffectiveType(connection.effectiveType);
+      } else {
+        device.setConnectionType(connectionStatusProvider.getConnectionType());
+      }
     }
   }
 

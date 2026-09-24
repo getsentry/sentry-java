@@ -24,6 +24,7 @@ import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
@@ -45,6 +46,7 @@ public final class AndroidConnectionStatusProvider
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull MonotonicTicker ticker;
   private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers;
+  private final @NotNull CellularNetworkTechnologyProvider cellularNetworkTechnologyProvider;
   private final @Nullable Handler handler;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private volatile @Nullable NetworkCallback networkCallback;
@@ -94,6 +96,26 @@ public final class AndroidConnectionStatusProvider
     this.cacheFreshUntil = Deadline.passed(ticker);
     this.handler = handler;
     this.connectionStatusObservers = new ArrayList<>();
+    this.cellularNetworkTechnologyProvider =
+        new CellularNetworkTechnologyProvider(
+            this.context,
+            options.getLogger(),
+            buildInfoProvider,
+            runnable -> {
+              try {
+                options.getExecutorService().submit(runnable);
+              } catch (RejectedExecutionException e) {
+                // The telephony framework calls this executor, so an exception would be thrown on
+                // one of its threads. The SDK's executor rejects work once it is shut down, which
+                // can happen before the listener is unregistered.
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.DEBUG,
+                        "Dropping a cellular network technology update, the executor rejected it.",
+                        e);
+              }
+            });
 
     capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
@@ -168,6 +190,41 @@ public final class AndroidConnectionStatusProvider
 
     // Fallback to legacy method when NetworkCapabilities not available
     return getConnectionType(context, options.getLogger(), buildInfoProvider);
+  }
+
+  /**
+   * The connection type and, for cellular connections, the generation of the network technology.
+   *
+   * <p>Both are derived from one cache read, so they always describe the same network instead of
+   * straddling a connectivity change.
+   */
+  public @NotNull Connection getConnection() {
+    if (!isCacheValid()) {
+      updateCache(null);
+    }
+    final @Nullable String connectionType = getConnectionTypeFromCache();
+    if (!"cellular".equals(connectionType)) {
+      return new Connection(connectionType, null);
+    }
+    return new Connection(
+        connectionType, cellularNetworkTechnologyProvider.getCellularNetworkTechnology());
+  }
+
+  /** The connection type and the generation of the cellular network technology, if any. */
+  public static final class Connection {
+    /** Maps to the {@code network.connection.type} attribute, {@code null} when unknown. */
+    public final @Nullable String type;
+
+    /**
+     * Maps to the {@code network.connection.effective_type} attribute, for example {@code 5g}.
+     * {@code null} when the connection is not cellular or the technology is unknown.
+     */
+    public final @Nullable String effectiveType;
+
+    Connection(final @Nullable String type, final @Nullable String effectiveType) {
+      this.type = type;
+      this.effectiveType = effectiveType;
+    }
   }
 
   private void ensureNetworkCallbackRegistered() {
@@ -344,6 +401,9 @@ public final class AndroidConnectionStatusProvider
       if (registerNetworkCallback(
           context, options.getLogger(), buildInfoProvider, handler, callback)) {
         networkCallback = callback;
+        // Only start listening once the network callback is registered, because unregistering is
+        // skipped while there is no network callback, which would leave the listener running.
+        cellularNetworkTechnologyProvider.register();
         options.getLogger().log(SentryLevel.DEBUG, "Network callback registered successfully");
       } else {
         options.getLogger().log(SentryLevel.WARNING, "Failed to register network callback");
@@ -459,6 +519,7 @@ public final class AndroidConnectionStatusProvider
       if (callbackRef != null) {
         unregisterNetworkCallback(context, options.getLogger(), callbackRef);
       }
+      cellularNetworkTechnologyProvider.unregister();
       // Clear cached state
       cachedNetworkCapabilities = null;
       currentNetwork = null;
