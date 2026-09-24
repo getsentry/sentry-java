@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
 import io.sentry.compose.navigation3.RouteTranslator.ArgumentSanitizer
+import io.sentry.compose.navigation3.RouteTranslator.RetentionPolicy
 import io.sentry.compose.navigation3.RouteTranslator.WarningState
 import java.util.AbstractCollection
 import kotlin.test.Test
@@ -43,7 +44,11 @@ class RouteTranslatorTest {
   fun `translate preserves input order`() {
     val sut = getSut()
 
-    val routes = sut.translate(listOf(SettingsRoute("privacy"), ProfileRoute("123"), HomeRoute()))
+    val routes =
+      sut.translate(
+        listOf(SettingsRoute("privacy"), ProfileRoute("123"), HomeRoute()),
+        RetentionPolicy.KEEP_FIRST,
+      )
 
     assertThat(routes)
       .containsExactly(Route("/SettingsRoute"), Route("/ProfileRoute"), Route("/HomeRoute"))
@@ -51,17 +56,68 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `translate returns empty routes for an empty back stack`() {
+  fun `translate preserves input order when top entry is last`() {
     val sut = getSut()
 
-    assertThat(sut.translate(emptyList())).isEmpty()
+    val routes =
+      sut.translate(
+        listOf(HomeRoute(), ProfileRoute("123"), SettingsRoute("privacy")),
+        RetentionPolicy.KEEP_LAST,
+      )
+
+    assertThat(routes)
+      .containsExactly(Route("/HomeRoute"), Route("/ProfileRoute"), Route("/SettingsRoute"))
+      .inOrder()
   }
 
   @Test
-  fun `translate preserves newer entry arguments when the shared budget overflows`() {
-    val newest = SettingsRoute("privacy")
+  fun `translate returns empty routes for an empty back stack`() {
+    val sut = getSut()
+
+    assertThat(sut.translate(emptyList(), RetentionPolicy.KEEP_FIRST)).isEmpty()
+  }
+
+  @Test
+  fun `translate returns empty routes for an empty back stack when top entry is last`() {
+    val sut = getSut()
+
+    assertThat(sut.translate(emptyList(), RetentionPolicy.KEEP_LAST)).isEmpty()
+  }
+
+  @Test
+  fun `translate with KEEP_FIRST preserves arguments nearest index zero when budget is exceeded`() {
+    val first = SettingsRoute("privacy")
     val middle = ProfileRoute("123")
-    val oldest = HomeRoute()
+    val last = HomeRoute()
+    val sut =
+      getSut(
+        argumentsExtractor =
+          RouteArgumentsExtractor { key ->
+            when (key) {
+              is SettingsRoute -> mapOf("section" to key.section)
+              is ProfileRoute -> mapOf("values" to List(999) { it })
+              is HomeRoute -> mapOf("home" to true)
+              else -> emptyMap()
+            }
+          }
+      )
+
+    val routes = sut.translate(listOf(first, middle, last), RetentionPolicy.KEEP_FIRST)
+
+    assertThat(routes)
+      .containsExactly(
+        Route("/SettingsRoute", mapOf("section" to "privacy")),
+        Route("/ProfileRoute"),
+        Route("/HomeRoute"),
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `translate with KEEP_LAST preserves arguments nearest lastIndex when budget is exceeded`() {
+    val first = HomeRoute()
+    val middle = ProfileRoute("123")
+    val last = SettingsRoute("privacy")
     val sut =
       getSut(
         argumentsExtractor =
@@ -75,14 +131,15 @@ class RouteTranslatorTest {
           }
       )
 
-    val routes = sut.translate(listOf(newest, middle, oldest))
+    val routes = sut.translate(listOf(first, middle, last), RetentionPolicy.KEEP_LAST)
 
-    assertThat(routes).hasSize(3)
-    assertThat(routes[0]).isEqualTo(Route("/SettingsRoute", mapOf("section" to "privacy")))
-    assertThat(routes[1].name).isEqualTo("/ProfileRoute")
-    assertThat(routes[1].arguments).isEmpty()
-    assertThat(routes[2].name).isEqualTo("/HomeRoute")
-    assertThat(routes[2].arguments).isEmpty()
+    assertThat(routes)
+      .containsExactly(
+        Route("/HomeRoute"),
+        Route("/ProfileRoute"),
+        Route("/SettingsRoute", mapOf("section" to "privacy")),
+      )
+      .inOrder()
   }
 
   @Test
@@ -99,7 +156,11 @@ class RouteTranslatorTest {
           }
       )
 
-    val routes = sut.translate(listOf(SettingsRoute("privacy"), ProfileRoute("123")))
+    val routes =
+      sut.translate(
+        listOf(SettingsRoute("privacy"), ProfileRoute("123")),
+        RetentionPolicy.KEEP_FIRST,
+      )
 
     assertThat(routes)
       .containsExactly(
@@ -124,7 +185,11 @@ class RouteTranslatorTest {
           }
       )
 
-    val routes = sut.translate(listOf(SettingsRoute("privacy"), ProfileRoute("123")))
+    val routes =
+      sut.translate(
+        listOf(SettingsRoute("privacy"), ProfileRoute("123")),
+        RetentionPolicy.KEEP_FIRST,
+      )
 
     assertThat(routes.map(Route::serialize))
       .containsExactly(
@@ -291,7 +356,7 @@ class RouteTranslatorTest {
           }
       )
 
-    sut.translate(listOf(HomeRoute(), ProfileRoute("123")))
+    sut.translate(listOf(HomeRoute(), ProfileRoute("123")), RetentionPolicy.KEEP_FIRST)
 
     verify(logger, times(1))
       .log(

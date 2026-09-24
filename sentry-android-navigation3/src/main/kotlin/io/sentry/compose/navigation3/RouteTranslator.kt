@@ -6,7 +6,15 @@ import io.sentry.util.ExceptionUtils
 import java.util.IdentityHashMap
 import org.jetbrains.annotations.TestOnly
 
-/** Translates app-defined back stack entries into input-ordered [Route]s. */
+/**
+ * Translates app-defined back stack entries into input-ordered [Route]s.
+ *
+ * **Threading policy**
+ *
+ * This class performs work synchronously on the calling thread. Host-provided [extractors] are
+ * invoked on that same thread and should remain small, non-blocking, and safe for the caller's
+ * threading context.
+ */
 internal class RouteTranslator<T : Any>(
   private val extractors: () -> RouteExtractors<T>,
   private val logger: ILogger,
@@ -16,22 +24,25 @@ internal class RouteTranslator<T : Any>(
     internal const val UNKNOWN_ROUTE_NAME = "/unknown"
   }
 
-  /**
-   * Translates the provided [backStackEntries] into [Route]s and returns them in input order.
-   *
-   * Callers should provide entries newest first so the shared argument budget preserves data for
-   * the destinations most relevant to the current navigation state.
-   */
-  fun translate(backStackEntries: List<T>): List<Route> {
+  /** Translates the provided [backStackEntries] into [Route]s and returns them in input order. */
+  fun translate(backStackEntries: List<T>, policy: RetentionPolicy): List<Route> {
     val warningState = WarningState()
     val sanitizer = ArgumentSanitizer(logger, warningState)
 
-    return backStackEntries.map { entry ->
+    val entriesInPolicyOrder =
+      when (policy) {
+        RetentionPolicy.KEEP_FIRST -> backStackEntries
+        RetentionPolicy.KEEP_LAST -> backStackEntries.asReversed()
+      }
+
+    val translatedByEntry = entriesInPolicyOrder.associateWith { entry ->
       Route(
         name = extractRouteName(entry, warningState),
         arguments = extractRouteArguments(entry, sanitizer),
       )
     }
+
+    return backStackEntries.map { entry -> translatedByEntry.getValue(entry) }
   }
 
   /**
@@ -92,6 +103,28 @@ internal class RouteTranslator<T : Any>(
       }
 
     return sanitizer.sanitizeEntry(raw)
+  }
+
+  /**
+   * Specifies whether route info starting at the initial or final element of a back stack list
+   * should be preserved if a size budget is exceeded.
+   *
+   * Most clients will want to select the policy that starts at the top of their back stack.
+   */
+  internal enum class RetentionPolicy {
+
+    /**
+     * Retains route info for lower indexed elements in the back stack list if a particular info
+     * budget is reached. Retention starts at index 0 and increments until the budget is exhausted.
+     */
+    KEEP_FIRST,
+
+    /**
+     * Retains route info for higher indexed elements in the back stack list if a particular info
+     * budget is reached. Retention starts at lastIndex and decrements until the budget is
+     * exhausted.
+     */
+    KEEP_LAST,
   }
 
   /**
