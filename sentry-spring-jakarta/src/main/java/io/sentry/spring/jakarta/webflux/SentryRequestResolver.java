@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 
 @Open
+@SuppressWarnings("deprecation")
 @ApiStatus.Experimental
 public class SentryRequestResolver {
   private final @NotNull IScopes scopes;
