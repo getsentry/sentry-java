@@ -123,6 +123,7 @@
   ```
 
   See the [Data Collection documentation](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection) for all configuration keys, supported integrations, and migration guidance.
+- Add `sentry-apollo-5` integration for Apollo Kotlin 5, providing HTTP tracing and failed GraphQL request reporting ([#6074](https://github.com/getsentry/sentry-java/pull/6074))
 
 ### Fixes
 
