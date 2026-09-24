@@ -102,6 +102,7 @@ internal object SentryOkHttpUtils {
     return getHeaders(scopes, responseHeaders)
   }
 
+  @Suppress("DEPRECATION")
   private fun getHeaders(scopes: IScopes, requestHeaders: Headers): MutableMap<String, String>? {
     // Headers are only sent if isSendDefaultPii is enabled due to PII
     if (!scopes.options.isSendDefaultPii) {
