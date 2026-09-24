@@ -122,7 +122,7 @@ internal fun interface RouteArgumentsExtractor<T : Any> {
  * Extractor invocations are hidden from Compose snapshot observation so they don't impact
  * invalidation of the recompose scope that reads them.
  */
-internal class RouteResolvers<T : Any>(
+internal class RouteExtractors<T : Any>(
   val nameExtractor: RouteNameExtractor<T>,
   val argumentsExtractor: RouteArgumentsExtractor<T>?,
 ) {

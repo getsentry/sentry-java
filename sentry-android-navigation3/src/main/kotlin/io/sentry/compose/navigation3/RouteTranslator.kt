@@ -8,7 +8,7 @@ import org.jetbrains.annotations.TestOnly
 
 /** Translates app-defined back stack entries into input-ordered [Route]s. */
 internal class RouteTranslator<T : Any>(
-  private val resolvers: () -> RouteResolvers<T>,
+  private val extractors: () -> RouteExtractors<T>,
   private val logger: ILogger,
 ) {
 
@@ -26,22 +26,17 @@ internal class RouteTranslator<T : Any>(
     val warningState = WarningState()
     val sanitizer = ArgumentSanitizer(logger, warningState)
 
-    return backStackEntries.map { entry -> resolveRoute(entry, warningState, sanitizer) }
+    return backStackEntries.map { entry ->
+      Route(
+        name = extractRouteName(entry, warningState),
+        arguments = extractRouteArguments(entry, sanitizer),
+      )
+    }
   }
-
-  private fun resolveRoute(
-    backStackEntry: T,
-    warningState: WarningState,
-    sanitizer: ArgumentSanitizer,
-  ): Route =
-    Route(
-      name = resolveRouteName(backStackEntry, warningState),
-      arguments = resolveArguments(backStackEntry, sanitizer),
-    )
 
   /**
    * Returns a route name for the provided [backStackEntry], based on this translator's
-   * [name extractor][RouteResolvers.nameExtractor].
+   * [name extractor][RouteExtractors.nameExtractor].
    *
    * The returned name is normalized to always include a leading slash. E.g., both `PromoDialog` and
    * `/PromoDialog` are resolved to `/PromoDialog`. (Doing so maintains parity with our Nav2
@@ -49,10 +44,10 @@ internal class RouteTranslator<T : Any>(
    */
   @TestOnly
   @Suppress("TooGenericExceptionCaught")
-  fun resolveRouteName(backStackEntry: T, warningState: WarningState): String {
+  fun extractRouteName(backStackEntry: T, warningState: WarningState): String {
     val name: String? =
       try {
-        resolvers.invoke().getName(backStackEntry)
+        extractors.invoke().getName(backStackEntry)
       } catch (t: Throwable) {
         // Route name extractors are host app callbacks.
         ExceptionUtils.rethrowIfFatal(t)
@@ -71,20 +66,20 @@ internal class RouteTranslator<T : Any>(
 
   /**
    * Returns the arguments for the provided [backStackEntry], based on this translator's
-   * [arguments extractor][RouteResolvers.argumentsExtractor].
+   * [arguments extractor][RouteExtractors.argumentsExtractor].
    *
    * The arguments are sanitized before being returned, i.e., bounded in size and depth, and
    * converted into a serializable form.
    */
   @TestOnly
   @Suppress("TooGenericExceptionCaught")
-  fun resolveArguments(
+  fun extractRouteArguments(
     backStackEntry: T,
     sanitizer: ArgumentSanitizer,
   ): Map<String, Any?> {
     val raw =
       try {
-        resolvers.invoke().getArguments(backStackEntry) ?: return emptyMap()
+        extractors.invoke().getArguments(backStackEntry) ?: return emptyMap()
       } catch (t: Throwable) {
         // Route argument extractors are host app callbacks.
         ExceptionUtils.rethrowIfFatal(t)

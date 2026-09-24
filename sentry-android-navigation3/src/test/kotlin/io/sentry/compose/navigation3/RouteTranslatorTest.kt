@@ -36,7 +36,7 @@ class RouteTranslatorTest {
     argumentsExtractor: RouteArgumentsExtractor<Any>? = null,
   ): RouteTranslator<Any> =
     RouteTranslator(
-      resolvers = { RouteResolvers(nameExtractor, argumentsExtractor) },
+      extractors = { RouteExtractors(nameExtractor, argumentsExtractor) },
       logger = logger,
     )
 
@@ -136,33 +136,33 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `resolveRouteName normalizes a custom name with a leading slash`() {
+  fun `extractRouteName normalizes a custom name with a leading slash`() {
     val sut = getSut(nameExtractor = { "profile" })
 
-    assertEquals("/profile", sut.resolveRouteName(ProfileRoute("123"), WarningState()))
+    assertEquals("/profile", sut.extractRouteName(ProfileRoute("123"), WarningState()))
   }
 
   @Test
-  fun `resolveRouteName leaves leading slash on custom name if already present`() {
+  fun `extractRouteName leaves leading slash on custom name if already present`() {
     val sut = getSut(nameExtractor = { "/profile" })
 
-    assertEquals("/profile", sut.resolveRouteName(ProfileRoute("123"), WarningState()))
+    assertEquals("/profile", sut.extractRouteName(ProfileRoute("123"), WarningState()))
   }
 
   @Test
-  fun `resolveRouteName returns the configured name extractor result`() {
+  fun `extractRouteName returns the configured name extractor result`() {
     val sut = getSut()
 
-    assertEquals("/HomeRoute", sut.resolveRouteName(HomeRoute(), WarningState()))
+    assertEquals("/HomeRoute", sut.extractRouteName(HomeRoute(), WarningState()))
   }
 
   @Test
-  fun `resolveRouteName returns unknown when name extractor throws`() {
+  fun `extractRouteName returns unknown when name extractor throws`() {
     val sut = getSut(nameExtractor = { error("boom") })
 
     assertEquals(
       RouteTranslator.UNKNOWN_ROUTE_NAME,
-      sut.resolveRouteName(HomeRoute(), WarningState()),
+      sut.extractRouteName(HomeRoute(), WarningState()),
     )
     verify(logger)
       .log(
@@ -173,12 +173,12 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `resolveRouteName returns unknown when name extractor returns blank`() {
+  fun `extractRouteName returns unknown when name extractor returns blank`() {
     val sut = getSut(nameExtractor = { "   " })
 
     assertEquals(
       RouteTranslator.UNKNOWN_ROUTE_NAME,
-      sut.resolveRouteName(HomeRoute(), WarningState()),
+      sut.extractRouteName(HomeRoute(), WarningState()),
     )
     verify(logger)
       .log(
@@ -191,7 +191,7 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `resolveArguments returns supported values in serializable form`() {
+  fun `extractRouteArguments returns supported values in serializable form`() {
     val sut =
       getSut(
         argumentsExtractor =
@@ -215,7 +215,7 @@ class RouteTranslatorTest {
           }
       )
 
-    assertThat(sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
+    assertThat(sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
       .isEqualTo(
         mapOf(
           "str" to "hello",
@@ -236,7 +236,7 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `resolveArguments sanitizes nested supported containers recursively`() {
+  fun `extractRouteArguments sanitizes nested supported containers recursively`() {
     val sut =
       getSut(
         argumentsExtractor =
@@ -256,7 +256,7 @@ class RouteTranslatorTest {
           }
       )
 
-    assertThat(sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
+    assertThat(sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
       .isEqualTo(
         mapOf(
           "nested" to
@@ -266,7 +266,7 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `resolveArguments coerces unsupported values to strings`() {
+  fun `extractRouteArguments coerces unsupported values to strings`() {
     class OpaqueValue {
       override fun toString(): String = "opaque-value"
     }
@@ -274,7 +274,7 @@ class RouteTranslatorTest {
     val sut =
       getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("bad" to OpaqueValue()) })
 
-    assertThat(sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
+    assertThat(sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
       .isEqualTo(mapOf("bad" to "opaque-value"))
   }
 
@@ -320,10 +320,10 @@ class RouteTranslatorTest {
     val sut =
       getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("bad" to OpaqueValue()) })
 
-    sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState()))
+    sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState()))
     clearInvocations(logger)
 
-    sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState()))
+    sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState()))
 
     verify(logger, times(1))
       .log(
@@ -339,18 +339,18 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `resolveArguments returns empty if no arguments extractor`() {
+  fun `extractRouteArguments returns empty if no arguments extractor`() {
     val sut = getSut(argumentsExtractor = null)
 
-    assertThat(sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
+    assertThat(sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
       .isEmpty()
   }
 
   @Test
-  fun `resolveArguments returns empty when arguments extractor throws`() {
+  fun `extractRouteArguments returns empty when arguments extractor throws`() {
     val sut = getSut(argumentsExtractor = { error("boom") })
 
-    assertThat(sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
+    assertThat(sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
       .isEmpty()
     verify(logger)
       .log(
@@ -361,42 +361,44 @@ class RouteTranslatorTest {
   }
 
   @Test
-  fun `resolveArguments returns empty for cyclic structures`() {
+  fun `extractRouteArguments returns empty for cyclic structures`() {
     val cyclic = mutableMapOf<String, Any?>()
     cyclic["self"] = cyclic
 
     val sut =
       getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("cyclic" to cyclic) })
 
-    assertThat(sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
+    assertThat(sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
       .isEmpty()
   }
 
   @Test
-  fun `resolveArguments returns empty for deeply nested structures`() {
+  fun `extractRouteArguments returns empty for deeply nested structures`() {
     var nested: Any? = "value"
     repeat(25) { nested = listOf(nested) }
 
     val sut =
       getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("nested" to nested) })
 
-    assertThat(sut.resolveArguments(ProfileRoute("123"), ArgumentSanitizer(logger, WarningState())))
+    assertThat(
+        sut.extractRouteArguments(ProfileRoute("123"), ArgumentSanitizer(logger, WarningState()))
+      )
       .isEmpty()
   }
 
   @Test
-  fun `resolveArguments drops oversized payloads instead of truncating them`() {
+  fun `extractRouteArguments drops oversized payloads instead of truncating them`() {
     val sut =
       getSut(
         argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("values" to List(1_001) { it }) }
       )
 
-    assertThat(sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
+    assertThat(sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
       .isEmpty()
   }
 
   @Test
-  fun `resolveArguments does not use caller collection size for allocation`() {
+  fun `extractRouteArguments does not use caller collection size for allocation`() {
     val values =
       object : AbstractCollection<Int>() {
         var wasSizeRead = false
@@ -412,7 +414,7 @@ class RouteTranslatorTest {
     val sut =
       getSut(argumentsExtractor = RouteArgumentsExtractor { _ -> mapOf("values" to values) })
 
-    assertThat(sut.resolveArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
+    assertThat(sut.extractRouteArguments(HomeRoute(), ArgumentSanitizer(logger, WarningState())))
       .isEqualTo(mapOf("values" to listOf(1, 2)))
     assertThat(values.wasSizeRead).isFalse()
   }

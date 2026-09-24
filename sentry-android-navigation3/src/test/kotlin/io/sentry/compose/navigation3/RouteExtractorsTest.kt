@@ -7,7 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
-class RouteResolversTest {
+class RouteExtractorsTest {
 
   private data class HomeRoute(val id: String = "home")
 
@@ -17,7 +17,7 @@ class RouteResolversTest {
 
   @Test
   fun `getArguments returns null when no arguments extractor is configured`() {
-    val sut = RouteResolvers(nameExtractor = defaultNameExtractor, argumentsExtractor = null)
+    val sut = RouteExtractors(nameExtractor = defaultNameExtractor, argumentsExtractor = null)
 
     assertNull(sut.getArguments(HomeRoute()))
   }
@@ -26,7 +26,7 @@ class RouteResolversTest {
   fun `getName delegates to the configured extractor`() {
     val route = ProfileRoute("123")
     val sut =
-      RouteResolvers<ProfileRoute>(
+      RouteExtractors<ProfileRoute>(
         nameExtractor = RouteNameExtractor { entry -> "profile-${entry.userId}" },
         argumentsExtractor = null,
       )
@@ -38,7 +38,7 @@ class RouteResolversTest {
   fun `getArguments delegates to the configured extractor`() {
     val route = ProfileRoute("123")
     val sut =
-      RouteResolvers<ProfileRoute>(
+      RouteExtractors<ProfileRoute>(
         nameExtractor = RouteNameExtractor { entry -> entry.userId },
         argumentsExtractor = RouteArgumentsExtractor { entry -> mapOf("userId" to entry.userId) },
       )
@@ -50,7 +50,7 @@ class RouteResolversTest {
   fun `getName hides extractor reads from snapshot observation`() {
     val routeName = mutableStateOf("home")
     val sut =
-      RouteResolvers<HomeRoute>(
+      RouteExtractors<HomeRoute>(
         nameExtractor = RouteNameExtractor { routeName.value },
         argumentsExtractor = null,
       )
@@ -62,7 +62,7 @@ class RouteResolversTest {
   fun `getArguments hides extractor reads from snapshot observation`() {
     val argumentValue = mutableStateOf("123")
     val sut =
-      RouteResolvers<HomeRoute>(
+      RouteExtractors<HomeRoute>(
         nameExtractor = defaultNameExtractor,
         argumentsExtractor = RouteArgumentsExtractor { mapOf("userId" to argumentValue.value) },
       )
