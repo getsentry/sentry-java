@@ -290,6 +290,9 @@ class AndroidConnectionStatusProviderTest {
 
     captor.firstValue.execute {}
 
+    // Cleanup runs through the same executor, and connectivityManager is static, so a still
+    // rejecting executor would leak a stale manager into later tests.
+    executor.reject = false
     provider.close()
   }
 
