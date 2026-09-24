@@ -3,7 +3,6 @@ package io.sentry.opentelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanId;
 import io.opentelemetry.api.trace.TraceId;
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
@@ -12,6 +11,7 @@ import io.sentry.ScopesAdapter;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.SpanContext;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.SentryId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -21,7 +21,7 @@ import org.jetbrains.annotations.TestOnly;
  * @deprecated this is no longer needed for the latest version of our OpenTelemetry integration.
  */
 @Deprecated
-public final class OpenTelemetryLinkErrorEventProcessor implements EventProcessor {
+public final class OpenTelemetryLinkErrorEventProcessor implements SentryEventProcessor {
 
   private final @NotNull IScopes scopes;
 

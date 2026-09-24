@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Cached;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryException;
@@ -16,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class MainEventProcessor implements EventProcessor {
+public final class MainEventProcessor implements SentryEventProcessor {
 
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
