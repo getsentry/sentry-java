@@ -52,6 +52,7 @@ import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.NativeCrashExit;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
@@ -89,7 +90,8 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 @WorkerThread
-public final class ApplicationExitInfoEventProcessor implements BackfillingEventProcessor {
+public final class ApplicationExitInfoEventProcessor
+    implements BackfillingEventProcessor, SentryEventProcessor {
 
   private final @NotNull Context context;
 
