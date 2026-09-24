@@ -20,6 +20,8 @@ class RouteTranslatorTest {
 
   private data class ProfileRoute(val userId: String)
 
+  private data class ProductRoute(val productId: String)
+
   private data class SettingsRoute(val section: String)
 
   private enum class PrivacyMode {
@@ -138,6 +140,62 @@ class RouteTranslatorTest {
         Route("/HomeRoute"),
         Route("/ProfileRoute"),
         Route("/SettingsRoute", mapOf("section" to "privacy")),
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `translate with KEEP_FIRST treats entries as distinct by position even if structurally equal`() {
+    val first = ProductRoute("sku-1")
+    val middle = ProfileRoute("123")
+    val last = ProductRoute("sku-1")
+    val sut =
+      getSut(
+        argumentsExtractor =
+          RouteArgumentsExtractor { entry ->
+            when (entry) {
+              is ProductRoute -> mapOf("productId" to entry.productId)
+              is ProfileRoute -> mapOf("values" to List(999) { it })
+              else -> emptyMap()
+            }
+          }
+      )
+
+    val routes = sut.translate(listOf(first, middle, last), RetentionPolicy.KEEP_FIRST)
+
+    assertThat(routes)
+      .containsExactly(
+        Route("/ProductRoute", mapOf("productId" to "sku-1")),
+        Route("/ProfileRoute"),
+        Route("/ProductRoute"),
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `translate with KEEP_LAST treats entries as distinct by position even if structurally equal`() {
+    val first = ProductRoute("sku-1")
+    val middle = ProfileRoute("123")
+    val last = ProductRoute("sku-1")
+    val sut =
+      getSut(
+        argumentsExtractor =
+          RouteArgumentsExtractor { entry ->
+            when (entry) {
+              is ProductRoute -> mapOf("productId" to entry.productId)
+              is ProfileRoute -> mapOf("values" to List(999) { it })
+              else -> emptyMap()
+            }
+          }
+      )
+
+    val routes = sut.translate(listOf(first, middle, last), RetentionPolicy.KEEP_LAST)
+
+    assertThat(routes)
+      .containsExactly(
+        Route("/ProductRoute"),
+        Route("/ProfileRoute"),
+        Route("/ProductRoute", mapOf("productId" to "sku-1")),
       )
       .inOrder()
   }

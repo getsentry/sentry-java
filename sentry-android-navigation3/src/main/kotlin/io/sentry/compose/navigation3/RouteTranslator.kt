@@ -29,20 +29,23 @@ internal class RouteTranslator<T : Any>(
     val warningState = WarningState()
     val sanitizer = ArgumentSanitizer(logger, warningState)
 
-    val entriesInPolicyOrder =
+    val routes = MutableList<Route?>(backStackEntries.size) { null }
+    val indicesInPolicyOrder =
       when (policy) {
-        RetentionPolicy.KEEP_FIRST -> backStackEntries
-        RetentionPolicy.KEEP_LAST -> backStackEntries.asReversed()
+        RetentionPolicy.KEEP_FIRST -> backStackEntries.indices
+        RetentionPolicy.KEEP_LAST -> backStackEntries.indices.reversed()
       }
 
-    val translatedByEntry = entriesInPolicyOrder.associateWith { entry ->
-      Route(
-        name = extractRouteName(entry, warningState),
-        arguments = extractRouteArguments(entry, sanitizer),
-      )
+    for (index in indicesInPolicyOrder) {
+      val entry = backStackEntries[index]
+      routes[index] =
+        Route(
+          name = extractRouteName(entry, warningState),
+          arguments = extractRouteArguments(entry, sanitizer),
+        )
     }
 
-    return backStackEntries.map { entry -> translatedByEntry.getValue(entry) }
+    return routes.requireNoNulls()
   }
 
   /**
