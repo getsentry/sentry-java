@@ -1,6 +1,8 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryLevel.WARNING
+import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.protocol.Request
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
@@ -334,16 +336,44 @@ class ScopeTest {
   }
 
   @Test
-  fun `when adding breadcrumb, executeBreadcrumb will be executed and throw, but breadcrumb will be added`() {
-    val exception = Exception("test")
-
-    val options = SentryOptions().apply { setBeforeBreadcrumb { _, _ -> throw exception } }
+  fun `when beforeBreadcrumb throws, breadcrumb is dropped without notifying observers`() {
+    val observer = mock<IScopeObserver>()
+    val options =
+      SentryOptions().apply {
+        setBeforeBreadcrumb { _, _ -> throw Exception("test") }
+        addScopeObserver(observer)
+      }
 
     val scope = Scope(options)
-    val actual = Breadcrumb()
-    scope.addBreadcrumb(actual)
+    val breadcrumb = Breadcrumb()
+    scope.addBreadcrumb(breadcrumb)
 
-    assertEquals("test", actual.data["sentry:message"])
+    assertThat(scope.breadcrumbs).isEmpty()
+    assertThat(breadcrumb.data).doesNotContainKey("sentry:message")
+    verifyNoInteractions(observer)
+    assertClientReport(options.clientReportRecorder, emptyList())
+  }
+
+  @Test
+  fun `when beforeBreadcrumb throws, later breadcrumbs can still be added`() {
+    var invocationCount = 0
+    val options =
+      SentryOptions().apply {
+        setBeforeBreadcrumb { breadcrumb, _ ->
+          invocationCount++
+          if (invocationCount == 1) {
+            throw Exception("test")
+          }
+          breadcrumb
+        }
+      }
+
+    val scope = Scope(options)
+    scope.addBreadcrumb(Breadcrumb("dropped"))
+    scope.addBreadcrumb(Breadcrumb("kept"))
+
+    assertThat(invocationCount).isEqualTo(2)
+    assertThat(scope.breadcrumbs.single().message).isEqualTo("kept")
   }
 
   @Test

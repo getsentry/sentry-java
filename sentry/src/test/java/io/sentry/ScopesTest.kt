@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.backpressure.IBackpressureMonitor
 import io.sentry.cache.EnvelopeCache
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
@@ -236,22 +237,23 @@ class ScopesTest {
   }
 
   @Test
-  fun `when beforeSend throws an exception, breadcrumb adds an entry to the data field with exception message`() {
-    val exception = Exception("test")
-
+  fun `when beforeBreadcrumb throws an exception, breadcrumb is dropped`() {
     val options = SentryOptions()
     options.cacheDirPath = file.absolutePath
     options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? ->
-      throw exception
+      throw Exception("test")
     }
     options.dsn = "https://key@sentry.io/proj"
     options.setSerializer(mock())
     val sut = createScopes(options)
 
-    val actual = Breadcrumb()
-    sut.addBreadcrumb(actual)
+    val breadcrumb = Breadcrumb()
+    sut.addBreadcrumb(breadcrumb)
 
-    assertEquals("test", actual.data["sentry:message"])
+    var breadcrumbs: Queue<Breadcrumb>? = null
+    sut.configureScope { breadcrumbs = it.breadcrumbs }
+    assertThat(breadcrumbs).isEmpty()
+    assertThat(breadcrumb.data).doesNotContainKey("sentry:message")
   }
 
   @Test
