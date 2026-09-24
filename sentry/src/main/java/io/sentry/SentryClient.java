@@ -244,9 +244,9 @@ public final class SentryClient implements ISentryClient {
               .getLogger()
               .log(
                   SentryLevel.ERROR,
-                  "The beforeErrorSampling callback threw an exception. Proceeding with replay capture.",
+                  "The beforeErrorSampling callback threw an exception. Skipping replay capture.",
                   e);
-          shouldCaptureReplay = true;
+          shouldCaptureReplay = false;
         }
       }
       if (shouldCaptureReplay) {
