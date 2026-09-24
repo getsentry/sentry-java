@@ -233,7 +233,7 @@ public final class io/sentry/android/core/AppState$LifecycleObserver : androidx/
 	public fun onStop (Landroidx/lifecycle/LifecycleOwner;)V
 }
 
-public final class io/sentry/android/core/ApplicationExitInfoEventProcessor : io/sentry/BackfillingEventProcessor {
+public final class io/sentry/android/core/ApplicationExitInfoEventProcessor : io/sentry/BackfillingEventProcessor, io/sentry/internal/eventprocessor/SentryEventProcessor {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
@@ -401,7 +401,7 @@ public class io/sentry/android/core/PerfettoProfiler {
 	public fun endAndCollect (Ljava/util/function/Consumer;)V
 }
 
-public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/internal/eventprocessor/SentryEventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/BuildInfoProvider;Z)V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
@@ -678,7 +678,7 @@ public final class io/sentry/android/core/UserInteractionIntegration : android/a
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
 }
 
-public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/android/core/ViewHierarchyEventProcessor : io/sentry/internal/eventprocessor/SentryEventProcessor {
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
