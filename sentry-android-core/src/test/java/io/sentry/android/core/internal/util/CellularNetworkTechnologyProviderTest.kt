@@ -157,6 +157,45 @@ class CellularNetworkTechnologyProviderTest {
   }
 
   @Test
+  fun `toGeneration maps the deprecated NSA mmWave override to 5g`() {
+    // Its underlying network type is LTE, so falling through to the network type reports 4g.
+    val displayInfo =
+      fixture.displayInfo(
+        networkType = TelephonyManager.NETWORK_TYPE_LTE,
+        overrideNetworkType = TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE,
+      )
+
+    assertThat(CellularNetworkTechnologyProvider.toGeneration(displayInfo)).isEqualTo("5g")
+  }
+
+  @Test
+  fun `toGeneration maps the NR advanced override to 5g`() {
+    val displayInfo =
+      fixture.displayInfo(
+        networkType = TelephonyManager.NETWORK_TYPE_LTE,
+        overrideNetworkType = TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED,
+      )
+
+    assertThat(CellularNetworkTechnologyProvider.toGeneration(displayInfo)).isEqualTo("5g")
+  }
+
+  @Test
+  fun `unregistering without a telephony manager keeps the callback for a later attempt`() {
+    val provider = fixture.getSut(sdkVersion = Build.VERSION_CODES.S)
+    val listener = fixture.registerAndCaptureCallback(provider)
+    // The telephony manager disappearing must not orphan the still-registered callback.
+    whenever(fixture.context.getSystemService(eq(Context.TELEPHONY_SERVICE))).thenReturn(null)
+
+    provider.unregister()
+
+    whenever(fixture.context.getSystemService(eq(Context.TELEPHONY_SERVICE)))
+      .thenReturn(fixture.telephonyManager)
+    provider.unregister()
+
+    verify(fixture.telephonyManager).unregisterTelephonyCallback(listener as TelephonyCallback)
+  }
+
+  @Test
   fun `toGeneration falls back to the network type without an override`() {
     val displayInfo =
       fixture.displayInfo(
