@@ -19,7 +19,6 @@ android {
   }
 
   buildTypes {
-    getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
