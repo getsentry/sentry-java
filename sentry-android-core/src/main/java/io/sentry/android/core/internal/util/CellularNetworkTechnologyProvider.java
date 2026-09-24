@@ -108,12 +108,18 @@ public final class CellularNetworkTechnologyProvider {
     }
   }
 
-  /** Stops listening for display info changes and forgets the last reported technology. */
+  /**
+   * Stops listening for display info changes.
+   *
+   * <p>The last reported technology is kept. Monitoring stops when the app goes to the background,
+   * and from API 31 on the listener is the only source, so discarding it would leave every
+   * background event without a technology even though the connection type still resolves. It is
+   * only ever paired with a connection that is cellular at the time the event is captured.
+   */
   @SuppressLint("NewApi")
   public void unregister() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       final @Nullable Object callback = displayInfoCallback;
-      displayInfoTechnology = null;
       if (callback == null) {
         return;
       }

@@ -271,7 +271,7 @@ class CellularNetworkTechnologyProviderTest {
   }
 
   @Test
-  fun `unregistering stops the listener and forgets the technology`() {
+  fun `unregistering stops the listener`() {
     val provider = fixture.getSut(sdkVersion = Build.VERSION_CODES.S)
     val listener = fixture.registerAndCaptureCallback(provider)
     listener.onDisplayInfoChanged(
@@ -284,7 +284,24 @@ class CellularNetworkTechnologyProviderTest {
     provider.unregister()
 
     verify(fixture.telephonyManager).unregisterTelephonyCallback(listener as TelephonyCallback)
-    assertThat(provider.cellularNetworkTechnology).isNull()
+  }
+
+  @Test
+  fun `unregistering keeps the last reported technology`() {
+    // Monitoring stops when the app backgrounds, and from API 31 the listener is the only source,
+    // so dropping the value would leave background events without a technology.
+    val provider = fixture.getSut(sdkVersion = Build.VERSION_CODES.S)
+    val listener = fixture.registerAndCaptureCallback(provider)
+    listener.onDisplayInfoChanged(
+      fixture.displayInfo(
+        networkType = TelephonyManager.NETWORK_TYPE_NR,
+        overrideNetworkType = TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NONE,
+      )
+    )
+
+    provider.unregister()
+
+    assertThat(provider.cellularNetworkTechnology).isEqualTo("5g")
   }
 
   @Test
