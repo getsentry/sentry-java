@@ -111,20 +111,20 @@ public final class CellularNetworkTechnologyProvider {
   /** Stops listening for display info changes and forgets the last reported technology. */
   @SuppressLint("NewApi")
   public void unregister() {
-    final @Nullable Object callback;
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      callback = displayInfoCallback;
-      displayInfoCallback = null;
+      final @Nullable Object callback = displayInfoCallback;
       displayInfoTechnology = null;
       if (callback == null) {
         return;
       }
       final @Nullable TelephonyManager telephonyManager = getTelephonyManager();
       if (telephonyManager == null) {
+        // Keep the reference so a later unregister can still reach the registered callback.
         return;
       }
       try {
         telephonyManager.unregisterTelephonyCallback((TelephonyCallback) callback);
+        displayInfoCallback = null;
         logger.log(SentryLevel.DEBUG, "Stopped listening for cellular network technology changes.");
       } catch (SecurityException | IllegalStateException | UnsupportedOperationException e) {
         logger.log(
@@ -176,10 +176,14 @@ public final class CellularNetworkTechnologyProvider {
    * device showing 5G to the user is also reported as 5G.
    */
   @RequiresApi(api = Build.VERSION_CODES.S)
+  @SuppressWarnings("deprecation")
   static @Nullable String toGeneration(final @NotNull TelephonyDisplayInfo displayInfo) {
     switch (displayInfo.getOverrideNetworkType()) {
       case TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA:
       case TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED:
+      // Deprecated in favour of NR_ADVANCED, but still reported on Android 11. Its underlying
+      // network type is LTE, so without this case a 5G mmWave connection reports 4g.
+      case TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE:
         return GENERATION_5G;
       case TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_CA:
       case TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO:
