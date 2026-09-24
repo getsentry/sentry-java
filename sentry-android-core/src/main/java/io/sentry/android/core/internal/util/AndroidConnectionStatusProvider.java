@@ -24,6 +24,7 @@ import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
@@ -100,7 +101,21 @@ public final class AndroidConnectionStatusProvider
             this.context,
             options.getLogger(),
             buildInfoProvider,
-            runnable -> options.getExecutorService().submit(runnable));
+            runnable -> {
+              try {
+                options.getExecutorService().submit(runnable);
+              } catch (RejectedExecutionException e) {
+                // The telephony framework calls this executor, so an exception would be thrown on
+                // one of its threads. The SDK's executor rejects work once it is shut down, which
+                // can happen before the listener is unregistered.
+                options
+                    .getLogger()
+                    .log(
+                        SentryLevel.DEBUG,
+                        "Dropping a cellular network technology update, the executor rejected it.",
+                        e);
+              }
+            });
 
     capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
