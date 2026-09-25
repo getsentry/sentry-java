@@ -13,7 +13,6 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
-import io.sentry.compose.navigation3.BackStackObserver.Companion.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasNewTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasSameTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackIsEmpty
@@ -22,6 +21,11 @@ import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.lang.ref.WeakReference
+
+private const val BACKSTACK_KEY = "backstack"
+private const val NAVIGATION_CONTEXT_KEY = "navigation"
+private const val NAVIGATION_OP: String = "navigation"
+private const val TRANSACTION_ORIGIN = "auto.navigation.nav3"
 
 /**
  * Observes the back stack managed by a single [SentryNavEffect] and records Sentry state as the
@@ -72,12 +76,6 @@ internal class BackStackObserver<T : Any>(
   }
 
   internal companion object {
-
-    private const val BACKSTACK_KEY = "backstack"
-    private const val NAVIGATION_CONTEXT_KEY = "navigation"
-    private const val NAVIGATION_OP: String = "navigation"
-    private const val TRANSACTION_ORIGIN = "auto.navigation.nav3"
-
     init {
       SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-android-navigation3", BuildConfig.VERSION_NAME)
@@ -109,7 +107,7 @@ internal class BackStackObserver<T : Any>(
         // replaces one observer with another, there may be a brief gap where events lack nav
         // context. Apps should keep the observer at the nav root so cleanup only runs when the
         // navigation session is ending, not during normal destination changes.
-        scope.removeNavigationContext()
+        NavigationContextBinder.updateScope(scope, emptyList())
       }
     }
   }
@@ -184,7 +182,7 @@ internal class BackStackObserver<T : Any>(
   ) {
     val currentTopRoute = currentBackStack.topRoute
 
-    scope.updateNavigationContext(currentBackStack.capturedRoutes)
+    NavigationContextBinder.updateScope(scope, currentBackStack.capturedRoutes)
 
     if (scopes.options.isEnableScreenTracking) {
       screenTracker.track(scope, currentTopRoute.name)
@@ -207,7 +205,15 @@ internal class BackStackObserver<T : Any>(
           currentTopRoute.name,
           currentTopRoute.arguments,
         )
-        ?.updateNavigationContext(scope, currentBackStack)
+        ?.let { transaction ->
+          NavigationContextBinder.updateTransaction(
+            transaction = transaction,
+            scope = scope,
+            backStack = currentBackStack,
+            isScreenTrackingEnabled = scopes.options.isEnableScreenTracking,
+            captureBackStack = options.captureBackStack,
+          )
+        }
     } else {
       // Rotate the propagation context.
       scope.withPropagationContext { scope.setPropagationContext(PropagationContext()) }
@@ -215,11 +221,11 @@ internal class BackStackObserver<T : Any>(
   }
 
   private fun handleSameTop(scope: IScope, backStack: BackStackData<T>) {
-    scope.updateNavigationContext(backStack.capturedRoutes)
+    NavigationContextBinder.updateScope(scope, backStack.capturedRoutes)
   }
 
   private fun handleEmptyBackStack(scope: IScope) {
-    scope.updateNavigationContext(emptyList())
+    NavigationContextBinder.updateScope(scope, emptyList())
     navTransactions.stop(scope)
     screenTracker.clear(scope)
     previousTopEntry = null
@@ -230,46 +236,6 @@ internal class BackStackObserver<T : Any>(
     previousTopEntry = WeakReference(topEntry)
     previousTopRoute = topRoute
   }
-
-  private fun IScope.updateNavigationContext(capturedRoutes: List<Route>) {
-    if (capturedRoutes.isEmpty()) {
-      this.removeNavigationContext()
-    } else {
-      this.setContexts(NAVIGATION_CONTEXT_KEY, capturedRoutes.toNavigationContext())
-    }
-  }
-
-  private fun IScope.removeNavigationContext() {
-    // We purposefully don't call IScope.removeContexts(), as it doesn't notify IScopeObserver and
-    // therefore doesn't write its updates to disk ¯\_ (ツ)_/¯.
-    this.setContexts(NAVIGATION_CONTEXT_KEY, null as Any?)
-  }
-
-  /**
-   * Updates the receiver's context with the provided navigation info.
-   *
-   * Needed because transactions inherit base scope context on a per-key basis unless transactions
-   * have their own values for those keys. In our case, we need to keep fresh back stack and route
-   * values in the base context for purposes of crash reporting. But those values will often advance
-   * past what's relevant to a given transaction. This method prevents misassociation by binding
-   * proper values to the transaction context instead.
-   */
-  private fun ITransaction.updateNavigationContext(scope: IScope, backStack: BackStackData<T>) {
-    if (scopes.options.isEnableScreenTracking) {
-      val appContext = contexts.app ?: io.sentry.protocol.Contexts(scope.contexts).app ?: App()
-
-      appContext.viewNames = listOf(backStack.topRoute.name)
-      contexts.setApp(appContext)
-    }
-
-    if (options.captureBackStack && backStack.capturedRoutes.isNotEmpty()) {
-      setContext(NAVIGATION_CONTEXT_KEY, backStack.capturedRoutes.toNavigationContext())
-    }
-  }
-
-  /** Builds the `{"backstack": [...]}` map bound under [NAVIGATION_CONTEXT_KEY]. */
-  private fun List<Route>.toNavigationContext(): Map<String, Any?> =
-    mapOf(BACKSTACK_KEY to serialize())
 
   private fun IScopes.addNav3Breadcrumb(
     from: Route?,
@@ -337,6 +303,55 @@ private data class BackStackData<T>(
    */
   val capturedRoutes: List<Route>,
 )
+
+private object NavigationContextBinder {
+
+  fun updateScope(scope: IScope, capturedRoutes: List<Route>) {
+    if (capturedRoutes.isEmpty()) {
+      removeScopeContext(scope)
+    } else {
+      scope.setContexts(NAVIGATION_CONTEXT_KEY, capturedRoutes.toNavigationContext())
+    }
+  }
+
+  /**
+   * Updates the transaction with the provided navigation info.
+   *
+   * Needed because transactions inherit base scope context on a per-key basis unless transactions
+   * have their own values for those keys. In our case, we need to keep fresh back stack and route
+   * values in the base context for purposes of crash reporting. But those values will often advance
+   * past what's relevant to a given transaction. This method prevents misassociation by binding
+   * proper values to the transaction context instead.
+   */
+  fun <T : Any> updateTransaction(
+    transaction: ITransaction,
+    scope: IScope,
+    backStack: BackStackData<T>,
+    isScreenTrackingEnabled: Boolean,
+    captureBackStack: Boolean,
+  ) {
+    if (isScreenTrackingEnabled) {
+      val appContext = transaction.contexts.app ?: io.sentry.protocol.Contexts(scope.contexts).app ?: App()
+
+      appContext.viewNames = listOf(backStack.topRoute.name)
+      transaction.contexts.setApp(appContext)
+    }
+
+    if (captureBackStack && backStack.capturedRoutes.isNotEmpty()) {
+      transaction.setContext(NAVIGATION_CONTEXT_KEY, backStack.capturedRoutes.toNavigationContext())
+    }
+  }
+
+  private fun removeScopeContext(scope: IScope) {
+    // We purposefully don't call IScope.removeContexts(), as it doesn't notify IScopeObserver and
+    // therefore doesn't write its updates to disk ¯\_ (ツ)_/¯.
+    scope.setContexts(NAVIGATION_CONTEXT_KEY, null as Any?)
+  }
+
+  /** Builds the `{"backstack": [...]}` map bound under [NAVIGATION_CONTEXT_KEY]. */
+  private fun List<Route>.toNavigationContext(): Map<String, Any?> =
+    mapOf(BACKSTACK_KEY to serialize())
+}
 
 /** Tracks a provided name as the current visible screen. */
 private class ScreenTracker {
