@@ -31,6 +31,7 @@ import io.sentry.android.replay.ReplayLifecycleState.STOPPED
 import io.sentry.android.replay.capture.BufferCaptureStrategy
 import io.sentry.android.replay.capture.CaptureStrategy
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
+import io.sentry.android.replay.capture.ReplaySegmentHint
 import io.sentry.android.replay.capture.SessionCaptureStrategy
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.gestures.TouchRecorderCallback
@@ -701,7 +702,7 @@ public class ReplayIntegration(
         )
 
       if (segment is ReplaySegment.Created) {
-        val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint())
+        val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint(segment.replay.videoFile))
         segment.capture(scopes, hint)
       }
       cleanupReplays(
@@ -757,7 +758,7 @@ public class ReplayIntegration(
       isRecording && this.generation == generation && this.replayId == replayId
   }
 
-  private class PreviousReplayHint : Backfillable {
+  private class PreviousReplayHint(videoFile: File?) : ReplaySegmentHint(videoFile), Backfillable {
     override fun shouldEnrich(): Boolean = false
   }
 

@@ -26,12 +26,14 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ReplayFrame
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.maskAllImages
+import io.sentry.hints.DiscardNotification
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebOptionsEvent
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.util.HintUtils
 import java.io.File
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
@@ -252,6 +254,41 @@ class SessionCaptureStrategyTest {
 
     // The envelope item reads the video lazily on the transport thread, long after stop() returns.
     assertTrue(capturedVideo!!.exists(), "video was deleted before the transport could read it")
+  }
+
+  @Test
+  fun `captured segment deletes its video when the envelope is discarded`() {
+    val replayId = SentryId()
+    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val video = File(currentReplay, "0.mp4").also { it.writeBytes(ByteArray(1024)) }
+    whenever(
+        fixture.replayCache.createVideoOf(
+          anyLong(),
+          anyLong(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          any(),
+        )
+      )
+      .thenReturn(GeneratedVideo(video, 5, Fixture.VIDEO_DURATION))
+    val strategy = fixture.getSut(replayCacheDir = currentReplay)
+    strategy.start(0, replayId)
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    // pause() captures a segment without deleting any files, unlike stop() before Task 5
+    strategy.pause()
+
+    verify(fixture.scopes)
+      .captureReplay(
+        any(),
+        check { hint ->
+          HintUtils.runIfHasType(hint, DiscardNotification::class.java) { it.markDiscarded() }
+        },
+      )
+    assertFalse(video.exists())
   }
 
   @Test

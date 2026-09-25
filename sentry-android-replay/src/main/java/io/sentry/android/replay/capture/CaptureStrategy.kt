@@ -18,6 +18,7 @@ import io.sentry.rrweb.RRWebEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebOptionsEvent
 import io.sentry.rrweb.RRWebVideoEvent
+import io.sentry.util.HintUtils
 import java.io.File
 import java.util.Date
 import java.util.Deque
@@ -273,7 +274,10 @@ internal interface CaptureStrategy {
 
     data class Created(val replay: SentryReplayEvent, val recording: ReplayRecording) :
       ReplaySegment() {
-      fun capture(scopes: IScopes?, hint: Hint = Hint()) {
+      fun capture(
+        scopes: IScopes?,
+        hint: Hint = HintUtils.createWithTypeCheckHint(ReplaySegmentHint(replay.videoFile)),
+      ) {
         scopes?.captureReplay(replay, hint.apply { replayRecording = recording })
       }
 
