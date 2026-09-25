@@ -3,7 +3,7 @@ package io.sentry.compose.navigation3
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.Snapshot
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.Test
+import org.junit.Test
 
 class RouteExtractorsTest {
 

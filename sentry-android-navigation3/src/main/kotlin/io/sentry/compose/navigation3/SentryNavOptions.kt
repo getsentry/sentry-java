@@ -96,6 +96,13 @@ private constructor(
     result = 31 * result + maxCapturedBackStackEntries
     return result
   }
+
+  override fun toString(): String =
+    "SentryNavOptions(" +
+      "enableNavigationBreadcrumbs=$enableNavigationBreadcrumbs, " +
+      "enableNavigationTransactions=$enableNavigationTransactions, " +
+      "captureBackStack=$captureBackStack, " +
+      "maxCapturedBackStackEntries=$maxCapturedBackStackEntries)"
 }
 
 /**

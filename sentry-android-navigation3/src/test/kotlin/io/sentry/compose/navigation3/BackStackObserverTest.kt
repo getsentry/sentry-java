@@ -18,8 +18,7 @@ import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
-import kotlin.test.Test
-import kotlin.test.assertNull
+import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
@@ -602,7 +601,7 @@ class BackStackObserverTest {
     assertThat(transaction.isFinished).isTrue()
     assertThat(fixture.scope.transaction).isNull()
     assertThat(fixture.scope.screen).isNull()
-    assertNull(fixture.scope.contexts.app?.viewNames)
+    assertThat(fixture.scope.contexts.app?.viewNames).isNull()
     assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
     assertThat(fixture.breadcrumbs).hasSize(1)
   }
@@ -732,7 +731,7 @@ class BackStackObserverTest {
     assertThat(transaction.isFinished).isTrue()
     assertThat(fixture.scope.transaction).isNull()
     assertThat(fixture.scope.screen).isNull()
-    assertNull(fixture.scope.contexts.app?.viewNames)
+    assertThat(fixture.scope.contexts.app?.viewNames).isNull()
     assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
   }
 

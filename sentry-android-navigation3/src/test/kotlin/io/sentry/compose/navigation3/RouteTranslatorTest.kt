@@ -7,7 +7,7 @@ import io.sentry.compose.navigation3.RouteTranslator.ArgumentSanitizer
 import io.sentry.compose.navigation3.RouteTranslator.RetentionPolicy
 import io.sentry.compose.navigation3.RouteTranslator.WarningState
 import java.util.AbstractCollection
-import kotlin.test.Test
+import org.junit.Test
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock

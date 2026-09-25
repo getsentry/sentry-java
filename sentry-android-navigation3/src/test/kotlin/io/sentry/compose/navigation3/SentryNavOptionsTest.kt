@@ -2,8 +2,8 @@ package io.sentry.compose.navigation3
 
 import com.google.common.truth.Truth.assertThat
 import java.lang.reflect.Modifier
-import kotlin.test.Test
-import kotlin.test.assertFailsWith
+import org.junit.Assert.assertThrows
+import org.junit.Test
 
 class SentryNavOptionsTest {
 
@@ -24,7 +24,7 @@ class SentryNavOptionsTest {
   @Test
   fun `rejects negative max captured backstack entries`() {
     val exception =
-      assertFailsWith<IllegalArgumentException> {
+      assertThrows(IllegalArgumentException::class.java) {
         SentryNavOptions { maxCapturedBackStackEntries = -1 }
       }
 
@@ -60,6 +60,33 @@ class SentryNavOptionsTest {
       assertThat(changed).isNotEqualTo(base)
       assertThat(changed.hashCode()).isNotEqualTo(base.hashCode())
       assertThat(propertyName).isIn(instanceFields)
+    }
+  }
+
+  @Test
+  fun `toString includes every property`() {
+    val options = SentryNavOptions()
+    val instanceFields =
+      SentryNavOptions::class
+        .java
+        .declaredFields
+        .filterNot { Modifier.isStatic(it.modifiers) }
+        .associate { field ->
+          field.isAccessible = true
+          field.name to field.get(options)
+        }
+
+    instanceFields.forEach { (name, value) ->
+      assertThat(options.toString()).contains("$name=$value")
+    }
+  }
+
+  @Test
+  fun `toString changes when any property changes`() {
+    val base = SentryNavOptions()
+
+    propertyMutators.forEach { (_, mutate) ->
+      assertThat(mutate(base).toString()).isNotEqualTo(base.toString())
     }
   }
 

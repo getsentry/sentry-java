@@ -17,7 +17,6 @@ android {
   defaultConfig {
     minSdk = libs.versions.minSdk.get().toInt()
 
-    // for AGP 4.1
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
   }
 
@@ -63,7 +62,6 @@ dependencies {
 
   testImplementation(libs.androidx.compose.runtime)
   testImplementation(libs.google.truth)
-  testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.mockito.kotlin)
 }
