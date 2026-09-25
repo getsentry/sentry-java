@@ -6,6 +6,7 @@ import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.Sentry.OptionsConfiguration
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -69,6 +70,9 @@ class SentrySpanWebClientCustomizerTest {
       doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
         .whenever(scopes)
         .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
       transaction =
         SentryTracer(TransactionContext("aTransaction", "op", TracesSamplingDecision(true)), scopes)
       val webClientBuilder = WebClient.builder()

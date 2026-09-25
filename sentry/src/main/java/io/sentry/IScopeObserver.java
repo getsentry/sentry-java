@@ -38,6 +38,8 @@ public interface IScopeObserver {
 
   void setLevel(@Nullable SentryLevel level);
 
+  void setEnvironment(@Nullable String environment);
+
   void setContexts(@NotNull Contexts contexts);
 
   void setTransaction(@Nullable String transaction);

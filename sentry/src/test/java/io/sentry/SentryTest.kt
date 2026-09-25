@@ -8,6 +8,7 @@ import io.sentry.backpressure.BackpressureMonitor
 import io.sentry.backpressure.NoOpBackpressureMonitor
 import io.sentry.cache.EnvelopeCache
 import io.sentry.cache.IEnvelopeCache
+import io.sentry.cache.PersistingScopeObserver
 import io.sentry.internal.debugmeta.IDebugMetaLoader
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader
 import io.sentry.internal.modules.CompositeModulesLoader
@@ -172,6 +173,32 @@ class SentryTest {
     Sentry.close()
     verify(scopes).close(eq(false))
     assertFalse(Sentry.getGlobalScope().client.isEnabled)
+  }
+
+  @Test
+  fun `init persists pre-init global scope environment`() {
+    val options =
+      SentryOptions().apply {
+        dsn = this@SentryTest.dsn
+        cacheDirPath = getTempPath()
+        executorService = ImmediateExecutorService()
+        addScopeObserver(PersistingScopeObserver(this))
+      }
+    Sentry.getGlobalScope().environment = "pre-init-environment"
+
+    try {
+      initForTest(options)
+
+      assertEquals(
+        "pre-init-environment",
+        PersistingScopeObserver(options)
+          .read(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String::class.java),
+      )
+    } finally {
+      Sentry.close()
+      Sentry.getGlobalScope().replaceOptions(SentryOptions.empty())
+      Sentry.getGlobalScope().environment = null
+    }
   }
 
   @Test
