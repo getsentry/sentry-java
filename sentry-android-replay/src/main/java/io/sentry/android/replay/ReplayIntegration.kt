@@ -344,9 +344,12 @@ public class ReplayIntegration(
     )
     capture(strategy) { newTimestamp ->
       // Runs on the replay thread right after the flush segment was captured, before any segment
-      // work queued behind it (pause, stop, frames), so no later segment reuses the flushed id.
+      // work queued behind it (pause, stop, frames). `strategy.currentSegment` is exactly the id
+      // the flush segment used (the buffer flush does not increment its own counter), so deriving
+      // the next id from it, rather than incrementing activeStrategy's possibly-stale id, ensures
+      // no later segment reuses the flushed id even if a queued segment ran on `strategy` first.
       // A restarted replay uses a new strategy instance, so this cannot touch it.
-      activeStrategy.currentSegment++
+      activeStrategy.currentSegment = strategy.currentSegment + 1
       activeStrategy.segmentTimestamp = newTimestamp
       activeStrategy.isFlushed = true
     }
