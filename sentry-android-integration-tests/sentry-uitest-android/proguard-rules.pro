@@ -36,6 +36,7 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+-dontwarn sun.nio.ch.DirectBuffer
 -dontwarn org.opentest4j.AssertionFailedError
 -dontwarn org.mockito.internal.**
 -dontwarn org.jetbrains.annotations.**

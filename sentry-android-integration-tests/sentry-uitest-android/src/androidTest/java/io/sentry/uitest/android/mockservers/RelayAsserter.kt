@@ -43,6 +43,15 @@ class RelayAsserter(private val unassertedEnvelopes: MutableList<RelayResponse>)
     return unassertedEnvelopes.removeAt(relayResponseIndex)
   }
 
+  /**
+   * Returns every envelope received so far that satisfies [filter], without consuming it. Use this
+   * while polling for envelopes that are still in flight: a consuming lookup would drop the
+   * envelopes that an earlier, failed attempt already found.
+   */
+  fun peekEnvelopes(
+    filter: (envelope: SentryEnvelope) -> Boolean = { true }
+  ): List<SentryEnvelope> = originalUnassertedEnvelopes.mapNotNull { it.envelope }.filter(filter)
+
   /** Asserts no other envelopes were sent. */
   fun assertNoOtherEnvelopes() {
     if (unassertedEnvelopes.isNotEmpty()) {

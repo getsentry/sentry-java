@@ -218,6 +218,43 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
+  fun `stop keeps segment video readable for the transport`() {
+    val replayId = SentryId()
+    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val video = File(currentReplay, "0.mp4").also { it.writeBytes(ByteArray(1024)) }
+    whenever(
+        fixture.replayCache.createVideoOf(
+          anyLong(),
+          anyLong(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          any(),
+        )
+      )
+      .thenReturn(GeneratedVideo(video, 5, Fixture.VIDEO_DURATION))
+
+    var capturedVideo: File? = null
+    doAnswer {
+        capturedVideo = (it.arguments[0] as SentryReplayEvent).videoFile
+        null
+      }
+      .whenever(fixture.scopes)
+      .captureReplay(any(), any())
+
+    val strategy = fixture.getSut(replayCacheDir = currentReplay)
+    strategy.start(0, replayId)
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.stop()
+
+    // The envelope item reads the video lazily on the transport thread, long after stop() returns.
+    assertTrue(capturedVideo!!.exists(), "video was deleted before the transport could read it")
+  }
+
+  @Test
   fun `stop closes cache after queued replay work`() {
     val tasks = mutableListOf<Runnable>()
     val calls = mutableListOf<String>()

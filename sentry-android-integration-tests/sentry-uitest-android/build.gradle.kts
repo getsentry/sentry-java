@@ -124,6 +124,7 @@ dependencies {
   androidTestImplementation(libs.awaitility3.kotlin)
   androidTestImplementation(libs.kotlin.test.junit)
   androidTestImplementation(libs.leakcanary.instrumentation)
+  androidTestImplementation(libs.msgpack)
   androidTestImplementation(libs.okhttp.mockwebserver)
 }
 
