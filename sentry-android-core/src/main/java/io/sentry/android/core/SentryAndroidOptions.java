@@ -768,6 +768,19 @@ public final class SentryAndroidOptions extends SentryOptions {
    * ApplicationExitInfo} and a native crash event in the outbox for the two to be merged into a
    * single event. Defaults to 5000 ms.
    *
+   * <p>The two timestamps come from different sources: the tombstone timestamp is recorded by the
+   * system when the process died, the native event timestamp is recorded by the SDK signal handler.
+   * Raise the threshold when crashes are reported as separate 'signalhandler' events instead of a
+   * merged event, because the gap between the two exceeded the threshold.
+   *
+   * <p>Do not raise it more than necessary. The threshold is the only criterion used to pair the
+   * two, so a high value can merge a tombstone with a native crash that belongs to a different
+   * process death. The merged event then reports the wrong stack trace, and the native crash it
+   * consumed is never sent on its own.
+   *
+   * <p>A value of 0 merges only events with identical timestamps. A negative value disables merging
+   * completely, so tombstone and native crash are both reported as separate events.
+   *
    * @param tombstoneMergeTimeThresholdMillis the threshold in milliseconds
    */
   public void setTombstoneMergeTimeThresholdMillis(final long tombstoneMergeTimeThresholdMillis) {
