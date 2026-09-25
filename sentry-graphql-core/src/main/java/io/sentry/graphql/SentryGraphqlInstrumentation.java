@@ -22,6 +22,7 @@ import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TypeCheckHint;
@@ -283,7 +284,19 @@ public final class SentryGraphqlInstrumentation {
       final @NotNull DataFetchingEnvironment environment,
       final @Nullable Object result) {
     if (beforeSpan != null) {
-      final ISpan newSpan = beforeSpan.execute(span, environment, result);
+      ISpan newSpan = span;
+      try {
+        newSpan = beforeSpan.execute(span, environment, result);
+      } catch (Exception e) {
+        span.getSpanContext().setSampled(false);
+        scopesFromContext(environment.getGraphQlContext())
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The beforeSpan callback threw an exception in SentryGraphqlInstrumentation. Dropping span.",
+                e);
+      }
       if (newSpan == null) {
         // span is dropped
         span.getSpanContext().setSampled(false);

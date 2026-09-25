@@ -33,6 +33,7 @@ dependencies {
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.apollo4.kotlin)
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlinx.coroutines)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.mockito.kotlin)

@@ -3,12 +3,15 @@ package io.sentry.apollo
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.coroutines.await
 import com.apollographql.apollo.exception.ApolloException
+import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -241,15 +244,38 @@ class SentryApolloInterceptorTest {
   }
 
   @Test
-  fun `when customizer throws, exception is handled`() {
-    executeQuery(fixture.getSut { _, _, _ -> throw RuntimeException() })
+  fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
+    val failure = IllegalStateException("callback failed")
+    val logger = mock<ILogger>()
+    fixture.options.isDebug = true
+    fixture.options.setLogger(logger)
+    val tx =
+      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(tx)
+    val sut = fixture.getSut { span, _, _ ->
+      span.description = "partially modified"
+      throw failure
+    }
 
+    val response = sut.query(LaunchDetailsQuery.builder().id("83").build()).await()
+    assertThat(response.data).isNotNull()
+    val span = tx.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    tx.finish()
     verify(fixture.scopes)
       .captureTransaction(
-        check { assertEquals(1, it.spans.size) },
+        check { assertThat(it.spans).isEmpty() },
         anyOrNull<TraceContext>(),
         anyOrNull(),
         anyOrNull(),
+      )
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+    verify(logger)
+      .log(
+        SentryLevel.ERROR,
+        "An error occurred while executing beforeSpan on ApolloInterceptor",
+        failure,
       )
   }
 

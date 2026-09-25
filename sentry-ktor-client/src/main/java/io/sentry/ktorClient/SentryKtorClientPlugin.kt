@@ -16,6 +16,7 @@ import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.kotlin.SentryContext
@@ -186,7 +187,20 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
         var result: ISpan? = span
 
         if (beforeSpan != null) {
-          result = beforeSpan.execute(span, request)
+          result =
+            try {
+              beforeSpan.execute(span, request)
+            } catch (e: Exception) {
+              (if (forceScopes) scopes else Sentry.getCurrentScopes())
+                .options
+                .logger
+                .log(
+                  SentryLevel.ERROR,
+                  "The beforeSpan callback threw an exception in SentryKtorClientPlugin. Dropping span.",
+                  e,
+                )
+              null
+            }
         }
 
         if (result == null) {

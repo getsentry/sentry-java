@@ -222,6 +222,7 @@ constructor(
             span.spanContext.sampled = false
           }
         } catch (e: Throwable) {
+          span.spanContext.sampled = false
           scopes.options.logger.log(
             SentryLevel.ERROR,
             "An error occurred while executing beforeSpan in ApolloInterceptor",

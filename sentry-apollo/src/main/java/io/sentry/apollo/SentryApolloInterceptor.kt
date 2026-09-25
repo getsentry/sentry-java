@@ -178,6 +178,7 @@ class SentryApolloInterceptor(
       try {
         newSpan = beforeSpan.execute(span, request, response)
       } catch (e: Exception) {
+        span.spanContext.sampled = false
         scopes.options.logger.log(
           SentryLevel.ERROR,
           "An error occurred while executing beforeSpan on ApolloInterceptor",

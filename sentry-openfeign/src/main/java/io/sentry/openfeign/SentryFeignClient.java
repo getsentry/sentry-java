@@ -14,6 +14,7 @@ import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.SentryLevel;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
@@ -95,7 +96,19 @@ public final class SentryFeignClient implements Client {
         throw e;
       } finally {
         if (beforeSpan != null) {
-          final ISpan result = beforeSpan.execute(span, request, response);
+          ISpan result = span;
+          try {
+            result = beforeSpan.execute(span, request, response);
+          } catch (Exception e) {
+            span.getSpanContext().setSampled(false);
+            scopes
+                .getOptions()
+                .getLogger()
+                .log(
+                    SentryLevel.ERROR,
+                    "The beforeSpan callback threw an exception in SentryFeignClient. Dropping span.",
+                    e);
+          }
 
           if (result == null) {
             // span is dropped

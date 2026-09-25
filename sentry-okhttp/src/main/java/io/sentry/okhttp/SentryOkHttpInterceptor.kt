@@ -9,6 +9,7 @@ import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryReplayOptions
 import io.sentry.SpanDataConvention
@@ -364,7 +365,17 @@ public open class SentryOkHttpInterceptor(
       return
     }
     if (beforeSpan != null) {
-      val result = beforeSpan.execute(span, request, response)
+      val result =
+        try {
+          beforeSpan.execute(span, request, response)
+        } catch (e: Exception) {
+          scopes.options.logger.log(
+            SentryLevel.ERROR,
+            "The beforeSpan callback threw an exception in SentryOkHttpInterceptor. Dropping span.",
+            e,
+          )
+          null
+        }
       if (result == null) {
         // span is dropped
         span.spanContext.sampled = false

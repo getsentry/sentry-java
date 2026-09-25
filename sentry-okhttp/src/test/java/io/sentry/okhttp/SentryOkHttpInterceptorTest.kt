@@ -2,16 +2,19 @@
 
 package io.sentry.okhttp
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
+import io.sentry.ILogger
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -28,6 +31,7 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -432,6 +436,76 @@ class SentryOkHttpInterceptorTest {
     val httpClientSpan = fixture.sentryTracer.children.first()
     assertTrue(httpClientSpan.isFinished)
     assertNotNull(httpClientSpan.spanContext.sampled) { assertFalse(it) }
+  }
+
+  @Test
+  fun `when beforeSpan throws, drops span and preserves response`() {
+    val failure = IllegalStateException("callback failed")
+    val logger = mock<ILogger>()
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _, _ ->
+          span.description = "partially modified"
+          throw failure
+        }
+      )
+    fixture.options.isDebug = true
+    fixture.options.setLogger(logger)
+
+    sut.newCall(getRequest()).execute().use { response ->
+      assertThat(response.code).isEqualTo(201)
+      assertThat(response.body!!.string()).isEqualTo("success")
+    }
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+    verify(logger)
+      .log(
+        SentryLevel.ERROR,
+        "The beforeSpan callback threw an exception in SentryOkHttpInterceptor. Dropping span.",
+        failure,
+      )
+  }
+
+  @Test
+  fun `when beforeSpan throws, event listener still finishes span`() {
+    val sut =
+      fixture.getSut(
+        beforeSpan = { _, _, _ -> throw IllegalStateException("callback failed") },
+        eventListener = SentryOkHttpEventListener(fixture.scopes),
+      )
+    val call = sut.newCall(getRequest())
+    call.execute().use { response ->
+      assertThat(response.code).isEqualTo(201)
+      assertThat(SentryOkHttpEventListener.eventMap[call]!!.isEventFinished.get()).isTrue()
+    }
+    val span = fixture.sentryTracer.children.first { it.operation == "http.client" }
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    assertThat(SentryOkHttpEventListener.eventMap).doesNotContainKey(call)
+  }
+
+  @Test
+  fun `when beforeSpan throws, preserves original request exception`() {
+    val requestFailure = IOException("request failed")
+    val sut =
+      fixture
+        .getSut(
+          beforeSpan = { _, _, _ ->
+            throw IllegalStateException("callback failed")
+          }
+        )
+        .newBuilder()
+        .addInterceptor { throw requestFailure }
+        .build()
+
+    val thrown = assertFailsWith<IOException> { sut.newCall(getRequest()).execute() }
+    assertThat(thrown).isSameInstanceAs(requestFailure)
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.throwable).isSameInstanceAs(requestFailure)
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
   }
 
   @Test
