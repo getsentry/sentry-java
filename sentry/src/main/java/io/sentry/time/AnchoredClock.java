@@ -43,7 +43,7 @@ public final class AnchoredClock {
    * from a tick. Reads no clock and never changes.
    */
   public @NotNull Timestamp startTime() {
-    return Timestamp.ofEpochNanos(epochNanos);
+    return Timestamp.anchoredAt(epochNanos, this);
   }
 
   /** Now: {@link #startTime()} plus the time the ticker has measured since the anchor. */
@@ -51,7 +51,27 @@ public final class AnchoredClock {
     return at(ticker.tickNanos());
   }
 
-  private @NotNull Timestamp at(final long tickNanos) {
-    return Timestamp.ofEpochNanos(epochNanos + (tickNanos - anchorTick));
+  /**
+   * The instant a tick corresponds to, for placing something already measured on this ticker — a
+   * frame, a profiler sample — on the same timeline as the instants projected here.
+   */
+  public @NotNull Timestamp at(final long tickNanos) {
+    return Timestamp.anchoredAt(epochNanos + (tickNanos - anchorTick), this);
+  }
+
+  /**
+   * The tick an instant was projected from. Exact, and reads no clock: projection adds a tick
+   * difference to a fixed epoch, so subtraction inverts it.
+   *
+   * @throws IllegalArgumentException if this clock did not project the instant. Its epoch bears no
+   *     arithmetic relation to these ticks, so converting it would silently produce a tick derived
+   *     from a wall-clock difference.
+   */
+  public long tickOf(final @NotNull Timestamp timestamp) {
+    if (timestamp.anchor() != this) {
+      throw new IllegalArgumentException(
+          "Timestamp was not projected by this AnchoredClock: " + timestamp);
+    }
+    return anchorTick + (timestamp.epochNanos() - epochNanos);
   }
 }
