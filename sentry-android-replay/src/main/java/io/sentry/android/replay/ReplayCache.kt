@@ -72,7 +72,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
    * @param frameTimestamp the timestamp when the frame screenshot was taken
    */
   internal fun addFrame(bitmap: Bitmap, frameTimestamp: Long, screen: String? = null) {
-    if (replayCacheDir == null || bitmap.isRecycled) {
+    if (replayCacheDir == null || bitmap.isRecycled || isClosed.get()) {
       return
     }
     replayCacheDir?.mkdirs()
@@ -101,7 +101,19 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
    */
   public fun addFrame(screenshot: File, frameTimestamp: Long, screen: String? = null) {
     val frame = ReplayFrame(screenshot, frameTimestamp, screen)
-    framesLock.acquire().use { frames += frame }
+    val added =
+      framesLock.acquire().use {
+        if (isClosed.get()) {
+          false
+        } else {
+          frames += frame
+          true
+        }
+      }
+    if (!added) {
+      // the replay has stopped, so nothing will encode or delete this frame
+      deleteFile(screenshot)
+    }
   }
 
   /** Returns the timestamp of the first frame if available in a thread-safe manner. */
@@ -271,12 +283,21 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     return screen
   }
 
+  /**
+   * Releases the encoder and deletes the frames and segment state of this cache. Segment videos are
+   * kept: a captured segment's video belongs to the send path.
+   */
   override fun close() {
     try {
       encoder?.release()
       encoder = null
     } finally {
       isClosed.set(true)
+      framesLock.acquire().use {
+        frames.forEach { deleteFile(it.screenshot) }
+        frames.clear()
+      }
+      lock.acquire().use { replayCacheDir?.let { File(it, ONGOING_SEGMENT).delete() } }
     }
   }
 

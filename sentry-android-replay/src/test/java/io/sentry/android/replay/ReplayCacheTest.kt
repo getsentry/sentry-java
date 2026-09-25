@@ -284,6 +284,34 @@ class ReplayCacheTest {
   }
 
   @Test
+  fun `close deletes frames and segment state but keeps videos`() {
+    val replayCache = fixture.getSut(tmpDir)
+    val frame = File(replayCache.replayCacheDir, "1.jpg").also { it.createNewFile() }
+    replayCache.addFrame(frame, 1)
+    replayCache.persistSegmentValues("key", "value")
+    val video = File(replayCache.replayCacheDir, "0.mp4").also { it.writeBytes(ByteArray(1)) }
+
+    replayCache.close()
+
+    assertFalse(frame.exists())
+    assertTrue(replayCache.frames.isEmpty())
+    assertFalse(File(replayCache.replayCacheDir, ONGOING_SEGMENT).exists())
+    assertTrue(video.exists())
+  }
+
+  @Test
+  fun `addFrame after close deletes the screenshot`() {
+    val replayCache = fixture.getSut(tmpDir)
+    replayCache.close()
+    val frame = File(replayCache.replayCacheDir, "1.jpg").also { it.createNewFile() }
+
+    replayCache.addFrame(frame, 1)
+
+    assertFalse(frame.exists())
+    assertTrue(replayCache.frames.isEmpty())
+  }
+
+  @Test
   fun `when file does not exist upon persisting creates it`() {
     val replayId = SentryId()
     val replayCache = fixture.getSut(tmpDir, replayId)
