@@ -17,6 +17,7 @@ import io.sentry.TypeCheckHint
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasNewTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasSameTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackIsEmpty
+import io.sentry.compose.navigation3.RouteTranslator.RetentionPolicy
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.ExceptionUtils
@@ -53,12 +54,12 @@ import java.lang.ref.WeakReference
 internal class BackStackObserver<T : Any>(
   private val scopes: IScopes,
   private val options: SentryNavOptions,
-  private val resolvers: () -> RouteResolvers<T>,
+  private val extractors: () -> RouteExtractors<T>,
 ) {
 
   private val navTransactions = NavTransactionManager(scopes, NAVIGATION_OP, TRANSACTION_ORIGIN)
   private val screenTracker = ScreenTracker()
-  private val routeTranslator = RouteTranslator(resolvers, scopes.options.logger)
+  private val routeTranslator = RouteTranslator(extractors, scopes.options.logger)
 
   private var previousTopEntry: WeakReference<T>? = null
   private var previousTopRoute: Route? = null
@@ -167,7 +168,11 @@ internal class BackStackObserver<T : Any>(
         else -> listOf(topEntry)
       }
 
-    val routes = routeTranslator.translate(entriesToTranslate)
+    val routes =
+      routeTranslator.translate(
+        backStackEntries = entriesToTranslate,
+        retentionPolicy = RetentionPolicy.KEEP_FIRST,
+      )
 
     return BackStackData(
       topEntry = topEntry,

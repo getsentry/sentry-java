@@ -96,7 +96,7 @@ class BackStackObserverTest {
             captureBackStack = config.captureBackStack
             maxCapturedBackStackEntries = config.maxCapturedBackStackEntries
           },
-        resolvers = { RouteResolvers(nameExtractor, argumentsExtractor) },
+        extractors = { RouteExtractors(nameExtractor, argumentsExtractor) },
       )
     }
 
@@ -246,6 +246,35 @@ class BackStackObserverTest {
 
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(listOf(mapOf("route" to "/SettingsRoute"), mapOf("route" to "/ProfileRoute")))
+  }
+
+  @Test
+  fun `onBackStackChanged preserves top entry arguments when lower entries exhaust the shared budget`() {
+    val fixture = Fixture()
+    val sut =
+      fixture.getSut(
+        config = ObserverConfig(captureBackStack = true),
+        argumentsExtractor =
+          RouteArgumentsExtractor { entry ->
+            when (entry) {
+              is HomeRoute -> mapOf("values" to List(999) { it })
+              is ProfileRoute -> mapOf("userId" to entry.userId)
+              else -> emptyMap()
+            }
+          },
+      )
+
+    sut.onBackStackChanged(listOf(HomeRoute(), ProfileRoute("123")))
+
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(
+        listOf(
+          mapOf("route" to "/ProfileRoute", "args" to mapOf("userId" to "123")),
+          mapOf("route" to "/HomeRoute"),
+        )
+      )
+    assertThat(fixture.startedTransactions.single().getData("arguments"))
+      .isEqualTo(mapOf("userId" to "123"))
   }
 
   @Test

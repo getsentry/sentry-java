@@ -25,13 +25,13 @@ internal class RouteTranslator<T : Any>(
   }
 
   /** Translates the provided [backStackEntries] into [Route]s and returns them in input order. */
-  fun translate(backStackEntries: List<T>, policy: RetentionPolicy): List<Route> {
+  fun translate(backStackEntries: List<T>, retentionPolicy: RetentionPolicy): List<Route> {
     val warningState = WarningState()
     val sanitizer = ArgumentSanitizer(logger, warningState)
 
     val routes = MutableList<Route?>(backStackEntries.size) { null }
     val indicesInPolicyOrder =
-      when (policy) {
+      when (retentionPolicy) {
         RetentionPolicy.KEEP_FIRST -> backStackEntries.indices
         RetentionPolicy.KEEP_LAST -> backStackEntries.indices.reversed()
       }
