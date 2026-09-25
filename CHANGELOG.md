@@ -7,6 +7,12 @@
 - Deprecate `sendDefaultPii` in favor of `dataCollection` ahead of its removal in 9.0 ([#6158](https://github.com/getsentry/sentry-java/pull/6158))
 - Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
 
+### Dependencies
+
+- Bump Native SDK from v0.16.6 to v0.17.1 ([#6135](https://github.com/getsentry/sentry-java/pull/6135))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0171)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.6...0.17.1)
+
 ## 8.58.0
 
 ### Features
