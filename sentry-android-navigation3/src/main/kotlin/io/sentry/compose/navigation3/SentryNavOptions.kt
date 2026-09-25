@@ -10,7 +10,7 @@ private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 10
 /**
  * Configuration info for a [SentryNavEffect].
  *
- * Instances are immutable; create one with the [SentryNavOptions] DSL:
+ * Instances are immutable; create one with the SentryNavOptions DSL:
  * ```kotlin
  * val options = SentryNavOptions {
  *   captureBackStack = false
@@ -98,7 +98,15 @@ private constructor(
   }
 }
 
-/** Creates [SentryNavOptions]. Optionally configure it via [configure]. */
+/**
+ * Creates [SentryNavOptions]. Optionally configure it via [configure]. E.g.:
+ * ```kotlin
+ * val options = SentryNavOptions {
+ *   captureBackStack = false
+ *   maxCapturedBackStackEntries = 5
+ * }
+ * ```
+ */
 @ApiStatus.Experimental
 internal fun SentryNavOptions(
   configure: SentryNavOptions.Builder.() -> Unit = {}

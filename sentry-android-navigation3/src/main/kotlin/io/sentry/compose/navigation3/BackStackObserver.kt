@@ -8,12 +8,13 @@ import io.sentry.ITransaction
 import io.sentry.PropagationContext
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
-import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
+import io.sentry.SentryLevel.WARNING
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.TypeCheckHint
+import io.sentry.compose.navigation3.BackStackObserver.Companion.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasNewTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasSameTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackIsEmpty
@@ -61,6 +62,7 @@ internal class BackStackObserver<T : Any>(
   private val screenTracker = ScreenTracker()
   private val routeTranslator = RouteTranslator(extractors, scopes.options.logger)
 
+  // Safe because the host back stack retains the current top entry strongly between updates.
   private var previousTopEntry: WeakReference<T>? = null
   private var previousTopRoute: Route? = null
 
@@ -313,7 +315,7 @@ internal class BackStackObserver<T : Any>(
       // Nav instrumentation can invoke host code through route translation and scope mutation.
       ExceptionUtils.rethrowIfFatal(t)
       scopes.options.logger.log(
-        ERROR,
+        WARNING,
         t,
         "Nav3 instrumentation failed during %s. Skipping this navigation update.",
         operation,

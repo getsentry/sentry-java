@@ -11,13 +11,16 @@ import org.jetbrains.annotations.ApiStatus
  * Values returned from [extract] are ***not*** scrubbed by the Sentry SDK before being sent to
  * Sentry. Only return names that are known to be safe or have been pre-scrubbed.
  *
- * **Choosing stable route names**
+ * **Choosing appropriate route names**
  *
  * Implementations should return stable, low-cardinality names that don't depend on object identity,
  * argument values, or runtime class-name preservation. E.g., `Home`, `DetailScreen`, etc.
  *
  * In particular, avoid `::class.simpleName` in release builds, as R8 obfuscates class names and may
  * map them to different symbols across builds.
+ *
+ * Extractors are invoked synchronously from [SentryNavEffect] on the same apply thread that runs
+ * the effect. Avoid non-performant extraction logic.
  *
  * **Falls back to "/unknown"**
  *
@@ -31,8 +34,8 @@ import org.jetbrains.annotations.ApiStatus
  *
  * **Using kotlinx.serialization**
  *
- * If your back stack contains `@Serializable` route types, you may want to consider mapping each
- * route type to a stable serializer name. For instance:
+ * If your back stack contains `@Serializable` route types, consider mapping each route type to a
+ * stable serializer name. For instance:
  * ```kotlin
  * val nameExtractor = RouteNameExtractor<Any> { route ->
  *   when (route) {
@@ -43,7 +46,7 @@ import org.jetbrains.annotations.ApiStatus
  * }
  * ```
  *
- * Doing so prevents route names from being obfuscated while leaving per-route arguments to
+ * Doing so gives each route type a stable, non-obfuscated name while leaving per-route arguments to
  * [RouteArgumentsExtractor].
  */
 @ApiStatus.Experimental
@@ -60,13 +63,14 @@ internal fun interface RouteNameExtractor<T : Any> {
  * Values returned from [extract] are ***not*** scrubbed by the Sentry SDK before being sent to
  * Sentry. Only return arguments that are known to be safe or have been pre-scrubbed.
  *
- * **Choosing performant route arguments**
+ * **Choosing appropriate route arguments**
  *
  * Return only a small subset of route data useful for diagnostics. Data should be stable enough to
  * inspect in Sentry.
  *
- * For performance reasons, implementations should avoid large structures. Cyclic or deeply nested
- * containers will be skipped. (See `RouteTranslator` for more details.)
+ * Extractors are invoked synchronously from [SentryNavEffect] on the same apply thread that runs
+ * the effect. For performance reasons, implementations should avoid large structures. Cyclic or
+ * deeply nested containers will be skipped. (See `RouteTranslator` for more details.)
  *
  * **Accepted value types**
  *
@@ -96,9 +100,9 @@ internal fun interface RouteNameExtractor<T : Any> {
  *
  * **Using kotlinx.serialization**
  *
- * Even if your back stack contains `@Serializable` route types, consider mapping each route type to
- * a small set of diagnostic arguments to avoid the cost of serializing and returning the entire
- * route object. For instance:
+ * If your back stack contains `@Serializable` route types, avoid returning the entire route object
+ * when it may be large, nested, or privacy-sensitive. Prefer a small set of diagnostic arguments
+ * instead. For instance:
  * ```kotlin
  * val argumentsExtractor = RouteArgumentsExtractor<Any> { route ->
  *   when (route) {
