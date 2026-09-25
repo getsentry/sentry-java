@@ -97,14 +97,14 @@ internal fun <T : Any> SentryNavEffect(
   options: SentryNavOptions = SentryNavOptions(),
   scopes: IScopes,
 ) {
-  val routeResolvers = rememberUpdatedState(RouteResolvers(nameExtractor, argumentsExtractor))
+  val routeExtractors = rememberUpdatedState(RouteExtractors(nameExtractor, argumentsExtractor))
 
   val observer =
     remember(scopes, options) {
       BackStackObserver(
         scopes = scopes,
         options = options,
-        resolvers = { routeResolvers.value },
+        extractors = { routeExtractors.value },
       )
     }
 

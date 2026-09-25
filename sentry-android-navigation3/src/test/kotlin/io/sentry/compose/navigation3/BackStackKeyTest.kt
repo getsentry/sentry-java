@@ -1,7 +1,7 @@
 package io.sentry.compose.navigation3
 
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.Test
+import org.junit.Test
 
 class BackStackKeyTest {
 

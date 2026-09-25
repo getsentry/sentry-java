@@ -22,9 +22,8 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import kotlin.test.Test
-import kotlin.test.assertNull
 import org.junit.Rule
+import org.junit.Test
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import org.junit.runner.RunWith
@@ -529,7 +528,7 @@ class SentryNavEffectTest {
     assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.transaction).isNull()
     assertThat(fixture.scope.screen).isNull()
-    assertNull(fixture.scope.contexts.app?.viewNames)
+    assertThat(fixture.scope.contexts.app?.viewNames).isNull()
     assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
   }
 
