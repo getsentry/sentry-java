@@ -1,6 +1,5 @@
 package io.sentry.samples.android
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
@@ -26,16 +25,20 @@ class SecondActivity : AppCompatActivity() {
 
     binding.doRequest.setOnClickListener { updateRepos() }
 
-    binding.backMain.setOnClickListener {
-      finish()
-      startActivity(Intent(this, MainActivity::class.java))
-    }
+    binding.backMain.setOnClickListener { finish() }
 
     // do some stuff
 
     setContentView(binding.root)
 
+    supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
     span?.finish(SpanStatus.OK)
+  }
+
+  override fun onSupportNavigateUp(): Boolean {
+    onBackPressedDispatcher.onBackPressed()
+    return true
   }
 
   private fun showText(visible: Boolean = true, text: String = "") {

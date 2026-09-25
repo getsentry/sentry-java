@@ -25,16 +25,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -45,6 +48,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -289,133 +293,150 @@ class SQLiteActivity : ComponentActivity() {
    */
   private var screenTraceHeader = newScreenTrace()
 
+  @OptIn(ExperimentalMaterial3Api::class)
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     setContent {
       MaterialTheme {
-        Surface {
-          Column(
-            modifier =
-              Modifier.fillMaxWidth()
-                .statusBarsPadding()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-          ) {
-            val screenHeightDp = LocalConfiguration.current.screenHeightDp
-            // A small gap below the screen title that grows with screen height and collapses to 0
-            // on short screens, so the title isn't crowded against "Configure it" on tall devices.
-            val titleGap =
-              (((((screenHeightDp / 4) - 48) / 3).coerceAtLeast(0).dp + TOGGLE_SECTION_GAP) / 2 -
-                  SECTION_HEADER_HEIGHT)
-                .coerceAtLeast(0.dp)
-
-            // Pulse the "Under the hood" outline in the integration color whenever a tap runs SQL.
-            val shimmer = remember { Animatable(0f) }
-            LaunchedEffect(runTick) {
-              if (runTick == 0) return@LaunchedEffect
-              shimmer.animateTo(
-                targetValue = 0f,
-                animationSpec =
-                  keyframes {
-                    durationMillis = 900
-                    0f at 0
-                    1f at 200
-                    0.4f at 450
-                    1f at 650
-                    0f at 900
-                  },
-              )
-            }
-
-            val detailOutline =
-              lerp(MaterialTheme.colorScheme.outline, integration.color, shimmer.value)
-
-            Text(text = "SQLite Instrumentation", style = MaterialTheme.typography.headlineSmall)
-            SagpBuildPill()
-
-            Spacer(Modifier.height(titleGap))
-
-            SectionHeader("Configure it")
-
-            val controlSwitchColors =
-              SwitchDefaults.colors(
-                checkedTrackColor = Color.Black,
-                checkedBorderColor = Color.Black,
-              )
-            IntegrationModeSelector(
-              selected = integration,
-              onSelected = {
-                integration = it
-                sqlDetail = SQL_DETAIL_HINT
-                latestResult = ""
+        Scaffold(
+          topBar = {
+            TopAppBar(
+              title = { Text("SQLite") },
+              navigationIcon = {
+                IconButton(onClick = { onBackPressedDispatcher.onBackPressed() }) {
+                  Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
               },
             )
-            ToggleRow(
-              label = if (heavyWork) "Heavy app-level work" else "No app-level work",
-              checked = heavyWork,
-              switchColors = controlSwitchColors,
+          }
+        ) { innerPadding ->
+          Surface(modifier = Modifier.padding(innerPadding)) {
+            Column(
+              modifier =
+                Modifier.fillMaxWidth()
+                  .statusBarsPadding()
+                  .padding(16.dp)
+                  .verticalScroll(rememberScrollState()),
+              verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-              heavyWork = it
-            }
-            ToggleRow(
-              label =
-                if (shareScreenTrace) "Single trace for all button clicks"
-                else "Separate trace per button click",
-              checked = shareScreenTrace,
-              switchColors = controlSwitchColors,
-            ) {
-              shareScreenTrace = it
-            }
+              val screenHeightDp = LocalConfiguration.current.screenHeightDp
+              // A small gap below the screen title that grows with screen height and collapses to 0
+              // on short screens, so the title isn't crowded against "Configure it" on tall
+              // devices.
+              val titleGap =
+                (((((screenHeightDp / 4) - 48) / 3).coerceAtLeast(0).dp + TOGGLE_SECTION_GAP) / 2 -
+                    SECTION_HEADER_HEIGHT)
+                  .coerceAtLeast(0.dp)
 
-            SectionHeader("Run it", topPadding = CONTROL_SECTION_GAP) { HelpTooltip() }
-
-            // One consolidated list of demo buttons. Each row dispatches to the selected
-            // integration's variant; a row that doesn't apply explains why via a toast (see
-            // [DemoRowButton]).
-            DEMO_ROWS.forEach { row ->
-              val variant = row.variantFor(integration)
-              DemoRowButton(
-                label = row.label,
-                color = integration.color,
-                variant = variant,
-                sagpDisabledReason = sagpDisabledReason(integration, row),
-                disabledReason = "${row.label} doesn't support the ${integration.apiName} stack",
-              )
-            }
-
-            ResetButton(
-              dbOperationInFlight = dbOperationInFlight,
-              resetInProgress = resetInProgress,
-            )
-
-            // Same [CONTROL_SECTION_GAP] above as the other sections, separating the controls from
-            // the detail output.
-            SectionHeader("Under the hood", topPadding = CONTROL_SECTION_GAP)
-            LaunchedEffect(Unit) {
-              while (!SampleDatabases.isWarmUpComplete()) {
-                warmUpErrors = SampleDatabases.warmUpErrors
-                delay(250)
+              // Pulse the "Under the hood" outline in the integration color whenever a tap runs
+              // SQL.
+              val shimmer = remember { Animatable(0f) }
+              LaunchedEffect(runTick) {
+                if (runTick == 0) return@LaunchedEffect
+                shimmer.animateTo(
+                  targetValue = 0f,
+                  animationSpec =
+                    keyframes {
+                      durationMillis = 900
+                      0f at 0
+                      1f at 200
+                      0.4f at 450
+                      1f at 650
+                      0f at 900
+                    },
+                )
               }
-              warmUpErrors = SampleDatabases.warmUpErrors
-            }
-            if (warmUpErrors.isNotEmpty()) {
-              Text(
-                text = warmUpErrors,
-                style = MaterialTheme.typography.bodyMedium,
-                color = SentryRed,
+
+              val detailOutline =
+                lerp(MaterialTheme.colorScheme.outline, integration.color, shimmer.value)
+
+              Text(text = "SQLite Instrumentation", style = MaterialTheme.typography.headlineSmall)
+              SagpBuildPill()
+
+              Spacer(Modifier.height(titleGap))
+
+              SectionHeader("Configure it")
+
+              val controlSwitchColors =
+                SwitchDefaults.colors(
+                  checkedTrackColor = Color.Black,
+                  checkedBorderColor = Color.Black,
+                )
+              IntegrationModeSelector(
+                selected = integration,
+                onSelected = {
+                  integration = it
+                  sqlDetail = SQL_DETAIL_HINT
+                  latestResult = ""
+                },
               )
-            }
-            // The latest run result (row counts, errors). Hidden until the first run.
-            if (latestResult.isNotEmpty()) {
-              Text(
-                text = latestResult,
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (latestResult.looksLikeError()) SentryRed else Color.Unspecified,
+              ToggleRow(
+                label = if (heavyWork) "Heavy app-level work" else "No app-level work",
+                checked = heavyWork,
+                switchColors = controlSwitchColors,
+              ) {
+                heavyWork = it
+              }
+              ToggleRow(
+                label =
+                  if (shareScreenTrace) "Single trace for all button clicks"
+                  else "Separate trace per button click",
+                checked = shareScreenTrace,
+                switchColors = controlSwitchColors,
+              ) {
+                shareScreenTrace = it
+              }
+
+              SectionHeader("Run it", topPadding = CONTROL_SECTION_GAP) { HelpTooltip() }
+
+              // One consolidated list of demo buttons. Each row dispatches to the selected
+              // integration's variant; a row that doesn't apply explains why via a toast (see
+              // [DemoRowButton]).
+              DEMO_ROWS.forEach { row ->
+                val variant = row.variantFor(integration)
+                DemoRowButton(
+                  label = row.label,
+                  color = integration.color,
+                  variant = variant,
+                  sagpDisabledReason = sagpDisabledReason(integration, row),
+                  disabledReason = "${row.label} doesn't support the ${integration.apiName} stack",
+                )
+              }
+
+              ResetButton(
+                dbOperationInFlight = dbOperationInFlight,
+                resetInProgress = resetInProgress,
               )
+
+              // Same [CONTROL_SECTION_GAP] above as the other sections, separating the controls
+              // from
+              // the detail output.
+              SectionHeader("Under the hood", topPadding = CONTROL_SECTION_GAP)
+              LaunchedEffect(Unit) {
+                while (!SampleDatabases.isWarmUpComplete()) {
+                  warmUpErrors = SampleDatabases.warmUpErrors
+                  delay(250)
+                }
+                warmUpErrors = SampleDatabases.warmUpErrors
+              }
+              if (warmUpErrors.isNotEmpty()) {
+                Text(
+                  text = warmUpErrors,
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = SentryRed,
+                )
+              }
+              // The latest run result (row counts, errors). Hidden until the first run.
+              if (latestResult.isNotEmpty()) {
+                Text(
+                  text = latestResult,
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = if (latestResult.looksLikeError()) SentryRed else Color.Unspecified,
+                )
+              }
+              DetailField("SQL run", sqlDetail, borderColor = detailOutline)
             }
-            DetailField("SQL run", sqlDetail, borderColor = detailOutline)
           }
         }
       }

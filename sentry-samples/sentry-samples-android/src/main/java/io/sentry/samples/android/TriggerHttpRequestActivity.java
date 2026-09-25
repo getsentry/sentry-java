@@ -52,12 +52,21 @@ public class TriggerHttpRequestActivity extends AppCompatActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_trigger_http_request);
+    if (getSupportActionBar() != null) {
+      getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    }
 
     dateFormat = new SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault());
 
     initializeViews();
     setupOkHttpClient();
     setupClickListeners();
+  }
+
+  @Override
+  public boolean onSupportNavigateUp() {
+    getOnBackPressedDispatcher().onBackPressed();
+    return true;
   }
 
   private void initializeViews() {
