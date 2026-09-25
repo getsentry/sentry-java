@@ -9,7 +9,6 @@ import io.sentry.PropagationContext
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
-import io.sentry.SentryLevel.WARNING
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
@@ -21,7 +20,6 @@ import io.sentry.compose.navigation3.PreparedChange.BackStackIsEmpty
 import io.sentry.compose.navigation3.RouteTranslator.RetentionPolicy
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
-import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.lang.ref.WeakReference
 
@@ -90,32 +88,28 @@ internal class BackStackObserver<T : Any>(
    * Updates recorded Sentry data based on the provided [backStack].
    *
    * Note: This method is ***not*** idempotent. Callers should protect against repeat invocations
-   * with the same back stack.
+   * with the same back stack to avoid emitting duplicate Sentry data.
    */
   internal fun onBackStackChanged(backStack: List<T>) {
-    guard("onBackStackChanged") {
-      val change = prepareChange(backStack)
-      scopes.configureScope { scope -> applyPreparedChange(scope, change) }
-    }
+    val change = prepareChange(backStack)
+    scopes.configureScope { scope -> applyChange(scope, change) }
   }
 
   internal fun cleanup() {
-    guard("cleanup") {
-      previousTopEntry = null
-      previousTopRoute = null
+    previousTopEntry = null
+    previousTopRoute = null
 
-      scopes.configureScope { scope ->
-        navTransactions.stop(scope)
-        screenTracker.clear(scope)
+    scopes.configureScope { scope ->
+      navTransactions.stop(scope)
+      screenTracker.clear(scope)
 
-        if (options.captureBackStack) {
-          // This observer owns the nav context while it's in the composition, and cleanup removes
-          // it to avoid leaking stale back stack data after observation stops. If the host app
-          // replaces one observer with another, there may be a brief gap where events lack nav
-          // context. Apps should keep the observer at the nav root so cleanup only runs when the
-          // navigation session is ending, not during normal destination changes.
-          scope.removeNavigationContext()
-        }
+      if (options.captureBackStack) {
+        // This observer owns the nav context while it's in the composition, and cleanup removes
+        // it to avoid leaking stale back stack data after observation stops. If the host app
+        // replaces one observer with another, there may be a brief gap where events lack nav
+        // context. Apps should keep the observer at the nav root so cleanup only runs when the
+        // navigation session is ending, not during normal destination changes.
+        scope.removeNavigationContext()
       }
     }
   }
@@ -131,7 +125,7 @@ internal class BackStackObserver<T : Any>(
     }
   }
 
-  private fun applyPreparedChange(scope: IScope, change: PreparedChange<T>) {
+  private fun applyChange(scope: IScope, change: PreparedChange<T>) {
     when (change) {
       is BackStackIsEmpty -> handleEmptyBackStack(scope)
 
@@ -305,22 +299,6 @@ internal class BackStackObserver<T : Any>(
     val hint = Hint()
     hint.set(TypeCheckHint.ANDROID_NAV3_DESTINATION, toEntry)
     this.addBreadcrumb(breadcrumb, hint)
-  }
-
-  @Suppress("TooGenericExceptionCaught")
-  private inline fun guard(operation: String, body: () -> Unit) {
-    try {
-      body()
-    } catch (t: Throwable) {
-      // Nav instrumentation can invoke host code through route translation and scope mutation.
-      ExceptionUtils.rethrowIfFatal(t)
-      scopes.options.logger.log(
-        WARNING,
-        t,
-        "Nav3 instrumentation failed during %s. Skipping this navigation update.",
-        operation,
-      )
-    }
   }
 }
 
