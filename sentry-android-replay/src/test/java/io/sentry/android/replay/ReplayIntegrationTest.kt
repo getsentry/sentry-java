@@ -749,6 +749,47 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `flush callback advances the converted strategy even after a queued stop`() {
+    val replayId = SentryId()
+    var onSegmentSent: ((Date) -> Unit)? = null
+    val bufferStrategy = mock<BufferCaptureStrategy>()
+    val sessionStrategy = mock<SessionCaptureStrategy>()
+    whenever(bufferStrategy.currentReplayId).thenReturn(replayId)
+    whenever(bufferStrategy.convert()).thenReturn(sessionStrategy)
+    whenever(sessionStrategy.currentReplayId).thenReturn(replayId)
+    whenever(sessionStrategy.currentSegment).thenReturn(0)
+    doAnswer {
+        @Suppress("UNCHECKED_CAST")
+        onSegmentSent = it.arguments[1] as (Date) -> Unit
+      }
+      .whenever(bufferStrategy)
+      .captureReplay(any(), any())
+    val replay =
+      fixture.getSut(
+        context,
+        sessionSampleRate = 0.0,
+        replayCaptureStrategyProvider = { bufferStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    shadowOf(Looper.getMainLooper()).idle()
+    replay.captureReplay(false)
+    shadowOf(Looper.getMainLooper()).idle()
+    replay.stop()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    // The flush finishes on the replay thread after stop() already ran on the main thread; the
+    // stop segment is queued behind it and must not reuse the flushed segment id.
+    val flushEnd = Date()
+    onSegmentSent!!.invoke(flushEnd)
+
+    verify(sessionStrategy).currentSegment = 1
+    verify(sessionStrategy).segmentTimestamp = flushEnd
+    verify(sessionStrategy).isFlushed = true
+  }
+
+  @Test
   fun `pause does nothing when not recording`() {
     val captureStrategy = mock<CaptureStrategy>()
     val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })

@@ -334,30 +334,22 @@ public class ReplayIntegration(
       return
     }
 
-    var activeStrategy: CaptureStrategy = strategy
-    capture(strategy) { newTimestamp ->
-      enqueueOnMainThread {
-        val latest = state.get()
-        // The flush completes asynchronously; ignore it if this replay was stopped, restarted,
-        // or handed to another strategy in the meantime.
-        if (
-          latest.matches(expectedGeneration, expectedReplayId) &&
-            latest.captureStrategy === activeStrategy
-        ) {
-          activeStrategy.currentSegment++
-          activeStrategy.segmentTimestamp = newTimestamp
-          activeStrategy.isFlushed = true
-        }
-      }
-    }
-    activeStrategy = strategy.convert()
-    val replayId: SentryId? = activeStrategy.currentReplayId
+    // Convert before capturing, so the flush callback knows which strategy continues this replay.
+    val activeStrategy = strategy.convert()
     state.set(
       current.copy(
-        replayId = replayId ?: SentryId.EMPTY_ID,
+        replayId = activeStrategy.currentReplayId ?: SentryId.EMPTY_ID,
         captureStrategy = activeStrategy,
       )
     )
+    capture(strategy) { newTimestamp ->
+      // Runs on the replay thread right after the flush segment was captured, before any segment
+      // work queued behind it (pause, stop, frames), so no later segment reuses the flushed id.
+      // A restarted replay uses a new strategy instance, so this cannot touch it.
+      activeStrategy.currentSegment++
+      activeStrategy.segmentTimestamp = newTimestamp
+      activeStrategy.isFlushed = true
+    }
   }
 
   override fun getReplayId(): SentryId = state.get().replayId
