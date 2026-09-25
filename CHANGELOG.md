@@ -127,6 +127,7 @@
   - Drop telemetry and record `callback_error` when a customer event processor throws instead of continuing with a potentially partially processed item. SDK-owned processor failures are logged and processing continues without a `callback_error` client report.
   - Drop breadcrumbs when `beforeBreadcrumb` throws instead of storing exception details on the breadcrumb.
   - When `tracesSampler` throws, drop the transaction and record `callback_error` instead of inheriting the parent sampling decision or falling back to `tracesSampleRate` ([#6163](https://github.com/getsentry/sentry-java/pull/6163))
+  - When `profilesSampler` throws, disable profiling instead of falling back to `profilesSampleRate` or inheriting the parent's profiling decision. Trace sampling is unchanged ([#6164](https://github.com/getsentry/sentry-java/pull/6164))
 - Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
 - Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
 

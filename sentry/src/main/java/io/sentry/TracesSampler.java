@@ -26,16 +26,18 @@ public final class TracesSampler {
     }
 
     Double profilesSampleRate = null;
+    boolean profilesSamplerFailed = false;
     if (options.getProfilesSampler() != null) {
       try {
         profilesSampleRate = options.getProfilesSampler().sample(samplingContext);
       } catch (Throwable t) {
+        profilesSamplerFailed = true;
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'ProfilesSamplerCallback' callback.", t);
       }
     }
-    if (profilesSampleRate == null) {
+    if (profilesSampleRate == null && !profilesSamplerFailed) {
       profilesSampleRate = options.getProfilesSampleRate();
     }
     Boolean profilesSampled = profilesSampleRate != null && sample(profilesSampleRate, sampleRand);
@@ -69,6 +71,13 @@ public final class TracesSampler {
     final TracesSamplingDecision parentSamplingDecision =
         samplingContext.getTransactionContext().getParentSamplingDecision();
     if (parentSamplingDecision != null) {
+      if (profilesSamplerFailed) {
+        return SampleRateUtils.backfilledSampleRand(
+            new TracesSamplingDecision(
+                parentSamplingDecision.getSampled(),
+                parentSamplingDecision.getSampleRate(),
+                parentSamplingDecision.getSampleRand()));
+      }
       return SampleRateUtils.backfilledSampleRand(parentSamplingDecision);
     }
 
