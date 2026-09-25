@@ -71,9 +71,10 @@ import org.jetbrains.annotations.ApiStatus
  * @param options The kinds of navigation info this effect should record.
  */
 @ApiStatus.Experimental
+@ApiStatus.Internal
 @Composable
 @Suppress("FunctionNaming")
-internal fun <T : Any> SentryNavEffect(
+public fun <T : Any> SentryNavEffect(
   backStack: List<T>,
   nameExtractor: RouteNameExtractor<T>,
   argumentsExtractor: RouteArgumentsExtractor<T>? = null,
