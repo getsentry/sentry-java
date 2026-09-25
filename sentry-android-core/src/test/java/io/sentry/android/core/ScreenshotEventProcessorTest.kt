@@ -29,11 +29,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Attachment
 import io.sentry.Hint
+import io.sentry.ILogger
 import io.sentry.MainEventProcessor
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.TypeCheckHint.ANDROID_ACTIVITY
 import io.sentry.protocol.SentryException
 import io.sentry.util.thread.IThreadChecker
@@ -48,6 +51,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric.buildActivity
 import org.robolectric.Shadows.shadowOf
@@ -311,10 +315,37 @@ class ScreenshotEventProcessorTest {
   }
 
   @Test
+  fun `when capture callback throws, skips screenshot and retains event`() {
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+    val logger = mock<ILogger>()
+    fixture.options.isDebug = true
+    fixture.options.setLogger(logger)
+    val failure = IllegalStateException("callback failed")
+    fixture.options.setBeforeScreenshotCaptureCallback { _, _, _ -> throw failure }
+    val processor = fixture.getSut(true)
+    val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+    val hint = Hint()
+
+    assertThat(processor.process(event, hint)).isSameInstanceAs(event)
+    assertThat(hint.screenshot).isNull()
+    verify(logger)
+      .log(
+        SentryLevel.ERROR,
+        "The beforeScreenshotCapture callback threw an exception. Skipping screenshot capture.",
+        failure,
+      )
+
+    fixture.options.setBeforeScreenshotCaptureCallback { _, _, _ -> true }
+    val nextHint = Hint()
+    assertThat(processor.process(event, nextHint)).isSameInstanceAs(event)
+    assertThat(nextHint.screenshot).isNotNull()
+  }
+
+  @Test
   fun `when capture callback returns true, a screenshot should be captured`() {
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
 
-    fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ -> true }
+    fixture.options.setBeforeScreenshotCaptureCallback { _, _, _ -> true }
     val processor = fixture.getSut(true)
 
     val event = SentryEvent().apply { exceptions = listOf(SentryException()) }

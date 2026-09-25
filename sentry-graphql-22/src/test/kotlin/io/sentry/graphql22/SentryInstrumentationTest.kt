@@ -1,5 +1,6 @@
 package io.sentry.graphql22
 
+import com.google.common.truth.Truth.assertThat
 import graphql.GraphQL
 import graphql.GraphQLContext
 import graphql.execution.ExecutionContextBuilder
@@ -18,17 +19,22 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
+import io.sentry.DataCategory
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.Sentry
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.clientreport.DiscardReason
 import io.sentry.graphql.ExceptionReporter
 import io.sentry.graphql.NoOpSubscriptionHandler
 import io.sentry.graphql.SentryGraphqlInstrumentation
 import io.sentry.graphql.SentrySubscriptionHandler
 import java.lang.RuntimeException
+import java.util.concurrent.CompletableFuture
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -38,6 +44,8 @@ import kotlin.test.assertTrue
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryInstrumentationTest {
@@ -48,9 +56,11 @@ class SentryInstrumentationTest {
     fun getSut(
       isTransactionActive: Boolean = true,
       dataFetcherThrows: Boolean = false,
+      async: Boolean = false,
       beforeSpan: SentryGraphqlInstrumentation.BeforeSpanCallback? = null,
     ): GraphQL {
-      whenever(scopes.options).thenReturn(SentryOptions())
+      whenever(scopes.options)
+        .thenReturn(SentryOptions().apply { dsn = "https://key@sentry.io/proj" })
       activeSpan = SentryTracer(TransactionContext("name", "op"), scopes)
       val schema =
         """
@@ -66,7 +76,10 @@ class SentryInstrumentationTest {
 
       val graphQLSchema =
         SchemaGenerator()
-          .makeExecutableSchema(SchemaParser().parse(schema), buildRuntimeWiring(dataFetcherThrows))
+          .makeExecutableSchema(
+            SchemaParser().parse(schema),
+            buildRuntimeWiring(dataFetcherThrows, async),
+          )
       val graphQL =
         GraphQL.newGraphQL(graphQLSchema)
           .instrumentation(
@@ -83,14 +96,15 @@ class SentryInstrumentationTest {
       return graphQL
     }
 
-    private fun buildRuntimeWiring(dataFetcherThrows: Boolean) =
+    private fun buildRuntimeWiring(dataFetcherThrows: Boolean, async: Boolean) =
       RuntimeWiring.newRuntimeWiring()
         .type("Query") {
           it.dataFetcher("shows") {
             if (dataFetcherThrows) {
               throw RuntimeException("error")
             } else {
-              listOf(Show(Random.nextInt()), Show(Random.nextInt()))
+              val shows = listOf(Show(Random.nextInt()), Show(Random.nextInt()))
+              if (async) CompletableFuture.completedFuture(shows) else shows
             }
           }
         }
@@ -152,6 +166,9 @@ class SentryInstrumentationTest {
       fixture.getSut(
         beforeSpan = SentryGraphqlInstrumentation.BeforeSpanCallback { _, _, _ -> null }
       )
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.scopes.options.onDiscard = onDiscard
+    fixture.activeSpan.spanContext.sampled = true
 
     withMockScopes {
       val result = sut.execute("{ shows { id } }")
@@ -162,6 +179,103 @@ class SentryInstrumentationTest {
       assertEquals("graphql", span.operation)
       assertEquals("Query.shows", span.description)
       assertNotNull(span.isSampled) { assertFalse(it) }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `reports callback errors only for sampled spans`() {
+    for (sampled in listOf(true, false, null)) {
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _, _ ->
+            span.spanContext.sampled = false
+            throw IllegalStateException("callback failed")
+          }
+        )
+      fixture.activeSpan.spanContext.sampled = sampled
+      fixture.scopes.options.onDiscard = onDiscard
+
+      withMockScopes {
+        assertThat(sut.execute("{ shows { id } }").errors).isEmpty()
+        fixture.activeSpan.finish()
+      }
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws, drops span and preserves result`() {
+    val failure = IllegalStateException("callback failed")
+    val logger = mock<ILogger>()
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _, _ ->
+          span.description = "partially modified"
+          throw failure
+        }
+      )
+    fixture.scopes.options.isDebug = true
+    fixture.scopes.options.setLogger(logger)
+
+    withMockScopes {
+      val result = sut.execute("{ shows { id } }")
+      assertThat(result.errors).isEmpty()
+      assertThat(result.getData<Map<String, Any>>()).containsKey("shows")
+      val span = fixture.activeSpan.children.single()
+      assertThat(span.isSampled).isFalse()
+      assertThat(span.isFinished).isTrue()
+      verify(logger)
+        .log(
+          SentryLevel.ERROR,
+          "The beforeSpan callback threw an exception in SentryGraphqlInstrumentation. Dropping span.",
+          failure,
+        )
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws, drops async span and preserves result`() {
+    val sut =
+      fixture.getSut(
+        async = true,
+        beforeSpan = { _, _, _ ->
+          throw IllegalStateException("callback failed")
+        },
+      )
+    withMockScopes {
+      val result = sut.execute("{ shows { id } }")
+      assertThat(result.errors).isEmpty()
+      assertThat(result.getData<Map<String, Any>>()).containsKey("shows")
+      val span = fixture.activeSpan.children.single()
+      assertThat(span.isSampled).isFalse()
+      assertThat(span.isFinished).isTrue()
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws, preserves data fetcher error`() {
+    val sut =
+      fixture.getSut(
+        dataFetcherThrows = true,
+        beforeSpan = { _, _, _ ->
+          throw IllegalStateException("callback failed")
+        },
+      )
+    withMockScopes {
+      val result = sut.execute("{ shows { id } }")
+      assertThat(result.errors).hasSize(1)
+      assertThat(result.errors.single().message).contains("error")
+      assertThat(result.errors.single().message).doesNotContain("callback failed")
+      val span = fixture.activeSpan.children.single()
+      assertThat(span.isSampled).isFalse()
+      assertThat(span.isFinished).isTrue()
+      assertThat(span.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
     }
   }
 

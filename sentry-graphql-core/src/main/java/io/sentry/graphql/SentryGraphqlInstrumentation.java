@@ -17,14 +17,17 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import io.sentry.Breadcrumb;
+import io.sentry.DataCategory;
 import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TypeCheckHint;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.util.StringUtils;
 import java.util.Arrays;
 import java.util.List;
@@ -283,7 +286,26 @@ public final class SentryGraphqlInstrumentation {
       final @NotNull DataFetchingEnvironment environment,
       final @Nullable Object result) {
     if (beforeSpan != null) {
-      final ISpan newSpan = beforeSpan.execute(span, environment, result);
+      final boolean wasSampled = Boolean.TRUE.equals(span.isSampled());
+      ISpan newSpan = span;
+      try {
+        newSpan = beforeSpan.execute(span, environment, result);
+      } catch (Exception e) {
+        span.getSpanContext().setSampled(false);
+        if (wasSampled) {
+          scopesFromContext(environment.getGraphQlContext())
+              .getOptions()
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Span);
+        }
+        scopesFromContext(environment.getGraphQlContext())
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The beforeSpan callback threw an exception in SentryGraphqlInstrumentation. Dropping span.",
+                e);
+      }
       if (newSpan == null) {
         // span is dropped
         span.getSpanContext().setSampled(false);

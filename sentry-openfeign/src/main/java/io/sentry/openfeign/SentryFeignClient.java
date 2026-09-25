@@ -10,14 +10,17 @@ import feign.Response;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.BuildConfig;
+import io.sentry.DataCategory;
 import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.SentryLevel;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.W3CTraceparentHeader;
+import io.sentry.clientreport.DiscardReason;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
@@ -95,7 +98,26 @@ public final class SentryFeignClient implements Client {
         throw e;
       } finally {
         if (beforeSpan != null) {
-          final ISpan result = beforeSpan.execute(span, request, response);
+          final boolean wasSampled = Boolean.TRUE.equals(span.isSampled());
+          ISpan result = span;
+          try {
+            result = beforeSpan.execute(span, request, response);
+          } catch (Exception e) {
+            span.getSpanContext().setSampled(false);
+            if (wasSampled) {
+              scopes
+                  .getOptions()
+                  .getClientReportRecorder()
+                  .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Span);
+            }
+            scopes
+                .getOptions()
+                .getLogger()
+                .log(
+                    SentryLevel.ERROR,
+                    "The beforeSpan callback threw an exception in SentryFeignClient. Dropping span.",
+                    e);
+          }
 
           if (result == null) {
             // span is dropped

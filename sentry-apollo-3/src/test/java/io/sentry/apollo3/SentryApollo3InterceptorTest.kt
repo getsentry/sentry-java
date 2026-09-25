@@ -7,12 +7,16 @@ import com.apollographql.apollo3.exception.ApolloException
 import com.apollographql.apollo3.exception.ApolloHttpException
 import com.apollographql.apollo3.network.http.HttpInterceptor
 import com.apollographql.apollo3.network.http.HttpInterceptorChain
+import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryTraceHeader
@@ -25,6 +29,7 @@ import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.W3CTraceparentHeader
 import io.sentry.apollo3.SentryApollo3HttpInterceptor.BeforeSpanCallback
+import io.sentry.clientreport.DiscardReason
 import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
@@ -47,6 +52,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryApollo3InterceptorTest {
@@ -291,7 +297,10 @@ class SentryApollo3InterceptorTest {
 
   @Test
   fun `returning null in beforeSpan callback drops span`() {
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.options.onDiscard = onDiscard
     executeQuery(fixture.getSut(beforeSpan = { _, _, _ -> null }))
+    verifyNoMoreInteractions(onDiscard)
 
     verify(fixture.scopes)
       .captureTransaction(
@@ -303,15 +312,67 @@ class SentryApollo3InterceptorTest {
   }
 
   @Test
-  fun `when customizer throws, exception is handled`() {
-    executeQuery(fixture.getSut(beforeSpan = { _, _, _ -> throw RuntimeException() }))
+  fun `reports callback errors only for sampled spans`(): Unit = runBlocking {
+    for (sampled in listOf(true, false, null)) {
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      fixture.options.onDiscard = onDiscard
+      val tx = SentryTracer(TransactionContext("op", "desc"), fixture.scopes)
+      tx.spanContext.sampled = sampled
+      whenever(fixture.scopes.span).thenReturn(tx)
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _, _ ->
+            span.spanContext.sampled = false
+            throw IllegalStateException("callback failed")
+          }
+        )
 
+      assertThat(sut.query(LaunchDetailsQuery("83")).execute().data).isNotNull()
+      tx.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
+    val failure = IllegalStateException("callback failed")
+    val logger = mock<ILogger>()
+    fixture.options.isDebug = true
+    fixture.options.setLogger(logger)
+    val tx =
+      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(tx)
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _, _ ->
+          span.description = "partially modified"
+          throw failure
+        }
+      )
+
+    val response = sut.query(LaunchDetailsQuery("83")).execute()
+    assertThat(response.data).isNotNull()
+    val span = tx.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    tx.finish()
     verify(fixture.scopes)
       .captureTransaction(
-        check { assertEquals(1, it.spans.size) },
+        check { assertThat(it.spans).isEmpty() },
         anyOrNull<TraceContext>(),
         anyOrNull(),
         anyOrNull(),
+      )
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+    verify(logger)
+      .log(
+        SentryLevel.ERROR,
+        "An error occurred while executing beforeSpan on ApolloInterceptor",
+        failure,
       )
   }
 
