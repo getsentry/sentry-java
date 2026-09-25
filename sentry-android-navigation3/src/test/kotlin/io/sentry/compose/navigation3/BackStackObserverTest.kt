@@ -8,6 +8,7 @@ import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ITransaction
+import io.sentry.NoOpTransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -572,6 +573,20 @@ class BackStackObserverTest {
 
     assertThat(fixture.startedTransactions).hasSize(1)
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
+  }
+
+  @Test
+  fun `onBackStackChanged does not bind a no-op nav transaction to the scope`() {
+    val fixture = Fixture()
+    whenever(fixture.scopes.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
+      .thenReturn(NoOpTransaction.getInstance())
+    val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = true))
+
+    sut.onBackStackChanged(listOf(HomeRoute()))
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
   }
 
   @Test

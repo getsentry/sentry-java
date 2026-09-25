@@ -326,6 +326,10 @@ private class NavTransaction(private val scopes: IScopes) {
         transactionOptions,
       )
 
+    if (transaction.isNoOp) {
+      return null
+    }
+
     activeNavTransaction = transaction
 
     transaction.apply {
