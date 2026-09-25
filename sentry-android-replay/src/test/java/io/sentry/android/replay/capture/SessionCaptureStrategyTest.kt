@@ -202,7 +202,7 @@ class SessionCaptureStrategyTest {
   @Test
   fun `stop creates and captures current segment and clears replayId from scope`() {
     val replayId = SentryId()
-    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val currentReplay = tmpDir.newFolder("replay_$replayId")
 
     val strategy = fixture.getSut(replayCacheDir = currentReplay)
     strategy.start(0, replayId)
@@ -221,7 +221,7 @@ class SessionCaptureStrategyTest {
   @Test
   fun `stop keeps segment video readable for the transport`() {
     val replayId = SentryId()
-    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val currentReplay = tmpDir.newFolder("replay_$replayId")
     val video = File(currentReplay, "0.mp4").also { it.writeBytes(ByteArray(1024)) }
     whenever(
         fixture.replayCache.createVideoOf(
@@ -258,7 +258,7 @@ class SessionCaptureStrategyTest {
   @Test
   fun `captured segment deletes its video when the envelope is discarded`() {
     val replayId = SentryId()
-    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val currentReplay = tmpDir.newFolder("replay_$replayId")
     val video = File(currentReplay, "0.mp4").also { it.writeBytes(ByteArray(1024)) }
     whenever(
         fixture.replayCache.createVideoOf(

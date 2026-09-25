@@ -187,7 +187,7 @@ class BufferCaptureStrategyTest {
   @Test
   fun `stop closes replay cache`() {
     val replayId = SentryId()
-    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val currentReplay = tmpDir.newFolder("replay_$replayId")
 
     val strategy = fixture.getSut(replayCacheDir = currentReplay)
     strategy.start(0, replayId)
@@ -204,7 +204,7 @@ class BufferCaptureStrategyTest {
   @Test
   fun `stop keeps videos of captured segments readable for the transport`() {
     val replayId = SentryId()
-    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val currentReplay = tmpDir.newFolder("replay_$replayId")
     val video = File(currentReplay, "0.mp4").also { it.writeBytes(ByteArray(1024)) }
     whenever(
         fixture.replayCache.createVideoOf(
@@ -234,7 +234,7 @@ class BufferCaptureStrategyTest {
   @Test
   fun `stop deletes videos of segments that were never captured`() {
     val replayId = SentryId()
-    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val currentReplay = tmpDir.newFolder("replay_$replayId")
     val video = File(currentReplay, "0.mp4").also { it.writeBytes(ByteArray(1024)) }
     whenever(
         fixture.replayCache.createVideoOf(
