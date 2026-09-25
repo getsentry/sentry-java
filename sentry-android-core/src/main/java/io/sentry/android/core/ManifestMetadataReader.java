@@ -52,6 +52,8 @@ final class ManifestMetadataReader {
   static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
   static final String TOMBSTONE_ATTACH_RAW = "io.sentry.tombstone.attach-raw";
   static final String TOMBSTONE_REPORT_HISTORICAL = "io.sentry.tombstone.report-historical";
+  static final String TOMBSTONE_MERGE_TIME_THRESHOLD_MILLIS =
+      "io.sentry.tombstone.merge-time-threshold-millis";
   static final String MEMORY_LIMITER_ENABLE = "io.sentry.memory-limiter.enable";
   static final String MEMORY_LIMITER_REPORT_HISTORICAL =
       "io.sentry.memory-limiter.report-historical";
@@ -278,6 +280,12 @@ final class ManifestMetadataReader {
                 logger,
                 TOMBSTONE_REPORT_HISTORICAL,
                 options.isReportHistoricalTombstones()));
+        options.setTombstoneMergeTimeThresholdMillis(
+            readLong(
+                metadata,
+                logger,
+                TOMBSTONE_MERGE_TIME_THRESHOLD_MILLIS,
+                options.getTombstoneMergeTimeThresholdMillis()));
         options.setMemoryLimiterEnabled(
             readBool(metadata, logger, MEMORY_LIMITER_ENABLE, options.isMemoryLimiterEnabled()));
         options.setReportHistoricalMemoryLimiterExits(
