@@ -9,6 +9,14 @@ import org.jetbrains.annotations.TestOnly
 /**
  * Translates app-defined back stack entries into input-ordered [Route]s.
  *
+ * **Exception handling policy**
+ *
+ * Invocations of host-provided [extractors] and sanitization of host-defined arguments are
+ * protected by broad `try-catch` clauses, as each may throw arbitrary exceptions. We avoid failing
+ * fast on the assumption that navigation telemetry is supplemental from host apps' perspective, and
+ * that falling back to an `/unknown` route name or losing an argument map is preferable to
+ * crashing.
+ *
  * **Threading policy**
  *
  * This class performs work synchronously on the calling thread. Host-provided [extractors] are
@@ -25,13 +33,13 @@ internal class RouteTranslator<T : Any>(
   }
 
   /** Translates the provided [backStackEntries] into [Route]s and returns them in input order. */
-  fun translate(backStackEntries: List<T>, policy: RetentionPolicy): List<Route> {
+  fun translate(backStackEntries: List<T>, retentionPolicy: RetentionPolicy): List<Route> {
     val warningState = WarningState()
     val sanitizer = ArgumentSanitizer(logger, warningState)
 
     val routes = MutableList<Route?>(backStackEntries.size) { null }
     val indicesInPolicyOrder =
-      when (policy) {
+      when (retentionPolicy) {
         RetentionPolicy.KEEP_FIRST -> backStackEntries.indices
         RetentionPolicy.KEEP_LAST -> backStackEntries.indices.reversed()
       }
