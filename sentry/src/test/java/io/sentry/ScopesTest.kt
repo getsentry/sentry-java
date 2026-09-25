@@ -5,6 +5,7 @@ import io.sentry.cache.EnvelopeCache
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
+import io.sentry.hints.DiscardNotification
 import io.sentry.hints.SessionEndHint
 import io.sentry.hints.SessionStartHint
 import io.sentry.logger.SentryLogParameters
@@ -2309,6 +2310,17 @@ class ScopesTest {
 
     sut.captureReplay(SentryReplayEvent(), Hint())
     verify(mockClient, never()).captureReplayEvent(any(), any(), any<Hint>())
+  }
+
+  @Test
+  fun `when captureReplay is called on disabled client, it notifies the discard hint`() {
+    val (sut, _) = getEnabledScopes()
+    sut.close()
+
+    val discardNotification = mock<DiscardNotification>()
+    val hint = HintUtils.createWithTypeCheckHint(discardNotification)
+    sut.captureReplay(SentryReplayEvent(), hint)
+    verify(discardNotification).markDiscarded()
   }
 
   @Test
