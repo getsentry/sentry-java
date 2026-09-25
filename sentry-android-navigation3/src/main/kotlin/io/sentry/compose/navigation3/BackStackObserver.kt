@@ -22,10 +22,7 @@ import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.lang.ref.WeakReference
 
-private const val BACKSTACK_KEY = "backstack"
-private const val NAVIGATION_CONTEXT_KEY = "navigation"
 private const val NAVIGATION_OP: String = "navigation"
-private const val TRANSACTION_ORIGIN = "auto.navigation.nav3"
 
 /**
  * Observes the back stack managed by a single [SentryNavEffect] and records Sentry state as the
@@ -61,7 +58,7 @@ internal class BackStackObserver<T : Any>(
 
   private val routeTranslator = RouteTranslator(extractors, scopes.options.logger)
 
-  private val navTransaction = NavTransaction(scopes, NAVIGATION_OP, TRANSACTION_ORIGIN)
+  private val navTransaction = NavTransaction(scopes)
   private val navContext = NavContext(scopes, options)
   private val navScreen = NavScreen()
   private val navBreadcrumbs = NavBreadcrumbs(scopes)
@@ -127,7 +124,7 @@ internal class BackStackObserver<T : Any>(
         // replaces one observer with another, there may be a brief gap where events lack nav
         // context. Apps should keep the observer at the nav root so cleanup only runs when the
         // navigation session is ending, not during normal destination changes.
-        navContext.update(scope, emptyList())
+        navContext.clear(scope)
       }
     }
   }
@@ -147,15 +144,8 @@ internal class BackStackObserver<T : Any>(
     when (change) {
       is BackStackIsEmpty -> handleEmptyBackStack(scope)
 
-      is BackStackHasNewTop -> {
-        handleNewTop(scope, change.previousTop, change.backStack)
-        storeAsPreviousTop(change.backStack.topEntry, change.backStack.topRoute)
-      }
-
-      is BackStackHasSameTop -> {
-        handleSameTop(scope, change.backStack)
-        storeAsPreviousTop(change.backStack.topEntry, change.backStack.topRoute)
-      }
+      is BackStackHasNewTop -> handleNewTop(scope, change.previousTop, change.backStack)
+      is BackStackHasSameTop -> handleSameTop(scope, change.backStack)
     }
   }
 
@@ -230,23 +220,30 @@ internal class BackStackObserver<T : Any>(
       // Rotate the propagation context.
       scope.withPropagationContext { scope.setPropagationContext(PropagationContext()) }
     }
+
+    storeAsPreviousTop(currentBackStack.topEntry, currentBackStack.topRoute)
   }
 
   private fun handleSameTop(scope: IScope, backStack: BackStackData<T>) {
     navContext.update(scope, backStack.capturedRoutes)
+    storeAsPreviousTop(backStack.topEntry, backStack.topRoute)
   }
 
   private fun handleEmptyBackStack(scope: IScope) {
     navTransaction.stop(scope)
+    navContext.clear(scope)
     navScreen.clear(scope)
-    navContext.update(scope, emptyList())
-    previousTopEntry = null
-    previousTopRoute = null
+    clearPreviousTop()
   }
 
   private fun storeAsPreviousTop(topEntry: T, topRoute: Route) {
     previousTopEntry = WeakReference(topEntry)
     previousTopRoute = topRoute
+  }
+
+  private fun clearPreviousTop() {
+    previousTopEntry = null
+    previousTopRoute = null
   }
 }
 
@@ -287,27 +284,27 @@ private data class BackStackData<T>(
 )
 
 /** A helper class for managing nav transactions. */
-private class NavTransaction(
-  private val scopes: IScopes,
-  private val navigationOp: String,
-  private val transactionOrigin: String,
-) {
+private class NavTransaction(private val scopes: IScopes) {
+
+  private companion object {
+    private const val TRANSACTION_ORIGIN = "auto.navigation.nav3"
+  }
 
   private var activeNavTransaction: ITransaction? = null
 
   /** Starts an idle navigation transaction, or no-ops if another transaction is already active. */
   fun start(
     scope: IScope,
-    routeName: String,
+    name: String,
     arguments: Map<String, Any?>,
   ): ITransaction? {
-    clearFinishedScopeTransaction(scope)
+    clearTransactionIfFinished(scope)
 
     if (scope.transaction != null) {
       scopes.options.logger.log(
         DEBUG,
         "Nav3 transaction for route %s won't be created because another transaction is active.",
-        routeName,
+        name,
       )
 
       return null
@@ -320,12 +317,12 @@ private class NavTransaction(
         val deadlineTimeoutMillis = scopes.options.deadlineTimeout
         it.deadlineTimeout = if (deadlineTimeoutMillis <= 0) null else deadlineTimeoutMillis
         it.isTrimEnd = true
-        it.origin = transactionOrigin
+        it.origin = TRANSACTION_ORIGIN
       }
 
     val transaction =
       scopes.startTransaction(
-        TransactionContext(routeName, TransactionNameSource.ROUTE, navigationOp),
+        TransactionContext(name, TransactionNameSource.ROUTE, NAVIGATION_OP),
         transactionOptions,
       )
 
@@ -362,7 +359,7 @@ private class NavTransaction(
   }
 
   /** Clears a stale finished transaction that's still bound to the default scope. */
-  private fun clearFinishedScopeTransaction(scope: IScope) {
+  private fun clearTransactionIfFinished(scope: IScope) {
     scope.withTransaction { tx ->
       if (tx?.isFinished == true) {
         scope.clearTransaction()
@@ -374,12 +371,24 @@ private class NavTransaction(
 /** A helper class for updating [nav context][NAVIGATION_CONTEXT_KEY]. */
 private class NavContext(private val scopes: IScopes, private val options: SentryNavOptions) {
 
+  private companion object {
+    private const val BACKSTACK_KEY = "backstack"
+    private const val NAVIGATION_CONTEXT_KEY = "navigation"
+  }
+
   fun update(scope: IScope, backStackRoutes: List<Route>) {
     if (backStackRoutes.isEmpty()) {
-      removeNavContext(scope)
-    } else {
-      scope.setContexts(NAVIGATION_CONTEXT_KEY, backStackRoutes.toNavigationContext())
+      clear(scope)
+      return
     }
+
+    scope.setContexts(NAVIGATION_CONTEXT_KEY, backStackRoutes.toBackStackMap())
+  }
+
+  fun clear(scope: IScope) {
+    // We purposefully don't call IScope.removeContexts(), as it doesn't notify IScopeObserver and
+    // therefore doesn't write its updates to disk ¯\_ (ツ)_/¯.
+    scope.setContexts(NAVIGATION_CONTEXT_KEY, null as Any?)
   }
 
   /**
@@ -405,19 +414,12 @@ private class NavContext(private val scopes: IScopes, private val options: Sentr
     }
 
     if (options.captureBackStack && backStack.capturedRoutes.isNotEmpty()) {
-      transaction.setContext(NAVIGATION_CONTEXT_KEY, backStack.capturedRoutes.toNavigationContext())
+      transaction.setContext(NAVIGATION_CONTEXT_KEY, backStack.capturedRoutes.toBackStackMap())
     }
   }
 
-  private fun removeNavContext(scope: IScope) {
-    // We purposefully don't call IScope.removeContexts(), as it doesn't notify IScopeObserver and
-    // therefore doesn't write its updates to disk ¯\_ (ツ)_/¯.
-    scope.setContexts(NAVIGATION_CONTEXT_KEY, null as Any?)
-  }
-
   /** Builds the `{"backstack": [...]}` map bound under [NAVIGATION_CONTEXT_KEY]. */
-  private fun List<Route>.toNavigationContext(): Map<String, Any?> =
-    mapOf(BACKSTACK_KEY to serialize())
+  private fun List<Route>.toBackStackMap(): Map<String, Any?> = mapOf(BACKSTACK_KEY to serialize())
 }
 
 /** A helper class for updating the tracked screen name. */
