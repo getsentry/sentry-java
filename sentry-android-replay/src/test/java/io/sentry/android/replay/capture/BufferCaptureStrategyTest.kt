@@ -284,6 +284,17 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
+  fun `convert hands over the replay cache to the session strategy`() {
+    val currentReplay = tmpDir.newFolder()
+    val strategy = fixture.getSut(replayCacheDir = currentReplay)
+    strategy.start()
+
+    val converted = strategy.convert()
+
+    assertEquals(currentReplay, converted.replayCacheDir)
+  }
+
+  @Test
   fun `createCurrentSegment uses first frame timestamp when available`() {
     val now = System.currentTimeMillis()
     val strategy = fixture.getSut(dateProvider = { now })

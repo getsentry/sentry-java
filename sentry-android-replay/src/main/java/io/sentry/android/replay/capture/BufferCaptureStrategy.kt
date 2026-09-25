@@ -171,9 +171,16 @@ internal class BufferCaptureStrategy(
       return this
     }
     // we hand over replayExecutor and persistingExecutor to the new strategy to preserve order of
-    // execution
+    // execution, and the cache so that its frames and files keep a single owner
     val captureStrategy =
-      SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor, persistingExecutor)
+      SessionCaptureStrategy(
+        options,
+        scopes,
+        dateProvider,
+        replayExecutor,
+        persistingExecutor,
+        replayCacheProvider = cache?.let { current -> { _ -> current } },
+      )
     captureStrategy.recorderConfig = recorderConfig
     captureStrategy.start(
       segmentId = currentSegment,
