@@ -74,7 +74,7 @@ public final class OpenTelemetryAttributesExtractor {
     }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"deprecation", "unchecked"})
   private static Map<String, String> collectHeaders(
       final @NotNull Attributes attributes, final @NotNull SentryOptions options) {
     Map<String, String> headers = new HashMap<>();

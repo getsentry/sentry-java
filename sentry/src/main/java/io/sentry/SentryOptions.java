@@ -1755,10 +1755,24 @@ public class SentryOptions implements RateLimiterConfig {
     this.sdkVersion = sdkVersion;
   }
 
+  /**
+   * Returns whether personally identifiable information is sent by default.
+   *
+   * @deprecated use {@link #getDataCollection()} instead. This option will be removed in 9.0.
+   */
+  @ApiStatus.ScheduledForRemoval(inVersion = "9.0")
+  @Deprecated
   public boolean isSendDefaultPii() {
     return sendDefaultPii;
   }
 
+  /**
+   * Sets whether personally identifiable information is sent by default.
+   *
+   * @deprecated use {@link #getDataCollection()} instead. This option will be removed in 9.0.
+   */
+  @ApiStatus.ScheduledForRemoval(inVersion = "9.0")
+  @Deprecated
   public void setSendDefaultPii(boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
   }
