@@ -130,7 +130,7 @@
   - Skip Android screenshot or view hierarchy capture when its capture callback throws, while retaining the error event ([#6167](https://github.com/getsentry/sentry-java/pull/6167))
   - Drop spans when `beforeSpan` throws in OkHttp, OpenFeign, GraphQL, Ktor, or Apollo, without disrupting the request ([#6167](https://github.com/getsentry/sentry-java/pull/6167))
   - Skip replay capture when `beforeErrorSampling` throws, while still sending the error event ([#6165](https://github.com/getsentry/sentry-java/pull/6165))
-  - When `tracesSampler` throws, inherit the parent sampling decision or leave the trace unsampled if there is no parent decision, instead of falling back to `tracesSampleRate` ([#6163](https://github.com/getsentry/sentry-java/pull/6163))
+  - When `tracesSampler` throws, drop the transaction and record `callback_error` instead of inheriting the parent sampling decision or falling back to `tracesSampleRate` ([#6163](https://github.com/getsentry/sentry-java/pull/6163))
   - When `profilesSampler` throws, disable profiling instead of falling back to `profilesSampleRate` or inheriting the parent's profiling decision. Trace sampling is unchanged ([#6164](https://github.com/getsentry/sentry-java/pull/6164))
 - Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
 - Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
