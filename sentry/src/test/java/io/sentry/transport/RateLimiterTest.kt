@@ -32,6 +32,7 @@ import io.sentry.TransactionContext
 import io.sentry.UserFeedback
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
+import io.sentry.hints.DiscardNotification
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
@@ -460,6 +461,25 @@ class RateLimiterTest {
     rateLimiter.filter(envelope, HintUtils.createWithTypeCheckHint(hint))
 
     verify(hint).markFlushed()
+  }
+
+  @Test
+  fun `on rate limit DiscardNotification is marked as discarded`() {
+    val rateLimiter = fixture.getSUT()
+    val sentryEvent = SentryEvent()
+    val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, sentryEvent)
+    val envelope = SentryEnvelope(SentryEnvelopeHeader(sentryEvent.eventId), arrayListOf(eventItem))
+
+    rateLimiter.updateRetryAfterLimits(
+      "50:transaction:key, 1:default;error;security:organization",
+      null,
+      1,
+    )
+
+    val hint = mock<DiscardNotification>()
+    rateLimiter.filter(envelope, HintUtils.createWithTypeCheckHint(hint))
+
+    verify(hint).markDiscarded()
   }
 
   @Test

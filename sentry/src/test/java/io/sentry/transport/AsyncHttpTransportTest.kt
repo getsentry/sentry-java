@@ -12,6 +12,7 @@ import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
 import io.sentry.clientreport.NoOpClientReportRecorder
 import io.sentry.dsnString
+import io.sentry.hints.DiscardNotification
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.Enqueable
 import io.sentry.protocol.SentryId
@@ -20,6 +21,7 @@ import io.sentry.test.injectForField
 import io.sentry.util.HintUtils
 import java.io.IOException
 import java.util.Date
+import java.util.concurrent.Future
 import java.util.concurrent.RejectedExecutionHandler
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -29,6 +31,7 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
@@ -308,6 +311,19 @@ class AsyncHttpTransportTest {
 
     // then
     verify(fixture.executor).submit(any())
+  }
+
+  @Test
+  fun `when the queue is full, DiscardNotification is marked as discarded`() {
+    val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
+    whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenAnswer { it.arguments[0] }
+    val cancelled = mock<Future<Any>> { on { isCancelled } doReturn true }
+    doReturn(cancelled).whenever(fixture.executor).submit(any())
+    val hint = mock<DiscardNotification>()
+
+    fixture.getSUT().send(envelope, HintUtils.createWithTypeCheckHint(hint))
+
+    verify(hint).markDiscarded()
   }
 
   @Test

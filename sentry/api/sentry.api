@@ -5303,6 +5303,10 @@ public abstract class io/sentry/hints/BlockingFlushHint : io/sentry/hints/DiskFl
 public abstract interface class io/sentry/hints/Cached {
 }
 
+public abstract interface class io/sentry/hints/DiscardNotification {
+	public abstract fun markDiscarded ()V
+}
+
 public abstract interface class io/sentry/hints/DiskFlushNotification {
 	public abstract fun isFlushable (Lio/sentry/protocol/SentryId;)Z
 	public abstract fun markFlushed ()V

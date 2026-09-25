@@ -11,6 +11,7 @@ import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Backfillable
 import io.sentry.hints.Cached
+import io.sentry.hints.DiscardNotification
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.TransactionEnd
 import io.sentry.logger.ILoggerBatchProcessor
@@ -3833,6 +3834,54 @@ class SentryClientTest {
     )
 
     verify(onDiscardMock, times(1)).execute(DiscardReason.BEFORE_SEND, DataCategory.Replay, 1)
+  }
+
+  @Test
+  fun `when beforeSendReplay returns null, marks the replay as discarded`() {
+    fixture.sentryOptions.setBeforeSendReplay { _: SentryReplayEvent, _: Hint -> null }
+    val discardNotification = mock<DiscardNotification>()
+
+    fixture
+      .getSut()
+      .captureReplayEvent(
+        SentryReplayEvent(),
+        Scope(fixture.sentryOptions),
+        HintUtils.createWithTypeCheckHint(discardNotification),
+      )
+
+    verify(discardNotification).markDiscarded()
+  }
+
+  @Test
+  fun `when an event processor drops the replay, marks the replay as discarded`() {
+    fixture.sentryOptions.addEventProcessor(DropEverythingEventProcessor())
+    val discardNotification = mock<DiscardNotification>()
+
+    fixture
+      .getSut()
+      .captureReplayEvent(
+        createReplayEvent(),
+        createScope(),
+        HintUtils.createWithTypeCheckHint(discardNotification),
+      )
+
+    verify(discardNotification).markDiscarded()
+  }
+
+  @Test
+  fun `when the replay is sent, does not mark it as discarded`() {
+    val discardNotification = mock<DiscardNotification>()
+
+    fixture
+      .getSut()
+      .captureReplayEvent(
+        createReplayEvent(),
+        createScope(),
+        HintUtils.createWithTypeCheckHint(discardNotification),
+      )
+
+    verify(fixture.transport).send(any(), anyOrNull())
+    verify(discardNotification, never()).markDiscarded()
   }
 
   @Test

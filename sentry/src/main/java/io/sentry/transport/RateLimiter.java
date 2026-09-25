@@ -11,6 +11,7 @@ import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.hints.DiscardNotification;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
@@ -185,6 +186,7 @@ public final class RateLimiter implements Closeable {
           diskFlushNotification.markFlushed();
           config.getLogger().log(SentryLevel.DEBUG, "Disk flush envelope fired due to rate limit");
         });
+    HintUtils.runIfHasType(hint, DiscardNotification.class, DiscardNotification::markDiscarded);
   }
 
   /**
