@@ -124,6 +124,7 @@
 
 - Fix SDK callback error handling ([#6140](https://github.com/getsentry/sentry-java/pull/6140))
   - Add `DiscardReason.CALLBACK_ERROR` and use it for telemetry dropped when a `beforeSend*` callback throws. `OnDiscardCallback` can now receive this value.
+  - Report attached profiles dropped by transaction callback errors as `callback_error` in client reports and `OnDiscardCallback`.
   - Drop telemetry and record `callback_error` when a customer event processor throws instead of continuing with a potentially partially processed item. SDK-owned processor failures are logged and processing continues without a `callback_error` client report.
   - Drop breadcrumbs when `beforeBreadcrumb` throws instead of storing exception details on the breadcrumb.
   - Skip replay capture when `beforeErrorSampling` throws, while still sending the error event ([#6165](https://github.com/getsentry/sentry-java/pull/6165))
