@@ -215,7 +215,6 @@ class SessionCaptureStrategyTest {
     assertEquals(SentryId.EMPTY_ID, fixture.scope.replayId)
     assertEquals(SentryId.EMPTY_ID, strategy.currentReplayId)
     assertEquals(-1, strategy.currentSegment)
-    assertFalse(currentReplay.exists())
     verify(fixture.replayCache).close()
   }
 

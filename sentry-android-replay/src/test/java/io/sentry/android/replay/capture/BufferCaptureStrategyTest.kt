@@ -185,7 +185,7 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
-  fun `stop clears replay cache dir`() {
+  fun `stop closes replay cache`() {
     val replayId = SentryId()
     val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
 
@@ -198,8 +198,66 @@ class BufferCaptureStrategyTest {
 
     assertEquals(SentryId.EMPTY_ID, strategy.currentReplayId)
     assertEquals(-1, strategy.currentSegment)
-    assertFalse(currentReplay.exists())
     verify(fixture.replayCache).close()
+  }
+
+  @Test
+  fun `stop keeps videos of captured segments readable for the transport`() {
+    val replayId = SentryId()
+    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val video = File(currentReplay, "0.mp4").also { it.writeBytes(ByteArray(1024)) }
+    whenever(
+        fixture.replayCache.createVideoOf(
+          anyLong(),
+          anyLong(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          any(),
+        )
+      )
+      .thenReturn(GeneratedVideo(video, 5, VIDEO_DURATION))
+    val strategy = fixture.getSut(replayCacheDir = currentReplay)
+    strategy.start(0, replayId)
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    strategy.pause()
+    strategy.captureReplay(false) {}
+
+    strategy.stop()
+
+    // The envelope item reads the video lazily on the transport thread, long after stop() returns.
+    assertTrue(video.exists(), "video was deleted before the transport could read it")
+  }
+
+  @Test
+  fun `stop deletes videos of segments that were never captured`() {
+    val replayId = SentryId()
+    val currentReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    val video = File(currentReplay, "0.mp4").also { it.writeBytes(ByteArray(1024)) }
+    whenever(
+        fixture.replayCache.createVideoOf(
+          anyLong(),
+          anyLong(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          any(),
+        )
+      )
+      .thenReturn(GeneratedVideo(video, 5, VIDEO_DURATION))
+    val strategy = fixture.getSut(replayCacheDir = currentReplay)
+    strategy.start(0, replayId)
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    strategy.pause()
+
+    strategy.stop()
+
+    verify(fixture.scopes, never()).captureReplay(any(), any())
+    assertFalse(video.exists())
   }
 
   @Test
