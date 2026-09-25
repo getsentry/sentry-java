@@ -20,6 +20,7 @@ import io.sentry.protocol.TransactionNameSource
 import kotlin.test.Test
 import kotlin.test.assertNull
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -461,6 +462,31 @@ class BackStackObserverTest {
         )
       )
     assertThat(fixture.scope.transaction).isSameInstanceAs(transaction)
+  }
+
+  // Regression test: Setting origin after starting the transaction breaks the ignoredSpanOrigins
+  // check (see SentryOptions.getIgnoredSpanOrigins()).
+  @Test
+  fun `onBackStackChanged sets nav transaction origin before starting the transaction`() {
+    val fixture = Fixture()
+    val transactionOptionsCaptor = argumentCaptor<TransactionOptions>()
+    whenever(
+        fixture.scopes.startTransaction(
+          any<TransactionContext>(),
+          transactionOptionsCaptor.capture(),
+        )
+      )
+      .thenAnswer {
+        val transactionContext = it.arguments[0] as TransactionContext
+        val transactionOptions = it.arguments[1] as TransactionOptions
+        SentryTracer(transactionContext, fixture.scopes, transactionOptions)
+          .also(fixture.startedTransactions::add)
+      }
+    val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = true))
+
+    sut.onBackStackChanged(listOf(HomeRoute()))
+
+    assertThat(transactionOptionsCaptor.firstValue.origin).isEqualTo("auto.navigation.nav3")
   }
 
   @Test

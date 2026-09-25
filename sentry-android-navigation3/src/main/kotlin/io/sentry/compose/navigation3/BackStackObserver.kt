@@ -410,6 +410,7 @@ private class NavTransactionManager(
         val deadlineTimeoutMillis = scopes.options.deadlineTimeout
         it.deadlineTimeout = if (deadlineTimeoutMillis <= 0) null else deadlineTimeoutMillis
         it.isTrimEnd = true
+        it.origin = transactionOrigin
       }
 
     val transaction =
@@ -421,7 +422,6 @@ private class NavTransactionManager(
     activeNavTransaction = transaction
 
     transaction.apply {
-      spanContext.origin = transactionOrigin
       if (arguments.isNotEmpty()) {
         setData("arguments", arguments)
       }
