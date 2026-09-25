@@ -13,6 +13,7 @@ import com.apollographql.apollo.network.http.HttpInterceptorChain
 import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ITransaction
@@ -32,6 +33,7 @@ import io.sentry.TransactionContext
 import io.sentry.W3CTraceparentHeader
 import io.sentry.apollo4.SentryApollo4HttpInterceptor.BeforeSpanCallback
 import io.sentry.apollo4.generated.LaunchDetailsQuery
+import io.sentry.clientreport.DiscardReason
 import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
@@ -55,6 +57,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryApollo4HttpInterceptorTestWithV4Implementation :
@@ -308,7 +311,10 @@ abstract class SentryApollo4HttpInterceptorTest(
 
   @Test
   fun `returning null in beforeSpan callback drops span`() {
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.options.onDiscard = onDiscard
     executeQuery(fixture.getSut(beforeSpan = { _, _, _ -> null }))
+    verifyNoMoreInteractions(onDiscard)
 
     verify(fixture.scopes)
       .captureTransaction(
@@ -317,6 +323,32 @@ abstract class SentryApollo4HttpInterceptorTest(
         anyOrNull(),
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `reports callback errors only for sampled spans`(): Unit = runBlocking {
+    for (sampled in listOf(true, false, null)) {
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      fixture.options.onDiscard = onDiscard
+      val tx = SentryTracer(TransactionContext("op", "desc"), fixture.scopes)
+      tx.spanContext.sampled = sampled
+      whenever(fixture.scopes.span).thenReturn(tx)
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _, _ ->
+            span.spanContext.sampled = false
+            throw IllegalStateException("callback failed")
+          }
+        )
+
+      assertThat(executeQueryImplementation(sut.query(LaunchDetailsQuery("83"))).data).isNotNull()
+      tx.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
   }
 
   @Test

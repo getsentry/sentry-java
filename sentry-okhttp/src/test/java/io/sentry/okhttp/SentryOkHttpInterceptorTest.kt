@@ -5,6 +5,7 @@ package io.sentry.okhttp
 import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
 import io.sentry.ILogger
@@ -24,6 +25,7 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
 import io.sentry.W3CTraceparentHeader
+import io.sentry.clientreport.DiscardReason
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.util.network.NetworkRequestData
@@ -57,6 +59,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryOkHttpInterceptorTest {
@@ -432,10 +435,39 @@ class SentryOkHttpInterceptorTest {
   @Test
   fun `customizer can drop the span`() {
     val sut = fixture.getSut(beforeSpan = { _, _, _ -> null })
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.options.onDiscard = onDiscard
+    fixture.sentryTracer.spanContext.sampled = true
     sut.newCall(getRequest()).execute()
+    verifyNoMoreInteractions(onDiscard)
     val httpClientSpan = fixture.sentryTracer.children.first()
     assertTrue(httpClientSpan.isFinished)
     assertNotNull(httpClientSpan.spanContext.sampled) { assertFalse(it) }
+  }
+
+  @Test
+  fun `reports callback errors only for sampled spans`() {
+    for (sampled in listOf(true, false, null)) {
+      val fixture = Fixture()
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _, _ ->
+            span.spanContext.sampled = false
+            throw IllegalStateException("callback failed")
+          }
+        )
+      fixture.sentryTracer.spanContext.sampled = sampled
+      fixture.options.onDiscard = onDiscard
+
+      sut.newCall(Request.Builder().url(fixture.server.url("/hello")).build()).execute().close()
+      fixture.sentryTracer.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
   }
 
   @Test

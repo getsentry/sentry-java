@@ -9,6 +9,7 @@ import feign.Request
 import feign.RequestLine
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.Scope
@@ -21,6 +22,7 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.W3CTraceparentHeader
+import io.sentry.clientreport.DiscardReason
 import io.sentry.mockServerRequestTimeoutMillis
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -41,6 +43,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryFeignClientTest {
@@ -291,6 +294,31 @@ class SentryFeignClientTest {
   }
 
   @Test
+  fun `reports callback errors only for sampled spans`() {
+    for (sampled in listOf(true, false, null)) {
+      val fixture = Fixture()
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _, _ ->
+            span.spanContext.sampled = false
+            throw IllegalStateException("callback failed")
+          }
+        )
+      fixture.sentryTracer.spanContext.sampled = sampled
+      fixture.sentryOptions.onDiscard = onDiscard
+
+      assertThat(sut.getOk()).isEqualTo("success")
+      fixture.sentryTracer.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
   fun `when beforeSpan throws, drops span and preserves response`() {
     val failure = IllegalStateException("callback failed")
     val logger = mock<ILogger>()
@@ -371,7 +399,11 @@ class SentryFeignClientTest {
   @Test
   fun `customizer can drop the span`() {
     val sut = fixture.getSut { _, _, _ -> null }
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscard
+    fixture.sentryTracer.spanContext.sampled = true
     sut.getOk()
+    verifyNoMoreInteractions(onDiscard)
     val httpClientSpan = fixture.sentryTracer.children.first()
     assertNotNull(httpClientSpan.spanContext.sampled) { assertFalse(it) }
   }

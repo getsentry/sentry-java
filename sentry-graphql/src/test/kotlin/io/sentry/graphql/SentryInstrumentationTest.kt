@@ -19,6 +19,7 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
+import io.sentry.DataCategory
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.Sentry
@@ -27,6 +28,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
+import io.sentry.clientreport.DiscardReason
 import java.lang.RuntimeException
 import java.util.concurrent.CompletableFuture
 import kotlin.random.Random
@@ -39,6 +41,7 @@ import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryInstrumentationTest {
@@ -52,7 +55,8 @@ class SentryInstrumentationTest {
       async: Boolean = false,
       beforeSpan: SentryGraphqlInstrumentation.BeforeSpanCallback? = null,
     ): GraphQL {
-      whenever(scopes.options).thenReturn(SentryOptions())
+      whenever(scopes.options)
+        .thenReturn(SentryOptions().apply { dsn = "https://key@sentry.io/proj" })
       activeSpan = SentryTracer(TransactionContext("name", "op"), scopes)
       val schema =
         """
@@ -158,6 +162,9 @@ class SentryInstrumentationTest {
       fixture.getSut(
         beforeSpan = SentryGraphqlInstrumentation.BeforeSpanCallback { _, _, _ -> null }
       )
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.scopes.options.onDiscard = onDiscard
+    fixture.activeSpan.spanContext.sampled = true
 
     withMockScopes {
       val result = sut.execute("{ shows { id } }")
@@ -168,6 +175,33 @@ class SentryInstrumentationTest {
       assertEquals("graphql", span.operation)
       assertEquals("Query.shows", span.description)
       assertNotNull(span.isSampled) { assertFalse(it) }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `reports callback errors only for sampled spans`() {
+    for (sampled in listOf(true, false, null)) {
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _, _ ->
+            span.spanContext.sampled = false
+            throw IllegalStateException("callback failed")
+          }
+        )
+      fixture.activeSpan.spanContext.sampled = sampled
+      fixture.scopes.options.onDiscard = onDiscard
+
+      withMockScopes {
+        assertThat(sut.execute("{ shows { id } }").errors).isEmpty()
+        fixture.activeSpan.finish()
+      }
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
     }
   }
 

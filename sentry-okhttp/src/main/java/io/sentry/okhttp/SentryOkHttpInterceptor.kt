@@ -2,6 +2,7 @@ package io.sentry.okhttp
 
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
 import io.sentry.ILogger
@@ -17,6 +18,7 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS
+import io.sentry.clientreport.DiscardReason
 import io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
@@ -365,10 +367,18 @@ public open class SentryOkHttpInterceptor(
       return
     }
     if (beforeSpan != null) {
+      val wasSampled = span.isSampled == true
       val result =
         try {
           beforeSpan.execute(span, request, response)
         } catch (e: Exception) {
+          span.spanContext.sampled = false
+          if (wasSampled) {
+            scopes.options.clientReportRecorder.recordLostEvent(
+              DiscardReason.CALLBACK_ERROR,
+              DataCategory.Span,
+            )
+          }
           scopes.options.logger.log(
             SentryLevel.ERROR,
             "The beforeSpan callback threw an exception in SentryOkHttpInterceptor. Dropping span.",
