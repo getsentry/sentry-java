@@ -109,17 +109,15 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     if (view == null) {
       return;
     }
-    // OnDrawListeners cannot be removed within onDraw, so we remove it with a
-    // GlobalLayoutListener
-    view.getViewTreeObserver()
-        .addOnGlobalLayoutListener(
-            new ViewTreeObserver.OnGlobalLayoutListener() {
-              @Override
-              public void onGlobalLayout() {
-                view.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                view.getViewTreeObserver().removeOnDrawListener(FirstDrawDoneListener.this);
-              }
-            });
+    // OnDrawListeners cannot be removed within onDraw. Posting the removal instead of waiting for
+    // the next global layout guarantees it happens, even if no layout pass follows the draw.
+    mainThreadHandler.post(
+        () -> {
+          final ViewTreeObserver observer = view.getViewTreeObserver();
+          if (observer.isAlive()) {
+            observer.removeOnDrawListener(this);
+          }
+        });
     mainThreadHandler.postAtFrontOfQueue(callback);
   }
 
