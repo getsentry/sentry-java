@@ -4,8 +4,7 @@
 
 ### Features
 
-- Add opt-in `strictCallbackMode` to propagate user callback failures as SDK exception or error wrappers. Events containing these failures are silently excluded from capture, including when nested in another exception, to avoid sending data without callback filtering. Configure it through SDK options, `strict-callback-mode` in external configuration, or `io.sentry.strict-callback-mode` in the Android manifest. Disabled by default.
-
+- Add opt-in `strictCallbackMode` to propagate user callback failures as SDK exception or error wrappers. Events containing these failures are silently excluded from capture, including when nested in another exception, to avoid sending data without callback filtering. Configure it through SDK options, `strict-callback-mode` in external configuration, or `io.sentry.strict-callback-mode` in the Android manifest. Disabled by default ([#6173](https://github.com/getsentry/sentry-java/pull/6173))
 - Add `LocalSentrySpan` to `sentry-compose` so apps can provide a parent `ISpan` to a composable subtree and have nested `SentryTraced` spans attach to it ([#6112]https://github.com/getsentry/sentry-java/pull/6112)
 - Add `dataCollection`, a fine-grained replacement for `sendDefaultPii`, for controlling data collected automatically by SDK integrations ([#5759](https://github.com/getsentry/sentry-java/pull/5759))
   - `sendDefaultPii` remains supported for backwards compatibility. When `dataCollection` is not configured, the SDK preserves the existing `sendDefaultPii` behavior.
