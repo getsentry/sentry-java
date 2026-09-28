@@ -7,6 +7,7 @@ import java.io.UncheckedIOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -75,7 +76,11 @@ public class TodoController {
     final Request request =
         new Request.Builder().url("https://jsonplaceholder.typicode.com/todos/" + id).build();
     try (Response response = okHttpClient.newCall(request).execute()) {
-      return objectMapper.readValue(response.body().byteStream(), Todo.class);
+      final ResponseBody body = response.body();
+      if (body == null) {
+        throw new IllegalStateException("Response body was null");
+      }
+      return objectMapper.readValue(body.byteStream(), Todo.class);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
