@@ -1,3 +1,6 @@
 style:
   ReturnCount:
     max: 3
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
