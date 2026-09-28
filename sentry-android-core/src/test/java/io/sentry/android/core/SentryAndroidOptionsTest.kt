@@ -246,6 +246,15 @@ class SentryAndroidOptionsTest {
     assertEquals(5000L, sentryOptions.ndkAppHangTimeoutIntervalMillis)
   }
 
+  @Test
+  fun `tombstone merge time threshold defaults to 5s and is configurable`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertEquals(5000L, sentryOptions.tombstoneMergeTimeThresholdMillis)
+
+    sentryOptions.tombstoneMergeTimeThresholdMillis = 10000L
+    assertEquals(10000L, sentryOptions.tombstoneMergeTimeThresholdMillis)
+  }
+
   private class CustomDebugImagesLoader : IDebugImagesLoader {
     override fun loadDebugImages(): List<DebugImage>? = null
 

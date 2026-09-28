@@ -214,8 +214,30 @@ class MemoryLimiterIntegrationTest {
     verify(fixture.options.executorService).submit(any())
   }
 
+  // "Explicit records" are ApplicationExitInfo instances that use
+  // ApplicationExitInfo.REASON_MEMORY_LIMITER to indicate a MemoryLimiter kill. Contrast "heuristic
+  // records" below.
   @Test
-  fun `captures exit when reason and description match exits produced by MemoryLimiter`() {
+  fun `captures exit for explicit MemoryLimiter record`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    fixture.addAppExitInfo(
+      reason = ApplicationExitInfo.REASON_MEMORY_LIMITER,
+      description = null,
+      timestamp = newTimestamp,
+    )
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  // "Heuristic records" are ApplicationExitInfo instances that use something other than
+  // ApplicationExitInfo.REASON_MEMORY_LIMITER to indicate a MemoryLimiter kill.
+  // (REASON_MEMORY_LIMITER wasn't introduced until 37.2.) They consist of
+  // ApplicationExitInfo.REASON_OTHER + an ApplicationExitInfo.description that contains the prefix
+  // "MemoryLimiter:".
+  @Test
+  fun `captures exit for heuristic MemoryLimiter record`() {
     val integration =
       fixture.getSut(
         memoryLimiterEnabled = true,
@@ -285,40 +307,11 @@ class MemoryLimiterIntegrationTest {
   }
 
   @Test
-  fun `ignores exit when reason does not match exits produced by MemoryLimiter`() {
-    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
-    fixture.addAppExitInfo(
-      reason = ApplicationExitInfo.REASON_ANR,
-      description = MemoryLimiterIntegration.MEMORY_LIMITER_DESCRIPTION,
-      timestamp = newTimestamp,
-    )
-
-    integration.register(fixture.scopes, fixture.options)
-
-    verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
-  }
-
-  @Test
-  fun `ignores exit when description does not match exits produced by MemoryLimiter`() {
+  fun `captures exit for heuristic record even if description suffix is not AnonSwap`() {
     val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
     fixture.addAppExitInfo(
       reason = ApplicationExitInfo.REASON_OTHER,
-      description = "LowSwapKiller",
-      timestamp = newTimestamp,
-    )
-
-    integration.register(fixture.scopes, fixture.options)
-
-    verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
-  }
-
-  @Test
-  fun `captures exit for any MemoryLimiter sub-reason, not just AnonSwap`() {
-    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
-    // A future MemoryLimiter kill sub-reason (e.g. the memory or swap limits) still lives in the
-    // "MemoryLimiter:" namespace and must be captured, with its raw sub-reason preserved.
-    fixture.addAppExitInfo(
-      reason = ApplicationExitInfo.REASON_OTHER,
+      // Description suffix is "Memory" rather than "AnonSwap".
       description = "MemoryLimiter:Memory",
       timestamp = newTimestamp,
     )
@@ -334,8 +327,38 @@ class MemoryLimiterIntegrationTest {
       )
   }
 
+  // "Heuristic candidates" are ApplicationExitInfo instances that may or may not be heuristic
+  // records.
   @Test
-  fun `ignores exit when description mentions MemoryLimiter without the namespace delimiter`() {
+  fun `ignores exit for heuristic candidate when reason does not match`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    fixture.addAppExitInfo(
+      reason = ApplicationExitInfo.REASON_ANR,
+      description = MemoryLimiterIntegration.MEMORY_LIMITER_DESCRIPTION,
+      timestamp = newTimestamp,
+    )
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
+  fun `ignores exit for heuristic candidate when description does not match`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    fixture.addAppExitInfo(
+      reason = ApplicationExitInfo.REASON_OTHER,
+      description = "LowSwapKiller",
+      timestamp = newTimestamp,
+    )
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
+  fun `ignores exit for heuristic candidate when description mentions MemoryLimiter without the namespace delimiter`() {
     val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
     // "MemoryLimiter" without the ":" delimiter is not a MemoryLimiter kill; matching requires the
     // namespace prefix so we don't over-capture unrelated REASON_OTHER exits.
@@ -351,7 +374,7 @@ class MemoryLimiterIntegrationTest {
   }
 
   @Test
-  fun `ignores exit when description is null`() {
+  fun `ignores exit for heuristic candidate when description is null`() {
     val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
     fixture.addAppExitInfo(
       reason = ApplicationExitInfo.REASON_OTHER,
@@ -481,7 +504,7 @@ class MemoryLimiterIntegrationTest {
   }
 
   @Test
-  fun `dedupes MemoryLimiter exists independently of ANR exits`() {
+  fun `dedupes MemoryLimiter exits independently of ANR exits`() {
     val integration =
       fixture.getSut(
         tmpDir,

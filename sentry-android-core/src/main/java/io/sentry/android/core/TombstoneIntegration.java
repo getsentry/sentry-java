@@ -241,7 +241,7 @@ public class TombstoneIntegration implements Integration, Closeable {
           nativeEventCollector.findAndRemoveMatchingNativeEvent(tombstoneTimestamp);
 
       if (matchingNativeEvent == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "No matching native event found for tombstone.");
+        // NativeEventCollector already logs why no event matched.
         return null;
       }
 
