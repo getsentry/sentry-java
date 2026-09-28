@@ -232,8 +232,9 @@ public final class Span implements ISpan {
     if (throwable != null) {
       scopes.setSpanContext(throwable, this, this.transaction.getName());
     }
-    if (spanFinishedCallback != null) {
-      spanFinishedCallback.execute(this);
+    final @Nullable SpanFinishedCallback callback = spanFinishedCallback;
+    if (callback != null) {
+      io.sentry.util.CallbackUtils.run(scopes.getOptions(), () -> callback.execute(this));
     }
     finished = true;
   }

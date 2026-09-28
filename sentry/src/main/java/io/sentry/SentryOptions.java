@@ -139,6 +139,8 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private boolean debug;
 
+  private boolean strictCallbackMode = false;
+
   /** Logger interface to log useful debugging information if debug is enabled */
   private @NotNull ILogger logger = NoOpLogger.getInstance();
 
@@ -846,6 +848,22 @@ public class SentryOptions implements RateLimiterConfig {
    */
   public void setDebug(final boolean debug) {
     this.debug = debug;
+  }
+
+  /** Returns whether user callback failures are propagated. Disabled by default. */
+  public boolean isStrictCallbackMode() {
+    return strictCallbackMode;
+  }
+
+  /**
+   * Enables propagating user callback failures wrapped in an SDK exception or error instead of
+   * isolating them. Events containing these failures are silently excluded from capture to avoid
+   * sending data without the failed callback's filtering.
+   *
+   * @param strictCallbackMode whether to propagate user callback failures
+   */
+  public void setStrictCallbackMode(final boolean strictCallbackMode) {
+    this.strictCallbackMode = strictCallbackMode;
   }
 
   /**
@@ -3688,6 +3706,9 @@ public class SentryOptions implements RateLimiterConfig {
     }
     if (options.getDebug() != null) {
       setDebug(options.getDebug());
+    }
+    if (options.getStrictCallbackMode() != null) {
+      setStrictCallbackMode(options.getStrictCallbackMode());
     }
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());

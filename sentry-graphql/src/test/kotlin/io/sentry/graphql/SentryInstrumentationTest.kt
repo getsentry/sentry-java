@@ -206,6 +206,37 @@ class SentryInstrumentationTest {
   }
 
   @Test
+  fun `strict beforeSpan failures reach GraphQL without invoking callback again`() {
+    for (async in listOf(false, true)) {
+      for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+        var calls = 0
+        val sut =
+          fixture.getSut(
+            async = async,
+            beforeSpan = { _, _, _ ->
+              calls++
+              throw failure
+            },
+          )
+        fixture.scopes.options.isStrictCallbackMode = true
+        withMockScopes {
+          val result = runCatching { sut.execute("{ shows { id } }") }
+          val thrown =
+            result.exceptionOrNull()
+              ?: (result.getOrThrow().errors.single() as graphql.ExceptionWhileDataFetching)
+                .exception
+          assertThat(io.sentry.util.CallbackUtils.isCallbackException(thrown)).isTrue()
+          assertThat(generateSequence(thrown) { it.cause }.toList()).contains(failure)
+          assertThat(calls).isEqualTo(1)
+          val span = fixture.activeSpan.children.last()
+          assertThat(span.isSampled).isFalse()
+          assertThat(span.isFinished).isTrue()
+        }
+      }
+    }
+  }
+
+  @Test
   fun `when beforeSpan throws, drops span and preserves result`() {
     val failure = IllegalStateException("callback failed")
     val logger = mock<ILogger>()

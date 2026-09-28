@@ -345,6 +345,21 @@ class ViewHierarchyEventProcessorTest {
   }
 
   @Test
+  fun `strict capture failures propagate without attaching view hierarchy`() {
+    fixture.options.isStrictCallbackMode = true
+    val processor = fixture.getSut(true)
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ -> throw failure }
+      val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+      val hint = Hint()
+      val thrown = kotlin.test.assertFails { processor.process(event, hint) }
+      assertThat(io.sentry.util.CallbackUtils.isCallbackException(thrown)).isTrue()
+      assertThat(thrown.cause).isSameInstanceAs(failure)
+      assertThat(hint.viewHierarchy).isNull()
+    }
+  }
+
+  @Test
   fun `when capture callback throws, skips view hierarchy and retains event`() {
     fixture.options.isDebug = true
     fixture.options.setLogger(fixture.logger)

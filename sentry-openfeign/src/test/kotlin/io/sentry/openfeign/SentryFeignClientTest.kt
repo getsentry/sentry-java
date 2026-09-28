@@ -319,6 +319,25 @@ class SentryFeignClientTest {
   }
 
   @Test
+  fun `strict beforeSpan failures propagate and finish dropped spans`() {
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      val fixture = Fixture()
+      fixture.sentryOptions.isStrictCallbackMode = true
+      val sut = fixture.getSut(beforeSpan = { _, _, _ -> throw failure })
+      val thrown = kotlin.test.assertFails { sut.getOk() }
+      assertThat(thrown)
+        .isInstanceOf(
+          if (failure is Error) io.sentry.exception.SentryCallbackError::class.java
+          else io.sentry.exception.SentryCallbackException::class.java
+        )
+      assertThat(thrown.cause).isSameInstanceAs(failure)
+      val span = fixture.sentryTracer.children.single()
+      assertThat(span.isSampled).isFalse()
+      assertThat(span.isFinished).isTrue()
+    }
+  }
+
+  @Test
   fun `when beforeSpan throws, drops span and preserves response`() {
     val failure = IllegalStateException("callback failed")
     val logger = mock<ILogger>()

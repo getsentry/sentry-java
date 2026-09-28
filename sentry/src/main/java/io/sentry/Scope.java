@@ -468,6 +468,7 @@ public final class Scope implements IScope {
     try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
       breadcrumb = callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
+      io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
       options
           .getLogger()
           .log(
@@ -1005,7 +1006,7 @@ public final class Scope implements IScope {
   public Session withSession(final @NotNull IWithSession sessionCallback) {
     Session cloneSession = null;
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
-      sessionCallback.accept(session);
+      io.sentry.util.CallbackUtils.run(options, () -> sessionCallback.accept(session));
 
       if (session != null) {
         cloneSession = session.clone();
@@ -1134,7 +1135,7 @@ public final class Scope implements IScope {
   @Override
   public void withTransaction(final @NotNull IWithTransaction callback) {
     try (final @NotNull ISentryLifecycleToken ignored = transactionLock.acquire()) {
-      callback.accept(transaction);
+      io.sentry.util.CallbackUtils.run(options, () -> callback.accept(transaction));
     }
   }
 
@@ -1181,7 +1182,7 @@ public final class Scope implements IScope {
   public @NotNull PropagationContext withPropagationContext(
       final @NotNull IWithPropagationContext callback) {
     try (final @NotNull ISentryLifecycleToken ignored = propagationContextLock.acquire()) {
-      callback.accept(propagationContext);
+      io.sentry.util.CallbackUtils.run(options, () -> callback.accept(propagationContext));
       return new PropagationContext(propagationContext);
     }
   }

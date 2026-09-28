@@ -193,8 +193,21 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
           result =
             try {
               beforeSpan.execute(span, request)
+            } catch (e: Error) {
+              val options = (if (forceScopes) scopes else Sentry.getCurrentScopes()).options
+              if (options.isStrictCallbackMode) {
+                span.spanContext.sampled = false
+                span.finish(SpanStatus.fromHttpStatusCode(response.status.value), endTimestamp)
+              }
+              io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e)
+              throw e
             } catch (e: Exception) {
               span.spanContext.sampled = false
+              val options = (if (forceScopes) scopes else Sentry.getCurrentScopes()).options
+              if (options.isStrictCallbackMode) {
+                span.finish(SpanStatus.fromHttpStatusCode(response.status.value), endTimestamp)
+              }
+              io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e)
               if (wasSampled) {
                 (if (forceScopes) scopes else Sentry.getCurrentScopes())
                   .options

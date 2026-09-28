@@ -218,6 +218,9 @@ public class SentryAppender extends AbstractAppender {
 
   @Override
   public void append(final @NotNull LogEvent eventObject) {
+    if (io.sentry.util.CallbackUtils.isCallbackException(eventObject.getThrown())) {
+      return;
+    }
     if (scopes.getOptions().getLogs().isEnabled()
         && eventObject.getLevel().isMoreSpecificThan(minimumLevel)) {
       captureLog(eventObject);

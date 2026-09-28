@@ -97,40 +97,56 @@ public final class SentryFeignClient implements Client {
         span.setStatus(SpanStatus.INTERNAL_ERROR);
         throw e;
       } finally {
-        if (beforeSpan != null) {
-          final boolean wasSampled = Boolean.TRUE.equals(span.isSampled());
-          ISpan result = span;
-          try {
-            result = beforeSpan.execute(span, request, response);
-          } catch (Exception e) {
-            span.getSpanContext().setSampled(false);
-            if (wasSampled) {
-              scopes
-                  .getOptions()
-                  .getClientReportRecorder()
-                  .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Span);
-            }
-            scopes
-                .getOptions()
-                .getLogger()
-                .log(
-                    SentryLevel.ERROR,
-                    "The beforeSpan callback threw an exception in SentryFeignClient. Dropping span.",
-                    e);
-          }
-
-          if (result == null) {
-            // span is dropped
-            span.getSpanContext().setSampled(false);
-          } else {
-            span.finish();
-          }
-        } else {
-          span.finish();
-        }
+        finishSpan(span, request, response);
       }
     } finally {
       addBreadcrumb(request, response);
+    }
+  }
+
+  private void finishSpan(
+      final @NotNull ISpan span,
+      final @NotNull Request request,
+      final @Nullable Response response) {
+    if (beforeSpan != null) {
+      final boolean wasSampled = Boolean.TRUE.equals(span.isSampled());
+      ISpan result = span;
+      try {
+        result = beforeSpan.execute(span, request, response);
+      } catch (Exception | Error e) {
+        if (scopes.getOptions().isStrictCallbackMode()) {
+          span.getSpanContext().setSampled(false);
+          if (response != null) {
+            response.close();
+          }
+          span.finish();
+        }
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(scopes.getOptions(), e);
+        if (e instanceof Error) {
+          throw (Error) e;
+        }
+        span.getSpanContext().setSampled(false);
+        if (wasSampled) {
+          scopes
+              .getOptions()
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Span);
+        }
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The beforeSpan callback threw an exception in SentryFeignClient. Dropping span.",
+                e);
+      }
+      if (result == null) {
+        span.getSpanContext().setSampled(false);
+      } else {
+        span.finish();
+      }
+    } else {
+      span.finish();
     }
   }
 

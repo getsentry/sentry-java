@@ -108,47 +108,54 @@ public final class UncaughtExceptionHandlerIntegration
   @Override
   public void uncaughtException(Thread thread, Throwable thrown) {
     if (options != null && scopes != null) {
-      options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
+      final boolean callbackFailure = io.sentry.util.CallbackUtils.isCallbackException(thrown);
+      if (!callbackFailure) {
+        options.getLogger().log(SentryLevel.INFO, "Uncaught exception received.");
 
-      try {
-        final UncaughtExceptionHint exceptionHint =
-            new UncaughtExceptionHint(options.getFlushTimeoutMillis(), options.getLogger());
-        final Throwable throwable = getUnhandledThrowable(thread, thrown);
-        final SentryEvent event = new SentryEvent(throwable);
-        event.setLevel(SentryLevel.FATAL);
+        try {
+          final UncaughtExceptionHint exceptionHint =
+              new UncaughtExceptionHint(options.getFlushTimeoutMillis(), options.getLogger());
+          final Throwable throwable = getUnhandledThrowable(thread, thrown);
+          final SentryEvent event = new SentryEvent(throwable);
+          event.setLevel(SentryLevel.FATAL);
 
-        final ITransaction transaction = scopes.getTransaction();
-        if (transaction == null && event.getEventId() != null) {
-          // if there's no active transaction on scope, this event can trigger flush notification
-          exceptionHint.setFlushable(event.getEventId());
-        }
-        final Hint hint = HintUtils.createWithTypeCheckHint(exceptionHint);
-
-        final @NotNull SentryId sentryId = scopes.captureEvent(event, hint);
-        final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
-        final EventDropReason eventDropReason = HintUtils.getEventDropReason(hint);
-        // in case the event has been dropped by multithreaded deduplicator, the other threads will
-        // crash the app without a chance to persist the main event so we have to special-case this
-        if (!isEventDropped
-            || EventDropReason.MULTITHREADED_DEDUPLICATION.equals(eventDropReason)) {
-          // Block until the event is flushed to disk
-          if (!exceptionHint.waitFlush()) {
-            options
-                .getLogger()
-                .log(
-                    SentryLevel.WARNING,
-                    "Timed out waiting to flush event to disk before crashing. Event: %s",
-                    event.getEventId());
+          final ITransaction transaction = scopes.getTransaction();
+          if (transaction == null && event.getEventId() != null) {
+            // if there's no active transaction on scope, this event can trigger flush notification
+            exceptionHint.setFlushable(event.getEventId());
           }
+          final Hint hint = HintUtils.createWithTypeCheckHint(exceptionHint);
+
+          final @NotNull SentryId sentryId = scopes.captureEvent(event, hint);
+          final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
+          final EventDropReason eventDropReason = HintUtils.getEventDropReason(hint);
+          // in case the event has been dropped by multithreaded deduplicator, the other threads
+          // will
+          // crash the app without a chance to persist the main event so we have to special-case
+          // this
+          if (!isEventDropped
+              || EventDropReason.MULTITHREADED_DEDUPLICATION.equals(eventDropReason)) {
+            // Block until the event is flushed to disk
+            if (!exceptionHint.waitFlush()) {
+              options
+                  .getLogger()
+                  .log(
+                      SentryLevel.WARNING,
+                      "Timed out waiting to flush event to disk before crashing. Event: %s",
+                      event.getEventId());
+            }
+          }
+        } catch (Throwable e) {
+          options
+              .getLogger()
+              .log(SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
         }
-      } catch (Throwable e) {
-        options
-            .getLogger()
-            .log(SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
       }
 
       if (defaultExceptionHandler != null) {
-        options.getLogger().log(SentryLevel.INFO, "Invoking inner uncaught exception handler.");
+        if (!callbackFailure) {
+          options.getLogger().log(SentryLevel.INFO, "Invoking inner uncaught exception handler.");
+        }
         defaultExceptionHandler.uncaughtException(thread, thrown);
       } else {
         if (options.isPrintUncaughtStackTrace()) {

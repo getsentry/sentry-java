@@ -204,6 +204,7 @@ class SentryAutoConfigurationTest {
         "sentry.shutdown-timeout-millis=20",
         "sentry.flush-timeout-millis=30",
         "sentry.debug=true",
+        "sentry.strict-callback-mode=true",
         "sentry.diagnostic-level=INFO",
         "sentry.sentry-client-name=my-client",
         "sentry.max-breadcrumbs=100",
@@ -254,6 +255,7 @@ class SentryAutoConfigurationTest {
         assertThat(options.shutdownTimeoutMillis).isEqualTo(20)
         assertThat(options.flushTimeoutMillis).isEqualTo(30)
         assertThat(options.isDebug).isTrue()
+        assertThat(options.isStrictCallbackMode).isTrue()
         assertThat(options.diagnosticLevel).isEqualTo(SentryLevel.INFO)
         assertThat(options.maxBreadcrumbs).isEqualTo(100)
         assertThat(options.release).isEqualTo("1.0.3")

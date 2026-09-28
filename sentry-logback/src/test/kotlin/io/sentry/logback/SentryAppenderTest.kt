@@ -119,6 +119,34 @@ class SentryAppenderTest {
   }
 
   @Test
+  fun `callback failures are excluded before events breadcrumbs and logs`() {
+    fixture = Fixture(enableLogs = true)
+    val options = Sentry.getCurrentScopes().options
+    val beforeSend = mock<SentryOptions.BeforeSendCallback>()
+    val beforeBreadcrumb = mock<SentryOptions.BeforeBreadcrumbCallback>()
+    val beforeLog = mock<SentryOptions.Logs.BeforeSendLogCallback>()
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    options.beforeSend = beforeSend
+    options.beforeBreadcrumb = beforeBreadcrumb
+    options.logs.beforeSend = beforeLog
+    options.onDiscard = onDiscard
+    for (marker in
+      listOf(
+        io.sentry.exception.SentryCallbackException(IllegalStateException()),
+        io.sentry.exception.SentryCallbackError(LinkageError()),
+      )) {
+      fixture.logger.error("private", java.util.concurrent.CompletionException(marker))
+    }
+    org.mockito.kotlin.verifyNoInteractions(
+      beforeSend,
+      beforeBreadcrumb,
+      beforeLog,
+      onDiscard,
+      fixture.transport,
+    )
+  }
+
+  @Test
   fun `does not initialize Sentry if Sentry is already enabled with higher prio`() {
     fixture =
       Fixture(

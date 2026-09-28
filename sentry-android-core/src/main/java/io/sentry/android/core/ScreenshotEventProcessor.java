@@ -116,7 +116,11 @@ public final class ScreenshotEventProcessor implements SentryEventProcessor {
         if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
           return event;
         }
-      } catch (Exception e) {
+      } catch (Exception | Error e) {
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
+        if (e instanceof Error) {
+          throw (Error) e;
+        }
         options
             .getLogger()
             .log(

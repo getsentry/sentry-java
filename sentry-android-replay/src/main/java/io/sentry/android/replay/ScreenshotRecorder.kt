@@ -92,6 +92,7 @@ internal class ScreenshotRecorder(
       contentChanged.set(false)
       screenshotStrategy.capture(root)
     } catch (e: Throwable) {
+      io.sentry.util.ExceptionUtils.maybeRethrow(e)
       options.logger.log(WARNING, "Failed to capture replay recording", e)
     }
   }

@@ -35,6 +35,7 @@ internal class ReplayExecutorService(
         try {
           task.run()
         } catch (e: Throwable) {
+          io.sentry.util.ExceptionUtils.maybeRethrow(e)
           options.logger.log(
             ERROR,
             "Failed to execute task ${if (task is ReplayRunnable) task.taskName else ""}",
@@ -43,6 +44,7 @@ internal class ReplayExecutorService(
         }
       }
     } catch (e: Throwable) {
+      io.sentry.util.ExceptionUtils.maybeRethrow(e)
       options.logger.log(
         ERROR,
         "Failed to submit task ${if (task is ReplayRunnable) task.taskName else ""} to executor",

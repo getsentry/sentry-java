@@ -145,6 +145,7 @@ public final class SentryAndroid {
             try {
               configuration.configure(options);
             } catch (Throwable t) {
+              io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, t);
               // let it slip, but log it
               options
                   .getLogger()

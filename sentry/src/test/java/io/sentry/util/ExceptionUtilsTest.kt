@@ -1,7 +1,12 @@
 package io.sentry.util
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.exception.ExceptionMechanismException
+import io.sentry.exception.SentryCallbackError
+import io.sentry.exception.SentryCallbackException
+import io.sentry.protocol.Mechanism
 import java.lang.RuntimeException
+import java.util.concurrent.CompletionException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
@@ -22,6 +27,61 @@ class ExceptionUtilsTest {
     val cause = RuntimeException(rootCause)
     val ex = RuntimeException(cause)
     assertEquals(rootCause, ExceptionUtils.findRootCause(ex))
+  }
+
+  @Test
+  fun `maybeRethrow propagates direct and nested markers unchanged`() {
+    for (marker in
+      listOf(
+        SentryCallbackException(IllegalStateException()),
+        SentryCallbackError(LinkageError()),
+      )) {
+      for (failure in
+        listOf(
+          marker,
+          CompletionException(RuntimeException(marker)),
+          ExceptionMechanismException(Mechanism(), marker, Thread.currentThread()),
+        )) {
+        assertThat(assertFails { ExceptionUtils.maybeRethrow(failure) }).isSameInstanceAs(marker)
+      }
+    }
+  }
+
+  @Test
+  fun `maybeRethrow terminates on cycles and still finds markers`() {
+    val first = IllegalStateException()
+    val second = IllegalArgumentException(first)
+    first.initCause(second)
+    ExceptionUtils.maybeRethrow(first)
+
+    val cause = IllegalStateException()
+    val marker = SentryCallbackException(cause)
+    cause.initCause(marker)
+    val mechanism = ExceptionMechanismException(Mechanism(), cause, Thread.currentThread())
+    assertThat(assertFails { ExceptionUtils.maybeRethrow(mechanism) }).isSameInstanceAs(marker)
+  }
+
+  @Test
+  fun `maybeRethrow leaves unmarked failures including fatal errors untouched`() {
+    for (failure in
+      listOf(
+        RuntimeException(),
+        java.io.IOException(),
+        AssertionError(),
+        OutOfMemoryError(),
+        StackOverflowError(),
+        ThreadDeath(),
+        LinkageError(),
+      )) {
+      ExceptionUtils.maybeRethrow(failure)
+      ExceptionUtils.maybeRethrow(CompletionException(failure))
+    }
+    try {
+      ExceptionUtils.maybeRethrow(InterruptedException())
+      assertThat(Thread.currentThread().isInterrupted).isFalse()
+    } finally {
+      Thread.interrupted()
+    }
   }
 
   @Test
