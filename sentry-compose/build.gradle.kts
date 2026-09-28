@@ -121,6 +121,9 @@ android {
   }
 }
 
+// The default detekt source set is src/{main,test}, which doesn't exist in a multiplatform module.
+detekt { source.setFrom("src/androidMain/kotlin", "src/androidUnitTest/kotlin") }
+
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.
   jvmTarget = JavaVersion.VERSION_1_8.toString()

@@ -1,6 +1,16 @@
 style:
   ReturnCount:
     max: 3
+  MagicNumber:
+    ignorePropertyDeclaration: true
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
 naming:
   FunctionNaming:
     ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    # Accept both SCREAMING_CASE and Compose's PascalCase constants.
+    constantPattern: '[A-Z][_A-Za-z0-9]*'
+complexity:
+  TooManyFunctions:
+    ignoreAnnotatedFunctions: ['Preview']
