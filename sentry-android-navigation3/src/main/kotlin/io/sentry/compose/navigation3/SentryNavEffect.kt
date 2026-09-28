@@ -43,7 +43,7 @@ import org.jetbrains.annotations.ApiStatus
  *
  * - a breadcrumb
  * - a screen name
- * - a record of the current back stack (last 10 frames)
+ * - a record of the current back stack (last 10 entries)
  *
  * A new transaction is started at each nav destination, assuming another non-nav transaction isn't
  * already active.
