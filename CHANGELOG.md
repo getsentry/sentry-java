@@ -10,7 +10,6 @@
 ### Fixes
 
 - Keep the videos of already captured session replay segments when the replay stops, so the final segments are no longer missing ([#6171](https://github.com/getsentry/sentry-java/pull/6171))
-- Derive the next session replay segment id from the flushed segment, so segments are no longer sent with a duplicate id ([#6171](https://github.com/getsentry/sentry-java/pull/6171))
 
 ## 8.58.0
 
