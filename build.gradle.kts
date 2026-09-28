@@ -171,7 +171,7 @@ subprojects {
         // to Java 8 so their bytecode stays consumable by Java 8 projects, mirroring the
         // java-library pin above.
         plugins.withId("com.android.library") {
-            configure<com.android.build.api.dsl.LibraryExtension> {
+            configure<com.android.build.gradle.BaseExtension> {
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_1_8
                     targetCompatibility = JavaVersion.VERSION_1_8
