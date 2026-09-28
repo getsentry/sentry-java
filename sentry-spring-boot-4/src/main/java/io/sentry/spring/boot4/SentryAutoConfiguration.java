@@ -282,10 +282,7 @@ public class SentryAutoConfiguration {
           "io.sentry.okhttp.SentryOkHttpEventListener"
         })
     @ConditionalOnProperty(name = "sentry.clients.ok-http-enabled", havingValue = "true")
-    @ConditionalOnMissingClass({
-      "io.sentry.opentelemetry.SentryAutoConfigurationCustomizerProvider",
-      "io.sentry.opentelemetry.agent.AgentMarker"
-    })
+    @ConditionalOnMissingClass("io.sentry.opentelemetry.agent.AgentMarker")
     @Open
     static class SentryOkHttpConfiguration {
 

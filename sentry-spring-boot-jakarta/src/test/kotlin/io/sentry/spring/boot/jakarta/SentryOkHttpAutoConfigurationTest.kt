@@ -209,7 +209,7 @@ class SentryOkHttpAutoConfigurationTest {
   }
 
   @Test
-  fun `does not instrument when Sentry OpenTelemetry integration is present`() {
+  fun `instruments when Sentry OpenTelemetry integration is used without the agent`() {
     contextRunner
       .withClassLoader(FilteredClassLoader(AgentMarker::class.java))
       .withPropertyValues("sentry.dsn=http://key@localhost/proj")
@@ -217,9 +217,9 @@ class SentryOkHttpAutoConfigurationTest {
       .run { context ->
         val client = context.getBean(OkHttpClient::class.java)
 
-        assertThat(client.interceptors.filterIsInstance<SentryOkHttpInterceptor>()).isEmpty()
+        assertThat(client.interceptors.filterIsInstance<SentryOkHttpInterceptor>()).hasSize(1)
         assertThat(client.eventListenerFactory.create(mock()))
-          .isNotInstanceOf(SentryOkHttpEventListener::class.java)
+          .isInstanceOf(SentryOkHttpEventListener::class.java)
       }
   }
 
