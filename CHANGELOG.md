@@ -7,6 +7,11 @@
 - Deprecate `sendDefaultPii` in favor of `dataCollection` ahead of its removal in 9.0 ([#6158](https://github.com/getsentry/sentry-java/pull/6158))
 - Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
 
+### Fixes
+
+- Keep the videos of already captured session replay segments when the replay stops, so the final segments are no longer missing ([#6171](https://github.com/getsentry/sentry-java/pull/6171))
+- Derive the next session replay segment id from the flushed segment, so segments are no longer sent with a duplicate id ([#6171](https://github.com/getsentry/sentry-java/pull/6171))
+
 ## 8.58.0
 
 ### Features
