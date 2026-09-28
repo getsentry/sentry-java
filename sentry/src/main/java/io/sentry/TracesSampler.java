@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.util.CallbackUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -31,6 +32,7 @@ public final class TracesSampler {
       try {
         profilesSampleRate = options.getProfilesSampler().sample(samplingContext);
       } catch (Throwable t) {
+        CallbackUtils.rethrowIfStrictCallbackMode(options, t);
         profilesSamplerFailed = true;
         options
             .getLogger()
@@ -47,6 +49,7 @@ public final class TracesSampler {
       try {
         samplerResult = options.getTracesSampler().sample(samplingContext);
       } catch (Throwable t) {
+        CallbackUtils.rethrowIfStrictCallbackMode(options, t);
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'TracesSamplerCallback' callback.", t);

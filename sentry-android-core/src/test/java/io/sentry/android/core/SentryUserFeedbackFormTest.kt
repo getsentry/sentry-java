@@ -107,6 +107,82 @@ class SentryUserFeedbackFormTest {
   }
 
   @Test
+  fun `strict submit callbacks propagate failures and close the form`() {
+    fixture.options.isStrictCallbackMode = true
+    for (success in listOf(false, true)) {
+      for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+        fixture.options.feedbackOptions.setOnSubmitSuccess { throw failure }
+        fixture.options.feedbackOptions.setOnSubmitError { throw failure }
+        whenever(fixture.mockFeedbackApi.capture(any<Feedback>(), anyOrNull()))
+          .thenReturn(if (success) SentryId() else SentryId.EMPTY_ID)
+        val sut = fixture.getSut()
+        sut.show()
+        sut
+          .findViewById<EditText>(R.id.sentry_dialog_user_feedback_edt_description)
+          .setText("message")
+        val thrown =
+          kotlin.test.assertFails {
+            sut.findViewById<Button>(R.id.sentry_dialog_user_feedback_btn_send).performClick()
+          }
+        assertThat(io.sentry.util.CallbackUtils.isCallbackException(thrown)).isTrue()
+        assertThat(thrown.cause).isSameInstanceAs(failure)
+        assertThat(sut.isShowing).isFalse()
+        shadowOf(Looper.getMainLooper()).idle()
+      }
+    }
+  }
+
+  @Test
+  fun `strict feedback configurators propagate marked failures`() {
+    fixture.options.isStrictCallbackMode = true
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      val configured =
+        kotlin.test.assertFails { fixture.getSut(configuration = { _, _ -> throw failure }) }
+      val customized = kotlin.test.assertFails { fixture.getSut(configurator = { throw failure }) }
+      for (thrown in listOf(configured, customized)) {
+        com.google.common.truth.Truth.assertThat(
+            io.sentry.util.CallbackUtils.isCallbackException(thrown)
+          )
+          .isTrue()
+        com.google.common.truth.Truth.assertThat(thrown.cause).isSameInstanceAs(failure)
+      }
+    }
+  }
+
+  @Test
+  fun `strict form open callback propagates marked failures`() {
+    fixture.options.isStrictCallbackMode = true
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      fixture.options.feedbackOptions.onFormOpen = Runnable { throw failure }
+      val sut = fixture.getSut()
+      val thrown = kotlin.test.assertFails { sut.show() }
+      com.google.common.truth.Truth.assertThat(
+          io.sentry.util.CallbackUtils.isCallbackException(thrown)
+        )
+        .isTrue()
+      com.google.common.truth.Truth.assertThat(thrown.cause).isSameInstanceAs(failure)
+      sut.dismiss()
+    }
+  }
+
+  @Test
+  fun `strict form close callback propagates marked failures`() {
+    fixture.options.isStrictCallbackMode = true
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      fixture.options.feedbackOptions.onFormClose = Runnable { throw failure }
+      val sut = fixture.getSut()
+      sut.show()
+      sut.dismiss()
+      val thrown = kotlin.test.assertFails { shadowOf(Looper.getMainLooper()).idle() }
+      com.google.common.truth.Truth.assertThat(
+          io.sentry.util.CallbackUtils.isCallbackException(thrown)
+        )
+        .isTrue()
+      com.google.common.truth.Truth.assertThat(thrown.cause).isSameInstanceAs(failure)
+    }
+  }
+
+  @Test
   fun `feedback dialog is shown when sdk is enabled`() {
     fixture.options.isEnabled = true
     val sut = fixture.getSut(context = componentActivity())

@@ -101,6 +101,51 @@ class SentryHandlerTest {
   }
 
   @Test
+  fun `strict callback failures propagate through the logging handler`() {
+    fixture = Fixture(minimumEventLevel = Level.SEVERE)
+    val options = Sentry.getCurrentScopes().options
+    options.isStrictCallbackMode = true
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      options.setBeforeSend { _, _ -> throw failure }
+      val thrown = kotlin.test.assertFails { fixture.logger.severe("message") }
+      com.google.common.truth.Truth.assertThat(thrown.cause).isSameInstanceAs(failure)
+      com.google.common.truth.Truth.assertThat(
+          io.sentry.util.CallbackUtils.isCallbackException(thrown)
+        )
+        .isTrue()
+    }
+  }
+
+  @Test
+  fun `callback failures are excluded before events breadcrumbs and logs`() {
+    fixture = Fixture()
+    val options = Sentry.getCurrentScopes().options
+    options.logs.isEnabled = true
+    val beforeSend = mock<SentryOptions.BeforeSendCallback>()
+    val beforeBreadcrumb = mock<SentryOptions.BeforeBreadcrumbCallback>()
+    val beforeLog = mock<SentryOptions.Logs.BeforeSendLogCallback>()
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    options.beforeSend = beforeSend
+    options.beforeBreadcrumb = beforeBreadcrumb
+    options.logs.beforeSend = beforeLog
+    options.onDiscard = onDiscard
+    for (marker in
+      listOf(
+        io.sentry.exception.SentryCallbackException(IllegalStateException()),
+        io.sentry.exception.SentryCallbackError(LinkageError()),
+      )) {
+      fixture.logger.log(Level.SEVERE, "private", java.util.concurrent.CompletionException(marker))
+    }
+    org.mockito.kotlin.verifyNoInteractions(
+      beforeSend,
+      beforeBreadcrumb,
+      beforeLog,
+      onDiscard,
+      fixture.transport,
+    )
+  }
+
+  @Test
   fun `converts message`() {
     fixture = Fixture(minimumEventLevel = Level.SEVERE)
     fixture.logger.log(Level.SEVERE, "testing message conversion {0}, {1}", arrayOf(1, 2))

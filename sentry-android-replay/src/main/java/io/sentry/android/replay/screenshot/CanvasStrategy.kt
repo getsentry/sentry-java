@@ -138,6 +138,7 @@ internal class CanvasStrategy(
         executor.getBackgroundHandler(),
       )
     } catch (t: Throwable) {
+      io.sentry.util.ExceptionUtils.maybeRethrow(t)
       options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)
       lastCaptureSuccessful.set(false)
     }
@@ -197,6 +198,7 @@ internal class CanvasStrategy(
     try {
       post(runnable)
     } catch (t: Throwable) {
+      io.sentry.util.ExceptionUtils.maybeRethrow(t)
       options.logger.log(
         SentryLevel.ERROR,
         "Canvas Strategy: failed to post runnable ${runnable.taskName}",

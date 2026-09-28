@@ -152,12 +152,12 @@ public final class NoOpScopes implements IScopes {
 
   @Override
   public void withScope(@NotNull ScopeCallback callback) {
-    callback.run(NoOpScope.getInstance());
+    io.sentry.util.CallbackUtils.run(getOptions(), () -> callback.run(NoOpScope.getInstance()));
   }
 
   @Override
   public void withIsolationScope(@NotNull ScopeCallback callback) {
-    callback.run(NoOpScope.getInstance());
+    io.sentry.util.CallbackUtils.run(getOptions(), () -> callback.run(NoOpScope.getInstance()));
   }
 
   @Override

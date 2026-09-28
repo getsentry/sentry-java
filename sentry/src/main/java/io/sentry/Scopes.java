@@ -9,6 +9,8 @@ import io.sentry.metrics.IMetricsApi;
 import io.sentry.metrics.MetricsApi;
 import io.sentry.protocol.*;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.CallbackUtils;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
@@ -146,6 +148,9 @@ public final class Scopes implements IScopes {
       final @NotNull SentryEvent event,
       final @Nullable Hint hint,
       final @Nullable ScopeCallback scopeCallback) {
+    if (event != null && CallbackUtils.isCallbackException(event.getThrowable())) {
+      return SentryId.EMPTY_ID;
+    }
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       getOptions()
@@ -164,6 +169,7 @@ public final class Scopes implements IScopes {
         sentryId = getClient().captureEvent(event, localScope, hint);
         updateLastEventId(sentryId);
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions()
             .getLogger()
             .log(
@@ -192,6 +198,7 @@ public final class Scopes implements IScopes {
         callback.run(localScope);
         return localScope;
       } catch (Throwable t) {
+        CallbackUtils.rethrowIfStrictCallbackMode(getOptions(), t);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'ScopeCallback' callback.", t);
@@ -235,6 +242,7 @@ public final class Scopes implements IScopes {
 
         sentryId = getClient().captureMessage(message, level, localScope);
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error while capturing message: " + message, e);
@@ -266,6 +274,7 @@ public final class Scopes implements IScopes {
 
         sentryId = getClient().captureFeedback(feedback, hint, localScope);
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error while capturing feedback: " + feedback.getMessage(), e);
@@ -294,6 +303,7 @@ public final class Scopes implements IScopes {
           sentryId = capturedEnvelopeId;
         }
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
       }
     }
@@ -319,6 +329,9 @@ public final class Scopes implements IScopes {
       final @NotNull Throwable throwable,
       final @Nullable Hint hint,
       final @Nullable ScopeCallback scopeCallback) {
+    if (CallbackUtils.isCallbackException(throwable)) {
+      return SentryId.EMPTY_ID;
+    }
     SentryId sentryId = SentryId.EMPTY_ID;
     if (!isEnabled()) {
       getOptions()
@@ -339,6 +352,7 @@ public final class Scopes implements IScopes {
 
         sentryId = getClient().captureEvent(event, localScope, hint);
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions()
             .getLogger()
             .log(
@@ -362,6 +376,7 @@ public final class Scopes implements IScopes {
       try {
         getClient().captureUserFeedback(userFeedback);
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions()
             .getLogger()
             .log(
@@ -499,6 +514,7 @@ public final class Scopes implements IScopes {
         configureScope(ScopeType.ISOLATION, scope -> scope.getClient().close(isRestarting));
         configureScope(ScopeType.GLOBAL, scope -> scope.getClient().close(isRestarting));
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while closing the Scopes.", e);
       }
     }
@@ -712,6 +728,7 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
+        CallbackUtils.rethrowIfStrictCallbackMode(getOptions(), e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
 
@@ -720,6 +737,7 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getScope());
       } catch (Throwable e) {
+        CallbackUtils.rethrowIfStrictCallbackMode(getOptions(), e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'withScope' callback.", e);
       }
     }
@@ -731,6 +749,7 @@ public final class Scopes implements IScopes {
       try {
         callback.run(NoOpScope.getInstance());
       } catch (Throwable e) {
+        CallbackUtils.rethrowIfStrictCallbackMode(getOptions(), e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
@@ -741,6 +760,7 @@ public final class Scopes implements IScopes {
       try (final @NotNull ISentryLifecycleToken ignored = forkedScopes.makeCurrent()) {
         callback.run(forkedScopes.getIsolationScope());
       } catch (Throwable e) {
+        CallbackUtils.rethrowIfStrictCallbackMode(getOptions(), e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'withIsolationScope' callback.", e);
@@ -761,6 +781,7 @@ public final class Scopes implements IScopes {
       try {
         callback.run(combinedScope.getSpecificScope(scopeType));
       } catch (Throwable e) {
+        CallbackUtils.rethrowIfStrictCallbackMode(getOptions(), e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error in the 'configureScope' callback.", e);
@@ -794,6 +815,7 @@ public final class Scopes implements IScopes {
       try {
         getClient().flush(timeoutMillis);
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
       }
     }
@@ -877,6 +899,7 @@ public final class Scopes implements IScopes {
                         hint,
                         profilingTraceData);
           } catch (Throwable e) {
+            ExceptionUtils.maybeRethrow(e);
             getOptions()
                 .getLogger()
                 .log(
@@ -907,6 +930,7 @@ public final class Scopes implements IScopes {
       try {
         sentryId = getClient().captureProfileChunk(profilingContinuousData, getScope());
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions()
             .getLogger()
             .log(
@@ -1212,6 +1236,7 @@ public final class Scopes implements IScopes {
       try {
         sentryId = getClient().captureCheckIn(checkIn, getCombinedScopeView(), null);
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions()
             .getLogger()
             .log(SentryLevel.ERROR, "Error while capturing check-in for slug", e);
@@ -1235,6 +1260,7 @@ public final class Scopes implements IScopes {
       try {
         sentryId = getClient().captureReplayEvent(replay, getCombinedScopeView(), hint);
       } catch (Throwable e) {
+        ExceptionUtils.maybeRethrow(e);
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing replay", e);
       }
     }

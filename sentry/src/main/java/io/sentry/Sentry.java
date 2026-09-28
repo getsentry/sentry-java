@@ -279,6 +279,7 @@ public final class Sentry {
     try {
       optionsConfiguration.configure(options);
     } catch (Throwable t) {
+      io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, t);
       options
           .getLogger()
           .log(SentryLevel.ERROR, "Error in the 'OptionsConfiguration.configure' callback.", t);
@@ -517,6 +518,7 @@ public final class Sentry {
                   }
                 }
               } catch (Throwable e) {
+                io.sentry.util.ExceptionUtils.maybeRethrow(e);
                 options
                     .getLogger()
                     .log(
@@ -525,6 +527,7 @@ public final class Sentry {
             }
           });
     } catch (Throwable e) {
+      io.sentry.util.ExceptionUtils.maybeRethrow(e);
       options
           .getLogger()
           .log(

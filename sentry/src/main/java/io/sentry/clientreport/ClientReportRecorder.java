@@ -9,6 +9,8 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.SentrySpan;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.CallbackUtils;
+import io.sentry.util.ExceptionUtils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -63,6 +65,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
         recordLostEnvelopeItem(reason, item);
       }
     } catch (Throwable e) {
+      ExceptionUtils.maybeRethrow(e);
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope.");
     }
   }
@@ -119,6 +122,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
         }
       }
     } catch (Throwable e) {
+      ExceptionUtils.maybeRethrow(e);
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost envelope item.");
     }
   }
@@ -135,6 +139,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       recordLostEventInternal(reason.getReason(), category.getCategory(), count);
       executeOnDiscard(reason, category, count);
     } catch (Throwable e) {
+      ExceptionUtils.maybeRethrow(e);
       options.getLogger().log(SentryLevel.ERROR, e, "Unable to record lost event.");
     }
   }
@@ -145,6 +150,7 @@ public final class ClientReportRecorder implements IClientReportRecorder {
       try {
         options.getOnDiscard().execute(reason, category, countToAdd);
       } catch (Throwable e) {
+        CallbackUtils.rethrowIfStrictCallbackMode(options, e);
         options.getLogger().log(SentryLevel.ERROR, "The onDiscard callback threw an exception.", e);
       }
     }

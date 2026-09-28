@@ -222,7 +222,8 @@ public final class SentryTracer implements ITransaction {
             final @Nullable TransactionFinishedCallback finishedCallback =
                 transactionOptions.getTransactionFinishedCallback();
             if (finishedCallback != null) {
-              finishedCallback.execute(this);
+              io.sentry.util.CallbackUtils.run(
+                  scopes.getOptions(), () -> finishedCallback.execute(this));
             }
 
             if (compositePerformanceCollector != null) {

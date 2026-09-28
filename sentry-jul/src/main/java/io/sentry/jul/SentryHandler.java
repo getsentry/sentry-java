@@ -107,6 +107,9 @@ public class SentryHandler extends Handler {
 
   @Override
   public void publish(final @NotNull LogRecord record) {
+    if (io.sentry.util.CallbackUtils.isCallbackException(record.getThrown())) {
+      return;
+    }
     // Do not log the event if the current thread is managed by sentry
     if (!isLoggable(record)) {
       return;
@@ -129,6 +132,7 @@ public class SentryHandler extends Handler {
         Sentry.addBreadcrumb(createBreadcrumb(record), hint);
       }
     } catch (RuntimeException e) {
+      io.sentry.util.ExceptionUtils.maybeRethrow(e);
       reportError(
           "An exception occurred while creating a new event in Sentry",
           e,
@@ -364,6 +368,7 @@ public class SentryHandler extends Handler {
     try {
       Sentry.close();
     } catch (RuntimeException e) {
+      io.sentry.util.ExceptionUtils.maybeRethrow(e);
       reportError(
           "An exception occurred while closing the Sentry connection",
           e,

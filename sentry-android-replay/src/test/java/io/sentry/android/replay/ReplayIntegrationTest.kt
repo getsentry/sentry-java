@@ -1532,6 +1532,42 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `strict snapshot observer failure propagates and recycles its bitmap`() {
+    val captureStrategy =
+      mock<CaptureStrategy> {
+        doAnswer {
+            (it.arguments[1] as ReplayCache.(Long) -> Unit).invoke(
+              fixture.replayCache,
+              1720693523997,
+            )
+          }
+          .whenever(mock)
+          .onScreenshotRecorded(anyOrNull<Bitmap>(), any())
+      }
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+    fixture.options.isStrictCallbackMode = true
+    replay.register(fixture.scopes, fixture.options)
+    replay.start()
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      fixture.options.sessionReplay.frameObserver =
+        SentryReplayOptions.ReplayFrameObserver { _, _, _ ->
+          throw failure
+        }
+      val copyBitmap = mock<Bitmap>()
+      val sourceBitmap =
+        mock<Bitmap> {
+          on { config } doReturn ARGB_8888
+          on { copy(any(), any()) } doReturn copyBitmap
+        }
+      val thrown = kotlin.test.assertFails { replay.onScreenshotRecorded(sourceBitmap) }
+      assertThat(io.sentry.util.CallbackUtils.isCallbackException(thrown)).isTrue()
+      assertThat(thrown.cause).isSameInstanceAs(failure)
+      verify(copyBitmap).recycle()
+    }
+    verify(fixture.replayCache, never()).addFrame(any<Bitmap>(), any(), anyOrNull())
+  }
+
+  @Test
   fun `snapshot observer exception does not prevent frame storage`() {
     val captureStrategy =
       mock<CaptureStrategy> {

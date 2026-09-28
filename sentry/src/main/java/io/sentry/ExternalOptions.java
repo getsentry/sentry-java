@@ -22,6 +22,7 @@ public final class ExternalOptions {
   private @Nullable String serverName;
   private @Nullable Boolean enableUncaughtExceptionHandler;
   private @Nullable Boolean debug;
+  private @Nullable Boolean strictCallbackMode;
   private @Nullable Boolean enableDeduplication;
   private @Nullable Double sampleRate;
   private @Nullable Double tracesSampleRate;
@@ -90,6 +91,7 @@ public final class ExternalOptions {
     options.setTracesSampleRate(propertiesProvider.getDoubleProperty("traces-sample-rate"));
     options.setProfilesSampleRate(propertiesProvider.getDoubleProperty("profiles-sample-rate"));
     options.setDebug(propertiesProvider.getBooleanProperty("debug"));
+    options.setStrictCallbackMode(propertiesProvider.getBooleanProperty("strict-callback-mode"));
     options.setEnableDeduplication(propertiesProvider.getBooleanProperty("enable-deduplication"));
     options.setSendClientReports(propertiesProvider.getBooleanProperty("send-client-reports"));
     options.setForceInit(propertiesProvider.getBooleanProperty("force-init"));
@@ -399,6 +401,14 @@ public final class ExternalOptions {
 
   public @Nullable List<String> getTracePropagationTargets() {
     return tracePropagationTargets;
+  }
+
+  public @Nullable Boolean getStrictCallbackMode() {
+    return strictCallbackMode;
+  }
+
+  public void setStrictCallbackMode(final @Nullable Boolean strictCallbackMode) {
+    this.strictCallbackMode = strictCallbackMode;
   }
 
   public @Nullable Boolean getDebug() {

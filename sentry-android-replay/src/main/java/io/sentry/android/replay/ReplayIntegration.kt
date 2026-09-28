@@ -464,8 +464,9 @@ public class ReplayIntegration(
             hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, copy)
             observer.onMaskedFrameCaptured(hint, frameTimeStamp, screen)
           } catch (e: Throwable) {
-            options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
             copy.recycle()
+            io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e)
+            options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
           }
         }
       }
@@ -487,8 +488,9 @@ public class ReplayIntegration(
             hint.set(TypeCheckHint.REPLAY_FRAME_BITMAP, bitmap)
             observer.onMaskedFrameCaptured(hint, frameTimestamp, screen)
           } catch (e: Throwable) {
-            options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
             bitmap.recycle()
+            io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e)
+            options.logger.log(ERROR, "Error in ReplayFrameObserver", e)
           }
         }
       }

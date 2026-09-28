@@ -138,6 +138,7 @@ public final class LoggerApi implements ILoggerApi {
 
       scopes.getClient().captureLog(logEvent, combinedScope);
     } catch (Throwable e) {
+      io.sentry.util.ExceptionUtils.maybeRethrow(e);
       options.getLogger().log(SentryLevel.ERROR, "Error while capturing log event", e);
     }
   }

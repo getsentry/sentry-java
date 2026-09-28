@@ -468,6 +468,29 @@ class SentryKtorClientPluginTest {
   }
 
   @Test
+  fun `strict beforeSpan failures propagate and finish dropped spans`(): Unit = runBlocking {
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      val fixture = Fixture()
+      val sut = fixture.getSut(beforeSpan = { _, _ -> throw failure })
+      fixture.options.isStrictCallbackMode = true
+      val thrown =
+        kotlin.test.assertFails {
+          sut.use { sut.get(fixture.server.url("/hello").toString()) }
+        }
+      assertThat(thrown)
+        .isInstanceOf(
+          if (failure is Error) io.sentry.exception.SentryCallbackError::class.java
+          else io.sentry.exception.SentryCallbackException::class.java
+        )
+      assertThat(generateSequence(thrown) { it.cause }.toList()).contains(failure)
+      val span = fixture.sentryTracer.children.single()
+      assertThat(span.isSampled).isFalse()
+      assertThat(span.isFinished).isTrue()
+      fixture.server.shutdown()
+    }
+  }
+
+  @Test
   fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
     val failure = IllegalStateException("callback failed")
     val logger = mock<ILogger>()

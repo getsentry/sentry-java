@@ -167,6 +167,10 @@ internal class PixelCopyStrategy(
               )
             }
           } catch (e: RuntimeException) {
+            if (io.sentry.util.CallbackUtils.isCallbackException(e)) {
+              finishFrame()
+              io.sentry.util.ExceptionUtils.maybeRethrow(e)
+            }
             // OEM View subclasses have been observed throwing during hierarchy traversal
             // (e.g. Redmi's TextView NPE). Release the frame gate so a single bad frame
             // doesn't wedge the recorder. Errors (OOM, LinkageError) intentionally propagate.
@@ -177,6 +181,10 @@ internal class PixelCopyStrategy(
         mainLooperHandler.handler,
       )
     } catch (e: Throwable) {
+      if (io.sentry.util.CallbackUtils.isCallbackException(e)) {
+        finishFrame()
+        io.sentry.util.ExceptionUtils.maybeRethrow(e)
+      }
       options.logger.log(WARNING, "Failed to capture replay recording", e)
       unstableCaptures.set(0)
       lastCaptureSuccessful.set(false)
@@ -295,6 +303,7 @@ internal class PixelCopyStrategy(
         // double-recycle if the recycle paths above already ran.
         svBitmap = null
       } catch (e: Throwable) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e)
         options.logger.log(WARNING, "Failed to capture SurfaceView", e)
         svBitmap?.recycle()
         onCaptureComplete()
