@@ -81,6 +81,7 @@
     <ID>MagicNumber:CanvasStrategy.kt$TextIgnoringDelegateCanvas$100</ID>
     <ID>MagicNumber:CanvasStrategy.kt$TextIgnoringDelegateCanvas$10f</ID>
     <ID>MagicNumber:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$26</ID>
+    <ID>MagicNumber:DebugOverlayDrawable.kt$DebugOverlayDrawable$6f</ID>
     <ID>MagicNumber:DefaultReplayBreadcrumbConverter.kt$DefaultReplayBreadcrumbConverter$1000.0</ID>
     <ID>MagicNumber:Persistable.kt$PersistableLinkedList$26</ID>
     <ID>MagicNumber:ReplayCache.kt$ReplayCache$1000</ID>
@@ -91,6 +92,7 @@
     <ID>MagicNumber:ScreenshotRecorder.kt$ScreenshotRecorderConfig.Companion$8</ID>
     <ID>MagicNumber:SimpleVideoEncoder.kt$MuxerConfig$24</ID>
     <ID>MagicNumber:SimpleVideoEncoder.kt$SimpleVideoEncoder$26</ID>
+    <ID>MagicNumber:SimpleVideoEncoder.kt$SimpleVideoEncoder$6</ID>
     <ID>MagicNumber:ViewHierarchyNode.kt$ViewHierarchyNode$26</ID>
     <ID>MagicNumber:Views.kt$10</ID>
     <ID>MagicNumber:Views.kt$21</ID>
