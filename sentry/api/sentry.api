@@ -7955,6 +7955,7 @@ public final class io/sentry/util/HintUtils {
 	public static fun hasType (Lio/sentry/Hint;Ljava/lang/Class;)Z
 	public static fun isCaptureFailed (Lio/sentry/Hint;)Z
 	public static fun isFromHybridSdk (Lio/sentry/Hint;)Z
+	public static fun markDiscarded (Lio/sentry/Hint;)V
 	public static fun runIfDoesNotHaveType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryNullableConsumer;)V
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;)V
 	public static fun runIfHasType (Lio/sentry/Hint;Ljava/lang/Class;Lio/sentry/util/HintUtils$SentryConsumer;Lio/sentry/util/HintUtils$SentryHintFallback;)V

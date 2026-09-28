@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.clientreport.DiscardReason;
-import io.sentry.hints.DiscardNotification;
 import io.sentry.hints.SessionEndHint;
 import io.sentry.hints.SessionStartHint;
 import io.sentry.logger.ILoggerApi;
@@ -1232,9 +1231,7 @@ public final class Scopes implements IScopes {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureReplay' call is a no-op.");
-      if (hint != null) {
-        HintUtils.runIfHasType(hint, DiscardNotification.class, DiscardNotification::markDiscarded);
-      }
+      HintUtils.markDiscarded(hint);
     } else {
       try {
         sentryId = getClient().captureReplayEvent(replay, getCombinedScopeView(), hint);

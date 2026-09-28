@@ -13,7 +13,6 @@ import io.sentry.UncaughtExceptionHandlerIntegration;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.clientreport.DiscardReason;
 import io.sentry.hints.Cached;
-import io.sentry.hints.DiscardNotification;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.Enqueable;
 import io.sentry.hints.Retryable;
@@ -111,7 +110,7 @@ public final class AsyncHttpTransport implements ITransport {
         options
             .getClientReportRecorder()
             .recordLostEnvelope(DiscardReason.QUEUE_OVERFLOW, envelopeThatMayIncludeClientReport);
-        HintUtils.runIfHasType(hint, DiscardNotification.class, DiscardNotification::markDiscarded);
+        HintUtils.markDiscarded(hint);
       } else {
         HintUtils.runIfHasType(
             hint,

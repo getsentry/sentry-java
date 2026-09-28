@@ -13,6 +13,7 @@ import io.sentry.ILogger;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.Cached;
+import io.sentry.hints.DiscardNotification;
 import io.sentry.hints.EventDropReason;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -94,6 +95,13 @@ public final class HintUtils {
   public static <T> void runIfHasType(
       @NotNull Hint hint, @NotNull Class<T> clazz, SentryConsumer<T> lambda) {
     runIfHasType(hint, clazz, lambda, (value, clazz2) -> {});
+  }
+
+  /** Notifies the hint, if any, that its envelope was dropped before it was sent or stored. */
+  public static void markDiscarded(final @Nullable Hint hint) {
+    if (hint != null) {
+      runIfHasType(hint, DiscardNotification.class, DiscardNotification::markDiscarded);
+    }
   }
 
   public static <T> void runIfHasTypeLogIfNot(

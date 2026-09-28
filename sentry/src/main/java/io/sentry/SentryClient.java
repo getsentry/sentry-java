@@ -6,7 +6,6 @@ import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.Cached;
-import io.sentry.hints.DiscardNotification;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.logger.ILoggerBatchProcessor;
@@ -321,7 +320,7 @@ public final class SentryClient implements ISentryClient {
 
     // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
-      markReplayDiscarded(hint);
+      HintUtils.markDiscarded(hint);
       return SentryId.EMPTY_ID;
     }
 
@@ -354,7 +353,7 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (event == null) {
-      markReplayDiscarded(hint);
+      HintUtils.markDiscarded(hint);
       return SentryId.EMPTY_ID;
     }
 
@@ -368,19 +367,13 @@ public final class SentryClient implements ISentryClient {
       transport.send(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.WARNING, e, "Capturing event %s failed.", sentryId);
-      markReplayDiscarded(hint);
+      HintUtils.markDiscarded(hint);
 
       // if there was an error capturing the event, we return an emptyId
       sentryId = SentryId.EMPTY_ID;
     }
 
     return sentryId;
-  }
-
-  private static void markReplayDiscarded(final @Nullable Hint hint) {
-    if (hint != null) {
-      HintUtils.runIfHasType(hint, DiscardNotification.class, DiscardNotification::markDiscarded);
-    }
   }
 
   private void addScopeAttachmentsToHint(@Nullable IScope scope, @NotNull Hint hint) {
