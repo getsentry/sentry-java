@@ -43,6 +43,7 @@ plugins.withId("io.sentry.android.gradle") {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.samples.android"
 
   defaultConfig {
