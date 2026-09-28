@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -307,13 +308,25 @@ private fun MemoryLimiterScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
           ) {
-            Button(onClick = onStartAllocating, enabled = isSupported && !isAllocating) {
+            Button(
+              onClick = onStartAllocating,
+              enabled = isSupported && !isAllocating,
+              modifier = Modifier.testTag("memory_limiter_start_pressure"),
+            ) {
               Text("Start memory pressure")
             }
-            OutlinedButton(onClick = onReleaseBuffers, enabled = allocatedMb > 0 || isAllocating) {
+            OutlinedButton(
+              onClick = onReleaseBuffers,
+              enabled = allocatedMb > 0 || isAllocating,
+              modifier = Modifier.testTag("memory_limiter_reset_run"),
+            ) {
               Text("Reset run")
             }
-            OutlinedButton(onClick = onMoveToBackground, enabled = isSupported) {
+            OutlinedButton(
+              onClick = onMoveToBackground,
+              enabled = isSupported,
+              modifier = Modifier.testTag("memory_limiter_move_background"),
+            ) {
               Text("Move app to background")
             }
           }
@@ -431,7 +444,7 @@ private fun RuntimeCard(
   isAllocating: Boolean,
   statusLine: String,
 ) {
-  ElevatedCard {
+  ElevatedCard(modifier = Modifier.testTag("memory_limiter_runtime_card")) {
     Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
       Text(
         text = "Runtime",
@@ -445,6 +458,7 @@ private fun RuntimeCard(
       RuntimeRow(label = "Retained", value = "$allocatedMb MiB")
       HorizontalDivider()
       Text(
+        modifier = Modifier.testTag("memory_limiter_status_line"),
         text = statusLine,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
