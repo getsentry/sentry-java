@@ -49,6 +49,7 @@ sqldelight = "2.3.2"
 # Android
 targetSdk = "37"
 compileSdk = "37"
+compileSdkMinor = "2"
 minSdk = "21"
 
 [plugins]
