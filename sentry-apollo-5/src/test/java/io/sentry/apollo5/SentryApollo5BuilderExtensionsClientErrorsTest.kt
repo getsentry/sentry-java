@@ -1,0 +1,599 @@
+package io.sentry.apollo5
+
+import com.apollographql.apollo.ApolloCall
+import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.api.ApolloResponse
+import com.apollographql.apollo.api.Operation
+import com.apollographql.apollo.api.http.HttpRequest
+import com.apollographql.apollo.api.http.HttpResponse
+import com.apollographql.apollo.exception.ApolloException
+import io.sentry.Hint
+import io.sentry.HttpBodyType
+import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
+import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryOptions
+import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
+import io.sentry.TypeCheckHint
+import io.sentry.apollo5.SentryApollo5HttpInterceptor.Companion.DEFAULT_CAPTURE_FAILED_REQUESTS
+import io.sentry.apollo5.generated.LaunchDetailsQuery
+import io.sentry.exception.ExceptionMechanismException
+import io.sentry.protocol.SdkVersion
+import io.sentry.protocol.SentryId
+import kotlin.reflect.KSuspendFunction1
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
+import org.mockito.kotlin.any
+import org.mockito.kotlin.check
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+
+class SentryApollo5BuilderExtensionsClientErrorsTestWithV5Implementation :
+  SentryApollo5BuilderExtensionsClientErrorsTest(ApolloCall<*>::execute)
+
+abstract class SentryApollo5BuilderExtensionsClientErrorsTest(
+  private val executeQueryImplementation:
+    KSuspendFunction1<ApolloCall<*>, ApolloResponse<out Operation.Data>>
+) {
+  class Fixture {
+    val server = MockWebServer()
+    lateinit var scopes: IScopes
+
+    private val responseBodyOk =
+      """{
+  "data": {
+    "launch": {
+      "__typename": "Launch",
+      "id": "83",
+      "site": "CCAFS SLC 40",
+      "mission": {
+        "__typename": "Mission",
+        "name": "Amos-17",
+        "missionPatch": "https://images2.imgbox.com/a0/ab/XUoByiuR_o.png"
+      }
+    }
+  }
+}"""
+
+    val responseBodyNotOk =
+      """{
+  "errors": [
+    {
+      "message": "Cannot query field \"mySite\" on type \"Launch\". Did you mean \"site\"?",
+      "extensions": {
+        "code": "GRAPHQL_VALIDATION_FAILED"
+      }
+    }
+  ]
+}"""
+
+    fun getSut(
+      captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
+      failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
+      httpStatusCode: Int = 200,
+      responseBody: String = responseBodyOk,
+      sendDefaultPii: Boolean = false,
+      includeCookies: Boolean = sendDefaultPii,
+      socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+      configureOptions: SentryOptions.() -> Unit = {},
+    ): ApolloClient {
+      SentryIntegrationPackageStorage.getInstance().clearStorage()
+
+      scopes =
+        mock<IScopes>().apply {
+          whenever(options)
+            .thenReturn(
+              SentryOptions().apply {
+                dsn = "https://key@sentry.io/proj"
+                sdkVersion = SdkVersion("test", "1.2.3")
+                isSendDefaultPii = sendDefaultPii
+                configureOptions()
+              }
+            )
+        }
+      whenever(scopes.captureEvent(any(), any<Hint>())).thenReturn(SentryId.EMPTY_ID)
+
+      val response =
+        MockResponse()
+          .setBody(responseBody)
+          .setSocketPolicy(socketPolicy)
+          .setResponseCode(httpStatusCode)
+
+      if (includeCookies) {
+        response.addHeader("Set-Cookie", "theme=dark; Path=/")
+      }
+
+      server.enqueue(response)
+
+      val builder =
+        ApolloClient.Builder()
+          .serverUrl(server.url("?myQuery=query#myFragment").toString())
+          // keep the request body deterministic across Apollo versions for exact body assertions
+          .sendEnhancedClientAwareness(false)
+          .sentryTracing(
+            scopes = scopes,
+            captureFailedRequests = captureFailedRequests,
+            failedRequestTargets = failedRequestTargets,
+          )
+      if (includeCookies) {
+        builder.addHttpHeader("Cookie", "theme=dark; sessionId=secret")
+      }
+
+      return builder.build()
+    }
+  }
+
+  private val fixture = Fixture()
+
+  // region captureFailedRequests
+
+  @Test
+  fun `does not capture errors if captureFailedRequests is disabled`() {
+    val sut =
+      fixture.getSut(captureFailedRequests = false, responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `capture errors if captureFailedRequests is enabled`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    verify(fixture.scopes).captureEvent(any(), any<Hint>())
+  }
+
+  // endregion
+
+  // region Apollo5ClientError
+
+  @Test
+  fun `does not add Apollo5ClientError integration if captureFailedRequests is disabled`() {
+    fixture.getSut(captureFailedRequests = false)
+
+    assertFalse(
+      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo5ClientError")
+    )
+  }
+
+  @Test
+  fun `adds Apollo5ClientError integration if captureFailedRequests is enabled`() {
+    fixture.getSut()
+
+    assertTrue(
+      SentryIntegrationPackageStorage.getInstance().integrations.contains("Apollo5ClientError")
+    )
+  }
+
+  // endregion
+
+  // region failedRequestTargets
+
+  @Test
+  fun `does not capture errors if failedRequestTargets does not match`() {
+    val sut =
+      fixture.getSut(
+        failedRequestTargets = listOf("nope.com"),
+        responseBody = fixture.responseBodyNotOk,
+      )
+    executeQuery(sut)
+
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `capture errors if failedRequestTargets matches`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    verify(fixture.scopes).captureEvent(any(), any<Hint>())
+  }
+
+  // endregion
+
+  // region SentryEvent
+
+  @Test
+  fun `capture errors with SentryApollo5Interceptor mechanism`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val throwable = (it.throwableMechanism as ExceptionMechanismException)
+          assertEquals("SentryApollo5Interceptor", throwable.exceptionMechanism.type)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `capture errors with title`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val throwable = (it.throwableMechanism as ExceptionMechanismException)
+          assertEquals(
+            "GraphQL Request failed, name: LaunchDetails, type: query",
+            throwable.throwable.message,
+          )
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `capture errors with snapshot flag set`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val throwable = (it.throwableMechanism as ExceptionMechanismException)
+          assertTrue(throwable.isSnapshot)
+        },
+        any<Hint>(),
+      )
+  }
+
+  private val escapeDollar = "\$id"
+
+  @Test
+  fun `capture errors with request context`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    val body =
+      """
+{"query":"query LaunchDetails($escapeDollar: ID!) { launch(id: $escapeDollar) { id site mission { name missionPatch(size: LARGE) } rocket { name type } } }","operationName":"LaunchDetails","variables":{"id":"83"}}
+            """
+        .trimIndent()
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val request = it.request!!
+
+          assertEquals("http://localhost:${fixture.server.port}/", request.url)
+          assertEquals("myQuery=query", request.queryString)
+          assertEquals("myFragment", request.fragment)
+          assertEquals("Post", request.method)
+          assertEquals("graphql", request.apiTarget)
+          assertEquals(193L, request.bodySize)
+          assertEquals(body, request.data)
+          assertNull(request.cookies)
+          assertNull(request.headers)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `capture errors with more request context if sendDefaultPii is enabled`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val request = it.request!!
+
+          assertEquals("theme=dark; sessionId=secret", request.cookies)
+          assertNotNull(request.headers)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable outgoing request body`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpBodies = setOf(HttpBodyType.INCOMING_RESPONSE)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals(193L, it.request!!.bodySize)
+          assertNull(it.request!!.data)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable the GraphQL document independently`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.graphql.setDocument(false)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val body = it.request!!.data as String
+          assertFalse(body.contains("\"query\""))
+          assertTrue(body.contains("\"variables\""))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable GraphQL variables independently`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.graphql.setVariables(false)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val body = it.request!!.data as String
+          assertTrue(body.contains("\"query\""))
+          assertFalse(body.contains("\"variables\""))
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable the GraphQL request body`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.graphql.setDocument(false)
+        dataCollection.graphql.setVariables(false)
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes).captureEvent(check { assertNull(it.request!!.data) }, any<Hint>())
+  }
+
+  @Test
+  fun `data collection filters cookies`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk, includeCookies = true) {
+        dataCollection.cookies = KeyValueCollectionBehavior.denyList("theme")
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("theme=[Filtered]; sessionId=[Filtered]", it.request!!.cookies)
+          assertEquals("theme=[Filtered]; Path=/", it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable cookies`() {
+    val sut =
+      fixture.getSut(
+        responseBody = fixture.responseBodyNotOk,
+        sendDefaultPii = true,
+        includeCookies = true,
+      ) {
+        dataCollection.cookies = KeyValueCollectionBehavior.off()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertNull(it.request!!.cookies)
+          assertNull(it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters request headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("accept")
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertEquals("[Filtered]", it.request!!.headers?.get("accept")) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable request headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(check { assertTrue(it.request!!.headers!!.isEmpty()) }, any<Hint>())
+  }
+
+  @Test
+  fun `capture errors with response context`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val response = it.contexts.response!!
+
+          assertEquals(200, response.statusCode)
+          assertEquals(200, response.bodySize)
+          assertEquals(fixture.responseBodyNotOk, response.data)
+          assertNull(response.cookies)
+          assertNull(response.headers)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `capture errors with more response context if sendDefaultPii is enabled`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, sendDefaultPii = true)
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val response = it.contexts.response!!
+
+          assertEquals("theme=dark; Path=/", response.cookies)
+          assertNotNull(response.headers)
+          assertEquals(200, response.headers?.get("Content-Length")?.toInt())
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable incoming response body`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpBodies = emptySet()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          val response = it.contexts.response!!
+          assertEquals(200, response.statusCode)
+          assertEquals(200, response.bodySize)
+          assertNull(response.data)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters response headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.denyList("content-length")
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertEquals("[Filtered]", it.contexts.response!!.headers?.get("Content-Length")) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable response headers`() {
+    val sut =
+      fixture.getSut(responseBody = fixture.responseBodyNotOk) {
+        dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+      }
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertTrue(it.contexts.response!!.headers!!.isEmpty()) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `capture errors with specific fingerprints`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check { assertEquals(listOf("LaunchDetails", "query", "200"), it.fingerprints) },
+        any<Hint>(),
+      )
+  }
+
+  // endregion
+
+  // region errors
+
+  @Test
+  fun `capture errors if response code is equal or higher than 400`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk, httpStatusCode = 500)
+    executeQuery(sut)
+
+    // HttpInterceptor does not throw for >= 400
+    verify(fixture.scopes).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `capture errors swallow any exception during the error transformation`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+
+    whenever(fixture.scopes.captureEvent(any(), any<Hint>())).thenThrow(RuntimeException())
+
+    executeQuery(sut)
+  }
+
+  // endregion
+
+  // region hints
+
+  @Test
+  fun `hints are set when capturing errors`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyNotOk)
+    executeQuery(sut)
+
+    verify(fixture.scopes)
+      .captureEvent(
+        any(),
+        check<Hint> {
+          val request = it.get(TypeCheckHint.APOLLO_REQUEST)
+          assertNotNull(request)
+          assertTrue(request is HttpRequest)
+
+          val response = it.get(TypeCheckHint.APOLLO_RESPONSE)
+          assertNotNull(response)
+          assertTrue(response is HttpResponse)
+        },
+      )
+  }
+
+  // endregion
+
+  private fun executeQuery(sut: ApolloClient, id: String = "83") = runBlocking {
+    val coroutine = launch {
+      try {
+        executeQueryImplementation(sut.query(LaunchDetailsQuery(id)))
+      } catch (e: ApolloException) {
+        return@launch
+      }
+    }
+
+    coroutine.join()
+  }
+}
