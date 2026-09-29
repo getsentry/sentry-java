@@ -148,6 +148,17 @@ android {
       },
     )
 
+    variant.buildConfigFields?.put(
+      "BUDDY_SOURCE_BASE_PATH",
+      providers.provider {
+        BuildConfigField(
+          type = "String",
+          value = "\"${project.projectDir.absolutePath}\"",
+          comment = "Absolute path of this module, so Sentry Buddy can open a stack frame's source",
+        )
+      },
+    )
+
     val taskName = "toggle${variant.name.capitalized()}NativeLogging"
     val toggleNativeLoggingTask =
       project.tasks.register<ToggleNativeLoggingTask>(taskName) {

@@ -25,7 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -34,10 +34,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -63,9 +61,6 @@ import io.sentry.android.buddy.ui.common.theme.BuddyErrorBubbleChonk
 import io.sentry.android.buddy.ui.common.theme.BuddyErrorBubbleEnd
 import io.sentry.android.buddy.ui.common.theme.BuddyErrorBubbleShadow
 import io.sentry.android.buddy.ui.common.theme.BuddyErrorBubbleStart
-import io.sentry.android.buddy.ui.common.theme.BuddyFabQuoteEstimatedHeight
-import io.sentry.android.buddy.ui.common.theme.BuddyFabQuoteGap
-import io.sentry.android.buddy.ui.common.theme.BuddyFabQuoteTextWidth
 import io.sentry.android.buddy.ui.common.theme.BuddyInk
 import io.sentry.android.buddy.ui.common.theme.BuddyRecordingBubbleChonk
 import io.sentry.android.buddy.ui.common.theme.BuddyRecordingBubbleEnd
@@ -110,7 +105,6 @@ internal fun BoxScope.BuddyBubble(
   val bubbleMarginPx = with(density) { BuddyBubbleMargin.toPx() }
   val initialTopPx = with(density) { BuddyBubbleInitialTop.toPx() }
   val isRecording = state is SentryBuddySessionState.Recording
-  val showQuote = state is SentryBuddySessionState.Closed
   val attentionItem = liveFeed.latestUnviewedAdverseItem
   val attentionColor = attentionItem?.let { severityColor(it.severity) }
   val bubbleGlyphState =
@@ -189,16 +183,7 @@ internal fun BoxScope.BuddyBubble(
         )
       }
       Box(
-        modifier =
-          Modifier.size(BuddyBubbleSize)
-            .shadow(10.dp, CircleShape)
-            .pointerInput(maxWidthPx, maxHeightPx) {
-              detectDragGestures { change, dragAmount ->
-                change.consume()
-                bubbleOffset = ((bubbleOffset ?: resolvedOffset) + dragAmount).constrain()
-              }
-            }
-            .clickable(onClick = onClick),
+        modifier = Modifier.size(BuddyBubbleSize),
         contentAlignment = Alignment.Center,
       ) {
         Box(
@@ -212,7 +197,19 @@ internal fun BoxScope.BuddyBubble(
               .background(bubblePalette.faceBrush, CircleShape)
               .border(2.dp, Color.White.copy(alpha = 0.55f), CircleShape)
         )
-        BuddyBubbleGlyph(state = bubbleGlyphState)
+        BuddyBubbleGlyph(
+          modifier =
+            Modifier.clip(CircleShape).clickable(onClick = onClick).pointerInput(
+              maxWidthPx,
+              maxHeightPx,
+            ) {
+              detectDragGestures { change, dragAmount ->
+                change.consume()
+                bubbleOffset = ((bubbleOffset ?: resolvedOffset) + dragAmount).constrain()
+              }
+            },
+          state = bubbleGlyphState,
+        )
       }
       if (badgeText != null) {
         BubbleNotificationBadge(
@@ -237,12 +234,6 @@ internal fun BoxScope.BuddyBubble(
     maxWidthPx = maxWidthPx,
     bubbleSizePx = bubbleSizePx,
     showAbove = showTransientAbove,
-  )
-  BuddyQuoteText(
-    visible = showQuote,
-    bubbleOffset = resolvedOffset,
-    maxWidthPx = maxWidthPx,
-    bubbleSizePx = bubbleSizePx,
   )
 }
 
@@ -326,74 +317,6 @@ internal fun BoxScope.TransientRecordingText(
       style = MaterialTheme.typography.labelMedium,
       fontWeight = FontWeight.Bold,
       textAlign = TextAlign.Center,
-    )
-  }
-}
-
-@Composable
-internal fun BoxScope.BuddyQuoteText(
-  visible: Boolean,
-  bubbleOffset: Offset,
-  maxWidthPx: Float,
-  bubbleSizePx: Float,
-) {
-  if (!visible) {
-    return
-  }
-  var quoteIndex by remember {
-    mutableStateOf(Random.nextInt(BuddyFabQuotes.size))
-  }
-  var showQuote by remember { mutableStateOf(true) }
-  var quoteHeightPx by remember { mutableStateOf(0f) }
-  val density = LocalDensity.current
-  val textWidthPx = with(density) { BuddyFabQuoteTextWidth.toPx() }
-  val quoteGapPx = with(density) { BuddyFabQuoteGap.toPx() }
-  val estimatedQuoteHeightPx = with(density) { BuddyFabQuoteEstimatedHeight.toPx() }
-  val quoteSide =
-    if (bubbleOffset.x + bubbleSizePx / 2f > maxWidthPx / 2f) {
-      BuddyQuoteBubbleSide.LEFT_OF_FAB
-    } else {
-      BuddyQuoteBubbleSide.RIGHT_OF_FAB
-    }
-  val x =
-    when (quoteSide) {
-      BuddyQuoteBubbleSide.LEFT_OF_FAB ->
-        (bubbleOffset.x + bubbleSizePx - textWidthPx).constrain(0f, maxWidthPx - textWidthPx)
-
-      BuddyQuoteBubbleSide.RIGHT_OF_FAB -> bubbleOffset.x.constrain(0f, maxWidthPx - textWidthPx)
-    }
-  val resolvedQuoteHeightPx = if (quoteHeightPx > 0f) quoteHeightPx else estimatedQuoteHeightPx
-  val y = (bubbleOffset.y - resolvedQuoteHeightPx - quoteGapPx).coerceAtLeast(0f)
-
-  LaunchedEffect(Unit) {
-    while (true) {
-      showQuote = true
-      delay(BUDDY_FAB_QUOTE_VISIBLE_MS)
-      showQuote = false
-      delay(BUDDY_FAB_QUOTE_INTERVAL_MS - BUDDY_FAB_QUOTE_VISIBLE_MS)
-      quoteIndex = nextRandomBuddyFabQuoteIndex(quoteIndex)
-    }
-  }
-
-  AnimatedVisibility(
-    visible = showQuote,
-    enter = fadeIn(),
-    exit = fadeOut(),
-    modifier = Modifier.offset { IntOffset(x.roundToInt(), y.roundToInt()) },
-  ) {
-    Text(
-      text = BuddyFabQuotes[quoteIndex],
-      modifier =
-        Modifier.width(BuddyFabQuoteTextWidth).onGloballyPositioned { coordinates ->
-          quoteHeightPx = coordinates.size.height.toFloat()
-        },
-      color = BuddyInk,
-      style = MaterialTheme.typography.titleSmall,
-      fontWeight = FontWeight.Bold,
-      fontStyle = FontStyle.Italic,
-      textAlign = TextAlign.Center,
-      maxLines = 4,
-      overflow = TextOverflow.Ellipsis,
     )
   }
 }

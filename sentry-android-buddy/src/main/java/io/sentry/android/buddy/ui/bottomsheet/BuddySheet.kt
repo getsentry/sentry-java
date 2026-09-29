@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.BuddyHealthCheckState
 import io.sentry.android.buddy.SentryBuddySessionController
 import io.sentry.android.buddy.SentryBuddySessionState
+import io.sentry.android.buddy.model.BuddyExceptionFrame
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
 import io.sentry.android.buddy.model.BuddyHomeTab
 import io.sentry.android.buddy.model.BuddyLiveFeed
@@ -66,6 +67,7 @@ internal fun BuddySheet(
   onOpenLatestInsights: () -> Unit,
   onRunHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
+  onOpenExceptionFrame: (Context, BuddyExceptionFrame) -> Unit,
 ) {
   if (state is SentryBuddySessionState.Closed || state is SentryBuddySessionState.Recording) {
     return
@@ -153,6 +155,7 @@ internal fun BuddySheet(
               onOpenLatestInsights,
               onRunHealthCheck,
               onOpenUrl,
+              onOpenExceptionFrame,
             )
 
           SentryBuddySessionState.Intro -> IntroSheet(::startRecordingAfterSheetExit)

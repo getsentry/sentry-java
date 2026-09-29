@@ -6,13 +6,16 @@ import io.sentry.android.buddy.bridge.BuddyFlowRecordingJsonSerializer
 import io.sentry.android.buddy.bridge.BuddyHealthCheckCapture
 import io.sentry.android.buddy.bridge.DummySentryBuddyFlowAnalysesApi
 import io.sentry.android.buddy.bridge.DummySentryBuddyHealthCheckApi
+import io.sentry.android.buddy.bridge.DummySentryBuddyOpenFileApi
 import io.sentry.android.buddy.bridge.DummySentryBuddyOpenUrlApi
 import io.sentry.android.buddy.bridge.SentryBuddyFlowAnalysesApi
 import io.sentry.android.buddy.bridge.SentryBuddyHealthCheckApi
+import io.sentry.android.buddy.bridge.SentryBuddyOpenFileApi
 import io.sentry.android.buddy.bridge.SentryBuddyOpenUrlApi
 import io.sentry.android.buddy.model.ActionStatus
 import io.sentry.android.buddy.model.AnalysisStatus
 import io.sentry.android.buddy.model.BuddyAnalysisResponse
+import io.sentry.android.buddy.model.BuddyExceptionFrame
 import io.sentry.android.buddy.model.BuddyFlowImportance
 import io.sentry.android.buddy.model.BuddyFlowIntent
 import io.sentry.android.buddy.model.BuddyFocusArea
@@ -34,6 +37,7 @@ import io.sentry.android.buddy.model.Recommendation
 import io.sentry.android.buddy.model.RecommendationAction
 import io.sentry.android.buddy.model.RecommendationStatus
 import io.sentry.android.buddy.model.Severity
+import io.sentry.android.buddy.model.markAdverseViewed
 import io.sentry.android.buddy.model.toHomeRecommendations
 import io.sentry.android.buddy.model.withAction
 import io.sentry.android.buddy.model.withRecommendation
@@ -129,10 +133,13 @@ public constructor(
   private val flowAnalysesApi: SentryBuddyFlowAnalysesApi = DummySentryBuddyFlowAnalysesApi,
   private val healthCheckApi: SentryBuddyHealthCheckApi = DummySentryBuddyHealthCheckApi,
   private val openUrlApi: SentryBuddyOpenUrlApi = DummySentryBuddyOpenUrlApi,
+  private val openFileApi: SentryBuddyOpenFileApi = DummySentryBuddyOpenFileApi,
   private val clock: () -> Long = { System.currentTimeMillis() },
 ) {
   public var state: SentryBuddySessionState = SentryBuddySessionState.Closed
     private set
+
+  internal var sourceBasePath: String? = null
 
   internal var liveFeed: BuddyLiveFeed = BuddyLiveFeed()
     private set
@@ -178,6 +185,7 @@ public constructor(
     if (shouldShowNewAttention) {
       lastPromptedAttentionItemId = attentionItemId
     }
+    liveFeed = safeMarkLiveFeedSeen()
     clearHealthCheckRecommendations()
     ingestHomeRecommendations(liveFeed.toHomeRecommendations(sentryUiLinks))
     hasPendingHealthCheck = true
@@ -531,6 +539,16 @@ public constructor(
     }
   }
 
+  /** Opens the tapped frame's source in the host IDE, ignoring an unreachable or unknown file. */
+  internal fun openExceptionFrame(context: Context, frame: BuddyExceptionFrame) {
+    val path = BuddySourcePathResolver.resolve(sourceBasePath, frame) ?: return
+    try {
+      openFileApi.open(context, path, frame.lineno)
+    } catch (_: IllegalStateException) {
+      // A miss (wrong layout, unreachable host) must not disrupt the app.
+    }
+  }
+
   internal fun recordTransientEvent(text: String) {
     val event: TransientRecordingEvent
     val listeners: List<(TransientRecordingEvent) -> Unit>
@@ -587,6 +605,17 @@ public constructor(
     liveFeed = feed
     ingestHomeRecommendations(feed.toHomeRecommendations(sentryUiLinks))
   }
+
+  private fun safeMarkLiveFeedSeen(): BuddyLiveFeed =
+    try {
+      if (recorderFacade === RealSentryBuddyRecorderFacade) {
+        SentryBuddy.markLiveFeedSeen()
+      } else {
+        liveFeed.markAdverseViewed()
+      }
+    } catch (_: IllegalStateException) {
+      liveFeed
+    }
 
   private fun safeDismissLiveFeedItem(id: Long): BuddyLiveFeed =
     try {

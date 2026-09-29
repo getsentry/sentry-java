@@ -50,6 +50,7 @@ internal fun BuddyTimeline(
   modifier: Modifier = Modifier,
   showOverflowEllipsis: Boolean = false,
   onRowClick: ((BuddyTimelineRow) -> Unit)? = null,
+  rowDetails: @Composable (BuddyTimelineRow) -> Unit = {},
 ) {
   Surface(
     modifier = modifier.fillMaxWidth(),
@@ -82,6 +83,7 @@ internal fun BuddyTimeline(
             )
           }
         }
+        rowDetails(row)
         if (index != rows.lastIndex || showOverflowEllipsis) {
           HorizontalDivider(color = BuddyBorder)
         }

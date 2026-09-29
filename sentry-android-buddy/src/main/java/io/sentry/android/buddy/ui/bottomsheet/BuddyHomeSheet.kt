@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import io.sentry.android.buddy.BuddyHealthCheckState
 import io.sentry.android.buddy.BuildConfig
 import io.sentry.android.buddy.SentryBuddySessionController
+import io.sentry.android.buddy.model.BuddyExceptionFrame
 import io.sentry.android.buddy.model.BuddyHomeRecommendation
 import io.sentry.android.buddy.model.BuddyHomeTab
 import io.sentry.android.buddy.model.BuddyLiveFeed
@@ -62,6 +63,7 @@ import io.sentry.android.buddy.ui.common.theme.BuddyMuted
 import io.sentry.android.buddy.ui.common.theme.BuddySheetHorizontalPadding
 import io.sentry.android.buddy.ui.common.theme.BuddySweatshirtPink
 import io.sentry.android.buddy.ui.common.theme.LIVE_FEED_VISIBLE_ITEM_LIMIT
+import io.sentry.android.buddy.ui.common.timeline.BuddyExceptionDetails
 import io.sentry.android.buddy.ui.common.timeline.BuddyTimeline
 import io.sentry.android.buddy.ui.common.timeline.toTimelineRow
 import io.sentry.android.buddy.ui.common.toActionModels
@@ -93,6 +95,7 @@ internal fun BuddyHomeSheet(
   onOpenLatestInsights: () -> Unit,
   onRunHealthCheck: () -> Unit,
   onOpenUrl: (Context, String) -> Unit,
+  onOpenExceptionFrame: (Context, BuddyExceptionFrame) -> Unit,
 ) {
   val unreadRecommendations = homeRecommendations.count { it.isAttentionDriving && it.unread }
   val emptyAttentionArtIndex = remember { EmptyAttentionArtIndex.next() }
@@ -130,6 +133,7 @@ internal fun BuddyHomeSheet(
           emptyArtIndex = emptyAttentionArtIndex,
           onDispatch = onDispatch,
           onOpenUrl = onOpenUrl,
+          onOpenExceptionFrame = onOpenExceptionFrame,
         )
 
       BuddyHomeTab.ACTIONS ->
@@ -225,16 +229,9 @@ internal fun LiveFeedTabContent(
   emptyArtIndex: Int,
   onDispatch: (SentryBuddySessionController.() -> Unit) -> Unit,
   onOpenUrl: (Context, String) -> Unit,
+  onOpenExceptionFrame: (Context, BuddyExceptionFrame) -> Unit,
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-    AttentionCard(
-      liveFeed = liveFeed,
-      sentryUiLinks = sentryUiLinks,
-      nowMs = nowMs,
-      emptyArtIndex = emptyArtIndex,
-      onDismiss = { onDispatch { dismissLiveFeedAttention() } },
-      onOpenUrl = onOpenUrl,
-    )
     LiveFeedInset {
       Text(
         "Live feed",
@@ -246,13 +243,24 @@ internal fun LiveFeedTabContent(
         EmptyLiveFeedCard()
       } else {
         val context = LocalContext.current
+        val visibleItems = liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT)
+        val exceptionsByRowId =
+          visibleItems.mapNotNull { item -> item.exception?.let { item.id to it } }.toMap()
         BuddyTimeline(
           rows =
-            liveFeed.items.take(LIVE_FEED_VISIBLE_ITEM_LIMIT).map { item ->
+            visibleItems.map { item ->
               item.toTimelineRow(nowMs = nowMs, link = sentryUiLinks.linkFor(item))
             },
           showOverflowEllipsis = liveFeed.items.size > LIVE_FEED_VISIBLE_ITEM_LIMIT,
           onRowClick = { row -> row.link?.let { onOpenUrl(context, it) } },
+          rowDetails = { row ->
+            exceptionsByRowId[row.id]?.let { report ->
+              BuddyExceptionDetails(
+                report = report,
+                onFrameClick = { frame -> onOpenExceptionFrame(context, frame) },
+              )
+            }
+          },
         )
       }
     }
@@ -425,6 +433,7 @@ private fun BuddyHomeSheetPreviewFrame(
       onOpenLatestInsights = {},
       onRunHealthCheck = {},
       onOpenUrl = { _, _ -> },
+      onOpenExceptionFrame = { _, _ -> },
     )
   }
 }

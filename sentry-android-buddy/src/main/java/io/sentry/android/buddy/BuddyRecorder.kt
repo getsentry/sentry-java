@@ -1,5 +1,6 @@
 package io.sentry.android.buddy
 
+import io.sentry.android.buddy.model.BuddyExceptionReport
 import io.sentry.android.buddy.model.BuddyFlowIntent
 import io.sentry.android.buddy.model.BuddyFlowRecording
 import io.sentry.android.buddy.model.BuddyLiveFeed
@@ -67,7 +68,12 @@ internal class BuddyRecorder(
 
   @Synchronized fun liveFeedSnapshot(): BuddyLiveFeed = liveFeed.snapshot()
 
-  @Synchronized fun markLiveFeedSeen(): BuddyLiveFeed = liveFeed.markAdverseViewed()
+  @Synchronized
+  fun markLiveFeedSeen(): BuddyLiveFeed {
+    val snapshot = liveFeed.markAdverseViewed()
+    liveFeedListeners.toList().forEach { it(snapshot) }
+    return snapshot
+  }
 
   @Synchronized fun dismissLiveFeedItem(id: Long): BuddyLiveFeed = liveFeed.dismissAdverseItem(id)
 
@@ -144,11 +150,17 @@ internal class BuddyRecorder(
   }
 
   @Synchronized
-  fun recordEvent(event: BuddyObservedEvent) {
+  fun recordEvent(event: BuddyObservedEvent, exception: BuddyExceptionReport? = null) {
     val recording = activeRecording
     val item = event.toTimelineItem(recording)
     recording?.timeline?.add(item)
-    recordLiveFeedItem(item, BuddyLiveFeedItem.Category.ERROR, Severity.HIGH, adverse = true)
+    recordLiveFeedItem(
+      item,
+      BuddyLiveFeedItem.Category.ERROR,
+      Severity.HIGH,
+      adverse = true,
+      exception = exception,
+    )
   }
 
   @Synchronized
@@ -351,7 +363,7 @@ internal class BuddyRecorder(
       category =
         if (isFailed) BuddyLiveFeedItem.Category.FAILED_SPAN
         else BuddyLiveFeedItem.Category.SLOW_SPAN,
-      severity = if (isFailed) Severity.HIGH else Severity.MEDIUM,
+      severity = Severity.LOW,
     )
   }
 
@@ -379,6 +391,7 @@ internal class BuddyRecorder(
     category: BuddyLiveFeedItem.Category,
     severity: Severity,
     adverse: Boolean,
+    exception: BuddyExceptionReport? = null,
   ) {
     val snapshot =
       liveFeed.add(
@@ -387,6 +400,7 @@ internal class BuddyRecorder(
         severity = severity,
         adverse = adverse,
         visibleScreens = activeRecording.visibleScreensFor(item),
+        exception = exception,
       )
     liveFeedListeners.toList().forEach { it(snapshot) }
   }

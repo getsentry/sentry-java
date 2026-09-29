@@ -1,5 +1,6 @@
 package io.sentry.android.buddy
 
+import io.sentry.android.buddy.model.BuddyExceptionReport
 import io.sentry.android.buddy.model.BuddyLiveFeed
 import io.sentry.android.buddy.model.BuddyLiveFeedItem
 import io.sentry.android.buddy.model.BuddyTimelineItem
@@ -15,6 +16,7 @@ internal class BuddyLiveFeedBuffer(private val capacity: Int) {
     severity: Severity,
     adverse: Boolean,
     visibleScreens: List<String>,
+    exception: BuddyExceptionReport? = null,
   ): BuddyLiveFeed {
     nextId++
     items +=
@@ -25,6 +27,7 @@ internal class BuddyLiveFeedBuffer(private val capacity: Int) {
         severity = severity,
         adverse = adverse,
         visibleScreens = visibleScreens,
+        exception = exception,
       )
     while (items.size > capacity) {
       items.removeFirst()

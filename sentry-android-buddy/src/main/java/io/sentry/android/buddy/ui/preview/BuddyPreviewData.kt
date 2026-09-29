@@ -14,6 +14,8 @@ import io.sentry.android.buddy.model.AnalysisStatus
 import io.sentry.android.buddy.model.BuddyAnalysisResponse
 import io.sentry.android.buddy.model.BuddyAppInfo
 import io.sentry.android.buddy.model.BuddyDeviceInfo
+import io.sentry.android.buddy.model.BuddyExceptionFrame
+import io.sentry.android.buddy.model.BuddyExceptionReport
 import io.sentry.android.buddy.model.BuddyFlowImportance
 import io.sentry.android.buddy.model.BuddyFlowIntent
 import io.sentry.android.buddy.model.BuddyFlowRecording
@@ -96,6 +98,37 @@ internal val previewTimelineRows: List<BuddyTimelineRow> =
     ),
   )
 
+internal val previewExceptionReport: BuddyExceptionReport =
+  BuddyExceptionReport(
+    id = 1,
+    type = "IllegalStateException",
+    value = "Session token missing after login",
+    frames =
+      listOf(
+        previewExceptionFrame("LoginViewModel", "requireToken", 88, inApp = true),
+        previewExceptionFrame("LoginViewModel", "onLoginSucceeded", 61, inApp = true),
+        previewExceptionFrame("LoginActivity", "onCreate\$lambda\$0", 42, inApp = true),
+        previewExceptionFrame("Handler", "handleCallback", 959, inApp = false),
+        previewExceptionFrame("Handler", "dispatchMessage", 100, inApp = false),
+        previewExceptionFrame("Looper", "loopOnce", 232, inApp = false),
+        previewExceptionFrame("Looper", "loop", 317, inApp = false),
+      ),
+  )
+
+private fun previewExceptionFrame(
+  className: String,
+  function: String,
+  lineno: Int,
+  inApp: Boolean,
+): BuddyExceptionFrame =
+  BuddyExceptionFrame(
+    function = function,
+    module = if (inApp) "io.sentry.samples.$className" else "android.os.$className",
+    filename = if (inApp) "$className.kt" else "$className.java",
+    lineno = lineno,
+    inApp = inApp,
+  )
+
 internal val previewLiveFeed: BuddyLiveFeed =
   BuddyLiveFeed(
       items =
@@ -108,6 +141,7 @@ internal val previewLiveFeed: BuddyLiveFeed =
             severity = Severity.HIGH,
             adverse = true,
             data = mapOf("event_id" to "abc123"),
+            exception = previewExceptionReport,
           ),
           previewLiveFeedItem(
             id = 2,
@@ -198,6 +232,7 @@ private fun previewLiveFeedItem(
   severity: Severity = Severity.LOW,
   adverse: Boolean = false,
   data: Map<String, Any?> = emptyMap(),
+  exception: BuddyExceptionReport? = null,
 ): BuddyLiveFeedItem =
   BuddyLiveFeedItem(
     id = id,
@@ -213,6 +248,7 @@ private fun previewLiveFeedItem(
     severity = severity,
     adverse = adverse,
     visibleScreens = listOf("LoginActivity"),
+    exception = exception,
   )
 
 internal val previewEmptyLiveFeed: BuddyLiveFeed = BuddyLiveFeed()

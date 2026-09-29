@@ -255,6 +255,11 @@ internal fun SentryBuddyOverlayContent(
       onOpenLatestInsights = { dispatchAnalysis { openLatestInsights() } },
       onRunHealthCheck = { dispatchHealthCheck { runHealthCheck() } },
       onOpenUrl = { context, url -> openUrl(context, url) },
+      onOpenExceptionFrame = { context, frame ->
+        analysisScope.launch {
+          withContext(Dispatchers.IO) { controller.openExceptionFrame(context, frame) }
+        }
+      },
     )
   }
 }

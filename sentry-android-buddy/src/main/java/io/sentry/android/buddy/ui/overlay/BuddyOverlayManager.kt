@@ -20,6 +20,7 @@ internal class BuddyOverlayManager(private val controller: SentryBuddySessionCon
 
   fun updateOptions(options: SentryBuddyOptions) {
     controller.sentryUiLinks = options.sentryUiLinks()
+    controller.sourceBasePath = options.sourceBasePath
   }
 
   fun attach(activity: Activity) {

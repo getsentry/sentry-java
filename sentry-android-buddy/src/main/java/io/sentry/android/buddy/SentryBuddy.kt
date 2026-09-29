@@ -3,6 +3,7 @@ package io.sentry.android.buddy
 import android.app.Application
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.android.buddy.bridge.DummySentryBuddyLogIngestApi
 import io.sentry.android.buddy.model.BuddyFlowIntent
 import io.sentry.android.buddy.model.BuddyFlowRecording
 import io.sentry.android.buddy.model.BuddyLiveFeed
@@ -24,6 +25,9 @@ public object SentryBuddy {
   private var buddyBeforeBreadcrumb: SentryOptions.BeforeBreadcrumbCallback? = null
   private var previousTracesSampler: SentryOptions.TracesSamplerCallback? = null
   private var buddyTracesSampler: SentryOptions.TracesSamplerCallback? = null
+  private var previousBeforeSendLog: SentryOptions.Logs.BeforeSendLogCallback? = null
+  private var buddyBeforeSendLog: SentryOptions.Logs.BeforeSendLogCallback? = null
+  private var logForwarder: BuddyLogForwarder? = null
 
   @JvmStatic
   public fun install(application: Application) {
@@ -57,11 +61,14 @@ public object SentryBuddy {
         )
       val callbacks = BuddyActivityLifecycleCallbacks(newRecorder, overlayManager(options))
       application.registerActivityLifecycleCallbacks(callbacks)
-      installEventObserver(newRecorder)
-      installBreadcrumbObserver(newRecorder)
-      installTransactionObserver(newRecorder)
+      val forwarder = createLogForwarder(options)
+      installEventObserver(newRecorder, forwarder)
+      installBreadcrumbObserver(newRecorder, forwarder)
+      installTransactionObserver(newRecorder, forwarder)
       installTracesSampler(newRecorder)
+      forwarder?.let { installLogObserver(it) }
 
+      logForwarder = forwarder
       recorder = newRecorder
       lifecycleCallbacks = callbacks
       installedApplication = application
@@ -108,9 +115,12 @@ public object SentryBuddy {
 
   private fun uninstallLocked() {
     restoreTracesSampler()
+    restoreLogObserver()
     restoreTransactionObserver()
     restoreBreadcrumbObserver()
     restoreEventObserver()
+    logForwarder?.close()
+    logForwarder = null
     lifecycleCallbacks?.let { callbacks ->
       callbacks.detachAll()
       installedApplication?.unregisterActivityLifecycleCallbacks(callbacks)
@@ -120,28 +130,47 @@ public object SentryBuddy {
     installedApplication = null
   }
 
-  private fun installTransactionObserver(recorder: BuddyRecorder) {
+  private fun installTransactionObserver(
+    recorder: BuddyRecorder,
+    logForwarder: BuddyLogForwarder?,
+  ) {
     val sentryOptions = Sentry.getCurrentScopes().options
     val original = sentryOptions.beforeSendTransaction
-    val observer = RealBuddySentryFacade.transactionObserver(recorder, original)
+    val observer = RealBuddySentryFacade.transactionObserver(recorder, logForwarder, original)
     previousBeforeSendTransaction = original
     buddyBeforeSendTransaction = observer
     sentryOptions.beforeSendTransaction = observer
   }
 
-  private fun installEventObserver(recorder: BuddyRecorder) {
+  private fun installEventObserver(recorder: BuddyRecorder, logForwarder: BuddyLogForwarder?) {
     val sentryOptions = Sentry.getCurrentScopes().options
     val original = sentryOptions.beforeSend
-    val observer = RealBuddySentryFacade.eventObserver(recorder, original)
+    val observer = RealBuddySentryFacade.eventObserver(recorder, logForwarder, original)
     previousBeforeSend = original
     buddyBeforeSend = observer
     sentryOptions.beforeSend = observer
   }
 
-  private fun installBreadcrumbObserver(recorder: BuddyRecorder) {
+  private fun installLogObserver(logForwarder: BuddyLogForwarder) {
+    val logs = Sentry.getCurrentScopes().options.logs
+    val original = logs.beforeSend
+    val observer = RealBuddySentryFacade.logObserver(logForwarder, original)
+    previousBeforeSendLog = original
+    buddyBeforeSendLog = observer
+    logs.beforeSend = observer
+  }
+
+  private fun createLogForwarder(options: SentryBuddyOptions): BuddyLogForwarder? {
+    if (options.logIngestApi === DummySentryBuddyLogIngestApi) {
+      return null
+    }
+    return BuddyLogForwarder(options.logIngestApi, java.util.UUID.randomUUID().toString())
+  }
+
+  private fun installBreadcrumbObserver(recorder: BuddyRecorder, logForwarder: BuddyLogForwarder?) {
     val sentryOptions = Sentry.getCurrentScopes().options
     val original = sentryOptions.beforeBreadcrumb
-    val observer = RealBuddySentryFacade.breadcrumbObserver(recorder, original)
+    val observer = RealBuddySentryFacade.breadcrumbObserver(recorder, logForwarder, original)
     previousBeforeBreadcrumb = original
     buddyBeforeBreadcrumb = observer
     sentryOptions.beforeBreadcrumb = observer
@@ -186,6 +215,16 @@ public object SentryBuddy {
     buddyBeforeBreadcrumb = null
   }
 
+  private fun restoreLogObserver() {
+    val observer = buddyBeforeSendLog ?: return
+    val logs = Sentry.getCurrentScopes().options.logs
+    if (logs.beforeSend === observer) {
+      logs.beforeSend = previousBeforeSendLog
+    }
+    previousBeforeSendLog = null
+    buddyBeforeSendLog = null
+  }
+
   private fun restoreTracesSampler() {
     val sampler = buddyTracesSampler ?: return
     val sentryOptions = Sentry.getCurrentScopes().options
@@ -205,6 +244,7 @@ public object SentryBuddy {
           flowAnalysesApi = options.flowAnalysesApi,
           healthCheckApi = options.healthCheckApi,
           openUrlApi = options.openUrlApi,
+          openFileApi = options.openFileApi,
         )
       )
       .also { it.updateOptions(options) }

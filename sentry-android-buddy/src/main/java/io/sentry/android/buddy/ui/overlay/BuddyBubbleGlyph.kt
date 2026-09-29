@@ -57,10 +57,14 @@ internal fun BuddyBubbleAnimatedDrawable(drawableRes: Int, modifier: Modifier = 
 }
 
 @Composable
-internal fun BuddyBubbleGlyph(state: BuddyBubbleGlyphState, size: Dp = BuddyBubbleGlyphSize) {
+internal fun BuddyBubbleGlyph(
+  modifier: Modifier = Modifier,
+  state: BuddyBubbleGlyphState = BuddyBubbleGlyphState.IDLE,
+  size: Dp = BuddyBubbleGlyphSize,
+) {
   val context = LocalContext.current
   Box(
-    modifier = Modifier.size(size).clip(CircleShape),
+    modifier = modifier.size(size).clip(CircleShape),
     contentAlignment = Alignment.Center,
   ) {
     AndroidView(

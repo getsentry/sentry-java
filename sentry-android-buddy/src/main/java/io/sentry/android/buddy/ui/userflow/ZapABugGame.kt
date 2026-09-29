@@ -302,7 +302,7 @@ private fun BuddyAnalyzingSeer(
       modifier =
         Modifier.size(size * 0.84f).shadow(14.dp, CircleShape).background(BuddyPurple, CircleShape)
     )
-    BuddyBubbleGlyph(BuddyBubbleGlyphState.ANALYZING, size * 0.8f)
+    BuddyBubbleGlyph(Modifier, BuddyBubbleGlyphState.ANALYZING, size * 0.8f)
   }
 }
 

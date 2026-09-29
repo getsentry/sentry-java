@@ -428,14 +428,23 @@ class SentryBuddySessionControllerTest {
     controller.openLiveFeed()
 
     assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.LIVE_FEED)
-    assertThat(controller.liveFeed.latestUnviewedAdverseItem).isNotNull()
-    assertThat(controller.liveFeed.unviewedAdverseCount).isEqualTo(1)
 
     controller.close()
     controller.openLiveFeed()
 
     assertThat(controller.homeTab).isEqualTo(BuddyHomeTab.RECORD_FLOW)
-    assertThat(controller.liveFeed.latestUnviewedAdverseItem).isNotNull()
+  }
+
+  @Test
+  fun `open live feed marks pending errors as read`() {
+    val controller = SentryBuddySessionController(recorderFacade = FakeRecorderFacade())
+    controller.updateLiveFeed(liveFeedWithUnviewedAttention())
+
+    controller.openLiveFeed()
+
+    assertThat(controller.liveFeed.unviewedAdverseCount).isEqualTo(0)
+    assertThat(controller.liveFeed.latestUnviewedAdverseItem).isNull()
+    assertThat(controller.liveFeed.items.single().viewed).isTrue()
   }
 
   @Test

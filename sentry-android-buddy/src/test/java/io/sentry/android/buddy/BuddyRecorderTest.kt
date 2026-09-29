@@ -186,7 +186,7 @@ class BuddyRecorderTest {
   fun `breadcrumb observer promotes accepted navigation breadcrumbs`() {
     val fixture = Fixture()
     fixture.recorder.start(BuddyFlowIntent("Checkout"))
-    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null)
+    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null, null)
     val breadcrumb =
       Breadcrumb(Date(500)).apply {
         type = "navigation"
@@ -212,7 +212,7 @@ class BuddyRecorderTest {
   fun `breadcrumb observer records accepted non-navigation breadcrumbs`() {
     val fixture = Fixture()
     fixture.recorder.start(BuddyFlowIntent("Checkout"))
-    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null)
+    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null, null)
     val breadcrumb =
       Breadcrumb(Date(500)).apply {
         type = "http"
@@ -236,7 +236,7 @@ class BuddyRecorderTest {
   fun `breadcrumb observer ignores non-ui breadcrumbs`() {
     val fixture = Fixture()
     fixture.recorder.start(BuddyFlowIntent("Checkout"))
-    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null)
+    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null, null)
     val breadcrumb = Breadcrumb(Date(500)).apply { category = "manual" }
 
     observer.execute(breadcrumb, Hint())
@@ -250,7 +250,7 @@ class BuddyRecorderTest {
     val fixture = Fixture()
     fixture.recorder.start(BuddyFlowIntent("Checkout"))
     val original = SentryOptions.BeforeBreadcrumbCallback { _, _ -> null }
-    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, original)
+    val observer = RealBuddySentryFacade.breadcrumbObserver(fixture.recorder, null, original)
     val breadcrumb = Breadcrumb(Date(500)).apply { category = "navigation" }
 
     assertThat(observer.execute(breadcrumb, Hint())).isNull()
@@ -263,7 +263,7 @@ class BuddyRecorderTest {
   fun `event observer records accepted error events`() {
     val fixture = Fixture()
     fixture.recorder.start(BuddyFlowIntent("Checkout"))
-    val observer = RealBuddySentryFacade.eventObserver(fixture.recorder, null)
+    val observer = RealBuddySentryFacade.eventObserver(fixture.recorder, null, null)
     val event =
       SentryEvent(Date(500)).apply {
         level = SentryLevel.ERROR
@@ -287,7 +287,7 @@ class BuddyRecorderTest {
   fun `event observer ignores non-error events`() {
     val fixture = Fixture()
     fixture.recorder.start(BuddyFlowIntent("Checkout"))
-    val observer = RealBuddySentryFacade.eventObserver(fixture.recorder, null)
+    val observer = RealBuddySentryFacade.eventObserver(fixture.recorder, null, null)
     val event = SentryEvent(Date(500)).apply { level = SentryLevel.INFO }
 
     observer.execute(event, Hint())
@@ -301,7 +301,7 @@ class BuddyRecorderTest {
     val fixture = Fixture()
     fixture.recorder.start(BuddyFlowIntent("Checkout"))
     val original = SentryOptions.BeforeSendCallback { _, _ -> null }
-    val observer = RealBuddySentryFacade.eventObserver(fixture.recorder, original)
+    val observer = RealBuddySentryFacade.eventObserver(fixture.recorder, null, original)
     val event = SentryEvent(Date(500)).apply { level = SentryLevel.ERROR }
 
     assertThat(observer.execute(event, Hint())).isNull()
@@ -468,6 +468,18 @@ class BuddyRecorderTest {
   }
 
   @Test
+  fun `live feed attaches captured exception to its error item`() {
+    val fixture = Fixture()
+    val report = BuddyExceptionReport(id = 1, type = "Boom", value = "bad", frames = emptyList())
+
+    fixture.recorder.recordEvent(BuddyObservedEvent(Date(500), "Boom", emptyMap()), report)
+
+    val item = fixture.recorder.liveFeedSnapshot().items.single()
+    assertThat(item.category).isEqualTo(BuddyLiveFeedItem.Category.ERROR)
+    assertThat(item.exception).isEqualTo(report)
+  }
+
+  @Test
   fun `mark live feed seen clears unviewed adverse count`() {
     val fixture = Fixture()
     fixture.recorder.recordEvent(BuddyObservedEvent(Date(500), "Boom", emptyMap()))
@@ -478,6 +490,18 @@ class BuddyRecorderTest {
 
     assertThat(feed.unviewedAdverseCount).isEqualTo(0)
     assertThat(feed.latestAdverseItem?.viewed).isTrue()
+  }
+
+  @Test
+  fun `mark live feed seen notifies live feed listeners`() {
+    val fixture = Fixture()
+    fixture.recorder.recordEvent(BuddyObservedEvent(Date(500), "Boom", emptyMap()))
+    val feeds = mutableListOf<BuddyLiveFeed>()
+    fixture.recorder.addLiveFeedListener { feeds += it }
+
+    fixture.recorder.markLiveFeedSeen()
+
+    assertThat(feeds.last().unviewedAdverseCount).isEqualTo(0)
   }
 
   @Test

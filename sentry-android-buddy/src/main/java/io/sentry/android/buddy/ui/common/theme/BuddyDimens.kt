@@ -6,7 +6,7 @@ internal val BuddyBubbleSize = 64.dp
 
 internal val BuddyBubbleFaceSize = 54.dp
 
-internal val BuddyBubbleFaceLift = (-1).dp
+internal val BuddyBubbleFaceLift = (-2).dp
 
 internal val BuddyBubbleGlyphSize = 44.dp
 
@@ -21,12 +21,6 @@ internal val BuddyBubbleTouchPadding = 20.dp
 internal val BuddyTransientTextWidth = 190.dp
 
 internal val BuddyTransientTextHeight = 28.dp
-
-internal val BuddyFabQuoteTextWidth = 230.dp
-
-internal val BuddyFabQuoteGap = 8.dp
-
-internal val BuddyFabQuoteEstimatedHeight = 86.dp
 
 internal val BuddyAttentionCardHeight = 264.dp
 

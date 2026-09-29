@@ -66,7 +66,9 @@ internal class BuddyActivityLifecycleCallbacks(
         BuddyOverlayManager(
           SentryBuddySessionController(
             flowAnalysesApi = options.flowAnalysesApi,
+            healthCheckApi = options.healthCheckApi,
             openUrlApi = options.openUrlApi,
+            openFileApi = options.openFileApi,
           )
         )
     }

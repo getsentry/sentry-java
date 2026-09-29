@@ -18,7 +18,6 @@ import io.sentry.android.buddy.model.BuddyObservedTransaction
 import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import java.util.Date
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 internal interface BuddySentryFacade {
@@ -88,42 +87,63 @@ internal class RealBuddySentryFacade : BuddySentryFacade {
   }
 
   companion object {
+    private val exceptionReportId = java.util.concurrent.atomic.AtomicLong()
+
     fun eventObserver(
       recorder: BuddyRecorder,
+      logForwarder: BuddyLogForwarder?,
       original: SentryOptions.BeforeSendCallback?,
     ): SentryOptions.BeforeSendCallback = SentryOptions.BeforeSendCallback { event, hint ->
       val processed = original?.execute(event, hint) ?: event.takeIf { original == null }
       processed
         ?.takeIf { it.isUsefulForBuddy() }
         ?.let {
-          recorder.recordEvent(it.toBuddyObservedEvent())
+          recorder.recordEvent(
+            it.toBuddyObservedEvent(),
+            it.toBuddyExceptionReport(exceptionReportId.incrementAndGet()),
+          )
+          logForwarder?.forwardEvent(it)
         }
       processed
     }
 
+    fun logObserver(
+      logForwarder: BuddyLogForwarder,
+      original: SentryOptions.Logs.BeforeSendLogCallback?,
+    ): SentryOptions.Logs.BeforeSendLogCallback =
+      SentryOptions.Logs.BeforeSendLogCallback { event ->
+        val processed = original?.execute(event) ?: event.takeIf { original == null }
+        processed?.let { logForwarder.forwardLog(it) }
+        processed
+      }
+
     fun breadcrumbObserver(
       recorder: BuddyRecorder,
+      logForwarder: BuddyLogForwarder?,
       original: SentryOptions.BeforeBreadcrumbCallback?,
     ): SentryOptions.BeforeBreadcrumbCallback =
       SentryOptions.BeforeBreadcrumbCallback { breadcrumb, hint ->
         val processed =
           original?.execute(breadcrumb, hint) ?: breadcrumb.takeIf { original == null }
-        processed
-          ?.takeIf { it.isUsefulForBuddy() }
-          ?.let {
-            recorder.recordBreadcrumb(it.toBuddyObservedBreadcrumb(hint))
-          }
+        processed?.let {
+          recorder.recordBreadcrumb(it.toBuddyObservedBreadcrumb(hint))
+          logForwarder?.forwardBreadcrumb(it)
+        }
         processed
       }
 
     fun transactionObserver(
       recorder: BuddyRecorder,
+      logForwarder: BuddyLogForwarder?,
       original: SentryOptions.BeforeSendTransactionCallback?,
     ): SentryOptions.BeforeSendTransactionCallback =
       SentryOptions.BeforeSendTransactionCallback { transaction, hint ->
         val processed =
           original?.execute(transaction, hint) ?: transaction.takeIf { original == null }
-        processed?.let { recorder.recordTransaction(it.toBuddyObservedTransaction()) }
+        processed?.let {
+          recorder.recordTransaction(it.toBuddyObservedTransaction())
+          logForwarder?.forwardTransaction(it)
+        }
         processed
       }
 
@@ -180,17 +200,6 @@ private fun SentryEvent.toBuddyObservedEvent(): BuddyObservedEvent {
           tags?.takeIf { it.isNotEmpty() }?.let { put("tags", it) }
         },
   )
-}
-
-private fun Breadcrumb.isUsefulForBuddy(): Boolean {
-  val normalizedCategory = category?.lowercase(Locale.ROOT)
-  val normalizedType = type?.lowercase(Locale.ROOT)
-  return normalizedCategory == "navigation" ||
-    normalizedCategory == "http" ||
-    normalizedCategory?.startsWith("ui.") == true ||
-    normalizedType == "navigation" ||
-    normalizedType == "http" ||
-    normalizedType == "user"
 }
 
 private fun Breadcrumb.toBuddyObservedBreadcrumb(hint: Hint): BuddyObservedBreadcrumb =
