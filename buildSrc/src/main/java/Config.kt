@@ -1,6 +1,6 @@
 
 object Config {
-    val AGP = System.getenv("VERSION_AGP") ?: "9.2.1"
+    val AGP = System.getenv("VERSION_AGP") ?: "9.4.0"
     val kotlinStdLib = "stdlib-jdk8"
     val kotlinStdLibVersionAndroid = "1.9.24"
     val kotlinTestJunit = "test-junit"
@@ -98,6 +98,7 @@ object Config {
             "sentry-android-ndk",
             "sentry-android-fragment",
             "sentry-android-navigation",
+            "sentry-android-navigation3",
             "sentry-android-timber",
             "sentry-compose-android",
             "sentry-android-sqlite",

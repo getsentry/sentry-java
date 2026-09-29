@@ -81,7 +81,7 @@ public open class SentryOkHttpInterceptor(
   override fun intercept(chain: Interceptor.Chain): Response {
     var request = chain.request()
 
-    val urlDetails = UrlUtils.parse(request.url.toString())
+    val urlDetails = UrlUtils.parse(request.url.toString(), scopes.options.dataCollectionResolver)
     val url = urlDetails.urlOrFallback
     val method = request.method
 
@@ -235,7 +235,13 @@ public open class SentryOkHttpInterceptor(
     startTimestamp: Long,
     networkDetailData: NetworkRequestData?,
   ) {
-    val breadcrumb = Breadcrumb.http(request.url.toString(), request.method, code)
+    val breadcrumb =
+      Breadcrumb.http(
+        request.url.toString(),
+        request.method,
+        code,
+        scopes.options.dataCollectionResolver,
+      )
 
     // Track request and response body sizes for the breadcrumb
     request.body?.contentLength().ifHasValidLength {

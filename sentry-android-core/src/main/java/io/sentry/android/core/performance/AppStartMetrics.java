@@ -156,6 +156,7 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     return applicationOnCreate;
   }
 
+  @TestOnly
   public void setAppStartType(final @NotNull AppStartType appStartType) {
     this.appStartType = appStartType;
   }

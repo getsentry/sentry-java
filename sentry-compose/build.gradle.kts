@@ -62,8 +62,6 @@ kotlin {
     }
     getByName("androidUnitTest") {
       dependencies {
-        implementation(libs.androidx.compose.foundation)
-        implementation(libs.androidx.compose.foundation.layout)
         implementation(libs.androidx.compose.ui.test.junit4)
         implementation(libs.androidx.navigation.compose)
         implementation(libs.androidx.test.ext.junit)
@@ -81,6 +79,7 @@ kotlin {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.compose"
 
   defaultConfig {
@@ -121,6 +120,9 @@ android {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
   }
 }
+
+// The default detekt source set is src/{main,test}, which doesn't exist in a multiplatform module.
+detekt { source.setFrom("src/androidMain/kotlin", "src/androidUnitTest/kotlin") }
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.

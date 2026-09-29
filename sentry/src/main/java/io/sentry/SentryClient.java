@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -41,7 +40,6 @@ public final class SentryClient implements ISentryClient {
 
   private final @NotNull SentryOptions options;
   private final @NotNull ITransport transport;
-  private final @NotNull SortBreadcrumbsByDate sortBreadcrumbsByDate = new SortBreadcrumbsByDate();
   private final @NotNull ILoggerBatchProcessor loggerBatchProcessor;
   private final @NotNull IMetricsBatchProcessor metricsBatchProcessor;
 
@@ -1660,7 +1658,7 @@ public final class SentryClient implements ISentryClient {
 
     if (sortedBreadcrumbs != null && !breadcrumbs.isEmpty()) {
       sortedBreadcrumbs.addAll(breadcrumbs);
-      Collections.sort(sortedBreadcrumbs, sortBreadcrumbsByDate);
+      Collections.sort(sortedBreadcrumbs);
     }
   }
 
@@ -1850,14 +1848,5 @@ public final class SentryClient implements ISentryClient {
       return !(sampling < random.nextDouble()); // bad luck
     }
     return true;
-  }
-
-  private static final class SortBreadcrumbsByDate implements Comparator<Breadcrumb> {
-
-    @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
-    @Override
-    public int compare(final @NotNull Breadcrumb b1, final @NotNull Breadcrumb b2) {
-      return b1.getTimestamp().compareTo(b2.getTimestamp());
-    }
   }
 }
