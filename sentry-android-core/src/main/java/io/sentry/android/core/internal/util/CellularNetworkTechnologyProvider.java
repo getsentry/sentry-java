@@ -10,12 +10,12 @@ import android.telephony.TelephonyManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
-import io.sentry.ISentryLifecycleToken;
+import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
-import io.sentry.util.AutoClosableReentrantLock;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,8 +41,16 @@ public final class CellularNetworkTechnologyProvider {
   private final @NotNull Context context;
   private final @NotNull ILogger logger;
   private final @NotNull BuildInfoProvider buildInfoProvider;
+
+  /** Guards the registration of the display info listener. */
+  private final @NotNull Object registrationLock = new Object();
+
+  /**
+   * The executor the telephony framework calls. The framework calls it on a thread of its own, so a
+   * rejection must not escape: the SDK's executor rejects work once it is shut down, which can
+   * happen before the listener is unregistered.
+   */
   private final @NotNull Executor executor;
-  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   /**
    * Set from {@link TelephonyCallback.DisplayInfoListener} on API 31 and above. Declared as {@link
@@ -57,11 +65,21 @@ public final class CellularNetworkTechnologyProvider {
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull Executor executor) {
+      final @NotNull ISentryExecutorService executorService) {
     this.context = ContextUtils.getApplicationContext(context);
     this.logger = logger;
     this.buildInfoProvider = buildInfoProvider;
-    this.executor = executor;
+    this.executor =
+        runnable -> {
+          try {
+            executorService.submit(runnable);
+          } catch (RejectedExecutionException e) {
+            logger.log(
+                SentryLevel.DEBUG,
+                "Dropping a cellular network technology update, the executor rejected it.",
+                e);
+          }
+        };
   }
 
   /**
@@ -86,7 +104,7 @@ public final class CellularNetworkTechnologyProvider {
     }
     // Checking and storing the callback has to be atomic, otherwise concurrent callers can each
     // register a listener while only the last one is kept and can ever be unregistered.
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+    synchronized (registrationLock) {
       if (displayInfoCallback != null) {
         return;
       }
@@ -118,7 +136,7 @@ public final class CellularNetworkTechnologyProvider {
    */
   @SuppressLint("NewApi")
   public void unregister() {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+    synchronized (registrationLock) {
       final @Nullable Object callback = displayInfoCallback;
       if (callback == null) {
         return;

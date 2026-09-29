@@ -11,8 +11,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.android.core.BuildInfoProvider
+import io.sentry.test.ImmediateExecutorService
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -37,7 +37,7 @@ class CellularNetworkTechnologyProviderTest {
     val telephonyManager = mock<TelephonyManager>()
 
     /** Runs the display info callback inline, so tests don't have to wait for another thread. */
-    val executor = Executor { it.run() }
+    val executorService = ImmediateExecutorService()
 
     fun getSut(
       sdkVersion: Int = Build.VERSION_CODES.S,
@@ -49,7 +49,7 @@ class CellularNetworkTechnologyProviderTest {
         .thenReturn(if (hasTelephonyManager) telephonyManager else null)
       whenever(context.checkPermission(any(), any(), any()))
         .thenReturn(if (hasPermission) PERMISSION_GRANTED else PERMISSION_DENIED)
-      return CellularNetworkTechnologyProvider(context, logger, buildInfo, executor)
+      return CellularNetworkTechnologyProvider(context, logger, buildInfo, executorService)
     }
 
     fun displayInfo(networkType: Int, overrideNetworkType: Int): TelephonyDisplayInfo {
@@ -65,7 +65,9 @@ class CellularNetworkTechnologyProviderTest {
     ): TelephonyCallback.DisplayInfoListener {
       provider.register()
       val captor = argumentCaptor<TelephonyCallback>()
-      verify(telephonyManager).registerTelephonyCallback(eq(executor), captor.capture())
+      // The provider wraps the executor service, so the executor it hands to the telephony
+      // manager is not an object this test holds.
+      verify(telephonyManager).registerTelephonyCallback(any(), captor.capture())
       return captor.firstValue as TelephonyCallback.DisplayInfoListener
     }
   }
@@ -246,7 +248,7 @@ class CellularNetworkTechnologyProviderTest {
     provider.register()
     provider.register()
 
-    verify(fixture.telephonyManager).registerTelephonyCallback(eq(fixture.executor), any())
+    verify(fixture.telephonyManager).registerTelephonyCallback(any(), any())
   }
 
   @Test
@@ -267,7 +269,7 @@ class CellularNetworkTechnologyProviderTest {
     start.countDown()
     assertThat(done.await(10, TimeUnit.SECONDS)).isTrue()
 
-    verify(fixture.telephonyManager).registerTelephonyCallback(eq(fixture.executor), any())
+    verify(fixture.telephonyManager).registerTelephonyCallback(any(), any())
   }
 
   @Test

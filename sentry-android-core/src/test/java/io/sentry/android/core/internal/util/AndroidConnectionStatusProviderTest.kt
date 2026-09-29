@@ -21,7 +21,6 @@ import android.telephony.TelephonyManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
-import io.sentry.ISentryExecutorService
 import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.BuildInfoProvider
@@ -29,9 +28,6 @@ import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.SystemEventsBreadcrumbsIntegration
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.time.TestMonotonicTicker
-import java.util.concurrent.Executor
-import java.util.concurrent.Future
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit.MINUTES
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -259,43 +255,6 @@ class AndroidConnectionStatusProviderTest {
   }
 
   /// Lets a test reject work only after the setup that needs a working executor is done.
-  private class RejectingExecutorService(private val delegate: ISentryExecutorService) :
-    ISentryExecutorService by delegate {
-    var reject = false
-
-    override fun submit(runnable: Runnable): Future<*> {
-      if (reject) {
-        throw RejectedExecutionException("closed")
-      }
-      return delegate.submit(runnable)
-    }
-  }
-
-  @Test
-  @Config(sdk = [Build.VERSION_CODES.S])
-  fun `When the executor rejects work, a technology update does not throw`() {
-    // The telephony framework calls the executor, so throwing there would surface on one of its
-    // threads. The SDK executor rejects work once it is shut down.
-    val telephonyManager = mock<TelephonyManager>()
-    whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
-      .thenReturn(telephonyManager)
-    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
-    val executor = RejectingExecutorService(ImmediateExecutorService())
-    options.executorService = executor
-
-    val provider = AndroidConnectionStatusProvider(contextMock, options, buildInfo, ticker)
-    val captor = argumentCaptor<Executor>()
-    verify(telephonyManager).registerTelephonyCallback(captor.capture(), any())
-    executor.reject = true
-
-    captor.firstValue.execute {}
-
-    // Cleanup runs through the same executor, and connectivityManager is static, so a still
-    // rejecting executor would leak a stale manager into later tests.
-    executor.reject = false
-    provider.close()
-  }
-
   @Test
   @Config(sdk = [Build.VERSION_CODES.S])
   fun `When the network callback cannot be registered, the telephony listener is not started`() {

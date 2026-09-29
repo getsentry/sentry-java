@@ -21,6 +21,7 @@ import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.DeviceOrientations;
+import io.sentry.android.core.internal.util.NetworkConnection;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
@@ -234,7 +235,7 @@ public final class DeviceInfoUtil {
           options.getConnectionStatusProvider();
       if (connectionStatusProvider instanceof AndroidConnectionStatusProvider) {
         // Reading both at once keeps the type and the technology describing the same network.
-        final AndroidConnectionStatusProvider.Connection connection =
+        final NetworkConnection connection =
             ((AndroidConnectionStatusProvider) connectionStatusProvider).getConnection();
         // wifi, ethernet or cellular, null if none
         device.setConnectionType(connection.type);

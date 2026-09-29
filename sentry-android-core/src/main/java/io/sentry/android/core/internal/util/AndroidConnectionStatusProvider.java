@@ -24,7 +24,6 @@ import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
@@ -98,24 +97,7 @@ public final class AndroidConnectionStatusProvider
     this.connectionStatusObservers = new ArrayList<>();
     this.cellularNetworkTechnologyProvider =
         new CellularNetworkTechnologyProvider(
-            this.context,
-            options.getLogger(),
-            buildInfoProvider,
-            runnable -> {
-              try {
-                options.getExecutorService().submit(runnable);
-              } catch (RejectedExecutionException e) {
-                // The telephony framework calls this executor, so an exception would be thrown on
-                // one of its threads. The SDK's executor rejects work once it is shut down, which
-                // can happen before the listener is unregistered.
-                options
-                    .getLogger()
-                    .log(
-                        SentryLevel.DEBUG,
-                        "Dropping a cellular network technology update, the executor rejected it.",
-                        e);
-              }
-            });
+            this.context, options.getLogger(), buildInfoProvider, options.getExecutorService());
 
     capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
@@ -198,33 +180,16 @@ public final class AndroidConnectionStatusProvider
    * <p>Both are derived from one cache read, so they always describe the same network instead of
    * straddling a connectivity change.
    */
-  public @NotNull Connection getConnection() {
+  public @NotNull NetworkConnection getConnection() {
     if (!isCacheValid()) {
       updateCache(null);
     }
     final @Nullable String connectionType = getConnectionTypeFromCache();
     if (!"cellular".equals(connectionType)) {
-      return new Connection(connectionType, null);
+      return new NetworkConnection(connectionType, null);
     }
-    return new Connection(
+    return new NetworkConnection(
         connectionType, cellularNetworkTechnologyProvider.getCellularNetworkTechnology());
-  }
-
-  /** The connection type and the generation of the cellular network technology, if any. */
-  public static final class Connection {
-    /** Maps to the {@code network.connection.type} attribute, {@code null} when unknown. */
-    public final @Nullable String type;
-
-    /**
-     * Maps to the {@code network.connection.effective_type} attribute, for example {@code 5g}.
-     * {@code null} when the connection is not cellular or the technology is unknown.
-     */
-    public final @Nullable String effectiveType;
-
-    Connection(final @Nullable String type, final @Nullable String effectiveType) {
-      this.type = type;
-      this.effectiveType = effectiveType;
-    }
   }
 
   private void ensureNetworkCallbackRegistered() {
