@@ -8,12 +8,12 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
-  // TODO: enable it later
-  //    alias(libs.plugins.detekt)
+  alias(libs.plugins.detekt)
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.replay"
 
   defaultConfig {

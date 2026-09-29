@@ -1,0 +1,165 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ComplexCondition:ReplayCache.kt$ReplayCache.Companion$height == null || width == null || frameRate == null || bitRate == null || (segmentId == null || segmentId == -1) || segmentTimestamp == null || replayType == null</ID>
+    <ID>ComplexCondition:ReplayIntegration.kt$ReplayIntegration$isManualPause || lastKnownConnectionStatus == DISCONNECTED || scopes?.rateLimiter?.isActiveForCategory(All) == true || scopes?.rateLimiter?.isActiveForCategory(Replay) == true</ID>
+    <ID>ComplexCondition:ReplayIntegration.kt$ReplayIntegration$name.startsWith("replay_") &amp;&amp; !name.contains(replayId.toString()) &amp;&amp; !(unfinishedReplayId.isNotBlank() &amp;&amp; name.contains(unfinishedReplayId))</ID>
+    <ID>ComplexCondition:ReplayIntegration.kt$ReplayIntegration$state.get().captureStrategy is SessionCaptureStrategy &amp;&amp; (lastKnownConnectionStatus == DISCONNECTED || scopes?.rateLimiter?.isActiveForCategory(All) == true || scopes?.rateLimiter?.isActiveForCategory(Replay) == true)</ID>
+    <ID>ComplexCondition:ScreenshotRecorder.kt$ScreenshotRecorder$root == null || root.width &lt;= 0 || root.height &lt;= 0 || !root.isShown</ID>
+    <ID>ComplexCondition:SimpleVideoEncoder.kt$SimpleVideoEncoder$Build.MANUFACTURER.contains("xiaomi", ignoreCase = true) || Build.MANUFACTURER.contains("motorola", ignoreCase = true) || SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER) .equals("spreadtrum", ignoreCase = true) || SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER) .equals("unisoc", ignoreCase = true)</ID>
+    <ID>CyclomaticComplexMethod:CaptureStrategy.kt$CaptureStrategy.Companion$@Suppress("NewApi") private fun buildReplay( options: SentryOptions, video: File, currentReplayId: SentryId, segmentTimestamp: Date, segmentId: Int, height: Int, width: Int, frameCount: Int, frameRate: Int, videoDuration: Long, replayType: ReplayType, screenAtStart: String?, breadcrumbs: List&lt;Breadcrumb>, events: Deque&lt;RRWebEvent>, traceIds: List&lt;String>, segmentNames: List&lt;String>, ): ReplaySegment</ID>
+    <ID>CyclomaticComplexMethod:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$private fun fromComposeNode( node: LayoutNode, parent: ViewHierarchyNode?, distance: Int, isComposeRoot: Boolean, options: SentryMaskingOptions, logger: ILogger, ): ViewHierarchyNode?</ID>
+    <ID>CyclomaticComplexMethod:DefaultReplayBreadcrumbConverter.kt$DefaultReplayBreadcrumbConverter$override fun convert(breadcrumb: Breadcrumb): RRWebEvent?</ID>
+    <ID>CyclomaticComplexMethod:DefaultReplayBreadcrumbConverter.kt$DefaultReplayBreadcrumbConverter$private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent</ID>
+    <ID>CyclomaticComplexMethod:ReplayCache.kt$ReplayCache$public fun createVideoOf( duration: Long, from: Long, segmentId: Int, height: Int, width: Int, frameRate: Int, bitRate: Int, videoFile: File = File(replayCacheDir, "$segmentId.mp4"), ): GeneratedVideo?</ID>
+    <ID>CyclomaticComplexMethod:ReplayCache.kt$ReplayCache.Companion$internal fun fromDisk( options: SentryOptions, replayId: SentryId, replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null, ): LastSegmentData?</ID>
+    <ID>CyclomaticComplexMethod:ReplayGestureConverter.kt$ReplayGestureConverter$fun convert( event: MotionEvent, recorderConfig: ScreenshotRecorderConfig, ): List&lt;RRWebIncrementalSnapshotEvent>?</ID>
+    <ID>CyclomaticComplexMethod:ReplayLifecycle.kt$internal fun ReplayLifecycleState.isAllowed(newState: ReplayLifecycleState): Boolean</ID>
+    <ID>CyclomaticComplexMethod:SimpleVideoEncoder.kt$SimpleVideoEncoder$private fun drainCodec(endOfStream: Boolean)</ID>
+    <ID>EmptyCatchBlock:ReplaySmokeTest.kt$ReplaySmokeTest${}</ID>
+    <ID>EmptyDefaultConstructor:ScreenshotRecorderTest.kt$ScreenshotRecorderTest.Fixture$()</ID>
+    <ID>EmptyFunctionBlock:ReplayExecutorService.kt$CompletedFuture${}</ID>
+    <ID>ForbiddenComment:BufferCaptureStrategy.kt$BufferCaptureStrategy$// TODO: can be a single while-loop</ID>
+    <ID>ForbiddenComment:BufferCaptureStrategy.kt$BufferCaptureStrategy$// TODO: capture envelopes for buffered segments instead, but don't send them until buffer is</ID>
+    <ID>ForbiddenComment:CaptureStrategy.kt$CaptureStrategy.Companion$// TODO: support non-fullscreen windows later</ID>
+    <ID>ForbiddenComment:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$// TODO: if we get reports that it's slow, we can drop this, and just mask</ID>
+    <ID>ForbiddenComment:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$// TODO: support editable text (currently there's a way to get @Composable's padding only</ID>
+    <ID>ForbiddenComment:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$// TODO: the whole view instead of per-line</ID>
+    <ID>ForbiddenComment:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$// TODO: this currently does not support embedded AndroidViews, we'd have to</ID>
+    <ID>ForbiddenComment:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$// TODO: traverse the ViewHierarchyNode here again. For now we can recommend</ID>
+    <ID>ForbiddenComment:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$// TODO: using custom modifiers to obscure the entire node if it's sensitive</ID>
+    <ID>ForbiddenComment:Nodes.kt$// TODO: probably most of the below we can do via bytecode instrumentation and speed up at runtime</ID>
+    <ID>ForbiddenComment:Persistable.kt$PersistableLinkedList$// TODO: enable this back after we are able to serialize individual touches to disk to not overload</ID>
+    <ID>ForbiddenComment:PixelCopyStrategy.kt$PixelCopyStrategy$// TODO: disableAllMasking here and dont traverse?</ID>
+    <ID>ForbiddenComment:ReplayCache.kt$ReplayCache$// TODO: it's awful, choose a better serialization format</ID>
+    <ID>ForbiddenComment:ReplayIntegration.kt$ReplayIntegration$// TODO: previous run and set them directly to the ReplayEvent so they don't get overwritten in</ID>
+    <ID>ForbiddenComment:ReplayIntegration.kt$ReplayIntegration$// TODO: read persisted options/scope values form the</ID>
+    <ID>ForbiddenComment:ReplaySmokeTest.kt$ReplaySmokeTest$// TODO: figure out why there's more than 10</ID>
+    <ID>ForbiddenComment:SimpleVideoEncoder.kt$SimpleVideoEncoder$// TODO: because the screenshot config has to match the video config</ID>
+    <ID>ForbiddenComment:SimpleVideoEncoder.kt$SimpleVideoEncoder$// TODO: if this ever becomes a problem, move this to ScreenshotRecorderConfig.from()</ID>
+    <ID>ForbiddenComment:SimpleVideoEncoder.kt$SimpleVideoEncoder$// TODO: maybe enable this back later, for now variable bitrate seems to provide much better</ID>
+    <ID>ForbiddenComment:SimpleVideoEncoder.kt$SimpleVideoEncoder$// TODO: quality with almost no overhead in terms of video size, let's monitor that</ID>
+    <ID>ForbiddenComment:Views.kt$// TODO: maybe find a way how to check if the drawable is coming from the apk or loaded from</ID>
+    <ID>ForbiddenComment:Views.kt$// TODO: otherwise maybe check for the bitmap size and don't mask those that take a lot of height</ID>
+    <ID>FunctionParameterNaming:PixelCopyStrategyTest.kt$DeferredWindowPixelCopyShadow.Companion$_dest: Bitmap</ID>
+    <ID>FunctionParameterNaming:PixelCopyStrategyTest.kt$DeferredWindowPixelCopyShadow.Companion$_source: Window</ID>
+    <ID>LargeClass:CanvasStrategy.kt$TextIgnoringDelegateCanvas : Canvas</ID>
+    <ID>LargeClass:ReplayIntegrationTest.kt$ReplayIntegrationTest</ID>
+    <ID>LongMethod:CaptureStrategy.kt$CaptureStrategy.Companion$@Suppress("NewApi") private fun buildReplay( options: SentryOptions, video: File, currentReplayId: SentryId, segmentTimestamp: Date, segmentId: Int, height: Int, width: Int, frameCount: Int, frameRate: Int, videoDuration: Long, replayType: ReplayType, screenAtStart: String?, breadcrumbs: List&lt;Breadcrumb>, events: Deque&lt;RRWebEvent>, traceIds: List&lt;String>, segmentNames: List&lt;String>, ): ReplaySegment</ID>
+    <ID>LongMethod:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$private fun fromComposeNode( node: LayoutNode, parent: ViewHierarchyNode?, distance: Int, isComposeRoot: Boolean, options: SentryMaskingOptions, logger: ILogger, ): ViewHierarchyNode?</ID>
+    <ID>LongMethod:DefaultReplayBreadcrumbConverter.kt$DefaultReplayBreadcrumbConverter$override fun convert(breadcrumb: Breadcrumb): RRWebEvent?</ID>
+    <ID>LongMethod:DefaultReplayBreadcrumbConverter.kt$DefaultReplayBreadcrumbConverter$private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent</ID>
+    <ID>LongMethod:PixelCopyStrategy.kt$PixelCopyStrategy$@SuppressLint("NewApi") override fun capture(root: View)</ID>
+    <ID>LongMethod:ReplayCache.kt$ReplayCache$public fun createVideoOf( duration: Long, from: Long, segmentId: Int, height: Int, width: Int, frameRate: Int, bitRate: Int, videoFile: File = File(replayCacheDir, "$segmentId.mp4"), ): GeneratedVideo?</ID>
+    <ID>LongMethod:ReplayCache.kt$ReplayCache.Companion$internal fun fromDisk( options: SentryOptions, replayId: SentryId, replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null, ): LastSegmentData?</ID>
+    <ID>LongMethod:ReplayGestureConverter.kt$ReplayGestureConverter$fun convert( event: MotionEvent, recorderConfig: ScreenshotRecorderConfig, ): List&lt;RRWebIncrementalSnapshotEvent>?</ID>
+    <ID>LongMethod:ReplayGestureConverterTest.kt$ReplayGestureConverterTest$@Test fun `convert multi-pointer events`()</ID>
+    <ID>LongMethod:ReplayIntegrationTest.kt$ReplayIntegrationTest$@Test fun `register finalizes previous replay`()</ID>
+    <ID>LongMethod:ReplayIntegrationWithRecorderTest.kt$ReplayIntegrationWithRecorderTest$@Test fun `works with different recorder`()</ID>
+    <ID>LongMethod:SimpleVideoEncoder.kt$SimpleVideoEncoder$private fun drainCodec(endOfStream: Boolean)</ID>
+    <ID>LongMethod:ViewHierarchyNode.kt$ViewHierarchyNode.Companion$@JvmStatic fun fromView( view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryMaskingOptions, ): ViewHierarchyNode</ID>
+    <ID>LongParameterList:BaseCaptureStrategy.kt$BaseCaptureStrategy$( duration: Long, currentSegmentTimestamp: Date, replayId: SentryId, segmentId: Int, height: Int, width: Int, frameRate: Int, bitRate: Int, replayType: ReplayType = this.replayType, cache: ReplayCache? = this.cache, screenAtStart: String? = this.screenAtStart, breadcrumbs: List&lt;Breadcrumb>? = null, events: Deque&lt;RRWebEvent> = this.currentEvents, )</ID>
+    <ID>LongParameterList:CaptureStrategy.kt$CaptureStrategy.Companion$( options: SentryOptions, video: File, currentReplayId: SentryId, segmentTimestamp: Date, segmentId: Int, height: Int, width: Int, frameCount: Int, frameRate: Int, videoDuration: Long, replayType: ReplayType, screenAtStart: String?, breadcrumbs: List&lt;Breadcrumb>, events: Deque&lt;RRWebEvent>, traceIds: List&lt;String>, segmentNames: List&lt;String>, )</ID>
+    <ID>LongParameterList:CaptureStrategy.kt$CaptureStrategy.Companion$( scopes: IScopes?, options: SentryOptions, duration: Long, currentSegmentTimestamp: Date, replayId: SentryId, segmentId: Int, height: Int, width: Int, replayType: ReplayType, cache: ReplayCache?, frameRate: Int, bitRate: Int, screenAtStart: String?, breadcrumbs: List&lt;Breadcrumb>?, events: Deque&lt;RRWebEvent>, traceIds: List&lt;String> = emptyList(), segmentNames: List&lt;String> = emptyList(), )</ID>
+    <ID>LongParameterList:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$( node: LayoutNode, parent: ViewHierarchyNode?, distance: Int, isComposeRoot: Boolean, options: SentryMaskingOptions, logger: ILogger, )</ID>
+    <ID>LongParameterList:PixelCopyStrategy.kt$( destCanvas: Canvas, destPaint: Paint, tmpSrc: Rect, tmpDst: RectF, sourceBitmap: Bitmap, sourceX: Int, sourceY: Int, windowX: Int, windowY: Int, scaleFactorX: Float, scaleFactorY: Float, )</ID>
+    <ID>LongParameterList:PixelCopyStrategy.kt$PixelCopyStrategy$( root: View, captures: Array&lt;SurfaceViewCapture?>, viewHierarchy: ViewHierarchyNode, windowX: Int, windowY: Int, resetUnstableCaptures: Boolean, )</ID>
+    <ID>LongParameterList:ReplayCache.kt$ReplayCache$( duration: Long, from: Long, segmentId: Int, height: Int, width: Int, frameRate: Int, bitRate: Int, videoFile: File = File(replayCacheDir, "$segmentId.mp4"), )</ID>
+    <ID>LongParameterList:ReplayIntegration.kt$ReplayIntegration$( context: Context, dateProvider: ICurrentDateProvider, recorderProvider: (() -> Recorder)?, replayCacheProvider: ((replayId: SentryId) -> ReplayCache)?, replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null, mainLooperHandler: MainLooperHandler? = null, gestureRecorderProvider: (() -> GestureRecorder)? = null, )</ID>
+    <ID>LongParameterList:ReplayIntegrationTest.kt$ReplayIntegrationTest.Fixture$( context: Context, sessionSampleRate: Double = 1.0, onErrorSampleRate: Double = 1.0, isRateLimited: Boolean = false, recorderProvider: (() -> Recorder)? = null, replayCaptureStrategyProvider: ((isFullSession: Boolean) -> CaptureStrategy)? = null, gestureRecorderProvider: (() -> GestureRecorder)? = null, dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(), mainLooperHandler: MainLooperHandler = mock { doAnswer { (it.arguments[0] as Runnable).run() true } .whenever(mock) .post(any()) }, )</ID>
+    <ID>LongParameterList:ViewHierarchyNode.kt$ViewHierarchyNode$( val x: Float, val y: Float, val width: Int, val height: Int, // Elevation (in px) val elevation: Float, // Distance to the parent (index) val distance: Int, val parent: ViewHierarchyNode? = null, val shouldMask: Boolean = false, // Whether the node is important for content capture (=non-empty container) var isImportantForContentCapture: Boolean = false, val isVisible: Boolean = false, val visibleRect: Rect? = null, )</ID>
+    <ID>LongParameterList:ViewHierarchyNode.kt$ViewHierarchyNode.GenericViewHierarchyNode$( x: Float, y: Float, width: Int, height: Int, elevation: Float, distance: Int, parent: ViewHierarchyNode? = null, shouldMask: Boolean = false, isImportantForContentCapture: Boolean = false, isVisible: Boolean = false, visibleRect: Rect? = null, )</ID>
+    <ID>LongParameterList:ViewHierarchyNode.kt$ViewHierarchyNode.ImageViewHierarchyNode$( x: Float, y: Float, width: Int, height: Int, elevation: Float, distance: Int, parent: ViewHierarchyNode? = null, shouldMask: Boolean = false, isImportantForContentCapture: Boolean = false, isVisible: Boolean = false, visibleRect: Rect? = null, )</ID>
+    <ID>LongParameterList:ViewHierarchyNode.kt$ViewHierarchyNode.SurfaceViewHierarchyNode$( val surfaceViewRef: WeakReference&lt;SurfaceView>, x: Float, y: Float, width: Int, height: Int, elevation: Float, distance: Int, parent: ViewHierarchyNode? = null, shouldMask: Boolean = false, isImportantForContentCapture: Boolean = false, isVisible: Boolean = false, visibleRect: Rect? = null, )</ID>
+    <ID>LongParameterList:ViewHierarchyNode.kt$ViewHierarchyNode.TextViewHierarchyNode$( val layout: TextLayout? = null, val dominantColor: Int? = null, val paddingLeft: Int = 0, val paddingTop: Int = 0, x: Float, y: Float, width: Int, height: Int, elevation: Float, distance: Int, parent: ViewHierarchyNode? = null, shouldMask: Boolean = false, isImportantForContentCapture: Boolean = false, isVisible: Boolean = false, visibleRect: Rect? = null, )</ID>
+    <ID>LoopWithTooManyJumpStatements:PixelCopyStrategy.kt$PixelCopyStrategy$for</ID>
+    <ID>LoopWithTooManyJumpStatements:ReplayCache.kt$ReplayCache$while</ID>
+    <ID>LoopWithTooManyJumpStatements:SimpleVideoEncoder.kt$SimpleVideoEncoder$while</ID>
+    <ID>MagicNumber:BaseCaptureStrategy.kt$BaseCaptureStrategy$26</ID>
+    <ID>MagicNumber:BufferCaptureStrategy.kt$BufferCaptureStrategy$26</ID>
+    <ID>MagicNumber:CanvasStrategy.kt$TextIgnoringDelegateCanvas$100</ID>
+    <ID>MagicNumber:CanvasStrategy.kt$TextIgnoringDelegateCanvas$10f</ID>
+    <ID>MagicNumber:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$26</ID>
+    <ID>MagicNumber:DebugOverlayDrawable.kt$DebugOverlayDrawable$6f</ID>
+    <ID>MagicNumber:DefaultReplayBreadcrumbConverter.kt$DefaultReplayBreadcrumbConverter$1000.0</ID>
+    <ID>MagicNumber:Persistable.kt$PersistableLinkedList$26</ID>
+    <ID>MagicNumber:ReplayCache.kt$ReplayCache$1000</ID>
+    <ID>MagicNumber:ReplayCache.kt$ReplayCache.Companion$1000</ID>
+    <ID>MagicNumber:ReplayGestureConverter.kt$ReplayGestureConverter$10</ID>
+    <ID>MagicNumber:ScreenshotRecorder.kt$ScreenshotRecorder$26</ID>
+    <ID>MagicNumber:ScreenshotRecorder.kt$ScreenshotRecorderConfig.Companion$16</ID>
+    <ID>MagicNumber:ScreenshotRecorder.kt$ScreenshotRecorderConfig.Companion$8</ID>
+    <ID>MagicNumber:SimpleVideoEncoder.kt$MuxerConfig$24</ID>
+    <ID>MagicNumber:SimpleVideoEncoder.kt$SimpleVideoEncoder$26</ID>
+    <ID>MagicNumber:SimpleVideoEncoder.kt$SimpleVideoEncoder$6</ID>
+    <ID>MagicNumber:ViewHierarchyNode.kt$ViewHierarchyNode$26</ID>
+    <ID>MagicNumber:Views.kt$10</ID>
+    <ID>MagicNumber:Views.kt$21</ID>
+    <ID>MagicNumber:WindowRecorder.kt$WindowRecorder$100L</ID>
+    <ID>MagicNumber:WindowRecorder.kt$WindowRecorder$26</ID>
+    <ID>MagicNumber:WindowRecorder.kt$WindowRecorder.Capturer$1000L</ID>
+    <ID>MatchingDeclarationName:ModifierExtensions.kt$SentryReplayModifiers</ID>
+    <ID>MatchingDeclarationName:Nodes.kt$ComposeTextLayout : TextLayout</ID>
+    <ID>MatchingDeclarationName:Persistable.kt$PersistableLinkedList : ConcurrentLinkedDeque</ID>
+    <ID>MatchingDeclarationName:ReplayLifecycle.kt$ReplayLifecycleState</ID>
+    <ID>MaxLineLength:ComposeMaskingOptionsTest.kt$ComposeMaskingOptionsTest$"Flaky: Robolectric intermittently reports zero bounds for nodes, causing isVisible=false and making the assertion non-deterministic"</ID>
+    <ID>NestedBlockDepth:CaptureStrategy.kt$CaptureStrategy.Companion$@Suppress("NewApi") private fun buildReplay( options: SentryOptions, video: File, currentReplayId: SentryId, segmentTimestamp: Date, segmentId: Int, height: Int, width: Int, frameCount: Int, frameRate: Int, videoDuration: Long, replayType: ReplayType, screenAtStart: String?, breadcrumbs: List&lt;Breadcrumb>, events: Deque&lt;RRWebEvent>, traceIds: List&lt;String>, segmentNames: List&lt;String>, ): ReplaySegment</ID>
+    <ID>NestedBlockDepth:DefaultReplayBreadcrumbConverter.kt$DefaultReplayBreadcrumbConverter$private fun Breadcrumb.toRRWebSpanEvent(): RRWebSpanEvent</ID>
+    <ID>NestedBlockDepth:Nodes.kt$internal fun LayoutNode.findPainter(): Painter?</ID>
+    <ID>NestedBlockDepth:Nodes.kt$internal fun LayoutNode.findTextColor(): Color?</ID>
+    <ID>NestedBlockDepth:ReplayGestureConverter.kt$ReplayGestureConverter$fun convert( event: MotionEvent, recorderConfig: ScreenshotRecorderConfig, ): List&lt;RRWebIncrementalSnapshotEvent>?</ID>
+    <ID>NestedBlockDepth:SimpleVideoEncoder.kt$SimpleVideoEncoder$private fun drainCodec(endOfStream: Boolean)</ID>
+    <ID>ReturnCount:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$fun fromView( view: View, parent: ViewHierarchyNode?, options: SentryMaskingOptions, logger: ILogger, ): Boolean</ID>
+    <ID>ReturnCount:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$private fun SemanticsConfiguration?.shouldMask( isImage: Boolean, options: SentryMaskingOptions, ): Boolean</ID>
+    <ID>ReturnCount:DefaultReplayBreadcrumbConverter.kt$DefaultReplayBreadcrumbConverter$override fun convert(breadcrumb: Breadcrumb): RRWebEvent?</ID>
+    <ID>ReturnCount:ReplayCache.kt$ReplayCache.Companion$internal fun fromDisk( options: SentryOptions, replayId: SentryId, replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null, ): LastSegmentData?</ID>
+    <ID>ReturnCount:ReplayGestureConverter.kt$ReplayGestureConverter$fun convert( event: MotionEvent, recorderConfig: ScreenshotRecorderConfig, ): List&lt;RRWebIncrementalSnapshotEvent>?</ID>
+    <ID>ReturnCount:ReplayIntegration.kt$ReplayIntegration$override fun captureReplay(isTerminating: Boolean?): SentryId</ID>
+    <ID>ReturnCount:ScreenshotRecorder.kt$ScreenshotRecorder$fun capture()</ID>
+    <ID>ReturnCount:SentryLayoutNodeHelper.kt$SentryLayoutNodeHelper$@Suppress("UNCHECKED_CAST") fun getChildren(node: LayoutNode): List&lt;LayoutNode></ID>
+    <ID>ReturnCount:SentryLayoutNodeHelper.kt$SentryLayoutNodeHelper$fun isTransparent(node: LayoutNode): Boolean</ID>
+    <ID>ReturnCount:ViewHierarchyNode.kt$ViewHierarchyNode.Companion$@JvmStatic fun fromView( view: View, parent: ViewHierarchyNode?, distance: Int, options: SentryMaskingOptions, ): ViewHierarchyNode</ID>
+    <ID>ReturnCount:ViewHierarchyNode.kt$ViewHierarchyNode.Companion$private fun View.shouldMask(options: SentryMaskingOptions): Boolean</ID>
+    <ID>ReturnCount:Views.kt$internal fun View.isVisibleToUser(): Pair&lt;Boolean, Rect?></ID>
+    <ID>SwallowedException:Nodes.kt$e: Throwable</ID>
+    <ID>SwallowedException:ReplayCache.kt$ReplayCache.Companion$e: Throwable</ID>
+    <ID>SwallowedException:ReplaySmokeTest.kt$ReplaySmokeTest$e: ConditionTimeoutException</ID>
+    <ID>SwallowedException:Views.kt$e: NullPointerException</ID>
+    <ID>ThrowsCount:SimpleVideoEncoder.kt$SimpleVideoEncoder$private fun drainCodec(endOfStream: Boolean)</ID>
+    <ID>TooGenericExceptionCaught:BaseCaptureStrategy.kt$BaseCaptureStrategy.&lt;no name provided>$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:BufferCaptureStrategy.kt$BufferCaptureStrategy$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:CanvasStrategy.kt$CanvasStrategy$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:Executors.kt$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:GestureRecorder.kt$GestureRecorder.SentryReplayGestureRecorder$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:Nodes.kt$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:PixelCopyStrategy.kt$PixelCopyStrategy$e: RuntimeException</ID>
+    <ID>TooGenericExceptionCaught:PixelCopyStrategy.kt$PixelCopyStrategy$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ReplayCache.kt$ReplayCache$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ReplayCache.kt$ReplayCache$t: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ReplayCache.kt$ReplayCache.Companion$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ReplayExecutorService.kt$ReplayExecutorService$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ReplayIntegration.kt$ReplayIntegration$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:ScreenshotRecorder.kt$ScreenshotRecorder$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:SimpleVideoEncoder.kt$SimpleVideoEncoder$e: RuntimeException</ID>
+    <ID>TooGenericExceptionCaught:SimpleVideoEncoder.kt$SimpleVideoEncoder$e: Throwable</ID>
+    <ID>TooGenericExceptionCaught:Views.kt$e: NullPointerException</ID>
+    <ID>TooGenericExceptionCaught:WindowRecorder.kt$WindowRecorder.Capturer$e: Throwable</ID>
+    <ID>TooGenericExceptionThrown:ReplayIntegrationTest.kt$ReplayIntegrationTest$throw RuntimeException("test")</ID>
+    <ID>TooGenericExceptionThrown:SimpleVideoEncoder.kt$SimpleVideoEncoder$throw RuntimeException("encoderOutputBuffer $encoderStatus was null")</ID>
+    <ID>TooGenericExceptionThrown:SimpleVideoEncoder.kt$SimpleVideoEncoder$throw RuntimeException("format changed twice")</ID>
+    <ID>TooGenericExceptionThrown:SimpleVideoEncoder.kt$SimpleVideoEncoder$throw RuntimeException("muxer hasn't started")</ID>
+    <ID>TooManyFunctions:BaseCaptureStrategy.kt$BaseCaptureStrategy : CaptureStrategy</ID>
+    <ID>TooManyFunctions:BufferCaptureStrategy.kt$BufferCaptureStrategy : BaseCaptureStrategy</ID>
+    <ID>TooManyFunctions:CanvasStrategy.kt$TextIgnoringDelegateCanvas : Canvas</ID>
+    <ID>TooManyFunctions:CaptureStrategy.kt$CaptureStrategy</ID>
+    <ID>TooManyFunctions:PixelCopyStrategy.kt$PixelCopyStrategy : ScreenshotStrategy</ID>
+    <ID>TooManyFunctions:ReplayIntegration.kt$ReplayIntegration : IntegrationCloseableScreenshotRecorderCallbackTouchRecorderCallbackReplayControllerIConnectionStatusObserverIRateLimitObserverWindowCallback</ID>
+    <ID>TooManyFunctions:WindowRecorder.kt$WindowRecorder : RecorderOnRootViewsChangedListenerExecutorProvider</ID>
+    <ID>UnusedPrivateProperty:DebugOverlayDrawable.kt$DebugOverlayDrawable$private val padding = 6f</ID>
+    <ID>UseCheckOrError:ReplayShadowMediaCodec.kt$ReplayShadowMediaCodec$throw IllegalStateException("Simulated codec start failure")</ID>
+    <ID>UtilityClassWithPublicConstructor:PixelCopyStrategyTest.kt$DeferredWindowPixelCopyShadow</ID>
+  </CurrentIssues>
+</SmellBaseline>
