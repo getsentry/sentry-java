@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Nav2 IDs are required in order for user interaction transactions to be triggered when the user interacts with a given component. -->
+  <item name="nav2_tab_compose" type="id" />
+  <item name="nav2_tab_fragments" type="id" />
+  <item name="nav2_tab_deep_link" type="id" />
+  <item name="nav2_tab_performance" type="id" />
+  <item name="nav2_recent_transactions" type="id" />
+  <item name="nav2_route_work_settings" type="id" />
+  <item name="nav2_capture_exception" type="id" />
+  <item name="nav2_crash_app" type="id" />
+  <item name="nav2_fragment_browse_products" type="id" />
+  <item name="nav2_fragment_open_deep_link" type="id" />
+  <item name="nav2_fragment_open_product_42" type="id" />
+  <item name="nav2_fragment_open_product_7" type="id" />
+  <item name="nav2_fragment_show_promo_dialog" type="id" />
+  <item name="nav2_fragment_open_share_sheet" type="id" />
+  <item name="nav2_fragment_go_to_checkout" type="id" />
+  <item name="nav2_fragment_complete_order" type="id" />
+  <item name="nav2_fragment_reset_backstack" type="id" />
+  <item name="nav2_modal_capture_exception" type="id" />
+  <item name="nav2_modal_crash_app" type="id" />
+  <item name="nav2_modal_dismiss" type="id" />
+  <item name="nav2_share_sheet_done" type="id" />
+</resources>

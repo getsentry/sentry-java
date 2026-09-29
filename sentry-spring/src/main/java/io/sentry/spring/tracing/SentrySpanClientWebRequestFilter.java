@@ -45,7 +45,8 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
     final @NotNull SpanOptions spanOptions = new SpanOptions();
     spanOptions.setOrigin(TRACE_ORIGIN);
     final ISpan span = activeSpan.startChild("http.client", null, spanOptions);
-    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url().toString());
+    final @NotNull UrlUtils.UrlDetails urlDetails =
+        UrlUtils.parse(request.url().toString(), scopes.getOptions().getDataCollectionResolver());
     final @NotNull String method = request.method().name();
     span.setDescription(method + " " + urlDetails.getUrlOrFallback());
     span.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT));
@@ -115,7 +116,8 @@ public class SentrySpanClientWebRequestFilter implements ExchangeFilterFunction 
         Breadcrumb.http(
             request.url().toString(),
             request.method().name(),
-            response != null ? response.statusCode().value() : null);
+            response != null ? response.statusCode().value() : null,
+            scopes.getOptions().getDataCollectionResolver());
 
     final Hint hint = new Hint();
     hint.set(SPRING_EXCHANGE_FILTER_REQUEST, request);

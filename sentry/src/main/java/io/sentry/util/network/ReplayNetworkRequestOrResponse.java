@@ -1,6 +1,7 @@
 package io.sentry.util.network;
 
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/types/request.ts">JS
  * SDK types</a>
  */
+@ApiStatus.Internal
 public final class ReplayNetworkRequestOrResponse {
   private final @Nullable Long size;
   private final @Nullable NetworkBody body;
