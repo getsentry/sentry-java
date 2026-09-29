@@ -8,8 +8,7 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
-  // TODO: enable it later
-  //    alias(libs.plugins.detekt)
+  alias(libs.plugins.detekt)
 }
 
 android {
