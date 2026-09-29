@@ -1,11 +1,19 @@
 package io.sentry.android.core.cache
 
+import com.google.common.truth.Truth.assertThat
+import io.sentry.DateUtils
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.SentryEnvelope
+import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.SentryUUID
+import io.sentry.Session
+import io.sentry.Session.State.Abnormal
+import io.sentry.Session.State.Ok
 import io.sentry.UncaughtExceptionHandlerIntegration.UncaughtExceptionHint
 import io.sentry.android.core.AnrV2Integration.AnrV2Hint
+import io.sentry.android.core.MemoryLimiterIntegration.MemoryLimiterHint
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.cache.EnvelopeCache
@@ -13,6 +21,7 @@ import io.sentry.transport.ICurrentDateProvider
 import io.sentry.util.HintUtils
 import java.io.File
 import java.lang.IllegalArgumentException
+import java.util.Date
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,6 +43,7 @@ class AndroidEnvelopeCacheTest {
     val dateProvider = mock<ICurrentDateProvider>()
     lateinit var startupCrashMarkerFile: File
     lateinit var lastReportedAnrFile: File
+    lateinit var lastReportedMemoryLimiterFile: File
 
     fun getSut(
       dir: TemporaryFolder,
@@ -48,6 +58,8 @@ class AndroidEnvelopeCacheTest {
 
       startupCrashMarkerFile = File(outboxDir, EnvelopeCache.STARTUP_CRASH_MARKER_FILE)
       lastReportedAnrFile = File(options.cacheDirPath!!, AndroidEnvelopeCache.LAST_ANR_REPORT)
+      lastReportedMemoryLimiterFile =
+        File(options.cacheDirPath!!, AndroidEnvelopeCache.LAST_MEMORY_LIMITER_REPORT)
 
       if (appStartMillis != null) {
         AppStartMetrics.getInstance().apply {
@@ -210,6 +222,86 @@ class AndroidEnvelopeCacheTest {
   }
 
   @Test
+  fun `when memory limiter hint exists, writes last memory limiter report timestamp into file`() {
+    val cache = fixture.getSut(tmpDir)
+
+    val hints =
+      HintUtils.createWithTypeCheckHint(
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), 23456789L, false)
+      )
+    cache.storeEnvelope(fixture.envelope, hints)
+
+    assertTrue(fixture.lastReportedMemoryLimiterFile.exists())
+    assertEquals("23456789", fixture.lastReportedMemoryLimiterFile.readText())
+  }
+
+  @Test
+  fun `memory limiter hint marks previous session abnormal at exit timestamp`() {
+    val cache = fixture.getSut(tmpDir)
+    val sessionStart = DateUtils.getCurrentDateTime()
+    val exitTimestamp = sessionStart.time + 1_000
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    fixture.options.serializer.serialize(createSession(sessionStart), previousSessionFile.writer())
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+
+    cache.storeEnvelope(
+      envelope,
+      HintUtils.createWithTypeCheckHint(
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), exitTimestamp, true)
+      ),
+    )
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(previousSessionFile.reader(), Session::class.java)!!
+    assertThat(updatedSession.status).isEqualTo(Abnormal)
+    assertThat(updatedSession.timestamp!!.time).isEqualTo(exitTimestamp)
+    assertThat(updatedSession.abnormalMechanism).isEqualTo("memory_limiter")
+  }
+
+  // Protects against misbehaved clocks, stale cached state, or mismatched recovery data.
+  @Test
+  fun `memory limiter exit before previous session start does not mark session abnormal`() {
+    val cache = fixture.getSut(tmpDir)
+    val sessionStart = DateUtils.getCurrentDateTime()
+    val previousSessionFile = EnvelopeCache.getPreviousSessionFile(fixture.options.cacheDirPath!!)
+    fixture.options.serializer.serialize(createSession(sessionStart), previousSessionFile.writer())
+    val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
+
+    cache.storeEnvelope(
+      envelope,
+      HintUtils.createWithTypeCheckHint(
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), sessionStart.time - 1_000, true)
+      ),
+    )
+
+    val updatedSession =
+      fixture.options.serializer.deserialize(previousSessionFile.reader(), Session::class.java)!!
+    assertThat(updatedSession.status).isEqualTo(Ok)
+    assertThat(updatedSession.abnormalMechanism).isNull()
+  }
+
+  @Test
+  fun `memory limiter and anr markers are stored independently`() {
+    val cache = fixture.getSut(tmpDir)
+
+    cache.storeEnvelope(
+      fixture.envelope,
+      HintUtils.createWithTypeCheckHint(
+        AnrV2Hint(0, NoOpLogger.getInstance(), 12345678L, false, false)
+      ),
+    )
+    cache.storeEnvelope(
+      fixture.envelope,
+      HintUtils.createWithTypeCheckHint(
+        MemoryLimiterHint(0, NoOpLogger.getInstance(), 23456789L, false)
+      ),
+    )
+
+    assertEquals("12345678", fixture.lastReportedAnrFile.readText())
+    assertEquals("23456789", fixture.lastReportedMemoryLimiterFile.readText())
+  }
+
+  @Test
   fun `returns false if storing fails`() {
     val serializer = mock<ISerializer>()
     val cache = fixture.getSut(tmpDir) { options -> options.setSerializer(serializer) }
@@ -220,6 +312,24 @@ class AndroidEnvelopeCacheTest {
     val didStore = cache.storeEnvelope(fixture.envelope, hints)
     assertFalse(didStore)
   }
+
+  private fun createSession(started: Date): Session =
+    Session(
+      Ok,
+      started,
+      started,
+      0,
+      "distinct-id",
+      SentryUUID.generateSentryId(),
+      true,
+      null,
+      null,
+      null,
+      null,
+      "environment",
+      "release",
+      null,
+    )
 
   internal class UncaughtHint : UncaughtExceptionHint(0, NoOpLogger.getInstance())
 }

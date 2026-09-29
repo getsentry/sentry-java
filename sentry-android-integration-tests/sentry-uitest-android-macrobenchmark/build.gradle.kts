@@ -8,6 +8,7 @@ plugins {
 android {
   namespace = "io.sentry.uitest.android.macrobenchmark"
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
 
   defaultConfig {
     // Macrobenchmark requires API 23+.

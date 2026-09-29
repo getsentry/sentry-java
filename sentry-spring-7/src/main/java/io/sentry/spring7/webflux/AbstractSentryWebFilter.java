@@ -96,7 +96,13 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
       hint.set(WEBFLUX_FILTER_RESPONSE, response);
       final String methodName =
           request.getMethod() != null ? request.getMethod().name() : "unknown";
-      requestScopes.addBreadcrumb(Breadcrumb.http(request.getURI().toString(), methodName), hint);
+      final @NotNull Breadcrumb breadcrumb =
+          Breadcrumb.http(
+              request.getURI().toString(),
+              methodName,
+              null,
+              requestScopes.getOptions().getDataCollectionResolver());
+      requestScopes.addBreadcrumb(breadcrumb, hint);
       requestScopes.configureScope(
           scope -> scope.setRequest(sentryRequestResolver.resolveSentryRequest(request)));
     }
