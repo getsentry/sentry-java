@@ -9,6 +9,7 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import java.nio.ByteBuffer
+import java.util.concurrent.RejectedExecutionException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import org.chromium.net.CronetException
@@ -164,6 +165,34 @@ class SentryCronetCallbackTest {
       .isSameInstanceAs(error)
     assertThat(fixture.tracer.spans.single().status).isEqualTo(SpanStatus.INTERNAL_ERROR)
     assertThat(fixture.tracer.spans.single().isFinished).isTrue()
+    fixture.breadcrumb()
+  }
+
+  @Test
+  fun `invalid request arguments finish the span and are rethrown`() {
+    val error = IllegalArgumentException("invalid HTTP method")
+    doThrow(error).whenever(fixture.request).start()
+    val callback = fixture.callback()
+    assertThat(assertFailsWith<IllegalArgumentException> { callback.start(fixture.request) })
+      .isSameInstanceAs(error)
+    val span = fixture.tracer.spans.single()
+    assertThat(span.isFinished).isTrue()
+    assertThat(span.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+    assertThat(span.throwable).isSameInstanceAs(error)
+    fixture.breadcrumb()
+  }
+
+  @Test
+  fun `executor rejection finishes the span and is rethrown`() {
+    val error = RejectedExecutionException("executor shut down")
+    doThrow(error).whenever(fixture.request).start()
+    val callback = fixture.callback()
+    assertThat(assertFailsWith<RejectedExecutionException> { callback.start(fixture.request) })
+      .isSameInstanceAs(error)
+    val span = fixture.tracer.spans.single()
+    assertThat(span.isFinished).isTrue()
+    assertThat(span.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+    assertThat(span.throwable).isSameInstanceAs(error)
     fixture.breadcrumb()
   }
 

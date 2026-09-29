@@ -12,6 +12,7 @@ import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.SpanUtils
 import io.sentry.util.UrlUtils
 import java.nio.ByteBuffer
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import org.chromium.net.CronetException
 import org.chromium.net.UrlRequest
@@ -65,10 +66,18 @@ public constructor(
     }
     try {
       request.start()
-    } catch (e: RuntimeException) {
-      finish(null, SpanStatus.INTERNAL_ERROR, e)
-      throw e
+    } catch (e: IllegalStateException) {
+      finishFailedStart(e)
+    } catch (e: IllegalArgumentException) {
+      finishFailedStart(e)
+    } catch (e: RejectedExecutionException) {
+      finishFailedStart(e)
     }
+  }
+
+  private fun finishFailedStart(error: RuntimeException): Nothing {
+    finish(null, SpanStatus.INTERNAL_ERROR, error)
+    throw error
   }
 
   @Throws(Exception::class)
