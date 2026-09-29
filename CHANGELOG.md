@@ -4,122 +4,23 @@
 
 ### Features
 
-- Add `LocalSentrySpan` to `sentry-compose` so apps can provide a parent `ISpan` to a composable subtree and have nested `SentryTraced` spans attach to it ([#6112]https://github.com/getsentry/sentry-java/pull/6112)
-- Add `dataCollection`, a fine-grained replacement for `sendDefaultPii`, for controlling data collected automatically by SDK integrations ([#5759](https://github.com/getsentry/sentry-java/pull/5759))
-  - `sendDefaultPii` remains supported for backwards compatibility. When `dataCollection` is not configured, the SDK preserves the existing `sendDefaultPii` behavior.
-  - Configuring any `dataCollection` option makes it the source of truth. `sendDefaultPii` is then ignored, and omitted `dataCollection` options use the defaults below.
-  - The Logback appender is a compatibility exception. When an encoder is configured, `sendDefaultPii=true` continues to include the original message template and parameters. To opt in independently of `sendDefaultPii`, set `<includeUnencodedMessage>true</includeUnencodedMessage>` on the Sentry appender in `logback.xml` or `logback-spring.xml`.
-  - Data explicitly supplied through APIs such as `Sentry.setUser`, scopes, event processors, or `beforeSend` is not affected.
-
-  To opt in to the documented `dataCollection` defaults without configuring an individual option:
-
-  ```java
-  Sentry.init(options -> options.getDataCollection().forceDataCollection());
-  ```
-
-  | Option | Default | Behavior |
-  | --- | --- | --- |
-  | `userInfo` | `true` | Allows integrations to populate user identity and IP address information automatically. |
-  | `cookies` | `{ mode: DENY_LIST, terms: [] }` | Collects cookies while filtering sensitive values. |
-  | `httpHeaders.request` | `{ mode: DENY_LIST, terms: [] }` | Collects request headers while filtering sensitive values. |
-  | `httpHeaders.response` | `{ mode: DENY_LIST, terms: [] }` | Collects response headers while filtering sensitive values. |
-  | `httpBodies` | All supported body types | Collects supported incoming and outgoing request and response bodies. An empty set disables body collection. |
-  | `urlQueryParams` | `{ mode: DENY_LIST, terms: [] }` | Collects URL query parameters while filtering sensitive values. |
-  | `graphql.document` | `true` | Collects GraphQL documents. |
-  | `graphql.variables` | `true` | Collects GraphQL variables. |
-  | `databaseQueryData` | `true` | Allows collection of associated query data, such as bound parameters, write payloads, and results, where supported. Sanitized query statements and structural database metadata remain available. |
-  | `filePaths` | `true` | Allows file-system instrumentation to collect file and directory paths. File extensions and byte counts remain available when disabled. |
-
-  Cookies, HTTP headers, and URL query parameters support three modes:
-
-  - `OFF`: Do not collect the category.
-  - `DENY_LIST`: Collect values except those matching the built-in sensitive deny-list or additional configured terms.
-  - `ALLOW_LIST`: Only send plaintext values for matching terms. The built-in sensitive deny-list still applies.
-
-  Matching is case-insensitive and partial. The built-in sensitive deny-list contains `auth`, `token`, `secret`, `password`, `passwd`, `pwd`, `key`, `jwt`, `bearer`, `sso`, `saml`, `csrf`, `xsrf`, `credentials`, `session`, `sid`, and `identity`. Filtered values are replaced with `"[Filtered]"`. Custom deny-list terms extend rather than replace this list.
-
-  Configure all HTTP body types, a custom cookie deny-list, a request-header allow-list, and disable URL query parameter and file path collection in an options callback:
-
-  ```java
-  Sentry.init(
-      options -> {
-        options
-            .getDataCollection()
-            .setHttpBodies(
-                EnumSet.of(
-                    HttpBodyType.INCOMING_REQUEST,
-                    HttpBodyType.OUTGOING_REQUEST,
-                    HttpBodyType.INCOMING_RESPONSE,
-                    HttpBodyType.OUTGOING_RESPONSE));
-        options
-            .getDataCollection()
-            .setCookies(
-                KeyValueCollectionBehavior.denyList(
-                    "forwarded", "-ip", "remote-", "via", "-user"));
-        options
-            .getDataCollection()
-            .getHttpHeaders()
-            .setRequest(
-                KeyValueCollectionBehavior.allowList("content-type", "x-request-id"));
-        options
-            .getDataCollection()
-            .setUrlQueryParams(KeyValueCollectionBehavior.off());
-        options.getDataCollection().setFilePaths(false);
-      });
-  ```
-
-  Configure the same options in `sentry.properties`:
-
-  ```properties
-  data-collection.http-bodies=incoming_request,outgoing_request,incoming_response,outgoing_response
-  data-collection.cookies.mode=deny_list
-  data-collection.cookies.terms=forwarded,-ip,remote-,via,-user
-  data-collection.http-headers.request.mode=allow_list
-  data-collection.http-headers.request.terms=content-type,x-request-id
-  data-collection.url-query-params.mode=off
-  data-collection.file-paths=false
-  ```
-
-  Configure them with Spring Boot properties:
-
-  ```properties
-  sentry.data-collection.http-bodies=incoming-request,outgoing-request,incoming-response,outgoing-response
-  sentry.data-collection.cookies.mode=deny-list
-  sentry.data-collection.cookies.terms=forwarded,-ip,remote-,via,-user
-  sentry.data-collection.http-headers.request.mode=allow-list
-  sentry.data-collection.http-headers.request.terms=content-type,x-request-id
-  sentry.data-collection.url-query-params.mode=off
-  sentry.data-collection.file-paths=false
-  ```
-
-  Configure them in `AndroidManifest.xml`:
-
-  ```xml
-  <meta-data
-      android:name="io.sentry.data-collection.http-bodies"
-      android:value="incoming_request,outgoing_request,incoming_response,outgoing_response" />
-  <meta-data
-      android:name="io.sentry.data-collection.cookies.mode"
-      android:value="deny_list" />
-  <meta-data
-      android:name="io.sentry.data-collection.cookies.terms"
-      android:value="forwarded,-ip,remote-,via,-user" />
-  <meta-data
-      android:name="io.sentry.data-collection.http-headers.request.mode"
-      android:value="allow_list" />
-  <meta-data
-      android:name="io.sentry.data-collection.http-headers.request.terms"
-      android:value="content-type,x-request-id" />
-  <meta-data
-      android:name="io.sentry.data-collection.url-query-params.mode"
-      android:value="off" />
-  <meta-data
-      android:name="io.sentry.data-collection.file-paths"
-      android:value="false" />
-  ```
-
-  See the [Data Collection documentation](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection) for all configuration keys, supported integrations, and migration guidance.
+- Deprecate `sendDefaultPii` in favor of `dataCollection` ahead of its removal in 9.0 ([#6158](https://github.com/getsentry/sentry-java/pull/6158))
+- Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
 - Add `sentry-apollo-5` integration for Apollo Kotlin 5, providing HTTP tracing and failed GraphQL request reporting ([#6074](https://github.com/getsentry/sentry-java/pull/6074))
+
+### Improvements
+
+- Recover Android 17 `MemoryLimiter` app exits recorded as `ApplicationExitInfo.REASON_MEMORY_LIMITER` ([#6174](https://github.com/getsentry/sentry-java/pull/6174))
+
+## 8.58.0
+
+### Features
+
+- Add `LocalSentrySpan` to `sentry-compose` so apps can provide a parent `ISpan` to a composable subtree and have nested `SentryTraced` spans attach to it ([#6112]https://github.com/getsentry/sentry-java/pull/6112)
+- Add `dataCollection`, a fine-grained replacement for `sendDefaultPii`, for controlling data collected automatically by SDK integrations. See the Data Collection documentation for [Android](https://docs.sentry.io/platforms/android/configuration/options/#dataCollection), [Java](https://docs.sentry.io/platforms/java/configuration/options/#dataCollection), and [Spring Boot](https://docs.sentry.io/platforms/java/guides/spring-boot/configuration/options/#dataCollection) ([#5759](https://github.com/getsentry/sentry-java/pull/5759))
+
+> [!WARNING]
+> `sendDefaultPii` will be removed in the next major SDK version. Migrate to `dataCollection` before upgrading.
 
 ### Fixes
 
@@ -215,6 +116,7 @@
 ### Fixes
 
 - Keep dropped tombstone and ANR events dropped, instead of reporting the same app exit again at every app start ([#6002](https://github.com/getsentry/sentry-java/pull/6002))
+- Clear the persisted replay id on SDK init, so a replay id from a previous process is no longer attached to ANR events from the current one ([#6033](https://github.com/getsentry/sentry-java/pull/6033))
 - Apply `Sentry.withScope` and `Sentry.withIsolationScope` data to events captured inside the callback when `globalHubMode` is enabled ([#6004](https://github.com/getsentry/sentry-java/pull/6004))
   - `globalHubMode` is enabled by default on Android, where tags, extras, contexts and level set inside the callback were silently dropped
   - Scopes that are explicitly made current, e.g. via `Sentry.setCurrentScopes` or the `SentryContext` coroutine integration, are now also honoured when `globalHubMode` is enabled

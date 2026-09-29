@@ -99,6 +99,7 @@ object Config {
             "sentry-android-ndk",
             "sentry-android-fragment",
             "sentry-android-navigation",
+            "sentry-android-navigation3",
             "sentry-android-timber",
             "sentry-compose-android",
             "sentry-android-sqlite",

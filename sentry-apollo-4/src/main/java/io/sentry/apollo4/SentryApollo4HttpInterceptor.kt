@@ -300,6 +300,7 @@ constructor(
     return getHeaders(headers)
   }
 
+  @Suppress("DEPRECATION")
   private fun getHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     // Headers are only sent if isSendDefaultPii is enabled due to PII
     if (!scopes.options.isSendDefaultPii) {

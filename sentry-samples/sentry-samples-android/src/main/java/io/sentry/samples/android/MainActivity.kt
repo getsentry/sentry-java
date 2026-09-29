@@ -76,6 +76,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -992,7 +993,7 @@ fun IntegrationsScreen() {
             tagSampleAction("memory_limiter")
             activity.startActivity(Intent(activity, MemoryLimiterActivity::class.java))
           },
-          modifier = Modifier,
+          modifier = Modifier.testTag("open_memory_limiter_demo"),
         ) {
           Text("MemoryLimiter Demo", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }

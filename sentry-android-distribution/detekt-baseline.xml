@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:DistributionHttpClient.kt$DistributionHttpClient$200</ID>
+    <ID>MagicNumber:DistributionHttpClient.kt$DistributionHttpClient$299</ID>
+    <ID>MagicNumber:DistributionHttpClient.kt$DistributionHttpClient.HttpResponse$200</ID>
+    <ID>MagicNumber:DistributionHttpClient.kt$DistributionHttpClient.HttpResponse$299</ID>
+    <ID>MagicNumber:UpdateResponseParser.kt$UpdateResponseParser$200</ID>
+    <ID>MagicNumber:UpdateResponseParser.kt$UpdateResponseParser$400</ID>
+    <ID>MagicNumber:UpdateResponseParser.kt$UpdateResponseParser$499</ID>
+    <ID>MagicNumber:UpdateResponseParser.kt$UpdateResponseParser$500</ID>
+    <ID>MagicNumber:UpdateResponseParser.kt$UpdateResponseParser$599</ID>
+    <ID>MaxLineLength:DistributionHttpClient.kt$DistributionHttpClient$"/api/0/projects/${URLEncoder.encode(orgSlug, "UTF-8")}/${URLEncoder.encode(projectSlug, "UTF-8")}/preprodartifacts/check-for-updates/"</ID>
+    <ID>SwallowedException:DistributionIntegration.kt$DistributionIntegration$e: android.content.ActivityNotFoundException</ID>
+    <ID>TooGenericExceptionCaught:DistributionIntegration.kt$DistributionIntegration$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:UpdateResponseParser.kt$UpdateResponseParser$e: Exception</ID>
+    <ID>UseCheckOrError:DistributionHttpClient.kt$DistributionHttpClient$throw IllegalStateException( "Missing required distribution configuration: orgSlug, projectSlug, or orgAuthToken" )</ID>
+    <ID>UseCheckOrError:DistributionHttpClient.kt$DistributionHttpClient$throw IllegalStateException("sentryClientName must be set")</ID>
+    <ID>UseCheckOrError:DistributionIntegration.kt$DistributionIntegration$throw IllegalStateException("buildConfiguration must be set in distribution options")</ID>
+    <ID>UseRequire:UpdateResponseParser.kt$UpdateResponseParser$throw IllegalArgumentException( "Missing required fields in API response: ${missingFields.joinToString(", ")}" )</ID>
+    <ID>WildcardImport:DistributionHttpClientTest.kt$import org.junit.Assert.*</ID>
+  </CurrentIssues>
+</SmellBaseline>
