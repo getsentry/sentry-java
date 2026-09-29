@@ -4092,7 +4092,7 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Logs {
 
-    /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
+    /** Whether automatic logging integrations send Logs to Sentry. */
     private boolean enable = false;
 
     /**
@@ -4105,18 +4105,20 @@ public class SentryOptions implements RateLimiterConfig {
         new DefaultLoggerBatchProcessorFactory();
 
     /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
+     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
+     * calls are always captured when the SDK is enabled.
      *
-     * @return true if Sentry Logs should be enabled
+     * @return true if automatic Logs should be enabled
      */
     public boolean isEnabled() {
       return enable;
     }
 
     /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
+     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
+     * calls are always captured when the SDK is enabled.
      *
-     * @param enableLogs true if Sentry Logs should be enabled
+     * @param enableLogs true if automatic Logs should be enabled
      */
     public void setEnabled(boolean enableLogs) {
       this.enable = enableLogs;
@@ -4171,7 +4173,7 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Metrics {
 
-    /** Whether Sentry Metrics feature is enabled and metrics are sent to Sentry. */
+    /** Whether automatic metrics integrations send Metrics to Sentry. */
     private boolean enable = true;
 
     /**
@@ -4184,18 +4186,20 @@ public class SentryOptions implements RateLimiterConfig {
         new DefaultMetricsBatchProcessorFactory();
 
     /**
-     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     * Whether automatic metrics integrations send Metrics to Sentry. Direct {@code
+     * Sentry.metrics()} calls are always captured when the SDK is enabled.
      *
-     * @return true if Sentry Metrics should be enabled
+     * @return true if automatic Metrics should be enabled
      */
     public boolean isEnabled() {
       return enable;
     }
 
     /**
-     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     * Whether automatic metrics integrations send Metrics to Sentry. Direct {@code
+     * Sentry.metrics()} calls are always captured when the SDK is enabled.
      *
-     * @param enableMetrics true if Sentry Metrics should be enabled
+     * @param enableMetrics true if automatic Metrics should be enabled
      */
     public void setEnabled(final boolean enableMetrics) {
       this.enable = enableMetrics;

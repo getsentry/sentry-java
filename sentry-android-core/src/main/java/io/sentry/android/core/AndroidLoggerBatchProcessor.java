@@ -24,6 +24,9 @@ public final class AndroidLoggerBatchProcessor extends LoggerBatchProcessor
 
   @Override
   public void onBackground() {
+    if (!hasAcceptedItem) {
+      return;
+    }
     try {
       options
           .getExecutorService()

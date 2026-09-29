@@ -147,7 +147,7 @@
       android:name="io.sentry.debug"
       android:value="${sentryDebug}" />
 
-    <!--    how to enable Sentry Logs (Sentry.logger() calls are dropped unless this is on)-->
+    <!--    how to enable automatic Sentry Logs from Logcat-->
     <meta-data
       android:name="io.sentry.logs.enabled"
       android:value="true" />

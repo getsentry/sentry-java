@@ -5547,6 +5547,7 @@ public class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBat
 	public static final field FLUSH_AFTER_MS I
 	public static final field MAX_BATCH_SIZE I
 	public static final field MAX_QUEUE_SIZE I
+	protected field hasAcceptedItem Z
 	protected final field options Lio/sentry/SentryOptions;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;Lio/sentry/ISentryExecutorService;)V
@@ -5635,6 +5636,7 @@ public class io/sentry/metrics/MetricsBatchProcessor : io/sentry/metrics/IMetric
 	public static final field FLUSH_AFTER_MS I
 	public static final field MAX_BATCH_SIZE I
 	public static final field MAX_QUEUE_SIZE I
+	protected field hasAcceptedItem Z
 	protected final field options Lio/sentry/SentryOptions;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun add (Lio/sentry/SentryMetricsEvent;)V

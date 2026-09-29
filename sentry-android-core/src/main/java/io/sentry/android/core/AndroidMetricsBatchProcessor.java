@@ -24,6 +24,9 @@ public final class AndroidMetricsBatchProcessor extends MetricsBatchProcessor
 
   @Override
   public void onBackground() {
+    if (!hasAcceptedItem) {
+      return;
+    }
     try {
       options
           .getExecutorService()
