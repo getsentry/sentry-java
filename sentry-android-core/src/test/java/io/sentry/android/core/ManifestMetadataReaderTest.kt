@@ -2220,6 +2220,36 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata keeps Logcat logs disabled if not found`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isEnableLogcatLogs).isFalse()
+  }
+
+  @Test
+  fun `applyMetadata reads Logcat logs enabled to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGCAT_LOGS to true)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isEnableLogcatLogs).isTrue()
+  }
+
+  @Test
+  fun `applyMetadata reads Logcat logs disabled to options`() {
+    fixture.options.isEnableLogcatLogs = true
+    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGCAT_LOGS to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isEnableLogcatLogs).isFalse()
+  }
+
+  @Test
   fun `applyMetadata reads metrics enabled and keep default value if not found`() {
     // Arrange
     val context = fixture.getContext()

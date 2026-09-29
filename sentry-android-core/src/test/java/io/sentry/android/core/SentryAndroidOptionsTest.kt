@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
 import io.sentry.protocol.DebugImage
@@ -106,6 +107,19 @@ class SentryAndroidOptionsTest {
     sentryOptions.isEnableTimberLogs = true
 
     assertTrue(sentryOptions.isEnableTimberLogs)
+  }
+
+  @Test
+  fun `Logcat logs are disabled by default`() {
+    assertThat(SentryAndroidOptions().isEnableLogcatLogs).isFalse()
+  }
+
+  @Test
+  fun `Logcat logs can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.isEnableLogcatLogs = true
+
+    assertThat(sentryOptions.isEnableLogcatLogs).isTrue()
   }
 
   @Test
