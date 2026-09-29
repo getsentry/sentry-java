@@ -9,6 +9,7 @@ import io.sentry.IScope;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.protocol.Request;
+import io.sentry.util.CookieUtils;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.StringUtils;
 import io.sentry.util.UrlUtils;
@@ -73,7 +74,7 @@ public final class OpenTelemetryAttributesExtractor {
     }
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"deprecation", "unchecked"})
   private static Map<String, String> collectHeaders(
       final @NotNull Attributes attributes, final @NotNull SentryOptions options) {
     Map<String, String> headers = new HashMap<>();
@@ -91,7 +92,7 @@ public final class OpenTelemetryAttributesExtractor {
                   headers.put(
                       headerName,
                       toString(
-                          HttpUtils.filterOutSecurityCookiesFromHeader(
+                          CookieUtils.filterOutSecurityCookiesFromHeader(
                               headerValues, headerName, null)));
                 } catch (Throwable t) {
                   options

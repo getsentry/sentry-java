@@ -63,7 +63,9 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
       final ISpan span = activeSpan.startChild("http.client", null, spanOptions);
       final String methodName =
           request.getMethod() != null ? request.getMethod().name() : "unknown";
-      final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.getURI().toString());
+      final @NotNull UrlUtils.UrlDetails urlDetails =
+          UrlUtils.parse(
+              request.getURI().toString(), scopes.getOptions().getDataCollectionResolver());
       span.setDescription(methodName + " " + urlDetails.getUrlOrFallback());
       span.setData(SpanDataConvention.HTTP_METHOD_KEY, methodName.toUpperCase(Locale.ROOT));
       urlDetails.applyToSpan(span);
@@ -135,7 +137,11 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
     final String methodName = request.getMethod() != null ? request.getMethod().name() : "unknown";
 
     final Breadcrumb breadcrumb =
-        Breadcrumb.http(request.getURI().toString(), methodName, responseStatusCode);
+        Breadcrumb.http(
+            request.getURI().toString(),
+            methodName,
+            responseStatusCode,
+            scopes.getOptions().getDataCollectionResolver());
     breadcrumb.setData("request_body_size", body.length);
 
     final Hint hint = new Hint();

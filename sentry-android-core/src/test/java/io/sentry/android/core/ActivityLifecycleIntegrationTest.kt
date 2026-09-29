@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.test.core.app.ApplicationProvider
@@ -106,7 +107,7 @@ class ActivityLifecycleIntegrationTest {
 
       val metrics = AppStartMetrics.getInstance()
       metrics.isAppLaunchedInForeground = true
-      metrics.appStartTimeSpan.start()
+      metrics.appStartTimeSpan.setStartedAt(SystemClock.uptimeMillis())
 
       // We let the ActivityLifecycleIntegration create the proper transaction here
       val optionCaptor = argumentCaptor<TransactionOptions>()
