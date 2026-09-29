@@ -66,21 +66,20 @@ apiValidation {
             "sentry-samples-spring-boot-opentelemetry",
             "sentry-samples-spring-boot-opentelemetry-noagent",
             "sentry-samples-spring-boot-jakarta",
+            "sentry-samples-spring-boot-jakarta-log4j2",
             "sentry-samples-spring-boot-jakarta-opentelemetry",
             "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-samples-spring-boot-4",
+            "sentry-samples-spring-boot-4-log4j2",
             "sentry-samples-spring-boot-4-opentelemetry",
             "sentry-samples-spring-boot-4-opentelemetry-noagent",
             "sentry-samples-spring-boot-4-otlp",
             "sentry-samples-spring-boot-4-webflux",
             "sentry-samples-ktor-client",
             "sentry-uitest-android",
-            "sentry-uitest-android-benchmark",
             "sentry-uitest-android-critical",
-            "test-app-plain",
-            "test-app-sentry",
             "test-app-size",
             "sentry-samples-netflix-dgs",
             "sentry-samples-console-otlp",
@@ -118,6 +117,7 @@ subprojects {
             buildUponDefaultConfig = true
             allRules = true
             config.setFrom("${rootProject.rootDir}/detekt.yml")
+            baseline = file("detekt-baseline.xml")
         }
     }
 
