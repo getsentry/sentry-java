@@ -11,6 +11,7 @@ body:
         - sentry-android
         - sentry-android-ndk
         - sentry-android-timber
+        - sentry-android-cronet
         - sentry-android-fragment
         - sentry-android-navigation3
         - sentry-android-sqlite

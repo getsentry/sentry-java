@@ -1,0 +1,22 @@
+public final class io/sentry/android/cronet/BuildConfig {
+	public static final field BUILD_TYPE Ljava/lang/String;
+	public static final field DEBUG Z
+	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field SENTRY_CRONET_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/android/cronet/SentryCronetCallback : org/chromium/net/UrlRequest$Callback {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lorg/chromium/net/UrlRequest$Callback;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lorg/chromium/net/UrlRequest$Callback;Lio/sentry/IScopes;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lorg/chromium/net/UrlRequest$Callback;Lio/sentry/IScopes;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun onCanceled (Lorg/chromium/net/UrlRequest;Lorg/chromium/net/UrlResponseInfo;)V
+	public fun onFailed (Lorg/chromium/net/UrlRequest;Lorg/chromium/net/UrlResponseInfo;Lorg/chromium/net/CronetException;)V
+	public fun onReadCompleted (Lorg/chromium/net/UrlRequest;Lorg/chromium/net/UrlResponseInfo;Ljava/nio/ByteBuffer;)V
+	public fun onRedirectReceived (Lorg/chromium/net/UrlRequest;Lorg/chromium/net/UrlResponseInfo;Ljava/lang/String;)V
+	public fun onResponseStarted (Lorg/chromium/net/UrlRequest;Lorg/chromium/net/UrlResponseInfo;)V
+	public fun onSucceeded (Lorg/chromium/net/UrlRequest;Lorg/chromium/net/UrlResponseInfo;)V
+	public final fun start (Lorg/chromium/net/UrlRequest;)V
+}
+

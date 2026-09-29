@@ -44,6 +44,7 @@ object Config {
     object Sentry {
         val SENTRY_JAVA_SDK_NAME = "sentry.java"
         val SENTRY_ANDROID_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.android"
+        val SENTRY_CRONET_SDK_NAME = "$SENTRY_ANDROID_SDK_NAME.cronet"
         val SENTRY_TIMBER_SDK_NAME = "$SENTRY_ANDROID_SDK_NAME.timber"
         val SENTRY_LOGBACK_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.logback"
         val SENTRY_JUL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.jul"
@@ -100,6 +101,7 @@ object Config {
             "sentry-android-navigation",
             "sentry-android-navigation3",
             "sentry-android-timber",
+            "sentry-android-cronet",
             "sentry-compose-android",
             "sentry-android-sqlite",
             "sentry-android-replay"
