@@ -133,8 +133,8 @@ public class TombstoneIntegration implements Integration, Closeable {
 
     @RequiresApi(api = Build.VERSION_CODES.R)
     @Override
-    public int getTargetReason() {
-      return ApplicationExitInfo.REASON_CRASH_NATIVE;
+    public boolean matches(final @NotNull ApplicationExitInfo exitInfo) {
+      return exitInfo.getReason() == ApplicationExitInfo.REASON_CRASH_NATIVE;
     }
 
     @Override
@@ -145,6 +145,11 @@ public class TombstoneIntegration implements Integration, Closeable {
     @Override
     public @Nullable Long getLastReportedTimestamp() {
       return AndroidEnvelopeCache.lastReportedTombstone(options);
+    }
+
+    @Override
+    public void markReported(final long timestamp) {
+      AndroidEnvelopeCache.markTombstoneReported(options, timestamp);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
@@ -236,7 +241,7 @@ public class TombstoneIntegration implements Integration, Closeable {
           nativeEventCollector.findAndRemoveMatchingNativeEvent(tombstoneTimestamp);
 
       if (matchingNativeEvent == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "No matching native event found for tombstone.");
+        // NativeEventCollector already logs why no event matched.
         return null;
       }
 

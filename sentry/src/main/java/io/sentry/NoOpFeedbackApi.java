@@ -2,9 +2,11 @@ package io.sentry;
 
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpFeedbackApi implements IFeedbackApi {
 
   private static final NoOpFeedbackApi instance = new NoOpFeedbackApi();
@@ -25,6 +27,17 @@ public final class NoOpFeedbackApi implements IFeedbackApi {
   public void show(
       final @Nullable SentryId associatedEventId,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {}
+
+  @Override
+  public void enableOnShake() {}
+
+  @Override
+  public void disableOnShake() {}
+
+  @Override
+  public boolean isOnShakeEnabled() {
+    return false;
+  }
 
   @Override
   public @NotNull SentryId capture(final @NotNull Feedback feedback) {
