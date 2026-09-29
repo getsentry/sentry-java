@@ -8,6 +8,10 @@
 - Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
 - Add `sentry-apollo-5` integration for Apollo Kotlin 5, providing HTTP tracing and failed GraphQL request reporting ([#6074](https://github.com/getsentry/sentry-java/pull/6074))
 
+### Fixes
+
+- Prevent infinite loops when capturing exceptions with cyclic cause chains ([#6073](https://github.com/getsentry/sentry-java/pull/6073))
+
 ### Improvements
 
 - Recover Android 17 `MemoryLimiter` app exits recorded as `ApplicationExitInfo.REASON_MEMORY_LIMITER` ([#6174](https://github.com/getsentry/sentry-java/pull/6174))
