@@ -29,7 +29,7 @@ import java.io.File
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
-  private lateinit var requestPermissionLauncher: ActivityResultLauncher<String?>
+  private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
   override fun onCreate(savedInstanceState: Bundle?) {
     setTheme(android.R.style.Theme_DeviceDefault_NoActionBar)

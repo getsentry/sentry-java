@@ -12,6 +12,7 @@ plugins {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.core"
 
   defaultConfig {
@@ -100,6 +101,9 @@ dependencies {
   implementation(libs.androidx.lifecycle.common.java8)
   implementation(libs.androidx.lifecycle.process)
   implementation(libs.androidx.core)
+  // photo picker for user feedback screenshot attachments
+  compileOnly(libs.androidx.activity)
+
   implementation(libs.epitaph)
 
   errorprone(libs.errorprone.core)

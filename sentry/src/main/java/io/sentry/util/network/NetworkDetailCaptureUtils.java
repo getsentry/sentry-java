@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -14,6 +15,7 @@ import org.jetbrains.annotations.VisibleForTesting;
  * Utility class for network capture operations shared across HTTP client integrations. Provides
  * common logic for determining what network data to capture and filtering headers.
  */
+@ApiStatus.Internal
 public final class NetworkDetailCaptureUtils {
 
   private NetworkDetailCaptureUtils() {}

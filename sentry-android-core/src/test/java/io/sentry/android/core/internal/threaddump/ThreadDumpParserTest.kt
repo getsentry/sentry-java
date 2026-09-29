@@ -2,7 +2,9 @@ package io.sentry.android.core.internal.threaddump
 
 import io.sentry.SentryLockReason
 import io.sentry.SentryOptions
+import java.io.BufferedReader
 import java.io.File
+import java.io.StringReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -217,6 +219,56 @@ class ThreadDumpParserTest {
     // the thread without any frames is skipped, only the one with a stacktrace remains
     assertEquals(1, threads.size)
     assertEquals("main", threads.first().name)
+  }
+
+  @Test
+  fun `uses class name as module when a Java frame has no package`() {
+    val lines =
+      Lines.readLines(
+        BufferedReader(
+          StringReader(
+            """
+            ----- pid 123 at 2023-04-04 22:06:31.064728684+0200 -----
+            "main" prio=5 tid=1 Runnable
+              | sysTid=123 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
+              at MainActivity.run(MainActivity.java:177)
+            """
+              .trimIndent()
+          )
+        )
+      )
+    val parser = ThreadDumpParser(SentryOptions(), false)
+
+    parser.parse(lines)
+
+    val frame = parser.threads.single().stacktrace!!.frames!!.last()
+    assertEquals("MainActivity", frame.module)
+  }
+
+  @Test
+  fun `uses class name as module when a JNI frame has no package`() {
+    val lines =
+      Lines.readLines(
+        BufferedReader(
+          StringReader(
+            """
+            ----- pid 123 at 2023-04-04 22:06:31.064728684+0200 -----
+            "main" prio=5 tid=1 Runnable
+              | sysTid=123 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
+              at MainActivity.nativeRun(Native method)
+            """
+              .trimIndent()
+          )
+        )
+      )
+    val parser = ThreadDumpParser(SentryOptions(), false)
+
+    parser.parse(lines)
+
+    val frame = parser.threads.single().stacktrace!!.frames!!.last()
+    assertEquals("MainActivity", frame.module)
+    assertEquals("nativeRun", frame.function)
+    assertEquals(true, frame.isNative)
   }
 
   @Test
