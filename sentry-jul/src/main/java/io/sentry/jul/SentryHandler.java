@@ -53,6 +53,8 @@ public class SentryHandler extends Handler {
    */
   private boolean printfStyle;
 
+  private boolean enableLogs;
+
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.SEVERE;
   private @NotNull Level minimumLevel = Level.INFO;
@@ -112,7 +114,8 @@ public class SentryHandler extends Handler {
       return;
     }
     try {
-      if (ScopesAdapter.getInstance().getOptions().getLogs().isEnabled()
+      if (enableLogs
+          && ScopesAdapter.getInstance().getOptions().getLogs().isEnabled()
           && record.getLevel().intValue() >= minimumLevel.intValue()) {
         captureLog(record);
       }
@@ -191,6 +194,7 @@ public class SentryHandler extends Handler {
     final LogManager manager = LogManager.getLogManager();
     final String className = SentryHandler.class.getName();
     setPrintfStyle(Boolean.parseBoolean(manager.getProperty(className + ".printfStyle")));
+    setEnableLogs(Boolean.parseBoolean(manager.getProperty(className + ".enableLogs")));
     setLevel(parseLevelOrDefault(manager.getProperty(className + ".level")));
     final String minimumBreadCrumbLevel =
         manager.getProperty(className + ".minimumBreadcrumbLevel");
@@ -388,6 +392,14 @@ public class SentryHandler extends Handler {
 
   public void setPrintfStyle(final boolean printfStyle) {
     this.printfStyle = printfStyle;
+  }
+
+  public void setEnableLogs(final boolean enableLogs) {
+    this.enableLogs = enableLogs;
+  }
+
+  public boolean isEnableLogs() {
+    return enableLogs;
   }
 
   public void setMinimumBreadcrumbLevel(final @Nullable Level minimumBreadcrumbLevel) {
