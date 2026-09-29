@@ -19,11 +19,13 @@
 package io.sentry.util;
 
 import java.util.UUID;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Utility class for generating UUIDs and half-length (1 long) UUIDs. Adapted from `java.util.UUID`
  * to use a faster random number generator.
  */
+@ApiStatus.Internal
 public final class UUIDGenerator {
 
   @SuppressWarnings("NarrowingCompoundAssignment")
