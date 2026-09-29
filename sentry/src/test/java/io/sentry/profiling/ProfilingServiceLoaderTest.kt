@@ -5,6 +5,7 @@ import io.sentry.ILogger
 import io.sentry.IProfileConverter
 import io.sentry.ISentryExecutorService
 import io.sentry.ProfileLifecycle
+import io.sentry.SentryDate
 import io.sentry.TracesSampler
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.profiling.SentryProfile
@@ -76,6 +77,14 @@ class ContinuousProfilerStub() : IContinuousProfiler {
   }
 
   override fun getChunkId(): SentryId {
+    TODO("Not yet implemented")
+  }
+
+  override fun getProfileRecordingState(
+    profilerId: SentryId,
+    startTime: SentryDate,
+    endTime: SentryDate,
+  ): ProfileRecordingState {
     TODO("Not yet implemented")
   }
 }
