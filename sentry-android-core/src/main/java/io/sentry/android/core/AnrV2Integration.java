@@ -118,8 +118,8 @@ public class AnrV2Integration implements Integration, Closeable {
     }
 
     @Override
-    public int getTargetReason() {
-      return ApplicationExitInfo.REASON_ANR;
+    public boolean matches(final @NotNull ApplicationExitInfo exitInfo) {
+      return exitInfo.getReason() == ApplicationExitInfo.REASON_ANR;
     }
 
     @Override
@@ -130,6 +130,11 @@ public class AnrV2Integration implements Integration, Closeable {
     @Override
     public @Nullable Long getLastReportedTimestamp() {
       return AndroidEnvelopeCache.lastReportedAnr(options);
+    }
+
+    @Override
+    public void markReported(final long timestamp) {
+      AndroidEnvelopeCache.markAnrReported(options, timestamp);
     }
 
     @Override

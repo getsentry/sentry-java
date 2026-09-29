@@ -5,9 +5,11 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import java.util.List;
 import java.util.Properties;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class DebugMetaPropertiesApplier {
 
   public static @NotNull String DEBUG_META_PROPERTIES_FILENAME = "sentry-debug-meta.properties";

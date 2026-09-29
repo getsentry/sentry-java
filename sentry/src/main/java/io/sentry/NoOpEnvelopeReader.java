@@ -2,9 +2,11 @@ package io.sentry;
 
 import java.io.IOException;
 import java.io.InputStream;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpEnvelopeReader implements IEnvelopeReader {
 
   private static final NoOpEnvelopeReader instance = new NoOpEnvelopeReader();
