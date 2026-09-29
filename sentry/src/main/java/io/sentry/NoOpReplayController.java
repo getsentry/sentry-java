@@ -1,9 +1,11 @@
 package io.sentry;
 
 import io.sentry.protocol.SentryId;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpReplayController implements ReplayController {
 
   private static final NoOpReplayController instance = new NoOpReplayController();
@@ -18,6 +20,9 @@ public final class NoOpReplayController implements ReplayController {
   public void start() {}
 
   @Override
+  public void startBuffering() {}
+
+  @Override
   public void stop() {}
 
   @Override
@@ -27,12 +32,26 @@ public final class NoOpReplayController implements ReplayController {
   public void resume() {}
 
   @Override
+  public void flush() {}
+
+  @Override
+  public void onAppForegrounded(boolean startNewReplay) {}
+
+  @Override
+  public void onAppBackgrounded() {}
+
+  @Override
+  public void onAppSessionEnded() {}
+
+  @Override
   public boolean isRecording() {
     return false;
   }
 
   @Override
-  public void captureReplay(@Nullable Boolean isTerminating) {}
+  public @NotNull SentryId captureReplay(@Nullable Boolean isTerminating) {
+    return SentryId.EMPTY_ID;
+  }
 
   @Override
   public @NotNull SentryId getReplayId() {
