@@ -34,6 +34,34 @@ Connect a device, then:
 Results print to the console and are written to
 `build/outputs/connected_android_test_additional_output/.../*-benchmarkData.json`.
 
+## Running on Sauce Labs
+
+The `Integration Tests - Macrobenchmark` workflow (manual trigger) runs the same benchmark on a
+Sauce Labs real device. It reports numbers only — it is not a PR gate, because cloud devices run
+with unlocked CPU clocks and the run-to-run spread swamps most SDK-init changes.
+
+Getting the numbers *back off* the device is the awkward part, so if you are changing this, know
+what has already been ruled out:
+
+- **`artifacts.download.match` in `.sauce/*.yml` cannot reach the device.** It filters a
+  hardcoded list of assets Sauce hosts for the job (`device.log`, `junit.xml`, `video.mp4`,
+  `network.har`, `crash.json`, `screenshots.zip`); nothing enumerates device storage. A
+  `*-benchmarkData.json` pattern there matches nothing.
+- **Macrobenchmark's own reporting channels don't survive.** The readable summary goes into the
+  instrumentation status bundle, which only Studio and AGP consume, and `benchmarkData.json` is
+  written to the app's external media dir, which Sauce never pulls.
+- **The Real Device Access API can pull device files, but not on our account.** It offers
+  `pullFile` and `executeShellCommand`, and `GET /rdc/v2/devices/status` even lists the whole
+  public fleet — but `POST /sessions` answers `deviceClasses=[PRIVATE_DEVICE]` and there is no
+  parameter to request a public device. It would need leased private devices. That route would
+  also return the per-iteration perfetto traces, so it is worth revisiting if we ever get them.
+
+So `SentryStartupBenchmark` echoes its own `benchmarkData.json` into logcat in chunks, which
+reaches CI inside `device.log`, and `scripts/parse-macrobenchmark-log.py` reassembles it and
+writes a `timeToInitialDisplay` table to the job summary. Note this recovers the metrics only —
+the perfetto traces are megabytes each and cannot go through logcat, so sub-millisecond work
+still needs a local device.
+
 ### Device hygiene (do this for trustworthy numbers)
 
 - **Wake and unlock the device first** — the launch check fails with "Unable to confirm activity

@@ -35,12 +35,6 @@ public class TimeSpan implements Comparable<TimeSpan> {
     this.stopUptimeMs = stopUptimeMs;
   }
 
-  /** Start the time span */
-  public void start() {
-    startUptimeMs = SystemClock.uptimeMillis();
-    startUnixTimeMs = System.currentTimeMillis();
-  }
-
   /**
    * @param uptimeMs the uptime in ms, provided by {@link SystemClock#uptimeMillis()}
    */

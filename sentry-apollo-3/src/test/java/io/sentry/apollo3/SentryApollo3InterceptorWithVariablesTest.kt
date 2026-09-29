@@ -55,9 +55,9 @@ class SentryApollo3InterceptorWithVariablesTest {
 }""",
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
       beforeSpan: BeforeSpanCallback? = null,
+      options: SentryOptions = SentryOptions().apply { dsn = "http://key@localhost/proj" },
     ): ApolloClient {
-      whenever(scopes.options)
-        .thenReturn(SentryOptions().apply { dsn = "http://key@localhost/proj" })
+      whenever(scopes.options).thenReturn(options)
 
       server.enqueue(
         MockResponse()
@@ -84,6 +84,28 @@ class SentryApollo3InterceptorWithVariablesTest {
         check {
           assertTransactionDetails(it)
           assertEquals(SpanStatus.OK, it.spans.first().status)
+        },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `does not attach GraphQL variables when data collection disables them`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "http://key@localhost/proj"
+        dataCollection.graphql.setVariables(false)
+      }
+
+    executeQuery(fixture.getSut(options = options))
+
+    verify(fixture.scopes)
+      .captureTransaction(
+        check {
+          assertNull(it.spans.first().data?.get("variables"))
+          assertNotNull(it.spans.first().data?.get("operationId"))
         },
         anyOrNull<TraceContext>(),
         anyOrNull(),
