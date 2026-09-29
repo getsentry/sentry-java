@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -91,7 +92,7 @@ public final class HostnameCache {
     this.cacheDuration = cacheDuration;
     this.getLocalhost = Objects.requireNonNull(getLocalhost, "getLocalhost is required");
     // A single thread executor whose worker thread times out while idle, so no thread is kept
-    // alive between the infrequent cache refreshes.
+    // alive between the infrequent cache refreshes and nothing has to shut it down.
     final @NotNull ThreadPoolExecutor executor =
         new ThreadPoolExecutor(
             1,
@@ -103,14 +104,6 @@ public final class HostnameCache {
     executor.allowCoreThreadTimeOut(true);
     this.executorService = executor;
     updateCache();
-  }
-
-  void close() {
-    this.executorService.shutdown();
-  }
-
-  boolean isClosed() {
-    return this.executorService.isShutdown();
   }
 
   /**
@@ -144,8 +137,21 @@ public final class HostnameCache {
           return null;
         };
 
+    final Future<Void> futureTask;
     try {
-      final Future<Void> futureTask = executorService.submit(hostRetriever);
+      futureTask = executorService.submit(hostRetriever);
+    } catch (RejectedExecutionException e) {
+      // updateRunning is cleared by the callable's finally block, which never runs if the callable
+      // was never queued. Clearing it here keeps a failure to queue from latching the flag on and
+      // silencing every later refresh.
+      updateRunning.set(false);
+      handleCacheUpdateFailure();
+      return;
+    }
+
+    // A timeout or interrupt below leaves the callable running, so it still clears updateRunning
+    // itself; doing it here as well would let refreshes pile up behind a slow lookup.
+    try {
       futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

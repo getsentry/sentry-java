@@ -46,7 +46,7 @@ public class SentryUserFilter extends OncePerRequestFilter {
     for (final SentryUserProvider provider : sentryUserProviders) {
       apply(user, provider.provideUser());
     }
-    if (scopes.getOptions().isSendDefaultPii()) {
+    if (scopes.getOptions().getDataCollectionResolver().isUserInfo()) {
       if (IpAddressUtils.isDefault(user.getIpAddress())) {
         // unset {{auto}} as it would set the server's ip address as a user ip address
         user.setIpAddress(null);
