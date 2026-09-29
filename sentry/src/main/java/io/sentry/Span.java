@@ -120,6 +120,12 @@ public final class Span implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(
+      @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
+    return startChild(operation, description, timestamp, Instrumenter.SENTRY);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
     if (finished) {
       return NoOpSpan.getInstance();

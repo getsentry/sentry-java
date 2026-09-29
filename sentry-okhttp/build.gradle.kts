@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.detekt)
   id("io.sentry.javadoc")
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -38,6 +39,7 @@ dependencies {
   testImplementation(libs.mockito.inline)
   testImplementation(libs.okhttp)
   testImplementation(libs.okhttp.mockwebserver)
+  testImplementation(libs.google.truth)
 }
 
 buildConfig {

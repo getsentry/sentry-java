@@ -275,7 +275,7 @@ public class ThreadDumpParser {
         final SentryStackFrame frame = new SentryStackFrame();
         final String packageName = javaRe.group(1);
         final String className = javaRe.group(2);
-        final String module = String.format("%s.%s", packageName, className);
+        final String module = toModuleName(packageName, className);
         frame.setModule(module);
         frame.setFunction(javaRe.group(3));
         frame.setFilename(javaRe.group(4));
@@ -312,7 +312,7 @@ public class ThreadDumpParser {
         final SentryStackFrame frame = new SentryStackFrame();
         final String packageName = jniRe.group(1);
         final String className = jniRe.group(2);
-        final String module = String.format("%s.%s", packageName, className);
+        final String module = toModuleName(packageName, className);
         frame.setModule(module);
         frame.setFunction(jniRe.group(3));
         frame.setInApp(stackTraceFactory.isInApp(module));
@@ -388,6 +388,11 @@ public class ThreadDumpParser {
     // it's a thread dump
     stackTrace.setSnapshot(true);
     return stackTrace;
+  }
+
+  private @NotNull String toModuleName(
+      final @Nullable String packageName, final @NotNull String className) {
+    return packageName == null || packageName.isEmpty() ? className : packageName + "." + className;
   }
 
   private void markThreads() {
