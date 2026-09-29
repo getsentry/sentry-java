@@ -754,7 +754,7 @@ final class ManifestMetadataReader {
           }
         }
 
-        if (metadata.containsKey(ENABLE_LOGS)) {
+        if (containsKey(metadata, ENABLE_LOGS)) {
           final boolean enableLogs = readBool(metadata, logger, ENABLE_LOGS, false);
           if (enableLogs) {
             logger.log(
