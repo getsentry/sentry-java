@@ -378,5 +378,6 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     delete(TAGS_FILENAME);
     delete(TRACE_FILENAME);
     delete(TRANSACTION_FILENAME);
+    delete(REPLAY_FILENAME);
   }
 }

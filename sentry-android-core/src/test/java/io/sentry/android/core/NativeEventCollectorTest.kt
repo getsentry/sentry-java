@@ -179,6 +179,35 @@ class NativeEventCollectorTest {
     assertNull(noMatch)
   }
 
+  @Test
+  fun `does not match when the gap exceeds the default threshold`() {
+    val sut = fixture.getSut(tmpDir)
+    copyEnvelopeToOutbox("native-event.txt")
+
+    val timestamp = DateUtils.getDateTime("2023-07-15T10:30:05.800Z").time
+    assertNull(sut.findAndRemoveMatchingNativeEvent(timestamp))
+  }
+
+  @Test
+  fun `matches when the gap is within a raised threshold`() {
+    fixture.options.tombstoneMergeTimeThresholdMillis = 10000
+    val sut = fixture.getSut(tmpDir)
+    copyEnvelopeToOutbox("native-event.txt")
+
+    val timestamp = DateUtils.getDateTime("2023-07-15T10:30:05.800Z").time
+    assertNotNull(sut.findAndRemoveMatchingNativeEvent(timestamp))
+  }
+
+  @Test
+  fun `does not match when the gap exceeds a lowered threshold`() {
+    fixture.options.tombstoneMergeTimeThresholdMillis = 1000
+    val sut = fixture.getSut(tmpDir)
+    copyEnvelopeToOutbox("native-event.txt")
+
+    val timestamp = DateUtils.getDateTime("2023-07-15T10:30:02.000Z").time
+    assertNull(sut.findAndRemoveMatchingNativeEvent(timestamp))
+  }
+
   private fun copyEnvelopeToOutbox(name: String): File {
     val resourcePath = "envelopes/$name"
     val inputStream =
