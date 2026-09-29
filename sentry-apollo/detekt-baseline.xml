@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>EmptyFunctionBlock:SentryApolloInterceptor.kt$SentryApolloInterceptor${}</ID>
+    <ID>SwallowedException:SentryApolloInterceptorTest.kt$SentryApolloInterceptorTest$e: ApolloException</ID>
+    <ID>TooGenericExceptionCaught:SentryApolloInterceptor.kt$SentryApolloInterceptor$e: Exception</ID>
+    <ID>TooGenericExceptionThrown:SentryApolloInterceptorTest.kt$SentryApolloInterceptorTest$throw RuntimeException()</ID>
+  </CurrentIssues>
+</SmellBaseline>
