@@ -34,7 +34,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
   private var method: String
 
   init {
-    val urlDetails = UrlUtils.parse(request.url.toString())
+    val urlDetails = UrlUtils.parse(request.url.toString(), scopes.options.dataCollectionResolver)
     url = urlDetails.urlOrFallback
     method = request.method
 
@@ -62,7 +62,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
    * due to interceptors.
    */
   fun setRequest(request: Request) {
-    val urlDetails = UrlUtils.parse(request.url.toString())
+    val urlDetails = UrlUtils.parse(request.url.toString(), scopes.options.dataCollectionResolver)
     url = urlDetails.urlOrFallback
 
     val host: String = request.url.host
@@ -78,8 +78,8 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
       breadcrumb.setData("url", urlDetails.url!!)
     }
     breadcrumb.setData("method", method.uppercase())
-    if (urlDetails.query != null) {
-      breadcrumb.setData("http.query", urlDetails.query!!)
+    urlDetails.query?.let {
+      breadcrumb.setData("http.query", it)
     }
     if (urlDetails.fragment != null) {
       breadcrumb.setData("http.fragment", urlDetails.fragment!!)

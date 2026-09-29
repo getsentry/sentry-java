@@ -349,16 +349,19 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
   @SuppressWarnings("unchecked")
   private void setBreadcrumbs(final @NotNull SentryBaseEvent event) {
+    final List<Breadcrumb> eventBreadcrumbs = event.getBreadcrumbs();
+    if (eventBreadcrumbs != null && !eventBreadcrumbs.isEmpty()) {
+      // the event already carries its own breadcrumbs (e.g. a tombstone-merged native
+      // crash event), so appending the persisted ones here would duplicate entries. Skip the
+      // disk read altogether since the result would be discarded anyway.
+      return;
+    }
     final List<Breadcrumb> breadcrumbs =
         (List<Breadcrumb>) readFromDisk(options, BREADCRUMBS_FILENAME, List.class);
     if (breadcrumbs == null) {
       return;
     }
-    if (event.getBreadcrumbs() == null) {
-      event.setBreadcrumbs(breadcrumbs);
-    } else {
-      event.getBreadcrumbs().addAll(breadcrumbs);
-    }
+    event.setBreadcrumbs(breadcrumbs);
   }
 
   @SuppressWarnings("unchecked")
@@ -678,7 +681,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     if (user.getId() == null) {
       user.setId(getDeviceId());
     }
-    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
+    if (user.getIpAddress() == null && options.getDataCollectionResolver().isUserInfo()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -797,9 +800,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
     @Override
     public boolean supports(@NotNull Object hint) {
-      // While this is specifically an ANR enricher we discriminate enrichment application
-      // on the broader AbnormalExit hints for now.
-      return hint instanceof AbnormalExit;
+      return hint instanceof AnrV2Integration.AnrV2Hint;
     }
 
     // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"

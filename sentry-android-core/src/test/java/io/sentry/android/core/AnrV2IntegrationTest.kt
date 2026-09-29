@@ -222,6 +222,18 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
   }
 
   @Test
+  fun `MemoryLimiter marker does not suppress matching ANR exit`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    File(fixture.options.cacheDirPath!!, AndroidEnvelopeCache.LAST_MEMORY_LIMITER_REPORT)
+      .writeText(newTimestamp.toString())
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
   fun `when traceInputStream is null, does not report ANR`() {
     val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
     fixture.addAppExitInfo(timestamp = newTimestamp, addTrace = false)
