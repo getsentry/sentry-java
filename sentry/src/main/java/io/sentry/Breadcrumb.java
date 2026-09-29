@@ -73,7 +73,9 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   }
 
   Breadcrumb(final @NotNull Breadcrumb breadcrumb) {
-    this.nanos = System.nanoTime();
+    // A clone stands in for the breadcrumb it was copied from, so it inherits its tie-breaker
+    // instead of taking a fresh one and sorting after everything recorded since.
+    this.nanos = breadcrumb.nanos;
     this.timestamp = breadcrumb.timestamp;
     this.timestampMs = breadcrumb.timestampMs;
     this.message = breadcrumb.message;
@@ -192,8 +194,15 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    * @return the breadcrumb
    */
   public static @NotNull Breadcrumb http(final @NotNull String url, final @NotNull String method) {
+    return createHttpBreadcrumb(url, method, null);
+  }
+
+  private static @NotNull Breadcrumb createHttpBreadcrumb(
+      final @NotNull String url,
+      final @NotNull String method,
+      final @Nullable DataCollectionResolver resolver) {
     final Breadcrumb breadcrumb = new Breadcrumb();
-    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(url);
+    final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(url, resolver);
     breadcrumb.setType("http");
     breadcrumb.setCategory("http");
     if (urlDetails.getUrl() != null) {
@@ -220,7 +229,21 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    */
   public static @NotNull Breadcrumb http(
       final @NotNull String url, final @NotNull String method, final @Nullable Integer code) {
-    final Breadcrumb breadcrumb = http(url, method);
+    final Breadcrumb breadcrumb = createHttpBreadcrumb(url, method, null);
+    if (code != null) {
+      breadcrumb.setData("status_code", code);
+      breadcrumb.setLevel(levelFromHttpStatusCode(code));
+    }
+    return breadcrumb;
+  }
+
+  @ApiStatus.Internal
+  public static @NotNull Breadcrumb http(
+      final @NotNull String url,
+      final @NotNull String method,
+      final @Nullable Integer code,
+      final @Nullable DataCollectionResolver resolver) {
+    final Breadcrumb breadcrumb = createHttpBreadcrumb(url, method, resolver);
     if (code != null) {
       breadcrumb.setData("status_code", code);
       breadcrumb.setLevel(levelFromHttpStatusCode(code));
@@ -832,6 +855,12 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
   @Override
   @SuppressWarnings("JavaUtilDate")
   public int compareTo(@NotNull Breadcrumb o) {
+    final int byTimestamp = getTimestamp().compareTo(o.getTimestamp());
+    if (byTimestamp != 0) {
+      return byTimestamp;
+    }
+    // Timestamps are millisecond-granular, so breadcrumbs recorded in the same millisecond tie.
+    // nanos is only meaningful within a process run, which is all a tie-breaker has to cover.
     return nanos.compareTo(o.nanos);
   }
 

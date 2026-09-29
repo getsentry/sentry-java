@@ -1,10 +1,76 @@
 package io.sentry.util
 
+import com.google.common.truth.Truth.assertThat
+import io.sentry.Breadcrumb
+import io.sentry.ISpan
+import io.sentry.KeyValueCollectionBehavior
+import io.sentry.SentryOptions
+import io.sentry.SpanDataConvention
+import io.sentry.protocol.Request
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
 class UrlUtilsTest {
+  @Test
+  fun `resolver aware helpers preserve legacy query values`() {
+    val resolver = SentryOptions().dataCollectionResolver
+    val details = UrlUtils.parse("https://example.com?token=secret", resolver)
+    val request = Request()
+
+    details.applyToRequest(request)
+
+    assertThat(request.queryString).isEqualTo("token=secret")
+  }
+
+  @Test
+  fun `resolver aware helpers filter request span and breadcrumb queries`() {
+    val options = SentryOptions().also { it.dataCollection.setUserInfo(false) }
+    val details =
+      UrlUtils.parse(
+        "https://example.com?name=value&token=secret",
+        options.dataCollectionResolver,
+      )
+    val request = Request()
+    val span = mock<ISpan>()
+    val breadcrumb =
+      Breadcrumb.http(
+        "https://example.com?name=value&token=secret",
+        "GET",
+        null,
+        options.dataCollectionResolver,
+      )
+
+    details.applyToRequest(request)
+    details.applyToSpan(span)
+
+    assertThat(request.queryString).isEqualTo("name=value&token=[Filtered]")
+    verify(span).setData(SpanDataConvention.HTTP_QUERY_KEY, "name=value&token=[Filtered]")
+    assertThat(breadcrumb.getData("http.query")).isEqualTo("name=value&token=[Filtered]")
+  }
+
+  @Test
+  fun `resolver aware helpers remove query values in off mode`() {
+    val options =
+      SentryOptions().also { it.dataCollection.urlQueryParams = KeyValueCollectionBehavior.off() }
+    val details = UrlUtils.parse("https://example.com?name=value", options.dataCollectionResolver)
+    val request = Request()
+    val breadcrumb =
+      Breadcrumb.http(
+        "https://example.com?name=value",
+        "GET",
+        null,
+        options.dataCollectionResolver,
+      )
+
+    details.applyToRequest(request)
+
+    assertThat(request.queryString).isNull()
+    assertThat(breadcrumb.getData("http.query")).isNull()
+  }
+
   @Test
   fun `returns null for null`() {
     assertNull(UrlUtils.parseNullable(null))
@@ -291,10 +357,36 @@ class UrlUtilsTest {
   }
 
   @Test
-  fun `does not extract details from websockets uri`() {
-    val urlDetails = UrlUtils.parse("wss://example.com/socket")
-    assertNull(urlDetails.url)
-    assertNull(urlDetails.query)
-    assertNull(urlDetails.fragment)
+  fun `extracts details from websocket uri`() {
+    val urlDetails = UrlUtils.parse("ws://example.com/socket?channel=updates#top")
+
+    assertThat(urlDetails.url).isEqualTo("ws://example.com/socket")
+    assertThat(urlDetails.query).isEqualTo("channel=updates")
+    assertThat(urlDetails.fragment).isEqualTo("top")
+  }
+
+  @Test
+  fun `filters query parameters from secure websocket uri`() {
+    val options = SentryOptions().also { it.dataCollection.setUserInfo(false) }
+    val urlDetails =
+      UrlUtils.parse(
+        "wss://example.com/socket?channel=updates&token=secret",
+        options.dataCollectionResolver,
+      )
+
+    assertThat(urlDetails.url).isEqualTo("wss://example.com/socket")
+    assertThat(urlDetails.query).isEqualTo("channel=updates&token=[Filtered]")
+    assertThat(urlDetails.fragment).isNull()
+  }
+
+  @Test
+  fun `does not extract details from websocket uri without authority`() {
+    listOf("ws:example.com/socket", "wss:///socket").forEach { url ->
+      val urlDetails = UrlUtils.parse(url)
+
+      assertThat(urlDetails.url).isNull()
+      assertThat(urlDetails.query).isNull()
+      assertThat(urlDetails.fragment).isNull()
+    }
   }
 }

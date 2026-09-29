@@ -6,6 +6,10 @@ public final class io/sentry/compose/BuildConfig {
 	public fun <init> ()V
 }
 
+public final class io/sentry/compose/LocalSentrySpanKt {
+	public static final fun getLocalSentrySpan ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+}
+
 public final class io/sentry/compose/SentryComposeHelperKt {
 	public static final fun boundsInWindow (Landroidx/compose/ui/layout/LayoutCoordinates;Landroidx/compose/ui/layout/LayoutCoordinates;)Landroidx/compose/ui/geometry/Rect;
 }
