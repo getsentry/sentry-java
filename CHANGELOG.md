@@ -4,6 +4,8 @@
 
 ### Features
 
+- Add experimental, opt-in Cronet request spans and HTTP breadcrumbs with `sentry-android-cronet` ([#6185](https://github.com/getsentry/sentry-java/pull/6185))
+
 - Deprecate `sendDefaultPii` in favor of `dataCollection` ahead of its removal in 9.0 ([#6158](https://github.com/getsentry/sentry-java/pull/6158))
 - Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
 
