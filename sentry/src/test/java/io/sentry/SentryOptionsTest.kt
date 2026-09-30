@@ -3,9 +3,6 @@ package io.sentry
 import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryOptions.RequestSize
 import io.sentry.logger.ILoggerBatchProcessorFactory
-import io.sentry.logger.LoggerApi
-import io.sentry.test.createSentryClientMock
-import io.sentry.test.createTestScopes
 import io.sentry.util.StringUtils
 import java.io.File
 import java.net.Proxy
@@ -19,11 +16,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 
 class SentryOptionsTest {
@@ -585,7 +579,6 @@ class SentryOptionsTest {
     externalOptions.isEnableSpotlight = true
     externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
     externalOptions.isGlobalHubMode = true
-    externalOptions.isEnableLogs = true
     externalOptions.isEnableMetrics = false
     externalOptions.profileSessionSampleRate = 0.8
     externalOptions.profilingTracesDirPath = "/profiling-traces"
@@ -660,72 +653,6 @@ class SentryOptionsTest {
     val options = SentryOptions()
     options.merge(externalOptions)
     assertTrue(options.isEnableUncaughtExceptionHandler)
-  }
-
-  @Test
-  fun `merging options does not warn when legacy logs configuration is absent`() {
-    val logger = mock<ILogger>()
-    val options =
-      SentryOptions().also {
-        it.isDebug = true
-        it.setLogger(logger)
-      }
-
-    options.merge(ExternalOptions())
-
-    verify(logger, never()).log(eq(SentryLevel.WARNING), any<String>())
-  }
-
-  @Test
-  fun `merging options warns when legacy logs configuration is true`() {
-    val logger = mock<ILogger>()
-    val options =
-      SentryOptions().also {
-        it.isDebug = true
-        it.setLogger(logger)
-      }
-
-    options.merge(ExternalOptions().apply { isEnableLogs = true })
-
-    verify(logger)
-      .log(
-        SentryLevel.WARNING,
-        "The 'logs.enabled' option is no longer supported. Manual Sentry.logger() calls no " +
-          "longer require it, and automatic logging integrations now require their own opt-ins.",
-        *emptyArray(),
-      )
-    assertLegacyLogsConfigurationDoesNotDisableCapture(options)
-  }
-
-  @Test
-  fun `merging options warns when legacy logs configuration is false`() {
-    val logger = mock<ILogger>()
-    val options =
-      SentryOptions().also {
-        it.isDebug = true
-        it.setLogger(logger)
-      }
-
-    options.merge(ExternalOptions().apply { isEnableLogs = false })
-
-    verify(logger)
-      .log(
-        SentryLevel.WARNING,
-        "The 'logs.enabled' option no longer disables manual Sentry.logger() calls. Automatic " +
-          "logging integrations remain disabled unless enabled through their own opt-ins.",
-        *emptyArray(),
-      )
-    assertLegacyLogsConfigurationDoesNotDisableCapture(options)
-  }
-
-  private fun assertLegacyLogsConfigurationDoesNotDisableCapture(options: SentryOptions) {
-    options.dsn = "https://key@sentry.io/proj"
-    val client = createSentryClientMock()
-    val scopes = createTestScopes(options).apply { bindClient(client) }
-
-    LoggerApi(scopes).info("test log")
-
-    verify(client).captureLog(any(), anyOrNull())
   }
 
   @Test
