@@ -1,11 +1,14 @@
 package io.sentry.android.core
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ISentryClient
 import io.sentry.SentryMetricsEvent
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.getProperty
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -14,6 +17,7 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -52,6 +56,16 @@ class AndroidMetricsBatchProcessorTest {
   fun `constructor registers as AppState listener`() {
     fixture.getSut()
     assertNotNull(AppState.getInstance().lifecycleObserver)
+  }
+
+  @Test
+  fun `onBackground does not flush before first accepted item`() {
+    val sut = fixture.getSut(useImmediateExecutor = true)
+
+    sut.onBackground()
+
+    assertThat(sut.getProperty<AtomicBoolean>("hasScheduled").get()).isFalse()
+    verify(fixture.client, never()).captureBatchedMetricsEvents(any())
   }
 
   @Test
