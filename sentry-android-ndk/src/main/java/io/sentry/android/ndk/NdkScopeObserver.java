@@ -54,6 +54,15 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   }
 
   @Override
+  public void setEnvironment(@Nullable String environment) {
+    try {
+      options.getExecutorService().submit(() -> nativeScope.setEnvironment(environment));
+    } catch (Throwable e) {
+      options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setEnvironment has an error.");
+    }
+  }
+
+  @Override
   public void addBreadcrumb(final @NotNull Breadcrumb crumb) {
     try {
       options

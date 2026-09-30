@@ -7,6 +7,7 @@ import io.sentry.ISpan
 import io.sentry.NoOpSpan
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -33,6 +34,7 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.header.Header
 import org.apache.kafka.common.header.Headers
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
@@ -64,6 +66,9 @@ class SentryKafkaProducerTest {
     doAnswer { (it.arguments[0] as ScopeCallback).run(Scope(options)) }
       .whenever(scopes)
       .configureScope(any())
+    doAnswer { (it.arguments[1] as ScopeCallback).run(Scope(options)) }
+      .whenever(scopes)
+      .configureScope(anyOrNull<ScopeType>(), any())
     delegate = mock()
     whenever(delegate.send(any(), any())).thenReturn(CompletableFuture.completedFuture(null))
   }

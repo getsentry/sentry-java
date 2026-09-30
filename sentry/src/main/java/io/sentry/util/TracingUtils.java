@@ -8,6 +8,7 @@ import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.NoOpLogger;
 import io.sentry.PropagationContext;
+import io.sentry.ScopeType;
 import io.sentry.SentryOptions;
 import io.sentry.SentryTraceHeader;
 import io.sentry.SpanContext;
@@ -75,7 +76,10 @@ public final class TracingUtils {
       return new TracingHeaders(sentryTraceHeader, baggageHeader, w3cTraceparentHeader);
     } else {
       final @NotNull PropagationContextHolder returnValue = new PropagationContextHolder();
+      // the combined view writes the propagation context to the same default scope as before, but
+      // reads scope data such as the environment across current -> isolation -> global
       scopes.configureScope(
+          ScopeType.COMBINED,
           (scope) -> {
             returnValue.propagationContext = maybeUpdateBaggage(scope, sentryOptions);
           });

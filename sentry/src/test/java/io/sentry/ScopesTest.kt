@@ -2751,6 +2751,24 @@ class ScopesTest {
   }
 
   @Test
+  fun `log environment attribute uses the scope environment`() {
+    val (sut, mockClient) =
+      getEnabledScopes {
+        it.logs.isEnabled = true
+        it.environment = "testenv"
+      }
+    sut.configureScope(ScopeType.GLOBAL) { it.environment = "scope-env" }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check { assertEquals("scope-env", it.attributes?.get("sentry.environment")?.value) },
+        anyOrNull(),
+      )
+  }
+
+  @Test
   fun `creating log with timestamp works`() {
     val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = true }
 
@@ -3372,6 +3390,21 @@ class ScopesTest {
           assertEquals(3.4, it.value)
           assertEquals("distribution", it.type)
         },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `metric environment attribute uses the scope environment`() {
+    val (sut, mockClient) = getEnabledScopes { it.environment = "testenv" }
+    sut.configureScope(ScopeType.GLOBAL) { it.environment = "scope-env" }
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check { assertEquals("scope-env", it.attributes?.get("sentry.environment")?.value) },
         anyOrNull(),
         anyOrNull(),
       )

@@ -8,6 +8,7 @@ import io.sentry.ISentryLifecycleToken
 import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.RequestSize.ALWAYS
 import io.sentry.SentryOptions.RequestSize.MEDIUM
@@ -63,6 +64,9 @@ class SentrySpringFilterTest {
       doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
         .whenever(scopes)
         .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
       this.request =
         request
           ?: MockHttpServletRequest().apply {

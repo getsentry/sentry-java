@@ -290,6 +290,7 @@ class ScopeTest {
     scope.addBreadcrumb(Breadcrumb())
     scope.setTag("some", "tag")
     scope.screen = "MainActivity"
+    scope.environment = "staging"
     scope.setExtra("some", "extra")
     scope.setAttribute("some", "attribute")
     scope.setContexts("some", "context")
@@ -304,6 +305,7 @@ class ScopeTest {
     assertNull(scope.user)
     assertNull(scope.request)
     assertNull(scope.screen)
+    assertNull(scope.environment)
     assertEquals(0, scope.fingerprint.size)
     assertEquals(0, scope.breadcrumbs.size)
     assertEquals(0, scope.tags.size)
@@ -462,6 +464,21 @@ class ScopeTest {
       assertEquals("env", it.current.environment)
       assertEquals("123", it.current.distinctId)
     }
+  }
+
+  @Test
+  fun `Scope starts a new session with scope environment`() {
+    val options =
+      SentryOptions().apply {
+        release = "rel"
+        environment = "options-env"
+      }
+    val scope = Scope(options)
+    scope.environment = "scope-env"
+
+    val sessionPair = scope.startSession()
+
+    assertNotNull(sessionPair) { assertEquals("scope-env", it.current.environment) }
   }
 
   @Test
@@ -802,6 +819,47 @@ class ScopeTest {
 
     scope.level = WARNING
     verify(observer).setLevel(eq(WARNING))
+  }
+
+  @Test
+  fun `Scope clear level sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    scope.clear()
+
+    verify(observer).setLevel(null)
+  }
+
+  @Test
+  fun `Scope set environment sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    scope.environment = "staging"
+    verify(observer).setEnvironment(eq("staging"))
+  }
+
+  @Test
+  fun `Scope set environment null sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    scope.environment = null
+    verify(observer).setEnvironment(null)
+  }
+
+  @Test
+  fun `Scope clone copies environment`() {
+    val scope = Scope(SentryOptions())
+    scope.environment = "staging"
+
+    val clone = scope.clone()
+
+    assertEquals("staging", clone.environment)
   }
 
   @Test
