@@ -2,16 +2,16 @@
 
 ## Unreleased
 
-### Features
-
-- Deprecate `sendDefaultPii` in favor of `dataCollection` ahead of its removal in 9.0 ([#6158](https://github.com/getsentry/sentry-java/pull/6158))
-- Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
-
-### Fixes
+### Breaking Changes
 
 - Capture direct `Sentry.logger()` and `Sentry.metrics()` calls regardless of `options.getLogs().isEnabled()` and `options.getMetrics().isEnabled()` ([#6184](https://github.com/getsentry/sentry-java/pull/6184))
   - `options.getLogs().setEnabled(...)` and `options.getMetrics().setEnabled(...)` continue to control automatic integrations, but will be removed in the upcoming major release. Each logging integration will then have a separate opt-in flag.
   - Use `options.getLogs().setBeforeSend(...)` and `options.getMetrics().setBeforeSend(...)` to filter manually emitted telemetry. Return `null` from either callback to drop it.
+
+### Features
+
+- Deprecate `sendDefaultPii` in favor of `dataCollection` ahead of its removal in 9.0 ([#6158](https://github.com/getsentry/sentry-java/pull/6158))
+- Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
 
 ### Improvements
 
