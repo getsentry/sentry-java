@@ -3834,10 +3834,6 @@ public class SentryOptions implements RateLimiterConfig {
       }
     }
 
-    if (options.isEnableLogs() != null) {
-      getLogs().setEnabled(options.isEnableLogs());
-    }
-
     if (options.isEnableMetrics() != null) {
       getMetrics().setEnabled(options.isEnableMetrics());
     }
@@ -4092,9 +4088,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Logs {
 
-    /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
-    private boolean enable = false;
-
     /**
      * This function is called with an SDK specific log event object and can return a modified event
      * object or nothing to skip reporting the log item
@@ -4103,24 +4096,6 @@ public class SentryOptions implements RateLimiterConfig {
 
     private @NotNull ILoggerBatchProcessorFactory loggerBatchProcessorFactory =
         new DefaultLoggerBatchProcessorFactory();
-
-    /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
-     *
-     * @return true if Sentry Logs should be enabled
-     */
-    public boolean isEnabled() {
-      return enable;
-    }
-
-    /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
-     *
-     * @param enableLogs true if Sentry Logs should be enabled
-     */
-    public void setEnabled(boolean enableLogs) {
-      this.enable = enableLogs;
-    }
 
     /**
      * Returns the BeforeSendLog callback

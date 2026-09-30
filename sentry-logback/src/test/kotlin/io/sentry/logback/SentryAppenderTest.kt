@@ -58,7 +58,6 @@ class SentryAppenderTest {
     includeUnencodedMessage: Boolean = false,
     sendDefaultPii: Boolean = false,
     enableLogs: Boolean = false,
-    enableGlobalLogs: Boolean = enableLogs,
     options: SentryOptions = SentryOptions(),
     startLater: Boolean = false,
   ) {
@@ -75,7 +74,6 @@ class SentryAppenderTest {
       this.encoder = encoder
       options.dsn = dsn
       options.isSendDefaultPii = sendDefaultPii
-      options.logs.isEnabled = enableGlobalLogs
       options.logs.loggerBatchProcessorFactory = ILoggerBatchProcessorFactory { options, client ->
         LoggerBatchProcessor(options, client, ImmediateExecutorService())
       }
@@ -414,8 +412,8 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `does not capture logs by default when aggregate logs are enabled`() {
-    fixture = Fixture(enableGlobalLogs = true)
+  fun `does not capture logs by default`() {
+    fixture = Fixture(enableLogs = false)
 
     assertFalse(fixture.appender.isEnableLogs)
     fixture.logger.info("this should not be captured as a log")
@@ -425,7 +423,7 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `captures logs when local and aggregate logs are enabled`() {
+  fun `captures logs when local logs are enabled`() {
     fixture = Fixture(enableLogs = true)
 
     assertTrue(fixture.appender.isEnableLogs)
@@ -446,7 +444,7 @@ class SentryAppenderTest {
       Fixture(
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.ERROR,
-        enableGlobalLogs = true,
+        enableLogs = false,
       )
 
     fixture.logger.info("this should be a breadcrumb")
