@@ -953,7 +953,7 @@ class SentryAppenderTest {
     fixture =
       Fixture(
         minimumLevel = Level.ERROR,
-        enableLogs = true,
+        logsEnabled = true,
         encoder = encoder,
         includeUnencodedMessage = true,
       )
