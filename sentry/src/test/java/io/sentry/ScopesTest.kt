@@ -3301,14 +3301,6 @@ class ScopesTest {
   }
 
   @Test
-  fun `when metrics is not enabled, do nothing`() {
-    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = false }
-
-    sut.metrics().count("metric name")
-    verify(mockClient, never()).captureMetric(any(), anyOrNull(), anyOrNull())
-  }
-
-  @Test
   fun `creating count metric works`() {
     val (sut, mockClient) = getEnabledScopes()
 
@@ -4237,7 +4229,7 @@ class ScopesTest {
 
   @Test
   fun `metric event has spanId from active span`() {
-    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     val transaction =
       sut.startTransaction(
@@ -4264,7 +4256,7 @@ class ScopesTest {
 
   @Test
   fun `metric event has spanId from propagation context when no active span`() {
-    val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = true }
+    val (sut, mockClient) = getEnabledScopes()
 
     var propagationContext: PropagationContext? = null
     sut.configureScope { propagationContext = it.propagationContext }
