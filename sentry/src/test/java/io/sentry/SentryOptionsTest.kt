@@ -579,7 +579,6 @@ class SentryOptionsTest {
     externalOptions.isEnableSpotlight = true
     externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
     externalOptions.isGlobalHubMode = true
-    externalOptions.isEnableMetrics = false
     externalOptions.profileSessionSampleRate = 0.8
     externalOptions.profilingTracesDirPath = "/profiling-traces"
     externalOptions.profileLifecycle = ProfileLifecycle.TRACE

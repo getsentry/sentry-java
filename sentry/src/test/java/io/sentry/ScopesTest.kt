@@ -3301,18 +3301,6 @@ class ScopesTest {
   }
 
   @Test
-  fun `legacy external metrics configuration does not disable capture`() {
-    val (sut, mockClient) =
-      getEnabledScopes { options ->
-        options.merge(ExternalOptions().also { it.isEnableMetrics = false })
-      }
-
-    sut.metrics().count("metric name")
-
-    verify(mockClient).captureMetric(any(), anyOrNull(), anyOrNull())
-  }
-
-  @Test
   fun `creating count metric works`() {
     val (sut, mockClient) = getEnabledScopes()
 

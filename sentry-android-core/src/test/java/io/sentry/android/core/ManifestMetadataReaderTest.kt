@@ -13,8 +13,6 @@ import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
 import io.sentry.TransactionOptions
-import io.sentry.test.createSentryClientMock
-import io.sentry.test.createTestScopes
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -25,7 +23,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -2225,20 +2222,6 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     assertThat(fixture.options.isEnableLogcatLogs).isFalse()
-  }
-
-  @Test
-  fun `legacy metrics metadata does not disable capture`() {
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to false)
-    val context = fixture.getContext(metaData = bundle)
-    val client = createSentryClientMock()
-
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-    fixture.options.dsn = "https://key@sentry.io/proj"
-    val scopes = createTestScopes(fixture.options).also { it.bindClient(client) }
-    scopes.metrics().count("metric name")
-
-    verify(client).captureMetric(any(), anyOrNull(), anyOrNull())
   }
 
   @Test
