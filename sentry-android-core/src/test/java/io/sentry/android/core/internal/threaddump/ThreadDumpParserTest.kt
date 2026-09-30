@@ -272,6 +272,53 @@ class ThreadDumpParserTest {
   }
 
   @Test
+  fun `keeps the build id of native frames without a function`() {
+    val lines =
+      Lines.readLines(
+        BufferedReader(
+          StringReader(
+            """
+            ----- pid 123 at 2023-04-04 22:06:31.064728684+0200 -----
+            "main" prio=5 tid=1 Native
+              | sysTid=123 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
+              native: #00 pc 00000000012b5b58  /data/app/~~abc==/io.sentry.samples-xyz==/split_config.arm64_v8a.apk!libaot-app.dll.so (offset 0x7d4c000) (BuildId: c65d42d4e065806f7d454a78145f93371de5d567)
+              native: #01 pc 000000000022258c  /apex/com.android.art/lib64/libart.so (BuildId: e6c658201ef1ec3760112fa1b838ab2c)
+            """
+              .trimIndent()
+          )
+        )
+      )
+    val parser = ThreadDumpParser(SentryOptions(), false)
+
+    parser.parse(lines)
+
+    val frames = parser.threads.single().stacktrace!!.frames!!.reversed()
+
+    val apkFrame = frames[0]
+    assertEquals(
+      "/data/app/~~abc==/io.sentry.samples-xyz==/split_config.arm64_v8a.apk!libaot-app.dll.so " +
+        "(offset 0x7d4c000)",
+      apkFrame.`package`,
+    )
+    assertNull(apkFrame.function)
+    assertEquals("0x00000000012b5b58", apkFrame.instructionAddr)
+    assertEquals("rel:d4425dc6-65e0-6f80-7d45-4a78145f9337", apkFrame.addrMode)
+
+    val libFrame = frames[1]
+    assertEquals("/apex/com.android.art/lib64/libart.so", libFrame.`package`)
+    assertNull(libFrame.function)
+    assertEquals("rel:2058c6e6-f11e-37ec-6011-2fa1b838ab2c", libFrame.addrMode)
+
+    val image = parser.debugImages.single { it.debugId == "d4425dc6-65e0-6f80-7d45-4a78145f9337" }
+    assertEquals(
+      "/data/app/~~abc==/io.sentry.samples-xyz==/split_config.arm64_v8a.apk!libaot-app.dll.so",
+      image.codeFile,
+    )
+    assertEquals("c65d42d4e065806f7d454a78145f93371de5d567", image.codeId)
+    assertEquals("elf", image.type)
+  }
+
+  @Test
   fun `thread dump garbage`() {
     val lines = Lines.readLines(File("src/test/resources/thread_dump_bad_data.txt"))
     val parser =

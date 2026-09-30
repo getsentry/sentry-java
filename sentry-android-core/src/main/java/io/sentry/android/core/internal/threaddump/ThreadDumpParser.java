@@ -79,8 +79,9 @@ public class ThreadDumpParser {
               // Optional function
               + ("(?:\\s+\\((?:"
                   + "\\?\\?\\?" // " (???) marks a missing function, so don't capture it in a group
-                  + "|(.*?)(?:\\+(\\d+))?" // " (func+1234)", offset is
-                  // optional
+                  // " (func+1234)", offset is optional. A frame without a function is followed
+                  // directly by " (BuildId: ...)", so don't capture that as the function.
+                  + "|(?!BuildId: )(.*?)(?:\\+(\\d+))?"
                   + ")\\))?")
               // Optional " (BuildId: abcd1234abcd1234abcd1234abcd1234abcd1234)"
               + "(?:\\s+\\(BuildId: (.*?)\\))?");
