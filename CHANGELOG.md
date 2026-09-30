@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Keep the videos of already captured session replay segments when the replay stops, so segments that are still queued are no longer sent without their video ([#6177](https://github.com/getsentry/sentry-java/pull/6177))
+
 ### Features
 
 - Deprecate `sendDefaultPii` in favor of `dataCollection` ahead of its removal in 9.0 ([#6158](https://github.com/getsentry/sentry-java/pull/6158))
