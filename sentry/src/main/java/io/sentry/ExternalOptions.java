@@ -46,7 +46,6 @@ public final class ExternalOptions {
   private @Nullable Boolean enabled;
   private @Nullable Boolean enablePrettySerializationOutput;
   private @Nullable Boolean enableSpotlight;
-  private @Nullable Boolean enableLogs;
   private @Nullable Boolean enableMetrics;
   private @Nullable String spotlightConnectionUrl;
 
@@ -177,8 +176,6 @@ public final class ExternalOptions {
 
     options.setCaptureOpenTelemetryEvents(
         propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
-
-    options.setEnableLogs(propertiesProvider.getBooleanProperty("logs.enabled"));
 
     options.setEnableMetrics(propertiesProvider.getBooleanProperty("metrics.enabled"));
 
@@ -715,14 +712,6 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isCaptureOpenTelemetryEvents() {
     return captureOpenTelemetryEvents;
-  }
-
-  public void setEnableLogs(final @Nullable Boolean enableLogs) {
-    this.enableLogs = enableLogs;
-  }
-
-  public @Nullable Boolean isEnableLogs() {
-    return enableLogs;
   }
 
   public void setEnableMetrics(final @Nullable Boolean enableMetrics) {
