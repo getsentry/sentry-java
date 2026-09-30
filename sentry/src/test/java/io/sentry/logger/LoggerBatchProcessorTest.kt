@@ -3,6 +3,7 @@ package io.sentry.logger
 import com.google.common.truth.Truth.assertThat
 import io.sentry.DataCategory
 import io.sentry.ISentryClient
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEvents
 import io.sentry.SentryLogLevel
@@ -13,19 +14,106 @@ import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
+import io.sentry.test.getProperty
 import io.sentry.test.injectForField
+import io.sentry.transport.ReusableCountLatch
 import io.sentry.util.JsonSerializationUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 
 class LoggerBatchProcessorTest {
+  @Test
+  fun `constructor does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+
+    LoggerBatchProcessor(SentryOptions(), mock(), mockExecutor)
+
+    verifyNoInteractions(mockExecutor)
+  }
+
+  @Test
+  fun `empty flush does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = LoggerBatchProcessor(SentryOptions(), mock(), mockExecutor)
+
+    processor.flush(0)
+
+    verifyNoInteractions(mockExecutor)
+  }
+
+  @Test
+  fun `close before first accepted item does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = LoggerBatchProcessor(SentryOptions(), mock(), mockExecutor)
+
+    processor.close(false)
+
+    verify(mockExecutor).close(any())
+    verify(mockExecutor, never()).schedule(any(), any())
+    verify(mockExecutor, never()).submit(any<Runnable>())
+  }
+
+  @Test
+  fun `restart close before first accepted item does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = LoggerBatchProcessor(SentryOptions(), mock(), mockExecutor)
+
+    processor.close(true)
+
+    verify(mockExecutor).close(any())
+    verify(mockExecutor, never()).schedule(any(), any())
+    verify(mockExecutor, never()).submit(any<Runnable>())
+  }
+
+  @Test
+  fun `item rejected during shutdown does not mark processor as used`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = LoggerBatchProcessor(SentryOptions(), mock(), mockExecutor)
+    processor.close(false)
+
+    processor.add(logEvent("rejected"))
+    processor.flush(0)
+
+    verify(mockExecutor, never()).schedule(any(), any())
+    verify(mockExecutor, never()).submit(any<Runnable>())
+  }
+
+  @Test
+  fun `item rejected due to queue capacity does not mark processor as used`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = LoggerBatchProcessor(SentryOptions(), mock(), mockExecutor)
+    val pendingCount = processor.getProperty<ReusableCountLatch>("pendingCount")
+    repeat(LoggerBatchProcessor.MAX_QUEUE_SIZE) { pendingCount.increment() }
+
+    processor.add(logEvent("rejected"))
+    processor.flush(0)
+
+    verifyNoInteractions(mockExecutor)
+  }
+
+  @Test
+  fun `flush and restart close submit processor work after first accepted item`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = LoggerBatchProcessor(SentryOptions(), mock(), mockExecutor)
+    processor.add(logEvent("accepted"))
+
+    processor.flush(0)
+    processor.close(true)
+
+    verify(mockExecutor, times(3)).schedule(any(), any())
+    verify(mockExecutor).submit(any<Runnable>())
+  }
+
   @Test
   fun `schedules another flush after previous flush has run`() {
     val mockClient = mock<ISentryClient>()
@@ -45,6 +133,9 @@ class LoggerBatchProcessorTest {
       .containsExactly("first", "second")
       .inOrder()
   }
+
+  private fun logEvent(body: String) =
+    SentryLogEvent(SentryId(), SentryNanotimeDate(), body, SentryLogLevel.INFO)
 
   @Test
   fun `drops log events after reaching MAX_QUEUE_SIZE limit`() {
