@@ -21,6 +21,12 @@
 
 - Recover Android 17 `MemoryLimiter` app exits recorded as `ApplicationExitInfo.REASON_MEMORY_LIMITER` ([#6174](https://github.com/getsentry/sentry-java/pull/6174))
 
+### Dependencies
+
+- Bump Native SDK from v0.16.6 to v0.17.1 ([#6135](https://github.com/getsentry/sentry-java/pull/6135))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0171)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.6...0.17.1)
+
 ## 8.58.0
 
 ### Features
