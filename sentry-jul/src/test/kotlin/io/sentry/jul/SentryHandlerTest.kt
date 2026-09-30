@@ -16,7 +16,9 @@ import io.sentry.transport.ITransport
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.util.ListResourceBundle
 import java.util.logging.Level
+import java.util.logging.LogRecord
 import java.util.logging.Logger
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -496,6 +498,40 @@ class SentryHandlerTest {
 
     fixture.logger.info(null as String?)
     fixture.logger.severe(null as String?)
+    Sentry.flush(10)
+
+    verify(fixture.transport)
+      .send(
+        checkEvent { event ->
+          assertNull(event.message?.message)
+          assertEquals(1, event.breadcrumbs?.size)
+          assertNull(event.breadcrumbs?.single()?.message)
+        },
+        anyOrNull(),
+      )
+    verify(fixture.transport, never()).send(checkLogs {})
+  }
+
+  @Test
+  fun `captures null message as event and breadcrumb when resource bundle is set`() {
+    fixture =
+      Fixture(
+        minimumBreadcrumbLevel = Level.INFO,
+        minimumEventLevel = Level.SEVERE,
+        enableLogs = true,
+      )
+    val resourceBundle =
+      object : ListResourceBundle() {
+        override fun getContents(): Array<Array<Any>> =
+          arrayOf(arrayOf<Any>("message", "localized message"))
+      }
+
+    fixture.handler.publish(
+      LogRecord(Level.INFO, null).apply { this.resourceBundle = resourceBundle }
+    )
+    fixture.handler.publish(
+      LogRecord(Level.SEVERE, null).apply { this.resourceBundle = resourceBundle }
+    )
     Sentry.flush(10)
 
     verify(fixture.transport)
