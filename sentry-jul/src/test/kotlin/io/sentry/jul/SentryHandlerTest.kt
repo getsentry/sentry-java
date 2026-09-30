@@ -518,7 +518,7 @@ class SentryHandlerTest {
       Fixture(
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.SEVERE,
-        enableLogs = true,
+        logsEnabled = true,
       )
     val resourceBundle =
       object : ListResourceBundle() {
