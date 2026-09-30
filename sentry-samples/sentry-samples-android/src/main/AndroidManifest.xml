@@ -147,7 +147,7 @@
       android:name="io.sentry.debug"
       android:value="${sentryDebug}" />
 
-    <!--    how to enable automatic Sentry Logs from Logcat-->
+    <!--    how to enable automatic Sentry Logs from Logcat and Timber-->
     <meta-data
       android:name="io.sentry.logs.enabled"
       android:value="true" />
