@@ -192,13 +192,9 @@ final class ManifestMetadataReader {
 
   static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
 
-  static final String ENABLE_LOGS = "io.sentry.logs.enabled";
-
   static final String ENABLE_TIMBER_LOGS = "io.sentry.timber.logs.enabled";
 
   static final String ENABLE_LOGCAT_LOGS = "io.sentry.logcat.logs.enabled";
-
-  static final String ENABLE_METRICS = "io.sentry.metrics.enabled";
 
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
@@ -751,38 +747,6 @@ final class ManifestMetadataReader {
         if (excludes != null && !excludes.isEmpty()) {
           for (final @NotNull String exclude : excludes) {
             options.addInAppExclude(exclude);
-          }
-        }
-
-        if (containsKey(metadata, ENABLE_LOGS)) {
-          final boolean enableLogs = readBool(metadata, logger, ENABLE_LOGS, false);
-          if (enableLogs) {
-            logger.log(
-                SentryLevel.WARNING,
-                "The Android manifest option 'io.sentry.logs.enabled' is no longer supported. "
-                    + "Manual Sentry.logger() calls no longer require it, and automatic logging "
-                    + "integrations now require their own opt-ins.");
-          } else {
-            logger.log(
-                SentryLevel.WARNING,
-                "The Android manifest option 'io.sentry.logs.enabled' no longer disables manual "
-                    + "Sentry.logger() calls. Automatic logging integrations remain disabled "
-                    + "unless enabled through their own opt-ins.");
-          }
-        }
-
-        if (containsKey(metadata, ENABLE_METRICS)) {
-          final boolean enableMetrics = readBool(metadata, logger, ENABLE_METRICS, false);
-          if (enableMetrics) {
-            logger.log(
-                SentryLevel.WARNING,
-                "The Android manifest option 'io.sentry.metrics.enabled' is no longer supported. "
-                    + "Manual Sentry.metrics() calls no longer require it.");
-          } else {
-            logger.log(
-                SentryLevel.WARNING,
-                "The Android manifest option 'io.sentry.metrics.enabled' no longer disables "
-                    + "manual Sentry.metrics() calls.");
           }
         }
 
