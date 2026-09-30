@@ -38,8 +38,10 @@ import org.robolectric.annotation.Config
 @Config(sdk = [30])
 class SentryNavEffectTest {
 
-  private val defaultNameExtractor =
-    RouteNameExtractor<Any> { entry -> entry::class.simpleName ?: "unknown" }
+  private val defaultEntryMapper =
+    BackStackEntryMapper<Any> { entry ->
+      SentryBackStackEntry(entry::class.simpleName ?: "unknown")
+    }
 
   @get:Rule(order = 1)
   val addActivityToRobolectricRule =
@@ -107,7 +109,7 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
+        backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -119,7 +121,7 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.single().name).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/HomeRoute")))
+      .isEqualTo(listOf(mapOf("entry" to "/HomeRoute")))
   }
 
   @Test
@@ -130,7 +132,7 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
+        backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -146,7 +148,7 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.last().name).isEqualTo("/ProfileRoute")
     assertThat(fixture.scope.screen).isEqualTo("/ProfileRoute")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/ProfileRoute"), mapOf("route" to "/HomeRoute")))
+      .isEqualTo(listOf(mapOf("entry" to "/ProfileRoute"), mapOf("entry" to "/HomeRoute")))
   }
 
   @Test
@@ -157,7 +159,7 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
+        backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -173,7 +175,7 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.last().name).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/HomeRoute")))
+      .isEqualTo(listOf(mapOf("entry" to "/HomeRoute")))
   }
 
   @Test
@@ -184,7 +186,7 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
+        backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -204,7 +206,7 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.last().name).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/HomeRoute"), mapOf("route" to "/ProfileRoute")))
+      .isEqualTo(listOf(mapOf("entry" to "/HomeRoute"), mapOf("entry" to "/ProfileRoute")))
   }
 
   @Test
@@ -217,7 +219,7 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
+        backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -235,9 +237,9 @@ class SentryNavEffectTest {
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("route" to "/ProfileRoute"),
-          mapOf("route" to "/HomeRoute"),
-          mapOf("route" to "/HomeRoute"),
+          mapOf("entry" to "/ProfileRoute"),
+          mapOf("entry" to "/HomeRoute"),
+          mapOf("entry" to "/HomeRoute"),
         )
       )
   }
@@ -250,7 +252,7 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
+        backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions { maxCapturedBackStackEntries = 0 },
         scopes = fixture.scopes,
       )
@@ -273,7 +275,7 @@ class SentryNavEffectTest {
       recomposeTick.intValue
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
+        backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -289,7 +291,7 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.single().name).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/HomeRoute")))
+      .isEqualTo(listOf(mapOf("entry" to "/HomeRoute")))
   }
 
   /**
@@ -309,7 +311,7 @@ class SentryNavEffectTest {
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
+        backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -329,18 +331,20 @@ class SentryNavEffectTest {
   }
 
   @Test
-  fun `updated name extractor is used for later navigation changes`() {
+  fun `updated entry mapper is used for later navigation changes`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(HomeRoute())
-    val nameExtractor =
-      mutableStateOf<RouteNameExtractor<Any>>(
-        RouteNameExtractor { entry -> entry::class.simpleName ?: "unknown" }
+    val entryMapper =
+      mutableStateOf<BackStackEntryMapper<Any>>(
+        BackStackEntryMapper { entry ->
+          SentryBackStackEntry(entry::class.simpleName ?: "unknown")
+        }
       )
 
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = nameExtractor.value,
+        backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -348,8 +352,8 @@ class SentryNavEffectTest {
     composeRule.waitForIdle()
 
     composeRule.runOnIdle {
-      nameExtractor.value = RouteNameExtractor { entry ->
-        if (entry is ProfileRoute) "profile-updated" else "home-updated"
+      entryMapper.value = BackStackEntryMapper { entry ->
+        SentryBackStackEntry(if (entry is ProfileRoute) "profile-updated" else "home-updated")
       }
     }
     composeRule.waitForIdle()
@@ -360,22 +364,24 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.last().name).isEqualTo("/profile-updated")
     assertThat(fixture.scope.screen).isEqualTo("/profile-updated")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/profile-updated"), mapOf("route" to "/home-updated")))
+      .isEqualTo(listOf(mapOf("entry" to "/profile-updated"), mapOf("entry" to "/home-updated")))
   }
 
   @Test
-  fun `changing the name extractor alone does not re-emit Sentry data for the current top entry`() {
+  fun `changing the entry mapper alone does not re-emit Sentry data for the current top entry`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(HomeRoute(), ProfileRoute("123"))
-    val nameExtractor =
-      mutableStateOf<RouteNameExtractor<Any>>(
-        RouteNameExtractor { entry -> entry::class.simpleName ?: "unknown" }
+    val entryMapper =
+      mutableStateOf<BackStackEntryMapper<Any>>(
+        BackStackEntryMapper { entry ->
+          SentryBackStackEntry(entry::class.simpleName ?: "unknown")
+        }
       )
 
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = nameExtractor.value,
+        backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -383,8 +389,8 @@ class SentryNavEffectTest {
     composeRule.waitForIdle()
 
     composeRule.runOnIdle {
-      nameExtractor.value = RouteNameExtractor { entry ->
-        if (entry is ProfileRoute) "profile-updated" else "home-updated"
+      entryMapper.value = BackStackEntryMapper { entry ->
+        SentryBackStackEntry(if (entry is ProfileRoute) "profile-updated" else "home-updated")
       }
     }
     composeRule.waitForIdle()
@@ -395,20 +401,19 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.single().name).isEqualTo("/ProfileRoute")
     assertThat(fixture.scope.screen).isEqualTo("/ProfileRoute")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/ProfileRoute"), mapOf("route" to "/HomeRoute")))
+      .isEqualTo(listOf(mapOf("entry" to "/ProfileRoute"), mapOf("entry" to "/HomeRoute")))
   }
 
   @Test
-  fun `updated arguments extractor is used for later navigation changes`() {
+  fun `updated entry mapper arguments are used for later navigation changes`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(HomeRoute())
-    val argumentsExtractor = mutableStateOf<RouteArgumentsExtractor<Any>?>(null)
+    val entryMapper = mutableStateOf(defaultEntryMapper)
 
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
-        argumentsExtractor = argumentsExtractor.value,
+        backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -416,8 +421,11 @@ class SentryNavEffectTest {
     composeRule.waitForIdle()
 
     composeRule.runOnIdle {
-      argumentsExtractor.value = RouteArgumentsExtractor { entry ->
-        if (entry is ProfileRoute) mapOf("userId" to entry.userId) else emptyMap()
+      entryMapper.value = BackStackEntryMapper { entry ->
+        SentryBackStackEntry(
+          entry::class.simpleName ?: "unknown",
+          if (entry is ProfileRoute) mapOf("userId" to entry.userId) else emptyMap(),
+        )
       }
     }
     composeRule.waitForIdle()
@@ -432,23 +440,22 @@ class SentryNavEffectTest {
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("route" to "/ProfileRoute", "args" to mapOf("userId" to "123")),
-          mapOf("route" to "/HomeRoute"),
+          mapOf("entry" to "/ProfileRoute", "arguments" to mapOf("userId" to "123")),
+          mapOf("entry" to "/HomeRoute"),
         )
       )
   }
 
   @Test
-  fun `changing the arguments extractor alone does not re-emit Sentry data for the current top entry`() {
+  fun `changing entry mapper arguments alone does not re-emit Sentry data for current top entry`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(HomeRoute(), ProfileRoute("123"))
-    val argumentsExtractor = mutableStateOf<RouteArgumentsExtractor<Any>?>(null)
+    val entryMapper = mutableStateOf(defaultEntryMapper)
 
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        nameExtractor = defaultNameExtractor,
-        argumentsExtractor = argumentsExtractor.value,
+        backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
       )
@@ -456,8 +463,11 @@ class SentryNavEffectTest {
     composeRule.waitForIdle()
 
     composeRule.runOnIdle {
-      argumentsExtractor.value = RouteArgumentsExtractor { entry ->
-        if (entry is ProfileRoute) mapOf("userId" to entry.userId) else emptyMap()
+      entryMapper.value = BackStackEntryMapper { entry ->
+        SentryBackStackEntry(
+          entry::class.simpleName ?: "unknown",
+          if (entry is ProfileRoute) mapOf("userId" to entry.userId) else emptyMap(),
+        )
       }
     }
     composeRule.waitForIdle()
@@ -470,7 +480,7 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.single().getData("arguments")).isNull()
     assertThat(fixture.scope.screen).isEqualTo("/ProfileRoute")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/ProfileRoute"), mapOf("route" to "/HomeRoute")))
+      .isEqualTo(listOf(mapOf("entry" to "/ProfileRoute"), mapOf("entry" to "/HomeRoute")))
   }
 
   @Test
@@ -483,7 +493,7 @@ class SentryNavEffectTest {
       SentryNavEffect(
         backStack = backStack,
         options = options.value,
-        nameExtractor = defaultNameExtractor,
+        backStackEntryMapper = defaultEntryMapper,
         scopes = fixture.scopes,
       )
     }
@@ -513,7 +523,7 @@ class SentryNavEffectTest {
       if (isShown.value) {
         SentryNavEffect(
           backStack = backStack,
-          nameExtractor = defaultNameExtractor,
+          backStackEntryMapper = defaultEntryMapper,
           scopes = fixture.scopes,
         )
       }
