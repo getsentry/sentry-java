@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.res.AssetManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.CompositePerformanceCollector
@@ -60,7 +59,6 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
-import org.robolectric.shadows.ShadowLog
 
 @RunWith(AndroidJUnit4::class)
 class AndroidOptionsInitializerTest {
@@ -204,26 +202,6 @@ class AndroidOptionsInitializerTest {
     val innerLogger = loggerField.javaClass.declaredFields.first { it.name == "logger" }
     innerLogger.isAccessible = true
     assertTrue(innerLogger.get(loggerField) is AndroidLogger)
-  }
-
-  @Test
-  fun `legacy manifest warning is visible when debug is disabled`() {
-    ShadowLog.clear()
-
-    fixture.initSut(
-      metadata =
-        Bundle().apply {
-          putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
-          putBoolean(ManifestMetadataReader.ENABLE_LOGS, true)
-        },
-      hasAppContext = false,
-    )
-
-    assertTrue(
-      ShadowLog.getLogsForTag("Sentry").any {
-        it.type == Log.ASSERT && it.msg.contains("'io.sentry.logs.enabled' is no longer supported")
-      }
-    )
   }
 
   @Test
