@@ -8,10 +8,20 @@
   - `options.getLogs().setEnabled(...)` continues to control automatic logging integrations. `options.getMetrics().setEnabled(...)` currently has no effect because there are no automatic Metrics integrations. Both options will be removed in the upcoming major release, and each logging integration will then have a separate opt-in flag.
   - Use `options.getLogs().setBeforeSend(...)` and `options.getMetrics().setBeforeSend(...)` to filter manually emitted telemetry. Return `null` from either callback to drop it.
 
+### Fixes
+
+- Keep the videos of already captured session replay segments when the replay stops, so segments that are still queued are no longer sent without their video ([#6177](https://github.com/getsentry/sentry-java/pull/6177))
+
 ### Features
 
 - Deprecate `sendDefaultPii` in favor of `dataCollection` ahead of its removal in 9.0 ([#6158](https://github.com/getsentry/sentry-java/pull/6158))
 - Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
+- Add `sentry-apollo-5` integration for Apollo Kotlin 5, providing HTTP tracing and failed GraphQL request reporting ([#6074](https://github.com/getsentry/sentry-java/pull/6074))
+- Add OkHttp autoconfiguration for Spring Boot ([#5797](https://github.com/getsentry/sentry-java/pull/5797))
+
+### Fixes
+
+- Prevent infinite loops when capturing exceptions with cyclic cause chains ([#6073](https://github.com/getsentry/sentry-java/pull/6073))
 
 ### Improvements
 
