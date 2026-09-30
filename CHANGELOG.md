@@ -5,6 +5,7 @@
 ### Fixes
 
 - Keep the videos of already captured session replay segments when the replay stops, so segments that are still queued are no longer sent without their video ([#6177](https://github.com/getsentry/sentry-java/pull/6177))
+- Keep the build ID of ANR native frames that have no function name, so frames in stripped or AOT-compiled libraries can be symbolicated ([#6196](https://github.com/getsentry/sentry-java/pull/6196))
 
 ### Features
 
