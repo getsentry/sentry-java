@@ -3834,34 +3834,6 @@ public class SentryOptions implements RateLimiterConfig {
       }
     }
 
-    if (options.isEnableLogs() != null) {
-      if (options.isEnableLogs()) {
-        fatalLogger.log(
-            SentryLevel.WARNING,
-            "The 'logs.enabled' option is no longer supported. Manual Sentry.logger() calls no "
-                + "longer require it, and automatic logging integrations now require their own "
-                + "opt-ins.");
-      } else {
-        fatalLogger.log(
-            SentryLevel.WARNING,
-            "The 'logs.enabled' option no longer disables manual Sentry.logger() calls. Automatic "
-                + "logging integrations remain disabled unless enabled through their own opt-ins.");
-      }
-    }
-
-    if (options.isEnableMetrics() != null) {
-      if (options.isEnableMetrics()) {
-        fatalLogger.log(
-            SentryLevel.WARNING,
-            "The 'metrics.enabled' option is no longer supported. Manual Sentry.metrics() calls no "
-                + "longer require it.");
-      } else {
-        fatalLogger.log(
-            SentryLevel.WARNING,
-            "The 'metrics.enabled' option no longer disables manual Sentry.metrics() calls.");
-      }
-    }
-
     if (options.getProfileSessionSampleRate() != null) {
       setProfileSessionSampleRate(options.getProfileSessionSampleRate());
     }

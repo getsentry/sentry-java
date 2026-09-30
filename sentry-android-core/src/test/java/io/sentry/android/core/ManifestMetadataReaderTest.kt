@@ -13,8 +13,6 @@ import io.sentry.ProfileLifecycle
 import io.sentry.SentryLevel
 import io.sentry.SentryReplayOptions
 import io.sentry.TransactionOptions
-import io.sentry.test.createSentryClientMock
-import io.sentry.test.createTestScopes
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -25,7 +23,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -36,12 +33,7 @@ import org.mockito.kotlin.verifyNoInteractions
 class ManifestMetadataReaderTest {
   private class Fixture {
     val logger = mock<ILogger>()
-    val fatalLogger = mock<ILogger>()
-    val options =
-      SentryAndroidOptions().apply {
-        setLogger(this@Fixture.logger)
-        setFatalLogger(this@Fixture.fatalLogger)
-      }
+    val options = SentryAndroidOptions().apply { setLogger(logger) }
     val buildInfoProvider = mock<BuildInfoProvider>()
 
     fun getContext(metaData: Bundle = Bundle()): Context =
@@ -2184,55 +2176,6 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata does not warn when legacy logs enabled metadata is absent`() {
-    val context = fixture.getContext()
-
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    verify(fixture.fatalLogger, never()).log(eq(SentryLevel.WARNING), any<String>())
-  }
-
-  @Test
-  fun `applyMetadata warns when legacy logs enabled metadata is true`() {
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGS to true)
-    val context = fixture.getContext(metaData = bundle)
-
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    verify(fixture.fatalLogger)
-      .log(
-        SentryLevel.WARNING,
-        "The Android manifest option 'io.sentry.logs.enabled' is no longer supported. " +
-          "Manual Sentry.logger() calls no longer require it, and automatic logging " +
-          "integrations now require their own opt-ins.",
-        *emptyArray(),
-      )
-    assertThat(fixture.options.isEnableTimberLogs).isFalse()
-    assertThat(fixture.options.isEnableLogcatLogs).isFalse()
-  }
-
-  @Test
-  fun `applyMetadata warns when legacy logs enabled metadata is false`() {
-    fixture.options.isEnableTimberLogs = true
-    fixture.options.isEnableLogcatLogs = true
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGS to false)
-    val context = fixture.getContext(metaData = bundle)
-
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    verify(fixture.fatalLogger)
-      .log(
-        SentryLevel.WARNING,
-        "The Android manifest option 'io.sentry.logs.enabled' no longer disables manual " +
-          "Sentry.logger() calls. Automatic logging integrations remain disabled unless " +
-          "enabled through their own opt-ins.",
-        *emptyArray(),
-      )
-    assertThat(fixture.options.isEnableTimberLogs).isTrue()
-    assertThat(fixture.options.isEnableLogcatLogs).isTrue()
-  }
-
-  @Test
   fun `applyMetadata keeps Timber logs disabled if not found`() {
     val context = fixture.getContext()
 
@@ -2279,57 +2222,6 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     assertThat(fixture.options.isEnableLogcatLogs).isFalse()
-  }
-
-  @Test
-  fun `applyMetadata does not warn when legacy metrics enabled metadata is absent`() {
-    val context = fixture.getContext()
-
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    verify(fixture.fatalLogger, never()).log(eq(SentryLevel.WARNING), any<String>())
-  }
-
-  @Test
-  fun `applyMetadata warns when legacy metrics enabled metadata is true`() {
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to true)
-    val context = fixture.getContext(metaData = bundle)
-    val client = createSentryClientMock()
-
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-    fixture.options.dsn = "https://key@sentry.io/proj"
-    val scopes = createTestScopes(fixture.options).also { it.bindClient(client) }
-    scopes.metrics().count("metric name")
-
-    verify(fixture.fatalLogger)
-      .log(
-        SentryLevel.WARNING,
-        "The Android manifest option 'io.sentry.metrics.enabled' is no longer supported. " +
-          "Manual Sentry.metrics() calls no longer require it.",
-        *emptyArray(),
-      )
-    verify(client).captureMetric(any(), anyOrNull(), anyOrNull())
-  }
-
-  @Test
-  fun `applyMetadata warns when legacy metrics enabled metadata is false`() {
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to false)
-    val context = fixture.getContext(metaData = bundle)
-    val client = createSentryClientMock()
-
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-    fixture.options.dsn = "https://key@sentry.io/proj"
-    val scopes = createTestScopes(fixture.options).also { it.bindClient(client) }
-    scopes.metrics().count("metric name")
-
-    verify(fixture.fatalLogger)
-      .log(
-        SentryLevel.WARNING,
-        "The Android manifest option 'io.sentry.metrics.enabled' no longer disables manual " +
-          "Sentry.metrics() calls.",
-        *emptyArray(),
-      )
-    verify(client).captureMetric(any(), anyOrNull(), anyOrNull())
   }
 
   @Test
