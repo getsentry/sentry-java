@@ -4173,7 +4173,7 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Metrics {
 
-    /** Whether automatic metrics integrations send Metrics to Sentry. */
+    /** The configured state for automatic Metrics integrations, which currently do not exist. */
     private boolean enable = true;
 
     /**
@@ -4186,20 +4186,24 @@ public class SentryOptions implements RateLimiterConfig {
         new DefaultMetricsBatchProcessorFactory();
 
     /**
-     * Whether automatic metrics integrations send Metrics to Sentry. Direct {@code
-     * Sentry.metrics()} calls are always captured when the SDK is enabled.
+     * Returns the configured state for automatic Metrics integrations.
      *
-     * @return true if automatic Metrics should be enabled
+     * <p>This option currently has no effect because there are no automatic Metrics integrations.
+     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
+     *
+     * @return the configured value for automatic Metrics integrations
      */
     public boolean isEnabled() {
       return enable;
     }
 
     /**
-     * Whether automatic metrics integrations send Metrics to Sentry. Direct {@code
-     * Sentry.metrics()} calls are always captured when the SDK is enabled.
+     * Configures whether automatic Metrics integrations send Metrics to Sentry.
      *
-     * @param enableMetrics true if automatic Metrics should be enabled
+     * <p>This option currently has no effect because there are no automatic Metrics integrations.
+     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
+     *
+     * @param enableMetrics whether automatic Metrics integrations should be enabled
      */
     public void setEnabled(final boolean enableMetrics) {
       this.enable = enableMetrics;

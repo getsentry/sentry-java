@@ -5,7 +5,7 @@
 ### Breaking Changes
 
 - Capture direct `Sentry.logger()` and `Sentry.metrics()` calls regardless of `options.getLogs().isEnabled()` and `options.getMetrics().isEnabled()` ([#6184](https://github.com/getsentry/sentry-java/pull/6184))
-  - `options.getLogs().setEnabled(...)` and `options.getMetrics().setEnabled(...)` continue to control automatic integrations, but will be removed in the upcoming major release. Each logging integration will then have a separate opt-in flag.
+  - `options.getLogs().setEnabled(...)` continues to control automatic logging integrations. `options.getMetrics().setEnabled(...)` currently has no effect because there are no automatic Metrics integrations. Both options will be removed in the upcoming major release, and each logging integration will then have a separate opt-in flag.
   - Use `options.getLogs().setBeforeSend(...)` and `options.getMetrics().setBeforeSend(...)` to filter manually emitted telemetry. Return `null` from either callback to drop it.
 
 ### Features
