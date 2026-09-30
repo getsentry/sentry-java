@@ -6,7 +6,10 @@ import ch.qos.logback.core.read.ListAppender
 import io.sentry.ITransportFactory
 import io.sentry.NoOpTransportFactory
 import io.sentry.ScopesAdapter
+import io.sentry.Sentry
+import io.sentry.checkLogs
 import io.sentry.log4j2.SentryAppender
+import io.sentry.transport.ITransport
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -17,6 +20,11 @@ import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.DefaultConfiguration
 import org.apache.logging.log4j.core.config.LoggerConfig
 import org.assertj.core.api.Assertions.assertThat
+import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.FilteredClassLoader
@@ -62,6 +70,16 @@ class SentryLog4j2AppenderAutoConfigurationTest {
       .withUserConfiguration(NoOpTransportConfiguration::class.java)
 
   private val dsnEnabledRunner = dsnOnlyRunner.withPropertyValues("sentry.logging.enabled=true")
+
+  private val logsRunner =
+    baseContextRunner
+      .withLog4j2CoreProvider()
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.logging.enabled=true",
+        "sentry.logs.enabled=true",
+      )
+      .withUserConfiguration(MockTransportConfiguration::class.java)
 
   // Hide the Log4j2 Core provider so LogManager uses the Log4j-to-SLF4J bridge.
   private val log4j2BridgeDsnEnabledRunner =
@@ -182,6 +200,29 @@ class SentryLog4j2AppenderAutoConfigurationTest {
   }
 
   @Test
+  fun `forwards Sentry Logs when enabled`() {
+    logsRunner.withPropertyValues("sentry.logging.enable-logs=true").run {
+      LogManager.getLogger("io.sentry.spring.boot4.logs-enabled").error("enabled log")
+      Sentry.flush(1000)
+
+      val transport = it.getBean(ITransport::class.java)
+      verify(transport)
+        .send(checkLogs { logs -> assertThat(logs.items.single().body).isEqualTo("enabled log") })
+    }
+  }
+
+  @Test
+  fun `does not forward Sentry Logs by default`() {
+    logsRunner.run {
+      LogManager.getLogger("io.sentry.spring.boot4.logs-disabled").error("disabled log")
+      Sentry.flush(1000)
+
+      val transport = it.getBean(ITransport::class.java)
+      verify(transport, never()).send(checkLogs {})
+    }
+  }
+
+  @Test
   fun `does not configure SentryAppender when logging is disabled`() {
     dsnEnabledRunner.withPropertyValues("sentry.logging.enabled=false").run {
       assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty()
@@ -249,6 +290,21 @@ class SentryLog4j2AppenderAutoConfigurationTest {
       .withPropertyValues("sentry.dsn=http://key@localhost/proj", "sentry.logging.enabled=true")
       .withClassLoader(FilteredClassLoader(SentryAppender::class.java))
       .run { assertThat(rootLogger.getAppenders(SentryAppender::class.java)).isEmpty() }
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  open class MockTransportConfiguration {
+
+    private val transport = mock<ITransport>()
+
+    @Bean
+    open fun mockTransportFactory(): ITransportFactory {
+      val factory = mock<ITransportFactory>()
+      whenever(factory.create(any(), any())).thenReturn(transport)
+      return factory
+    }
+
+    @Bean open fun sentryTransport() = transport
   }
 
   @Configuration(proxyBeanMethods = false)
