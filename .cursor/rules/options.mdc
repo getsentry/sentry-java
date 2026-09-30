@@ -61,8 +61,7 @@ Allows setting options via `sentry.properties` file or system properties. Fields
       getLogs().setSampleRate(options.getLogsSampleRate());
   }
   ```
-- Do not add or restore `logs.enabled` or `metrics.enabled`. Legacy values are retained only long
-  enough to emit presence-aware migration warnings and must not be applied.
+- Do not add or restore `logs.enabled` or `metrics.enabled`; these aggregate options are obsolete.
 
 **Tests:**
 - `sentry/src/test/java/io/sentry/ExternalOptionsTest.kt` — test true/false/null for booleans, valid values and null for doubles
@@ -78,7 +77,7 @@ Allows setting options via `AndroidManifest.xml` `<meta-data>` tags.
 - Apply automatic-source options directly, for example
   `options.setEnableLogcatLogs(...)` for `io.sentry.logcat.logs.enabled`
 - Do not add or restore `io.sentry.logs.enabled` or `io.sentry.metrics.enabled`; those aggregate
-  keys are obsolete and are read only to emit migration warnings.
+  keys are obsolete.
 
 **Tests:** `sentry-android-core/src/test/java/io/sentry/android/core/ManifestMetadataReaderTest.kt`
 - Test default value preserved when not in manifest
@@ -93,8 +92,8 @@ namespace instead. For example, `SentryProperties.Logging.enableLogs` binds to
 `sentry.logging.enable-logs` and controls Logs forwarding from the auto-configured Logback
 appender. `sentry.logging.enabled` separately controls whether that appender is installed.
 
-Do not add or restore `sentry.logs.enabled` or `sentry.metrics.enabled`. Spring detects those legacy
-properties through `Environment` only to emit migration warnings; it does not bind or apply them.
+Do not add or restore `sentry.logs.enabled` or `sentry.metrics.enabled`; those aggregate properties
+are obsolete.
 
 **Tests:** `sentry-spring-boot*/src/test/kotlin/.../SentryAutoConfigurationTest.kt`
 - Add the new property to the existing binding test
