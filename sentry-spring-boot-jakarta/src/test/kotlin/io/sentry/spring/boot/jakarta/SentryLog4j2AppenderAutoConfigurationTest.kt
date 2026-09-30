@@ -77,7 +77,6 @@ class SentryLog4j2AppenderAutoConfigurationTest {
       .withPropertyValues(
         "sentry.dsn=http://key@localhost/proj",
         "sentry.logging.enabled=true",
-        "sentry.logs.enabled=true",
       )
       .withUserConfiguration(MockTransportConfiguration::class.java)
 
@@ -201,7 +200,7 @@ class SentryLog4j2AppenderAutoConfigurationTest {
 
   @Test
   fun `forwards Sentry Logs when enabled`() {
-    logsRunner.withPropertyValues("sentry.logging.enable-logs=true").run {
+    logsRunner.withPropertyValues("sentry.logging.logs-enabled=true").run {
       LogManager.getLogger("io.sentry.spring.boot.jakarta.logs-enabled").error("enabled log")
       Sentry.flush(1000)
 
