@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- Capture direct `Sentry.logger()` and `Sentry.metrics()` calls regardless of `options.getLogs().isEnabled()` and `options.getMetrics().isEnabled()` ([#6184](https://github.com/getsentry/sentry-java/pull/6184))
+  - Automatic logging integrations still only capture logs when `options.getLogs().isEnabled()` is `true`. `options.getMetrics().setEnabled(...)` currently has no effect because there are no automatic Metrics integrations. Both enable options will be removed in the upcoming major release, and each logging integration will then have a separate opt-in flag.
+  - Use `options.getLogs().setBeforeSend(...)` and `options.getMetrics().setBeforeSend(...)` to filter manually emitted telemetry. Return `null` from either callback to drop it.
+
 ### Fixes
 
 - Keep the videos of already captured session replay segments when the replay stops, so segments that are still queued are no longer sent without their video ([#6177](https://github.com/getsentry/sentry-java/pull/6177))
