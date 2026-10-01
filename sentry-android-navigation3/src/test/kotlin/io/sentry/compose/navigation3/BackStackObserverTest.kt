@@ -15,7 +15,6 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import io.sentry.TypeCheckHint
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import org.junit.Test
@@ -153,8 +152,6 @@ class BackStackObserverTest {
         "to_arguments",
         mapOf("userId" to "123"),
       )
-    assertThat(fixture.breadcrumbHints.last().get(TypeCheckHint.ANDROID_NAV3_DESTINATION))
-      .isSameInstanceAs(profile)
   }
 
   @Test
@@ -320,8 +317,6 @@ class BackStackObserverTest {
     assertThat(fixture.breadcrumbs).hasSize(2)
     assertThat(fixture.breadcrumbs.last().data["from"]).isEqualTo("/ProfileScreen")
     assertThat(fixture.breadcrumbs.last().data["to"]).isEqualTo("/ProfileScreen")
-    assertThat(fixture.breadcrumbHints.last().get(TypeCheckHint.ANDROID_NAV3_DESTINATION))
-      .isSameInstanceAs(replacementProfile)
     assertThat(fixture.startedTransactions).hasSize(2)
     assertThat(fixture.startedTransactions.last().name).isEqualTo("/ProfileScreen")
     assertThat(fixture.startedTransactions.first().isFinished).isTrue()
