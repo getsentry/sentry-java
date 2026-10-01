@@ -76,10 +76,10 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean enableNetworkEventBreadcrumbs = true;
 
   /** Enable or disable automatic Sentry Logs capture from Timber. Default is disabled. */
-  private boolean timberLogsEnabled = false;
+  private boolean timberLogCaptureEnabled = false;
 
   /** Enable or disable automatic Sentry Logs capture from Logcat. Default is disabled. */
-  private boolean logcatLogsEnabled = false;
+  private boolean logcatLogCaptureEnabled = false;
 
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
@@ -511,20 +511,20 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.enableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs;
   }
 
-  public boolean getTimberLogsEnabled() {
-    return timberLogsEnabled;
+  public boolean getTimberLogCaptureEnabled() {
+    return timberLogCaptureEnabled;
   }
 
-  public void setTimberLogsEnabled(boolean timberLogsEnabled) {
-    this.timberLogsEnabled = timberLogsEnabled;
+  public void setTimberLogCaptureEnabled(boolean timberLogCaptureEnabled) {
+    this.timberLogCaptureEnabled = timberLogCaptureEnabled;
   }
 
-  public boolean getLogcatLogsEnabled() {
-    return logcatLogsEnabled;
+  public boolean getLogcatLogCaptureEnabled() {
+    return logcatLogCaptureEnabled;
   }
 
-  public void setLogcatLogsEnabled(boolean logcatLogsEnabled) {
-    this.logcatLogsEnabled = logcatLogsEnabled;
+  public void setLogcatLogCaptureEnabled(boolean logcatLogCaptureEnabled) {
+    this.logcatLogCaptureEnabled = logcatLogCaptureEnabled;
   }
 
   /**

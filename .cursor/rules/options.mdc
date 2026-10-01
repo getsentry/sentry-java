@@ -76,7 +76,7 @@ Allows setting options via `AndroidManifest.xml` `<meta-data>` tags.
 - Add a `static final String` constant for the key
 - Read it in `applyMetadata()` using `readBool(metadata, logger, CONSTANT, defaultValue)`
 - Apply automatic-source options directly, for example
-  `options.setLogcatLogsEnabled(...)` for `io.sentry.logcat.logs.enabled`
+  `options.setLogcatLogCaptureEnabled(...)` for `io.sentry.logcat.logs.enabled`
 - Do not add or restore `io.sentry.logs.enabled` or `io.sentry.metrics.enabled`; those aggregate
   keys are obsolete.
 
@@ -114,8 +114,8 @@ or breadcrumb paths. Current Logs controls are:
 - Log4j2: appender `logsEnabled`
 - JUL: handler `logsEnabled`
 - Spring Boot Logback: `sentry.logging.logs-enabled`
-- Timber: `timberLogsEnabled` / `io.sentry.timber.logs.enabled`
-- Logcat: `logcatLogsEnabled` / `io.sentry.logcat.logs.enabled`
+- Timber: `timberLogCaptureEnabled` / `io.sentry.timber.logs.enabled`
+- Logcat: `logcatLogCaptureEnabled` / `io.sentry.logcat.logs.enabled`
 
 All source-local options default to `false` and gate only Sentry Logs forwarding.
 

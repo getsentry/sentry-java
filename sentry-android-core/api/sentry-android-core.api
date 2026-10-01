@@ -429,14 +429,14 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
-	public fun getLogcatLogsEnabled ()Z
+	public fun getLogcatLogCaptureEnabled ()Z
 	public fun getMonotonicTicker ()Lio/sentry/time/MonotonicTicker;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkAppHangTimeoutIntervalMillis ()J
 	public fun getNdkHandlerStrategy ()I
 	public fun getScreenshot ()Lio/sentry/android/core/SentryScreenshotOptions;
 	public fun getStartupCrashDurationThresholdMillis ()J
-	public fun getTimberLogsEnabled ()Z
+	public fun getTimberLogCaptureEnabled ()Z
 	public fun getTombstoneMergeTimeThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrProfilingEnabled ()Z
@@ -500,7 +500,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
-	public fun setLogcatLogsEnabled (Z)V
+	public fun setLogcatLogCaptureEnabled (Z)V
 	public fun setMemoryLimiterEnabled (Z)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
@@ -508,7 +508,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setReportHistoricalAnrs (Z)V
 	public fun setReportHistoricalMemoryLimiterExits (Z)V
 	public fun setReportHistoricalTombstones (Z)V
-	public fun setTimberLogsEnabled (Z)V
+	public fun setTimberLogCaptureEnabled (Z)V
 	public fun setTombstoneEnabled (Z)V
 	public fun setTombstoneMergeTimeThresholdMillis (J)V
 }

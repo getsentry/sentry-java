@@ -241,10 +241,10 @@ class SentryAndroidTest {
   }
 
   @Test
-  fun `auto-installed Timber integration uses Logs option set in configuration callback`() {
+  fun `auto-installed Timber integration uses log capture option set in configuration callback`() {
     val logs = mutableListOf<SentryLogEvent>()
     fixture.initSut { options ->
-      options.timberLogsEnabled = true
+      options.timberLogCaptureEnabled = true
       options.logs.beforeSend =
         SentryOptions.Logs.BeforeSendLogCallback { log ->
           logs.add(log)
@@ -268,7 +268,7 @@ class SentryAndroidTest {
     val logs = mutableListOf<SentryLogEvent>()
 
     initForTest(mockContext) { options ->
-      options.timberLogsEnabled = false
+      options.timberLogCaptureEnabled = false
       options.logs.beforeSend =
         SentryOptions.Logs.BeforeSendLogCallback { log ->
           logs.add(log)

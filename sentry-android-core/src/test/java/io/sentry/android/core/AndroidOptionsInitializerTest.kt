@@ -713,8 +713,8 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
-  fun `SentryTimberIntegration receives Timber logs option`() {
-    fixture.sentryOptions.timberLogsEnabled = true
+  fun `SentryTimberIntegration receives Timber log capture option`() {
+    fixture.sentryOptions.timberLogCaptureEnabled = true
     fixture.initSutWithClassLoader(isTimberAvailable = true)
 
     val actual =
