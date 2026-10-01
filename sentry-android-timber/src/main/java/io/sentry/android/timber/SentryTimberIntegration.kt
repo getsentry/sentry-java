@@ -37,7 +37,7 @@ public class SentryTimberIntegration(
     enableLogsProvider = Evaluator { enableLogs }
   }
 
-  public constructor(enableLogsProvider: Evaluator<Boolean>) : this() {
+  internal constructor(enableLogsProvider: Evaluator<Boolean>) : this() {
     this.enableLogsProvider = enableLogsProvider
   }
 

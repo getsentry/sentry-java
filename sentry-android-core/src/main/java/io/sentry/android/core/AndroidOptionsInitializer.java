@@ -479,7 +479,7 @@ final class AndroidOptionsInitializer {
     }
 
     if (isTimberAvailable) {
-      options.addIntegration(new SentryTimberIntegration(options::isEnableTimberLogs));
+      options.addIntegration(new SentryTimberIntegration(() -> options.isEnableTimberLogs()));
     }
     options.addIntegration(new AppComponentsBreadcrumbsIntegration(context));
     options.addIntegration(new SystemEventsBreadcrumbsIntegration(context));
