@@ -1,3 +1,7 @@
+public abstract interface class io/sentry/compose/navigation3/BackStackEntryMapper {
+	public abstract fun map (Ljava/lang/Object;)Lio/sentry/compose/navigation3/SentryBackStackEntry;
+}
+
 public final class io/sentry/compose/navigation3/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
@@ -6,16 +10,19 @@ public final class io/sentry/compose/navigation3/BuildConfig {
 	public fun <init> ()V
 }
 
-public abstract interface class io/sentry/compose/navigation3/RouteArgumentsExtractor {
-	public abstract fun extract (Ljava/lang/Object;)Ljava/util/Map;
-}
-
-public abstract interface class io/sentry/compose/navigation3/RouteNameExtractor {
-	public abstract fun extract (Ljava/lang/Object;)Ljava/lang/String;
+public final class io/sentry/compose/navigation3/SentryBackStackEntry {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Ljava/util/Map;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/util/Map;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getArguments ()Ljava/util/Map;
+	public final fun getName ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/compose/navigation3/SentryNavEffectKt {
-	public static final fun SentryNavEffect (Ljava/util/List;Lio/sentry/compose/navigation3/RouteNameExtractor;Lio/sentry/compose/navigation3/RouteArgumentsExtractor;Lio/sentry/compose/navigation3/SentryNavOptions;Landroidx/compose/runtime/Composer;II)V
+	public static final fun SentryNavEffect (Ljava/util/List;Lio/sentry/compose/navigation3/BackStackEntryMapper;Lio/sentry/compose/navigation3/SentryNavOptions;Landroidx/compose/runtime/Composer;II)V
 }
 
 public final class io/sentry/compose/navigation3/SentryNavOptions {

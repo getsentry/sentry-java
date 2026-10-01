@@ -2,122 +2,93 @@ package io.sentry.compose.navigation3
 
 import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
+import io.sentry.compose.navigation3.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import io.sentry.util.ExceptionUtils
 import java.util.IdentityHashMap
-import org.jetbrains.annotations.TestOnly
 
 /**
- * Translates app-defined back stack entries into input-ordered [Route]s.
+ * Converts the host app back stack into a list of [NormalizedSentryBackStackEntry]s.
  *
- * **Exception handling policy**
+ * **Exception handling**
  *
- * Invocations of host-provided [extractors] and sanitization of host-defined arguments are
- * protected by broad `try-catch` clauses, as each may throw arbitrary exceptions. We avoid failing
- * fast on the assumption that navigation telemetry is supplemental from host apps' perspective, and
- * that falling back to an `/unknown` route name or losing an argument map is preferable to
- * crashing.
+ * Invocations of the host-provided [BackStackEntryMapper] and sanitization of host-defined
+ * arguments are protected by broad `try-catch` clauses, as each may throw arbitrary exceptions.
+ *
+ * We avoid failing fast on the assumption that nav telemetry is supplemental, and falling back to
+ * an [UNKNOWN_ENTRY_NAME] or losing an argument map is preferable to crashing.
  *
  * **Threading policy**
  *
- * This class performs work synchronously on the calling thread. Host-provided [extractors] are
- * invoked on that same thread and should remain small, non-blocking, and safe for the caller's
- * threading context.
+ * This class performs work synchronously on the calling thread. The host app's
+ * [BackStackEntryMapper] is invoked on that same thread and should remain small, non-blocking, and
+ * safe for the caller's threading context.
  */
-internal class RouteTranslator<T : Any>(
-  private val extractors: () -> RouteExtractors<T>,
+internal class BackStackConverter<T : Any>(
+  private val entryMapper: ForwardingBackStackEntryMapper<T>,
   private val logger: ILogger,
 ) {
 
-  companion object {
-    internal const val UNKNOWN_ROUTE_NAME = "/unknown"
-  }
-
-  /** Translates the provided [backStackEntries] into [Route]s and returns them in input order. */
-  fun translate(backStackEntries: List<T>, retentionPolicy: RetentionPolicy): List<Route> {
+  /**
+   * Converts the provided [backStack] into a list of [NormalizedSentryBackStackEntry]s by invoking
+   * the host app-provided [entryMapper] and normalizing the results.
+   *
+   * The returned list has the same order as `backStack`.
+   */
+  fun convert(
+    backStack: List<T>,
+    retentionPolicy: RetentionPolicy,
+  ): List<NormalizedSentryBackStackEntry> {
     val warningState = WarningState()
     val sanitizer = ArgumentSanitizer(logger, warningState)
 
-    val routes = MutableList<Route?>(backStackEntries.size) { null }
+    val entries = MutableList<NormalizedSentryBackStackEntry?>(backStack.size) { null }
     val indicesInPolicyOrder =
       when (retentionPolicy) {
-        RetentionPolicy.KEEP_FIRST -> backStackEntries.indices
-        RetentionPolicy.KEEP_LAST -> backStackEntries.indices.reversed()
+        RetentionPolicy.KEEP_FIRST -> backStack.indices
+        RetentionPolicy.KEEP_LAST -> backStack.indices.reversed()
       }
 
     for (index in indicesInPolicyOrder) {
-      val entry = backStackEntries[index]
-      routes[index] =
-        Route(
-          name = extractRouteName(entry, warningState),
-          arguments = extractRouteArguments(entry, sanitizer),
-        )
+      val entry = backStack[index]
+      entries[index] = normalize(entry, sanitizer, warningState)
     }
 
-    return routes.requireNoNulls()
+    return entries.requireNoNulls()
   }
 
-  /**
-   * Returns a route name for the provided [backStackEntry], based on this translator's
-   * [name extractor][RouteExtractors.nameExtractor].
-   *
-   * The returned name is normalized to always include a leading slash. E.g., both `PromoDialog` and
-   * `/PromoDialog` are resolved to `/PromoDialog`. (Doing so maintains parity with our Nav2
-   * convention.)
-   */
-  @TestOnly
   @Suppress("TooGenericExceptionCaught")
-  fun extractRouteName(backStackEntry: T, warningState: WarningState): String {
-    val name: String? =
-      try {
-        extractors.invoke().getName(backStackEntry)
-      } catch (t: Throwable) {
-        // Route name extractors are host app callbacks.
-        ExceptionUtils.rethrowIfFatal(t)
-        warningState.logNameExtractorFailureWarning(logger, t)
-        return UNKNOWN_ROUTE_NAME
-      }
-
-    val normalizedName = name?.trim()?.takeUnless { it.isEmpty() }?.removePrefix("/")
-    if (normalizedName == null) {
-      warningState.logInvalidRouteNameWarning(logger)
-      return UNKNOWN_ROUTE_NAME
-    }
-
-    return "/$normalizedName"
-  }
-
-  /**
-   * Returns the arguments for the provided [backStackEntry], based on this translator's
-   * [arguments extractor][RouteExtractors.argumentsExtractor].
-   *
-   * The arguments are sanitized before being returned, i.e., bounded in size and depth, and
-   * converted into a serializable form.
-   */
-  @TestOnly
-  @Suppress("TooGenericExceptionCaught")
-  fun extractRouteArguments(
+  private fun normalize(
     backStackEntry: T,
     sanitizer: ArgumentSanitizer,
-  ): Map<String, Any?> {
-    val raw =
+    warningState: WarningState,
+  ): NormalizedSentryBackStackEntry {
+    val info =
       try {
-        extractors.invoke().getArguments(backStackEntry) ?: return emptyMap()
+        entryMapper.map(backStackEntry)
       } catch (t: Throwable) {
-        // Route argument extractors are host app callbacks.
+        // Back stack entry mappers are host app callbacks.
         ExceptionUtils.rethrowIfFatal(t)
-        logger.log(
-          WARNING,
-          "Nav3 argumentsExtractor threw while resolving arguments. Skipping arguments.",
-          t,
-        )
-        return emptyMap()
+        warningState.logMapperFailureWarning(logger, t)
+        return NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME)
       }
 
-    return sanitizer.sanitizeEntry(raw)
+    if (info == null) {
+      return NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME)
+    }
+
+    val arguments = info.arguments?.let(sanitizer::sanitizeEntry) ?: emptyMap()
+    val formattedName = NormalizedSentryBackStackEntry.formatName(info.name)
+
+    return if (formattedName.isBlank()) {
+      warningState.logInvalidNameWarning(logger)
+      NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME, arguments)
+    } else {
+      NormalizedSentryBackStackEntry(formattedName, arguments)
+    }
   }
 
   /**
-   * Specifies whether route info starting at the initial or final element of a back stack list
+   * Specifies whether entry info starting at the initial or final element of a back stack list
    * should be preserved if a size budget is exceeded.
    *
    * Most clients will want to select the policy that starts at the top of their back stack.
@@ -125,13 +96,13 @@ internal class RouteTranslator<T : Any>(
   internal enum class RetentionPolicy {
 
     /**
-     * Retains route info for lower indexed elements in the back stack list if a particular info
+     * Retains entry info for lower indexed elements in the back stack list if a particular info
      * budget is reached. Retention starts at index 0 and increments until the budget is exhausted.
      */
     KEEP_FIRST,
 
     /**
-     * Retains route info for higher indexed elements in the back stack list if a particular info
+     * Retains entry info for higher indexed elements in the back stack list if a particular info
      * budget is reached. Retention starts at lastIndex and decrements until the budget is
      * exhausted.
      */
@@ -139,10 +110,10 @@ internal class RouteTranslator<T : Any>(
   }
 
   /**
-   * Sanitizes a back stack update's argument maps into a serializable form. It bounds depth and
-   * total value count, and it rejects cyclic structures.
+   * Sanitizes a back stack entry's arguments and writes them in a serializable form. It bounds
+   * depth and total value count, and it rejects cyclic structures.
    *
-   * One instance is shared across every entry in a single [translate] call, so the value budget is
+   * One instance is shared across every entry in a single [convert] call, so the value budget is
    * enforced across the whole update. Once the budget is spent, the overflowing entry and every
    * older entry are dropped, while newer (already-processed) entries are preserved.
    */
@@ -152,7 +123,7 @@ internal class RouteTranslator<T : Any>(
   ) {
 
     private val activeContainers = IdentityHashMap<Any, Unit>()
-    private var remainingValues = MAX_ARGUMENT_VALUES
+    private var remainingValues = MAX_ARGUMENT_COUNT
     private var budgetExhausted = false
 
     /**
@@ -185,7 +156,7 @@ internal class RouteTranslator<T : Any>(
     private fun sanitizeMap(value: Map<*, *>, depth: Int): Map<String, Any?> {
       enter(value)
       try {
-        val sanitized = LinkedHashMap<String, Any?>()
+        val sanitized = mutableMapOf<String, Any?>()
         for ((key, childValue) in value) {
           sanitized[key.toString()] = sanitizeValue(childValue, depth + 1)
         }
@@ -199,7 +170,7 @@ internal class RouteTranslator<T : Any>(
       enter(value)
       try {
         // The value budget bounds allocation instead of the caller-provided collection size.
-        val sanitized = ArrayList<Any?>()
+        val sanitized = mutableListOf<Any?>()
         for (childValue in value) {
           sanitized += sanitizeValue(childValue, depth + 1)
         }
@@ -283,39 +254,75 @@ internal class RouteTranslator<T : Any>(
        * Max nesting depth allowed while sanitizing a single argument value for a given back stack
        * entry.
        *
+       * For instance, `mapOf("id" to 123)` has a depth of 1; `mapOf("items" to listOf("apple",
+       * "banana"))` has a depth of 2.
+       *
        * If exceeded, all arguments for that back stack entry are dropped.
        */
-      private const val MAX_ARGUMENT_DEPTH = 20
+      private const val MAX_ARGUMENT_DEPTH = 10
 
       /**
        * Max number of argument values visited while sanitizing all entries in a given back stack
        * update.
        *
+       * For instance, `mapOf("id" to 123)` consumes 1 value; `mapOf("profile" to mapOf("id" to 123,
+       * "name" to "Ada"))` consumes 3 values.
+       *
        * If exceeded, the entry that overflows loses its arguments, as do older entries; newer
-       * entries are preserved. E.g., suppose we have the following back stack:
+       * entries are preserved.
+       *
+       * For instance, suppose we have the following back stack:
+       *
        * - /Checkout -> Top of the stack and processed first
        * - /ProductDetail -> Processed second and overflows the `MAX_ARGUMENT_VALUES` budget
        * - /Home
        *
        * Then /ProductDetail and /Home will have no arguments, but /Checkout will.
        */
-      private const val MAX_ARGUMENT_VALUES = 1_000
-
-      private const val STRUCTURE_WARNING =
-        "Nav3 argument sanitization failed (possibly a cyclic or deeply nested structure). " +
-          "Skipping arguments."
+      private const val MAX_ARGUMENT_COUNT = 500
 
       private const val BUDGET_WARNING =
-        "Nav3 arguments exceeded the maximum total value count for one backstack update. " +
-          "Skipping arguments for this and older captured entries."
+        "Nav3 arguments exceeded the maximum total value count for one backstack update. Skipping arguments " +
+          "for this and older captured entries."
+
+      private const val STRUCTURE_WARNING =
+        "Nav3 argument sanitization failed (possibly a cyclic or deeply nested structure). Skipping arguments."
     }
   }
 
   /** A small state wrapper that lets us avoid spamming logs when sanitizing arguments. */
   internal class WarningState {
+
+    private var hasLoggedInvalidNameWarning = false
+    private var hasLoggedMapperFailureWarning = false
     private var hasLoggedUnsupportedValueWarning = false
-    private var hasLoggedInvalidRouteNameWarning = false
-    private var hasLoggedNameExtractorFailureWarning = false
+
+    fun logInvalidNameWarning(logger: ILogger) {
+      if (hasLoggedInvalidNameWarning) {
+        return
+      }
+
+      logger.log(
+        WARNING,
+        "Nav3 backStackEntryMapper returned a blank name while processing this back stack update. " +
+          "Using $UNKNOWN_ENTRY_NAME instead.",
+      )
+      hasLoggedInvalidNameWarning = true
+    }
+
+    fun logMapperFailureWarning(logger: ILogger, throwable: Throwable) {
+      if (hasLoggedMapperFailureWarning) {
+        return
+      }
+
+      logger.log(
+        WARNING,
+        "Nav3 backStackEntryMapper threw while resolving an entry. " +
+          "Using $UNKNOWN_ENTRY_NAME without arguments instead.",
+        throwable,
+      )
+      hasLoggedMapperFailureWarning = true
+    }
 
     fun logUnsupportedValueWarning(typeName: String?, logger: ILogger) {
       if (hasLoggedUnsupportedValueWarning) {
@@ -324,7 +331,7 @@ internal class RouteTranslator<T : Any>(
 
       logger.log(
         WARNING,
-        "Nav3 argumentsExtractor returned unsupported value of type %s while processing this back " +
+        "Nav3 backStackEntryMapper returned unsupported argument value of type %s while processing this back " +
           "stack update. Falling back to toString(). Use String, CharSequence, Char, Number, " +
           "Boolean, Enum, Map, Collection, object Array, and primitive array values for reliable " +
           "results.",
@@ -332,52 +339,42 @@ internal class RouteTranslator<T : Any>(
       )
       hasLoggedUnsupportedValueWarning = true
     }
-
-    fun logInvalidRouteNameWarning(logger: ILogger) {
-      if (hasLoggedInvalidRouteNameWarning) {
-        return
-      }
-
-      logger.log(
-        WARNING,
-        "Nav3 nameExtractor returned a blank route name while processing this back stack update. " +
-          "Using /unknown instead.",
-      )
-      hasLoggedInvalidRouteNameWarning = true
-    }
-
-    fun logNameExtractorFailureWarning(logger: ILogger, throwable: Throwable) {
-      if (hasLoggedNameExtractorFailureWarning) {
-        return
-      }
-
-      logger.log(
-        WARNING,
-        "Nav3 nameExtractor threw while resolving a route name. Using /unknown instead.",
-        throwable,
-      )
-      hasLoggedNameExtractorFailureWarning = true
-    }
   }
 }
 
-/**
- * Summary information about a back stack entry from the host app, fit for use with Sentry data.
- *
- * All route names should be normalized to include a leading slash, and all arguments should be
- * sanitized (i.e., bounded in size and depth, and converted into a serializable form).
- */
-internal data class Route(
+/** A normalized version of a [SentryBackStackEntry] produced by a [BackStackEntryMapper]. */
+internal data class NormalizedSentryBackStackEntry(
+  /** A [SentryBackStackEntry.name] trimmed and formatted to include a leading "/". */
   val name: String,
+  /** Sanitized [SentryBackStackEntry.arguments] (i.e., bounded in size and depth). */
   val arguments: Map<String, Any?> = emptyMap(),
 ) {
 
+  companion object {
+
+    const val UNKNOWN_ENTRY_NAME = "/unknown"
+
+    /**
+     * Trims [name] and adds a "/" prefix if one isn't already present.
+     *
+     * Matches the Nav2, Dart, and Web naming patterns.
+     */
+    fun formatName(name: String): String {
+      val trimmedName = name.trim()
+      return when {
+        trimmedName.isEmpty() -> ""
+        trimmedName.startsWith("/") -> trimmedName
+        else -> "/$trimmedName"
+      }
+    }
+  }
+
   /**
-   * Returns this route in serialized form. E.g.:
+   * Returns this entry in serialized form. E.g.:
    * ```
    *  {
-   *    "route": "/ProductScreen"
-   *    "args": {
+   *    "entry": "/ProductScreen"
+   *    "arguments": {
    *      "product_id": 12345
    *      "promo_id:": "spring-marketing-drive-2026"
    *    }
@@ -385,11 +382,12 @@ internal data class Route(
    * ```
    */
   fun serialize(): Map<String, Any?> = buildMap {
-    put("route", name)
+    put("entry", name)
     if (arguments.isNotEmpty()) {
-      put("args", arguments)
+      put("arguments", arguments)
     }
   }
 }
 
-internal fun List<Route>.serialize(): List<Map<String, Any?>> = map(Route::serialize)
+internal fun List<NormalizedSentryBackStackEntry>.serialize(): List<Map<String, Any?>> =
+  map(NormalizedSentryBackStackEntry::serialize)

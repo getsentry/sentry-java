@@ -27,13 +27,13 @@ import org.mockito.kotlin.whenever
 
 class BackStackObserverTest {
 
-  private data class HomeRoute(val id: String = "home")
+  private data class HomeScreen(val id: String = "home")
 
-  private data class ProfileRoute(val userId: String)
+  private data class ProfileScreen(val userId: String)
 
-  private data class CartRoute(val productId: String)
+  private data class CartScreen(val productId: String)
 
-  private data class SettingsRoute(val section: String)
+  private data class SettingsScreen(val section: String)
 
   private data class ObserverConfig(
     val enableNavigationBreadcrumbs: Boolean = true,
@@ -44,8 +44,10 @@ class BackStackObserverTest {
   )
 
   private class Fixture {
-    private val defaultNameExtractor =
-      RouteNameExtractor<Any> { entry -> entry::class.simpleName ?: "unknown" }
+    private val defaultEntryMapper =
+      BackStackEntryMapper<Any> { entry ->
+        SentryBackStackEntry(entry::class.simpleName ?: "<unknown>")
+      }
 
     val logger = mock<ILogger>()
     val scope = Scope(createOptions(logger))
@@ -83,8 +85,7 @@ class BackStackObserverTest {
 
     fun getSut(
       config: ObserverConfig = ObserverConfig(),
-      nameExtractor: RouteNameExtractor<Any> = defaultNameExtractor,
-      argumentsExtractor: RouteArgumentsExtractor<Any>? = null,
+      entryMapper: BackStackEntryMapper<Any> = defaultEntryMapper,
     ): BackStackObserver<Any> {
       scope.options.isEnableScreenTracking = config.enableScreenTracking
 
@@ -97,7 +98,7 @@ class BackStackObserverTest {
             captureBackStack = config.captureBackStack
             maxCapturedBackStackEntries = config.maxCapturedBackStackEntries
           },
-        extractors = { RouteExtractors(nameExtractor, argumentsExtractor) },
+        entryMapper = ForwardingBackStackEntryMapper { entryMapper },
       )
     }
 
@@ -121,17 +122,19 @@ class BackStackObserverTest {
     val sut =
       fixture.getSut(
         config = ObserverConfig(enableNavigationBreadcrumbs = true),
-        argumentsExtractor =
-          RouteArgumentsExtractor { entry ->
+        entryMapper = { entry ->
+          SentryBackStackEntry(
+            entry::class.simpleName ?: "unknown",
             when (entry) {
-              is HomeRoute -> mapOf("tab" to entry.id)
-              is ProfileRoute -> mapOf("userId" to entry.userId)
+              is HomeScreen -> mapOf("tab" to entry.id)
+              is ProfileScreen -> mapOf("userId" to entry.userId)
               else -> emptyMap()
-            }
-          },
+            },
+          )
+        },
       )
-    val home = HomeRoute()
-    val profile = ProfileRoute("123")
+    val home = HomeScreen()
+    val profile = ProfileScreen("123")
 
     sut.onBackStackChanged(listOf(home))
     sut.onBackStackChanged(listOf(home, profile))
@@ -142,11 +145,11 @@ class BackStackObserverTest {
     assertThat(breadcrumb.data)
       .containsExactly(
         "from",
-        "/HomeRoute",
+        "/HomeScreen",
         "from_arguments",
         mapOf("tab" to "home"),
         "to",
-        "/ProfileRoute",
+        "/ProfileScreen",
         "to_arguments",
         mapOf("userId" to "123"),
       )
@@ -157,37 +160,37 @@ class BackStackObserverTest {
   @Test
   fun `onBackStackChanged reuses the previous top snapshot for breadcrumb from payload`() {
     val fixture = Fixture()
-    val previousProfile = ProfileRoute("123")
-    val replacementProfile = ProfileRoute("123")
+    val previousProfile = ProfileScreen("123")
+    val replacementProfile = ProfileScreen("123")
     var profileName = "profile"
     var profileArguments = mapOf("userId" to "123")
     val sut =
       fixture.getSut(
-        nameExtractor =
-          RouteNameExtractor { entry ->
-            when (entry) {
-              is HomeRoute -> "home"
-              is ProfileRoute -> profileName
-              is SettingsRoute -> "settings"
-              else -> error("unknown route: $entry")
-            }
-          },
-        argumentsExtractor =
-          RouteArgumentsExtractor { entry ->
-            when (entry) {
-              is HomeRoute -> mapOf("tab" to entry.id)
-              is ProfileRoute -> profileArguments
-              is SettingsRoute -> mapOf("section" to entry.section)
-              else -> emptyMap()
-            }
-          },
+        entryMapper = { entry ->
+          SentryBackStackEntry(
+            name =
+              when (entry) {
+                is HomeScreen -> "home"
+                is ProfileScreen -> profileName
+                is SettingsScreen -> "settings"
+                else -> error("unknown entry: $entry")
+              },
+            arguments =
+              when (entry) {
+                is HomeScreen -> mapOf("tab" to entry.id)
+                is ProfileScreen -> profileArguments
+                is SettingsScreen -> mapOf("section" to entry.section)
+                else -> emptyMap()
+              },
+          )
+        }
       )
 
-    sut.onBackStackChanged(listOf(HomeRoute(), previousProfile))
+    sut.onBackStackChanged(listOf(HomeScreen(), previousProfile))
     profileName = "mutated-profile"
     profileArguments = mapOf("userId" to "999")
 
-    sut.onBackStackChanged(listOf(HomeRoute(), replacementProfile, SettingsRoute("privacy")))
+    sut.onBackStackChanged(listOf(HomeScreen(), replacementProfile, SettingsScreen("privacy")))
 
     assertThat(fixture.breadcrumbs.last().data)
       .containsExactly(
@@ -207,7 +210,7 @@ class BackStackObserverTest {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationBreadcrumbs = false))
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     assertThat(fixture.breadcrumbs).isEmpty()
   }
@@ -217,10 +220,10 @@ class BackStackObserverTest {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(enableScreenTracking = true))
 
-    sut.onBackStackChanged(listOf(HomeRoute(), ProfileRoute("123")))
+    sut.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("123")))
 
-    assertThat(fixture.scope.screen).isEqualTo("/ProfileRoute")
-    assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf("/ProfileRoute"))
+    assertThat(fixture.scope.screen).isEqualTo("/ProfileScreen")
+    assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf("/ProfileScreen"))
   }
 
   @Test
@@ -228,7 +231,7 @@ class BackStackObserverTest {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(enableScreenTracking = false))
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
@@ -243,10 +246,10 @@ class BackStackObserverTest {
         config = ObserverConfig(captureBackStack = true, maxCapturedBackStackEntries = 2)
       )
 
-    sut.onBackStackChanged(listOf(HomeRoute(), ProfileRoute("123"), SettingsRoute("privacy")))
+    sut.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("123"), SettingsScreen("privacy")))
 
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/SettingsRoute"), mapOf("route" to "/ProfileRoute")))
+      .isEqualTo(listOf(mapOf("entry" to "/SettingsScreen"), mapOf("entry" to "/ProfileScreen")))
   }
 
   @Test
@@ -255,23 +258,25 @@ class BackStackObserverTest {
     val sut =
       fixture.getSut(
         config = ObserverConfig(captureBackStack = true),
-        argumentsExtractor =
-          RouteArgumentsExtractor { entry ->
+        entryMapper = { entry ->
+          SentryBackStackEntry(
+            entry::class.simpleName ?: "unknown",
             when (entry) {
-              is HomeRoute -> mapOf("values" to List(999) { it })
-              is ProfileRoute -> mapOf("userId" to entry.userId)
+              is HomeScreen -> mapOf("values" to List(999) { it })
+              is ProfileScreen -> mapOf("userId" to entry.userId)
               else -> emptyMap()
-            }
-          },
+            },
+          )
+        },
       )
 
-    sut.onBackStackChanged(listOf(HomeRoute(), ProfileRoute("123")))
+    sut.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("123")))
 
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("route" to "/ProfileRoute", "args" to mapOf("userId" to "123")),
-          mapOf("route" to "/HomeRoute"),
+          mapOf("entry" to "/ProfileScreen", "arguments" to mapOf("userId" to "123")),
+          mapOf("entry" to "/HomeScreen"),
         )
       )
     assertThat(fixture.startedTransactions.single().getData("arguments"))
@@ -282,21 +287,21 @@ class BackStackObserverTest {
   fun `onBackStackChanged emits an updated copy of the back stack even when the top entry is unchanged`() {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(captureBackStack = true))
-    val home = HomeRoute()
-    val profile = ProfileRoute("123")
+    val home = HomeScreen()
+    val profile = ProfileScreen("123")
 
     sut.onBackStackChanged(listOf(home, profile))
-    sut.onBackStackChanged(listOf(home, SettingsRoute("privacy"), profile))
+    sut.onBackStackChanged(listOf(home, SettingsScreen("privacy"), profile))
 
     assertThat(fixture.breadcrumbs).hasSize(1)
     assertThat(fixture.startedTransactions).hasSize(1)
-    assertThat(fixture.scope.screen).isEqualTo("/ProfileRoute")
+    assertThat(fixture.scope.screen).isEqualTo("/ProfileScreen")
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("route" to "/ProfileRoute"),
-          mapOf("route" to "/SettingsRoute"),
-          mapOf("route" to "/HomeRoute"),
+          mapOf("entry" to "/ProfileScreen"),
+          mapOf("entry" to "/SettingsScreen"),
+          mapOf("entry" to "/HomeScreen"),
         )
       )
   }
@@ -305,24 +310,24 @@ class BackStackObserverTest {
   fun `onBackStackChanged emits new top-entry data when the top entry is replaced by an equal new instance`() {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(captureBackStack = true))
-    val home = HomeRoute()
-    val firstProfile = ProfileRoute("123")
-    val replacementProfile = ProfileRoute("123")
+    val home = HomeScreen()
+    val firstProfile = ProfileScreen("123")
+    val replacementProfile = ProfileScreen("123")
 
     sut.onBackStackChanged(listOf(home, firstProfile))
     sut.onBackStackChanged(listOf(home, replacementProfile))
 
     assertThat(fixture.breadcrumbs).hasSize(2)
-    assertThat(fixture.breadcrumbs.last().data["from"]).isEqualTo("/ProfileRoute")
-    assertThat(fixture.breadcrumbs.last().data["to"]).isEqualTo("/ProfileRoute")
+    assertThat(fixture.breadcrumbs.last().data["from"]).isEqualTo("/ProfileScreen")
+    assertThat(fixture.breadcrumbs.last().data["to"]).isEqualTo("/ProfileScreen")
     assertThat(fixture.breadcrumbHints.last().get(TypeCheckHint.ANDROID_NAV3_DESTINATION))
       .isSameInstanceAs(replacementProfile)
     assertThat(fixture.startedTransactions).hasSize(2)
-    assertThat(fixture.startedTransactions.last().name).isEqualTo("/ProfileRoute")
+    assertThat(fixture.startedTransactions.last().name).isEqualTo("/ProfileScreen")
     assertThat(fixture.startedTransactions.first().isFinished).isTrue()
-    assertThat(fixture.scope.screen).isEqualTo("/ProfileRoute")
+    assertThat(fixture.scope.screen).isEqualTo("/ProfileScreen")
     assertThat(fixture.scope.navigationBackStack())
-      .isEqualTo(listOf(mapOf("route" to "/ProfileRoute"), mapOf("route" to "/HomeRoute")))
+      .isEqualTo(listOf(mapOf("entry" to "/ProfileScreen"), mapOf("entry" to "/HomeScreen")))
   }
 
   @Test
@@ -334,19 +339,19 @@ class BackStackObserverTest {
       )
     fixture.scope.setContexts(
       "navigation",
-      mapOf("backstack" to listOf(mapOf("route" to "/Stale"))),
+      mapOf("backstack" to listOf(mapOf("entry" to "/Stale"))),
     )
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     // Doesn't emit a back stack...
     assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
 
     // ...but continues to emit all other Sentry data.
-    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/HomeRoute")
+    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/HomeScreen")
     assertThat(fixture.startedTransactions).hasSize(1)
-    assertThat(fixture.startedTransactions.single().name).isEqualTo("/HomeRoute")
-    assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
+    assertThat(fixture.startedTransactions.single().name).isEqualTo("/HomeScreen")
+    assertThat(fixture.scope.screen).isEqualTo("/HomeScreen")
   }
 
   @Test
@@ -355,19 +360,19 @@ class BackStackObserverTest {
     val sut = fixture.getSut(config = ObserverConfig(captureBackStack = false))
     fixture.scope.setContexts(
       "navigation",
-      mapOf("backstack" to listOf(mapOf("route" to "/Stale"))),
+      mapOf("backstack" to listOf(mapOf("entry" to "/Stale"))),
     )
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     // Doesn't emit a back stack...
     assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
 
     // ...but continues to emit all other Sentry data.
-    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/HomeRoute")
+    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/HomeScreen")
     assertThat(fixture.startedTransactions).hasSize(1)
-    assertThat(fixture.startedTransactions.single().name).isEqualTo("/HomeRoute")
-    assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
+    assertThat(fixture.startedTransactions.single().name).isEqualTo("/HomeScreen")
+    assertThat(fixture.scope.screen).isEqualTo("/HomeScreen")
   }
 
   // Like `onBackStackChanged does not emit a back stack copy when back stack capture is disabled`,
@@ -375,58 +380,56 @@ class BackStackObserverTest {
   @Test
   fun `onBackStackChanged skips lower back stack resolution when back stack capture is disabled`() {
     val fixture = Fixture()
-    val home = HomeRoute()
-    val profile = ProfileRoute("123")
-    val nameCalls = mutableMapOf<Any, Int>()
-    val argumentCalls = mutableMapOf<Any, Int>()
+    val home = HomeScreen()
+    val profile = ProfileScreen("123")
+    val mapperCalls = mutableMapOf<Any, Int>()
     val sut =
       fixture.getSut(
         config = ObserverConfig(captureBackStack = false),
-        nameExtractor = { entry ->
-          nameCalls[entry] = (nameCalls[entry] ?: 0) + 1
-          entry::class.simpleName ?: "unknown"
-        },
-        argumentsExtractor = { entry ->
-          argumentCalls[entry] = (argumentCalls[entry] ?: 0) + 1
-          when (entry) {
-            is HomeRoute -> mapOf("tab" to entry.id)
-            is ProfileRoute -> mapOf("userId" to entry.userId)
-            else -> emptyMap()
-          }
+        entryMapper = { entry ->
+          mapperCalls[entry] = (mapperCalls[entry] ?: 0) + 1
+          SentryBackStackEntry(
+            entry::class.simpleName ?: "unknown",
+            when (entry) {
+              is HomeScreen -> mapOf("tab" to entry.id)
+              is ProfileScreen -> mapOf("userId" to entry.userId)
+              else -> emptyMap()
+            },
+          )
         },
       )
 
     sut.onBackStackChanged(listOf(home, profile))
 
-    assertThat(nameCalls[profile]).isEqualTo(1)
-    assertThat(argumentCalls[profile]).isEqualTo(1)
-    assertThat(nameCalls).doesNotContainKey(home)
-    assertThat(argumentCalls).doesNotContainKey(home)
+    assertThat(mapperCalls[profile]).isEqualTo(1)
+    assertThat(mapperCalls).doesNotContainKey(home)
   }
 
   @Test
-  fun `onBackStackChanged resolves top entry arguments once per update`() {
+  fun `onBackStackChanged maps each captured entry once per update`() {
     val fixture = Fixture()
-    val home = HomeRoute()
-    val profile = ProfileRoute("123")
-    val argumentCalls = mutableMapOf<Any, Int>()
+    val home = HomeScreen()
+    val profile = ProfileScreen("123")
+    val mapperCalls = mutableMapOf<Any, Int>()
     val sut =
       fixture.getSut(
-        argumentsExtractor =
-          RouteArgumentsExtractor { entry ->
-            argumentCalls[entry] = (argumentCalls[entry] ?: 0) + 1
+        entryMapper = { entry ->
+          mapperCalls[entry] = (mapperCalls[entry] ?: 0) + 1
+          SentryBackStackEntry(
+            entry::class.simpleName ?: "unknown",
             when (entry) {
-              is HomeRoute -> mapOf("tab" to entry.id)
-              is ProfileRoute -> mapOf("userId" to entry.userId)
+              is HomeScreen -> mapOf("tab" to entry.id)
+              is ProfileScreen -> mapOf("userId" to entry.userId)
               else -> emptyMap()
-            }
-          }
+            },
+          )
+        }
       )
 
     sut.onBackStackChanged(listOf(home, profile))
 
-    assertThat(argumentCalls[profile]).isEqualTo(1)
-    assertThat(argumentCalls[home]).isEqualTo(1)
+    assertThat(mapperCalls[profile]).isEqualTo(1)
+    assertThat(mapperCalls[home]).isEqualTo(1)
   }
 
   @Test
@@ -435,30 +438,32 @@ class BackStackObserverTest {
     val sut =
       fixture.getSut(
         config = ObserverConfig(enableNavigationTransactions = true),
-        argumentsExtractor =
-          RouteArgumentsExtractor { entry ->
+        entryMapper = { entry ->
+          SentryBackStackEntry(
+            entry::class.simpleName ?: "unknown",
             when (entry) {
-              is ProfileRoute -> mapOf("userId" to entry.userId)
+              is ProfileScreen -> mapOf("userId" to entry.userId)
               else -> emptyMap()
-            }
-          },
+            },
+          )
+        },
       )
 
-    sut.onBackStackChanged(listOf(HomeRoute(), ProfileRoute("123")))
+    sut.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("123")))
 
     val transaction = fixture.startedTransactions.single()
 
-    assertThat(transaction.name).isEqualTo("/ProfileRoute")
+    assertThat(transaction.name).isEqualTo("/ProfileScreen")
     assertThat(transaction.transactionNameSource).isEqualTo(TransactionNameSource.ROUTE)
     assertThat(transaction.operation).isEqualTo("navigation")
     assertThat(transaction.spanContext.origin).isEqualTo("auto.navigation.nav3")
     assertThat(transaction.getData("arguments")).isEqualTo(mapOf("userId" to "123"))
-    assertThat(transaction.contexts.app?.viewNames).isEqualTo(listOf("/ProfileRoute"))
+    assertThat(transaction.contexts.app?.viewNames).isEqualTo(listOf("/ProfileScreen"))
     assertThat(transaction.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("route" to "/ProfileRoute", "args" to mapOf("userId" to "123")),
-          mapOf("route" to "/HomeRoute"),
+          mapOf("entry" to "/ProfileScreen", "arguments" to mapOf("userId" to "123")),
+          mapOf("entry" to "/HomeScreen"),
         )
       )
     assertThat(fixture.scope.transaction).isSameInstanceAs(transaction)
@@ -484,7 +489,7 @@ class BackStackObserverTest {
       }
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = true))
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     assertThat(transactionOptionsCaptor.firstValue.origin).isEqualTo("auto.navigation.nav3")
   }
@@ -500,14 +505,14 @@ class BackStackObserverTest {
     fixture.scope.contexts.setApp(scopeApp)
     val sut = fixture.getSut(config = ObserverConfig(enableScreenTracking = true))
 
-    sut.onBackStackChanged(listOf(HomeRoute(), ProfileRoute("123")))
+    sut.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("123")))
 
     val transactionApp = fixture.startedTransactions.single().contexts.app
     assertThat(transactionApp).isNotNull()
     assertThat(transactionApp).isNotSameInstanceAs(scopeApp)
     assertThat(transactionApp?.appName).isEqualTo("Demo App")
     assertThat(transactionApp?.appIdentifier).isEqualTo("io.sentry.demo")
-    assertThat(transactionApp?.viewNames).isEqualTo(listOf("/ProfileRoute"))
+    assertThat(transactionApp?.viewNames).isEqualTo(listOf("/ProfileScreen"))
   }
 
   @Test
@@ -516,12 +521,12 @@ class BackStackObserverTest {
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = true))
 
     fixture.scope.setActiveSpan(mock<ISpan>())
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     assertThat(fixture.startedTransactions).hasSize(1)
-    assertThat(fixture.startedTransactions.single().name).isEqualTo("/HomeRoute")
+    assertThat(fixture.startedTransactions.single().name).isEqualTo("/HomeScreen")
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
-    assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
+    assertThat(fixture.scope.screen).isEqualTo("/HomeScreen")
   }
 
   @Test
@@ -536,11 +541,11 @@ class BackStackObserverTest {
     fixture.scope.transaction = ambientTransaction
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = true))
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isSameInstanceAs(ambientTransaction)
-    assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
+    assertThat(fixture.scope.screen).isEqualTo("/HomeScreen")
   }
 
   @Test
@@ -549,7 +554,7 @@ class BackStackObserverTest {
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = false))
     val originalPropagationContext = fixture.scope.propagationContext
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isNull()
@@ -568,7 +573,7 @@ class BackStackObserverTest {
     fixture.scope.transaction = staleTransaction
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = true))
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     assertThat(fixture.startedTransactions).hasSize(1)
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
@@ -581,11 +586,11 @@ class BackStackObserverTest {
       .thenReturn(NoOpTransaction.getInstance())
     val sut = fixture.getSut(config = ObserverConfig(enableNavigationTransactions = true))
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
 
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isNull()
-    assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
+    assertThat(fixture.scope.screen).isEqualTo("/HomeScreen")
   }
 
   @Test
@@ -593,7 +598,7 @@ class BackStackObserverTest {
     val fixture = Fixture()
     val sut = fixture.getSut()
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
     val transaction = fixture.startedTransactions.single()
 
     sut.onBackStackChanged(emptyList())
@@ -608,29 +613,30 @@ class BackStackObserverTest {
 
   @Test
   @Suppress("LongMethod")
-  fun `onBackStackChanged records unknown route names when destination route name can't be extracted`() {
+  fun `onBackStackChanged records unknown entry names when destination name can't be mapped`() {
     val fixture = Fixture()
-    val home = HomeRoute()
-    val profile = ProfileRoute(userId = "123")
-    val cart = CartRoute(productId = "987")
-    val settings = SettingsRoute(section = "privacy")
+    val home = HomeScreen()
+    val profile = ProfileScreen(userId = "123")
+    val cart = CartScreen(productId = "987")
+    val settings = SettingsScreen(section = "privacy")
     val sut =
       fixture.getSut(
-        nameExtractor =
-          RouteNameExtractor { entry ->
+        entryMapper = { entry ->
+          SentryBackStackEntry(
             when (entry) {
-              is HomeRoute -> "home"
-              is ProfileRoute -> "   "
-              is CartRoute -> error("throwing in order to simulate a buggy name extractor")
-              is SettingsRoute -> "settings"
-              else -> error("unknown route: $entry")
+              is HomeScreen -> "home"
+              is ProfileScreen -> "   "
+              is CartScreen -> error("throwing in order to simulate a buggy entry mapper")
+              is SettingsScreen -> "settings"
+              else -> error("unknown entry: $entry")
             }
-          }
+          )
+        }
       )
 
     // Navigate to the home screen and verify that a transaction has started and related Sentry data
     // have been generated (i.e., screen name, breadcrumb, and updated back stack context), as the
-    // host app's RouteNameExtractor returned a valid route name for the home screen entry.
+    // host app's BackStackEntryMapper returned a valid name for the home screen entry.
     sut.onBackStackChanged(listOf(home))
     val transaction = fixture.startedTransactions.single()
     assertThat(transaction.isFinished).isFalse()
@@ -638,7 +644,7 @@ class BackStackObserverTest {
     assertThat(fixture.scope.screen).isEqualTo("/home")
     assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf("/home"))
     assertThat(fixture.breadcrumbs).hasSize(1)
-    assertThat(fixture.scope.navigationBackStack()).isEqualTo(listOf(mapOf("route" to "/home")))
+    assertThat(fixture.scope.navigationBackStack()).isEqualTo(listOf(mapOf("entry" to "/home")))
 
     // Navigate to the profile screen and verify the invalid route name is recorded as /unknown so
     // the transition history remains intact.
@@ -647,19 +653,19 @@ class BackStackObserverTest {
     assertThat(fixture.startedTransactions).hasSize(2)
     val profileTransaction = fixture.startedTransactions.last()
     assertThat(profileTransaction.isFinished).isFalse()
-    assertThat(profileTransaction.name).isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
+    assertThat(profileTransaction.name).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
     assertThat(fixture.scope.transaction).isSameInstanceAs(profileTransaction)
-    assertThat(fixture.scope.screen).isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
+    assertThat(fixture.scope.screen).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
     assertThat(fixture.scope.contexts.app?.viewNames)
-      .isEqualTo(listOf(RouteTranslator.UNKNOWN_ROUTE_NAME))
+      .isEqualTo(listOf(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME))
     assertThat(fixture.breadcrumbs).hasSize(2)
     assertThat(fixture.breadcrumbs.last().data)
-      .containsExactly("from", "/home", "to", RouteTranslator.UNKNOWN_ROUTE_NAME)
+      .containsExactly("from", "/home", "to", NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
-          mapOf("route" to "/home"),
+          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf("entry" to "/home"),
         )
       )
 
@@ -670,25 +676,25 @@ class BackStackObserverTest {
     assertThat(fixture.startedTransactions).hasSize(3)
     val cartTransaction = fixture.startedTransactions.last()
     assertThat(cartTransaction.isFinished).isFalse()
-    assertThat(cartTransaction.name).isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
+    assertThat(cartTransaction.name).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
     assertThat(fixture.scope.transaction).isSameInstanceAs(cartTransaction)
-    assertThat(fixture.scope.screen).isEqualTo(RouteTranslator.UNKNOWN_ROUTE_NAME)
+    assertThat(fixture.scope.screen).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
     assertThat(fixture.scope.contexts.app?.viewNames)
-      .isEqualTo(listOf(RouteTranslator.UNKNOWN_ROUTE_NAME))
+      .isEqualTo(listOf(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME))
     assertThat(fixture.breadcrumbs).hasSize(3)
     assertThat(fixture.breadcrumbs.last().data)
       .containsExactly(
         "from",
-        RouteTranslator.UNKNOWN_ROUTE_NAME,
+        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
         "to",
-        RouteTranslator.UNKNOWN_ROUTE_NAME,
+        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
       )
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
-          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
-          mapOf("route" to "/home"),
+          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf("entry" to "/home"),
         )
       )
 
@@ -706,14 +712,14 @@ class BackStackObserverTest {
     assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf("/settings"))
     assertThat(fixture.breadcrumbs).hasSize(4)
     assertThat(fixture.breadcrumbs.last().data)
-      .containsExactly("from", RouteTranslator.UNKNOWN_ROUTE_NAME, "to", "/settings")
+      .containsExactly("from", NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME, "to", "/settings")
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("route" to "/settings"),
-          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
-          mapOf("route" to RouteTranslator.UNKNOWN_ROUTE_NAME),
-          mapOf("route" to "/home"),
+          mapOf("entry" to "/settings"),
+          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf("entry" to "/home"),
         )
       )
   }
@@ -723,7 +729,7 @@ class BackStackObserverTest {
     val fixture = Fixture()
     val sut = fixture.getSut()
 
-    sut.onBackStackChanged(listOf(HomeRoute()))
+    sut.onBackStackChanged(listOf(HomeScreen()))
     val transaction = fixture.startedTransactions.single()
 
     sut.cleanup()

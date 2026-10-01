@@ -34,16 +34,20 @@ class SentryNavOptionsTest {
   }
 
   @Test
-  fun `equal instances share the same hash code`() {
-    val first = SentryNavOptions()
-    val second = SentryNavOptions()
+  fun `equals follows value semantics`() {
+    val options = SentryNavOptions()
+    val structurallyEqual = SentryNavOptions()
+    val structurallyDifferent = SentryNavOptions { captureBackStack = false }
 
-    assertThat(first).isEqualTo(second)
-    assertThat(first.hashCode()).isEqualTo(second.hashCode())
+    assertThat(options).isEqualTo(options)
+    assertThat(options).isEqualTo(structurallyEqual)
+    assertThat(options).isNotEqualTo(structurallyDifferent)
+    assertThat(options).isNotEqualTo(null)
+    assertThat(options).isNotEqualTo("options")
   }
 
   @Test
-  fun `equals and hash code include every property`() {
+  fun `equals includes every property`() {
     val base = SentryNavOptions()
     val instanceFields =
       SentryNavOptions::class
@@ -58,6 +62,34 @@ class SentryNavOptionsTest {
       val changed = mutate(base)
 
       assertThat(changed).isNotEqualTo(base)
+      assertThat(propertyName).isIn(instanceFields)
+    }
+  }
+
+  @Test
+  fun `equal instances share the same hash code`() {
+    val first = SentryNavOptions()
+    val second = SentryNavOptions()
+
+    assertThat(first).isEqualTo(second)
+    assertThat(first.hashCode()).isEqualTo(second.hashCode())
+  }
+
+  @Test
+  fun `hash code includes every property`() {
+    val base = SentryNavOptions()
+    val instanceFields =
+      SentryNavOptions::class
+        .java
+        .declaredFields
+        .filterNot { Modifier.isStatic(it.modifiers) }
+        .map { it.name }
+
+    assertThat(propertyMutators.keys).containsExactlyElementsIn(instanceFields)
+
+    propertyMutators.forEach { (propertyName, mutate) ->
+      val changed = mutate(base)
+
       assertThat(changed.hashCode()).isNotEqualTo(base.hashCode())
       assertThat(propertyName).isIn(instanceFields)
     }
