@@ -67,7 +67,8 @@ public class SentryAppender extends AbstractAppender {
 
   /**
    * @deprecated This constructor is deprecated. Please use {@link #SentryAppender(String, Filter,
-   *     String, Level, Level, Level, Boolean, ITransportFactory, IScopes, String[])} instead.
+   *     String, Level, Level, Level, boolean, Boolean, ITransportFactory, IScopes, String[])}
+   *     instead.
    */
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
@@ -88,30 +89,6 @@ public class SentryAppender extends AbstractAppender {
         minimumBreadcrumbLevel,
         minimumEventLevel,
         null,
-        debug,
-        transportFactory,
-        scopes,
-        contextTags);
-  }
-
-  public SentryAppender(
-      final @NotNull String name,
-      final @Nullable Filter filter,
-      final @Nullable String dsn,
-      final @Nullable Level minimumBreadcrumbLevel,
-      final @Nullable Level minimumEventLevel,
-      final @Nullable Level minimumLevel,
-      final @Nullable Boolean debug,
-      final @Nullable ITransportFactory transportFactory,
-      final @NotNull IScopes scopes,
-      final @Nullable String[] contextTags) {
-    this(
-        name,
-        filter,
-        dsn,
-        minimumBreadcrumbLevel,
-        minimumEventLevel,
-        minimumLevel,
         false,
         debug,
         transportFactory,
@@ -156,32 +133,12 @@ public class SentryAppender extends AbstractAppender {
    * @param minimumBreadcrumbLevel The min. level of the breadcrumb.
    * @param minimumEventLevel The min. level of the event.
    * @param minimumLevel The min. level of the log event.
+   * @param logsEnabled Whether to capture log events as Sentry Logs.
    * @param dsn the Sentry DSN.
    * @param debug if Sentry debug mode should be on
    * @param filter The filter, if any, to use.
    * @return The SentryAppender.
    */
-  public static @Nullable SentryAppender createAppender(
-      final @Nullable String name,
-      final @Nullable Level minimumBreadcrumbLevel,
-      final @Nullable Level minimumEventLevel,
-      final @Nullable Level minimumLevel,
-      final @Nullable String dsn,
-      final @Nullable Boolean debug,
-      final @Nullable Filter filter,
-      final @Nullable String contextTags) {
-    return createAppender(
-        name,
-        minimumBreadcrumbLevel,
-        minimumEventLevel,
-        minimumLevel,
-        false,
-        dsn,
-        debug,
-        filter,
-        contextTags);
-  }
-
   @PluginFactory
   public static @Nullable SentryAppender createAppender(
       @Nullable @PluginAttribute("name") final String name,

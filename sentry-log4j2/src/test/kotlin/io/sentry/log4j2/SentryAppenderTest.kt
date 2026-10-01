@@ -310,7 +310,7 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `existing constructors default logs to disabled`() {
+  fun `constructors can opt out of logs capture`() {
     val scopes = mock<IScopes>()
     val event = mock<LogEvent>()
     whenever(event.level).thenReturn(Level.INFO)
@@ -335,6 +335,7 @@ class SentryAppenderTest {
         Level.OFF,
         Level.OFF,
         Level.INFO,
+        false,
         null,
         null,
         scopes,
@@ -348,24 +349,9 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `existing factory and plugin attribute default logs to disabled`() {
+  fun `plugin attribute defaults logs to disabled`() {
     val event = mock<LogEvent>()
     whenever(event.level).thenReturn(Level.INFO)
-    val existingAppender =
-      spy(
-        assertNotNull(
-          SentryAppender.createAppender(
-            "existing",
-            Level.OFF,
-            Level.OFF,
-            Level.INFO,
-            null,
-            null,
-            null,
-            null,
-          )
-        )
-      )
     val pluginDefaultAppender =
       spy(
         assertNotNull(
@@ -383,10 +369,8 @@ class SentryAppenderTest {
         )
       )
 
-    existingAppender.append(event)
     pluginDefaultAppender.append(event)
 
-    verify(existingAppender, never()).captureLog(event)
     verify(pluginDefaultAppender, never()).captureLog(event)
   }
 

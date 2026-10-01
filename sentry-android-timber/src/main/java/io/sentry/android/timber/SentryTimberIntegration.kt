@@ -18,26 +18,14 @@ public class SentryTimberIntegration(
   public val minEventLevel: SentryLevel = SentryLevel.ERROR,
   public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
   public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+  logsEnabled: Boolean = false,
 ) : Integration, Closeable {
   public val logsEnabled: Boolean
     get() = logsEnabledProvider.evaluate()
 
-  private var logsEnabledProvider: Evaluator<Boolean> = Evaluator { false }
+  private var logsEnabledProvider: Evaluator<Boolean> = Evaluator { logsEnabled }
 
-  public constructor(logsEnabled: Boolean) : this() {
-    logsEnabledProvider = Evaluator { logsEnabled }
-  }
-
-  public constructor(
-    minEventLevel: SentryLevel,
-    minBreadcrumbLevel: SentryLevel,
-    minLogsLevel: SentryLogLevel,
-    logsEnabled: Boolean,
-  ) : this(minEventLevel, minBreadcrumbLevel, minLogsLevel) {
-    logsEnabledProvider = Evaluator { logsEnabled }
-  }
-
-  public constructor(logsEnabledProvider: Evaluator<Boolean>) : this() {
+  internal constructor(logsEnabledProvider: Evaluator<Boolean>) : this() {
     this.logsEnabledProvider = logsEnabledProvider
   }
 

@@ -238,6 +238,7 @@ class SentryLog4j2AppenderAutoConfigurationTest {
         null,
         null,
         null,
+        false,
         null,
         null,
         io.sentry.ScopesAdapter.getInstance(),

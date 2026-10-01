@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- Add a `logsEnabled` argument to the preferred Log4j2 `SentryAppender` constructor and
+  `createAppender` factory. Pass `true` to opt in to Sentry Logs capture or `false` to keep it
+  disabled. ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
+- Add a `logsEnabled` argument to the `SentryTimberIntegration` and `SentryTimberTree` JVM
+  constructors. It defaults to `false` for Kotlin callers; Java callers using the explicit level
+  constructors must pass the new argument. ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+
 ### Features
 
 - Remove the aggregate Sentry Metrics enable flag; `Sentry.metrics()` calls now capture Metrics by default ([#5953](https://github.com/getsentry/sentry-java/pull/5953))
