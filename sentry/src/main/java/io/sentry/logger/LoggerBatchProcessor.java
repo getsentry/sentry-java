@@ -89,6 +89,8 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
       executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
       return;
     }
+    // On restart, reaching this path means the executor never had anything scheduled, so
+    // synchronous shutdown should be immediate.
     executorService.close(options.getShutdownTimeoutMillis());
     while (!queue.isEmpty()) {
       flushBatch();
