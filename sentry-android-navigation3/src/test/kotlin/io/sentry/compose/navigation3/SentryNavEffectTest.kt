@@ -337,7 +337,7 @@ class SentryNavEffectTest {
     val entryMapper =
       mutableStateOf<BackStackEntryMapper<Any>>(
         BackStackEntryMapper { entry ->
-          SentryBackStackEntry(entry::class.simpleName ?: "unknown")
+          SentryBackStackEntry(entry::class.simpleName ?: "<unknown>")
         }
       )
 

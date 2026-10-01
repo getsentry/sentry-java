@@ -72,14 +72,19 @@ internal class BackStackConverter<T : Any>(
         return NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME)
       }
 
-    val arguments = info.arguments?.let(sanitizer::sanitizeEntry) ?: emptyMap()
-    val formattedName = NormalizedSentryBackStackEntry.formatName(info.name)
-    if (formattedName.isBlank()) {
-      warningState.logInvalidNameWarning(logger)
-      return NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME, arguments)
+    if (info == null) {
+      return NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME)
     }
 
-    return NormalizedSentryBackStackEntry(formattedName, arguments)
+    val arguments = info.arguments?.let(sanitizer::sanitizeEntry) ?: emptyMap()
+    val formattedName = NormalizedSentryBackStackEntry.formatName(info.name)
+
+    return if (formattedName.isBlank()) {
+      warningState.logInvalidNameWarning(logger)
+      NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME, arguments)
+    } else {
+      NormalizedSentryBackStackEntry(formattedName, arguments)
+    }
   }
 
   /**

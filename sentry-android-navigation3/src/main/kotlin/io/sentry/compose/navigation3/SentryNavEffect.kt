@@ -21,8 +21,8 @@ import org.jetbrains.annotations.ApiStatus
  *
  *    // Place SentryNavEffect in the same composable as your NavDisplay and call
  *    // the effect first. Doing so ensures the effect's lifecycle matches your
- *    // NavDisplay, and that any Sentry data produced by your nav destinations
- *    // get attributed to the appropriate nav transaction.
+ *    // NavDisplay, and that any Sentry data produced by your initial nav
+ *    // destination get attributed to the appropriate nav transaction.
  *    SentryNavEffect(
  *      backStack = navBackStack,
  *      backStackEntryMapper = { entry ->
@@ -64,6 +64,10 @@ import org.jetbrains.annotations.ApiStatus
  * [predictive back](https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture)
  * gestures. That means that spans produced by predictively rendered composables can show up under
  * the current destination's transaction.
+ *
+ * Multiple simultaneously active `SentryNavEffect` instances writing to the same Sentry scope are
+ * not supported. Violating this restriction can result in interleaved breadcrumbs, clobbered screen
+ * names and back stacks, and transactions that interfere with one another.
  *
  * @param backStack The navigation backstack to observe.
  * @param backStackEntryMapper Maps each entry of the [backStack] to a name and optional arguments

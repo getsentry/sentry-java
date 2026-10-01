@@ -31,8 +31,15 @@ class ForwardingBackStackEntryMapperTest {
       BackStackEntryMapper<HomeScreen> { SentryBackStackEntry(it.id) }
     }
 
-    assertThat(sut.map(HomeScreen())).isEqualTo(SentryBackStackEntry("home"))
-    assertThat(sut.map(HomeScreen()).arguments).isNull()
+    val mapped = sut.map(HomeScreen())
+    assertThat(mapped).isEqualTo(SentryBackStackEntry("home"))
+    assertThat(mapped?.arguments).isNull()
+  }
+
+  @Test
+  fun `mapper forwards null results`() {
+    val sut = ForwardingBackStackEntryMapper<HomeScreen> { BackStackEntryMapper { null } }
+    assertThat(sut.map(HomeScreen())).isNull()
   }
 
   @Test

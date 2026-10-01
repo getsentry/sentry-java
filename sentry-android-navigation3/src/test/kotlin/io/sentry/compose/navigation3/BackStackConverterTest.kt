@@ -32,7 +32,7 @@ class BackStackConverterTest {
 
   private val defaultEntryMapper =
     BackStackEntryMapper<Any> { entry ->
-      SentryBackStackEntry(entry::class.simpleName ?: "unknown")
+      SentryBackStackEntry(entry::class.simpleName ?: "<unknown>")
     }
 
   private fun getSut(
@@ -44,7 +44,7 @@ class BackStackConverterTest {
     )
 
   private fun entryInfo(entry: Any, arguments: Map<String, Any?>? = null): SentryBackStackEntry =
-    SentryBackStackEntry(entry::class.simpleName ?: "unknown", arguments)
+    SentryBackStackEntry(entry::class.simpleName ?: "<unknown>", arguments)
 
   private fun BackStackConverter<Any>.convert(entry: Any): NormalizedSentryBackStackEntry =
     convert(listOf(entry), RetentionPolicy.KEEP_FIRST).single()
@@ -298,6 +298,14 @@ class BackStackConverterTest {
             "Using /unknown instead."
         ),
       )
+  }
+
+  @Test
+  fun `convert returns unknown name without arguments if mapper returns null`() {
+    val sut = getSut(entryMapper = { null })
+
+    assertThat(sut.convert(HomeScreen()))
+      .isEqualTo(NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME))
   }
 
   @Test

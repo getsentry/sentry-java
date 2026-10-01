@@ -77,9 +77,9 @@ public class SentryBackStackEntry(
  *
  * **Names fall back to "/unknown"**
  *
- * If [map] throws or returns a blank [name][SentryBackStackEntry.name], Sentry records the
- * destination as "/unknown". Doing so signals that name extraction needs to be fixed while avoiding
- * misleading gaps in navigation data.
+ * If [map] throws, returns `null`, or returns a blank [name][SentryBackStackEntry.name], Sentry
+ * records the destination as "/unknown". Doing so signals that name extraction needs to be fixed
+ * while avoiding misleading gaps in navigation data.
  *
  * For instance, if a user navigates from `/home -> /detail -> /settings`, but the mapper for
  * `/detail` throws, the back stack record will be `/home -> /unknown -> /settings` rather than
@@ -109,8 +109,8 @@ public class SentryBackStackEntry(
  *
  * **Arguments fall back to `toString()` or nothing**
  *
- * All non-supported argument types are stringified via `toString()`. If [map] throws, no arguments
- * are recorded for that back stack entry.
+ * All non-supported argument types are stringified via `toString()`. If [map] throws or returns
+ * `null`, no arguments are recorded for that back stack entry.
  *
  * **Using kotlinx.serialization**
  *
@@ -123,14 +123,15 @@ public class SentryBackStackEntry(
  * ```kotlin
  * @Serializable
  * @SerialName("Home")
- * data object Home(userName: String) : NavKey
+ * data class Home(userName: String) : NavKey
  *
  * @Serializable
  * @SerialName("ProductDetail")
  * data class ProductDetail(userName: String, productId: String, tab: Tab) : NavKey
- * ```
- * ```kotlin
- * val backStackItemMapper = BackStackEntryMapper<Any> { entry ->
+ *
+ * ...
+ *
+ * val backStackItemMapper = BackStackEntryMapper<NavKey> { entry ->
  *   when (entry) {
  *     is Home -> SentryBackStackEntry(Home.serializer().descriptor.serialName)
  *     is ProductDetail -> SentryBackStackEntry(
@@ -139,6 +140,7 @@ public class SentryBackStackEntry(
  *       // or non-performant.
  *       arguments = mapOf("product_id" to entry.productId, "tab" to entry.tab)
  *     )
+ *     ...
  *   }
  * }
  * ```
@@ -146,7 +148,7 @@ public class SentryBackStackEntry(
 @ApiStatus.Experimental
 @ApiStatus.Internal
 public fun interface BackStackEntryMapper<T : Any> {
-  public fun map(backStackEntry: T): SentryBackStackEntry
+  public fun map(backStackEntry: T): SentryBackStackEntry?
 }
 
 /**
@@ -165,7 +167,7 @@ public fun interface BackStackEntryMapper<T : Any> {
 internal class ForwardingBackStackEntryMapper<T : Any>(
   private val currentMapper: () -> BackStackEntryMapper<T>
 ) {
-  fun map(backStackEntry: T): SentryBackStackEntry = Snapshot.withoutReadObservation {
+  fun map(backStackEntry: T): SentryBackStackEntry? = Snapshot.withoutReadObservation {
     currentMapper().map(backStackEntry)
   }
 }

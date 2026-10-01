@@ -46,7 +46,7 @@ class BackStackObserverTest {
   private class Fixture {
     private val defaultEntryMapper =
       BackStackEntryMapper<Any> { entry ->
-        SentryBackStackEntry(entry::class.simpleName ?: "unknown")
+        SentryBackStackEntry(entry::class.simpleName ?: "<unknown>")
       }
 
     val logger = mock<ILogger>()
