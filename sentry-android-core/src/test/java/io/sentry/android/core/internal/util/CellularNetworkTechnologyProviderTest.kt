@@ -11,7 +11,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.android.core.BuildInfoProvider
-import io.sentry.test.ImmediateExecutorService
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
@@ -36,9 +35,6 @@ class CellularNetworkTechnologyProviderTest {
     val buildInfo = mock<BuildInfoProvider>()
     val telephonyManager = mock<TelephonyManager>()
 
-    /** Runs the display info callback inline, so tests don't have to wait for another thread. */
-    val executorService = ImmediateExecutorService()
-
     fun getSut(
       sdkVersion: Int = Build.VERSION_CODES.S,
       hasPermission: Boolean = false,
@@ -49,7 +45,7 @@ class CellularNetworkTechnologyProviderTest {
         .thenReturn(if (hasTelephonyManager) telephonyManager else null)
       whenever(context.checkPermission(any(), any(), any()))
         .thenReturn(if (hasPermission) PERMISSION_GRANTED else PERMISSION_DENIED)
-      return CellularNetworkTechnologyProvider(context, logger, buildInfo, executorService)
+      return CellularNetworkTechnologyProvider(context, logger, buildInfo)
     }
 
     fun displayInfo(networkType: Int, overrideNetworkType: Int): TelephonyDisplayInfo {
@@ -65,8 +61,8 @@ class CellularNetworkTechnologyProviderTest {
     ): TelephonyCallback.DisplayInfoListener {
       provider.register()
       val captor = argumentCaptor<TelephonyCallback>()
-      // The provider wraps the executor service, so the executor it hands to the telephony
-      // manager is not an object this test holds.
+      // The provider runs the callback on the thread the framework calls, so the executor it
+      // hands over only calls `run`.
       verify(telephonyManager).registerTelephonyCallback(any(), captor.capture())
       return captor.firstValue as TelephonyCallback.DisplayInfoListener
     }

@@ -10,12 +10,9 @@ import android.telephony.TelephonyManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
-import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
-import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,13 +43,6 @@ public final class CellularNetworkTechnologyProvider {
   private final @NotNull Object registrationLock = new Object();
 
   /**
-   * The executor the telephony framework calls. The framework calls it on a thread of its own, so a
-   * rejection must not escape: the SDK's executor rejects work once it is shut down, which can
-   * happen before the listener is unregistered.
-   */
-  private final @NotNull Executor executor;
-
-  /**
    * Set from {@link TelephonyCallback.DisplayInfoListener} on API 31 and above. Declared as {@link
    * Object} so that loading this class on older devices never has to resolve a type that does not
    * exist there.
@@ -64,22 +54,10 @@ public final class CellularNetworkTechnologyProvider {
   public CellularNetworkTechnologyProvider(
       final @NotNull Context context,
       final @NotNull ILogger logger,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull ISentryExecutorService executorService) {
+      final @NotNull BuildInfoProvider buildInfoProvider) {
     this.context = ContextUtils.getApplicationContext(context);
     this.logger = logger;
     this.buildInfoProvider = buildInfoProvider;
-    this.executor =
-        runnable -> {
-          try {
-            executorService.submit(runnable);
-          } catch (RejectedExecutionException e) {
-            logger.log(
-                SentryLevel.DEBUG,
-                "Dropping a cellular network technology update, the executor rejected it.",
-                e);
-          }
-        };
   }
 
   /**
@@ -114,7 +92,12 @@ public final class CellularNetworkTechnologyProvider {
       }
       try {
         final @NotNull DisplayInfoCallback callback = new DisplayInfoCallback(this);
-        telephonyManager.registerTelephonyCallback(executor, callback);
+        // The callback maps the display info to a generation and stores it, so it runs on the
+        // binder thread the telephony framework calls it on. An executor of the SDK would add a
+        // reference that goes stale: the options hold a no-op executor until
+        // SentryOptions.activate replaces it, and a second SentryAndroid.init shuts the previous
+        // one down.
+        telephonyManager.registerTelephonyCallback(Runnable::run, callback);
         displayInfoCallback = callback;
         logger.log(SentryLevel.DEBUG, "Started listening for cellular network technology changes.");
       } catch (SecurityException | IllegalStateException | UnsupportedOperationException e) {

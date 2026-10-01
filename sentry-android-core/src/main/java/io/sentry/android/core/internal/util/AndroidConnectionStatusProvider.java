@@ -96,8 +96,7 @@ public final class AndroidConnectionStatusProvider
     this.handler = handler;
     this.connectionStatusObservers = new ArrayList<>();
     this.cellularNetworkTechnologyProvider =
-        new CellularNetworkTechnologyProvider(
-            this.context, options.getLogger(), buildInfoProvider, options.getExecutorService());
+        new CellularNetworkTechnologyProvider(this.context, options.getLogger(), buildInfoProvider);
 
     capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
