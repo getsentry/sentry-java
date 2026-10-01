@@ -12,7 +12,6 @@ import io.sentry.SentryLevel.INFO
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import io.sentry.TypeCheckHint
 import io.sentry.compose.navigation3.BackStackConverter.RetentionPolicy
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasNewTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasSameTop
@@ -199,11 +198,7 @@ internal class BackStackObserver<T : Any>(
     }
 
     if (options.enableNavigationBreadcrumbs) {
-      navBreadcrumbs.emit(
-        fromEntry = previousTop,
-        toEntry = currentBackStack.topEntryNormalized,
-        toRawEntry = currentBackStack.topEntry,
-      )
+      navBreadcrumbs.emit(fromEntry = previousTop, toEntry = currentBackStack.topEntryNormalized)
     }
 
     navTransaction.stop(scope)
@@ -454,11 +449,7 @@ private class NavScreen {
 /** A helper class for generating nav breadcrumbs. */
 private class NavBreadcrumbs(private val scopes: IScopes) {
 
-  fun <T : Any> emit(
-    fromEntry: NormalizedSentryBackStackEntry?,
-    toEntry: NormalizedSentryBackStackEntry,
-    toRawEntry: T,
-  ) {
+  fun emit(fromEntry: NormalizedSentryBackStackEntry?, toEntry: NormalizedSentryBackStackEntry) {
     val breadcrumb =
       Breadcrumb().apply {
         type = NAVIGATION_OP
@@ -480,7 +471,6 @@ private class NavBreadcrumbs(private val scopes: IScopes) {
       }
 
     val hint = Hint()
-    hint.set(TypeCheckHint.ANDROID_NAV3_DESTINATION, toRawEntry)
     scopes.addBreadcrumb(breadcrumb, hint)
   }
 }
