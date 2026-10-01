@@ -19,8 +19,9 @@ Each namespaced options class is a `public static final class` inside `SentryOpt
 
 Do not assume that a namespaced signal needs an aggregate `enabled` field. In particular, Logs and
 Metrics are available through deliberate API calls whenever the SDK is enabled. Their namespaced
-options contain behavior such as sampling, `beforeSend`, limits, and processor factories. Automatic
-capture integrations use source-local enable options that default to `false`.
+options contain signal-specific behavior such as `beforeSend`, limits, and processor factories. Add
+options such as sampling only when the signal supports them. Automatic capture integrations use
+source-local enable options that default to `false`.
 
 To add a new namespaced options class:
 1. Create the `public static final class` inside `SentryOptions` with fields, getters/setters, and any callback interfaces
