@@ -115,4 +115,4 @@ Since version 7.0.0 of this SDK, Sentry version >= 22.12.0 is required to proper
 * [![Stack Overflow](https://img.shields.io/badge/stack%20overflow-sentry-green.svg)](http://stackoverflow.com/questions/tagged/sentry)
 * [![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-sentry-green.svg)](https://github.com/getsentry/.github/blob/master/CODE_OF_CONDUCT.md)
 * [![Twitter Follow](https://img.shields.io/twitter/follow/getsentry?label=getsentry&style=social)](https://twitter.com/intent/follow?screen_name=getsentry)
-* Check out product updates, deep dives, and React Native tips on [the Sentry blog](https://blog.sentry.io/) and [our changelog](https://sentry.io/changelog/)
+* Check out product updates, deep dives, and tips on [the Sentry blog](https://blog.sentry.io/) and [our changelog](https://sentry.io/changelog/)
