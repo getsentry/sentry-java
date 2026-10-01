@@ -12,6 +12,7 @@ import io.sentry.logger.ILoggerApi
 import io.sentry.logger.SentryLogParameters
 import io.sentry.protocol.SdkVersion
 import io.sentry.transport.ITransport
+import io.sentry.util.LazyEvaluator.Evaluator
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -103,6 +104,18 @@ class SentryTimberIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertTrue(sut.enableLogs)
+    Timber.i("message")
+
+    verify(fixture.logs).log(any(), any<SentryLogParameters>(), any<String>())
+  }
+
+  @Test
+  fun `Integration evaluates Logs provider when registered`() {
+    var enableLogs = false
+    val sut = SentryTimberIntegration(Evaluator { enableLogs })
+    enableLogs = true
+
+    sut.register(fixture.scopes, fixture.options)
     Timber.i("message")
 
     verify(fixture.logs).log(any(), any<SentryLogParameters>(), any<String>())
