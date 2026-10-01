@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 8.59.0
 
 ### Breaking Changes
 
