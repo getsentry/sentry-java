@@ -155,6 +155,43 @@ Apply that pattern only where a broad catch is genuinely unavoidable — an entr
 arbitrary user code or third-party callbacks. Everywhere else, name the exception types. Say in the
 PR description why the broad catch is necessary.
 
+### Measuring Time
+
+**All new code that reads a clock uses `io.sentry.time`.** Do not reach for
+`DateUtils.getCurrentDateTime()`, `System.currentTimeMillis()`, `System.nanoTime()`,
+`SystemClock`, or any `SentryDateProvider` implementation (`SentryAutoDateProvider`,
+`SentryNanotimeDateProvider`, `SentryInstantDateProvider`, `SentryAndroidDateProvider`). Those
+remain only because the `SentryDate` protocol types still flow through the event pipeline; they
+are legacy, not a precedent to follow.
+
+Pick the abstraction by what the number is *for*, not by what is convenient to call:
+
+| You need | Use | Notes |
+|---|---|---|
+| An instant that leaves the process (event, breadcrumb, session) | `EpochClock` → `Timestamp` | Serialize it. Never subtract two of them |
+| How long something took | `Stopwatch` | |
+| Whether a window has elapsed (TTL, cache expiry, backoff, timeout) | `Deadline` | Also gives you `remaining(unit)` for scheduling |
+| Several instants that will be compared with each other (spans of a transaction, samples of a chunk) | `AnchoredClock` | One wall-clock read, the rest projected off ticks, so gaps are real elapsed time |
+| A raw monotonic tick, when none of the above fits | `MonotonicTicker` | |
+
+Two rules on top of that:
+
+1. **Get the clock from the options object** — `options.getEpochClock()` and
+   `options.getMonotonicTicker()` — not from `SystemEpochClock.getInstance()`,
+   `JavaMonotonicTicker.getInstance()`, or `AndroidMonotonicTicker.getInstance()`. The accessor is
+   what resolves to the correct per-platform implementation: on Android the ticker is
+   `CLOCK_BOOTTIME`, which keeps counting through a device suspend, while `System.nanoTime()` does
+   not. Take the clock as a constructor parameter and keep it in a field; `sentry-test-support`
+   provides `TestMonotonicTicker` so tests advance time instead of sleeping.
+2. **If no abstraction fits, stop and think hard before adding one.** Adding a type here is a
+   deliberate act, not a shortcut around an awkward call site. First re-read the existing types —
+   most "missing" cases turn out to be a `Deadline` or a `Stopwatch` described in different words.
+   If one is genuinely missing, work out what invariant it exists to enforce (each of these types
+   exists to make one class of clock bug unrepresentable — negative durations, unit mix-ups,
+   wrap-unsafe comparisons, a tick escaping into serialized output), name that invariant in its
+   Javadoc, and propose it before writing call sites against it. Do not inline raw tick arithmetic
+   at a call site as a stopgap.
+
 ### Testing Requirements
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
