@@ -119,11 +119,24 @@ class SentryJobListenerTest {
   }
 
   @Test
+  fun `without upsert monitor config key sends no monitor config`() {
+    assertThat(inProgressMonitorConfig(cronTrigger("0 0 2 * * ?"), JobDataMap())).isNull()
+  }
+
+  @Test
   fun `upsert monitor config false sends no monitor config`() {
     val jobDataMap = JobDataMap()
     jobDataMap[SentryJobListener.SENTRY_UPSERT_MONITOR_CONFIG_KEY] = "false"
 
     assertThat(inProgressMonitorConfig(cronTrigger("0 0 2 * * ?"), jobDataMap)).isNull()
+  }
+
+  @Test
+  fun `upsert monitor config as boolean true sends monitor config`() {
+    val jobDataMap = JobDataMap()
+    jobDataMap[SentryJobListener.SENTRY_UPSERT_MONITOR_CONFIG_KEY] = true
+
+    assertThat(inProgressMonitorConfig(cronTrigger("0 0 2 * * ?"), jobDataMap)).isNotNull()
   }
 
   @Test
@@ -165,9 +178,15 @@ class SentryJobListenerTest {
       .withSchedule(CronScheduleBuilder.cronSchedule(cron).inTimeZone(timeZone))
       .build()
 
+  private fun upsertJobDataMap(): JobDataMap {
+    val jobDataMap = JobDataMap()
+    jobDataMap[SentryJobListener.SENTRY_UPSERT_MONITOR_CONFIG_KEY] = "true"
+    return jobDataMap
+  }
+
   private fun inProgressMonitorConfig(
     trigger: Trigger,
-    jobDataMap: JobDataMap = JobDataMap(),
+    jobDataMap: JobDataMap = upsertJobDataMap(),
   ): MonitorConfig? {
     jobDataMap[SentryJobListener.SENTRY_SLUG_KEY] = "my-job"
     val context = mock<JobExecutionContext>()

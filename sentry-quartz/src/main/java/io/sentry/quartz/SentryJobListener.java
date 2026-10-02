@@ -39,7 +39,7 @@ public final class SentryJobListener implements JobListener {
   public static final String SENTRY_SLUG_KEY = "sentry-slug";
   public static final String SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY = "sentry-scope-lifecycle";
 
-  /** Job data key; set to {@code false} to not send a monitor config from the trigger. */
+  /** Job data key; set to {@code true} to send a monitor config from the trigger. */
   public static final String SENTRY_UPSERT_MONITOR_CONFIG_KEY = "sentry-upsert-monitor-config";
 
   private final @NotNull IScopes scopes;
@@ -100,10 +100,10 @@ public final class SentryJobListener implements JobListener {
   private boolean shouldUpsertMonitorConfig(final @NotNull JobExecutionContext context) {
     final @Nullable JobDataMap jobDataMap = context.getMergedJobDataMap();
     if (jobDataMap == null) {
-      return true;
+      return false;
     }
     final @Nullable Object o = jobDataMap.get(SENTRY_UPSERT_MONITOR_CONFIG_KEY);
-    return o == null || !"false".equalsIgnoreCase(o.toString());
+    return o != null && "true".equalsIgnoreCase(o.toString());
   }
 
   private @Nullable MonitorConfig monitorConfigFromTrigger(final @Nullable Trigger trigger) {
