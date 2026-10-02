@@ -7,9 +7,10 @@
 - Add a `logsEnabled` argument to the preferred Log4j2 `SentryAppender` constructor and
   `createAppender` factory. Pass `true` to opt in to Sentry Logs capture or `false` to keep it
   disabled. ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
-- Add a `logsEnabled` argument to the `SentryTimberIntegration` and `SentryTimberTree` JVM
-  constructors. It defaults to `false` for Kotlin callers; Java callers using the explicit level
-  constructors must pass the new argument. ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+- Require a `logsEnabled` argument when manually constructing `SentryTimberIntegration` or
+  `SentryTimberTree`. Replace `SentryTimberIntegration()` with
+  `SentryTimberIntegration(logsEnabled = false)` in Kotlin or `new SentryTimberIntegration(false)`
+  in Java to keep Sentry Logs disabled. ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
 - Remove the obsolete aggregate Sentry Metrics options `metrics.enabled` and
   `options.getMetrics().setEnabled(...)`. Direct `Sentry.metrics()` calls continue to capture
   Metrics whenever the SDK is enabled. ([#5953](https://github.com/getsentry/sentry-java/pull/5953))
@@ -22,7 +23,9 @@
   - Log4j2 appender: `logsEnabled`
   - JUL handler: `io.sentry.jul.SentryHandler.logsEnabled`
   - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
-  - Timber: `timberLogCaptureEnabled` or `io.sentry.timber.logs.enabled` manifest metadata
+  - Auto-installed Timber integration: `timberLogCaptureEnabled` or
+    `io.sentry.timber.logs.enabled` manifest metadata
+  - Manually installed Timber integration: `logsEnabled` constructor argument
   - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.logs.enabled` manifest metadata
 
 ### Features

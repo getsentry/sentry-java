@@ -286,7 +286,13 @@ class SentryAndroidTest {
     fixture.initSut(autoInit = true) {
       it.addIntegration(FragmentLifecycleIntegration(ApplicationProvider.getApplicationContext()))
 
-      it.addIntegration(SentryTimberIntegration(minEventLevel = FATAL, minBreadcrumbLevel = DEBUG))
+      it.addIntegration(
+        SentryTimberIntegration(
+          minEventLevel = FATAL,
+          minBreadcrumbLevel = DEBUG,
+          logsEnabled = false,
+        )
+      )
 
       it.addIntegration(
         SystemEventsBreadcrumbsIntegration(

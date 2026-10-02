@@ -14,20 +14,45 @@ import java.io.Closeable
 import timber.log.Timber
 
 /** Sentry integration for Timber. */
-public class SentryTimberIntegration(
-  public val minEventLevel: SentryLevel = SentryLevel.ERROR,
-  public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
-  public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
-  logsEnabled: Boolean = false,
+public class SentryTimberIntegration
+private constructor(
+  public val minEventLevel: SentryLevel,
+  public val minBreadcrumbLevel: SentryLevel,
+  public val minLogsLevel: SentryLogLevel,
+  private val logsEnabledProvider: Evaluator<Boolean>,
 ) : Integration, Closeable {
+  public constructor(
+    minEventLevel: SentryLevel = SentryLevel.ERROR,
+    minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
+    minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+    logsEnabled: Boolean,
+  ) : this(
+    minEventLevel,
+    minBreadcrumbLevel,
+    minLogsLevel,
+    Evaluator { logsEnabled },
+  )
+
+  public constructor(
+    logsEnabled: Boolean
+  ) : this(
+    SentryLevel.ERROR,
+    SentryLevel.INFO,
+    SentryLogLevel.INFO,
+    logsEnabled,
+  )
+
+  internal constructor(
+    logsEnabledProvider: Evaluator<Boolean>
+  ) : this(
+    SentryLevel.ERROR,
+    SentryLevel.INFO,
+    SentryLogLevel.INFO,
+    logsEnabledProvider,
+  )
+
   public val logsEnabled: Boolean
     get() = logsEnabledProvider.evaluate()
-
-  private var logsEnabledProvider: Evaluator<Boolean> = Evaluator { logsEnabled }
-
-  internal constructor(logsEnabledProvider: Evaluator<Boolean>) : this() {
-    this.logsEnabledProvider = logsEnabledProvider
-  }
 
   private lateinit var tree: SentryTimberTree
   private lateinit var logger: ILogger
