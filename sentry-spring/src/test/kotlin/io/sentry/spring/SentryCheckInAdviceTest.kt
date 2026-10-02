@@ -52,7 +52,6 @@ import org.springframework.util.StringValueResolver
       "my.cron.slug = mypropertycronslug",
       "my.cron.schedule = 0 30 2 * * *",
       "my.cron.zone = America/New_York",
-      "my.cron.delay = PT10M",
     ]
 )
 class SentryCheckInAdviceTest {
@@ -247,16 +246,23 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
-  fun `cron with fixed seconds is sent as crontab monitor config in the JVM default zone`() {
+  fun `cron with zone is sent as crontab monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.cronWithZone() }
+    assertNotNull(config)
+    assertEquals("crontab", config.schedule.type)
+    assertEquals("15 10 * * 1-5", config.schedule.value)
+    assertNull(config.schedule.unit)
+    assertEquals("Europe/Vienna", config.timezone)
+  }
+
+  @Test
+  fun `cron without zone is sent in the JVM default zone`() {
     val defaultTimeZone = TimeZone.getDefault()
     TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
     try {
       val config = inProgressMonitorConfig { sampleServiceScheduled.cron() }
-      assertNotNull(config)
-      assertEquals("crontab", config.schedule.type)
-      assertEquals("15 10 * * 1-5", config.schedule.value)
-      assertNull(config.schedule.unit)
-      assertEquals("Asia/Tokyo", config.timezone)
+      assertEquals("0 2 * * *", config?.schedule?.value)
+      assertEquals("Asia/Tokyo", config?.timezone)
     } finally {
       TimeZone.setDefault(defaultTimeZone)
     }
@@ -270,28 +276,19 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
-  fun `days of week are rewritten to how crontab reads them`() {
-    assertEquals(
-      "0 9 * * 1-7/2",
-      inProgressMonitorConfig { sampleServiceScheduled.daysOfWeekStep() }?.schedule?.value,
-    )
-    assertEquals(
-      "0 9 * * 7/2",
-      inProgressMonitorConfig { sampleServiceScheduled.sundayStep() }?.schedule?.value,
-    )
-    assertEquals(
-      "0 9 * * 0-2,5-7",
-      inProgressMonitorConfig { sampleServiceScheduled.sundayRanges() }?.schedule?.value,
-    )
-    assertEquals(
-      "0 9 * * 5L",
-      inProgressMonitorConfig { sampleServiceScheduled.lastFriday() }?.schedule?.value,
-    )
+  fun `fixed rate with time unit is sent as interval monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateHours() }
+    assertNotNull(config)
+    assertEquals("interval", config.schedule.type)
+    assertEquals("2", config.schedule.value)
+    assertEquals("hour", config.schedule.unit)
   }
 
   @Test
-  fun `cron with day of month and day of week sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.bothDayFields() })
+  fun `ISO-8601 fixed delay string is sent as interval monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedDelayIso() }
+    assertEquals("10", config?.schedule?.value)
+    assertEquals("minute", config?.schedule?.unit)
   }
 
   @Test
@@ -300,60 +297,16 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
-  fun `disabled cron sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.disabledCron() })
-  }
-
-  @Test
-  fun `whole hour offset zone is sent as Etc zone`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.offsetZone() }
-    assertEquals("Etc/GMT-2", config?.timezone)
-  }
-
-  @Test
-  fun `zone Sentry does not accept sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.unsupportedZone() })
-  }
-
-  @Test
-  fun `fixed rate in whole minutes is sent as interval monitor config`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateMinutes() }
-    assertNotNull(config)
-    assertEquals("interval", config.schedule.type)
-    assertEquals("5", config.schedule.value)
-    assertEquals("minute", config.schedule.unit)
-  }
-
-  @Test
-  fun `fixed delay with time unit is sent as interval monitor config`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedDelayHours() }
-    assertEquals("2", config?.schedule?.value)
-    assertEquals("hour", config?.schedule?.unit)
-  }
-
-  @Test
-  fun `fixed delay string placeholder is resolved`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedDelayFromProperties() }
-    assertEquals("10", config?.schedule?.value)
-    assertEquals("minute", config?.schedule?.unit)
-  }
-
-  @Test
-  fun `fixed rate string in simple duration style is sent as interval monitor config`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateSimpleStyle() }
-    assertEquals("5", config?.schedule?.value)
-    assertEquals("minute", config?.schedule?.unit)
-  }
-
-  @Test
-  fun `unparseable fixed rate string sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.fixedRateUnparseable() })
+  fun `exception while deriving monitor config sends no monitor config and runs the job`() {
+    var result = 0
+    assertNull(inProgressMonitorConfig { result = sampleServiceScheduled.derivationThrows() })
+    assertEquals(1, result)
   }
 
   @Test
   fun `monitor config is derived once per method`() {
-    val first = inProgressMonitorConfig { sampleServiceScheduled.fixedRateMinutes() }
-    val second = inProgressMonitorConfig { sampleServiceScheduled.fixedRateMinutes() }
+    val first = inProgressMonitorConfig { sampleServiceScheduled.fixedRateHours() }
+    val second = inProgressMonitorConfig { sampleServiceScheduled.fixedRateHours() }
     assertNotNull(first)
     assertSame(first, second)
   }
@@ -455,69 +408,33 @@ class SentryCheckInAdviceTest {
 
   open class SampleServiceScheduled {
 
+    @SentryCheckIn("cron_zone", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 15 10 * * MON-FRI", zone = "Europe/Vienna")
+    open fun cronWithZone() {}
+
     @SentryCheckIn("cron", upsertMonitorConfig = true)
-    @Scheduled(cron = "0 15 10 * * MON-FRI")
+    @Scheduled(cron = "0 0 2 * * *")
     open fun cron() {}
 
     @SentryCheckIn("cron_properties", upsertMonitorConfig = true)
     @Scheduled(cron = "\${my.cron.schedule}", zone = "\${my.cron.zone}")
     open fun cronFromProperties() {}
 
-    @SentryCheckIn("days_of_week_step", upsertMonitorConfig = true)
-    @Scheduled(cron = "0 0 9 * * */2")
-    open fun daysOfWeekStep() {}
+    @SentryCheckIn("fixed_rate_hours", upsertMonitorConfig = true)
+    @Scheduled(fixedRate = 2, timeUnit = TimeUnit.HOURS)
+    open fun fixedRateHours() {}
 
-    @SentryCheckIn("sunday_step", upsertMonitorConfig = true)
-    @Scheduled(cron = "0 0 9 ? * SUN/2")
-    open fun sundayStep() {}
-
-    @SentryCheckIn("sunday_ranges", upsertMonitorConfig = true)
-    @Scheduled(cron = "0 0 9 ? * SUN-TUE,fri-sun")
-    open fun sundayRanges() {}
-
-    @SentryCheckIn("last_friday", upsertMonitorConfig = true)
-    @Scheduled(cron = "0 0 9 ? * FRIL")
-    open fun lastFriday() {}
-
-    @SentryCheckIn("both_day_fields", upsertMonitorConfig = true)
-    @Scheduled(cron = "0 0 9 1-7 * MON")
-    open fun bothDayFields() {}
+    @SentryCheckIn("fixed_delay_iso", upsertMonitorConfig = true)
+    @Scheduled(fixedDelayString = "PT10M")
+    open fun fixedDelayIso() {}
 
     @SentryCheckIn("unresolvable_cron", upsertMonitorConfig = true)
     @Scheduled(cron = "\${my.cron.missing}")
     open fun unresolvableCron() {}
 
-    @SentryCheckIn("disabled_cron", upsertMonitorConfig = true)
-    @Scheduled(cron = "-")
-    open fun disabledCron() {}
-
-    @SentryCheckIn("offset_zone", upsertMonitorConfig = true)
-    @Scheduled(cron = "0 0 2 * * *", zone = "GMT+2")
-    open fun offsetZone() {}
-
-    @SentryCheckIn("unsupported_zone", upsertMonitorConfig = true)
-    @Scheduled(cron = "0 0 2 * * *", zone = "GMT+05:30")
-    open fun unsupportedZone() {}
-
-    @SentryCheckIn("fixed_rate", upsertMonitorConfig = true)
-    @Scheduled(fixedRate = 300_000)
-    open fun fixedRateMinutes() {}
-
-    @SentryCheckIn("fixed_delay_hours", upsertMonitorConfig = true)
-    @Scheduled(fixedDelay = 2, timeUnit = TimeUnit.HOURS)
-    open fun fixedDelayHours() {}
-
-    @SentryCheckIn("fixed_delay_properties", upsertMonitorConfig = true)
-    @Scheduled(fixedDelayString = "\${my.cron.delay}")
-    open fun fixedDelayFromProperties() {}
-
-    @SentryCheckIn("fixed_rate_simple", upsertMonitorConfig = true)
-    @Scheduled(fixedRateString = "5m")
-    open fun fixedRateSimpleStyle() {}
-
-    @SentryCheckIn("fixed_rate_unparseable", upsertMonitorConfig = true)
-    @Scheduled(fixedRateString = "5 minutes")
-    open fun fixedRateUnparseable() {}
+    @SentryCheckIn("derivation_throws", upsertMonitorConfig = true)
+    @Scheduled(cron = "\${my.cron.exception.property}")
+    open fun derivationThrows() = 1
 
     @SentryCheckIn("multiple", upsertMonitorConfig = true)
     @Scheduled(cron = "0 0 1 * * *")

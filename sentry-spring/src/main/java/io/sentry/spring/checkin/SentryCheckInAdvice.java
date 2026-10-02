@@ -17,10 +17,8 @@ import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -43,10 +41,6 @@ import org.springframework.util.StringValueResolver;
 @ApiStatus.Internal
 @Open
 public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueResolverAware {
-  private static final @NotNull String[] DAYS_OF_WEEK = {
-    "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"
-  };
-
   private final @NotNull IScopes scopes;
 
   private @Nullable StringValueResolver resolver;
@@ -160,16 +154,11 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
           timeUnitAttribute instanceof TimeUnit
               ? (TimeUnit) timeUnitAttribute
               : TimeUnit.MILLISECONDS;
-      final @Nullable String cron = toCrontabDaysOfWeek(resolve(scheduled.cron()));
-      @Nullable String zone = null;
-      if (cron != null && !cron.isEmpty()) {
-        zone = resolve(scheduled.zone());
-        if (zone == null || zone.isEmpty()) {
-          // Spring runs a cron without zone in the JVM default zone
-          zone = TimeZone.getDefault().getID();
-        }
-      }
-      return MonitorConfigUtils.fromSchedule(
+      final @Nullable String cron = resolve(scheduled.cron());
+      // Spring only reads the zone for a cron
+      final @Nullable String zone =
+          cron == null || cron.isEmpty() ? null : resolve(scheduled.zone());
+      return MonitorConfigUtils.fromSpringScheduled(
           cron,
           zone,
           periodMillis(scheduled.fixedRate(), scheduled.fixedRateString(), timeUnit),
@@ -216,38 +205,6 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
               trimmed);
     }
     return millis;
-  }
-
-  /**
-   * Spring numbers days of week from Monday with 0 or 7 for Sunday, and starts {@code *} on Monday.
-   * Rewrites them so crontab reads them the same way.
-   */
-  private static @Nullable String toCrontabDaysOfWeek(final @Nullable String cron) {
-    if (cron == null) {
-      return null;
-    }
-    final @NotNull String[] fields = cron.trim().split("\\s+", -1);
-    if (fields.length != 6) {
-      return cron;
-    }
-    final @NotNull StringBuilder daysOfWeek = new StringBuilder();
-    for (@NotNull String item : fields[5].toUpperCase(Locale.ROOT).split(",", -1)) {
-      for (int i = 0; i < DAYS_OF_WEEK.length; i++) {
-        item = item.replace(DAYS_OF_WEEK[i], String.valueOf(i + 1));
-      }
-      if (item.startsWith("*/")) {
-        item = "1-7" + item.substring(1);
-      } else if (item.startsWith("7-")) {
-        // Sunday starting a range is 0 in Spring
-        item = "0" + item.substring(1);
-      }
-      if (daysOfWeek.length() > 0) {
-        daysOfWeek.append(',');
-      }
-      daysOfWeek.append(item);
-    }
-    fields[5] = daysOfWeek.toString();
-    return String.join(" ", fields);
   }
 
   private @Nullable String resolve(final @NotNull String value) {
