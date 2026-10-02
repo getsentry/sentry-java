@@ -39,10 +39,7 @@ public final class SentryJobListener implements JobListener {
   public static final String SENTRY_SLUG_KEY = "sentry-slug";
   public static final String SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY = "sentry-scope-lifecycle";
 
-  /**
-   * Job data key to control whether a monitor config derived from the trigger is sent with the
-   * check-in. Set it to {@code false} to send no monitor config. Defaults to {@code true}.
-   */
+  /** Job data key; set to {@code false} to not send a monitor config from the trigger. */
   public static final String SENTRY_UPSERT_MONITOR_CONFIG_KEY = "sentry-upsert-monitor-config";
 
   private final @NotNull IScopes scopes;
@@ -139,11 +136,7 @@ public final class SentryJobListener implements JobListener {
     }
   }
 
-  /**
-   * Converts a Quartz cron expression (seconds first, optional year, days of week 1-7 starting on
-   * Sunday) to a 6 field cron expression with days of week 0-6. Returns null if it can't be
-   * converted, for example when the year field is set.
-   */
+  /** Quartz numbers days of week 1-7 from Sunday; crontab uses 0-6. Null if a year is set. */
   static @Nullable String toSixFieldCron(final @Nullable String quartzCron) {
     if (quartzCron == null) {
       return null;
@@ -172,7 +165,7 @@ public final class SentryJobListener implements JobListener {
       if (result.length() > 0) {
         result.append(',');
       }
-      // the step after '/' and the occurrence after '#' are not days
+      // the number after '/' or '#' is not a day
       int end = item.length();
       final int suffix = Math.max(item.indexOf('/'), item.indexOf('#'));
       if (suffix >= 0) {
