@@ -163,7 +163,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       if (cron != null && !cron.isEmpty()) {
         zone = resolve(scheduled.zone());
         if (zone == null || zone.isEmpty()) {
-          // Spring runs cron schedules without a zone in the JVM default time zone
+          // Spring runs a cron without zone in the JVM default zone
           zone = TimeZone.getDefault().getID();
         }
       }

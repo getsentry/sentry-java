@@ -38,15 +38,13 @@ public final class MonitorConfigUtils {
   private MonitorConfigUtils() {}
 
   /**
-   * Builds a monitor config from exactly one of a cron expression, a fixed rate or a fixed delay.
+   * Builds a monitor config from exactly one of a cron, fixed rate or fixed delay.
    *
-   * @param cron a 6 field cron expression with seconds first (Spring style), a macro such as
-   *     {@code @daily}, {@code "-"} (disabled), or null/empty when not set
-   * @param zone time zone of the cron expression, ignored for fixed rates and delays
-   * @param fixedRateMillis fixed rate in milliseconds, or null when not set
-   * @param fixedDelayMillis fixed delay in milliseconds, or null when not set
-   * @return the monitor config, or null if the schedule cannot be expressed as a Sentry monitor
-   *     schedule (sub-minute schedules, more than one schedule kind, unsupported cron)
+   * @param cron 6 field cron (seconds first) or macro, null or empty if unset
+   * @param zone cron time zone, ignored for intervals
+   * @param fixedRateMillis null if unset
+   * @param fixedDelayMillis null if unset
+   * @return null if the schedule can't be expressed as a Sentry monitor schedule
    */
   public static @Nullable MonitorConfig fromSchedule(
       final @Nullable String cron,
@@ -83,12 +81,10 @@ public final class MonitorConfigUtils {
   }
 
   /**
-   * Parses a period given as a plain number in {@code defaultUnit}, or in the simple duration style
-   * Spring 6.1+ accepts (a number followed by {@code ns}, {@code us}, {@code ms}, {@code s}, {@code
-   * m}, {@code h} or {@code d}, e.g. {@code 30s} or {@code 5m}). ISO-8601 durations are not handled
-   * here.
+   * Parses a plain number in {@code defaultUnit} or a Spring 6.1 simple duration like {@code 30s}.
+   * ISO-8601 is not supported.
    *
-   * @return the period in milliseconds, or null if the value is empty or cannot be parsed
+   * @return milliseconds, or null if unparseable
    */
   public static @Nullable Long parsePeriodMillis(
       final @Nullable String value, final @NotNull TimeUnit defaultUnit) {
@@ -133,10 +129,7 @@ public final class MonitorConfigUtils {
     }
   }
 
-  /**
-   * Converts a 6 field cron expression (seconds first) to a 5 field crontab. Returns null unless
-   * the seconds field is a single fixed number, since crontab cannot express sub-minute schedules.
-   */
+  /** Drops a fixed seconds field; returns null otherwise, as crontab has no seconds. */
   static @Nullable String toCrontab(final @NotNull String cron) {
     final @NotNull String trimmed = cron.trim();
     if (CRON_DISABLED.equals(trimmed)) {
@@ -154,7 +147,7 @@ public final class MonitorConfigUtils {
       if (i > 1) {
         crontab.append(' ');
       }
-      // '?' means the same as '*' in Spring and Quartz cron expressions
+      // '?' means '*' in Spring and Quartz cron
       crontab.append("?".equals(fields[i]) ? "*" : fields[i]);
     }
     return crontab.toString();
