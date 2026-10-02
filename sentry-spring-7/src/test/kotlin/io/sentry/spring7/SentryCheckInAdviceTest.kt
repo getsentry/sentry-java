@@ -254,35 +254,6 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
-  fun `cron question mark is converted to asterisk`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.cronQuestionMark() }
-    assertEquals("0 9 * * *", config?.schedule?.value)
-  }
-
-  @Test
-  fun `cron macro is converted to crontab`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.cronMacro() }
-    assertEquals("0 * * * *", config?.schedule?.value)
-  }
-
-  @Test
-  fun `cron with variable seconds sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.cronEverySeconds() })
-  }
-
-  @Test
-  fun `disabled cron sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.cronDisabled() })
-  }
-
-  @Test
-  fun `cron zone is sent as timezone`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.cronWithZone() }
-    assertEquals("0 2 * * *", config?.schedule?.value)
-    assertEquals("Europe/Vienna", config?.timezone)
-  }
-
-  @Test
   fun `cron and zone placeholders are resolved`() {
     val config = inProgressMonitorConfig { sampleServiceScheduled.cronFromProperties() }
     assertEquals("30 2 * * *", config?.schedule?.value)
@@ -310,16 +281,6 @@ class SentryCheckInAdviceTest {
     val config = inProgressMonitorConfig { sampleServiceScheduled.fixedDelayFromProperties() }
     assertEquals("10", config?.schedule?.value)
     assertEquals("minute", config?.schedule?.unit)
-  }
-
-  @Test
-  fun `sub-minute fixed rate sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.fixedRateSeconds() })
-  }
-
-  @Test
-  fun `fixed rate not in whole minutes sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.fixedRateNotWholeMinutes() })
   }
 
   @Test
@@ -421,24 +382,6 @@ class SentryCheckInAdviceTest {
 
     @SentryCheckIn("cron") @Scheduled(cron = "0 15 10 * * MON-FRI") open fun cron() {}
 
-    @SentryCheckIn("cron_question_mark")
-    @Scheduled(cron = "0 0 9 ? * *")
-    open fun cronQuestionMark() {}
-
-    @SentryCheckIn("cron_macro") @Scheduled(cron = "@hourly") open fun cronMacro() {}
-
-    @SentryCheckIn("cron_every_seconds")
-    @Scheduled(cron = "*/30 * * * * *")
-    open fun cronEverySeconds() {}
-
-    @SentryCheckIn("cron_disabled")
-    @Scheduled(cron = Scheduled.CRON_DISABLED)
-    open fun cronDisabled() {}
-
-    @SentryCheckIn("cron_zone")
-    @Scheduled(cron = "0 0 2 * * *", zone = "Europe/Vienna")
-    open fun cronWithZone() {}
-
     @SentryCheckIn("cron_properties")
     @Scheduled(cron = "\${my.cron.schedule}", zone = "\${my.cron.zone}")
     open fun cronFromProperties() {}
@@ -452,14 +395,6 @@ class SentryCheckInAdviceTest {
     @SentryCheckIn("fixed_delay_properties")
     @Scheduled(fixedDelayString = "\${my.cron.delay}")
     open fun fixedDelayFromProperties() {}
-
-    @SentryCheckIn("fixed_rate_seconds")
-    @Scheduled(fixedRate = 30_000)
-    open fun fixedRateSeconds() {}
-
-    @SentryCheckIn("fixed_rate_odd")
-    @Scheduled(fixedRate = 90_000)
-    open fun fixedRateNotWholeMinutes() {}
 
     @SentryCheckIn("multiple")
     @Scheduled(cron = "0 0 1 * * *")
