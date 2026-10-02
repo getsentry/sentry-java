@@ -429,12 +429,14 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getBeforeViewHierarchyCaptureCallback ()Lio/sentry/android/core/SentryAndroidOptions$BeforeCaptureCallback;
 	public fun getDebugImagesLoader ()Lio/sentry/android/core/IDebugImagesLoader;
 	public fun getFrameMetricsCollector ()Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;
+	public fun getLogcatLogCaptureEnabled ()Z
 	public fun getMonotonicTicker ()Lio/sentry/time/MonotonicTicker;
 	public fun getNativeSdkName ()Ljava/lang/String;
 	public fun getNdkAppHangTimeoutIntervalMillis ()J
 	public fun getNdkHandlerStrategy ()I
 	public fun getScreenshot ()Lio/sentry/android/core/SentryScreenshotOptions;
 	public fun getStartupCrashDurationThresholdMillis ()J
+	public fun getTimberLogCaptureEnabled ()Z
 	public fun getTombstoneMergeTimeThresholdMillis ()J
 	public fun isAnrEnabled ()Z
 	public fun isAnrProfilingEnabled ()Z
@@ -453,7 +455,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableAutoActivityLifecycleTracing ()Z
 	public fun isEnableAutoTraceIdGeneration ()Z
 	public fun isEnableFramesTracking ()Z
-	public fun isEnableLogcatLogs ()Z
 	public fun isEnableNdk ()Z
 	public fun isEnableNdkAppHangTracking ()Z
 	public fun isEnableNetworkEventBreadcrumbs ()Z
@@ -463,7 +464,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun isEnableStandaloneAppStartTracing ()Z
 	public fun isEnableSystemEventBreadcrumbs ()Z
 	public fun isEnableSystemEventBreadcrumbsExtras ()Z
-	public fun isEnableTimberLogs ()Z
 	public fun isMemoryLimiterEnabled ()Z
 	public fun isReportHistoricalAnrs ()Z
 	public fun isReportHistoricalMemoryLimiterExits ()Z
@@ -490,7 +490,6 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableAutoActivityLifecycleTracing (Z)V
 	public fun setEnableAutoTraceIdGeneration (Z)V
 	public fun setEnableFramesTracking (Z)V
-	public fun setEnableLogcatLogs (Z)V
 	public fun setEnableNdk (Z)V
 	public fun setEnableNdkAppHangTracking (Z)V
 	public fun setEnableNetworkEventBreadcrumbs (Z)V
@@ -500,8 +499,8 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setEnableStandaloneAppStartTracing (Z)V
 	public fun setEnableSystemEventBreadcrumbs (Z)V
 	public fun setEnableSystemEventBreadcrumbsExtras (Z)V
-	public fun setEnableTimberLogs (Z)V
 	public fun setFrameMetricsCollector (Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
+	public fun setLogcatLogCaptureEnabled (Z)V
 	public fun setMemoryLimiterEnabled (Z)V
 	public fun setNativeHandlerStrategy (Lio/sentry/android/core/NdkHandlerStrategy;)V
 	public fun setNativeSdkName (Ljava/lang/String;)V
@@ -509,6 +508,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun setReportHistoricalAnrs (Z)V
 	public fun setReportHistoricalMemoryLimiterExits (Z)V
 	public fun setReportHistoricalTombstones (Z)V
+	public fun setTimberLogCaptureEnabled (Z)V
 	public fun setTombstoneEnabled (Z)V
 	public fun setTombstoneMergeTimeThresholdMillis (J)V
 }

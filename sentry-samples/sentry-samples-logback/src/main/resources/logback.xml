@@ -14,7 +14,7 @@
       <contextTag>userId</contextTag>
       <contextTag>requestId</contextTag>
     </options>
-    <enableLogs>true</enableLogs>
+    <logsEnabled>true</logsEnabled>
     <!-- Demonstrates how to modify the minimum values -->
     <!-- Default for Events is ERROR -->
     <minimumEventLevel>WARN</minimumEventLevel>

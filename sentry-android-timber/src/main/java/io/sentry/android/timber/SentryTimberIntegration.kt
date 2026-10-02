@@ -14,32 +14,45 @@ import java.io.Closeable
 import timber.log.Timber
 
 /** Sentry integration for Timber. */
-public class SentryTimberIntegration(
-  public val minEventLevel: SentryLevel = SentryLevel.ERROR,
-  public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
-  public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+public class SentryTimberIntegration
+private constructor(
+  public val minEventLevel: SentryLevel,
+  public val minBreadcrumbLevel: SentryLevel,
+  public val minLogsLevel: SentryLogLevel,
+  private val logsEnabledProvider: Evaluator<Boolean>,
 ) : Integration, Closeable {
-  public val enableLogs: Boolean
-    get() = enableLogsProvider.evaluate()
-
-  private var enableLogsProvider: Evaluator<Boolean> = Evaluator { false }
-
-  public constructor(enableLogs: Boolean) : this() {
-    enableLogsProvider = Evaluator { enableLogs }
-  }
+  public constructor(
+    minEventLevel: SentryLevel = SentryLevel.ERROR,
+    minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
+    minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+    logsEnabled: Boolean,
+  ) : this(
+    minEventLevel,
+    minBreadcrumbLevel,
+    minLogsLevel,
+    Evaluator { logsEnabled },
+  )
 
   public constructor(
-    minEventLevel: SentryLevel,
-    minBreadcrumbLevel: SentryLevel,
-    minLogsLevel: SentryLogLevel,
-    enableLogs: Boolean,
-  ) : this(minEventLevel, minBreadcrumbLevel, minLogsLevel) {
-    enableLogsProvider = Evaluator { enableLogs }
-  }
+    logsEnabled: Boolean
+  ) : this(
+    SentryLevel.ERROR,
+    SentryLevel.INFO,
+    SentryLogLevel.INFO,
+    logsEnabled,
+  )
 
-  internal constructor(enableLogsProvider: Evaluator<Boolean>) : this() {
-    this.enableLogsProvider = enableLogsProvider
-  }
+  internal constructor(
+    logsEnabledProvider: Evaluator<Boolean>
+  ) : this(
+    SentryLevel.ERROR,
+    SentryLevel.INFO,
+    SentryLogLevel.INFO,
+    logsEnabledProvider,
+  )
+
+  public val logsEnabled: Boolean
+    get() = logsEnabledProvider.evaluate()
 
   private lateinit var tree: SentryTimberTree
   private lateinit var logger: ILogger
@@ -60,7 +73,7 @@ public class SentryTimberIntegration(
         minEventLevel,
         minBreadcrumbLevel,
         minLogsLevel,
-        enableLogsProvider.evaluate(),
+        logsEnabledProvider.evaluate(),
       )
     Timber.plant(tree)
 

@@ -2,10 +2,34 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- Add a `logsEnabled` argument to the preferred Log4j2 `SentryAppender` constructor and
+  `createAppender` factory. Pass `true` to opt in to Sentry Logs capture or `false` to keep it
+  disabled. ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
+- Require a `logsEnabled` argument when manually constructing `SentryTimberIntegration` or
+  `SentryTimberTree`. Replace `SentryTimberIntegration()` with
+  `SentryTimberIntegration(logsEnabled = false)` in Kotlin or `new SentryTimberIntegration(false)`
+  in Java to keep Sentry Logs disabled. ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+- Remove the obsolete aggregate Sentry Metrics options `metrics.enabled` and
+  `options.getMetrics().setEnabled(...)`. Direct `Sentry.metrics()` calls continue to capture
+  Metrics whenever the SDK is enabled. ([#5953](https://github.com/getsentry/sentry-java/pull/5953))
+- Remove the obsolete aggregate Sentry Logs options `logs.enabled` and
+  `options.getLogs().setEnabled(...)`. ([#5947](https://github.com/getsentry/sentry-java/pull/5947))
+  Direct `Sentry.logger()` calls continue to capture Logs whenever the SDK is enabled. Sentry Logs
+  capture is disabled by default for every automatic logging integration. Set the applicable
+  integration-specific option to `true` to opt in:
+  - Logback appender: `logsEnabled`
+  - Log4j2 appender: `logsEnabled`
+  - JUL handler: `io.sentry.jul.SentryHandler.logsEnabled`
+  - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
+  - Auto-installed Timber integration: `timberLogCaptureEnabled` or
+    `io.sentry.timber.logs.enabled` manifest metadata
+  - Manually installed Timber integration: `logsEnabled` constructor argument
+  - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.logs.enabled` manifest metadata
+
 ### Features
 
-- Remove the aggregate Sentry Metrics enable flag; `Sentry.metrics()` calls now capture Metrics by default ([#5953](https://github.com/getsentry/sentry-java/pull/5953))
-- Remove the aggregate Sentry Logs enable flag; manual `Sentry.logger()` calls now capture Logs by default ([#5947](https://github.com/getsentry/sentry-java/pull/5947))
 - Add an explicit Logs opt-in to Spring Boot logging auto-configuration ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
 - Add an explicit Logs opt-in to the Android Logcat integration ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
 - Add an explicit Logs opt-in to the Android Timber integration ([#5943](https://github.com/getsentry/sentry-java/pull/5943))

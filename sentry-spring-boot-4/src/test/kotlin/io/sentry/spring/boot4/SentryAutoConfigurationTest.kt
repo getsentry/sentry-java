@@ -244,7 +244,7 @@ class SentryAutoConfigurationTest {
         "sentry.cron.default-timezone=America/New_York",
         "sentry.cron.default-failure-issue-threshold=40",
         "sentry.cron.default-recovery-threshold=50",
-        "sentry.logging.enable-logs=true",
+        "sentry.logging.logs-enabled=true",
         "sentry.strict-trace-continuation=true",
         "sentry.org-id=12345",
       )
@@ -301,7 +301,7 @@ class SentryAutoConfigurationTest {
         assertThat(options.cron!!.defaultTimezone).isEqualTo("America/New_York")
         assertThat(options.cron!!.defaultFailureIssueThreshold).isEqualTo(40L)
         assertThat(options.cron!!.defaultRecoveryThreshold).isEqualTo(50L)
-        assertThat(options.logging.isEnableLogs).isTrue()
+        assertThat(options.logging.logsEnabled).isTrue()
         assertThat(options.isStrictTraceContinuation).isEqualTo(true)
         assertThat(options.orgId).isEqualTo("12345")
       }
