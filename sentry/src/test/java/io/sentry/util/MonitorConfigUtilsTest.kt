@@ -69,6 +69,88 @@ class MonitorConfigUtilsTest {
   }
 
   @Test
+  fun `cron with both day of month and day of week returns null`() {
+    for (cron in listOf("0 0 9 1-7 * MON", "0 0 9 15 * 1-5", "0 0 9 L * 5L", "0 0 9 1 * 1/2")) {
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)).isNull()
+    }
+  }
+
+  @Test
+  fun `cron with a day field starting with asterisk is kept`() {
+    val expected =
+      mapOf(
+        "0 0 9 */2 * MON" to "0 9 */2 * MON",
+        "0 0 9 15 * */2" to "0 9 15 * */2",
+        "0 0 9 1 * ?" to "0 9 1 * *",
+      )
+    for ((cron, crontab) in expected) {
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)?.schedule?.value)
+        .isEqualTo(crontab)
+    }
+  }
+
+  @Test
+  fun `cron syntax Sentry accepts is kept`() {
+    val expected =
+      listOf(
+        "0 */15 * * * *",
+        "0 5/15 * * * *",
+        "0 0,30 8-18/2 * * *",
+        "0 0 0 1,15 JAN-MAR,dec *",
+        "0 0 0 L * *",
+        "0 0 0 lw * *",
+        "0 0 0 31 1-12 *",
+        "0 0 0 * * 0,7",
+        "0 0 0 * * sat",
+        "0 0 0 * * MON-FRI/2",
+        "0 0 0 * * 5L",
+        "0 0 0 * * 5#3",
+        "0 0 0 * * MON#2",
+        "0 0 0 * * 1-7/2",
+      )
+    for (cron in expected) {
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)?.schedule?.value)
+        .isEqualTo(cron.substringAfter(' '))
+    }
+  }
+
+  @Test
+  fun `cron syntax Sentry rejects returns null`() {
+    val rejected =
+      listOf(
+        "60 * * * * *",
+        "0 60 * * * *",
+        "0 0 24 * * *",
+        "0 0 22-2 * * *",
+        "0 */0 * * * *",
+        "0 0,,30 * * * *",
+        "0 ? * * * *",
+        "0 0 0 0 * *",
+        "0 0 0 32 * *",
+        "0 0 0 15W * *",
+        "0 0 0 LW/2 * *",
+        "0 0 0 L-3 * *",
+        "0 0 0 5L * *",
+        "0 0 0 1#2 * *",
+        "0 0 0 30 2 *",
+        "0 0 0 31 4,6 *",
+        "0 0 0 * 0 *",
+        "0 0 0 * 13 *",
+        "0 0 0 * FOO *",
+        "0 0 0 * * 8",
+        "0 0 0 * * SAT-SUN",
+        "0 0 0 * * L",
+        "0 0 0 * * FRIL",
+        "0 0 0 * * L5",
+        "0 0 0 * * 5#6",
+        "0 0 0 * * 5#0",
+      )
+    for (cron in rejected) {
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)).isNull()
+    }
+  }
+
+  @Test
   fun `disabled cron returns null`() {
     assertThat(MonitorConfigUtils.fromSchedule("-", null, null, null)).isNull()
   }
@@ -79,6 +161,41 @@ class MonitorConfigUtilsTest {
 
     assertThat(config?.schedule?.value).isEqualTo("0 2 * * *")
     assertThat(config?.timezone).isEqualTo("Europe/Vienna")
+  }
+
+  @Test
+  fun `IANA zones are kept`() {
+    for (zone in
+      listOf("UTC", "GMT", "Etc/GMT+5", "US/Eastern", "America/Argentina/Buenos_Aires")) {
+      assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", zone, null, null)?.timezone)
+        .isEqualTo(zone)
+    }
+  }
+
+  @Test
+  fun `whole hour fixed offsets are converted to Etc zones`() {
+    val expected =
+      mapOf(
+        "GMT+2" to "Etc/GMT-2",
+        "GMT+02:00" to "Etc/GMT-2",
+        "UTC-5" to "Etc/GMT+5",
+        "+03:00" to "Etc/GMT-3",
+        "-1200" to "Etc/GMT+12",
+        "GMT+14" to "Etc/GMT-14",
+        "GMT-00:00" to "Etc/GMT",
+      )
+    for ((zone, timezone) in expected) {
+      assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", zone, null, null)?.timezone)
+        .isEqualTo(timezone)
+    }
+  }
+
+  @Test
+  fun `zones Sentry rejects return null`() {
+    for (zone in
+      listOf("GMT+05:30", "GMT+15", "UTC-13", "PST", "IST", "Nowhere/Land", "SystemV/EST5")) {
+      assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", zone, null, null)).isNull()
+    }
   }
 
   @Test
@@ -98,10 +215,26 @@ class MonitorConfigUtilsTest {
 
   @Test
   fun `fixed delay in whole minutes is an interval`() {
-    val config = MonitorConfigUtils.fromSchedule("", null, null, TimeUnit.HOURS.toMillis(2))
+    val config = MonitorConfigUtils.fromSchedule("", null, null, TimeUnit.MINUTES.toMillis(90))
 
-    assertThat(config?.schedule?.value).isEqualTo("120")
+    assertThat(config?.schedule?.value).isEqualTo("90")
     assertThat(config?.schedule?.unit).isEqualTo("minute")
+  }
+
+  @Test
+  fun `period in whole hours or days uses the largest unit`() {
+    val expected =
+      mapOf(
+        TimeUnit.MINUTES.toMillis(60) to ("1" to "hour"),
+        TimeUnit.HOURS.toMillis(36) to ("36" to "hour"),
+        TimeUnit.HOURS.toMillis(24) to ("1" to "day"),
+        TimeUnit.DAYS.toMillis(14) to ("14" to "day"),
+      )
+    for ((millis, interval) in expected) {
+      val config = MonitorConfigUtils.fromSchedule(null, null, millis, null)
+      assertThat(config?.schedule?.value).isEqualTo(interval.first)
+      assertThat(config?.schedule?.unit).isEqualTo(interval.second)
+    }
   }
 
   @Test
