@@ -238,6 +238,9 @@ dependencies {
 
   debugImplementation(projects.sentryAndroidDistribution)
   debugImplementation(libs.leakcanary)
+
+  testImplementation(libs.google.truth)
+  testImplementation(libs.kotlin.test.junit)
 }
 
 abstract class ToggleNativeLoggingTask : Exec() {

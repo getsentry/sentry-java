@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Improvements
+
+- Support Navigation 3 integration for multi-Activity applications, where each Activity has its own `SentryNavEffect` ([#6229](https://github.com/getsentry/sentry-java/pull/6229))
+  - Limitations: Does not include support for applications where multiple `SentryNavEffect`s are meant to be simultaneously active, whether nested or as siblings (e.g., [multi-resume mode](https://developer.android.com/develop/ui/views/layout/support-multi-window-mode))
+
 ### Dependencies
 
 - Bump Native SDK from v0.17.2 to v0.17.3 ([#6250](https://github.com/getsentry/sentry-java/pull/6250))

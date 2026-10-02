@@ -66,7 +66,7 @@ internal fun NavigationTransactionHistorySheet(
         modifier = Modifier.testTag(historyTag(sampleName, "title")),
       )
       Text(
-        "Displays the last 10 finished transactions emitted by the SDK. Transactions with child work appear here after their work finishes.",
+        "Displays the last 25 finished Nav3 transactions emitted by the SDK. Transactions with child work appear here after their work finishes.",
         style = MaterialTheme.typography.bodyMedium,
       )
       Column(
@@ -133,7 +133,11 @@ private fun TransactionCard(
       modifier = Modifier.padding(12.dp).testTag(historyTag(sampleName, "card_${index}_content")),
       verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-      Row(verticalAlignment = Alignment.CenterVertically) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+      ) {
         Column(
           modifier = Modifier.weight(1f).testTag(historyTag(sampleName, "card_${index}_summary"))
         ) {
@@ -152,12 +156,20 @@ private fun TransactionCard(
             modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_operation")),
           )
         }
-        Text(
-          "Tab: ${transaction.tab}",
-          style = MaterialTheme.typography.labelLarge,
-          fontFamily = FontFamily.Monospace,
-          modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_tab")),
-        )
+        Column(horizontalAlignment = Alignment.End) {
+          Text(
+            transaction.activity,
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_activity")),
+          )
+          Text(
+            "Tab: ${transaction.tab}",
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = FontFamily.Monospace,
+            modifier = Modifier.testTag(historyTag(sampleName, "card_${index}_tab")),
+          )
+        }
       }
 
       TransactionWaterfall(transaction, historyTag(sampleName, "card_${index}_waterfall"))

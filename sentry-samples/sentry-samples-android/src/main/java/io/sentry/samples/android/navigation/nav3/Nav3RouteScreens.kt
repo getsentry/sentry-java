@@ -37,6 +37,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +48,7 @@ import io.sentry.Sentry
 import io.sentry.compose.SentryModifier.sentryTag
 import io.sentry.compose.SentryTraced
 import io.sentry.samples.android.R
+import io.sentry.samples.android.getActivity
 import io.sentry.samples.android.navigation.common.RouteNames
 import io.sentry.samples.android.navigation.common.RouteSpec
 import io.sentry.samples.android.navigation.common.RouteSpecs
@@ -65,7 +67,7 @@ internal fun TracedNav3Route(
   scenario: Nav3Scenario,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  tagCurrentNav3Scenario(scenario)
+  tagCurrentNav3Scenario(scenario, LocalContext.current.getActivity().javaClass.simpleName)
   SentryTraced(
     tag = "Nav3 /${route.routeName}",
     enableUserInteractionTracing = false,
@@ -73,8 +75,19 @@ internal fun TracedNav3Route(
   )
 }
 
-private fun tagCurrentNav3Scenario(scenario: Nav3Scenario) {
-  Sentry.getSpan()?.setTag("sample_nav3_scenario", scenario.label)
+private fun tagCurrentNav3Scenario(scenario: Nav3Scenario, activityName: String) {
+  val sessionId = NavigationTransactionHistory.sessionId
+  Sentry.getSpan()?.let { span ->
+    span.setTag(NAV3_SCENARIO_TAG, scenario.label)
+    span.setTag(NAVIGATION_SAMPLE_ACTIVITY_TAG, activityName)
+    span.setTag(NAVIGATION_SAMPLE_SESSION_TAG, sessionId)
+  }
+  Sentry.configureScope { scope ->
+    scope.withTransaction { transaction ->
+      transaction?.setTag(NAVIGATION_SAMPLE_ACTIVITY_TAG, activityName)
+      transaction?.setTag(NAVIGATION_SAMPLE_SESSION_TAG, sessionId)
+    }
+  }
   tagCurrentNavigationSampleScenario(scenario.label)
 }
 
@@ -496,6 +509,8 @@ internal fun ProductListRoute(backStack: SnapshotStateList<Nav3Route>) {
 internal fun ProductDetailRoute(
   route: Nav3Route.ProductDetail,
   backStack: SnapshotStateList<Nav3Route>,
+  onCheckout: () -> Unit = { backStack.add(Nav3Route.Checkout(route.productId)) },
+  showOverlays: Boolean = true,
 ) {
   LaunchedEffect(route.productId, route.source, route.campaign) {
     recordSimulatedBackgroundSpan(RouteNames.PRODUCT_DETAIL)
@@ -508,19 +523,21 @@ internal fun ProductDetailRoute(
       RouteSpecs.productDetail.displayArguments(route.arguments).forEach { (label, value) ->
         RouteInfo(label, value)
       }
-      RouteButton(
-        "Show Promo Dialog",
-        onClick = { backStack.add(Nav3Route.PromoDialog("detail-${route.productId}")) },
-        testTag = nav3TestTag("product_detail_show_promo_dialog"),
-      )
-      RouteButton(
-        "Open Share Sheet",
-        onClick = { backStack.add(Nav3Route.ShareSheet(route.productId)) },
-        testTag = nav3TestTag("product_detail_open_share_sheet"),
-      )
+      if (showOverlays) {
+        RouteButton(
+          "Show Promo Dialog",
+          onClick = { backStack.add(Nav3Route.PromoDialog("detail-${route.productId}")) },
+          testTag = nav3TestTag("product_detail_show_promo_dialog"),
+        )
+        RouteButton(
+          "Open Share Sheet",
+          onClick = { backStack.add(Nav3Route.ShareSheet(route.productId)) },
+          testTag = nav3TestTag("product_detail_open_share_sheet"),
+        )
+      }
       RouteButton(
         "Go to Checkout",
-        onClick = { backStack.add(Nav3Route.Checkout(route.productId)) },
+        onClick = onCheckout,
         testTag = nav3TestTag("product_detail_go_to_checkout"),
       )
     },
