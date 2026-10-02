@@ -3,10 +3,13 @@ package io.sentry.util;
 import io.sentry.MonitorConfig;
 import io.sentry.MonitorSchedule;
 import io.sentry.MonitorScheduleUnit;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,16 +19,20 @@ import org.jetbrains.annotations.Nullable;
 public final class MonitorConfigUtils {
   private static final @NotNull String CRON_DISABLED = "-";
   private static final long MINUTE_MILLIS = TimeUnit.MINUTES.toMillis(1);
-  private static final @NotNull Map<String, String> CRON_MACROS = new HashMap<>();
+  private static final @NotNull Map<String, String> CRON_MACROS;
+  private static final @NotNull Pattern SIMPLE_DURATION =
+      Pattern.compile("^([+-]?\\d+)([a-zA-Z]{0,2})$");
 
   static {
-    CRON_MACROS.put("@yearly", "0 0 1 1 *");
-    CRON_MACROS.put("@annually", "0 0 1 1 *");
-    CRON_MACROS.put("@monthly", "0 0 1 * *");
-    CRON_MACROS.put("@weekly", "0 0 * * 0");
-    CRON_MACROS.put("@daily", "0 0 * * *");
-    CRON_MACROS.put("@midnight", "0 0 * * *");
-    CRON_MACROS.put("@hourly", "0 * * * *");
+    final @NotNull Map<String, String> macros = new HashMap<>();
+    macros.put("@yearly", "0 0 1 1 *");
+    macros.put("@annually", "0 0 1 1 *");
+    macros.put("@monthly", "0 0 1 * *");
+    macros.put("@weekly", "0 0 * * 0");
+    macros.put("@daily", "0 0 * * *");
+    macros.put("@midnight", "0 0 * * *");
+    macros.put("@hourly", "0 * * * *");
+    CRON_MACROS = Collections.unmodifiableMap(macros);
   }
 
   private MonitorConfigUtils() {}
@@ -73,6 +80,57 @@ public final class MonitorConfigUtils {
       return new MonitorConfig(MonitorSchedule.interval((int) minutes, MonitorScheduleUnit.MINUTE));
     }
     return null;
+  }
+
+  /**
+   * Parses a period given as a plain number in {@code defaultUnit}, or in the simple duration style
+   * Spring 6.1+ accepts (a number followed by {@code ns}, {@code us}, {@code ms}, {@code s}, {@code
+   * m}, {@code h} or {@code d}, e.g. {@code 30s} or {@code 5m}). ISO-8601 durations are not handled
+   * here.
+   *
+   * @return the period in milliseconds, or null if the value is empty or cannot be parsed
+   */
+  public static @Nullable Long parsePeriodMillis(
+      final @Nullable String value, final @NotNull TimeUnit defaultUnit) {
+    if (value == null) {
+      return null;
+    }
+    final @NotNull Matcher matcher = SIMPLE_DURATION.matcher(value.trim());
+    if (!matcher.matches()) {
+      return null;
+    }
+    final long amount;
+    try {
+      amount = Long.parseLong(matcher.group(1));
+    } catch (NumberFormatException e) {
+      return null;
+    }
+    final @Nullable TimeUnit unit = timeUnit(matcher.group(2), defaultUnit);
+    return unit == null ? null : unit.toMillis(amount);
+  }
+
+  private static @Nullable TimeUnit timeUnit(
+      final @NotNull String suffix, final @NotNull TimeUnit defaultUnit) {
+    switch (suffix.toLowerCase(Locale.ROOT)) {
+      case "":
+        return defaultUnit;
+      case "ns":
+        return TimeUnit.NANOSECONDS;
+      case "us":
+        return TimeUnit.MICROSECONDS;
+      case "ms":
+        return TimeUnit.MILLISECONDS;
+      case "s":
+        return TimeUnit.SECONDS;
+      case "m":
+        return TimeUnit.MINUTES;
+      case "h":
+        return TimeUnit.HOURS;
+      case "d":
+        return TimeUnit.DAYS;
+      default:
+        return null;
+    }
   }
 
   /**
