@@ -31,6 +31,7 @@ import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringValueResolver;
 
@@ -41,6 +42,12 @@ import org.springframework.util.StringValueResolver;
 @ApiStatus.Internal
 @Open
 public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueResolverAware {
+  // Spring before 5.3 parses crons with CronSequenceGenerator
+  private static final boolean LEGACY_CRON_PARSER =
+      !ClassUtils.isPresent(
+          "org.springframework.scheduling.support.CronExpression",
+          SentryCheckInAdvice.class.getClassLoader());
+
   private final @NotNull IScopes scopes;
 
   private @Nullable StringValueResolver resolver;
@@ -103,6 +110,11 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       return invocation.proceed();
     }
 
+    final @Nullable MonitorConfig monitorConfig =
+        !isHeartbeatOnly && checkInAnnotation.upsertMonitorConfig()
+            ? monitorConfig(mostSpecificMethod)
+            : null;
+
     try (final @NotNull ISentryLifecycleToken ignored =
             scopes.forkedScopes("SentryCheckInAdvice").makeCurrent()) {
       TracingUtils.startNewTrace(scopes);
@@ -115,9 +127,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       try {
         if (!isHeartbeatOnly) {
           final @NotNull CheckIn inProgress = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
-          if (checkInAnnotation.upsertMonitorConfig()) {
-            inProgress.setMonitorConfig(monitorConfig(mostSpecificMethod));
-          }
+          inProgress.setMonitorConfig(monitorConfig);
           checkInId = scopes.captureCheckIn(inProgress);
         }
         return invocation.proceed();
@@ -162,8 +172,9 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
           cron,
           zone,
           periodMillis(scheduled.fixedRate(), scheduled.fixedRateString(), timeUnit),
-          periodMillis(scheduled.fixedDelay(), scheduled.fixedDelayString(), timeUnit));
-    } catch (RuntimeException e) {
+          periodMillis(scheduled.fixedDelay(), scheduled.fixedDelayString(), timeUnit),
+          LEGACY_CRON_PARSER);
+    } catch (Throwable e) {
       scopes
           .getOptions()
           .getLogger()

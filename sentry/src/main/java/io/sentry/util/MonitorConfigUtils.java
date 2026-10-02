@@ -72,22 +72,20 @@ public final class MonitorConfigUtils {
   private MonitorConfigUtils() {}
 
   /**
-   * Builds a monitor config from exactly one of a cron, fixed rate or fixed delay.
+   * Builds a monitor config from exactly one of a cron or a fixed interval.
    *
    * @param cron 6 field cron (seconds first) or macro, null or empty if unset
    * @param zone cron time zone, ignored for intervals
-   * @param fixedRateMillis null if unset
-   * @param fixedDelayMillis null if unset
+   * @param intervalMillis fixed rate, null if unset
    * @return null if the schedule can't be expressed as a Sentry monitor schedule
    */
   public static @Nullable MonitorConfig fromSchedule(
       final @Nullable String cron,
       final @Nullable String zone,
-      final @Nullable Long fixedRateMillis,
-      final @Nullable Long fixedDelayMillis) {
+      final @Nullable Long intervalMillis) {
     final boolean hasCron = cron != null && !cron.isEmpty();
 
-    if (hasCron && cron != null && fixedRateMillis == null && fixedDelayMillis == null) {
+    if (hasCron && cron != null && intervalMillis == null) {
       final @Nullable String crontab = toCrontab(cron);
       if (crontab == null) {
         return null;
@@ -103,9 +101,8 @@ public final class MonitorConfigUtils {
       return config;
     }
 
-    final @Nullable Long period = fixedRateMillis != null ? fixedRateMillis : fixedDelayMillis;
-    if (!hasCron && period != null && (fixedRateMillis == null || fixedDelayMillis == null)) {
-      final long millis = period;
+    if (!hasCron && intervalMillis != null) {
+      final long millis = intervalMillis;
       if (millis < MINUTE_MILLIS || millis % MINUTE_MILLIS != 0) {
         return null;
       }
@@ -128,30 +125,72 @@ public final class MonitorConfigUtils {
 
   /**
    * Builds a monitor config from Spring {@code @Scheduled} values with placeholders resolved. Reads
-   * days of week and a cron without zone the way Spring does.
+   * the cron and a cron without zone the way Spring does.
    *
    * @param cron Spring cron, null or empty if unset
    * @param zone cron time zone, null or empty for the JVM default zone
    * @param fixedRateMillis null if unset
-   * @param fixedDelayMillis null if unset
+   * @param fixedDelayMillis null if unset; a fixed delay never gets a config
+   * @param legacyCronParser true for Spring before 5.3, which parses crons with {@code
+   *     CronSequenceGenerator}
    * @return null if the schedule can't be expressed as a Sentry monitor schedule
    */
   public static @Nullable MonitorConfig fromSpringScheduled(
       final @Nullable String cron,
       final @Nullable String zone,
       final @Nullable Long fixedRateMillis,
-      final @Nullable Long fixedDelayMillis) {
-    final @Nullable String crontabCron = toCrontabDaysOfWeek(cron);
+      final @Nullable Long fixedDelayMillis,
+      final boolean legacyCronParser) {
+    // runs start a delay after the previous run ends, so they drift from any interval
+    if (fixedDelayMillis != null) {
+      return null;
+    }
+    final @Nullable String crontabCron =
+        legacyCronParser ? toCrontabLegacy(cron) : toCrontabDaysOfWeek(cron);
     @Nullable String cronZone = null;
     if (crontabCron != null && !crontabCron.isEmpty()) {
       cronZone = zone == null || zone.isEmpty() ? TimeZone.getDefault().getID() : zone;
     }
-    return fromSchedule(crontabCron, cronZone, fixedRateMillis, fixedDelayMillis);
+    return fromSchedule(crontabCron, cronZone, fixedRateMillis);
+  }
+
+  /**
+   * Spring before 5.3 steps day of month {@code *}/n from 0, so it runs on n, 2n, ... Days of week
+   * already match crontab. Null if both day fields are set, as it then sometimes runs at midnight.
+   */
+  static @Nullable String toCrontabLegacy(final @Nullable String cron) {
+    if (cron == null) {
+      return null;
+    }
+    final @NotNull String[] fields = cron.trim().split("\\s+", -1);
+    if (fields.length != 6) {
+      return cron;
+    }
+    if (!isAnyDay(fields[3]) && !isAnyDay(fields[5])) {
+      return null;
+    }
+    final @NotNull StringBuilder daysOfMonth = new StringBuilder();
+    for (@NotNull String item : fields[3].split(",", -1)) {
+      if (item.startsWith("*/")) {
+        item = item.substring(2) + "-31" + item.substring(1);
+      }
+      if (daysOfMonth.length() > 0) {
+        daysOfMonth.append(',');
+      }
+      daysOfMonth.append(item);
+    }
+    fields[3] = daysOfMonth.toString();
+    return join(fields);
+  }
+
+  private static boolean isAnyDay(final @NotNull String field) {
+    return "*".equals(field) || "?".equals(field);
   }
 
   /**
    * Spring numbers days of week from Monday with 0 or 7 for Sunday, and starts {@code *} on Monday.
-   * Rewrites them so crontab reads them the same way.
+   * Rewrites them so crontab reads them the same way. Null for {@code #5}, which Spring 5.3 also
+   * runs in months without a fifth weekday.
    */
   static @Nullable String toCrontabDaysOfWeek(final @Nullable String cron) {
     if (cron == null) {
@@ -166,6 +205,9 @@ public final class MonitorConfigUtils {
       for (int i = 0; i < DAY_NAMES.size(); i++) {
         item = item.replace(DAY_NAMES.get(i), String.valueOf(i == 0 ? 7 : i));
       }
+      if (item.matches(".*#0*5")) {
+        return null;
+      }
       if (item.startsWith("*/")) {
         item = "1-7" + item.substring(1);
       } else if (item.startsWith("7-")) {
@@ -178,6 +220,10 @@ public final class MonitorConfigUtils {
       daysOfWeek.append(item);
     }
     fields[5] = daysOfWeek.toString();
+    return join(fields);
+  }
+
+  private static @NotNull String join(final @NotNull String[] fields) {
     final @NotNull StringBuilder result = new StringBuilder();
     for (int i = 0; i < fields.length; i++) {
       if (i > 0) {
@@ -370,6 +416,10 @@ public final class MonitorConfigUtils {
         return null;
       }
       if (items.size() == 1) {
+        // cronsim steps a single value range like 10-10/2 to the field max
+        if (base.indexOf('-') >= 0) {
+          return null;
+        }
         return range(items.iterator().next(), FIELD_MAX[index], step);
       }
       final @NotNull List<Integer> sorted = new ArrayList<>(items);

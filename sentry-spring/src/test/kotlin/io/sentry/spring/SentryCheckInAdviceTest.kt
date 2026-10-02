@@ -39,6 +39,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
 import org.springframework.scheduling.annotation.Scheduled
+import org.springframework.scheduling.annotation.Schedules
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
@@ -52,6 +53,7 @@ import org.springframework.util.StringValueResolver
       "my.cron.slug = mypropertycronslug",
       "my.cron.schedule = 0 30 2 * * *",
       "my.cron.zone = America/New_York",
+      "my.cron.empty.zone = ",
     ]
 )
 class SentryCheckInAdviceTest {
@@ -285,10 +287,53 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
-  fun `ISO-8601 fixed delay string is sent as interval monitor config`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedDelayIso() }
+  fun `ISO-8601 fixed rate string is sent as interval monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateIso() }
     assertEquals("10", config?.schedule?.value)
     assertEquals("minute", config?.schedule?.unit)
+  }
+
+  @Test
+  fun `simple duration fixed rate string is sent as interval monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateSimpleDuration() }
+    assertEquals("interval", config?.schedule?.type)
+    assertEquals("5", config?.schedule?.value)
+    assertEquals("minute", config?.schedule?.unit)
+  }
+
+  @Test
+  fun `fixed delay sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.fixedDelay() })
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.fixedDelayIso() })
+  }
+
+  @Test
+  fun `disabled cron sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.disabledCron() })
+  }
+
+  @Test
+  fun `zone placeholder resolving to empty uses the JVM default zone`() {
+    val defaultTimeZone = TimeZone.getDefault()
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
+    try {
+      val config = inProgressMonitorConfig { sampleServiceScheduled.cronWithEmptyZone() }
+      assertEquals("0 3 * * *", config?.schedule?.value)
+      assertEquals("Asia/Tokyo", config?.timezone)
+    } finally {
+      TimeZone.setDefault(defaultTimeZone)
+    }
+  }
+
+  @Test
+  fun `cron zone overrides the default timezone from options`() {
+    val options =
+      SentryOptions().apply {
+        cron = SentryOptions.Cron().apply { defaultTimezone = "Europe/Berlin" }
+      }
+    whenever(scopes.options).thenReturn(options)
+    val config = inProgressMonitorConfig { sampleServiceScheduled.cronWithZoneAndDefaults() }
+    assertEquals("Europe/Vienna", config?.timezone)
   }
 
   @Test
@@ -314,6 +359,11 @@ class SentryCheckInAdviceTest {
   @Test
   fun `multiple schedules send no monitor config`() {
     assertNull(inProgressMonitorConfig { sampleServiceScheduled.multipleSchedules() })
+  }
+
+  @Test
+  fun `schedules container sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.schedulesContainer() })
   }
 
   @Test
@@ -424,9 +474,37 @@ class SentryCheckInAdviceTest {
     @Scheduled(fixedRate = 2, timeUnit = TimeUnit.HOURS)
     open fun fixedRateHours() {}
 
+    @SentryCheckIn("fixed_rate_iso", upsertMonitorConfig = true)
+    @Scheduled(fixedRateString = "PT10M")
+    open fun fixedRateIso() {}
+
+    @SentryCheckIn("fixed_rate_simple", upsertMonitorConfig = true)
+    @Scheduled(fixedRateString = "5m")
+    open fun fixedRateSimpleDuration() {}
+
+    @SentryCheckIn("fixed_delay", upsertMonitorConfig = true)
+    @Scheduled(fixedDelay = 300_000)
+    open fun fixedDelay() {}
+
     @SentryCheckIn("fixed_delay_iso", upsertMonitorConfig = true)
     @Scheduled(fixedDelayString = "PT10M")
     open fun fixedDelayIso() {}
+
+    @SentryCheckIn("disabled_cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "-")
+    open fun disabledCron() {}
+
+    @SentryCheckIn("cron_empty_zone", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 3 * * *", zone = "\${my.cron.empty.zone}")
+    open fun cronWithEmptyZone() {}
+
+    @SentryCheckIn("cron_zone_defaults", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 4 * * *", zone = "Europe/Vienna")
+    open fun cronWithZoneAndDefaults() {}
+
+    @SentryCheckIn("schedules_container", upsertMonitorConfig = true)
+    @Schedules(Scheduled(cron = "0 0 1 * * *"), Scheduled(cron = "0 0 13 * * *"))
+    open fun schedulesContainer() {}
 
     @SentryCheckIn("unresolvable_cron", upsertMonitorConfig = true)
     @Scheduled(cron = "\${my.cron.missing}")
