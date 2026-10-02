@@ -62,10 +62,15 @@ dependencies {
   implementation(projects.sentry)
 
   compileOnly(libs.androidx.compose.runtime)
+  // Provides androidx.lifecycle.compose.LocalLifecycleOwner. Hosts get it at runtime through
+  // Compose UI 1.7+ and navigation3-ui, both of which depend on it.
+  compileOnly(libs.androidx.lifecycle.runtime.compose)
 
   testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.androidx.fragment.ktx)
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.ext.junit)
+  testImplementation(libs.androidx.viewpager2)
   testImplementation(libs.google.truth)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.mockito.kotlin)
