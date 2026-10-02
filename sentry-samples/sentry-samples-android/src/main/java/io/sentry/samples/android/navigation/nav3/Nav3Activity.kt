@@ -464,6 +464,17 @@ private fun Nav3SampleApp(
                 )
               }
             }
+            entry<Nav3Route.MultiActivity> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                MultiActivityRoute {
+                  activity?.startActivity(
+                    Intent(activity, Nav3ProductsActivity::class.java)
+                      .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+                  )
+                }
+              }
+            }
             entry<Nav3Route.Landing> { route ->
               TracedNav3Route(route, selectedScenario) {
                 Nav3RouteWorkEffect(route, routeWorkOptions)

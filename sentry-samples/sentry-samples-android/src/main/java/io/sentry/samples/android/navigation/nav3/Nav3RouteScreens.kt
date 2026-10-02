@@ -496,6 +496,8 @@ internal fun ProductListRoute(backStack: SnapshotStateList<Nav3Route>) {
 internal fun ProductDetailRoute(
   route: Nav3Route.ProductDetail,
   backStack: SnapshotStateList<Nav3Route>,
+  onCheckout: () -> Unit = { backStack.add(Nav3Route.Checkout(route.productId)) },
+  showOverlays: Boolean = true,
 ) {
   LaunchedEffect(route.productId, route.source, route.campaign) {
     recordSimulatedBackgroundSpan(RouteNames.PRODUCT_DETAIL)
@@ -508,19 +510,21 @@ internal fun ProductDetailRoute(
       RouteSpecs.productDetail.displayArguments(route.arguments).forEach { (label, value) ->
         RouteInfo(label, value)
       }
-      RouteButton(
-        "Show Promo Dialog",
-        onClick = { backStack.add(Nav3Route.PromoDialog("detail-${route.productId}")) },
-        testTag = nav3TestTag("product_detail_show_promo_dialog"),
-      )
-      RouteButton(
-        "Open Share Sheet",
-        onClick = { backStack.add(Nav3Route.ShareSheet(route.productId)) },
-        testTag = nav3TestTag("product_detail_open_share_sheet"),
-      )
+      if (showOverlays) {
+        RouteButton(
+          "Show Promo Dialog",
+          onClick = { backStack.add(Nav3Route.PromoDialog("detail-${route.productId}")) },
+          testTag = nav3TestTag("product_detail_show_promo_dialog"),
+        )
+        RouteButton(
+          "Open Share Sheet",
+          onClick = { backStack.add(Nav3Route.ShareSheet(route.productId)) },
+          testTag = nav3TestTag("product_detail_open_share_sheet"),
+        )
+      }
       RouteButton(
         "Go to Checkout",
-        onClick = { backStack.add(Nav3Route.Checkout(route.productId)) },
+        onClick = onCheckout,
         testTag = nav3TestTag("product_detail_go_to_checkout"),
       )
     },
