@@ -76,7 +76,8 @@ internal data class Nav2TraceSpan(
 private fun SentryTransaction.toNav2TransactionTrace(dsn: String?): Nav2TransactionTrace {
   val trace = contexts.trace
   val startTimestamp = startTimestamp
-  val endTimestamp = timestamp ?: startTimestamp
+  val endTimestamp =
+    timestamp ?: spans.mapNotNull { span -> span.timestamp }.maxOrNull() ?: startTimestamp
   val durationMillis = ((endTimestamp - startTimestamp) * 1_000.0).coerceAtLeast(0.0)
   val rootSpanId = trace?.spanId?.toString()
   val traceId = trace?.traceId?.toString().orEmpty()

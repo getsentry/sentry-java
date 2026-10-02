@@ -103,6 +103,7 @@ internal class Nav3PerformanceState(
   private val mutationToFirstDrawDurations = Nav3PerformanceDurations()
   private var pendingOperation: PendingNav3PerformanceOperation? = null
   private var pendingAbPhase: PendingNav3PerformanceTrace? = null
+  private var pendingMeasuredPhase: PendingNav3PerformanceTrace? = null
   private var nextTraceCookie = 0
   private var abComparisonCount = 0
   private var collectMeasurements = true
@@ -267,6 +268,7 @@ internal class Nav3PerformanceState(
   }
 
   fun startBenchmark(status: String) {
+    finishMeasuredPhase()
     benchmarkRunning = true
     benchmarkStatus = status
     comparisonResult = null
@@ -278,11 +280,16 @@ internal class Nav3PerformanceState(
   }
 
   fun startMeasuredIterations() {
+    finishMeasuredPhase()
     resetCounters()
     collectMeasurements = true
+    val cookie = ++nextTraceCookie
+    pendingMeasuredPhase = PendingNav3PerformanceTrace(MEASURED_SECTION, cookie)
+    beginAsyncTraceSection(MEASURED_SECTION, cookie)
   }
 
   fun stopCollectingMeasurements() {
+    finishMeasuredPhase()
     collectMeasurements = false
   }
 
@@ -293,6 +300,7 @@ internal class Nav3PerformanceState(
   }
 
   fun finishBenchmark(result: String? = null) {
+    finishMeasuredPhase()
     finishAbPhase()
     collectMeasurements = true
     benchmarkRunning = false
@@ -305,6 +313,7 @@ internal class Nav3PerformanceState(
   }
 
   fun cancelBenchmark(status: String = "Ready") {
+    finishMeasuredPhase()
     finishAbPhase()
     collectMeasurements = true
     benchmarkRunning = false
@@ -379,6 +388,11 @@ internal class Nav3PerformanceState(
   fun finishAbPhase() {
     pendingAbPhase?.let { phase -> endAsyncTraceSection(phase.sectionName, phase.cookie) }
     pendingAbPhase = null
+  }
+
+  private fun finishMeasuredPhase() {
+    pendingMeasuredPhase?.let { phase -> endAsyncTraceSection(phase.sectionName, phase.cookie) }
+    pendingMeasuredPhase = null
   }
 
   fun sentryNavEffectDurationSummary(): String = sentryNavEffectDurations.summary()
@@ -1277,4 +1291,5 @@ private const val NAVIGATION_TO_COMPOSITION_SECTION = "Nav3Stress.navigationToCo
 private const val NAVIGATION_TO_FIRST_DRAW_SECTION = "Nav3Stress.navigationToFirstDraw"
 private const val AB_DISABLED_SECTION = "Nav3Stress.ab.disabled"
 private const val AB_ENABLED_SECTION = "Nav3Stress.ab.enabled"
+private const val MEASURED_SECTION = "Nav3Stress.measured"
 private const val NAV_PERF_TAG = "NavPerformance"

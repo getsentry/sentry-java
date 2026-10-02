@@ -78,7 +78,8 @@ private fun SentryTransaction.toNavigationTransactionTrace(
 ): NavigationTransactionTrace {
   val trace = contexts.trace
   val startTimestamp = startTimestamp
-  val endTimestamp = timestamp ?: startTimestamp
+  val endTimestamp =
+    timestamp ?: spans.mapNotNull { span -> span.timestamp }.maxOrNull() ?: startTimestamp
   val durationMillis = ((endTimestamp - startTimestamp) * 1_000.0).coerceAtLeast(0.0)
   val rootSpanId = trace?.spanId?.toString()
   val traceId = trace?.traceId?.toString().orEmpty()

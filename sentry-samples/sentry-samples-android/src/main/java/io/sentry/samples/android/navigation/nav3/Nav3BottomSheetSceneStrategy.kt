@@ -1,5 +1,6 @@
 package io.sentry.samples.android.navigation.nav3
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
@@ -48,6 +49,10 @@ internal data class Nav3OverlayScene<T : Any>(
 
   override val content: @Composable (() -> Unit) = {
     val visibleState = rememberOverlayVisibleState()
+
+    // NavDisplay bases its system-back pop count on the non-overlay scene beneath this custom
+    // in-content overlay. Consume Back here so a single press removes only the overlay entry.
+    BackHandler(onBack = onBack)
 
     Box(modifier = Modifier.fillMaxSize()) {
       AnimatedOverlayScrim(visibleState = visibleState, onBack = onBack)
