@@ -6,6 +6,9 @@ import io.sentry.CheckInStatus;
 import io.sentry.DateUtils;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
+import io.sentry.MonitorConfig;
+import io.sentry.MonitorSchedule;
+import io.sentry.MonitorScheduleUnit;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
@@ -13,6 +16,12 @@ import io.sentry.time.Stopwatch;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.ApiStatus;
@@ -20,8 +29,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.context.EmbeddedValueResolverAware;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.util.StringValueResolver;
 
 /**
@@ -31,6 +43,18 @@ import org.springframework.util.StringValueResolver;
 @ApiStatus.Internal
 @Open
 public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueResolverAware {
+  private static final @NotNull Map<String, String> CRON_MACROS = new HashMap<>();
+
+  static {
+    CRON_MACROS.put("@yearly", "0 0 1 1 *");
+    CRON_MACROS.put("@annually", "0 0 1 1 *");
+    CRON_MACROS.put("@monthly", "0 0 1 * *");
+    CRON_MACROS.put("@weekly", "0 0 * * 0");
+    CRON_MACROS.put("@daily", "0 0 * * *");
+    CRON_MACROS.put("@midnight", "0 0 * * *");
+    CRON_MACROS.put("@hourly", "0 * * * *");
+  }
+
   private final @NotNull IScopes scopes;
 
   private @Nullable StringValueResolver resolver;
@@ -98,7 +122,11 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
 
       try {
         if (!isHeartbeatOnly) {
-          checkInId = scopes.captureCheckIn(new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS));
+          final @NotNull CheckIn inProgress = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
+          if (checkInAnnotation.upsertMonitorConfig()) {
+            inProgress.setMonitorConfig(monitorConfigFromScheduled(mostSpecificMethod));
+          }
+          checkInId = scopes.captureCheckIn(inProgress);
         }
         return invocation.proceed();
       } catch (Throwable e) {
@@ -111,6 +139,118 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         scopes.captureCheckIn(checkIn);
       }
     }
+  }
+
+  private @Nullable MonitorConfig monitorConfigFromScheduled(final @NotNull Method method) {
+    try {
+      final @NotNull Set<Scheduled> schedules =
+          AnnotatedElementUtils.findMergedRepeatableAnnotations(method, Scheduled.class);
+      if (schedules.size() != 1) {
+        return null;
+      }
+      final @NotNull Scheduled scheduled = schedules.iterator().next();
+      final @Nullable String cron = resolve(scheduled.cron());
+      final @Nullable Long fixedRate =
+          periodMillis(scheduled, scheduled.fixedRate(), scheduled.fixedRateString());
+      final @Nullable Long fixedDelay =
+          periodMillis(scheduled, scheduled.fixedDelay(), scheduled.fixedDelayString());
+      final boolean hasCron = cron != null && !cron.isEmpty();
+
+      if (hasCron && cron != null && fixedRate == null && fixedDelay == null) {
+        final @Nullable String crontab = toCrontab(cron);
+        if (crontab == null) {
+          return null;
+        }
+        final @NotNull MonitorConfig config = new MonitorConfig(MonitorSchedule.crontab(crontab));
+        final @Nullable String zone = resolve(scheduled.zone());
+        if (zone != null && !zone.isEmpty()) {
+          config.setTimezone(zone);
+        }
+        return config;
+      }
+      final @Nullable Long period = fixedRate != null ? fixedRate : fixedDelay;
+      if (!hasCron && period != null && (fixedRate == null || fixedDelay == null)) {
+        final long millis = period;
+        final long minuteMillis = TimeUnit.MINUTES.toMillis(1);
+        if (millis < minuteMillis || millis % minuteMillis != 0) {
+          return null;
+        }
+        final long minutes = millis / minuteMillis;
+        if (minutes > Integer.MAX_VALUE) {
+          return null;
+        }
+        return new MonitorConfig(
+            MonitorSchedule.interval((int) minutes, MonitorScheduleUnit.MINUTE));
+      }
+      return null;
+    } catch (RuntimeException e) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Could not derive a monitor config from @Scheduled for method annotated with @SentryCheckIn.",
+              e);
+      return null;
+    }
+  }
+
+  private @Nullable Long periodMillis(
+      final @NotNull Scheduled scheduled, final long value, final @NotNull String valueString) {
+    // timeUnit only exists from Spring 5.3.10, so read it as an attribute
+    final @Nullable Object timeUnitAttribute =
+        AnnotationUtils.getAnnotationAttributes(scheduled).get("timeUnit");
+    final @NotNull TimeUnit timeUnit =
+        timeUnitAttribute instanceof TimeUnit
+            ? (TimeUnit) timeUnitAttribute
+            : TimeUnit.MILLISECONDS;
+    if (value >= 0) {
+      return timeUnit.toMillis(value);
+    }
+    final @Nullable String resolved = resolve(valueString);
+    if (resolved == null || resolved.isEmpty()) {
+      return null;
+    }
+    final @NotNull String trimmed = resolved.trim();
+    if (trimmed.startsWith("P") || trimmed.startsWith("p")) {
+      return Duration.parse(trimmed).toMillis();
+    }
+    return timeUnit.toMillis(Long.parseLong(trimmed));
+  }
+
+  /**
+   * Converts a Spring cron expression (6 fields, seconds first) to a 5 field crontab. Returns null
+   * unless the seconds field is a single fixed number, since crontab cannot express sub-minute
+   * schedules.
+   */
+  private static @Nullable String toCrontab(final @NotNull String cron) {
+    final @NotNull String trimmed = cron.trim();
+    if (Scheduled.CRON_DISABLED.equals(trimmed)) {
+      return null;
+    }
+    if (trimmed.startsWith("@")) {
+      return CRON_MACROS.get(trimmed.toLowerCase(Locale.ROOT));
+    }
+    final @NotNull String[] fields = StringUtils.tokenizeToStringArray(trimmed, " \t");
+    if (fields.length != 6 || !fields[0].matches("\\d{1,2}")) {
+      return null;
+    }
+    final @NotNull StringBuilder crontab = new StringBuilder();
+    for (int i = 1; i < fields.length; i++) {
+      if (i > 1) {
+        crontab.append(' ');
+      }
+      // Spring treats '?' like '*'
+      crontab.append("?".equals(fields[i]) ? "*" : fields[i]);
+    }
+    return crontab.toString();
+  }
+
+  private @Nullable String resolve(final @NotNull String value) {
+    if (resolver == null || value.isEmpty()) {
+      return value;
+    }
+    return resolver.resolveStringValue(value);
   }
 
   @Override
