@@ -86,3 +86,9 @@ If you want the route transactions to be the primary trace surface while testing
 ```
 
 This is mainly useful for debugging and comparison in the sample app. It is not a general recommendation for production apps.
+
+## Nav3 Performance Scenario
+
+The Nav3 sample includes an interactive performance scenario for exercising stack mutations and
+route rendering. Open Nav3 from the integrations screen and use the performance controls to run a
+scenario with the desired stack depth and workload.
