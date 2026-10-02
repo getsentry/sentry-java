@@ -9,7 +9,7 @@ class MonitorConfigUtilsTest {
 
   @Test
   fun `cron with fixed seconds drops the seconds field`() {
-    val config = MonitorConfigUtils.fromSchedule("0 15 10 * * MON-FRI", null, null, null)
+    val config = MonitorConfigUtils.fromSchedule("0 15 10 * * MON-FRI", null, null)
 
     assertThat(config).isNotNull()
     assertThat(config!!.schedule.type).isEqualTo("crontab")
@@ -20,14 +20,14 @@ class MonitorConfigUtilsTest {
 
   @Test
   fun `cron whitespace is normalized`() {
-    val config = MonitorConfigUtils.fromSchedule("  30   0 2 * * *  ", null, null, null)
+    val config = MonitorConfigUtils.fromSchedule("  30   0 2 * * *  ", null, null)
 
     assertThat(config?.schedule?.value).isEqualTo("0 2 * * *")
   }
 
   @Test
   fun `cron question mark is converted to asterisk`() {
-    val config = MonitorConfigUtils.fromSchedule("0 0 9 ? * MON", null, null, null)
+    val config = MonitorConfigUtils.fromSchedule("0 0 9 ? * MON", null, null)
 
     assertThat(config?.schedule?.value).isEqualTo("0 9 * * MON")
   }
@@ -46,33 +46,33 @@ class MonitorConfigUtilsTest {
         "@HOURLY" to "0 * * * *",
       )
     for ((macro, crontab) in expected) {
-      assertThat(MonitorConfigUtils.fromSchedule(macro, null, null, null)?.schedule?.value)
+      assertThat(MonitorConfigUtils.fromSchedule(macro, null, null)?.schedule?.value)
         .isEqualTo(crontab)
     }
   }
 
   @Test
   fun `unknown cron macro returns null`() {
-    assertThat(MonitorConfigUtils.fromSchedule("@reboot", null, null, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("@reboot", null, null)).isNull()
   }
 
   @Test
   fun `cron with variable seconds returns null`() {
-    assertThat(MonitorConfigUtils.fromSchedule("*/30 * * * * *", null, null, null)).isNull()
-    assertThat(MonitorConfigUtils.fromSchedule("0,30 * * * * *", null, null, null)).isNull()
-    assertThat(MonitorConfigUtils.fromSchedule("0-10 * * * * *", null, null, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("*/30 * * * * *", null, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("0,30 * * * * *", null, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("0-10 * * * * *", null, null)).isNull()
   }
 
   @Test
   fun `cron without 6 fields returns null`() {
-    assertThat(MonitorConfigUtils.fromSchedule("0 * * * *", null, null, null)).isNull()
-    assertThat(MonitorConfigUtils.fromSchedule("0 0 * * * * 2030", null, null, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("0 * * * *", null, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("0 0 * * * * 2030", null, null)).isNull()
   }
 
   @Test
   fun `cron with both day of month and day of week returns null`() {
     for (cron in listOf("0 0 9 1-7 * MON", "0 0 9 15 * 1-5", "0 0 9 L * 5L", "0 0 9 1 * 1/2")) {
-      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)).isNull()
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null)).isNull()
     }
   }
 
@@ -85,7 +85,7 @@ class MonitorConfigUtilsTest {
         "0 0 9 1 * ?" to "0 9 1 * *",
       )
     for ((cron, crontab) in expected) {
-      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)?.schedule?.value)
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null)?.schedule?.value)
         .isEqualTo(crontab)
     }
   }
@@ -110,7 +110,7 @@ class MonitorConfigUtilsTest {
         "0 0 0 * * 1-7/2",
       )
     for (cron in expected) {
-      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)?.schedule?.value)
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null)?.schedule?.value)
         .isEqualTo(cron.substringAfter(' '))
     }
   }
@@ -147,7 +147,7 @@ class MonitorConfigUtilsTest {
         "0 0 0 * * 5#0",
       )
     for (cron in rejected) {
-      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)).isNull()
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null)).isNull()
     }
   }
 
@@ -156,18 +156,18 @@ class MonitorConfigUtilsTest {
     // Spring and Quartz run only at the value, cronsim steps to the field max
     for (cron in
       listOf("0 10-10/2 * * * *", "0 0 0-0/3 * * *", "0 0 0 ? * 4-4/3", "0 0 0 * 6-6/1 *")) {
-      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)).isNull()
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null)).isNull()
     }
   }
 
   @Test
   fun `disabled cron returns null`() {
-    assertThat(MonitorConfigUtils.fromSchedule("-", null, null, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("-", null, null)).isNull()
   }
 
   @Test
   fun `zone is set for cron`() {
-    val config = MonitorConfigUtils.fromSchedule("0 0 2 * * *", "Europe/Vienna", null, null)
+    val config = MonitorConfigUtils.fromSchedule("0 0 2 * * *", "Europe/Vienna", null)
 
     assertThat(config?.schedule?.value).isEqualTo("0 2 * * *")
     assertThat(config?.timezone).isEqualTo("Europe/Vienna")
@@ -177,7 +177,7 @@ class MonitorConfigUtilsTest {
   fun `IANA zones are kept`() {
     for (zone in
       listOf("UTC", "GMT", "Etc/GMT+5", "US/Eastern", "America/Argentina/Buenos_Aires")) {
-      assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", zone, null, null)?.timezone)
+      assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", zone, null)?.timezone)
         .isEqualTo(zone)
     }
   }
@@ -195,7 +195,7 @@ class MonitorConfigUtilsTest {
         "GMT-00:00" to "Etc/GMT",
       )
     for ((zone, timezone) in expected) {
-      assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", zone, null, null)?.timezone)
+      assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", zone, null)?.timezone)
         .isEqualTo(timezone)
     }
   }
@@ -204,31 +204,23 @@ class MonitorConfigUtilsTest {
   fun `zones Sentry rejects return null`() {
     for (zone in
       listOf("GMT+05:30", "GMT+15", "UTC-13", "PST", "IST", "Nowhere/Land", "SystemV/EST5")) {
-      assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", zone, null, null)).isNull()
+      assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", zone, null)).isNull()
     }
   }
 
   @Test
   fun `empty zone is not set`() {
-    assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", "", null, null)?.timezone).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", "", null)?.timezone).isNull()
   }
 
   @Test
   fun `fixed rate in whole minutes is an interval`() {
-    val config = MonitorConfigUtils.fromSchedule(null, null, TimeUnit.MINUTES.toMillis(5), null)
+    val config = MonitorConfigUtils.fromSchedule(null, null, TimeUnit.MINUTES.toMillis(5))
 
     assertThat(config).isNotNull()
     assertThat(config!!.schedule.type).isEqualTo("interval")
     assertThat(config.schedule.value).isEqualTo("5")
     assertThat(config.schedule.unit).isEqualTo("minute")
-  }
-
-  @Test
-  fun `fixed delay in whole minutes is an interval`() {
-    val config = MonitorConfigUtils.fromSchedule("", null, null, TimeUnit.MINUTES.toMillis(90))
-
-    assertThat(config?.schedule?.value).isEqualTo("90")
-    assertThat(config?.schedule?.unit).isEqualTo("minute")
   }
 
   @Test
@@ -241,7 +233,7 @@ class MonitorConfigUtilsTest {
         TimeUnit.DAYS.toMillis(14) to ("14" to "day"),
       )
     for ((millis, interval) in expected) {
-      val config = MonitorConfigUtils.fromSchedule(null, null, millis, null)
+      val config = MonitorConfigUtils.fromSchedule(null, null, millis)
       assertThat(config?.schedule?.value).isEqualTo(interval.first)
       assertThat(config?.schedule?.unit).isEqualTo(interval.second)
     }
@@ -250,7 +242,7 @@ class MonitorConfigUtilsTest {
   @Test
   fun `zone is ignored for intervals`() {
     val config =
-      MonitorConfigUtils.fromSchedule(null, "Europe/Vienna", TimeUnit.MINUTES.toMillis(1), null)
+      MonitorConfigUtils.fromSchedule(null, "Europe/Vienna", TimeUnit.MINUTES.toMillis(1))
 
     assertThat(config?.schedule?.value).isEqualTo("1")
     assertThat(config?.timezone).isNull()
@@ -258,13 +250,13 @@ class MonitorConfigUtilsTest {
 
   @Test
   fun `sub-minute period returns null`() {
-    assertThat(MonitorConfigUtils.fromSchedule(null, null, 30_000L, null)).isNull()
-    assertThat(MonitorConfigUtils.fromSchedule(null, null, 0L, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule(null, null, 30_000L)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule(null, null, 0L)).isNull()
   }
 
   @Test
   fun `period not in whole minutes returns null`() {
-    assertThat(MonitorConfigUtils.fromSchedule(null, null, 90_000L, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule(null, null, 90_000L)).isNull()
   }
 
   @Test
@@ -274,7 +266,6 @@ class MonitorConfigUtilsTest {
           null,
           null,
           TimeUnit.MINUTES.toMillis(Int.MAX_VALUE.toLong() + 1),
-          null,
         )
       )
       .isNull()
@@ -282,14 +273,13 @@ class MonitorConfigUtilsTest {
 
   @Test
   fun `more than one schedule kind returns null`() {
-    assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", null, 60_000L, null)).isNull()
-    assertThat(MonitorConfigUtils.fromSchedule(null, null, 60_000L, 60_000L)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("0 0 2 * * *", null, 60_000L)).isNull()
   }
 
   @Test
   fun `no schedule returns null`() {
-    assertThat(MonitorConfigUtils.fromSchedule(null, null, null, null)).isNull()
-    assertThat(MonitorConfigUtils.fromSchedule("", null, null, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule(null, null, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSchedule("", null, null)).isNull()
   }
 
   @Test
@@ -307,7 +297,9 @@ class MonitorConfigUtilsTest {
         "0 0 9 * * *" to "0 9 * * *",
       )
     for ((cron, crontab) in expected) {
-      assertThat(MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null)?.schedule?.value)
+      assertThat(
+          MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null, false)?.schedule?.value
+        )
         .isEqualTo(crontab)
     }
   }
@@ -317,9 +309,13 @@ class MonitorConfigUtilsTest {
     val defaultTimeZone = TimeZone.getDefault()
     TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
     try {
-      assertThat(MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", null, null, null)?.timezone)
+      assertThat(
+          MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", null, null, null, false)?.timezone
+        )
         .isEqualTo("Asia/Tokyo")
-      assertThat(MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "", null, null)?.timezone)
+      assertThat(
+          MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "", null, null, false)?.timezone
+        )
         .isEqualTo("Asia/Tokyo")
     } finally {
       TimeZone.setDefault(defaultTimeZone)
@@ -328,7 +324,7 @@ class MonitorConfigUtilsTest {
 
   @Test
   fun `Spring cron zone is converted`() {
-    val config = MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "GMT+2", null, null)
+    val config = MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "GMT+2", null, null, false)
 
     assertThat(config?.schedule?.value).isEqualTo("0 2 * * *")
     assertThat(config?.timezone).isEqualTo("Etc/GMT-2")
@@ -337,24 +333,80 @@ class MonitorConfigUtilsTest {
   @Test
   fun `Spring schedules Sentry can't express return null`() {
     for (cron in listOf("0 0 9 1-7 * MON", "-", "\${my.cron.missing}", "*/30 * * * * *")) {
-      assertThat(MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null)).isNull()
+      assertThat(MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null, false)).isNull()
     }
-    assertThat(MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "GMT+05:30", null, null))
+    assertThat(
+        MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "GMT+05:30", null, null, false)
+      )
       .isNull()
-    assertThat(MonitorConfigUtils.fromSpringScheduled(null, null, 30_000L, null)).isNull()
+    assertThat(MonitorConfigUtils.fromSpringScheduled(null, null, 30_000L, null, false)).isNull()
   }
 
   @Test
   fun `Spring periods are intervals without zone`() {
-    val rate = MonitorConfigUtils.fromSpringScheduled("", null, TimeUnit.MINUTES.toMillis(5), null)
+    val rate =
+      MonitorConfigUtils.fromSpringScheduled("", null, TimeUnit.MINUTES.toMillis(5), null, false)
     assertThat(rate?.schedule?.type).isEqualTo("interval")
     assertThat(rate?.schedule?.value).isEqualTo("5")
     assertThat(rate?.schedule?.unit).isEqualTo("minute")
     assertThat(rate?.timezone).isNull()
+  }
 
-    val delay = MonitorConfigUtils.fromSpringScheduled(null, null, null, TimeUnit.HOURS.toMillis(2))
-    assertThat(delay?.schedule?.value).isEqualTo("2")
-    assertThat(delay?.schedule?.unit).isEqualTo("hour")
+  @Test
+  fun `Spring fixed delay returns null`() {
+    for (legacy in listOf(false, true)) {
+      assertThat(MonitorConfigUtils.fromSpringScheduled(null, null, null, 300_000L, legacy))
+        .isNull()
+      assertThat(MonitorConfigUtils.fromSpringScheduled("", null, 300_000L, 300_000L, legacy))
+        .isNull()
+    }
+  }
+
+  @Test
+  fun `Spring fifth weekday returns null`() {
+    assertThat(MonitorConfigUtils.fromSpringScheduled("0 0 9 ? * MON#5", "UTC", null, null, false))
+      .isNull()
+  }
+
+  @Test
+  fun `legacy Spring cron is rewritten to how crontab reads it`() {
+    val expected =
+      mapOf(
+        "0 0 9 */2 * *" to "0 9 2-31/2 * *",
+        "0 0 9 */1,15 * ?" to "0 9 1-31/1,15 * *",
+        "0 0 9 ? * */2" to "0 9 * * */2",
+        "0 0 9 ? * SUN/2" to "0 9 * * SUN/2",
+        "0 0 9 ? * 5-7" to "0 9 * * 5-7",
+        "0 0 9 1-15/3 * *" to "0 9 1-15/3 * *",
+      )
+    for ((cron, crontab) in expected) {
+      assertThat(
+          MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null, true)?.schedule?.value
+        )
+        .isEqualTo(crontab)
+    }
+  }
+
+  @Test
+  fun `legacy Spring cron with both day fields returns null`() {
+    // CronSequenceGenerator then sometimes runs at midnight
+    for (cron in listOf("0 0 9 1 * */2", "0 0 9 */2 * */3", "0 0 9 */2 * MON")) {
+      assertThat(MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null, true)).isNull()
+    }
+  }
+
+  @Test
+  fun `legacy Spring cron without zone uses the JVM default zone`() {
+    val defaultTimeZone = TimeZone.getDefault()
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
+    try {
+      assertThat(
+          MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", null, null, null, true)?.timezone
+        )
+        .isEqualTo("Asia/Tokyo")
+    } finally {
+      TimeZone.setDefault(defaultTimeZone)
+    }
   }
 
   @Test
