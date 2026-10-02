@@ -51,26 +51,28 @@ internal class NetworkBodyCapturingResponseBody(
     delegate.close()
   }
 
+  /**
+   * Copies the bytes passing through into [captured].
+   *
+   * A response body has a single consumer, as OkHttp requires of one, so the buffer is only ever
+   * touched by the thread reading it and needs no locking.
+   */
   private inner class CapturingSource(source: Source) : ForwardingSource(source) {
     override fun read(sink: Buffer, byteCount: Long): Long {
       val sinkBefore = sink.size
       val read = super.read(sink, byteCount)
 
       if (read > 0L) {
-        val reachedCap =
-          synchronized(captured) {
-            val room = maxBytes - captured.size
-            val toTake = minOf(room, sink.size - sinkBefore)
-            if (toTake > 0L) {
-              sink.copyTo(captured, sinkBefore, toTake)
-            }
-            captured.size >= maxBytes
-          }
-        if (reachedCap) {
+        val toTake = minOf(maxBytes - captured.size, sink.size - sinkBefore)
+        if (toTake > 0L) {
+          sink.copyTo(captured, sinkBefore, toTake)
+        }
+        if (captured.size >= maxBytes) {
+          // the capture can never grow again, so this is the moment it becomes final
           reportCaptured()
         }
       } else if (read == -1L) {
-        // End of stream: nothing more will ever be captured.
+        // end of stream: nothing more can ever arrive
         reportCaptured()
       }
       return read
@@ -84,8 +86,7 @@ internal class NetworkBodyCapturingResponseBody(
 
   private fun reportCaptured() {
     if (reported.compareAndSet(false, true)) {
-      val bytes = synchronized(captured) { captured.clone().readByteArray() }
-      onCaptured(bytes)
+      onCaptured(captured.clone().readByteArray())
     }
   }
 }
