@@ -286,6 +286,7 @@ class SentryOkHttpInterceptorStreamingTest {
     val url: String
       get() = "http://127.0.0.1:${server.localPort}/events"
 
+    @Suppress("SwallowedException") // the server socket is closed when the test finishes
     private fun acceptLoop() {
       while (!server.isClosed) {
         val socket =
@@ -299,15 +300,18 @@ class SentryOkHttpInterceptorStreamingTest {
       }
     }
 
+    @Suppress("SwallowedException") // a client that hangs up mid-stream is normal here
     private fun serve(socket: Socket) {
       try {
         socket.use {
           readRequestHead(it.getInputStream())
           val output = it.getOutputStream()
-          output.write(
-            ("HTTP/1.1 $statusCode OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nTransfer-Encoding: chunked\r\n\r\n")
-              .toByteArray()
-          )
+          val headers =
+            "HTTP/1.1 $statusCode OK\r\n" +
+              "Content-Type: text/event-stream\r\n" +
+              "Cache-Control: no-cache\r\n" +
+              "Transfer-Encoding: chunked\r\n\r\n"
+          output.write(headers.toByteArray())
           output.flush()
           for (event in events) {
             val bytes = event.toByteArray()

@@ -34,6 +34,7 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import okhttp3.ResponseBody
 import org.jetbrains.annotations.VisibleForTesting
 
 /**
@@ -50,6 +51,7 @@ import org.jetbrains.annotations.VisibleForTesting
  * @param failedRequestTargets The SDK will only capture HTTP Client errors if the HTTP Request URL
  *   is a match for any of the defined targets.
  */
+@Suppress("TooManyFunctions") // one function per concern of the interception pipeline
 public open class SentryOkHttpInterceptor(
   private val scopes: IScopes = ScopesAdapter.getInstance(),
   private val beforeSpan: BeforeSpanCallback? = null,
@@ -323,27 +325,39 @@ public open class SentryOkHttpInterceptor(
    * and captured while it is being consumed instead.
    */
   private fun Response.withNetworkBodyCapture(networkDetailData: NetworkRequestData?): Response {
-    val data = networkDetailData ?: return this
-    val responseBody = body ?: return this
-    val logger = scopes.options.logger
+    val responseBody = body
     val captureBodies = scopes.options.sessionReplay.isNetworkCaptureBodies
     val responseHeaders = scopes.options.sessionReplay.networkResponseHeaders
+    val logger = scopes.options.logger
 
-    if (!captureBodies || responseBody.contentLength() >= 0) {
-      data.setResponseDetails(
-        code,
-        NetworkDetailCaptureUtils.createResponse(
-          this,
-          responseBody.contentLength(),
-          captureBodies,
-          { resp: Response -> resp.extractResponseBody(logger) },
-          responseHeaders,
-          { resp: Response -> resp.headers.toMap() },
-        ),
-      )
-      return this
+    return when {
+      networkDetailData == null || responseBody == null -> this
+      // a body with a known length ends on its own, so capturing it up front is bounded
+      !captureBodies || responseBody.contentLength() >= 0 -> {
+        networkDetailData.setResponseDetails(
+          code,
+          NetworkDetailCaptureUtils.createResponse(
+            this,
+            responseBody.contentLength(),
+            captureBodies,
+            { resp: Response -> resp.extractResponseBody(logger) },
+            responseHeaders,
+            { resp: Response -> resp.headers.toMap() },
+          ),
+        )
+        this
+      }
+      else -> wrapForCapturedStreamingBody(networkDetailData, responseBody, responseHeaders, logger)
     }
+  }
 
+  /** Wraps a body that may never end, capturing the bytes as the application consumes them. */
+  private fun Response.wrapForCapturedStreamingBody(
+    networkDetailData: NetworkRequestData,
+    responseBody: ResponseBody,
+    responseHeaders: List<String>,
+    logger: ILogger,
+  ): Response {
     val maxBodySize = SentryReplayOptions.MAX_NETWORK_BODY_SIZE
     val contentType = responseBody.contentType()
     val contentTypeString = contentType?.toString()
@@ -352,7 +366,7 @@ public open class SentryOkHttpInterceptor(
     return newBuilder()
       .body(
         NetworkBodyCapturingResponseBody(responseBody, maxBodySize.toLong()) { capturedBytes ->
-          data.setResponseDetails(
+          networkDetailData.setResponseDetails(
             code,
             NetworkDetailCaptureUtils.createResponse(
               this,

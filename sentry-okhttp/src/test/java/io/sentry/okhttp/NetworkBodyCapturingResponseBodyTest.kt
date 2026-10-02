@@ -45,6 +45,9 @@ class NetworkBodyCapturingResponseBodyTest {
   }
 
   private class FailingSource(private val bytesBeforeFailure: Int) : Source {
+    var isClosed = false
+      private set
+
     private var written = 0
 
     override fun read(sink: Buffer, byteCount: Long): Long {
@@ -56,7 +59,9 @@ class NetworkBodyCapturingResponseBodyTest {
 
     override fun timeout(): Timeout = Timeout.NONE
 
-    override fun close() {}
+    override fun close() {
+      isClosed = true
+    }
   }
 
   private fun bodyOf(
@@ -211,10 +216,15 @@ class NetworkBodyCapturingResponseBodyTest {
 
   @Test
   fun `propagates read failures to the application`() {
-    val (wrapper, captured) = capture(FailingSource(bytesBeforeFailure = 4), 1024)
+    val source = FailingSource(bytesBeforeFailure = 4)
+    val captured = mutableListOf<ByteArray?>()
+    val wrapper = NetworkBodyCapturingResponseBody(bodyOf(source), 1024) { captured.add(it) }
 
     assertFailsWith<IOException> { wrapper.source().readByteArray() }
     assertTrue(captured.isEmpty(), "a failed stream has no final capture")
+
+    wrapper.close()
+    assertTrue(source.isClosed, "the connection must still be releasable after a failure")
   }
 
   @Test
