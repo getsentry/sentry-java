@@ -13,11 +13,14 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class NetworkRequestData {
   private @Nullable final String method;
-  private @Nullable Integer statusCode;
   private @Nullable Long requestBodySize;
-  private @Nullable Long responseBodySize;
   private @Nullable ReplayNetworkRequestOrResponse request;
-  private @Nullable ReplayNetworkRequestOrResponse response;
+
+  // The response can be filled in after this instance was handed to the scope: an integration that
+  // captures a streamed body only knows it once the stream has been consumed. Keeping the three
+  // response values behind one volatile reference means a reader on the replay thread sees either
+  // nothing or the complete set, never a mix of the two.
+  private volatile @Nullable ResponseDetails responseDetails;
 
   public NetworkRequestData(@Nullable final String method) {
     this.method = method;
@@ -28,7 +31,8 @@ public final class NetworkRequestData {
   }
 
   public @Nullable Integer getStatusCode() {
-    return statusCode;
+    final ResponseDetails details = responseDetails;
+    return details == null ? null : details.statusCode;
   }
 
   public @Nullable Long getRequestBodySize() {
@@ -36,7 +40,8 @@ public final class NetworkRequestData {
   }
 
   public @Nullable Long getResponseBodySize() {
-    return responseBodySize;
+    final ResponseDetails details = responseDetails;
+    return details == null ? null : details.bodySize;
   }
 
   public @Nullable ReplayNetworkRequestOrResponse getRequest() {
@@ -44,7 +49,8 @@ public final class NetworkRequestData {
   }
 
   public @Nullable ReplayNetworkRequestOrResponse getResponse() {
-    return response;
+    final ResponseDetails details = responseDetails;
+    return details == null ? null : details.response;
   }
 
   /**
@@ -62,9 +68,7 @@ public final class NetworkRequestData {
    */
   public void setResponseDetails(
       final int statusCode, @NotNull final ReplayNetworkRequestOrResponse responseData) {
-    this.statusCode = statusCode;
-    this.response = responseData;
-    this.responseBodySize = responseData.getSize();
+    this.responseDetails = new ResponseDetails(statusCode, responseData.getSize(), responseData);
   }
 
   @Override
@@ -74,15 +78,31 @@ public final class NetworkRequestData {
         + method
         + '\''
         + ", statusCode="
-        + statusCode
+        + getStatusCode()
         + ", requestBodySize="
         + requestBodySize
         + ", responseBodySize="
-        + responseBodySize
+        + getResponseBodySize()
         + ", request="
         + request
         + ", response="
-        + response
+        + getResponse()
         + '}';
+  }
+
+  /** Immutable, so publishing one reference publishes all three values. */
+  private static final class ResponseDetails {
+    private final int statusCode;
+    private final @Nullable Long bodySize;
+    private final @NotNull ReplayNetworkRequestOrResponse response;
+
+    ResponseDetails(
+        final int statusCode,
+        final @Nullable Long bodySize,
+        final @NotNull ReplayNetworkRequestOrResponse response) {
+      this.statusCode = statusCode;
+      this.bodySize = bodySize;
+      this.response = response;
+    }
   }
 }
