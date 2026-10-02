@@ -3,11 +3,16 @@ package io.sentry.compose.navigation3
 import android.app.Application
 import android.content.ComponentName
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -15,9 +20,12 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.ISentryClient
 import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
+import io.sentry.Scopes
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
@@ -525,6 +533,7 @@ class SentryNavEffectTest {
         SentryNavEffect(
           backStack = backStack,
           backStackEntryMapper = defaultEntryMapper,
+          options = SentryNavOptions(),
           scopes = fixture.scopes,
         )
       }
@@ -541,6 +550,33 @@ class SentryNavEffectTest {
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
     assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
+  }
+
+  @Test
+  fun `effect publishes initial navigation before its lifecycle owner resumes`() {
+    val fixture = NavTestFixture()
+    val owner = NavTestLifecycle()
+    val options = SentryNavOptions()
+    composeRule.setContent {
+      CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+        SentryNavEffect(
+          backStack = listOf("Home"),
+          backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
+          options = options,
+          scopes = fixture.scopes,
+        )
+      }
+    }
+    composeRule.runOnIdle {
+      assertThat(fixture.scope.transaction?.name).isEqualTo("/Home")
+      assertThat(fixture.scope.screen).isEqualTo("/Home")
+      assertThat(fixture.scope.breadcrumbs.map { it.data["to"] }).containsExactly("/Home")
+      owner.resume()
+    }
+    composeRule.runOnIdle {
+      assertThat(fixture.scope.screen).isEqualTo("/Home")
+      assertThat(fixture.scope.breadcrumbs.map { it.data["to"] }).containsExactly("/Home")
+    }
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
@@ -560,5 +596,44 @@ class SentryNavEffectTest {
   private companion object {
     const val NAVIGATION_CONTEXT_KEY = "Navigation"
     const val BACKSTACK_KEY = "Back Stack"
+  }
+}
+
+private class NavTestLifecycle(state: Lifecycle.State = Lifecycle.State.CREATED) : LifecycleOwner {
+
+  override val lifecycle =
+    LifecycleRegistry.createUnsafe(this).apply {
+      if (state == Lifecycle.State.DESTROYED) currentState = Lifecycle.State.CREATED
+      currentState = state
+    }
+
+  fun resume() {
+    lifecycle.currentState = Lifecycle.State.RESUMED
+  }
+
+  fun pause() {
+    lifecycle.currentState = Lifecycle.State.STARTED
+  }
+}
+
+/** Real SDK state with only the event delivery boundary stubbed. No timers or global SDK state. */
+private class NavTestFixture {
+
+  val options =
+    SentryOptions().apply {
+      dsn = "http://key@localhost/1"
+      defaultScopeType = ScopeType.CURRENT
+      setTracesSampleRate(1.0)
+      idleTimeout = null
+      deadlineTimeout = 0
+    }
+
+  val scope = Scope(options)
+  val scopes = Scopes(scope, Scope(options), Scope(options), "navigation test")
+
+  init {
+    val client = mock<ISentryClient>()
+    whenever(client.isEnabled).thenReturn(true)
+    scopes.bindClient(client)
   }
 }

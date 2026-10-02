@@ -20,6 +20,9 @@ import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.lang.ref.WeakReference
+import java.util.WeakHashMap
+
+internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
 
 private const val NAVIGATION_OP: String = "navigation"
 
@@ -44,15 +47,76 @@ private const val NAVIGATION_OP: String = "navigation"
  *   expensive; and
  * - ensures we don't miss reporting a genuine top-of-stack change.
  *
+ * **Coexisting with other observers**
+ *
+ * All observer instances mutate a single [IScope] by default. In general, more than one
+ * simultaneously active observer writing to the same scope is ***not*** supported and can result in
+ * clobbered or interleaved updates, as well as undefined transaction behavior.
+ *
+ * This class does, however, coordinate updates from multiple observers when the lifecycles of the
+ * Activity or Fragment each observer instance lives in overlap. Doing so lets us support common app
+ * architectures where i) each Activity or Fragment owns its own `NavDisplay` <> `SentryNavEffect`
+ * pair, and ii) no `NavDisplay` <> `SentryNavEffect` pair is meant to be active at the same time as
+ * another (e.g., no nesting or
+ * [multi-resume mode](https://source.android.com/docs/core/display/multi_display/multi-resume)).
+ *
+ * // TODO ADAM: Update as needed. The basic policy is that:
+ *
+ * 1. the active observer owns the shared nav state;
+ * 2. obscured observers retain changes without publishing them; and
+ * 3. when ownership returns to an observer, it applies any retained changes and restores its state.
+ *
+ * The following diagram illustrates how observers coordinate their updates during those brief
+ * overlaps ("nav data" refers to breadcrumbs, screen names, and back stack context):
+ * ```
+ *  Time
+ *    │
+ *    ▼
+ *
+ *  Observer A                    Shared scope                    Observer B
+ *  ──────────                    ────────────                    ──────────
+ *      │
+ *  First new top
+ *      │
+ *      ├── publish ────────────► Nav data: A
+ *      └── bind ───────────────► Nav transaction: A
+ *      │                                                             │
+ *      │                                                       First new top
+ *      │                                                             │
+ *      │                         A's nav transaction ◄── unbind ─────┤
+ *      │                         Nav data: B         ◄── publish ────┤
+ *      │                         Nav transaction: B  ◄── bind ───────┤
+ *      │                                                             │
+ *  Back stack changes                                                │
+ *      │                                                             │
+ *      └── held while obscured                                       │
+ *      │                                                             │
+ *      │                                                         cleanup
+ *      │                                                             │
+ *      │                         B's data cleared ◄──────────────────┤
+ *      │                         A becomes active ◄── coordinator ───┤
+ *      │                                                             │
+ *      ├── apply held changes ─► Nav data: A                         │
+ *      └── reclaim ────────────► A's unfinished nav transaction      │
+ *      │                                                             ▼
+ *
+ *  Alternative: A cleans up while B is active
+ *      │
+ *      └── clear A's own data only; B's published data remains
+ *  ```
+ *
  * **Thread safety**
  *
- * This class is ***not*** thread-safe. Clients should serialize calls to [onBackStackChanged] and
- * [cleanup] (e.g., via invocation from an `*Effect` or another form of thread confinement).
+ * This class is ***not*** thread-safe. Clients should serialize calls to [onBackStackChanged],
+ * [onResume], and [cleanup] (e.g., via invocation from an `*Effect` or another form of thread
+ * confinement).
  */
+@Suppress("TooManyFunctions")
 internal class BackStackObserver<T : Any>(
   private val scopes: IScopes,
   private val options: SentryNavOptions,
   entryMapper: ForwardingBackStackEntryMapper<T>,
+  private val coordinator: NavEffectCoordinator? = null,
 ) {
 
   private val backStackConverter = BackStackConverter(entryMapper, scopes.options.logger)
@@ -65,6 +129,11 @@ internal class BackStackObserver<T : Any>(
   // Safe because the host back stack retains the current top entry strongly between updates.
   private var previousTop: WeakReference<T>? = null
   private var previousTopNormalized: NormalizedSentryBackStackEntry? = null
+
+  /** Whether a new top was handled yet. Only the first may evict another observer's transaction. */
+  private var hasHandledNewTop = false
+
+  private var pendingChange: PreparedChange<T>? = null
 
   private val areNavigationTransactionsEnabled: Boolean
     get() = scopes.options.isTracingEnabled && options.enableNavigationTransactions
@@ -107,26 +176,58 @@ internal class BackStackObserver<T : Any>(
    */
   internal fun onBackStackChanged(backStack: List<T>) {
     val change = prepareChange(backStack)
+    if (!hasHandledNewTop && change is BackStackHasNewTop) {
+      coordinator?.activate(this)
+    }
+    if (coordinator != null && !coordinator.isActive(this)) {
+      pendingChange = change
+      return
+    }
     scopes.configureScope { scope -> applyChange(scope, change) }
+  }
+
+  /**
+   * Republishes this observer's latest screen and nav context, unbinds another observer's nav
+   * transaction, and rebinds this observer's unfinished one if the scope is then free. Call when
+   * the observer's lifecycle owner resumes.
+   *
+   * No-ops for data this observer never published (e.g., screens when screen tracking is disabled),
+   * so host-owned values are left alone.
+   */
+  internal fun onResume() {
+    coordinator?.activate(this)
+    publishCurrentState()
+  }
+
+  /** Restores this observer after the active one leaves without a lifecycle resume. */
+  internal fun restoreAfterHandoff() {
+    publishCurrentState()
+  }
+
+  private fun publishCurrentState() {
+    scopes.configureScope { scope ->
+      pendingChange?.let { change ->
+        applyChange(scope, change)
+        pendingChange = null
+      }
+      navScreen.republish(scope)
+      navContext.republish(scope)
+      navTransaction.reclaim(scope)
+    }
   }
 
   internal fun cleanup() {
     previousTop = null
     previousTopNormalized = null
+    pendingChange = null
 
     scopes.configureScope { scope ->
       navTransaction.stop(scope)
+      // Only clear values this observer published; another observer may have replaced them.
       navScreen.clear(scope)
-
-      if (options.captureBackStack) {
-        // This observer owns the nav context while it's in the composition, and cleanup removes
-        // it to avoid leaking stale back stack data after observation stops. If the host app
-        // replaces one observer with another, there may be a brief gap where events lack nav
-        // context. Apps should keep the observer at the nav root so cleanup only runs when the
-        // navigation session is ending, not during normal destination changes.
-        navContext.clear(scope)
-      }
+      navContext.clearIfPublished(scope)
     }
+    coordinator?.remove(this)?.restoreAfterHandoff()
   }
 
   private fun prepareChange(backStack: List<T>): PreparedChange<T> {
@@ -203,12 +304,16 @@ internal class BackStackObserver<T : Any>(
 
     navTransaction.stop(scope)
 
+    val isFirstNewTop = !hasHandledNewTop
+    hasHandledNewTop = true
+
     if (areNavigationTransactionsEnabled) {
       navTransaction
         .start(
           scope,
           currentTop.name,
           currentTop.argumentsWithMetadata(),
+          evictOtherNavTransaction = isFirstNewTop,
         )
         ?.let { transaction -> navContext.updateTransaction(transaction, scope, currentBackStack) }
     } else {
@@ -226,7 +331,7 @@ internal class BackStackObserver<T : Any>(
 
   private fun handleEmptyBackStack(scope: IScope) {
     navTransaction.stop(scope)
-    navContext.clear(scope)
+    navContext.clearIfPublished(scope)
     navScreen.clear(scope)
     clearPreviousTop()
   }
@@ -289,13 +394,24 @@ private class NavTransaction(private val scopes: IScopes) {
 
   private var activeNavTransaction: ITransaction? = null
 
-  /** Starts an idle navigation transaction, or no-ops if another transaction is already active. */
+  /**
+   * Starts an idle navigation transaction, or no-ops if another transaction is already active.
+   *
+   * When [evictOtherNavTransaction] is true, a bound nav transaction owned by another observer is
+   * unbound (not finished; its owner still finishes it) before the check. Non-nav transactions are
+   * never evicted.
+   */
   fun start(
     scope: IScope,
     name: String,
     arguments: Map<String, Any?>,
+    evictOtherNavTransaction: Boolean = false,
   ): ITransaction? {
     clearTransactionIfFinished(scope)
+
+    if (evictOtherNavTransaction) {
+      unbindOtherNavTransaction(scope)
+    }
 
     if (scope.transaction != null) {
       scopes.options.logger.log(
@@ -359,6 +475,36 @@ private class NavTransaction(private val scopes: IScopes) {
     activeNavTransaction = null
   }
 
+  /**
+   * Takes the scope back for this observer when its owner resumes: unbinds another observer's nav
+   * transaction (never a non-nav transaction) and rebinds this observer's unfinished one if the
+   * scope is then free.
+   */
+  fun reclaim(scope: IScope) {
+    clearTransactionIfFinished(scope)
+    unbindOtherNavTransaction(scope)
+
+    val transaction = activeNavTransaction ?: return
+    if (transaction.isFinished) {
+      return
+    }
+    scope.withTransaction { tx ->
+      if (tx == null) {
+        scope.transaction = transaction
+      }
+    }
+  }
+
+  private fun unbindOtherNavTransaction(scope: IScope) {
+    scope.withTransaction { tx ->
+      if (
+        tx != null && tx !== activeNavTransaction && tx.spanContext.origin == TRANSACTION_ORIGIN
+      ) {
+        scope.clearTransaction()
+      }
+    }
+  }
+
   /** Clears a stale finished transaction that's still bound to the default scope. */
   private fun clearTransactionIfFinished(scope: IScope) {
     scope.withTransaction { tx ->
@@ -374,8 +520,10 @@ private class NavContext(private val scopes: IScopes, private val options: Sentr
 
   private companion object {
     private const val BACKSTACK_KEY = "Back Stack"
-    private const val NAVIGATION_CONTEXT_KEY = "Navigation"
   }
+
+  /** The exact nav context instance this helper last published, if any. */
+  private var lastPublished: Map<String, Any?>? = null
 
   fun update(scope: IScope, backStackEntries: List<NormalizedSentryBackStackEntry>) {
     if (backStackEntries.isEmpty()) {
@@ -383,13 +531,29 @@ private class NavContext(private val scopes: IScopes, private val options: Sentr
       return
     }
 
-    scope.setContexts(NAVIGATION_CONTEXT_KEY, backStackEntries.toBackStackMap())
+    val navigationContext = backStackEntries.toBackStackMap()
+    scope.setContexts(NAVIGATION_CONTEXT_KEY, navigationContext)
+    lastPublished = navigationContext
   }
 
   fun clear(scope: IScope) {
     // We purposefully don't call IScope.removeContexts(), as it doesn't notify IScopeObserver and
     // therefore doesn't write its updates to disk ¯\_ (ツ)_/¯.
     scope.setContexts(NAVIGATION_CONTEXT_KEY, null as Any?)
+    lastPublished = null
+  }
+
+  /** Clears the nav context only if it's still the exact instance this helper published. */
+  fun clearIfPublished(scope: IScope) {
+    val published = lastPublished ?: return
+    if (scope.contexts[NAVIGATION_CONTEXT_KEY] === published) {
+      clear(scope)
+    }
+    lastPublished = null
+  }
+
+  fun republish(scope: IScope) {
+    lastPublished?.let { scope.setContexts(NAVIGATION_CONTEXT_KEY, it) }
   }
 
   /**
@@ -430,19 +594,28 @@ private class NavContext(private val scopes: IScopes, private val options: Sentr
 /** A helper class for updating the tracked screen name. */
 private class NavScreen {
 
+  /** The exact screen name instance this helper last published, if any. */
   private var lastScreenName: String? = null
 
   fun update(scope: IScope, currentEntry: NormalizedSentryBackStackEntry) {
-    scope.screen = currentEntry.name
-    lastScreenName = currentEntry.name
+    // Publish a private copy so clear() can tell it apart by identity, even when another observer
+    // publishes an equal name backed by the same interned string (e.g., a route name literal).
+    val screenName = String(currentEntry.name.toCharArray())
+    scope.screen = screenName
+    lastScreenName = screenName
   }
 
+  /** Clears the screen name only if it's still the exact instance this helper published. */
   fun clear(scope: IScope) {
     val screenName = lastScreenName ?: return
-    if (scope.screen == screenName) {
+    if (scope.screen === screenName) {
       scope.screen = null
     }
     lastScreenName = null
+  }
+
+  fun republish(scope: IScope) {
+    lastScreenName?.let { scope.screen = it }
   }
 }
 
@@ -478,5 +651,47 @@ private class NavBreadcrumbs(private val scopes: IScopes) {
 
     val hint = Hint()
     scopes.addBreadcrumb(breadcrumb, hint)
+  }
+}
+
+/**
+ * Selects which [BackStackObserver] may publish navigation state to a shared [IScopes] instance.
+ *
+ * The most recently [activated][activate] observer is selected. If it's removed, the coordinator
+ * selects the most recently activated observer it still tracks.
+ */
+internal class NavEffectCoordinator private constructor() {
+
+  /**
+   * The list of currently or previously [activated][activate] observers.
+   *
+   * Stored in reverse activation order, i.e., the currently activated observer is at the end of the list.
+   */
+  private val trackedObservers = mutableListOf<WeakReference<BackStackObserver<*>>>()
+
+  fun activate(observer: BackStackObserver<*>) {
+    trackedObservers.removeAll { it.get() == null || it.get() === observer }
+    trackedObservers.add(WeakReference(observer))
+  }
+
+  fun isActive(observer: BackStackObserver<*>): Boolean {
+    trackedObservers.removeAll { it.get() == null }
+    return trackedObservers.lastOrNull()?.get() === observer
+  }
+
+  /** Removes an effect and returns the previous one only when the removed effect was active. */
+  fun remove(observer: BackStackObserver<*>): BackStackObserver<*>? {
+    val wasActive = isActive(observer)
+    trackedObservers.removeAll { it.get() == null || it.get() === observer }
+    return if (wasActive) trackedObservers.lastOrNull()?.get() else null
+  }
+
+  companion object {
+
+    // Neither the coordinator nor its weak observer references retain the scopes key.
+    private val coordinators = WeakHashMap<IScopes, NavEffectCoordinator>()
+
+    fun forScopes(scopes: IScopes): NavEffectCoordinator =
+      synchronized(coordinators) { coordinators.getOrPut(scopes) { NavEffectCoordinator() } }
   }
 }
