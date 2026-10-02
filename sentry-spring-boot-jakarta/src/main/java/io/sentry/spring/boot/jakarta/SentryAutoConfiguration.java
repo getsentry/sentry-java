@@ -44,7 +44,6 @@ import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.spring.jakarta.tracing.SpringServletTransactionNameProvider;
 import io.sentry.spring.jakarta.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
-import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
@@ -493,18 +492,6 @@ public class SentryAutoConfiguration {
       @Bean
       public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IScopes scopes) {
         return new SentrySpanWebClientCustomizer(scopes);
-      }
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnMissingBean(ITransportFactory.class)
-    @ConditionalOnClass(ApacheHttpClientTransportFactory.class)
-    @Open
-    static class ApacheHttpClientTransportFactoryAutoconfiguration {
-
-      @Bean
-      public @NotNull ApacheHttpClientTransportFactory apacheHttpClientTransportFactory() {
-        return new ApacheHttpClientTransportFactory();
       }
     }
 

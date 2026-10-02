@@ -31,7 +31,6 @@ dependencies {
   api(projects.sentrySpring7)
   compileOnly(projects.sentryLogback)
   compileOnly(projects.sentryLog4j2)
-  compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(libs.log4j.api)
   compileOnly(libs.log4j.core)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
@@ -69,7 +68,6 @@ dependencies {
   // tests
   testImplementation(projects.sentryLogback)
   testImplementation(projects.sentryLog4j2)
-  testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(libs.log4j.api)
   testImplementation(libs.log4j.core)
   testImplementation(projects.sentryGraphql)
@@ -85,6 +83,7 @@ dependencies {
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(Config.Libs.kotlinReflect)
   testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
+  testImplementation(libs.apache.httpclient)
   testImplementation(libs.context.propagation)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
