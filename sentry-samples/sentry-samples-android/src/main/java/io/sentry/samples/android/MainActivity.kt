@@ -900,7 +900,10 @@ fun IntegrationsScreen() {
         OutlinedButton(
           onClick = {
             activity.startActivity(
-              Intent(activity, io.sentry.samples.android.navigation.Nav2SetupActivity::class.java)
+              Intent(
+                activity,
+                io.sentry.samples.android.navigation.nav2.Nav2SetupActivity::class.java,
+              )
             )
           },
           modifier = Modifier,

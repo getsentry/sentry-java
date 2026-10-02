@@ -1,70 +1,19 @@
-package io.sentry.samples.android.navigation
+package io.sentry.samples.android.navigation.nav2
 
 import android.content.Context
 import android.content.Intent
-import io.sentry.Sentry
+import android.os.Bundle
+import io.sentry.samples.android.navigation.common.NavigationSampleConfig
+import io.sentry.samples.android.navigation.common.NavigationSampleConfigSnapshot
+import io.sentry.samples.android.navigation.common.currentNavigationSampleConfigSnapshot
 
-internal data class Nav2SampleConfig(
-  val enableNavigationTransactions: Boolean = true,
-  val enableNavigationBreadcrumbs: Boolean = true,
-  val enableScreenTracking: Boolean = true,
-  val enableActivityUiLoadTransaction: Boolean = false,
-  val enableUserInteractionTransactions: Boolean = false,
-  val enableUserInteractionBreadcrumbs: Boolean = false,
-)
-
-internal val Nav2SampleConfig.hasOnlyActivityUiLoadTransactions: Boolean
-  get() =
-    enableActivityUiLoadTransaction &&
-      !enableNavigationTransactions &&
-      !enableUserInteractionTransactions
-
-internal data class Nav2SampleConfigSnapshot(
-  val enableScreenTracking: Boolean,
-  val enableUserInteractionTransactions: Boolean,
-  val enableUserInteractionBreadcrumbs: Boolean,
-)
-
-internal fun Nav2SampleConfig.applyToCurrentOptions() {
-  applyNav2SampleOptions(
-    enableScreenTracking = enableScreenTracking,
-    enableUserInteractionTransactions = enableUserInteractionTransactions,
-    enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs,
-  )
-}
-
-internal fun Nav2SampleConfigSnapshot.applyToCurrentOptions() {
-  applyNav2SampleOptions(
-    enableScreenTracking = enableScreenTracking,
-    enableUserInteractionTransactions = enableUserInteractionTransactions,
-    enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs,
-  )
-}
-
-private fun applyNav2SampleOptions(
-  enableScreenTracking: Boolean,
-  enableUserInteractionTransactions: Boolean,
-  enableUserInteractionBreadcrumbs: Boolean,
-) {
-  val options = Sentry.getCurrentScopes().options
-  options.setEnableScreenTracking(enableScreenTracking)
-  options.setEnableUserInteractionTracing(enableUserInteractionTransactions)
-  options.setEnableUserInteractionBreadcrumbs(enableUserInteractionBreadcrumbs)
-}
-
-internal fun currentNav2SampleConfigSnapshot(): Nav2SampleConfigSnapshot {
-  val options = Sentry.getCurrentScopes().options
-  return Nav2SampleConfigSnapshot(
-    enableScreenTracking = options.isEnableScreenTracking,
-    enableUserInteractionTransactions = options.isEnableUserInteractionTracing,
-    enableUserInteractionBreadcrumbs = options.isEnableUserInteractionBreadcrumbs,
-  )
-}
+internal fun currentNav2SampleConfigSnapshot(): NavigationSampleConfigSnapshot =
+  currentNavigationSampleConfigSnapshot()
 
 internal fun Intent.previousNav2SampleConfigSnapshot(
-  fallback: Nav2SampleConfigSnapshot
-): Nav2SampleConfigSnapshot =
-  Nav2SampleConfigSnapshot(
+  fallback: NavigationSampleConfigSnapshot
+): NavigationSampleConfigSnapshot =
+  NavigationSampleConfigSnapshot(
     enableScreenTracking =
       getBooleanExtra(EXTRA_PREVIOUS_ENABLE_SCREEN_TRACKING, fallback.enableScreenTracking),
     enableUserInteractionTransactions =
@@ -79,8 +28,8 @@ internal fun Intent.previousNav2SampleConfigSnapshot(
       ),
   )
 
-internal fun Intent.nav2SampleConfig(): Nav2SampleConfig =
-  Nav2SampleConfig(
+internal fun Intent.nav2SampleConfig(): NavigationSampleConfig =
+  NavigationSampleConfig(
     enableNavigationTransactions = getBooleanExtra(EXTRA_ENABLE_NAVIGATION_TRANSACTIONS, true),
     enableNavigationBreadcrumbs = getBooleanExtra(EXTRA_ENABLE_NAVIGATION_BREADCRUMBS, true),
     enableScreenTracking = getBooleanExtra(EXTRA_ENABLE_SCREEN_TRACKING, true),
@@ -93,8 +42,8 @@ internal fun Intent.nav2SampleConfig(): Nav2SampleConfig =
   )
 
 internal fun Context.nav2LaunchIntent(
-  configuration: Nav2SampleConfig,
-  previousOptions: Nav2SampleConfigSnapshot,
+  configuration: NavigationSampleConfig,
+  previousOptions: NavigationSampleConfigSnapshot,
 ): Intent =
   Intent(this, Nav2Activity::class.java)
     .putExtra(EXTRA_ENABLE_NAVIGATION_TRANSACTIONS, configuration.enableNavigationTransactions)
@@ -122,6 +71,35 @@ internal fun Context.nav2LaunchIntent(
       previousOptions.enableUserInteractionBreadcrumbs,
     )
 
+internal fun Bundle.putNav2SampleConfiguration(configuration: NavigationSampleConfig) {
+  putBoolean(STATE_ENABLE_NAVIGATION_TRANSACTIONS, configuration.enableNavigationTransactions)
+  putBoolean(STATE_ENABLE_NAVIGATION_BREADCRUMBS, configuration.enableNavigationBreadcrumbs)
+  putBoolean(STATE_ENABLE_SCREEN_TRACKING, configuration.enableScreenTracking)
+  putBoolean(
+    STATE_ENABLE_ACTIVITY_UI_LOAD_TRANSACTION,
+    configuration.enableActivityUiLoadTransaction,
+  )
+  putBoolean(
+    STATE_ENABLE_USER_INTERACTION_TRANSACTIONS,
+    configuration.enableUserInteractionTransactions,
+  )
+  putBoolean(
+    STATE_ENABLE_USER_INTERACTION_BREADCRUMBS,
+    configuration.enableUserInteractionBreadcrumbs,
+  )
+}
+
+internal fun Bundle.nav2SampleConfiguration(): NavigationSampleConfig =
+  NavigationSampleConfig(
+    enableNavigationTransactions = getBoolean(STATE_ENABLE_NAVIGATION_TRANSACTIONS, true),
+    enableNavigationBreadcrumbs = getBoolean(STATE_ENABLE_NAVIGATION_BREADCRUMBS, true),
+    enableScreenTracking = getBoolean(STATE_ENABLE_SCREEN_TRACKING, true),
+    enableActivityUiLoadTransaction = getBoolean(STATE_ENABLE_ACTIVITY_UI_LOAD_TRANSACTION, false),
+    enableUserInteractionTransactions =
+      getBoolean(STATE_ENABLE_USER_INTERACTION_TRANSACTIONS, false),
+    enableUserInteractionBreadcrumbs = getBoolean(STATE_ENABLE_USER_INTERACTION_BREADCRUMBS, false),
+  )
+
 private const val EXTRA_ENABLE_NAVIGATION_TRANSACTIONS =
   "io.sentry.samples.android.navigation.enable_navigation_transactions"
 private const val EXTRA_ENABLE_NAVIGATION_BREADCRUMBS =
@@ -140,3 +118,10 @@ private const val EXTRA_PREVIOUS_ENABLE_USER_INTERACTION_TRANSACTIONS =
   "io.sentry.samples.android.navigation.previous_enable_user_interaction_transactions"
 private const val EXTRA_PREVIOUS_ENABLE_USER_INTERACTION_BREADCRUMBS =
   "io.sentry.samples.android.navigation.previous_enable_user_interaction_breadcrumbs"
+private const val STATE_ENABLE_NAVIGATION_TRANSACTIONS = "enable_navigation_transactions"
+private const val STATE_ENABLE_NAVIGATION_BREADCRUMBS = "enable_navigation_breadcrumbs"
+private const val STATE_ENABLE_SCREEN_TRACKING = "enable_screen_tracking"
+private const val STATE_ENABLE_ACTIVITY_UI_LOAD_TRANSACTION = "enable_activity_ui_load_transaction"
+private const val STATE_ENABLE_USER_INTERACTION_TRANSACTIONS =
+  "enable_user_interaction_transactions"
+private const val STATE_ENABLE_USER_INTERACTION_BREADCRUMBS = "enable_user_interaction_breadcrumbs"
