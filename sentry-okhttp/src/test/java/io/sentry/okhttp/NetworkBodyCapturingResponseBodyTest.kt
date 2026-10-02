@@ -1,0 +1,229 @@
+package io.sentry.okhttp
+
+import java.io.IOException
+import kotlin.test.Test
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody
+import okio.Buffer
+import okio.BufferedSource
+import okio.Source
+import okio.Timeout
+import okio.buffer
+
+class NetworkBodyCapturingResponseBodyTest {
+
+  /** Emits one chunk per read, then EOF. Records how many reads happened. */
+  private class ChunkedSource(private val chunks: List<ByteArray>) : Source {
+    var reads = 0
+      private set
+
+    private var index = 0
+    private var closed = false
+
+    override fun read(sink: Buffer, byteCount: Long): Long {
+      reads++
+      if (index >= chunks.size) return -1L
+      val chunk = chunks[index++]
+      sink.write(chunk)
+      return chunk.size.toLong()
+    }
+
+    override fun timeout(): Timeout = Timeout.NONE
+
+    override fun close() {
+      closed = true
+    }
+
+    val isClosed: Boolean
+      get() = closed
+  }
+
+  private class FailingSource(private val bytesBeforeFailure: Int) : Source {
+    private var written = 0
+
+    override fun read(sink: Buffer, byteCount: Long): Long {
+      if (written >= bytesBeforeFailure) throw IOException("connection reset")
+      sink.write(ByteArray(bytesBeforeFailure) { 'x'.code.toByte() })
+      written += bytesBeforeFailure
+      return bytesBeforeFailure.toLong()
+    }
+
+    override fun timeout(): Timeout = Timeout.NONE
+
+    override fun close() {}
+  }
+
+  private fun bodyOf(
+    source: Source,
+    type: String? = "text/plain",
+    length: Long = -1L,
+  ): ResponseBody =
+    object : ResponseBody() {
+      override fun contentType(): MediaType? = type?.toMediaType()
+
+      override fun contentLength(): Long = length
+
+      override fun source(): BufferedSource = source.buffer()
+    }
+
+  private fun capture(
+    source: Source,
+    maxBytes: Long,
+    type: String? = "text/plain",
+    length: Long = -1L,
+  ): Pair<NetworkBodyCapturingResponseBody, MutableList<ByteArray?>> {
+    val captured = mutableListOf<ByteArray?>()
+    val wrapper =
+      NetworkBodyCapturingResponseBody(bodyOf(source, type, length), maxBytes) {
+        captured.add(it)
+      }
+    return wrapper to captured
+  }
+
+  @Test
+  fun `does not read anything before the application does`() {
+    val source = ChunkedSource(listOf("hello".toByteArray()))
+    val (wrapper, captured) = capture(source, 1024)
+
+    assertEquals(0, source.reads, "the wrapper must not read the body up front")
+    assertTrue(captured.isEmpty(), "nothing can be captured before the application reads")
+    assertEquals("text/plain", wrapper.contentType()?.toString(), "content type is delegated")
+  }
+
+  @Test
+  fun `forwards every byte to the application unchanged`() {
+    val payload = "data: event-0\n\ndata: event-1\n\n".toByteArray()
+    val (wrapper, _) = capture(ChunkedSource(listOf(payload)), 1024)
+
+    assertContentEquals(payload, wrapper.source().readByteArray())
+  }
+
+  @Test
+  fun `captures the whole body when it is consumed and ends`() {
+    val (wrapper, captured) =
+      capture(
+        ChunkedSource(listOf("hello ".toByteArray(), "world".toByteArray())),
+        1024,
+      )
+
+    wrapper.source().readByteArray()
+
+    assertEquals(1, captured.size, "the capture must be reported exactly once")
+    assertEquals("hello world", captured.single()?.decodeToString())
+  }
+
+  @Test
+  fun `passes small events through as they arrive and captures them on close`() {
+    val events = (0 until 3).map { "data: event-$it\n\n".toByteArray() }
+    val source = ChunkedSource(events)
+    val (wrapper, captured) = capture(source, 1024)
+
+    val application = wrapper.source()
+    for (expected in events) {
+      assertContentEquals(expected, application.readByteArray(expected.size.toLong()))
+    }
+
+    assertTrue(captured.isEmpty(), "an open stream has nothing final to report yet")
+
+    wrapper.close()
+
+    assertEquals(1, captured.size)
+    assertEquals(
+      "data: event-0\n\ndata: event-1\n\ndata: event-2\n\n",
+      captured.single()?.decodeToString(),
+    )
+  }
+
+  @Test
+  fun `captures what was read when the body is closed early`() {
+    val (wrapper, captured) =
+      capture(ChunkedSource(listOf("first ".toByteArray(), "second".toByteArray())), 1024)
+
+    val application = wrapper.source()
+    assertEquals("first ", application.readUtf8(6))
+
+    wrapper.close()
+
+    assertEquals(1, captured.size)
+    assertEquals("first ", captured.single()?.decodeToString())
+  }
+
+  @Test
+  fun `reports an empty capture for an empty body`() {
+    val (wrapper, captured) = capture(ChunkedSource(emptyList()), 1024)
+
+    wrapper.source().readByteArray()
+    wrapper.close()
+
+    assertEquals(1, captured.size)
+    assertEquals(0, captured.single()?.size)
+  }
+
+  @Test
+  fun `never captures more than the cap but still delivers the whole body`() {
+    val payload = "0123456789abcdefghij".toByteArray()
+    val (wrapper, captured) = capture(ChunkedSource(listOf(payload)), 8)
+
+    assertContentEquals(
+      payload,
+      wrapper.source().readByteArray(),
+      "the application is not truncated",
+    )
+
+    assertEquals(1, captured.size, "reaching the cap is final, so it is reported once")
+    assertEquals("01234567", captured.single()?.decodeToString())
+  }
+
+  @Test
+  fun `reports only once when the body ends and is then closed`() {
+    val (wrapper, captured) = capture(ChunkedSource(listOf("done".toByteArray())), 1024)
+
+    wrapper.source().readByteArray()
+    wrapper.close()
+    wrapper.source().close()
+
+    assertEquals(1, captured.size, "the capture is reported exactly once")
+  }
+
+  @Test
+  fun `delegates content type and content length`() {
+    val type = "text/event-stream".toMediaType()
+    val delegate =
+      object : ResponseBody() {
+        override fun contentType(): MediaType? = type
+
+        override fun contentLength(): Long = -1L
+
+        override fun source(): BufferedSource = ChunkedSource(emptyList()).buffer()
+      }
+
+    val wrapper = NetworkBodyCapturingResponseBody(delegate, 16) {}
+
+    assertEquals(type, wrapper.contentType())
+    assertEquals(-1L, wrapper.contentLength())
+  }
+
+  @Test
+  fun `propagates read failures to the application`() {
+    val (wrapper, captured) = capture(FailingSource(bytesBeforeFailure = 4), 1024)
+
+    assertFailsWith<IOException> { wrapper.source().readByteArray() }
+    assertTrue(captured.isEmpty(), "a failed stream has no final capture")
+  }
+
+  @Test
+  fun `closes the delegate body`() {
+    val source = ChunkedSource(listOf("x".toByteArray()))
+    val (wrapper, _) = capture(source, 1024)
+
+    assertFalse(source.isClosed)
+    wrapper.close()
+    assertTrue(source.isClosed, "the application must still be able to release the connection")
+  }
+}

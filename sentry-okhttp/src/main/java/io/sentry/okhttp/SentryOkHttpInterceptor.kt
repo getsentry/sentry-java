@@ -191,7 +191,8 @@ public open class SentryOkHttpInterceptor(
         }
       }
 
-      return response
+      // The response is returned after the finally block: a body of unknown length may be wrapped
+      // there so its content can be captured while it is streamed.
     } catch (e: IOException) {
       span?.apply {
         this.throwable = e
@@ -203,19 +204,7 @@ public open class SentryOkHttpInterceptor(
       // this only works correctly if SentryOkHttpInterceptor is the last one in the chain
       okHttpEvent?.setRequest(request)
 
-      response?.let {
-        networkDetailData?.setResponseDetails(
-          it.code,
-          NetworkDetailCaptureUtils.createResponse(
-            it,
-            it.body?.contentLength(),
-            scopes.options.sessionReplay.isNetworkCaptureBodies,
-            { resp: Response -> resp.extractResponseBody(scopes.options.logger) },
-            scopes.options.sessionReplay.networkResponseHeaders,
-            { resp: Response -> resp.headers.toMap() },
-          ),
-        )
-      }
+      response = response?.withNetworkBodyCapture(networkDetailData)
 
       // Set network details on the OkHttpEvent so it can include them in the breadcrumb hint
       okHttpEvent?.setNetworkDetails(networkDetailData)
@@ -227,6 +216,8 @@ public open class SentryOkHttpInterceptor(
         sendBreadcrumb(request, code, response, startTimestamp, networkDetailData)
       }
     }
+
+    return response!!
   }
 
   private fun isIgnored(): Boolean =
@@ -320,6 +311,69 @@ public open class SentryOkHttpInterceptor(
       logger.log(io.sentry.SentryLevel.ERROR, "Failed to parse buffered request body: ${e.message}")
       return null
     }
+  }
+
+  /**
+   * Returns this response with a body that can be captured for replay, without blocking on streams
+   * that never end.
+   *
+   * A body with a known length ends on its own, so it is captured up front, as before. A body of
+   * unknown length may never end (server-sent events, long-poll, a chunked endpoint that stays
+   * open): peeking it would block the calling thread until the connection dies, so it is wrapped
+   * and captured while it is being consumed instead.
+   */
+  private fun Response.withNetworkBodyCapture(networkDetailData: NetworkRequestData?): Response {
+    val data = networkDetailData ?: return this
+    val responseBody = body ?: return this
+    val logger = scopes.options.logger
+    val captureBodies = scopes.options.sessionReplay.isNetworkCaptureBodies
+    val responseHeaders = scopes.options.sessionReplay.networkResponseHeaders
+
+    if (!captureBodies || responseBody.contentLength() >= 0) {
+      data.setResponseDetails(
+        code,
+        NetworkDetailCaptureUtils.createResponse(
+          this,
+          responseBody.contentLength(),
+          captureBodies,
+          { resp: Response -> resp.extractResponseBody(logger) },
+          responseHeaders,
+          { resp: Response -> resp.headers.toMap() },
+        ),
+      )
+      return this
+    }
+
+    val maxBodySize = SentryReplayOptions.MAX_NETWORK_BODY_SIZE
+    val contentType = responseBody.contentType()
+    val contentTypeString = contentType?.toString()
+    val charset = contentType?.charset(Charsets.UTF_8)?.name() ?: "UTF-8"
+
+    return newBuilder()
+      .body(
+        NetworkBodyCapturingResponseBody(responseBody, maxBodySize.toLong()) { capturedBytes ->
+          data.setResponseDetails(
+            code,
+            NetworkDetailCaptureUtils.createResponse(
+              this,
+              capturedBytes.size.toLong(),
+              true,
+              {
+                NetworkBodyParser.fromBytes(
+                  capturedBytes,
+                  contentTypeString,
+                  charset,
+                  maxBodySize,
+                  logger,
+                )
+              },
+              responseHeaders,
+              { resp: Response -> resp.headers.toMap() },
+            ),
+          )
+        }
+      )
+      .build()
   }
 
   /** Extracts the body content from an OkHttp Response safely */
