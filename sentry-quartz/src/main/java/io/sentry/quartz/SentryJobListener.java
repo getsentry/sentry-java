@@ -5,20 +5,27 @@ import io.sentry.CheckIn;
 import io.sentry.CheckInStatus;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
+import io.sentry.MonitorConfig;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
 import io.sentry.util.LifecycleHelper;
+import io.sentry.util.MonitorConfigUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
+import java.util.Locale;
+import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobListener;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
 
 @ApiStatus.Experimental
 public final class SentryJobListener implements JobListener {
@@ -31,6 +38,12 @@ public final class SentryJobListener implements JobListener {
   public static final String SENTRY_CHECK_IN_ID_KEY = "sentry-checkin-id";
   public static final String SENTRY_SLUG_KEY = "sentry-slug";
   public static final String SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY = "sentry-scope-lifecycle";
+
+  /**
+   * Job data key to control whether a monitor config derived from the trigger is sent with the
+   * check-in. Set it to {@code false} to send no monitor config. Defaults to {@code true}.
+   */
+  public static final String SENTRY_UPSERT_MONITOR_CONFIG_KEY = "sentry-upsert-monitor-config";
 
   private final @NotNull IScopes scopes;
 
@@ -60,6 +73,9 @@ public final class SentryJobListener implements JobListener {
       TracingUtils.startNewTrace(scopes);
       final @NotNull String slug = maybeSlug;
       final @NotNull CheckIn checkIn = new CheckIn(slug, CheckInStatus.IN_PROGRESS);
+      if (shouldUpsertMonitorConfig(context)) {
+        checkIn.setMonitorConfig(monitorConfigFromTrigger(context.getTrigger()));
+      }
       final @NotNull SentryId checkInId = scopes.captureCheckIn(checkIn);
       context.put(SENTRY_CHECK_IN_ID_KEY, checkInId);
       context.put(SENTRY_SLUG_KEY, slug);
@@ -81,6 +97,119 @@ public final class SentryJobListener implements JobListener {
       }
     }
 
+    return null;
+  }
+
+  private boolean shouldUpsertMonitorConfig(final @NotNull JobExecutionContext context) {
+    final @Nullable JobDataMap jobDataMap = context.getMergedJobDataMap();
+    if (jobDataMap == null) {
+      return true;
+    }
+    final @Nullable Object o = jobDataMap.get(SENTRY_UPSERT_MONITOR_CONFIG_KEY);
+    return o == null || !"false".equalsIgnoreCase(o.toString());
+  }
+
+  private @Nullable MonitorConfig monitorConfigFromTrigger(final @Nullable Trigger trigger) {
+    try {
+      if (trigger instanceof CronTrigger) {
+        final @NotNull CronTrigger cronTrigger = (CronTrigger) trigger;
+        final @Nullable String cron = toSixFieldCron(cronTrigger.getCronExpression());
+        if (cron == null) {
+          return null;
+        }
+        final @Nullable TimeZone timeZone = cronTrigger.getTimeZone();
+        return MonitorConfigUtils.fromSchedule(
+            cron, timeZone == null ? null : timeZone.getID(), null, null);
+      }
+      if (trigger instanceof SimpleTrigger) {
+        final @NotNull SimpleTrigger simpleTrigger = (SimpleTrigger) trigger;
+        if (simpleTrigger.getRepeatCount() == 0) {
+          return null;
+        }
+        return MonitorConfigUtils.fromSchedule(null, null, simpleTrigger.getRepeatInterval(), null);
+      }
+      return null;
+    } catch (RuntimeException e) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING, "Could not derive a monitor config from the Quartz trigger.", e);
+      return null;
+    }
+  }
+
+  /**
+   * Converts a Quartz cron expression (seconds first, optional year, days of week 1-7 starting on
+   * Sunday) to a 6 field cron expression with days of week 0-6. Returns null if it can't be
+   * converted, for example when the year field is set.
+   */
+  static @Nullable String toSixFieldCron(final @Nullable String quartzCron) {
+    if (quartzCron == null) {
+      return null;
+    }
+    final @NotNull String[] fields = quartzCron.trim().split("\\s+", -1);
+    if (fields.length == 7 && !"*".equals(fields[6])) {
+      return null;
+    }
+    if (fields.length != 6 && fields.length != 7) {
+      return null;
+    }
+    final @Nullable String dayOfWeek = toZeroBasedDayOfWeek(fields[5]);
+    if (dayOfWeek == null) {
+      return null;
+    }
+    final @NotNull StringBuilder cron = new StringBuilder();
+    for (int i = 0; i < 5; i++) {
+      cron.append(fields[i]).append(' ');
+    }
+    return cron.append(dayOfWeek).toString();
+  }
+
+  private static @Nullable String toZeroBasedDayOfWeek(final @NotNull String field) {
+    final @NotNull StringBuilder result = new StringBuilder();
+    for (final @NotNull String item : field.split(",", -1)) {
+      if (result.length() > 0) {
+        result.append(',');
+      }
+      // the step after '/' and the occurrence after '#' are not days
+      int end = item.length();
+      final int suffix = Math.max(item.indexOf('/'), item.indexOf('#'));
+      if (suffix >= 0) {
+        end = suffix;
+      }
+      final @NotNull String days = item.substring(0, end);
+      final @NotNull String[] range = days.split("-", -1);
+      if (range.length > 2) {
+        return null;
+      }
+      for (int i = 0; i < range.length; i++) {
+        if (i > 0) {
+          result.append('-');
+        }
+        final @Nullable String day = toZeroBasedDay(range[i]);
+        if (day == null) {
+          return null;
+        }
+        result.append(day);
+      }
+      result.append(item.substring(end));
+    }
+    return result.toString();
+  }
+
+  private static @Nullable String toZeroBasedDay(final @NotNull String day) {
+    if ("*".equals(day) || "?".equals(day)) {
+      return day;
+    }
+    final boolean last = day.endsWith("L") || day.endsWith("l");
+    final @NotNull String value = last ? day.substring(0, day.length() - 1) : day;
+    if (value.matches("[1-7]")) {
+      return (Integer.parseInt(value) - 1) + (last ? "L" : "");
+    }
+    if (value.matches("[A-Za-z]{3}")) {
+      return value.toUpperCase(Locale.ROOT) + (last ? "L" : "");
+    }
     return null;
   }
 
