@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Improvements
+
+- Support Navigation 3 integration for multi-Activity applications, where each Activity has its own `SentryNavEffect` ([#6229](https://github.com/getsentry/sentry-java/pull/6229))
+  - Limitations: Does not include support for applications where multiple `SentryNavEffect`s are meant to be simultaneously active, whether nested or as siblings (e.g., [multi-resume mode](https://developer.android.com/develop/ui/views/layout/support-multi-window-mode))
+
 ### Fixes
 
 - Measure Session Replay's 1h recording cap and its touch-move debounce on a monotonic clock, so a device time change no longer stops a healthy recording early, keeps a finished one alive, or suppresses gesture events ([#6090](https://github.com/getsentry/sentry-java/pull/6090))

@@ -62,6 +62,7 @@ dependencies {
   implementation(projects.sentry)
 
   compileOnly(libs.androidx.compose.runtime)
+  compileOnly(libs.jetbrains.lifecycle.runtime.compose)
 
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.test.core)

@@ -124,6 +124,18 @@
       android:theme="@style/AppTheme.Main" />
 
     <activity
+      android:name=".navigation.nav3.Nav3ProductsActivity"
+      android:exported="false"
+      android:screenOrientation="portrait"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
+      android:name=".navigation.nav3.Nav3CheckoutActivity"
+      android:exported="false"
+      android:screenOrientation="portrait"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
       android:name=".FrameDataForSpansActivity"
       android:exported="false" />
 

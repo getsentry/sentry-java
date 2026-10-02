@@ -75,9 +75,6 @@ class Nav3Activity : ComponentActivity() {
 
   private var routeWorkOptions by mutableStateOf(setOf(RouteWorkOption.MANUAL_CHILD_SPAN))
 
-  private var isTransactionHistoryActive = false
-  private val transactionHistory =
-    NavigationTransactionHistory(isActive = { isTransactionHistoryActive })
   private var showTransactionHistorySheet by mutableStateOf(false)
 
   private var showActivityUiLoadTransactionDelayMessage = false
@@ -99,14 +96,14 @@ class Nav3Activity : ComponentActivity() {
       cancelCurrentActivityUiLoadTransaction()
     }
 
-    transactionHistory.install()
+    NavigationTransactionHistory.install()
 
     setContent {
       Nav3SampleTheme {
         Nav3SampleApp(
           performanceState = performanceState,
           configuration = configuration,
-          transactions = transactionHistory.transactions,
+          transactions = NavigationTransactionHistory.transactions,
           showActivityUiLoadTransactionDelayMessage = showActivityUiLoadTransactionDelayMessage,
           routeWorkOptions = routeWorkOptions,
           showTransactionHistorySheet = showTransactionHistorySheet,
@@ -124,13 +121,7 @@ class Nav3Activity : ComponentActivity() {
     }
   }
 
-  override fun onStart() {
-    super.onStart()
-    isTransactionHistoryActive = true
-  }
-
   override fun onStop() {
-    isTransactionHistoryActive = false
     performanceState.stopAutomaticWork()
     super.onStop()
   }
@@ -139,7 +130,6 @@ class Nav3Activity : ComponentActivity() {
     if (isFinishing) {
       previousConfig.applyToCurrentOptions()
     }
-    transactionHistory.uninstall()
     super.onDestroy()
   }
 
@@ -462,6 +452,17 @@ private fun Nav3SampleApp(
                     }
                   },
                 )
+              }
+            }
+            entry<Nav3Route.MultiActivity> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                MultiActivityRoute {
+                  activity?.startActivity(
+                    Intent(activity, Nav3ProductsActivity::class.java)
+                      .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+                  )
+                }
               }
             }
             entry<Nav3Route.Landing> { route ->

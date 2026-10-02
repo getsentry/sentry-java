@@ -8,12 +8,19 @@ import io.sentry.protocol.SentrySpan
 import io.sentry.protocol.SentryTransaction
 import io.sentry.samples.android.SampleBeforeSendTransactionHook
 
-/** State holder backing the navigation sample transaction history sheet. */
-internal class NavigationTransactionHistory(private val isActive: () -> Boolean) {
+/** Process-wide state holder backing every Nav3 transaction history sheet. */
+internal object NavigationTransactionHistory {
 
-  val transactions = mutableStateListOf<NavigationTransactionTrace>()
+  private val store = NavigationTransactionHistoryStore()
+  @Volatile private var sessionGeneration = 0L
 
-  private val mainHandler = Handler(Looper.getMainLooper())
+  val transactions: List<NavigationTransactionTrace>
+    get() = store.transactions
+
+  val sessionId: String
+    get() = sessionGeneration.toString()
+
+  private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
   private val transactionListener: (SentryTransaction, String?) -> Unit = { transaction, dsn ->
     add(transaction, dsn)
   }
@@ -24,34 +31,57 @@ internal class NavigationTransactionHistory(private val isActive: () -> Boolean)
     SampleBeforeSendTransactionHook.addListener(transactionListener)
   }
 
-  fun uninstall() {
+  fun startSession() {
+    install()
+    sessionGeneration++
     clear()
-    SampleBeforeSendTransactionHook.removeListener(transactionListener)
   }
 
   fun clear() {
-    transactions.clear()
+    store.clear()
   }
 
   private fun add(transaction: SentryTransaction, dsn: String?) {
-    if (!isActive()) {
+    val transactionSessionId = transaction.getTag(NAVIGATION_SAMPLE_SESSION_TAG)
+    if (transaction.getTag(NAV3_SCENARIO_TAG) == null || transactionSessionId != sessionId) {
       return
     }
 
     val trace = transaction.toNavigationTransactionTrace(dsn)
     if (Looper.myLooper() == Looper.getMainLooper()) {
-      transactions.addMostRecent(trace)
+      if (transactionSessionId == sessionId) {
+        store.add(trace)
+      }
     } else {
       mainHandler.post {
-        if (isActive()) {
-          transactions.addMostRecent(trace)
+        if (transactionSessionId == sessionId) {
+          store.add(trace)
         }
       }
     }
   }
 }
 
+internal class NavigationTransactionHistoryStore(
+  private val transactionLimit: Int = TRANSACTION_HISTORY_LIMIT
+) {
+
+  val transactions = mutableStateListOf<NavigationTransactionTrace>()
+
+  fun add(transaction: NavigationTransactionTrace) {
+    transactions.add(0, transaction)
+    while (transactions.size > transactionLimit) {
+      transactions.removeAt(transactions.lastIndex)
+    }
+  }
+
+  fun clear() {
+    transactions.clear()
+  }
+}
+
 internal data class NavigationTransactionTrace(
+  val activity: String,
   val name: String,
   val operation: String,
   val eventId: String,
@@ -73,7 +103,7 @@ internal data class NavigationTraceSpan(
   val children: List<NavigationTraceSpan> = emptyList(),
 )
 
-private fun SentryTransaction.toNavigationTransactionTrace(
+internal fun SentryTransaction.toNavigationTransactionTrace(
   dsn: String?
 ): NavigationTransactionTrace {
   val trace = contexts.trace
@@ -97,6 +127,7 @@ private fun SentryTransaction.toNavigationTransactionTrace(
       .sortedBy { span -> span.startOffsetMillis }
 
   return NavigationTransactionTrace(
+    activity = getTag(NAVIGATION_SAMPLE_ACTIVITY_TAG) ?: UNKNOWN_NAVIGATION_ACTIVITY,
     name = transaction ?: "<unnamed transaction>",
     operation = trace?.operation ?: "transaction",
     eventId = eventId,
@@ -107,15 +138,6 @@ private fun SentryTransaction.toNavigationTransactionTrace(
     sentryUrl = sentryTransactionUrl(dsn, traceId, rootSpanId, eventId, endTimestamp),
     spans = topLevelSpans.withChildren(spansByParentId),
   )
-}
-
-private fun MutableList<NavigationTransactionTrace>.addMostRecent(
-  transaction: NavigationTransactionTrace
-) {
-  add(0, transaction)
-  while (size > TRANSACTION_HISTORY_LIMIT) {
-    removeAt(lastIndex)
-  }
 }
 
 private fun SentrySpan.toNavigationTraceSpan(
@@ -172,5 +194,6 @@ private fun String.projectIdFromDsn(): String? =
     projectId.isNotEmpty() && projectId.all { it.isDigit() }
   }
 
-private const val TRANSACTION_HISTORY_LIMIT = 10
+private const val TRANSACTION_HISTORY_LIMIT = 25
 private const val SENTRY_SAMPLE_ORG_SLUG = "sentry-sdks"
+private const val UNKNOWN_NAVIGATION_ACTIVITY = "Unknown"
