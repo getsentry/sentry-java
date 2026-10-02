@@ -96,7 +96,7 @@ The repository is organized into multiple modules:
 ### Integration Modules
 - **Spring Framework**: `sentry-spring*`, `sentry-spring-boot*`
 - **Logging**: `sentry-logback`, `sentry-log4j2`, `sentry-jul`, `sentry-android-timber`
-- **Web**: `sentry-servlet*`, `sentry-okhttp`, `sentry-openfeign`, `sentry-apache-http-client-5`
+- **Web**: `sentry-servlet*`, `sentry-okhttp`, `sentry-openfeign`
 - **GraphQL**: `sentry-graphql*`, `sentry-apollo*`
 - **Android UI**: `sentry-android-fragment`, `sentry-android-navigation`, `sentry-compose`
 - **Session Replay**: `sentry-android-replay`
