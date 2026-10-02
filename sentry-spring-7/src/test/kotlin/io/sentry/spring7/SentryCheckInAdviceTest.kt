@@ -4,16 +4,21 @@ import io.sentry.CheckIn
 import io.sentry.CheckInStatus
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
+import io.sentry.MonitorConfig
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
 import io.sentry.spring7.checkin.SentryCheckIn
 import io.sentry.spring7.checkin.SentryCheckInAdviceConfiguration
 import io.sentry.spring7.checkin.SentryCheckInPointcutConfiguration
+import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertSame
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -32,6 +37,8 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
 import org.springframework.context.annotation.Import
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
+import org.springframework.scheduling.annotation.Scheduled
+import org.springframework.scheduling.annotation.Schedules
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
@@ -39,7 +46,15 @@ import org.springframework.util.StringValueResolver
 
 @RunWith(SpringRunner::class)
 @SpringJUnitConfig(SentryCheckInAdviceTest.Config::class)
-@TestPropertySource(properties = ["my.cron.slug = mypropertycronslug"])
+@TestPropertySource(
+  properties =
+    [
+      "my.cron.slug = mypropertycronslug",
+      "my.cron.schedule = 0 30 2 * * *",
+      "my.cron.zone = America/New_York",
+      "my.cron.empty.zone = ",
+    ]
+)
 class SentryCheckInAdviceTest {
 
   @Autowired lateinit var sampleService: SampleService
@@ -49,6 +64,8 @@ class SentryCheckInAdviceTest {
   @Autowired lateinit var sampleServiceHeartbeat: SampleServiceHeartbeat
 
   @Autowired lateinit var sampleServiceSpringProperties: SampleServiceSpringProperties
+
+  @Autowired lateinit var sampleServiceScheduled: SampleServiceScheduled
 
   @Autowired lateinit var scopes: IScopes
 
@@ -74,6 +91,7 @@ class SentryCheckInAdviceTest {
     val inProgressCheckIn = checkInCaptor.firstValue
     assertEquals("monitor_slug_1", inProgressCheckIn.monitorSlug)
     assertEquals(CheckInStatus.IN_PROGRESS.apiName(), inProgressCheckIn.status)
+    assertNull(inProgressCheckIn.monitorConfig)
 
     val doneCheckIn = checkInCaptor.lastValue
     assertEquals("monitor_slug_1", doneCheckIn.monitorSlug)
@@ -228,6 +246,150 @@ class SentryCheckInAdviceTest {
     order.verify(lifecycleToken).close()
   }
 
+  @Test
+  fun `cron with zone is sent as crontab monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.cronWithZone() }
+    assertNotNull(config)
+    assertEquals("crontab", config.schedule.type)
+    assertEquals("15 10 * * 1-5", config.schedule.value)
+    assertNull(config.schedule.unit)
+    assertEquals("Europe/Vienna", config.timezone)
+  }
+
+  @Test
+  fun `cron without zone is sent in the JVM default zone`() {
+    val defaultTimeZone = TimeZone.getDefault()
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
+    try {
+      val config = inProgressMonitorConfig { sampleServiceScheduled.cron() }
+      assertEquals("0 2 * * *", config?.schedule?.value)
+      assertEquals("Asia/Tokyo", config?.timezone)
+    } finally {
+      TimeZone.setDefault(defaultTimeZone)
+    }
+  }
+
+  @Test
+  fun `cron and zone placeholders are resolved`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.cronFromProperties() }
+    assertEquals("30 2 * * *", config?.schedule?.value)
+    assertEquals("America/New_York", config?.timezone)
+  }
+
+  @Test
+  fun `fixed rate with time unit is sent as interval monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateHours() }
+    assertNotNull(config)
+    assertEquals("interval", config.schedule.type)
+    assertEquals("2", config.schedule.value)
+    assertEquals("hour", config.schedule.unit)
+  }
+
+  @Test
+  fun `ISO-8601 fixed rate string is sent as interval monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateIso() }
+    assertEquals("10", config?.schedule?.value)
+    assertEquals("minute", config?.schedule?.unit)
+  }
+
+  @Test
+  fun `simple duration fixed rate string is sent as interval monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateSimpleDuration() }
+    assertEquals("interval", config?.schedule?.type)
+    assertEquals("5", config?.schedule?.value)
+    assertEquals("minute", config?.schedule?.unit)
+  }
+
+  @Test
+  fun `fixed delay sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.fixedDelay() })
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.fixedDelayIso() })
+  }
+
+  @Test
+  fun `disabled cron sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.disabledCron() })
+  }
+
+  @Test
+  fun `zone placeholder resolving to empty uses the JVM default zone`() {
+    val defaultTimeZone = TimeZone.getDefault()
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
+    try {
+      val config = inProgressMonitorConfig { sampleServiceScheduled.cronWithEmptyZone() }
+      assertEquals("0 3 * * *", config?.schedule?.value)
+      assertEquals("Asia/Tokyo", config?.timezone)
+    } finally {
+      TimeZone.setDefault(defaultTimeZone)
+    }
+  }
+
+  @Test
+  fun `cron zone overrides the default timezone from options`() {
+    val options =
+      SentryOptions().apply {
+        cron = SentryOptions.Cron().apply { defaultTimezone = "Europe/Berlin" }
+      }
+    whenever(scopes.options).thenReturn(options)
+    val config = inProgressMonitorConfig { sampleServiceScheduled.cronWithZoneAndDefaults() }
+    assertEquals("Europe/Vienna", config?.timezone)
+  }
+
+  @Test
+  fun `unresolvable cron placeholder sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.unresolvableCron() })
+  }
+
+  @Test
+  fun `exception while deriving monitor config sends no monitor config and runs the job`() {
+    var result = 0
+    assertNull(inProgressMonitorConfig { result = sampleServiceScheduled.derivationThrows() })
+    assertEquals(1, result)
+  }
+
+  @Test
+  fun `monitor config is derived once per method`() {
+    val first = inProgressMonitorConfig { sampleServiceScheduled.fixedRateHours() }
+    val second = inProgressMonitorConfig { sampleServiceScheduled.fixedRateHours() }
+    assertNotNull(first)
+    assertSame(first, second)
+  }
+
+  @Test
+  fun `multiple schedules send no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.multipleSchedules() })
+  }
+
+  @Test
+  fun `schedules container sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.schedulesContainer() })
+  }
+
+  @Test
+  fun `upsertMonitorConfig defaults to false and sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.defaultNoConfig() })
+  }
+
+  @Test
+  fun `heartbeat with @Scheduled sends a single check-in without monitor config`() {
+    val checkInCaptor = argumentCaptor<CheckIn>()
+    whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(SentryId())
+    sampleServiceScheduled.heartbeat()
+    assertEquals(1, checkInCaptor.allValues.size)
+    assertEquals(CheckInStatus.OK.apiName(), checkInCaptor.firstValue.status)
+    assertNull(checkInCaptor.firstValue.monitorConfig)
+  }
+
+  private fun inProgressMonitorConfig(block: () -> Unit): MonitorConfig? {
+    val checkInCaptor = argumentCaptor<CheckIn>()
+    whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(SentryId())
+    block()
+    assertEquals(2, checkInCaptor.allValues.size)
+    assertEquals(CheckInStatus.IN_PROGRESS.apiName(), checkInCaptor.firstValue.status)
+    assertNull(checkInCaptor.lastValue.monitorConfig)
+    return checkInCaptor.firstValue.monitorConfig
+  }
+
   @Configuration
   @EnableAspectJAutoProxy(proxyTargetClass = true)
   @Import(SentryCheckInAdviceConfiguration::class, SentryCheckInPointcutConfiguration::class)
@@ -240,6 +402,8 @@ class SentryCheckInAdviceTest {
     @Bean open fun sampleServiceHeartbeat() = SampleServiceHeartbeat()
 
     @Bean open fun sampleServiceSpringProperties() = SampleServiceSpringProperties()
+
+    @Bean open fun sampleServiceScheduled() = SampleServiceScheduled()
 
     @Bean
     open fun scopes(): IScopes {
@@ -289,6 +453,78 @@ class SentryCheckInAdviceTest {
 
     @SentryCheckIn("\${my.cron.exception.property}", heartbeat = true)
     open fun helloExceptionProperty() = 1
+  }
+
+  open class SampleServiceScheduled {
+
+    @SentryCheckIn("cron_zone", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 15 10 * * MON-FRI", zone = "Europe/Vienna")
+    open fun cronWithZone() {}
+
+    @SentryCheckIn("cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 2 * * *")
+    open fun cron() {}
+
+    @SentryCheckIn("cron_properties", upsertMonitorConfig = true)
+    @Scheduled(cron = "\${my.cron.schedule}", zone = "\${my.cron.zone}")
+    open fun cronFromProperties() {}
+
+    @SentryCheckIn("fixed_rate_hours", upsertMonitorConfig = true)
+    @Scheduled(fixedRate = 2, timeUnit = TimeUnit.HOURS)
+    open fun fixedRateHours() {}
+
+    @SentryCheckIn("fixed_rate_iso", upsertMonitorConfig = true)
+    @Scheduled(fixedRateString = "PT10M")
+    open fun fixedRateIso() {}
+
+    @SentryCheckIn("fixed_rate_simple", upsertMonitorConfig = true)
+    @Scheduled(fixedRateString = "5m")
+    open fun fixedRateSimpleDuration() {}
+
+    @SentryCheckIn("fixed_delay", upsertMonitorConfig = true)
+    @Scheduled(fixedDelay = 300_000)
+    open fun fixedDelay() {}
+
+    @SentryCheckIn("fixed_delay_iso", upsertMonitorConfig = true)
+    @Scheduled(fixedDelayString = "PT10M")
+    open fun fixedDelayIso() {}
+
+    @SentryCheckIn("disabled_cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "-")
+    open fun disabledCron() {}
+
+    @SentryCheckIn("cron_empty_zone", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 3 * * *", zone = "\${my.cron.empty.zone}")
+    open fun cronWithEmptyZone() {}
+
+    @SentryCheckIn("cron_zone_defaults", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 4 * * *", zone = "Europe/Vienna")
+    open fun cronWithZoneAndDefaults() {}
+
+    @SentryCheckIn("schedules_container", upsertMonitorConfig = true)
+    @Schedules(Scheduled(cron = "0 0 1 * * *"), Scheduled(cron = "0 0 13 * * *"))
+    open fun schedulesContainer() {}
+
+    @SentryCheckIn("unresolvable_cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "\${my.cron.missing}")
+    open fun unresolvableCron() {}
+
+    @SentryCheckIn("derivation_throws", upsertMonitorConfig = true)
+    @Scheduled(cron = "\${my.cron.exception.property}")
+    open fun derivationThrows() = 1
+
+    @SentryCheckIn("multiple", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 1 * * *")
+    @Scheduled(cron = "0 0 13 * * *")
+    open fun multipleSchedules() {}
+
+    @SentryCheckIn("default_no_config")
+    @Scheduled(cron = "0 0 1 * * *")
+    open fun defaultNoConfig() {}
+
+    @SentryCheckIn("heartbeat", heartbeat = true, upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 1 * * *")
+    open fun heartbeat() {}
   }
 
   class MyPropertyPlaceholderConfigurer : PropertySourcesPlaceholderConfigurer() {
