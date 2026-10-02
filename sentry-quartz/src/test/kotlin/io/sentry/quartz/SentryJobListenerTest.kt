@@ -14,6 +14,7 @@ import kotlin.test.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.quartz.CalendarIntervalScheduleBuilder
 import org.quartz.CronScheduleBuilder
@@ -45,7 +46,7 @@ class SentryJobListenerTest {
 
     assertThat(config).isNotNull()
     assertThat(config!!.schedule.type).isEqualTo("crontab")
-    assertThat(config.schedule.value).isEqualTo("15 10 * * MON-FRI")
+    assertThat(config.schedule.value).isEqualTo("15 10 * * 1-5")
     assertThat(config.timezone).isEqualTo("America/New_York")
   }
 
@@ -71,6 +72,28 @@ class SentryJobListenerTest {
     val config = inProgressMonitorConfig(cronTrigger("0 0 9 ? * 2-6"))
 
     assertThat(config?.schedule?.value).isEqualTo("0 9 * * 1-5")
+  }
+
+  @Test
+  fun `cron trigger with syntax Sentry rejects sends no monitor config`() {
+    for (cron in
+      listOf("0 0 12 15W * ?", "0 0 12 L-3 * ?", "0 0 12 ? * FRI-MON", "0 0 22-2 * * ?")) {
+      assertThat(inProgressMonitorConfig(cronTrigger(cron))).isNull()
+    }
+  }
+
+  @Test
+  fun `cron trigger with whole hour offset zone is sent as Etc zone`() {
+    val config = inProgressMonitorConfig(cronTrigger("0 0 2 * * ?", TimeZone.getTimeZone("GMT+2")))
+
+    assertThat(config?.timezone).isEqualTo("Etc/GMT-2")
+  }
+
+  @Test
+  fun `cron trigger with zone Sentry rejects sends no monitor config`() {
+    val trigger = cronTrigger("0 0 2 * * ?", TimeZone.getTimeZone("GMT+05:30"))
+
+    assertThat(inProgressMonitorConfig(trigger)).isNull()
   }
 
   @Test
@@ -104,6 +127,30 @@ class SentryJobListenerTest {
       TriggerBuilder.newTrigger().withSchedule(SimpleScheduleBuilder.simpleSchedule()).build()
 
     assertThat(inProgressMonitorConfig(trigger)).isNull()
+  }
+
+  @Test
+  fun `simple trigger with a finite repeat count sends no monitor config`() {
+    val trigger =
+      TriggerBuilder.newTrigger()
+        .withSchedule(SimpleScheduleBuilder.repeatMinutelyForTotalCount(5))
+        .build()
+
+    assertThat(inProgressMonitorConfig(trigger)).isNull()
+  }
+
+  @Test
+  fun `scope token is stored even if capturing the check-in fails`() {
+    val jobDataMap = upsertJobDataMap()
+    jobDataMap[SentryJobListener.SENTRY_SLUG_KEY] = "my-job"
+    val context = mock<JobExecutionContext>()
+    whenever(context.mergedJobDataMap).thenReturn(jobDataMap)
+    whenever(context.trigger).thenReturn(cronTrigger("0 0 2 * * ?"))
+    whenever(scopes.captureCheckIn(any())).thenThrow(IllegalStateException("boom"))
+
+    SentryJobListener(scopes).jobToBeExecuted(context)
+
+    verify(context).put(SentryJobListener.SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY, lifecycleToken)
   }
 
   @Test
@@ -154,12 +201,18 @@ class SentryJobListenerTest {
         "0 0 12 * * ?" to "0 0 12 * * ?",
         "0 0 12 * * ? *" to "0 0 12 * * ?",
         "0 0 12 ? * 1,7" to "0 0 12 ? * 0,6",
-        "0 0 12 ? * SUN,sat" to "0 0 12 ? * SUN,SAT",
+        "0 0 12 ? * SUN,sat" to "0 0 12 ? * 0,6",
+        "0 0 12 ? * MON-FRI" to "0 0 12 ? * 1-5",
         "0 0 12 ? * 6#3" to "0 0 12 ? * 5#3",
+        "0 0 12 ? * FRI#3" to "0 0 12 ? * 5#3",
         "0 0 12 ? * 6L" to "0 0 12 ? * 5L",
-        "0 0 12 ? * 1/2" to "0 0 12 ? * 0/2",
+        "0 0 12 ? * FRIL" to "0 0 12 ? * 5L",
+        "0 0 12 ? * 1/2" to "0 0 12 ? * 0-6/2",
+        "0 0 12 ? * 2/2" to "0 0 12 ? * 1-6/2",
+        "0 0 12 ? * MON/2" to "0 0 12 ? * 1-6/2",
+        "0 0 12 ? * 2-6/2" to "0 0 12 ? * 1-5/2",
+        "0 0 12 ? * */2" to "0 0 12 ? * */2",
         "0 0 12 L * ?" to "0 0 12 L * ?",
-        "0 0 12 15W * ?" to "0 0 12 15W * ?",
       )
     for ((quartz, cron) in expected) {
       assertThat(SentryJobListener.toSixFieldCron(quartz)).isEqualTo(cron)
@@ -168,7 +221,14 @@ class SentryJobListenerTest {
 
   @Test
   fun `quartz cron that cannot be converted returns null`() {
-    for (quartz in listOf("0 0 12 * * ? 2030", "0 0 12 ? * L", "0 0 12 ? * 8", "0 12 * * *")) {
+    for (quartz in
+      listOf(
+        "0 0 12 * * ? 2030",
+        "0 0 12 ? * L",
+        "0 0 12 ? * 8",
+        "0 0 12 ? * XYZL",
+        "0 12 * * *",
+      )) {
       assertThat(SentryJobListener.toSixFieldCron(quartz)).isNull()
     }
   }

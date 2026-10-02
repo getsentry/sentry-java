@@ -14,6 +14,8 @@ import io.sentry.util.LifecycleHelper;
 import io.sentry.util.MonitorConfigUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
@@ -42,6 +44,9 @@ public final class SentryJobListener implements JobListener {
   /** Job data key; set to {@code true} to send a monitor config from the trigger. */
   public static final String SENTRY_UPSERT_MONITOR_CONFIG_KEY = "sentry-upsert-monitor-config";
 
+  private static final @NotNull List<String> DAY_NAMES =
+      Arrays.asList("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT");
+
   private final @NotNull IScopes scopes;
 
   public SentryJobListener() {
@@ -65,18 +70,20 @@ public final class SentryJobListener implements JobListener {
       if (maybeSlug == null) {
         return;
       }
+      final @Nullable MonitorConfig monitorConfig =
+          shouldUpsertMonitorConfig(context)
+              ? monitorConfigFromTrigger(context.getTrigger())
+              : null;
       final @NotNull ISentryLifecycleToken lifecycleToken =
           scopes.forkedScopes("SentryJobListener").makeCurrent();
+      context.put(SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY, lifecycleToken);
       TracingUtils.startNewTrace(scopes);
       final @NotNull String slug = maybeSlug;
       final @NotNull CheckIn checkIn = new CheckIn(slug, CheckInStatus.IN_PROGRESS);
-      if (shouldUpsertMonitorConfig(context)) {
-        checkIn.setMonitorConfig(monitorConfigFromTrigger(context.getTrigger()));
-      }
+      checkIn.setMonitorConfig(monitorConfig);
       final @NotNull SentryId checkInId = scopes.captureCheckIn(checkIn);
       context.put(SENTRY_CHECK_IN_ID_KEY, checkInId);
       context.put(SENTRY_SLUG_KEY, slug);
-      context.put(SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY, lifecycleToken);
     } catch (Throwable t) {
       scopes
           .getOptions()
@@ -120,7 +127,7 @@ public final class SentryJobListener implements JobListener {
       }
       if (trigger instanceof SimpleTrigger) {
         final @NotNull SimpleTrigger simpleTrigger = (SimpleTrigger) trigger;
-        if (simpleTrigger.getRepeatCount() == 0) {
+        if (simpleTrigger.getRepeatCount() != SimpleTrigger.REPEAT_INDEFINITELY) {
           return null;
         }
         return MonitorConfigUtils.fromSchedule(null, null, simpleTrigger.getRepeatInterval(), null);
@@ -162,48 +169,57 @@ public final class SentryJobListener implements JobListener {
   private static @Nullable String toZeroBasedDayOfWeek(final @NotNull String field) {
     final @NotNull StringBuilder result = new StringBuilder();
     for (final @NotNull String item : field.split(",", -1)) {
+      final @Nullable String converted = toZeroBasedDayOfWeekItem(item.toUpperCase(Locale.ROOT));
+      if (converted == null) {
+        return null;
+      }
       if (result.length() > 0) {
         result.append(',');
       }
-      // the number after '/' or '#' is not a day
-      int end = item.length();
-      final int suffix = Math.max(item.indexOf('/'), item.indexOf('#'));
-      if (suffix >= 0) {
-        end = suffix;
-      }
-      final @NotNull String days = item.substring(0, end);
-      final @NotNull String[] range = days.split("-", -1);
-      if (range.length > 2) {
-        return null;
-      }
-      for (int i = 0; i < range.length; i++) {
-        if (i > 0) {
-          result.append('-');
-        }
-        final @Nullable String day = toZeroBasedDay(range[i]);
-        if (day == null) {
-          return null;
-        }
-        result.append(day);
-      }
-      result.append(item.substring(end));
+      result.append(converted);
     }
     return result.toString();
   }
 
-  private static @Nullable String toZeroBasedDay(final @NotNull String day) {
-    if ("*".equals(day) || "?".equals(day)) {
-      return day;
+  private static @Nullable String toZeroBasedDayOfWeekItem(final @NotNull String item) {
+    if (item.startsWith("*") || item.startsWith("?")) {
+      // '*' starts on Sunday in both
+      return item;
     }
-    final boolean last = day.endsWith("L") || day.endsWith("l");
-    final @NotNull String value = last ? day.substring(0, day.length() - 1) : day;
-    if (value.matches("[1-7]")) {
-      return (Integer.parseInt(value) - 1) + (last ? "L" : "");
+    final int hash = item.indexOf('#');
+    if (hash >= 0) {
+      final @Nullable Integer day = toZeroBasedDay(item.substring(0, hash));
+      return day == null ? null : day + item.substring(hash);
     }
-    if (value.matches("[A-Za-z]{3}")) {
-      return value.toUpperCase(Locale.ROOT) + (last ? "L" : "");
+    if (item.length() > 1 && item.endsWith("L")) {
+      final @Nullable Integer day = toZeroBasedDay(item.substring(0, item.length() - 1));
+      return day == null ? null : day + "L";
     }
-    return null;
+    final int slash = item.indexOf('/');
+    final @NotNull String days = slash >= 0 ? item.substring(0, slash) : item;
+    final @NotNull String step = slash >= 0 ? item.substring(slash) : "";
+    final @NotNull String[] range = days.split("-", -1);
+    if (range.length > 2) {
+      return null;
+    }
+    final @Nullable Integer start = toZeroBasedDay(range[0]);
+    if (start == null) {
+      return null;
+    }
+    if (range.length == 2) {
+      final @Nullable Integer end = toZeroBasedDay(range[1]);
+      return end == null ? null : start + "-" + end + step;
+    }
+    // a step from a single day ends on Saturday in Quartz, but on Sunday (7) in crontab
+    return slash >= 0 ? start + "-6" + step : String.valueOf(start);
+  }
+
+  private static @Nullable Integer toZeroBasedDay(final @NotNull String day) {
+    if (day.matches("[1-7]")) {
+      return Integer.parseInt(day) - 1;
+    }
+    final int index = DAY_NAMES.indexOf(day);
+    return index >= 0 ? index : null;
   }
 
   @Override
