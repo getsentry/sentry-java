@@ -113,6 +113,18 @@
       android:theme="@style/AppTheme.Main" />
 
     <activity
+      android:name=".navigation.nav3.Nav3SetupActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
+      android:name=".navigation.nav3.Nav3Activity"
+      android:exported="false"
+      android:launchMode="singleTop"
+      android:screenOrientation="portrait"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
       android:name=".FrameDataForSpansActivity"
       android:exported="false" />
 
@@ -147,7 +159,7 @@
       android:name="io.sentry.debug"
       android:value="${sentryDebug}" />
 
-    <!--    how to enable automatic Sentry Logs from Logcat and Timber-->
+    <!--    how to enable Sentry Logs (Sentry.logger() calls are dropped unless this is on)-->
     <meta-data
       android:name="io.sentry.logs.enabled"
       android:value="true" />
