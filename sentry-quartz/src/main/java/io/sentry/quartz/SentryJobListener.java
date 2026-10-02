@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +47,10 @@ public final class SentryJobListener implements JobListener {
 
   private static final @NotNull List<String> DAY_NAMES =
       Arrays.asList("SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT");
+
+  // Quartz ignores a step after a name, so SUN/2 is every Sunday
+  private static final @NotNull Pattern NAME_STEP =
+      Pattern.compile("(^|,)[A-Za-z]{3}(-[A-Za-z]{3})?/");
 
   private final @NotNull IScopes scopes;
 
@@ -115,6 +120,10 @@ public final class SentryJobListener implements JobListener {
 
   private @Nullable MonitorConfig monitorConfigFromTrigger(final @Nullable Trigger trigger) {
     try {
+      // Sentry can't express calendar exclusions
+      if (trigger == null || trigger.getCalendarName() != null) {
+        return null;
+      }
       if (trigger instanceof CronTrigger) {
         final @NotNull CronTrigger cronTrigger = (CronTrigger) trigger;
         final @Nullable String cron = toSixFieldCron(cronTrigger.getCronExpression());
@@ -123,14 +132,14 @@ public final class SentryJobListener implements JobListener {
         }
         final @Nullable TimeZone timeZone = cronTrigger.getTimeZone();
         return MonitorConfigUtils.fromSchedule(
-            cron, timeZone == null ? null : timeZone.getID(), null, null);
+            cron, timeZone == null ? null : timeZone.getID(), null);
       }
       if (trigger instanceof SimpleTrigger) {
         final @NotNull SimpleTrigger simpleTrigger = (SimpleTrigger) trigger;
         if (simpleTrigger.getRepeatCount() != SimpleTrigger.REPEAT_INDEFINITELY) {
           return null;
         }
-        return MonitorConfigUtils.fromSchedule(null, null, simpleTrigger.getRepeatInterval(), null);
+        return MonitorConfigUtils.fromSchedule(null, null, simpleTrigger.getRepeatInterval());
       }
       return null;
     } catch (RuntimeException e) {
@@ -143,7 +152,10 @@ public final class SentryJobListener implements JobListener {
     }
   }
 
-  /** Quartz numbers days of week 1-7 from Sunday; crontab uses 0-6. Null if a year is set. */
+  /**
+   * Quartz numbers days of week 1-7 from Sunday; crontab uses 0-6. Null if a year is set or a name
+   * has a step.
+   */
   static @Nullable String toSixFieldCron(final @Nullable String quartzCron) {
     if (quartzCron == null) {
       return null;
@@ -153,6 +165,9 @@ public final class SentryJobListener implements JobListener {
       return null;
     }
     if (fields.length != 6 && fields.length != 7) {
+      return null;
+    }
+    if (NAME_STEP.matcher(fields[4]).find() || NAME_STEP.matcher(fields[5]).find()) {
       return null;
     }
     final @Nullable String dayOfWeek = toZeroBasedDayOfWeek(fields[5]);
@@ -210,8 +225,11 @@ public final class SentryJobListener implements JobListener {
       final @Nullable Integer end = toZeroBasedDay(range[1]);
       return end == null ? null : start + "-" + end + step;
     }
+    if (slash < 0 || start == 6) {
+      return String.valueOf(start);
+    }
     // a step from a single day ends on Saturday in Quartz, but on Sunday (7) in crontab
-    return slash >= 0 ? start + "-6" + step : String.valueOf(start);
+    return start + "-6" + step;
   }
 
   private static @Nullable Integer toZeroBasedDay(final @NotNull String day) {

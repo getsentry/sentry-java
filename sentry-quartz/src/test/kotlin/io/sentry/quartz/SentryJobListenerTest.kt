@@ -166,6 +166,17 @@ class SentryJobListenerTest {
   }
 
   @Test
+  fun `trigger with a calendar sends no monitor config`() {
+    val trigger =
+      TriggerBuilder.newTrigger()
+        .withSchedule(CronScheduleBuilder.cronSchedule("0 0 2 * * ?"))
+        .modifiedByCalendar("holidays")
+        .build()
+
+    assertThat(inProgressMonitorConfig(trigger)).isNull()
+  }
+
+  @Test
   fun `without upsert monitor config key sends no monitor config`() {
     assertThat(inProgressMonitorConfig(cronTrigger("0 0 2 * * ?"), JobDataMap())).isNull()
   }
@@ -209,7 +220,7 @@ class SentryJobListenerTest {
         "0 0 12 ? * FRIL" to "0 0 12 ? * 5L",
         "0 0 12 ? * 1/2" to "0 0 12 ? * 0-6/2",
         "0 0 12 ? * 2/2" to "0 0 12 ? * 1-6/2",
-        "0 0 12 ? * MON/2" to "0 0 12 ? * 1-6/2",
+        "0 0 12 ? * 7/2" to "0 0 12 ? * 6",
         "0 0 12 ? * 2-6/2" to "0 0 12 ? * 1-5/2",
         "0 0 12 ? * */2" to "0 0 12 ? * */2",
         "0 0 12 L * ?" to "0 0 12 L * ?",
@@ -227,6 +238,10 @@ class SentryJobListenerTest {
         "0 0 12 ? * L",
         "0 0 12 ? * 8",
         "0 0 12 ? * XYZL",
+        "0 0 12 ? * SUN/2",
+        "0 0 12 ? * mon-wed/3",
+        "0 0 12 ? * 1,MON/2",
+        "0 0 12 * JUN/3 ?",
         "0 12 * * *",
       )) {
       assertThat(SentryJobListener.toSixFieldCron(quartz)).isNull()
