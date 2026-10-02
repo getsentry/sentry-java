@@ -370,6 +370,10 @@ public final class MonitorConfigUtils {
         return null;
       }
       if (items.size() == 1) {
+        // cronsim steps a single value range like 10-10/2 to the field max
+        if (base.indexOf('-') >= 0) {
+          return null;
+        }
         return range(items.iterator().next(), FIELD_MAX[index], step);
       }
       final @NotNull List<Integer> sorted = new ArrayList<>(items);

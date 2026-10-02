@@ -152,6 +152,15 @@ class MonitorConfigUtilsTest {
   }
 
   @Test
+  fun `stepped single value range returns null`() {
+    // Spring and Quartz run only at the value, cronsim steps to the field max
+    for (cron in
+      listOf("0 10-10/2 * * * *", "0 0 0-0/3 * * *", "0 0 0 ? * 4-4/3", "0 0 0 * 6-6/1 *")) {
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null, null)).isNull()
+    }
+  }
+
+  @Test
   fun `disabled cron returns null`() {
     assertThat(MonitorConfigUtils.fromSchedule("-", null, null, null)).isNull()
   }
