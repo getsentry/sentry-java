@@ -1,4 +1,4 @@
-package io.sentry.samples.android.navigation
+package io.sentry.samples.android.navigation.nav2
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
