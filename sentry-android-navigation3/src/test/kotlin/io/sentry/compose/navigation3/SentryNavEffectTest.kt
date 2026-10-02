@@ -73,6 +73,7 @@ class SentryNavEffectTest {
       }
     val scope = Scope(options)
     val scopes = mock<IScopes>()
+    val coordinator = NavLeaseCoordinator()
     val breadcrumbs = mutableListOf<Breadcrumb>()
     val transactions = mutableListOf<SentryTracer>()
 
@@ -112,6 +113,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
 
@@ -135,6 +137,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -162,6 +165,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -189,6 +193,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -222,6 +227,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -255,6 +261,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions { maxCapturedBackStackEntries = 0 },
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -278,6 +285,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -314,6 +322,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
 
       val currentTop = backStack.last()
@@ -347,6 +356,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -384,6 +394,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -416,6 +427,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -458,6 +470,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -495,6 +508,7 @@ class SentryNavEffectTest {
         options = options.value,
         backStackEntryMapper = defaultEntryMapper,
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -524,7 +538,9 @@ class SentryNavEffectTest {
         SentryNavEffect(
           backStack = backStack,
           backStackEntryMapper = defaultEntryMapper,
+          options = SentryNavOptions(),
           scopes = fixture.scopes,
+          coordinator = fixture.coordinator,
         )
       }
     }
