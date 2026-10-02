@@ -148,4 +148,38 @@ class MonitorConfigUtilsTest {
     assertThat(MonitorConfigUtils.fromSchedule(null, null, null, null)).isNull()
     assertThat(MonitorConfigUtils.fromSchedule("", null, null, null)).isNull()
   }
+
+  @Test
+  fun `parsePeriodMillis parses plain numbers in the default unit`() {
+    assertThat(MonitorConfigUtils.parsePeriodMillis("300000", TimeUnit.MILLISECONDS))
+      .isEqualTo(300_000L)
+    assertThat(MonitorConfigUtils.parsePeriodMillis(" 5 ", TimeUnit.MINUTES)).isEqualTo(300_000L)
+  }
+
+  @Test
+  fun `parsePeriodMillis parses the simple duration style`() {
+    val expected =
+      mapOf(
+        "2000000ns" to 2L,
+        "3000us" to 3L,
+        "500ms" to 500L,
+        "30s" to 30_000L,
+        "5m" to 300_000L,
+        "1h" to 3_600_000L,
+        "1d" to 86_400_000L,
+        "5M" to 300_000L,
+        "+5m" to 300_000L,
+      )
+    for ((value, millis) in expected) {
+      assertThat(MonitorConfigUtils.parsePeriodMillis(value, TimeUnit.SECONDS)).isEqualTo(millis)
+    }
+  }
+
+  @Test
+  fun `parsePeriodMillis returns null for unparseable values`() {
+    for (value in listOf("", "abc", "5x", "5 m", "1.5m", "PT5M", "99999999999999999999")) {
+      assertThat(MonitorConfigUtils.parsePeriodMillis(value, TimeUnit.MILLISECONDS)).isNull()
+    }
+    assertThat(MonitorConfigUtils.parsePeriodMillis(null, TimeUnit.MILLISECONDS)).isNull()
+  }
 }

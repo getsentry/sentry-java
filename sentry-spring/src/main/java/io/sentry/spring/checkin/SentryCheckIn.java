@@ -30,17 +30,12 @@ public @interface SentryCheckIn {
   boolean heartbeat() default false;
 
   /**
-   * Whether to send a monitor config derived from the method's {@link
-   * org.springframework.scheduling.annotation.Scheduled} annotation, so Sentry creates or updates
-   * the monitor's schedule (and timezone) from code.
+   * Set to true to send the schedule from the method's {@code @Scheduled}, so Sentry creates or
+   * updates the monitor.
    *
-   * <p>Only cron expressions with a fixed seconds field, and fixed rates or delays that are a whole
-   * number of minutes, can be converted. Other schedules send no monitor config. Not used for
-   * heartbeat check-ins.
-   *
-   * @return true if a monitor config should be sent with the check-in.
+   * @return true to send a monitor config, false by default
    */
-  boolean upsertMonitorConfig() default true;
+  boolean upsertMonitorConfig() default false;
 
   /**
    * Monitor slug. If not set, no check-in will be sent.

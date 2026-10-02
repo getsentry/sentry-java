@@ -11,12 +11,14 @@ import io.sentry.protocol.SentryId
 import io.sentry.spring7.checkin.SentryCheckIn
 import io.sentry.spring7.checkin.SentryCheckInAdviceConfiguration
 import io.sentry.spring7.checkin.SentryCheckInPointcutConfiguration
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -244,13 +246,19 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
-  fun `cron with fixed seconds is sent as crontab monitor config`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.cron() }
-    assertNotNull(config)
-    assertEquals("crontab", config.schedule.type)
-    assertEquals("15 10 * * MON-FRI", config.schedule.value)
-    assertNull(config.schedule.unit)
-    assertNull(config.timezone)
+  fun `cron with fixed seconds is sent as crontab monitor config in the JVM default zone`() {
+    val defaultTimeZone = TimeZone.getDefault()
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
+    try {
+      val config = inProgressMonitorConfig { sampleServiceScheduled.cron() }
+      assertNotNull(config)
+      assertEquals("crontab", config.schedule.type)
+      assertEquals("15 10 * * MON-FRI", config.schedule.value)
+      assertNull(config.schedule.unit)
+      assertEquals("Asia/Tokyo", config.timezone)
+    } finally {
+      TimeZone.setDefault(defaultTimeZone)
+    }
   }
 
   @Test
@@ -284,13 +292,33 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
+  fun `fixed rate string in simple duration style is sent as interval monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateSimpleStyle() }
+    assertEquals("5", config?.schedule?.value)
+    assertEquals("minute", config?.schedule?.unit)
+  }
+
+  @Test
+  fun `unparseable fixed rate string sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.fixedRateUnparseable() })
+  }
+
+  @Test
+  fun `monitor config is derived once per method`() {
+    val first = inProgressMonitorConfig { sampleServiceScheduled.fixedRateMinutes() }
+    val second = inProgressMonitorConfig { sampleServiceScheduled.fixedRateMinutes() }
+    assertNotNull(first)
+    assertSame(first, second)
+  }
+
+  @Test
   fun `multiple schedules send no monitor config`() {
     assertNull(inProgressMonitorConfig { sampleServiceScheduled.multipleSchedules() })
   }
 
   @Test
-  fun `upsertMonitorConfig false sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.optOut() })
+  fun `upsertMonitorConfig defaults to false and sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.defaultNoConfig() })
   }
 
   @Test
@@ -380,32 +408,44 @@ class SentryCheckInAdviceTest {
 
   open class SampleServiceScheduled {
 
-    @SentryCheckIn("cron") @Scheduled(cron = "0 15 10 * * MON-FRI") open fun cron() {}
+    @SentryCheckIn("cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 15 10 * * MON-FRI")
+    open fun cron() {}
 
-    @SentryCheckIn("cron_properties")
+    @SentryCheckIn("cron_properties", upsertMonitorConfig = true)
     @Scheduled(cron = "\${my.cron.schedule}", zone = "\${my.cron.zone}")
     open fun cronFromProperties() {}
 
-    @SentryCheckIn("fixed_rate") @Scheduled(fixedRate = 300_000) open fun fixedRateMinutes() {}
+    @SentryCheckIn("fixed_rate", upsertMonitorConfig = true)
+    @Scheduled(fixedRate = 300_000)
+    open fun fixedRateMinutes() {}
 
-    @SentryCheckIn("fixed_delay_hours")
+    @SentryCheckIn("fixed_delay_hours", upsertMonitorConfig = true)
     @Scheduled(fixedDelay = 2, timeUnit = TimeUnit.HOURS)
     open fun fixedDelayHours() {}
 
-    @SentryCheckIn("fixed_delay_properties")
+    @SentryCheckIn("fixed_delay_properties", upsertMonitorConfig = true)
     @Scheduled(fixedDelayString = "\${my.cron.delay}")
     open fun fixedDelayFromProperties() {}
 
-    @SentryCheckIn("multiple")
+    @SentryCheckIn("fixed_rate_simple", upsertMonitorConfig = true)
+    @Scheduled(fixedRateString = "5m")
+    open fun fixedRateSimpleStyle() {}
+
+    @SentryCheckIn("fixed_rate_unparseable", upsertMonitorConfig = true)
+    @Scheduled(fixedRateString = "5 minutes")
+    open fun fixedRateUnparseable() {}
+
+    @SentryCheckIn("multiple", upsertMonitorConfig = true)
     @Scheduled(cron = "0 0 1 * * *")
     @Scheduled(cron = "0 0 13 * * *")
     open fun multipleSchedules() {}
 
-    @SentryCheckIn("opt_out", upsertMonitorConfig = false)
+    @SentryCheckIn("default_no_config")
     @Scheduled(cron = "0 0 1 * * *")
-    open fun optOut() {}
+    open fun defaultNoConfig() {}
 
-    @SentryCheckIn("heartbeat", heartbeat = true)
+    @SentryCheckIn("heartbeat", heartbeat = true, upsertMonitorConfig = true)
     @Scheduled(cron = "0 0 1 * * *")
     open fun heartbeat() {}
   }
