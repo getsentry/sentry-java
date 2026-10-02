@@ -1,6 +1,7 @@
 package io.sentry.util
 
 import com.google.common.truth.Truth.assertThat
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 
@@ -280,6 +281,71 @@ class MonitorConfigUtilsTest {
   fun `no schedule returns null`() {
     assertThat(MonitorConfigUtils.fromSchedule(null, null, null, null)).isNull()
     assertThat(MonitorConfigUtils.fromSchedule("", null, null, null)).isNull()
+  }
+
+  @Test
+  fun `Spring days of week are rewritten to how crontab reads them`() {
+    val expected =
+      mapOf(
+        "0 15 10 * * MON-FRI" to "15 10 * * 1-5",
+        "0 0 9 * * */2" to "0 9 * * 1-7/2",
+        "0 0 9 ? * SUN/2" to "0 9 * * 7/2",
+        "0 0 9 ? * SUN-TUE,fri-sun" to "0 9 * * 0-2,5-7",
+        "0 0 9 ? * 7-2" to "0 9 * * 0-2",
+        "0 0 9 ? * 0,7" to "0 9 * * 0,7",
+        "0 0 9 ? * FRIL" to "0 9 * * 5L",
+        "0 0 9 ? * MON#2" to "0 9 * * 1#2",
+        "0 0 9 * * *" to "0 9 * * *",
+      )
+    for ((cron, crontab) in expected) {
+      assertThat(MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null)?.schedule?.value)
+        .isEqualTo(crontab)
+    }
+  }
+
+  @Test
+  fun `Spring cron without zone uses the JVM default zone`() {
+    val defaultTimeZone = TimeZone.getDefault()
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
+    try {
+      assertThat(MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", null, null, null)?.timezone)
+        .isEqualTo("Asia/Tokyo")
+      assertThat(MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "", null, null)?.timezone)
+        .isEqualTo("Asia/Tokyo")
+    } finally {
+      TimeZone.setDefault(defaultTimeZone)
+    }
+  }
+
+  @Test
+  fun `Spring cron zone is converted`() {
+    val config = MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "GMT+2", null, null)
+
+    assertThat(config?.schedule?.value).isEqualTo("0 2 * * *")
+    assertThat(config?.timezone).isEqualTo("Etc/GMT-2")
+  }
+
+  @Test
+  fun `Spring schedules Sentry can't express return null`() {
+    for (cron in listOf("0 0 9 1-7 * MON", "-", "\${my.cron.missing}", "*/30 * * * * *")) {
+      assertThat(MonitorConfigUtils.fromSpringScheduled(cron, "UTC", null, null)).isNull()
+    }
+    assertThat(MonitorConfigUtils.fromSpringScheduled("0 0 2 * * *", "GMT+05:30", null, null))
+      .isNull()
+    assertThat(MonitorConfigUtils.fromSpringScheduled(null, null, 30_000L, null)).isNull()
+  }
+
+  @Test
+  fun `Spring periods are intervals without zone`() {
+    val rate = MonitorConfigUtils.fromSpringScheduled("", null, TimeUnit.MINUTES.toMillis(5), null)
+    assertThat(rate?.schedule?.type).isEqualTo("interval")
+    assertThat(rate?.schedule?.value).isEqualTo("5")
+    assertThat(rate?.schedule?.unit).isEqualTo("minute")
+    assertThat(rate?.timezone).isNull()
+
+    val delay = MonitorConfigUtils.fromSpringScheduled(null, null, null, TimeUnit.HOURS.toMillis(2))
+    assertThat(delay?.schedule?.value).isEqualTo("2")
+    assertThat(delay?.schedule?.unit).isEqualTo("hour")
   }
 
   @Test

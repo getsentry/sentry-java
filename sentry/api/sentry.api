@@ -8122,6 +8122,7 @@ public final class io/sentry/util/MapObjectWriter : io/sentry/ObjectWriter {
 
 public final class io/sentry/util/MonitorConfigUtils {
 	public static fun fromSchedule (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)Lio/sentry/MonitorConfig;
+	public static fun fromSpringScheduled (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;)Lio/sentry/MonitorConfig;
 	public static fun parsePeriodMillis (Ljava/lang/String;Ljava/util/concurrent/TimeUnit;)Ljava/lang/Long;
 }
 

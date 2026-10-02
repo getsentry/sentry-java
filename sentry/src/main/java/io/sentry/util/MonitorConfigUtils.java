@@ -127,6 +127,68 @@ public final class MonitorConfigUtils {
   }
 
   /**
+   * Builds a monitor config from Spring {@code @Scheduled} values with placeholders resolved. Reads
+   * days of week and a cron without zone the way Spring does.
+   *
+   * @param cron Spring cron, null or empty if unset
+   * @param zone cron time zone, null or empty for the JVM default zone
+   * @param fixedRateMillis null if unset
+   * @param fixedDelayMillis null if unset
+   * @return null if the schedule can't be expressed as a Sentry monitor schedule
+   */
+  public static @Nullable MonitorConfig fromSpringScheduled(
+      final @Nullable String cron,
+      final @Nullable String zone,
+      final @Nullable Long fixedRateMillis,
+      final @Nullable Long fixedDelayMillis) {
+    final @Nullable String crontabCron = toCrontabDaysOfWeek(cron);
+    @Nullable String cronZone = null;
+    if (crontabCron != null && !crontabCron.isEmpty()) {
+      cronZone = zone == null || zone.isEmpty() ? TimeZone.getDefault().getID() : zone;
+    }
+    return fromSchedule(crontabCron, cronZone, fixedRateMillis, fixedDelayMillis);
+  }
+
+  /**
+   * Spring numbers days of week from Monday with 0 or 7 for Sunday, and starts {@code *} on Monday.
+   * Rewrites them so crontab reads them the same way.
+   */
+  static @Nullable String toCrontabDaysOfWeek(final @Nullable String cron) {
+    if (cron == null) {
+      return null;
+    }
+    final @NotNull String[] fields = cron.trim().split("\\s+", -1);
+    if (fields.length != 6) {
+      return cron;
+    }
+    final @NotNull StringBuilder daysOfWeek = new StringBuilder();
+    for (@NotNull String item : fields[5].toUpperCase(Locale.ROOT).split(",", -1)) {
+      for (int i = 0; i < DAY_NAMES.size(); i++) {
+        item = item.replace(DAY_NAMES.get(i), String.valueOf(i == 0 ? 7 : i));
+      }
+      if (item.startsWith("*/")) {
+        item = "1-7" + item.substring(1);
+      } else if (item.startsWith("7-")) {
+        // Sunday starting a range is 0 in Spring
+        item = "0" + item.substring(1);
+      }
+      if (daysOfWeek.length() > 0) {
+        daysOfWeek.append(',');
+      }
+      daysOfWeek.append(item);
+    }
+    fields[5] = daysOfWeek.toString();
+    final @NotNull StringBuilder result = new StringBuilder();
+    for (int i = 0; i < fields.length; i++) {
+      if (i > 0) {
+        result.append(' ');
+      }
+      result.append(fields[i]);
+    }
+    return result.toString();
+  }
+
+  /**
    * Parses a plain number in {@code defaultUnit} or a Spring 6.1 simple duration like {@code 30s}.
    * ISO-8601 is not supported.
    *
