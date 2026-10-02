@@ -254,7 +254,7 @@ class SentryCheckInAdviceTest {
       val config = inProgressMonitorConfig { sampleServiceScheduled.cron() }
       assertNotNull(config)
       assertEquals("crontab", config.schedule.type)
-      assertEquals("15 10 * * MON-FRI", config.schedule.value)
+      assertEquals("15 10 * * 1-5", config.schedule.value)
       assertNull(config.schedule.unit)
       assertEquals("Asia/Tokyo", config.timezone)
     } finally {
@@ -270,6 +270,52 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
+  fun `days of week are rewritten to how crontab reads them`() {
+    assertEquals(
+      "0 9 * * 1-7/2",
+      inProgressMonitorConfig { sampleServiceScheduled.daysOfWeekStep() }?.schedule?.value,
+    )
+    assertEquals(
+      "0 9 * * 7/2",
+      inProgressMonitorConfig { sampleServiceScheduled.sundayStep() }?.schedule?.value,
+    )
+    assertEquals(
+      "0 9 * * 0-2,5-7",
+      inProgressMonitorConfig { sampleServiceScheduled.sundayRanges() }?.schedule?.value,
+    )
+    assertEquals(
+      "0 9 * * 5L",
+      inProgressMonitorConfig { sampleServiceScheduled.lastFriday() }?.schedule?.value,
+    )
+  }
+
+  @Test
+  fun `cron with day of month and day of week sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.bothDayFields() })
+  }
+
+  @Test
+  fun `unresolvable cron placeholder sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.unresolvableCron() })
+  }
+
+  @Test
+  fun `disabled cron sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.disabledCron() })
+  }
+
+  @Test
+  fun `whole hour offset zone is sent as Etc zone`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.offsetZone() }
+    assertEquals("Etc/GMT-2", config?.timezone)
+  }
+
+  @Test
+  fun `zone Sentry does not accept sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.unsupportedZone() })
+  }
+
+  @Test
   fun `fixed rate in whole minutes is sent as interval monitor config`() {
     val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateMinutes() }
     assertNotNull(config)
@@ -281,8 +327,8 @@ class SentryCheckInAdviceTest {
   @Test
   fun `fixed delay with time unit is sent as interval monitor config`() {
     val config = inProgressMonitorConfig { sampleServiceScheduled.fixedDelayHours() }
-    assertEquals("120", config?.schedule?.value)
-    assertEquals("minute", config?.schedule?.unit)
+    assertEquals("2", config?.schedule?.value)
+    assertEquals("hour", config?.schedule?.unit)
   }
 
   @Test
@@ -416,6 +462,42 @@ class SentryCheckInAdviceTest {
     @SentryCheckIn("cron_properties", upsertMonitorConfig = true)
     @Scheduled(cron = "\${my.cron.schedule}", zone = "\${my.cron.zone}")
     open fun cronFromProperties() {}
+
+    @SentryCheckIn("days_of_week_step", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 9 * * */2")
+    open fun daysOfWeekStep() {}
+
+    @SentryCheckIn("sunday_step", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 9 ? * SUN/2")
+    open fun sundayStep() {}
+
+    @SentryCheckIn("sunday_ranges", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 9 ? * SUN-TUE,fri-sun")
+    open fun sundayRanges() {}
+
+    @SentryCheckIn("last_friday", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 9 ? * FRIL")
+    open fun lastFriday() {}
+
+    @SentryCheckIn("both_day_fields", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 9 1-7 * MON")
+    open fun bothDayFields() {}
+
+    @SentryCheckIn("unresolvable_cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "\${my.cron.missing}")
+    open fun unresolvableCron() {}
+
+    @SentryCheckIn("disabled_cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "-")
+    open fun disabledCron() {}
+
+    @SentryCheckIn("offset_zone", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 2 * * *", zone = "GMT+2")
+    open fun offsetZone() {}
+
+    @SentryCheckIn("unsupported_zone", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 2 * * *", zone = "GMT+05:30")
+    open fun unsupportedZone() {}
 
     @SentryCheckIn("fixed_rate", upsertMonitorConfig = true)
     @Scheduled(fixedRate = 300_000)
