@@ -317,8 +317,8 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
-  fun `upsertMonitorConfig false sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.optOut() })
+  fun `upsertMonitorConfig defaults to false and sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.defaultNoConfig() })
   }
 
   @Test
@@ -408,40 +408,44 @@ class SentryCheckInAdviceTest {
 
   open class SampleServiceScheduled {
 
-    @SentryCheckIn("cron") @Scheduled(cron = "0 15 10 * * MON-FRI") open fun cron() {}
+    @SentryCheckIn("cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 15 10 * * MON-FRI")
+    open fun cron() {}
 
-    @SentryCheckIn("cron_properties")
+    @SentryCheckIn("cron_properties", upsertMonitorConfig = true)
     @Scheduled(cron = "\${my.cron.schedule}", zone = "\${my.cron.zone}")
     open fun cronFromProperties() {}
 
-    @SentryCheckIn("fixed_rate") @Scheduled(fixedRate = 300_000) open fun fixedRateMinutes() {}
+    @SentryCheckIn("fixed_rate", upsertMonitorConfig = true)
+    @Scheduled(fixedRate = 300_000)
+    open fun fixedRateMinutes() {}
 
-    @SentryCheckIn("fixed_delay_hours")
+    @SentryCheckIn("fixed_delay_hours", upsertMonitorConfig = true)
     @Scheduled(fixedDelay = 2, timeUnit = TimeUnit.HOURS)
     open fun fixedDelayHours() {}
 
-    @SentryCheckIn("fixed_delay_properties")
+    @SentryCheckIn("fixed_delay_properties", upsertMonitorConfig = true)
     @Scheduled(fixedDelayString = "\${my.cron.delay}")
     open fun fixedDelayFromProperties() {}
 
-    @SentryCheckIn("fixed_rate_simple")
+    @SentryCheckIn("fixed_rate_simple", upsertMonitorConfig = true)
     @Scheduled(fixedRateString = "5m")
     open fun fixedRateSimpleStyle() {}
 
-    @SentryCheckIn("fixed_rate_unparseable")
+    @SentryCheckIn("fixed_rate_unparseable", upsertMonitorConfig = true)
     @Scheduled(fixedRateString = "5 minutes")
     open fun fixedRateUnparseable() {}
 
-    @SentryCheckIn("multiple")
+    @SentryCheckIn("multiple", upsertMonitorConfig = true)
     @Scheduled(cron = "0 0 1 * * *")
     @Scheduled(cron = "0 0 13 * * *")
     open fun multipleSchedules() {}
 
-    @SentryCheckIn("opt_out", upsertMonitorConfig = false)
+    @SentryCheckIn("default_no_config")
     @Scheduled(cron = "0 0 1 * * *")
-    open fun optOut() {}
+    open fun defaultNoConfig() {}
 
-    @SentryCheckIn("heartbeat", heartbeat = true)
+    @SentryCheckIn("heartbeat", heartbeat = true, upsertMonitorConfig = true)
     @Scheduled(cron = "0 0 1 * * *")
     open fun heartbeat() {}
   }
