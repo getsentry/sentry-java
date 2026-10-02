@@ -732,6 +732,9 @@ public class io/sentry/android/core/anr/AnrProfilingIntegration : io/sentry/Inte
 	public static final field POLLING_INTERVAL_MS J
 	public static final field THRESHOLD_ANR_MS J
 	public fun <init> ()V
+	public fun <init> (JJJ)V
+	protected fun addStackTrace (Lio/sentry/android/core/anr/AnrStackTrace;)V
+	protected fun captureStackTrace (Ljava/lang/Thread;)Lio/sentry/android/core/anr/AnrStackTrace;
 	protected fun checkMainThread (Ljava/lang/Thread;)V
 	public fun close ()V
 	protected fun getProfileManager ()Lio/sentry/android/core/anr/AnrProfileManager;

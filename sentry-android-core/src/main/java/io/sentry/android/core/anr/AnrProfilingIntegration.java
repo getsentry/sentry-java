@@ -42,6 +42,11 @@ public class AnrProfilingIntegration
   public static final long THRESHOLD_ANR_MS = 4000;
   static final int MAX_NUM_STACKS = (int) (10_000 / POLLING_INTERVAL_MS);
 
+  private final long pollingIntervalMs;
+  private final long samplingIntervalMs;
+  private final long suspicionThresholdMs;
+  private final int maxNumStacks;
+
   private final AtomicBoolean enabled = new AtomicBoolean(true);
   private final Runnable updater = () -> lastMainThreadExecutionTime = SystemClock.uptimeMillis();
   private final @NotNull AutoClosableReentrantLock lifecycleLock = new AutoClosableReentrantLock();
@@ -59,6 +64,26 @@ public class AnrProfilingIntegration
   private volatile boolean inForeground = false;
   private volatile @Nullable Handler mainHandler;
   private volatile @Nullable Thread mainThread;
+
+  public AnrProfilingIntegration() {
+    this(POLLING_INTERVAL_MS, POLLING_INTERVAL_MS, THRESHOLD_SUSPICION_MS);
+  }
+
+  /**
+   * @param pollingIntervalMs how often the main thread is checked while it is responsive
+   * @param samplingIntervalMs how often a main thread stack is captured once it is suspicious
+   * @param suspicionThresholdMs how long the main thread has to be blocked before sampling starts
+   */
+  @ApiStatus.Internal
+  public AnrProfilingIntegration(
+      final long pollingIntervalMs,
+      final long samplingIntervalMs,
+      final long suspicionThresholdMs) {
+    this.pollingIntervalMs = pollingIntervalMs;
+    this.samplingIntervalMs = samplingIntervalMs;
+    this.suspicionThresholdMs = suspicionThresholdMs;
+    this.maxNumStacks = (int) (10_000 / samplingIntervalMs);
+  }
 
   @Override
   public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
@@ -197,7 +222,7 @@ public class AnrProfilingIntegration
           handler.post(updater);
 
           // noinspection BusyWait
-          Thread.sleep(POLLING_INTERVAL_MS);
+          Thread.sleep(getNextIntervalMs());
         } catch (InterruptedException e) {
           // Restore interrupt status and exit the polling loop
           Thread.currentThread().interrupt();
@@ -214,12 +239,12 @@ public class AnrProfilingIntegration
     final long now = SystemClock.uptimeMillis();
     final long diff = now - lastMainThreadExecutionTime;
 
-    if (diff < THRESHOLD_SUSPICION_MS) {
+    if (diff < suspicionThresholdMs) {
       mainThreadState = MainThreadState.IDLE;
       sampled = false;
     }
 
-    if (mainThreadState == MainThreadState.IDLE && diff > THRESHOLD_SUSPICION_MS) {
+    if (mainThreadState == MainThreadState.IDLE && diff > suspicionThresholdMs) {
       if (logger.isEnabled(SentryLevel.DEBUG)) {
         logger.log(SentryLevel.DEBUG, "ANR: main thread is suspicious");
       }
@@ -240,10 +265,9 @@ public class AnrProfilingIntegration
     if (sampled
         && (mainThreadState == MainThreadState.SUSPICIOUS
             || mainThreadState == MainThreadState.ANR_DETECTED)) {
-      if (numCollectedStacks.get() < MAX_NUM_STACKS) {
+      if (numCollectedStacks.get() < maxNumStacks) {
         final long start = SystemClock.uptimeMillis();
-        final @NotNull AnrStackTrace trace =
-            new AnrStackTrace(System.currentTimeMillis(), mainThread.getStackTrace());
+        final @NotNull AnrStackTrace trace = captureStackTrace(mainThread);
         final long duration = SystemClock.uptimeMillis() - start;
         if (logger.isEnabled(SentryLevel.DEBUG)) {
           logger.log(
@@ -266,6 +290,12 @@ public class AnrProfilingIntegration
       }
       mainThreadState = MainThreadState.ANR_DETECTED;
     }
+  }
+
+  long getNextIntervalMs() {
+    return sampled && mainThreadState != MainThreadState.IDLE
+        ? samplingIntervalMs
+        : pollingIntervalMs;
   }
 
   @TestOnly
@@ -299,7 +329,13 @@ public class AnrProfilingIntegration
     getProfileManager().clear();
   }
 
-  private void addStackTrace(@NotNull final AnrStackTrace trace) throws IOException {
+  @ApiStatus.Internal
+  protected @NotNull AnrStackTrace captureStackTrace(final @NotNull Thread mainThread) {
+    return new AnrStackTrace(System.currentTimeMillis(), mainThread.getStackTrace());
+  }
+
+  @ApiStatus.Internal
+  protected void addStackTrace(final @NotNull AnrStackTrace trace) throws IOException {
     if (!enabled.get()) {
       return;
     }

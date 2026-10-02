@@ -91,6 +91,7 @@ import io.sentry.android.core.SentryUserFeedbackForm
 import io.sentry.compose.SentryTraced
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.User
+import io.sentry.samples.android.anr.AnrProfilingOverheadActivity
 import io.sentry.samples.android.memory.MemoryLimiterActivity
 import java.io.File
 import java.io.FileOutputStream
@@ -995,6 +996,19 @@ fun IntegrationsScreen() {
           modifier = Modifier,
         ) {
           Text("MemoryLimiter Demo", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("anr_profiling_overhead") {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction("anr_profiling_overhead")
+            activity.startActivity(Intent(activity, AnrProfilingOverheadActivity::class.java))
+          },
+          modifier = Modifier,
+        ) {
+          Text("ANR Profiling Overhead", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
     }

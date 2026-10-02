@@ -137,6 +137,12 @@
       android:exported="false"
       android:theme="@style/AppTheme.Main" />
 
+    <!-- Exported so the macrobenchmark can start it with interval extras. -->
+    <activity
+      android:name=".anr.AnrProfilingOverheadActivity"
+      android:exported="true"
+      android:theme="@style/AppTheme.Main" />
+
     <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
     <meta-data
       android:name="io.sentry.dsn"
