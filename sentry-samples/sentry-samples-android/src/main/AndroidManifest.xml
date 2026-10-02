@@ -120,7 +120,6 @@
     <activity
       android:name=".navigation.nav3.Nav3Activity"
       android:exported="false"
-      android:launchMode="singleTop"
       android:screenOrientation="portrait"
       android:theme="@style/AppTheme.Main" />
 

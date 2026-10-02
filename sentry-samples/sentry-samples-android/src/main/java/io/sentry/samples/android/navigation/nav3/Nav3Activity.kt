@@ -71,8 +71,6 @@ class Nav3Activity : ComponentActivity() {
       measureRenderLatency = true,
       diagnosticsSurfaceName = "Nav3",
     )
-  private var performanceRunRequest by mutableStateOf<Nav3PerformanceRunRequest?>(null)
-  private var nextPerformanceRunRequestId = 0
   private var isTransactionHistoryActive = false
   private val transactionHistory =
     NavigationTransactionHistory(isActive = { isTransactionHistoryActive })
@@ -98,21 +96,10 @@ class Nav3Activity : ComponentActivity() {
 
     transactionHistory.install()
 
-    val initialPerformancePreset =
-      intent.getStringExtra(NAV3_PERFORMANCE_PRESET_EXTRA)?.let { presetName ->
-        Nav3PerformancePreset.entries.firstOrNull { it.name == presetName }
-      }
-    val initialPerformanceRun =
-      intent.getStringExtra(NAV3_PERFORMANCE_RUN_EXTRA)?.let { runName ->
-        Nav3PerformanceRun.entries.firstOrNull { it.name == runName }
-      }
     setContent {
       Nav3SampleTheme {
         Nav3SampleApp(
           performanceState = performanceState,
-          initialPerformancePreset = initialPerformancePreset,
-          initialPerformanceRun = initialPerformanceRun,
-          performanceRunRequest = performanceRunRequest,
           configuration = configuration,
           transactions = transactionHistory.transactions,
           showActivityUiLoadTransactionDelayMessage = showActivityUiLoadTransactionDelayMessage,
@@ -130,24 +117,6 @@ class Nav3Activity : ComponentActivity() {
         )
       }
     }
-  }
-
-  override fun onNewIntent(intent: Intent) {
-    super.onNewIntent(intent)
-    setIntent(intent)
-    val runName = intent.getStringExtra(NAV3_PERFORMANCE_RUN_EXTRA) ?: return
-    val run = Nav3PerformanceRun.entries.firstOrNull { it.name == runName } ?: return
-    val skipWarmUp = intent.getBooleanExtra(NAV3_PERFORMANCE_SKIP_WARM_UP_EXTRA, false)
-    if (!skipWarmUp || !performanceState.benchmarkRunning) {
-      performanceState.startBenchmark("Starting")
-    }
-    performanceRunRequest =
-      Nav3PerformanceRunRequest(
-        id = ++nextPerformanceRunRequestId,
-        run = run,
-        warmUpOnly = intent.getBooleanExtra(NAV3_PERFORMANCE_WARM_UP_ONLY_EXTRA, false),
-        skipWarmUp = skipWarmUp,
-      )
   }
 
   override fun onStart() {
@@ -196,9 +165,6 @@ class Nav3Activity : ComponentActivity() {
 @Composable
 private fun Nav3SampleApp(
   performanceState: Nav3PerformanceState,
-  initialPerformancePreset: Nav3PerformancePreset? = null,
-  initialPerformanceRun: Nav3PerformanceRun? = null,
-  performanceRunRequest: Nav3PerformanceRunRequest? = null,
   configuration: NavigationSampleConfig,
   transactions: List<NavigationTransactionTrace>,
   showActivityUiLoadTransactionDelayMessage: Boolean,
@@ -377,37 +343,6 @@ private fun Nav3SampleApp(
         )
       }
     }
-  }
-
-  LaunchedEffect(initialPerformancePreset, initialPerformanceRun) {
-    val preset = initialPerformancePreset ?: return@LaunchedEffect
-    selectedScenario = Nav3Scenario.PERFORMANCE
-    backStack.openScenario(Nav3Scenario.PERFORMANCE)
-    awaitNav3PerformanceFrames()
-    prepareNav3PerformancePreset(
-      preset = preset,
-      state = performanceState,
-      backStack = backStack,
-      onMaxCapturedBackStackEntriesChange = { maxCapturedBackStackEntries = it },
-    )
-    if (initialPerformanceRun != null) {
-      runNav3PerformanceBenchmark(
-        run = initialPerformanceRun,
-        state = performanceState,
-        backStack = backStack,
-      )
-    }
-  }
-
-  LaunchedEffect(performanceRunRequest) {
-    val request = performanceRunRequest ?: return@LaunchedEffect
-    runNav3PerformanceBenchmark(
-      run = request.run,
-      state = performanceState,
-      backStack = backStack,
-      warmUpOnly = request.warmUpOnly,
-      skipWarmUp = request.skipWarmUp,
-    )
   }
 
   LaunchedEffect(selectedScenario, sentryBackStack.lastOrNull()) {

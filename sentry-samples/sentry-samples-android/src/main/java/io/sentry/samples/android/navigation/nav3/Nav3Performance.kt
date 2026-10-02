@@ -277,15 +277,3 @@ internal suspend fun awaitNav3PerformanceFrames() {
 
 private const val PERFORMANCE_WARM_UP_ITERATIONS = 5
 private const val PERFORMANCE_MEASURED_ITERATIONS = 20
-
-internal const val NAV3_PERFORMANCE_PRESET_EXTRA = "nav3_performance_preset"
-internal const val NAV3_PERFORMANCE_RUN_EXTRA = "nav3_performance_run"
-internal const val NAV3_PERFORMANCE_WARM_UP_ONLY_EXTRA = "nav3_performance_warm_up_only"
-internal const val NAV3_PERFORMANCE_SKIP_WARM_UP_EXTRA = "nav3_performance_skip_warm_up"
-
-internal data class Nav3PerformanceRunRequest(
-  val id: Int,
-  val run: Nav3PerformanceRun,
-  val warmUpOnly: Boolean,
-  val skipWarmUp: Boolean,
-)
