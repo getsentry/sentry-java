@@ -108,8 +108,12 @@ internal fun <T : Any> SentryNavEffect(
       )
     }
 
-  // The incoming back stack is mutable and shared with the host app; copy it so that BackStackKey
-  // and BackStackObserver are guaranteed to have the same (stable) view.
+  // Intentionally don't remember this copy. Snapshot-backed lists mutate in place, so
+  // remember(backStack) { backStack.toList() } would cache a stale copy. (The key reference
+  // retained by remember() and the backStack reference passed to this effect would point to the
+  // same instance, causing remember() to always return the originally copied list.) Making a fresh
+  // copy ensures a stable snapshot for the duration of each update and lets BackStackKey compare
+  // it with the previous one.
   val copy = backStack.toList()
 
   DisposableEffect(observer, BackStackKey(copy)) {
