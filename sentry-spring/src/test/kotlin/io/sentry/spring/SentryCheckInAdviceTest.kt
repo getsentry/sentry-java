@@ -11,6 +11,7 @@ import io.sentry.protocol.SentryId
 import io.sentry.spring.checkin.SentryCheckIn
 import io.sentry.spring.checkin.SentryCheckInAdviceConfiguration
 import io.sentry.spring.checkin.SentryCheckInPointcutConfiguration
+import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 import kotlin.RuntimeException
 import kotlin.test.BeforeTest
@@ -18,6 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import org.junit.jupiter.api.assertThrows
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
@@ -245,13 +247,19 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
-  fun `cron with fixed seconds is sent as crontab monitor config`() {
-    val config = inProgressMonitorConfig { sampleServiceScheduled.cron() }
-    assertNotNull(config)
-    assertEquals("crontab", config.schedule.type)
-    assertEquals("15 10 * * MON-FRI", config.schedule.value)
-    assertNull(config.schedule.unit)
-    assertNull(config.timezone)
+  fun `cron with fixed seconds is sent as crontab monitor config in the JVM default zone`() {
+    val defaultTimeZone = TimeZone.getDefault()
+    TimeZone.setDefault(TimeZone.getTimeZone("Asia/Tokyo"))
+    try {
+      val config = inProgressMonitorConfig { sampleServiceScheduled.cron() }
+      assertNotNull(config)
+      assertEquals("crontab", config.schedule.type)
+      assertEquals("15 10 * * MON-FRI", config.schedule.value)
+      assertNull(config.schedule.unit)
+      assertEquals("Asia/Tokyo", config.timezone)
+    } finally {
+      TimeZone.setDefault(defaultTimeZone)
+    }
   }
 
   @Test
@@ -282,6 +290,26 @@ class SentryCheckInAdviceTest {
     val config = inProgressMonitorConfig { sampleServiceScheduled.fixedDelayFromProperties() }
     assertEquals("10", config?.schedule?.value)
     assertEquals("minute", config?.schedule?.unit)
+  }
+
+  @Test
+  fun `fixed rate string in simple duration style is sent as interval monitor config`() {
+    val config = inProgressMonitorConfig { sampleServiceScheduled.fixedRateSimpleStyle() }
+    assertEquals("5", config?.schedule?.value)
+    assertEquals("minute", config?.schedule?.unit)
+  }
+
+  @Test
+  fun `unparseable fixed rate string sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.fixedRateUnparseable() })
+  }
+
+  @Test
+  fun `monitor config is derived once per method`() {
+    val first = inProgressMonitorConfig { sampleServiceScheduled.fixedRateMinutes() }
+    val second = inProgressMonitorConfig { sampleServiceScheduled.fixedRateMinutes() }
+    assertNotNull(first)
+    assertSame(first, second)
   }
 
   @Test
@@ -396,6 +424,14 @@ class SentryCheckInAdviceTest {
     @SentryCheckIn("fixed_delay_properties")
     @Scheduled(fixedDelayString = "\${my.cron.delay}")
     open fun fixedDelayFromProperties() {}
+
+    @SentryCheckIn("fixed_rate_simple")
+    @Scheduled(fixedRateString = "5m")
+    open fun fixedRateSimpleStyle() {}
+
+    @SentryCheckIn("fixed_rate_unparseable")
+    @Scheduled(fixedRateString = "5 minutes")
+    open fun fixedRateUnparseable() {}
 
     @SentryCheckIn("multiple")
     @Scheduled(cron = "0 0 1 * * *")

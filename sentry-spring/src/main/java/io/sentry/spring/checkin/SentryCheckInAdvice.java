@@ -16,7 +16,11 @@ import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.time.format.DateTimeParseException;
+import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -41,6 +45,9 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
   private final @NotNull IScopes scopes;
 
   private @Nullable StringValueResolver resolver;
+
+  private final @NotNull Map<Method, CachedMonitorConfig> monitorConfigs =
+      new ConcurrentHashMap<>();
 
   public SentryCheckInAdvice() {
     this(ScopesAdapter.getInstance());
@@ -110,7 +117,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         if (!isHeartbeatOnly) {
           final @NotNull CheckIn inProgress = new CheckIn(monitorSlug, CheckInStatus.IN_PROGRESS);
           if (checkInAnnotation.upsertMonitorConfig()) {
-            inProgress.setMonitorConfig(monitorConfigFromScheduled(mostSpecificMethod));
+            inProgress.setMonitorConfig(monitorConfig(mostSpecificMethod));
           }
           checkInId = scopes.captureCheckIn(inProgress);
         }
@@ -125,6 +132,15 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         scopes.captureCheckIn(checkIn);
       }
     }
+  }
+
+  private @Nullable MonitorConfig monitorConfig(final @NotNull Method method) {
+    @Nullable CachedMonitorConfig cached = monitorConfigs.get(method);
+    if (cached == null) {
+      cached = new CachedMonitorConfig(monitorConfigFromScheduled(method));
+      monitorConfigs.putIfAbsent(method, cached);
+    }
+    return cached.config;
   }
 
   private @Nullable MonitorConfig monitorConfigFromScheduled(final @NotNull Method method) {
@@ -143,8 +159,14 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
               ? (TimeUnit) timeUnitAttribute
               : TimeUnit.MILLISECONDS;
       final @Nullable String cron = resolve(scheduled.cron());
-      final @Nullable String zone =
-          cron != null && !cron.isEmpty() ? resolve(scheduled.zone()) : null;
+      @Nullable String zone = null;
+      if (cron != null && !cron.isEmpty()) {
+        zone = resolve(scheduled.zone());
+        if (zone == null || zone.isEmpty()) {
+          // Spring runs cron schedules without a zone in the JVM default time zone
+          zone = TimeZone.getDefault().getID();
+        }
+      }
       return MonitorConfigUtils.fromSchedule(
           cron,
           zone,
@@ -172,10 +194,26 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       return null;
     }
     final @NotNull String trimmed = resolved.trim();
+    @Nullable Long millis = null;
     if (trimmed.startsWith("P") || trimmed.startsWith("p")) {
-      return Duration.parse(trimmed).toMillis();
+      try {
+        millis = Duration.parse(trimmed).toMillis();
+      } catch (DateTimeParseException | ArithmeticException e) {
+        // logged below
+      }
+    } else {
+      millis = MonitorConfigUtils.parsePeriodMillis(trimmed, timeUnit);
     }
-    return timeUnit.toMillis(Long.parseLong(trimmed));
+    if (millis == null) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Not sending a monitor config for @SentryCheckIn because the @Scheduled period '%s' could not be parsed.",
+              trimmed);
+    }
+    return millis;
   }
 
   private @Nullable String resolve(final @NotNull String value) {
@@ -183,6 +221,14 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       return value;
     }
     return resolver.resolveStringValue(value);
+  }
+
+  private static final class CachedMonitorConfig {
+    private final @Nullable MonitorConfig config;
+
+    private CachedMonitorConfig(final @Nullable MonitorConfig config) {
+      this.config = config;
+    }
   }
 
   @Override
