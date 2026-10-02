@@ -15,6 +15,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
+import io.sentry.compose.navigation3.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import org.junit.Test
@@ -273,7 +274,10 @@ class BackStackObserverTest {
       .isEqualTo(
         listOf(
           mapOf("entry" to "/ProfileScreen", "arguments" to mapOf("userId" to "123")),
-          mapOf("entry" to "/HomeScreen"),
+          mapOf(
+            "entry" to "/HomeScreen",
+            "arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
+          ),
         )
       )
     assertThat(fixture.startedTransactions.single().getData("arguments"))
@@ -672,6 +676,8 @@ class BackStackObserverTest {
     val cartTransaction = fixture.startedTransactions.last()
     assertThat(cartTransaction.isFinished).isFalse()
     assertThat(cartTransaction.name).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
+    assertThat(cartTransaction.getData("arguments"))
+      .isEqualTo(mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"))
     assertThat(fixture.scope.transaction).isSameInstanceAs(cartTransaction)
     assertThat(fixture.scope.screen).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
     assertThat(fixture.scope.contexts.app?.viewNames)
@@ -683,11 +689,16 @@ class BackStackObserverTest {
         NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
         "to",
         NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+        "to_arguments",
+        mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
       )
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf(
+            "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+            "arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
+          ),
           mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
         )
@@ -707,12 +718,22 @@ class BackStackObserverTest {
     assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf("/settings"))
     assertThat(fixture.breadcrumbs).hasSize(4)
     assertThat(fixture.breadcrumbs.last().data)
-      .containsExactly("from", NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME, "to", "/settings")
+      .containsExactly(
+        "from",
+        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+        "from_arguments",
+        mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
+        "to",
+        "/settings",
+      )
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
           mapOf("entry" to "/settings"),
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf(
+            "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+            "arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
+          ),
           mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
         )
