@@ -5,7 +5,7 @@ import org.jetbrains.annotations.ApiStatus
 
 // Keep the default low: every captured entry may require argument extraction and recursive
 // sanitization when navigation changes are observed.
-private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 10
+private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 5
 
 /**
  * Configuration info for a [SentryNavEffect].
