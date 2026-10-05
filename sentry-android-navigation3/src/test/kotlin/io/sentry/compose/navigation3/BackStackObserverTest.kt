@@ -337,14 +337,14 @@ class BackStackObserverTest {
         config = ObserverConfig(captureBackStack = true, maxCapturedBackStackEntries = 0)
       )
     fixture.scope.setContexts(
-      "navigation",
-      mapOf("backstack" to listOf(mapOf("entry" to "/Stale"))),
+      NAVIGATION_CONTEXT_KEY,
+      mapOf(BACKSTACK_KEY to listOf(mapOf("entry" to "/Stale"))),
     )
 
     sut.onBackStackChanged(listOf(HomeScreen()))
 
     // Doesn't emit a back stack...
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
 
     // ...but continues to emit all other Sentry data.
     assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/HomeScreen")
@@ -358,14 +358,14 @@ class BackStackObserverTest {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(captureBackStack = false))
     fixture.scope.setContexts(
-      "navigation",
-      mapOf("backstack" to listOf(mapOf("entry" to "/Stale"))),
+      NAVIGATION_CONTEXT_KEY,
+      mapOf(BACKSTACK_KEY to listOf(mapOf("entry" to "/Stale"))),
     )
 
     sut.onBackStackChanged(listOf(HomeScreen()))
 
     // Doesn't emit a back stack...
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
 
     // ...but continues to emit all other Sentry data.
     assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/HomeScreen")
@@ -606,7 +606,7 @@ class BackStackObserverTest {
     assertThat(fixture.scope.transaction).isNull()
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
     assertThat(fixture.breadcrumbs).hasSize(1)
   }
 
@@ -754,7 +754,7 @@ class BackStackObserverTest {
     assertThat(fixture.scope.transaction).isNull()
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
@@ -772,7 +772,7 @@ class BackStackObserverTest {
   }
 
   private companion object {
-    const val NAVIGATION_CONTEXT_KEY = "navigation"
-    const val BACKSTACK_KEY = "backstack"
+    const val NAVIGATION_CONTEXT_KEY = "Navigation"
+    const val BACKSTACK_KEY = "Back Stack"
   }
 }
