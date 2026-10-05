@@ -373,8 +373,8 @@ private class NavTransaction(private val scopes: IScopes) {
 private class NavContext(private val scopes: IScopes, private val options: SentryNavOptions) {
 
   private companion object {
-    private const val BACKSTACK_KEY = "backstack"
-    private const val NAVIGATION_CONTEXT_KEY = "navigation"
+    private const val BACKSTACK_KEY = "Back Stack"
+    private const val NAVIGATION_CONTEXT_KEY = "Navigation"
   }
 
   fun update(scope: IScope, backStackEntries: List<NormalizedSentryBackStackEntry>) {
