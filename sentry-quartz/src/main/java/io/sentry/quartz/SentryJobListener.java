@@ -24,9 +24,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobListener;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 
@@ -42,7 +45,10 @@ public final class SentryJobListener implements JobListener {
   public static final String SENTRY_SLUG_KEY = "sentry-slug";
   public static final String SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY = "sentry-scope-lifecycle";
 
-  /** Job data key; set to {@code true} to send a monitor config from the trigger. */
+  /**
+   * Job or trigger data key. The listener sends a monitor config from the trigger with check-ins by
+   * default; set this to {@code "false"} to manage the monitor's schedule in Sentry instead.
+   */
   public static final String SENTRY_UPSERT_MONITOR_CONFIG_KEY = "sentry-upsert-monitor-config";
 
   private static final @NotNull List<String> DAY_NAMES =
@@ -76,9 +82,7 @@ public final class SentryJobListener implements JobListener {
         return;
       }
       final @Nullable MonitorConfig monitorConfig =
-          shouldUpsertMonitorConfig(context)
-              ? monitorConfigFromTrigger(context.getTrigger())
-              : null;
+          shouldUpsertMonitorConfig(context) ? monitorConfigFromTrigger(context) : null;
       final @NotNull ISentryLifecycleToken lifecycleToken =
           scopes.forkedScopes("SentryJobListener").makeCurrent();
       context.put(SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY, lifecycleToken);
@@ -112,16 +116,22 @@ public final class SentryJobListener implements JobListener {
   private boolean shouldUpsertMonitorConfig(final @NotNull JobExecutionContext context) {
     final @Nullable JobDataMap jobDataMap = context.getMergedJobDataMap();
     if (jobDataMap == null) {
-      return false;
+      return true;
     }
     final @Nullable Object o = jobDataMap.get(SENTRY_UPSERT_MONITOR_CONFIG_KEY);
-    return o != null && "true".equalsIgnoreCase(o.toString());
+    return o == null || !"false".equalsIgnoreCase(o.toString().trim());
   }
 
-  private @Nullable MonitorConfig monitorConfigFromTrigger(final @Nullable Trigger trigger) {
+  private @Nullable MonitorConfig monitorConfigFromTrigger(
+      final @NotNull JobExecutionContext context) {
     try {
+      final @Nullable Trigger trigger = context.getTrigger();
       // Sentry can't express calendar exclusions
       if (trigger == null || trigger.getCalendarName() != null) {
+        return null;
+      }
+      // each trigger would overwrite the others' schedule
+      if (hasSeveralTriggers(context)) {
         return null;
       }
       if (trigger instanceof CronTrigger) {
@@ -150,6 +160,16 @@ public final class SentryJobListener implements JobListener {
               SentryLevel.WARNING, "Could not derive a monitor config from the Quartz trigger.", e);
       return null;
     }
+  }
+
+  private static boolean hasSeveralTriggers(final @NotNull JobExecutionContext context)
+      throws SchedulerException {
+    final @Nullable Scheduler scheduler = context.getScheduler();
+    final @Nullable JobDetail jobDetail = context.getJobDetail();
+    if (scheduler == null || jobDetail == null) {
+      return false;
+    }
+    return scheduler.getTriggersOfJob(jobDetail.getKey()).size() > 1;
   }
 
   /**

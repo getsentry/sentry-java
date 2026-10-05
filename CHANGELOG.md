@@ -4,7 +4,7 @@
 
 ### Features
 
-- Add the `sentry-upsert-monitor-config` job data key to Quartz `SentryJobListener`; set it to `true` to send a monitor config derived from the trigger with check-ins, so Sentry can create the monitor from code ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
+- Quartz `SentryJobListener` now sends a monitor config derived from the trigger with check-ins by default, so Sentry can create or update the monitor from code. Existing monitors take their schedule and time zone from the trigger; set the `sentry-upsert-monitor-config` job or trigger data key to `"false"` to keep managing them in Sentry ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
 - Add `@SentryCheckIn(upsertMonitorConfig = true)` to send a monitor config derived from Spring `@Scheduled` with check-ins, so Sentry can create the monitor from code ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
 

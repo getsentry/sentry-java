@@ -19,7 +19,10 @@ import org.mockito.kotlin.whenever
 import org.quartz.CalendarIntervalScheduleBuilder
 import org.quartz.CronScheduleBuilder
 import org.quartz.JobDataMap
+import org.quartz.JobDetail
 import org.quartz.JobExecutionContext
+import org.quartz.JobKey
+import org.quartz.Scheduler
 import org.quartz.SimpleScheduleBuilder
 import org.quartz.Trigger
 import org.quartz.TriggerBuilder
@@ -141,7 +144,7 @@ class SentryJobListenerTest {
 
   @Test
   fun `scope token is stored even if capturing the check-in fails`() {
-    val jobDataMap = upsertJobDataMap()
+    val jobDataMap = JobDataMap()
     jobDataMap[SentryJobListener.SENTRY_SLUG_KEY] = "my-job"
     val context = mock<JobExecutionContext>()
     whenever(context.mergedJobDataMap).thenReturn(jobDataMap)
@@ -177,8 +180,16 @@ class SentryJobListenerTest {
   }
 
   @Test
-  fun `without upsert monitor config key sends no monitor config`() {
-    assertThat(inProgressMonitorConfig(cronTrigger("0 0 2 * * ?"), JobDataMap())).isNull()
+  fun `sends monitor config by default`() {
+    assertThat(inProgressMonitorConfig(cronTrigger("0 0 2 * * ?"), JobDataMap())).isNotNull()
+  }
+
+  @Test
+  fun `upsert monitor config true sends monitor config`() {
+    val jobDataMap = JobDataMap()
+    jobDataMap[SentryJobListener.SENTRY_UPSERT_MONITOR_CONFIG_KEY] = "true"
+
+    assertThat(inProgressMonitorConfig(cronTrigger("0 0 2 * * ?"), jobDataMap)).isNotNull()
   }
 
   @Test
@@ -190,11 +201,26 @@ class SentryJobListenerTest {
   }
 
   @Test
-  fun `upsert monitor config as boolean true sends monitor config`() {
+  fun `upsert monitor config as boolean false sends no monitor config`() {
     val jobDataMap = JobDataMap()
-    jobDataMap[SentryJobListener.SENTRY_UPSERT_MONITOR_CONFIG_KEY] = true
+    jobDataMap[SentryJobListener.SENTRY_UPSERT_MONITOR_CONFIG_KEY] = false
 
-    assertThat(inProgressMonitorConfig(cronTrigger("0 0 2 * * ?"), jobDataMap)).isNotNull()
+    assertThat(inProgressMonitorConfig(cronTrigger("0 0 2 * * ?"), jobDataMap)).isNull()
+  }
+
+  @Test
+  fun `job with one trigger sends monitor config`() {
+    val trigger = cronTrigger("0 0 2 * * ?")
+
+    assertThat(inProgressMonitorConfig(trigger, triggersOfJob = listOf(trigger))).isNotNull()
+  }
+
+  @Test
+  fun `job with several triggers sends no monitor config`() {
+    val trigger = cronTrigger("0 0 2 * * ?")
+    val triggers = listOf(trigger, cronTrigger("0 0 3 * * ?"))
+
+    assertThat(inProgressMonitorConfig(trigger, triggersOfJob = triggers)).isNull()
   }
 
   @Test
@@ -261,20 +287,24 @@ class SentryJobListenerTest {
       .withSchedule(CronScheduleBuilder.cronSchedule(cron).inTimeZone(timeZone))
       .build()
 
-  private fun upsertJobDataMap(): JobDataMap {
-    val jobDataMap = JobDataMap()
-    jobDataMap[SentryJobListener.SENTRY_UPSERT_MONITOR_CONFIG_KEY] = "true"
-    return jobDataMap
-  }
-
   private fun inProgressMonitorConfig(
     trigger: Trigger,
-    jobDataMap: JobDataMap = upsertJobDataMap(),
+    jobDataMap: JobDataMap = JobDataMap(),
+    triggersOfJob: List<Trigger>? = null,
   ): MonitorConfig? {
     jobDataMap[SentryJobListener.SENTRY_SLUG_KEY] = "my-job"
     val context = mock<JobExecutionContext>()
     whenever(context.mergedJobDataMap).thenReturn(jobDataMap)
     whenever(context.trigger).thenReturn(trigger)
+    if (triggersOfJob != null) {
+      val jobKey = JobKey.jobKey("my-job")
+      val jobDetail = mock<JobDetail>()
+      whenever(jobDetail.key).thenReturn(jobKey)
+      val scheduler = mock<Scheduler>()
+      whenever(scheduler.getTriggersOfJob(jobKey)).thenReturn(triggersOfJob)
+      whenever(context.jobDetail).thenReturn(jobDetail)
+      whenever(context.scheduler).thenReturn(scheduler)
+    }
     val checkInCaptor = argumentCaptor<CheckIn>()
     whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(SentryId())
 
