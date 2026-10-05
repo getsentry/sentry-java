@@ -366,8 +366,8 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
-  fun `upsertMonitorConfig defaults to false and sends no monitor config`() {
-    assertNull(inProgressMonitorConfig { sampleServiceScheduled.defaultNoConfig() })
+  fun `upsertMonitorConfig false sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.upsertDisabled() })
   }
 
   @Test
@@ -457,72 +457,66 @@ class SentryCheckInAdviceTest {
 
   open class SampleServiceScheduled {
 
-    @SentryCheckIn("cron_zone", upsertMonitorConfig = true)
+    @SentryCheckIn("cron_zone")
     @Scheduled(cron = "0 15 10 * * MON-FRI", zone = "Europe/Vienna")
     open fun cronWithZone() {}
 
-    @SentryCheckIn("cron", upsertMonitorConfig = true)
-    @Scheduled(cron = "0 0 2 * * *")
-    open fun cron() {}
+    @SentryCheckIn("cron") @Scheduled(cron = "0 0 2 * * *") open fun cron() {}
 
-    @SentryCheckIn("cron_properties", upsertMonitorConfig = true)
+    @SentryCheckIn("cron_properties")
     @Scheduled(cron = "\${my.cron.schedule}", zone = "\${my.cron.zone}")
     open fun cronFromProperties() {}
 
-    @SentryCheckIn("fixed_rate_hours", upsertMonitorConfig = true)
+    @SentryCheckIn("fixed_rate_hours")
     @Scheduled(fixedRate = 2, timeUnit = TimeUnit.HOURS)
     open fun fixedRateHours() {}
 
-    @SentryCheckIn("fixed_rate_iso", upsertMonitorConfig = true)
+    @SentryCheckIn("fixed_rate_iso")
     @Scheduled(fixedRateString = "PT10M")
     open fun fixedRateIso() {}
 
-    @SentryCheckIn("fixed_rate_simple", upsertMonitorConfig = true)
+    @SentryCheckIn("fixed_rate_simple")
     @Scheduled(fixedRateString = "5m")
     open fun fixedRateSimpleDuration() {}
 
-    @SentryCheckIn("fixed_delay", upsertMonitorConfig = true)
-    @Scheduled(fixedDelay = 300_000)
-    open fun fixedDelay() {}
+    @SentryCheckIn("fixed_delay") @Scheduled(fixedDelay = 300_000) open fun fixedDelay() {}
 
-    @SentryCheckIn("fixed_delay_iso", upsertMonitorConfig = true)
+    @SentryCheckIn("fixed_delay_iso")
     @Scheduled(fixedDelayString = "PT10M")
     open fun fixedDelayIso() {}
 
-    @SentryCheckIn("disabled_cron", upsertMonitorConfig = true)
-    @Scheduled(cron = "-")
-    open fun disabledCron() {}
+    @SentryCheckIn("disabled_cron") @Scheduled(cron = "-") open fun disabledCron() {}
 
-    @SentryCheckIn("cron_empty_zone", upsertMonitorConfig = true)
+    @SentryCheckIn("cron_empty_zone")
     @Scheduled(cron = "0 0 3 * * *", zone = "\${my.cron.empty.zone}")
     open fun cronWithEmptyZone() {}
 
-    @SentryCheckIn("cron_zone_defaults", upsertMonitorConfig = true)
+    @SentryCheckIn("cron_zone_defaults")
     @Scheduled(cron = "0 0 4 * * *", zone = "Europe/Vienna")
     open fun cronWithZoneAndDefaults() {}
 
-    @SentryCheckIn("schedules_container", upsertMonitorConfig = true)
+    @SentryCheckIn("schedules_container")
     @Schedules(Scheduled(cron = "0 0 1 * * *"), Scheduled(cron = "0 0 13 * * *"))
     open fun schedulesContainer() {}
 
-    @SentryCheckIn("unresolvable_cron", upsertMonitorConfig = true)
+    @SentryCheckIn("unresolvable_cron")
     @Scheduled(cron = "\${my.cron.missing}")
     open fun unresolvableCron() {}
 
-    @SentryCheckIn("derivation_throws", upsertMonitorConfig = true)
+    @SentryCheckIn("derivation_throws")
     @Scheduled(cron = "\${my.cron.exception.property}")
     open fun derivationThrows() = 1
 
-    @SentryCheckIn("multiple", upsertMonitorConfig = true)
+    @SentryCheckIn("multiple")
     @Scheduled(cron = "0 0 1 * * *")
     @Scheduled(cron = "0 0 13 * * *")
     open fun multipleSchedules() {}
 
-    @SentryCheckIn("default_no_config")
+    @SentryCheckIn("upsert_disabled", upsertMonitorConfig = false)
     @Scheduled(cron = "0 0 1 * * *")
-    open fun defaultNoConfig() {}
+    open fun upsertDisabled() {}
 
-    @SentryCheckIn("heartbeat", heartbeat = true, upsertMonitorConfig = true)
+    @SentryCheckIn("heartbeat", heartbeat = true)
     @Scheduled(cron = "0 0 1 * * *")
     open fun heartbeat() {}
   }
