@@ -13,6 +13,7 @@ import io.sentry.SentryOptions
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.io.Closeable
 
+// TODO ADAM: This is a test.
 public class FragmentLifecycleIntegration(
   private val application: Application,
   private val filterFragmentLifecycleBreadcrumbs: Set<FragmentLifecycleState>,
