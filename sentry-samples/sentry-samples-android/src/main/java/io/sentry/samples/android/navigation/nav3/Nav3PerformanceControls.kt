@@ -106,6 +106,7 @@ internal class Nav3PerformanceState(
   private var abComparisonCount = 0
   private var collectMeasurements = true
   private var discardNextSentryNavEffectMeasurement = false
+  private var suppressExtractorMeasurementsUntilNavigation = false
   private var suppressNextDestinationChange = false
   private var pendingProcessedNavigationWork = false
 
@@ -121,6 +122,7 @@ internal class Nav3PerformanceState(
     sentryNavEffectAttempts = 0
     sentryNavEffectProcessedCalls = 0
     capturedEntriesResolved = 0
+    pendingProcessedNavigationWork = false
     mutationToCompositionDurations.clear()
     mutationToFirstDrawDurations.clear()
     comparisonResult = null
@@ -149,7 +151,7 @@ internal class Nav3PerformanceState(
 
   fun markNavigationMutation() {
     navigationMutations++
-    pendingProcessedNavigationWork = true
+    markNavigationWorkPending()
     if (!performanceRunActive) {
       displayRevision++
     }
@@ -161,7 +163,7 @@ internal class Nav3PerformanceState(
       return
     }
     destinationChanges++
-    pendingProcessedNavigationWork = true
+    markNavigationWorkPending()
     if (!performanceRunActive) {
       displayRevision++
     }
@@ -169,7 +171,7 @@ internal class Nav3PerformanceState(
 
   fun markPerformanceDestinationChange() {
     destinationChanges++
-    pendingProcessedNavigationWork = true
+    markNavigationWorkPending()
   }
 
   fun suppressNextDestinationChange() {
@@ -179,6 +181,8 @@ internal class Nav3PerformanceState(
   fun updateIntegrationMode(mode: Nav3PerformanceIntegrationMode) {
     if (integrationMode != mode) {
       discardNextSentryNavEffectMeasurement = true
+      suppressExtractorMeasurementsUntilNavigation = true
+      pendingProcessedNavigationWork = false
       integrationMode = mode
     }
   }
@@ -240,6 +244,7 @@ internal class Nav3PerformanceState(
   ) {
     if (discardNextSentryNavEffectMeasurement) {
       discardNextSentryNavEffectMeasurement = false
+      pendingProcessedNavigationWork = false
       return
     }
     if (!collectMeasurements) {
@@ -283,8 +288,7 @@ internal class Nav3PerformanceState(
 
   fun finishWarmUp() {
     resetCounters()
-    performanceRunActive = true
-    performanceStatus = "Warm-up complete"
+    cancelPerformanceRun(status = "Warm-up complete")
   }
 
   fun finishPerformanceRun(result: String? = null) {
@@ -405,7 +409,7 @@ internal class Nav3PerformanceState(
       return block()
     } finally {
       Trace.endSection()
-      if (collectMeasurements && !discardNextSentryNavEffectMeasurement) {
+      if (collectMeasurements && !suppressExtractorMeasurementsUntilNavigation) {
         nameExtractorCalls++
         nameExtractorNanos += System.nanoTime() - startedAt
       }
@@ -422,11 +426,16 @@ internal class Nav3PerformanceState(
       return block()
     } finally {
       Trace.endSection()
-      if (collectMeasurements && !discardNextSentryNavEffectMeasurement) {
+      if (collectMeasurements && !suppressExtractorMeasurementsUntilNavigation) {
         argumentsExtractorCalls++
         argumentsExtractorNanos += System.nanoTime() - startedAt
       }
     }
+  }
+
+  private fun markNavigationWorkPending() {
+    suppressExtractorMeasurementsUntilNavigation = false
+    pendingProcessedNavigationWork = true
   }
 }
 
