@@ -32,12 +32,29 @@ internal object RouteWorkApi {
 
   private val service: RouteWorkService = retrofit.create(RouteWorkService::class.java)
 
-  fun enqueueRequest(callback: retrofit2.Callback<ResponseBody>) {
-    service.request(ROUTE_WORK_URL).enqueue(callback)
+  fun enqueueRequest(onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
+    service
+      .request(ROUTE_WORK_URL)
+      .enqueue(
+        object : retrofit2.Callback<ResponseBody> {
+          override fun onResponse(
+            call: retrofit2.Call<ResponseBody>,
+            response: retrofit2.Response<ResponseBody>,
+          ) {
+            response.body()?.close()
+            response.errorBody()?.close()
+            onSuccess()
+          }
+
+          override fun onFailure(call: retrofit2.Call<ResponseBody>, t: Throwable) {
+            onFailure(t)
+          }
+        }
+      )
   }
 
   suspend fun runRequest() {
-    service.requestAsync(ROUTE_WORK_URL)
+    service.requestAsync(ROUTE_WORK_URL).use {}
   }
 }
 

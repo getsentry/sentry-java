@@ -45,10 +45,6 @@ import io.sentry.samples.android.navigation.common.hasOnlyActivityUiLoadTransact
 import io.sentry.samples.android.navigation.common.showRouteWorkDialog
 import io.sentry.samples.android.navigation.nav2.Nav2Destination.Home
 import io.sentry.samples.android.navigation.nav2.Nav2Destination.Landing
-import okhttp3.ResponseBody
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 /**
  * Sample activity for testing Sentry's
@@ -396,16 +392,11 @@ class Nav2Activity : AppCompatActivity() {
       when (option) {
         RouteWorkOption.HTTP_REQUEST -> {
           RouteWorkApi.enqueueRequest(
-            object : Callback<ResponseBody> {
-              override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
-              }
-
-              override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                Sentry.captureException(t)
-                Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
-              }
-            }
+            onSuccess = { Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start() },
+            onFailure = { t ->
+              Sentry.captureException(t)
+              Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
+            },
           )
         }
 
