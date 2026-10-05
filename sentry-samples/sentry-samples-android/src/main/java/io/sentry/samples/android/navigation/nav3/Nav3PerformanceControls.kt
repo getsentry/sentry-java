@@ -240,8 +240,6 @@ internal class Nav3PerformanceState(
 
   fun recordSentryNavEffect(
     durationNanos: Long,
-    nameExtractorCallsBefore: Int,
-    argumentsExtractorCallsBefore: Int,
     extractorNanosBefore: Long,
     processedCall: Boolean,
     resolvedEntryCount: Int,
@@ -254,8 +252,6 @@ internal class Nav3PerformanceState(
       return
     }
 
-    val nameExtractorCallCount = nameExtractorCalls - nameExtractorCallsBefore
-    val argumentsExtractorCallCount = argumentsExtractorCalls - argumentsExtractorCallsBefore
     sentryNavEffectAttempts++
     val shouldCountAsProcessed = processedCall && pendingProcessedNavigationWork
     if (shouldCountAsProcessed) {

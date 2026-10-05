@@ -296,8 +296,6 @@ private fun Nav3SampleApp(
       controller = customTransactionController,
     )
 
-    val nameExtractorCallsBefore = performanceState.nameExtractorCalls
-    val argumentsExtractorCallsBefore = performanceState.argumentsExtractorCalls
     val extractorNanosBefore =
       performanceState.nameExtractorNanos + performanceState.argumentsExtractorNanos
     val startedAtNanos = System.nanoTime()
@@ -311,8 +309,6 @@ private fun Nav3SampleApp(
     if (isPerformanceScenario) {
       performanceState.recordSentryNavEffect(
         durationNanos = System.nanoTime() - startedAtNanos,
-        nameExtractorCallsBefore = nameExtractorCallsBefore,
-        argumentsExtractorCallsBefore = argumentsExtractorCallsBefore,
         extractorNanosBefore = extractorNanosBefore,
         processedCall = true,
         resolvedEntryCount =

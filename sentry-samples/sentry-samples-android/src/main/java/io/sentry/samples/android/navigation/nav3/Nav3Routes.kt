@@ -110,16 +110,23 @@ private fun Bundle.toNav3Route(): Nav3Route {
     "custom" -> Nav3Route.Custom
     "deep_link" -> Nav3Route.DeepLink
     "product_list" -> Nav3Route.ProductList
-    "product_detail" ->
+    "product_detail" -> {
+      val productId = getString("product_id") ?: return Nav3Route.SingleStack
+      val source = getString("source") ?: return Nav3Route.SingleStack
       Nav3Route.ProductDetail(
-        productId = requireNotNull(getString("product_id")),
-        source = requireNotNull(getString("source")),
+        productId = productId,
+        source = source,
         campaign = getString("campaign"),
       )
-    "checkout" -> Nav3Route.Checkout(productId = requireNotNull(getString("product_id")))
-    "confirmation" -> Nav3Route.Confirmation(orderId = requireNotNull(getString("order_id")))
-    "promo_dialog" -> Nav3Route.PromoDialog(promoId = requireNotNull(getString("promo_id")))
-    "share_sheet" -> Nav3Route.ShareSheet(productId = requireNotNull(getString("product_id")))
+    }
+    "checkout" ->
+      Nav3Route.Checkout(productId = getString("product_id") ?: return Nav3Route.SingleStack)
+    "confirmation" ->
+      Nav3Route.Confirmation(orderId = getString("order_id") ?: return Nav3Route.SingleStack)
+    "promo_dialog" ->
+      Nav3Route.PromoDialog(promoId = getString("promo_id") ?: return Nav3Route.SingleStack)
+    "share_sheet" ->
+      Nav3Route.ShareSheet(productId = getString("product_id") ?: return Nav3Route.SingleStack)
     "multipane" -> Nav3Route.Multipane
     "multistack" -> Nav3Route.Multistack
     "performance" ->
