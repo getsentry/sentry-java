@@ -619,7 +619,7 @@ class BackStackConverterTest {
 
     assertThat(routes.map(NormalizedSentryBackStackEntry::serialize))
       .containsExactly(
-        mapOf("entry" to "/SettingsScreen", "arguments" to mapOf("section" to "privacy")),
+        mapOf("entry" to "/SettingsScreen", "entry_arguments" to mapOf("section" to "privacy")),
         mapOf("entry" to "/ProfileScreen"),
       )
       .inOrder()
@@ -637,7 +637,7 @@ class BackStackConverterTest {
       .isEqualTo(
         mapOf(
           "entry" to "/HomeScreen",
-          "arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
+          "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
         )
       )
   }

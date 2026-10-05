@@ -432,7 +432,7 @@ internal data class NormalizedSentryBackStackEntry(
    * ```
    *  {
    *    "entry": "/ProductScreen"
-   *    "arguments": {
+   *    "entry_arguments": {
    *      "product_id": 12345
    *      "promo_id:": "spring-marketing-drive-2026"
    *    }
@@ -441,7 +441,7 @@ internal data class NormalizedSentryBackStackEntry(
    */
   fun serialize(): Map<String, Any?> = buildMap {
     put("entry", name)
-    argumentsWithMetadata().takeIf { it.isNotEmpty() }?.let { put("arguments", it) }
+    argumentsWithMetadata().takeIf { it.isNotEmpty() }?.let { put("entry_arguments", it) }
   }
 }
 
@@ -461,6 +461,6 @@ internal enum class ArgumentDropReason(
   SANITIZATION_FAILED("sanitization_failed");
 
   companion object {
-    const val ARGUMENT_DROP_REASON_KEY = "arguments_dropped_by_sentry"
+    const val ARGUMENT_DROP_REASON_KEY = "dropped_by_sentry"
   }
 }

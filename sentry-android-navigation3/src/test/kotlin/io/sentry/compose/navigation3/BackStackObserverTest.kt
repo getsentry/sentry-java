@@ -273,10 +273,10 @@ class BackStackObserverTest {
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("entry" to "/ProfileScreen", "arguments" to mapOf("userId" to "123")),
+          mapOf("entry" to "/ProfileScreen", "entry_arguments" to mapOf("userId" to "123")),
           mapOf(
             "entry" to "/HomeScreen",
-            "arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
+            "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
           ),
         )
       )
@@ -461,7 +461,7 @@ class BackStackObserverTest {
     assertThat(transaction.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("entry" to "/ProfileScreen", "arguments" to mapOf("userId" to "123")),
+          mapOf("entry" to "/ProfileScreen", "entry_arguments" to mapOf("userId" to "123")),
           mapOf("entry" to "/HomeScreen"),
         )
       )
@@ -697,7 +697,7 @@ class BackStackObserverTest {
         listOf(
           mapOf(
             "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
-            "arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
+            "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
           ),
           mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
@@ -732,7 +732,7 @@ class BackStackObserverTest {
           mapOf("entry" to "/settings"),
           mapOf(
             "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
-            "arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
+            "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
           ),
           mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),

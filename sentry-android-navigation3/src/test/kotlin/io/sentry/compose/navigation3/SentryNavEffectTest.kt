@@ -440,7 +440,7 @@ class SentryNavEffectTest {
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("entry" to "/ProfileRoute", "arguments" to mapOf("userId" to "123")),
+          mapOf("entry" to "/ProfileRoute", "entry_arguments" to mapOf("userId" to "123")),
           mapOf("entry" to "/HomeRoute"),
         )
       )
