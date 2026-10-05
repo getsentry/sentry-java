@@ -97,8 +97,6 @@ internal class Nav3PerformanceState(
   var capturedEntriesResolved = 0
     private set
 
-  private val sentryNavEffectDurations = Nav3PerformanceDurations()
-  private val extractorDurations = Nav3PerformanceDurations()
   private val mutationToCompositionDurations = Nav3PerformanceDurations()
   private val mutationToFirstDrawDurations = Nav3PerformanceDurations()
   private var pendingOperation: PendingNav3PerformanceOperation? = null
@@ -123,8 +121,6 @@ internal class Nav3PerformanceState(
     sentryNavEffectAttempts = 0
     sentryNavEffectProcessedCalls = 0
     capturedEntriesResolved = 0
-    sentryNavEffectDurations.clear()
-    extractorDurations.clear()
     mutationToCompositionDurations.clear()
     mutationToFirstDrawDurations.clear()
     comparisonResult = null
@@ -239,8 +235,6 @@ internal class Nav3PerformanceState(
   }
 
   fun recordSentryNavEffect(
-    durationNanos: Long,
-    extractorNanosBefore: Long,
     processedCall: Boolean,
     resolvedEntryCount: Int,
   ) {
@@ -259,8 +253,6 @@ internal class Nav3PerformanceState(
       capturedEntriesResolved += resolvedEntryCount
     }
     pendingProcessedNavigationWork = false
-    sentryNavEffectDurations.add(durationNanos)
-    extractorDurations.add(nameExtractorNanos + argumentsExtractorNanos - extractorNanosBefore)
   }
 
   fun startPerformanceRun(status: String) {
@@ -319,8 +311,7 @@ internal class Nav3PerformanceState(
   }
 
   fun performanceSummary(label: String): String =
-    "$label: effect ${sentryNavEffectDurations.compactSummary()}, " +
-      "first draw ${mutationToFirstDrawDurations.compactSummary()}"
+    "$label: first draw ${mutationToFirstDrawDurations.compactSummary()}"
 
   fun diagnosticsSummary(currentRoute: String, backStack: String): String = buildString {
     appendLine("status=$performanceStatus")
@@ -336,9 +327,6 @@ internal class Nav3PerformanceState(
     appendLine("arguments_extractor_calls=$argumentsExtractorCalls")
     appendLine("name_extractor_avg=${nameExtractorAverageMicros()}")
     appendLine("arguments_extractor_avg=${argumentsExtractorAverageMicros()}")
-    appendLine("sentry_nav_effect_duration=${sentryNavEffectDurationSummary()}")
-    appendLine("extractor_duration=${extractorDurationSummary()}")
-    appendLine("non_extractor_estimate=${nonExtractorDurationSummary()}")
     appendLine("mutation_to_composition=${mutationToCompositionSummary()}")
     appendLine("mutation_to_first_draw=${mutationToFirstDrawSummary()}")
     appendLine("first_draws_over_8_3_ms=${firstDrawsOver8Millis()}")
@@ -390,13 +378,6 @@ internal class Nav3PerformanceState(
     pendingMeasuredPhase?.let { phase -> endAsyncTraceSection(phase.sectionName, phase.cookie) }
     pendingMeasuredPhase = null
   }
-
-  fun sentryNavEffectDurationSummary(): String = sentryNavEffectDurations.summary()
-
-  fun extractorDurationSummary(): String = extractorDurations.summary()
-
-  fun nonExtractorDurationSummary(): String =
-    sentryNavEffectDurations.minus(extractorDurations).summary()
 
   fun mutationToCompositionSummary(): String = mutationToCompositionDurations.summary()
 
@@ -953,21 +934,6 @@ internal fun Nav3PerformancePanel(
             "argumentsExtractor avg",
             state.argumentsExtractorAverageMicros(),
             tag = navPerformanceTag("arguments_extractor_avg"),
-          )
-          PerfInfoRow(
-            "SentryNavEffect duration",
-            state.sentryNavEffectDurationSummary(),
-            tag = navPerformanceTag("sentry_nav_effect_duration"),
-          )
-          PerfInfoRow(
-            "Extractor duration",
-            state.extractorDurationSummary(),
-            tag = navPerformanceTag("extractor_duration"),
-          )
-          PerfInfoRow(
-            "Non-extractor estimate",
-            state.nonExtractorDurationSummary(),
-            tag = navPerformanceTag("non_extractor_estimate"),
           )
           PerfInfoRow(
             "Mutation to composition",

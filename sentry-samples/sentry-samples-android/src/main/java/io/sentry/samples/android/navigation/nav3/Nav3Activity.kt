@@ -296,10 +296,6 @@ private fun Nav3SampleApp(
       controller = customTransactionController,
     )
 
-    val extractorNanosBefore =
-      performanceState.nameExtractorNanos + performanceState.argumentsExtractorNanos
-    val startedAtNanos = System.nanoTime()
-
     SentryNavEffect(
       backStack = sentryBackStack,
       backStackEntryMapper = backStackEntryMapper,
@@ -307,19 +303,15 @@ private fun Nav3SampleApp(
     )
 
     if (isPerformanceScenario) {
-      SideEffect {
-        performanceState.recordSentryNavEffect(
-          durationNanos = System.nanoTime() - startedAtNanos,
-          extractorNanosBefore = extractorNanosBefore,
-          processedCall = true,
-          resolvedEntryCount =
-            if (integrationMode.captureBackStack) {
-              minOf(sentryBackStack.size, maxCapturedBackStackEntries)
-            } else {
-              0
-            },
-        )
-      }
+      performanceState.recordSentryNavEffect(
+        processedCall = true,
+        resolvedEntryCount =
+          if (integrationMode.captureBackStack) {
+            minOf(sentryBackStack.size, maxCapturedBackStackEntries)
+          } else {
+            0
+          },
+      )
     }
   }
 
