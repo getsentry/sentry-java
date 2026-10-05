@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -94,7 +95,8 @@ internal fun Nav2ComposeApp(
   onCaptureException: () -> Unit,
   onCrashApp: () -> Unit,
   selectedScenario: Nav2Scenario,
-  onRouteChanged: (routeName: String, currentRoute: String, backStack: String) -> Unit,
+  onRouteChanged:
+    (scenario: Nav2Scenario, routeName: String, currentRoute: String, backStack: String) -> Unit,
   onExitRoot: () -> Unit,
 ) {
 
@@ -105,7 +107,7 @@ internal fun Nav2ComposeApp(
   var customTransactionMode by rememberSaveable {
     mutableStateOf(Nav2CustomTransactionMode.PER_SCREEN)
   }
-  var asyncBrowseProductsJob by rememberSaveable { mutableStateOf<Job?>(null) }
+  var asyncBrowseProductsJob by remember { mutableStateOf<Job?>(null) }
   var isAsyncBrowseProductsRunning by rememberSaveable { mutableStateOf(false) }
   val customTransactionsScope = androidx.compose.runtime.rememberCoroutineScope()
   val customTransactionController =
@@ -147,7 +149,7 @@ internal fun Nav2ComposeApp(
         backStack.resetTo(Home)
         shareSheetProductId.value = null
         navController.navigate(Home.route) {
-          popUpTo(Home.route) { inclusive = true }
+          popUpTo(Home.route) { inclusive = false }
           launchSingleTop = true
         }
       }
@@ -155,7 +157,7 @@ internal fun Nav2ComposeApp(
         backStack.resetTo(Custom)
         shareSheetProductId.value = null
         navController.navigate(Custom.route) {
-          popUpTo(Home.route) { inclusive = true }
+          popUpTo(Home.route) { inclusive = false }
           launchSingleTop = true
         }
       }
@@ -176,6 +178,7 @@ internal fun Nav2ComposeApp(
 
   LaunchedEffect(currentDestination, backStack.size) {
     onRouteChanged(
+      selectedScenario,
       currentDestination.routeName,
       currentDestination.displayRoute(),
       backStack.toComposeBackStackText(),
@@ -205,13 +208,13 @@ internal fun Nav2ComposeApp(
         popExitTransition = { fadeOut(animationSpec = tween(COMPOSE_ROUTE_TRANSITION_MILLIS)) },
       ) {
         composable(Home.route) {
-          TracedNav2ComposeRoute(Home.routeName) {
+          TracedNav2ComposeRoute(selectedScenario, Home.routeName) {
             Nav2ComposeHomeRoute(routeSpec = RouteSpecs.home) { navigateTo(ProductList) }
           }
         }
 
         composable(Custom.route) {
-          TracedNav2ComposeRoute(Custom.routeName) {
+          TracedNav2ComposeRoute(selectedScenario, Custom.routeName) {
             Nav2ComposeCustomRoute(
               routeSpec = RouteSpecs.custom,
               mode = customTransactionMode,
@@ -248,7 +251,7 @@ internal fun Nav2ComposeApp(
         }
 
         composable(ProductList.route) {
-          TracedNav2ComposeRoute(ProductList.routeName) {
+          TracedNav2ComposeRoute(selectedScenario, ProductList.routeName) {
             Nav2ComposeProductListRoute(
               routeSpec = RouteSpecs.productList,
               onOpenProduct42 = {
@@ -282,7 +285,7 @@ internal fun Nav2ComposeApp(
           val productId = entry.arguments?.getString(NavArgs.PRODUCT_ID).orEmpty()
           val source = entry.arguments?.getString(NavArgs.SOURCE).orEmpty()
           val campaign = entry.arguments?.getString(NavArgs.CAMPAIGN).orEmpty()
-          TracedNav2ComposeRoute(RouteNames.PRODUCT_DETAIL) {
+          TracedNav2ComposeRoute(selectedScenario, RouteNames.PRODUCT_DETAIL) {
             Nav2ComposeProductDetailRoute(
               routeSpec = RouteSpecs.productDetail,
               productId = productId,
@@ -302,7 +305,7 @@ internal fun Nav2ComposeApp(
           arguments = listOf(navArgument(NavArgs.PRODUCT_ID) { type = NavType.StringType }),
         ) { entry ->
           val productId = entry.arguments?.getString(NavArgs.PRODUCT_ID).orEmpty()
-          TracedNav2ComposeRoute(RouteNames.CHECKOUT) {
+          TracedNav2ComposeRoute(selectedScenario, RouteNames.CHECKOUT) {
             Nav2ComposeCheckoutRoute(
               routeSpec = RouteSpecs.checkout,
               productId = productId,
@@ -317,7 +320,7 @@ internal fun Nav2ComposeApp(
           route = Nav2ComposeDestination.CONFIRMATION_ROUTE,
           arguments = listOf(navArgument(NavArgs.ORDER_ID) { type = NavType.StringType }),
         ) { entry ->
-          TracedNav2ComposeRoute(RouteNames.CONFIRMATION) {
+          TracedNav2ComposeRoute(selectedScenario, RouteNames.CONFIRMATION) {
             Nav2ComposeConfirmationRoute(
               routeSpec = RouteSpecs.confirmation,
               orderId = entry.arguments?.getString(NavArgs.ORDER_ID).orEmpty(),
@@ -333,7 +336,7 @@ internal fun Nav2ComposeApp(
           // This dialog is a real Nav destination, so it participates in Nav2 the same way as the
           // rest of the route graph. Compare it with the share sheet overlay below when inspecting
           // Sentry's Nav2 breadcrumbs, destination arguments, and route transactions.
-          TracedNav2ComposeRoute(RouteNames.PROMO_DIALOG) {
+          TracedNav2ComposeRoute(selectedScenario, RouteNames.PROMO_DIALOG) {
             Nav2ComposePromoDialogRoute(
               routeSpec = RouteSpecs.promoDialog,
               promoId = entry.arguments?.getString(NavArgs.PROMO_ID).orEmpty(),
@@ -378,8 +381,12 @@ internal fun Nav2ComposeApp(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun TracedNav2ComposeRoute(routeName: String, content: @Composable BoxScope.() -> Unit) {
-  tagCurrentNav2Scenario(Nav2Scenario.COMPOSE)
+private fun TracedNav2ComposeRoute(
+  scenario: Nav2Scenario,
+  routeName: String,
+  content: @Composable BoxScope.() -> Unit,
+) {
+  tagCurrentNav2Scenario(scenario)
   SentryTraced(
     tag = "Nav2 /$routeName",
     // Keep interaction tagging off here so route wrappers do not turn every Compose click into a

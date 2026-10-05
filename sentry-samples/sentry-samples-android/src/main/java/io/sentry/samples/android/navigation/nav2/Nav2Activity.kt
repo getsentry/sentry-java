@@ -212,8 +212,8 @@ class Nav2Activity : AppCompatActivity() {
             onCaptureException = { captureSampleException("Nav2") },
             onCrashApp = { showCrashConfirmation("Nav2") },
             selectedScenario = composeScenario.value,
-            onRouteChanged = { _, currentRoute, backStack ->
-              updateComposeNavigationUi(currentRoute, backStack)
+            onRouteChanged = { scenario, _, currentRoute, backStack ->
+              updateComposeNavigationUi(scenario, currentRoute, backStack)
             },
             onExitRoot = { finish() },
           )
@@ -347,11 +347,19 @@ class Nav2Activity : AppCompatActivity() {
       }
       Nav2Scenario.COMPOSE -> {
         contentHosts.showCompose()
-        updateComposeNavigationUi("/${RouteNames.HOME}", "/${RouteNames.HOME}")
+        updateComposeNavigationUi(
+          scenario = Nav2Scenario.COMPOSE,
+          currentRoute = "/${RouteNames.HOME}",
+          backStack = "/${RouteNames.HOME}",
+        )
       }
       Nav2Scenario.CUSTOM -> {
         contentHosts.showCompose()
-        updateComposeNavigationUi("/${RouteNames.CUSTOM}", "/${RouteNames.CUSTOM}")
+        updateComposeNavigationUi(
+          scenario = Nav2Scenario.CUSTOM,
+          currentRoute = "/${RouteNames.CUSTOM}",
+          backStack = "/${RouteNames.CUSTOM}",
+        )
       }
       Nav2Scenario.FRAGMENTS -> {
         contentHosts.showFragments()
@@ -488,11 +496,13 @@ class Nav2Activity : AppCompatActivity() {
     }
   }
 
-  private fun updateComposeNavigationUi(currentRoute: String, backStack: String) {
+  private fun updateComposeNavigationUi(
+    scenario: Nav2Scenario,
+    currentRoute: String,
+    backStack: String,
+  ) {
     topBar.update(
-      scenario =
-        if (currentRoute.startsWith("/${RouteNames.CUSTOM}")) Nav2Scenario.CUSTOM
-        else Nav2Scenario.COMPOSE,
+      scenario = scenario,
       currentRoute = currentRoute,
       backStack = backStack,
     )
