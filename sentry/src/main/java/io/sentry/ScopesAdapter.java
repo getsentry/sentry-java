@@ -178,16 +178,6 @@ public final class ScopesAdapter implements IScopes {
     return Sentry.pushIsolationScope();
   }
 
-  /**
-   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
-   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
-   */
-  @Override
-  @Deprecated
-  public void popScope() {
-    Sentry.popScope();
-  }
-
   @Override
   public void withScope(@NotNull ScopeCallback callback) {
     Sentry.withScope(callback);
@@ -216,17 +206,6 @@ public final class ScopesAdapter implements IScopes {
   @Override
   public void flush(long timeoutMillis) {
     Sentry.flush(timeoutMillis);
-  }
-
-  /**
-   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
-   *     IScopes#forkedCurrentScope(String)} instead.
-   */
-  @Deprecated
-  @Override
-  @SuppressWarnings("deprecation")
-  public @NotNull IHub clone() {
-    return Sentry.getCurrentScopes().clone();
   }
 
   @Override

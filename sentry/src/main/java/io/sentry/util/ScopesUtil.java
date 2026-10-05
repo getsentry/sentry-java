@@ -29,7 +29,7 @@ public final class ScopesUtil {
     System.out.println("==========================================");
   }
 
-  @SuppressWarnings({"ObjectToString", "deprecation"})
+  @SuppressWarnings("ObjectToString")
   private static void printScopesChainInternal(final @Nullable IScopes someScopes) {
     if (someScopes != null) {
       if (someScopes instanceof Scopes) {
@@ -44,12 +44,8 @@ public final class ScopesUtil {
                 scopes.getCreator());
         System.out.println(info);
         printScopesChainInternal(someScopes.getParentScopes());
-      } else if (someScopes instanceof ScopesAdapter
-          || someScopes instanceof io.sentry.HubAdapter) {
+      } else if (someScopes instanceof ScopesAdapter) {
         printScopesChainInternal(Sentry.getCurrentScopes());
-      } else if (someScopes instanceof io.sentry.HubScopesWrapper) {
-        io.sentry.HubScopesWrapper wrapper = (io.sentry.HubScopesWrapper) someScopes;
-        printScopesChainInternal(wrapper.getScopes());
       } else {
         System.out.println("Hit unhandled Scopes class" + someScopes.getClass());
       }

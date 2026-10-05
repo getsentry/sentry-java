@@ -217,12 +217,6 @@ class ScopesAdapterTest {
   }
 
   @Test
-  fun `popScope calls Scopes`() {
-    ScopesAdapter.getInstance().popScope()
-    verify(scopes).popScope()
-  }
-
-  @Test
   fun `withScope calls Scopes`() {
     val scopeCallback = mock<ScopeCallback>()
     ScopesAdapter.getInstance().withScope(scopeCallback)
@@ -247,12 +241,6 @@ class ScopesAdapterTest {
   fun `flush calls Scopes`() {
     ScopesAdapter.getInstance().flush(1)
     verify(scopes).flush(eq(1))
-  }
-
-  @Test
-  fun `clone calls Scopes`() {
-    ScopesAdapter.getInstance().clone()
-    verify(scopes).clone()
   }
 
   @Test

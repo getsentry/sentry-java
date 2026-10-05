@@ -11,7 +11,6 @@ public final class io/sentry/graphql/ExceptionReporter {
 public final class io/sentry/graphql/ExceptionReporter$ExceptionDetails {
 	public fun <init> (Lio/sentry/IScopes;Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;Z)V
 	public fun <init> (Lio/sentry/IScopes;Lgraphql/schema/DataFetchingEnvironment;Z)V
-	public fun getHub ()Lio/sentry/IScopes;
 	public fun getQuery ()Ljava/lang/String;
 	public fun getScopes ()Lio/sentry/IScopes;
 	public fun getVariables ()Ljava/util/Map;
