@@ -113,9 +113,9 @@ internal class Nav2CustomTransactionController {
 
   private fun handleWholeFlow(currentRoute: String) {
     if (currentRoute == RouteNames.CUSTOM) {
-      if (activeMode == Nav2CustomTransactionMode.WHOLE_FLOW) {
-        finishActiveTransaction()
-      }
+      finishActiveTransaction()
+      activeMode = Nav2CustomTransactionMode.WHOLE_FLOW
+      activeRouteName = currentRoute
       return
     }
 

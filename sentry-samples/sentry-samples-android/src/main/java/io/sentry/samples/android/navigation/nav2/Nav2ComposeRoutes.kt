@@ -133,10 +133,11 @@ internal fun Nav2ComposeApp(
     shareSheetProductId.value = null
   }
 
-  fun resetToHome() {
-    backStack.resetTo(Home)
+  fun resetToRoot() {
+    val root = if (selectedScenario == Nav2Scenario.CUSTOM) Custom else Home
+    backStack.resetTo(root)
     shareSheetProductId.value = null
-    navController.navigate(Home.route) {
+    navController.navigate(root.route) {
       popUpTo(Home.route) { inclusive = false }
       launchSingleTop = true
     }
@@ -324,7 +325,7 @@ internal fun Nav2ComposeApp(
             Nav2ComposeConfirmationRoute(
               routeSpec = RouteSpecs.confirmation,
               orderId = entry.arguments?.getString(NavArgs.ORDER_ID).orEmpty(),
-              onResetBackStack = { resetToHome() },
+              onResetBackStack = { resetToRoot() },
             )
           }
         }
