@@ -383,7 +383,6 @@ public final class io/sentry/spring/webflux/SentryWebExceptionHandler : org/spri
 }
 
 public final class io/sentry/spring/webflux/SentryWebFilter : org/springframework/web/server/WebFilter {
-	public static final field SENTRY_HUB_KEY Ljava/lang/String;
 	public static final field SENTRY_SCOPES_KEY Ljava/lang/String;
 	public fun <init> (Lio/sentry/IScopes;)V
 	public fun filter (Lorg/springframework/web/server/ServerWebExchange;Lorg/springframework/web/server/WebFilterChain;)Lreactor/core/publisher/Mono;

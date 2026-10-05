@@ -11,6 +11,10 @@
 
 - Recover Android 17 `MemoryLimiter` app exits recorded as `ApplicationExitInfo.REASON_MEMORY_LIMITER` ([#6174](https://github.com/getsentry/sentry-java/pull/6174))
 
+### Internal
+
+- Remove deprecated Hub compatibility APIs in favor of `IScopes` and `Scopes` ([#6223](https://github.com/getsentry/sentry-java/pull/6223))
+
 ## 8.58.0
 
 ### Features

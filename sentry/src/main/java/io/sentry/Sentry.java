@@ -85,21 +85,7 @@ public final class Sentry {
 
   private static final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
-  /**
-   * Returns the current (threads) hub, if none, clones the rootScopes and returns it.
-   *
-   * @deprecated please use {@link Sentry#getCurrentScopes()} instead
-   * @return the hub
-   */
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  @SuppressWarnings("deprecation")
-  @Deprecated
-  public static @NotNull IHub getCurrentHub() {
-    return new HubScopesWrapper(getCurrentScopes());
-  }
-
   @ApiStatus.Internal
-  @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes() {
     return getCurrentScopes(true);
   }
@@ -112,7 +98,6 @@ public final class Sentry {
    * @return current scopes, a root scopes fork or NoopScopes
    */
   @ApiStatus.Internal
-  @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes(final boolean ensureForked) {
     // read the volatile rootScopes once, so a concurrent Sentry.init cannot make the check below
     // disagree with what we return
@@ -161,16 +146,6 @@ public final class Sentry {
 
   public static @NotNull IScopes forkedCurrentScope(final @NotNull String creator) {
     return getCurrentScopes().forkedCurrentScope(creator);
-  }
-
-  /**
-   * @deprecated please use {@link Sentry#setCurrentScopes} instead.
-   */
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  @Deprecated
-  @SuppressWarnings({"deprecation", "InlineMeSuggester"})
-  public static @NotNull ISentryLifecycleToken setCurrentHub(final @NotNull IHub hub) {
-    return setCurrentScopes(hub);
   }
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
@@ -1096,20 +1071,6 @@ public final class Sentry {
       return getCurrentScopes().pushIsolationScope();
     }
     return NoOpScopesLifecycleToken.getInstance();
-  }
-
-  /**
-   * Removes the first scope and restores its parent.
-   *
-   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
-   *     Sentry#pushScope()} or {@link Sentry#pushIsolationScope()} instead.
-   */
-  @Deprecated
-  public static void popScope() {
-    // popScope is no-op in global hub mode
-    if (!globalHubMode) {
-      getCurrentScopes().popScope();
-    }
   }
 
   /**

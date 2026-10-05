@@ -376,7 +376,6 @@ public final class io/sentry/spring7/tracing/TransactionNameWithSource {
 }
 
 public abstract class io/sentry/spring7/webflux/AbstractSentryWebFilter : org/springframework/web/server/WebFilter {
-	public static final field SENTRY_HUB_KEY Ljava/lang/String;
 	public static final field SENTRY_SCOPES_KEY Ljava/lang/String;
 	public fun <init> (Lio/sentry/IScopes;)V
 	protected fun doFinally (Lorg/springframework/web/server/ServerWebExchange;Lio/sentry/IScopes;Lio/sentry/ITransaction;)V
