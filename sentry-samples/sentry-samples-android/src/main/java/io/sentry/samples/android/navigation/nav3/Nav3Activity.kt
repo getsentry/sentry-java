@@ -307,17 +307,19 @@ private fun Nav3SampleApp(
     )
 
     if (isPerformanceScenario) {
-      performanceState.recordSentryNavEffect(
-        durationNanos = System.nanoTime() - startedAtNanos,
-        extractorNanosBefore = extractorNanosBefore,
-        processedCall = true,
-        resolvedEntryCount =
-          if (integrationMode.captureBackStack) {
-            minOf(sentryBackStack.size, maxCapturedBackStackEntries)
-          } else {
-            0
-          },
-      )
+      SideEffect {
+        performanceState.recordSentryNavEffect(
+          durationNanos = System.nanoTime() - startedAtNanos,
+          extractorNanosBefore = extractorNanosBefore,
+          processedCall = true,
+          resolvedEntryCount =
+            if (integrationMode.captureBackStack) {
+              minOf(sentryBackStack.size, maxCapturedBackStackEntries)
+            } else {
+              0
+            },
+        )
+      }
     }
   }
 
