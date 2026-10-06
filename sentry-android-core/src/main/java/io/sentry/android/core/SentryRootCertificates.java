@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -14,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * Google Trust Services via its GlobalSign cross-sign) are already trusted on all supported API
  * levels.
  */
+@ApiStatus.Internal
 final class SentryRootCertificates {
 
   private SentryRootCertificates() {}

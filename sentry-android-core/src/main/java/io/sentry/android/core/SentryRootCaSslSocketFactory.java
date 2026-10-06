@@ -7,7 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
@@ -19,6 +19,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
@@ -37,10 +38,8 @@ import org.jetbrains.annotations.TestOnly;
  * certificates is paid on the transport thread instead of during {@code SentryAndroid.init}. If
  * creating it fails, the platform default {@link SSLSocketFactory} is used.
  */
+@ApiStatus.Internal
 final class SentryRootCaSslSocketFactory extends SSLSocketFactory {
-
-  @SuppressWarnings("CharsetObjectCanBeUsed")
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   static final @NotNull String SENTRY_ROOT_CA_ALIAS_PREFIX = "sentry-root-ca-";
 
@@ -97,7 +96,8 @@ final class SentryRootCaSslSocketFactory extends SSLSocketFactory {
     for (int i = 0; i < SentryRootCertificates.ALL.length; i++) {
       final @NotNull Certificate certificate =
           certificateFactory.generateCertificate(
-              new ByteArrayInputStream(SentryRootCertificates.ALL[i].getBytes(UTF_8)));
+              new ByteArrayInputStream(
+                  SentryRootCertificates.ALL[i].getBytes(StandardCharsets.UTF_8)));
       keyStore.setCertificateEntry(SENTRY_ROOT_CA_ALIAS_PREFIX + i, certificate);
     }
     return keyStore;
