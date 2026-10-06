@@ -210,6 +210,9 @@ public final class MonitorConfigUtils {
       }
       if (item.startsWith("*/")) {
         item = "1-7" + item.substring(1);
+      } else if (item.startsWith("7-7")) {
+        // Sunday only; 0-7 would be every day
+        item = "7" + item.substring(3);
       } else if (item.startsWith("7-")) {
         // Sunday starting a range is 0 in Spring
         item = "0" + item.substring(1);
