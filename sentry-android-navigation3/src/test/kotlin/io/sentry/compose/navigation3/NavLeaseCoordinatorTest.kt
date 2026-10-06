@@ -12,17 +12,17 @@ class NavLeaseCoordinatorTest {
     val firstOwner = Any()
     val secondOwner = Any()
 
-    assertThat(coordinator.ownsData(firstOwner)).isFalse()
+    assertThat(coordinator.hasDataLease(firstOwner)).isFalse()
 
-    assertThat(coordinator.claimDataOwnership(firstOwner)).isTrue()
-    assertThat(coordinator.claimDataOwnership(firstOwner)).isFalse()
-    assertThat(coordinator.claimDataOwnership(secondOwner)).isTrue()
+    assertThat(coordinator.claimDataLease(firstOwner)).isTrue()
+    assertThat(coordinator.claimDataLease(firstOwner)).isFalse()
+    assertThat(coordinator.claimDataLease(secondOwner)).isTrue()
 
-    assertThat(coordinator.releaseDataOwnership(firstOwner)).isFalse()
-    assertThat(coordinator.ownsData(secondOwner)).isTrue()
+    assertThat(coordinator.releaseDataLease(firstOwner)).isFalse()
+    assertThat(coordinator.hasDataLease(secondOwner)).isTrue()
 
-    assertThat(coordinator.releaseDataOwnership(secondOwner)).isTrue()
-    assertThat(coordinator.ownsData(secondOwner)).isFalse()
+    assertThat(coordinator.releaseDataLease(secondOwner)).isTrue()
+    assertThat(coordinator.hasDataLease(secondOwner)).isFalse()
   }
 
   @Test
@@ -31,11 +31,11 @@ class NavLeaseCoordinatorTest {
     val firstOwner = listOf("same")
     val secondOwner = listOf("same")
 
-    coordinator.claimDataOwnership(firstOwner)
-    coordinator.claimTransactionOwnership(firstOwner)
+    coordinator.claimDataLease(firstOwner)
+    coordinator.claimTransactionLease(firstOwner)
 
-    assertThat(coordinator.ownsData(secondOwner)).isFalse()
-    assertThat(coordinator.ownsTransactions(secondOwner)).isFalse()
+    assertThat(coordinator.hasDataLease(secondOwner)).isFalse()
+    assertThat(coordinator.hasTransactionLease(secondOwner)).isFalse()
   }
 
   @Test
@@ -46,9 +46,9 @@ class NavLeaseCoordinatorTest {
     val tx = fixture.transaction()
     tx.status = SpanStatus.CANCELLED
     fixture.scope.transaction = tx
-    fixture.coordinator.claimTransactionOwnership(firstOwner)
+    fixture.coordinator.claimTransactionLease(firstOwner)
     fixture.coordinator.bindTransaction(firstOwner, tx)
-    fixture.coordinator.claimTransactionOwnership(secondOwner)
+    fixture.coordinator.claimTransactionLease(secondOwner)
     assertThat(tx.isFinished).isFalse()
 
     fixture.coordinator.prepareTransactionUpdate(secondOwner, fixture.scope)
@@ -65,9 +65,9 @@ class NavLeaseCoordinatorTest {
     val secondOwner = Any()
     val tx = fixture.transaction()
 
-    fixture.coordinator.claimTransactionOwnership(firstOwner)
+    fixture.coordinator.claimTransactionLease(firstOwner)
     fixture.coordinator.bindTransaction(firstOwner, tx)
-    fixture.coordinator.claimTransactionOwnership(secondOwner)
+    fixture.coordinator.claimTransactionLease(secondOwner)
     fixture.coordinator.prepareTransactionUpdate(secondOwner, fixture.scope)
 
     assertThat(tx.isFinished).isTrue()
@@ -82,10 +82,10 @@ class NavLeaseCoordinatorTest {
     val navTx = fixture.transaction("navigation")
     val hostTx = fixture.transaction("host")
 
-    fixture.coordinator.claimTransactionOwnership(firstOwner)
+    fixture.coordinator.claimTransactionLease(firstOwner)
     fixture.coordinator.bindTransaction(firstOwner, navTx)
     fixture.scope.transaction = hostTx
-    fixture.coordinator.claimTransactionOwnership(secondOwner)
+    fixture.coordinator.claimTransactionLease(secondOwner)
     fixture.coordinator.prepareTransactionUpdate(secondOwner, fixture.scope)
 
     assertThat(navTx.isFinished).isTrue()
@@ -100,7 +100,7 @@ class NavLeaseCoordinatorTest {
     val secondOwner = Any()
     val tx = fixture.transaction()
 
-    fixture.coordinator.claimTransactionOwnership(firstOwner)
+    fixture.coordinator.claimTransactionLease(firstOwner)
     fixture.coordinator.bindTransaction(firstOwner, tx)
     fixture.coordinator.bindTransaction(secondOwner, fixture.transaction("unowned"))
     fixture.coordinator.prepareTransactionUpdate(secondOwner, fixture.scope)
@@ -118,13 +118,13 @@ class NavLeaseCoordinatorTest {
     val firstOwner = Any()
     val secondOwner = Any()
 
-    fixture.coordinator.claimTransactionOwnership(firstOwner)
+    fixture.coordinator.claimTransactionLease(firstOwner)
     fixture.coordinator.bindTransaction(firstOwner, fixture.transaction())
-    fixture.coordinator.claimTransactionOwnership(secondOwner)
-    fixture.coordinator.releaseTransactionOwnership(secondOwner)
+    fixture.coordinator.claimTransactionLease(secondOwner)
+    fixture.coordinator.releaseTransactionLease(secondOwner)
 
-    assertThat(fixture.coordinator.ownsTransactions(firstOwner)).isTrue()
-    assertThat(fixture.coordinator.ownsTransactions(secondOwner)).isFalse()
+    assertThat(fixture.coordinator.hasTransactionLease(firstOwner)).isTrue()
+    assertThat(fixture.coordinator.hasTransactionLease(secondOwner)).isFalse()
   }
 
   @Test
@@ -134,17 +134,17 @@ class NavLeaseCoordinatorTest {
     val secondOwner = Any()
     val tx = fixture.transaction()
 
-    fixture.coordinator.claimTransactionOwnership(firstOwner)
+    fixture.coordinator.claimTransactionLease(firstOwner)
     fixture.coordinator.bindTransaction(firstOwner, tx)
 
     tx.finish()
 
     fixture.coordinator.clearFinishedTransaction()
-    fixture.coordinator.claimTransactionOwnership(secondOwner)
-    fixture.coordinator.releaseTransactionOwnership(secondOwner)
+    fixture.coordinator.claimTransactionLease(secondOwner)
+    fixture.coordinator.releaseTransactionLease(secondOwner)
 
-    assertThat(fixture.coordinator.ownsTransactions(firstOwner)).isFalse()
-    assertThat(fixture.coordinator.ownsTransactions(secondOwner)).isFalse()
+    assertThat(fixture.coordinator.hasTransactionLease(firstOwner)).isFalse()
+    assertThat(fixture.coordinator.hasTransactionLease(secondOwner)).isFalse()
   }
 
   @Test
@@ -152,12 +152,12 @@ class NavLeaseCoordinatorTest {
     val coordinator = NavLeaseCoordinator()
     val firstOwner = Any()
     val secondOwner = Any()
-    assertThat(coordinator.claimTransactionOwnership(firstOwner)).isTrue()
-    assertThat(coordinator.claimTransactionOwnership(firstOwner)).isFalse()
+    assertThat(coordinator.claimTransactionLease(firstOwner)).isTrue()
+    assertThat(coordinator.claimTransactionLease(firstOwner)).isFalse()
 
-    coordinator.claimTransactionOwnership(secondOwner)
-    coordinator.releaseTransactionOwnership(firstOwner)
+    coordinator.claimTransactionLease(secondOwner)
+    coordinator.releaseTransactionLease(firstOwner)
 
-    assertThat(coordinator.ownsTransactions(secondOwner)).isTrue()
+    assertThat(coordinator.hasTransactionLease(secondOwner)).isTrue()
   }
 }
