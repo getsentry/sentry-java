@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Trust the bundled Sentry root CAs (Let's Encrypt, Google Trust Services, DigiCert) for SDK envelope uploads on Android API 25 and lower, which don't ship all of them ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
+- Trust a bundled Let's Encrypt root (ISRG Root X1) for SDK envelope uploads on Android API 25 and lower, which may not ship it ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
 
 ### Features
 
