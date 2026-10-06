@@ -152,7 +152,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   }
 
   @Override
-  public void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {
+  public void clearBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {
     if (breadcrumbs.isEmpty()) {
       // we only clear the queue if the new collection is empty (someone called clearBreadcrumbs)
       // If it's not empty, we'd add breadcrumbs one-by-one in the method above
