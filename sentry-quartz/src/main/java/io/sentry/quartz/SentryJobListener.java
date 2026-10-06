@@ -152,7 +152,8 @@ public final class SentryJobListener implements JobListener {
         return MonitorConfigUtils.fromSchedule(null, null, simpleTrigger.getRepeatInterval());
       }
       return null;
-    } catch (Throwable e) {
+    } catch (RuntimeException | SchedulerException | NoSuchMethodError | AbstractMethodError e) {
+      // Trigger implementations may come from other Quartz versions or third parties
       scopes
           .getOptions()
           .getLogger()
