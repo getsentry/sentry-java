@@ -382,6 +382,24 @@ class AndroidContinuousProfilerTest {
     assertTrue(stopFuture.isCancelled || stopFuture.isDone)
   }
 
+  @Test
+  fun `manual profiler can be started again after a full start-stop cycle`() {
+    val profiler = fixture.getSut()
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+    profiler.stopProfiler(ProfileLifecycle.MANUAL)
+    // Triggers the scheduled executor task that collects perf metrics and finalizes the chunk
+    fixture.executor.runAll()
+    assertFalse(profiler.isRunning)
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+    // Triggers the scheduled executor task that collects perf metrics and finalizes the chunk
+    fixture.executor.runAll()
+    assertTrue(profiler.isRunning, "shouldStop must be reset on start")
+  }
+
   fun withMockScopes(closure: () -> Unit) =
     mockStatic(Sentry::class.java).use {
       it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)
