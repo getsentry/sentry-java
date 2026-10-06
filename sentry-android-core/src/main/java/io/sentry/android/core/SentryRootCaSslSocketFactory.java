@@ -23,13 +23,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.TestOnly;
 
 /**
- * An {@link SSLSocketFactory} that trusts the system root CAs plus the root CAs Sentry SaaS uses
- * (see {@link SentryRootCertificates}). Both are put into a single trust store which is handed to
- * the platform's default {@link TrustManagerFactory}, so certificate validation itself is still
- * done by the platform.
+ * An {@link SSLSocketFactory} that trusts the system root CAs plus the root CAs bundled in {@link
+ * SentryRootCertificates}. Both are put into a single trust store which is handed to the platform's
+ * default {@link TrustManagerFactory}, so certificate validation itself is still done by the
+ * platform.
  *
- * <p>Android API 25 and lower don't ship all of Sentry's root CAs (e.g. ISRG Root X1), so TLS
- * handshakes with Sentry fail on those devices. This factory is only set as {@link
+ * <p>Android API 25 and lower may not ship ISRG Root X1, so TLS handshakes with Let's Encrypt
+ * certificates fail on those devices. This factory is only set as {@link
  * io.sentry.SentryOptions#setSslSocketFactory(SSLSocketFactory)} on those API levels, so it only
  * applies to the SDK's own envelope uploads and not to any other connection of the app.
  *
