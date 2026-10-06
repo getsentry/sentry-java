@@ -33,6 +33,10 @@
 
 ## 8.60.0
 
+### Fixes
+
+- Trust the bundled Sentry root CAs (Let's Encrypt, Google Trust Services, DigiCert) for SDK envelope uploads on Android API 25 and lower, which don't ship all of them ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
+
 ### Features
 
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
