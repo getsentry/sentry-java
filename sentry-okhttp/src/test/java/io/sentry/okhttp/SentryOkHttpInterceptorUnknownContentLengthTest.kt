@@ -13,15 +13,20 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.mockwebserver.MockResponse
@@ -215,6 +220,109 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
 
       assertEquals(200, networkDetails().statusCode)
       assertNull(capturedBody())
+    }
+  }
+
+  // ---------------------------------------------------------------------------------------
+  // how the body is actually consumed
+  // ---------------------------------------------------------------------------------------
+
+  @Test
+  fun `captures a body consumed from the callback of an asynchronous call`() {
+    // enqueue() hands the response to a dispatcher thread, so the capture is completed by a thread
+    // other than the one that started the call. That is the publication NetworkRequestData guards.
+    setUpSut()
+    val events = (0 until 3).map { "data: event-$it\n\n" }
+    EventStreamServer(events, closeStream = true).use { stream ->
+      val body = AtomicReference<String>()
+      val thread = AtomicReference<String>()
+      val done = CountDownLatch(1)
+
+      sut
+        .newCall(requestTo(stream.url))
+        .enqueue(
+          object : Callback {
+            override fun onFailure(call: Call, e: IOException) = done.countDown()
+
+            override fun onResponse(call: Call, response: Response) {
+              response.use { body.set(it.body?.string()) }
+              thread.set(Thread.currentThread().name)
+              done.countDown()
+            }
+          }
+        )
+
+      assertTrue(done.await(10, TimeUnit.SECONDS), "the callback must be reached")
+      assertEquals(events.joinToString(""), body.get())
+      assertNotEquals(
+        Thread.currentThread().name,
+        thread.get(),
+        "the body is consumed off the calling thread",
+      )
+      assertEquals(events.joinToString(""), capturedBody())
+      assertEquals(200, networkDetails().statusCode)
+    }
+  }
+
+  @Test
+  fun `records the response of a stream that is cancelled while a reader is parked on it`() {
+    // How an SSE client consumes a stream: line by line on its own thread, until the call is
+    // cancelled. Nothing closes the body afterwards, so the capture never completes - but what was
+    // known when the response arrived must still reach the breadcrumb.
+    setUpSut()
+    val events = (0 until 3).map { "data: event-$it\n\n" }
+    EventStreamServer(events, closeStream = false).use { stream ->
+      val call = sut.newCall(requestTo(stream.url))
+      val response = call.execute()
+      val readThree = CountDownLatch(3)
+      val failed = CountDownLatch(1)
+      val reader = Thread {
+        @Suppress("SwallowedException") // cancelling the call is how this read is meant to end
+        try {
+          val source = response.body!!.source()
+          while (true) {
+            val line = source.readUtf8Line() ?: break
+            if (line.startsWith("data:")) readThree.countDown()
+          }
+        } catch (e: IOException) {
+          failed.countDown()
+        }
+      }
+      reader.isDaemon = true
+      reader.start()
+
+      assertTrue(readThree.await(10, TimeUnit.SECONDS), "the reader must receive the events")
+      call.cancel()
+
+      assertTrue(failed.await(10, TimeUnit.SECONDS), "the parked read must end with an IOException")
+      assertEquals(200, networkDetails().statusCode)
+      assertNull(capturedBody(), "a cancelled stream never completes its capture")
+    }
+  }
+
+  @Test
+  fun `captures a body of unknown length over HTTP2`() {
+    // HTTP/2 has no chunked encoding and ends a body with an empty DATA frame, so it reaches the
+    // wrapper by a different route than the HTTP/1.1 tests above.
+    setUpSut()
+    val payload = "data: over-h2\n\n"
+    MockWebServer().use { server ->
+      server.protocols = listOf(Protocol.H2_PRIOR_KNOWLEDGE)
+      server.enqueue(
+        MockResponse()
+          .setBody(payload)
+          .removeHeader("Content-Length")
+          .setHeader("Content-Type", "text/event-stream")
+      )
+      sut = sut.newBuilder().protocols(listOf(Protocol.H2_PRIOR_KNOWLEDGE)).build()
+
+      val response = sut.newCall(requestTo(server.url("/events").toString())).execute()
+      assertEquals(payload, response.use { it.body?.string() })
+
+      assertEquals(Protocol.H2_PRIOR_KNOWLEDGE, response.protocol)
+      assertEquals(-1L, response.body?.contentLength(), "no known length on the h2 body")
+      assertEquals(payload, capturedBody())
+      assertEquals(200, networkDetails().statusCode)
     }
   }
 

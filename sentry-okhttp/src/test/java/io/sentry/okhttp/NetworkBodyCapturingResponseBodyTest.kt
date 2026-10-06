@@ -1,6 +1,8 @@
 package io.sentry.okhttp
 
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -61,6 +63,30 @@ class NetworkBodyCapturingResponseBodyTest {
 
     override fun close() {
       isClosed = true
+    }
+  }
+
+  /** Emits one chunk, then parks until it is closed, like a stream that has gone quiet. */
+  private class ParkingSource(private val chunk: ByteArray) : Source {
+    val emitted = CountDownLatch(1)
+    private val closed = CountDownLatch(1)
+    private var sent = false
+
+    override fun read(sink: Buffer, byteCount: Long): Long {
+      if (!sent) {
+        sent = true
+        sink.write(chunk)
+        emitted.countDown()
+        return chunk.size.toLong()
+      }
+      closed.await(10, TimeUnit.SECONDS)
+      return -1L
+    }
+
+    override fun timeout(): Timeout = Timeout.NONE
+
+    override fun close() {
+      closed.countDown()
     }
   }
 
@@ -214,6 +240,36 @@ class NetworkBodyCapturingResponseBodyTest {
     // while leaving the delegate open.
     assertFailsWith<IllegalStateException> { wrapper.close() }
     assertTrue(source.isClosed, "the delegate is closed even though the callback threw")
+  }
+
+  @Test
+  fun `reports once when the body is closed while another thread is reading it`() {
+    // Cancelling a stream from elsewhere closes the body from a thread other than the consumer, so
+    // the capture is read and written at the same time.
+    val chunk = "data: event-0\n\n".toByteArray()
+    val source = ParkingSource(chunk)
+    val (wrapper, captured) = capture(source, 1024)
+    val readDone = CountDownLatch(1)
+    val reader = Thread {
+      wrapper.source().readByteArray()
+      readDone.countDown()
+    }
+    reader.isDaemon = true
+    reader.start()
+
+    assertTrue(source.emitted.await(10, TimeUnit.SECONDS), "the reader must have taken the chunk")
+    wrapper.close()
+
+    assertTrue(
+      readDone.await(10, TimeUnit.SECONDS),
+      "the reader must finish once the body is closed",
+    )
+    assertEquals(
+      1,
+      captured.size,
+      "the capture is reported once, by whichever thread got there first",
+    )
+    assertContentEquals(chunk, captured.single())
   }
 
   @Test
