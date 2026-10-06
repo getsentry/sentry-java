@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Trust the bundled Sentry root CAs (Let's Encrypt, Google Trust Services, DigiCert) for SDK envelope uploads on Android API 25 and lower, which don't ship all of them ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
+
 ### Features
 
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
