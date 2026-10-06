@@ -368,6 +368,31 @@ class AndroidOptionsInitializerTest {
     assertTrue(fixture.sentryOptions.transportGate is AndroidTransportGate)
   }
 
+  @Config(sdk = [Build.VERSION_CODES.N_MR1])
+  @Test
+  fun `init on API 25 and lower sets SSLSocketFactory with bundled Sentry root CAs`() {
+    fixture.initSut()
+
+    assertIs<SentryRootCaSslSocketFactory>(fixture.sentryOptions.sslSocketFactory)
+  }
+
+  @Config(sdk = [Build.VERSION_CODES.O])
+  @Test
+  fun `init on API 26 and higher does not set SSLSocketFactory`() {
+    fixture.initSut()
+
+    assertNull(fixture.sentryOptions.sslSocketFactory)
+  }
+
+  @Config(sdk = [Build.VERSION_CODES.N_MR1])
+  @Test
+  fun `init on API 25 and lower keeps user provided SSLSocketFactory`() {
+    val sslSocketFactory = mock<javax.net.ssl.SSLSocketFactory>()
+    fixture.initSut(configureOptions = { this.sslSocketFactory = sslSocketFactory })
+
+    assertEquals(sslSocketFactory, fixture.sentryOptions.sslSocketFactory)
+  }
+
   @Test
   fun `init should set Android continuous profiler`() {
     fixture.initSut()
