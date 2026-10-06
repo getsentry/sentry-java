@@ -129,9 +129,7 @@ internal class Nav3CustomTransactionController {
 
   private fun handleWholeFlow(currentRoute: Nav3Route) {
     if (currentRoute == Nav3Route.Custom) {
-      if (activeMode == Nav3CustomTransactionMode.WHOLE_FLOW) {
-        finishActiveTransaction()
-      }
+      finishActiveTransaction()
       return
     }
 

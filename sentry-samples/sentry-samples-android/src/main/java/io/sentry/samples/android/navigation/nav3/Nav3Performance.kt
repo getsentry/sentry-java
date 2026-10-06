@@ -226,7 +226,11 @@ private suspend fun runNav3PerformanceAbComparison(
     }
   } finally {
     state.updateIntegrationMode(originalMode)
-    awaitNav3PerformanceFrames()
+    try {
+      awaitNav3PerformanceFrames()
+    } finally {
+      state.resetNavigationMeasurementGuards()
+    }
   }
 
   state.finishPerformanceRun(results.joinToString(" | "))

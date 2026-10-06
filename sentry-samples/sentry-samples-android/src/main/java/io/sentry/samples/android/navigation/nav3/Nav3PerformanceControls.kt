@@ -378,6 +378,12 @@ internal class Nav3PerformanceState(
     pendingAbPhase = null
   }
 
+  fun resetNavigationMeasurementGuards() {
+    discardNextSentryNavEffectMeasurement = false
+    suppressExtractorMeasurementsUntilNavigation = false
+    pendingProcessedNavigationWork = false
+  }
+
   private fun finishMeasuredPhase() {
     pendingMeasuredPhase?.let { phase -> endAsyncTraceSection(phase.sectionName, phase.cookie) }
     pendingMeasuredPhase = null

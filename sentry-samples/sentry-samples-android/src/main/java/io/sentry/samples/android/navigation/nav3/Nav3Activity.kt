@@ -303,15 +303,17 @@ private fun Nav3SampleApp(
     )
 
     if (isPerformanceScenario) {
-      performanceState.recordSentryNavEffect(
-        processedCall = true,
-        resolvedEntryCount =
-          if (integrationMode.captureBackStack) {
-            minOf(sentryBackStack.size, maxCapturedBackStackEntries)
-          } else {
-            0
-          },
-      )
+      SideEffect {
+        performanceState.recordSentryNavEffect(
+          processedCall = true,
+          resolvedEntryCount =
+            if (integrationMode.captureBackStack) {
+              minOf(sentryBackStack.size, maxCapturedBackStackEntries)
+            } else {
+              0
+            },
+        )
+      }
     }
   }
 
