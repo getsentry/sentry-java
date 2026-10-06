@@ -18,6 +18,7 @@ internal fun tagCurrentNavigationSampleScenario(scenarioLabel: String) {
 internal fun SentryTransaction.navigationSampleScenarioLabel(): String =
   getTag(NAVIGATION_SAMPLE_SCENARIO_TAG)
     ?: getTag(NAV2_SCENARIO_TAG)
+    ?: getTag(NAV3_SCENARIO_TAG)
     ?: UNKNOWN_NAVIGATION_SCENARIO_LABEL
 
 internal fun cancelCurrentActivityUiLoadTransaction() {
@@ -72,6 +73,7 @@ internal const val SENTRY_FLUSH_TIMEOUT_MILLIS = 5000L
 
 private const val BACKGROUND_WORK_MILLIS = 1000L
 private const val NAV2_SCENARIO_TAG = "sample_nav2_scenario"
+private const val NAV3_SCENARIO_TAG = "sample_nav3_scenario"
 private const val NAVIGATION_SAMPLE_SCENARIO_TAG = "sample_navigation_scenario"
 private const val UNKNOWN_NAVIGATION_SCENARIO_LABEL = "Unknown"
 private const val ACTIVITY_UI_LOAD_OP = "ui.load"

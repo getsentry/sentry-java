@@ -177,10 +177,7 @@ internal fun Nav3SentryButton(
 }
 
 internal fun crashSampleApp(navName: String): Nothing {
-  val crash = RuntimeException("Fatal $navName sample crash app button")
-  Sentry.captureException(crash)
-  Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS)
-  throw crash
+  throw RuntimeException("Fatal $navName sample crash app button")
 }
 
 private fun runManualNav3RouteActivationSpan(route: Nav3Route) {
