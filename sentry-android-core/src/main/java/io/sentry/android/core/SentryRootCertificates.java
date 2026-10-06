@@ -55,5 +55,9 @@ final class SentryRootCertificates {
           + "emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=\n"
           + "-----END CERTIFICATE-----\n";
 
+  // TODO(2028-01-28): Google Trust Services certs are only trusted on API <= 28 via the GTS
+  //  Root R1 cross-sign by GlobalSign Root CA, which expires on 2028-01-28. Before that date,
+  //  bundle GTS Root R1-R4 here and raise the API gate in AndroidOptionsInitializer to <= 28.
+  //  See https://github.com/getsentry/sentry-java/pull/6227
   static final @NotNull String[] ALL = new String[] {ISRG_ROOT_X1};
 }
