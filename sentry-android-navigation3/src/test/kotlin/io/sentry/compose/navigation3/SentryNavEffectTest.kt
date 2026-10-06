@@ -440,7 +440,7 @@ class SentryNavEffectTest {
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("entry" to "/ProfileRoute", "arguments" to mapOf("userId" to "123")),
+          mapOf("entry" to "/ProfileRoute", "entry_arguments" to mapOf("userId" to "123")),
           mapOf("entry" to "/HomeRoute"),
         )
       )
@@ -510,7 +510,7 @@ class SentryNavEffectTest {
     assertThat(fixture.transactions.last().isFinished).isFalse()
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.transactions.last())
     assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
   }
 
   @Test
@@ -539,7 +539,7 @@ class SentryNavEffectTest {
     assertThat(fixture.scope.transaction).isNull()
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
@@ -557,7 +557,7 @@ class SentryNavEffectTest {
   }
 
   private companion object {
-    const val NAVIGATION_CONTEXT_KEY = "navigation"
-    const val BACKSTACK_KEY = "backstack"
+    const val NAVIGATION_CONTEXT_KEY = "Navigation"
+    const val BACKSTACK_KEY = "Back Stack"
   }
 }

@@ -2,6 +2,7 @@ package io.sentry.compose.navigation3
 
 import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
+import io.sentry.compose.navigation3.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
 import io.sentry.compose.navigation3.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import io.sentry.util.ExceptionUtils
 import java.util.IdentityHashMap
@@ -69,21 +70,33 @@ internal class BackStackConverter<T : Any>(
         // Back stack entry mappers are host app callbacks.
         ExceptionUtils.rethrowIfFatal(t)
         warningState.logMapperFailureWarning(logger, t)
-        return NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME)
+        return NormalizedSentryBackStackEntry(
+          name = UNKNOWN_ENTRY_NAME,
+          argumentDropReason = ArgumentDropReason.MAPPING_FAILED,
+        )
       }
 
     if (info == null) {
-      return NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME)
+      return NormalizedSentryBackStackEntry(name = UNKNOWN_ENTRY_NAME)
     }
 
-    val arguments = info.arguments?.let(sanitizer::sanitizeEntry) ?: emptyMap()
+    val sanitizedArguments =
+      info.arguments?.let(sanitizer::sanitizeEntry) ?: SanitizedArguments(emptyMap())
     val formattedName = NormalizedSentryBackStackEntry.formatName(info.name)
 
     return if (formattedName.isBlank()) {
       warningState.logInvalidNameWarning(logger)
-      NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME, arguments)
+      NormalizedSentryBackStackEntry(
+        name = UNKNOWN_ENTRY_NAME,
+        arguments = sanitizedArguments.values,
+        argumentDropReason = sanitizedArguments.dropReason,
+      )
     } else {
-      NormalizedSentryBackStackEntry(formattedName, arguments)
+      NormalizedSentryBackStackEntry(
+        name = formattedName,
+        arguments = sanitizedArguments.values,
+        argumentDropReason = sanitizedArguments.dropReason,
+      )
     }
   }
 
@@ -109,6 +122,11 @@ internal class BackStackConverter<T : Any>(
     KEEP_LAST,
   }
 
+  internal data class SanitizedArguments(
+    val values: Map<String, Any?>,
+    val dropReason: ArgumentDropReason? = null,
+  )
+
   /**
    * Sanitizes a back stack entry's arguments and writes them in a serializable form. It bounds
    * depth and total value count, and it rejects cyclic structures.
@@ -124,7 +142,8 @@ internal class BackStackConverter<T : Any>(
 
     private val activeContainers = IdentityHashMap<Any, Unit>()
     private var remainingValues = MAX_ARGUMENT_COUNT
-    private var budgetExhausted = false
+    private var remainingCharacters = MAX_ARGUMENT_CHARACTERS
+    private var dropReason: ArgumentDropReason? = null
 
     /**
      * Sanitizes one entry's arguments, or returns an empty map to drop them, either because the
@@ -132,24 +151,24 @@ internal class BackStackConverter<T : Any>(
      * value budget is spent (this entry and every older one).
      */
     @Suppress("TooGenericExceptionCaught")
-    fun sanitizeEntry(raw: Map<String, Any?>): Map<String, Any?> {
-      if (budgetExhausted) {
-        return emptyMap()
+    fun sanitizeEntry(raw: Map<String, Any?>): SanitizedArguments {
+      dropReason?.let { reason ->
+        return SanitizedArguments(emptyMap(), reason)
       }
 
       return try {
-        sanitizeMap(raw, depth = 0)
+        SanitizedArguments(sanitizeMap(raw, depth = 0))
       } catch (drop: DropSubtree) {
-        if (drop.exhaustsBudget) {
-          budgetExhausted = true
+        if (drop.reason.exhaustsUpdateBudget) {
+          dropReason = drop.reason
         }
         logger.log(WARNING, drop.warning)
-        emptyMap()
+        SanitizedArguments(emptyMap(), drop.reason)
       } catch (t: Throwable) {
         // Extracted maps may invoke host app code while iterating or stringifying values.
         ExceptionUtils.rethrowIfFatal(t)
         logger.log(WARNING, STRUCTURE_WARNING, t)
-        emptyMap()
+        SanitizedArguments(emptyMap(), ArgumentDropReason.SANITIZATION_FAILED)
       }
     }
 
@@ -158,7 +177,9 @@ internal class BackStackConverter<T : Any>(
       try {
         val sanitized = mutableMapOf<String, Any?>()
         for ((key, childValue) in value) {
-          sanitized[key.toString()] = sanitizeValue(childValue, depth + 1)
+          val keyString = key.toString()
+          consumeCharacters(keyString.length)
+          sanitized[keyString] = sanitizeValue(childValue, depth + 1)
         }
         return sanitized
       } finally {
@@ -185,17 +206,26 @@ internal class BackStackConverter<T : Any>(
       val collection = value?.asSanitizableCollectionOrNull()
 
       return when {
-        value == null || value is String || value is Number || value is Boolean -> value
-        value is CharSequence || value is Char -> value.toString()
-        value is Enum<*> -> value.name
         value is Map<*, *> -> sanitizeMap(value, depth)
         collection != null -> sanitizeCollection(collection, depth)
-        else -> {
-          warningState.logUnsupportedValueWarning(value::class.simpleName, logger)
-          value.toString()
-        }
+        else -> sanitizeScalar(value)
       }
     }
+
+    private fun sanitizeScalar(value: Any?): Any? =
+      when (value) {
+        null,
+        is Number,
+        is Boolean -> value
+        is String -> value.also { consumeCharacters(it.length) }
+        is CharSequence,
+        is Char -> value.toString().also { consumeCharacters(it.length) }
+        is Enum<*> -> value.name.also { consumeCharacters(it.length) }
+        else -> {
+          warningState.logUnsupportedValueWarning(value::class.simpleName, logger)
+          value.toString().also { consumeCharacters(it.length) }
+        }
+      }
 
     private fun Any.asSanitizableCollectionOrNull(): Collection<*>? =
       when (this) {
@@ -218,16 +248,23 @@ internal class BackStackConverter<T : Any>(
      */
     private fun visit(depth: Int) {
       if (depth > MAX_ARGUMENT_DEPTH) {
-        throw DropSubtree(STRUCTURE_WARNING, exhaustsBudget = false)
+        throw DropSubtree(STRUCTURE_WARNING, ArgumentDropReason.INVALID_STRUCTURE)
       }
       if (--remainingValues < 0) {
-        throw DropSubtree(BUDGET_WARNING, exhaustsBudget = true)
+        throw DropSubtree(MAX_COUNT_WARNING, ArgumentDropReason.MAX_COUNT)
       }
+    }
+
+    private fun consumeCharacters(count: Int) {
+      if (count > remainingCharacters) {
+        throw DropSubtree(MAX_CHARACTER_WARNING, ArgumentDropReason.CHARACTER_LIMIT)
+      }
+      remainingCharacters -= count
     }
 
     private fun enter(container: Any) {
       if (activeContainers.put(container, Unit) != null) {
-        throw DropSubtree(STRUCTURE_WARNING, exhaustsBudget = false)
+        throw DropSubtree(STRUCTURE_WARNING, ArgumentDropReason.INVALID_STRUCTURE)
       }
     }
 
@@ -239,11 +276,10 @@ internal class BackStackConverter<T : Any>(
      * Control-flow signal to abort sanitization of the current subtree. Internal to
      * [ArgumentSanitizer].
      *
-     * [exhaustsBudget] distinguishes an entry-local drop (cycle or over-deep structure) from an
-     * update-wide one (the shared value budget is spent). Overrides [fillInStackTrace] to skip
-     * stack-trace capture.
+     * [reason] distinguishes entry-local drops from update-wide budget exhaustion. Overrides
+     * [fillInStackTrace] to skip stack-trace capture.
      */
-    private class DropSubtree(val warning: String, val exhaustsBudget: Boolean) :
+    private class DropSubtree(val warning: String, val reason: ArgumentDropReason) :
       RuntimeException() {
       override fun fillInStackTrace(): Throwable = this
     }
@@ -279,11 +315,22 @@ internal class BackStackConverter<T : Any>(
        *
        * Then /ProductDetail and /Home will have no arguments, but /Checkout will.
        */
-      private const val MAX_ARGUMENT_COUNT = 500
+      private const val MAX_ARGUMENT_COUNT = 200
 
-      private const val BUDGET_WARNING =
-        "Nav3 arguments exceeded the maximum total value count for one backstack update. Skipping arguments " +
-          "for this and older captured entries."
+      /**
+       * Max number of characters visited while sanitizing all entries in a given back stack update.
+       *
+       * Caps payload size in the presence of large individual arguments.
+       */
+      private const val MAX_ARGUMENT_CHARACTERS = 4_096
+
+      private const val MAX_CHARACTER_WARNING =
+        "Nav3 arguments exceeded the maximum total character count for one backstack update. Skipping " +
+          "arguments for this and older captured entries."
+
+      private const val MAX_COUNT_WARNING =
+        "Nav3 arguments exceeded the maximum total count for one backstack update. Skipping arguments for " +
+          "this and older captured entries."
 
       private const val STRUCTURE_WARNING =
         "Nav3 argument sanitization failed (possibly a cyclic or deeply nested structure). Skipping arguments."
@@ -348,6 +395,8 @@ internal data class NormalizedSentryBackStackEntry(
   val name: String,
   /** Sanitized [SentryBackStackEntry.arguments] (i.e., bounded in size and depth). */
   val arguments: Map<String, Any?> = emptyMap(),
+  /** The reason why the SDK dropped host-provided arguments. */
+  val argumentDropReason: ArgumentDropReason? = null,
 ) {
 
   companion object {
@@ -369,12 +418,21 @@ internal data class NormalizedSentryBackStackEntry(
     }
   }
 
+  /** Returns sanitized host arguments together with SDK-owned argument metadata. */
+  fun argumentsWithMetadata(): Map<String, Any?> {
+    val reason = argumentDropReason ?: return arguments
+    return buildMap {
+      putAll(arguments)
+      put(ARGUMENT_DROP_REASON_KEY, reason.serializedValue)
+    }
+  }
+
   /**
    * Returns this entry in serialized form. E.g.:
    * ```
    *  {
    *    "entry": "/ProductScreen"
-   *    "arguments": {
+   *    "entry_arguments": {
    *      "product_id": 12345
    *      "promo_id:": "spring-marketing-drive-2026"
    *    }
@@ -383,11 +441,26 @@ internal data class NormalizedSentryBackStackEntry(
    */
   fun serialize(): Map<String, Any?> = buildMap {
     put("entry", name)
-    if (arguments.isNotEmpty()) {
-      put("arguments", arguments)
-    }
+    argumentsWithMetadata().takeIf { it.isNotEmpty() }?.let { put("entry_arguments", it) }
   }
 }
 
 internal fun List<NormalizedSentryBackStackEntry>.serialize(): List<Map<String, Any?>> =
   map(NormalizedSentryBackStackEntry::serialize)
+
+/** Why host-provided arguments were unavailable in emitted navigation data. */
+internal enum class ArgumentDropReason(
+  val serializedValue: String,
+  val exhaustsUpdateBudget: Boolean = false,
+) {
+
+  CHARACTER_LIMIT("max_character_limit_exceeded", exhaustsUpdateBudget = true),
+  INVALID_STRUCTURE("invalid_structure"),
+  MAPPING_FAILED("mapping_failed"),
+  MAX_COUNT("max_argument_count_exceeded", exhaustsUpdateBudget = true),
+  SANITIZATION_FAILED("sanitization_failed");
+
+  companion object {
+    const val ARGUMENT_DROP_REASON_KEY = "dropped_by_sentry"
+  }
+}

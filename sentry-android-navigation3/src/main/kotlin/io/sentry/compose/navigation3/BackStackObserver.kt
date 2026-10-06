@@ -208,7 +208,7 @@ internal class BackStackObserver<T : Any>(
         .start(
           scope,
           currentTop.name,
-          currentTop.arguments,
+          currentTop.argumentsWithMetadata(),
         )
         ?.let { transaction -> navContext.updateTransaction(transaction, scope, currentBackStack) }
     } else {
@@ -373,8 +373,8 @@ private class NavTransaction(private val scopes: IScopes) {
 private class NavContext(private val scopes: IScopes, private val options: SentryNavOptions) {
 
   private companion object {
-    private const val BACKSTACK_KEY = "backstack"
-    private const val NAVIGATION_CONTEXT_KEY = "navigation"
+    private const val BACKSTACK_KEY = "Back Stack"
+    private const val NAVIGATION_CONTEXT_KEY = "Navigation"
   }
 
   fun update(scope: IScope, backStackEntries: List<NormalizedSentryBackStackEntry>) {
@@ -455,17 +455,23 @@ private class NavBreadcrumbs(private val scopes: IScopes) {
         type = NAVIGATION_OP
         category = NAVIGATION_OP
 
-        fromEntry?.let {
-          data["from"] = it.name
-          if (it.arguments.isNotEmpty()) {
-            data["from_arguments"] = it.arguments
-          }
+        fromEntry?.let { entry ->
+          data["from"] = entry.name
+          entry
+            .argumentsWithMetadata()
+            .takeIf { it.isNotEmpty() }
+            ?.let { arguments ->
+              data["from_arguments"] = arguments
+            }
         }
 
         data["to"] = toEntry.name
-        if (toEntry.arguments.isNotEmpty()) {
-          data["to_arguments"] = toEntry.arguments
-        }
+        toEntry
+          .argumentsWithMetadata()
+          .takeIf { it.isNotEmpty() }
+          ?.let { arguments ->
+            data["to_arguments"] = arguments
+          }
 
         level = INFO
       }
