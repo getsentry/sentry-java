@@ -171,7 +171,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
           periodMillis(scheduled.fixedRate(), scheduled.fixedRateString(), timeUnit),
           periodMillis(scheduled.fixedDelay(), scheduled.fixedDelayString(), timeUnit),
           LEGACY_CRON_PARSER);
-    } catch (Throwable e) {
+    } catch (RuntimeException e) {
       scopes
           .getOptions()
           .getLogger()
