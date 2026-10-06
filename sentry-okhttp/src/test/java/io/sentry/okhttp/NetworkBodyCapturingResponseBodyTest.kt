@@ -308,9 +308,14 @@ class NetworkBodyCapturingResponseBodyTest {
     val wrapper = NetworkBodyCapturingResponseBody(bodyOf(source), 1024) { captured.add(it) }
 
     assertFailsWith<IOException> { wrapper.source().readByteArray() }
-    assertTrue(captured.isEmpty(), "a failed stream has no final capture")
+    assertEquals(
+      "xxxx",
+      captured.single()?.decodeToString(),
+      "what arrived before the failure is reported, since nothing more can arrive",
+    )
 
     wrapper.close()
+    assertEquals(1, captured.size, "closing afterwards does not report a second time")
     assertTrue(source.isClosed, "the connection must still be releasable after a failure")
   }
 

@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -265,10 +266,10 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
   }
 
   @Test
-  fun `records the response of a stream that is cancelled while a reader is parked on it`() {
+  fun `captures what arrived when a stream is cancelled while a reader is parked on it`() {
     // How an SSE client consumes a stream: line by line on its own thread, until the call is
-    // cancelled. Nothing closes the body afterwards, so the capture never completes - but what was
-    // known when the response arrived must still reach the breadcrumb.
+    // cancelled. Nothing closes the body afterwards, so the broken read is what completes the
+    // capture, with the events that did arrive.
     setUpSut()
     val events = (0 until 3).map { "data: event-$it\n\n" }
     EventStreamServer(events, closeStream = false).use { stream ->
@@ -296,7 +297,21 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
 
       assertTrue(failed.await(10, TimeUnit.SECONDS), "the parked read must end with an IOException")
       assertEquals(200, networkDetails().statusCode)
-      assertNull(capturedBody(), "a cancelled stream never completes its capture")
+      assertEquals(events.joinToString(""), capturedBody())
+    }
+  }
+
+  @Test
+  fun `captures what arrived when the server drops the connection mid stream`() {
+    setUpSut()
+    val events = (0 until 3).map { "data: event-$it\n\n" }
+    EventStreamServer(events, closeStream = false, dropAfterEvents = true).use { stream ->
+      val response = sut.newCall(requestTo(stream.url)).execute()
+
+      assertFailsWith<IOException> { response.body?.string() }
+
+      assertEquals(200, networkDetails().statusCode)
+      assertEquals(events.joinToString(""), capturedBody())
     }
   }
 
@@ -434,6 +449,7 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
     private val events: List<String>,
     private val closeStream: Boolean,
     private val statusCode: Int = 200,
+    private val dropAfterEvents: Boolean = false,
   ) : Closeable {
     private val server = ServerSocket(0, 8, InetAddress.getLoopbackAddress())
     private val connections = CopyOnWriteArrayList<Socket>()
@@ -478,6 +494,10 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
             output.write(bytes)
             output.write("\r\n".toByteArray())
             output.flush()
+          }
+          if (dropAfterEvents) {
+            // hang up without the terminating chunk, the way a mobile connection dies
+            return
           }
           if (closeStream) {
             output.write("0\r\n\r\n".toByteArray())

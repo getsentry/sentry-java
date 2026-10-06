@@ -1,5 +1,6 @@
 package io.sentry.okhttp
 
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import okhttp3.MediaType
 import okhttp3.ResponseBody
@@ -20,7 +21,8 @@ import okio.buffer
  *
  * This body instead captures what is actually consumed. It forwards every byte to the application
  * untouched and hands the captured bytes to [onCaptured] as soon as the capture can no longer grow,
- * which is when the stream ends, when the application closes the body, or when the cap is reached.
+ * which is when the stream ends or breaks, when the application closes the body, or when the cap is
+ * reached.
  *
  * @param delegate the body to capture from.
  * @param maxBytes the maximum number of bytes to retain; capture stops once it is reached.
@@ -66,7 +68,15 @@ internal class NetworkBodyCapturingResponseBody(
   private inner class CapturingSource(source: Source) : ForwardingSource(source) {
     override fun read(sink: Buffer, byteCount: Long): Long {
       val sinkBefore = sink.size
-      val read = super.read(sink, byteCount)
+      val read =
+        try {
+          super.read(sink, byteCount)
+        } catch (e: IOException) {
+          // The stream broke, so nothing more can arrive. What did arrive is the evidence for this
+          // very failure, and a caller handling the error is not obliged to close the body.
+          reportCaptured()
+          throw e
+        }
 
       if (read > 0L) {
         val capFull =
