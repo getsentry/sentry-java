@@ -102,12 +102,12 @@
       android:exported="false" />
 
     <activity
-      android:name=".navigation.Nav2SetupActivity"
+      android:name=".navigation.nav2.Nav2SetupActivity"
       android:exported="false"
       android:theme="@style/AppTheme.Main" />
 
     <activity
-      android:name=".navigation.Nav2Activity"
+      android:name=".navigation.nav2.Nav2Activity"
       android:exported="false"
       android:screenOrientation="portrait"
       android:theme="@style/AppTheme.Main" />

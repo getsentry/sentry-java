@@ -1,4 +1,4 @@
-package io.sentry.samples.android.navigation
+package io.sentry.samples.android.navigation.nav2
 
 import android.graphics.Typeface
 import android.os.Bundle
@@ -16,6 +16,12 @@ import androidx.lifecycle.lifecycleScope
 import io.sentry.ISpan
 import io.sentry.Sentry
 import io.sentry.samples.android.R
+import io.sentry.samples.android.navigation.common.NavArgs
+import io.sentry.samples.android.navigation.common.RouteNames
+import io.sentry.samples.android.navigation.common.RouteSpec
+import io.sentry.samples.android.navigation.common.RouteSpecs
+import io.sentry.samples.android.navigation.common.displayArguments
+import io.sentry.samples.android.navigation.common.themeColor
 import kotlinx.coroutines.launch
 
 class Nav2RouteFragment : Fragment() {
@@ -26,13 +32,13 @@ class Nav2RouteFragment : Fragment() {
     savedInstanceState: Bundle?,
   ): View {
     val activity = requireActivity() as Nav2Activity
-    val routeName = requireArguments().getString(Nav2Args.ROUTE_NAME).orEmpty()
-    val routeSpec = Nav2RouteSpecs.get(routeName)
+    val routeName = requireArguments().getString(NavArgs.ROUTE_NAME).orEmpty()
+    val routeSpec = RouteSpecs.get(routeName)
 
     return when (routeName) {
-      Nav2RouteNames.LANDING -> routeLayout(routeSpec)
+      RouteNames.LANDING -> routeLayout(routeSpec)
 
-      Nav2RouteNames.HOME ->
+      RouteNames.HOME ->
         routeLayout(
           routeSpec,
           buttons =
@@ -43,7 +49,7 @@ class Nav2RouteFragment : Fragment() {
             ),
         )
 
-      Nav2RouteNames.DEEP_LINK ->
+      RouteNames.DEEP_LINK ->
         routeLayout(
           routeSpec,
           buttons =
@@ -54,7 +60,7 @@ class Nav2RouteFragment : Fragment() {
             ),
         )
 
-      Nav2RouteNames.PRODUCT_LIST ->
+      RouteNames.PRODUCT_LIST ->
         routeLayout(
           routeSpec,
           buttons =
@@ -71,15 +77,15 @@ class Nav2RouteFragment : Fragment() {
           trailingContent = { addProductListItemsToggle() },
         )
 
-      Nav2RouteNames.PRODUCT_DETAIL -> productDetailLayout(activity)
+      RouteNames.PRODUCT_DETAIL -> productDetailLayout(activity)
 
-      Nav2RouteNames.CHECKOUT -> checkoutLayout(activity)
+      RouteNames.CHECKOUT -> checkoutLayout(activity)
 
-      Nav2RouteNames.CONFIRMATION -> confirmationLayout(activity)
+      RouteNames.CONFIRMATION -> confirmationLayout(activity)
 
       else ->
         routeLayout(
-          Nav2RouteSpec(routeName = routeName, title = "Unknown Route", description = routeName)
+          RouteSpec(routeName = routeName, title = "Unknown Route", description = routeName)
         )
     }
   }
@@ -87,16 +93,16 @@ class Nav2RouteFragment : Fragment() {
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
     val activity = requireActivity() as Nav2Activity
-    val routeName = requireArguments().getString(Nav2Args.ROUTE_NAME).orEmpty()
+    val routeName = requireArguments().getString(NavArgs.ROUTE_NAME).orEmpty()
 
     activity.tagCurrentScenarioOnTransaction()
 
-    if (routeName == Nav2RouteNames.LANDING) {
+    if (routeName == RouteNames.LANDING) {
       view.post { activity.cancelCurrentUiLoadTransaction() }
       return
     }
 
-    if (routeName == Nav2RouteNames.PRODUCT_DETAIL) {
+    if (routeName == RouteNames.PRODUCT_DETAIL) {
       viewLifecycleOwner.lifecycleScope.launch {
         recordSimulatedBackgroundSpan(routeName)
       }
@@ -107,8 +113,8 @@ class Nav2RouteFragment : Fragment() {
 
   private fun productDetailLayout(activity: Nav2Activity): View {
     val arguments = requireArguments()
-    val productId = arguments.getString(Nav2Args.PRODUCT_ID).orEmpty()
-    val source = arguments.getString(Nav2Args.SOURCE).orEmpty()
+    val productId = arguments.getString(NavArgs.PRODUCT_ID).orEmpty()
+    val source = arguments.getString(NavArgs.SOURCE).orEmpty()
     val scenario =
       if (source == "deep-link") {
         Nav2Scenario.DEEP_LINK
@@ -116,7 +122,7 @@ class Nav2RouteFragment : Fragment() {
         Nav2Scenario.FRAGMENTS
       }
 
-    val routeSpec = Nav2RouteSpecs.productDetail
+    val routeSpec = RouteSpecs.productDetail
     return routeLayout(
       routeSpec,
       arguments = arguments,
@@ -136,8 +142,8 @@ class Nav2RouteFragment : Fragment() {
   }
 
   private fun checkoutLayout(activity: Nav2Activity): View {
-    val productId = requireArguments().getString(Nav2Args.PRODUCT_ID).orEmpty()
-    val routeSpec = Nav2RouteSpecs.checkout
+    val productId = requireArguments().getString(NavArgs.PRODUCT_ID).orEmpty()
+    val routeSpec = RouteSpecs.checkout
     return routeLayout(
       routeSpec,
       arguments = requireArguments(),
@@ -151,7 +157,7 @@ class Nav2RouteFragment : Fragment() {
   }
 
   private fun confirmationLayout(activity: Nav2Activity): View {
-    val routeSpec = Nav2RouteSpecs.confirmation
+    val routeSpec = RouteSpecs.confirmation
     return routeLayout(
       routeSpec,
       arguments = requireArguments(),
@@ -165,7 +171,7 @@ class Nav2RouteFragment : Fragment() {
   }
 
   private fun routeLayout(
-    routeSpec: Nav2RouteSpec,
+    routeSpec: RouteSpec,
     arguments: Bundle? = null,
     buttons: List<RouteButton> = emptyList(),
     trailingContent: (LinearLayout.() -> Unit)? = null,

@@ -1,5 +1,6 @@
-package io.sentry.samples.android.navigation
+package io.sentry.samples.android.navigation.common
 
+import android.R
 import android.content.Context
 import android.graphics.Typeface
 import android.view.View
@@ -39,14 +40,14 @@ private fun routeWorkDialogTitle(context: Context): View =
         text = "Route work"
         textSize = 20f
         setTypeface(null, Typeface.BOLD)
-        setTextColor(context.themeColor(android.R.attr.textColorPrimary))
+        setTextColor(context.themeColor(R.attr.textColorPrimary))
       }
     )
     addView(
       TextView(context).apply {
         text = "Enable/disable the generation of spans by navigation destinations."
         textSize = 14f
-        setTextColor(context.themeColor(android.R.attr.textColorSecondary))
+        setTextColor(context.themeColor(R.attr.textColorSecondary))
         setPadding(0, context.dp(8), 0, 0)
       }
     )

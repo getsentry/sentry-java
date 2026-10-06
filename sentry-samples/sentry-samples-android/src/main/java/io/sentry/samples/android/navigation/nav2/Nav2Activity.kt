@@ -1,4 +1,4 @@
-package io.sentry.samples.android.navigation
+package io.sentry.samples.android.navigation.nav2
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -33,14 +33,18 @@ import androidx.navigation.fragment.NavHostFragment
 import io.sentry.Sentry
 import io.sentry.SpanStatus
 import io.sentry.android.navigation.SentryNavigationListener
-import io.sentry.samples.android.GithubAPI
 import io.sentry.samples.android.R
-import io.sentry.samples.android.Repo
-import io.sentry.samples.android.navigation.Nav2Destination.Home
-import io.sentry.samples.android.navigation.Nav2Destination.Landing
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import io.sentry.samples.android.navigation.common.NavigationSampleConfigSnapshot
+import io.sentry.samples.android.navigation.common.RouteNames
+import io.sentry.samples.android.navigation.common.RouteSpecs
+import io.sentry.samples.android.navigation.common.RouteWorkApi
+import io.sentry.samples.android.navigation.common.RouteWorkOption
+import io.sentry.samples.android.navigation.common.applyToCurrentOptions
+import io.sentry.samples.android.navigation.common.displayRoute
+import io.sentry.samples.android.navigation.common.hasOnlyActivityUiLoadTransactions
+import io.sentry.samples.android.navigation.common.showRouteWorkDialog
+import io.sentry.samples.android.navigation.nav2.Nav2Destination.Home
+import io.sentry.samples.android.navigation.nav2.Nav2Destination.Landing
 
 /**
  * Sample activity for testing Sentry's
@@ -66,17 +70,17 @@ class Nav2Activity : AppCompatActivity() {
   private val enableNavigationBreadcrumbs = mutableStateOf(true)
   private val enableNavigationTransactions = mutableStateOf(true)
 
-  private lateinit var previousConfig: Nav2SampleConfigSnapshot
+  private lateinit var previousConfig: NavigationSampleConfigSnapshot
 
   // Top bar config
-  private val routeWorkOptions =
-    mutableStateOf(setOf(RouteWorkOption.HTTP_REQUEST, RouteWorkOption.MANUAL_CHILD_SPAN))
+  private val routeWorkOptions = mutableStateOf(setOf(RouteWorkOption.MANUAL_CHILD_SPAN))
   private lateinit var topBar: Nav2TopBar
   private var activeScenario = Nav2Scenario.COMPOSE
+  private val composeScenario = mutableStateOf(Nav2Scenario.COMPOSE)
 
   // Main content
   private lateinit var contentHosts: Nav2ContentHosts
-  private val performanceState = NavigationPerformanceState()
+  private val performanceState = Nav2PerformanceState()
 
   // Transaction history bottom sheet
   private var isTransactionHistoryActive = false
@@ -203,9 +207,11 @@ class Nav2Activity : AppCompatActivity() {
             routeWorkOptions = routeWorkOptions.value,
             onCaptureException = { captureSampleException("Nav2") },
             onCrashApp = { showCrashConfirmation("Nav2") },
-            onRouteChanged = { _, currentRoute, backStack ->
-              updateComposeNavigationUi(currentRoute, backStack)
+            selectedScenario = composeScenario.value,
+            onRouteChanged = { scenario, _, currentRoute, backStack ->
+              updateComposeNavigationUi(scenario, currentRoute, backStack)
             },
+            onExitRoot = { finish() },
           )
         }
       }
@@ -258,15 +264,15 @@ class Nav2Activity : AppCompatActivity() {
 
       setContent {
         Nav2SampleTheme {
-          NavigationPerformancePanel(
+          Nav2PerformancePanel(
             title = "Performance",
             description =
               "Stress the Nav2 listener path with deep fragment back stacks, destination changes, " +
                 "and unrelated Compose recompositions. Use Perfetto sections prefixed with " +
                 "Nav2Stress to inspect hot paths.",
-            currentRoute = "/${backStack.lastOrNull()?.routeName ?: Nav2RouteNames.HOME}",
+            currentRoute = "/${backStack.lastOrNull()?.routeName ?: RouteNames.HOME}",
             backStack =
-              navigationPerformanceBackStackPreview(
+              nav2PerformanceBackStackPreview(
                 backStack.map { destination -> "/${destination.routeName}" }
               ),
             state = performanceState,
@@ -324,6 +330,7 @@ class Nav2Activity : AppCompatActivity() {
 
   private fun openScenario(scenario: Nav2Scenario) {
     activeScenario = scenario
+    composeScenario.value = scenario
     topBar.select(activeScenario)
     performanceState.stopAutomaticWork()
     when (scenario) {
@@ -334,7 +341,22 @@ class Nav2Activity : AppCompatActivity() {
           navController.currentBackStackEntry?.arguments,
         )
       }
-      Nav2Scenario.COMPOSE -> contentHosts.showCompose()
+      Nav2Scenario.COMPOSE -> {
+        contentHosts.showCompose()
+        updateComposeNavigationUi(
+          scenario = Nav2Scenario.COMPOSE,
+          currentRoute = "/${RouteNames.HOME}",
+          backStack = "/${RouteNames.HOME}",
+        )
+      }
+      Nav2Scenario.CUSTOM -> {
+        contentHosts.showCompose()
+        updateComposeNavigationUi(
+          scenario = Nav2Scenario.CUSTOM,
+          currentRoute = "/${RouteNames.CUSTOM}",
+          backStack = "/${RouteNames.CUSTOM}",
+        )
+      }
       Nav2Scenario.FRAGMENTS -> {
         contentHosts.showFragments()
         resetToHome()
@@ -369,20 +391,13 @@ class Nav2Activity : AppCompatActivity() {
 
       when (option) {
         RouteWorkOption.HTTP_REQUEST -> {
-          GithubAPI.service
-            .listRepos("getsentry")
-            .enqueue(
-              object : Callback<List<Repo>> {
-                override fun onResponse(call: Call<List<Repo>>, response: Response<List<Repo>>) {
-                  Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
-                }
-
-                override fun onFailure(call: Call<List<Repo>>, t: Throwable) {
-                  Sentry.captureException(t)
-                  Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
-                }
-              }
-            )
+          RouteWorkApi.enqueueRequest(
+            onSuccess = { Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start() },
+            onFailure = { t ->
+              Sentry.captureException(t)
+              Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
+            },
+          )
         }
 
         RouteWorkOption.MANUAL_CHILD_SPAN -> recordManualChildSpan(routeName)
@@ -393,16 +408,16 @@ class Nav2Activity : AppCompatActivity() {
   private fun updatePerformanceTopBar() {
     topBar.update(
       scenario = Nav2Scenario.PERFORMANCE,
-      currentRoute = "/${backStack.lastOrNull()?.routeName ?: Nav2RouteNames.HOME}",
+      currentRoute = "/${backStack.lastOrNull()?.routeName ?: RouteNames.HOME}",
       backStack =
-        navigationPerformanceBackStackPreview(
+        nav2PerformanceBackStackPreview(
           backStack.map { destination -> "/${destination.routeName}" }
         ),
     )
   }
 
   private fun buildNav2PerformanceStack() {
-    traceNavigationPerformanceSection("Nav2Stress.buildStack") {
+    traceNav2PerformanceSection("Nav2Stress.buildStack") {
       val generation = performanceState.nextGeneration()
       resetToHome()
       for (index in 1 until performanceState.stackDepth.coerceAtLeast(1)) {
@@ -413,7 +428,7 @@ class Nav2Activity : AppCompatActivity() {
   }
 
   private fun replaceNav2PerformanceTop() {
-    traceNavigationPerformanceSection("Nav2Stress.replaceTop") {
+    traceNav2PerformanceSection("Nav2Stress.replaceTop") {
       val generation = performanceState.nextGeneration()
       if (backStack.size > 1) {
         navigateBack()
@@ -456,9 +471,9 @@ class Nav2Activity : AppCompatActivity() {
     syncTrackedBackStack(destination, arguments)
 
     val trackedDestination = backStack.lastOrNull()
-    val routeName = trackedDestination?.routeName ?: destination?.routeName() ?: Nav2RouteNames.HOME
+    val routeName = trackedDestination?.routeName ?: destination?.routeName() ?: RouteNames.HOME
     val currentRoute =
-      trackedDestination?.displayRoute() ?: Nav2RouteSpecs.get(routeName).displayRoute(arguments)
+      trackedDestination?.displayRoute() ?: RouteSpecs.get(routeName).displayRoute(arguments)
 
     val scenario = fragmentTopBarScenario(trackedDestination)
     topBar.update(
@@ -472,9 +487,13 @@ class Nav2Activity : AppCompatActivity() {
     }
   }
 
-  private fun updateComposeNavigationUi(currentRoute: String, backStack: String) {
+  private fun updateComposeNavigationUi(
+    scenario: Nav2Scenario,
+    currentRoute: String,
+    backStack: String,
+  ) {
     topBar.update(
-      scenario = Nav2Scenario.COMPOSE,
+      scenario = scenario,
       currentRoute = currentRoute,
       backStack = backStack,
     )
@@ -605,7 +624,7 @@ class Nav2Activity : AppCompatActivity() {
   }
 
   internal fun captureSampleException(navName: String) {
-    Sentry.captureException(RuntimeException("$navName sample exception button"))
+    Sentry.captureException(RuntimeException("$navName sample capture exception button"))
     Thread { Sentry.flush(SENTRY_FLUSH_TIMEOUT_MILLIS) }.start()
   }
 
@@ -619,7 +638,7 @@ class Nav2Activity : AppCompatActivity() {
   }
 
   private fun crashSampleApp(navName: String): Nothing {
-    throw RuntimeException("Fatal $navName sample crash button")
+    throw RuntimeException("Fatal $navName sample crash app button")
   }
 
   private val Int.dp: Int
