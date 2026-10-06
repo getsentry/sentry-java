@@ -2,6 +2,7 @@ package io.sentry.util.network
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class NetworkRequestDataTest {
@@ -47,6 +48,22 @@ class NetworkRequestDataTest {
     assertEquals(500, data.getStatusCode())
     assertEquals(7L, data.getResponseBodySize())
     assertEquals(7L, data.getResponse()?.getSize())
+  }
+
+  @Test
+  fun `the response details snapshot keeps the status code and the response together`() {
+    val data = NetworkRequestData("GET")
+    assertNull(data.responseDetails)
+
+    data.setResponseDetails(responseDetails(200, 42L))
+    val first = assertNotNull(data.responseDetails)
+
+    data.setResponseDetails(responseDetails(500, 7L))
+
+    assertEquals(200, first.statusCode, "a snapshot is unaffected by a later call")
+    assertEquals(42L, first.response.size)
+    assertEquals(500, data.responseDetails?.statusCode)
+    assertEquals(7L, data.responseDetails?.response?.size)
   }
 
   @Test

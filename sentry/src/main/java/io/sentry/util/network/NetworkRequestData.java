@@ -32,7 +32,7 @@ public final class NetworkRequestData {
 
   public @Nullable Integer getStatusCode() {
     final ResponseDetails details = responseDetails;
-    return details == null ? null : details.statusCode;
+    return details == null ? null : details.getStatusCode();
   }
 
   public @Nullable Long getRequestBodySize() {
@@ -42,7 +42,7 @@ public final class NetworkRequestData {
 
   public @Nullable Long getResponseBodySize() {
     final ResponseDetails details = responseDetails;
-    return details == null ? null : details.response.getSize();
+    return details == null ? null : details.getResponse().getSize();
   }
 
   public @Nullable ReplayNetworkRequestOrResponse getRequest() {
@@ -51,7 +51,7 @@ public final class NetworkRequestData {
 
   public @Nullable ReplayNetworkRequestOrResponse getResponse() {
     final ResponseDetails details = responseDetails;
-    return details == null ? null : details.response;
+    return details == null ? null : details.getResponse();
   }
 
   /**
@@ -60,6 +60,17 @@ public final class NetworkRequestData {
    */
   public void setRequestDetails(@NotNull final ReplayNetworkRequestOrResponse requestData) {
     this.request = requestData;
+  }
+
+  /**
+   * The response details as one snapshot, or {@code null} while the response is not known yet.
+   *
+   * <p>Prefer this over {@link #getStatusCode()}, {@link #getResponseBodySize()} and {@link
+   * #getResponse()} when more than one of them is needed: the details may be replaced between two
+   * of those calls, which would mix one response with the next.
+   */
+  public @Nullable ResponseDetails getResponseDetails() {
+    return responseDetails;
   }
 
   /**
@@ -105,9 +116,17 @@ public final class NetworkRequestData {
       this.response = response;
     }
 
+    public int getStatusCode() {
+      return statusCode;
+    }
+
+    public @NotNull ReplayNetworkRequestOrResponse getResponse() {
+      return response;
+    }
+
     @Override
     public String toString() {
-      return "ResponseDetails{" + "statusCode=" + statusCode + ", response=" + response + '}';
+      return "ResponseDetails{statusCode=" + statusCode + ", response=" + response + '}';
     }
   }
 }

@@ -8311,6 +8311,7 @@ public final class io/sentry/util/network/NetworkRequestData {
 	public fun getRequestBodySize ()Ljava/lang/Long;
 	public fun getResponse ()Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
 	public fun getResponseBodySize ()Ljava/lang/Long;
+	public fun getResponseDetails ()Lio/sentry/util/network/NetworkRequestData$ResponseDetails;
 	public fun getStatusCode ()Ljava/lang/Integer;
 	public fun setRequestDetails (Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
 	public fun setResponseDetails (Lio/sentry/util/network/NetworkRequestData$ResponseDetails;)V
@@ -8319,6 +8320,8 @@ public final class io/sentry/util/network/NetworkRequestData {
 
 public final class io/sentry/util/network/NetworkRequestData$ResponseDetails {
 	public fun <init> (ILio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
+	public fun getResponse ()Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public fun getStatusCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
