@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import java.security.KeyStore
 import java.security.MessageDigest
+import java.security.cert.Certificate
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
@@ -61,6 +62,6 @@ class SentryRootCaSslSocketFactoryTest {
     return factory.trustManagers.filterIsInstance<X509TrustManager>().first()
   }
 
-  private fun java.security.cert.Certificate.sha256(): String =
+  private fun Certificate.sha256(): String =
     MessageDigest.getInstance("SHA-256").digest(encoded).joinToString(":") { "%02X".format(it) }
 }
