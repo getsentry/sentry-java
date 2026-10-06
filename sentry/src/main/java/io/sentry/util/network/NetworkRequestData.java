@@ -17,7 +17,7 @@ public final class NetworkRequestData {
   private @Nullable ReplayNetworkRequestOrResponse request;
 
   // The response can be filled in after this instance was handed to the scope: an integration that
-  // captures a streamed body only knows it once the stream has been consumed. Keeping the three
+  // captures a body of unknown length only knows it once the body has been consumed. Keeping the
   // response values behind one volatile reference means a reader on the replay thread sees either
   // nothing or the complete set, never a mix of the two.
   private volatile @Nullable ResponseDetails responseDetails;
@@ -62,13 +62,9 @@ public final class NetworkRequestData {
     this.requestBodySize = requestData.getSize();
   }
 
-  /**
-   * Populates this instance with request details obtained via {@link
-   * NetworkDetailCaptureUtils#createResponse}
-   */
-  public void setResponseDetails(
-      final int statusCode, @NotNull final ReplayNetworkRequestOrResponse responseData) {
-    this.responseDetails = new ResponseDetails(statusCode, responseData.getSize(), responseData);
+  /** Populates this instance with the response details assembled by the caller. */
+  public void setResponseDetails(@NotNull final ResponseDetails details) {
+    this.responseDetails = details;
   }
 
   @Override
@@ -77,32 +73,45 @@ public final class NetworkRequestData {
         + "method='"
         + method
         + '\''
-        + ", statusCode="
-        + getStatusCode()
         + ", requestBodySize="
         + requestBodySize
-        + ", responseBodySize="
-        + getResponseBodySize()
         + ", request="
         + request
-        + ", response="
-        + getResponse()
+        + ", responseDetails="
+        + responseDetails
         + '}';
   }
 
-  /** Immutable, so publishing one reference publishes all three values. */
-  private static final class ResponseDetails {
+  /**
+   * The response side of a {@link NetworkRequestData}, immutable so one reference publishes all.
+   */
+  public static final class ResponseDetails {
     private final int statusCode;
     private final @Nullable Long bodySize;
     private final @NotNull ReplayNetworkRequestOrResponse response;
 
-    ResponseDetails(
-        final int statusCode,
-        final @Nullable Long bodySize,
-        final @NotNull ReplayNetworkRequestOrResponse response) {
+    /**
+     * @param statusCode the HTTP status code of the response.
+     * @param response the response details obtained via {@link
+     *     NetworkDetailCaptureUtils#createResponse}
+     */
+    public ResponseDetails(
+        final int statusCode, final @NotNull ReplayNetworkRequestOrResponse response) {
       this.statusCode = statusCode;
-      this.bodySize = bodySize;
+      this.bodySize = response.getSize();
       this.response = response;
+    }
+
+    @Override
+    public String toString() {
+      return "ResponseDetails{"
+          + "statusCode="
+          + statusCode
+          + ", bodySize="
+          + bodySize
+          + ", response="
+          + response
+          + '}';
     }
   }
 }

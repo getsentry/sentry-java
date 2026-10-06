@@ -19,12 +19,13 @@ import okio.buffer
  * returns and the thread that called `execute()` never gets the response at all.
  *
  * This body instead captures what is actually consumed. It forwards every byte to the application
- * untouched and hands the captured bytes to [onCaptured] as soon as no more bytes can arrive, which
- * is when the stream ends, when the application closes the body, or when the cap is reached.
+ * untouched and hands the captured bytes to [onCaptured] as soon as the capture can no longer grow,
+ * which is when the stream ends, when the application closes the body, or when the cap is reached.
  *
  * @param delegate the body to capture from.
  * @param maxBytes the maximum number of bytes to retain; capture stops once it is reached.
- * @param onCaptured invoked exactly once with the captured bytes.
+ * @param onCaptured invoked at most once, synchronously, on the thread that finishes the body. It
+ *   is never invoked for a body that is abandoned without being read to the end or closed.
  */
 internal class NetworkBodyCapturingResponseBody(
   private val delegate: ResponseBody,
@@ -34,6 +35,13 @@ internal class NetworkBodyCapturingResponseBody(
 
   private val captured = Buffer()
   private val reported = AtomicBoolean(false)
+
+  // A ResponseBody must hand out a BufferedSource, so the capturing source is buffered. That cannot
+  // re-introduce the blocking this class exists to avoid: BufferedSource.read(sink, byteCount)
+  // issues at most one segment-sized read on the source below it and returns with whatever arrived,
+  // so a short event is still forwarded on its own. The reads that loop until a byte count is
+  // reached — request, require, readByteArray() — are the application's own choice, and the capture
+  // never calls them.
   private val capturingSource: BufferedSource by lazy {
     CapturingSource(delegate.source()).buffer()
   }
@@ -45,29 +53,31 @@ internal class NetworkBodyCapturingResponseBody(
   override fun source(): BufferedSource = capturingSource
 
   override fun close() {
-    // Report before closing the delegate: closing it notifies listeners, which may serialize the
-    // breadcrumb this capture belongs to.
-    reportCaptured()
-    delegate.close()
+    try {
+      // Report before closing the delegate: closing it notifies listeners, which may serialize the
+      // breadcrumb this capture belongs to.
+      reportCaptured()
+    } finally {
+      delegate.close()
+    }
   }
 
-  /**
-   * Copies the bytes passing through into [captured].
-   *
-   * A response body has a single consumer, as OkHttp requires of one, so the buffer is only ever
-   * touched by the thread reading it and needs no locking.
-   */
+  /** Copies the bytes passing through into [captured]. */
   private inner class CapturingSource(source: Source) : ForwardingSource(source) {
     override fun read(sink: Buffer, byteCount: Long): Long {
       val sinkBefore = sink.size
       val read = super.read(sink, byteCount)
 
       if (read > 0L) {
-        val toTake = minOf(maxBytes - captured.size, sink.size - sinkBefore)
-        if (toTake > 0L) {
-          sink.copyTo(captured, sinkBefore, toTake)
-        }
-        if (captured.size >= maxBytes) {
+        val capFull =
+          synchronized(captured) {
+            val toTake = minOf(maxBytes - captured.size, sink.size - sinkBefore)
+            if (toTake > 0L) {
+              sink.copyTo(captured, sinkBefore, toTake)
+            }
+            captured.size >= maxBytes
+          }
+        if (capFull) {
           // the capture can never grow again, so this is the moment it becomes final
           reportCaptured()
         }
@@ -79,14 +89,23 @@ internal class NetworkBodyCapturingResponseBody(
     }
 
     override fun close() {
-      super.close()
-      reportCaptured()
+      try {
+        reportCaptured()
+      } finally {
+        super.close()
+      }
     }
   }
 
+  /**
+   * The consuming thread writes [captured] from [CapturingSource.read] while [close] may be called
+   * by another thread — cancelling a stream from elsewhere is ordinary use — and [Buffer] is not
+   * thread-safe, so both accesses are guarded. [reported] keeps the callback to a single
+   * invocation.
+   */
   private fun reportCaptured() {
     if (reported.compareAndSet(false, true)) {
-      onCaptured(captured.clone().readByteArray())
+      onCaptured(synchronized(captured) { captured.clone().readByteArray() })
     }
   }
 }

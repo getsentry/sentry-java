@@ -6,8 +6,11 @@ import kotlin.test.assertNull
 
 class NetworkRequestDataTest {
 
-  private fun response(statusCode: Int, size: Long): ReplayNetworkRequestOrResponse =
-    ReplayNetworkRequestOrResponse(size, null, emptyMap())
+  private fun responseDetails(statusCode: Int, size: Long): NetworkRequestData.ResponseDetails =
+    NetworkRequestData.ResponseDetails(
+      statusCode,
+      ReplayNetworkRequestOrResponse(size, null, emptyMap()),
+    )
 
   @Test
   fun `response details are empty until they are set`() {
@@ -22,7 +25,7 @@ class NetworkRequestDataTest {
   fun `response details are all readable once set`() {
     val data = NetworkRequestData("GET")
 
-    data.setResponseDetails(200, response(200, 42L))
+    data.setResponseDetails(responseDetails(200, 42L))
 
     assertEquals(200, data.getStatusCode())
     assertEquals(42L, data.getResponseBodySize())
@@ -31,14 +34,15 @@ class NetworkRequestDataTest {
 
   @Test
   fun `response details can be filled in after the instance was published`() {
-    // A streamed body is only known once it has been consumed, which can be after the breadcrumb
+    // A body of unknown length is only known once it has been consumed, which can be after the
+    // breadcrumb
     // holding this instance already reached the scope, so the values must stay consistent for a
     // reader that arrives late.
     val data = NetworkRequestData("GET")
     assertNull(data.getStatusCode())
     assertNull(data.getResponse())
 
-    data.setResponseDetails(500, response(500, 7L))
+    data.setResponseDetails(responseDetails(500, 7L))
 
     assertEquals(500, data.getStatusCode())
     assertEquals(7L, data.getResponseBodySize())

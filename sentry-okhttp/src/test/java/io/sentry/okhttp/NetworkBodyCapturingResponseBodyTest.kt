@@ -186,6 +186,37 @@ class NetworkBodyCapturingResponseBodyTest {
   }
 
   @Test
+  fun `captures every byte when the application reads less than a chunk at a time`() {
+    // The capture copies out of the application's sink at an offset, because a BufferedSource keeps
+    // what the application did not take yet in that same sink.
+    val chunks = (0 until 5).map { i -> "chunk-$i--".toByteArray() }
+    val whole = chunks.joinToString("") { it.decodeToString() }
+    val (wrapper, captured) = capture(ChunkedSource(chunks), 1024)
+
+    val source = wrapper.source()
+    val read = StringBuilder()
+    while (!source.exhausted()) {
+      read.append(source.readUtf8(minOf(3L, source.buffer.size.coerceAtLeast(1L))))
+    }
+
+    assertEquals(whole, read.toString(), "the application receives the whole body")
+    assertEquals(whole, captured.single()?.decodeToString(), "and the capture holds the same bytes")
+  }
+
+  @Test
+  fun `a failing capture callback does not reach the application`() {
+    val source = ChunkedSource(listOf("payload".toByteArray()))
+    val body = bodyOf(source)
+    val wrapper =
+      NetworkBodyCapturingResponseBody(body, 1024) { throw IllegalStateException("parse failed") }
+
+    // The interceptor guards its own callback; the wrapper must not swallow the failure silently
+    // while leaving the delegate open.
+    assertFailsWith<IllegalStateException> { wrapper.close() }
+    assertTrue(source.isClosed, "the delegate is closed even though the callback threw")
+  }
+
+  @Test
   fun `reports only once when the body ends and is then closed`() {
     val (wrapper, captured) = capture(ChunkedSource(listOf("done".toByteArray())), 1024)
 

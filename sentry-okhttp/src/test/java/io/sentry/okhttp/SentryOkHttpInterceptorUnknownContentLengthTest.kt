@@ -4,6 +4,7 @@ import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.SentryOptions
 import io.sentry.TypeCheckHint
+import io.sentry.util.network.NetworkBody
 import io.sentry.util.network.NetworkRequestData
 import java.io.ByteArrayOutputStream
 import java.io.Closeable
@@ -25,6 +26,9 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okio.Buffer
+import okio.GzipSink
+import okio.buffer
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
@@ -39,7 +43,7 @@ import org.mockito.kotlin.whenever
  * reading until the peek size is reached or the stream ends". For these responses neither happens,
  * so the thread that called `execute()` never received the response at all.
  */
-class SentryOkHttpInterceptorStreamingTest {
+class SentryOkHttpInterceptorUnknownContentLengthTest {
 
   private val scopes = mock<IScopes>()
   private lateinit var options: SentryOptions
@@ -72,6 +76,8 @@ class SentryOkHttpInterceptorStreamingTest {
 
   private fun capturedBody(): String? = networkDetails().response?.body?.body as String?
 
+  private fun capturedBodyValue(): Any? = networkDetails().response?.body?.body
+
   // ---------------------------------------------------------------------------------------
   // the regression
   // ---------------------------------------------------------------------------------------
@@ -85,6 +91,14 @@ class SentryOkHttpInterceptorStreamingTest {
       try {
         val response = executor.submit<Response> { call.execute() }.get(5, TimeUnit.SECONDS)
         assertEquals(200, response.code)
+
+        // The stream is still open and nothing has been consumed, so the capture cannot have
+        // happened yet. Everything that is already known must still reach the breadcrumb.
+        val details = networkDetails()
+        assertEquals(200, details.statusCode)
+        assertNotNull(details.response, "the response is recorded before the body is consumed")
+        assertNull(details.response?.body, "but its body is not known yet")
+
         response.close()
       } finally {
         executor.shutdownNow()
@@ -116,7 +130,7 @@ class SentryOkHttpInterceptorStreamingTest {
   // ---------------------------------------------------------------------------------------
 
   @Test
-  fun `captures a streamed body once the stream ends`() {
+  fun `captures a body of unknown length once the stream ends`() {
     setUpSut()
     val events = listOf("data: event-0\n\n", "data: event-1\n\n")
     EventStreamServer(events, closeStream = true).use { stream ->
@@ -129,7 +143,7 @@ class SentryOkHttpInterceptorStreamingTest {
   }
 
   @Test
-  fun `captures a streamed body when the application closes it before the stream ends`() {
+  fun `captures a body of unknown length when the application closes it before the stream ends`() {
     setUpSut()
     EventStreamServer(listOf("data: event-0\n\n", "data: event-1\n\n"), closeStream = false).use {
       stream ->
@@ -142,7 +156,7 @@ class SentryOkHttpInterceptorStreamingTest {
   }
 
   @Test
-  fun `records the response of a streamed body the application never reads`() {
+  fun `records the response of a body of unknown length the application never reads`() {
     setUpSut()
     EventStreamServer(listOf("data: event-0\n\n"), closeStream = true).use { stream ->
       sut.newCall(requestTo(stream.url)).execute().close()
@@ -157,7 +171,7 @@ class SentryOkHttpInterceptorStreamingTest {
   }
 
   @Test
-  fun `captures a streamed error response body`() {
+  fun `captures an error response body of unknown length`() {
     setUpSut()
     EventStreamServer(listOf("data: boom\n\n"), closeStream = true, statusCode = 500).use { stream
       ->
@@ -179,11 +193,17 @@ class SentryOkHttpInterceptorStreamingTest {
 
       assertEquals(whole.length, received?.length, "the application must receive the whole stream")
       val captured = assertNotNull(capturedBody())
-      assertTrue(
-        captured.length <= io.sentry.SentryReplayOptions.MAX_NETWORK_BODY_SIZE,
-        "the capture must stop at the cap, was ${captured.length}",
+      assertEquals(
+        io.sentry.SentryReplayOptions.MAX_NETWORK_BODY_SIZE,
+        captured.length,
+        "the capture must stop at the cap",
       )
       assertEquals(whole.substring(0, captured.length), captured)
+      assertEquals(
+        listOf(NetworkBody.NetworkBodyWarning.TEXT_TRUNCATED),
+        networkDetails().response?.body?.warnings,
+        "a capped capture must be reported as truncated, not as a complete body",
+      )
     }
   }
 
@@ -201,6 +221,37 @@ class SentryOkHttpInterceptorStreamingTest {
   // ---------------------------------------------------------------------------------------
   // responses with a known length keep the existing behaviour
   // ---------------------------------------------------------------------------------------
+
+  @Test
+  fun `captures a gzipped body, which okhttp hands over without a known length`() {
+    // OkHttp asks for gzip on its own and decompresses transparently, dropping Content-Length on
+    // the
+    // way, so an application interceptor sees -1 for an ordinary gzipped JSON response. That makes
+    // this the common path through the wrapper, not an exotic one.
+    setUpSut()
+    val json = """{"hello":"world"}"""
+    val gzipped = Buffer()
+    GzipSink(gzipped).buffer().use { it.writeUtf8(json) }
+    MockWebServer().use { server ->
+      server.enqueue(
+        MockResponse()
+          .setBody(gzipped)
+          .setHeader("Content-Encoding", "gzip")
+          .setHeader("Content-Type", "application/json")
+      )
+
+      val response = sut.newCall(requestTo(server.url("/json").toString())).execute()
+      assertEquals(json, response.use { it.body?.string() })
+
+      assertEquals(
+        -1L,
+        response.body?.contentLength(),
+        "okhttp reports no length for a gzipped body",
+      )
+      assertEquals(mapOf("hello" to "world"), capturedBodyValue())
+      assertEquals(200, networkDetails().statusCode)
+    }
+  }
 
   @Test
   fun `still captures a response with a known length up front`() {
@@ -244,7 +295,7 @@ class SentryOkHttpInterceptorStreamingTest {
   }
 
   @Test
-  fun `handles a zero length streamed body`() {
+  fun `handles a zero length body of unknown length`() {
     setUpSut()
     EventStreamServer(emptyList(), closeStream = true).use { stream ->
       sut.newCall(requestTo(stream.url)).execute().use { response ->
@@ -257,7 +308,7 @@ class SentryOkHttpInterceptorStreamingTest {
   }
 
   @Test
-  fun `keeps the connection usable after a streamed response is closed`() {
+  fun `keeps the connection usable after a response of unknown length is closed`() {
     setUpSut()
     EventStreamServer(listOf("data: event-0\n\n"), closeStream = true).use { stream ->
       // a second call on the same client proves the connection was released properly

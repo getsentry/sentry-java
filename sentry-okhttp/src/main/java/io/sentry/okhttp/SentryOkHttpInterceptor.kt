@@ -173,28 +173,32 @@ public open class SentryOkHttpInterceptor(
       )
 
       request = requestBuilder.build()
-      response = chain.proceed(request)
-      code = response.code
+      val rawResponse = chain.proceed(request)
+      response = rawResponse
+      code = rawResponse.code
       span?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, code)
       span?.status = SpanStatus.fromHttpStatusCode(code)
 
       // OkHttp errors (4xx, 5xx) don't throw, so it's safe to call within this block.
       // breadcrumbs are added on the finally block because we'd like to know if the device
       // had an unstable connection or something similar
-      if (shouldCaptureClientError(request, response)) {
+      if (shouldCaptureClientError(request, rawResponse)) {
         // If we capture the client error directly, it could be associated with the
         // currently running span by the backend. In case the listener is in use, that is
         // an inner span. So, if the listener is in use, we let it capture the client
         // error, to shown it in the http root call span in the dashboard.
         if (isFromEventListener && okHttpEvent != null) {
-          okHttpEvent.setClientErrorResponse(response)
+          okHttpEvent.setClientErrorResponse(rawResponse)
         } else {
-          SentryOkHttpUtils.captureClientError(scopes, request, response)
+          SentryOkHttpUtils.captureClientError(scopes, request, rawResponse)
         }
       }
 
-      // The response is returned after the finally block: a body of unknown length may be wrapped
-      // there so its content can be captured while it is streamed.
+      // Wrapping comes last, after the client error was captured from the untouched response. The
+      // returned value is computed here, so the finally block below only reads it.
+      val capturingResponse = rawResponse.withNetworkBodyCapture(networkDetailData)
+      response = capturingResponse
+      return capturingResponse
     } catch (e: IOException) {
       span?.apply {
         this.throwable = e
@@ -206,8 +210,6 @@ public open class SentryOkHttpInterceptor(
       // this only works correctly if SentryOkHttpInterceptor is the last one in the chain
       okHttpEvent?.setRequest(request)
 
-      response = response?.withNetworkBodyCapture(networkDetailData)
-
       // Set network details on the OkHttpEvent so it can include them in the breadcrumb hint
       okHttpEvent?.setNetworkDetails(networkDetailData)
 
@@ -218,8 +220,6 @@ public open class SentryOkHttpInterceptor(
         sendBreadcrumb(request, code, response, startTimestamp, networkDetailData)
       }
     }
-
-    return response!!
   }
 
   private fun isIgnored(): Boolean =
@@ -335,56 +335,88 @@ public open class SentryOkHttpInterceptor(
       // a body with a known length ends on its own, so capturing it up front is bounded
       !captureBodies || responseBody.contentLength() >= 0 -> {
         networkDetailData.setResponseDetails(
-          code,
-          NetworkDetailCaptureUtils.createResponse(
-            this,
-            responseBody.contentLength(),
-            captureBodies,
-            { resp: Response -> resp.extractResponseBody(logger) },
-            responseHeaders,
-            { resp: Response -> resp.headers.toMap() },
-          ),
+          NetworkRequestData.ResponseDetails(
+            code,
+            NetworkDetailCaptureUtils.createResponse(
+              this,
+              responseBody.contentLength(),
+              captureBodies,
+              { resp: Response -> resp.extractResponseBody(logger) },
+              responseHeaders,
+              { resp: Response -> resp.headers.toMap() },
+            ),
+          )
         )
         this
       }
-      else -> wrapForCapturedStreamingBody(networkDetailData, responseBody, responseHeaders, logger)
+      else -> wrapUnknownContentLengthBody(networkDetailData, responseBody, responseHeaders, logger)
     }
   }
 
   /** Wraps a body that may never end, capturing the bytes as the application consumes them. */
-  private fun Response.wrapForCapturedStreamingBody(
+  private fun Response.wrapUnknownContentLengthBody(
     networkDetailData: NetworkRequestData,
     responseBody: ResponseBody,
     responseHeaders: List<String>,
     logger: ILogger,
   ): Response {
-    val maxBodySize = SentryReplayOptions.MAX_NETWORK_BODY_SIZE
+    // One byte above the limit, as the peek path does: NetworkBodyParser.fromBytes tells a
+    // truncated body from one that happens to match the limit exactly by that byte.
+    val captureCap = SentryReplayOptions.MAX_NETWORK_BODY_SIZE.toLong() + 1
     val contentType = responseBody.contentType()
     val contentTypeString = contentType?.toString()
     val charset = contentType?.charset(Charsets.UTF_8)?.name() ?: "UTF-8"
 
+    // The status code and the headers are known now, so record them before anything is consumed.
+    // The capture below replaces them with the same values plus the body: for a stream that stays
+    // open for minutes, or a body the application never reads, this is all the replay ever gets.
+    networkDetailData.setResponseDetails(
+      NetworkRequestData.ResponseDetails(
+        code,
+        NetworkDetailCaptureUtils.createResponse(
+          this,
+          null,
+          false,
+          { null },
+          responseHeaders,
+          { resp: Response -> resp.headers.toMap() },
+        ),
+      )
+    )
+
     return newBuilder()
       .body(
-        NetworkBodyCapturingResponseBody(responseBody, maxBodySize.toLong()) { capturedBytes ->
-          networkDetailData.setResponseDetails(
-            code,
-            NetworkDetailCaptureUtils.createResponse(
-              this,
-              capturedBytes.size.toLong(),
-              true,
-              {
-                NetworkBodyParser.fromBytes(
-                  capturedBytes,
-                  contentTypeString,
-                  charset,
-                  maxBodySize,
-                  logger,
-                )
-              },
-              responseHeaders,
-              { resp: Response -> resp.headers.toMap() },
-            ),
-          )
+        NetworkBodyCapturingResponseBody(responseBody, captureCap) { capturedBytes ->
+          // This runs on the thread consuming the body, inside its read or close, so a failure in
+          // here must stay in here. The peek path guards the same parsing work the same way.
+          try {
+            networkDetailData.setResponseDetails(
+              NetworkRequestData.ResponseDetails(
+                code,
+                NetworkDetailCaptureUtils.createResponse(
+                  this,
+                  capturedBytes.size.toLong(),
+                  true,
+                  {
+                    NetworkBodyParser.fromBytes(
+                      capturedBytes,
+                      contentTypeString,
+                      charset,
+                      SentryReplayOptions.MAX_NETWORK_BODY_SIZE,
+                      logger,
+                    )
+                  },
+                  responseHeaders,
+                  { resp: Response -> resp.headers.toMap() },
+                ),
+              )
+            )
+          } catch (e: Exception) {
+            logger.log(
+              io.sentry.SentryLevel.ERROR,
+              "Failed to capture the http response body for Network Details: ${e.message}",
+            )
+          }
         }
       )
       .build()

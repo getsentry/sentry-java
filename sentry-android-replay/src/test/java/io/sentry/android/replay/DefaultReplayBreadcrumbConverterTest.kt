@@ -429,12 +429,14 @@ class DefaultReplayBreadcrumbConverterTest {
       )
     )
     fakeOkHttpNetworkDetails.setResponseDetails(
-      200,
-      ReplayNetworkRequestOrResponse(
-        500L,
-        NetworkBody(mapOf("status" to "success", "message" to "OK")),
-        mapOf("Content-Type" to "text/plain"),
-      ),
+      NetworkRequestData.ResponseDetails(
+        200,
+        ReplayNetworkRequestOrResponse(
+          500L,
+          NetworkBody(mapOf("status" to "success", "message" to "OK")),
+          mapOf("Content-Type" to "text/plain"),
+        ),
+      )
     )
     val hintWithFakeOKHttpNetworkDetails = Hint()
     hintWithFakeOKHttpNetworkDetails.set(SENTRY_REPLAY_NETWORK_DETAILS, fakeOkHttpNetworkDetails)
@@ -491,12 +493,14 @@ class DefaultReplayBreadcrumbConverterTest {
       )
     )
     fakeOkHttpNetworkDetails.setResponseDetails(
-      404,
-      ReplayNetworkRequestOrResponse(
-        550L,
-        NetworkBody(mapOf("status" to "success", "message" to "OK")),
-        mapOf("Content-Type" to "text/plain"),
-      ),
+      NetworkRequestData.ResponseDetails(
+        404,
+        ReplayNetworkRequestOrResponse(
+          550L,
+          NetworkBody(mapOf("status" to "success", "message" to "OK")),
+          mapOf("Content-Type" to "text/plain"),
+        ),
+      )
     )
     val hintWithFakeOKHttpNetworkDetails = Hint()
     hintWithFakeOKHttpNetworkDetails.set(SENTRY_REPLAY_NETWORK_DETAILS, fakeOkHttpNetworkDetails)
@@ -546,12 +550,14 @@ class DefaultReplayBreadcrumbConverterTest {
       )
     )
     networkRequestData.setResponseDetails(
-      200,
-      ReplayNetworkRequestOrResponse(
-        100L,
-        NetworkBody("response body content"),
-        mapOf("Content-Type" to "application/json"),
-      ),
+      NetworkRequestData.ResponseDetails(
+        200,
+        ReplayNetworkRequestOrResponse(
+          100L,
+          NetworkBody("response body content"),
+          mapOf("Content-Type" to "application/json"),
+        ),
+      )
     )
     hint.set(SENTRY_REPLAY_NETWORK_DETAILS, networkRequestData)
 
