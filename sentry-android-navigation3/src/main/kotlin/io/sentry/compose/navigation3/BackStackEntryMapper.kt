@@ -5,7 +5,6 @@ import org.jetbrains.annotations.ApiStatus
 
 /** Info about a given back stack entry, suitable for display in Sentry. */
 @ApiStatus.Experimental
-@ApiStatus.Internal
 public class SentryBackStackEntry(
   /**
    * A host-app defined name for a given back stack entry.
@@ -146,7 +145,6 @@ public class SentryBackStackEntry(
  * ```
  */
 @ApiStatus.Experimental
-@ApiStatus.Internal
 public fun interface BackStackEntryMapper<T : Any> {
   public fun map(backStackEntry: T): SentryBackStackEntry?
 }

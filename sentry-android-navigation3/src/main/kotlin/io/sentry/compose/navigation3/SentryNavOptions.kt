@@ -19,7 +19,6 @@ private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 5
  * ```
  */
 @ApiStatus.Experimental
-@ApiStatus.Internal
 @Immutable
 public class SentryNavOptions
 private constructor(
@@ -116,6 +115,5 @@ private constructor(
  * ```
  */
 @ApiStatus.Experimental
-@ApiStatus.Internal
 public fun SentryNavOptions(configure: SentryNavOptions.Builder.() -> Unit = {}): SentryNavOptions =
   SentryNavOptions.Builder().apply(configure).build()
