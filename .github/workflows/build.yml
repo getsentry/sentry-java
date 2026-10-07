@@ -49,12 +49,9 @@ jobs:
         uses: getsentry/action-setup-cli@70d7e587b84c2e78cf4d37cd33d7b74fb3729c1b # v1
 
       - name: Upload Snapshots to Sentry
+        # Skip on PRs from forks and from Dependabot, which don't have access to the upload secret
+        if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') }}
         run: |
-          # PRs from forks and Dependabot PRs have no access to the upload secret
-          if [ -z "$SENTRY_AUTH_TOKEN" ]; then
-            echo "SENTRY_AUTH_TOKEN is not available, skipping snapshot upload"
-            exit 0
-          fi
           sentry-cli snapshots upload ./sentry-android-core/build/test-snapshots \
             --app-id sentry-android-core
         env:
