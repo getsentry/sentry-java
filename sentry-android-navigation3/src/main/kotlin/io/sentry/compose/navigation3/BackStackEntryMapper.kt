@@ -5,7 +5,6 @@ import org.jetbrains.annotations.ApiStatus
 
 /** Info about a given back stack entry, suitable for display in Sentry. */
 @ApiStatus.Experimental
-@ApiStatus.Internal
 public class SentryBackStackEntry(
   /**
    * A host-app defined name for a given back stack entry.
@@ -104,13 +103,15 @@ public class SentryBackStackEntry(
  * - [Map]s
  * - [Collection]s
  *
- * Containers may be nested, but they must bottom out in supported scalar types. Cyclic or deeply
- * nested containers will be skipped.
+ * Containers may be nested, but they must bottom out in supported scalar types.
  *
  * **Arguments fall back to `toString()` or nothing**
  *
- * All non-supported argument types are stringified via `toString()`. If [map] throws or returns
- * `null`, no arguments are recorded for that back stack entry.
+ * All non-supported argument types are stringified via `toString()`.
+ *
+ * No arguments will be recorded for a back stack entry if [map] throws or returns `null`, or if its
+ * arguments are cyclic, too deeply nested, or too large. If the SDK drops an entry's arguments, it
+ * adds a `dropped_by_sentry` field and corresponding reason in the Sentry UI.
  *
  * **Using kotlinx.serialization**
  *
@@ -123,11 +124,11 @@ public class SentryBackStackEntry(
  * ```kotlin
  * @Serializable
  * @SerialName("Home")
- * data class Home(userName: String) : NavKey
+ * data class Home(val userName: String) : NavKey
  *
  * @Serializable
  * @SerialName("ProductDetail")
- * data class ProductDetail(userName: String, productId: String, tab: Tab) : NavKey
+ * data class ProductDetail(val userName: String, val productId: String) : NavKey
  *
  * ...
  *
@@ -138,7 +139,7 @@ public class SentryBackStackEntry(
  *       name = ProductDetail.serializer().descriptor.serialName,
  *       // Select a subset of diagnostic arguments when serialization is unsafe
  *       // or non-performant.
- *       arguments = mapOf("product_id" to entry.productId, "tab" to entry.tab)
+ *       arguments = mapOf("product_id" to entry.productId)
  *     )
  *     ...
  *   }
@@ -146,7 +147,6 @@ public class SentryBackStackEntry(
  * ```
  */
 @ApiStatus.Experimental
-@ApiStatus.Internal
 public fun interface BackStackEntryMapper<T : Any> {
   public fun map(backStackEntry: T): SentryBackStackEntry?
 }
