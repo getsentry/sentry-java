@@ -6,6 +6,12 @@
 
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
 
+### Dependencies
+
+- Bump Native SDK from v0.17.1 to v0.17.2 ([#6230](https://github.com/getsentry/sentry-java/pull/6230))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0172)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.1...0.17.2)
+
 ## 8.59.0
 
 ### Breaking Changes
