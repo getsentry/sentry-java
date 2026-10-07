@@ -22,7 +22,85 @@ import io.sentry.TransactionOptions
  * An [IScopes] implementation that lets us coordinate updates to navigation state across multiple
  * [SentryNavEffect]s. (Also supports updates managed by a single `SentryNavEffect`.)
  *
- * Needed because all `SentryNavEffect`s mutate a single [IScope] instance by default.
+ * Needed because all `SentryNavEffect`s mutate a single [IScope] instance by default:
+ * ```
+ * SentryNavEffect
+ *       ↓ owns
+ *   NavSession
+ *    ├── BackStackObserver — computes nav data and nav transactions
+ *    └── INavScopes        — controls whether those results reach the real scope
+ *               ↓
+ *        NavLeaseCoordinator — arbitrates ownership across all effects
+ *               ↓
+ *          shared IScope
+ * ```
+ *
+ * The ownership policy differs between nav transactions vs nav data, and is based on the lifetime
+ * of the [LifecycleOwner] managing each `SentryNavEffect`:
+ * ```
+ *   ┌──────── Transaction lease lifetime ────────┐
+ *   │                                            │
+ *   │  ON_CREATE                                 │
+ *   │      │                                     │
+ *   │      ▼                                     │
+ *   │  ┌──────── Data lease lifetime ─────────┐  │
+ *   │  │ ON_RESUME                            │  │
+ *   │  │     │                                │  │
+ *   │  │     ▼                                │  │
+ *   │  │ ON_PAUSE                             │  │
+ *   │  └──────────────────────────────────────┘  │
+ *   │      │                                     │
+ *   │      ▼                                     │
+ *   │  ON_DESTROY                                │
+ *   │                                            │
+ *   └────────────────────────────────────────────┘
+ * ```
+ *
+ * Transaction ownership changes quickly if two `SentryNavEffect`s overlap while the host app
+ * transitions between their `LifecycleOwner`s. That lets us ensure no spans are lost and that the
+ * incoming destination is available to parent any spans produced by the incoming `LifecycleOwner`.
+ *
+ * Data ownership, by contrast, requires less internal coordination, as it tracks `LifecycleOwner`
+ * visibility.
+ *
+ * ```
+ *   Time
+ *    │
+ *    ▼
+ *
+ *   SentryNavEffect A                  Lease owner              SentryNavEffect B
+ *   ─────────────────              ───────────────────          ─────────────────
+ *
+ *   ON_CREATE ───────────────────► Transaction: A
+ *       │                          Data:        none
+ *       │
+ *   ON_RESUME ───────────────────► Transaction: A
+ *       │                          Data:        A
+ *       │
+ *   ON_PAUSE ────────────────────► Transaction: A
+ *       │                          Data:        none
+ *       │
+ *       │                                                            ON_CREATE
+ *       │                          Transaction: B ◄───────────────────────┤
+ *       │                          Data:        none                      │
+ *       │                                                                 │
+ *       │                                                            ON_RESUME
+ *       │                          Transaction: B ◄───────────────────────┤
+ *       │                          Data:        B                         │
+ *       │                                                                 │
+ *   ON_DESTROY ──────────────────► Transaction: B                         │
+ *                                  Data:        B                         │
+ *                                  (A owns neither,                       │
+ *                                   so B is unaffected)                   │
+ *                                                                         │
+ *                                                                      ON_PAUSE
+ *                                  Transaction: B ◄───────────────────────┤
+ *                                  Data:        none                      │
+ *                                                                         │
+ *                                                                     ON_DESTROY
+ *                                  Transaction: none ◄────────────────────┘
+ *                                  Data:        none
+ * ```
  *
  * **Limitations**
  *
@@ -31,10 +109,10 @@ import io.sentry.TransactionOptions
  * - each `SentryNavEffect` is managed by a single [LifecycleOwner] (e.g., a multi-Activity app with
  *   one `SentryNavEffect` per Activity);
  *
- * - in general only one `SentryNavEffect` is active at a time; but
+ * - normally only one `SentryNavEffect` is active at a time; but
  *
  * - brief windows exist where multiple `SentryNavEffect`s may be simultaneously active (e.g., as
- *   the host app switches between activities)
+ *   the host app switches between activities).
  *
  * Does ***not*** support scenarios where multiple `SentryNavEffect`s are meant to be simultaneously
  * active, whether nested or as siblings (e.g.,
@@ -46,18 +124,18 @@ import io.sentry.TransactionOptions
  * This class works by maintaining separate nav transaction and nav data leases, and only allowing
  * `INavScopes` instances holding the relevant lease to mutate the underlying `IScope`.
  *
- * `NavIScope` instances without a lease write to a [stagedNavState] holder, which lets them
- * preserve their latest nav updates without overwriting another instance's published data. When an
- * instance acquires the lease, it publishes its staged screen and navigation context to the
- * underlying [IScope].
+ * `NavIScope` instances without a lease write to a [stagedNavData] holder, which lets them preserve
+ * their latest nav updates without overwriting another instance's published data. When an instance
+ * acquires the lease, it publishes its staged screen and navigation context to the underlying
+ * [IScope].
  *
  * The data lease is acquired automatically as a `LifecycleOwner` transitions into
  * [resumed][Lifecycle.Event.ON_RESUME] state, and released automatically as it transitions into
  * [paused][Lifecycle.Event.ON_PAUSE] state.
  *
  * The transaction lease is acquired during [attach] and in [ON_CREATE][Lifecycle.Event.ON_CREATE]
- * in order to eagerly create a nav transaction for the initial nav destination (otherwise initial
- * spans may be dropped or misattributed). The transaction lease is released upon
+ * in order to eagerly create a nav transaction for the initial nav destination. (Otherwise initial
+ * spans may be dropped or misattributed.) The transaction lease is released upon
  * [disposal][dispose], or whenever another `INavScopes` instance claims ownership.
  *
  * **Usage**
@@ -85,7 +163,7 @@ internal class INavScopes(
 
   private val owner: Any = Any()
   private var attachedLifecycle: Lifecycle? = null
-  private val stagedNavState = StagedNavState()
+  private val stagedNavData = StagedNavData()
 
   /**
    * Whether [runBackStackUpdate] is currently executing its callback.
@@ -189,13 +267,13 @@ internal class INavScopes(
   }
 
   override fun addBreadcrumb(breadcrumb: Breadcrumb, hint: Hint?) {
-    stagedNavState.addBreadcrumb(coordinator.hasDataLease(owner)) {
+    stagedNavData.addBreadcrumb(coordinator.hasDataLease(owner)) {
       delegate.addBreadcrumb(breadcrumb, hint)
     }
   }
 
   override fun addBreadcrumb(breadcrumb: Breadcrumb) {
-    stagedNavState.addBreadcrumb(coordinator.hasDataLease(owner)) {
+    stagedNavData.addBreadcrumb(coordinator.hasDataLease(owner)) {
       delegate.addBreadcrumb(breadcrumb)
     }
   }
@@ -217,19 +295,19 @@ internal class INavScopes(
       if (!coordinator.hasDataLease(owner)) {
         return@configureScope
       }
-      stagedNavState.publishTo(scope)
+      stagedNavData.publishTo(scope)
     }
 
-    stagedNavState.publishPendingBreadcrumb(coordinator.hasDataLease(owner))
+    stagedNavData.publishPendingBreadcrumb(coordinator.hasDataLease(owner))
   }
 
   private inner class LeasedNavigationScope(private val realScope: IScope) : IScope by realScope {
 
     override fun getScreen(): String? =
-      stagedNavState.getScreen(realScope, coordinator.hasDataLease(owner))
+      stagedNavData.getScreen(realScope, coordinator.hasDataLease(owner))
 
     override fun setScreen(screen: String?) {
-      stagedNavState.setScreen(screen, realScope, coordinator.hasDataLease(owner))
+      stagedNavData.setScreen(screen, realScope, coordinator.hasDataLease(owner))
     }
 
     override fun setContexts(key: String?, value: Any?) {
@@ -238,21 +316,21 @@ internal class INavScopes(
         return
       }
 
-      stagedNavState.setNavigationContext(value, realScope, coordinator.hasDataLease(owner))
+      stagedNavData.setNavigationContext(value, realScope, coordinator.hasDataLease(owner))
     }
 
     override fun getPropagationContext(): PropagationContext =
       if (coordinator.hasTransactionLease(owner)) {
         realScope.propagationContext
       } else {
-        stagedNavState.propagationContext
+        stagedNavData.propagationContext
       }
 
     override fun setPropagationContext(propagationContext: PropagationContext) {
       if (coordinator.hasTransactionLease(owner)) {
         realScope.propagationContext = propagationContext
       } else {
-        stagedNavState.propagationContext = propagationContext
+        stagedNavData.propagationContext = propagationContext
       }
     }
 
@@ -262,13 +340,13 @@ internal class INavScopes(
       if (coordinator.hasTransactionLease(owner)) {
         realScope.withPropagationContext(callback)
       } else {
-        stagedNavState.withPropagationContext(callback)
+        stagedNavData.withPropagationContext(callback)
       }
   }
 }
 
 /** Holds navigation data staged for publication. */
-private class StagedNavState {
+private class StagedNavData {
 
   private val scope = Scope(SentryOptions.empty())
 
