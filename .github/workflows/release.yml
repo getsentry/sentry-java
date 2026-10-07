@@ -38,6 +38,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.token.outputs.token }}
         with:
+          craft_version: 2.33.1
           version: ${{ github.event.inputs.version }}
           force: ${{ github.event.inputs.force }}
           merge_target: ${{ github.event.inputs.merge_target }}
