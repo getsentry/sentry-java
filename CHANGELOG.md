@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events ([#1](https://github.com/getsentry/sentry-java/pull/1))
+- Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
 
 ### Features
 
