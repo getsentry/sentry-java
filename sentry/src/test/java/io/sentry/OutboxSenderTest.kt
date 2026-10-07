@@ -1,9 +1,16 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.cache.EnvelopeCache
+import io.sentry.hints.Cached
+import io.sentry.hints.DeferredDelete
+import io.sentry.hints.Flushable
+import io.sentry.hints.Resettable
 import io.sentry.hints.Retryable
+import io.sentry.hints.SubmissionResult
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
+import io.sentry.util.DeferredDeleteDecision
 import io.sentry.util.HintUtils
 import io.sentry.util.thread.NoOpThreadChecker
 import java.io.File
@@ -11,6 +18,8 @@ import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Date
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -368,5 +377,112 @@ class OutboxSenderTest {
   @Test
   fun `when file name is relevant, should return true`() {
     assertTrue(fixture.getSut().isRelevantFileName("123.envelope"))
+  }
+
+  /** Mirrors the outbox hints in DirectoryProcessor and EnvelopeFileObserver. */
+  private class DeferrableOutboxHint(private val flushTimeoutMillis: Long, logger: ILogger) :
+    Cached, Retryable, SubmissionResult, Flushable, Resettable, DeferredDelete {
+    private val decision = DeferredDeleteDecision(logger)
+    private var latch = CountDownLatch(1)
+    private var retry = false
+    private var succeeded = false
+
+    override fun waitFlush(): Boolean = latch.await(flushTimeoutMillis, TimeUnit.MILLISECONDS)
+
+    override fun isRetry(): Boolean = retry
+
+    override fun setRetry(retry: Boolean) {
+      this.retry = retry
+    }
+
+    override fun setResult(succeeded: Boolean) {
+      this.succeeded = succeeded
+      decision.onOutcomeKnown(retry)
+      latch.countDown()
+    }
+
+    override fun isSuccess(): Boolean = succeeded
+
+    override fun reset() {
+      latch = CountDownLatch(1)
+      retry = false
+      succeeded = false
+    }
+
+    override fun deferDelete(file: File): Boolean = decision.defer(file)
+  }
+
+  private val flushTimeoutMillis = 300L
+
+  /** Reports the outcome of a send only after the flush wait has already expired. */
+  private fun reportOutcomeLate(hint: Hint, retry: Boolean, succeeded: Boolean): Thread =
+    Thread {
+        Thread.sleep(flushTimeoutMillis * 3)
+        HintUtils.runIfHasType(hint, Retryable::class.java) { it.isRetry = retry }
+        HintUtils.runIfHasType(hint, SubmissionResult::class.java) { it.setResult(succeeded) }
+      }
+      .also { it.start() }
+
+  private fun processEventItemWithLateOutcome(retry: Boolean, succeeded: Boolean): File {
+    fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
+    whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java)))
+      .thenReturn(SentryEvent(SentryId("9ec79c33-ec99-42ab-8353-589fcb2e04dc"), Date()))
+
+    val threads = mutableListOf<Thread>()
+    whenever(fixture.scopes.captureEvent(any<SentryEvent>(), any<Hint>())).thenAnswer { invocation
+      ->
+      threads.add(reportOutcomeLate(invocation.getArgument(1), retry, succeeded))
+      SentryId.EMPTY_ID
+    }
+
+    val path = getTempEnvelope()
+    val hint =
+      HintUtils.createWithTypeCheckHint(DeferrableOutboxHint(flushTimeoutMillis, fixture.logger))
+
+    fixture.getSut().processEnvelopeFile(path, hint)
+    threads.forEach { it.join() }
+    return File(path)
+  }
+
+  @Test
+  fun `when the flush wait expires on the first item and the send then fails, the file is kept`() {
+    val file = processEventItemWithLateOutcome(retry = true, succeeded = false)
+    assertThat(file.exists()).isTrue()
+  }
+
+  @Test
+  fun `when the flush wait expires on the first item and the send then succeeds, the file is deleted`() {
+    val file = processEventItemWithLateOutcome(retry = false, succeeded = true)
+    assertThat(file.exists()).isFalse()
+  }
+
+  @Test
+  fun `when an item was already sent, a later flush timeout still deletes the file`() {
+    fixture.envelopeReader = EnvelopeReader(JsonSerializer(fixture.options))
+    whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java)))
+      .thenReturn(SentryEvent(SentryId("9ec79c33-ec99-42ab-8353-589fcb2e04dc"), Date()))
+
+    // The event item lands right away, so the attachment item that follows it may not keep the
+    // file: a later attempt would send the event a second time.
+    whenever(fixture.scopes.captureEvent(any<SentryEvent>(), any<Hint>())).thenAnswer { invocation
+      ->
+      val hint = invocation.getArgument<Hint>(1)
+      HintUtils.runIfHasType(hint, SubmissionResult::class.java) { it.setResult(true) }
+      SentryId.EMPTY_ID
+    }
+    val threads = mutableListOf<Thread>()
+    whenever(fixture.scopes.captureEnvelope(any(), any<Hint>())).thenAnswer { invocation ->
+      threads.add(reportOutcomeLate(invocation.getArgument(1), retry = true, succeeded = false))
+      SentryId.EMPTY_ID
+    }
+
+    val path = getTempEnvelope()
+    val hint =
+      HintUtils.createWithTypeCheckHint(DeferrableOutboxHint(flushTimeoutMillis, fixture.logger))
+
+    fixture.getSut().processEnvelopeFile(path, hint)
+    threads.forEach { it.join() }
+
+    assertThat(File(path).exists()).isFalse()
   }
 }

@@ -12,6 +12,7 @@ import io.sentry.hints.SubmissionResult;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.util.CollectionUtils;
+import io.sentry.util.FileUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.LogUtils;
 import io.sentry.util.Objects;
@@ -64,6 +65,10 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
       return;
     }
 
+    // Set once an item is still in flight and the hint has taken over the file, so that the
+    // decision below is left to whoever learns the outcome of the send.
+    boolean deferredToHint = false;
+
     try (final InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
       final SentryEnvelope envelope = envelopeReader.read(stream);
       if (envelope == null) {
@@ -72,27 +77,28 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
             "Stream from path %s resulted in a null envelope.",
             file.getAbsolutePath());
       } else {
-        processEnvelope(envelope, hint);
+        deferredToHint = processEnvelope(envelope, hint, file);
         logger.log(SentryLevel.DEBUG, "File '%s' is done.", file.getAbsolutePath());
       }
     } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Error processing envelope.", e);
     } finally {
-      HintUtils.runIfHasTypeLogIfNot(
-          hint,
-          Retryable.class,
-          logger,
-          (retryable) -> {
-            if (!retryable.isRetry()) {
-              try {
-                if (!file.delete()) {
-                  logger.log(SentryLevel.ERROR, "Failed to delete: %s", file.getAbsolutePath());
-                }
-              } catch (RuntimeException e) {
-                logger.log(SentryLevel.ERROR, e, "Failed to delete: %s", file.getAbsolutePath());
+      if (deferredToHint) {
+        logger.log(
+            SentryLevel.INFO,
+            "File %s kept until the in-flight send reports its outcome.",
+            file.getAbsolutePath());
+      } else {
+        HintUtils.runIfHasTypeLogIfNot(
+            hint,
+            Retryable.class,
+            logger,
+            (retryable) -> {
+              if (!retryable.isRetry()) {
+                FileUtils.deleteFile(file, logger);
               }
-            }
-          });
+            });
+      }
     }
   }
 
@@ -113,13 +119,24 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
     processFile(new File(path), hint);
   }
 
-  private void processEnvelope(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint)
+  /**
+   * Captures every item of the envelope, one after the other.
+   *
+   * <p>A flush wait that expires leaves the outcome of that item unknown. The file may only be
+   * handed to the hint while no item has been sent yet: once one has, keeping the file would send
+   * that item a second time on the next attempt, and losing the remaining items is the lesser harm.
+   *
+   * @return true if the hint took over the decision about {@code file}
+   */
+  private boolean processEnvelope(
+      final @NotNull SentryEnvelope envelope, final @NotNull Hint hint, final @NotNull File file)
       throws IOException {
     logger.log(
         SentryLevel.DEBUG,
         "Processing Envelope with %d item(s)",
         CollectionUtils.size(envelope.getItems()));
     int currentItem = 0;
+    boolean anyItemSent = false;
 
     for (final SentryEnvelopeItem item : envelope.getItems()) {
       currentItem++;
@@ -149,7 +166,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
 
             if (!waitFlush(hint)) {
               logTimeout(event.getEventId());
-              break;
+              return !anyItemSent && HintUtils.deferDelete(hint, file);
             }
           }
         } catch (Throwable e) {
@@ -186,7 +203,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
 
             if (!waitFlush(hint)) {
               logTimeout(transaction.getEventId());
-              break;
+              return !anyItemSent && HintUtils.deferDelete(hint, file);
             }
           }
         } catch (Throwable e) {
@@ -209,7 +226,7 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               SentryLevel.WARNING,
               "Timed out waiting for item type submission: %s",
               item.getHeader().getType().getItemType());
-          break;
+          return !anyItemSent && HintUtils.deferDelete(hint, file);
         }
       }
 
@@ -224,11 +241,13 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               currentItem);
           break;
         }
+        anyItemSent = true;
       }
 
       // reset the Hint to its initial state as we use it multiple times.
       HintUtils.runIfHasType(hint, Resettable.class, (resettable) -> resettable.reset());
     }
+    return false;
   }
 
   private @NotNull TracesSamplingDecision extractSamplingDecision(

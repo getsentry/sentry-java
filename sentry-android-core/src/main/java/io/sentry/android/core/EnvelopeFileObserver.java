@@ -9,10 +9,12 @@ import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Cached;
+import io.sentry.hints.DeferredDelete;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Resettable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
+import io.sentry.util.DeferredDeleteDecision;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.File;
@@ -65,18 +67,31 @@ final class EnvelopeFileObserver extends FileObserver {
   }
 
   private static final class CachedEnvelopeHint
-      implements Cached, Retryable, SubmissionResult, Flushable, ApplyScopeData, Resettable {
+      implements Cached,
+          Retryable,
+          SubmissionResult,
+          Flushable,
+          ApplyScopeData,
+          Resettable,
+          DeferredDelete {
     boolean retry;
     boolean succeeded;
 
     private @NotNull CountDownLatch latch;
     private final long flushTimeoutMillis;
     private final @NotNull ILogger logger;
+    private final @NotNull DeferredDeleteDecision deleteDecision;
 
     public CachedEnvelopeHint(final long flushTimeoutMillis, final @NotNull ILogger logger) {
       reset();
       this.flushTimeoutMillis = flushTimeoutMillis;
       this.logger = Objects.requireNonNull(logger, "ILogger is required.");
+      this.deleteDecision = new DeferredDeleteDecision(this.logger);
+    }
+
+    @Override
+    public boolean deferDelete(final @NotNull File file) {
+      return deleteDecision.defer(file);
     }
 
     @Override
@@ -103,6 +118,8 @@ final class EnvelopeFileObserver extends FileObserver {
     @Override
     public void setResult(boolean succeeded) {
       this.succeeded = succeeded;
+      // setRetry runs first on the transport thread, so retry already holds the final value here.
+      deleteDecision.onOutcomeKnown(retry);
       latch.countDown();
     }
 

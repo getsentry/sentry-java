@@ -90,6 +90,9 @@ public final class AsyncHttpTransport implements ITransport {
 
     if (filteredEnvelope == null) {
       if (cached) {
+        // A rate limited envelope is dropped for good, so tell the hint it must not be retried.
+        // Without this the caller would have to infer the drop from a flush that never completes.
+        markHintWhenSendingFailed(hint, false);
         envelopeCache.discard(envelope);
       }
     } else {
@@ -209,8 +212,10 @@ public final class AsyncHttpTransport implements ITransport {
    * @param retry if event should be retried or not
    */
   private static void markHintWhenSendingFailed(final @NotNull Hint hint, final boolean retry) {
-    HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
+    // Mark the retry decision first: setResult releases anyone waiting on the hint, and may act on
+    // the retry flag itself, so the flag has to be final before that happens.
     HintUtils.runIfHasType(hint, Retryable.class, retryable -> retryable.setRetry(retry));
+    HintUtils.runIfHasType(hint, SubmissionResult.class, result -> result.setResult(false));
   }
 
   private static final class AsyncConnectionThreadFactory implements ThreadFactory {

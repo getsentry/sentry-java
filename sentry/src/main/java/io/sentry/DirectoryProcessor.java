@@ -3,11 +3,13 @@ package io.sentry;
 import static io.sentry.SentryLevel.ERROR;
 
 import io.sentry.hints.Cached;
+import io.sentry.hints.DeferredDelete;
 import io.sentry.hints.Enqueable;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
 import io.sentry.hints.SubmissionResult;
 import io.sentry.transport.RateLimiter;
+import io.sentry.util.DeferredDeleteDecision;
 import io.sentry.util.HintUtils;
 import java.io.File;
 import java.util.Queue;
@@ -110,7 +112,7 @@ abstract class DirectoryProcessor {
   protected abstract boolean isRelevantFileName(String fileName);
 
   private static final class SendCachedEnvelopeHint
-      implements Cached, Retryable, SubmissionResult, Flushable, Enqueable {
+      implements Cached, Retryable, SubmissionResult, Flushable, Enqueable, DeferredDelete {
     boolean retry = false;
     boolean succeeded = false;
 
@@ -119,6 +121,7 @@ abstract class DirectoryProcessor {
     private final @NotNull ILogger logger;
     private final @NotNull String filePath;
     private final @NotNull Queue<String> processedEnvelopes;
+    private final @NotNull DeferredDeleteDecision deleteDecision;
 
     public SendCachedEnvelopeHint(
         final long flushTimeoutMillis,
@@ -130,6 +133,7 @@ abstract class DirectoryProcessor {
       this.processedEnvelopes = processedEnvelopes;
       this.latch = new CountDownLatch(1);
       this.logger = logger;
+      this.deleteDecision = new DeferredDeleteDecision(logger);
     }
 
     @Override
@@ -154,8 +158,16 @@ abstract class DirectoryProcessor {
     }
 
     @Override
+    public boolean deferDelete(final @NotNull File file) {
+      return deleteDecision.defer(file);
+    }
+
+    @Override
     public void setResult(boolean succeeded) {
       this.succeeded = succeeded;
+      // Both setRetry and setResult are called from the transport thread, with setRetry first, so
+      // retry already holds the final value here.
+      deleteDecision.onOutcomeKnown(retry);
       latch.countDown();
     }
 

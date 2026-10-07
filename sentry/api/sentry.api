@@ -5304,6 +5304,10 @@ public abstract class io/sentry/hints/BlockingFlushHint : io/sentry/hints/DiskFl
 public abstract interface class io/sentry/hints/Cached {
 }
 
+public abstract interface class io/sentry/hints/DeferredDelete {
+	public abstract fun deferDelete (Ljava/io/File;)Z
+}
+
 public abstract interface class io/sentry/hints/DiskFlushNotification {
 	public abstract fun isFlushable (Lio/sentry/protocol/SentryId;)Z
 	public abstract fun markFlushed ()V
@@ -7911,6 +7915,12 @@ public final class io/sentry/util/DebugMetaPropertiesApplier {
 	public static fun getProguardUuid (Ljava/util/Properties;)Ljava/lang/String;
 }
 
+public final class io/sentry/util/DeferredDeleteDecision {
+	public fun <init> (Lio/sentry/ILogger;)V
+	public fun defer (Ljava/io/File;)Z
+	public fun onOutcomeKnown (Z)V
+}
+
 public final class io/sentry/util/ErrorUtils {
 	public fun <init> ()V
 	public static fun isIgnored (Ljava/util/List;Lio/sentry/SentryEvent;)Z
@@ -7935,6 +7945,7 @@ public final class io/sentry/util/ExceptionUtils {
 public final class io/sentry/util/FileUtils {
 	public fun <init> ()V
 	public static fun createDirectory (Ljava/io/File;)Z
+	public static fun deleteFile (Ljava/io/File;Lio/sentry/ILogger;)Z
 	public static fun deleteRecursively (Ljava/io/File;)Z
 	public static fun inputStreamToByteArray (Ljava/io/InputStream;J)[B
 	public static fun readBytesFromFile (Ljava/lang/String;J)[B
@@ -7947,6 +7958,7 @@ public final class io/sentry/util/GraphqlUtils {
 
 public final class io/sentry/util/HintUtils {
 	public static fun createWithTypeCheckHint (Ljava/lang/Object;)Lio/sentry/Hint;
+	public static fun deferDelete (Lio/sentry/Hint;Ljava/io/File;)Z
 	public static fun getEventDropReason (Lio/sentry/Hint;)Lio/sentry/hints/EventDropReason;
 	public static fun getSentrySdkHint (Lio/sentry/Hint;)Ljava/lang/Object;
 	public static fun hasType (Lio/sentry/Hint;Ljava/lang/Class;)Z

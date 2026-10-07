@@ -5,6 +5,7 @@
 ### Fixes
 
 - Keep the videos of already captured session replay segments when the replay stops, so segments that are still queued are no longer sent without their video ([#6177](https://github.com/getsentry/sentry-java/pull/6177))
+- Keep a cached or outbox envelope on disk while its send is still in flight, so a crash report is no longer lost when a hung connection outlasts `flushTimeoutMillis` ([#6195](https://github.com/getsentry/sentry-java/issues/6195))
 
 ### Features
 

@@ -1,12 +1,16 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.cache.EnvelopeCache
 import io.sentry.hints.Retryable
+import io.sentry.hints.SubmissionResult
+import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
 import io.sentry.util.noFlushTimeout
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.system.measureTimeMillis
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -174,5 +178,83 @@ class EnvelopeSenderTest {
       eq(testFile.absolutePath),
     )
     verifyNoMoreInteractions(fixture.scopes)
+  }
+
+  /**
+   * Runs one cached file through the sender. The send outcome only arrives after the flush wait has
+   * expired, which is what happens when a connection hangs until connectionTimeoutMillis (30s by
+   * default) while the flush wait is only flushTimeoutMillis (4s on Android).
+   */
+  private fun processFileWithLateOutcome(retry: Boolean, succeeded: Boolean): File {
+    fixture.options.flushTimeoutMillis = 300
+    val envelope = SentryEnvelope.from(fixture.serializer!!, SentryEvent(), null)
+    whenever(fixture.serializer!!.deserializeEnvelope(any())).thenReturn(envelope)
+
+    val senderThreads = mutableListOf<Thread>()
+    whenever(fixture.scopes!!.captureEnvelope(any(), any())).thenAnswer { invocation ->
+      val hint = invocation.getArgument<Hint>(1)
+      val thread = Thread {
+        Thread.sleep(fixture.options.flushTimeoutMillis * 3)
+        HintUtils.runIfHasType(hint, Retryable::class.java) { it.isRetry = retry }
+        HintUtils.runIfHasType(hint, SubmissionResult::class.java) { it.setResult(succeeded) }
+      }
+      senderThreads.add(thread)
+      thread.start()
+      SentryId.EMPTY_ID
+    }
+
+    val testFile = createTestEnvelopeFile()
+    fixture.getSut().processDirectory(File(tempDirectory.toUri()))
+    senderThreads.forEach { it.join() }
+    return testFile
+  }
+
+  private fun createTestEnvelopeFile(): File =
+    File(
+        Files.createTempFile(
+            tempDirectory,
+            "send-cached-event-test",
+            EnvelopeCache.SUFFIX_ENVELOPE_FILE,
+          )
+          .toUri()
+      )
+      .also { it.deleteOnExit() }
+
+  @Test
+  fun `when the flush wait expires and the send then fails, the file is kept`() {
+    val testFile = processFileWithLateOutcome(retry = true, succeeded = false)
+    assertThat(testFile.exists()).isTrue()
+  }
+
+  @Test
+  fun `when the flush wait expires and the send then succeeds, the file is deleted`() {
+    val testFile = processFileWithLateOutcome(retry = false, succeeded = true)
+    assertThat(testFile.exists()).isFalse()
+  }
+
+  @Test
+  fun `when the flush wait expires and the envelope is then dropped for good, the file is deleted`() {
+    val testFile = processFileWithLateOutcome(retry = false, succeeded = false)
+    assertThat(testFile.exists()).isFalse()
+  }
+
+  @Test
+  fun `when capturing fails before the transport, the file is kept without waiting for a flush`() {
+    fixture.options.flushTimeoutMillis = 30000
+    val envelope = SentryEnvelope.from(fixture.serializer!!, SentryEvent(), null)
+    whenever(fixture.serializer!!.deserializeEnvelope(any())).thenReturn(envelope)
+    whenever(fixture.scopes!!.captureEnvelope(any(), any())).thenAnswer { invocation ->
+      HintUtils.setCaptureFailed(invocation.getArgument(1))
+      SentryId.EMPTY_ID
+    }
+
+    val testFile = createTestEnvelopeFile()
+
+    val elapsed = measureTimeMillis {
+      fixture.getSut().processDirectory(File(tempDirectory.toUri()))
+    }
+
+    assertThat(testFile.exists()).isTrue()
+    assertThat(elapsed).isLessThan(fixture.options.flushTimeoutMillis)
   }
 }

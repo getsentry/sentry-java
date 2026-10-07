@@ -1,5 +1,7 @@
 package io.sentry.util;
 
+import io.sentry.ILogger;
+import io.sentry.SentryLevel;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -14,6 +16,26 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class FileUtils {
+
+  /**
+   * Deletes a single file, logging instead of throwing when that is not possible.
+   *
+   * @param file the file to delete
+   * @param logger the logger to report a failed deletion to
+   * @return true if the file was deleted, false otherwise
+   */
+  public static boolean deleteFile(final @NotNull File file, final @NotNull ILogger logger) {
+    try {
+      if (file.delete()) {
+        logger.log(SentryLevel.DEBUG, "Deleted file %s.", file.getAbsolutePath());
+        return true;
+      }
+      logger.log(SentryLevel.ERROR, "Failed to delete '%s'", file.getAbsolutePath());
+    } catch (RuntimeException e) {
+      logger.log(SentryLevel.ERROR, e, "Failed to delete '%s'", file.getAbsolutePath());
+    }
+    return false;
+  }
 
   /**
    * Deletes the file or directory denoted by a path. If it is a directory, all files and directory

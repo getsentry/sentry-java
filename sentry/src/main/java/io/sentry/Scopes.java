@@ -287,6 +287,7 @@ public final class Scopes implements IScopes {
           .log(
               SentryLevel.WARNING,
               "Instance is disabled and this 'captureEnvelope' call is a no-op.");
+      HintUtils.setCaptureFailed(hint);
     } else {
       try {
         final SentryId capturedEnvelopeId = getClient().captureEnvelope(envelope, hint);
@@ -295,6 +296,7 @@ public final class Scopes implements IScopes {
         }
       } catch (Throwable e) {
         getOptions().getLogger().log(SentryLevel.ERROR, "Error while capturing envelope.", e);
+        HintUtils.setCaptureFailed(hint);
       }
     }
     return sentryId;

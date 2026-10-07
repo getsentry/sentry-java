@@ -3,6 +3,7 @@ package io.sentry;
 import io.sentry.cache.EnvelopeCache;
 import io.sentry.hints.Flushable;
 import io.sentry.hints.Retryable;
+import io.sentry.util.FileUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedInputStream;
@@ -11,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -54,6 +56,10 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
       return;
     }
 
+    // Set once the send is still in flight and the hint has taken over the file, so that the
+    // decision below is left to whoever learns the outcome of the send.
+    final AtomicBoolean deferredToHint = new AtomicBoolean(false);
+
     try (final InputStream is = new BufferedInputStream(new FileInputStream(file))) {
       SentryEnvelope envelope = serializer.deserializeEnvelope(is);
       if (envelope == null) {
@@ -61,6 +67,14 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
             SentryLevel.ERROR, "Failed to deserialize cached envelope %s", file.getAbsolutePath());
       } else {
         scopes.captureEnvelope(envelope, hint);
+
+        if (HintUtils.isCaptureFailed(hint)) {
+          // The envelope never reached the transport, so nothing will ever report an outcome for
+          // it. Keep the file for a later attempt instead of awaiting a flush that cannot come.
+          HintUtils.runIfHasTypeLogIfNot(
+              hint, Retryable.class, logger, (retryable) -> retryable.setRetry(true));
+          return;
+        }
       }
 
       HintUtils.runIfHasTypeLogIfNot(
@@ -70,6 +84,7 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
           (flushable) -> {
             if (!flushable.waitFlush()) {
               logger.log(SentryLevel.WARNING, "Timed out waiting for envelope submission.");
+              deferredToHint.set(HintUtils.deferDelete(hint, file));
             }
           });
     } catch (FileNotFoundException e) {
@@ -88,22 +103,28 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
             logger.log(SentryLevel.INFO, e, "File '%s' won't retry.", file.getAbsolutePath());
           });
     } finally {
-      // Unless the transport marked this to be retried, it'll be deleted.
-      HintUtils.runIfHasTypeLogIfNot(
-          hint,
-          Retryable.class,
-          logger,
-          (retryable) -> {
-            if (!retryable.isRetry()) {
-              safeDelete(file, "after trying to capture it");
-              logger.log(SentryLevel.DEBUG, "Deleted file %s.", file.getAbsolutePath());
-            } else {
-              logger.log(
-                  SentryLevel.INFO,
-                  "File not deleted since retry was marked. %s.",
-                  file.getAbsolutePath());
-            }
-          });
+      if (deferredToHint.get()) {
+        logger.log(
+            SentryLevel.INFO,
+            "File %s kept until the in-flight send reports its outcome.",
+            file.getAbsolutePath());
+      } else {
+        // Unless the transport marked this to be retried, it'll be deleted.
+        HintUtils.runIfHasTypeLogIfNot(
+            hint,
+            Retryable.class,
+            logger,
+            (retryable) -> {
+              if (!retryable.isRetry()) {
+                FileUtils.deleteFile(file, logger);
+              } else {
+                logger.log(
+                    SentryLevel.INFO,
+                    "File not deleted since retry was marked. %s.",
+                    file.getAbsolutePath());
+              }
+            });
+      }
     }
   }
 
@@ -117,24 +138,5 @@ public final class EnvelopeSender extends DirectoryProcessor implements IEnvelop
     Objects.requireNonNull(path, "Path is required.");
 
     processFile(new File(path), hint);
-  }
-
-  private void safeDelete(final @NotNull File file, final @NotNull String errorMessageSuffix) {
-    try {
-      if (!file.delete()) {
-        logger.log(
-            SentryLevel.ERROR,
-            "Failed to delete '%s' %s",
-            file.getAbsolutePath(),
-            errorMessageSuffix);
-      }
-    } catch (Throwable e) {
-      logger.log(
-          SentryLevel.ERROR,
-          e,
-          "Failed to delete '%s' %s",
-          file.getAbsolutePath(),
-          errorMessageSuffix);
-    }
   }
 }

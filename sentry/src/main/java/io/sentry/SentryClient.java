@@ -942,6 +942,7 @@ public final class SentryClient implements ISentryClient {
       return sendEnvelope(envelope, hint);
     } catch (IOException e) {
       options.getLogger().log(SentryLevel.ERROR, "Failed to capture envelope.", e);
+      HintUtils.setCaptureFailed(hint);
     }
     return SentryId.EMPTY_ID;
   }

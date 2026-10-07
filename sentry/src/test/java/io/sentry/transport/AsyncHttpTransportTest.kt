@@ -12,8 +12,11 @@ import io.sentry.SentryOptionsManipulator
 import io.sentry.Session
 import io.sentry.clientreport.NoOpClientReportRecorder
 import io.sentry.dsnString
+import io.sentry.hints.Cached
 import io.sentry.hints.DiskFlushNotification
 import io.sentry.hints.Enqueable
+import io.sentry.hints.Retryable
+import io.sentry.hints.SubmissionResult
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
 import io.sentry.test.injectForField
@@ -564,6 +567,37 @@ class AsyncHttpTransportTest {
     whenever(fixture.executor.didRejectRecently()).thenReturn(true)
 
     assertFalse(fixture.getSUT().isHealthy)
+  }
+
+  @Test
+  fun `when a cached envelope is rate limited, it is reported as a final drop`() {
+    val envelope = SentryEnvelope.from(fixture.sentryOptions.serializer, createSession(), null)
+    whenever(fixture.rateLimiter.filter(any(), anyOrNull())).thenReturn(null)
+    val hint = CachedRetryableHint()
+
+    fixture.getSUT().send(envelope, HintUtils.createWithTypeCheckHint(hint))
+
+    assertFalse(hint.isRetry)
+    assertTrue(hint.resultReported)
+  }
+
+  private class CachedRetryableHint : Cached, Retryable, SubmissionResult {
+    var resultReported = false
+    private var retry = false
+    private var succeeded = false
+
+    override fun isRetry(): Boolean = retry
+
+    override fun setRetry(retry: Boolean) {
+      this.retry = retry
+    }
+
+    override fun setResult(succeeded: Boolean) {
+      this.succeeded = succeeded
+      resultReported = true
+    }
+
+    override fun isSuccess(): Boolean = succeeded
   }
 
   private fun createSession(): Session = Session("123", User(), "env", "release")

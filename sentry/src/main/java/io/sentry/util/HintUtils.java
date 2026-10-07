@@ -13,7 +13,9 @@ import io.sentry.ILogger;
 import io.sentry.hints.ApplyScopeData;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.Cached;
+import io.sentry.hints.DeferredDelete;
 import io.sentry.hints.EventDropReason;
+import java.io.File;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -73,6 +75,20 @@ public final class HintUtils {
 
   public static @Nullable Object getSentrySdkHint(@NotNull Hint hint) {
     return hint.get(SENTRY_TYPE_CHECK_HINT);
+  }
+
+  /**
+   * Hands a cached file over to the hint, so it can delete or keep the file once the outcome of the
+   * send is known.
+   *
+   * @return true if the hint took over the decision, false if the caller keeps it
+   */
+  public static boolean deferDelete(final @NotNull Hint hint, final @NotNull File file) {
+    final Object sentrySdkHint = getSentrySdkHint(hint);
+    if (sentrySdkHint instanceof DeferredDelete) {
+      return ((DeferredDelete) sentrySdkHint).deferDelete(file);
+    }
+    return false;
   }
 
   public static boolean hasType(@NotNull Hint hint, @NotNull Class<?> clazz) {
