@@ -34,7 +34,6 @@ import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
-import okhttp3.ResponseBody
 import org.jetbrains.annotations.VisibleForTesting
 
 /**
@@ -316,101 +315,58 @@ public open class SentryOkHttpInterceptor(
   }
 
   /**
-   * Returns this response with a body that can be captured for replay, without blocking on streams
-   * that never end.
+   * Returns this response with a body whose content is captured for replay while the application
+   * consumes it.
    *
-   * A body with a known length ends on its own, so it is captured up front, as before. A body of
-   * unknown length may never end (server-sent events, long-poll, a chunked endpoint that stays
-   * open): peeking it would block the calling thread until the connection dies, so it is wrapped
-   * and captured while it is being consumed instead.
+   * Capturing a body by peeking at it up front does not work for every response. OkHttp implements
+   * [Response.peekBody] as `request(byteCount)`, which keeps reading until that many bytes are
+   * buffered or the stream ends. A response of unknown length may never end — server-sent events, a
+   * long-poll, a chunked endpoint that stays open, and every response OkHttp decompressed itself —
+   * so the peek would never return and the caller would never get the response at all.
+   *
+   * Every body therefore goes through [NetworkBodyCapturingResponseBody], which copies what passes
+   * through it. A body with a known length that the application never reads is taken when it is
+   * closed, where reading it is bounded.
    */
   private fun Response.withNetworkBodyCapture(networkDetailData: NetworkRequestData?): Response {
     val responseBody = body
-    val captureBodies = scopes.options.sessionReplay.isNetworkCaptureBodies
-    val responseHeaders = scopes.options.sessionReplay.networkResponseHeaders
-    val logger = scopes.options.logger
-
-    return when {
-      networkDetailData == null || responseBody == null -> this
-      // a body with a known length ends on its own, so capturing it up front is bounded
-      !captureBodies || responseBody.contentLength() >= 0 -> {
-        networkDetailData.setResponseDetails(
-          NetworkRequestData.ResponseDetails(
-            code,
-            NetworkDetailCaptureUtils.createResponse(
-              this,
-              responseBody.contentLength(),
-              captureBodies,
-              { resp: Response -> resp.extractResponseBody(logger) },
-              responseHeaders,
-              { resp: Response -> resp.headers.toMap() },
-            ),
-          )
-        )
-        this
-      }
-      else -> wrapUnknownContentLengthBody(networkDetailData, responseBody, responseHeaders, logger)
+    if (networkDetailData == null || responseBody == null) {
+      return this
     }
-  }
 
-  /** Wraps a body that may never end, capturing the bytes as the application consumes them. */
-  private fun Response.wrapUnknownContentLengthBody(
-    networkDetailData: NetworkRequestData,
-    responseBody: ResponseBody,
-    responseHeaders: List<String>,
-    logger: ILogger,
-  ): Response {
-    // One byte above the limit, as the peek path does: NetworkBodyParser.fromBytes tells a
-    // truncated body from one that happens to match the limit exactly by that byte.
+    val knownBodySize = responseBody.contentLength().takeIf { it >= 0L }
+
+    // The status code and the headers are known now, so record them before anything is consumed. A
+    // stream that stays open for minutes never gets further than this.
+    recordResponse(networkDetailData, knownBodySize) { null }
+
+    if (!scopes.options.sessionReplay.isNetworkCaptureBodies) {
+      return this
+    }
+
+    val logger = scopes.options.logger
+    // One byte above the limit, so NetworkBodyParser.fromBytes can tell a truncated body from one
+    // that happens to match the limit exactly.
     val captureCap = SentryReplayOptions.MAX_NETWORK_BODY_SIZE.toLong() + 1
     val contentType = responseBody.contentType()
     val contentTypeString = contentType?.toString()
     val charset = contentType?.charset(Charsets.UTF_8)?.name() ?: "UTF-8"
 
-    // The status code and the headers are known now, so record them before anything is consumed.
-    // The capture below replaces them with the same values plus the body: for a stream that stays
-    // open for minutes, or a body the application never reads, this is all the replay ever gets.
-    networkDetailData.setResponseDetails(
-      NetworkRequestData.ResponseDetails(
-        code,
-        NetworkDetailCaptureUtils.createResponse(
-          this,
-          null,
-          false,
-          { null },
-          responseHeaders,
-          { resp: Response -> resp.headers.toMap() },
-        ),
-      )
-    )
-
     return newBuilder()
       .body(
         NetworkBodyCapturingResponseBody(responseBody, captureCap) { capturedBytes ->
           // This runs on the thread consuming the body, inside its read or close, so a failure in
-          // here must stay in here. The peek path guards the same parsing work the same way.
+          // here must stay in here.
           try {
-            networkDetailData.setResponseDetails(
-              NetworkRequestData.ResponseDetails(
-                code,
-                NetworkDetailCaptureUtils.createResponse(
-                  this,
-                  capturedBytes.size.toLong(),
-                  true,
-                  {
-                    NetworkBodyParser.fromBytes(
-                      capturedBytes,
-                      contentTypeString,
-                      charset,
-                      SentryReplayOptions.MAX_NETWORK_BODY_SIZE,
-                      logger,
-                    )
-                  },
-                  responseHeaders,
-                  { resp: Response -> resp.headers.toMap() },
-                ),
+            recordResponse(networkDetailData, knownBodySize ?: capturedBytes.size.toLong()) {
+              NetworkBodyParser.fromBytes(
+                capturedBytes,
+                contentTypeString,
+                charset,
+                SentryReplayOptions.MAX_NETWORK_BODY_SIZE,
+                logger,
               )
-            )
+            }
           } catch (e: Exception) {
             logger.log(
               io.sentry.SentryLevel.ERROR,
@@ -422,36 +378,28 @@ public open class SentryOkHttpInterceptor(
       .build()
   }
 
-  /** Extracts the body content from an OkHttp Response safely */
-  private fun Response.extractResponseBody(logger: ILogger): NetworkBody? {
-    return body?.let { responseBody ->
-      try {
-        val contentType = responseBody.contentType()
-        val contentTypeString = contentType?.toString()
-        val maxBodySize = SentryReplayOptions.MAX_NETWORK_BODY_SIZE
-
-        // Peek at the body (doesn't consume it)
-        // We +1 here in order to properly truncate within NetworkBodyParser.fromBytes
-        // and be able to distinguish from an oversized request and a request matching maxBodySize
-        val peekBody = peekBody(maxBodySize.toLong() + 1)
-        val bodyBytes = peekBody.bytes()
-
-        val charset = contentType?.charset(Charsets.UTF_8)?.name() ?: "UTF-8"
-        return NetworkBodyParser.fromBytes(
-          bodyBytes,
-          contentTypeString,
-          charset,
-          maxBodySize,
-          logger,
-        )
-      } catch (e: Exception) {
-        logger.log(
-          io.sentry.SentryLevel.ERROR,
-          "Failed to read http response body for Network Details: ${e.message}",
-        )
-        null
-      }
-    }
+  /**
+   * Records what is known about this response, replacing anything recorded for it before. Called
+   * once before the body is consumed and once with the captured body.
+   */
+  private fun Response.recordResponse(
+    networkDetailData: NetworkRequestData,
+    bodySize: Long?,
+    body: () -> NetworkBody?,
+  ) {
+    networkDetailData.setResponseDetails(
+      NetworkRequestData.ResponseDetails(
+        code,
+        NetworkDetailCaptureUtils.createResponse(
+          this,
+          bodySize,
+          true,
+          { body() },
+          scopes.options.sessionReplay.networkResponseHeaders,
+          { resp: Response -> resp.headers.toMap() },
+        ),
+      )
+    )
   }
 
   private fun finishSpan(

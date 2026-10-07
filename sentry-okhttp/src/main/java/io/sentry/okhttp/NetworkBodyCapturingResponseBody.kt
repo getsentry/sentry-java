@@ -24,6 +24,10 @@ import okio.buffer
  * which is when the stream ends or breaks, when the application closes the body, or when the cap is
  * reached.
  *
+ * A body the application never reads is still captured if its length is known: such a body ends on
+ * its own, so taking it while closing is bounded. That is how the body of a response whose status
+ * code was the only thing of interest reaches the capture.
+ *
  * @param delegate the body to capture from.
  * @param maxBytes the maximum number of bytes to retain; capture stops once it is reached.
  * @param onCaptured invoked at most once, synchronously, on the thread that finishes the body. It
@@ -37,6 +41,7 @@ internal class NetworkBodyCapturingResponseBody(
 
   private val captured = Buffer()
   private val reported = AtomicBoolean(false)
+  @Volatile private var readStarted = false
 
   // A ResponseBody must hand out a BufferedSource, so the capturing source is buffered. That cannot
   // re-introduce the blocking this class exists to avoid: BufferedSource.read(sink, byteCount)
@@ -56,6 +61,7 @@ internal class NetworkBodyCapturingResponseBody(
 
   override fun close() {
     try {
+      captureUnreadBody()
       // Report before closing the delegate: closing it notifies listeners, which may serialize the
       // breadcrumb this capture belongs to.
       reportCaptured()
@@ -64,9 +70,27 @@ internal class NetworkBodyCapturingResponseBody(
     }
   }
 
+  /**
+   * Reads a body nobody touched, so it is captured as well. Only for a body of known length, which
+   * ends on its own, and only while no one is reading: a concurrent read of the same body is what
+   * OkHttp forbids.
+   */
+  @Suppress("SwallowedException") // the body is being closed; a failure here leaves it as it was
+  private fun captureUnreadBody() {
+    if (readStarted || reported.get() || delegate.contentLength() < 0L) {
+      return
+    }
+    try {
+      capturingSource.request(maxBytes)
+    } catch (e: IOException) {
+      // nothing more to capture
+    }
+  }
+
   /** Copies the bytes passing through into [captured]. */
   private inner class CapturingSource(source: Source) : ForwardingSource(source) {
     override fun read(sink: Buffer, byteCount: Long): Long {
+      readStarted = true
       val sinkBefore = sink.size
       val read =
         try {
