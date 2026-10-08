@@ -1,5 +1,10 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
+import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
+import io.sentry.clientreport.DiscardReason
+import io.sentry.clientreport.DiscardedEvent
+import io.sentry.protocol.SentryId
 import io.sentry.util.SentryRandom
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -175,7 +180,7 @@ class TracesSamplerTest {
 
   @Test
   fun `when tracesSampler returns null and parentSampled is set sampler uses it as a sampling decision`() {
-    val sampler = fixture.getSut(tracesSamplerCallback = null)
+    val sampler = fixture.getSut(tracesSamplerCallback = { null })
     val transactionContextParentSampled = TransactionContext("name", "op")
     transactionContextParentSampled.parentSampled = true
     val samplingDecision =
@@ -204,7 +209,7 @@ class TracesSamplerTest {
 
   @Test
   fun `when tracesSampler returns null and tracesSampleRate is set sampler uses it as a sampling decision`() {
-    val sampler = fixture.getSut(tracesSampleRate = 0.2, tracesSamplerCallback = null)
+    val sampler = fixture.getSut(tracesSampleRate = 0.2, tracesSamplerCallback = { null })
     val samplingDecision =
       sampler.sample(
         SamplingContext(TransactionContext("name", "op"), CustomSamplingContext(), 0.1, null)
@@ -381,14 +386,121 @@ class TracesSamplerTest {
   }
 
   @Test
-  fun `when a tracesSampleRate and a TracesSamplerCallback is set but the callback throws an exception then tracing should still be enabled`() {
+  fun `when tracesSampler throws without a parent then static rates are ignored`() {
     val exception = Exception("faulty TracesSamplerCallback")
+    for (tracesSampleRate in listOf(null, 0.0, 1.0)) {
+      val sampler =
+        fixture.getSut(
+          tracesSampleRate = tracesSampleRate,
+          profilesSampleRate = 1.0,
+          tracesSamplerCallback = { throw exception },
+        )
+      val decision =
+        sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.0, null))
+
+      assertThat(decision.sampled).isFalse()
+      assertThat(decision.sampleRate).isNull()
+      assertThat(decision.sampleRand).isEqualTo(0.0)
+      assertThat(decision.profileSampled).isFalse()
+      assertThat(decision.profileSampleRate).isNull()
+    }
+  }
+
+  @Test
+  fun `when tracesSampler throws then a sampled parent decision is ignored`() {
     val sampler =
-      fixture.getSut(tracesSampleRate = 1.0, tracesSamplerCallback = { throw exception })
+      fixture.getSut(
+        tracesSampleRate = 0.0,
+        tracesSamplerCallback = { throw IllegalStateException("faulty TracesSamplerCallback") },
+      )
+    val parentDecision = TracesSamplingDecision(true, 0.5, 0.1, true, 0.5)
+    val transactionContext =
+      TransactionContext(SentryId(), SpanId(), SpanId(), parentDecision, null)
+
+    val decision = sampler.sample(SamplingContext(transactionContext, null, 0.1, null))
+
+    assertThat(decision.sampled).isFalse()
+    assertThat(decision.sampleRate).isNull()
+    assertThat(decision.sampleRand).isEqualTo(0.1)
+    assertThat(decision.profileSampled).isFalse()
+    assertThat(decision.profileSampleRate).isNull()
+    assertThat(parentDecision.sampled).isTrue()
+    assertThat(parentDecision.profileSampled).isTrue()
+  }
+
+  @Test
+  fun `when tracesSampler throws then an unsampled parent decision is ignored`() {
+    val sampler =
+      fixture.getSut(
+        tracesSampleRate = 1.0,
+        profilesSampleRate = 1.0,
+        tracesSamplerCallback = { throw IllegalStateException("faulty TracesSamplerCallback") },
+      )
+    val parentDecision = TracesSamplingDecision(false, 0.5, 0.9)
+    val transactionContext =
+      TransactionContext(SentryId(), SpanId(), SpanId(), parentDecision, null)
+
+    val decision = sampler.sample(SamplingContext(transactionContext, null, 0.9, null))
+
+    assertThat(decision.sampled).isFalse()
+    assertThat(decision.sampleRate).isNull()
+    assertThat(decision.sampleRand).isEqualTo(0.9)
+    assertThat(decision.profileSampled).isFalse()
+    assertThat(decision.profileSampleRate).isNull()
+  }
+
+  @Test
+  fun `when tracesSampler throws then a parent decision without sampleRand is ignored`() {
+    val sampler =
+      fixture.getSut(
+        tracesSampleRate = 0.0,
+        tracesSamplerCallback = { throw IllegalStateException("faulty TracesSamplerCallback") },
+      )
+    val transactionContext = TransactionContext("name", "op")
+    transactionContext.parentSampled = true
+
+    val decision = sampler.sample(SamplingContext(transactionContext, null, 0.1, null))
+
+    assertThat(decision.sampled).isFalse()
+    assertThat(decision.sampleRate).isNull()
+    assertThat(decision.sampleRand).isEqualTo(0.1)
+  }
+
+  @Test
+  fun `tracesSampler failure reports callback errors immediately`() {
+    val options =
+      SentryOptions().apply {
+        tracesSampler = SentryOptions.TracesSamplerCallback {
+          throw IllegalStateException("sampler")
+        }
+      }
     val decision =
-      sampler.sample(SamplingContext(TransactionContext("name", "op"), null, 0.0, null))
-    assertTrue(decision.sampled)
-    assertEquals(0.0, decision.sampleRand)
+      TracesSampler(options)
+        .sample(SamplingContext(TransactionContext("name", "op"), null, 0.0, null))
+
+    assertThat(decision.sampled).isFalse()
+    assertClientReport(
+      options.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Transaction.category, 1),
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Span.category, 1),
+      ),
+    )
+  }
+
+  @Test
+  fun `explicit sampling decisions bypass a throwing tracesSampler without reporting losses`() {
+    val options =
+      SentryOptions().apply {
+        tracesSampler = SentryOptions.TracesSamplerCallback {
+          throw IllegalStateException("sampler")
+        }
+      }
+    val context = TransactionContext("name", "op", TracesSamplingDecision(true))
+    val decision = TracesSampler(options).sample(SamplingContext(context, null, 0.1, null))
+
+    assertThat(decision.sampled).isTrue()
+    assertClientReport(options.clientReportRecorder, emptyList())
   }
 
   @Test
