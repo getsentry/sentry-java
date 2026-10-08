@@ -4,6 +4,7 @@
   <item name="nav2_tab_compose" type="id" />
   <item name="nav2_tab_fragments" type="id" />
   <item name="nav2_tab_deep_link" type="id" />
+  <item name="nav2_tab_custom" type="id" />
   <item name="nav2_tab_performance" type="id" />
   <item name="nav2_recent_transactions" type="id" />
   <item name="nav2_route_work_settings" type="id" />

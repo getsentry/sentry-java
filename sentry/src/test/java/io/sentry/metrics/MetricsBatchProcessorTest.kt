@@ -3,6 +3,7 @@ package io.sentry.metrics
 import com.google.common.truth.Truth.assertThat
 import io.sentry.DataCategory
 import io.sentry.ISentryClient
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryMetricsEvent
 import io.sentry.SentryMetricsEvents
 import io.sentry.SentryNanotimeDate
@@ -18,13 +19,42 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 
 class MetricsBatchProcessorTest {
+  @Test
+  fun `flush without accepted items does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = MetricsBatchProcessor(SentryOptions(), mock())
+    processor.injectForField("executorService", mockExecutor)
+
+    processor.flush(0)
+
+    verifyNoInteractions(mockExecutor)
+  }
+
+  @Test
+  fun `close without accepted items does not submit processor work`() {
+    for (isRestarting in listOf(false, true)) {
+      val mockExecutor = mock<ISentryExecutorService>()
+      val processor = MetricsBatchProcessor(SentryOptions(), mock())
+      processor.injectForField("executorService", mockExecutor)
+
+      processor.close(isRestarting)
+
+      verify(mockExecutor).close(any())
+      verify(mockExecutor, never()).schedule(any(), any())
+      verify(mockExecutor, never()).submit(any<Runnable>())
+    }
+  }
+
   @Test
   fun `schedules another flush after previous flush has run`() {
     val mockClient = mock<ISentryClient>()

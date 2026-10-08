@@ -200,6 +200,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
 
+  @SuppressWarnings("deprecation")
   private boolean shouldIncludeUnencodedMessage() {
     return encoder == null
         || includeUnencodedMessage
