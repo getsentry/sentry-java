@@ -316,17 +316,15 @@ public open class SentryOkHttpInterceptor(
 
   /**
    * Returns this response with a body whose content is captured for replay while the application
-   * consumes it.
+   * reads it.
    *
-   * Capturing a body by peeking at it up front does not work for every response. OkHttp implements
-   * [Response.peekBody] as `request(byteCount)`, which keeps reading until that many bytes are
-   * buffered or the stream ends. A response of unknown length may never end — server-sent events, a
-   * long-poll, a chunked endpoint that stays open, and every response OkHttp decompressed itself —
-   * so the peek would never return and the caller would never get the response at all.
+   * Reading the body up front, as [Response.peekBody] does, deadlocks on a response of unknown
+   * length: server-sent events, a long-poll, a chunked endpoint that stays open, and every response
+   * OkHttp decompressed itself. The caller would never receive the response at all.
    *
-   * Every body therefore goes through [CapturedResponseBody], which copies what passes through it.
-   * A body with a known length that the application never reads is taken when it is closed, where
-   * reading it is bounded.
+   * Every body therefore goes through [CapturedResponseBody], which captures only what the
+   * application reads. A body nobody reads leaves the status code and the headers recorded below,
+   * and no body.
    */
   private fun Response.withNetworkBodyCapture(networkDetailData: NetworkRequestData?): Response {
     val responseBody = body

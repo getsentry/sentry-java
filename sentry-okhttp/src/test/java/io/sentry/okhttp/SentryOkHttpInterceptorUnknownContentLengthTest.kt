@@ -342,15 +342,13 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
   }
 
   // ---------------------------------------------------------------------------------------
-  // responses with a known length keep the existing behaviour
+  // responses with a known length
   // ---------------------------------------------------------------------------------------
 
   @Test
   fun `captures a gzipped body, which okhttp hands over without a known length`() {
-    // OkHttp asks for gzip on its own and decompresses transparently, dropping Content-Length on
-    // the
-    // way, so an application interceptor sees -1 for an ordinary gzipped JSON response. That makes
-    // this the common path through the wrapper, not an exotic one.
+    // OkHttp asks for gzip itself and decompresses transparently, dropping Content-Length on the
+    // way, so an application interceptor sees -1 for an ordinary gzipped JSON response.
     setUpSut()
     val json = """{"hello":"world"}"""
     val gzipped = Buffer()
@@ -377,19 +375,21 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
   }
 
   @Test
-  fun `still captures a response with a known length up front`() {
+  fun `captures a body with a known length as the application reads it`() {
     setUpSut()
     MockWebServer().use { server ->
       server.enqueue(MockResponse().setBody("response body").setResponseCode(200))
 
-      sut.newCall(requestTo(server.url("/hello").toString())).execute().close()
+      sut.newCall(requestTo(server.url("/hello").toString())).execute().use { it.body?.string() }
 
       assertEquals("response body", capturedBody())
     }
   }
 
   @Test
-  fun `still captures an error response with a known length the application never reads`() {
+  fun `records an error response the application never reads, without its body`() {
+    // Nothing is read on the capture's own account, not even a body that would end on its own, so
+    // the interceptor costs a consumer no more than the bytes it asked for itself.
     setUpSut()
     MockWebServer().use { server ->
       server.enqueue(MockResponse().setBody("failure").setResponseCode(500))
@@ -397,7 +397,7 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
       sut.newCall(requestTo(server.url("/hello").toString())).execute().close()
 
       assertEquals(500, networkDetails().statusCode)
-      assertEquals("failure", capturedBody())
+      assertNull(capturedBody())
     }
   }
 

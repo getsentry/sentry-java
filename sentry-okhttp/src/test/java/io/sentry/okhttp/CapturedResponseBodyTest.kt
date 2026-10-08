@@ -186,25 +186,13 @@ class CapturedResponseBodyTest {
   }
 
   @Test
-  fun `captures a body of known length that the application never read`() {
-    val payload = "failure".toByteArray()
-    val source = ChunkedSource(listOf(payload))
-    val (wrapper, captured) = capture(source, 1024, length = payload.size.toLong())
+  fun `does not read a body the application never read`() {
+    val source = ChunkedSource(listOf("failure".toByteArray()))
+    val (wrapper, captured) = capture(source, 1024, length = 7L)
 
     wrapper.close()
 
-    assertContentEquals(payload, captured.single(), "a bounded body is taken while closing")
-    assertTrue(source.isClosed)
-  }
-
-  @Test
-  fun `does not read a body of unknown length that the application never read`() {
-    val source = ChunkedSource(listOf("data: event-0\n\n".toByteArray()))
-    val (wrapper, captured) = capture(source, 1024)
-
-    wrapper.close()
-
-    assertEquals(0, source.reads, "a body that may never end must not be read while closing")
+    assertEquals(0, source.reads, "the capture must not read on its own account")
     assertTrue(captured.single()!!.isEmpty())
   }
 

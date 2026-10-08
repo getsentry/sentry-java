@@ -11,27 +11,21 @@ import okio.Source
 import okio.buffer
 
 /**
- * A [ResponseBody] that copies the bytes the application consumes into a capped buffer.
+ * A [ResponseBody] that copies the bytes the application reads into a capped buffer.
  *
- * Capturing a body by peeking at it up front does not work for every response. OkHttp implements
- * [okhttp3.Response.peekBody] as `request(byteCount)`, which keeps reading until the requested
- * number of bytes is buffered or the stream ends. A response of unknown length may never end — a
- * server-sent-events stream, a long-poll, a chunked endpoint that stays open — so the peek never
- * returns and the thread that called `execute()` never gets the response at all.
+ * Reading the body up front instead, with [okhttp3.Response.peekBody], deadlocks on a response of
+ * unknown length: a peek is `request(byteCount)`, which waits for that many bytes or for the end of
+ * the stream, and a server-sent-events stream, a long-poll or an open chunked endpoint delivers
+ * neither. The caller would never receive the response at all.
  *
- * This body instead captures what is actually consumed. It forwards every byte to the application
- * untouched and hands the captured bytes to [onCaptured] as soon as the capture can no longer grow,
- * which is when the stream ends or breaks, when the application closes the body, or when the cap is
- * reached.
- *
- * A body the application never reads is still captured if its length is known: such a body ends on
- * its own, so taking it while closing is bounded. That is how the body of a response whose status
- * code was the only thing of interest reaches the capture.
+ * Nothing is therefore read on the capture's own account. Only what the application reads is
+ * captured, which also keeps the cost of the instrumentation to a copy of those bytes.
  *
  * @param delegate the body to capture from.
  * @param maxBytes the maximum number of bytes to retain; capture stops once it is reached.
- * @param onCaptured invoked at most once, synchronously, on the thread that finishes the body. It
- *   is never invoked for a body that is abandoned without being read to the end or closed.
+ * @param onCaptured invoked at most once, synchronously, on the thread that finishes the body — so
+ *   it must not block. A body that is abandoned without being read to the end or closed never
+ *   reaches it.
  */
 internal class CapturedResponseBody(
   private val delegate: ResponseBody,
@@ -41,14 +35,11 @@ internal class CapturedResponseBody(
 
   private val captured = Buffer()
   private val reported = AtomicBoolean(false)
-  @Volatile private var readStarted = false
 
-  // A ResponseBody must hand out a BufferedSource, so the capturing source is buffered. That cannot
-  // re-introduce the blocking this class exists to avoid: BufferedSource.read(sink, byteCount)
-  // issues at most one segment-sized read on the source below it and returns with whatever arrived,
-  // so a short event is still forwarded on its own. The reads that loop until a byte count is
-  // reached — request, require, readByteArray() — are the application's own choice, and the capture
-  // never calls them.
+  // Buffering the capturing source cannot re-introduce the deadlock above: a BufferedSource read
+  // takes at most one segment from the source below it and returns with whatever arrived, so a
+  // short event is still forwarded on its own. Only request/require/readByteArray() wait for a byte
+  // count, and those are the application's own calls.
   private val capturingSource: BufferedSource by lazy {
     CapturingSource(delegate.source()).buffer()
   }
@@ -61,43 +52,23 @@ internal class CapturedResponseBody(
 
   override fun close() {
     try {
-      captureUnreadBody()
-      // Report before closing the delegate: closing it notifies listeners, which may serialize the
-      // breadcrumb this capture belongs to.
+      // Closing the delegate notifies listeners, which may serialize the breadcrumb this capture
+      // belongs to, so report first.
       reportCaptured()
     } finally {
       delegate.close()
     }
   }
 
-  /**
-   * Reads a body nobody touched, so it is captured as well. Only for a body of known length, which
-   * ends on its own, and only while no one is reading: a concurrent read of the same body is what
-   * OkHttp forbids.
-   */
-  @Suppress("SwallowedException") // the body is being closed; a failure here leaves it as it was
-  private fun captureUnreadBody() {
-    if (readStarted || reported.get() || delegate.contentLength() < 0L) {
-      return
-    }
-    try {
-      capturingSource.request(maxBytes)
-    } catch (e: IOException) {
-      // nothing more to capture
-    }
-  }
-
-  /** Copies the bytes passing through into [captured]. */
   private inner class CapturingSource(source: Source) : ForwardingSource(source) {
     override fun read(sink: Buffer, byteCount: Long): Long {
-      readStarted = true
       val sinkBefore = sink.size
       val read =
         try {
           super.read(sink, byteCount)
         } catch (e: IOException) {
-          // The stream broke, so nothing more can arrive. What did arrive is the evidence for this
-          // very failure, and a caller handling the error is not obliged to close the body.
+          // What arrived is the evidence for this very failure, and a caller handling it is not
+          // obliged to close the body.
           reportCaptured()
           throw e
         }
@@ -105,6 +76,7 @@ internal class CapturedResponseBody(
       if (read > 0L) {
         val capFull =
           synchronized(captured) {
+            // the application may not have taken everything in the sink yet, hence the offset
             val toTake = minOf(maxBytes - captured.size, sink.size - sinkBefore)
             if (toTake > 0L) {
               sink.copyTo(captured, sinkBefore, toTake)
@@ -112,11 +84,9 @@ internal class CapturedResponseBody(
             captured.size >= maxBytes
           }
         if (capFull) {
-          // the capture can never grow again, so this is the moment it becomes final
           reportCaptured()
         }
       } else if (read == -1L) {
-        // end of stream: nothing more can ever arrive
         reportCaptured()
       }
       return read
@@ -132,10 +102,9 @@ internal class CapturedResponseBody(
   }
 
   /**
-   * The consuming thread writes [captured] from [CapturingSource.read] while [close] may be called
-   * by another thread — cancelling a stream from elsewhere is ordinary use — and [Buffer] is not
-   * thread-safe, so both accesses are guarded. [reported] keeps the callback to a single
-   * invocation.
+   * [captured] is written by the thread reading the body and read here, which [close] may reach
+   * from another thread — cancelling a stream from elsewhere is ordinary use — and [Buffer] is not
+   * thread-safe.
    */
   private fun reportCaptured() {
     if (reported.compareAndSet(false, true)) {
