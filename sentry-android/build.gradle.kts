@@ -6,6 +6,7 @@ plugins {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android"
 
   defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }

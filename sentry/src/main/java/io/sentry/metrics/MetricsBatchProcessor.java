@@ -34,6 +34,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
   private final @NotNull Queue<SentryMetricsEvent> queue;
   private final @NotNull ISentryExecutorService executorService;
   private final @NotNull AtomicBoolean hasScheduled = new AtomicBoolean(false);
+  protected volatile boolean hasAcceptedItem = false;
   private volatile boolean isShuttingDown = false;
 
   private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
@@ -65,6 +66,7 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
     }
     pendingCount.increment();
     queue.offer(metricsEvent);
+    hasAcceptedItem = true;
     maybeSchedule(false);
   }
 
@@ -72,14 +74,16 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
   @Override
   public void close(final boolean isRestarting) {
     isShuttingDown = true;
-    if (isRestarting) {
+    if (isRestarting && hasAcceptedItem) {
       maybeSchedule(true);
       executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
-    } else {
-      executorService.close(options.getShutdownTimeoutMillis());
-      while (!queue.isEmpty()) {
-        flushBatch();
-      }
+      return;
+    }
+    // On restart, reaching this path means the executor never had anything scheduled, so
+    // synchronous shutdown should be immediate.
+    executorService.close(options.getShutdownTimeoutMillis());
+    while (!queue.isEmpty()) {
+      flushBatch();
     }
   }
 
@@ -106,6 +110,9 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
 
   @Override
   public void flush(long timeoutMillis) {
+    if (!hasAcceptedItem) {
+      return;
+    }
     maybeSchedule(true);
     try {
       pendingCount.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);

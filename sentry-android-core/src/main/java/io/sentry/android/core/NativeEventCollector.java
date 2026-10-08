@@ -38,8 +38,6 @@ public final class NativeEventCollector {
 
   private static final String NATIVE_PLATFORM = "native";
 
-  private static final long TIMESTAMP_TOLERANCE_MS = 5000;
-
   private final @NotNull SentryAndroidOptions options;
 
   /** Lightweight metadata collected during scan phase. */
@@ -175,18 +173,30 @@ public final class NativeEventCollector {
     // Lazily collect on first use (runs on executor thread, not main thread)
     collect();
 
+    final long thresholdMs = options.getTombstoneMergeTimeThresholdMillis();
     for (final NativeEnvelopeMetadata metadata : nativeEnvelopes) {
       final long timeDiff = Math.abs(tombstoneTimestampMs - metadata.getTimestampMs());
-      if (timeDiff <= TIMESTAMP_TOLERANCE_MS) {
+      if (timeDiff <= thresholdMs) {
         options
             .getLogger()
-            .log(SentryLevel.DEBUG, "Matched native event by timestamp (diff: %d ms)", timeDiff);
+            .log(
+                SentryLevel.DEBUG,
+                "Matched native event by timestamp (diff: %d ms, threshold: %d ms)",
+                timeDiff,
+                thresholdMs);
         nativeEnvelopes.remove(metadata);
         // Only load full event data when we have a match
         return loadFullNativeEventData(metadata.getFile());
       }
     }
 
+    options
+        .getLogger()
+        .log(
+            SentryLevel.DEBUG,
+            "No native event matched the tombstone timestamp %d within %d ms.",
+            tombstoneTimestampMs,
+            thresholdMs);
     return null;
   }
 
