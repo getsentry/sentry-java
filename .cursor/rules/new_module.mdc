@@ -52,10 +52,7 @@ val SENTRY_FOO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.foo"
 The module's `build.gradle.kts` consumes it in both `buildConfig` and the jar manifest
 (`Sentry-SDK-Name` / `Sentry-SDK-Package-Name`) — see `sentry-kafka/build.gradle.kts`.
 
-4. For an Android module, add the artifact id to `Config.BuildScript.androidLibs` in
-   `buildSrc/src/main/java/Config.kt`. This makes the generated POM of any module that depends
-   on it declare `<type>aar</type>`, which Gradle otherwise gets wrong
-   ([gradle#3170](https://github.com/gradle/gradle/issues/3170)).
+4. For an Android module, add the artifact id to `androidLibs` in `buildSrc/src/main/java/Config.kt`.
 
 5. Add the instrumented library to `gradle/libs.versions.toml` and depend on it with
    `compileOnly(libs.<lib>)`, so the integration does not force the dependency on users.
@@ -79,11 +76,7 @@ addIntegrationToSdkVersion("{IntegrationName}");
 
 ### 2. Create Module Documentation
 
-Create a `README.md` in the module directory: the module name as the heading, what it instruments,
-the entry points a host app touches, and a link to the module's page on docs.sentry.io. Take that
-link from the page itself rather than assembling it from the module name — a module does not always
-get its own page (`sentry-android-navigation3` is documented inside the existing Navigation page).
-`sentry-android-navigation3/README.md` is a good example.
+Create a `README.md` in the module directory: the module name as the heading, what it instruments, and a high level overview.
 
 Steps 3 to 6 are required only when adding a module that isn't a sample.
 
@@ -111,40 +104,9 @@ Add the necessary documentation to [docs.sentry.io](https://docs.sentry.io):
 - For Android modules: Add to Android platform docs, usually in integrations section
 - Include installation instructions, configuration options, and usage examples
 
-This has to be merged before step 6, which needs the live URL. The path is not derivable from the
-module name — integrations sit under `integrations/`, instrumentation under
-`tracing/instrumentation/`, and some modules are documented inside an existing page instead of
-getting their own. Note the URL the page actually resolves to, with no redirect.
-
 ### 6. Add the Module to `.craft.yml`
 
-This is **not** a post-release task. It has to be merged before the release that first ships the
-module, otherwise that release publishes to Maven Central and then aborts on the `registry`
-target, leaving *every* `io.sentry` artifact stale in the release registry — not just the new one.
-
-Add the module to the `registry` target in `.craft.yml`, carrying all four metadata fields. The
-simplest way is to copy the block of a neighbouring module and swap the name:
-
-```yaml
-sdks:
-  # ... existing modules ...
-  maven:io.sentry:sentry-{module-name}:
-    name: io.sentry:sentry-{module-name}
-    packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-{module-name}
-    mainDocsUrl: {the live docs.sentry.io URL from step 5}
-    apiDocsUrl: https://javadoc.io/doc/io.sentry
-```
-
-Craft reads these fields only for a package it has not published before — for anything already in
-the registry it carries the existing manifest forward. A missing `name` therefore fails the whole
-registry target rather than just that entry, and only on the release that first ships the module.
-That is why a bare `maven:io.sentry:sentry-{module-name}:` key appears to work and then does not.
-
-No hand-editing of [sentry-release-registry](https://github.com/getsentry/sentry-release-registry)
-is needed: with these fields present, craft creates the registry entry by itself.
-
-The fields are authoritative — craft writes them over the registry manifest on every release, so
-do not change an existing entry's values unless the change is intended to be published.
+Add the module to the `registry` target in `.craft.yml`, including all metadata fields.
 
 ## Module Naming Conventions
 
