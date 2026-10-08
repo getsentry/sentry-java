@@ -39,10 +39,15 @@ val SENTRY_FOO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.foo"
 The module's `build.gradle.kts` consumes it in both `buildConfig` and the jar manifest
 (`Sentry-SDK-Name` / `Sentry-SDK-Package-Name`) — see `sentry-kafka/build.gradle.kts`.
 
-4. Add the instrumented library to `gradle/libs.versions.toml` and depend on it with
+4. For an Android module, add the artifact id to `Config.BuildScript.androidLibs` in
+   `buildSrc/src/main/java/Config.kt`. This makes the generated POM of any module that depends
+   on it declare `<type>aar</type>`, which Gradle otherwise gets wrong
+   ([gradle#3170](https://github.com/gradle/gradle/issues/3170)).
+
+5. Add the instrumented library to `gradle/libs.versions.toml` and depend on it with
    `compileOnly(libs.<lib>)`, so the integration does not force the dependency on users.
 
-5. Register the integration with the SDK so it is reported in the `sdk` payload. Every
+6. Register the integration with the SDK so it is reported in the `sdk` payload. Every
    integration does this — see `sentry-openfeature/.../SentryOpenFeatureHook.java`:
 
 ```java
@@ -54,7 +59,7 @@ static {
 addIntegrationToSdkVersion("{IntegrationName}");
 ```
 
-6. If adding a JVM sample, add E2E (system) tests, following the structure we have in the existing JVM examples.
+7. If adding a JVM sample, add E2E (system) tests, following the structure we have in the existing JVM examples.
    The test should then be added to `test/system-test-runner.py` and `.github/workflows/system-tests-backend.yml`.
 
 `sentry-bom` and the root `build.gradle.kts` need no change — they iterate over subprojects.
@@ -97,18 +102,35 @@ Add the necessary documentation to [docs.sentry.io](https://docs.sentry.io):
 - For Android modules: Add to Android platform docs, usually in integrations section
 - Include installation instructions, configuration options, and usage examples
 
-### 6. Post release tasks
+### 6. Add the Module to `.craft.yml`
 
-Remind the user to perform the following tasks after the module is merged and released:
+This is **not** a post-release task. It has to be merged before the release that first ships the
+module, otherwise that release publishes to Maven Central and then aborts on the `registry`
+target, leaving *every* `io.sentry` artifact stale in the release registry — not just the new one.
 
-1. Add the SDK to the Sentry release registry, following the instructions in the [sentry-release-registry README](https://github.com/getsentry/sentry-release-registry#adding-new-sdks)
+Add the module to the `registry` target in `.craft.yml`, carrying all four metadata fields. The
+simplest way is to copy the block of a neighbouring module and swap the name:
 
-2. Add the module to `.craft.yml` in the `sdks` section:
-   ```yaml
-   sdks:
-     # ... existing modules ...
-     maven:io.sentry:sentry-{module-name}:
-   ```
+```yaml
+sdks:
+  # ... existing modules ...
+  maven:io.sentry:sentry-{module-name}:
+    name: io.sentry:sentry-{module-name}
+    packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-{module-name}
+    mainDocsUrl: https://docs.sentry.io/platforms/{android|java}/integrations/{module-name}/
+    apiDocsUrl: https://javadoc.io/doc/io.sentry
+```
+
+Craft reads these fields only for a package it has not published before — for anything already in
+the registry it carries the existing manifest forward. A missing `name` therefore fails the whole
+registry target rather than just that entry, and only on the release that first ships the module.
+`mainDocsUrl` must be a live page, so step 5 has to be merged first.
+
+No hand-editing of [sentry-release-registry](https://github.com/getsentry/sentry-release-registry)
+is needed: with these fields present, craft creates the registry entry by itself.
+
+The fields are authoritative — craft writes them over the registry manifest on every release, so
+do not change an existing entry's values unless the change is intended to be published.
 
 ## Module Naming Conventions
 
