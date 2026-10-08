@@ -101,6 +101,35 @@ class SentryClientInternalEventProcessorTest(private val onScope: Boolean) {
   }
 
   @Test
+  fun `SDK transaction processor failure keeps attached profile without reporting loss`() {
+    val transaction = SentryTransaction(fixture.sentryTracer)
+    whenever(processor.process(any<SentryTransaction>(), any())).thenThrow(failure)
+    whenever(nextProcessor.process(any<SentryTransaction>(), any())).thenAnswer { it.arguments[0] }
+
+    val id =
+      fixture
+        .getSut()
+        .captureTransaction(
+          transaction,
+          fixture.sentryTracer.traceContext(),
+          scope,
+          null,
+          fixture.profilingTraceData,
+        )
+
+    assertThat(id).isEqualTo(transaction.eventId)
+    verify(fixture.transport)
+      .send(
+        check {
+          assertThat(it.items.map { item -> item.header.type })
+            .containsExactly(SentryItemType.Transaction, SentryItemType.Profile)
+        },
+        anyOrNull(),
+      )
+    assertFailureLoggedWithoutLoss("transaction")
+  }
+
+  @Test
   fun `SDK feedback processor failure keeps feedback and runs remaining callbacks`() {
     val feedback = Feedback("message")
     val beforeSend = mock<SentryOptions.BeforeSendCallback>()

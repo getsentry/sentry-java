@@ -618,7 +618,8 @@ public final class SentryClient implements ISentryClient {
   private @Nullable SentryTransaction processTransaction(
       @NotNull SentryTransaction transaction,
       final @NotNull Hint hint,
-      final @NotNull List<EventProcessor> eventProcessors) {
+      final @NotNull List<EventProcessor> eventProcessors,
+      final boolean hasProfile) {
     for (final EventProcessor processor : eventProcessors) {
       final int spanCountBeforeProcessor = transaction.getSpans().size();
       try {
@@ -639,6 +640,11 @@ public final class SentryClient implements ISentryClient {
               .getClientReportRecorder()
               .recordLostEvent(
                   DiscardReason.CALLBACK_ERROR, DataCategory.Span, spanCountBeforeProcessor + 1);
+          if (hasProfile) {
+            options
+                .getClientReportRecorder()
+                .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Profile);
+          }
           return null;
         }
       }
@@ -659,6 +665,11 @@ public final class SentryClient implements ISentryClient {
             .getClientReportRecorder()
             .recordLostEvent(
                 DiscardReason.EVENT_PROCESSOR, DataCategory.Span, spanCountBeforeProcessor + 1);
+        if (hasProfile) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Profile);
+        }
         break;
       } else if (spanCountAfterProcessor < spanCountBeforeProcessor) {
         // If the callback removed some spans, we report it
@@ -1055,7 +1066,9 @@ public final class SentryClient implements ISentryClient {
       transaction = applyScope(transaction, scope, HintUtils.hasType(hint, Cached.class));
 
       if (transaction != null && scope != null) {
-        transaction = processTransaction(transaction, hint, scope.getEventProcessors());
+        transaction =
+            processTransaction(
+                transaction, hint, scope.getEventProcessors(), profilingTraceData != null);
       }
 
       if (transaction == null) {
@@ -1064,7 +1077,9 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (transaction != null) {
-      transaction = processTransaction(transaction, hint, options.getEventProcessors());
+      transaction =
+          processTransaction(
+              transaction, hint, options.getEventProcessors(), profilingTraceData != null);
     }
 
     if (transaction == null) {
@@ -1072,7 +1087,7 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
-    transaction = executeBeforeSendTransaction(transaction, hint);
+    transaction = executeBeforeSendTransaction(transaction, hint, profilingTraceData != null);
 
     if (transaction == null) {
       options
@@ -1666,7 +1681,7 @@ public final class SentryClient implements ISentryClient {
   }
 
   private @Nullable SentryTransaction executeBeforeSendTransaction(
-      @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
+      @NotNull SentryTransaction transaction, final @NotNull Hint hint, final boolean hasProfile) {
     final SentryOptions.BeforeSendTransactionCallback beforeSendTransaction =
         options.getBeforeSendTransaction();
     if (beforeSendTransaction != null) {
@@ -1687,6 +1702,11 @@ public final class SentryClient implements ISentryClient {
             .getClientReportRecorder()
             .recordLostEvent(
                 DiscardReason.CALLBACK_ERROR, DataCategory.Span, spanCountBeforeCallback + 1);
+        if (hasProfile) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Profile);
+        }
         return null;
       }
 
@@ -1698,6 +1718,11 @@ public final class SentryClient implements ISentryClient {
             .getClientReportRecorder()
             .recordLostEvent(
                 DiscardReason.BEFORE_SEND, DataCategory.Span, spanCountBeforeCallback + 1);
+        if (hasProfile) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Profile);
+        }
       } else {
         final int spanCountAfterCallback = transaction.getSpans().size();
         if (spanCountAfterCallback < spanCountBeforeCallback) {

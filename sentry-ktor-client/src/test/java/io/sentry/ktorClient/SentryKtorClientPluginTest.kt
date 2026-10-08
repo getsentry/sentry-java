@@ -1,17 +1,21 @@
 package io.sentry.ktorClient
 
+import com.google.common.truth.Truth.assertThat
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.java.Java
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
+import io.sentry.ILogger
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.KeyValueCollectionBehavior
@@ -19,6 +23,7 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryEvent
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -26,6 +31,7 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.W3CTraceparentHeader
+import io.sentry.clientreport.DiscardReason
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
 import java.util.concurrent.TimeUnit
@@ -46,6 +52,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryKtorClientPluginTest {
@@ -112,6 +119,7 @@ class SentryKtorClientPluginTest {
       return HttpClient(httpClientEngine) {
         install(SentryKtorClientPlugin) {
           this.scopes = this@Fixture.scopes
+          this.beforeSpan = beforeSpan
           this.captureFailedRequests = captureFailedRequests
           this.failedRequestTargets = failedRequestTargets
           this.failedRequestStatusCodes = failedRequestStatusCodes
@@ -432,6 +440,90 @@ class SentryKtorClientPluginTest {
         },
         any<Hint>(),
       )
+  }
+
+  @Test
+  fun `reports callback errors only for sampled spans`(): Unit = runBlocking {
+    for (sampled in listOf(true, false, null)) {
+      val fixture = Fixture()
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _ ->
+            span.spanContext.sampled = false
+            throw IllegalStateException("callback failed")
+          }
+        )
+      fixture.sentryTracer.spanContext.sampled = sampled
+      fixture.options.onDiscard = onDiscard
+
+      sut.use { sut.get(fixture.server.url("/hello").toString()) }
+      fixture.sentryTracer.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
+    val failure = IllegalStateException("callback failed")
+    val logger = mock<ILogger>()
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _ ->
+          span.description = "partially modified"
+          throw failure
+        }
+      )
+    fixture.options.isDebug = true
+    fixture.options.setLogger(logger)
+    sut.use {
+      val response = sut.get(fixture.server.url("/hello").toString())
+      assertThat(response.status.value).isEqualTo(201)
+      assertThat(response.bodyAsText()).isEqualTo("success")
+    }
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    assertThat(span.status).isEqualTo(SpanStatus.OK)
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+    verify(logger)
+      .log(
+        SentryLevel.ERROR,
+        "The beforeSpan callback threw an exception in SentryKtorClientPlugin. Dropping span.",
+        failure,
+      )
+  }
+
+  @Test
+  fun `beforeSpan can drop span`(): Unit = runBlocking {
+    val sut = fixture.getSut(beforeSpan = { _, _ -> null })
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.options.onDiscard = onDiscard
+    fixture.sentryTracer.spanContext.sampled = true
+    sut.use { sut.get(fixture.server.url("/hello").toString()) }
+    verifyNoMoreInteractions(onDiscard)
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+  }
+
+  @Test
+  fun `beforeSpan can modify span`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _ ->
+          span.description = "changed"
+          span
+        }
+      )
+    sut.use { sut.get(fixture.server.url("/hello").toString()) }
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).isEqualTo("changed")
+    assertThat(span.isFinished).isTrue()
   }
 
   @Test
