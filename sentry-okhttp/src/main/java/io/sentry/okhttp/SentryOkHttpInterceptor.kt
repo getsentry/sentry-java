@@ -324,9 +324,9 @@ public open class SentryOkHttpInterceptor(
    * long-poll, a chunked endpoint that stays open, and every response OkHttp decompressed itself —
    * so the peek would never return and the caller would never get the response at all.
    *
-   * Every body therefore goes through [NetworkBodyCapturingResponseBody], which copies what passes
-   * through it. A body with a known length that the application never reads is taken when it is
-   * closed, where reading it is bounded.
+   * Every body therefore goes through [CapturedResponseBody], which copies what passes through it.
+   * A body with a known length that the application never reads is taken when it is closed, where
+   * reading it is bounded.
    */
   private fun Response.withNetworkBodyCapture(networkDetailData: NetworkRequestData?): Response {
     val responseBody = body
@@ -354,7 +354,7 @@ public open class SentryOkHttpInterceptor(
 
     return newBuilder()
       .body(
-        NetworkBodyCapturingResponseBody(responseBody, captureCap) { capturedBytes ->
+        CapturedResponseBody(responseBody, captureCap) { capturedBytes ->
           // This runs on the thread consuming the body, inside its read or close, so a failure in
           // here must stay in here.
           try {

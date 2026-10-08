@@ -18,7 +18,7 @@ import okio.Source
 import okio.Timeout
 import okio.buffer
 
-class NetworkBodyCapturingResponseBodyTest {
+class CapturedResponseBodyTest {
 
   /** Emits one chunk per read, then EOF. Records how many reads happened. */
   private class ChunkedSource(private val chunks: List<ByteArray>) : Source {
@@ -108,10 +108,10 @@ class NetworkBodyCapturingResponseBodyTest {
     maxBytes: Long,
     type: String? = "text/plain",
     length: Long = -1L,
-  ): Pair<NetworkBodyCapturingResponseBody, MutableList<ByteArray?>> {
+  ): Pair<CapturedResponseBody, MutableList<ByteArray?>> {
     val captured = mutableListOf<ByteArray?>()
     val wrapper =
-      NetworkBodyCapturingResponseBody(bodyOf(source, type, length), maxBytes) {
+      CapturedResponseBody(bodyOf(source, type, length), maxBytes) {
         captured.add(it)
       }
     return wrapper to captured
@@ -256,8 +256,7 @@ class NetworkBodyCapturingResponseBodyTest {
   fun `a failing capture callback does not reach the application`() {
     val source = ChunkedSource(listOf("payload".toByteArray()))
     val body = bodyOf(source)
-    val wrapper =
-      NetworkBodyCapturingResponseBody(body, 1024) { throw IllegalStateException("parse failed") }
+    val wrapper = CapturedResponseBody(body, 1024) { throw IllegalStateException("parse failed") }
 
     // The interceptor guards its own callback; the wrapper must not swallow the failure silently
     // while leaving the delegate open.
@@ -318,7 +317,7 @@ class NetworkBodyCapturingResponseBodyTest {
         override fun source(): BufferedSource = ChunkedSource(emptyList()).buffer()
       }
 
-    val wrapper = NetworkBodyCapturingResponseBody(delegate, 16) {}
+    val wrapper = CapturedResponseBody(delegate, 16) {}
 
     assertEquals(type, wrapper.contentType())
     assertEquals(-1L, wrapper.contentLength())
@@ -328,7 +327,7 @@ class NetworkBodyCapturingResponseBodyTest {
   fun `propagates read failures to the application`() {
     val source = FailingSource(bytesBeforeFailure = 4)
     val captured = mutableListOf<ByteArray?>()
-    val wrapper = NetworkBodyCapturingResponseBody(bodyOf(source), 1024) { captured.add(it) }
+    val wrapper = CapturedResponseBody(bodyOf(source), 1024) { captured.add(it) }
 
     assertFailsWith<IOException> { wrapper.source().readByteArray() }
     assertEquals(

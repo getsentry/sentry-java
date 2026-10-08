@@ -33,7 +33,7 @@ import okio.buffer
  * @param onCaptured invoked at most once, synchronously, on the thread that finishes the body. It
  *   is never invoked for a body that is abandoned without being read to the end or closed.
  */
-internal class NetworkBodyCapturingResponseBody(
+internal class CapturedResponseBody(
   private val delegate: ResponseBody,
   private val maxBytes: Long,
   private val onCaptured: (ByteArray) -> Unit,
