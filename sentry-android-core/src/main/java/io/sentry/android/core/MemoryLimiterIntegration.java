@@ -190,24 +190,30 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
     /**
      * Returns true if the provided {@code exitInfo} looks like it came from a MemoryLimiter-induced
      * process death.
-     *
-     * <p>Criteria taken from <a
-     * href="https://developer.android.com/about/versions/17/behavior-changes-all#app-memory-limits">here</a>.
      */
     @Override
     @RequiresApi(api = Build.VERSION_CODES.R)
     public boolean matches(final @NotNull ApplicationExitInfo exitInfo) {
-      if (exitInfo.getReason() != ApplicationExitInfo.REASON_OTHER) {
-        return false;
+      final int reason = exitInfo.getReason();
+
+      // 1. Return true for explicit matches.
+      if (reason == ApplicationExitInfo.REASON_MEMORY_LIMITER) {
+        return true;
       }
 
-      final String description = exitInfo.getDescription();
-      // We match on the "MemoryLimiter:" prefix rather than the full "MemoryLimiter:AnonSwap"
-      // string mentioned in the Android 17 release notes because we want to capture any future
-      // MemoryLimiter kill reason without a code change. (MemoryLimiter source already tracks
-      // MemoryLimiter:Memory and MemoryLimiter:Swap, but for now doesn't kill the process because
-      // of them.)
-      return description != null && description.contains(MEMORY_LIMITER_DESCRIPTION_PREFIX);
+      // 2. Return true for heuristic matches based on criteria discussed here:
+      // https://developer.android.com/about/versions/17/behavior-changes-all#app-memory-limits
+      if (reason == ApplicationExitInfo.REASON_OTHER) {
+        final String description = exitInfo.getDescription();
+        // We match on the "MemoryLimiter:" prefix rather than the full "MemoryLimiter:AnonSwap"
+        // string mentioned in the Android 17 release notes because we want to capture any future
+        // MemoryLimiter kill reason without a code change. (MemoryLimiter source already tracks
+        // MemoryLimiter:Memory and MemoryLimiter:Swap, but for now doesn't kill the process because
+        // of them.)
+        return description != null && description.contains(MEMORY_LIMITER_DESCRIPTION_PREFIX);
+      }
+
+      return false;
     }
 
     @Override

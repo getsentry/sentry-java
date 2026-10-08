@@ -156,6 +156,17 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when Logs and Metrics options are disabled, batch processors are still created`() {
+    val sut = fixture.getSut {
+      it.logs.isEnabled = false
+      it.metrics.isEnabled = false
+    }
+
+    verify(fixture.loggerBatchProcessorFactory).create(fixture.sentryOptions, sut)
+    verify(fixture.metricsBatchProcessorFactory).create(fixture.sentryOptions, sut)
+  }
+
+  @Test
   fun `when dsn is an invalid string, client throws`() {
     fixture.sentryOptions.dsn = "invalid-dsn"
     assertFailsWith<IllegalArgumentException> { fixture.getSut() }
