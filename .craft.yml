@@ -64,6 +64,7 @@ targets:
       maven:io.sentry:sentry-quartz:
       maven:io.sentry:sentry-okhttp:
       maven:io.sentry:sentry-android-navigation:
+      maven:io.sentry:sentry-android-navigation3:
       maven:io.sentry:sentry-compose:
       maven:io.sentry:sentry-compose-android:
       maven:io.sentry:sentry-compose-desktop:
