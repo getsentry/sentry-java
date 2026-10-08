@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @Open
+@SuppressWarnings("deprecation")
 public class SentryRequestResolver {
   protected static final @NotNull AutoClosableReentrantLock staticLock =
       new AutoClosableReentrantLock();

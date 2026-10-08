@@ -43,6 +43,7 @@ plugins.withId("io.sentry.android.gradle") {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.samples.android"
 
   defaultConfig {
@@ -186,6 +187,7 @@ dependencies {
   implementation(projects.sentryAndroid)
   implementation(projects.sentryAndroidFragment)
   implementation(projects.sentryAndroidNavigation)
+  implementation(projects.sentryAndroidNavigation3)
   implementation(projects.sentryAndroidSqlite)
   implementation(projects.sentryAndroidTimber)
   implementation(projects.sentryCompose)
@@ -211,6 +213,8 @@ dependencies {
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.navigation.fragment)
+  implementation(libs.androidx.navigation3.runtime)
+  implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.recyclerview)
   implementation(libs.androidx.browser)
   implementation(libs.androidx.room3.runtime)

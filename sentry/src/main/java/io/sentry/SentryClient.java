@@ -10,9 +10,7 @@ import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
 import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.logger.ILoggerBatchProcessor;
-import io.sentry.logger.NoOpLoggerBatchProcessor;
 import io.sentry.metrics.IMetricsBatchProcessor;
-import io.sentry.metrics.NoOpMetricsBatchProcessor;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.FeatureFlags;
@@ -61,18 +59,9 @@ public final class SentryClient implements ISentryClient {
 
     final RequestDetailsResolver requestDetailsResolver = new RequestDetailsResolver(options);
     transport = transportFactory.create(options, requestDetailsResolver.resolve());
-    if (options.getLogs().isEnabled()) {
-      loggerBatchProcessor =
-          options.getLogs().getLoggerBatchProcessorFactory().create(options, this);
-    } else {
-      loggerBatchProcessor = NoOpLoggerBatchProcessor.getInstance();
-    }
-    if (options.getMetrics().isEnabled()) {
-      metricsBatchProcessor =
-          options.getMetrics().getMetricsBatchProcessorFactory().create(options, this);
-    } else {
-      metricsBatchProcessor = NoOpMetricsBatchProcessor.getInstance();
-    }
+    loggerBatchProcessor = options.getLogs().getLoggerBatchProcessorFactory().create(options, this);
+    metricsBatchProcessor =
+        options.getMetrics().getMetricsBatchProcessorFactory().create(options, this);
   }
 
   private boolean shouldApplyScopeData(

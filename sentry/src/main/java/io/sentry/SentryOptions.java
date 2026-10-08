@@ -1755,10 +1755,24 @@ public class SentryOptions implements RateLimiterConfig {
     this.sdkVersion = sdkVersion;
   }
 
+  /**
+   * Returns whether personally identifiable information is sent by default.
+   *
+   * @deprecated use {@link #getDataCollection()} instead. This option will be removed in 9.0.
+   */
+  @ApiStatus.ScheduledForRemoval(inVersion = "9.0")
+  @Deprecated
   public boolean isSendDefaultPii() {
     return sendDefaultPii;
   }
 
+  /**
+   * Sets whether personally identifiable information is sent by default.
+   *
+   * @deprecated use {@link #getDataCollection()} instead. This option will be removed in 9.0.
+   */
+  @ApiStatus.ScheduledForRemoval(inVersion = "9.0")
+  @Deprecated
   public void setSendDefaultPii(boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
   }
@@ -4078,7 +4092,7 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Logs {
 
-    /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
+    /** Whether automatic logging integrations send Logs to Sentry. */
     private boolean enable = false;
 
     /**
@@ -4091,18 +4105,20 @@ public class SentryOptions implements RateLimiterConfig {
         new DefaultLoggerBatchProcessorFactory();
 
     /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
+     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
+     * calls are always captured when the SDK is enabled.
      *
-     * @return true if Sentry Logs should be enabled
+     * @return true if automatic Logs should be enabled
      */
     public boolean isEnabled() {
       return enable;
     }
 
     /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
+     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
+     * calls are always captured when the SDK is enabled.
      *
-     * @param enableLogs true if Sentry Logs should be enabled
+     * @param enableLogs true if automatic Logs should be enabled
      */
     public void setEnabled(boolean enableLogs) {
       this.enable = enableLogs;
@@ -4157,7 +4173,7 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Metrics {
 
-    /** Whether Sentry Metrics feature is enabled and metrics are sent to Sentry. */
+    /** The configured state for automatic Metrics integrations, which currently do not exist. */
     private boolean enable = true;
 
     /**
@@ -4170,18 +4186,24 @@ public class SentryOptions implements RateLimiterConfig {
         new DefaultMetricsBatchProcessorFactory();
 
     /**
-     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     * Returns the configured state for automatic Metrics integrations.
      *
-     * @return true if Sentry Metrics should be enabled
+     * <p>This option currently has no effect because there are no automatic Metrics integrations.
+     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
+     *
+     * @return the configured value for automatic Metrics integrations
      */
     public boolean isEnabled() {
       return enable;
     }
 
     /**
-     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     * Configures whether automatic Metrics integrations send Metrics to Sentry.
      *
-     * @param enableMetrics true if Sentry Metrics should be enabled
+     * <p>This option currently has no effect because there are no automatic Metrics integrations.
+     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
+     *
+     * @param enableMetrics whether automatic Metrics integrations should be enabled
      */
     public void setEnabled(final boolean enableMetrics) {
       this.enable = enableMetrics;
