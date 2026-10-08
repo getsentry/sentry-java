@@ -3,7 +3,7 @@ public final class io/sentry/spring7/BuildConfig {
 	public static final field VERSION_NAME Ljava/lang/String;
 }
 
-public final class io/sentry/spring7/ContextTagsEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/spring7/ContextTagsEventProcessor : io/sentry/internal/eventprocessor/SentryEventProcessor {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
@@ -48,7 +48,7 @@ public class io/sentry/spring7/SentryProfilerConfiguration {
 	public fun sentryOpenTelemetryProfilerConverterConfiguration ()Lio/sentry/IProfileConverter;
 }
 
-public class io/sentry/spring7/SentryRequestHttpServletRequestProcessor : io/sentry/EventProcessor {
+public class io/sentry/spring7/SentryRequestHttpServletRequestProcessor : io/sentry/internal/eventprocessor/SentryEventProcessor {
 	public fun <init> (Lio/sentry/spring7/tracing/TransactionNameProvider;Ljakarta/servlet/http/HttpServletRequest;)V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
@@ -92,7 +92,7 @@ public class io/sentry/spring7/SentryWebConfiguration {
 	public fun httpServletRequestSentryUserProvider (Lio/sentry/SentryOptions;)Lio/sentry/spring7/HttpServletRequestSentryUserProvider;
 }
 
-public final class io/sentry/spring7/SpringProfilesEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/spring7/SpringProfilesEventProcessor : io/sentry/internal/eventprocessor/SentryEventProcessor {
 	public fun <init> (Lorg/springframework/core/env/Environment;)V
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/SentryReplayEvent;

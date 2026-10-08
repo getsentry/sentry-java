@@ -7,7 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import io.sentry.Attachment;
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.ISerializer;
@@ -18,6 +17,7 @@ import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.Debouncer;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.ViewHierarchy;
@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** ViewHierarchyEventProcessor responsible for taking a snapshot of the current view hierarchy. */
 @ApiStatus.Internal
-public final class ViewHierarchyEventProcessor implements EventProcessor {
+public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull Debouncer debouncer;

@@ -1,6 +1,7 @@
 package io.sentry;
 
 import io.sentry.hints.EventDropReason;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.SentryException;
 import io.sentry.util.HintUtils;
 import java.util.Collections;
@@ -14,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
  * multiple threads. This can be the case for OutOfMemory errors or CursorWindowAllocationException,
  * basically any error related to allocating memory when it's low.
  */
-public final class DeduplicateMultithreadedEventProcessor implements EventProcessor {
+public final class DeduplicateMultithreadedEventProcessor implements SentryEventProcessor {
 
   private final @NotNull Map<String, Long> processedEvents =
       Collections.synchronizedMap(new HashMap<>());

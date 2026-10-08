@@ -1,12 +1,13 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.SentryRuntime;
 import io.sentry.protocol.SentryTransaction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Attaches Java vendor and version to events and transactions. */
-final class SentryRuntimeEventProcessor implements EventProcessor {
+final class SentryRuntimeEventProcessor implements SentryEventProcessor {
   private final @Nullable String javaVersion;
   private final @Nullable String javaVendor;
 
