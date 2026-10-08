@@ -17,9 +17,8 @@ targets:
   - name: registry
     # Every package carries name/packageUrl/mainDocsUrl/apiDocsUrl so craft can create the
     # registry entry itself when we add a new artifact. Craft only reads them for a package it
-    # hasn't published before, but a missing `name` fails the whole registry target rather than
-    # just that package - which is what held back the whole 8.60.0 registry update.
-    # These values are authoritative: craft writes them over the registry manifest on every release.
+    # hasn't published before, but defining them all here for conistency and 
+    # as a single source of truth.
     sdks:
       maven:io.sentry:sentry:
         name: io.sentry:sentry
