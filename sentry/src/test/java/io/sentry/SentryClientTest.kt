@@ -3973,24 +3973,78 @@ class SentryClientTest {
   }
 
   @Test
-  fun `beforeErrorSampling throwing exception proceeds with captureReplay`() {
-    var called = false
-    fixture.sentryOptions.setReplayController(
-      object : ReplayController by NoOpReplayController.getInstance() {
-        override fun captureReplay(isTerminating: Boolean?): SentryId {
-          called = true
-          return SentryId.EMPTY_ID
-        }
-      }
-    )
+  fun `beforeErrorSampling throwing exception skips replay but still sends errors and crashes`() {
+    val replayController = mock<ReplayController>()
+    whenever(replayController.replayId).thenReturn(SentryId())
+    whenever(replayController.captureReplay(anyOrNull())).thenReturn(SentryId.EMPTY_ID)
+    fixture.sentryOptions.setReplayController(replayController)
+    val logger = mock<ILogger>()
+    fixture.sentryOptions.setLogger(logger)
+    val exception = RuntimeException("test")
     fixture.sentryOptions.sessionReplay.beforeErrorSampling =
       SentryReplayOptions.BeforeErrorSamplingCallback { _, _ ->
-        throw RuntimeException("test")
+        throw exception
+      }
+    val sut = fixture.getSut()
+    val events =
+      listOf(true, false).map { handled ->
+        SentryEvent().apply {
+          exceptions =
+            listOf(
+              SentryException().apply { mechanism = Mechanism().apply { isHandled = handled } }
+            )
+        }
+      }
+
+    events.forEach { event ->
+      assertThat(sut.captureEvent(event)).isEqualTo(event.eventId)
+    }
+
+    verify(replayController, never()).captureReplay(anyOrNull())
+    val envelopes = argumentCaptor<SentryEnvelope>()
+    verify(fixture.transport, times(2)).send(envelopes.capture(), anyOrNull())
+    assertThat(envelopes.allValues.map { getEventFromData(it.items.first().data).eventId })
+      .containsExactlyElementsIn(events.map { it.eventId })
+      .inOrder()
+    verify(logger, times(2))
+      .log(
+        SentryLevel.ERROR,
+        "The beforeErrorSampling callback threw an exception. Skipping replay capture.",
+        exception,
+      )
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Replay.category, 2)),
+    )
+  }
+
+  @Test
+  fun `beforeErrorSampling throwing exception does not prevent replay capture for subsequent events`() {
+    val replayController = mock<ReplayController>()
+    whenever(replayController.replayId).thenReturn(SentryId.EMPTY_ID)
+    whenever(replayController.captureReplay(anyOrNull())).thenReturn(SentryId.EMPTY_ID)
+    fixture.sentryOptions.setReplayController(replayController)
+    var invocations = 0
+    fixture.sentryOptions.sessionReplay.beforeErrorSampling =
+      SentryReplayOptions.BeforeErrorSamplingCallback { _, _ ->
+        invocations++
+        if (invocations == 1) {
+          throw RuntimeException("test")
+        }
+        true
       }
     val sut = fixture.getSut()
 
     sut.captureEvent(SentryEvent().apply { exceptions = listOf(SentryException()) })
-    assertTrue(called)
+    verify(replayController, never()).captureReplay(anyOrNull())
+
+    val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+    assertThat(sut.captureEvent(event)).isEqualTo(event.eventId)
+
+    assertThat(invocations).isEqualTo(2)
+    verify(replayController).captureReplay(false)
+    verify(fixture.transport, times(2)).send(any(), anyOrNull())
+    assertClientReport(fixture.sentryOptions.clientReportRecorder, emptyList())
   }
 
   @Test
