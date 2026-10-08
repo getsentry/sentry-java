@@ -671,6 +671,11 @@ public final class SentryClient implements ISentryClient {
             .getClientReportRecorder()
             .recordLostEvent(
                 DiscardReason.EVENT_PROCESSOR, DataCategory.Span, spanCountBeforeProcessor + 1);
+        if (hasProfile) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Profile);
+        }
         break;
       } else if (spanCountAfterProcessor < spanCountBeforeProcessor) {
         // If the callback removed some spans, we report it
@@ -1719,6 +1724,11 @@ public final class SentryClient implements ISentryClient {
             .getClientReportRecorder()
             .recordLostEvent(
                 DiscardReason.BEFORE_SEND, DataCategory.Span, spanCountBeforeCallback + 1);
+        if (hasProfile) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Profile);
+        }
       } else {
         final int spanCountAfterCallback = transaction.getSpans().size();
         if (spanCountAfterCallback < spanCountBeforeCallback) {
