@@ -29,6 +29,8 @@ dependencies {
   api(projects.sentry)
   api(projects.sentrySpring)
   compileOnly(projects.sentryLogback)
+  compileOnly(projects.sentryOkhttp)
+  compileOnly(libs.okhttp)
   compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
@@ -58,12 +60,14 @@ dependencies {
 
   // tests
   testImplementation(projects.sentryLogback)
+  testImplementation(projects.sentryOkhttp)
   testImplementation(projects.sentryQuartz)
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryKafka)
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.okhttp)
   testImplementation(libs.okhttp.mockwebserver)

@@ -81,4 +81,55 @@ class SentryClientTransactionProfileTest(
     verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 2)
     verifyNoMoreInteractions(onDiscard)
   }
+
+  @Test
+  fun `intentional transaction drop reports attached profile exactly once`() {
+    val fixture = SentryClientTest.Fixture()
+    val options = fixture.sentryOptions
+    options.eventProcessors.clear()
+    val scope = Scope(options)
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    options.onDiscard = onDiscard
+    val discardReason =
+      if (callback == "beforeSendTransaction") {
+        options.setBeforeSendTransaction { _, _ -> null }
+        DiscardReason.BEFORE_SEND
+      } else {
+        val processor = mock<EventProcessor>()
+        whenever(processor.process(any<SentryTransaction>(), any())).thenReturn(null)
+        if (callback == "scope processor") {
+          scope.addEventProcessor(processor)
+        } else {
+          options.addEventProcessor(processor)
+        }
+        DiscardReason.EVENT_PROCESSOR
+      }
+
+    val id =
+      fixture
+        .getSut()
+        .captureTransaction(
+          SentryTransaction(fixture.sentryTracer),
+          fixture.sentryTracer.traceContext(),
+          scope,
+          null,
+          if (hasProfile) fixture.profilingTraceData else null,
+        )
+
+    assertThat(id).isEqualTo(SentryId.EMPTY_ID)
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+    val expected =
+      mutableListOf(
+        DiscardedEvent(discardReason.reason, DataCategory.Transaction.category, 1),
+        DiscardedEvent(discardReason.reason, DataCategory.Span.category, 2),
+      )
+    if (hasProfile) {
+      expected.add(DiscardedEvent(discardReason.reason, DataCategory.Profile.category, 1))
+      verify(onDiscard).execute(discardReason, DataCategory.Profile, 1)
+    }
+    assertClientReport(options.clientReportRecorder, expected)
+    verify(onDiscard).execute(discardReason, DataCategory.Transaction, 1)
+    verify(onDiscard).execute(discardReason, DataCategory.Span, 2)
+    verifyNoMoreInteractions(onDiscard)
+  }
 }

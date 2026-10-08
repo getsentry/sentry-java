@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.detekt)
   id("io.sentry.javadoc")
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)

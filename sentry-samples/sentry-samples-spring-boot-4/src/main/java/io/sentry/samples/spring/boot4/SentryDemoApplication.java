@@ -4,6 +4,7 @@ import static io.sentry.quartz.SentryJobListener.SENTRY_SLUG_KEY;
 
 import io.sentry.samples.spring.boot4.quartz.SampleJob;
 import java.util.Collections;
+import okhttp3.OkHttpClient;
 import org.quartz.JobDetail;
 import org.quartz.SimpleTrigger;
 import org.springframework.boot.SpringApplication;
@@ -40,6 +41,12 @@ public class SentryDemoApplication {
   @Bean
   RestClient restClient(RestClient.Builder builder) {
     return builder.build();
+  }
+
+  @Bean
+  OkHttpClient okHttpClient() {
+    // automatically instrumented by Sentry via sentry.clients.ok-http-enabled=true
+    return new OkHttpClient.Builder().build();
   }
 
   @Bean

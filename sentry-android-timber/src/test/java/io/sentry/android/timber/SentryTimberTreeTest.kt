@@ -5,6 +5,7 @@ import io.sentry.Breadcrumb
 import io.sentry.Scopes
 import io.sentry.SentryLevel
 import io.sentry.SentryLogLevel
+import io.sentry.SentryOptions
 import io.sentry.logger.ILoggerApi
 import io.sentry.logger.SentryLogParameters
 import kotlin.test.BeforeTest
@@ -31,9 +32,12 @@ class SentryTimberTreeTest {
       minEventLevel: SentryLevel = SentryLevel.ERROR,
       minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
       minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+      logsEnabled: Boolean = true,
     ): SentryTimberTree {
       logs = mock<ILoggerApi>()
       scopes = mock<Scopes>()
+      val options = SentryOptions().apply { logs.isEnabled = logsEnabled }
+      whenever(scopes.options).thenReturn(options)
       whenever(scopes.logger()).thenReturn(logs)
       return SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
     }
@@ -343,6 +347,17 @@ class SentryTimberTreeTest {
     val sut = fixture.getSut(minLogsLevel = SentryLogLevel.ERROR)
     sut.i(Throwable("test"))
     verifyNoInteractions(fixture.logs)
+  }
+
+  @Test
+  fun `Tree does not add a log when automatic Logs are disabled`() {
+    val sut = fixture.getSut(logsEnabled = false)
+
+    sut.e("message")
+
+    verifyNoInteractions(fixture.logs)
+    verify(fixture.scopes).captureEvent(any())
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>())
   }
 
   @Test

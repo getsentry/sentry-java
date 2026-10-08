@@ -156,6 +156,17 @@ class SentryClientTest {
   }
 
   @Test
+  fun `when Logs and Metrics options are disabled, batch processors are still created`() {
+    val sut = fixture.getSut {
+      it.logs.isEnabled = false
+      it.metrics.isEnabled = false
+    }
+
+    verify(fixture.loggerBatchProcessorFactory).create(fixture.sentryOptions, sut)
+    verify(fixture.metricsBatchProcessorFactory).create(fixture.sentryOptions, sut)
+  }
+
+  @Test
   fun `when dsn is an invalid string, client throws`() {
     fixture.sentryOptions.dsn = "invalid-dsn"
     assertFailsWith<IllegalArgumentException> { fixture.getSut() }
@@ -3964,6 +3975,7 @@ class SentryClientTest {
   @Test
   fun `beforeErrorSampling throwing exception skips replay but still sends errors and crashes`() {
     val replayController = mock<ReplayController>()
+    whenever(replayController.replayId).thenReturn(SentryId())
     whenever(replayController.captureReplay(anyOrNull())).thenReturn(SentryId.EMPTY_ID)
     fixture.sentryOptions.setReplayController(replayController)
     val logger = mock<ILogger>()
@@ -4000,11 +4012,16 @@ class SentryClientTest {
         "The beforeErrorSampling callback threw an exception. Skipping replay capture.",
         exception,
       )
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Replay.category, 2)),
+    )
   }
 
   @Test
   fun `beforeErrorSampling throwing exception does not prevent replay capture for subsequent events`() {
     val replayController = mock<ReplayController>()
+    whenever(replayController.replayId).thenReturn(SentryId.EMPTY_ID)
     whenever(replayController.captureReplay(anyOrNull())).thenReturn(SentryId.EMPTY_ID)
     fixture.sentryOptions.setReplayController(replayController)
     var invocations = 0
@@ -4027,6 +4044,7 @@ class SentryClientTest {
     assertThat(invocations).isEqualTo(2)
     verify(replayController).captureReplay(false)
     verify(fixture.transport, times(2)).send(any(), anyOrNull())
+    assertClientReport(fixture.sentryOptions.clientReportRecorder, emptyList())
   }
 
   @Test

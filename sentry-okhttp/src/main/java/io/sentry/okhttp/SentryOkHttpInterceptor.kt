@@ -14,6 +14,7 @@ import io.sentry.SentryLevel
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryReplayOptions
 import io.sentry.SpanDataConvention
+import io.sentry.SpanOptions
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
@@ -99,12 +100,15 @@ public open class SentryOkHttpInterceptor(
       // read the span from the bound scope
       okHttpEvent = null
       val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
-      span = parentSpan?.startChild("http.client", "$method $url")
+      span =
+        parentSpan?.startChild(
+          "http.client",
+          "$method $url",
+          SpanOptions().apply { origin = TRACE_ORIGIN },
+        )
     }
 
     val startTimestamp = CurrentDateProvider.getInstance().currentTimeMillis
-
-    span?.spanContext?.origin = TRACE_ORIGIN
 
     urlDetails.applyToSpan(span)
 
