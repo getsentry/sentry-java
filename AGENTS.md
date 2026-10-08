@@ -121,26 +121,6 @@ The repository is organized into multiple modules:
 - **Transport Layer**: Pluggable transport implementations for different environments
 - **Scope Management**: Thread-safe scope/context management for error tracking
 
-### Requirements for New Modules Before They Can Be Published
-
-Read the `new_module` rule for the full procedure; this is the subset that, if missed, is not
-caught locally. Every item must land **before** the release that first ships the module.
-
-1. The module is in the include list in `settings.gradle.kts`
-2. The module has a row in the packages table in `README.md` (the Maven Central badge stays
-   broken until the first release)
-3. Android (AAR) modules are listed in `Config.BuildScript.androidLibs` in
-   `buildSrc/src/main/java/Config.kt`, so the generated POM of any module depending on it
-   declares `<type>aar</type>`
-4. The module is in the integrations dropdown of `.github/ISSUE_TEMPLATE/bug_report_java.yml`,
-   or `bug_report_android.yml` for an Android module
-5. The module has an entry in the `registry` target of `.craft.yml` carrying `name`,
-   `packageUrl`, `mainDocsUrl` and `apiDocsUrl`. Craft reads these only for a package it has
-   not published before, and a missing `name` fails the **whole** registry target rather than
-   just that entry — so the release publishes to Maven Central and then leaves every artifact
-   stale in the release registry. `mainDocsUrl` must be a live docs.sentry.io page, which means
-   the docs change has to be merged first.
-
 ## Development Guidelines
 
 ### Code Style

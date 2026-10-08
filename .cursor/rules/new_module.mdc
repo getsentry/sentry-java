@@ -8,6 +8,19 @@ alwaysApply: false
 
 This document outlines the complete process for adding a new module to the sentry-java repository. Follow these steps in order to ensure proper integration and release management.
 
+## Publishing Gate
+
+Nothing below is enforced by the build, so a module can look finished, pass CI, and still break
+the release that first ships it. All of the following have to be merged **before** that release:
+
+- The module is in the include list in `settings.gradle.kts` (step 1.2)
+- Android (AAR) modules are in `Config.BuildScript.androidLibs` (step 1.4)
+- The module has a row in the packages table in the main `README.md` (step 3)
+- The module is in the integrations dropdown of the matching issue template (step 4)
+- The docs page exists on docs.sentry.io (step 5), because `.craft.yml` has to point at a live URL
+- The module has a full entry in the `registry` target of `.craft.yml` (step 6) — **this one
+  fails the release itself**, not just the module
+
 ## Step-by-Step Process
 
 ### 1. Create the Module Structure
@@ -66,17 +79,13 @@ addIntegrationToSdkVersion("{IntegrationName}");
 
 ### 2. Create Module Documentation
 
-Create a `README.md` in the module directory with the following structure:
+Create a `README.md` in the module directory: the module name as the heading, what it instruments,
+the entry points a host app touches, and a link to the module's page on docs.sentry.io. Take that
+link from the page itself rather than assembling it from the module name — a module does not always
+get its own page (`sentry-android-navigation3` is documented inside the existing Navigation page).
+`sentry-android-navigation3/README.md` is a good example.
 
-```markdown
-# sentry-{module-name}
-
-This module provides an integration for [Technology/Framework Name].
-
-Please consult the documentation on how to install and use this integration in the Sentry Docs for [Android](https://docs.sentry.io/platforms/android/integrations/{module-name}/) or [Java](https://docs.sentry.io/platforms/java/tracing/instrumentation/{module-name}/).
-```
-
-The following tasks are required only when adding a module that isn't a sample.
+Steps 3 to 6 are required only when adding a module that isn't a sample.
 
 ### 3. Update Main README.md
 
@@ -102,6 +111,11 @@ Add the necessary documentation to [docs.sentry.io](https://docs.sentry.io):
 - For Android modules: Add to Android platform docs, usually in integrations section
 - Include installation instructions, configuration options, and usage examples
 
+This has to be merged before step 6, which needs the live URL. The path is not derivable from the
+module name — integrations sit under `integrations/`, instrumentation under
+`tracing/instrumentation/`, and some modules are documented inside an existing page instead of
+getting their own. Note the URL the page actually resolves to, with no redirect.
+
 ### 6. Add the Module to `.craft.yml`
 
 This is **not** a post-release task. It has to be merged before the release that first ships the
@@ -117,14 +131,14 @@ sdks:
   maven:io.sentry:sentry-{module-name}:
     name: io.sentry:sentry-{module-name}
     packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-{module-name}
-    mainDocsUrl: https://docs.sentry.io/platforms/{android|java}/integrations/{module-name}/
+    mainDocsUrl: {the live docs.sentry.io URL from step 5}
     apiDocsUrl: https://javadoc.io/doc/io.sentry
 ```
 
 Craft reads these fields only for a package it has not published before — for anything already in
 the registry it carries the existing manifest forward. A missing `name` therefore fails the whole
 registry target rather than just that entry, and only on the release that first ships the module.
-`mainDocsUrl` must be a live page, so step 5 has to be merged first.
+That is why a bare `maven:io.sentry:sentry-{module-name}:` key appears to work and then does not.
 
 No hand-editing of [sentry-release-registry](https://github.com/getsentry/sentry-release-registry)
 is needed: with these fields present, craft creates the registry entry by itself.
