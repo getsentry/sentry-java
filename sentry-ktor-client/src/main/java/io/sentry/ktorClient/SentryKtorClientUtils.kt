@@ -92,6 +92,7 @@ internal object SentryKtorClientUtils {
     return getHeaders(scopes, headers)
   }
 
+  @Suppress("DEPRECATION")
   private fun getHeaders(scopes: IScopes, headers: Headers): MutableMap<String, String>? {
     // Headers are only sent if isSendDefaultPii is enabled due to PII
     if (!scopes.options.isSendDefaultPii) {

@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Resolves effective Data Collection policies for SDK integrations. */
+@SuppressWarnings("deprecation")
 @ApiStatus.Internal
 public final class DataCollectionResolver {
 
