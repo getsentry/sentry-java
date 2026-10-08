@@ -15,64 +15,300 @@ targets:
   - name: github
     excludeNames: /^libsentry.*\.so$/
   - name: registry
+    # Every package carries name/packageUrl/mainDocsUrl/apiDocsUrl so craft can create the
+    # registry entry itself when we add a new artifact. Craft only reads them for a package it
+    # hasn't published before, but defining them all here for conistency and 
+    # as a single source of truth.
     sdks:
       maven:io.sentry:sentry:
+        name: io.sentry:sentry
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry
+        mainDocsUrl: https://docs.sentry.io/platforms/java/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spring:
+        name: io.sentry:sentry-spring
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spring
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spring-jakarta:
+        name: io.sentry:sentry-spring-jakarta
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spring-jakarta
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spring-7:
+        name: io.sentry:sentry-spring-7
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spring-7
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spring-boot:
+        name: io.sentry:sentry-spring-boot
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spring-boot
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring-boot/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spring-boot-jakarta:
+        name: io.sentry:sentry-spring-boot-jakarta
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spring-boot-jakarta
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring-boot/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spring-boot-starter:
+        name: io.sentry:sentry-spring-boot-starter
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spring-boot-starter
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring-boot/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spring-boot-starter-jakarta:
+        name: io.sentry:sentry-spring-boot-starter-jakarta
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spring-boot-starter-jakarta
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring-boot/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spring-boot-4:
+        name: io.sentry:sentry-spring-boot-4
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spring-boot-4
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring-boot/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spring-boot-4-starter:
+        name: io.sentry:sentry-spring-boot-4-starter
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spring-boot-4-starter
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring-boot/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-servlet:
+        name: io.sentry:sentry-servlet
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-servlet
+        mainDocsUrl: https://docs.sentry.io/platforms/java/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-servlet-jakarta:
+        name: io.sentry:sentry-servlet-jakarta
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-servlet-jakarta
+        mainDocsUrl: https://docs.sentry.io/platforms/java/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-logback:
+        name: io.sentry:sentry-logback
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-logback
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/logback/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-log4j2:
+        name: io.sentry:sentry-log4j2
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-log4j2
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/log4j2/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-jul:
+        name: io.sentry:sentry-jul
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-jul
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/jul/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-apache-http-client-5:
+        name: io.sentry:sentry-apache-http-client-5
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-apache-http-client-5
+        mainDocsUrl: https://docs.sentry.io/platforms/java/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android:
+        name: io.sentry:sentry-android
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android
+        mainDocsUrl: https://docs.sentry.io/platforms/android/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-core:
+        name: io.sentry:sentry-android-core
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-core
+        mainDocsUrl: https://docs.sentry.io/platforms/android/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-distribution:
+        name: io.sentry:sentry-android-distribution
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-distribution
+        mainDocsUrl: https://docs.sentry.io/platforms/android/build-distribution/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-ndk:
+        name: io.sentry:sentry-android-ndk
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-ndk
+        mainDocsUrl: https://docs.sentry.io/platforms/android/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-timber:
+        name: io.sentry:sentry-android-timber
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-timber
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/timber/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-kotlin-extensions:
+        name: io.sentry:sentry-kotlin-extensions
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-kotlin-extensions
+        mainDocsUrl: https://docs.sentry.io/platforms/kotlin/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-fragment:
+        name: io.sentry:sentry-android-fragment
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-fragment
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/fragment/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-bom:
+        name: io.sentry:sentry-bom
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-bom
+        mainDocsUrl: https://docs.sentry.io/platforms/java/configuration/bill-of-materials/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-openfeign:
+        name: io.sentry:sentry-openfeign
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-openfeign
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/open-feign/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-openfeature:
+        name: io.sentry:sentry-openfeature
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-openfeature
+        mainDocsUrl: https://docs.sentry.io/platforms/java/integrations/openfeature/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-launchdarkly-android:
+        name: io.sentry:sentry-launchdarkly-android
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-launchdarkly-android
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/launchdarkly/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-launchdarkly-server:
+        name: io.sentry:sentry-launchdarkly-server
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-launchdarkly-server
+        mainDocsUrl: https://docs.sentry.io/platforms/java/integrations/launchdarkly/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-opentelemetry-agent:
+        name: io.sentry:sentry-opentelemetry-agent
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-agent
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       # TODO: Add after first release of the artifact.
       # maven:io.sentry:sentry-opentelemetry-bom:
       maven:io.sentry:sentry-opentelemetry-agentcustomization:
+        name: io.sentry:sentry-opentelemetry-agentcustomization
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-agentcustomization
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-opentelemetry-agentless:
+        name: io.sentry:sentry-opentelemetry-agentless
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-agentless
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-opentelemetry-agentless-spring:
+        name: io.sentry:sentry-opentelemetry-agentless-spring
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-agentless-spring
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-opentelemetry-bootstrap:
+        name: io.sentry:sentry-opentelemetry-bootstrap
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-bootstrap
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-opentelemetry-core:
+        name: io.sentry:sentry-opentelemetry-core
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-core
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/opentelemetry/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-opentelemetry-otlp:
+        name: io.sentry:sentry-opentelemetry-otlp
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-otlp
+        mainDocsUrl: https://docs.sentry.io/platforms/java/opentelemetry/setup/otlp/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-opentelemetry-otlp-spring:
+        name: io.sentry:sentry-opentelemetry-otlp-spring
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-opentelemetry-otlp-spring
+        mainDocsUrl: https://docs.sentry.io/platforms/java/guides/spring-boot/opentelemetry/setup/otlp/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-kafka:
+        name: io.sentry:sentry-kafka
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-kafka
+        mainDocsUrl: https://docs.sentry.io/platforms/java/integrations/kafka/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-apollo:
+        name: io.sentry:sentry-apollo
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-apollo
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/apollo2/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-jdbc:
+        name: io.sentry:sentry-jdbc
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-jdbc
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/jdbc/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-jcache:
+        name: io.sentry:sentry-jcache
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-jcache
+        mainDocsUrl: https://docs.sentry.io/platforms/java/integrations/jcache/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-graphql:
+        name: io.sentry:sentry-graphql
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-graphql
+        mainDocsUrl: https://docs.sentry.io/platforms/java/integrations/graphql/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-graphql-22:
+        name: io.sentry:sentry-graphql-22
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-graphql-22
+        mainDocsUrl: https://docs.sentry.io/platforms/java/integrations/graphql22/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-graphql-core:
+        name: io.sentry:sentry-graphql-core
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-graphql-core
+        mainDocsUrl: https://docs.sentry.io/platforms/java/integrations/graphql/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-quartz:
+        name: io.sentry:sentry-quartz
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-quartz
+        mainDocsUrl: https://docs.sentry.io/platforms/java/integrations/quartz/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-okhttp:
+        name: io.sentry:sentry-okhttp
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-okhttp
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/okhttp/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-navigation:
+        name: io.sentry:sentry-android-navigation
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-navigation
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/navigation/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-navigation3:
+        name: io.sentry:sentry-android-navigation3
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-navigation3
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/navigation/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-compose:
+        name: io.sentry:sentry-compose
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-compose
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/jetpack-compose/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-compose-android:
+        name: io.sentry:sentry-compose-android
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-compose-android
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/jetpack-compose/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-compose-desktop:
+        name: io.sentry:sentry-compose-desktop
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-compose-desktop
+        mainDocsUrl: https://docs.sentry.io/platforms/kotlin/guides/compose-multiplatform/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-apollo-3:
+        name: io.sentry:sentry-apollo-3
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-apollo-3
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/apollo3/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-sqlite:
+        name: io.sentry:sentry-android-sqlite
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-sqlite
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/room-and-sqlite/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android-replay:
+        name: io.sentry:sentry-android-replay
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android-replay
+        mainDocsUrl: https://docs.sentry.io/platforms/android/session-replay/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-apollo-4:
+        name: io.sentry:sentry-apollo-4
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-apollo-4
+        mainDocsUrl: https://docs.sentry.io/platforms/java/tracing/instrumentation/apollo4/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-reactor:
+        name: io.sentry:sentry-reactor
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-reactor
+        mainDocsUrl: https://docs.sentry.io/platforms/java/integrations/reactor/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-ktor-client:
+        name: io.sentry:sentry-ktor-client
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-ktor-client
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/ktor-client/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-async-profiler:
+        name: io.sentry:sentry-async-profiler
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-async-profiler
+        mainDocsUrl: https://docs.sentry.io/platforms/java/profiling/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-spotlight:
+        name: io.sentry:sentry-spotlight
+        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-spotlight
+        mainDocsUrl: https://docs.sentry.io/platforms/android/integrations/spotlight/
+        apiDocsUrl: https://javadoc.io/doc/io.sentry

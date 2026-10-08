@@ -8,6 +8,19 @@ alwaysApply: false
 
 This document outlines the complete process for adding a new module to the sentry-java repository. Follow these steps in order to ensure proper integration and release management.
 
+## Publishing Gate
+
+Nothing below is enforced by the build, so a module can look finished, pass CI, and still break
+the release that first ships it. All of the following have to be merged **before** that release:
+
+- The module is in the include list in `settings.gradle.kts` (step 1.2)
+- Android (AAR) modules are in `Config.BuildScript.androidLibs` (step 1.4)
+- The module has a row in the packages table in the main `README.md` (step 3)
+- The module is in the integrations dropdown of the matching issue template (step 4)
+- The docs page exists on docs.sentry.io (step 5), because `.craft.yml` has to point at a live URL
+- The module has a full entry in the `registry` target of `.craft.yml` (step 6) — **this one
+  fails the release itself**, not just the module
+
 ## Step-by-Step Process
 
 ### 1. Create the Module Structure
@@ -39,10 +52,12 @@ val SENTRY_FOO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.foo"
 The module's `build.gradle.kts` consumes it in both `buildConfig` and the jar manifest
 (`Sentry-SDK-Name` / `Sentry-SDK-Package-Name`) — see `sentry-kafka/build.gradle.kts`.
 
-4. Add the instrumented library to `gradle/libs.versions.toml` and depend on it with
+4. For an Android module, add the artifact id to `androidLibs` in `buildSrc/src/main/java/Config.kt`.
+
+5. Add the instrumented library to `gradle/libs.versions.toml` and depend on it with
    `compileOnly(libs.<lib>)`, so the integration does not force the dependency on users.
 
-5. Register the integration with the SDK so it is reported in the `sdk` payload. Every
+6. Register the integration with the SDK so it is reported in the `sdk` payload. Every
    integration does this — see `sentry-openfeature/.../SentryOpenFeatureHook.java`:
 
 ```java
@@ -54,24 +69,16 @@ static {
 addIntegrationToSdkVersion("{IntegrationName}");
 ```
 
-6. If adding a JVM sample, add E2E (system) tests, following the structure we have in the existing JVM examples.
+7. If adding a JVM sample, add E2E (system) tests, following the structure we have in the existing JVM examples.
    The test should then be added to `test/system-test-runner.py` and `.github/workflows/system-tests-backend.yml`.
 
 `sentry-bom` and the root `build.gradle.kts` need no change — they iterate over subprojects.
 
 ### 2. Create Module Documentation
 
-Create a `README.md` in the module directory with the following structure:
+Create a `README.md` in the module directory: the module name as the heading, what it instruments, and a high level overview.
 
-```markdown
-# sentry-{module-name}
-
-This module provides an integration for [Technology/Framework Name].
-
-Please consult the documentation on how to install and use this integration in the Sentry Docs for [Android](https://docs.sentry.io/platforms/android/integrations/{module-name}/) or [Java](https://docs.sentry.io/platforms/java/tracing/instrumentation/{module-name}/).
-```
-
-The following tasks are required only when adding a module that isn't a sample.
+Steps 3 to 6 are required only when adding a module that isn't a sample.
 
 ### 3. Update Main README.md
 
@@ -97,18 +104,9 @@ Add the necessary documentation to [docs.sentry.io](https://docs.sentry.io):
 - For Android modules: Add to Android platform docs, usually in integrations section
 - Include installation instructions, configuration options, and usage examples
 
-### 6. Post release tasks
+### 6. Add the Module to `.craft.yml`
 
-Remind the user to perform the following tasks after the module is merged and released:
-
-1. Add the SDK to the Sentry release registry, following the instructions in the [sentry-release-registry README](https://github.com/getsentry/sentry-release-registry#adding-new-sdks)
-
-2. Add the module to `.craft.yml` in the `sdks` section:
-   ```yaml
-   sdks:
-     # ... existing modules ...
-     maven:io.sentry:sentry-{module-name}:
-   ```
+Add the module to the `registry` target in `.craft.yml`, including all metadata fields.
 
 ## Module Naming Conventions
 
