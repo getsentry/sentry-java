@@ -12,6 +12,7 @@ plugins {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.core"
 
   defaultConfig {
@@ -47,10 +48,7 @@ android {
       isIncludeAndroidResources = true
       // Robolectric loads the android-all jar into each test JVM, which needs more heap
       // than the default.
-      all {
-        it.minHeapSize = "256m"
-        it.maxHeapSize = "2g"
-      }
+      all { it.maxHeapSize = "2g" }
     }
   }
 

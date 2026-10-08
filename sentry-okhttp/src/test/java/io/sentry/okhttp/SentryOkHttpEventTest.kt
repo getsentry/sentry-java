@@ -100,11 +100,19 @@ class SentryOkHttpEventTest {
     val callSpan = sut.callSpan
     assertNotNull(callSpan)
     assertEquals("http.client", callSpan.operation)
+    assertEquals("auto.http.okhttp", callSpan.spanContext.origin)
     assertEquals("${fixture.mockRequest.method} ${fixture.mockRequest.url}", callSpan.description)
     assertEquals(fixture.mockRequest.url.toString(), callSpan.getData("url"))
     assertEquals(fixture.mockRequest.url.host, callSpan.getData("host"))
     assertEquals(fixture.mockRequest.url.encodedPath, callSpan.getData("path"))
     assertEquals(fixture.mockRequest.method, callSpan.getData(SpanDataConvention.HTTP_METHOD_KEY))
+  }
+
+  @Test
+  fun `when span origin is ignored, call span is a no-op`() {
+    fixture.scopes.options.setIgnoredSpanOrigins(listOf("auto.http.okhttp"))
+    val sut = fixture.getSut()
+    assertTrue(sut.callSpan!!.isNoOp)
   }
 
   @Test

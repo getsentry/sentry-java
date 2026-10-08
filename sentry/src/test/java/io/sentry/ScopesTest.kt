@@ -2536,11 +2536,21 @@ class ScopesTest {
   }
 
   @Test
-  fun `when logging is not enabled, do nothing`() {
+  fun `when Logs option is omitted, capture manual log`() {
     val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().warn("test message")
-    verify(mockClient, never()).captureLog(any(), anyOrNull())
+
+    verify(mockClient).captureLog(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when Logs option is disabled, capture manual log`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = false }
+
+    sut.logger().warn("test message")
+
+    verify(mockClient).captureLog(any(), anyOrNull())
   }
 
   @Test
@@ -3316,11 +3326,12 @@ class ScopesTest {
   }
 
   @Test
-  fun `when metrics is not enabled, do nothing`() {
+  fun `when Metrics option is disabled, capture manual metric`() {
     val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = false }
 
     sut.metrics().count("metric name")
-    verify(mockClient, never()).captureMetric(any(), anyOrNull(), anyOrNull())
+
+    verify(mockClient).captureMetric(any(), anyOrNull(), anyOrNull())
   }
 
   @Test

@@ -465,6 +465,31 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads tombstone merge time threshold to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.TOMBSTONE_MERGE_TIME_THRESHOLD_MILLIS to 10000)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(10000, fixture.options.tombstoneMergeTimeThresholdMillis)
+  }
+
+  @Test
+  fun `applyMetadata reads tombstone merge time threshold to options and keeps default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(5000, fixture.options.tombstoneMergeTimeThresholdMillis)
+  }
+
+  @Test
   fun `applyMetadata reads anr report historical to options`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.ANR_REPORT_HISTORICAL to true)
