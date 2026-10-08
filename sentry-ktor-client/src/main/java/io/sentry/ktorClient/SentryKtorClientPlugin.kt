@@ -9,6 +9,7 @@ import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.sentry.BaggageHeader
 import io.sentry.BuildConfig
+import io.sentry.DataCategory
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IScopes
 import io.sentry.ISpan
@@ -16,8 +17,10 @@ import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
+import io.sentry.clientreport.DiscardReason
 import io.sentry.kotlin.SentryContext
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
@@ -186,7 +189,28 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
         var result: ISpan? = span
 
         if (beforeSpan != null) {
-          result = beforeSpan.execute(span, request)
+          val wasSampled = span.isSampled == true
+          result =
+            try {
+              beforeSpan.execute(span, request)
+            } catch (e: Exception) {
+              span.spanContext.sampled = false
+              if (wasSampled) {
+                (if (forceScopes) scopes else Sentry.getCurrentScopes())
+                  .options
+                  .clientReportRecorder
+                  .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Span)
+              }
+              (if (forceScopes) scopes else Sentry.getCurrentScopes())
+                .options
+                .logger
+                .log(
+                  SentryLevel.ERROR,
+                  "The beforeSpan callback threw an exception in SentryKtorClientPlugin. Dropping span.",
+                  e,
+                )
+              null
+            }
         }
 
         if (result == null) {

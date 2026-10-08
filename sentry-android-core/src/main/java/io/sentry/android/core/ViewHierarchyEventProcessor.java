@@ -91,7 +91,17 @@ public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
     final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
         options.getBeforeViewHierarchyCaptureCallback();
     if (beforeCaptureCallback != null) {
-      if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+      try {
+        if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+          return event;
+        }
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The beforeViewHierarchyCapture callback threw an exception. Skipping view hierarchy capture.",
+                e);
         return event;
       }
     } else if (shouldDebounce) {

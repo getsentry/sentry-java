@@ -1,15 +1,20 @@
 package io.sentry.openfeign
 
+import com.google.common.truth.Truth.assertThat
 import feign.Client
 import feign.Feign
 import feign.FeignException
 import feign.HeaderMap
+import feign.Request
 import feign.RequestLine
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -17,11 +22,14 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.W3CTraceparentHeader
+import io.sentry.clientreport.DiscardReason
 import io.sentry.mockServerRequestTimeoutMillis
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -35,6 +43,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryFeignClientTest {
@@ -285,6 +294,86 @@ class SentryFeignClientTest {
   }
 
   @Test
+  fun `reports callback errors only for sampled spans`() {
+    for (sampled in listOf(true, false, null)) {
+      val fixture = Fixture()
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _, _ ->
+            span.spanContext.sampled = false
+            throw IllegalStateException("callback failed")
+          }
+        )
+      fixture.sentryTracer.spanContext.sampled = sampled
+      fixture.sentryOptions.onDiscard = onDiscard
+
+      assertThat(sut.getOk()).isEqualTo("success")
+      fixture.sentryTracer.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws, drops span and preserves response`() {
+    val failure = IllegalStateException("callback failed")
+    val logger = mock<ILogger>()
+    fixture.sentryOptions.isDebug = true
+    fixture.sentryOptions.setLogger(logger)
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _, _ ->
+          span.description = "partially modified"
+          throw failure
+        }
+      )
+
+    assertThat(sut.getOk()).isEqualTo("success")
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+    verify(logger)
+      .log(
+        SentryLevel.ERROR,
+        "The beforeSpan callback threw an exception in SentryFeignClient. Dropping span.",
+        failure,
+      )
+  }
+
+  @Test
+  fun `when beforeSpan throws, preserves original request exception`() {
+    val requestFailure = IOException("request failed")
+    val delegate = mock<Client>()
+    whenever(delegate.execute(any(), any())).thenThrow(requestFailure)
+    whenever(fixture.scopes.span).thenReturn(fixture.sentryTracer)
+    val sut =
+      SentryFeignClient(delegate, fixture.scopes) { _, _, _ ->
+        throw IllegalStateException("callback failed")
+      }
+    val request =
+      Request.create(
+        Request.HttpMethod.GET,
+        "https://example.com",
+        emptyMap<String, Collection<String>>(),
+        null as ByteArray?,
+        null,
+      )
+
+    val thrown = assertFailsWith<IOException> { sut.execute(request, Request.Options()) }
+    assertThat(thrown).isSameInstanceAs(requestFailure)
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.throwable).isSameInstanceAs(requestFailure)
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+  }
+
+  @Test
   fun `customizer modifies span`() {
     val sut = fixture.getSut { span, _, _ ->
       span.description = "overwritten description"
@@ -310,7 +399,11 @@ class SentryFeignClientTest {
   @Test
   fun `customizer can drop the span`() {
     val sut = fixture.getSut { _, _, _ -> null }
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.sentryOptions.onDiscard = onDiscard
+    fixture.sentryTracer.spanContext.sampled = true
     sut.getOk()
+    verifyNoMoreInteractions(onDiscard)
     val httpClientSpan = fixture.sentryTracer.children.first()
     assertNotNull(httpClientSpan.spanContext.sampled) { assertFalse(it) }
   }

@@ -112,7 +112,17 @@ public final class ScreenshotEventProcessor implements SentryEventProcessor {
     final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
         options.getBeforeScreenshotCaptureCallback();
     if (beforeCaptureCallback != null) {
-      if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+      try {
+        if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+          return event;
+        }
+      } catch (Exception e) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The beforeScreenshotCapture callback threw an exception. Skipping screenshot capture.",
+                e);
         return event;
       }
     } else if (shouldDebounce) {
