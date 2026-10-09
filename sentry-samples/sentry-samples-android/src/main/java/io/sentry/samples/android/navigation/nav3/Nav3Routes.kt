@@ -26,6 +26,14 @@ internal fun Nav3Route.routeSpec(): RouteSpec =
           "Reuses the single-stack shopping flow while simulating a power user who starts their " +
             "own manual transactions.",
       )
+    Nav3Route.MultiActivity ->
+      RouteSpec(
+        routeName = Nav3Route.MultiActivity.routeName,
+        title = "Multi-Activity",
+        description =
+          "Tests how SentryNavEffect uses INavScopes to coordinate state updates between " +
+            "SentryNavEffect instances. Each Activity owns its own SentryNavEffect and NavDisplay.",
+      )
     Nav3Route.DeepLink ->
       RouteSpec(
         routeName = Nav3Route.DeepLink.routeName,
@@ -69,6 +77,7 @@ private fun Nav3Route.toSavedState(): Bundle =
       Nav3Route.Landing -> putString("type", "landing")
       Nav3Route.SingleStack -> putString("type", "single_stack")
       Nav3Route.Custom -> putString("type", "custom")
+      Nav3Route.MultiActivity -> putString("type", "multi_activity")
       Nav3Route.DeepLink -> putString("type", "deep_link")
       Nav3Route.ProductList -> putString("type", "product_list")
       is Nav3Route.ProductDetail -> {
@@ -108,6 +117,7 @@ private fun Bundle.toNav3Route(): Nav3Route {
     "landing" -> Nav3Route.Landing
     "single_stack" -> Nav3Route.SingleStack
     "custom" -> Nav3Route.Custom
+    "multi_activity" -> Nav3Route.MultiActivity
     "deep_link" -> Nav3Route.DeepLink
     "product_list" -> Nav3Route.ProductList
     "product_detail" -> {
@@ -148,6 +158,7 @@ internal fun SnapshotStateList<Nav3Route>.openScenario(scenario: Nav3Scenario) {
     Nav3Scenario.LANDING -> resetTo(Nav3Route.Landing)
     Nav3Scenario.SINGLE_STACK -> resetTo(Nav3Route.SingleStack)
     Nav3Scenario.CUSTOM -> resetTo(Nav3Route.Custom)
+    Nav3Scenario.MULTI_ACTIVITY -> resetTo(Nav3Route.MultiActivity)
     Nav3Scenario.DEEP_LINK -> resetTo(Nav3Route.DeepLink)
     Nav3Scenario.MULTIPANE -> resetTo(Nav3Route.Multipane)
     Nav3Scenario.MULTIPLE_STACKS -> resetTo(Nav3Route.Multistack)
@@ -209,6 +220,10 @@ internal sealed interface Nav3Route {
 
   data object Custom : Nav3Route {
     override val routeName: String = "Custom"
+  }
+
+  data object MultiActivity : Nav3Route {
+    override val routeName: String = "MultiActivity"
   }
 
   data object DeepLink : Nav3Route {
@@ -282,6 +297,7 @@ internal enum class Nav3Scenario(val label: String, val showTab: Boolean = true)
   SINGLE_STACK("Single Stack"),
   DEEP_LINK("Deep Link"),
   CUSTOM("Custom"),
+  MULTI_ACTIVITY("Multi-Activity"),
   MULTIPANE("Multipane"),
   MULTIPLE_STACKS("Multistack"),
   PERFORMANCE("Performance"),
@@ -293,6 +309,7 @@ internal val Nav3Scenario.initialRoute: Nav3Route
       Nav3Scenario.LANDING -> Nav3Route.Landing
       Nav3Scenario.SINGLE_STACK -> Nav3Route.SingleStack
       Nav3Scenario.CUSTOM -> Nav3Route.Custom
+      Nav3Scenario.MULTI_ACTIVITY -> Nav3Route.MultiActivity
       Nav3Scenario.DEEP_LINK -> Nav3Route.DeepLink
       Nav3Scenario.MULTIPANE -> Nav3Route.Multipane
       Nav3Scenario.MULTIPLE_STACKS -> Nav3Route.Multistack

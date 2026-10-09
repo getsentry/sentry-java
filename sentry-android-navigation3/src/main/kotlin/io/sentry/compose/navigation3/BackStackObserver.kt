@@ -21,6 +21,8 @@ import io.sentry.protocol.TransactionNameSource
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.lang.ref.WeakReference
 
+internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
+
 private const val NAVIGATION_OP: String = "navigation"
 
 /**
@@ -374,7 +376,6 @@ private class NavContext(private val scopes: IScopes, private val options: Sentr
 
   private companion object {
     private const val BACKSTACK_KEY = "Back Stack"
-    private const val NAVIGATION_CONTEXT_KEY = "Navigation"
   }
 
   fun update(scope: IScope, backStackEntries: List<NormalizedSentryBackStackEntry>) {

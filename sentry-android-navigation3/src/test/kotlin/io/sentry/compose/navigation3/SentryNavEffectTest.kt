@@ -3,11 +3,14 @@ package io.sentry.compose.navigation3
 import android.app.Application
 import android.content.ComponentName
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -73,6 +76,7 @@ class SentryNavEffectTest {
       }
     val scope = Scope(options)
     val scopes = mock<IScopes>()
+    val coordinator = NavLeaseCoordinator()
     val breadcrumbs = mutableListOf<Breadcrumb>()
     val transactions = mutableListOf<SentryTracer>()
 
@@ -112,6 +116,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
 
@@ -135,6 +140,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -162,6 +168,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -189,6 +196,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -222,6 +230,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -255,6 +264,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions { maxCapturedBackStackEntries = 0 },
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -278,6 +288,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -314,6 +325,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
 
       val currentTop = backStack.last()
@@ -348,6 +360,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -385,6 +398,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -417,6 +431,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -459,6 +474,7 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -496,6 +512,7 @@ class SentryNavEffectTest {
         options = options.value,
         backStackEntryMapper = defaultEntryMapper,
         scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -525,7 +542,9 @@ class SentryNavEffectTest {
         SentryNavEffect(
           backStack = backStack,
           backStackEntryMapper = defaultEntryMapper,
+          options = SentryNavOptions(),
           scopes = fixture.scopes,
+          coordinator = fixture.coordinator,
         )
       }
     }
@@ -541,6 +560,69 @@ class SentryNavEffectTest {
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
     assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
+  }
+
+  @Test
+  fun `effect publishes staged navigation when its lifecycle owner resumes`() {
+    val fixture = NavTestFixture()
+    val owner = NavTestLifecycle()
+    val options = SentryNavOptions()
+    composeRule.setContent {
+      CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+        SentryNavEffect(
+          backStack = listOf("Home"),
+          backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
+          options = options,
+          scopes = fixture.scopes,
+          coordinator = fixture.coordinator,
+        )
+      }
+    }
+    composeRule.runOnIdle {
+      assertThat(fixture.scope.transaction?.name).isEqualTo("/Home")
+      assertThat(fixture.scope.screen).isNull()
+      owner.resume()
+    }
+    composeRule.runOnIdle {
+      assertThat(fixture.scope.screen).isEqualTo("/Home")
+      assertThat(fixture.scope.breadcrumbs.map { it.data["to"] }).containsExactly("/Home")
+    }
+  }
+
+  @Test
+  fun `replacing lifecycle owner disposes the old session and observes the new owner`() {
+    val fixture = NavTestFixture()
+    val originalOwner = NavTestLifecycle(Lifecycle.State.RESUMED)
+    val replacementOwner = NavTestLifecycle()
+    val owner = mutableStateOf(originalOwner)
+    val options = SentryNavOptions()
+    composeRule.setContent {
+      CompositionLocalProvider(LocalLifecycleOwner provides owner.value) {
+        SentryNavEffect(
+          backStack = listOf("Home"),
+          backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
+          options = options,
+          scopes = fixture.scopes,
+          coordinator = fixture.coordinator,
+        )
+      }
+    }
+    lateinit var originalTransaction: ITransaction
+    composeRule.runOnIdle {
+      originalTransaction = requireNotNull(fixture.scope.transaction)
+      owner.value = replacementOwner
+    }
+    composeRule.runOnIdle {
+      assertThat(originalTransaction.isFinished).isTrue()
+      assertThat(fixture.scope.transaction).isNotSameInstanceAs(originalTransaction)
+      assertThat(fixture.scope.transaction?.name).isEqualTo("/Home")
+      assertThat(fixture.scope.screen).isNull()
+      originalOwner.pause()
+      originalOwner.resume()
+      assertThat(fixture.scope.screen).isNull()
+      replacementOwner.resume()
+      assertThat(fixture.scope.screen).isEqualTo("/Home")
+    }
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
