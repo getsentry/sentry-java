@@ -8,6 +8,7 @@ import io.sentry.*;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.App;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.SentryException;
@@ -32,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-final class DefaultAndroidEventProcessor implements EventProcessor {
+final class DefaultAndroidEventProcessor implements SentryEventProcessor {
 
   @TestOnly final Context context;
 

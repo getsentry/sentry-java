@@ -2,6 +2,11 @@
 
 ## 8.60.0
 
+### Fixes
+
+- Keep Spring requests running when a `SentryUserProvider` throws and discard the incomplete user identity ([#6240](https://github.com/getsentry/sentry-java/pull/6240))
+- Drop Apollo 5 spans when `beforeSpan` throws without disrupting the GraphQL request ([#6238](https://github.com/getsentry/sentry-java/pull/6238))
+
 ### Features
 
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
@@ -60,6 +65,16 @@
 
 ### Fixes
 
+- Fix SDK callback error handling ([#6140](https://github.com/getsentry/sentry-java/pull/6140))
+  - Add `DiscardReason.CALLBACK_ERROR` and use it for telemetry dropped when a `beforeSend*` callback throws. `OnDiscardCallback` can now receive this value.
+  - Report attached profiles dropped by transaction callback errors as `callback_error` in client reports and `OnDiscardCallback` ([#6166](https://github.com/getsentry/sentry-java/pull/6166))
+  - Drop telemetry and record `callback_error` when a customer event processor throws instead of continuing with a potentially partially processed item. SDK-owned processor failures are logged and processing continues without a `callback_error` client report.
+  - Drop breadcrumbs when `beforeBreadcrumb` throws instead of storing exception details on the breadcrumb.
+  - Skip Android screenshot or view hierarchy capture when its capture callback throws, while retaining the error event ([#6167](https://github.com/getsentry/sentry-java/pull/6167))
+  - Drop spans when `beforeSpan` throws in OkHttp, OpenFeign, GraphQL, Ktor, or Apollo, without disrupting the request. Report lost sampled spans as `callback_error` in client reports and `OnDiscardCallback` ([#6167](https://github.com/getsentry/sentry-java/pull/6167))
+  - Skip replay capture when `beforeErrorSampling` throws, while still sending the error event ([#6165](https://github.com/getsentry/sentry-java/pull/6165))
+  - When `tracesSampler` throws, drop the transaction and record `callback_error` instead of inheriting the parent sampling decision or falling back to `tracesSampleRate` ([#6163](https://github.com/getsentry/sentry-java/pull/6163))
+  - When `profilesSampler` throws, disable profiling instead of falling back to `profilesSampleRate` or inheriting the parent's profiling decision. Trace sampling is unchanged ([#6164](https://github.com/getsentry/sentry-java/pull/6164))
 - Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
 - Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
 

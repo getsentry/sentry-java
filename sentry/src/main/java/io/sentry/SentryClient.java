@@ -8,6 +8,7 @@ import io.sentry.hints.Backfillable;
 import io.sentry.hints.Cached;
 import io.sentry.hints.DiskFlushNotification;
 import io.sentry.hints.TransactionEnd;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.logger.ILoggerBatchProcessor;
 import io.sentry.metrics.IMetricsBatchProcessor;
 import io.sentry.protocol.Contexts;
@@ -160,9 +161,6 @@ public final class SentryClient implements ISentryClient {
 
       if (event == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
       }
     }
 
@@ -235,9 +233,14 @@ public final class SentryClient implements ISentryClient {
               .getLogger()
               .log(
                   SentryLevel.ERROR,
-                  "The beforeErrorSampling callback threw an exception. Proceeding with replay capture.",
+                  "The beforeErrorSampling callback threw an exception. Skipping replay capture.",
                   e);
-          shouldCaptureReplay = true;
+          if (!SentryId.EMPTY_ID.equals(options.getReplayController().getReplayId())) {
+            options
+                .getClientReportRecorder()
+                .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Replay);
+          }
+          shouldCaptureReplay = false;
         }
       }
       if (shouldCaptureReplay) {
@@ -334,9 +337,6 @@ public final class SentryClient implements ISentryClient {
 
       if (event == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSendReplay");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Replay);
       }
     }
 
@@ -501,6 +501,12 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing event by processor: %s",
                 processor.getClass().getName());
+        if (!(processor instanceof SentryEventProcessor)) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Error);
+          return null;
+        }
       }
 
       if (event == null) {
@@ -519,6 +525,24 @@ public final class SentryClient implements ISentryClient {
     return event;
   }
 
+  private void recordLostLogEvent(
+      final @NotNull DiscardReason reason, final @NotNull SentryLogEvent event) {
+    options.getClientReportRecorder().recordLostEvent(reason, DataCategory.LogItem);
+    final long numberOfBytes =
+        JsonSerializationUtils.byteSizeOf(options.getSerializer(), options.getLogger(), event);
+    options.getClientReportRecorder().recordLostEvent(reason, DataCategory.LogByte, numberOfBytes);
+  }
+
+  private void recordLostMetricsEvent(
+      final @NotNull DiscardReason reason, final @NotNull SentryMetricsEvent event) {
+    options.getClientReportRecorder().recordLostEvent(reason, DataCategory.TraceMetric);
+    final long numberOfBytes =
+        JsonSerializationUtils.byteSizeOf(options.getSerializer(), options.getLogger(), event);
+    options
+        .getClientReportRecorder()
+        .recordLostEvent(reason, DataCategory.TraceMetricByte, numberOfBytes);
+  }
+
   @Nullable
   private SentryLogEvent processLogEvent(
       @NotNull SentryLogEvent event, final @NotNull List<EventProcessor> eventProcessors) {
@@ -534,6 +558,10 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing log event by processor: %s",
                 processor.getClass().getName());
+        if (!(processor instanceof SentryEventProcessor)) {
+          recordLostLogEvent(DiscardReason.CALLBACK_ERROR, eventBeforeProcessor);
+          return null;
+        }
       }
 
       if (event == null) {
@@ -543,16 +571,7 @@ public final class SentryClient implements ISentryClient {
                 SentryLevel.DEBUG,
                 "Log event was dropped by a processor: %s",
                 processor.getClass().getName());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.LogItem);
-        final long logEventNumberOfBytes =
-            JsonSerializationUtils.byteSizeOf(
-                options.getSerializer(), options.getLogger(), eventBeforeProcessor);
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(
-                DiscardReason.EVENT_PROCESSOR, DataCategory.LogByte, logEventNumberOfBytes);
+        recordLostLogEvent(DiscardReason.EVENT_PROCESSOR, eventBeforeProcessor);
         break;
       }
     }
@@ -576,6 +595,10 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing metrics event by processor: %s",
                 processor.getClass().getName());
+        if (!(processor instanceof SentryEventProcessor)) {
+          recordLostMetricsEvent(DiscardReason.CALLBACK_ERROR, eventBeforeProcessor);
+          return null;
+        }
       }
 
       if (event == null) {
@@ -585,18 +608,7 @@ public final class SentryClient implements ISentryClient {
                 SentryLevel.DEBUG,
                 "Metrics event was dropped by a processor: %s",
                 processor.getClass().getName());
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.TraceMetric);
-        final long metricsEventNumberOfBytes =
-            JsonSerializationUtils.byteSizeOf(
-                options.getSerializer(), options.getLogger(), eventBeforeProcessor);
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(
-                DiscardReason.EVENT_PROCESSOR,
-                DataCategory.TraceMetricByte,
-                metricsEventNumberOfBytes);
+        recordLostMetricsEvent(DiscardReason.EVENT_PROCESSOR, eventBeforeProcessor);
         break;
       }
     }
@@ -606,7 +618,8 @@ public final class SentryClient implements ISentryClient {
   private @Nullable SentryTransaction processTransaction(
       @NotNull SentryTransaction transaction,
       final @NotNull Hint hint,
-      final @NotNull List<EventProcessor> eventProcessors) {
+      final @NotNull List<EventProcessor> eventProcessors,
+      final boolean hasProfile) {
     for (final EventProcessor processor : eventProcessors) {
       final int spanCountBeforeProcessor = transaction.getSpans().size();
       try {
@@ -619,6 +632,21 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing transaction by processor: %s",
                 processor.getClass().getName());
+        if (!(processor instanceof SentryEventProcessor)) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Transaction);
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(
+                  DiscardReason.CALLBACK_ERROR, DataCategory.Span, spanCountBeforeProcessor + 1);
+          if (hasProfile) {
+            options
+                .getClientReportRecorder()
+                .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Profile);
+          }
+          return null;
+        }
       }
       final int spanCountAfterProcessor = transaction == null ? 0 : transaction.getSpans().size();
 
@@ -637,6 +665,11 @@ public final class SentryClient implements ISentryClient {
             .getClientReportRecorder()
             .recordLostEvent(
                 DiscardReason.EVENT_PROCESSOR, DataCategory.Span, spanCountBeforeProcessor + 1);
+        if (hasProfile) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.EVENT_PROCESSOR, DataCategory.Profile);
+        }
         break;
       } else if (spanCountAfterProcessor < spanCountBeforeProcessor) {
         // If the callback removed some spans, we report it
@@ -672,6 +705,12 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing replay event by processor: %s",
                 processor.getClass().getName());
+        if (!(processor instanceof SentryEventProcessor)) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Replay);
+          return null;
+        }
       }
 
       if (replayEvent == null) {
@@ -706,6 +745,12 @@ public final class SentryClient implements ISentryClient {
                 e,
                 "An exception occurred while processing feedback event by processor: %s",
                 processor.getClass().getName());
+        if (!(processor instanceof SentryEventProcessor)) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Feedback);
+          return null;
+        }
       }
 
       if (feedbackEvent == null) {
@@ -1021,7 +1066,9 @@ public final class SentryClient implements ISentryClient {
       transaction = applyScope(transaction, scope, HintUtils.hasType(hint, Cached.class));
 
       if (transaction != null && scope != null) {
-        transaction = processTransaction(transaction, hint, scope.getEventProcessors());
+        transaction =
+            processTransaction(
+                transaction, hint, scope.getEventProcessors(), profilingTraceData != null);
       }
 
       if (transaction == null) {
@@ -1030,7 +1077,9 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (transaction != null) {
-      transaction = processTransaction(transaction, hint, options.getEventProcessors());
+      transaction =
+          processTransaction(
+              transaction, hint, options.getEventProcessors(), profilingTraceData != null);
     }
 
     if (transaction == null) {
@@ -1038,35 +1087,13 @@ public final class SentryClient implements ISentryClient {
       return SentryId.EMPTY_ID;
     }
 
-    final int spanCountBeforeCallback = transaction.getSpans().size();
-    transaction = executeBeforeSendTransaction(transaction, hint);
-    final int spanCountAfterCallback = transaction == null ? 0 : transaction.getSpans().size();
+    transaction = executeBeforeSendTransaction(transaction, hint, profilingTraceData != null);
 
     if (transaction == null) {
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "Transaction was dropped by beforeSendTransaction.");
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Transaction);
-      // If we drop a transaction, we are also dropping all its spans (+1 for the root span)
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(
-              DiscardReason.BEFORE_SEND, DataCategory.Span, spanCountBeforeCallback + 1);
       return SentryId.EMPTY_ID;
-    } else if (spanCountAfterCallback < spanCountBeforeCallback) {
-      // If the callback removed some spans, we report it
-      final int droppedSpanCount = spanCountBeforeCallback - spanCountAfterCallback;
-      options
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "%d spans were dropped by beforeSendTransaction.",
-              droppedSpanCount);
-      options
-          .getClientReportRecorder()
-          .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Span, droppedSpanCount);
     }
 
     try {
@@ -1245,9 +1272,6 @@ public final class SentryClient implements ISentryClient {
 
       if (event == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Event was dropped by beforeSend");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Feedback);
       }
     }
 
@@ -1345,21 +1369,10 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (logEvent != null) {
-      final @NotNull SentryLogEvent tmpLogEvent = logEvent;
       logEvent = executeBeforeSendLog(logEvent);
 
       if (logEvent == null) {
         options.getLogger().log(SentryLevel.DEBUG, "Log Event was dropped by beforeSendLog");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.LogItem);
-        final @NotNull long logEventNumberOfBytes =
-            JsonSerializationUtils.byteSizeOf(
-                options.getSerializer(), options.getLogger(), tmpLogEvent);
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(
-                DiscardReason.BEFORE_SEND, DataCategory.LogByte, logEventNumberOfBytes);
         return;
       }
 
@@ -1408,23 +1421,12 @@ public final class SentryClient implements ISentryClient {
     }
 
     if (metricsEvent != null) {
-      final @NotNull SentryMetricsEvent tmpMetricsEvent = metricsEvent;
       metricsEvent = executeBeforeSendMetric(metricsEvent, hint);
 
       if (metricsEvent == null) {
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "Metrics Event was dropped by beforeSendMetrics");
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.TraceMetric);
-        final long metricsEventNumberOfBytes =
-            JsonSerializationUtils.byteSizeOf(
-                options.getSerializer(), options.getLogger(), tmpMetricsEvent);
-        options
-            .getClientReportRecorder()
-            .recordLostEvent(
-                DiscardReason.BEFORE_SEND, DataCategory.TraceMetricByte, metricsEventNumberOfBytes);
         return;
       }
 
@@ -1662,21 +1664,28 @@ public final class SentryClient implements ISentryClient {
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "The BeforeSend callback threw an exception. It will be added as breadcrumb and continue.",
+                "The beforeSend callback threw an exception. Dropping event.",
                 e);
-
-        // drop event in case of an error in beforeSend due to PII concerns
-        event = null;
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Error);
+        return null;
+      }
+      if (event == null) {
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Error);
       }
     }
     return event;
   }
 
   private @Nullable SentryTransaction executeBeforeSendTransaction(
-      @NotNull SentryTransaction transaction, final @NotNull Hint hint) {
+      @NotNull SentryTransaction transaction, final @NotNull Hint hint, final boolean hasProfile) {
     final SentryOptions.BeforeSendTransactionCallback beforeSendTransaction =
         options.getBeforeSendTransaction();
     if (beforeSendTransaction != null) {
+      final int spanCountBeforeCallback = transaction.getSpans().size();
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         transaction = beforeSendTransaction.execute(transaction, hint);
       } catch (Throwable e) {
@@ -1684,11 +1693,50 @@ public final class SentryClient implements ISentryClient {
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "The BeforeSendTransaction callback threw an exception. It will be added as breadcrumb and continue.",
+                "The beforeSendTransaction callback threw an exception. Dropping transaction.",
                 e);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Transaction);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.CALLBACK_ERROR, DataCategory.Span, spanCountBeforeCallback + 1);
+        if (hasProfile) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Profile);
+        }
+        return null;
+      }
 
-        // drop transaction in case of an error in beforeSend due to PII concerns
-        transaction = null;
+      if (transaction == null) {
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Transaction);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(
+                DiscardReason.BEFORE_SEND, DataCategory.Span, spanCountBeforeCallback + 1);
+        if (hasProfile) {
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Profile);
+        }
+      } else {
+        final int spanCountAfterCallback = transaction.getSpans().size();
+        if (spanCountAfterCallback < spanCountBeforeCallback) {
+          final int droppedSpanCount = spanCountBeforeCallback - spanCountAfterCallback;
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "%d spans were dropped by beforeSendTransaction.",
+                  droppedSpanCount);
+          options
+              .getClientReportRecorder()
+              .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Span, droppedSpanCount);
+        }
       }
     }
     return transaction;
@@ -1703,10 +1751,19 @@ public final class SentryClient implements ISentryClient {
       } catch (Throwable e) {
         options
             .getLogger()
-            .log(SentryLevel.ERROR, "The BeforeSendFeedback callback threw an exception.", e);
-
-        // drop feedback in case of an error in beforeSend due to PII concerns
-        event = null;
+            .log(
+                SentryLevel.ERROR,
+                "The beforeSendFeedback callback threw an exception. Dropping feedback.",
+                e);
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Feedback);
+        return null;
+      }
+      if (event == null) {
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Feedback);
       }
     }
     return event;
@@ -1723,11 +1780,17 @@ public final class SentryClient implements ISentryClient {
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "The BeforeSendReplay callback threw an exception. It will be added as breadcrumb and continue.",
+                "The beforeSendReplay callback threw an exception. Dropping replay event.",
                 e);
-
-        // drop event in case of an error in beforeSend due to PII concerns
-        event = null;
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Replay);
+        return null;
+      }
+      if (event == null) {
+        options
+            .getClientReportRecorder()
+            .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.Replay);
       }
     }
     return event;
@@ -1737,6 +1800,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.Logs.BeforeSendLogCallback beforeSendLog =
         options.getLogs().getBeforeSend();
     if (beforeSendLog != null) {
+      final @NotNull SentryLogEvent eventBeforeCallback = event;
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendLog.execute(event);
       } catch (Throwable e) {
@@ -1744,11 +1808,13 @@ public final class SentryClient implements ISentryClient {
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "The BeforeSendLog callback threw an exception. Dropping log event.",
+                "The beforeSendLog callback threw an exception. Dropping log event.",
                 e);
-
-        // drop event in case of an error in beforeSendLog due to PII concerns
-        event = null;
+        recordLostLogEvent(DiscardReason.CALLBACK_ERROR, eventBeforeCallback);
+        return null;
+      }
+      if (event == null) {
+        recordLostLogEvent(DiscardReason.BEFORE_SEND, eventBeforeCallback);
       }
     }
     return event;
@@ -1759,6 +1825,7 @@ public final class SentryClient implements ISentryClient {
     final SentryOptions.Metrics.BeforeSendMetricCallback beforeSendMetric =
         options.getMetrics().getBeforeSend();
     if (beforeSendMetric != null) {
+      final @NotNull SentryMetricsEvent eventBeforeCallback = event;
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendMetric.execute(event, hint);
       } catch (Throwable e) {
@@ -1766,11 +1833,13 @@ public final class SentryClient implements ISentryClient {
             .getLogger()
             .log(
                 SentryLevel.ERROR,
-                "The BeforeSendMetric callback threw an exception. Dropping metrics event.",
+                "The beforeSendMetric callback threw an exception. Dropping metrics event.",
                 e);
-
-        // drop event in case of an error in beforeSendMetric due to PII concerns
-        event = null;
+        recordLostMetricsEvent(DiscardReason.CALLBACK_ERROR, eventBeforeCallback);
+        return null;
+      }
+      if (event == null) {
+        recordLostMetricsEvent(DiscardReason.BEFORE_SEND, eventBeforeCallback);
       }
     }
     return event;

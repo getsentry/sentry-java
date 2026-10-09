@@ -5,11 +5,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Hint
 import io.sentry.JsonSerializable
 import io.sentry.JsonSerializer
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.SentryException
 import io.sentry.util.thread.IThreadChecker
@@ -340,6 +342,31 @@ class ViewHierarchyEventProcessorTest {
       fixture.process(true, SentryEvent().apply { exceptions = listOf(SentryException()) })
 
     assertNull(hint.viewHierarchy)
+  }
+
+  @Test
+  fun `when capture callback throws, skips view hierarchy and retains event`() {
+    fixture.options.isDebug = true
+    fixture.options.setLogger(fixture.logger)
+    val failure = IllegalStateException("callback failed")
+    fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ -> throw failure }
+    val processor = fixture.getSut(true)
+    val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+    val hint = Hint()
+
+    assertThat(processor.process(event, hint)).isSameInstanceAs(event)
+    assertThat(hint.viewHierarchy).isNull()
+    verify(fixture.logger)
+      .log(
+        SentryLevel.ERROR,
+        "The beforeViewHierarchyCapture callback threw an exception. Skipping view hierarchy capture.",
+        failure,
+      )
+
+    fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ -> true }
+    val nextHint = Hint()
+    assertThat(processor.process(event, nextHint)).isSameInstanceAs(event)
+    assertThat(nextHint.viewHierarchy).isNotNull()
   }
 
   @Test
