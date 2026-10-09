@@ -5560,13 +5560,6 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
 }
 
-public final class io/sentry/logger/NoOpLoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
-	public fun add (Lio/sentry/SentryLogEvent;)V
-	public fun close (Z)V
-	public fun flush (J)V
-	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerBatchProcessor;
-}
-
 public final class io/sentry/logger/SentryLogParameters {
 	public fun <init> ()V
 	public static fun create (Lio/sentry/SentryAttributes;)Lio/sentry/logger/SentryLogParameters;
