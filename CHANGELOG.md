@@ -4,9 +4,10 @@
 
 ### Breaking Changes
 
-- Add a `logsEnabled` argument to the preferred Log4j2 `SentryAppender` constructor and
-  `createAppender` factory. Pass `true` to opt in to Sentry Logs capture or `false` to keep it
-  disabled. ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
+- Remove the deprecated Log4j2 `SentryAppender` constructor without `minimumLevel`, and add a
+  `logsEnabled` argument to the remaining constructor and `createAppender` factory. Pass `true` to
+  opt in to Sentry Logs capture or `false` to keep it disabled.
+  ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
 - Require a `logsEnabled` argument when manually constructing `SentryTimberIntegration` or
   `SentryTimberTree`. Replace `SentryTimberIntegration()` with
   `SentryTimberIntegration(logsEnabled = false)` in Kotlin or `new SentryTimberIntegration(false)`

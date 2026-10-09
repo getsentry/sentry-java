@@ -5,7 +5,6 @@ public final class io/sentry/log4j2/BuildConfig {
 
 public class io/sentry/log4j2/SentryAppender : org/apache/logging/log4j/core/appender/AbstractAppender {
 	public static final field MECHANISM_TYPE Ljava/lang/String;
-	public fun <init> (Ljava/lang/String;Lorg/apache/logging/log4j/core/Filter;Ljava/lang/String;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;Ljava/lang/Boolean;Lio/sentry/ITransportFactory;Lio/sentry/IScopes;[Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Lorg/apache/logging/log4j/core/Filter;Ljava/lang/String;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;Lorg/apache/logging/log4j/Level;ZLjava/lang/Boolean;Lio/sentry/ITransportFactory;Lio/sentry/IScopes;[Ljava/lang/String;)V
 	public fun append (Lorg/apache/logging/log4j/core/LogEvent;)V
 	protected fun captureLog (Lorg/apache/logging/log4j/core/LogEvent;)V

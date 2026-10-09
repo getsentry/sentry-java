@@ -65,37 +65,6 @@ public class SentryAppender extends AbstractAppender {
         .addPackage("maven:io.sentry:sentry-log4j2", BuildConfig.VERSION_NAME);
   }
 
-  /**
-   * @deprecated This constructor is deprecated. Please use {@link #SentryAppender(String, Filter,
-   *     String, Level, Level, Level, boolean, Boolean, ITransportFactory, IScopes, String[])}
-   *     instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public SentryAppender(
-      final @NotNull String name,
-      final @Nullable Filter filter,
-      final @Nullable String dsn,
-      final @Nullable Level minimumBreadcrumbLevel,
-      final @Nullable Level minimumEventLevel,
-      final @Nullable Boolean debug,
-      final @Nullable ITransportFactory transportFactory,
-      final @NotNull IScopes scopes,
-      final @Nullable String[] contextTags) {
-    this(
-        name,
-        filter,
-        dsn,
-        minimumBreadcrumbLevel,
-        minimumEventLevel,
-        null,
-        false,
-        debug,
-        transportFactory,
-        scopes,
-        contextTags);
-  }
-
   public SentryAppender(
       final @NotNull String name,
       final @Nullable Filter filter,

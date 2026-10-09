@@ -310,26 +310,14 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `constructors can opt out of logs capture`() {
+  fun `constructor can opt out of logs capture`() {
     val scopes = mock<IScopes>()
     val event = mock<LogEvent>()
     whenever(event.level).thenReturn(Level.INFO)
 
-    val deprecatedAppender =
+    val appender =
       SentryAppender(
-        "deprecated",
-        null,
-        null,
-        Level.OFF,
-        Level.OFF,
-        null,
-        null,
-        scopes,
-        null,
-      )
-    val existingAppender =
-      SentryAppender(
-        "existing",
+        "sentry",
         null,
         null,
         Level.OFF,
@@ -342,8 +330,7 @@ class SentryAppenderTest {
         null,
       )
 
-    deprecatedAppender.append(event)
-    existingAppender.append(event)
+    appender.append(event)
 
     verify(scopes, never()).logger()
   }
