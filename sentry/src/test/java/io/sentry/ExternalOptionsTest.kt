@@ -531,11 +531,6 @@ class ExternalOptionsTest {
   }
 
   @Test
-  fun `creates options with enableLogs set to true`() {
-    withPropertiesFile("logs.enabled=true") { options -> assertTrue(options.isEnableLogs == true) }
-  }
-
-  @Test
   fun `creates options with enableMetrics set to true`() {
     withPropertiesFile("metrics.enabled=true") { options ->
       assertTrue(options.isEnableMetrics == true)

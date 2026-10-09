@@ -579,7 +579,6 @@ class SentryOptionsTest {
     externalOptions.isEnableSpotlight = true
     externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
     externalOptions.isGlobalHubMode = true
-    externalOptions.isEnableLogs = true
     externalOptions.isEnableMetrics = false
     externalOptions.profileSessionSampleRate = 0.8
     externalOptions.profilingTracesDirPath = "/profiling-traces"
@@ -643,7 +642,6 @@ class SentryOptionsTest {
     assertTrue(options.isEnableSpotlight)
     assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
     assertTrue(options.isGlobalHubMode!!)
-    assertTrue(options.logs.isEnabled!!)
     assertFalse(options.metrics.isEnabled)
     assertEquals(0.8, options.profileSessionSampleRate)
     assertEquals("/profiling-traces${File.separator}${hash}", options.profilingTracesDirPath)

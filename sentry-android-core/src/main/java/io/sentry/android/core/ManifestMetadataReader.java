@@ -192,8 +192,6 @@ final class ManifestMetadataReader {
 
   static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
 
-  static final String ENABLE_LOGS = "io.sentry.logs.enabled";
-
   static final String ENABLE_TIMBER_LOGS = "io.sentry.timber.logs.enabled";
 
   static final String ENABLE_LOGCAT_LOGS = "io.sentry.logcat.logs.enabled";
@@ -753,10 +751,6 @@ final class ManifestMetadataReader {
             options.addInAppExclude(exclude);
           }
         }
-
-        options
-            .getLogs()
-            .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
 
         options.setEnableTimberLogs(
             readBool(metadata, logger, ENABLE_TIMBER_LOGS, options.isEnableTimberLogs()));

@@ -14,7 +14,6 @@ import java.lang.RuntimeException
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.robolectric.shadows.ShadowLog
 
@@ -40,7 +39,6 @@ class SentryLogcatAdapterTest {
           breadcrumbs.add(breadcrumb)
           breadcrumb
         }
-        it.logs.isEnabled = true
         if (enableLogcatLogs != null) {
           it.isEnableLogcatLogs = enableLogcatLogs
         }
@@ -203,26 +201,6 @@ class SentryLogcatAdapterTest {
     fixture.logs
       .first()
       .assert("$commonMsg wtf exception\n${throwable.message}", SentryLogLevel.FATAL)
-  }
-
-  @Test
-  fun `do not send logs if logs is disabled`() {
-    fixture.initSut { it.logs.isEnabled = false }
-
-    SentryLogcatAdapter.v(tag, "$commonMsg verbose")
-    SentryLogcatAdapter.i(tag, "$commonMsg info")
-    SentryLogcatAdapter.d(tag, "$commonMsg debug")
-    SentryLogcatAdapter.w(tag, "$commonMsg warning")
-    SentryLogcatAdapter.e(tag, "$commonMsg error")
-    SentryLogcatAdapter.wtf(tag, "$commonMsg wtf")
-    SentryLogcatAdapter.e(tag, "$commonMsg error exception", throwable)
-    SentryLogcatAdapter.v(tag, "$commonMsg verbose exception", throwable)
-    SentryLogcatAdapter.i(tag, "$commonMsg info exception", throwable)
-    SentryLogcatAdapter.d(tag, "$commonMsg debug exception", throwable)
-    SentryLogcatAdapter.w(tag, "$commonMsg warning exception", throwable)
-    SentryLogcatAdapter.wtf(tag, "$commonMsg wtf exception", throwable)
-
-    assertTrue(fixture.logs.isEmpty())
   }
 
   @Test
