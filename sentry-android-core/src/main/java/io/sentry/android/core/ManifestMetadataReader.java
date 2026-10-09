@@ -196,8 +196,6 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_LOGCAT_LOGS = "io.sentry.logcat.logs.enabled";
 
-  static final String ENABLE_METRICS = "io.sentry.metrics.enabled";
-
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
 
@@ -757,11 +755,6 @@ final class ManifestMetadataReader {
 
         options.setEnableLogcatLogs(
             readBool(metadata, logger, ENABLE_LOGCAT_LOGS, options.isEnableLogcatLogs()));
-
-        options
-            .getMetrics()
-            .setEnabled(
-                readBool(metadata, logger, ENABLE_METRICS, options.getMetrics().isEnabled()));
 
         final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
         feedbackOptions.setNameRequired(

@@ -46,7 +46,6 @@ public final class ExternalOptions {
   private @Nullable Boolean enabled;
   private @Nullable Boolean enablePrettySerializationOutput;
   private @Nullable Boolean enableSpotlight;
-  private @Nullable Boolean enableMetrics;
   private @Nullable String spotlightConnectionUrl;
 
   private @Nullable List<String> ignoredCheckIns;
@@ -176,8 +175,6 @@ public final class ExternalOptions {
 
     options.setCaptureOpenTelemetryEvents(
         propertiesProvider.getBooleanProperty("capture-open-telemetry-events"));
-
-    options.setEnableMetrics(propertiesProvider.getBooleanProperty("metrics.enabled"));
 
     for (final String ignoredExceptionType :
         propertiesProvider.getList("ignored-exceptions-for-type")) {
@@ -712,14 +709,6 @@ public final class ExternalOptions {
   @ApiStatus.Experimental
   public @Nullable Boolean isCaptureOpenTelemetryEvents() {
     return captureOpenTelemetryEvents;
-  }
-
-  public void setEnableMetrics(final @Nullable Boolean enableMetrics) {
-    this.enableMetrics = enableMetrics;
-  }
-
-  public @Nullable Boolean isEnableMetrics() {
-    return enableMetrics;
   }
 
   public @Nullable Double getProfileSessionSampleRate() {

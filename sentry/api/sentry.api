@@ -590,7 +590,6 @@ public final class io/sentry/ExternalOptions {
 	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
 	public fun isEnableCacheTracing ()Ljava/lang/Boolean;
 	public fun isEnableDatabaseTransactionTracing ()Ljava/lang/Boolean;
-	public fun isEnableMetrics ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnableQueueTracing ()Ljava/lang/Boolean;
 	public fun isEnableSpotlight ()Ljava/lang/Boolean;
@@ -610,7 +609,6 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnableCacheTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDatabaseTransactionTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
-	public fun setEnableMetrics (Ljava/lang/Boolean;)V
 	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
 	public fun setEnableQueueTracing (Ljava/lang/Boolean;)V
 	public fun setEnableSpotlight (Ljava/lang/Boolean;)V
@@ -4110,9 +4108,7 @@ public final class io/sentry/SentryOptions$Metrics {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;
 	public fun getMetricsBatchProcessorFactory ()Lio/sentry/metrics/IMetricsBatchProcessorFactory;
-	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;)V
-	public fun setEnabled (Z)V
 	public fun setMetricsBatchProcessorFactory (Lio/sentry/metrics/IMetricsBatchProcessorFactory;)V
 }
 
@@ -5680,13 +5676,6 @@ public final class io/sentry/metrics/NoOpMetricsApi : io/sentry/metrics/IMetrics
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsApi;
-}
-
-public final class io/sentry/metrics/NoOpMetricsBatchProcessor : io/sentry/metrics/IMetricsBatchProcessor {
-	public fun add (Lio/sentry/SentryMetricsEvent;)V
-	public fun close (Z)V
-	public fun flush (J)V
-	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsBatchProcessor;
 }
 
 public final class io/sentry/metrics/SentryMetricsParameters {
