@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Keep Spring requests running when a `SentryUserProvider` throws and discard the incomplete user identity ([#6240](https://github.com/getsentry/sentry-java/pull/6240))
 - Drop Apollo 5 spans when `beforeSpan` throws without disrupting the GraphQL request ([#6238](https://github.com/getsentry/sentry-java/pull/6238))
 
 ### Features
