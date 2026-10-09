@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Keep the Android feedback form available when an options configurator throws ([#6239](https://github.com/getsentry/sentry-java/pull/6239))
+
 ### Features
 
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))

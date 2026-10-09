@@ -165,6 +165,56 @@ class SentryUserFeedbackFormTest {
   }
 
   @Test
+  fun `when configuration throws, its partial changes are ignored`() {
+    fixture.options.isEnabled = true
+    val originalTitle = fixture.options.feedbackOptions.formTitle
+    val failure = IllegalStateException("configuration failed")
+
+    val sut =
+      fixture.getSut(
+        configuration = { _, options ->
+          options.formTitle = "partial title"
+          throw failure
+        }
+      )
+    sut.show()
+
+    assertThat(sut.findViewById<TextView>(R.id.sentry_dialog_user_feedback_title).text)
+      .isEqualTo(originalTitle)
+  }
+
+  @Test
+  fun `when configuration throws a fatal error, it is not swallowed`() {
+    val failure = OutOfMemoryError("configuration failed")
+
+    val thrown =
+      assertFailsWith<OutOfMemoryError> {
+        fixture.getSut(configuration = { _, _ -> throw failure })
+      }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+  }
+
+  @Test
+  fun `when configurator throws, its partial changes are ignored`() {
+    fixture.options.isEnabled = true
+    val failure = IllegalStateException("configurator failed")
+
+    val sut =
+      fixture.getSut(
+        configuration = { _, options -> options.formTitle = "configured title" },
+        configurator = { options ->
+          options.formTitle = "partial title"
+          throw failure
+        },
+      )
+    sut.show()
+
+    assertThat(sut.findViewById<TextView>(R.id.sentry_dialog_user_feedback_title).text)
+      .isEqualTo("configured title")
+  }
+
+  @Test
   fun `dialog window does not have FLAG_ALT_FOCUSABLE_IM so soft keyboard can appear`() {
     fixture.options.isEnabled = true
     val sut = fixture.getSut()
