@@ -17,12 +17,13 @@
         <enabled>true</enabled>
       </logs>
     </options>
+    <enableLogs>true</enableLogs>
     <!-- Demonstrates how to modify the minimum values -->
     <!-- Default for Events is ERROR -->
     <minimumEventLevel>WARN</minimumEventLevel>
     <!-- Default for Breadcrumbs is INFO -->
     <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
-    <!-- Default for Breadcrumbs is INFO -->
+    <!-- Default for Logs is INFO -->
     <minimumLevel>INFO</minimumLevel>
   </appender>
 
