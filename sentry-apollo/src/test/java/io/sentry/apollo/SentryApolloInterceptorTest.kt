@@ -260,7 +260,7 @@ class SentryApolloInterceptorTest {
       whenever(fixture.scopes.span).thenReturn(tx)
       val sut = fixture.getSut { span, _, _ ->
         span.spanContext.sampled = false
-        throw IllegalStateException("callback failed")
+        error("callback failed")
       }
 
       assertThat(sut.query(LaunchDetailsQuery.builder().id("83").build()).await().data).isNotNull()
