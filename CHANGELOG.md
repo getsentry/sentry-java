@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Keep Spring requests running when a `SentryUserProvider` throws and discard the incomplete user identity ([#6240](https://github.com/getsentry/sentry-java/pull/6240))
+
 ### Features
 
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
