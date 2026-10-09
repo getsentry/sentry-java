@@ -91,7 +91,8 @@ public class SentrySpringFilter extends OncePerRequestFilter {
             // transaction name is known at the later stage of request processing, thus it cannot
             // be set on the scope
             scope.addEventProcessor(
-                new SentryRequestHttpServletRequestProcessor(transactionNameProvider, request));
+                new SentryRequestHttpServletRequestProcessor(
+                    transactionNameProvider, request, scopes.getOptions().getLogger()));
             // only if request caches body, add an event processor that sets body on the event
             // body is not on the scope, to avoid using memory when no event is triggered during
             // request processing

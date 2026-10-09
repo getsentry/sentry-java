@@ -104,6 +104,11 @@ public final class io/sentry/spring/SpringSecuritySentryUserProvider : io/sentry
 	public fun provideUser ()Lio/sentry/protocol/User;
 }
 
+public final class io/sentry/spring/TransactionNameProviderUtils {
+	public static fun provideTransactionName (Lio/sentry/spring/tracing/TransactionNameProvider;Ljavax/servlet/http/HttpServletRequest;Lio/sentry/ILogger;)Ljava/lang/String;
+	public static fun provideTransactionNameAndSource (Lio/sentry/spring/tracing/TransactionNameProvider;Ljavax/servlet/http/HttpServletRequest;Lio/sentry/ILogger;Lio/sentry/spring/tracing/TransactionNameWithSource;)Lio/sentry/spring/tracing/TransactionNameWithSource;
+}
+
 public final class io/sentry/spring/cache/SentryCacheBeanPostProcessor : org/springframework/beans/factory/config/BeanPostProcessor, org/springframework/core/PriorityOrdered {
 	public fun <init> ()V
 	public fun getOrder ()I

@@ -9,6 +9,7 @@ import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TransactionContext
+import io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME
 import io.sentry.TransactionOptions
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
@@ -134,6 +135,25 @@ class SentryTracingFilterTest {
           assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
           assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
         },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `transaction name provider failure uses safe fallback and request continues`() {
+    val filter = fixture.getSut()
+    val failure = RuntimeException("provider failed")
+    whenever(fixture.transactionNameProvider.provideTransactionNameAndSource(fixture.request))
+      .thenThrow(failure)
+
+    filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    verify(fixture.chain).doFilter(fixture.request, fixture.response)
+    verify(fixture.scopes)
+      .captureTransaction(
+        check { assertThat(it.transaction).isEqualTo(DEFAULT_TRANSACTION_NAME) },
         anyOrNull<TraceContext>(),
         anyOrNull(),
         anyOrNull(),
