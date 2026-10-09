@@ -70,7 +70,7 @@ dependencies {
   testImplementation(libs.androidx.fragment.ktx)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
 }
 
 tasks.withType<Detekt>().configureEach {

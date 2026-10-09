@@ -83,7 +83,7 @@ public final class JfrAsyncProfilerToSentryProfileConverter extends JfrConverter
     private final @NotNull JfrReader jfr;
     private final @NotNull Arguments args;
 
-    public ProfileEventVisitor(
+    ProfileEventVisitor(
         @NotNull SentryProfile sentryProfile,
         @NotNull SentryStackTraceFactory stackTraceFactory,
         @NotNull JfrReader jfr,

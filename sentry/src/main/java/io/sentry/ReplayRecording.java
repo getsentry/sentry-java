@@ -102,7 +102,8 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<ReplayRecording> {
 
-    @SuppressWarnings("unchecked")
+    // The rrweb protocol encodes these enums by ordinal.
+    @SuppressWarnings({"unchecked", "EnumOrdinal"})
     @Override
     public @NotNull ReplayRecording deserialize(
         @NotNull ObjectReader reader, @NotNull ILogger logger) throws Exception {

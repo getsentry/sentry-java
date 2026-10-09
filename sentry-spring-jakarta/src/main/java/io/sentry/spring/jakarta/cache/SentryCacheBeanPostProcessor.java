@@ -16,8 +16,8 @@ public final class SentryCacheBeanPostProcessor implements BeanPostProcessor, Pr
   @Override
   public @NotNull Object postProcessAfterInitialization(
       final @NotNull Object bean, final @NotNull String beanName) throws BeansException {
-    if (bean instanceof CacheManager && !(bean instanceof SentryCacheManagerWrapper)) {
-      return new SentryCacheManagerWrapper((CacheManager) bean, ScopesAdapter.getInstance());
+    if (bean instanceof CacheManager cacheManager && !(bean instanceof SentryCacheManagerWrapper)) {
+      return new SentryCacheManagerWrapper(cacheManager, ScopesAdapter.getInstance());
     }
     return bean;
   }

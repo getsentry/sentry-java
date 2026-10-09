@@ -29,6 +29,8 @@ public final class SentryOtelThreadLocalStorage implements ContextStorage {
 
   private static final ThreadLocal<Context> THREAD_LOCAL_STORAGE = new ThreadLocal<>();
 
+  // Same identity check as OpenTelemetry's ThreadLocalContextStorage.
+  @SuppressWarnings("ReferenceEquality")
   @Override
   public Scope attach(Context toAttach) {
     if (toAttach == null) {

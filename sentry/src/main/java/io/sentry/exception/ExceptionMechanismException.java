@@ -14,9 +14,16 @@ import org.jetbrains.annotations.Nullable;
 public final class ExceptionMechanismException extends RuntimeException {
   private static final long serialVersionUID = 142345454265713915L;
 
+  // Never serialized.
+  @SuppressWarnings("serial")
   private final @NotNull Mechanism exceptionMechanism;
+
   private final @NotNull Throwable throwable;
+
+  // Never serialized.
+  @SuppressWarnings("serial")
   private final @Nullable Thread thread;
+
   private final boolean snapshot;
 
   /**

@@ -120,7 +120,7 @@ abstract class DirectoryProcessor {
     private final @NotNull String filePath;
     private final @NotNull Queue<String> processedEnvelopes;
 
-    public SendCachedEnvelopeHint(
+    SendCachedEnvelopeHint(
         final long flushTimeoutMillis,
         final @NotNull ILogger logger,
         final @NotNull String filePath,

@@ -265,6 +265,8 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     }
   }
 
+  // DELETE_MARKER and CLEAR_MARKER are sentinels, so identity comparison is intended.
+  @SuppressWarnings("ReferenceEquality")
   private void writePending() {
     // ConcurrentHashMap's iterator is weakly consistent, so removing while iterating is safe. Keys
     // added after iteration starts may be missed, but flush() re-checks and queues another write.

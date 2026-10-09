@@ -1353,7 +1353,7 @@ public final class SentryClient implements ISentryClient {
         options
             .getClientReportRecorder()
             .recordLostEvent(DiscardReason.BEFORE_SEND, DataCategory.LogItem);
-        final @NotNull long logEventNumberOfBytes =
+        final long logEventNumberOfBytes =
             JsonSerializationUtils.byteSizeOf(
                 options.getSerializer(), options.getLogger(), tmpLogEvent);
         options

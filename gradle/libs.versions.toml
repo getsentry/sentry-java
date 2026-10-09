@@ -64,7 +64,7 @@ buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
 dokka = { id = "org.jetbrains.dokka", version = "2.0.0" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version = "2.0.0" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.13.0" }
-errorprone = { id = "net.ltgt.errorprone", version = "3.0.1" }
+errorprone = { id = "net.ltgt.errorprone", version = "5.1.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
@@ -129,7 +129,7 @@ caffeine-jcache = { module = "com.github.ben-manes.caffeine:jcache", version = "
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.28.0"}
 context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
-errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.11.0" }
+errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.50.0" }
 feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
 feign-gson = { module = "io.github.openfeign:feign-gson", version.ref = "feign" }
 graphql-java17 = { module = "com.graphql-java:graphql-java", version = "17.3" }
@@ -154,7 +154,7 @@ lottie-compose = { module = "com.airbnb.android:lottie-compose", version = "6.7.
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 nopen-annotations = { module = "com.jakewharton.nopen:nopen-annotations", version.ref = "nopen" }
 nopen-checker = { module = "com.jakewharton.nopen:nopen-checker", version.ref = "nopen" }
-nullaway = { module = "com.uber.nullaway:nullaway", version = "0.9.5" }
+nullaway = { module = "com.uber.nullaway:nullaway", version = "0.14.2" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-bom = { module = "com.squareup.okhttp3:okhttp-bom", version.ref = "okhttp" }
 openfeature = { module = "dev.openfeature:sdk", version.ref = "openfeature" }
@@ -273,15 +273,14 @@ hsqldb = { module = "org.hsqldb:hsqldb", version = "2.6.1" }
 javafaker = { module = "com.github.javafaker:javafaker", version = "1.0.2" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 leakcanary-instrumentation = { module = "com.squareup.leakcanary:leakcanary-android-instrumentation", version = "2.14" }
-mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version = "4.1.0" }
-mockito-kotlin-spring7 = { module = "org.mockito.kotlin:mockito-kotlin", version = "6.0.0" }
-mockito-inline = { module = "org.mockito:mockito-inline", version = "4.8.0" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version = "6.4.0" }
+mockito-core = { module = "org.mockito:mockito-core", version = "5.24.0" }
 msgpack = { module = "org.msgpack:msgpack-core", version = "0.9.8" }
 okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
 # apollo-runtime 5.x pulls in okhttp 5.x; mockwebserver 4.x is incompatible with that classpath
 okhttp-mockwebserver5 = { module = "com.squareup.okhttp3:mockwebserver", version = "5.3.0" }
 okio = { module = "com.squareup.okio:okio", version = "1.13.0" }
-roboelectric = { module = "org.robolectric:robolectric", version = "4.15" }
+roboelectric = { module = "org.robolectric:robolectric", version = "4.17" }
 
 [bundles]
 androidx-room2 = ["androidx-room-runtime", "androidx-room-ktx"]

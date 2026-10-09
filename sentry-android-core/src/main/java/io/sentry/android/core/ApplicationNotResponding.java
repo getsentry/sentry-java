@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 final class ApplicationNotResponding extends RuntimeException {
   private static final long serialVersionUID = 252541144579117016L;
 
+  // Never serialized.
+  @SuppressWarnings("serial")
   private final @Nullable Thread thread;
 
   ApplicationNotResponding(final @Nullable String message) {
