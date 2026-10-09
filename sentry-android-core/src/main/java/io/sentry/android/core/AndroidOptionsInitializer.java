@@ -202,6 +202,12 @@ final class AndroidOptionsInitializer {
     if (options.getTransportGate() instanceof NoOpTransportGate) {
       options.setTransportGate(new AndroidTransportGate(options));
     }
+    // API 25 and lower may lack ISRG Root X1 (Let's Encrypt), so the SDK's own envelope uploads
+    // trust the bundled root in addition to the system ones.
+    if (buildInfoProvider.getSdkInfoVersion() <= Build.VERSION_CODES.N_MR1
+        && options.getSslSocketFactory() == null) {
+      options.setSslSocketFactory(new SentryRootCaSslSocketFactory(options.getLogger()));
+    }
 
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     options.setAppStartExtender(appStartMetrics.getAppStartExtension());
