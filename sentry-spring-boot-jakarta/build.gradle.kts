@@ -35,6 +35,8 @@ dependencies {
   api(projects.sentrySpringJakarta)
   compileOnly(projects.sentryLogback)
   compileOnly(projects.sentryLog4j2)
+  compileOnly(projects.sentryOkhttp)
+  compileOnly(libs.okhttp)
   compileOnly(libs.log4j.api)
   compileOnly(libs.log4j.core)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
@@ -69,6 +71,7 @@ dependencies {
 
   // tests
   testImplementation(projects.sentryLogback)
+  testImplementation(projects.sentryOkhttp)
   testImplementation(projects.sentryLog4j2)
   testImplementation(libs.log4j.api)
   testImplementation(libs.log4j.core)
@@ -87,8 +90,11 @@ dependencies {
   testImplementation(libs.apache.httpclient)
   testImplementation(libs.context.propagation)
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.okhttp)
+  testImplementation(libs.log4j.api)
+  testImplementation(libs.log4j.core)
   testImplementation(libs.okhttp.mockwebserver)
   testImplementation(libs.otel)
   testImplementation(libs.otel.extension.autoconfigure.spi)

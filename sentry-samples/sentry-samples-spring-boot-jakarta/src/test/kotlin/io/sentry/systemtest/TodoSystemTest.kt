@@ -58,4 +58,20 @@ class TodoSystemTest {
       )
     }
   }
+
+  @Test
+  fun `get todo okhttp works`() {
+    val restClient = testHelper.restClient
+    restClient.getTodoOkHttp(1L)
+    assertEquals(200, restClient.lastKnownStatusCode)
+
+    testHelper.ensureTransactionReceived { transaction, envelopeHeader ->
+      transaction.transaction == "GET /todo-okhttp/{id}" &&
+        testHelper.doesTransactionContainSpanWithOpAndDescription(
+          transaction,
+          "http.client",
+          "GET https://jsonplaceholder.typicode.com/todos/1",
+        )
+    }
+  }
 }
