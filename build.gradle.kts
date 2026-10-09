@@ -116,23 +116,24 @@ allprojects {
 subprojects {
     apply { plugin("io.sentry.spotless") }
 
-    // Mockito 5 and mockito-kotlin 5+ are built for Java 11. Test code is never published, so it
-    // compiles for at least Java 11 while the published code keeps its own target. Runs in
-    // afterEvaluate, as most modules pin the JVM target of all their compile tasks.
-    afterEvaluate {
-        tasks.withType<JavaCompile>().matching { it.name.contains("Test") }.configureEach {
-            if (JavaVersion.toVersion(targetCompatibility) < JavaVersion.VERSION_11) {
-                sourceCompatibility = JavaVersion.VERSION_11.toString()
-                targetCompatibility = JavaVersion.VERSION_11.toString()
-            }
-        }
-        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().matching { it.name.contains("Test") }.configureEach {
-            if (compilerOptions.jvmTarget.get() < org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11) {
-                compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    // Mockito 5 and mockito-kotlin 5+ are built for Java 11, so test code (never published) can't
+    // share the Java 8 target of the published code; it compiles for the build JDK instead.
+    // Registered once each plugin is applied, so this afterEvaluate runs after the plugins and the
+    // module have pinned the JVM target of all compile tasks.
+    listOf("java", "com.android.library", "com.android.application").forEach { pluginId ->
+        plugins.withId(pluginId) {
+            afterEvaluate {
+                val isTestTask = { task: Task -> task.name.contains("Test") && !task.name.contains("AndroidTest") }
+                tasks.withType<JavaCompile>().matching(isTestTask).configureEach {
+                    sourceCompatibility = JavaVersion.VERSION_21.toString()
+                    targetCompatibility = JavaVersion.VERSION_21.toString()
+                }
+                tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().matching(isTestTask).configureEach {
+                    compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+                }
             }
         }
     }
-
     listOf("com.android.library", "com.android.application").forEach { pluginId ->
         plugins.withId(pluginId) {
             // Robolectric's SDK 37 sandbox (the default, as targetSdk is 37) reflectively writes

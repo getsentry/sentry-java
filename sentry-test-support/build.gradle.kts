@@ -6,9 +6,10 @@ plugins {
   alias(libs.plugins.gradle.versions)
 }
 
+// Not published. Mockito 5 and mockito-kotlin 5+ are built for Java 11.
 configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_1_8
-  targetCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
