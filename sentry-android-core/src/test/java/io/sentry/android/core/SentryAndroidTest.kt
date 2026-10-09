@@ -23,6 +23,7 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.FATAL
+import io.sentry.SentryLogEvent
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeSendCallback
 import io.sentry.Session
@@ -84,6 +85,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
+import timber.log.Timber
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.N], shadows = [SentryShadowProcess::class])
@@ -236,6 +238,46 @@ class SentryAndroidTest {
     }
 
     assertNotEquals(0, AppStartMetrics.getInstance().appStartTimeSpan.durationMs)
+  }
+
+  @Test
+  fun `auto-installed Timber integration uses Logs option set in configuration callback`() {
+    val logs = mutableListOf<SentryLogEvent>()
+    fixture.initSut { options ->
+      options.isEnableTimberLogs = true
+      options.logs.beforeSend =
+        SentryOptions.Logs.BeforeSendLogCallback { log ->
+          logs.add(log)
+          log
+        }
+    }
+
+    Timber.i("message")
+
+    assertEquals(1, logs.size)
+  }
+
+  @Test
+  fun `auto-installed Timber integration uses configuration callback override of manifest option`() {
+    val metadata =
+      Bundle().apply {
+        putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+        putBoolean(ManifestMetadataReader.ENABLE_TIMBER_LOGS, true)
+      }
+    val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
+    val logs = mutableListOf<SentryLogEvent>()
+
+    initForTest(mockContext) { options ->
+      options.isEnableTimberLogs = false
+      options.logs.beforeSend =
+        SentryOptions.Logs.BeforeSendLogCallback { log ->
+          logs.add(log)
+          log
+        }
+    }
+    Timber.i("message")
+
+    assertTrue(logs.isEmpty())
   }
 
   @Test
