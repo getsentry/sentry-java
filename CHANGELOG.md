@@ -2,6 +2,10 @@
 
 ## 8.60.0
 
+### Fixes
+
+- Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
+
 ### Features
 
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
