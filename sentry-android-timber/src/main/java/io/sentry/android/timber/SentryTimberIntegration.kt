@@ -18,6 +18,22 @@ public class SentryTimberIntegration(
   public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
   public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
 ) : Integration, Closeable {
+  public var enableLogs: Boolean = false
+    private set
+
+  public constructor(enableLogs: Boolean) : this() {
+    this.enableLogs = enableLogs
+  }
+
+  public constructor(
+    minEventLevel: SentryLevel,
+    minBreadcrumbLevel: SentryLevel,
+    minLogsLevel: SentryLogLevel,
+    enableLogs: Boolean,
+  ) : this(minEventLevel, minBreadcrumbLevel, minLogsLevel) {
+    this.enableLogs = enableLogs
+  }
+
   private lateinit var tree: SentryTimberTree
   private lateinit var logger: ILogger
 
@@ -31,7 +47,7 @@ public class SentryTimberIntegration(
   override fun register(scopes: IScopes, options: SentryOptions) {
     logger = options.logger
 
-    tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
+    tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel, enableLogs)
     Timber.plant(tree)
 
     logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")
