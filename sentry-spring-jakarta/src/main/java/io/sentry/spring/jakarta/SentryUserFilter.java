@@ -55,7 +55,11 @@ public class SentryUserFilter extends OncePerRequestFilter {
         scopes
             .getOptions()
             .getLogger()
-            .log(SentryLevel.ERROR, "The SentryUserProvider callback threw an exception.", e);
+            .log(
+                SentryLevel.ERROR,
+                e,
+                "The SentryUserProvider callback %s threw an exception.",
+                provider.getClass().getName());
       }
     }
     if (!providerFailed && scopes.getOptions().getDataCollectionResolver().isUserInfo()) {
