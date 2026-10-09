@@ -337,7 +337,7 @@ abstract class SentryApollo4HttpInterceptorTest(
         fixture.getSut(
           beforeSpan = { span, _, _ ->
             span.spanContext.sampled = false
-            throw IllegalStateException("callback failed")
+            error("callback failed")
           }
         )
 
