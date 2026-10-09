@@ -73,8 +73,6 @@ dependencies {
   testImplementation(projects.sentryLogback)
   testImplementation(projects.sentryOkhttp)
   testImplementation(projects.sentryLog4j2)
-  testImplementation(libs.log4j.api)
-  testImplementation(libs.log4j.core)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
   testImplementation(projects.sentryKafka)
