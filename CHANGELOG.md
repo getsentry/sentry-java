@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
+
 ### Features
 
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))

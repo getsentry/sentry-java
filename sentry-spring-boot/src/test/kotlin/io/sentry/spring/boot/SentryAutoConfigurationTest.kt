@@ -2,7 +2,6 @@ package io.sentry.spring.boot
 
 import com.acme.MainBootClass
 import io.opentelemetry.api.OpenTelemetry
-import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory
 import io.sentry.EventProcessor
@@ -47,7 +46,6 @@ import io.sentry.spring.tracing.SpringServletTransactionNameProvider
 import io.sentry.spring.tracing.TransactionNameProvider
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
-import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import java.io.File
 import java.lang.RuntimeException
 import javax.servlet.Filter
@@ -824,37 +822,6 @@ class SentryAutoConfigurationTest {
       .run {
         assertThat(it.getBean(SentryOptions::class.java).tracesSampler)
           .isInstanceOf(CustomTracesSamplerCallback::class.java)
-      }
-  }
-
-  @Test
-  fun `when sentry-apache-http-client-5 is on the classpath, creates apache transport factory`() {
-    baseContextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
-      assertThat(it.getBean(SentryOptions::class.java).transportFactory)
-        .isInstanceOf(ApacheHttpClientTransportFactory::class.java)
-    }
-  }
-
-  @Test
-  fun `when sentry-apache-http-client-5 is not on the classpath, does not create apache transport factory`() {
-    baseContextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
-      .withClassLoader(FilteredClassLoader(ApacheHttpClientTransportFactory::class.java))
-      .run {
-        assertThat(it.getBean(SentryOptions::class.java).transportFactory)
-          .isInstanceOf(AsyncHttpTransportFactory::class.java)
-      }
-  }
-
-  @Test
-  fun `when sentry-apache-http-client-5 is on the classpath and custom transport factory bean is set, does not create apache transport factory`() {
-    baseContextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
-      .withUserConfiguration(MockTransportConfiguration::class.java)
-      .run {
-        assertThat(it.getBean(SentryOptions::class.java).transportFactory)
-          .isNotInstanceOf(ApacheHttpClientTransportFactory::class.java)
-          .isNotInstanceOf(NoOpTransportFactory::class.java)
       }
   }
 
