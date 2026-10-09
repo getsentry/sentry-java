@@ -37,7 +37,7 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.kotlinx.coroutines)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(libs.okhttp.mockwebserver)
 }
 

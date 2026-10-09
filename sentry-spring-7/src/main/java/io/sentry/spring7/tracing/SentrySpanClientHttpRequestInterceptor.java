@@ -39,7 +39,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
   }
 
   public SentrySpanClientHttpRequestInterceptor(
-      final @NotNull IScopes scopes, final @NotNull boolean isRestTemplate) {
+      final @NotNull IScopes scopes, final boolean isRestTemplate) {
     this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
     this.traceOrigin = isRestTemplate ? TRACE_ORIGIN_REST_TEMPLATE : TRACE_ORIGIN_REST_CLIENT;
   }

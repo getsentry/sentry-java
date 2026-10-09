@@ -56,7 +56,7 @@ public final class UUIDGenerator {
     // clear variant
     randomBytes[8] &= 0x3f;
     // set to IETF variant
-    randomBytes[8] |= 0x80;
+    randomBytes[8] = (byte) (randomBytes[8] | 0x80);
     long msb = 0;
     long lsb = 0;
     for (int i = 0; i < 8; i++) {

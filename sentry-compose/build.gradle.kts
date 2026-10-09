@@ -69,7 +69,7 @@ kotlin {
         implementation(libs.androidx.test.runner)
         implementation(libs.google.truth)
         implementation(libs.kotlin.test.junit)
-        implementation(libs.mockito.inline)
+        implementation(libs.mockito.core)
         implementation(libs.mockito.kotlin)
         implementation(libs.roboelectric)
       }

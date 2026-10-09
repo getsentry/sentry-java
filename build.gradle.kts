@@ -29,6 +29,10 @@ plugins {
     alias(libs.plugins.sentry) apply false
 }
 
+check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
+    "This build requires JDK 21 or newer, but runs on JDK ${JavaVersion.current()}."
+}
+
 buildscript {
     repositories {
         google()
@@ -112,6 +116,34 @@ allprojects {
 subprojects {
     apply { plugin("io.sentry.spotless") }
 
+    // Mockito 5 and mockito-kotlin 5+ are built for Java 11. Test code is never published, so it
+    // compiles for at least Java 11 while the published code keeps its own target. Runs in
+    // afterEvaluate, as most modules pin the JVM target of all their compile tasks.
+    afterEvaluate {
+        tasks.withType<JavaCompile>().matching { it.name.contains("Test") }.configureEach {
+            if (JavaVersion.toVersion(targetCompatibility) < JavaVersion.VERSION_11) {
+                sourceCompatibility = JavaVersion.VERSION_11.toString()
+                targetCompatibility = JavaVersion.VERSION_11.toString()
+            }
+        }
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().matching { it.name.contains("Test") }.configureEach {
+            if (compilerOptions.jvmTarget.get() < org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11) {
+                compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            }
+        }
+    }
+
+    listOf("com.android.library", "com.android.application").forEach { pluginId ->
+        plugins.withId(pluginId) {
+            // Robolectric's SDK 37 sandbox (the default, as targetSdk is 37) reflectively writes
+            // FileDescriptor fields in ApplicationSharedMemory; without this, setup fails with
+            // "Failed to interact with raw FileDescriptor internals".
+            tasks.withType<Test>().configureEach {
+                jvmArgs("--add-opens=java.base/java.io=ALL-UNNAMED")
+            }
+        }
+    }
+
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
             buildUponDefaultConfig = true
@@ -165,6 +197,15 @@ subprojects {
 
                 sourceCompatibility = JavaVersion.VERSION_1_8
                 targetCompatibility = JavaVersion.VERSION_1_8
+            }
+
+            // Compile against the class library of the target Java version instead of the build
+            // JDK's, so newer JDK APIs (e.g. List.getFirst()) can't leak into published bytecode.
+            val javaExtension = the<JavaPluginExtension>()
+            tasks.named<JavaCompile>("compileJava") {
+                options.release.set(
+                    provider { javaExtension.targetCompatibility.majorVersion.toInt() }
+                )
             }
         }
 

@@ -30,6 +30,8 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent
     TouchEnd,
     TouchCancel;
 
+    // The rrweb protocol encodes these enums by ordinal.
+    @SuppressWarnings("EnumOrdinal")
     @Override
     public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
         throws IOException {
@@ -37,6 +39,8 @@ public final class RRWebInteractionEvent extends RRWebIncrementalSnapshotEvent
     }
 
     public static final class Deserializer implements JsonDeserializer<InteractionType> {
+      // The rrweb protocol encodes these enums by ordinal.
+      @SuppressWarnings("EnumOrdinal")
       @Override
       public @NotNull InteractionType deserialize(
           final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {

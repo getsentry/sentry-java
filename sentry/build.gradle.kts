@@ -28,7 +28,7 @@ dependencies {
   testImplementation(libs.javafaker)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(libs.msgpack)
   testImplementation(libs.okio)
   testImplementation(projects.sentryTestSupport)
@@ -51,6 +51,9 @@ tasks {
       "--add-opens",
       "java.base/java.lang=ALL-UNNAMED",
     )
+    // SentryEnvelopeItemTest."fromAttachment with file SecurityManager denies read access" installs
+    // a SecurityManager to simulate unreadable attachments; JDK 18+ refuses that without opt-in.
+    systemProperty("java.security.manager", "allow")
     environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
     environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
     environment["SENTRY_TEST_MAP_KEY2"] = "value2"

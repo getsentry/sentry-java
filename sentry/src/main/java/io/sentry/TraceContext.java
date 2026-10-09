@@ -30,7 +30,7 @@ public final class TraceContext implements JsonUnknown, JsonSerializable {
   }
 
   @SuppressWarnings("InlineMeSuggester")
-  /**
+  /*
    * @deprecated please use the constructor than also takes sampleRand
    */
   @Deprecated

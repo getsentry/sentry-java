@@ -29,6 +29,8 @@ public final class DiagnosticLogger implements ILogger {
    * @param level The SentryLevel to test against.
    * @return True if a log message would be recorded for the level. Otherwise false.
    */
+  // SentryLevel is declared in ascending severity order.
+  @SuppressWarnings("EnumOrdinal")
   @Override
   public boolean isEnabled(final @Nullable SentryLevel level) {
     final SentryLevel diagLevel = options.getDiagnosticLevel();

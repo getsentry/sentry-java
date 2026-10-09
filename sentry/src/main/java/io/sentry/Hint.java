@@ -60,7 +60,7 @@ public final class Hint {
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends Object> @Nullable T getAs(@NotNull String name, @NotNull Class<T> clazz) {
+  public <T> @Nullable T getAs(@NotNull String name, @NotNull Class<T> clazz) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       Object hintValue = internalStorage.get(name);
 

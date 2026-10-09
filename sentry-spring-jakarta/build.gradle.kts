@@ -66,7 +66,7 @@ dependencies {
   testImplementation(libs.graphql.java24)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(libs.springboot3.starter.aop)
   testImplementation(libs.springboot3.starter.graphql)
   testImplementation(libs.springboot3.starter.security)

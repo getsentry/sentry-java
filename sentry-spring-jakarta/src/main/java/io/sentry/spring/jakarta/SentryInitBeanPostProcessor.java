@@ -42,8 +42,7 @@ public class SentryInitBeanPostProcessor
   @SuppressWarnings({"unchecked", "deprecation"})
   public @NotNull Object postProcessAfterInitialization(
       final @NotNull Object bean, @NotNull final String beanName) throws BeansException {
-    if (bean instanceof SentryOptions) {
-      final SentryOptions options = (SentryOptions) bean;
+    if (bean instanceof SentryOptions options) {
 
       if (applicationContext != null) {
         applicationContext

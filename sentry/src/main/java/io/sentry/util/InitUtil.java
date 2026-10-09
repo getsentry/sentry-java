@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class InitUtil {
+  // InitPriority is declared in ascending priority order.
+  @SuppressWarnings("EnumOrdinal")
   public static boolean shouldInit(
       final @Nullable SentryOptions previousOptions,
       final @NotNull SentryOptions newOptions,

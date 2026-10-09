@@ -48,7 +48,7 @@ public class SentryReactorUtils {
    */
   public static <T> Mono<T> withSentryScopes(
       final @NotNull Mono<T> mono, final @NotNull IScopes scopes) {
-    /**
+    /*
      * WARNING: Cannot set the scopes as current. It would be used by others to clone again causing
      * shared scopes and thus leading to issues like unrelated breadcrumbs showing up in events.
      */
@@ -96,7 +96,7 @@ public class SentryReactorUtils {
    */
   public static <T> Flux<T> withSentryScopes(
       final @NotNull Flux<T> flux, final @NotNull IScopes scopes) {
-    /**
+    /*
      * WARNING: Cannot set the scopes as current. It would be used by others to fork again causing
      * shared scopes and thus leading to issues like unrelated breadcrumbs showing up in events.
      */

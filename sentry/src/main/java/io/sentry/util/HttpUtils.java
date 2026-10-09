@@ -125,6 +125,8 @@ public final class HttpUtils {
     return filteredHeaders;
   }
 
+  // The Charset overload requires Java 10.
+  @SuppressWarnings("JdkObsolete")
   private static @NotNull String decodeQueryParamName(final @NotNull String name) {
     try {
       return URLDecoder.decode(name, "UTF-8");

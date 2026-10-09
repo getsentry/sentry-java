@@ -34,6 +34,8 @@ public final class NetworkBodyParser {
    * @param logger Optional logger
    * @return A NetworkBody or null if bytes are null/empty
    */
+  // The charset is a name from the Content-Type header; unsupported names are handled below.
+  @SuppressWarnings("JdkObsolete")
   public static @Nullable NetworkBody fromBytes(
       @Nullable final byte[] bytes,
       @Nullable final String contentType,
@@ -131,6 +133,8 @@ public final class NetworkBodyParser {
   }
 
   /** Parses URL-encoded form data into a JsonObject NetworkBody. */
+  // The Charset overload requires Java 10.
+  @SuppressWarnings("JdkObsolete")
   @NotNull
   private static NetworkBody parseFormUrlEncoded(
       @NotNull final String content, final boolean isPartial, @Nullable final ILogger logger) {
@@ -206,7 +210,7 @@ public final class NetworkBodyParser {
     private SaferJsonParser() {}
 
     @NotNull
-    public static SaferJsonParser.Result parse(final @NotNull JsonReader reader) {
+    static SaferJsonParser.Result parse(final @NotNull JsonReader reader) {
       final SaferJsonParser parser = new SaferJsonParser();
       parser.result.data = parser.parse(reader, 0);
       return parser.result;
