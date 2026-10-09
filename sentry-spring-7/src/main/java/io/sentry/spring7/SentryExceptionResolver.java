@@ -75,7 +75,9 @@ public class SentryExceptionResolver implements HandlerExceptionResolver, Ordere
         new ExceptionMechanismException(mechanism, ex, Thread.currentThread());
     final SentryEvent event = new SentryEvent(throwable);
     event.setLevel(SentryLevel.FATAL);
-    event.setTransaction(transactionNameProvider.provideTransactionName(request));
+    event.setTransaction(
+        TransactionNameProviderUtils.provideTransactionName(
+            transactionNameProvider, request, scopes.getOptions().getLogger()));
 
     return event;
   }

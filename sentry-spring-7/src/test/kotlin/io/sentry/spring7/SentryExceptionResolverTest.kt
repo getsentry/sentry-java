@@ -4,6 +4,8 @@ import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
+import io.sentry.SentryOptions
+import io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.spring7.tracing.TransactionNameProvider
 import jakarta.servlet.http.HttpServletRequest
@@ -19,9 +21,14 @@ import org.mockito.kotlin.whenever
 class SentryExceptionResolverTest {
   private val scopes = mock<IScopes>()
   private val transactionNameProvider = mock<TransactionNameProvider>()
+  private val options = SentryOptions()
 
   private val request = mock<HttpServletRequest>()
   private val response = mock<HttpServletResponse>()
+
+  init {
+    whenever(scopes.options).thenReturn(options)
+  }
 
   @Test
   fun `when handles exception, sets wrapped exception for event`() {
@@ -68,6 +75,19 @@ class SentryExceptionResolverTest {
 
     assertThat(eventCaptor.firstValue.transaction).isEqualTo(expectedTransactionName)
     verify(transactionNameProvider).provideTransactionName(request)
+  }
+
+  @Test
+  fun `when transaction name provider fails, captures event with safe fallback`() {
+    val failure = RuntimeException("provider failed")
+    whenever(transactionNameProvider.provideTransactionName(any())).thenThrow(failure)
+    val eventCaptor = argumentCaptor<SentryEvent>()
+    whenever(scopes.captureEvent(eventCaptor.capture(), any<Hint>())).thenReturn(null)
+
+    SentryExceptionResolver(scopes, transactionNameProvider, 1)
+      .resolveException(request, response, null, RuntimeException("request failed"))
+
+    assertThat(eventCaptor.firstValue.transaction).isEqualTo(DEFAULT_TRANSACTION_NAME)
   }
 
   @Test
