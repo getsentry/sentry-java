@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Drop Apollo 5 spans when `beforeSpan` throws without disrupting the GraphQL request ([#6238](https://github.com/getsentry/sentry-java/pull/6238))
+
 ### Features
 
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
