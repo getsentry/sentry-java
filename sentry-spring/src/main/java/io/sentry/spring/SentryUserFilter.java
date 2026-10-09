@@ -4,7 +4,9 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.IScope;
 import io.sentry.IScopes;
 import io.sentry.IpAddressUtils;
+import io.sentry.SentryLevel;
 import io.sentry.protocol.User;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.io.IOException;
 import java.util.List;
@@ -43,16 +45,26 @@ public class SentryUserFilter extends OncePerRequestFilter {
       final @NotNull FilterChain chain)
       throws ServletException, IOException {
     final User user = new User();
+    boolean providerFailed = false;
     for (final SentryUserProvider provider : sentryUserProviders) {
-      apply(user, provider.provideUser());
+      try {
+        apply(user, provider.provideUser());
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
+        providerFailed = true;
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(SentryLevel.ERROR, "The SentryUserProvider callback threw an exception.", e);
+      }
     }
-    if (scopes.getOptions().getDataCollectionResolver().isUserInfo()) {
+    if (!providerFailed && scopes.getOptions().getDataCollectionResolver().isUserInfo()) {
       if (IpAddressUtils.isDefault(user.getIpAddress())) {
         // unset {{auto}} as it would set the server's ip address as a user ip address
         user.setIpAddress(null);
       }
     }
-    scopes.setUser(user);
+    scopes.setUser(providerFailed ? new User() : user);
     chain.doFilter(request, response);
   }
 
