@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Keep Spring requests and event capture running when a `TransactionNameProvider` throws ([#6241](https://github.com/getsentry/sentry-java/pull/6241))
+
 ### Features
 
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
