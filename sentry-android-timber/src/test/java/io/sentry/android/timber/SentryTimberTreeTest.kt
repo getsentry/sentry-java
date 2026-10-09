@@ -51,6 +51,19 @@ class SentryTimberTreeTest {
   }
 
   @Test
+  fun `callback failures are excluded before events breadcrumbs and logs`() {
+    val sut = fixture.getSut()
+    for (marker in
+      listOf(
+        io.sentry.exception.SentryCallbackException(IllegalStateException()),
+        io.sentry.exception.SentryCallbackError(LinkageError()),
+      )) {
+      sut.e(java.util.concurrent.CompletionException(marker), "private")
+    }
+    verifyNoInteractions(fixture.scopes, fixture.logs)
+  }
+
+  @Test
   fun `Tree captures an event if min level is equal`() {
     val sut = fixture.getSut()
     sut.e(Throwable())

@@ -583,6 +583,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getSessionFlushTimeoutMillis ()Ljava/lang/Long;
 	public fun getShutdownTimeoutMillis ()Ljava/lang/Long;
 	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
+	public fun getStrictCallbackMode ()Ljava/lang/Boolean;
 	public fun getTags ()Ljava/util/Map;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
@@ -643,6 +644,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setSessionFlushTimeoutMillis (Ljava/lang/Long;)V
 	public fun setShutdownTimeoutMillis (Ljava/lang/Long;)V
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
+	public fun setStrictCallbackMode (Ljava/lang/Boolean;)V
 	public fun setStrictTraceContinuation (Ljava/lang/Boolean;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
@@ -3914,6 +3916,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun isSendDefaultPii ()Z
 	public fun isSendModules ()Z
 	public fun isStartProfilerOnAppStart ()Z
+	public fun isStrictCallbackMode ()Z
 	public fun isStrictTraceContinuation ()Z
 	public fun isTraceOptionsRequests ()Z
 	public fun isTraceSampling ()Z
@@ -4036,6 +4039,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setSslSocketFactory (Ljavax/net/ssl/SSLSocketFactory;)V
 	public fun setStartProfilerOnAppStart (Z)V
+	public fun setStrictCallbackMode (Z)V
 	public fun setStrictTraceContinuation (Z)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
@@ -5235,6 +5239,14 @@ public final class io/sentry/exception/InvalidSentryTraceHeaderException : java/
 	public fun <init> (Ljava/lang/String;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
 	public fun getSentryTraceHeader ()Ljava/lang/String;
+}
+
+public final class io/sentry/exception/SentryCallbackError : java/lang/Error {
+	public fun <init> (Ljava/lang/Error;)V
+}
+
+public final class io/sentry/exception/SentryCallbackException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/Throwable;)V
 }
 
 public final class io/sentry/exception/SentryEnvelopeException : java/lang/Exception {
@@ -7859,6 +7871,12 @@ public final class io/sentry/util/AutoClosableReentrantLock : io/sentry/ISentryL
 	public fun close ()V
 }
 
+public final class io/sentry/util/CallbackUtils {
+	public static fun isCallbackException (Ljava/lang/Throwable;)Z
+	public static fun rethrowIfStrictCallbackMode (Lio/sentry/SentryOptions;Ljava/lang/Throwable;)V
+	public static fun run (Lio/sentry/SentryOptions;Ljava/lang/Runnable;)V
+}
+
 public final class io/sentry/util/CheckInUtils {
 	public fun <init> ()V
 	public static fun isIgnored (Ljava/util/List;Ljava/lang/String;)Z
@@ -7937,6 +7955,7 @@ public final class io/sentry/util/ExceptionUtils {
 	public fun <init> ()V
 	public static fun findRootCause (Ljava/lang/Throwable;)Ljava/lang/Throwable;
 	public static fun isIgnored (Ljava/util/Set;Ljava/lang/Throwable;)Z
+	public static fun maybeRethrow (Ljava/lang/Throwable;)V
 	public static fun rethrowIfFatal (Ljava/lang/Throwable;)V
 }
 

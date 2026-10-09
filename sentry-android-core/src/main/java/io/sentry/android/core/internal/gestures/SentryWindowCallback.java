@@ -57,6 +57,7 @@ public final class SentryWindowCallback extends WindowCallbackAdapter {
       try {
         handleTouchEvent(copy);
       } catch (Throwable e) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e);
         if (options != null) {
           options.getLogger().log(SentryLevel.ERROR, "Error dispatching touch event", e);
         }

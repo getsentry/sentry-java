@@ -42,6 +42,39 @@ class ManifestMetadataReaderTest {
 
   private val fixture = Fixture()
 
+  @Test
+  fun `strict callback mode defaults to false when metadata is absent`() {
+    ManifestMetadataReader.applyMetadata(
+      fixture.getContext(),
+      fixture.options,
+      fixture.buildInfoProvider,
+    )
+    assertThat(fixture.options.isStrictCallbackMode).isFalse()
+  }
+
+  @Test
+  fun `strict callback mode preserves programmatic value when metadata is absent`() {
+    fixture.options.isStrictCallbackMode = true
+    ManifestMetadataReader.applyMetadata(
+      fixture.getContext(),
+      fixture.options,
+      fixture.buildInfoProvider,
+    )
+    assertThat(fixture.options.isStrictCallbackMode).isTrue()
+  }
+
+  @Test
+  fun `strict callback mode reads true and false from manifest`() {
+    for (value in listOf(true, false)) {
+      fixture.options.isStrictCallbackMode = !value
+      ContextUtils.resetInstance()
+      val context =
+        fixture.getContext(bundleOf(ManifestMetadataReader.STRICT_CALLBACK_MODE to value))
+      ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+      assertThat(fixture.options.isStrictCallbackMode).isEqualTo(value)
+    }
+  }
+
   @BeforeTest
   fun `set up`() {
     ContextUtils.resetInstance()

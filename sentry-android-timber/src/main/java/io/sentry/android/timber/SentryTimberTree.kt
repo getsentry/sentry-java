@@ -167,6 +167,9 @@ public class SentryTimberTree(
     vararg args: Any?,
   ) {
     val tag = retrieveTag()
+    if (io.sentry.util.CallbackUtils.isCallbackException(throwable)) {
+      return
+    }
 
     if (message.isNullOrEmpty() && throwable == null) {
       return // Swallow message if it's null and there's no throwable

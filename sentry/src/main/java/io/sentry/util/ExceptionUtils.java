@@ -1,10 +1,14 @@
 package io.sentry.util;
 
+import io.sentry.exception.ExceptionMechanismException;
+import io.sentry.exception.SentryCallbackError;
+import io.sentry.exception.SentryCallbackException;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class ExceptionUtils {
@@ -34,6 +38,43 @@ public final class ExceptionUtils {
       final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType,
       final @NotNull Throwable throwable) {
     return ignoredExceptionsForType.contains(throwable.getClass());
+  }
+
+  /**
+   * Rethrows callback exception and error markers, including those nested in a cause chain,
+   * regardless of the current strict-callback-mode setting. Call before logging or discard
+   * accounting at SDK error-isolation boundaries. Other throwables are left for the caller to
+   * handle.
+   *
+   * @param throwable the failure to check
+   */
+  public static void maybeRethrow(final @NotNull Throwable throwable) {
+    final Throwable failure = findCallbackException(throwable);
+    if (failure instanceof SentryCallbackError) {
+      throw (SentryCallbackError) failure;
+    }
+    if (failure instanceof SentryCallbackException) {
+      throw (SentryCallbackException) failure;
+    }
+  }
+
+  static @Nullable Throwable findCallbackException(@Nullable Throwable throwable) {
+    if (throwable == null) {
+      return null;
+    }
+    final Set<Throwable> visited =
+        Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
+    while (throwable != null && visited.add(throwable)) {
+      if (throwable instanceof SentryCallbackException
+          || throwable instanceof SentryCallbackError) {
+        return throwable;
+      }
+      throwable =
+          throwable instanceof ExceptionMechanismException
+              ? ((ExceptionMechanismException) throwable).getThrowable()
+              : throwable.getCause();
+    }
+    return null;
   }
 
   /**

@@ -4,6 +4,7 @@
 
 ### Features
 
+- Add opt-in `strictCallbackMode` to propagate user callback failures as SDK exception or error wrappers. Events containing these failures are silently excluded from capture, including when nested in another exception, to avoid sending data without callback filtering. Configure it through SDK options, `strict-callback-mode` in external configuration, or `io.sentry.strict-callback-mode` in the Android manifest. Disabled by default ([#6173](https://github.com/getsentry/sentry-java/pull/6173))
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
   - Use `SentryNavEffect` to record navigation transactions, breadcrumbs, screen names, and additional context as your nav back stack changes.
   - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/) for additional details.

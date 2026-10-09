@@ -232,7 +232,7 @@ public final class SentryGraphqlInstrumentation {
           final @Nullable Object result =
               maybeCallSubscriptionHandler(parameters, environment, tmpResult);
           if (result instanceof CompletableFuture) {
-            ((CompletableFuture<?>) result)
+            return ((CompletableFuture<?>) result)
                 .whenComplete(
                     (r, ex) -> {
                       if (ex != null) {
@@ -249,6 +249,7 @@ public final class SentryGraphqlInstrumentation {
           }
           return result;
         } catch (Throwable e) {
+          io.sentry.util.ExceptionUtils.maybeRethrow(e);
           span.setThrowable(e);
           span.setStatus(SpanStatus.INTERNAL_ERROR);
           finish(span, environment);
@@ -290,7 +291,17 @@ public final class SentryGraphqlInstrumentation {
       ISpan newSpan = span;
       try {
         newSpan = beforeSpan.execute(span, environment, result);
-      } catch (Exception e) {
+      } catch (Exception | Error e) {
+        final io.sentry.SentryOptions options =
+            scopesFromContext(environment.getGraphQlContext()).getOptions();
+        if (options.isStrictCallbackMode()) {
+          span.getSpanContext().setSampled(false);
+          span.finish();
+        }
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
+        if (e instanceof Error) {
+          throw (Error) e;
+        }
         span.getSpanContext().setSampled(false);
         if (wasSampled) {
           scopesFromContext(environment.getGraphQlContext())

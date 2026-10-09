@@ -69,6 +69,7 @@ public final class EventSizeLimitingUtils {
             return reducedEvent;
           }
         } catch (Throwable e) {
+          CallbackUtils.rethrowIfStrictCallbackMode(options, e);
           options
               .getLogger()
               .log(
@@ -96,6 +97,7 @@ public final class EventSizeLimitingUtils {
 
       return reducedEvent;
     } catch (Throwable e) {
+      ExceptionUtils.maybeRethrow(e);
       options
           .getLogger()
           .log(

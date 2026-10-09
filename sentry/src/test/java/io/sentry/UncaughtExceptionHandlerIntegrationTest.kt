@@ -60,6 +60,23 @@ class UncaughtExceptionHandlerIntegrationTest {
   private val fixture = Fixture()
 
   @Test
+  fun `callback failures skip all SDK handling but reach the application handler`() {
+    val sut = fixture.getSut(hasDefaultHandler = true)
+    sut.register(fixture.scopes, fixture.options)
+    org.mockito.kotlin.clearInvocations(fixture.scopes, fixture.logger)
+    for (marker in
+      listOf(
+        io.sentry.exception.SentryCallbackException(IllegalStateException("private")),
+        io.sentry.exception.SentryCallbackError(LinkageError("private")),
+      )) {
+      val failure = java.util.concurrent.CompletionException(marker)
+      sut.uncaughtException(fixture.thread, failure)
+      verify(fixture.defaultHandler).uncaughtException(fixture.thread, failure)
+    }
+    org.mockito.kotlin.verifyNoInteractions(fixture.scopes, fixture.logger)
+  }
+
+  @Test
   fun `when UncaughtExceptionHandlerIntegration is initialized, uncaught handler is unchanged`() {
     fixture.getSut(isPrintUncaughtStackTrace = false)
 

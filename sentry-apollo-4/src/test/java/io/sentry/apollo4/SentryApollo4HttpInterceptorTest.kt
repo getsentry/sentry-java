@@ -352,6 +352,28 @@ abstract class SentryApollo4HttpInterceptorTest(
   }
 
   @Test
+  fun `strict beforeSpan failures escape and finish dropped spans`(): Unit = runBlocking {
+    fixture.options.isStrictCallbackMode = true
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      val tx =
+        SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+      whenever(fixture.scopes.span).thenReturn(tx)
+      val sut = fixture.getSut(beforeSpan = { _, _, _ -> throw failure })
+      val thrown =
+        kotlin.test.assertFails {
+          kotlinx.coroutines.withTimeout(5000) {
+            executeQueryImplementation(sut.query(LaunchDetailsQuery("83")))
+          }
+        }
+      assertThat(io.sentry.util.CallbackUtils.isCallbackException(thrown)).isTrue()
+      assertThat(generateSequence(thrown) { it.cause }.toList()).contains(failure)
+      assertThat(tx.children.single().isSampled).isFalse()
+      assertThat(tx.children.single().isFinished).isTrue()
+      sut.close()
+    }
+  }
+
+  @Test
   fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
     val failure = IllegalStateException("callback failed")
     val logger = mock<ILogger>()

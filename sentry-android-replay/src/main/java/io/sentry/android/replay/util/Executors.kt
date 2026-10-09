@@ -15,10 +15,12 @@ internal fun ISentryExecutorService.submitSafely(
       try {
         task.run()
       } catch (e: Throwable) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e)
         options.logger.log(ERROR, "Failed to execute task $taskName", e)
       }
     }
   } catch (e: Throwable) {
+    io.sentry.util.ExceptionUtils.maybeRethrow(e)
     options.logger.log(ERROR, "Failed to submit task $taskName to executor", e)
     null
   }

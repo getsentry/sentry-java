@@ -6,6 +6,7 @@ import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryLogLevel
+import io.sentry.SentryOptions
 import io.sentry.checkEvent
 import io.sentry.checkLogs
 import io.sentry.logger.ILoggerBatchProcessorFactory
@@ -141,6 +142,35 @@ class SentryAppenderTest {
         checkEvent { event -> assertEquals("manual-environment", event.environment) },
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `callback failures are excluded before events breadcrumbs and logs`() {
+    val logger = fixture.getSut()
+    val options = Sentry.getCurrentScopes().options
+    options.logs.isEnabled = true
+    val beforeSend = mock<SentryOptions.BeforeSendCallback>()
+    val beforeBreadcrumb = mock<SentryOptions.BeforeBreadcrumbCallback>()
+    val beforeLog = mock<SentryOptions.Logs.BeforeSendLogCallback>()
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    options.beforeSend = beforeSend
+    options.beforeBreadcrumb = beforeBreadcrumb
+    options.logs.beforeSend = beforeLog
+    options.onDiscard = onDiscard
+    for (marker in
+      listOf(
+        io.sentry.exception.SentryCallbackException(IllegalStateException()),
+        io.sentry.exception.SentryCallbackError(LinkageError()),
+      )) {
+      logger.error("private", java.util.concurrent.CompletionException(marker))
+    }
+    org.mockito.kotlin.verifyNoInteractions(
+      beforeSend,
+      beforeBreadcrumb,
+      beforeLog,
+      onDiscard,
+      fixture.transport,
+    )
   }
 
   @Test

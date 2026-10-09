@@ -375,8 +375,23 @@ public open class SentryOkHttpInterceptor(
       val result =
         try {
           beforeSpan.execute(span, request, response)
+        } catch (e: Error) {
+          if (scopes.options.isStrictCallbackMode) {
+            span.spanContext.sampled = false
+            response?.close()
+            if (!isFromEventListener) span.finish()
+            okHttpEvent?.finish()
+          }
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(scopes.options, e)
+          throw e
         } catch (e: Exception) {
           span.spanContext.sampled = false
+          if (scopes.options.isStrictCallbackMode) {
+            response?.close()
+            if (!isFromEventListener) span.finish()
+            okHttpEvent?.finish()
+          }
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(scopes.options, e)
           if (wasSampled) {
             scopes.options.clientReportRecorder.recordLostEvent(
               DiscardReason.CALLBACK_ERROR,

@@ -96,6 +96,7 @@ internal class WindowRecorder(
         }
         recorder?.capture()
       } catch (e: Throwable) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e)
         options.logger.log(ERROR, "Failed to capture a frame", e)
       }
 

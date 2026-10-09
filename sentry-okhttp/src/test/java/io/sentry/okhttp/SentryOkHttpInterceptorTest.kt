@@ -480,6 +480,29 @@ class SentryOkHttpInterceptorTest {
   }
 
   @Test
+  fun `strict beforeSpan failures propagate and finish dropped spans`() {
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      val fixture = Fixture()
+      val sut = fixture.getSut(beforeSpan = { _, _, _ -> throw failure })
+      fixture.options.isStrictCallbackMode = true
+      val thrown =
+        kotlin.test.assertFails {
+          sut.newCall(Request.Builder().url(fixture.server.url("/hello")).build()).execute()
+        }
+      assertThat(thrown)
+        .isInstanceOf(
+          if (failure is Error) io.sentry.exception.SentryCallbackError::class.java
+          else io.sentry.exception.SentryCallbackException::class.java
+        )
+      assertThat(thrown.cause).isSameInstanceAs(failure)
+      val span = fixture.sentryTracer.children.single()
+      assertThat(span.isSampled).isFalse()
+      assertThat(span.isFinished).isTrue()
+      fixture.server.shutdown()
+    }
+  }
+
+  @Test
   fun `when beforeSpan throws, drops span and preserves response`() {
     val failure = IllegalStateException("callback failed")
     val logger = mock<ILogger>()
@@ -507,6 +530,24 @@ class SentryOkHttpInterceptorTest {
         "The beforeSpan callback threw an exception in SentryOkHttpInterceptor. Dropping span.",
         failure,
       )
+  }
+
+  @Test
+  fun `strict beforeSpan failure closes response and event listener state`() {
+    val failure = IllegalStateException("private")
+    val sut =
+      fixture.getSut(
+        beforeSpan = { _, _, _ -> throw failure },
+        eventListener = SentryOkHttpEventListener(fixture.scopes),
+      )
+    fixture.options.isStrictCallbackMode = true
+    val call = sut.newCall(getRequest())
+    val thrown = kotlin.test.assertFails { call.execute() }
+    assertThat(thrown.cause).isSameInstanceAs(failure)
+    assertThat(SentryOkHttpEventListener.eventMap).doesNotContainKey(call)
+    val span = fixture.sentryTracer.children.first { it.operation == "http.client" }
+    assertThat(span.isFinished).isTrue()
+    assertThat(span.isSampled).isFalse()
   }
 
   @Test

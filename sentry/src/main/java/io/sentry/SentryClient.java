@@ -94,6 +94,9 @@ public final class SentryClient implements ISentryClient {
   public @NotNull SentryId captureEvent(
       @NotNull SentryEvent event, final @Nullable IScope scope, @Nullable Hint hint) {
     Objects.requireNonNull(event, "SentryEvent is required.");
+    if (io.sentry.util.CallbackUtils.isCallbackException(event.getThrowable())) {
+      return SentryId.EMPTY_ID;
+    }
 
     // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
     if (SentryCallbackReentrancyGuard.isActive()) {
@@ -229,6 +232,7 @@ public final class SentryClient implements ISentryClient {
         try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
           shouldCaptureReplay = beforeErrorSampling.execute(event, hint);
         } catch (Throwable e) {
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
           options
               .getLogger()
               .log(
@@ -494,6 +498,10 @@ public final class SentryClient implements ISentryClient {
           event = processor.process(event, hint);
         }
       } catch (Throwable e) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e);
+        if (!(processor instanceof SentryEventProcessor)) {
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
+        }
         options
             .getLogger()
             .log(
@@ -551,6 +559,10 @@ public final class SentryClient implements ISentryClient {
       try {
         event = processor.process(event);
       } catch (Throwable e) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e);
+        if (!(processor instanceof SentryEventProcessor)) {
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
+        }
         options
             .getLogger()
             .log(
@@ -588,6 +600,10 @@ public final class SentryClient implements ISentryClient {
       try {
         event = processor.process(event, hint);
       } catch (Throwable e) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e);
+        if (!(processor instanceof SentryEventProcessor)) {
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
+        }
         options
             .getLogger()
             .log(
@@ -625,6 +641,10 @@ public final class SentryClient implements ISentryClient {
       try {
         transaction = processor.process(transaction, hint);
       } catch (Throwable e) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e);
+        if (!(processor instanceof SentryEventProcessor)) {
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
+        }
         options
             .getLogger()
             .log(
@@ -698,6 +718,10 @@ public final class SentryClient implements ISentryClient {
       try {
         replayEvent = processor.process(replayEvent, hint);
       } catch (Throwable e) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e);
+        if (!(processor instanceof SentryEventProcessor)) {
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
+        }
         options
             .getLogger()
             .log(
@@ -738,6 +762,10 @@ public final class SentryClient implements ISentryClient {
       try {
         feedbackEvent = processor.process(feedbackEvent, hint);
       } catch (Throwable e) {
+        io.sentry.util.ExceptionUtils.maybeRethrow(e);
+        if (!(processor instanceof SentryEventProcessor)) {
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
+        }
         options
             .getLogger()
             .log(
@@ -997,6 +1025,7 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         beforeEnvelopeCallback.execute(envelope, hint);
       } catch (Throwable e) {
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
         options
             .getLogger()
             .log(SentryLevel.ERROR, "The BeforeEnvelope callback threw an exception.", e);
@@ -1660,6 +1689,7 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSend.execute(event, hint);
       } catch (Throwable e) {
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
         options
             .getLogger()
             .log(
@@ -1689,6 +1719,7 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         transaction = beforeSendTransaction.execute(transaction, hint);
       } catch (Throwable e) {
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
         options
             .getLogger()
             .log(
@@ -1749,6 +1780,7 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendFeedback.execute(event, hint);
       } catch (Throwable e) {
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
         options
             .getLogger()
             .log(
@@ -1776,6 +1808,7 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendReplay.execute(event, hint);
       } catch (Throwable e) {
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
         options
             .getLogger()
             .log(
@@ -1804,6 +1837,7 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendLog.execute(event);
       } catch (Throwable e) {
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
         options
             .getLogger()
             .log(
@@ -1829,6 +1863,7 @@ public final class SentryClient implements ISentryClient {
       try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
         event = beforeSendMetric.execute(event, hint);
       } catch (Throwable e) {
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(options, e);
         options
             .getLogger()
             .log(

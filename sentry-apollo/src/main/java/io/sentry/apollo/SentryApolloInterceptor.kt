@@ -180,8 +180,17 @@ class SentryApolloInterceptor(
       val wasSampled = span.isSampled == true
       try {
         newSpan = beforeSpan.execute(span, request, response)
+      } catch (e: Error) {
+        if (scopes.options.isStrictCallbackMode) {
+          span.spanContext.sampled = false
+          span.finish()
+        }
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(scopes.options, e)
+        throw e
       } catch (e: Exception) {
         span.spanContext.sampled = false
+        if (scopes.options.isStrictCallbackMode) span.finish()
+        io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(scopes.options, e)
         if (wasSampled) {
           scopes.options.clientReportRecorder.recordLostEvent(
             DiscardReason.CALLBACK_ERROR,

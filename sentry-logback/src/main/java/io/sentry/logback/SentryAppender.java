@@ -88,6 +88,11 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   @Override
   protected void append(@NotNull ILoggingEvent eventObject) {
+    if (eventObject.getThrowableProxy() instanceof ThrowableProxy
+        && io.sentry.util.CallbackUtils.isCallbackException(
+            ((ThrowableProxy) eventObject.getThrowableProxy()).getThrowable())) {
+      return;
+    }
     if (ScopesAdapter.getInstance().getOptions().getLogs().isEnabled()
         && eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
       captureLog(eventObject);

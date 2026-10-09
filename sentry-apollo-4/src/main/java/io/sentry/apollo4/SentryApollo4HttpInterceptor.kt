@@ -226,6 +226,11 @@ constructor(
           }
         } catch (e: Throwable) {
           span.spanContext.sampled = false
+          if (scopes.options.isStrictCallbackMode) {
+            response?.body?.close()
+            span.finish()
+          }
+          io.sentry.util.CallbackUtils.rethrowIfStrictCallbackMode(scopes.options, e)
           if (wasSampled) {
             scopes.options.clientReportRecorder.recordLostEvent(
               DiscardReason.CALLBACK_ERROR,
@@ -449,6 +454,7 @@ constructor(
 
       scopes.captureEvent(event, hint)
     } catch (e: Throwable) {
+      io.sentry.util.ExceptionUtils.maybeRethrow(e)
       scopes.options.logger.log(SentryLevel.ERROR, "Error capturing the GraphQL error.", e)
     }
   }

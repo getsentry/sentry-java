@@ -30,6 +30,7 @@ import io.sentry.SentryOptions;
 import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
+import io.sentry.util.CallbackUtils;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import io.sentry.util.LoadClass;
@@ -65,10 +66,14 @@ public class SentryUserFeedbackForm extends AlertDialog {
     this.resolvedFeedbackOptions =
         new SentryFeedbackOptions(Sentry.getCurrentScopes().getOptions().getFeedbackOptions());
     if (configuration != null) {
-      configuration.configure(context, resolvedFeedbackOptions);
+      CallbackUtils.run(
+          Sentry.getCurrentScopes().getOptions(),
+          () -> configuration.configure(context, resolvedFeedbackOptions));
     }
     if (configurator != null) {
-      configurator.configure(resolvedFeedbackOptions);
+      CallbackUtils.run(
+          Sentry.getCurrentScopes().getOptions(),
+          () -> configurator.configure(resolvedFeedbackOptions));
     }
     SentryIntegrationPackageStorage.getInstance().addIntegration("UserFeedbackWidget");
     maybeStartShakeDetection(context);
@@ -338,37 +343,44 @@ public class SentryUserFeedbackForm extends AlertDialog {
           final @NotNull Hint hint = new Hint();
           maybeAddImageAttachment(hint);
           final @NotNull SentryId id = Sentry.feedback().capture(feedback, hint);
-          if (!id.equals(SentryId.EMPTY_ID)) {
-            Toast.makeText(
-                    getContext(), feedbackOptions.getSuccessMessageText(), Toast.LENGTH_SHORT)
-                .show();
-            final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess =
-                feedbackOptions.getOnSubmitSuccess();
-            if (onSubmitSuccess != null) {
-              try {
-                onSubmitSuccess.call(feedback);
-              } catch (Exception e) {
-                Sentry.getCurrentScopes()
-                    .getOptions()
-                    .getLogger()
-                    .log(SentryLevel.ERROR, "onSubmitSuccess callback threw an exception.", e);
+          try {
+            if (!id.equals(SentryId.EMPTY_ID)) {
+              Toast.makeText(
+                      getContext(), feedbackOptions.getSuccessMessageText(), Toast.LENGTH_SHORT)
+                  .show();
+              final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitSuccess =
+                  feedbackOptions.getOnSubmitSuccess();
+              if (onSubmitSuccess != null) {
+                try {
+                  CallbackUtils.run(
+                      Sentry.getCurrentScopes().getOptions(), () -> onSubmitSuccess.call(feedback));
+                } catch (Exception e) {
+                  ExceptionUtils.maybeRethrow(e);
+                  Sentry.getCurrentScopes()
+                      .getOptions()
+                      .getLogger()
+                      .log(SentryLevel.ERROR, "onSubmitSuccess callback threw an exception.", e);
+                }
+              }
+            } else {
+              final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitError =
+                  feedbackOptions.getOnSubmitError();
+              if (onSubmitError != null) {
+                try {
+                  CallbackUtils.run(
+                      Sentry.getCurrentScopes().getOptions(), () -> onSubmitError.call(feedback));
+                } catch (Exception e) {
+                  ExceptionUtils.maybeRethrow(e);
+                  Sentry.getCurrentScopes()
+                      .getOptions()
+                      .getLogger()
+                      .log(SentryLevel.ERROR, "onSubmitError callback threw an exception.", e);
+                }
               }
             }
-          } else {
-            final @Nullable SentryFeedbackOptions.SentryFeedbackCallback onSubmitError =
-                feedbackOptions.getOnSubmitError();
-            if (onSubmitError != null) {
-              try {
-                onSubmitError.call(feedback);
-              } catch (Exception e) {
-                Sentry.getCurrentScopes()
-                    .getOptions()
-                    .getLogger()
-                    .log(SentryLevel.ERROR, "onSubmitError callback threw an exception.", e);
-              }
-            }
+          } finally {
+            cancel();
           }
-          cancel();
         });
 
     btnCancel.setText(feedbackOptions.getCancelButtonLabel());
@@ -388,13 +400,15 @@ public class SentryUserFeedbackForm extends AlertDialog {
             // User-provided callback: a crash in it must not take down the app or skip the
             // cleanup and the user's own dismiss listener below
             try {
-              onFormClose.run();
+              CallbackUtils.run(options, onFormClose);
             } catch (Exception e) {
+              ExceptionUtils.maybeRethrow(e);
               options
                   .getLogger()
                   .log(SentryLevel.ERROR, "onFormClose callback threw an exception.", e);
+            } finally {
+              currentReplayId = null;
             }
-            currentReplayId = null;
             if (delegate != null) {
               delegate.onDismiss(dialog);
             }
@@ -426,8 +440,9 @@ public class SentryUserFeedbackForm extends AlertDialog {
     final @Nullable Runnable onFormOpen = feedbackOptions.getOnFormOpen();
     if (onFormOpen != null) {
       try {
-        onFormOpen.run();
+        CallbackUtils.run(options, onFormOpen);
       } catch (Exception e) {
+        ExceptionUtils.maybeRethrow(e);
         options.getLogger().log(SentryLevel.ERROR, "onFormOpen callback threw an exception.", e);
       }
     }

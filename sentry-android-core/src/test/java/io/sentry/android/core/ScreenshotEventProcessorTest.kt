@@ -315,6 +315,22 @@ class ScreenshotEventProcessorTest {
   }
 
   @Test
+  fun `strict capture failures propagate without attaching screenshot`() {
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+    fixture.options.isStrictCallbackMode = true
+    val processor = fixture.getSut(true)
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      fixture.options.setBeforeScreenshotCaptureCallback { _, _, _ -> throw failure }
+      val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+      val hint = Hint()
+      val thrown = kotlin.test.assertFails { processor.process(event, hint) }
+      assertThat(io.sentry.util.CallbackUtils.isCallbackException(thrown)).isTrue()
+      assertThat(thrown.cause).isSameInstanceAs(failure)
+      assertThat(hint.screenshot).isNull()
+    }
+  }
+
+  @Test
   fun `when capture callback throws, skips screenshot and retains event`() {
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
     val logger = mock<ILogger>()

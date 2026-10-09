@@ -36,6 +36,7 @@ final class ManifestMetadataReader {
 
   static final String DSN = "io.sentry.dsn";
   static final String DEBUG = "io.sentry.debug";
+  static final String STRICT_CALLBACK_MODE = "io.sentry.strict-callback-mode";
   static final String DEBUG_LEVEL = "io.sentry.debug.level";
   static final String SAMPLE_RATE = "io.sentry.sample-rate";
   static final String ANR_ENABLE = "io.sentry.anr.enable";
@@ -256,6 +257,8 @@ final class ManifestMetadataReader {
 
       if (metadata != null) {
         options.setDebug(readBool(metadata, logger, DEBUG, options.isDebug()));
+        options.setStrictCallbackMode(
+            readBool(metadata, logger, STRICT_CALLBACK_MODE, options.isStrictCallbackMode()));
 
         if (options.isDebug()) {
           final @Nullable String level =

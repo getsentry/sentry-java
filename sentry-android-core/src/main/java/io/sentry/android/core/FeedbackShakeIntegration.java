@@ -300,6 +300,7 @@ public final class FeedbackShakeIntegration
                   if (dialog != null) {
                     onDialogGone(dialog);
                   }
+                  io.sentry.util.ExceptionUtils.maybeRethrow(e);
                   options
                       .getLogger()
                       .log(SentryLevel.ERROR, "Failed to show feedback dialog on shake.", e);

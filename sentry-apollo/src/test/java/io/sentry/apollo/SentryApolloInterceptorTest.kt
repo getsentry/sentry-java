@@ -40,6 +40,7 @@ import okhttp3.mockwebserver.SocketPolicy
 import org.junit.Before
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
@@ -269,6 +270,33 @@ class SentryApolloInterceptorTest {
         verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
       }
       verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `strict beforeSpan failures escape asynchronous completion callback`() {
+    fixture.options.isStrictCallbackMode = true
+    for (failure in listOf(IllegalStateException("private"), LinkageError("private"))) {
+      val tx =
+        SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+      whenever(fixture.scopes.span).thenReturn(tx)
+      val chain = mock<com.apollographql.apollo.interceptor.ApolloInterceptorChain>()
+      val callback =
+        argumentCaptor<com.apollographql.apollo.interceptor.ApolloInterceptor.CallBack>()
+      val sut = SentryApolloInterceptor(fixture.scopes) { _, _, _ -> throw failure }
+      val request =
+        com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest.builder(
+            LaunchDetailsQuery.builder().id("83").build()
+          )
+          .build()
+      sut.interceptAsync(request, chain, java.util.concurrent.Executor { it.run() }, mock())
+      verify(chain).proceedAsync(any(), any(), callback.capture())
+      val thrown =
+        kotlin.test.assertFails { callback.firstValue.onFailure(ApolloException("request")) }
+      assertThat(thrown.cause).isSameInstanceAs(failure)
+      assertThat(io.sentry.util.CallbackUtils.isCallbackException(thrown)).isTrue()
+      assertThat(tx.children.single().isSampled).isFalse()
+      assertThat(tx.children.single().isFinished).isTrue()
     }
   }
 
