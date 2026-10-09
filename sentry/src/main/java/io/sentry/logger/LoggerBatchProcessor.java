@@ -36,6 +36,7 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
   private final @NotNull Queue<SentryLogEvent> queue;
   private final @NotNull ISentryExecutorService executorService;
   private final @NotNull AtomicBoolean hasScheduled = new AtomicBoolean(false);
+  private volatile boolean hasAcceptedItem = false;
   private volatile boolean isShuttingDown = false;
 
   private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
@@ -75,6 +76,7 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
     }
     pendingCount.increment();
     queue.offer(logEvent);
+    hasAcceptedItem = true;
     maybeSchedule(false);
   }
 
@@ -82,14 +84,14 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
   @Override
   public void close(final boolean isRestarting) {
     isShuttingDown = true;
-    if (isRestarting) {
+    if (isRestarting && hasAcceptedItem) {
       maybeSchedule(true);
       executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
-    } else {
-      executorService.close(options.getShutdownTimeoutMillis());
-      while (!queue.isEmpty()) {
-        flushBatch();
-      }
+      return;
+    }
+    executorService.close(options.getShutdownTimeoutMillis());
+    while (!queue.isEmpty()) {
+      flushBatch();
     }
   }
 
@@ -114,6 +116,9 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
 
   @Override
   public void flush(long timeoutMillis) {
+    if (!hasAcceptedItem) {
+      return;
+    }
     maybeSchedule(true);
     try {
       pendingCount.waitTillZero(timeoutMillis, TimeUnit.MILLISECONDS);
