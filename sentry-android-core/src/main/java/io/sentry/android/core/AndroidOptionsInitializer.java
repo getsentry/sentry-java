@@ -452,7 +452,7 @@ final class AndroidOptionsInitializer {
 
     // AppLifecycleIntegration has to be installed before AnrIntegration, because AnrIntegration
     // relies on AppState set by it
-    options.addIntegration(new AppLifecycleIntegration());
+    options.addIntegration(new AppLifecycleIntegration(context, buildInfoProvider));
     // AnrIntegration must be installed before ReplayIntegration, as ReplayIntegration relies on
     // it to set the replayId in case of an ANR
     options.addIntegration(AnrIntegrationFactory.create(context, buildInfoProvider));
