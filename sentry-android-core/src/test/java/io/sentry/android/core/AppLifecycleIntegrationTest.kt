@@ -145,6 +145,20 @@ class AppLifecycleIntegrationTest {
 
   @Test
   @Config(sdk = [37])
+  fun `the deprecated no-arg constructor installs the integration without the ANR warning listener`() {
+    @Suppress("DEPRECATION") val sut = AppLifecycleIntegration()
+
+    sut.register(fixture.scopes, fixture.options)
+
+    assertNotNull(sut.watcher)
+
+    sut.close()
+
+    assertNull(sut.watcher)
+  }
+
+  @Test
+  @Config(sdk = [37])
   fun `ANR warning listener is not registered below API 37`() {
     val activityManager = mock<ActivityManager>()
     val sut = getSutWithActivityManager(activityManager, sdkVersion = 36)

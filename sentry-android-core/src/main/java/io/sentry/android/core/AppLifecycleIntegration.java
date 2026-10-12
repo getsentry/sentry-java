@@ -43,10 +43,21 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
 
   private @Nullable SentryAndroidOptions options;
 
-  private final @NotNull Context context;
-  private final @NotNull BuildInfoProvider buildInfoProvider;
+  // Both null when created through the deprecated no-arg constructor, which skips ANR warnings.
+  private final @Nullable Context context;
+  private final @Nullable BuildInfoProvider buildInfoProvider;
   private @Nullable Consumer<AnrWarningResult> anrWarningConsumer;
   private boolean isClosed;
+
+  /**
+   * @deprecated Without a {@link Context} the integration cannot listen for ANR warnings. Use
+   *     {@link #AppLifecycleIntegration(Context, BuildInfoProvider)} instead.
+   */
+  @Deprecated
+  public AppLifecycleIntegration() {
+    this.context = null;
+    this.buildInfoProvider = null;
+  }
 
   public AppLifecycleIntegration(
       final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
@@ -128,6 +139,13 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
    */
   private void scheduleRegisterAnrWarningListener(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
+    final @Nullable Context context = this.context;
+    if (context == null || buildInfoProvider == null) {
+      options
+          .getLogger()
+          .log(SentryLevel.DEBUG, "ANR warning listener needs a Context, not installed.");
+      return;
+    }
     if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.CINNAMON_BUN) {
       options
           .getLogger()
@@ -136,7 +154,9 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     }
 
     try {
-      options.getExecutorService().submit(() -> registerAnrWarningListener(scopes, options));
+      options
+          .getExecutorService()
+          .submit(() -> registerAnrWarningListener(context, scopes, options));
     } catch (RejectedExecutionException e) {
       options
           .getLogger()
@@ -171,7 +191,9 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
   // before this ever runs. The suppression is scoped so that register() stays lint-checked.
   @SuppressLint("NewApi")
   private void registerAnrWarningListener(
-      final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
+      final @NotNull Context context,
+      final @NotNull IScopes scopes,
+      final @NotNull SentryAndroidOptions options) {
     final @Nullable ActivityManager activityManager =
         (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
     if (activityManager == null) {
@@ -216,7 +238,8 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       anrWarningConsumer = null;
     }
 
-    if (consumerRef == null) {
+    final @Nullable Context context = this.context;
+    if (consumerRef == null || context == null) {
       return;
     }
 
