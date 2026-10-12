@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Avoid `StackOverflowError` in `Scopes.isAncestorOf` on deep `Scopes` chains ([#NNNN](https://github.com/getsentry/sentry-java/pull/NNNN))
+- Avoid `StackOverflowError` in `Scopes.isAncestorOf` on deep `Scopes` chains ([#6249](https://github.com/getsentry/sentry-java/pull/6249))
 
 ## 8.60.0
 
