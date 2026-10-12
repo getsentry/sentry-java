@@ -140,7 +140,10 @@ subprojects {
             // FileDescriptor fields in ApplicationSharedMemory; without this, setup fails with
             // "Failed to interact with raw FileDescriptor internals".
             tasks.withType<Test>().configureEach {
-                jvmArgs("--add-opens=java.base/java.io=ALL-UNNAMED")
+                jvmArgs(
+                    "--add-opens=java.base/java.io=ALL-UNNAMED",
+                    "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
+                )
             }
         }
     }
