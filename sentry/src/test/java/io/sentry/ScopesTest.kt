@@ -170,6 +170,38 @@ class ScopesTest {
   }
 
   @Test
+  fun `isAncestorOf does not overflow the stack on a deep chain`() {
+    val options = SentryOptions()
+    options.cacheDirPath = file.absolutePath
+    options.dsn = "https://key@sentry.io/proj"
+    options.setSerializer(mock())
+    val root = createScopes(options)
+    var deepest: IScopes = root
+    repeat(20_000) { deepest = deepest.forkedCurrentScope("deep") }
+
+    val result = AtomicReference<Any>()
+    val thread =
+      Thread(
+        null,
+        {
+          result.set(
+            try {
+              root.isAncestorOf(deepest)
+            } catch (e: StackOverflowError) {
+              e
+            }
+          )
+        },
+        "small-stack",
+        256 * 1024,
+      )
+    thread.start()
+    thread.join()
+
+    assertEquals(true, result.get())
+  }
+
+  @Test
   fun `when scopes is initialized, breadcrumbs are capped as per options`() {
     val options = SentryOptions()
     options.cacheDirPath = file.absolutePath

@@ -96,18 +96,13 @@ public final class Scopes implements IScopes {
   @Override
   @ApiStatus.Internal
   public boolean isAncestorOf(final @Nullable IScopes otherScopes) {
-    if (otherScopes == null) {
-      return false;
+    @Nullable IScopes candidate = otherScopes;
+    while (candidate != null) {
+      if (this == candidate) {
+        return true;
+      }
+      candidate = candidate.getParentScopes();
     }
-
-    if (this == otherScopes) {
-      return true;
-    }
-
-    if (otherScopes.getParentScopes() != null) {
-      return isAncestorOf(otherScopes.getParentScopes());
-    }
-
     return false;
   }
 
