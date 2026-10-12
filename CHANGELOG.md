@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Avoid `StackOverflowError` in `Scopes.isAncestorOf` on deep `Scopes` chains ([#NNNN](https://github.com/getsentry/sentry-java/pull/NNNN))
+
 ## 8.60.0
 
 ### Features
