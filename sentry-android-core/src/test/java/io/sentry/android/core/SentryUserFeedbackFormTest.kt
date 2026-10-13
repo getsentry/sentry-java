@@ -224,6 +224,16 @@ class SentryUserFeedbackFormTest {
   }
 
   @Test
+  fun `when configurator throws a fatal error, it is not swallowed`() {
+    val failure = OutOfMemoryError("configurator failed")
+
+    val thrown =
+      assertFailsWith<OutOfMemoryError> { fixture.getSut(configurator = { throw failure }) }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+  }
+
+  @Test
   fun `dialog window does not have FLAG_ALT_FOCUSABLE_IM so soft keyboard can appear`() {
     fixture.options.isEnabled = true
     val sut = fixture.getSut()
