@@ -4,7 +4,7 @@
 
 ### Breaking Changes
 
-- Remove deprecated OpenTelemetry integration classes from `sentry-opentelemetry-core` ([#6243](https://github.com/getsentry/sentry-java/pull/6243))
+- Remove deprecated OpenTelemetry integration classes and the legacy `SentrySpanStorage` ([#6243](https://github.com/getsentry/sentry-java/pull/6243))
 - Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
 
 ### Features
