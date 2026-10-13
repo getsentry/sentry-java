@@ -1,10 +1,9 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
-// Compilation and tests run on this JDK whatever JDK runs Gradle. Error Prone 2.50 ships Java 21
-// bytecode, so javac itself has to be 21; on JDK 17 it fails with "UnsupportedClassVersionError:
-// com/google/errorprone/ErrorProneJavacPlugin". This picks the JDK only - every module pins the
-// bytecode level it publishes itself.
+// Compilation and tests run on this JDK whatever JDK runs Gradle, so a contributor on a newer JDK
+// gets the same output as CI. Error Prone 2.50 ships Java 21 bytecode and needs javac 21 as well.
+// This picks the JDK only - every module pins the bytecode level it publishes itself.
 val buildJdk = JavaLanguageVersion.of(21)
 
 plugins.withType<JavaBasePlugin> {

@@ -5,9 +5,9 @@ We suggest opening an issue to discuss bigger changes before investing on a big 
 
 # Requirements
 
-Gradle runs on JDK 17 or newer. Compilation and tests use a JDK 21
-[toolchain](https://docs.gradle.org/current/userguide/toolchains.html), so you also need a
-JDK 21 installed; Gradle finds it in the usual locations (`JAVA_HOME`, SDKMAN!, asdf, IntelliJ).
+The project requires you to run JDK 21 or newer. Compilation and tests always happen on JDK 21
+through a [toolchain](https://docs.gradle.org/current/userguide/toolchains.html), so a newer JDK
+runs the build but never changes its output.
 
 ## Android
 

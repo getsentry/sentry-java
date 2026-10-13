@@ -29,10 +29,8 @@ plugins {
     alias(libs.plugins.sentry) apply false
 }
 
-// Only the Gradle daemon itself, buildSrc and the plugins run on this JDK; compilation and tests
-// use the JDK 21 toolchain configured below. 17 is the minimum AGP 9 accepts.
-check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
-    "This build requires JDK 17 or newer to run Gradle, but runs on JDK ${JavaVersion.current()}."
+check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
+    "This build requires JDK 21 or newer, but runs on JDK ${JavaVersion.current()}."
 }
 
 buildscript {
