@@ -4,10 +4,19 @@
 
 ### Fixes
 
-- Keep Spring requests and event capture running when a `TransactionNameProvider` throws ([#6241](https://github.com/getsentry/sentry-java/pull/6241))
-- Keep the Android feedback form available when an options configurator throws ([#6239](https://github.com/getsentry/sentry-java/pull/6239))
-- Keep Spring requests running when a `SentryUserProvider` throws and discard the incomplete user identity ([#6240](https://github.com/getsentry/sentry-java/pull/6240))
-- Drop Apollo 5 spans when `beforeSpan` throws without disrupting the GraphQL request ([#6238](https://github.com/getsentry/sentry-java/pull/6238))
+- Fix SDK callback error handling ([#6140](https://github.com/getsentry/sentry-java/pull/6140))
+  - Drop telemetry when a `beforeSend*` callback throws and report it using `DiscardReason.CALLBACK_ERROR`.
+  - Drop transactions when `tracesSampler` throws instead of inheriting the parent sampling decision or falling back to `tracesSampleRate` ([#6163](https://github.com/getsentry/sentry-java/pull/6163)).
+  - Drop spans when `beforeSpan` throws without disrupting requests, covering OkHttp, OpenFeign, GraphQL, Ktor, and Apollo—including Apollo 5 ([#6167](https://github.com/getsentry/sentry-java/pull/6167), [#6238](https://github.com/getsentry/sentry-java/pull/6238)).
+  - Drop telemetry and record `callback_error` when a customer event processor throws instead of continuing with a potentially partially processed item. SDK-owned processor failures are logged and processing continues.
+  - Drop breadcrumbs when `beforeBreadcrumb` throws instead of storing exception details on the breadcrumb.
+  - No longer fail Spring requests when a `TransactionNameProvider` throws, falling back to `<unlabeled transaction>` ([#6241](https://github.com/getsentry/sentry-java/pull/6241)).
+  - No longer fail Spring requests when a `SentryUserProvider` throws and overwrite the user with an empty user object ([#6240](https://github.com/getsentry/sentry-java/pull/6240)).
+  - Disable profiling when `profilesSampler` throws instead of falling back to `profilesSampleRate` or inheriting the parent profiling decision ([#6164](https://github.com/getsentry/sentry-java/pull/6164)).
+  - Report attached profiles dropped by transaction callback errors as `callback_error` in client reports and `OnDiscardCallback` ([#6166](https://github.com/getsentry/sentry-java/pull/6166)).
+  - Skip replay capture when `beforeErrorSampling` throws while retaining the error event ([#6165](https://github.com/getsentry/sentry-java/pull/6165)).
+  - Skip Android screenshots or view hierarchies when their capture callbacks throw while retaining the error event ([#6167](https://github.com/getsentry/sentry-java/pull/6167)).
+  - Keep the Android feedback form available when its options configurator throws ([#6239](https://github.com/getsentry/sentry-java/pull/6239)).
 
 ### Dependencies
 
@@ -75,16 +84,6 @@
 
 ### Fixes
 
-- Fix SDK callback error handling ([#6140](https://github.com/getsentry/sentry-java/pull/6140))
-  - Add `DiscardReason.CALLBACK_ERROR` and use it for telemetry dropped when a `beforeSend*` callback throws. `OnDiscardCallback` can now receive this value.
-  - Report attached profiles dropped by transaction callback errors as `callback_error` in client reports and `OnDiscardCallback` ([#6166](https://github.com/getsentry/sentry-java/pull/6166))
-  - Drop telemetry and record `callback_error` when a customer event processor throws instead of continuing with a potentially partially processed item. SDK-owned processor failures are logged and processing continues without a `callback_error` client report.
-  - Drop breadcrumbs when `beforeBreadcrumb` throws instead of storing exception details on the breadcrumb.
-  - Skip Android screenshot or view hierarchy capture when its capture callback throws, while retaining the error event ([#6167](https://github.com/getsentry/sentry-java/pull/6167))
-  - Drop spans when `beforeSpan` throws in OkHttp, OpenFeign, GraphQL, Ktor, or Apollo, without disrupting the request. Report lost sampled spans as `callback_error` in client reports and `OnDiscardCallback` ([#6167](https://github.com/getsentry/sentry-java/pull/6167))
-  - Skip replay capture when `beforeErrorSampling` throws, while still sending the error event ([#6165](https://github.com/getsentry/sentry-java/pull/6165))
-  - When `tracesSampler` throws, drop the transaction and record `callback_error` instead of inheriting the parent sampling decision or falling back to `tracesSampleRate` ([#6163](https://github.com/getsentry/sentry-java/pull/6163))
-  - When `profilesSampler` throws, disable profiling instead of falling back to `profilesSampleRate` or inheriting the parent's profiling decision. Trace sampling is unchanged ([#6164](https://github.com/getsentry/sentry-java/pull/6164))
 - Disable URL caching when reading `META-INF/MANIFEST.MF` files during version detection so that the SDK no longer keeps jar file handles open for the life of the process ([#6124](https://github.com/getsentry/sentry-java/pull/6124)
 - Keep the `EventListener` wrapped by `SentryOkHttpEventListener` per `Call` ([#6003](https://github.com/getsentry/sentry-java/pull/6003))
 
