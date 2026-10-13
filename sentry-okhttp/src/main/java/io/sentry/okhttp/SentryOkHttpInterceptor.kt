@@ -22,6 +22,7 @@ import io.sentry.TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS
 import io.sentry.clientreport.DiscardReason
 import io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback
 import io.sentry.transport.CurrentDateProvider
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
@@ -375,7 +376,8 @@ public open class SentryOkHttpInterceptor(
       val result =
         try {
           beforeSpan.execute(span, request, response)
-        } catch (e: Exception) {
+        } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+          ExceptionUtils.rethrowIfFatal(e)
           span.spanContext.sampled = false
           if (wasSampled) {
             scopes.options.clientReportRecorder.recordLostEvent(

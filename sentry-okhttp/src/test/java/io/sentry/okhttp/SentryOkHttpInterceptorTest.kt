@@ -62,6 +62,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
+@Suppress("LargeClass")
 class SentryOkHttpInterceptorTest {
   class Fixture {
     val scopes = mock<IScopes>()
@@ -463,7 +464,7 @@ class SentryOkHttpInterceptorTest {
         fixture.getSut(
           beforeSpan = { span, _, _ ->
             span.spanContext.sampled = false
-            throw IllegalStateException("callback failed")
+            error("callback failed")
           }
         )
       fixture.sentryTracer.spanContext.sampled = sampled
@@ -480,8 +481,8 @@ class SentryOkHttpInterceptorTest {
   }
 
   @Test
-  fun `when beforeSpan throws, drops span and preserves response`() {
-    val failure = IllegalStateException("callback failed")
+  fun `when beforeSpan throws a nonfatal throwable, drops span and preserves response`() {
+    val failure = AssertionError("callback failed")
     val logger = mock<ILogger>()
     val sut =
       fixture.getSut(
@@ -507,6 +508,16 @@ class SentryOkHttpInterceptorTest {
         "The beforeSpan callback threw an exception in SentryOkHttpInterceptor. Dropping span.",
         failure,
       )
+  }
+
+  @Test
+  fun `fatal error from beforeSpan is not swallowed`() {
+    val failure = OutOfMemoryError("callback failed")
+    val sut = fixture.getSut(beforeSpan = { _, _, _ -> throw failure })
+
+    val thrown = assertFailsWith<OutOfMemoryError> { sut.newCall(getRequest()).execute() }
+
+    assertThat(thrown).isSameInstanceAs(failure)
   }
 
   @Test

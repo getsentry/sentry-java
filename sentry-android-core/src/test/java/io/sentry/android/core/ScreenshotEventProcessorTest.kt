@@ -44,6 +44,7 @@ import java.io.File
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -315,12 +316,12 @@ class ScreenshotEventProcessorTest {
   }
 
   @Test
-  fun `when capture callback throws, skips screenshot and retains event`() {
+  fun `when capture callback throws a nonfatal throwable, skips screenshot and retains event`() {
     CurrentActivityHolder.getInstance().setActivity(fixture.activity)
     val logger = mock<ILogger>()
     fixture.options.isDebug = true
     fixture.options.setLogger(logger)
-    val failure = IllegalStateException("callback failed")
+    val failure = AssertionError("callback failed")
     fixture.options.setBeforeScreenshotCaptureCallback { _, _, _ -> throw failure }
     val processor = fixture.getSut(true)
     val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
@@ -339,6 +340,19 @@ class ScreenshotEventProcessorTest {
     val nextHint = Hint()
     assertThat(processor.process(event, nextHint)).isSameInstanceAs(event)
     assertThat(nextHint.screenshot).isNotNull()
+  }
+
+  @Test
+  fun `when capture callback throws a fatal error, it is not swallowed`() {
+    CurrentActivityHolder.getInstance().setActivity(fixture.activity)
+    val failure = OutOfMemoryError("callback failed")
+    fixture.options.setBeforeScreenshotCaptureCallback { _, _, _ -> throw failure }
+    val processor = fixture.getSut(true)
+    val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+
+    val thrown = assertFailsWith<OutOfMemoryError> { processor.process(event, Hint()) }
+
+    assertThat(thrown).isSameInstanceAs(failure)
   }
 
   @Test

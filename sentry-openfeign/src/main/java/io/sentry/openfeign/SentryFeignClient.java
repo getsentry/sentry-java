@@ -21,6 +21,7 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.W3CTraceparentHeader;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
@@ -102,7 +103,8 @@ public final class SentryFeignClient implements Client {
           ISpan result = span;
           try {
             result = beforeSpan.execute(span, request, response);
-          } catch (Exception e) {
+          } catch (Throwable e) {
+            ExceptionUtils.rethrowIfFatal(e);
             span.getSpanContext().setSampled(false);
             if (wasSampled) {
               scopes

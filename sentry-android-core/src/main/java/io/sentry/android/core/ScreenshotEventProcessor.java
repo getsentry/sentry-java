@@ -19,6 +19,7 @@ import io.sentry.android.replay.util.ViewsKt;
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode;
 import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -116,7 +117,8 @@ public final class ScreenshotEventProcessor implements SentryEventProcessor {
         if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
           return event;
         }
-      } catch (Exception e) {
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(

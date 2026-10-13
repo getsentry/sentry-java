@@ -35,9 +35,11 @@ import io.sentry.graphql.SentryGraphqlInstrumentation
 import io.sentry.graphql.SentrySubscriptionHandler
 import java.lang.RuntimeException
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -210,8 +212,8 @@ class SentryInstrumentationTest {
   }
 
   @Test
-  fun `when beforeSpan throws, drops span and preserves result`() {
-    val failure = IllegalStateException("callback failed")
+  fun `when beforeSpan throws a nonfatal throwable, drops span and preserves result`() {
+    val failure = AssertionError("callback failed")
     val logger = mock<ILogger>()
     val sut =
       fixture.getSut(
@@ -236,6 +238,18 @@ class SentryInstrumentationTest {
           "The beforeSpan callback threw an exception in SentryGraphqlInstrumentation. Dropping span.",
           failure,
         )
+    }
+  }
+
+  @Test
+  fun `fatal error from beforeSpan is not swallowed`() {
+    val failure = OutOfMemoryError("callback failed")
+    val sut = fixture.getSut(beforeSpan = { _, _, _ -> throw failure })
+
+    withMockScopes {
+      val thrown = assertFailsWith<CompletionException> { sut.execute("{ shows { id } }") }
+
+      assertThat(thrown.cause).isSameInstanceAs(failure)
     }
   }
 

@@ -22,6 +22,7 @@ import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.clientreport.DiscardReason
 import io.sentry.kotlin.SentryContext
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
@@ -193,7 +194,8 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
           result =
             try {
               beforeSpan.execute(span, request)
-            } catch (e: Exception) {
+            } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+              ExceptionUtils.rethrowIfFatal(e)
               span.spanContext.sampled = false
               if (wasSampled) {
                 (if (forceScopes) scopes else Sentry.getCurrentScopes())
