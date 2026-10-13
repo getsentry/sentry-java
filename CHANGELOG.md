@@ -8,7 +8,8 @@
   `options.getLogs().setEnabled(...)`, and `options.getMetrics().setEnabled(...)`. Existing values
   for these options no longer affect capture. `Sentry.logger()` and `Sentry.metrics()` are no longer
   guarded by product enable flags and capture whenever the SDK is enabled.
-  ([#5947](https://github.com/getsentry/sentry-java/pull/5947),
+  ([#5939](https://github.com/getsentry/sentry-java/pull/5939),
+  [#5947](https://github.com/getsentry/sentry-java/pull/5947),
   [#5953](https://github.com/getsentry/sentry-java/pull/5953))
   Automatic Logs capture is disabled by default. Enable it separately for each integration:
   - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
