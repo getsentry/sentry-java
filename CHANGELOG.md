@@ -32,12 +32,12 @@
 
 ### Features
 
-- Add an explicit Logs opt-in to Spring Boot logging auto-configuration ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
-- Add an explicit Logs opt-in to the Android Logcat integration ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
-- Add an explicit Logs opt-in to the Android Timber integration ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
-- Add an explicit Logs opt-in to the JUL handler ([#5942](https://github.com/getsentry/sentry-java/pull/5942))
-- Add an explicit Logs opt-in to the Log4j2 appender ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
-- Add an explicit Logs opt-in to the Logback appender ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
+- Add the `sentry.logging.logs-enabled` Logs opt-in to Spring Boot logging auto-configuration ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
+- Add the `logcatLogCaptureEnabled` Logs opt-in and `io.sentry.logcat.log-capture.enabled` manifest metadata to the Android Logcat integration ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
+- Add the `timberLogCaptureEnabled` Logs opt-in and `io.sentry.timber.log-capture.enabled` manifest metadata for auto-installed Timber, and the `logsEnabled` constructor argument for manual Timber integrations ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+- Add the `logsEnabled` Logs opt-in to the JUL handler, configurable programmatically or as `io.sentry.jul.SentryHandler.logsEnabled` ([#5942](https://github.com/getsentry/sentry-java/pull/5942))
+- Add the `logsEnabled` constructor and plugin attribute to the Log4j2 appender ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
+- Add the `logsEnabled` setter and XML option to the Logback appender ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
 
 ### Dependencies
