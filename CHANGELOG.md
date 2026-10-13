@@ -17,6 +17,7 @@
   - Skip replay capture when `beforeErrorSampling` throws while retaining the error event ([#6165](https://github.com/getsentry/sentry-java/pull/6165)).
   - Skip Android screenshots or view hierarchies when their capture callbacks throw while retaining the error event ([#6167](https://github.com/getsentry/sentry-java/pull/6167)).
   - Keep the Android feedback form available when its options configurator throws ([#6239](https://github.com/getsentry/sentry-java/pull/6239)).
+  - Isolate nonfatal callback throwables while continuing to propagate fatal JVM errors ([#6251](https://github.com/getsentry/sentry-java/pull/6251)).
 
 ### Dependencies
 
