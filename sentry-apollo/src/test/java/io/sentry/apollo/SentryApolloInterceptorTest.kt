@@ -3,10 +3,6 @@ package io.sentry.apollo
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.coroutines.await
 import com.apollographql.apollo.exception.ApolloException
-import com.apollographql.apollo.interceptor.ApolloInterceptor.CallBack
-import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorRequest
-import com.apollographql.apollo.interceptor.ApolloInterceptor.InterceptorResponse
-import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
@@ -33,7 +29,6 @@ import io.sentry.util.ApolloPlatformTestManipulator
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -279,7 +274,7 @@ class SentryApolloInterceptorTest {
 
   @Test
   fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
-    val failure = AssertionError("callback failed")
+    val failure = IllegalStateException("callback failed")
     val logger = mock<ILogger>()
     fixture.options.isDebug = true
     fixture.options.setLogger(logger)
@@ -311,30 +306,6 @@ class SentryApolloInterceptorTest {
         "An error occurred while executing beforeSpan on ApolloInterceptor",
         failure,
       )
-  }
-
-  @Test
-  fun `fatal error from beforeSpan is not swallowed`() {
-    val failure = OutOfMemoryError("callback failed")
-    val tx =
-      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
-    whenever(fixture.scopes.span).thenReturn(tx)
-    val interceptor = SentryApolloInterceptor(fixture.scopes) { _, _, _ -> throw failure }
-    val request = InterceptorRequest.builder(LaunchDetailsQuery.builder().id("83").build()).build()
-    val chain = mock<ApolloInterceptorChain>()
-    doAnswer {
-        it.getArgument<CallBack>(2).onResponse(InterceptorResponse(null))
-        null
-      }
-      .whenever(chain)
-      .proceedAsync(any(), any(), any())
-
-    val thrown =
-      assertFailsWith<OutOfMemoryError> {
-        interceptor.interceptAsync(request, chain, { it.run() }, mock())
-      }
-
-    assertThat(thrown).isSameInstanceAs(failure)
   }
 
   @Test

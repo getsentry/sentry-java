@@ -26,7 +26,6 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
 import io.sentry.clientreport.DiscardReason
-import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
@@ -181,8 +180,7 @@ class SentryApolloInterceptor(
       val wasSampled = span.isSampled == true
       try {
         newSpan = beforeSpan.execute(span, request, response)
-      } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
-        ExceptionUtils.rethrowIfFatal(e)
+      } catch (e: Exception) {
         span.spanContext.sampled = false
         if (wasSampled) {
           scopes.options.clientReportRecorder.recordLostEvent(
