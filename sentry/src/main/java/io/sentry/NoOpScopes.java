@@ -142,14 +142,6 @@ public final class NoOpScopes implements IScopes {
     return NoOpScopesLifecycleToken.getInstance();
   }
 
-  /**
-   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
-   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
-   */
-  @Override
-  @Deprecated
-  public void popScope() {}
-
   @Override
   public void withScope(@NotNull ScopeCallback callback) {
     callback.run(NoOpScope.getInstance());
@@ -173,16 +165,6 @@ public final class NoOpScopes implements IScopes {
 
   @Override
   public void flush(long timeoutMillis) {}
-
-  /**
-   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
-   *     IScopes#forkedCurrentScope(String)} instead.
-   */
-  @Deprecated
-  @Override
-  public @NotNull IHub clone() {
-    return NoOpHub.getInstance();
-  }
 
   @Override
   public @NotNull IScopes forkedScopes(@NotNull String creator) {

@@ -354,15 +354,6 @@ public interface IScopes {
   ISentryLifecycleToken pushIsolationScope();
 
   /**
-   * Removes the first scope and restores its parent.
-   *
-   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
-   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
-   */
-  @Deprecated
-  void popScope();
-
-  /**
    * Runs the callback with a new current scope which gets dropped at the end.
    *
    * <p>If you're using the Sentry SDK in globalHubMode (defaults to true on Android) {@link
@@ -423,17 +414,6 @@ public interface IScopes {
    * @param timeoutMillis time in milliseconds
    */
   void flush(long timeoutMillis);
-
-  /**
-   * Clones the Hub
-   *
-   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
-   *     IScopes#forkedCurrentScope(String)} instead.
-   * @return the cloned Hub
-   */
-  @NotNull
-  @Deprecated
-  IHub clone();
 
   /**
    * Creates a fork of both current and isolation scope from current scopes.

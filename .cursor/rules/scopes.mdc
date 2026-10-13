@@ -14,8 +14,8 @@ Data itself is stored on `Scope` instances.
 ## `Hub`
 
 Up until major version 7 of the Java SDK the `IHub` interface was a central part of the SDK.
-In major version 8 we replaced the `IHub` interface with `IScopes`. `IHub` has been deprecated.
-While there is some bridging code in place to allow for easier migration, we are planning to remove it in an upcoming major.
+In major version 8 we replaced the `IHub` interface with `IScopes` and deprecated the Hub compatibility APIs.
+Those compatibility APIs were removed in major version 9.
 
 ## Scope Types
 

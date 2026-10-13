@@ -36,6 +36,7 @@
     - Manually constructed `SentryTimberIntegration` and `SentryTimberTree` instances require a
       `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
 - Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
+- Remove deprecated Hub compatibility APIs in favor of `IScopes` and `Scopes` ([#6223](https://github.com/getsentry/sentry-java/pull/6223))
 
 ### Features
 
