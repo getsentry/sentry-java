@@ -14,6 +14,7 @@ import com.apollographql.apollo.network.http.HttpInterceptorChain
 import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.ITransaction
@@ -32,6 +33,7 @@ import io.sentry.TransactionContext
 import io.sentry.W3CTraceparentHeader
 import io.sentry.apollo5.SentryApollo5HttpInterceptor.BeforeSpanCallback
 import io.sentry.apollo5.generated.LaunchDetailsQuery
+import io.sentry.clientreport.DiscardReason
 import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
@@ -40,6 +42,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.reflect.KSuspendFunction1
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -60,6 +63,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryApollo5HttpInterceptorTestWithV5Implementation :
@@ -421,16 +425,83 @@ abstract class SentryApollo5HttpInterceptorTest(
   }
 
   @Test
-  fun `when customizer throws, exception is handled`() {
-    executeQuery(fixture.getSut(beforeSpan = { _, _, _ -> throw RuntimeException() }))
+  fun `reports callback errors only for sampled spans`(): Unit = runBlocking {
+    for (sampled in listOf(true, false, null)) {
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      fixture.options.onDiscard = onDiscard
+      val tx = SentryTracer(TransactionContext("op", "desc"), fixture.scopes)
+      tx.spanContext.sampled = sampled
+      whenever(fixture.scopes.span).thenReturn(tx)
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _, _ ->
+            span.spanContext.sampled = false
+            throw IllegalStateException("callback failed")
+          }
+        )
 
+      assertThat(executeQueryImplementation(sut.query(LaunchDetailsQuery("83"))).data).isNotNull()
+      tx.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
+    val failure = IllegalStateException("callback failed")
+    val tx =
+      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(tx)
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _, _ ->
+          span.description = "partially modified"
+          throw failure
+        }
+      )
+
+    val response = executeQueryImplementation(sut.query(LaunchDetailsQuery("83")))
+    assertThat(response.data).isNotNull()
+    val span = tx.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    tx.finish()
     verify(fixture.scopes)
       .captureTransaction(
-        check { assertEquals(1, it.spans.size) },
+        check { assertThat(it.spans).isEmpty() },
         anyOrNull<TraceContext>(),
         anyOrNull(),
         anyOrNull(),
       )
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+  }
+
+  @Test
+  fun `fatal error from beforeSpan is not swallowed`(): Unit = runBlocking {
+    val failure = OutOfMemoryError("callback failed")
+    val tx =
+      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(tx)
+    val request = HttpRequest.Builder(HttpMethod.Post, "https://example.com/graphql").build()
+    val response = HttpResponse.Builder(200).build()
+    val chain =
+      object : HttpInterceptorChain {
+        override suspend fun proceed(request: HttpRequest): HttpResponse = response
+      }
+    val interceptor =
+      SentryApollo5HttpInterceptor(
+        fixture.scopes,
+        beforeSpan = { _, _, _ -> throw failure },
+        captureFailedRequests = false,
+      )
+
+    val thrown = assertFailsWith<OutOfMemoryError> { interceptor.intercept(request, chain) }
+
+    assertThat(thrown).isSameInstanceAs(failure)
   }
 
   @Test
