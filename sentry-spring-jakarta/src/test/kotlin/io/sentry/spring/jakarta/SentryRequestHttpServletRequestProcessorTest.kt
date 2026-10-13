@@ -1,15 +1,20 @@
 package io.sentry.spring.jakarta
 
 import io.sentry.Hint
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
+import io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME
 import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider
+import io.sentry.spring.jakarta.tracing.TransactionNameProvider
 import jakarta.servlet.http.HttpServletRequest
 import java.net.URI
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.mock.web.MockServletContext
@@ -19,13 +24,15 @@ import org.springframework.web.servlet.HandlerMapping
 class SentryRequestHttpServletRequestProcessorTest {
   private class Fixture {
     val scopes = mock<IScopes>()
+    val logger = mock<ILogger>()
 
     fun getSut(
       request: HttpServletRequest,
       options: SentryOptions = SentryOptions(),
+      provider: TransactionNameProvider = SpringMvcTransactionNameProvider(),
     ): SentryRequestHttpServletRequestProcessor {
       whenever(scopes.options).thenReturn(options)
-      return SentryRequestHttpServletRequestProcessor(SpringMvcTransactionNameProvider(), request)
+      return SentryRequestHttpServletRequestProcessor(provider, request, logger)
     }
   }
 
@@ -44,6 +51,30 @@ class SentryRequestHttpServletRequestProcessorTest {
 
     assertNotNull(event.transaction)
     assertEquals("GET /some-path", event.transaction)
+  }
+
+  @Test
+  fun `provider failure uses safe transaction name`() {
+    val failure = RuntimeException("provider failed")
+    val request = mock<HttpServletRequest>()
+    val eventProcessor =
+      fixture.getSut(request, provider = TransactionNameProvider { throw failure })
+    val event = SentryEvent()
+
+    eventProcessor.process(event, Hint())
+
+    assertThat(event.transaction).isEqualTo(DEFAULT_TRANSACTION_NAME)
+  }
+
+  @Test
+  fun `fatal provider failure propagates`() {
+    val failure = OutOfMemoryError("fatal")
+    val request = mock<HttpServletRequest>()
+    val eventProcessor =
+      fixture.getSut(request, provider = TransactionNameProvider { throw failure })
+
+    assertThat(assertFailsWith<OutOfMemoryError> { eventProcessor.process(SentryEvent(), Hint()) })
+      .isSameAs(failure)
   }
 
   @Test
