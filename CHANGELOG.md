@@ -9,6 +9,14 @@
 - Keep Spring requests running when a `SentryUserProvider` throws and discard the incomplete user identity ([#6240](https://github.com/getsentry/sentry-java/pull/6240))
 - Drop Apollo 5 spans when `beforeSpan` throws without disrupting the GraphQL request ([#6238](https://github.com/getsentry/sentry-java/pull/6238))
 
+### Dependencies
+
+- Bump Native SDK from v0.17.2 to v0.17.3 ([#6250](https://github.com/getsentry/sentry-java/pull/6250))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0173)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.2...0.17.3)
+
+## 8.60.0
+
 ### Features
 
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
