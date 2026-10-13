@@ -56,9 +56,9 @@ private const val NAVIGATION_OP: String = "navigation"
  *    transaction), so the incoming destination gets its own transaction.
  * 2. [cleanup] only clears the screen and nav context this observer published, so an outgoing
  *    observer can't wipe an incoming observer's data.
- * 3. [onResume] republishes this observer's latest screen and nav context, and rebinds its
- *    unfinished nav transaction if the scope is free, so returning to an observer restores its
- *    data.
+ * 3. [onResume] republishes this observer's latest screen and nav context, unbinds another
+ *    observer's nav transaction, and rebinds its own unfinished one, so returning to an observer
+ *    restores its data.
  *
  * Simultaneously active observers (side-by-side or nested) are not supported.
  *
@@ -134,8 +134,9 @@ internal class BackStackObserver<T : Any>(
   }
 
   /**
-   * Republishes this observer's latest screen and nav context, and rebinds its unfinished nav
-   * transaction if no other transaction is bound. Call when the observer's lifecycle owner resumes.
+   * Republishes this observer's latest screen and nav context, unbinds another observer's nav
+   * transaction, and rebinds this observer's unfinished one if the scope is then free. Call when
+   * the observer's lifecycle owner resumes.
    *
    * No-ops for data this observer never published (e.g., screens when screen tracking is disabled),
    * so host-owned values are left alone.
@@ -144,7 +145,7 @@ internal class BackStackObserver<T : Any>(
     scopes.configureScope { scope ->
       navScreen.republish(scope)
       navContext.republish(scope)
-      navTransaction.rebindIfScopeIsFree(scope)
+      navTransaction.reclaim(scope)
     }
   }
 
@@ -405,10 +406,16 @@ private class NavTransaction(private val scopes: IScopes) {
     activeNavTransaction = null
   }
 
-  /** Rebinds this observer's unfinished nav transaction if no transaction is bound. */
-  fun rebindIfScopeIsFree(scope: IScope) {
-    val transaction = activeNavTransaction ?: return
+  /**
+   * Takes the scope back for this observer when its owner resumes: unbinds another observer's nav
+   * transaction (never a non-nav transaction) and rebinds this observer's unfinished one if the
+   * scope is then free.
+   */
+  fun reclaim(scope: IScope) {
     clearTransactionIfFinished(scope)
+    unbindOtherNavTransaction(scope)
+
+    val transaction = activeNavTransaction ?: return
     if (transaction.isFinished) {
       return
     }

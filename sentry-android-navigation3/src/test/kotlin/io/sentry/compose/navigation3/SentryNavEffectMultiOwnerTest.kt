@@ -154,6 +154,27 @@ class SentryNavEffectMultiOwnerTest {
     }
   }
 
+  @Test
+  fun `activity abort - outgoing owner's unfinished transaction is rebound once it resumes`() {
+    val fixture = Fixture(composeRule)
+    val a = fixture.host("A", "Home")
+    fixture.show(a)
+    val txA = fixture.runOnIdle { requireNotNull(fixture.scope.transaction) }
+    fixture.runOnIdle { a.pause() }
+    val b = fixture.host("B", "Checkout")
+    fixture.show(b)
+
+    // Framework order when B finishes quickly: B pauses, A resumes, then B is destroyed.
+    fixture.runOnIdle {
+      b.pause()
+      a.resume()
+    }
+    fixture.runOnIdle { b.stop() }
+    fixture.hide(b)
+
+    fixture.runOnIdle { assertThat(fixture.scope.transaction).isSameInstanceAs(txA) }
+  }
+
   @Ignore(KNOWN_GAP)
   @Test
   fun `activity abort - outgoing owner's nav data is restored while it's still paused`() {

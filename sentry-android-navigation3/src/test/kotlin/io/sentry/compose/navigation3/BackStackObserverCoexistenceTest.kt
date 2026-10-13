@@ -105,6 +105,22 @@ class BackStackObserverCoexistenceTest {
   }
 
   @Test
+  fun `onResume takes the scope back from another observer's nav transaction`() {
+    val fixture = Fixture()
+    val returning = fixture.getSut()
+    returning.onBackStackChanged(listOf(HomeScreen()))
+    val returningTransaction = requireNotNull(fixture.scope.transaction)
+    val other = fixture.getSut()
+    other.onBackStackChanged(listOf(CartScreen("1")))
+    val otherTransaction = requireNotNull(fixture.scope.transaction)
+
+    returning.onResume()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(returningTransaction)
+    assertThat(otherTransaction.isFinished).isFalse()
+  }
+
+  @Test
   fun `only the first new top evicts another observer's nav transaction`() {
     val fixture = Fixture()
     val outgoing = fixture.getSut()
