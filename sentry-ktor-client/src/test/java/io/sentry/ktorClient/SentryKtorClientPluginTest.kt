@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.Unit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -451,7 +452,7 @@ class SentryKtorClientPluginTest {
         fixture.getSut(
           beforeSpan = { span, _ ->
             span.spanContext.sampled = false
-            throw IllegalStateException("callback failed")
+            error("callback failed")
           }
         )
       fixture.sentryTracer.spanContext.sampled = sampled
@@ -469,7 +470,7 @@ class SentryKtorClientPluginTest {
 
   @Test
   fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
-    val failure = IllegalStateException("callback failed")
+    val failure = AssertionError("callback failed")
     val logger = mock<ILogger>()
     val sut =
       fixture.getSut(
@@ -496,6 +497,19 @@ class SentryKtorClientPluginTest {
         "The beforeSpan callback threw an exception in SentryKtorClientPlugin. Dropping span.",
         failure,
       )
+  }
+
+  @Test
+  fun `fatal error from beforeSpan is not swallowed`(): Unit = runBlocking {
+    val failure = OutOfMemoryError("callback failed")
+    val sut = fixture.getSut(beforeSpan = { _, _ -> throw failure })
+
+    val thrown =
+      assertFailsWith<OutOfMemoryError> {
+        sut.use { sut.get(fixture.server.url("/hello").toString()) }
+      }
+
+    assertThat(generateSequence<Throwable>(thrown) { it.cause }.last()).isSameInstanceAs(failure)
   }
 
   @Test

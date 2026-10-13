@@ -19,6 +19,7 @@ import java.io.Writer
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -345,10 +346,10 @@ class ViewHierarchyEventProcessorTest {
   }
 
   @Test
-  fun `when capture callback throws, skips view hierarchy and retains event`() {
+  fun `when capture callback throws a nonfatal throwable, skips view hierarchy and retains event`() {
     fixture.options.isDebug = true
     fixture.options.setLogger(fixture.logger)
-    val failure = IllegalStateException("callback failed")
+    val failure = AssertionError("callback failed")
     fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ -> throw failure }
     val processor = fixture.getSut(true)
     val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
@@ -367,6 +368,18 @@ class ViewHierarchyEventProcessorTest {
     val nextHint = Hint()
     assertThat(processor.process(event, nextHint)).isSameInstanceAs(event)
     assertThat(nextHint.viewHierarchy).isNotNull()
+  }
+
+  @Test
+  fun `when capture callback throws a fatal error, it is not swallowed`() {
+    val failure = OutOfMemoryError("callback failed")
+    fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ -> throw failure }
+    val processor = fixture.getSut(true)
+    val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+
+    val thrown = assertFailsWith<OutOfMemoryError> { processor.process(event, Hint()) }
+
+    assertThat(thrown).isSameInstanceAs(failure)
   }
 
   @Test

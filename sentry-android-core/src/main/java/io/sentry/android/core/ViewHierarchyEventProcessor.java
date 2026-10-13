@@ -22,6 +22,7 @@ import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -95,7 +96,8 @@ public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
         if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
           return event;
         }
-      } catch (Exception e) {
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
         options
             .getLogger()
             .log(

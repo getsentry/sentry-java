@@ -28,6 +28,7 @@ import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TypeCheckHint;
 import io.sentry.clientreport.DiscardReason;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.StringUtils;
 import java.util.Arrays;
 import java.util.List;
@@ -290,7 +291,8 @@ public final class SentryGraphqlInstrumentation {
       ISpan newSpan = span;
       try {
         newSpan = beforeSpan.execute(span, environment, result);
-      } catch (Exception e) {
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
         span.getSpanContext().setSampled(false);
         if (wasSampled) {
           scopesFromContext(environment.getGraphQlContext())

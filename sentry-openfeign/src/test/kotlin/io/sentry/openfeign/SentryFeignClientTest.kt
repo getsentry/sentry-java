@@ -319,8 +319,8 @@ class SentryFeignClientTest {
   }
 
   @Test
-  fun `when beforeSpan throws, drops span and preserves response`() {
-    val failure = IllegalStateException("callback failed")
+  fun `when beforeSpan throws a nonfatal throwable, drops span and preserves response`() {
+    val failure = AssertionError("callback failed")
     val logger = mock<ILogger>()
     fixture.sentryOptions.isDebug = true
     fixture.sentryOptions.setLogger(logger)
@@ -343,6 +343,16 @@ class SentryFeignClientTest {
         "The beforeSpan callback threw an exception in SentryFeignClient. Dropping span.",
         failure,
       )
+  }
+
+  @Test
+  fun `fatal error from beforeSpan is not swallowed`() {
+    val failure = OutOfMemoryError("callback failed")
+    val sut = fixture.getSut(beforeSpan = { _, _, _ -> throw failure })
+
+    val thrown = assertFailsWith<OutOfMemoryError> { sut.getOk() }
+
+    assertThat(thrown).isSameInstanceAs(failure)
   }
 
   @Test
