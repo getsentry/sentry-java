@@ -165,22 +165,31 @@ class SentryUserFeedbackFormTest {
   }
 
   @Test
-  fun `when configuration throws, its partial changes are ignored`() {
+  fun `when configuration throws, configurator still runs with original options`() {
     fixture.options.isEnabled = true
     val originalTitle = fixture.options.feedbackOptions.formTitle
+    val customNameLabel = "custom name label"
     val failure = IllegalStateException("configuration failed")
+    var titleReceivedByConfigurator: CharSequence? = null
 
     val sut =
       fixture.getSut(
         configuration = { _, options ->
           options.formTitle = "partial title"
           throw failure
-        }
+        },
+        configurator = { options ->
+          titleReceivedByConfigurator = options.formTitle
+          options.nameLabel = customNameLabel
+        },
       )
     sut.show()
 
+    assertThat(titleReceivedByConfigurator).isEqualTo(originalTitle)
     assertThat(sut.findViewById<TextView>(R.id.sentry_dialog_user_feedback_title).text)
       .isEqualTo(originalTitle)
+    assertThat(sut.findViewById<TextView>(R.id.sentry_dialog_user_feedback_txt_name).text)
+      .isEqualTo(customNameLabel)
   }
 
   @Test
