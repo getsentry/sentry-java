@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
@@ -67,7 +68,9 @@ internal fun TracedNav3Route(
   scenario: Nav3Scenario,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  tagCurrentNav3Scenario(scenario, LocalContext.current.getActivity().javaClass.simpleName)
+  val activityName = LocalContext.current.getActivity().javaClass.simpleName
+  // Tag after composition is applied so abandoned compositions don't tag anything.
+  SideEffect { tagCurrentNav3Scenario(scenario, activityName) }
   SentryTraced(
     tag = "Nav3 /${route.routeName}",
     enableUserInteractionTracing = false,

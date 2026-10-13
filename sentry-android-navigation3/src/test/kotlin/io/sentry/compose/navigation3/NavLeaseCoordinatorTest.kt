@@ -230,6 +230,60 @@ class NavLeaseCoordinatorTest {
   }
 
   @Test
+  fun `resuming without a scope keeps the owner eligible for nav lease fallback`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.register(owner, Lifecycle.State.CREATED)
+    navLeaseCoordinator.resumeCandidate(owner, null)
+    navLeaseCoordinator.onBackStackUpdate(owner, fixture.scope)
+    fixture.acquireLease(incoming, state = Lifecycle.State.CREATED)
+
+    navLeaseCoordinator.pauseCandidate(incoming, fixture.scope)
+
+    assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
+  }
+
+  @Test
+  fun `resuming without a scope does not transfer the nav lease`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(incumbent)
+    fixture.register(owner, Lifecycle.State.CREATED)
+    navLeaseCoordinator.stopCandidate(owner, fixture.scope)
+    navLeaseCoordinator.onBackStackUpdate(owner, fixture.scope)
+
+    navLeaseCoordinator.resumeCandidate(owner, null)
+
+    assertThat(navLeaseCoordinator.hasLease(incumbent)).isTrue()
+    assertThat(fixture.published).containsExactly(incumbent)
+  }
+
+  @Test
+  fun `pausing the leaseholder without a scope releases the nav lease without publishing a fallback`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(previous)
+    fixture.acquireLease(owner, state = Lifecycle.State.CREATED)
+
+    navLeaseCoordinator.pauseCandidate(owner, null)
+
+    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
+    assertThat(navLeaseCoordinator.hasLease(previous)).isFalse()
+    assertThat(fixture.published).containsExactly(previous, owner).inOrder()
+  }
+
+  @Test
+  fun `stopping the leaseholder without a scope releases the nav lease`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(owner)
+
+    navLeaseCoordinator.stopCandidate(owner, null)
+
+    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
+  }
+
+  @Test
   fun `a non-leaseholder cannot bind a nav transaction`() {
     val fixture = Fixture.create()
     val navLeaseCoordinator = fixture.navLeaseCoordinator

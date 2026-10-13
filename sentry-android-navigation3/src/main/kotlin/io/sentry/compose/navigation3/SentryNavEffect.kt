@@ -67,12 +67,11 @@ import org.jetbrains.annotations.ApiStatus
  * gestures. That means that spans produced by predictively rendered composables can show up under
  * the current destination's transaction.
  *
- * In general, host apps should ensure that only one `SentryNavEffect` is active at a time.
- * `SentryNavEffect` protects against multiple instances emitting data simultaneously during
- * [lifecycle owner][androidx.lifecycle.LifecycleOwner] transitions, such as when navigating between
- * activities where each Activity has its own `SentryNavEffect`. But `SentryNavEffect`s associated
- * with side-by-side or nested `NavDisplay`s are not supported and can result in duplicated or
- * interleaved data and undefined transaction behavior.
+ * Each [lifecycle owner][androidx.lifecycle.LifecycleOwner] may host its own `SentryNavEffect`
+ * (e.g., one per Activity). During transitions between owners, `SentryNavEffect` coordinates the
+ * overlapping instances so only one records navigation data at a time. `SentryNavEffect`s
+ * associated with side-by-side or nested `NavDisplay`s are not supported and can result in
+ * duplicated or interleaved data and undefined transaction behavior.
  *
  * @param backStack The navigation backstack to observe.
  * @param backStackEntryMapper Maps each entry of the [backStack] to a name and optional arguments
