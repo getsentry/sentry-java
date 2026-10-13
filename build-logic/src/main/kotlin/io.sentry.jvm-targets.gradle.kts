@@ -34,10 +34,6 @@ fun Project.followToolchainInTests(taskFilter: (Task) -> Boolean) {
   }
 }
 
-if (path.startsWith(":sentry-samples")) {
-  plugins.withId("java") { followToolchainInTests { it.name.contains("Test") } }
-}
-
 listOf("com.android.library", "com.android.application").forEach { pluginId ->
   plugins.withId(pluginId) {
     followToolchainInTests { it.name.contains("UnitTest") }

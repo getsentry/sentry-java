@@ -17,10 +17,6 @@ group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-java.sourceCompatibility = JavaVersion.VERSION_11
-
-java.targetCompatibility = JavaVersion.VERSION_11
-
 fun springBoot2SupportsGraphql(): Boolean {
   val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
   val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
@@ -94,7 +90,6 @@ configure<SourceSetContainer> {
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = JvmTarget.JVM_11
   }
 }
 

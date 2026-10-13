@@ -17,10 +17,6 @@ group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-java.sourceCompatibility = JavaVersion.VERSION_11
-
-java.targetCompatibility = JavaVersion.VERSION_11
-
 fun springBoot2SupportsOptionalIntegrations(): Boolean {
   val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
   val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
@@ -33,16 +29,9 @@ val includeGraphql =
   !project.hasProperty("excludeGraphql") && springBoot2SupportsOptionalIntegrations()
 val includeKafka = !project.hasProperty("excludeKafka") && springBoot2SupportsOptionalIntegrations()
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
-}
-
 tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions.jvmTarget = JvmTarget.JVM_11
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = JvmTarget.JVM_11
   }
 }
 
