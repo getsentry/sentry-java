@@ -152,6 +152,7 @@ log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "lo
 leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version = "2.14" }
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version = "6.7.1" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 nopen-annotations = { module = "com.jakewharton.nopen:nopen-annotations", version.ref = "nopen" }
 nopen-checker = { module = "com.jakewharton.nopen:nopen-checker", version.ref = "nopen" }
 nullaway = { module = "com.uber.nullaway:nullaway", version = "0.14.2" }

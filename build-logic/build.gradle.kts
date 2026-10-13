@@ -9,6 +9,8 @@ repositories {
 dependencies {
   implementation(libs.animalsniffer.gradle.plugin)
   implementation(libs.spotlessLib)
+  // Only for the Kotlin task types the jvm-targets plugin configures.
+  compileOnly(libs.kotlin.gradle.plugin)
 }
 
 gradlePlugin {
