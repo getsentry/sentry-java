@@ -241,10 +241,10 @@ class SentryAndroidTest {
   }
 
   @Test
-  fun `auto-installed Timber integration uses Logs option set in configuration callback`() {
+  fun `auto-installed Timber integration uses log capture option set in configuration callback`() {
     val logs = mutableListOf<SentryLogEvent>()
     fixture.initSut { options ->
-      options.isEnableTimberLogs = true
+      options.timberLogCaptureEnabled = true
       options.logs.beforeSend =
         SentryOptions.Logs.BeforeSendLogCallback { log ->
           logs.add(log)
@@ -262,13 +262,13 @@ class SentryAndroidTest {
     val metadata =
       Bundle().apply {
         putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
-        putBoolean(ManifestMetadataReader.ENABLE_TIMBER_LOGS, true)
+        putBoolean(ManifestMetadataReader.TIMBER_LOG_CAPTURE_ENABLED, true)
       }
     val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
     val logs = mutableListOf<SentryLogEvent>()
 
     initForTest(mockContext) { options ->
-      options.isEnableTimberLogs = false
+      options.timberLogCaptureEnabled = false
       options.logs.beforeSend =
         SentryOptions.Logs.BeforeSendLogCallback { log ->
           logs.add(log)
@@ -286,7 +286,13 @@ class SentryAndroidTest {
     fixture.initSut(autoInit = true) {
       it.addIntegration(FragmentLifecycleIntegration(ApplicationProvider.getApplicationContext()))
 
-      it.addIntegration(SentryTimberIntegration(minEventLevel = FATAL, minBreadcrumbLevel = DEBUG))
+      it.addIntegration(
+        SentryTimberIntegration(
+          minEventLevel = FATAL,
+          minBreadcrumbLevel = DEBUG,
+          logsEnabled = false,
+        )
+      )
 
       it.addIntegration(
         SystemEventsBreadcrumbsIntegration(

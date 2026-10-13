@@ -43,7 +43,7 @@ class SentryHandlerTest {
     val transport: ITransport = mock(),
     contextTags: List<String>? = null,
     printfStyle: Boolean? = null,
-    enableLogs: Boolean? = true,
+    logsEnabled: Boolean? = true,
   ) {
     var logger: Logger
     var handler: SentryHandler
@@ -62,8 +62,8 @@ class SentryHandlerTest {
       handler.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
       handler.setMinimumEventLevel(minimumEventLevel)
       handler.setMinimumLevel(minimumLevel)
-      if (enableLogs != null) {
-        handler.setEnableLogs(enableLogs)
+      if (logsEnabled != null) {
+        handler.setLogsEnabled(logsEnabled)
       }
       if (printfStyle == true) {
         handler.setPrintfStyle(printfStyle)
@@ -325,12 +325,12 @@ class SentryHandlerTest {
 
   @Test
   fun `fetches configuration from logging dot properties`() {
-    fixture = Fixture(configureWithLogManager = true, enableLogs = null)
+    fixture = Fixture(configureWithLogManager = true, logsEnabled = null)
     assertEquals(Level.CONFIG, fixture.handler.minimumBreadcrumbLevel)
     assertEquals(Level.WARNING, fixture.handler.minimumEventLevel)
     assertEquals(Level.ALL, fixture.handler.level)
     assertTrue(fixture.handler.isPrintfStyle)
-    assertTrue(fixture.handler.isEnableLogs)
+    assertTrue(fixture.handler.logsEnabled)
 
     fixture.logger.info("this should be captured as a log")
     Sentry.flush(10)
@@ -438,9 +438,9 @@ class SentryHandlerTest {
 
   @Test
   fun `does not capture logs by default`() {
-    fixture = Fixture(enableLogs = null)
+    fixture = Fixture(logsEnabled = null)
 
-    assertFalse(fixture.handler.isEnableLogs)
+    assertFalse(fixture.handler.logsEnabled)
     fixture.logger.info("this should not be captured as a log")
     Sentry.flush(10)
 
@@ -449,9 +449,9 @@ class SentryHandlerTest {
 
   @Test
   fun `captures logs when enabled through Java`() {
-    fixture = Fixture(enableLogs = true)
+    fixture = Fixture(logsEnabled = true)
 
-    assertTrue(fixture.handler.isEnableLogs)
+    assertTrue(fixture.handler.logsEnabled)
     fixture.logger.info("this should be captured as a log")
     Sentry.flush(10)
 
@@ -469,7 +469,7 @@ class SentryHandlerTest {
       Fixture(
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.SEVERE,
-        enableLogs = false,
+        logsEnabled = false,
       )
 
     fixture.logger.info("this should be a breadcrumb")
@@ -493,7 +493,7 @@ class SentryHandlerTest {
       Fixture(
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.SEVERE,
-        enableLogs = true,
+        logsEnabled = true,
       )
 
     fixture.logger.info(null as String?)
@@ -518,7 +518,7 @@ class SentryHandlerTest {
       Fixture(
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.SEVERE,
-        enableLogs = true,
+        logsEnabled = true,
       )
     val resourceBundle =
       object : ListResourceBundle() {

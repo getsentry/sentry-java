@@ -62,7 +62,7 @@ class SentryAppenderTest {
       minimumLevel: Level? = null,
       debug: Boolean? = null,
       contextTags: List<String>? = null,
-      enableLogs: Boolean = true,
+      logsEnabled: Boolean = true,
     ): ExtendedLogger {
       if (transportFactory != null) {
         this.transportFactory = transportFactory
@@ -77,7 +77,7 @@ class SentryAppenderTest {
           minimumBreadcrumbLevel,
           minimumEventLevel,
           minimumLevel,
-          enableLogs,
+          logsEnabled,
           debug,
           this.transportFactory,
           ScopesAdapter.getInstance(),
@@ -262,7 +262,7 @@ class SentryAppenderTest {
 
   @Test
   fun `does not capture logs when local logs are disabled`() {
-    val logger = fixture.getSut(enableLogs = false)
+    val logger = fixture.getSut(logsEnabled = false)
 
     logger.info("this should not be captured as a log")
     Sentry.flush(10)
@@ -272,7 +272,7 @@ class SentryAppenderTest {
 
   @Test
   fun `captures logs when local logs are enabled`() {
-    val logger = fixture.getSut(enableLogs = true)
+    val logger = fixture.getSut(logsEnabled = true)
 
     logger.info("this should be captured as a log")
     Sentry.flush(10)
@@ -291,7 +291,7 @@ class SentryAppenderTest {
       fixture.getSut(
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.ERROR,
-        enableLogs = false,
+        logsEnabled = false,
       )
 
     logger.info("this should be a breadcrumb")
@@ -310,62 +310,35 @@ class SentryAppenderTest {
   }
 
   @Test
-  fun `existing constructors default logs to disabled`() {
+  fun `constructor can opt out of logs capture`() {
     val scopes = mock<IScopes>()
     val event = mock<LogEvent>()
     whenever(event.level).thenReturn(Level.INFO)
 
-    val deprecatedAppender =
+    val appender =
       SentryAppender(
-        "deprecated",
-        null,
-        null,
-        Level.OFF,
-        Level.OFF,
-        null,
-        null,
-        scopes,
-        null,
-      )
-    val existingAppender =
-      SentryAppender(
-        "existing",
+        "sentry",
         null,
         null,
         Level.OFF,
         Level.OFF,
         Level.INFO,
+        false,
         null,
         null,
         scopes,
         null,
       )
 
-    deprecatedAppender.append(event)
-    existingAppender.append(event)
+    appender.append(event)
 
     verify(scopes, never()).logger()
   }
 
   @Test
-  fun `existing factory and plugin attribute default logs to disabled`() {
+  fun `plugin attribute defaults logs to disabled`() {
     val event = mock<LogEvent>()
     whenever(event.level).thenReturn(Level.INFO)
-    val existingAppender =
-      spy(
-        assertNotNull(
-          SentryAppender.createAppender(
-            "existing",
-            Level.OFF,
-            Level.OFF,
-            Level.INFO,
-            null,
-            null,
-            null,
-            null,
-          )
-        )
-      )
     val pluginDefaultAppender =
       spy(
         assertNotNull(
@@ -383,10 +356,8 @@ class SentryAppenderTest {
         )
       )
 
-    existingAppender.append(event)
     pluginDefaultAppender.append(event)
 
-    verify(existingAppender, never()).captureLog(event)
     verify(pluginDefaultAppender, never()).captureLog(event)
   }
 

@@ -95,7 +95,7 @@ public class SentryLog4j2Initializer implements GenericApplicationListener {
               toLog4jLevel(sentryProperties.getLogging().getMinimumBreadcrumbLevel()),
               toLog4jLevel(sentryProperties.getLogging().getMinimumEventLevel()),
               toLog4jLevel(sentryProperties.getLogging().getMinimumLevel()),
-              sentryProperties.getLogging().isEnableLogs(),
+              sentryProperties.getLogging().getLogsEnabled(),
               null,
               null,
               ScopesAdapter.getInstance(),

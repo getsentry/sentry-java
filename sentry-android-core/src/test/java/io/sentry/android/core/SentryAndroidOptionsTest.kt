@@ -95,31 +95,31 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
-  fun `Timber logs are disabled by default`() {
+  fun `Timber log capture is disabled by default`() {
     val sentryOptions = SentryAndroidOptions()
 
-    assertFalse(sentryOptions.isEnableTimberLogs)
+    assertFalse(sentryOptions.timberLogCaptureEnabled)
   }
 
   @Test
-  fun `Timber logs can be enabled`() {
+  fun `Timber log capture can be enabled`() {
     val sentryOptions = SentryAndroidOptions()
-    sentryOptions.isEnableTimberLogs = true
+    sentryOptions.timberLogCaptureEnabled = true
 
-    assertTrue(sentryOptions.isEnableTimberLogs)
+    assertTrue(sentryOptions.timberLogCaptureEnabled)
   }
 
   @Test
-  fun `Logcat logs are disabled by default`() {
-    assertThat(SentryAndroidOptions().isEnableLogcatLogs).isFalse()
+  fun `Logcat log capture is disabled by default`() {
+    assertThat(SentryAndroidOptions().logcatLogCaptureEnabled).isFalse()
   }
 
   @Test
-  fun `Logcat logs can be enabled`() {
+  fun `Logcat log capture can be enabled`() {
     val sentryOptions = SentryAndroidOptions()
-    sentryOptions.isEnableLogcatLogs = true
+    sentryOptions.logcatLogCaptureEnabled = true
 
-    assertThat(sentryOptions.isEnableLogcatLogs).isTrue()
+    assertThat(sentryOptions.logcatLogCaptureEnabled).isTrue()
   }
 
   @Test

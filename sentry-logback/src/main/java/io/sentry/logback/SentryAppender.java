@@ -52,7 +52,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.ERROR;
   private @NotNull Level minimumLevel = Level.INFO;
-  private boolean enableLogs = false;
+  private boolean logsEnabled = false;
   private @Nullable Encoder<ILoggingEvent> encoder;
   private boolean includeUnencodedMessage = false;
 
@@ -89,7 +89,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
 
   @Override
   protected void append(@NotNull ILoggingEvent eventObject) {
-    if (enableLogs && eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
+    if (logsEnabled && eventObject.getLevel().isGreaterOrEqual(minimumLevel)) {
       captureLog(eventObject);
     }
     if (eventObject.getLevel().isGreaterOrEqual(minimumEventLevel)) {
@@ -333,12 +333,12 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     return minimumLevel;
   }
 
-  public void setEnableLogs(final boolean enableLogs) {
-    this.enableLogs = enableLogs;
+  public void setLogsEnabled(final boolean logsEnabled) {
+    this.logsEnabled = logsEnabled;
   }
 
-  public boolean isEnableLogs() {
-    return enableLogs;
+  public boolean getLogsEnabled() {
+    return logsEnabled;
   }
 
   @ApiStatus.Internal

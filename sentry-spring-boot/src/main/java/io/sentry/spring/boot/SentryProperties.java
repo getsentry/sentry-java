@@ -104,7 +104,7 @@ public class SentryProperties extends SentryOptions {
     private boolean enabled = true;
 
     /** Enable/Disable Sentry Logs capture from the auto-configured appender. */
-    private boolean enableLogs = false;
+    private boolean logsEnabled = false;
 
     /** Minimum logging level for recording breadcrumbs. */
     private @Nullable Level minimumBreadcrumbLevel;
@@ -126,12 +126,12 @@ public class SentryProperties extends SentryOptions {
       this.enabled = enabled;
     }
 
-    public boolean isEnableLogs() {
-      return enableLogs;
+    public boolean getLogsEnabled() {
+      return logsEnabled;
     }
 
-    public void setEnableLogs(boolean enableLogs) {
-      this.enableLogs = enableLogs;
+    public void setLogsEnabled(boolean logsEnabled) {
+      this.logsEnabled = logsEnabled;
     }
 
     public @Nullable Level getMinimumBreadcrumbLevel() {

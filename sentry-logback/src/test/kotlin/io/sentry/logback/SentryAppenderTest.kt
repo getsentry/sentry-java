@@ -57,7 +57,7 @@ class SentryAppenderTest {
     encoder: Encoder<ILoggingEvent>? = null,
     includeUnencodedMessage: Boolean = false,
     sendDefaultPii: Boolean = false,
-    enableLogs: Boolean = false,
+    logsEnabled: Boolean = false,
     options: SentryOptions = SentryOptions(),
     startLater: Boolean = false,
   ) {
@@ -83,7 +83,7 @@ class SentryAppenderTest {
       appender.setMinimumBreadcrumbLevel(minimumBreadcrumbLevel)
       appender.setMinimumEventLevel(minimumEventLevel)
       appender.setMinimumLevel(minimumLevel)
-      appender.setEnableLogs(enableLogs)
+      appender.setLogsEnabled(logsEnabled)
       appender.context = loggerContext
       appender.setTransportFactory(transportFactory)
       encoder?.context = loggerContext
@@ -413,9 +413,9 @@ class SentryAppenderTest {
 
   @Test
   fun `does not capture logs by default`() {
-    fixture = Fixture(enableLogs = false)
+    fixture = Fixture(logsEnabled = false)
 
-    assertFalse(fixture.appender.isEnableLogs)
+    assertFalse(fixture.appender.logsEnabled)
     fixture.logger.info("this should not be captured as a log")
     Sentry.flush(10)
 
@@ -424,9 +424,9 @@ class SentryAppenderTest {
 
   @Test
   fun `captures logs when local logs are enabled`() {
-    fixture = Fixture(enableLogs = true)
+    fixture = Fixture(logsEnabled = true)
 
-    assertTrue(fixture.appender.isEnableLogs)
+    assertTrue(fixture.appender.logsEnabled)
     fixture.logger.info("this should be captured as a log")
     Sentry.flush(10)
 
@@ -444,7 +444,7 @@ class SentryAppenderTest {
       Fixture(
         minimumBreadcrumbLevel = Level.INFO,
         minimumEventLevel = Level.ERROR,
-        enableLogs = false,
+        logsEnabled = false,
       )
 
     fixture.logger.info("this should be a breadcrumb")
@@ -464,7 +464,7 @@ class SentryAppenderTest {
 
   @Test
   fun `converts trace log level to Sentry log level`() {
-    fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.TRACE, logsEnabled = true)
     fixture.logger.trace("testing trace level")
 
     Sentry.flush(10)
@@ -475,7 +475,7 @@ class SentryAppenderTest {
 
   @Test
   fun `converts debug log level to Sentry log level`() {
-    fixture = Fixture(minimumLevel = Level.DEBUG, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.DEBUG, logsEnabled = true)
     fixture.logger.debug("testing debug level")
 
     Sentry.flush(10)
@@ -486,7 +486,7 @@ class SentryAppenderTest {
 
   @Test
   fun `converts info log level to Sentry log level`() {
-    fixture = Fixture(minimumLevel = Level.INFO, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.INFO, logsEnabled = true)
     fixture.logger.info("testing info level")
 
     Sentry.flush(10)
@@ -497,7 +497,7 @@ class SentryAppenderTest {
 
   @Test
   fun `converts warn log level to Sentry log level`() {
-    fixture = Fixture(minimumLevel = Level.WARN, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.WARN, logsEnabled = true)
     fixture.logger.warn("testing warn level")
 
     Sentry.flush(10)
@@ -508,7 +508,7 @@ class SentryAppenderTest {
 
   @Test
   fun `converts error log level to Sentry log level`() {
-    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.ERROR, logsEnabled = true)
     fixture.logger.error("testing error level")
 
     Sentry.flush(10)
@@ -519,7 +519,7 @@ class SentryAppenderTest {
 
   @Test
   fun `sends formatted log message if no encoder`() {
-    fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.TRACE, logsEnabled = true)
     fixture.logger.trace("Testing {} level", "TRACE")
 
     Sentry.flush(10)
@@ -541,7 +541,7 @@ class SentryAppenderTest {
   fun `does not send formatted log message if encoder is available but sendDefaultPii is off`() {
     var encoder = PatternLayoutEncoder()
     encoder.pattern = "encoderadded %msg"
-    fixture = Fixture(minimumLevel = Level.TRACE, enableLogs = true, encoder = encoder)
+    fixture = Fixture(minimumLevel = Level.TRACE, logsEnabled = true, encoder = encoder)
     fixture.logger.trace("Testing {} level", "TRACE")
 
     Sentry.flush(10)
@@ -564,7 +564,7 @@ class SentryAppenderTest {
     fixture =
       Fixture(
         minimumLevel = Level.TRACE,
-        enableLogs = true,
+        logsEnabled = true,
         sendDefaultPii = true,
         encoder = encoder,
       )
@@ -591,7 +591,7 @@ class SentryAppenderTest {
     fixture =
       Fixture(
         minimumLevel = Level.TRACE,
-        enableLogs = true,
+        logsEnabled = true,
         sendDefaultPii = true,
         encoder = encoder,
       )
@@ -864,7 +864,7 @@ class SentryAppenderTest {
 
   @Test
   fun `does not set template on log when logging message without parameters`() {
-    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.ERROR, logsEnabled = true)
     fixture.logger.error("testing message without parameters")
 
     Sentry.flush(1000)
@@ -881,7 +881,7 @@ class SentryAppenderTest {
 
   @Test
   fun `sets template on log when logging message with parameters`() {
-    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.ERROR, logsEnabled = true)
     fixture.logger.error("testing message {}", "param")
 
     Sentry.flush(1000)
@@ -899,7 +899,7 @@ class SentryAppenderTest {
 
   @Test
   fun `sets template on log when logging message with parameters and number of parameters is wrong`() {
-    fixture = Fixture(minimumLevel = Level.ERROR, enableLogs = true)
+    fixture = Fixture(minimumLevel = Level.ERROR, logsEnabled = true)
     fixture.logger.error("testing message {} {} {}", "param1", "param2")
 
     Sentry.flush(1000)
@@ -927,7 +927,7 @@ class SentryAppenderTest {
     fixture =
       Fixture(
         minimumLevel = Level.ERROR,
-        enableLogs = true,
+        logsEnabled = true,
         encoder = encoder,
         sendDefaultPii = false,
       )
@@ -953,7 +953,7 @@ class SentryAppenderTest {
     fixture =
       Fixture(
         minimumLevel = Level.ERROR,
-        enableLogs = true,
+        logsEnabled = true,
         encoder = encoder,
         includeUnencodedMessage = true,
       )
@@ -980,7 +980,7 @@ class SentryAppenderTest {
     fixture =
       Fixture(
         minimumLevel = Level.ERROR,
-        enableLogs = true,
+        logsEnabled = true,
         encoder = encoder,
         sendDefaultPii = true,
       )
@@ -1001,7 +1001,8 @@ class SentryAppenderTest {
 
   @Test
   fun `sets properties from MDC as attributes on logs`() {
-    fixture = Fixture(minimumLevel = Level.INFO, enableLogs = true, contextTags = listOf("someTag"))
+    fixture =
+      Fixture(minimumLevel = Level.INFO, logsEnabled = true, contextTags = listOf("someTag"))
     MDC.put("someTag", "someValue")
     MDC.put("otherTag", "otherValue")
     fixture.logger.info("testing MDC properties in logs")
