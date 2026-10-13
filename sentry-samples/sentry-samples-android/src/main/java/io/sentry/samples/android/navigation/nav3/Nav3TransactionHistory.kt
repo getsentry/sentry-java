@@ -49,11 +49,10 @@ internal object NavigationTransactionHistory {
 
     val trace = transaction.toNavigationTransactionTrace(dsn)
     if (Looper.myLooper() == Looper.getMainLooper()) {
-      if (transactionSessionId == sessionId) {
-        store.add(trace)
-      }
+      store.add(trace)
     } else {
       mainHandler.post {
+        // The session may have changed while this was queued.
         if (transactionSessionId == sessionId) {
           store.add(trace)
         }

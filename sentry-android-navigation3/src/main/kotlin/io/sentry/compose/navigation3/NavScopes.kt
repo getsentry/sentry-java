@@ -18,6 +18,7 @@ import io.sentry.PropagationContext
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.ScopeType
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
@@ -225,14 +226,19 @@ internal class NavScopes(
    * Registers this [NavScopes] instance with [lifecycle]. No-ops if `lifecycle` has already been
    * attached or is [destroyed][Lifecycle.Event.ON_DESTROY].
    *
-   * Throws if a caller tries to attach this instance to more than one lifecycle.
+   * Attaching to a second, different lifecycle is unsupported; it's logged and ignored.
    */
   fun attach(lifecycle: Lifecycle) {
-    check(attachedLifecycle == null || attachedLifecycle === lifecycle) {
-      "NavScopes has already been attached to a different lifecycle!"
+    val currentLifecycle = attachedLifecycle
+    if (currentLifecycle != null && currentLifecycle !== lifecycle) {
+      delegate.options.logger.log(
+        SentryLevel.WARNING,
+        "NavScopes is already attached to a different lifecycle; ignoring the new lifecycle.",
+      )
+      return
     }
 
-    if (attachedLifecycle === lifecycle) {
+    if (currentLifecycle === lifecycle) {
       return
     }
     if (lifecycle.currentState == Lifecycle.State.DESTROYED) {
@@ -254,9 +260,9 @@ internal class NavScopes(
   override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
     when (event) {
       ON_START -> coordinator.startCandidate(owner)
-      ON_RESUME -> delegate.configureScope { coordinator.resumeCandidate(owner, it) }
-      ON_PAUSE -> delegate.configureScope { coordinator.pauseCandidate(owner, it) }
-      ON_STOP -> delegate.configureScope { coordinator.stopCandidate(owner, it) }
+      ON_RESUME -> withScopeOrNull { coordinator.resumeCandidate(owner, it) }
+      ON_PAUSE -> withScopeOrNull { coordinator.pauseCandidate(owner, it) }
+      ON_STOP -> withScopeOrNull { coordinator.stopCandidate(owner, it) }
       ON_DESTROY -> dispose()
       else -> Unit
     }
@@ -328,18 +334,26 @@ internal class NavScopes(
     attachedLifecycle?.removeObserver(this)
     attachedLifecycle = null
 
-    var callbackInvoked = false
-
     // Clear nav state, unbind the nav transaction, and avoid leaking the LifecycleOwner.
+    withScopeOrNull { coordinator.unregisterCandidate(owner, it) }
+  }
+
+  /**
+   * Runs [block] with the real scope, or with `null` if [configureScope][IScopes.configureScope]
+   * skips its callback (e.g., the SDK is disabled), so coordinator bookkeeping still happens.
+   *
+   * A callback that ran but threw is not retried, as retrying could let its exception escape into
+   * the host app.
+   */
+  private fun withScopeOrNull(block: (IScope?) -> Unit) {
+    var callbackInvoked = false
     delegate.configureScope { scope ->
       callbackInvoked = true
-      coordinator.unregisterCandidate(owner, scope)
+      block(scope)
     }
 
-    // If the SDK is disabled, configureScope skips its callback. Unregister without a scope only
-    // then; retrying a callback that failed could let its exception escape into the host app.
     if (!callbackInvoked) {
-      coordinator.unregisterCandidate(owner, scope = null)
+      block(null)
     }
   }
 
@@ -629,32 +643,41 @@ internal class NavLeaseCoordinator {
     findCandidate(owner)?.start()
   }
 
-  fun resumeCandidate(owner: Any, scope: IScope) {
+  /**
+   * Records that [owner] resumed and, given a [scope], restores its lease if it has already applied
+   * a back stack update.
+   *
+   * A `null` scope (e.g., the SDK is disabled) still records the lifecycle transition so the
+   * candidate remains eligible for fallback once a scope becomes available.
+   */
+  fun resumeCandidate(owner: Any, scope: IScope?) {
     findCandidate(owner)?.let {
       it.resume(++resumeOrder)
 
-      if (it.hasAppliedInitialBackStackUpdate) {
+      if (scope != null && it.hasAppliedInitialBackStackUpdate) {
         transferLeaseTo(it, scope)
       }
     }
   }
 
-  fun pauseCandidate(owner: Any, scope: IScope) {
+  /** See [resumeCandidate] for `null` [scope] handling. */
+  fun pauseCandidate(owner: Any, scope: IScope?) {
     findCandidate(owner)?.let {
       it.pause()
 
       if (leaseHolder === it) {
-        transferLeaseTo(mostRecentlyResumedCandidate(excluding = it), scope)
+        handOffLease(mostRecentlyResumedCandidate(excluding = it), scope)
       }
     }
   }
 
-  fun stopCandidate(owner: Any, scope: IScope) {
+  /** See [resumeCandidate] for `null` [scope] handling. */
+  fun stopCandidate(owner: Any, scope: IScope?) {
     findCandidate(owner)?.let {
       it.stop()
 
       if (leaseHolder === it) {
-        transferLeaseTo(mostRecentlyResumedCandidate(), scope)
+        handOffLease(mostRecentlyResumedCandidate(), scope)
       }
     }
   }
@@ -672,11 +695,7 @@ internal class NavLeaseCoordinator {
       }
 
       if (leaseHolder === it) {
-        if (scope != null) {
-          transferLeaseTo(mostRecentlyResumedCandidate(), scope)
-        } else {
-          leaseHolder = null
-        }
+        handOffLease(mostRecentlyResumedCandidate(), scope)
       }
     }
   }
@@ -723,6 +742,18 @@ internal class NavLeaseCoordinator {
           it.resumeOrder > 0
       }
       .maxByOrNull { it.resumeOrder }
+
+  /**
+   * Hands the current lease to [next]. Without a [scope], the lease is released instead, as [next]
+   * could not publish its staged data.
+   */
+  private fun handOffLease(next: Candidate?, scope: IScope?) {
+    if (scope != null) {
+      transferLeaseTo(next, scope)
+    } else {
+      leaseHolder = null
+    }
+  }
 
   private fun transferLeaseTo(candidate: Candidate?, scope: IScope) {
     if (leaseHolder === candidate) {
