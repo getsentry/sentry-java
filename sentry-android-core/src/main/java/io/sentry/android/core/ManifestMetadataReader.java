@@ -192,9 +192,9 @@ final class ManifestMetadataReader {
 
   static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
 
-  static final String ENABLE_LOGS = "io.sentry.logs.enabled";
+  static final String TIMBER_LOG_CAPTURE_ENABLED = "io.sentry.timber.log-capture.enabled";
 
-  static final String ENABLE_METRICS = "io.sentry.metrics.enabled";
+  static final String LOGCAT_LOG_CAPTURE_ENABLED = "io.sentry.logcat.log-capture.enabled";
 
   static final String ENABLE_AUTO_TRACE_ID_GENERATION =
       "io.sentry.traces.enable-auto-id-generation";
@@ -750,14 +750,19 @@ final class ManifestMetadataReader {
           }
         }
 
-        options
-            .getLogs()
-            .setEnabled(readBool(metadata, logger, ENABLE_LOGS, options.getLogs().isEnabled()));
+        options.setTimberLogCaptureEnabled(
+            readBool(
+                metadata,
+                logger,
+                TIMBER_LOG_CAPTURE_ENABLED,
+                options.getTimberLogCaptureEnabled()));
 
-        options
-            .getMetrics()
-            .setEnabled(
-                readBool(metadata, logger, ENABLE_METRICS, options.getMetrics().isEnabled()));
+        options.setLogcatLogCaptureEnabled(
+            readBool(
+                metadata,
+                logger,
+                LOGCAT_LOG_CAPTURE_ENABLED,
+                options.getLogcatLogCaptureEnabled()));
 
         final @NotNull SentryFeedbackOptions feedbackOptions = options.getFeedbackOptions();
         feedbackOptions.setNameRequired(
