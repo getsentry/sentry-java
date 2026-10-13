@@ -11,6 +11,8 @@
   ([#5947](https://github.com/getsentry/sentry-java/pull/5947),
   [#5953](https://github.com/getsentry/sentry-java/pull/5953))
   Automatic Logs capture is disabled by default. Enable it separately for each integration:
+  - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
+    ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
   - Logback appender: `logsEnabled` ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
   - Log4j2 appender: `logsEnabled` ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
   - JUL handler: `logsEnabled` or `io.sentry.jul.SentryHandler.logsEnabled`
@@ -22,8 +24,6 @@
     ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
   - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.log-capture.enabled` manifest metadata
     ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
-  - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
-    ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
   Constructor migrations:
   - The remaining Log4j2 `SentryAppender` constructor and `createAppender` factory require a
     `logsEnabled` argument. The deprecated constructor without `minimumLevel` is removed.
