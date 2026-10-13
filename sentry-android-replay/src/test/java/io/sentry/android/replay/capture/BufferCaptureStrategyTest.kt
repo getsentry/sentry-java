@@ -203,6 +203,23 @@ class BufferCaptureStrategyTest {
   }
 
   @Test
+  fun `stop keeps the segment videos and deletes everything else`() {
+    val replayId = SentryId()
+    // a temporary folder, not options.cacheDirPath: the kept video would outlive the test there
+    val currentReplay = tmpDir.newFolder("replay_$replayId")
+    val video = File(currentReplay, "0.mp4").also { it.writeText("video") }
+    val frame = File(currentReplay, "1727500000000.jpg").also { it.writeText("frame") }
+
+    val strategy = fixture.getSut(replayCacheDir = currentReplay)
+    strategy.start(0, replayId)
+
+    strategy.stop()
+
+    assertTrue(video.exists(), "a captured segment's video is still queued for sending")
+    assertFalse(frame.exists())
+  }
+
+  @Test
   fun `onScreenshotRecorded adds screenshot to cache`() {
     val now = System.currentTimeMillis() + (fixture.options.sessionReplay.errorReplayDuration * 5)
     val strategy = fixture.getSut(dateProvider = { now })

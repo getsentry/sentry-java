@@ -50,6 +50,7 @@ public final class SpanUtils {
     if (SentryOpenTelemetryMode.AGENT == mode) {
       origins.add("auto.graphql.graphql");
       origins.add("auto.graphql.graphql22");
+      origins.add("auto.http.okhttp");
     }
 
     return origins;

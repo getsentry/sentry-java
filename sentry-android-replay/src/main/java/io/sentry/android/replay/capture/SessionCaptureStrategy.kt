@@ -12,7 +12,6 @@ import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
-import io.sentry.util.FileUtils
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
 
@@ -76,7 +75,7 @@ internal class SessionCaptureStrategy(
         segment.capture(scopes)
       }
       currentSegment = -1
-      FileUtils.deleteRecursively(replayCacheDir)
+      ReplayCache.deleteExceptSegmentVideos(replayCacheDir)
     }
     scopes?.configureScope { it.replayId = SentryId.EMPTY_ID }
     super.stop()

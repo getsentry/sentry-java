@@ -590,8 +590,6 @@ public final class io/sentry/ExternalOptions {
 	public fun isEnableBackpressureHandling ()Ljava/lang/Boolean;
 	public fun isEnableCacheTracing ()Ljava/lang/Boolean;
 	public fun isEnableDatabaseTransactionTracing ()Ljava/lang/Boolean;
-	public fun isEnableLogs ()Ljava/lang/Boolean;
-	public fun isEnableMetrics ()Ljava/lang/Boolean;
 	public fun isEnablePrettySerializationOutput ()Ljava/lang/Boolean;
 	public fun isEnableQueueTracing ()Ljava/lang/Boolean;
 	public fun isEnableSpotlight ()Ljava/lang/Boolean;
@@ -611,8 +609,6 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnableCacheTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDatabaseTransactionTracing (Ljava/lang/Boolean;)V
 	public fun setEnableDeduplication (Ljava/lang/Boolean;)V
-	public fun setEnableLogs (Ljava/lang/Boolean;)V
-	public fun setEnableMetrics (Ljava/lang/Boolean;)V
 	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
 	public fun setEnableQueueTracing (Ljava/lang/Boolean;)V
 	public fun setEnableSpotlight (Ljava/lang/Boolean;)V
@@ -3851,9 +3847,7 @@ public final class io/sentry/SentryOptions$Logs {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;
 	public fun getLoggerBatchProcessorFactory ()Lio/sentry/logger/ILoggerBatchProcessorFactory;
-	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Logs$BeforeSendLogCallback;)V
-	public fun setEnabled (Z)V
 	public fun setLoggerBatchProcessorFactory (Lio/sentry/logger/ILoggerBatchProcessorFactory;)V
 }
 
@@ -3865,9 +3859,7 @@ public final class io/sentry/SentryOptions$Metrics {
 	public fun <init> ()V
 	public fun getBeforeSend ()Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;
 	public fun getMetricsBatchProcessorFactory ()Lio/sentry/metrics/IMetricsBatchProcessorFactory;
-	public fun isEnabled ()Z
 	public fun setBeforeSend (Lio/sentry/SentryOptions$Metrics$BeforeSendMetricCallback;)V
-	public fun setEnabled (Z)V
 	public fun setMetricsBatchProcessorFactory (Lio/sentry/metrics/IMetricsBatchProcessorFactory;)V
 }
 
@@ -5298,6 +5290,7 @@ public class io/sentry/logger/LoggerBatchProcessor : io/sentry/logger/ILoggerBat
 	public static final field FLUSH_AFTER_MS I
 	public static final field MAX_BATCH_SIZE I
 	public static final field MAX_QUEUE_SIZE I
+	protected field hasAcceptedItem Z
 	protected final field options Lio/sentry/SentryOptions;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;Lio/sentry/ISentryExecutorService;)V
@@ -5317,13 +5310,6 @@ public final class io/sentry/logger/NoOpLoggerApi : io/sentry/logger/ILoggerApi 
 	public fun log (Lio/sentry/SentryLogLevel;Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun trace (Ljava/lang/String;[Ljava/lang/Object;)V
 	public fun warn (Ljava/lang/String;[Ljava/lang/Object;)V
-}
-
-public final class io/sentry/logger/NoOpLoggerBatchProcessor : io/sentry/logger/ILoggerBatchProcessor {
-	public fun add (Lio/sentry/SentryLogEvent;)V
-	public fun close (Z)V
-	public fun flush (J)V
-	public static fun getInstance ()Lio/sentry/logger/NoOpLoggerBatchProcessor;
 }
 
 public final class io/sentry/logger/SentryLogParameters {
@@ -5386,6 +5372,7 @@ public class io/sentry/metrics/MetricsBatchProcessor : io/sentry/metrics/IMetric
 	public static final field FLUSH_AFTER_MS I
 	public static final field MAX_BATCH_SIZE I
 	public static final field MAX_QUEUE_SIZE I
+	protected field hasAcceptedItem Z
 	protected final field options Lio/sentry/SentryOptions;
 	public fun <init> (Lio/sentry/SentryOptions;Lio/sentry/ISentryClient;)V
 	public fun add (Lio/sentry/SentryMetricsEvent;)V
@@ -5442,13 +5429,6 @@ public final class io/sentry/metrics/NoOpMetricsApi : io/sentry/metrics/IMetrics
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;)V
 	public fun gauge (Ljava/lang/String;Ljava/lang/Double;Ljava/lang/String;Lio/sentry/metrics/SentryMetricsParameters;)V
 	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsApi;
-}
-
-public final class io/sentry/metrics/NoOpMetricsBatchProcessor : io/sentry/metrics/IMetricsBatchProcessor {
-	public fun add (Lio/sentry/SentryMetricsEvent;)V
-	public fun close (Z)V
-	public fun flush (J)V
-	public static fun getInstance ()Lio/sentry/metrics/NoOpMetricsBatchProcessor;
 }
 
 public final class io/sentry/metrics/SentryMetricsParameters {
@@ -5833,6 +5813,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun getBootTime ()Ljava/util/Date;
 	public fun getBrand ()Ljava/lang/String;
 	public fun getChipset ()Ljava/lang/String;
+	public fun getConnectionEffectiveType ()Ljava/lang/String;
 	public fun getConnectionType ()Ljava/lang/String;
 	public fun getCpuDescription ()Ljava/lang/String;
 	public fun getExternalFreeStorage ()Ljava/lang/Long;
@@ -5871,6 +5852,7 @@ public final class io/sentry/protocol/Device : io/sentry/JsonSerializable, io/se
 	public fun setBrand (Ljava/lang/String;)V
 	public fun setCharging (Ljava/lang/Boolean;)V
 	public fun setChipset (Ljava/lang/String;)V
+	public fun setConnectionEffectiveType (Ljava/lang/String;)V
 	public fun setConnectionType (Ljava/lang/String;)V
 	public fun setCpuDescription (Ljava/lang/String;)V
 	public fun setExternalFreeStorage (Ljava/lang/Long;)V
@@ -5929,6 +5911,7 @@ public final class io/sentry/protocol/Device$JsonKeys {
 	public static final field BRAND Ljava/lang/String;
 	public static final field CHARGING Ljava/lang/String;
 	public static final field CHIPSET Ljava/lang/String;
+	public static final field CONNECTION_EFFECTIVE_TYPE Ljava/lang/String;
 	public static final field CONNECTION_TYPE Ljava/lang/String;
 	public static final field CPU_DESCRIPTION Ljava/lang/String;
 	public static final field EXTERNAL_FREE_STORAGE Ljava/lang/String;

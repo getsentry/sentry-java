@@ -21,7 +21,6 @@ import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.clientreport.DiscardReason.RATELIMIT_BACKOFF
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
-import io.sentry.util.FileUtils
 import java.io.File
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
@@ -80,7 +79,7 @@ internal class BufferCaptureStrategy(
     val replayCacheDir = cache?.replayCacheDir
     replayExecutor.submit(
       ReplayRunnable("$TAG.stop") {
-        FileUtils.deleteRecursively(replayCacheDir)
+        ReplayCache.deleteExceptSegmentVideos(replayCacheDir)
         currentSegment = -1
       }
     )

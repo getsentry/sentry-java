@@ -19,6 +19,7 @@ public class SentryTimberTree(
   private val minEventLevel: SentryLevel,
   private val minBreadcrumbLevel: SentryLevel,
   private val minLogLevel: SentryLogLevel = SentryLogLevel.INFO,
+  private val logsEnabled: Boolean = false,
 ) : Timber.Tree() {
   private val pendingTag = ThreadLocal<String?>()
 
@@ -185,7 +186,9 @@ public class SentryTimberTree(
 
     captureEvent(level, tag, sentryMessage, throwable)
     addBreadcrumb(level, sentryMessage, throwable)
-    addLog(logLevel, message, tag, throwable, *args)
+    if (logsEnabled) {
+      addLog(logLevel, message, tag, throwable, *args)
+    }
   }
 
   /** do not log if it's lower than min. required level. */

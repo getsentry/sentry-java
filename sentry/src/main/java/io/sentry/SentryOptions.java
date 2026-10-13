@@ -3834,14 +3834,6 @@ public class SentryOptions implements RateLimiterConfig {
       }
     }
 
-    if (options.isEnableLogs() != null) {
-      getLogs().setEnabled(options.isEnableLogs());
-    }
-
-    if (options.isEnableMetrics() != null) {
-      getMetrics().setEnabled(options.isEnableMetrics());
-    }
-
     if (options.getProfileSessionSampleRate() != null) {
       setProfileSessionSampleRate(options.getProfileSessionSampleRate());
     }
@@ -4092,9 +4084,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Logs {
 
-    /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
-    private boolean enable = false;
-
     /**
      * This function is called with an SDK specific log event object and can return a modified event
      * object or nothing to skip reporting the log item
@@ -4103,24 +4092,6 @@ public class SentryOptions implements RateLimiterConfig {
 
     private @NotNull ILoggerBatchProcessorFactory loggerBatchProcessorFactory =
         new DefaultLoggerBatchProcessorFactory();
-
-    /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
-     *
-     * @return true if Sentry Logs should be enabled
-     */
-    public boolean isEnabled() {
-      return enable;
-    }
-
-    /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
-     *
-     * @param enableLogs true if Sentry Logs should be enabled
-     */
-    public void setEnabled(boolean enableLogs) {
-      this.enable = enableLogs;
-    }
 
     /**
      * Returns the BeforeSendLog callback
@@ -4171,9 +4142,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Metrics {
 
-    /** Whether Sentry Metrics feature is enabled and metrics are sent to Sentry. */
-    private boolean enable = true;
-
     /**
      * This function is called with a metric key and tags and can return false to skip sending the
      * metric
@@ -4182,24 +4150,6 @@ public class SentryOptions implements RateLimiterConfig {
 
     private @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory =
         new DefaultMetricsBatchProcessorFactory();
-
-    /**
-     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
-     *
-     * @return true if Sentry Metrics should be enabled
-     */
-    public boolean isEnabled() {
-      return enable;
-    }
-
-    /**
-     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
-     *
-     * @param enableMetrics true if Sentry Metrics should be enabled
-     */
-    public void setEnabled(final boolean enableMetrics) {
-      this.enable = enableMetrics;
-    }
 
     /**
      * Returns the BeforeSendMetric callback

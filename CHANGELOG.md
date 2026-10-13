@@ -2,18 +2,84 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- Remove the aggregate Sentry Logs and Metrics enable options from all configuration surfaces:
+  - Java API: `options.getLogs().setEnabled(...)` and `options.getMetrics().setEnabled(...)`
+  - Properties files: `logs.enabled` and `metrics.enabled`
+  - Environment variables: `SENTRY_LOGS_ENABLED` and `SENTRY_METRICS_ENABLED`
+  - JVM system properties and Spring Boot: `sentry.logs.enabled` and `sentry.metrics.enabled`
+  - Android manifest metadata: `io.sentry.logs.enabled` and `io.sentry.metrics.enabled`
+
+  The Java accessors are removed. Values supplied through the other configuration surfaces no
+  longer affect capture.
+  ([#5939](https://github.com/getsentry/sentry-java/pull/5939),
+  [#5947](https://github.com/getsentry/sentry-java/pull/5947),
+  [#5953](https://github.com/getsentry/sentry-java/pull/5953))
+  - **Automatic Logs capture:** Disabled by default. Enable it separately for each integration:
+    - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
+      ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
+    - Logback appender: `logsEnabled` ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
+    - Log4j2 appender: `logsEnabled` ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
+    - JUL handler: `logsEnabled` or `io.sentry.jul.SentryHandler.logsEnabled`
+      ([#5942](https://github.com/getsentry/sentry-java/pull/5942))
+    - Auto-installed Timber integration: `timberLogCaptureEnabled` or
+      `io.sentry.timber.log-capture.enabled` manifest metadata
+      ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+    - Manually installed Timber integration or tree: `logsEnabled`
+      ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+    - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.log-capture.enabled` manifest metadata
+      ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
+  - **Constructor migrations:**
+    - The remaining Log4j2 `SentryAppender` constructor and `createAppender` factory require a
+      `logsEnabled` argument. The deprecated constructor without `minimumLevel` is removed.
+    - Manually constructed `SentryTimberIntegration` and `SentryTimberTree` instances require a
+      `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
+- Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
+- Remove deprecated Hub compatibility APIs in favor of `IScopes` and `Scopes` ([#6223](https://github.com/getsentry/sentry-java/pull/6223))
+
+### Features
+
+- Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
+
+### Dependencies
+
+- Bump Native SDK from v0.17.1 to v0.17.2 ([#6230](https://github.com/getsentry/sentry-java/pull/6230))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0172)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.1...0.17.2)
+
+## 8.59.0
+
+### Breaking Changes
+
+- Capture direct `Sentry.logger()` and `Sentry.metrics()` calls regardless of `options.getLogs().isEnabled()` and `options.getMetrics().isEnabled()` ([#6184](https://github.com/getsentry/sentry-java/pull/6184))
+  - Automatic logging integrations still only capture logs when `options.getLogs().isEnabled()` is `true`. `options.getMetrics().setEnabled(...)` currently has no effect because there are no automatic Metrics integrations. Both enable options will be removed in the upcoming major release, and each logging integration will then have a separate opt-in flag.
+  - Use `options.getLogs().setBeforeSend(...)` and `options.getMetrics().setBeforeSend(...)` to filter manually emitted telemetry. Return `null` from either callback to drop it.
+
+### Fixes
+
+- Keep the videos of already captured session replay segments when the replay stops, so segments that are still queued are no longer sent without their video ([#6177](https://github.com/getsentry/sentry-java/pull/6177))
+
 ### Features
 
 - Deprecate `sendDefaultPii` in favor of `dataCollection` ahead of its removal in 9.0 ([#6158](https://github.com/getsentry/sentry-java/pull/6158))
 - Make the tombstone merge time threshold configurable via `SentryAndroidOptions.setTombstoneMergeTimeThresholdMillis` and the `io.sentry.tombstone.merge-time-threshold-millis` manifest option ([#6154](https://github.com/getsentry/sentry-java/pull/6154))
+- Add `sentry-apollo-5` integration for Apollo Kotlin 5, providing HTTP tracing and failed GraphQL request reporting ([#6074](https://github.com/getsentry/sentry-java/pull/6074))
+- Add OkHttp autoconfiguration for Spring Boot ([#5797](https://github.com/getsentry/sentry-java/pull/5797))
+
+### Fixes
+
+- Prevent infinite loops when capturing exceptions with cyclic cause chains ([#6073](https://github.com/getsentry/sentry-java/pull/6073))
 
 ### Improvements
 
 - Recover Android 17 `MemoryLimiter` app exits recorded as `ApplicationExitInfo.REASON_MEMORY_LIMITER` ([#6174](https://github.com/getsentry/sentry-java/pull/6174))
 
-### Internal
+### Dependencies
 
-- Remove deprecated Hub compatibility APIs in favor of `IScopes` and `Scopes` ([#6223](https://github.com/getsentry/sentry-java/pull/6223))
+- Bump Native SDK from v0.16.6 to v0.17.1 ([#6135](https://github.com/getsentry/sentry-java/pull/6135))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0171)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.16.6...0.17.1)
 
 ## 8.58.0
 

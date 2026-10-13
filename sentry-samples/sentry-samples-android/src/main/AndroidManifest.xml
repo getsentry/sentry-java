@@ -102,12 +102,23 @@
       android:exported="false" />
 
     <activity
-      android:name=".navigation.Nav2SetupActivity"
+      android:name=".navigation.nav2.Nav2SetupActivity"
       android:exported="false"
       android:theme="@style/AppTheme.Main" />
 
     <activity
-      android:name=".navigation.Nav2Activity"
+      android:name=".navigation.nav2.Nav2Activity"
+      android:exported="false"
+      android:screenOrientation="portrait"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
+      android:name=".navigation.nav3.Nav3SetupActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
+      android:name=".navigation.nav3.Nav3Activity"
       android:exported="false"
       android:screenOrientation="portrait"
       android:theme="@style/AppTheme.Main" />
@@ -147,9 +158,14 @@
       android:name="io.sentry.debug"
       android:value="${sentryDebug}" />
 
-    <!--    how to enable Sentry Logs (Sentry.logger() calls are dropped unless this is on)-->
+    <!--    how to enable Sentry Logs capture from Timber-->
     <meta-data
-      android:name="io.sentry.logs.enabled"
+      android:name="io.sentry.timber.log-capture.enabled"
+      android:value="true" />
+
+    <!--    how to enable Sentry Logs capture from Logcat-->
+    <meta-data
+      android:name="io.sentry.logcat.log-capture.enabled"
       android:value="true" />
 
     <!--    how to disable verbose logging of the session replay feature-->

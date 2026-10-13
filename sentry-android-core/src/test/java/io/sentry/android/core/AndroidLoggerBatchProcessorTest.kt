@@ -1,12 +1,16 @@
 package io.sentry.android.core
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ISentryClient
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
+import io.sentry.test.getProperty
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -15,7 +19,9 @@ import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
@@ -56,6 +62,16 @@ class AndroidLoggerBatchProcessorTest {
   }
 
   @Test
+  fun `onBackground does not flush before first accepted item`() {
+    val sut = fixture.getSut(useImmediateExecutor = true)
+
+    sut.onBackground()
+
+    assertThat(sut.getProperty<AtomicBoolean>("hasScheduled").get()).isFalse()
+    verify(fixture.client, never()).captureBatchedLogEvents(any())
+  }
+
+  @Test
   fun `onBackground schedules flush`() {
     val sut = fixture.getSut(useImmediateExecutor = true)
     val logEvent = SentryLogEvent(SentryId(), 1.0, "test", SentryLogLevel.INFO)
@@ -67,12 +83,23 @@ class AndroidLoggerBatchProcessorTest {
   }
 
   @Test
+  fun `onBackground does not submit shared executor work without accepted items`() {
+    val sharedExecutor = mock<ISentryExecutorService>()
+    val sut = fixture.getSut { options -> options.executorService = sharedExecutor }
+
+    sut.onBackground()
+
+    verifyNoInteractions(sharedExecutor)
+  }
+
+  @Test
   fun `onBackground handles executor exception gracefully`() {
     val sut = fixture.getSut { options ->
-      val rejectingExecutor = mock<io.sentry.ISentryExecutorService>()
+      val rejectingExecutor = mock<ISentryExecutorService>()
       whenever(rejectingExecutor.submit(any())).thenThrow(RuntimeException("Rejected"))
       options.executorService = rejectingExecutor
     }
+    sut.add(SentryLogEvent(SentryId(), 1.0, "test", SentryLogLevel.INFO))
 
     // Should not throw
     sut.onBackground()

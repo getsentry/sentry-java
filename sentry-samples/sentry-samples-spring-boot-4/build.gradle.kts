@@ -64,6 +64,10 @@ dependencies {
   implementation(libs.springboot4.starter.kafka)
   implementation(projects.sentryKafka)
 
+  // okhttp client instrumentation
+  implementation(projects.sentryOkhttp)
+  implementation(libs.okhttp)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)
@@ -90,10 +94,6 @@ tasks.register<Test>("systemTest").configure {
   classpath = test.runtimeClasspath
 
   maxParallelForks = 1
-
-  // Cap JVM args per test
-  minHeapSize = "128m"
-  maxHeapSize = "1g"
 
   filter { includeTestsMatching("io.sentry.systemtest*") }
 }

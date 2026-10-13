@@ -133,7 +133,6 @@ public class Main {
           //                }
           //              });
 
-          options.getLogs().setEnabled(true);
         });
 
     Sentry.addBreadcrumb(

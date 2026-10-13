@@ -6,6 +6,7 @@ import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.SentryDate
 import io.sentry.SpanDataConvention
+import io.sentry.SpanOptions
 import io.sentry.TypeCheckHint
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.Platform
@@ -40,8 +41,8 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
 
     // We start the call span that will contain all the others
     val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
-    callSpan = parentSpan?.startChild("http.client")
-    callSpan?.spanContext?.origin = TRACE_ORIGIN
+    callSpan =
+      parentSpan?.startChild("http.client", null, SpanOptions().apply { origin = TRACE_ORIGIN })
 
     breadcrumb =
       Breadcrumb().apply {

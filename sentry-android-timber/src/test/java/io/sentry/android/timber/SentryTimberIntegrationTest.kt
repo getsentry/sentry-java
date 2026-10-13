@@ -1,5 +1,6 @@
 package io.sentry.android.timber
 
+import io.sentry.Breadcrumb
 import io.sentry.IScopes
 import io.sentry.ITransportFactory
 import io.sentry.ScopesAdapter
@@ -7,32 +8,44 @@ import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
+import io.sentry.logger.ILoggerApi
+import io.sentry.logger.SentryLogParameters
 import io.sentry.protocol.SdkVersion
 import io.sentry.transport.ITransport
+import io.sentry.util.LazyEvaluator.Evaluator
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import timber.log.Timber
 
 class SentryTimberIntegrationTest {
   private class Fixture {
     val scopes = mock<IScopes>()
+    val logs = mock<ILoggerApi>()
     val options = SentryOptions().apply { sdkVersion = SdkVersion("test", "1.2.3") }
+
+    init {
+      whenever(scopes.logger()).thenReturn(logs)
+    }
 
     fun getSut(
       minEventLevel: SentryLevel = SentryLevel.ERROR,
       minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
       minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+      logsEnabled: Boolean = false,
     ): SentryTimberIntegration =
       SentryTimberIntegration(
         minEventLevel = minEventLevel,
         minBreadcrumbLevel = minBreadcrumbLevel,
         minLogsLevel = minLogsLevel,
+        logsEnabled = logsEnabled,
       )
   }
 
@@ -62,6 +75,42 @@ class SentryTimberIntegrationTest {
 
     Timber.e(Throwable())
     verify(fixture.scopes).captureEvent(any())
+  }
+
+  @Test
+  fun `Manual integration keeps logs disabled when configured false`() {
+    val sut = SentryTimberIntegration(logsEnabled = false)
+    sut.register(fixture.scopes, fixture.options)
+
+    assertFalse(sut.logsEnabled)
+    Timber.e("message")
+
+    verify(fixture.scopes).captureEvent(any())
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>())
+    verifyNoInteractions(fixture.logs)
+  }
+
+  @Test
+  fun `Manual integration captures logs when enabled`() {
+    val sut = SentryTimberIntegration(logsEnabled = true)
+    sut.register(fixture.scopes, fixture.options)
+
+    assertTrue(sut.logsEnabled)
+    Timber.i("message")
+
+    verify(fixture.logs).log(any(), any<SentryLogParameters>(), any<String>())
+  }
+
+  @Test
+  fun `Integration evaluates Logs provider when registered`() {
+    var logsEnabled = false
+    val sut = SentryTimberIntegration(Evaluator { logsEnabled })
+    logsEnabled = true
+
+    sut.register(fixture.scopes, fixture.options)
+    Timber.i("message")
+
+    verify(fixture.logs).log(any(), any<SentryLogParameters>(), any<String>())
   }
 
   @Test

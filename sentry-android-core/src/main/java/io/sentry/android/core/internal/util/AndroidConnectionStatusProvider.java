@@ -45,6 +45,7 @@ public final class AndroidConnectionStatusProvider
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull MonotonicTicker ticker;
   private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers;
+  private final @NotNull CellularNetworkTechnologyProvider cellularNetworkTechnologyProvider;
   private final @Nullable Handler handler;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private volatile @Nullable NetworkCallback networkCallback;
@@ -94,6 +95,8 @@ public final class AndroidConnectionStatusProvider
     this.cacheFreshUntil = Deadline.passed(ticker);
     this.handler = handler;
     this.connectionStatusObservers = new ArrayList<>();
+    this.cellularNetworkTechnologyProvider =
+        new CellularNetworkTechnologyProvider(this.context, options.getLogger(), buildInfoProvider);
 
     capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
@@ -168,6 +171,24 @@ public final class AndroidConnectionStatusProvider
 
     // Fallback to legacy method when NetworkCapabilities not available
     return getConnectionType(context, options.getLogger(), buildInfoProvider);
+  }
+
+  /**
+   * The connection type and, for cellular connections, the generation of the network technology.
+   *
+   * <p>Both are derived from one cache read, so they always describe the same network instead of
+   * straddling a connectivity change.
+   */
+  public @NotNull NetworkConnection getConnection() {
+    if (!isCacheValid()) {
+      updateCache(null);
+    }
+    final @Nullable String connectionType = getConnectionTypeFromCache();
+    if (!"cellular".equals(connectionType)) {
+      return new NetworkConnection(connectionType, null);
+    }
+    return new NetworkConnection(
+        connectionType, cellularNetworkTechnologyProvider.getCellularNetworkTechnology());
   }
 
   private void ensureNetworkCallbackRegistered() {
@@ -344,6 +365,9 @@ public final class AndroidConnectionStatusProvider
       if (registerNetworkCallback(
           context, options.getLogger(), buildInfoProvider, handler, callback)) {
         networkCallback = callback;
+        // Only start listening once the network callback is registered, because unregistering is
+        // skipped while there is no network callback, which would leave the listener running.
+        cellularNetworkTechnologyProvider.register();
         options.getLogger().log(SentryLevel.DEBUG, "Network callback registered successfully");
       } else {
         options.getLogger().log(SentryLevel.WARNING, "Failed to register network callback");
@@ -459,6 +483,7 @@ public final class AndroidConnectionStatusProvider
       if (callbackRef != null) {
         unregisterNetworkCallback(context, options.getLogger(), callbackRef);
       }
+      cellularNetworkTechnologyProvider.unregister();
       // Clear cached state
       cachedNetworkCapabilities = null;
       currentNetwork = null;

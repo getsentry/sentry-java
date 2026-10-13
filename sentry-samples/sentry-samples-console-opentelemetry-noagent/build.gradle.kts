@@ -70,10 +70,6 @@ tasks.register<Test>("systemTest").configure {
 
   maxParallelForks = 1
 
-  // Cap JVM args per test
-  minHeapSize = "128m"
-  maxHeapSize = "1g"
-
   filter { includeTestsMatching("io.sentry.systemtest*") }
 }
 

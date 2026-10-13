@@ -104,13 +104,6 @@ public final class LoggerApi implements ILoggerApi {
         return;
       }
 
-      if (!options.getLogs().isEnabled()) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Sentry Log is disabled and this 'logger' call is a no-op.");
-        return;
-      }
-
       if (message == null) {
         return;
       }
