@@ -34,10 +34,5 @@ listOf("com.android.library", "com.android.application").forEach { pluginId ->
     // leaves their test tasks on the toolchain; AGP has no such split, as compileOptions applies to
     // every variant, so its unit tests need this.
     applyToolchainToCompileTasks { it.name.contains("UnitTest") }
-
-    // Robolectric's SDK 37 sandbox (the default, as targetSdk is 37) reflectively writes
-    // FileDescriptor fields in ApplicationSharedMemory; without this, setup fails with
-    // "Failed to interact with raw FileDescriptor internals".
-    tasks.withType<Test>().configureEach { jvmArgs("--add-opens=java.base/java.io=ALL-UNNAMED") }
   }
 }
