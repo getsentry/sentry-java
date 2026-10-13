@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,6 +62,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 
+/**
+ * Names the Activity or Fragment hosting the current Nav3 root, for the sample's transaction tags.
+ * Defaults to the Activity's class name when unset.
+ */
+internal val LocalNav3SampleHost = staticCompositionLocalOf<String?> { null }
+
 @ExperimentalComposeUiApi
 @Composable
 internal fun TracedNav3Route(
@@ -68,7 +75,8 @@ internal fun TracedNav3Route(
   scenario: Nav3Scenario,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  val activityName = LocalContext.current.getActivity().javaClass.simpleName
+  val activityName =
+    LocalNav3SampleHost.current ?: LocalContext.current.getActivity().javaClass.simpleName
   // Tag after composition is applied so abandoned compositions don't tag anything.
   SideEffect { tagCurrentNav3Scenario(scenario, activityName) }
   SentryTraced(

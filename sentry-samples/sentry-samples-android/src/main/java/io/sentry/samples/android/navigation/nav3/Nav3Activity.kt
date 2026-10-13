@@ -39,6 +39,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import io.sentry.compose.navigation3.SentryBackStackEntry
@@ -351,7 +353,9 @@ private fun Nav3SampleApp(
   }
 
   Scaffold(
-    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+    // Expose test tags as resource IDs so adb/uiautomator can target them.
+    modifier =
+      Modifier.fillMaxSize().safeDrawingPadding().semantics { testTagsAsResourceId = true },
     containerColor = MaterialTheme.colorScheme.background,
     topBar = {
       Nav3TopBar(
@@ -460,6 +464,17 @@ private fun Nav3SampleApp(
                 MultiActivityRoute {
                   activity?.startActivity(
                     Intent(activity, Nav3ProductsActivity::class.java)
+                      .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+                  )
+                }
+              }
+            }
+            entry<Nav3Route.MultiFragment> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                MultiFragmentRoute {
+                  activity?.startActivity(
+                    Intent(activity, Nav3FragmentsActivity::class.java)
                       .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
                   )
                 }

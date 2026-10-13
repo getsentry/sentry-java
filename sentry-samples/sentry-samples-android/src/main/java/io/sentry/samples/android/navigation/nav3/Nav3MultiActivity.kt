@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
@@ -58,9 +60,11 @@ class Nav3ProductsActivity : ComponentActivity() {
     }
     setContent {
       Nav3SampleTheme {
-        MultiActivityNavDisplay(
+        MultiRootNavDisplay(
           activity = this,
+          title = "Products Activity",
           initialRoute = Nav3Route.ProductList,
+          scenario = Nav3Scenario.MULTI_ACTIVITY,
           configuration = configuration,
           onFinish = { finish() },
           onCheckout = { productId ->
@@ -88,9 +92,11 @@ class Nav3CheckoutActivity : ComponentActivity() {
     }
     setContent {
       Nav3SampleTheme {
-        MultiActivityNavDisplay(
+        MultiRootNavDisplay(
           activity = this,
+          title = "Checkout Activity",
           initialRoute = Nav3Route.Checkout(productId),
+          scenario = Nav3Scenario.MULTI_ACTIVITY,
           configuration = configuration,
           onFinish = { finish() },
         )
@@ -114,14 +120,23 @@ internal fun MultiActivityRoute(onOpenProducts: () -> Unit) {
   )
 }
 
+/**
+ * A self-contained Nav3 root (back stack, [SentryNavEffect], and [NavDisplay]) shared by the
+ * Multi-Activity and Multi-Fragment samples, so each Activity or Fragment owns its own effect.
+ *
+ * @param onCheckout Opens checkout outside this root (e.g., another Activity or Fragment). When
+ *   `null`, checkout is pushed onto this root's own back stack.
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun MultiActivityNavDisplay(
+internal fun MultiRootNavDisplay(
   activity: ComponentActivity,
+  title: String,
   initialRoute: Nav3Route,
+  scenario: Nav3Scenario,
   configuration: NavigationSampleConfig,
   onFinish: () -> Unit,
-  onCheckout: (String) -> Unit = {},
+  onCheckout: ((String) -> Unit)? = null,
 ) {
   val backStack = rememberSaveableNav3BackStack(initialRoute)
   var routeWorkOptions by remember { mutableStateOf(setOf(RouteWorkOption.MANUAL_CHILD_SPAN)) }
@@ -151,12 +166,14 @@ private fun MultiActivityNavDisplay(
     }
   }
   Scaffold(
-    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+    // Expose test tags as resource IDs so adb/uiautomator can target them.
+    modifier =
+      Modifier.fillMaxSize().safeDrawingPadding().semantics { testTagsAsResourceId = true },
     topBar = {
       Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
           Text(
-            if (initialRoute is Nav3Route.Checkout) "Checkout Activity" else "Products Activity",
+            title,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.weight(1f),
           )
@@ -184,7 +201,7 @@ private fun MultiActivityNavDisplay(
     },
     bottomBar = {
       SentryControls(
-        onCaptureException = { captureSampleException("Nav3 Multi-Activity") },
+        onCaptureException = { captureSampleException("Nav3 ${scenario.label}") },
         onCrashApp = { showCrashConfirmation = true },
       )
     },
@@ -196,30 +213,33 @@ private fun MultiActivityNavDisplay(
       entryProvider =
         entryProvider {
           entry<Nav3Route.ProductList> { route ->
-            TracedNav3Route(route, Nav3Scenario.MULTI_ACTIVITY) {
+            TracedNav3Route(route, scenario) {
               Nav3RouteWorkEffect(route, routeWorkOptions)
               ProductListRoute(backStack)
             }
           }
           entry<Nav3Route.ProductDetail> { route ->
-            TracedNav3Route(route, Nav3Scenario.MULTI_ACTIVITY) {
+            TracedNav3Route(route, scenario) {
               Nav3RouteWorkEffect(route, routeWorkOptions)
               ProductDetailRoute(
                 route = route,
                 backStack = backStack,
-                onCheckout = { onCheckout(route.productId) },
+                onCheckout = {
+                  onCheckout?.invoke(route.productId)
+                    ?: backStack.add(Nav3Route.Checkout(route.productId))
+                },
                 showOverlays = false,
               )
             }
           }
           entry<Nav3Route.Checkout> { route ->
-            TracedNav3Route(route, Nav3Scenario.MULTI_ACTIVITY) {
+            TracedNav3Route(route, scenario) {
               Nav3RouteWorkEffect(route, routeWorkOptions)
               CheckoutRoute(route, backStack)
             }
           }
           entry<Nav3Route.Confirmation> { route ->
-            TracedNav3Route(route, Nav3Scenario.MULTI_ACTIVITY) {
+            TracedNav3Route(route, scenario) {
               Nav3RouteWorkEffect(route, routeWorkOptions)
               ConfirmationRoute(route, backStack, rootRoute = initialRoute)
             }
@@ -239,7 +259,7 @@ private fun MultiActivityNavDisplay(
         TextButton(
           onClick = {
             showCrashConfirmation = false
-            crashSampleApp("Nav3 Multi-Activity")
+            crashSampleApp("Nav3 ${scenario.label}")
           }
         ) {
           Text("Crash")
