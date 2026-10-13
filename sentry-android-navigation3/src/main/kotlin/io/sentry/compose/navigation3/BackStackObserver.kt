@@ -46,11 +46,29 @@ private const val NAVIGATION_OP: String = "navigation"
  *   expensive; and
  * - ensures we don't miss reporting a genuine top-of-stack change.
  *
+ * **Coexisting with other observers**
+ *
+ * Host apps may briefly have more than one observer alive at a time, e.g., when navigating between
+ * activities that each own a [SentryNavEffect]. Rather than coordinating with each other, observers
+ * follow three local rules:
+ *
+ * 1. An observer's first new top may unbind another observer's nav transaction (but never a non-nav
+ *    transaction), so the incoming destination gets its own transaction.
+ * 2. [cleanup] only clears the screen and nav context this observer published, so an outgoing
+ *    observer can't wipe an incoming observer's data.
+ * 3. [onResume] republishes this observer's latest screen and nav context, and rebinds its
+ *    unfinished nav transaction if the scope is free, so returning to an observer restores its
+ *    data.
+ *
+ * Simultaneously active observers (side-by-side or nested) are not supported.
+ *
  * **Thread safety**
  *
- * This class is ***not*** thread-safe. Clients should serialize calls to [onBackStackChanged] and
- * [cleanup] (e.g., via invocation from an `*Effect` or another form of thread confinement).
+ * This class is ***not*** thread-safe. Clients should serialize calls to [onBackStackChanged],
+ * [onResume], and [cleanup] (e.g., via invocation from an `*Effect` or another form of thread
+ * confinement).
  */
+@Suppress("TooManyFunctions")
 internal class BackStackObserver<T : Any>(
   private val scopes: IScopes,
   private val options: SentryNavOptions,
@@ -67,6 +85,9 @@ internal class BackStackObserver<T : Any>(
   // Safe because the host back stack retains the current top entry strongly between updates.
   private var previousTop: WeakReference<T>? = null
   private var previousTopNormalized: NormalizedSentryBackStackEntry? = null
+
+  /** Whether this observer has handled a new top. Only its first may evict another nav txn. */
+  private var hasHandledNewTop = false
 
   private val areNavigationTransactionsEnabled: Boolean
     get() = scopes.options.isTracingEnabled && options.enableNavigationTransactions
@@ -112,22 +133,30 @@ internal class BackStackObserver<T : Any>(
     scopes.configureScope { scope -> applyChange(scope, change) }
   }
 
+  /**
+   * Republishes this observer's latest screen and nav context, and rebinds its unfinished nav
+   * transaction if no other transaction is bound. Call when the observer's lifecycle owner resumes.
+   *
+   * No-ops for data this observer never published (e.g., screens when screen tracking is disabled),
+   * so host-owned values are left alone.
+   */
+  internal fun onResume() {
+    scopes.configureScope { scope ->
+      navScreen.republish(scope)
+      navContext.republish(scope)
+      navTransaction.rebindIfScopeIsFree(scope)
+    }
+  }
+
   internal fun cleanup() {
     previousTop = null
     previousTopNormalized = null
 
     scopes.configureScope { scope ->
       navTransaction.stop(scope)
+      // Only clear values this observer published; another observer may have replaced them.
       navScreen.clear(scope)
-
-      if (options.captureBackStack) {
-        // This observer owns the nav context while it's in the composition, and cleanup removes
-        // it to avoid leaking stale back stack data after observation stops. If the host app
-        // replaces one observer with another, there may be a brief gap where events lack nav
-        // context. Apps should keep the observer at the nav root so cleanup only runs when the
-        // navigation session is ending, not during normal destination changes.
-        navContext.clear(scope)
-      }
+      navContext.clearIfPublished(scope)
     }
   }
 
@@ -205,12 +234,16 @@ internal class BackStackObserver<T : Any>(
 
     navTransaction.stop(scope)
 
+    val isFirstNewTop = !hasHandledNewTop
+    hasHandledNewTop = true
+
     if (areNavigationTransactionsEnabled) {
       navTransaction
         .start(
           scope,
           currentTop.name,
           currentTop.argumentsWithMetadata(),
+          evictOtherNavTransaction = isFirstNewTop,
         )
         ?.let { transaction -> navContext.updateTransaction(transaction, scope, currentBackStack) }
     } else {
@@ -291,13 +324,24 @@ private class NavTransaction(private val scopes: IScopes) {
 
   private var activeNavTransaction: ITransaction? = null
 
-  /** Starts an idle navigation transaction, or no-ops if another transaction is already active. */
+  /**
+   * Starts an idle navigation transaction, or no-ops if another transaction is already active.
+   *
+   * When [evictOtherNavTransaction] is true, a bound nav transaction owned by another observer is
+   * unbound (not finished; its owner still finishes it) before the check. Non-nav transactions are
+   * never evicted.
+   */
   fun start(
     scope: IScope,
     name: String,
     arguments: Map<String, Any?>,
+    evictOtherNavTransaction: Boolean = false,
   ): ITransaction? {
     clearTransactionIfFinished(scope)
+
+    if (evictOtherNavTransaction) {
+      unbindOtherNavTransaction(scope)
+    }
 
     if (scope.transaction != null) {
       scopes.options.logger.log(
@@ -361,6 +405,30 @@ private class NavTransaction(private val scopes: IScopes) {
     activeNavTransaction = null
   }
 
+  /** Rebinds this observer's unfinished nav transaction if no transaction is bound. */
+  fun rebindIfScopeIsFree(scope: IScope) {
+    val transaction = activeNavTransaction ?: return
+    clearTransactionIfFinished(scope)
+    if (transaction.isFinished) {
+      return
+    }
+    scope.withTransaction { tx ->
+      if (tx == null) {
+        scope.transaction = transaction
+      }
+    }
+  }
+
+  private fun unbindOtherNavTransaction(scope: IScope) {
+    scope.withTransaction { tx ->
+      if (
+        tx != null && tx !== activeNavTransaction && tx.spanContext.origin == TRANSACTION_ORIGIN
+      ) {
+        scope.clearTransaction()
+      }
+    }
+  }
+
   /** Clears a stale finished transaction that's still bound to the default scope. */
   private fun clearTransactionIfFinished(scope: IScope) {
     scope.withTransaction { tx ->
@@ -378,19 +446,38 @@ private class NavContext(private val scopes: IScopes, private val options: Sentr
     private const val BACKSTACK_KEY = "Back Stack"
   }
 
+  /** The exact nav context instance this helper last published, if any. */
+  private var lastPublished: Map<String, Any?>? = null
+
   fun update(scope: IScope, backStackEntries: List<NormalizedSentryBackStackEntry>) {
     if (backStackEntries.isEmpty()) {
       clear(scope)
       return
     }
 
-    scope.setContexts(NAVIGATION_CONTEXT_KEY, backStackEntries.toBackStackMap())
+    val navigationContext = backStackEntries.toBackStackMap()
+    scope.setContexts(NAVIGATION_CONTEXT_KEY, navigationContext)
+    lastPublished = navigationContext
   }
 
   fun clear(scope: IScope) {
     // We purposefully don't call IScope.removeContexts(), as it doesn't notify IScopeObserver and
     // therefore doesn't write its updates to disk ¯\_ (ツ)_/¯.
     scope.setContexts(NAVIGATION_CONTEXT_KEY, null as Any?)
+    lastPublished = null
+  }
+
+  /** Clears the nav context only if it's still the exact instance this helper published. */
+  fun clearIfPublished(scope: IScope) {
+    val published = lastPublished ?: return
+    if (scope.contexts[NAVIGATION_CONTEXT_KEY] === published) {
+      clear(scope)
+    }
+    lastPublished = null
+  }
+
+  fun republish(scope: IScope) {
+    lastPublished?.let { scope.setContexts(NAVIGATION_CONTEXT_KEY, it) }
   }
 
   /**
@@ -440,10 +527,15 @@ private class NavScreen {
 
   fun clear(scope: IScope) {
     val screenName = lastScreenName ?: return
-    if (scope.screen == screenName) {
+    // Identity, not equality: another observer may have published an equal name.
+    if (scope.screen === screenName) {
       scope.screen = null
     }
     lastScreenName = null
+  }
+
+  fun republish(scope: IScope) {
+    lastScreenName?.let { scope.screen = it }
   }
 }
 

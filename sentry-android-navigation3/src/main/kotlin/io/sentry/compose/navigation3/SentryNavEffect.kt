@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
@@ -68,10 +70,11 @@ import org.jetbrains.annotations.ApiStatus
  * the current destination's transaction.
  *
  * Each [lifecycle owner][androidx.lifecycle.LifecycleOwner] may host its own `SentryNavEffect`
- * (e.g., one per Activity). During transitions between owners, `SentryNavEffect` coordinates the
- * overlapping instances so only one records navigation data at a time. `SentryNavEffect`s
- * associated with side-by-side or nested `NavDisplay`s are not supported and can result in
- * duplicated or interleaved data and undefined transaction behavior.
+ * (e.g., one per Activity). An incoming effect takes over the navigation transaction from the
+ * previous one, an outgoing effect only clears data it published, and an effect republishes its
+ * data when its owner resumes. `SentryNavEffect`s associated with side-by-side or nested
+ * `NavDisplay`s are not supported and can result in duplicated or interleaved data and undefined
+ * transaction behavior.
  *
  * @param backStack The navigation backstack to observe.
  * @param backStackEntryMapper Maps each entry of the [backStack] to a name and optional arguments
@@ -90,7 +93,6 @@ public fun <T : Any> SentryNavEffect(
     backStackEntryMapper = backStackEntryMapper,
     options = options,
     scopes = ScopesAdapter.getInstance(),
-    coordinator = defaultNavLeaseCoordinator,
   )
 }
 
@@ -100,25 +102,30 @@ internal fun <T : Any> SentryNavEffect(
   backStackEntryMapper: BackStackEntryMapper<T>,
   options: SentryNavOptions,
   scopes: IScopes,
-  coordinator: NavLeaseCoordinator,
 ) {
   val currentBackStackEntryMapper = rememberUpdatedState(backStackEntryMapper)
   val lifecycle = LocalLifecycleOwner.current.lifecycle
 
-  val session =
-    remember(scopes, options, lifecycle, coordinator) {
-      NavSession(
+  val observer =
+    remember(scopes, options) {
+      BackStackObserver(
         scopes = scopes,
         options = options,
-        coordinator = coordinator,
         entryMapper = ForwardingBackStackEntryMapper { currentBackStackEntryMapper.value },
       )
     }
 
-  // Register first so the initial prepared back stack update can acquire navigation ownership.
-  DisposableEffect(session, lifecycle) {
-    session.attach(lifecycle)
-    onDispose { session.dispose() }
+  // Republish this effect's data whenever its owner resumes (e.g., returning to an Activity), since
+  // another effect may have replaced it in the meantime. Registered before the back stack effect
+  // so the ON_RESUME replayed for an already-resumed owner arrives before anything is published.
+  DisposableEffect(observer, lifecycle) {
+    val lifecycleObserver = LifecycleEventObserver { _, event ->
+      if (event == Lifecycle.Event.ON_RESUME) {
+        observer.onResume()
+      }
+    }
+    lifecycle.addObserver(lifecycleObserver)
+    onDispose { lifecycle.removeObserver(lifecycleObserver) }
   }
 
   // Intentionally don't remember this copy. Snapshot-backed lists mutate in place, so
@@ -129,10 +136,12 @@ internal fun <T : Any> SentryNavEffect(
   // it with the previous one.
   val copy = backStack.toList()
 
-  DisposableEffect(session, BackStackKey(copy)) {
-    session.onBackStackChanged(backStack = copy)
+  DisposableEffect(observer, BackStackKey(copy)) {
+    observer.onBackStackChanged(backStack = copy)
     onDispose {}
   }
+
+  DisposableEffect(observer) { onDispose { observer.cleanup() } }
 }
 
 /**

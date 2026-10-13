@@ -81,7 +81,6 @@ class SentryNavEffectTest {
       }
     val scope = Scope(options)
     val scopes = mock<IScopes>()
-    val coordinator = NavLeaseCoordinator()
     val breadcrumbs = mutableListOf<Breadcrumb>()
     val transactions = mutableListOf<SentryTracer>()
 
@@ -121,7 +120,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
 
@@ -145,7 +143,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -173,7 +170,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -201,7 +197,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -235,7 +230,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -269,7 +263,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions { maxCapturedBackStackEntries = 0 },
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -293,7 +286,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -330,7 +322,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = defaultEntryMapper,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
 
       val currentTop = backStack.last()
@@ -365,7 +356,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -403,7 +393,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -436,7 +425,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -479,7 +467,6 @@ class SentryNavEffectTest {
         backStackEntryMapper = entryMapper.value,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -517,7 +504,6 @@ class SentryNavEffectTest {
         options = options.value,
         backStackEntryMapper = defaultEntryMapper,
         scopes = fixture.scopes,
-        coordinator = fixture.coordinator,
       )
     }
     composeRule.waitForIdle()
@@ -549,7 +535,6 @@ class SentryNavEffectTest {
           backStackEntryMapper = defaultEntryMapper,
           options = SentryNavOptions(),
           scopes = fixture.scopes,
-          coordinator = fixture.coordinator,
         )
       }
     }
@@ -579,7 +564,6 @@ class SentryNavEffectTest {
           backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
           options = options,
           scopes = fixture.scopes,
-          coordinator = fixture.coordinator,
         )
       }
     }
@@ -592,42 +576,6 @@ class SentryNavEffectTest {
     composeRule.runOnIdle {
       assertThat(fixture.scope.screen).isEqualTo("/Home")
       assertThat(fixture.scope.breadcrumbs.map { it.data["to"] }).containsExactly("/Home")
-    }
-  }
-
-  @Test
-  fun `replacing lifecycle owner disposes the old session and observes the new owner`() {
-    val fixture = NavTestFixture()
-    val originalOwner = NavTestLifecycle(Lifecycle.State.RESUMED)
-    val replacementOwner = NavTestLifecycle()
-    val owner = mutableStateOf(originalOwner)
-    val options = SentryNavOptions()
-    composeRule.setContent {
-      CompositionLocalProvider(LocalLifecycleOwner provides owner.value) {
-        SentryNavEffect(
-          backStack = listOf("Home"),
-          backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
-          options = options,
-          scopes = fixture.scopes,
-          coordinator = fixture.coordinator,
-        )
-      }
-    }
-    lateinit var originalTransaction: ITransaction
-    composeRule.runOnIdle {
-      originalTransaction = requireNotNull(fixture.scope.transaction)
-      owner.value = replacementOwner
-    }
-    composeRule.runOnIdle {
-      assertThat(originalTransaction.isFinished).isTrue()
-      assertThat(fixture.scope.transaction).isNotSameInstanceAs(originalTransaction)
-      assertThat(fixture.scope.transaction?.name).isEqualTo("/Home")
-      assertThat(fixture.scope.screen).isEqualTo("/Home")
-      originalOwner.pause()
-      originalOwner.resume()
-      assertThat(fixture.scope.screen).isEqualTo("/Home")
-      replacementOwner.resume()
-      assertThat(fixture.scope.screen).isEqualTo("/Home")
     }
   }
 
@@ -682,8 +630,6 @@ private class NavTestFixture {
 
   val scope = Scope(options)
   val scopes = Scopes(scope, Scope(options), Scope(options), "navigation test")
-
-  val coordinator = NavLeaseCoordinator()
 
   init {
     val client = mock<ISentryClient>()
