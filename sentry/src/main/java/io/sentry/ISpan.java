@@ -39,23 +39,6 @@ public interface ISpan {
   @NotNull
   ISpan startChild(@NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions);
 
-  @ApiStatus.Internal
-  @NotNull
-  ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter);
-
-  @ApiStatus.Internal
-  @NotNull
-  ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter,
-      @NotNull SpanOptions spanOptions);
-
   /**
    * Starts a child Span.
    *
@@ -77,7 +60,9 @@ public interface ISpan {
   @NotNull
   default ISpan startChild(
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
-    return startChild(operation, description, timestamp, Instrumenter.SENTRY);
+    final @NotNull SpanOptions spanOptions = new SpanOptions();
+    spanOptions.setStartTimestamp(timestamp);
+    return startChild(operation, description, spanOptions);
   }
 
   /**

@@ -105,23 +105,10 @@ public final class Span implements ISpan {
 
   @Override
   public @NotNull ISpan startChild(
-      final @NotNull String operation,
-      final @Nullable String description,
-      final @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter,
-      @NotNull SpanOptions spanOptions) {
-    if (finished) {
-      return NoOpSpan.getInstance();
-    }
-
-    return transaction.startChild(
-        context.getSpanId(), operation, description, timestamp, instrumenter, spanOptions);
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
-    return startChild(operation, description, timestamp, Instrumenter.SENTRY);
+    final @NotNull SpanOptions spanOptions = new SpanOptions();
+    spanOptions.setStartTimestamp(timestamp);
+    return startChild(operation, description, spanOptions);
   }
 
   @Override
@@ -147,15 +134,6 @@ public final class Span implements ISpan {
   public @NotNull ISpan startChild(
       @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
     return transaction.startChild(spanContext, spanOptions);
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter) {
-    return startChild(operation, description, timestamp, instrumenter, new SpanOptions());
   }
 
   @Override

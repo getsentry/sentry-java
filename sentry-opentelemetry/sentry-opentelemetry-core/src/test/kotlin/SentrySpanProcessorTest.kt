@@ -25,7 +25,6 @@ import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ITransaction
-import io.sentry.Instrumenter
 import io.sentry.SentryDate
 import io.sentry.SentryEvent
 import io.sentry.SentryOptions
@@ -64,11 +63,7 @@ class SentrySpanProcessorTest {
 
   private class Fixture {
 
-    val options =
-      SentryOptions().also {
-        it.dsn = "https://key@sentry.io/proj"
-        it.instrumenter = Instrumenter.OTEL
-      }
+    val options = SentryOptions().also { it.dsn = "https://key@sentry.io/proj" }
     val scopes = mock<IScopes>()
     val transaction = mock<ITransaction>()
     val span = mock<ISpan>()
@@ -96,15 +91,7 @@ class SentrySpanProcessorTest {
       whenever(span.toBaggageHeader(any())).thenReturn(baggageHeader)
       whenever(transaction.toBaggageHeader(any())).thenReturn(baggageHeader)
 
-      whenever(
-          transaction.startChild(
-            any<String>(),
-            anyOrNull<String>(),
-            anyOrNull<SentryDate>(),
-            eq(Instrumenter.OTEL),
-            any<SpanOptions>(),
-          )
-        )
+      whenever(transaction.startChild(any<String>(), anyOrNull<String>(), any<SpanOptions>()))
         .thenReturn(span)
 
       val sdkTracerProvider =
@@ -371,17 +358,6 @@ class SentrySpanProcessorTest {
     }
   }
 
-  @Test
-  fun `does not link error to OTEL transaction if instrumenter does not match`() {
-    fixture.options.instrumenter = Instrumenter.SENTRY
-    fixture.setup()
-
-    val processedEvent =
-      OpenTelemetryLinkErrorEventProcessor(fixture.scopes).process(SentryEvent(), Hint())
-
-    thenNoTraceContextHasBeenAddedToEvent(processedEvent)
-  }
-
   private fun givenSpanBuilder(
     spanKind: SpanKind = SpanKind.SERVER,
     parentSpan: Span? = null,
@@ -483,14 +459,7 @@ class SentrySpanProcessorTest {
   }
 
   private fun thenChildSpanIsStarted() {
-    verify(fixture.transaction)
-      .startChild(
-        eq("childspan"),
-        eq("childspan"),
-        any<SentryDate>(),
-        eq(Instrumenter.OTEL),
-        any<SpanOptions>(),
-      )
+    verify(fixture.transaction).startChild(eq("childspan"), eq("childspan"), any<SpanOptions>())
   }
 
   private fun thenChildSpanIsFinished(status: SpanStatus = SpanStatus.OK) {
