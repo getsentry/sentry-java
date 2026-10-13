@@ -4,40 +4,35 @@
 
 ### Breaking Changes
 
-- Remove the deprecated Log4j2 `SentryAppender` constructor without `minimumLevel`, and add a
-  `logsEnabled` argument to the remaining constructor and `createAppender` factory. Pass `true` to
-  opt in to Sentry Logs capture or `false` to keep it disabled.
-  ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
-- Require a `logsEnabled` argument when manually constructing `SentryTimberIntegration` or
-  `SentryTimberTree`. Replace `SentryTimberIntegration()` with
-  `SentryTimberIntegration(logsEnabled = false)` in Kotlin or `new SentryTimberIntegration(false)`
-  in Java to keep Sentry Logs disabled. ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
-- Remove the obsolete aggregate Sentry Metrics options `metrics.enabled` and
-  `options.getMetrics().setEnabled(...)`. Direct `Sentry.metrics()` calls continue to capture
-  Metrics whenever the SDK is enabled. ([#5953](https://github.com/getsentry/sentry-java/pull/5953))
-- Remove the obsolete aggregate Sentry Logs options `logs.enabled` and
-  `options.getLogs().setEnabled(...)`. ([#5947](https://github.com/getsentry/sentry-java/pull/5947))
-  Direct `Sentry.logger()` calls continue to capture Logs whenever the SDK is enabled. Sentry Logs
-  capture is disabled by default for every automatic logging integration. Set the applicable
-  integration-specific option to `true` to opt in:
-  - Logback appender: `logsEnabled`
-  - Log4j2 appender: `logsEnabled`
-  - JUL handler: `io.sentry.jul.SentryHandler.logsEnabled`
-  - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
+- Remove the aggregate Sentry Logs and Metrics enable options `logs.enabled`, `metrics.enabled`,
+  `options.getLogs().setEnabled(...)`, and `options.getMetrics().setEnabled(...)`. Existing values
+  for these options no longer affect capture. `Sentry.logger()` and `Sentry.metrics()` are no longer
+  guarded by product enable flags and capture whenever the SDK is enabled.
+  ([#5947](https://github.com/getsentry/sentry-java/pull/5947),
+  [#5953](https://github.com/getsentry/sentry-java/pull/5953))
+  Automatic Logs capture is disabled by default. Enable it separately for each integration:
+  - Logback appender: `logsEnabled` ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
+  - Log4j2 appender: `logsEnabled` ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
+  - JUL handler: `logsEnabled` or `io.sentry.jul.SentryHandler.logsEnabled`
+    ([#5942](https://github.com/getsentry/sentry-java/pull/5942))
   - Auto-installed Timber integration: `timberLogCaptureEnabled` or
     `io.sentry.timber.log-capture.enabled` manifest metadata
-  - Manually installed Timber integration: `logsEnabled` constructor argument
+    ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+  - Manually installed Timber integration or tree: `logsEnabled`
+    ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
   - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.log-capture.enabled` manifest metadata
+    ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
+  - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
+    ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
+  Constructor migrations:
+  - The remaining Log4j2 `SentryAppender` constructor and `createAppender` factory require a
+    `logsEnabled` argument. The deprecated constructor without `minimumLevel` is removed.
+  - Manually constructed `SentryTimberIntegration` and `SentryTimberTree` instances require a
+    `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
 - Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
 
 ### Features
 
-- Add the `sentry.logging.logs-enabled` Logs opt-in to Spring Boot logging auto-configuration ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
-- Add the `logcatLogCaptureEnabled` Logs opt-in and `io.sentry.logcat.log-capture.enabled` manifest metadata to the Android Logcat integration ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
-- Add the `timberLogCaptureEnabled` Logs opt-in and `io.sentry.timber.log-capture.enabled` manifest metadata for auto-installed Timber, and the `logsEnabled` constructor argument for manual Timber integrations ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
-- Add the `logsEnabled` Logs opt-in to the JUL handler, configurable programmatically or as `io.sentry.jul.SentryHandler.logsEnabled` ([#5942](https://github.com/getsentry/sentry-java/pull/5942))
-- Add the `logsEnabled` constructor and plugin attribute to the Log4j2 appender ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
-- Add the `logsEnabled` setter and XML option to the Logback appender ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
 
 ### Dependencies
