@@ -178,14 +178,12 @@ class SentryTest {
   }
 
   @Test
-  fun `manual Logs and Metrics reach transport when automatic collection is disabled`() {
+  fun `manual Logs and Metrics reach transport`() {
     val transport = mock<ITransport>()
     val transportFactory = mock<ITransportFactory>()
     whenever(transportFactory.create(any(), any())).thenReturn(transport)
     initForTest {
       it.dsn = dsn
-      it.logs.isEnabled = false
-      it.metrics.isEnabled = false
       it.setTransportFactory(transportFactory)
       it.shutdownTimeoutMillis = 5_000
     }

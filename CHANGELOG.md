@@ -4,6 +4,37 @@
 
 ### Breaking Changes
 
+- Remove the aggregate Sentry Logs and Metrics enable options from all configuration surfaces:
+  - Java API: `options.getLogs().setEnabled(...)` and `options.getMetrics().setEnabled(...)`
+  - Properties files: `logs.enabled` and `metrics.enabled`
+  - Environment variables: `SENTRY_LOGS_ENABLED` and `SENTRY_METRICS_ENABLED`
+  - JVM system properties and Spring Boot: `sentry.logs.enabled` and `sentry.metrics.enabled`
+  - Android manifest metadata: `io.sentry.logs.enabled` and `io.sentry.metrics.enabled`
+
+  The Java accessors are removed. Values supplied through the other configuration surfaces no
+  longer affect capture.
+  ([#5939](https://github.com/getsentry/sentry-java/pull/5939),
+  [#5947](https://github.com/getsentry/sentry-java/pull/5947),
+  [#5953](https://github.com/getsentry/sentry-java/pull/5953))
+  - **Automatic Logs capture:** Disabled by default. Enable it separately for each integration:
+    - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
+      ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
+    - Logback appender: `logsEnabled` ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
+    - Log4j2 appender: `logsEnabled` ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
+    - JUL handler: `logsEnabled` or `io.sentry.jul.SentryHandler.logsEnabled`
+      ([#5942](https://github.com/getsentry/sentry-java/pull/5942))
+    - Auto-installed Timber integration: `timberLogCaptureEnabled` or
+      `io.sentry.timber.log-capture.enabled` manifest metadata
+      ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+    - Manually installed Timber integration or tree: `logsEnabled`
+      ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+    - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.log-capture.enabled` manifest metadata
+      ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
+  - **Constructor migrations:**
+    - The remaining Log4j2 `SentryAppender` constructor and `createAppender` factory require a
+      `logsEnabled` argument. The deprecated constructor without `minimumLevel` is removed.
+    - Manually constructed `SentryTimberIntegration` and `SentryTimberTree` instances require a
+      `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
 - Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
 
 ### Features

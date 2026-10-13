@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -52,6 +53,8 @@ public class SentryHandler extends Handler {
    * <code>MessageFormat.format()</code>; Defaults to false.
    */
   private boolean printfStyle;
+
+  private boolean logsEnabled;
 
   private @NotNull Level minimumBreadcrumbLevel = Level.INFO;
   private @NotNull Level minimumEventLevel = Level.SEVERE;
@@ -112,8 +115,7 @@ public class SentryHandler extends Handler {
       return;
     }
     try {
-      if (ScopesAdapter.getInstance().getOptions().getLogs().isEnabled()
-          && record.getLevel().intValue() >= minimumLevel.intValue()) {
+      if (logsEnabled && record.getLevel().intValue() >= minimumLevel.intValue()) {
         captureLog(record);
       }
       if (record.getLevel().intValue() >= minimumEventLevel.intValue()) {
@@ -149,10 +151,15 @@ public class SentryHandler extends Handler {
     final @Nullable Object[] arguments = loggingEvent.getParameters();
     final @NotNull SentryAttributes attributes = SentryAttributes.of();
 
-    @NotNull String message = loggingEvent.getMessage();
+    final @Nullable String messageTemplate = loggingEvent.getMessage();
+    if (messageTemplate == null) {
+      return;
+    }
+
+    @NotNull String message = messageTemplate;
     if (loggingEvent.getResourceBundle() != null
-        && loggingEvent.getResourceBundle().containsKey(loggingEvent.getMessage())) {
-      message = loggingEvent.getResourceBundle().getString(loggingEvent.getMessage());
+        && loggingEvent.getResourceBundle().containsKey(messageTemplate)) {
+      message = loggingEvent.getResourceBundle().getString(messageTemplate);
     }
 
     final @NotNull String formattedMessage = maybeFormatted(arguments, message);
@@ -191,6 +198,7 @@ public class SentryHandler extends Handler {
     final LogManager manager = LogManager.getLogManager();
     final String className = SentryHandler.class.getName();
     setPrintfStyle(Boolean.parseBoolean(manager.getProperty(className + ".printfStyle")));
+    setLogsEnabled(Boolean.parseBoolean(manager.getProperty(className + ".logsEnabled")));
     setLevel(parseLevelOrDefault(manager.getProperty(className + ".level")));
     final String minimumBreadCrumbLevel =
         manager.getProperty(className + ".minimumBreadcrumbLevel");
@@ -288,13 +296,16 @@ public class SentryHandler extends Handler {
     final Message sentryMessage = new Message();
     sentryMessage.setParams(toParams(record.getParameters()));
 
-    String message = record.getMessage();
-    if (record.getResourceBundle() != null
-        && record.getResourceBundle().containsKey(record.getMessage())) {
-      message = record.getResourceBundle().getString(record.getMessage());
+    final @Nullable String messageTemplate = record.getMessage();
+    final @Nullable ResourceBundle resourceBundle = record.getResourceBundle();
+    @Nullable String message = messageTemplate;
+    if (messageTemplate != null
+        && resourceBundle != null
+        && resourceBundle.containsKey(messageTemplate)) {
+      message = resourceBundle.getString(messageTemplate);
     }
     sentryMessage.setMessage(message);
-    if (record.getParameters() != null) {
+    if (message != null && record.getParameters() != null) {
       try {
         sentryMessage.setFormatted(formatMessage(message, record.getParameters()));
       } catch (RuntimeException e) {
@@ -388,6 +399,14 @@ public class SentryHandler extends Handler {
 
   public void setPrintfStyle(final boolean printfStyle) {
     this.printfStyle = printfStyle;
+  }
+
+  public void setLogsEnabled(final boolean logsEnabled) {
+    this.logsEnabled = logsEnabled;
+  }
+
+  public boolean getLogsEnabled() {
+    return logsEnabled;
   }
 
   public void setMinimumBreadcrumbLevel(final @Nullable Level minimumBreadcrumbLevel) {
