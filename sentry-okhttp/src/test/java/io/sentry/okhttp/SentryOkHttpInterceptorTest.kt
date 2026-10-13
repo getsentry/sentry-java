@@ -295,6 +295,15 @@ class SentryOkHttpInterceptorTest {
   }
 
   @Test
+  fun `does not create a span when span origin is ignored`() {
+    val sut = fixture.getSut { options ->
+      options.setIgnoredSpanOrigins(listOf("auto.http.okhttp"))
+    }
+    sut.newCall(getRequest()).execute()
+    assertEquals(0, fixture.sentryTracer.children.size)
+  }
+
+  @Test
   fun `maps http status code to SpanStatus`() {
     val sut = fixture.getSut(httpStatusCode = 400)
     sut.newCall(getRequest()).execute()

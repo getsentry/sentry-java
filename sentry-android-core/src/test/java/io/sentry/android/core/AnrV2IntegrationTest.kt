@@ -12,7 +12,6 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import org.junit.After
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -161,11 +160,6 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
       event.debugMeta?.images?.find { it.debugId == "741f3301-bbb0-b92c-58bd-c15282b8ec7b" }
     assertNotNull(image)
     assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
-  }
-
-  @After
-  fun cleanup() {
-    fixture.options.cacheDirPath?.let { File(it).deleteRecursively() }
   }
 
   @Test

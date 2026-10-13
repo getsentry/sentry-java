@@ -18,7 +18,6 @@ import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.HintUtils
 import java.io.File
-import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -78,6 +77,9 @@ class MemoryLimiterIntegrationTest {
         setLogger(this@Fixture.logger)
         isDebug = true
         cacheDirPath = dir?.newFolder()?.absolutePath
+        // Nothing ever releases these latches here, so every wait would run to its timeout.
+        flushTimeoutMillis = 0L
+        sessionFlushTimeoutMillis = 0L
         executorService = if (useImmediateExecutorService) ImmediateExecutorService() else mock()
         isMemoryLimiterEnabled = memoryLimiterEnabled
         isReportHistoricalMemoryLimiterExits = reportHistoricalMemoryLimiterExits
@@ -132,11 +134,6 @@ class MemoryLimiterIntegrationTest {
   fun `set up`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     fixture.init(context)
-  }
-
-  @AfterTest
-  fun `tear down`() {
-    fixture.options.cacheDirPath?.let { File(it).deleteRecursively() }
   }
 
   @Test

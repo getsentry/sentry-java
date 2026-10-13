@@ -349,6 +349,17 @@ class SentryTimberTreeTest {
   }
 
   @Test
+  fun `Tree does not add a log when automatic Logs are disabled`() {
+    val sut = fixture.getSut(logsEnabled = false)
+
+    sut.e("message")
+
+    verifyNoInteractions(fixture.logs)
+    verify(fixture.scopes).captureEvent(any())
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>())
+  }
+
+  @Test
   fun `Tree adds an info log`() {
     val sut = fixture.getSut()
     sut.i("message")

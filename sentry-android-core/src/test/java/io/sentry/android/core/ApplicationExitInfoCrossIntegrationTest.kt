@@ -14,7 +14,6 @@ import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
 import java.io.File
 import java.util.zip.GZIPInputStream
-import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import org.junit.Rule
@@ -63,6 +62,9 @@ class ApplicationExitInfoCrossIntegrationTest {
         setLogger(logger)
         isDebug = true
         cacheDirPath = dir.absolutePath
+        // Nothing ever releases these latches here, so every wait would run to its timeout.
+        flushTimeoutMillis = 0L
+        sessionFlushTimeoutMillis = 0L
         executorService = ImmediateExecutorService()
         setEnvelopeDiskCache(EnvelopeCache.create(this))
         addInAppInclude("io.sentry.samples")
@@ -149,11 +151,6 @@ class ApplicationExitInfoCrossIntegrationTest {
   @BeforeTest
   fun `set up`() {
     fixture.init(ApplicationProvider.getApplicationContext())
-  }
-
-  @AfterTest
-  fun `tear down`() {
-    tmpDir.root.deleteRecursively()
   }
 
   @Test

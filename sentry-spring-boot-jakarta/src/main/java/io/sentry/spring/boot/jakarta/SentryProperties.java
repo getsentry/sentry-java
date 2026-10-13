@@ -47,6 +47,9 @@ public class SentryProperties extends SentryOptions {
   /** Graphql integration properties. */
   private @NotNull Graphql graphql = new Graphql();
 
+  /** Clients integration properties. */
+  private @NotNull Clients clients = new Clients();
+
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
   }
@@ -122,6 +125,28 @@ public class SentryProperties extends SentryOptions {
 
   public void setGraphql(@NotNull Graphql graphql) {
     this.graphql = graphql;
+  }
+
+  public @NotNull Clients getClients() {
+    return clients;
+  }
+
+  public void setClients(@NotNull Clients clients) {
+    this.clients = clients;
+  }
+
+  @Open
+  public static class Clients {
+    /** Enable automatic instrumentation of Spring-managed OkHttp clients. Disabled by default. */
+    private boolean okHttpEnabled = false;
+
+    public boolean isOkHttpEnabled() {
+      return okHttpEnabled;
+    }
+
+    public void setOkHttpEnabled(boolean okHttpEnabled) {
+      this.okHttpEnabled = okHttpEnabled;
+    }
   }
 
   @Open

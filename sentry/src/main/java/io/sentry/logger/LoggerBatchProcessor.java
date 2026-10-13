@@ -36,7 +36,7 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
   private final @NotNull Queue<SentryLogEvent> queue;
   private final @NotNull ISentryExecutorService executorService;
   private final @NotNull AtomicBoolean hasScheduled = new AtomicBoolean(false);
-  private volatile boolean hasAcceptedItem = false;
+  protected volatile boolean hasAcceptedItem = false;
   private volatile boolean isShuttingDown = false;
 
   private final @NotNull ReusableCountLatch pendingCount = new ReusableCountLatch();
@@ -89,6 +89,8 @@ public class LoggerBatchProcessor implements ILoggerBatchProcessor {
       executorService.submit(() -> executorService.close(options.getShutdownTimeoutMillis()));
       return;
     }
+    // On restart, reaching this path means the executor never had anything scheduled, so
+    // synchronous shutdown should be immediate.
     executorService.close(options.getShutdownTimeoutMillis());
     while (!queue.isEmpty()) {
       flushBatch();

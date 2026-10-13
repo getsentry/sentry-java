@@ -308,6 +308,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
 
   internal companion object {
     internal const val ONGOING_SEGMENT = ".ongoing_segment"
+    private const val VIDEO_EXTENSION = "mp4"
 
     internal const val SEGMENT_KEY_HEIGHT = "config.height"
     internal const val SEGMENT_KEY_WIDTH = "config.width"
@@ -320,6 +321,26 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     internal const val SEGMENT_KEY_REPLAY_RECORDING = "replay.recording"
     internal const val SEGMENT_KEY_ID = "segment.id"
     internal const val SEGMENT_KEY_FLUSHED = "replay.flushed"
+
+    /**
+     * Deletes [replayCacheDir], but keeps the segment videos it holds. A captured segment's video
+     * is read from disk only when its envelope is written to the socket, which can happen long
+     * after the replay stopped, so the videos outlive the replay that produced them. The send path
+     * deletes each video once it has been read; whatever is left over is removed by
+     * `cleanupReplays` on the next replay start.
+     */
+    fun deleteExceptSegmentVideos(replayCacheDir: File?) {
+      if (replayCacheDir == null) {
+        return
+      }
+      replayCacheDir.listFiles()?.forEach { file ->
+        if (file.isDirectory || file.extension != VIDEO_EXTENSION) {
+          FileUtils.deleteRecursively(file)
+        }
+      }
+      // no-op while videos remain; removes the folder once the last one has been sent and deleted
+      replayCacheDir.delete()
+    }
 
     fun makeReplayCacheDir(options: SentryOptions, replayId: SentryId): File? =
       if (options.cacheDirPath.isNullOrEmpty()) {

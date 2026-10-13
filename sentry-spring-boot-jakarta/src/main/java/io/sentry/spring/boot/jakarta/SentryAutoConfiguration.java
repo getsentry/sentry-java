@@ -44,7 +44,6 @@ import io.sentry.spring.jakarta.tracing.SpringMvcTransactionNameProvider;
 import io.sentry.spring.jakarta.tracing.SpringServletTransactionNameProvider;
 import io.sentry.spring.jakarta.tracing.TransactionNameProvider;
 import io.sentry.transport.ITransportGate;
-import io.sentry.transport.apache.ApacheHttpClientTransportFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
@@ -277,6 +276,25 @@ public class SentryAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(
+        name = {
+          "okhttp3.OkHttpClient",
+          "io.sentry.okhttp.SentryOkHttpInterceptor",
+          "io.sentry.okhttp.SentryOkHttpEventListener"
+        })
+    @ConditionalOnProperty(name = "sentry.clients.ok-http-enabled", havingValue = "true")
+    @ConditionalOnMissingClass("io.sentry.opentelemetry.agent.AgentMarker")
+    @Open
+    static class SentryOkHttpConfiguration {
+
+      @Bean
+      public static @NotNull SentryOkHttpClientBeanPostProcessor
+          sentryOkHttpClientBeanPostProcessor() {
+        return new SentryOkHttpClientBeanPostProcessor();
+      }
+    }
+
+    @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(ProceedingJoinPoint.class)
     @ConditionalOnProperty(
         value = "sentry.enable-aot-compatibility",
@@ -493,18 +511,6 @@ public class SentryAutoConfiguration {
       @Bean
       public SentrySpanWebClientCustomizer sentrySpanWebClientCustomizer(IScopes scopes) {
         return new SentrySpanWebClientCustomizer(scopes);
-      }
-    }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnMissingBean(ITransportFactory.class)
-    @ConditionalOnClass(ApacheHttpClientTransportFactory.class)
-    @Open
-    static class ApacheHttpClientTransportFactoryAutoconfiguration {
-
-      @Bean
-      public @NotNull ApacheHttpClientTransportFactory apacheHttpClientTransportFactory() {
-        return new ApacheHttpClientTransportFactory();
       }
     }
 

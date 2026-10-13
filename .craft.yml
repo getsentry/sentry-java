@@ -31,7 +31,6 @@ targets:
       maven:io.sentry:sentry-logback:
       maven:io.sentry:sentry-log4j2:
       maven:io.sentry:sentry-jul:
-      maven:io.sentry:sentry-apache-http-client-5:
       maven:io.sentry:sentry-android:
       maven:io.sentry:sentry-android-core:
       maven:io.sentry:sentry-android-distribution:

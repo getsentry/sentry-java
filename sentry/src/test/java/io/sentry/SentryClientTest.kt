@@ -154,9 +154,10 @@ class SentryClientTest {
   }
 
   @Test
-  fun `when client is created, metrics batch processor is created`() {
+  fun `when client is created, batch processors are created`() {
     val sut = fixture.getSut()
 
+    verify(fixture.loggerBatchProcessorFactory).create(fixture.sentryOptions, sut)
     verify(fixture.metricsBatchProcessorFactory).create(fixture.sentryOptions, sut)
   }
 
