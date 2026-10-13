@@ -4294,13 +4294,6 @@ public final class io/sentry/SentryReplayOptions$SentryReplayQuality : java/lang
 	public static fun values ()[Lio/sentry/SentryReplayOptions$SentryReplayQuality;
 }
 
-public final class io/sentry/SentrySpanStorage {
-	public fun get (Ljava/lang/String;)Lio/sentry/ISpan;
-	public static fun getInstance ()Lio/sentry/SentrySpanStorage;
-	public fun removeAndGet (Ljava/lang/String;)Lio/sentry/ISpan;
-	public fun store (Ljava/lang/String;Lio/sentry/ISpan;)V
-}
-
 public final class io/sentry/SentryStackTraceFactory {
 	public fun <init> (Lio/sentry/SentryOptions;)V
 	public fun getInAppCallStack ()Ljava/util/List;
