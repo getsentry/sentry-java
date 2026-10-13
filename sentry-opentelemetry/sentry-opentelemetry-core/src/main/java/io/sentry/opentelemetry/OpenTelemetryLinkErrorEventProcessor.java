@@ -7,7 +7,6 @@ import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
-import io.sentry.Instrumenter;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -40,57 +39,40 @@ public final class OpenTelemetryLinkErrorEventProcessor implements EventProcesso
 
   @Override
   public @Nullable SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
-    final @NotNull Instrumenter instrumenter = scopes.getOptions().getInstrumenter();
-    if (Instrumenter.OTEL.equals(instrumenter)) {
-      @NotNull final Span otelSpan = Span.current();
-      @NotNull final String traceId = otelSpan.getSpanContext().getTraceId();
-      @NotNull final String spanId = otelSpan.getSpanContext().getSpanId();
+    @NotNull final Span otelSpan = Span.current();
+    @NotNull final String traceId = otelSpan.getSpanContext().getTraceId();
+    @NotNull final String spanId = otelSpan.getSpanContext().getSpanId();
 
-      if (TraceId.isValid(traceId) && SpanId.isValid(spanId)) {
-        final @Nullable ISpan sentrySpan = spanStorage.get(spanId);
-        if (sentrySpan != null) {
-          final @NotNull SpanContext sentrySpanSpanContext = sentrySpan.getSpanContext();
-          final @NotNull String operation = sentrySpanSpanContext.getOperation();
-          final @Nullable io.sentry.SpanId parentSpanId = sentrySpanSpanContext.getParentSpanId();
-          final @NotNull SpanContext spanContext =
-              new SpanContext(
-                  new SentryId(traceId),
-                  new io.sentry.SpanId(spanId),
-                  operation,
-                  parentSpanId,
-                  null);
+    if (TraceId.isValid(traceId) && SpanId.isValid(spanId)) {
+      final @Nullable ISpan sentrySpan = spanStorage.get(spanId);
+      if (sentrySpan != null) {
+        final @NotNull SpanContext sentrySpanSpanContext = sentrySpan.getSpanContext();
+        final @NotNull String operation = sentrySpanSpanContext.getOperation();
+        final @Nullable io.sentry.SpanId parentSpanId = sentrySpanSpanContext.getParentSpanId();
+        final @NotNull SpanContext spanContext =
+            new SpanContext(
+                new SentryId(traceId), new io.sentry.SpanId(spanId), operation, parentSpanId, null);
 
-          event.getContexts().setTrace(spanContext);
-          scopes
-              .getOptions()
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Linking Sentry event %s to span %s created via OpenTelemetry (trace %s).",
-                  event.getEventId(),
-                  spanId,
-                  traceId);
-        } else {
-          scopes
-              .getOptions()
-              .getLogger()
-              .log(
-                  SentryLevel.DEBUG,
-                  "Not linking Sentry event %s to any transaction created via OpenTelemetry as none has been found for span %s (trace %s).",
-                  event.getEventId(),
-                  spanId,
-                  traceId);
-        }
+        event.getContexts().setTrace(spanContext);
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Linking Sentry event %s to span %s created via OpenTelemetry (trace %s).",
+                event.getEventId(),
+                spanId,
+                traceId);
       } else {
         scopes
             .getOptions()
             .getLogger()
             .log(
                 SentryLevel.DEBUG,
-                "Not linking Sentry event %s to any transaction created via OpenTelemetry as traceId %s or spanId %s are invalid.",
+                "Not linking Sentry event %s to any transaction created via OpenTelemetry as none has been found for span %s (trace %s).",
                 event.getEventId(),
-                traceId,
-                spanId);
+                spanId,
+                traceId);
       }
     } else {
       scopes
@@ -98,9 +80,10 @@ public final class OpenTelemetryLinkErrorEventProcessor implements EventProcesso
           .getLogger()
           .log(
               SentryLevel.DEBUG,
-              "Not linking Sentry event %s to any transaction created via OpenTelemetry as instrumenter is set to %s.",
+              "Not linking Sentry event %s to any transaction created via OpenTelemetry as traceId %s or spanId %s are invalid.",
               event.getEventId(),
-              instrumenter);
+              traceId,
+              spanId);
     }
 
     return event;

@@ -7,7 +7,6 @@ import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
-import io.sentry.Instrumenter;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryDate;
 import io.sentry.SentryTraceHeader;
@@ -129,25 +128,6 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
     return delegate.startChild(operation, description, timestamp);
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter) {
-    return delegate.startChild(operation, description, timestamp, instrumenter);
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter,
-      @NotNull SpanOptions spanOptions) {
-    return delegate.startChild(operation, description, timestamp, instrumenter, spanOptions);
   }
 
   @Override

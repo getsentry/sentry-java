@@ -8,7 +8,6 @@ import io.opentelemetry.sdk.trace.ReadWriteSpan
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ISpanFactory
-import io.sentry.Instrumenter
 import io.sentry.SentryLongDate
 import io.sentry.SentryOptions
 import io.sentry.SpanOptions
@@ -22,7 +21,7 @@ import org.mockito.kotlin.whenever
 
 class OtelSpanWrapperTest {
   @Test
-  fun `startChild with timestamp forwards timestamp and Sentry instrumenter`() {
+  fun `startChild with timestamp forwards timestamp`() {
     val otelSpan = mock<ReadWriteSpan>()
     whenever(otelSpan.spanContext)
       .thenReturn(
@@ -55,6 +54,5 @@ class OtelSpanWrapperTest {
     assertThat(spanOptions.firstValue.startTimestamp).isSameInstanceAs(timestamp)
     assertThat(spanContext.firstValue.operation).isEqualTo("child-op")
     assertThat(spanContext.firstValue.description).isEqualTo("description")
-    assertThat(spanContext.firstValue.instrumenter).isEqualTo(Instrumenter.SENTRY)
   }
 }

@@ -19,7 +19,6 @@ import io.sentry.DsnUtil;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
-import io.sentry.Instrumenter;
 import io.sentry.PropagationContext;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryDate;
@@ -103,9 +102,9 @@ public final class SentrySpanProcessor implements SpanProcessor {
           new SentryLongDate(otelSpan.toSpanData().getStartEpochNanos());
       final @NotNull SpanOptions spanOptions = new SpanOptions();
       spanOptions.setOrigin(TRACE_ORIGN);
+      spanOptions.setStartTimestamp(startDate);
       final @NotNull ISpan sentryChildSpan =
-          sentryParentSpan.startChild(
-              otelSpan.getName(), otelSpan.getName(), startDate, Instrumenter.OTEL, spanOptions);
+          sentryParentSpan.startChild(otelSpan.getName(), otelSpan.getName(), spanOptions);
       spanStorage.store(traceData.getSpanId(), sentryChildSpan);
     } else {
       scopes
@@ -135,7 +134,6 @@ public final class SentrySpanProcessor implements SpanProcessor {
       transactionContext.setName(transactionName);
       transactionContext.setTransactionNameSource(transactionNameSource);
       transactionContext.setOperation(op);
-      transactionContext.setInstrumenter(Instrumenter.OTEL);
 
       TransactionOptions transactionOptions = new TransactionOptions();
       transactionOptions.setStartTimestamp(
@@ -229,18 +227,6 @@ public final class SentrySpanProcessor implements SpanProcessor {
           .log(
               SentryLevel.DEBUG,
               "Not forwarding OpenTelemetry span to Sentry as Sentry has not yet been initialized.");
-      return false;
-    }
-
-    final @NotNull Instrumenter instrumenter = scopes.getOptions().getInstrumenter();
-    if (!Instrumenter.OTEL.equals(instrumenter)) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Not forwarding OpenTelemetry span to Sentry as instrumenter has been set to %s.",
-              instrumenter);
       return false;
     }
 
