@@ -86,7 +86,8 @@ class SentryLogcatAdapterTest {
 
   @Test
   fun `Logcat log capture can be enabled through manifest metadata`() {
-    val metadata = Bundle().apply { putBoolean(ManifestMetadataReader.ENABLE_LOGCAT_LOGS, true) }
+    val metadata =
+      Bundle().apply { putBoolean(ManifestMetadataReader.LOGCAT_LOG_CAPTURE_ENABLED, true) }
     fixture.initSut(logcatLogCaptureEnabled = null, metadata = metadata)
 
     SentryLogcatAdapter.d(tag, commonMsg)

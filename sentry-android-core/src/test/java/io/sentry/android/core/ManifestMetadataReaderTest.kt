@@ -2186,7 +2186,7 @@ class ManifestMetadataReaderTest {
 
   @Test
   fun `applyMetadata reads Timber log capture enabled to options`() {
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_TIMBER_LOGS to true)
+    val bundle = bundleOf(ManifestMetadataReader.TIMBER_LOG_CAPTURE_ENABLED to true)
     val context = fixture.getContext(metaData = bundle)
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
@@ -2205,7 +2205,7 @@ class ManifestMetadataReaderTest {
 
   @Test
   fun `applyMetadata reads Logcat log capture enabled to options`() {
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGCAT_LOGS to true)
+    val bundle = bundleOf(ManifestMetadataReader.LOGCAT_LOG_CAPTURE_ENABLED to true)
     val context = fixture.getContext(metaData = bundle)
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
@@ -2216,7 +2216,7 @@ class ManifestMetadataReaderTest {
   @Test
   fun `applyMetadata reads Logcat log capture disabled to options`() {
     fixture.options.logcatLogCaptureEnabled = true
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGCAT_LOGS to false)
+    val bundle = bundleOf(ManifestMetadataReader.LOGCAT_LOG_CAPTURE_ENABLED to false)
     val context = fixture.getContext(metaData = bundle)
 
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)

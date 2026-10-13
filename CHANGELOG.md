@@ -25,9 +25,9 @@
   - JUL handler: `io.sentry.jul.SentryHandler.logsEnabled`
   - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
   - Auto-installed Timber integration: `timberLogCaptureEnabled` or
-    `io.sentry.timber.logs.enabled` manifest metadata
+    `io.sentry.timber.log-capture.enabled` manifest metadata
   - Manually installed Timber integration: `logsEnabled` constructor argument
-  - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.logs.enabled` manifest metadata
+  - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.log-capture.enabled` manifest metadata
 
 ### Features
 

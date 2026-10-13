@@ -262,7 +262,7 @@ class SentryAndroidTest {
     val metadata =
       Bundle().apply {
         putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
-        putBoolean(ManifestMetadataReader.ENABLE_TIMBER_LOGS, true)
+        putBoolean(ManifestMetadataReader.TIMBER_LOG_CAPTURE_ENABLED, true)
       }
     val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
     val logs = mutableListOf<SentryLogEvent>()
