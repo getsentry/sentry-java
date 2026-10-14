@@ -19,6 +19,8 @@ import io.sentry.TracesSamplingDecision;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.time.AnchoredClock;
+import io.sentry.time.Timestamp;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.List;
@@ -313,5 +315,20 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   @Override
   public void addFeatureFlag(final @Nullable String flag, final @Nullable Boolean result) {
     rootSpan.addFeatureFlag(flag, result);
+  }
+
+  @Override
+  public @NotNull Timestamp startTimestamp() {
+    return rootSpan.startTimestamp();
+  }
+
+  @Override
+  public @Nullable Timestamp endTimestamp() {
+    return rootSpan.endTimestamp();
+  }
+
+  @Override
+  public @Nullable AnchoredClock anchor() {
+    return rootSpan.anchor();
   }
 }

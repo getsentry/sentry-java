@@ -1,6 +1,8 @@
 package io.sentry;
 
 import io.sentry.protocol.Contexts;
+import io.sentry.time.AnchoredClock;
+import io.sentry.time.Timestamp;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -278,6 +280,33 @@ public interface ISpan {
   @ApiStatus.Internal
   @Nullable
   SentryDate getFinishDate();
+
+  /**
+   * When this span started, as an instant projected from {@link #anchor()}.
+   *
+   * <p>Replaces {@link #getStartDate()}. The difference that matters is not the type: two instants
+   * from one anchor are images of the same tick origin, so subtracting them reports measured time,
+   * whereas two {@link SentryDate}s may or may not, depending on the runtime class of each.
+   */
+  @ApiStatus.Internal
+  @NotNull
+  Timestamp startTimestamp();
+
+  /** When this span ended, or null while it is still running. */
+  @ApiStatus.Internal
+  @Nullable
+  Timestamp endTimestamp();
+
+  /**
+   * The clock this span's instants were projected from, or null when they were stated from outside
+   * the process — an OTel span, or a caller-supplied {@code startTimestamp}.
+   *
+   * <p>Exposed so that in-process consumers can recover the tick a span was measured at, via {@link
+   * AnchoredClock#tickOf}, instead of reverse-engineering it out of a {@link SentryNanotimeDate}.
+   */
+  @ApiStatus.Internal
+  @Nullable
+  AnchoredClock anchor();
 
   /**
    * Whether this span instance is a NOOP that doesn't collect information

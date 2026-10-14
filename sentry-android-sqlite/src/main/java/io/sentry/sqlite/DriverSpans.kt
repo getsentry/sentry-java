@@ -4,20 +4,12 @@ import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.Instrumenter
 import io.sentry.ScopesAdapter
-import io.sentry.SentryDate
 import io.sentry.SentryLongDate
-import io.sentry.SentryNanotimeDate
 import io.sentry.SentryStackTraceFactory
 import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 
 private const val SQLITE_TRACE_ORIGIN = "auto.db.sqlite"
-
-/**
- * Sentinel for extracting a [SentryNanotimeDate]'s underlying [System.nanoTime] value via
- * [SentryDate.diff].
- */
-private val EMPTY_NANO_TIME = SentryNanotimeDate(0, 0L)
 
 /** Span instrumentation for [SentrySQLiteDriver]. */
 internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: DbMetadata) {
@@ -26,7 +18,7 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
 
   /**
    * Returns a timestamp in nanoseconds for use with [record]. Timestamp is ns-precise if the active
-   * parent span uses a [SentryNanotimeDate] (the ordinary case); otherwise it's ms-precise.
+   * parent span is anchored (the ordinary case); otherwise it's ms-precise.
    *
    * Note: Internalizing the start time in [record] would shift spans to end-of-work on the trace
    * timeline, which is less desirable; callers capture the start before doing database work and
@@ -104,14 +96,9 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
  * END TRANSACTION                     ├███┤   0.33 ms
  * ```
  */
-internal fun ISpan.computeNanoStartTimestampForChild(): Long? {
-  if (startDate !is SentryNanotimeDate) {
-    return null
-  }
-
-  val parentWallClockNanos = startDate.nanoTimestamp()
-  val parentMonotonicNanos = startDate.diff(EMPTY_NANO_TIME)
-  val elapsedSinceParentStart = System.nanoTime() - parentMonotonicNanos
-  // Return the child's absolute start time.
-  return parentWallClockNanos + elapsedSinceParentStart
-}
+internal fun ISpan.computeNanoStartTimestampForChild(): Long? =
+  // An anchored span projects nanosecond instants from the transaction's single wall-clock
+  // reading, so "now" on its own timeline is exactly where a child span should start. No
+  // reconstruction, and no silent drop to millisecond precision when the parent's date happens
+  // not to be anchored.
+  anchor()?.now()?.epochNanos()
