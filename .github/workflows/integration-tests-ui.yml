@@ -12,7 +12,7 @@ concurrency:
 jobs:
   test:
     name: Ui tests
-    runs-on: ubuntu-latest
+    runs-on: ["bitrise_pool_name:tahoe"]
 
     # we copy the secret to the env variable in order to access it in the workflow
     env:
@@ -81,11 +81,12 @@ jobs:
         # Skip on PRs from forks, which don't have access to the upload secret
         if: ${{ !cancelled() && env.SAUCE_USERNAME != null && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
-          shopt -s globstar nullglob
-          pngs=(artifacts/**/*.png)
-          if [ ${#pngs[@]} -gt 0 ]; then
-            mkdir -p replay-snapshots
-            cp "${pngs[@]}" replay-snapshots/
+          # find instead of `shopt -s globstar`, which macOS's bash 3.2 doesn't support
+          mkdir -p replay-snapshots
+          if [ -d artifacts ]; then
+            find artifacts -type f -name '*.png' -exec cp {} replay-snapshots/ \;
+          fi
+          if [ -n "$(ls -A replay-snapshots)" ]; then
             sentry-cli snapshots upload ./replay-snapshots \
               --app-id sentry-android-replay
           else
