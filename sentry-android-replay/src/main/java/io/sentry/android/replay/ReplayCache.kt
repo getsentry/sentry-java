@@ -494,7 +494,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     }
 
     private fun recordingMetadata(lastSegment: Map<String, String>): RecordingMetadata? {
-      if (RECORDING_METADATA_KEYS.none { lastSegment.containsKey(it) }) {
+      if (RECORDING_METADATA_KEYS.none { it in lastSegment }) {
         // recorded by an older SDK version
         return null
       }
