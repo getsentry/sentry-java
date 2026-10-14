@@ -70,11 +70,11 @@ import org.jetbrains.annotations.ApiStatus
  * the current destination's transaction.
  *
  * Each [lifecycle owner][androidx.lifecycle.LifecycleOwner] may host its own `SentryNavEffect`
- * (e.g., one per Activity). An incoming effect takes over the navigation transaction from the
- * previous one, an outgoing effect only clears data it published, and an effect republishes its
- * data when its owner resumes. `SentryNavEffect`s associated with side-by-side or nested
- * `NavDisplay`s are not supported and can result in duplicated or interleaved data and undefined
- * transaction behavior.
+ * (e.g., one per Activity or Fragment). An incoming effect takes over the navigation transaction
+ * from the previous one, an outgoing effect only clears data it published, and an effect
+ * republishes its data when its owner resumes. `SentryNavEffect`s associated with side-by-side or
+ * nested `NavDisplay`s (including pages of a `ViewPager2` or similar) are not supported and can
+ * result in duplicated or interleaved data and undefined transaction behavior.
  *
  * @param backStack The navigation backstack to observe.
  * @param backStackEntryMapper Maps each entry of the [backStack] to a name and optional arguments
@@ -116,8 +116,9 @@ internal fun <T : Any> SentryNavEffect(
     }
 
   // Republish this effect's data whenever its owner resumes (e.g., returning to an Activity), since
-  // another effect may have replaced it in the meantime. Registered before the back stack effect
-  // so the ON_RESUME replayed for an already-resumed owner arrives before anything is published.
+  // another effect may have replaced it in the meantime. For an owner that's already resumed,
+  // addObserver() replays ON_RESUME immediately, before the first back stack update below; at that
+  // point this effect has nothing to republish yet.
   DisposableEffect(observer, lifecycle) {
     val lifecycleObserver = LifecycleEventObserver { _, event ->
       if (event == Lifecycle.Event.ON_RESUME) {

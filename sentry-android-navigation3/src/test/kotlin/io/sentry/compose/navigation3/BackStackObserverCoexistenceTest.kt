@@ -23,8 +23,6 @@ class BackStackObserverCoexistenceTest {
 
   private data class CartScreen(val productId: String)
 
-  private data class ObserverConfig(val enableScreenTracking: Boolean = true)
-
   private class Fixture {
     val options =
       SentryOptions().apply {
@@ -43,8 +41,8 @@ class BackStackObserverCoexistenceTest {
       scopes.bindClient(client)
     }
 
-    fun getSut(config: ObserverConfig = ObserverConfig()): BackStackObserver<Any> {
-      options.isEnableScreenTracking = config.enableScreenTracking
+    fun getSut(enableScreenTracking: Boolean = true): BackStackObserver<Any> {
+      options.isEnableScreenTracking = enableScreenTracking
       return BackStackObserver(
         scopes = scopes,
         options = SentryNavOptions(),
@@ -74,7 +72,7 @@ class BackStackObserverCoexistenceTest {
   @Test
   fun `onResume leaves values this observer never published untouched`() {
     val fixture = Fixture()
-    val sut = fixture.getSut(config = ObserverConfig(enableScreenTracking = false))
+    val sut = fixture.getSut(enableScreenTracking = false)
     sut.onBackStackChanged(listOf(HomeScreen()))
     fixture.scope.screen = "HostScreen"
 
@@ -135,6 +133,21 @@ class BackStackObserverCoexistenceTest {
     assertThat(outgoingTransaction.isFinished).isTrue()
     assertThat(incomingTransaction.name).isEqualTo("/CartScreen")
     assertThat(fixture.scope.transaction).isSameInstanceAs(incomingTransaction)
+  }
+
+  @Test
+  fun `an empty back stack only clears screen and nav context this observer published`() {
+    val fixture = Fixture()
+    val outgoing = fixture.getSut()
+    outgoing.onBackStackChanged(listOf(HomeScreen()))
+    val incoming = fixture.getSut()
+    incoming.onBackStackChanged(listOf(CartScreen("1")))
+
+    outgoing.onBackStackChanged(emptyList())
+
+    assertThat(fixture.scope.screen).isEqualTo("/CartScreen")
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(listOf(mapOf("entry" to "/CartScreen")))
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {

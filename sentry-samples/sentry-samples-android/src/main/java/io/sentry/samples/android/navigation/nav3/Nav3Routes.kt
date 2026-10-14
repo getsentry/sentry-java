@@ -31,8 +31,8 @@ internal fun Nav3Route.routeSpec(): RouteSpec =
         routeName = Nav3Route.MultiActivity.routeName,
         title = "Multi-Activity",
         description =
-          "Tests how SentryNavEffect uses NavScopes to coordinate state updates between " +
-            "SentryNavEffect instances. Each Activity owns its own SentryNavEffect and NavDisplay.",
+          "Tests SentryNavEffect when each Activity owns its own SentryNavEffect and NavDisplay: " +
+            "products and checkout run in separate Activities.",
       )
     Nav3Route.MultiFragment ->
       RouteSpec(

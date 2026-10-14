@@ -4,8 +4,8 @@
 
 ### Improvements
 
-- Support Navigation 3 integration for multi-Activity applications, where each Activity has its own `SentryNavEffect` ([#6229](https://github.com/getsentry/sentry-java/pull/6229))
-  - Limitations: Does not include support for applications where multiple `SentryNavEffect`s are meant to be simultaneously active, whether nested or as siblings (e.g., [multi-resume mode](https://developer.android.com/develop/ui/views/layout/support-multi-window-mode))
+- Support Navigation 3 integration for multi-Activity and multi-Fragment applications, where each Activity or Fragment has its own `SentryNavEffect` ([#6229](https://github.com/getsentry/sentry-java/pull/6229))
+  - Limitations: Does not include support for applications where multiple `SentryNavEffect`s are meant to be simultaneously active, whether nested or as siblings (e.g., `ViewPager2` pages or [multi-resume mode](https://developer.android.com/develop/ui/views/layout/support-multi-window-mode))
 
 ### Dependencies
 

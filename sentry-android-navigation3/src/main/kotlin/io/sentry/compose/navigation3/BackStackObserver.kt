@@ -49,18 +49,24 @@ private const val NAVIGATION_OP: String = "navigation"
  * **Coexisting with other observers**
  *
  * Host apps may briefly have more than one observer alive at a time, e.g., when navigating between
- * activities that each own a [SentryNavEffect]. Rather than coordinating with each other, observers
- * follow three local rules:
+ * Activities or Fragments that each own a [SentryNavEffect]. Rather than coordinating with each
+ * other, observers follow three local rules:
  *
  * 1. An observer's first new top may unbind another observer's nav transaction (but never a non-nav
  *    transaction), so the incoming destination gets its own transaction.
- * 2. [cleanup] only clears the screen and nav context this observer published, so an outgoing
- *    observer can't wipe an incoming observer's data.
+ * 2. [cleanup] and an empty back stack only clear the screen and nav context this observer
+ *    published, so an outgoing observer can't wipe an incoming observer's data.
  * 3. [onResume] republishes this observer's latest screen and nav context, unbinds another
  *    observer's nav transaction, and rebinds its own unfinished one, so returning to an observer
  *    restores its data.
  *
- * Simultaneously active observers (side-by-side or nested) are not supported.
+ * Known gaps of these rules:
+ *
+ * - An outgoing observer that navigates after an incoming one has published (e.g., while paused)
+ *   overwrites the incoming observer's screen and nav context until the incoming one resumes again.
+ * - When an observer is removed while the one underneath stays resumed (e.g., an overlay), the one
+ *   underneath doesn't republish its data, since it never receives a new `ON_RESUME`.
+ * - Simultaneously active observers (side-by-side or nested) are not supported.
  *
  * **Thread safety**
  *
@@ -86,7 +92,7 @@ internal class BackStackObserver<T : Any>(
   private var previousTop: WeakReference<T>? = null
   private var previousTopNormalized: NormalizedSentryBackStackEntry? = null
 
-  /** Whether this observer has handled a new top. Only its first may evict another nav txn. */
+  /** Whether a new top was handled yet. Only the first may evict another observer's transaction. */
   private var hasHandledNewTop = false
 
   private val areNavigationTransactionsEnabled: Boolean
@@ -262,7 +268,7 @@ internal class BackStackObserver<T : Any>(
 
   private fun handleEmptyBackStack(scope: IScope) {
     navTransaction.stop(scope)
-    navContext.clear(scope)
+    navContext.clearIfPublished(scope)
     navScreen.clear(scope)
     clearPreviousTop()
   }
@@ -525,16 +531,20 @@ private class NavContext(private val scopes: IScopes, private val options: Sentr
 /** A helper class for updating the tracked screen name. */
 private class NavScreen {
 
+  /** The exact screen name instance this helper last published, if any. */
   private var lastScreenName: String? = null
 
   fun update(scope: IScope, currentEntry: NormalizedSentryBackStackEntry) {
-    scope.screen = currentEntry.name
-    lastScreenName = currentEntry.name
+    // Publish a private copy so clear() can tell it apart by identity, even when another observer
+    // publishes an equal name backed by the same interned string (e.g., a route name literal).
+    val screenName = String(currentEntry.name.toCharArray())
+    scope.screen = screenName
+    lastScreenName = screenName
   }
 
+  /** Clears the screen name only if it's still the exact instance this helper published. */
   fun clear(scope: IScope) {
     val screenName = lastScreenName ?: return
-    // Identity, not equality: another observer may have published an equal name.
     if (scope.screen === screenName) {
       scope.screen = null
     }

@@ -17,7 +17,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import io.sentry.IScopes
 import io.sentry.ISentryClient
 import io.sentry.Scope
 import io.sentry.ScopeType
@@ -26,7 +25,6 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.protocol.TransactionNameSource
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -175,25 +173,6 @@ class SentryNavEffectMultiOwnerTest {
     fixture.runOnIdle { assertThat(fixture.scope.transaction).isSameInstanceAs(txA) }
   }
 
-  @Ignore(KNOWN_GAP)
-  @Test
-  fun `activity abort - outgoing owner's nav data is restored while it's still paused`() {
-    val fixture = Fixture(composeRule)
-    val a = fixture.host("A", "Home")
-    fixture.show(a)
-    fixture.runOnIdle { a.pause() }
-    val b = fixture.host("B", "Checkout")
-    fixture.show(b)
-
-    fixture.runOnIdle { b.pause() }
-    fixture.hide(b)
-
-    fixture.runOnIdle {
-      assertThat(fixture.scope.screen).isEqualTo("/Home")
-      assertThat(fixture.topOfNavigationContext()).isEqualTo("/Home")
-    }
-  }
-
   @Test
   fun `overlap - outgoing owner navigating while paused doesn't take the incoming transaction`() {
     val fixture = Fixture(composeRule)
@@ -209,31 +188,14 @@ class SentryNavEffectMultiOwnerTest {
     fixture.runOnIdle { assertThat(fixture.scope.transaction).isSameInstanceAs(txB) }
   }
 
-  @Ignore(KNOWN_GAP)
-  @Test
-  fun `overlap - outgoing owner navigating while paused doesn't overwrite incoming nav data`() {
-    val fixture = Fixture(composeRule)
-    val a = fixture.host("A", "Home")
-    fixture.show(a)
-    fixture.runOnIdle { a.pause() }
-    val b = fixture.host("B", "Checkout")
-    fixture.show(b)
-
-    fixture.runOnIdle { a.backStack.add("Settings") }
-
-    fixture.runOnIdle {
-      assertThat(fixture.scope.screen).isEqualTo("/Checkout")
-      assertThat(fixture.topOfNavigationContext()).isEqualTo("/Checkout")
-    }
-  }
-
   @Test
   fun `equal route names - outgoing owner's cleanup doesn't clear the incoming owner's equal screen`() {
     val fixture = Fixture(composeRule)
-    val a = fixture.host("A", "Home")
+    // Same literal in both owners, so both route names are the same interned string.
+    val a = fixture.host("A", "/Home")
     fixture.show(a)
     fixture.runOnIdle { a.pause() }
-    val b = fixture.host("B", "Home")
+    val b = fixture.host("B", "/Home")
     fixture.show(b)
 
     fixture.runOnIdle { a.stop() }
@@ -262,7 +224,7 @@ class SentryNavEffectMultiOwnerTest {
 
   // endregion
 
-  // region Single owner (review warnings)
+  // region Single owner
 
   @Test
   fun `single owner - navigating while paused still records a transaction and breadcrumb`() {
@@ -351,76 +313,6 @@ class SentryNavEffectMultiOwnerTest {
     }
   }
 
-  @Ignore(KNOWN_GAP)
-  @Test
-  fun `fragment overlay - dismissing restores the still-resumed owner underneath`() {
-    val fixture = Fixture(composeRule)
-    val a = fixture.host("A", "Home")
-    fixture.show(a)
-    val sheet = fixture.host("Sheet", "Share")
-    fixture.show(sheet)
-
-    fixture.runOnIdle {
-      sheet.pause()
-      sheet.stop()
-    }
-    fixture.hide(sheet)
-
-    fixture.runOnIdle {
-      assertThat(fixture.scope.screen).isEqualTo("/Home")
-      assertThat(fixture.topOfNavigationContext()).isEqualTo("/Home")
-    }
-  }
-
-  @Test
-  fun `pager preload - visible page keeps recording nav data after a neighbor composes`() {
-    val fixture = Fixture(composeRule)
-    val visible = fixture.host("Visible", "Home")
-    fixture.show(visible)
-    fixture.show(fixture.host("Neighbor", "Products", Lifecycle.State.STARTED))
-
-    fixture.runOnIdle { visible.backStack.add("Settings") }
-
-    fixture.runOnIdle {
-      assertThat(fixture.scope.screen).isEqualTo("/Settings")
-      assertThat(fixture.topOfNavigationContext()).isEqualTo("/Settings")
-      assertThat(fixture.breadcrumbDestinations()).contains("/Settings")
-    }
-  }
-
-  @Ignore(KNOWN_GAP)
-  @Test
-  fun `pager preload - visible page keeps recording transactions after a neighbor composes`() {
-    val fixture = Fixture(composeRule)
-    val visible = fixture.host("Visible", "Home")
-    fixture.show(visible)
-    fixture.show(fixture.host("Neighbor", "Products", Lifecycle.State.STARTED))
-
-    fixture.runOnIdle { visible.backStack.add("Settings") }
-
-    fixture.runOnIdle { assertThat(fixture.scope.transaction?.name).isEqualTo("/Settings") }
-  }
-
-  @Test
-  fun `pager swipe - newly resumed page's nav data is published`() {
-    val fixture = Fixture(composeRule)
-    val visible = fixture.host("Visible", "Home")
-    fixture.show(visible)
-    val neighbor = fixture.host("Neighbor", "Products", Lifecycle.State.STARTED)
-    fixture.show(neighbor)
-    fixture.runOnIdle { visible.backStack.add("Settings") }
-
-    fixture.runOnIdle {
-      visible.pause()
-      neighbor.resume()
-    }
-
-    fixture.runOnIdle {
-      assertThat(fixture.scope.screen).isEqualTo("/Products")
-      assertThat(fixture.topOfNavigationContext()).isEqualTo("/Products")
-    }
-  }
-
   // endregion
 
   private class Host(val id: String, initialRoute: String, initialState: Lifecycle.State) :
@@ -478,7 +370,12 @@ class SentryNavEffectMultiOwnerTest {
     @Composable
     private fun HostContent(host: Host) {
       CompositionLocalProvider(LocalLifecycleOwner provides host) {
-        TestSentryNavEffect(host.backStack, navOptions, scopes)
+        SentryNavEffect(
+          backStack = host.backStack,
+          backStackEntryMapper = { SentryBackStackEntry(it) },
+          options = navOptions,
+          scopes = scopes,
+        )
       }
     }
 
@@ -499,23 +396,4 @@ class SentryNavEffectMultiOwnerTest {
 
     fun breadcrumbDestinations(): List<Any?> = scope.breadcrumbs.map { it.data["to"] }
   }
-
-  private companion object {
-    const val KNOWN_GAP = "Known gap of the evict/republish approach"
-  }
-}
-
-/** Calls the implementation under test. The only line that differs between implementations. */
-@Composable
-private fun TestSentryNavEffect(
-  backStack: List<String>,
-  options: SentryNavOptions,
-  scopes: IScopes,
-) {
-  SentryNavEffect(
-    backStack = backStack,
-    backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
-    options = options,
-    scopes = scopes,
-  )
 }
