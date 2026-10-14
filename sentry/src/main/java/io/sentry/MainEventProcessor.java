@@ -22,7 +22,6 @@ public final class MainEventProcessor implements SentryEventProcessor {
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
-  private volatile @Nullable HostnameCache hostnameCache = null;
 
   public MainEventProcessor(final @NotNull SentryOptions options) {
     this.options = options;
@@ -161,16 +160,7 @@ public final class MainEventProcessor implements SentryEventProcessor {
     }
 
     if (options.isAttachServerName() && event.getServerName() == null) {
-      ensureHostnameCache();
-      if (hostnameCache != null) {
-        event.setServerName(hostnameCache.getHostname());
-      }
-    }
-  }
-
-  private void ensureHostnameCache() {
-    if (hostnameCache == null) {
-      hostnameCache = HostnameCache.getInstance();
+      event.setServerName(options.getHostnameCache().getHostname());
     }
   }
 
