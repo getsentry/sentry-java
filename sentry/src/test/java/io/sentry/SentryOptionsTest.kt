@@ -4,6 +4,8 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryOptions.RequestSize
 import io.sentry.logger.ILoggerBatchProcessorFactory
 import io.sentry.test.getProperty
+import io.sentry.time.MonotonicTicker
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.LazyEvaluator
 import io.sentry.util.StringUtils
 import java.io.File
@@ -1337,9 +1339,16 @@ class SentryOptionsTest {
   private fun SentryOptions.peekHostnameCache(): HostnameCache? =
     getProperty<LazyEvaluator<HostnameCache>>("hostnameCache").getProperty("value")
 
+  /** Options whose hostname cache resolves against a ticker the test controls. */
+  private fun optionsWithTicker(ticker: MonotonicTicker): SentryOptions =
+    object : SentryOptions() {
+      override fun getMonotonicTicker(): MonotonicTicker = ticker
+    }
+
   @Test
   fun `hostname is resolved on first use, not when options are constructed`() {
-    val options = SentryOptions()
+    val ticker = TestMonotonicTicker()
+    val options = optionsWithTicker(ticker)
 
     assertThat(options.peekHostnameCache()).isNull()
 
@@ -1348,5 +1357,6 @@ class SentryOptionsTest {
     // Also keeps the assertion above honest: peek does report a cache once one exists.
     assertThat(options.peekHostnameCache()).isSameInstanceAs(cache)
     assertThat(options.hostnameCache).isSameInstanceAs(cache)
+    assertThat(cache.getProperty<MonotonicTicker>("ticker")).isSameInstanceAs(ticker)
   }
 }
