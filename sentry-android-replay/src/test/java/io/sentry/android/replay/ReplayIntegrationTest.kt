@@ -1135,6 +1135,28 @@ class ReplayIntegrationTest {
       )
   }
 
+  @Test
+  fun `register backfills previous replay with the replay sdk version set by hybrid sdks`() {
+    val oldReplayId = SentryId()
+    writePreviousReplay(oldReplayId)
+    PersistingOptionsObserver(fixture.options)
+      .setSdkVersion(SdkVersion("sentry.java.android.react-native", "1.0.0"))
+    fixture.options.sessionReplay.sdkVersion = SdkVersion("sentry.javascript.react-native", "7.0.0")
+
+    val replay = fixture.getSut(context)
+    replay.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureReplay(
+        check {
+          assertThat(it.replayId).isEqualTo(oldReplayId)
+          assertThat(it.sdk?.name).isEqualTo("sentry.javascript.react-native")
+          assertThat(it.sdk?.version).isEqualTo("7.0.0")
+        },
+        any(),
+      )
+  }
+
   private fun writePreviousReplay(replayId: SentryId) {
     fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
     fixture.options.addScopeObserver(PersistingScopeObserver(fixture.options))

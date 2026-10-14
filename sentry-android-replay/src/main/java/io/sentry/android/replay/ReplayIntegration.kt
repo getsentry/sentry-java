@@ -704,39 +704,13 @@ public class ReplayIntegration(
         )
 
       if (segment is ReplaySegment.Created) {
-        segment.replay.applyPreviousRunOptions()
+        segment.replay.applyPreviousRunOptions(options)
         val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint())
         segment.capture(scopes, hint)
       }
       cleanupReplays(
         unfinishedReplayId = previousReplayIdString
       ) // will be cleaned up after the envelope is assembled
-    }
-  }
-
-  /**
-   * [PreviousReplayHint] is [Backfillable], so MainEventProcessor does not apply release,
-   * environment, dist or SDK from the current run. Restore them from the options persisted by the
-   * previous run instead. This runs on the SDK executor before Sentry.init persists the current
-   * options, so the persisted values still describe the run that recorded this replay.
-   */
-  private fun SentryReplayEvent.applyPreviousRunOptions() {
-    if (release == null) {
-      release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java)
-    }
-    if (environment == null) {
-      environment =
-        PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String::class.java)
-    }
-    if (dist == null) {
-      dist = PersistingOptionsObserver.read(options, DIST_FILENAME, String::class.java)
-    }
-    if (sdk == null) {
-      // the SDK name does not change between runs, so fall back to the current one rather than
-      // sending a replay without any SDK info
-      sdk =
-        PersistingOptionsObserver.read(options, SDK_VERSION_FILENAME, SdkVersion::class.java)
-          ?: options.sdkVersion
     }
   }
 
@@ -809,5 +783,36 @@ public class ReplayIntegration(
       ret.setDaemon(true)
       return ret
     }
+  }
+}
+
+/**
+ * Replays from the previous run are sent with a [Backfillable] hint, so MainEventProcessor does not
+ * apply release, environment, dist or SDK from the current run. Restore them from the options
+ * persisted by the previous run instead. This runs on the SDK executor before Sentry.init persists
+ * the current options, so the persisted values still describe the run that recorded this replay.
+ */
+private fun SentryReplayEvent.applyPreviousRunOptions(options: SentryOptions) {
+  if (release == null) {
+    release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java)
+  }
+  if (environment == null) {
+    environment = PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String::class.java)
+  }
+  if (dist == null) {
+    dist = PersistingOptionsObserver.read(options, DIST_FILENAME, String::class.java)
+  }
+  if (sdk == null) {
+    val replaySdkVersion = options.sessionReplay.sdkVersion
+    sdk =
+      if (replaySdkVersion != null && replaySdkVersion != options.sdkVersion) {
+        // Hybrid SDKs override the replay SDK version, which is what MainEventProcessor uses for
+        // current-run segments. It isn't persisted, but the SDK name doesn't change between runs.
+        replaySdkVersion
+      } else {
+        // fall back to the current SDK rather than sending a replay without any SDK info
+        PersistingOptionsObserver.read(options, SDK_VERSION_FILENAME, SdkVersion::class.java)
+          ?: options.sdkVersion
+      }
   }
 }
