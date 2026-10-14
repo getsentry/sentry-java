@@ -22,6 +22,7 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent
 import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayLifecycleState.CLOSED
 import io.sentry.android.replay.ReplayLifecycleState.PAUSED
@@ -39,9 +40,15 @@ import io.sentry.android.replay.util.ReplayExecutorService
 import io.sentry.android.replay.util.appContext
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.cache.PersistingOptionsObserver
+import io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.hints.Backfillable
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
@@ -653,10 +660,7 @@ public class ReplayIntegration(
   }
 
   private fun finalizePreviousReplay() {
-    // TODO: read persisted options/scope values form the
-    // TODO: previous run and set them directly to the ReplayEvent so they don't get overwritten in
-    // MainEventProcessor
-
+    // TODO: also backfill persisted scope values (e.g. user, tags, contexts) from the previous run
     options.executorService.submitSafely(options, "ReplayIntegration.finalize_previous_replay") {
       val persistingScopeObserver = options.findPersistingScopeObserver()
       val previousReplayIdString =
@@ -701,12 +705,39 @@ public class ReplayIntegration(
         )
 
       if (segment is ReplaySegment.Created) {
+        segment.replay.applyPreviousRunOptions()
         val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint())
         segment.capture(scopes, hint)
       }
       cleanupReplays(
         unfinishedReplayId = previousReplayIdString
       ) // will be cleaned up after the envelope is assembled
+    }
+  }
+
+  /**
+   * [PreviousReplayHint] is [Backfillable], so MainEventProcessor does not apply release,
+   * environment, dist or SDK from the current run. Restore them from the options persisted by the
+   * previous run instead. This runs on the SDK executor before Sentry.init persists the current
+   * options, so the persisted values still describe the run that recorded this replay.
+   */
+  private fun SentryReplayEvent.applyPreviousRunOptions() {
+    if (release == null) {
+      release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java)
+    }
+    if (environment == null) {
+      environment =
+        PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String::class.java)
+    }
+    if (dist == null) {
+      dist = PersistingOptionsObserver.read(options, DIST_FILENAME, String::class.java)
+    }
+    if (sdk == null) {
+      // the SDK name does not change between runs, so fall back to the current one rather than
+      // sending a replay without any SDK info
+      sdk =
+        PersistingOptionsObserver.read(options, SDK_VERSION_FILENAME, SdkVersion::class.java)
+          ?: options.sdkVersion
     }
   }
 

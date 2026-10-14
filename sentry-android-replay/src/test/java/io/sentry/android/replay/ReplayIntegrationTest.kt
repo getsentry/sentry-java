@@ -38,8 +38,10 @@ import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Compa
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
+import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.tape.QueueFile
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
@@ -1076,6 +1078,86 @@ class ReplayIntegrationTest {
           assertEquals(322.0039f, interactionEvents?.last()?.x)
           assertEquals(424.43848f, interactionEvents?.last()?.y)
         },
+      )
+  }
+
+  @Test
+  fun `register backfills previous replay with options persisted by the previous run`() {
+    val oldReplayId = SentryId()
+    writePreviousReplay(oldReplayId)
+    PersistingOptionsObserver(fixture.options).apply {
+      setRelease("io.sentry.sample@1.0.0+1")
+      setEnvironment("previous-env")
+      setDist("1")
+      setSdkVersion(SdkVersion("sentry.java.android", "1.0.0"))
+    }
+    // current run options differ and must not be used for the previous replay
+    fixture.options.release = "io.sentry.sample@2.0.0+2"
+    fixture.options.environment = "current-env"
+    fixture.options.sdkVersion = SdkVersion("sentry.java.android", "2.0.0")
+
+    val replay = fixture.getSut(context)
+    replay.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureReplay(
+        check {
+          assertThat(it.replayId).isEqualTo(oldReplayId)
+          assertThat(it.release).isEqualTo("io.sentry.sample@1.0.0+1")
+          assertThat(it.environment).isEqualTo("previous-env")
+          assertThat(it.dist).isEqualTo("1")
+          assertThat(it.sdk?.name).isEqualTo("sentry.java.android")
+          assertThat(it.sdk?.version).isEqualTo("1.0.0")
+        },
+        any(),
+      )
+  }
+
+  @Test
+  fun `register falls back to current sdk version when previous run did not persist it`() {
+    val oldReplayId = SentryId()
+    writePreviousReplay(oldReplayId)
+    fixture.options.sdkVersion = SdkVersion("sentry.java.android", "2.0.0")
+
+    val replay = fixture.getSut(context)
+    replay.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureReplay(
+        check {
+          assertThat(it.replayId).isEqualTo(oldReplayId)
+          assertThat(it.sdk?.name).isEqualTo("sentry.java.android")
+          assertThat(it.sdk?.version).isEqualTo("2.0.0")
+          assertThat(it.release).isNull()
+          assertThat(it.environment).isNull()
+        },
+        any(),
+      )
+  }
+
+  private fun writePreviousReplay(replayId: SentryId) {
+    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+    fixture.options.addScopeObserver(PersistingScopeObserver(fixture.options))
+    val oldReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    File(oldReplay, "1720693523997.jpg").outputStream().use {
+      Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+      it.flush()
+    }
+    val scopeCache =
+      File(fixture.options.cacheDirPath, PersistingScopeObserver.SCOPE_CACHE).also { it.mkdirs() }
+    File(scopeCache, PersistingScopeObserver.REPLAY_FILENAME).writeText("\"$replayId\"")
+    File(oldReplay, ONGOING_SEGMENT)
+      .writeText(
+        """
+        $SEGMENT_KEY_HEIGHT=912
+        $SEGMENT_KEY_WIDTH=416
+        $SEGMENT_KEY_FRAME_RATE=1
+        $SEGMENT_KEY_BIT_RATE=75000
+        $SEGMENT_KEY_ID=0
+        $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
+        $SEGMENT_KEY_REPLAY_TYPE=BUFFER
+        """
+          .trimIndent()
       )
   }
 
