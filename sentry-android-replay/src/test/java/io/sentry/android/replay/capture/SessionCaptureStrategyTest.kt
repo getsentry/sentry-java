@@ -16,9 +16,12 @@ import io.sentry.android.replay.DefaultReplayBreadcrumbConverter
 import io.sentry.android.replay.GeneratedVideo
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_DIST
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ENVIRONMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_RELEASE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_NAME
@@ -158,14 +161,30 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
-  fun `start persists the replay sdk version`() {
+  fun `start persists the recording metadata`() {
+    fixture.options.release = "io.sentry.sample@1.0.0+1"
+    fixture.options.environment = "recording-env"
+    fixture.options.dist = "1"
     fixture.options.sessionReplay.sdkVersion = SdkVersion("sentry.javascript.react-native", "7.0.0")
     val strategy = fixture.getSut()
 
     strategy.start(0, SentryId())
 
+    assertEquals("io.sentry.sample@1.0.0+1", fixture.persistedSegment[SEGMENT_KEY_RELEASE])
+    assertEquals("recording-env", fixture.persistedSegment[SEGMENT_KEY_ENVIRONMENT])
+    assertEquals("1", fixture.persistedSegment[SEGMENT_KEY_DIST])
     assertEquals("sentry.javascript.react-native", fixture.persistedSegment[SEGMENT_KEY_SDK_NAME])
     assertEquals("7.0.0", fixture.persistedSegment[SEGMENT_KEY_SDK_VERSION])
+  }
+
+  @Test
+  fun `start does not persist recording metadata with line breaks`() {
+    fixture.options.environment = "multi\nline"
+    val strategy = fixture.getSut()
+
+    strategy.start(0, SentryId())
+
+    assertNull(fixture.persistedSegment[SEGMENT_KEY_ENVIRONMENT])
   }
 
   @Test

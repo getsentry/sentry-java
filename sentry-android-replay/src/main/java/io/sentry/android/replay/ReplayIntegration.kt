@@ -702,8 +702,7 @@ public class ReplayIntegration(
         )
 
       if (segment is ReplaySegment.Created) {
-        segment.replay.sdk = lastSegment.sdkVersion
-        segment.replay.applyPreviousRunOptions(options)
+        segment.replay.applyRecordingMetadata(lastSegment.metadata, options)
         val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint())
         segment.capture(scopes, hint)
       }
@@ -787,24 +786,27 @@ public class ReplayIntegration(
 
 /**
  * Replays from the previous run are sent with a [Backfillable] hint, so MainEventProcessor does not
- * apply release, environment, dist or SDK from the current run. Restore release, environment and
- * dist from the options persisted by the previous run instead. This runs on the SDK executor before
- * Sentry.init persists the current options, so the persisted values still describe the run that
- * recorded this replay. The SDK is stored with the replay itself, see [LastSegmentData.sdkVersion].
+ * apply release, environment, dist or SDK from the current run. Use the values persisted with the
+ * replay when it started recording instead.
+ *
+ * Replays recorded by older SDK versions don't have them stored. For those, read release,
+ * environment and dist from the options persisted by the previous run: this runs on the SDK
+ * executor before Sentry.init persists the current options, so they still describe that run. The
+ * SDK falls back to the one MainEventProcessor applies to current-run segments rather than none.
  */
-private fun SentryReplayEvent.applyPreviousRunOptions(options: SentryOptions) {
-  if (release == null) {
+private fun SentryReplayEvent.applyRecordingMetadata(
+  metadata: RecordingMetadata?,
+  options: SentryOptions,
+) {
+  if (metadata != null) {
+    release = metadata.release
+    environment = metadata.environment
+    dist = metadata.dist
+    sdk = metadata.sdkVersion ?: options.sessionReplay.sdkVersion ?: options.sdkVersion
+  } else {
     release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java)
-  }
-  if (environment == null) {
     environment = PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String::class.java)
-  }
-  if (dist == null) {
     dist = PersistingOptionsObserver.read(options, DIST_FILENAME, String::class.java)
-  }
-  if (sdk == null) {
-    // replays recorded by older SDK versions don't store the SDK, fall back to the one that
-    // MainEventProcessor applies to current-run segments rather than sending none
     sdk = options.sessionReplay.sdkVersion ?: options.sdkVersion
   }
 }

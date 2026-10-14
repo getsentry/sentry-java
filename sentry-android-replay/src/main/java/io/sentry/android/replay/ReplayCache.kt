@@ -324,6 +324,17 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     internal const val SEGMENT_KEY_FLUSHED = "replay.flushed"
     internal const val SEGMENT_KEY_SDK_NAME = "replay.sdk-name"
     internal const val SEGMENT_KEY_SDK_VERSION = "replay.sdk-version"
+    internal const val SEGMENT_KEY_RELEASE = "replay.release"
+    internal const val SEGMENT_KEY_ENVIRONMENT = "replay.environment"
+    internal const val SEGMENT_KEY_DIST = "replay.dist"
+    private val RECORDING_METADATA_KEYS =
+      listOf(
+        SEGMENT_KEY_RELEASE,
+        SEGMENT_KEY_ENVIRONMENT,
+        SEGMENT_KEY_DIST,
+        SEGMENT_KEY_SDK_NAME,
+        SEGMENT_KEY_SDK_VERSION,
+      )
 
     /**
      * Deletes [replayCacheDir], but keeps the segment videos it holds. A captured segment's video
@@ -478,13 +489,26 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
         replayType = replayType,
         screenAtStart = lastSegment[SEGMENT_KEY_REPLAY_SCREEN_AT_START],
         events = events.sortedBy { it.timestamp },
-        sdkVersion =
-          sdkVersion(lastSegment[SEGMENT_KEY_SDK_NAME], lastSegment[SEGMENT_KEY_SDK_VERSION]),
+        metadata = recordingMetadata(lastSegment),
       )
     }
 
-    private fun sdkVersion(name: String?, version: String?): SdkVersion? =
-      if (name.isNullOrEmpty() || version.isNullOrEmpty()) null else SdkVersion(name, version)
+    private fun recordingMetadata(lastSegment: Map<String, String>): RecordingMetadata? {
+      if (RECORDING_METADATA_KEYS.none { lastSegment.containsKey(it) }) {
+        // recorded by an older SDK version
+        return null
+      }
+      val sdkName = lastSegment[SEGMENT_KEY_SDK_NAME]
+      val sdkVersion = lastSegment[SEGMENT_KEY_SDK_VERSION]
+      return RecordingMetadata(
+        release = lastSegment[SEGMENT_KEY_RELEASE],
+        environment = lastSegment[SEGMENT_KEY_ENVIRONMENT],
+        dist = lastSegment[SEGMENT_KEY_DIST],
+        sdkVersion =
+          if (sdkName.isNullOrEmpty() || sdkVersion.isNullOrEmpty()) null
+          else SdkVersion(sdkName, sdkVersion),
+      )
+    }
   }
 }
 
@@ -497,7 +521,18 @@ internal data class LastSegmentData(
   val replayType: ReplayType,
   val screenAtStart: String?,
   val events: List<RRWebEvent>,
-  /** The SDK that recorded the replay, null for replays recorded by older SDK versions. */
+  /** Null for replays recorded by SDK versions that didn't persist it. */
+  val metadata: RecordingMetadata?,
+)
+
+/**
+ * Event metadata of the run that recorded a replay, persisted when recording starts so a replay
+ * sent on the next launch describes the run that recorded it.
+ */
+internal data class RecordingMetadata(
+  val release: String?,
+  val environment: String?,
+  val dist: String?,
   val sdkVersion: SdkVersion?,
 )
 
