@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * Time sensitive cache in charge of keeping track of the hostname. The {@code
@@ -76,6 +77,7 @@ public final class HostnameCache {
    *     testability
    * @param ticker the ticker the cache lifetime is measured on
    */
+  @VisibleForTesting
   HostnameCache(
       final @NotNull Callable<InetAddress> getLocalhost, final @NotNull MonotonicTicker ticker) {
     this.getLocalhost = Objects.requireNonNull(getLocalhost, "getLocalhost is required");
