@@ -3,6 +3,8 @@ package io.sentry
 import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryOptions.RequestSize
 import io.sentry.logger.ILoggerBatchProcessorFactory
+import io.sentry.test.getProperty
+import io.sentry.util.LazyEvaluator
 import io.sentry.util.StringUtils
 import java.io.File
 import java.net.Proxy
@@ -1330,5 +1332,21 @@ class SentryOptionsTest {
     options.scopesStorageFactory = factory
     options.scopesStorageFactory = null
     assertNull(options.scopesStorageFactory)
+  }
+
+  private fun SentryOptions.peekHostnameCache(): HostnameCache? =
+    getProperty<LazyEvaluator<HostnameCache>>("hostnameCache").getProperty("value")
+
+  @Test
+  fun `hostname is resolved on first use, not when options are constructed`() {
+    val options = SentryOptions()
+
+    assertThat(options.peekHostnameCache()).isNull()
+
+    val cache = options.hostnameCache
+
+    // Also keeps the assertion above honest: peek does report a cache once one exists.
+    assertThat(options.peekHostnameCache()).isSameInstanceAs(cache)
+    assertThat(options.hostnameCache).isSameInstanceAs(cache)
   }
 }

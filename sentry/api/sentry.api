@@ -694,7 +694,6 @@ public final class io/sentry/Hint {
 
 public final class io/sentry/HostnameCache {
 	public fun getHostname ()Ljava/lang/String;
-	public static fun getInstance ()Lio/sentry/HostnameCache;
 }
 
 public final class io/sentry/HttpBodyType : java/lang/Enum {
@@ -3808,6 +3807,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getFlushTimeoutMillis ()J
 	public fun getFullyDisplayedReporter ()Lio/sentry/FullyDisplayedReporter;
 	public fun getGestureTargetLocators ()Ljava/util/List;
+	public fun getHostnameCache ()Lio/sentry/HostnameCache;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;

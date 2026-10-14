@@ -19,6 +19,10 @@
   - Keep the Android feedback form available when its options configurator throws ([#6239](https://github.com/getsentry/sentry-java/pull/6239)).
   - Isolate nonfatal callback throwables while continuing to propagate fatal JVM errors ([#6251](https://github.com/getsentry/sentry-java/pull/6251)).
 
+### Internal
+
+- Hold the hostname cache on `SentryOptions` instead of a static singleton ([#6117](https://github.com/getsentry/sentry-java/pull/6117))
+
 ### Dependencies
 
 - Bump Native SDK from v0.17.2 to v0.17.3 ([#6250](https://github.com/getsentry/sentry-java/pull/6250))
