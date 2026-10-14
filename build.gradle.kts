@@ -168,19 +168,12 @@ subprojects {
             configure<JavaPluginExtension> {
                 withJavadocJar()
             }
-
-            // Published code targets Java 8. release compiles against that version's class library
-            // instead of the build JDK's, so newer JDK APIs (e.g. List.getFirst()) can't leak into
-            // published bytecode. Modules that publish a higher level override this; test code is
-            // never published and follows the toolchain.
-            tasks.named<JavaCompile>("compileJava") {
-                options.release.set(8)
-            }
         }
 
         // AGP 9 defaults Android modules to Java 11. Pin the published library modules back
         // to Java 8 so their bytecode stays consumable by Java 8 projects, mirroring the
-        // java-library pin above.
+        // java-library pin in the io.sentry.jvm-targets plugin. AGP compiles against android.jar,
+        // so it has no release equivalent.
         plugins.withId("com.android.library") {
             configure<com.android.build.gradle.BaseExtension> {
                 compileOptions {

@@ -36,3 +36,20 @@ listOf("com.android.library", "com.android.application").forEach { pluginId ->
     applyToolchainToCompileTasks { it.name.contains("UnitTest") }
   }
 }
+
+// Published code targets Java 8. release compiles against that version's class library instead of
+// the build JDK's, so newer JDK APIs (e.g. List.getFirst()) can't leak into published bytecode.
+// Modules that publish a higher level override this; test code and samples are never published and
+// follow the toolchain.
+// Keep this in sync with the publication filter in the root build script.
+val isPublished =
+  !name.contains("sample") &&
+    !name.contains("integration-tests") &&
+    name != "sentry-system-test-support" &&
+    name != "sentry-test-support"
+
+if (isPublished) {
+  plugins.withId("java-library") {
+    tasks.named<JavaCompile>("compileJava") { options.release.set(8) }
+  }
+}
