@@ -305,6 +305,11 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `traceOptionsRequests defaults to false`() {
+    assertThat(SentryOptions().isTraceOptionsRequests).isFalse()
+  }
+
+  @Test
   fun `when there's no cacheDirPath, outboxPath returns null`() {
     val options = SentryOptions()
     assertNull(options.outboxPath)
