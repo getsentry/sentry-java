@@ -35,6 +35,8 @@
       `logsEnabled` argument. The deprecated constructor without `minimumLevel` is removed.
     - Manually constructed `SentryTimberIntegration` and `SentryTimberTree` instances require a
       `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
+- Disable tracing for HTTP `OPTIONS` requests by default. Set `traceOptionsRequests` to `true` to
+  preserve the previous behavior ([#6254](https://github.com/getsentry/sentry-java/pull/6254))
 - Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
 
 ### Features
