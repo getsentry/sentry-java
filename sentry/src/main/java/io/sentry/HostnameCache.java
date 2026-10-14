@@ -54,6 +54,12 @@ public final class HostnameCache {
 
   private final @NotNull ExecutorService executorService;
 
+  /**
+   * Do not construct a hostname cache directly; get it from {@link
+   * SentryOptions#getHostnameCache()}. Every instance resolves the hostname as soon as it is built
+   * and caches it on its own, so another instance would repeat that blocking lookup instead of
+   * sharing the cached value.
+   */
   HostnameCache() {
     this(HOSTNAME_CACHE_DURATION);
   }
