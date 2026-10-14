@@ -539,8 +539,7 @@ public class SentryOptions implements RateLimiterConfig {
    * Cache of the local hostname, used when {@link #isAttachServerName()} is enabled.
    *
    * <p>Evaluated lazily because resolving the hostname blocks on {@code
-   * InetAddress.getLocalHost()}, which no {@code Sentry.init} should pay for up front. Deferring
-   * also means {@link #getMonotonicTicker()} is read after subclasses have overridden it.
+   * InetAddress.getLocalHost()}, which no {@code Sentry.init} should pay for up front.
    */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<HostnameCache> hostnameCache =
