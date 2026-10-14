@@ -21,11 +21,14 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_NAME
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_VERSION
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ReplayFrame
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.maskAllImages
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebMetaEvent
@@ -152,6 +155,17 @@ class SessionCaptureStrategyTest {
     assertEquals(replayId, fixture.scope.replayId)
     assertEquals(replayId, strategy.currentReplayId)
     assertEquals(0, strategy.currentSegment)
+  }
+
+  @Test
+  fun `start persists the replay sdk version`() {
+    fixture.options.sessionReplay.sdkVersion = SdkVersion("sentry.javascript.react-native", "7.0.0")
+    val strategy = fixture.getSut()
+
+    strategy.start(0, SentryId())
+
+    assertEquals("sentry.javascript.react-native", fixture.persistedSegment[SEGMENT_KEY_SDK_NAME])
+    assertEquals("7.0.0", fixture.persistedSegment[SEGMENT_KEY_SDK_VERSION])
   }
 
   @Test

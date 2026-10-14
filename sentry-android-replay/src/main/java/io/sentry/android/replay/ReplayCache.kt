@@ -13,6 +13,7 @@ import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.util.AutoClosableReentrantLock
@@ -321,6 +322,8 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     internal const val SEGMENT_KEY_REPLAY_RECORDING = "replay.recording"
     internal const val SEGMENT_KEY_ID = "segment.id"
     internal const val SEGMENT_KEY_FLUSHED = "replay.flushed"
+    internal const val SEGMENT_KEY_SDK_NAME = "replay.sdk-name"
+    internal const val SEGMENT_KEY_SDK_VERSION = "replay.sdk-version"
 
     /**
      * Deletes [replayCacheDir], but keeps the segment videos it holds. A captured segment's video
@@ -475,8 +478,13 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
         replayType = replayType,
         screenAtStart = lastSegment[SEGMENT_KEY_REPLAY_SCREEN_AT_START],
         events = events.sortedBy { it.timestamp },
+        sdkVersion =
+          sdkVersion(lastSegment[SEGMENT_KEY_SDK_NAME], lastSegment[SEGMENT_KEY_SDK_VERSION]),
       )
     }
+
+    private fun sdkVersion(name: String?, version: String?): SdkVersion? =
+      if (name.isNullOrEmpty() || version.isNullOrEmpty()) null else SdkVersion(name, version)
   }
 }
 
@@ -489,6 +497,8 @@ internal data class LastSegmentData(
   val replayType: ReplayType,
   val screenAtStart: String?,
   val events: List<RRWebEvent>,
+  /** The SDK that recorded the replay, null for replays recorded by older SDK versions. */
+  val sdkVersion: SdkVersion?,
 )
 
 internal data class ReplayFrame(

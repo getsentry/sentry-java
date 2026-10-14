@@ -20,6 +20,8 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_SCREEN_AT_START
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_NAME
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_VERSION
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ScreenshotRecorderConfig
@@ -27,6 +29,7 @@ import io.sentry.android.replay.capture.CaptureStrategy.Companion.createSegment
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.gestures.ReplayGestureConverter
 import io.sentry.android.replay.util.ReplayRunnable
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.transport.ICurrentDateProvider
@@ -80,6 +83,12 @@ internal abstract class BaseCaptureStrategy(
       )
     }
   protected val replayStartTimestamp = AtomicLong()
+  // persisted so a replay sent on the next launch reports the SDK that recorded it
+  private var recordingSdkVersion: SdkVersion? by
+    persistableAtomicNullable(propertyName = "") { _, _, newValue ->
+      cache?.persistSegmentValues(SEGMENT_KEY_SDK_NAME, newValue?.name)
+      cache?.persistSegmentValues(SEGMENT_KEY_SDK_VERSION, newValue?.version)
+    }
   protected var screenAtStart by
     persistableAtomicNullable<String>(propertyName = SEGMENT_KEY_REPLAY_SCREEN_AT_START)
   override var currentReplayId: SentryId by
@@ -110,6 +119,8 @@ internal abstract class BaseCaptureStrategy(
 
     segmentTimestamp = DateUtils.getCurrentDateTime()
     replayStartTimestamp.set(dateProvider.currentTimeMillis)
+    // same SDK that MainEventProcessor applies to current-run segments
+    recordingSdkVersion = options.sessionReplay.sdkVersion ?: options.sdkVersion
   }
 
   override fun resume() {

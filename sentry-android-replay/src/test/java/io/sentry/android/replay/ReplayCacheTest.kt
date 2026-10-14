@@ -17,6 +17,8 @@ import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDING
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_NAME
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_VERSION
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
@@ -502,6 +504,39 @@ class ReplayCacheTest {
     val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
 
     assertEquals(0, lastSegment.id)
+  }
+
+  @Test
+  fun `fromDisk reads the sdk version stored with the replay`() {
+    fixture.options.run { cacheDirPath = tmpDir.newFolder()?.absolutePath }
+    val replayId = SentryId()
+    val replayCacheFolder =
+      File(fixture.options.cacheDirPath!!, "replay_$replayId").also { it.mkdirs() }
+    File(replayCacheFolder, ONGOING_SEGMENT).also {
+      it.writeText(
+        """
+                $SEGMENT_KEY_HEIGHT=912
+                $SEGMENT_KEY_WIDTH=416
+                $SEGMENT_KEY_FRAME_RATE=1
+                $SEGMENT_KEY_BIT_RATE=75000
+                $SEGMENT_KEY_ID=0
+                $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
+                $SEGMENT_KEY_REPLAY_TYPE=BUFFER
+                $SEGMENT_KEY_SDK_NAME=sentry.java.android
+                $SEGMENT_KEY_SDK_VERSION=8.0.0
+                """
+          .trimIndent()
+      )
+    }
+    File(replayCacheFolder, "1720693523997.jpg").outputStream().use {
+      Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+      it.flush()
+    }
+
+    val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
+
+    assertEquals("sentry.java.android", lastSegment.sdkVersion?.name)
+    assertEquals("8.0.0", lastSegment.sdkVersion?.version)
   }
 
   @Test
