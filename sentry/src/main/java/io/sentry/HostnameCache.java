@@ -61,9 +61,6 @@ public final class HostnameCache {
    * and caches it on its own, so another instance would repeat that blocking lookup instead of
    * sharing the cached value.
    *
-   * <p>Names the only collaborator a hostname cache reads, rather than taking the whole {@link
-   * SentryOptions}.
-   *
    * @param ticker the ticker the cache lifetime is measured on
    */
   HostnameCache(final @NotNull MonotonicTicker ticker) {
