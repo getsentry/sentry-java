@@ -660,7 +660,6 @@ public class ReplayIntegration(
   }
 
   private fun finalizePreviousReplay() {
-    // TODO: also backfill persisted scope values (e.g. user, tags, contexts) from the previous run
     options.executorService.submitSafely(options, "ReplayIntegration.finalize_previous_replay") {
       val persistingScopeObserver = options.findPersistingScopeObserver()
       val previousReplayIdString =
