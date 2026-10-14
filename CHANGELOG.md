@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Session Replay: Backfill release, environment and SDK info for replays sent on the next launch after the app was killed or crashed ([#6253](https://github.com/getsentry/sentry-java/pull/6253))
 - Fix SDK callback error handling ([#6140](https://github.com/getsentry/sentry-java/pull/6140))
   - Drop telemetry when a `beforeSend*` callback throws and report it using `DiscardReason.CALLBACK_ERROR`.
   - Drop transactions when `tracesSampler` throws instead of inheriting the parent sampling decision or falling back to `tracesSampleRate` ([#6163](https://github.com/getsentry/sentry-java/pull/6163)).
