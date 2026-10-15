@@ -265,7 +265,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     }
   }
 
-  // TODO Fix for JDK21: DELETE_MARKER and CLEAR_MARKER are sentinels, so identity comparison is
+  // temp fix for JDK 21: DELETE_MARKER and CLEAR_MARKER are sentinels, so identity comparison is
   // intended.
   @SuppressWarnings("ReferenceEquality")
   private void writePending() {

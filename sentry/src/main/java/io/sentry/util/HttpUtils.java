@@ -125,7 +125,7 @@ public final class HttpUtils {
     return filteredHeaders;
   }
 
-  // TODO Fix for JDK21: The Charset overload requires Java 10.
+  // temp fix for JDK 21: The Charset overload requires Java 10.
   @SuppressWarnings("JdkObsolete")
   private static @NotNull String decodeQueryParamName(final @NotNull String name) {
     try {

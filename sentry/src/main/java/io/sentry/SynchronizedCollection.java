@@ -50,13 +50,13 @@ class SynchronizedCollection<E> implements Collection<E>, Serializable {
   private static final long serialVersionUID = 2412805092710877986L;
 
   /** The collection to decorate */
-  // TODO Fix for JDK21: Serializable only if the decorated collection is, as in Apache Commons
+  // temp fix for JDK 21: Serializable only if the decorated collection is, as in Apache Commons
   // Collections.
   @SuppressWarnings("serial")
   private final Collection<E> collection;
 
   /** The object to lock on, needed for List/SortedSet views */
-  // TODO Fix for JDK21: Not Serializable either; the SDK never serializes these collections.
+  // temp fix for JDK 21: Not Serializable either; the SDK never serializes these collections.
   @SuppressWarnings("serial")
   final AutoClosableReentrantLock lock;
 

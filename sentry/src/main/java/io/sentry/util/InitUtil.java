@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
 public final class InitUtil {
-  // TODO Fix for JDK21: InitPriority is declared in ascending priority order.
+  // temp fix for JDK 21: InitPriority is declared in ascending priority order.
   @SuppressWarnings("EnumOrdinal")
   public static boolean shouldInit(
       final @Nullable SentryOptions previousOptions,

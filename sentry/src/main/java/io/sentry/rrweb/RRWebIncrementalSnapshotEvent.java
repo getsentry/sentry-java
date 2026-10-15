@@ -30,7 +30,7 @@ public abstract class RRWebIncrementalSnapshotEvent extends RRWebEvent {
     AdoptedStyleSheet,
     CustomElement;
 
-    // TODO Fix for JDK21: The rrweb protocol encodes these enums by ordinal.
+    // temp fix for JDK 21: The rrweb protocol encodes these enums by ordinal.
     @SuppressWarnings("EnumOrdinal")
     @Override
     public void serialize(@NotNull ObjectWriter writer, @NotNull ILogger logger)
@@ -39,7 +39,7 @@ public abstract class RRWebIncrementalSnapshotEvent extends RRWebEvent {
     }
 
     public static final class Deserializer implements JsonDeserializer<IncrementalSource> {
-      // TODO Fix for JDK21: The rrweb protocol encodes these enums by ordinal.
+      // temp fix for JDK 21: The rrweb protocol encodes these enums by ordinal.
       @SuppressWarnings("EnumOrdinal")
       @Override
       public @NotNull IncrementalSource deserialize(

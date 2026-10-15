@@ -102,7 +102,7 @@ public final class ReplayRecording implements JsonUnknown, JsonSerializable {
 
   public static final class Deserializer implements JsonDeserializer<ReplayRecording> {
 
-    // TODO Fix for JDK21: The rrweb protocol encodes these enums by ordinal.
+    // temp fix for JDK 21: The rrweb protocol encodes these enums by ordinal.
     @SuppressWarnings({"unchecked", "EnumOrdinal"})
     @Override
     public @NotNull ReplayRecording deserialize(

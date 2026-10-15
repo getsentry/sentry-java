@@ -34,7 +34,7 @@ public final class NetworkBodyParser {
    * @param logger Optional logger
    * @return A NetworkBody or null if bytes are null/empty
    */
-  // TODO Fix for JDK21: The charset is a name from the Content-Type header; unsupported names are
+  // temp fix for JDK 21: The charset is a name from the Content-Type header; unsupported names are
   // handled below.
   @SuppressWarnings("JdkObsolete")
   public static @Nullable NetworkBody fromBytes(
@@ -134,7 +134,7 @@ public final class NetworkBodyParser {
   }
 
   /** Parses URL-encoded form data into a JsonObject NetworkBody. */
-  // TODO Fix for JDK21: The Charset overload requires Java 10.
+  // temp fix for JDK 21: The Charset overload requires Java 10.
   @SuppressWarnings("JdkObsolete")
   @NotNull
   private static NetworkBody parseFormUrlEncoded(
