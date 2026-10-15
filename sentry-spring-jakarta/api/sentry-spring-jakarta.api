@@ -136,6 +136,7 @@ public final class io/sentry/spring/jakarta/cache/SentryCacheWrapper : org/sprin
 public abstract interface annotation class io/sentry/spring/jakarta/checkin/SentryCheckIn : java/lang/annotation/Annotation {
 	public abstract fun heartbeat ()Z
 	public abstract fun monitorSlug ()Ljava/lang/String;
+	public abstract fun upsertMonitorConfig ()Z
 	public abstract fun value ()Ljava/lang/String;
 }
 
