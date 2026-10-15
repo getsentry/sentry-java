@@ -36,14 +36,11 @@
     - Manually constructed `SentryTimberIntegration` and `SentryTimberTree` instances require a
       `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
 - Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
+- Decide whether foregrounding the app starts a new session on a monotonic clock instead of the wall clock, so that a device time change no longer starts a session that should have been resumed, or resumes one that should have ended. This affects session counts ([#6096](https://github.com/getsentry/sentry-java/pull/6096))
 
 ### Features
 
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
-
-### Fixes
-
-- Decide whether foregrounding the app starts a new session on a monotonic clock instead of the wall clock, so that a device time change no longer starts a session that should have been resumed, or resumes one that should have ended ([#6096](https://github.com/getsentry/sentry-java/pull/6096))
 
 ### Dependencies
 
