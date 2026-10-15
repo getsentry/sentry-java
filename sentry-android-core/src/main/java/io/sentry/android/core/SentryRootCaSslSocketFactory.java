@@ -104,11 +104,12 @@ final class SentryRootCaSslSocketFactory extends SSLSocketFactory {
       final @NotNull SSLContext sslContext = SSLContext.getInstance("TLS");
       sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
       return sslContext.getSocketFactory();
-    } catch (Throwable e) {
-      // Catches everything, not only GeneralSecurityException and IOException: some OEM builds
+    } catch (Exception e) {
+      // Catches Exception, not only GeneralSecurityException and IOException: some OEM builds
       // throw RuntimeExceptions from their trust store or certificate code. An exception escaping
       // here would make every envelope upload fail without being retried, and the LazyEvaluator
-      // would try to build the delegate again on every send.
+      // would try to build the delegate again on every send. Errors such as OutOfMemoryError are
+      // not caught on purpose, the process can't recover from them.
       logger.log(
           SentryLevel.ERROR,
           "Failed to create SSLSocketFactory with bundled Sentry root CAs, using the default one.",
