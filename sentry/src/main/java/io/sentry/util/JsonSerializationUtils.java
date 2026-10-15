@@ -129,7 +129,7 @@ public final class JsonSerializationUtils {
       // Nothing to close
     }
 
-    long getByteCount() {
+    public long getByteCount() {
       return byteCount;
     }
 

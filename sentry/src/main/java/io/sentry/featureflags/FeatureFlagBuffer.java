@@ -233,14 +233,13 @@ public final class FeatureFlagBuffer implements IFeatureFlagBuffer {
     private final boolean result;
     private final long nanos;
 
-    FeatureFlagEntry(final @NotNull String flag, final boolean result, final long nanos) {
+    public FeatureFlagEntry(final @NotNull String flag, final boolean result, final long nanos) {
       this.flag = flag;
       this.result = result;
       this.nanos = nanos;
     }
 
-    @NotNull
-    FeatureFlag toFeatureFlag() {
+    public @NotNull FeatureFlag toFeatureFlag() {
       return new FeatureFlag(flag, result);
     }
   }

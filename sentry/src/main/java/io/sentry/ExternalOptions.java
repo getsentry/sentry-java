@@ -242,8 +242,7 @@ public final class ExternalOptions {
 
     String profileLifecycleString = propertiesProvider.getProperty("profile-lifecycle");
     if (profileLifecycleString != null && !profileLifecycleString.isEmpty()) {
-      options.setProfileLifecycle(
-          ProfileLifecycle.valueOf(profileLifecycleString.toUpperCase(Locale.ROOT)));
+      options.setProfileLifecycle(ProfileLifecycle.valueOf(profileLifecycleString.toUpperCase()));
     }
 
     return options;

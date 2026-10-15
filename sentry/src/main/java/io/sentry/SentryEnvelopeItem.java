@@ -691,12 +691,11 @@ public final class SentryEnvelopeItem {
     private @Nullable byte[] bytes;
     private final @Nullable Callable<byte[]> dataFactory;
 
-    CachedItem(final @Nullable Callable<byte[]> dataFactory) {
+    public CachedItem(final @Nullable Callable<byte[]> dataFactory) {
       this.dataFactory = dataFactory;
     }
 
-    @NotNull
-    byte[] getBytes() throws Exception {
+    public @NotNull byte[] getBytes() throws Exception {
       if (bytes == null && dataFactory != null) {
         bytes = dataFactory.call();
       }

@@ -196,9 +196,7 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
     if (enqueuedTimeStr != null) {
       try {
         final double enqueuedTimeSeconds = Double.parseDouble(enqueuedTimeStr);
-        // millisToSeconds takes a double; the cast is explicit for Error Prone's
-        // LongDoubleConversion check.
-        final double nowSeconds = DateUtils.millisToSeconds((double) System.currentTimeMillis());
+        final double nowSeconds = DateUtils.millisToSeconds(System.currentTimeMillis());
         final long latencyMs = (long) ((nowSeconds - enqueuedTimeSeconds) * 1000);
         if (latencyMs >= 0) {
           transaction.setData(SpanDataConvention.MESSAGING_MESSAGE_RECEIVE_LATENCY, latencyMs);

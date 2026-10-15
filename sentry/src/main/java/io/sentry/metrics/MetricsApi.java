@@ -156,7 +156,7 @@ public final class MetricsApi implements IMetricsApi {
     }
   }
 
-  private @NotNull Map<String, SentryLogEventAttributeValue> createAttributes(
+  private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
       final @NotNull SentryMetricsParameters params) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
 
@@ -232,7 +232,8 @@ public final class MetricsApi implements IMetricsApi {
     return attributes;
   }
 
-  private void setServerName(final @NotNull Map<String, SentryLogEventAttributeValue> attributes) {
+  private void setServerName(
+      final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
     final @NotNull SentryOptions options = scopes.getOptions();
     final @Nullable String optionsServerName = options.getServerName();
     if (optionsServerName != null) {
@@ -249,7 +250,7 @@ public final class MetricsApi implements IMetricsApi {
     }
   }
 
-  private void setUser(final @NotNull Map<String, SentryLogEventAttributeValue> attributes) {
+  private void setUser(final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
     final @Nullable User user = scopes.getCombinedScopeView().getUser();
     if (user == null) {
       // In case no user is set, we should fallback to the distinct id, known as installation id,

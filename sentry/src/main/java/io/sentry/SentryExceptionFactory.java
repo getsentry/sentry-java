@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -142,7 +141,7 @@ public final class SentryExceptionFactory {
   Deque<SentryException> extractExceptionQueueInternal(
       final @NotNull Throwable throwable,
       final @NotNull AtomicInteger exceptionId,
-      final @NotNull Set<Throwable> circularityDetector,
+      final @NotNull HashSet<Throwable> circularityDetector,
       final @NotNull Deque<SentryException> exceptions,
       @Nullable String mechanismTypeOverride) {
     Mechanism exceptionMechanism;

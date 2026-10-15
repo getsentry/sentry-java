@@ -197,8 +197,7 @@ public class SentryAppender extends UnsynchronizedAppenderBase<ILoggingEvent> {
     final @NotNull SentryLogParameters params = SentryLogParameters.create(attributes);
     params.setOrigin("auto.log.logback");
 
-    Sentry.logger()
-        .log(sentryLevel, params, formattedMessage, arguments != null ? arguments : new Object[0]);
+    Sentry.logger().log(sentryLevel, params, formattedMessage, arguments);
   }
 
   @SuppressWarnings("deprecation")

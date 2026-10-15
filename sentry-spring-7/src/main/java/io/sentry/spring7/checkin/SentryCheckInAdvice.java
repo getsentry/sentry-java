@@ -44,11 +44,9 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
   }
 
   @Override
-  public @Nullable Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
-    final @Nullable Object target = invocation.getThis();
+  public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final Method mostSpecificMethod =
-        AopUtils.getMostSpecificMethod(
-            invocation.getMethod(), target != null ? target.getClass() : null);
+        AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
 
     @Nullable
     SentryCheckIn checkInAnnotation =

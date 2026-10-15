@@ -41,11 +41,9 @@ public class SentryTransactionAdvice implements MethodInterceptor {
 
   @SuppressWarnings("deprecation")
   @Override
-  public @Nullable Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
-    final @Nullable Object target = invocation.getThis();
+  public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final Method mostSpecificMethod =
-        AopUtils.getMostSpecificMethod(
-            invocation.getMethod(), target != null ? target.getClass() : null);
+        AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
 
     @Nullable
     SentryTransaction sentryTransaction =
@@ -118,7 +116,7 @@ public class SentryTransactionAdvice implements MethodInterceptor {
     private final @NotNull String name;
     private final @NotNull TransactionNameSource source;
 
-    TransactionNameAndSource(
+    public TransactionNameAndSource(
         final @NotNull String name, final @NotNull TransactionNameSource source) {
       this.name = name;
       this.source = source;

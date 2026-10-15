@@ -35,17 +35,15 @@ public class SentrySpanAdvice implements MethodInterceptor {
 
   @SuppressWarnings("deprecation")
   @Override
-  public @Nullable Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
+  public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final ISpan activeSpan = scopes.getSpan();
 
     if (activeSpan == null || activeSpan.isNoOp()) {
       // there is no active transaction, we do not start new span
       return invocation.proceed();
     } else {
-      final @Nullable Object target = invocation.getThis();
       final Method mostSpecificMethod =
-          AopUtils.getMostSpecificMethod(
-              invocation.getMethod(), target != null ? target.getClass() : null);
+          AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
       final Class<?> targetClass = invocation.getMethod().getDeclaringClass();
       SentrySpan sentrySpan = AnnotationUtils.findAnnotation(mostSpecificMethod, SentrySpan.class);
       if (sentrySpan == null) {

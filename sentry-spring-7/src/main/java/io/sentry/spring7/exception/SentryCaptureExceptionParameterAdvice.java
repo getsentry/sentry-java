@@ -11,7 +11,6 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 
@@ -34,19 +33,17 @@ public class SentryCaptureExceptionParameterAdvice implements MethodInterceptor 
   }
 
   @Override
-  public @Nullable Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
-    final @Nullable Object target = invocation.getThis();
+  public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
     final Method mostSpecificMethod =
-        AopUtils.getMostSpecificMethod(
-            invocation.getMethod(), target != null ? target.getClass() : null);
+        AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
     SentryCaptureExceptionParameter sentryCaptureExceptionParameter =
         AnnotationUtils.findAnnotation(mostSpecificMethod, SentryCaptureExceptionParameter.class);
 
     if (sentryCaptureExceptionParameter != null) {
       Object[] args = invocation.getArguments();
       for (Object arg : args) {
-        if (arg instanceof Exception exception) {
-          captureException(exception);
+        if (arg instanceof Exception) {
+          captureException((Exception) arg);
           break;
         }
       }

@@ -17,8 +17,6 @@ public enum RRWebEventType implements JsonSerializable {
   Custom,
   Plugin;
 
-  // The rrweb protocol encodes these enums by ordinal.
-  @SuppressWarnings("EnumOrdinal")
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
@@ -26,8 +24,6 @@ public enum RRWebEventType implements JsonSerializable {
   }
 
   public static final class Deserializer implements JsonDeserializer<RRWebEventType> {
-    // The rrweb protocol encodes these enums by ordinal.
-    @SuppressWarnings("EnumOrdinal")
     @Override
     public @NotNull RRWebEventType deserialize(
         final @NotNull ObjectReader reader, final @NotNull ILogger logger) throws Exception {

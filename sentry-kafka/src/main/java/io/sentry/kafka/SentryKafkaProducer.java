@@ -114,8 +114,7 @@ public final class SentryKafkaProducer {
     }
 
     @Override
-    // Proxy equals() is identity-based.
-    @SuppressWarnings({"unchecked", "ReferenceEquality"})
+    @SuppressWarnings("unchecked")
     public @Nullable Object invoke(
         final @NotNull Object proxy, final @NotNull Method method, final @Nullable Object[] args)
         throws Throwable {
@@ -237,8 +236,7 @@ public final class SentryKafkaProducer {
         headers.remove(SENTRY_ENQUEUED_TIME_HEADER);
         headers.add(
             SENTRY_ENQUEUED_TIME_HEADER,
-            DateUtils.doubleToBigDecimal(
-                    DateUtils.millisToSeconds((double) System.currentTimeMillis()))
+            DateUtils.doubleToBigDecimal(DateUtils.millisToSeconds(System.currentTimeMillis()))
                 .toString()
                 .getBytes(StandardCharsets.UTF_8));
       } catch (Throwable t) {

@@ -25,8 +25,9 @@ public final class HttpServletRequestSentryUserProvider implements SentryUserPro
   public @Nullable User provideUser() {
     if (options.getDataCollectionResolver().isUserInfo()) {
       final RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-      if (requestAttributes instanceof ServletRequestAttributes servletRequestAttributes) {
-
+      if (requestAttributes instanceof ServletRequestAttributes) {
+        final ServletRequestAttributes servletRequestAttributes =
+            (ServletRequestAttributes) requestAttributes;
         final HttpServletRequest request = servletRequestAttributes.getRequest();
 
         final User user = new User();

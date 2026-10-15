@@ -151,10 +151,10 @@ public final class DateUtils {
    */
   @SuppressWarnings("JavaUtilDate")
   public static double dateToSeconds(final @NotNull Date date) {
-    return millisToSeconds((double) date.getTime());
+    return millisToSeconds(date.getTime());
   }
 
-  public static long secondsToNanos(final long seconds) {
+  public static long secondsToNanos(final @NotNull long seconds) {
     return seconds * (1000L * 1000L * 1000L);
   }
 

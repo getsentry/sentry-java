@@ -463,10 +463,10 @@ public final class Scope implements IScope {
    */
   private @Nullable Breadcrumb executeBeforeBreadcrumb(
       final @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
-      final @NotNull Breadcrumb breadcrumb,
+      @NotNull Breadcrumb breadcrumb,
       final @NotNull Hint hint) {
     try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
-      return callback.execute(breadcrumb, hint);
+      breadcrumb = callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
       options
           .getLogger()

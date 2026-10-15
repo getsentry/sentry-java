@@ -1,6 +1,7 @@
 package io.sentry.util;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
@@ -26,7 +27,7 @@ public final class Platform {
       try {
         final @Nullable String javaStringVersion = System.getProperty("java.specification.version");
         if (javaStringVersion != null) {
-          final double javaVersion = Double.parseDouble(javaStringVersion);
+          final @NotNull double javaVersion = Double.parseDouble(javaStringVersion);
           isJavaNinePlus = javaVersion >= 9.0;
         } else {
           isJavaNinePlus = false;
