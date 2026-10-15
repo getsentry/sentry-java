@@ -172,7 +172,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
 
     verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
     verify(fixture.logger, never())
-      .log(any(), argThat { startsWith(config.flushLogPrefix) }, any<Any>())
+      .log(any(), argThat { startsWith(config.flushLogPrefix) }, anyVararg<Any>())
   }
 
   @Test
@@ -185,7 +185,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
 
     verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
     verify(fixture.logger, never())
-      .log(any(), argThat { startsWith(config.flushLogPrefix) }, any<Any>())
+      .log(any(), argThat { startsWith(config.flushLogPrefix) }, anyVararg<Any>())
   }
 
   @Test
