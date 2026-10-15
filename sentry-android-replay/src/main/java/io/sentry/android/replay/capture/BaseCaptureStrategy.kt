@@ -11,15 +11,21 @@ import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
+import io.sentry.android.replay.RecordingMetadata
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_DIST
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ENVIRONMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FLUSHED
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_RELEASE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_SCREEN_AT_START
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_NAME
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_VERSION
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ScreenshotRecorderConfig
@@ -80,6 +86,14 @@ internal abstract class BaseCaptureStrategy(
       )
     }
   protected val replayStartTimestamp = AtomicLong()
+  private var recordingMetadata: RecordingMetadata? by
+    persistableAtomicNullable(propertyName = "") { _, _, newValue ->
+      persistMetadataValue(SEGMENT_KEY_RELEASE, newValue?.release)
+      persistMetadataValue(SEGMENT_KEY_ENVIRONMENT, newValue?.environment)
+      persistMetadataValue(SEGMENT_KEY_DIST, newValue?.dist)
+      persistMetadataValue(SEGMENT_KEY_SDK_NAME, newValue?.sdkVersion?.name)
+      persistMetadataValue(SEGMENT_KEY_SDK_VERSION, newValue?.sdkVersion?.version)
+    }
   protected var screenAtStart by
     persistableAtomicNullable<String>(propertyName = SEGMENT_KEY_REPLAY_SCREEN_AT_START)
   override var currentReplayId: SentryId by
@@ -110,6 +124,19 @@ internal abstract class BaseCaptureStrategy(
 
     segmentTimestamp = DateUtils.getCurrentDateTime()
     replayStartTimestamp.set(dateProvider.currentTimeMillis)
+    // the same values MainEventProcessor applies to current-run segments
+    recordingMetadata =
+      RecordingMetadata(
+        release = options.release,
+        environment = options.environment,
+        dist = options.dist,
+        sdkVersion = options.sessionReplay.sdkVersion ?: options.sdkVersion,
+      )
+  }
+
+  private fun persistMetadataValue(key: String, value: String?) {
+    // the segment file stores one key=value per line, so values with line breaks can't be stored
+    cache?.persistSegmentValues(key, value?.takeIf { '\n' !in it && '\r' !in it })
   }
 
   override fun resume() {

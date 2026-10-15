@@ -8,7 +8,6 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.view.View;
 import io.sentry.Attachment;
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
@@ -18,7 +17,9 @@ import io.sentry.android.core.internal.util.ScreenshotUtils;
 import io.sentry.android.replay.util.MaskRenderer;
 import io.sentry.android.replay.util.ViewsKt;
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -34,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
  * captured.
  */
 @ApiStatus.Internal
-public final class ScreenshotEventProcessor implements EventProcessor {
+public final class ScreenshotEventProcessor implements SentryEventProcessor {
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -112,7 +113,18 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
         options.getBeforeScreenshotCaptureCallback();
     if (beforeCaptureCallback != null) {
-      if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+      try {
+        if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+          return event;
+        }
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The beforeScreenshotCapture callback threw an exception. Skipping screenshot capture.",
+                e);
         return event;
       }
     } else if (shouldDebounce) {
