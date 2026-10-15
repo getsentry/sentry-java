@@ -581,8 +581,6 @@ class SentryOptionsTest {
     externalOptions.isEnableSpotlight = true
     externalOptions.spotlightConnectionUrl = "http://local.sentry.io:1234"
     externalOptions.isGlobalHubMode = true
-    externalOptions.isEnableLogs = true
-    externalOptions.isEnableMetrics = false
     externalOptions.profileSessionSampleRate = 0.8
     externalOptions.profilingTracesDirPath = "/profiling-traces"
     externalOptions.profileLifecycle = ProfileLifecycle.TRACE
@@ -645,8 +643,6 @@ class SentryOptionsTest {
     assertTrue(options.isEnableSpotlight)
     assertEquals("http://local.sentry.io:1234", options.spotlightConnectionUrl)
     assertTrue(options.isGlobalHubMode!!)
-    assertTrue(options.logs.isEnabled!!)
-    assertFalse(options.metrics.isEnabled)
     assertEquals(0.8, options.profileSessionSampleRate)
     assertEquals("/profiling-traces${File.separator}${hash}", options.profilingTracesDirPath)
     assertEquals(ProfileLifecycle.TRACE, options.profileLifecycle)
@@ -658,14 +654,6 @@ class SentryOptionsTest {
     val options = SentryOptions()
     options.merge(externalOptions)
     assertTrue(options.isEnableUncaughtExceptionHandler)
-  }
-
-  @Test
-  fun `merging options when enableMetrics is not set preserves the default value`() {
-    val externalOptions = ExternalOptions()
-    val options = SentryOptions()
-    options.merge(externalOptions)
-    assertTrue(options.metrics.isEnabled)
   }
 
   @Test
@@ -897,11 +885,6 @@ class SentryOptionsTest {
   @Test
   fun `when options are initialized, enableQueueTracing is set to false by default`() {
     assertFalse(SentryOptions().isEnableQueueTracing)
-  }
-
-  @Test
-  fun `when options are initialized, metrics is enabled by default`() {
-    assertTrue(SentryOptions().metrics.isEnabled)
   }
 
   @Test

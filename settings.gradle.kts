@@ -66,7 +66,6 @@ include(
     "sentry-jul",
     "sentry-servlet",
     "sentry-servlet-jakarta",
-    "sentry-apache-http-client-5",
     "sentry-spring",
     "sentry-spring-jakarta",
     "sentry-spring-7",
