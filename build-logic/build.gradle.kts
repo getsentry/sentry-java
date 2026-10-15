@@ -2,11 +2,6 @@ plugins {
   `kotlin-dsl`
 }
 
-repositories {
-  mavenCentral()
-  gradlePluginPortal()
-}
-
 dependencies {
   implementation(libs.animalsniffer.gradle.plugin)
   implementation(libs.spotlessLib)
