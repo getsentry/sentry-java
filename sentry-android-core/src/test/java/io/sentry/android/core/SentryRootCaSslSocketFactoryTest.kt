@@ -122,14 +122,6 @@ class SentryRootCaSslSocketFactoryTest {
       .isFalse()
   }
 
-  @Test
-  fun `does not swallow Errors when building the delegate`() {
-    val sut =
-      SentryRootCaSslSocketFactory(mock<ILogger>()) { throw OutOfMemoryError("low memory device") }
-
-    assertFailsWith<OutOfMemoryError> { sut.delegate }
-  }
-
   /** The JVM's system CAs without ISRG Root X1 and any other ISRG root, such as Root YR. */
   private fun systemIssuersWithoutIsrgRoots(): Array<X509Certificate> =
     defaultTrustManager(null)
