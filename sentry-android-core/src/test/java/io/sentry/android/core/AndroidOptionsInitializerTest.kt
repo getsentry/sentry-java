@@ -60,6 +60,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
+private const val SAAS_DSN = "https://key@o1.ingest.us.sentry.io/1"
+
 @RunWith(AndroidJUnit4::class)
 class AndroidOptionsInitializerTest {
   class Fixture(val context: Context, private val file: File) {
@@ -371,15 +373,23 @@ class AndroidOptionsInitializerTest {
   @Config(sdk = [Build.VERSION_CODES.N_MR1])
   @Test
   fun `init on API 25 and lower sets SSLSocketFactory with bundled Sentry root CAs`() {
-    fixture.initSut()
+    fixture.initSut(configureOptions = { dsn = SAAS_DSN })
 
     assertIs<SentryRootCaSslSocketFactory>(fixture.sentryOptions.sslSocketFactory)
+  }
+
+  @Config(sdk = [Build.VERSION_CODES.N_MR1])
+  @Test
+  fun `init on API 25 and lower does not set SSLSocketFactory for self-hosted DSN`() {
+    fixture.initSut(configureOptions = { dsn = "https://key@sentry.example.com/1" })
+
+    assertNull(fixture.sentryOptions.sslSocketFactory)
   }
 
   @Config(sdk = [Build.VERSION_CODES.O])
   @Test
   fun `init on API 26 and higher does not set SSLSocketFactory`() {
-    fixture.initSut()
+    fixture.initSut(configureOptions = { dsn = SAAS_DSN })
 
     assertNull(fixture.sentryOptions.sslSocketFactory)
   }
@@ -388,7 +398,12 @@ class AndroidOptionsInitializerTest {
   @Test
   fun `init on API 25 and lower keeps user provided SSLSocketFactory`() {
     val sslSocketFactory = mock<javax.net.ssl.SSLSocketFactory>()
-    fixture.initSut(configureOptions = { this.sslSocketFactory = sslSocketFactory })
+    fixture.initSut(
+      configureOptions = {
+        dsn = SAAS_DSN
+        this.sslSocketFactory = sslSocketFactory
+      }
+    )
 
     assertEquals(sslSocketFactory, fixture.sentryOptions.sslSocketFactory)
   }

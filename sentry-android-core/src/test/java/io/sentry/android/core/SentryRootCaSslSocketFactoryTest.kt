@@ -56,6 +56,28 @@ class SentryRootCaSslSocketFactoryTest {
     assertThat(sut.delegate).isSameInstanceAs(delegate)
   }
 
+  @Test
+  fun `isSentrySaasDsn matches sentry_io and its subdomains only`() {
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn("https://key@o1.ingest.us.sentry.io/1"))
+      .isTrue()
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn("https://key@o1.ingest.sentry.io/1"))
+      .isTrue()
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn("https://key:secret@sentry.io:443/1"))
+      .isTrue()
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn("https://key@O1.Ingest.SENTRY.IO./1"))
+      .isTrue()
+
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn(null)).isFalse()
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn("")).isFalse()
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn("https://key@sentry.example.com/1"))
+      .isFalse()
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn("https://key@notsentry.io/1")).isFalse()
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn("https://key@sentry.io.evil.com/1"))
+      .isFalse()
+    assertThat(SentryRootCaSslSocketFactory.isSentrySaasDsn("https://key@evil.com/sentry.io"))
+      .isFalse()
+  }
+
   private fun defaultTrustManager(keyStore: KeyStore?): X509TrustManager {
     val factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
     factory.init(keyStore)

@@ -13,6 +13,7 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Locale;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -21,6 +22,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
@@ -31,8 +33,15 @@ import org.jetbrains.annotations.TestOnly;
  *
  * <p>Android API 25 and lower may not ship ISRG Root X1, so TLS handshakes with Let's Encrypt
  * certificates fail on those devices. This factory is only set as {@link
- * io.sentry.SentryOptions#setSslSocketFactory(SSLSocketFactory)} on those API levels, so it only
- * applies to the SDK's own envelope uploads and not to any other connection of the app.
+ * io.sentry.SentryOptions#setSslSocketFactory(SSLSocketFactory)} on those API levels and only when
+ * the DSN points to Sentry SaaS ({@code sentry.io}), see {@link #isSentrySaasDsn(String)}. So it
+ * only applies to the SDK's own envelope uploads to Sentry and not to any other connection of the
+ * app.
+ *
+ * <p>On API 24 and 25, the system CAs are read from the Network Security Config's base config. Any
+ * {@code domain-config} trust anchors or pins do not apply to connections using this factory. This
+ * is why it's limited to Sentry SaaS: self-hosted Sentry with a private CA keeps using the platform
+ * default.
  *
  * <p>The underlying {@link SSLContext} is created lazily on first use, so the cost of parsing the
  * certificates is paid on the transport thread instead of during {@code SentryAndroid.init}. If
@@ -47,6 +56,44 @@ final class SentryRootCaSslSocketFactory extends SSLSocketFactory {
 
   SentryRootCaSslSocketFactory(final @NotNull ILogger logger) {
     this.delegate = new LazyEvaluator<>(() -> createDelegate(logger));
+  }
+
+  /**
+   * Returns {@code true} if the DSN's host is {@code sentry.io} or a subdomain of it, for example
+   * {@code o123.ingest.us.sentry.io}. Those are the hosts whose certificates chain to the bundled
+   * roots. Parses the host by hand instead of using {@link java.net.URI}, which is slow on Android.
+   */
+  static boolean isSentrySaasDsn(final @Nullable String dsn) {
+    if (dsn == null) {
+      return false;
+    }
+    final int schemeEnd = dsn.indexOf("://");
+    if (schemeEnd < 0) {
+      return false;
+    }
+    final int authorityStart = schemeEnd + 3;
+    int authorityEnd = dsn.length();
+    for (int i = authorityStart; i < dsn.length(); i++) {
+      final char c = dsn.charAt(i);
+      if (c == '/' || c == '?' || c == '#') {
+        authorityEnd = i;
+        break;
+      }
+    }
+    String host = dsn.substring(authorityStart, authorityEnd);
+    final int userInfoEnd = host.lastIndexOf('@');
+    if (userInfoEnd >= 0) {
+      host = host.substring(userInfoEnd + 1);
+    }
+    final int portStart = host.indexOf(':');
+    if (portStart >= 0) {
+      host = host.substring(0, portStart);
+    }
+    if (host.endsWith(".")) {
+      host = host.substring(0, host.length() - 1);
+    }
+    host = host.toLowerCase(Locale.ROOT);
+    return host.equals("sentry.io") || host.endsWith(".sentry.io");
   }
 
   private static @NotNull SSLSocketFactory createDelegate(final @NotNull ILogger logger) {
