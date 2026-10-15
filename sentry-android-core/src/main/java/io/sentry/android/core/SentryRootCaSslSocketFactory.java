@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import io.sentry.DsnUtil;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.util.LazyEvaluator;
@@ -24,6 +25,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * An {@link SSLSocketFactory} that trusts the system root CAs plus the root CAs bundled in {@link
@@ -45,7 +47,8 @@ import org.jetbrains.annotations.TestOnly;
  *
  * <p>The underlying {@link SSLContext} is created lazily on first use, so the cost of parsing the
  * certificates is paid on the transport thread instead of during {@code SentryAndroid.init}. If
- * creating it fails, the platform default {@link SSLSocketFactory} is used.
+ * creating it fails for any reason, the platform default {@link SSLSocketFactory} is used and the
+ * failure is not retried.
  */
 @ApiStatus.Internal
 final class SentryRootCaSslSocketFactory extends SSLSocketFactory {
@@ -54,40 +57,33 @@ final class SentryRootCaSslSocketFactory extends SSLSocketFactory {
 
   private final @NotNull LazyEvaluator<SSLSocketFactory> delegate;
 
+  /** Provides the CAs trusted by the platform. */
+  interface SystemTrustedIssuersProvider {
+    @NotNull
+    X509Certificate[] getSystemTrustedIssuers() throws GeneralSecurityException;
+  }
+
   SentryRootCaSslSocketFactory(final @NotNull ILogger logger) {
-    this.delegate = new LazyEvaluator<>(() -> createDelegate(logger));
+    this(logger, SentryRootCaSslSocketFactory::getSystemTrustedIssuers);
+  }
+
+  @VisibleForTesting
+  SentryRootCaSslSocketFactory(
+      final @NotNull ILogger logger,
+      final @NotNull SystemTrustedIssuersProvider systemTrustedIssuersProvider) {
+    this.delegate = new LazyEvaluator<>(() -> createDelegate(logger, systemTrustedIssuersProvider));
   }
 
   /**
    * Returns {@code true} if the DSN's host is {@code sentry.io} or a subdomain of it, for example
    * {@code o123.ingest.us.sentry.io}. Those are the hosts whose certificates chain to the bundled
-   * roots. Parses the host by hand instead of using {@link java.net.URI}, which is slow on Android.
+   * roots. The host is read with {@link DsnUtil#getHost(String)}, which parses it the same way as
+   * the DSN the SDK sends envelopes to.
    */
   static boolean isSentrySaasDsn(final @Nullable String dsn) {
-    if (dsn == null) {
+    @Nullable String host = DsnUtil.getHost(dsn);
+    if (host == null) {
       return false;
-    }
-    final int schemeEnd = dsn.indexOf("://");
-    if (schemeEnd < 0) {
-      return false;
-    }
-    final int authorityStart = schemeEnd + 3;
-    int authorityEnd = dsn.length();
-    for (int i = authorityStart; i < dsn.length(); i++) {
-      final char c = dsn.charAt(i);
-      if (c == '/' || c == '?' || c == '#') {
-        authorityEnd = i;
-        break;
-      }
-    }
-    String host = dsn.substring(authorityStart, authorityEnd);
-    final int userInfoEnd = host.lastIndexOf('@');
-    if (userInfoEnd >= 0) {
-      host = host.substring(userInfoEnd + 1);
-    }
-    final int portStart = host.indexOf(':');
-    if (portStart >= 0) {
-      host = host.substring(0, portStart);
     }
     if (host.endsWith(".")) {
       host = host.substring(0, host.length() - 1);
@@ -96,16 +92,23 @@ final class SentryRootCaSslSocketFactory extends SSLSocketFactory {
     return host.equals("sentry.io") || host.endsWith(".sentry.io");
   }
 
-  private static @NotNull SSLSocketFactory createDelegate(final @NotNull ILogger logger) {
+  private static @NotNull SSLSocketFactory createDelegate(
+      final @NotNull ILogger logger,
+      final @NotNull SystemTrustedIssuersProvider systemTrustedIssuersProvider) {
     try {
       final @NotNull TrustManagerFactory trustManagerFactory =
           TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-      trustManagerFactory.init(createTrustStore(getSystemTrustedIssuers()));
+      trustManagerFactory.init(
+          createTrustStore(systemTrustedIssuersProvider.getSystemTrustedIssuers()));
 
       final @NotNull SSLContext sslContext = SSLContext.getInstance("TLS");
       sslContext.init(null, trustManagerFactory.getTrustManagers(), null);
       return sslContext.getSocketFactory();
-    } catch (GeneralSecurityException | IOException e) {
+    } catch (Throwable e) {
+      // Catches everything, not only GeneralSecurityException and IOException: some OEM builds
+      // throw RuntimeExceptions from their trust store or certificate code. An exception escaping
+      // here would make every envelope upload fail without being retried, and the LazyEvaluator
+      // would try to build the delegate again on every send.
       logger.log(
           SentryLevel.ERROR,
           "Failed to create SSLSocketFactory with bundled Sentry root CAs, using the default one.",
@@ -131,7 +134,7 @@ final class SentryRootCaSslSocketFactory extends SSLSocketFactory {
   /**
    * Creates a trust store containing the given system trusted CAs plus the bundled Sentry root CAs.
    */
-  @TestOnly
+  @VisibleForTesting
   static @NotNull KeyStore createTrustStore(final @NotNull X509Certificate[] systemTrustedIssuers)
       throws GeneralSecurityException, IOException {
     final @NotNull KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
