@@ -630,6 +630,8 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
     this.type = type;
   }
 
+  // TODO Fix for JDK21: EMPTY_DATA is a sentinel, so identity comparison is intended.
+  @SuppressWarnings("ReferenceEquality")
   private @NotNull Map<String, @NotNull Object> getOrCreateData() {
     Map<String, @NotNull Object> currentData = data;
     if (currentData == EMPTY_DATA) {
@@ -691,6 +693,8 @@ public final class Breadcrumb implements JsonUnknown, JsonSerializable, Comparab
    *
    * @param key the key
    */
+  // TODO Fix for JDK21: EMPTY_DATA is a sentinel, so identity comparison is intended.
+  @SuppressWarnings("ReferenceEquality")
   public void removeData(@Nullable String key) {
     if (key == null) {
       return;

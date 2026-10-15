@@ -78,6 +78,8 @@ public final class SentryThreadFactory {
    *     crashed. This is the case for e.g. watchdog threads which are not the one erroring.
    * @return a list of SentryThread or null if none
    */
+  // TODO Fix for JDK21: Identifies the current thread by identity.
+  @SuppressWarnings("ReferenceEquality")
   @TestOnly
   @Nullable
   List<SentryThread> getCurrentThreads(

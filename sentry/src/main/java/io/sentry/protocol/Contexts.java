@@ -36,6 +36,9 @@ public class Contexts implements JsonSerializable {
 
   public Contexts() {}
 
+  // TODO Fix for JDK21: Constructors call overridable methods; making them final would break the
+  // public API.
+  @SuppressWarnings("this-escape")
   public Contexts(final @NotNull Contexts contexts) {
     for (final Map.Entry<String, Object> entry : contexts.entrySet()) {
       if (entry != null) {
@@ -252,6 +255,10 @@ public class Contexts implements JsonSerializable {
     internalStorage.clear();
   }
 
+  // TODO Fix for JDK21: ConcurrentHashMap.keySet() compiled against JDK 8+ returns KeySetView,
+  // which crashes on Android
+  // < 24.
+  @SuppressWarnings("JdkObsolete")
   public @NotNull Enumeration<String> keys() {
     return internalStorage.keys();
   }
