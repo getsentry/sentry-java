@@ -11,9 +11,7 @@ repositories {
 dependencies {
   implementation(libs.animalsniffer.gradle.plugin)
   implementation(libs.spotlessLib)
-  // Only for the Kotlin task types the android-compilation plugin configures.
   compileOnly(libs.kotlin.gradle.plugin)
-  // Only for the AGP extension types the android-compilation plugin configures.
   compileOnly(libs.android.gradle.plugin)
 }
 

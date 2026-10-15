@@ -7,8 +7,6 @@ plugins {
   id("com.apollographql.apollo") version "4.1.1"
 }
 
-// Not published and test-only, so it keeps the toolchain's JVM target instead of pinning Java 8
-// like the published modules do.
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
