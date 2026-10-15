@@ -2,14 +2,11 @@ package io.sentry.opentelemetry.agent
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.opentelemetry.agent.fixture.HelloServer
+import io.sentry.test.ChildJvmApp
 import io.sentry.test.MockSentryServer
 import io.sentry.test.transaction
-import io.sentry.time.Deadline
-import io.sentry.time.JavaMonotonicTicker
 import java.io.File
 import java.net.URL
-import java.nio.file.Files
-import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.Test
 
@@ -20,25 +17,34 @@ import kotlin.test.Test
  */
 class AgentSmokeTest {
   private val server = MockSentryServer()
-  private val workDir = Files.createTempDirectory("agent-smoke-test").toFile()
-  private val appLog = File(workDir, "app.log")
-  private var app: Process? = null
+  private var app: ChildJvmApp? = null
 
   @AfterTest
   fun teardown() {
-    app?.destroyForcibly()?.waitFor()
+    app?.close()
     server.close()
-    if (appLog.exists()) {
-      println(appLog.readText())
-    }
-    workDir.deleteRecursively()
   }
 
   @Test
   fun `agent sends a transaction for an incoming request`() {
-    val port = launchWithAgent(HelloServer::class.java)
+    val app =
+      ChildJvmApp.start(
+          mainClass = HelloServer::class.java.name,
+          classpath =
+            File(HelloServer::class.java.protectionDomain.codeSource.location.toURI()).path,
+          jvmArgs = listOf("-javaagent:${System.getProperty("sentry.test.agentJar")}"),
+          env =
+            mapOf(
+              "SENTRY_DSN" to server.dsn,
+              "SENTRY_TRACES_SAMPLE_RATE" to "1.0",
+              "OTEL_TRACES_EXPORTER" to "none",
+              "OTEL_METRICS_EXPORTER" to "none",
+              "OTEL_LOGS_EXPORTER" to "none",
+            ),
+        )
+        .also { app = it }
 
-    URL("http://127.0.0.1:$port/hello").readText()
+    URL("http://127.0.0.1:${app.awaitPort()}/hello").readText()
 
     // The agent's BatchSpanProcessor exports every 5s.
     val envelope =
@@ -46,43 +52,5 @@ class AgentSmokeTest {
         it.transaction()?.contexts?.trace?.operation == "http.server"
       }
     assertThat(envelope.header.sdkVersion!!.name).isEqualTo("sentry.java.opentelemetry.agent")
-  }
-
-  private fun launchWithAgent(mainClass: Class<*>): Int {
-    val portFile = File(workDir, "port")
-    val process =
-      ProcessBuilder(
-          File(System.getProperty("java.home"), "bin/java").path,
-          "-javaagent:${System.getProperty("sentry.test.agentJar")}",
-          "-cp",
-          File(mainClass.protectionDomain.codeSource.location.toURI()).path,
-          mainClass.name,
-          portFile.path,
-        )
-        .redirectErrorStream(true)
-        .redirectOutput(appLog)
-        .apply {
-          environment()["SENTRY_DSN"] = server.dsn
-          environment()["SENTRY_TRACES_SAMPLE_RATE"] = "1.0"
-          environment()["OTEL_TRACES_EXPORTER"] = "none"
-          environment()["OTEL_METRICS_EXPORTER"] = "none"
-          environment()["OTEL_LOGS_EXPORTER"] = "none"
-        }
-        .start()
-    app = process
-
-    val deadline = Deadline.after(JavaMonotonicTicker.getInstance(), 60, TimeUnit.SECONDS)
-    while (true) {
-      portFile
-        .takeIf { it.exists() }
-        ?.readText()
-        ?.toIntOrNull()
-        ?.let {
-          return it
-        }
-      check(process.isAlive) { "App exited with ${process.exitValue()}" }
-      check(!deadline.hasPassed()) { "App did not start within 60s" }
-      Thread.sleep(100)
-    }
   }
 }

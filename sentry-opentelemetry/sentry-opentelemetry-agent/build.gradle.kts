@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import io.sentry.gradle.ChildJvmTestArguments
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -211,19 +212,9 @@ tasks {
 
   test {
     jvmArgumentProviders.add(
-      objects.newInstance<AgentJarArgument>().apply {
-        agentJar.set(shadowJar.flatMap { it.archiveFile })
-      }
+      objects.newInstance<ChildJvmTestArguments>().apply { agentJar.from(shadowJar) }
     )
   }
-}
-
-// Tests launch apps with the built agent attached, so the agent jar is a test input.
-abstract class AgentJarArgument : CommandLineArgumentProvider {
-  @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val agentJar: RegularFileProperty
-
-  override fun asArguments() =
-    listOf("-Dsentry.test.agentJar=${agentJar.get().asFile.absolutePath}")
 }
 
 tasks.named("distZip").configure { this.dependsOn("jar") }
