@@ -40,7 +40,9 @@ import java.util.concurrent.ScheduledExecutorService
  */
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
-internal class BufferCaptureStrategy(
+internal class BufferCaptureStrategy
+@Suppress("LongParameterList")
+constructor(
   private val options: SentryOptions,
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,

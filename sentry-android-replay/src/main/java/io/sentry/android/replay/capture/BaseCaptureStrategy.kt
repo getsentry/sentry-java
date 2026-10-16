@@ -51,7 +51,9 @@ import kotlin.reflect.KProperty
 
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
-internal abstract class BaseCaptureStrategy(
+internal abstract class BaseCaptureStrategy
+@Suppress("LongParameterList")
+constructor(
   private val options: SentryOptions,
   private val scopes: IScopes?,
   // TODO [v9]: We should consider replacing this with AnchoredClock in V9.

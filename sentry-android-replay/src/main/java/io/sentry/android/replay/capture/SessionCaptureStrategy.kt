@@ -28,7 +28,9 @@ import java.util.concurrent.ScheduledExecutorService
  *
  * See [BufferCaptureStrategy] for the on-error counterpart.
  */
-internal class SessionCaptureStrategy(
+internal class SessionCaptureStrategy
+@Suppress("LongParameterList")
+constructor(
   private val options: SentryOptions,
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,
