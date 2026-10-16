@@ -4,13 +4,13 @@ import com.android.build.gradle.BaseExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 /** The JDK every module compiles and tests with, whatever JDK runs Gradle. */
@@ -24,11 +24,11 @@ private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_1_8
  * following
  * - sample apps target the build JDK (21)
  * - unit test code will target the build JDK (21) (required for Mockito 5)
- * - published JVM modules main code pins the Java 1.8 release
+ * - published JVM modules main code pins the Java 1.8 release, for Java and for Kotlin
  * - published Android modules main code targets Java 1.8
  * - minSdk is set for Android libraries
  */
-class SentryCompilationPlugin : Plugin<Project> {
+class JdkTargetConvention : Plugin<Project> {
   override fun apply(project: Project) {
     project.plugins.withType(JavaBasePlugin::class.java) {
       project.extensions.getByType(JavaPluginExtension::class.java).toolchain {
@@ -36,12 +36,22 @@ class SentryCompilationPlugin : Plugin<Project> {
       }
     }
 
-    // Only works for non-android modules
-    // See https://issuetracker.google.com/issues/278800528
     project.plugins.withId("com.vanniktech.maven.publish") {
+      // Only works for non-android modules
+      // See https://issuetracker.google.com/issues/278800528
       project.plugins.withId("java-library") {
         project.tasks.named("compileJava", JavaCompile::class.java) {
           options.release.set(PUBLISHED_JAVA_VERSION.majorVersion.toInt())
+        }
+      }
+      // -Xjdk-release is the Kotlin counterpart of release: without it Kotlin resolves against the
+      // build JDK and happily compiles e.g. Files.readString() into Java 8 bytecode. The version
+      // follows jvmTarget, which the modules that publish a higher level set themselves.
+      project.plugins.withId("org.jetbrains.kotlin.jvm") {
+        project.tasks.named("compileKotlin", KotlinJvmCompile::class.java) {
+          compilerOptions.freeCompilerArgs.add(
+            compilerOptions.jvmTarget.map { "-Xjdk-release=${it.target}" }
+          )
         }
       }
     }
@@ -69,20 +79,29 @@ class SentryCompilationPlugin : Plugin<Project> {
       .requiredVersion
       .toInt()
 
+  /**
+   * Mockito 5 and mockito-kotlin 6 are built for Java 11, so test code - which is never published -
+   * cannot share the Java 8 target of the main code. AGP has no per variant compileOptions, so this
+   * goes through the Kotlin compilations: their compile task providers are configured after AGP
+   * wrote its own compileOptions, which an apply time configureEach would lose against.
+   */
   private fun Project.targetBuildJdkForUnitTests() {
-    val unitTestTask = { task: Task -> task.name.contains("UnitTest") }
-    // jvmTarget is a Property, so this set wins over the AGP convention whenever it runs.
-    tasks.withType(KotlinJvmCompile::class.java).matching(unitTestTask).configureEach {
-      compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
-    }
-    // source/targetCompatibility are plain fields, so the last write wins, and AGP writes its
-    // compileOptions while it creates the compile tasks. Registering earlier - at apply time or
-    // in onVariants - is silently overwritten, so right now there's no way around afterEvaluate.
-    afterEvaluate {
-      tasks.withType(JavaCompile::class.java).matching(unitTestTask).configureEach {
-        sourceCompatibility = BUILD_JDK.toString()
-        targetCompatibility = BUILD_JDK.toString()
-      }
+    plugins.withId("org.jetbrains.kotlin.android") {
+      extensions
+        .getByType(KotlinAndroidProjectExtension::class.java)
+        .target
+        .compilations
+        .configureEach {
+          if (name.endsWith("UnitTest")) {
+            compileTaskProvider.configure {
+              compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
+            }
+            compileJavaTaskProvider?.configure {
+              sourceCompatibility = BUILD_JDK.toString()
+              targetCompatibility = BUILD_JDK.toString()
+            }
+          }
+        }
     }
   }
 }

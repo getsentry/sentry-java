@@ -115,7 +115,7 @@ allprojects {
 
 subprojects {
     apply { plugin("io.sentry.spotless") }
-    apply { plugin("io.sentry.compilation") }
+    apply { plugin("io.sentry.jdk-target") }
 
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {

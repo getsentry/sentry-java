@@ -11,9 +11,9 @@ dependencies {
 
 gradlePlugin {
   plugins {
-    register("sentryCompilation") {
-      id = "io.sentry.compilation"
-      implementationClass = "io.sentry.gradle.SentryCompilationPlugin"
+    register("sentryJdkTarget") {
+      id = "io.sentry.jdk-target"
+      implementationClass = "io.sentry.gradle.JdkTargetConvention"
     }
     register("sentryAnimalSniffer") {
       id = "io.sentry.animalsniffer"
