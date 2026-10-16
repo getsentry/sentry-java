@@ -10,6 +10,8 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         gradlePluginPortal()
+        // AGP is only published to Google's repository.
+        google()
     }
     versionCatalogs {
         create("libs") {

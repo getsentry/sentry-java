@@ -11,8 +11,8 @@ concurrency:
 
 jobs:
   build:
-    # Job name is a required status check in the main branch ruleset; keep it stable.
-    name: Build Job ubuntu-latest - Java 17
+    # Job name is a required status check in the main branch ruleset; update it there too.
+    name: Build Job ubuntu-latest
     # Runs on Bitrise-hosted runners (same pattern as sentry-cocoa) instead of
     # GitHub-hosted ubuntu-latest, which ran out of memory during `make preMerge`.
     runs-on: ["bitrise_pool_name:tahoe"]
@@ -31,7 +31,7 @@ jobs:
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
       - name: Cache buildSrc
