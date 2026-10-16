@@ -4,7 +4,6 @@ plugins {
 
 repositories {
   gradlePluginPortal()
-  // AGP is only published to Google's repository.
   google()
 }
 

@@ -70,16 +70,18 @@ class SentryCompilationPlugin : Plugin<Project> {
       .toInt()
 
   private fun Project.targetBuildJdkForUnitTests() {
-    // AGP assigns these task properties when it creates the compile tasks, as they can be
-    // variant aware, so right now there's no way around using afterEvaluate
+    val unitTestTask = { task: Task -> task.name.contains("UnitTest") }
+    // jvmTarget is a Property, so this set wins over the AGP convention whenever it runs.
+    tasks.withType(KotlinJvmCompile::class.java).matching(unitTestTask).configureEach {
+      compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
+    }
+    // source/targetCompatibility are plain fields, so the last write wins, and AGP writes its
+    // compileOptions while it creates the compile tasks. Registering earlier - at apply time or
+    // in onVariants - is silently overwritten, so right now there's no way around afterEvaluate.
     afterEvaluate {
-      val unitTestTask = { task: Task -> task.name.contains("UnitTest") }
       tasks.withType(JavaCompile::class.java).matching(unitTestTask).configureEach {
         sourceCompatibility = BUILD_JDK.toString()
         targetCompatibility = BUILD_JDK.toString()
-      }
-      tasks.withType(KotlinJvmCompile::class.java).matching(unitTestTask).configureEach {
-        compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
       }
     }
   }
