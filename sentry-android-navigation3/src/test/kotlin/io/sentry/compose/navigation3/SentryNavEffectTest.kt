@@ -22,6 +22,8 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -122,6 +124,133 @@ class SentryNavEffectTest {
     assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(listOf(mapOf("entry" to "/HomeRoute")))
+  }
+
+  @Serializable @SerialName("SerializableHome") private data object SerializableHomeRoute
+
+  @Serializable private data class SerializableProfileRoute(val userId: String)
+
+  @Test
+  fun `serialName mapper names entries after their serial names`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(SerializableHomeRoute)
+
+    composeRule.setContent {
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = BackStackEntryMapper.serialName(),
+        options = SentryNavOptions(),
+        scopes = fixture.scopes,
+      )
+    }
+    composeRule.waitForIdle()
+
+    composeRule.runOnIdle {
+      backStack.add(SerializableProfileRoute("123"))
+      backStack.add(ProfileRoute("456"))
+    }
+    composeRule.waitForIdle()
+
+    val profileName = "/io.sentry.compose.navigation3.SentryNavEffectTest.SerializableProfileRoute"
+    assertThat(fixture.breadcrumbs.first().data["to"]).isEqualTo("/SerializableHome")
+    assertThat(fixture.transactions.first().name).isEqualTo("/SerializableHome")
+    assertThat(fixture.scope.screen).isEqualTo("/unknown")
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(
+        listOf(
+          mapOf("entry" to "/unknown"),
+          mapOf("entry" to profileName),
+          mapOf("entry" to "/SerializableHome"),
+        )
+      )
+  }
+
+  @Serializable
+  @SerialName("Checkout")
+  private data class CheckoutRoute(val cartId: String, val authToken: String)
+
+  @Test
+  fun `serialNameWithArguments mapper records filtered arguments`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(CheckoutRoute(cartId = "c-1", authToken = "secret"))
+
+    composeRule.setContent {
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = BackStackEntryMapper.serialNameWithArguments(),
+        options = SentryNavOptions(),
+        scopes = fixture.scopes,
+      )
+    }
+    composeRule.waitForIdle()
+
+    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/Checkout")
+    assertThat(fixture.breadcrumbs.single().data["to_arguments"])
+      .isEqualTo(mapOf("cartId" to "c-1", "authToken" to "[Filtered]"))
+    assertThat(fixture.transactions.single().getData("arguments"))
+      .isEqualTo(mapOf("cartId" to "c-1", "authToken" to "[Filtered]"))
+  }
+
+  @Test
+  fun `auto-instrumentation effect with DEFAULT records names without arguments`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(CheckoutRoute(cartId = "c-1", authToken = "secret"))
+
+    composeRule.setContent {
+      SentryNavAutoInstrumentation.Effect(
+        backStack = backStack,
+        backStackMappingType = SentryNavAutoInstrumentation.BackStackMappingType.DEFAULT,
+        options = SentryNavOptions.Builder().build(),
+        scopes = fixture.scopes,
+      )
+    }
+    composeRule.waitForIdle()
+
+    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/Checkout")
+    assertThat(fixture.breadcrumbs.single().data["to_arguments"]).isNull()
+    assertThat(fixture.transactions.single().name).isEqualTo("/Checkout")
+    assertThat(fixture.transactions.single().getData("arguments")).isNull()
+    assertThat(fixture.scope.navigationBackStack()).isEqualTo(listOf(mapOf("entry" to "/Checkout")))
+  }
+
+  @Test
+  fun `auto-instrumentation effect with NAMES_AND_ARGUMENTS records filtered arguments`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(CheckoutRoute(cartId = "c-1", authToken = "secret"))
+
+    composeRule.setContent {
+      SentryNavAutoInstrumentation.Effect(
+        backStack = backStack,
+        backStackMappingType =
+          SentryNavAutoInstrumentation.BackStackMappingType.NAMES_AND_ARGUMENTS,
+        options = SentryNavOptions.Builder().build(),
+        scopes = fixture.scopes,
+      )
+    }
+    composeRule.waitForIdle()
+
+    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/Checkout")
+    assertThat(fixture.breadcrumbs.single().data["to_arguments"])
+      .isEqualTo(mapOf("cartId" to "c-1", "authToken" to "[Filtered]"))
+  }
+
+  @Test
+  fun `auto-instrumentation effect applies the given options`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(SerializableHomeRoute)
+
+    composeRule.setContent {
+      SentryNavAutoInstrumentation.Effect(
+        backStack = backStack,
+        backStackMappingType = SentryNavAutoInstrumentation.BackStackMappingType.DEFAULT,
+        options = SentryNavOptions { enableNavigationBreadcrumbs = false },
+        scopes = fixture.scopes,
+      )
+    }
+    composeRule.waitForIdle()
+
+    assertThat(fixture.breadcrumbs).isEmpty()
+    assertThat(fixture.transactions.single().name).isEqualTo("/SerializableHome")
   }
 
   @Test
