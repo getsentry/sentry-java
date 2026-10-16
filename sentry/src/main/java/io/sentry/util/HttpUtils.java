@@ -133,7 +133,11 @@ public final class HttpUtils {
     }
   }
 
-  static boolean containsSensitiveDataKey(final @NotNull String key) {
+  /**
+   * Returns whether {@code key} contains a term from the Data Collection spec's sensitive denylist,
+   * matched partially and case-insensitively.
+   */
+  public static boolean containsSensitiveDataKey(final @NotNull String key) {
     return containsTerm(key, SENSITIVE_DATA_KEYS);
   }
 

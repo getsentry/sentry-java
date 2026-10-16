@@ -6,6 +6,8 @@ plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  // Only test sources declare @Serializable classes.
+  alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
 }
@@ -62,11 +64,13 @@ dependencies {
   implementation(projects.sentry)
 
   compileOnly(libs.androidx.compose.runtime)
+  compileOnly(libs.kotlinx.serialization.core)
 
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.google.truth)
+  testImplementation(libs.kotlinx.serialization.core)
   testImplementation(libs.mockito.inline)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.roboelectric)

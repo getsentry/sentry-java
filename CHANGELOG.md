@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Improvements
+
+- Navigation 3: Add `BackStackEntryMapper.serialName()` for generating Sentry data from back stack entries ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+  - Uses each entry's kotlinx.serialization `@SerialName`; if no serial name is available, falls back to `/unknown`
+  - Add a `BackStackEntryMapper.serialNameWithArguments()` which also records each entry's properties as `arguments` in Sentry data
+
 ### Fixes
 
 - Measure Session Replay's 1h recording cap and its touch-move debounce on a monotonic clock, so a device time change no longer stops a healthy recording early, keeps a finished one alive, or suppresses gesture events ([#6090](https://github.com/getsentry/sentry-java/pull/6090))
