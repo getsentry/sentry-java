@@ -13,11 +13,14 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class NetworkRequestData {
   private @Nullable final String method;
-  private @Nullable Integer statusCode;
-  private @Nullable Long requestBodySize;
-  private @Nullable Long responseBodySize;
-  private @Nullable ReplayNetworkRequestOrResponse request;
-  private @Nullable ReplayNetworkRequestOrResponse response;
+
+  // Both sides are filled in by the thread running the http call and read by the replay thread, so
+  // both are published through a volatile write. The response side needs it most: an integration
+  // that captures a body of unknown length only knows the response once the body has been consumed,
+  // which can be after this instance was handed to the scope. Keeping its values behind one
+  // reference to an immutable object means a reader sees either nothing or the complete set.
+  private volatile @Nullable ReplayNetworkRequestOrResponse request;
+  private volatile @Nullable ResponseDetails responseDetails;
 
   public NetworkRequestData(@Nullable final String method) {
     this.method = method;
@@ -28,15 +31,18 @@ public final class NetworkRequestData {
   }
 
   public @Nullable Integer getStatusCode() {
-    return statusCode;
+    final ResponseDetails details = responseDetails;
+    return details == null ? null : details.getStatusCode();
   }
 
   public @Nullable Long getRequestBodySize() {
-    return requestBodySize;
+    final ReplayNetworkRequestOrResponse requestData = request;
+    return requestData == null ? null : requestData.getSize();
   }
 
   public @Nullable Long getResponseBodySize() {
-    return responseBodySize;
+    final ResponseDetails details = responseDetails;
+    return details == null ? null : details.getResponse().getSize();
   }
 
   public @Nullable ReplayNetworkRequestOrResponse getRequest() {
@@ -44,7 +50,8 @@ public final class NetworkRequestData {
   }
 
   public @Nullable ReplayNetworkRequestOrResponse getResponse() {
-    return response;
+    final ResponseDetails details = responseDetails;
+    return details == null ? null : details.getResponse();
   }
 
   /**
@@ -53,18 +60,29 @@ public final class NetworkRequestData {
    */
   public void setRequestDetails(@NotNull final ReplayNetworkRequestOrResponse requestData) {
     this.request = requestData;
-    this.requestBodySize = requestData.getSize();
   }
 
   /**
-   * Populates this instance with request details obtained via {@link
-   * NetworkDetailCaptureUtils#createResponse}
+   * The response details as one snapshot, or {@code null} while the response is not known yet.
+   *
+   * <p>Prefer this over {@link #getStatusCode()}, {@link #getResponseBodySize()} and {@link
+   * #getResponse()} when more than one of them is needed: the details may be replaced between two
+   * of those calls, which would mix one response with the next.
    */
-  public void setResponseDetails(
-      final int statusCode, @NotNull final ReplayNetworkRequestOrResponse responseData) {
-    this.statusCode = statusCode;
-    this.response = responseData;
-    this.responseBodySize = responseData.getSize();
+  public @Nullable ResponseDetails getResponseDetails() {
+    return responseDetails;
+  }
+
+  /**
+   * Populates this instance with the response details assembled by the caller.
+   *
+   * <p>May be called from another thread than the one that created this instance, and after the
+   * instance was handed to the scope. A later call replaces the details of an earlier one, so an
+   * integration can record the status code and the headers as soon as the response arrives and add
+   * the body once it has been consumed.
+   */
+  public void setResponseDetails(@NotNull final ResponseDetails details) {
+    this.responseDetails = details;
   }
 
   @Override
@@ -73,16 +91,42 @@ public final class NetworkRequestData {
         + "method='"
         + method
         + '\''
-        + ", statusCode="
-        + statusCode
-        + ", requestBodySize="
-        + requestBodySize
-        + ", responseBodySize="
-        + responseBodySize
         + ", request="
         + request
-        + ", response="
-        + response
+        + ", responseDetails="
+        + responseDetails
         + '}';
+  }
+
+  /**
+   * The response side of a {@link NetworkRequestData}, immutable so one reference publishes all.
+   */
+  public static final class ResponseDetails {
+    private final int statusCode;
+    private final @NotNull ReplayNetworkRequestOrResponse response;
+
+    /**
+     * @param statusCode the HTTP status code of the response.
+     * @param response the response details obtained via {@link
+     *     NetworkDetailCaptureUtils#createResponse}
+     */
+    public ResponseDetails(
+        final int statusCode, final @NotNull ReplayNetworkRequestOrResponse response) {
+      this.statusCode = statusCode;
+      this.response = response;
+    }
+
+    public int getStatusCode() {
+      return statusCode;
+    }
+
+    public @NotNull ReplayNetworkRequestOrResponse getResponse() {
+      return response;
+    }
+
+    @Override
+    public String toString() {
+      return "ResponseDetails{statusCode=" + statusCode + ", response=" + response + '}';
+    }
   }
 }
