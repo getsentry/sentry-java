@@ -447,6 +447,7 @@ class SessionCaptureStrategyTest {
 
     strategy.onScreenshotRecorded(mock<Bitmap>()) {}
     now += fixture.options.sessionReplay.sessionDuration
+    fixture.ticker.advance(fixture.options.sessionReplay.sessionDuration, MILLISECONDS)
     tasks.forEach(Runnable::run)
 
     verify(fixture.scopes, never()).captureReplay(any(), any())
