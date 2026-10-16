@@ -52,22 +52,22 @@ private const val NAVIGATION_OP: String = "navigation"
  *
  * **Coexisting with other observers**
  *
- * All observer instances mutate a single [IScope] by default. In general, more than one
- * simultaneously active observer writing to the same scope is ***not*** supported and can result in
- * clobbered or interleaved updates, as well as undefined transaction behavior.
+ * All observer instances mutate a single [IScope] by default. In general, more than one observer
+ * whose `NavDisplay` is in use at the same time is ***not*** supported and can result in missing,
+ * clobbered, or interleaved nav data, as well as undefined transaction behavior.
  *
  * This class does, however, coordinate updates from multiple observers when the lifecycles of the
  * Activity or Fragment each observer instance lives in briefly overlap. Doing so lets us support
  * common app architectures where i) each Activity or Fragment owns its own `NavDisplay` <>
- * `SentryNavEffect` pair, and ii) no `NavDisplay` <> `SentryNavEffect` pair is meant to be active
+ * `SentryNavEffect` pair, and ii) no `NavDisplay` <> `SentryNavEffect` pair is meant to be in use
  * at the same time as another (e.g., no nesting or
  * [multi-resume mode](https://source.android.com/docs/core/display/multi_display/multi-resume)).
  *
  * // TODO ADAM: Update as needed. The basic policy is that:
  *
- * 1. the active observer owns the shared nav state;
- * 2. obscured observers retain changes without publishing them; and
- * 3. when ownership returns to an observer, it applies any retained changes and restores its state.
+ * 1. only the observer that owns the scope publishes nav data;
+ * 2. observers that don't own the scope hold their changes without publishing them; and
+ * 3. when an observer regains ownership, it applies any held changes and republishes its nav data.
  *
  * The following diagram illustrates how observers coordinate their updates during lifecycle owner
  * overlaps ("nav data" refers to breadcrumbs, screen names, and back stack context):
@@ -92,18 +92,18 @@ private const val NAVIGATION_OP: String = "navigation"
  *      │                                                             │
  *  Back stack changes                                                │
  *      │                                                             │
- *      └── held while obscured                                       │
+ *      └── held while B owns the scope                               │
  *      │                                                             │
  *      │                                                         cleanup
  *      │                                                             │
  *      │                         B's data cleared ◄──────────────────┤
- *      │                         A becomes active ◄── coordinator ───┤
+ *      │                         A owns the scope ◄── coordinator ───┤
  *      │                                                             │
  *      ├── apply held changes ─► Nav data: A                         │
  *      └── reclaim ────────────► A's unfinished nav transaction      │
  *      │                                                             ▼
  *
- *  Alternative: A cleans up while B is active
+ *  Alternative: A cleans up while B owns the scope
  *      │
  *      └── clear A's own data only; B's published data remains
  *  ```
@@ -111,9 +111,10 @@ private const val NAVIGATION_OP: String = "navigation"
  * **Lifecycle**
  *
  * Register this observer with the [Lifecycle] of the owner hosting its `NavDisplay`. Each time that
- * owner resumes, the observer [reclaims][onResume] the shared nav state. Registration is left to
- * the caller so it can be tied to an `*Effect` (and so never happens during composition), and so a
- * change of owner only requires re-registering rather than a new observer.
+ * owner resumes, the observer [claims the scope][NavScopesCoordinator.claimScope] and republishes
+ * its nav data. Registration is left to the caller so it can be tied to an `*Effect` (and so never
+ * happens during composition), and so a change of owner only requires re-registering rather than a
+ * new observer.
  *
  * **Thread safety**
  *
@@ -202,8 +203,9 @@ internal class BackStackObserver<T : Any>(
   }
 
   /**
-   * Republishes this observer's nav state to [IScopes] whenever its lifecycle owner resumes (e.g.,
-   * returning to an Activity), as another observer may have overwritten that state in the meantime.
+   * [Claims the scope][NavScopesCoordinator.claimScope] and republishes this observer's nav data
+   * whenever its lifecycle owner resumes (e.g., returning to an Activity), as another observer may
+   * have taken the scope and overwritten that data in the meantime.
    *
    * For an owner that's already resumed, [Lifecycle.addObserver] replays
    * [Lifecycle.Event.ON_RESUME] immediately, typically before the first [onBackStackChanged]; at
@@ -220,9 +222,10 @@ internal class BackStackObserver<T : Any>(
   }
 
   /**
-   * Republishes this observer's state after the [coordinator] hands it the shared nav state, i.e.,
-   * when the previously active observer [releases the scope][NavScopesCoordinator.releaseScope]
-   * without this observer's lifecycle owner resuming.
+   * Republishes this observer's nav data after it regains ownership of the scope without its
+   * lifecycle owner resuming, i.e., when the previous owner
+   * [releases the scope][NavScopesCoordinator.handOffScope] and the [coordinator] passes ownership
+   * to this observer.
    */
   internal fun onHandoff() {
     publishCurrentState()
@@ -251,7 +254,7 @@ internal class BackStackObserver<T : Any>(
       navScreen.clear(scope)
       navContext.clearIfPublished(scope)
     }
-    coordinator.releaseScope(this)
+    coordinator.handOffScope(this)
   }
 
   private fun prepareChange(backStack: List<T>): PreparedChange<T> {
@@ -679,47 +682,59 @@ private class NavBreadcrumbs(private val scopes: IScopes) {
 }
 
 /**
- * Coordinates [BackStackObserver] updates to a shared [IScopes] instance.
+ * Decides which [BackStackObserver] owns a shared [IScopes] instance, i.e., which observer may
+ * publish nav data to it.
  *
- * The observer that most recently [claimed the scope][claimScope] is active. When the active
- * observer [releases the scope][releaseScope], the coordinator hands the shared nav state to the
- * most recent claimant it still tracks.
+ * Observers that share an [IScopes] instance would otherwise overwrite each other's nav data. The
+ * coordinator lets only the owner publish; other observers hold their changes until they own the
+ * scope again.
+ *
+ * Ownership goes to the observer that most recently [claimed the scope][claimScope]. When the owner
+ * [releases the scope][handOffScope], ownership passes to the most recent claimant that hasn't
+ * released it, if any.
  */
 // TODO ADAM: Tests.
 internal class NavScopesCoordinator private constructor() {
 
   /**
-   * The observers that have [claimed the scope][claimScope] and have yet to release it or be gc'd.
+   * Observers that have [claimed the scope][claimScope] and haven't released it, in claim order.
    *
-   * Stored in claim order, i.e., the active observer is at the end of the list.
+   * The owner is at the end. The observers before it are the candidates for ownership, in the order
+   * they'd regain it as later claimants release the scope.
+   *
+   * References are weak, so an observer that's garbage collected without releasing the scope drops
+   * out of the list. If that observer was the owner, the previous claimant becomes the owner
+   * without being notified.
    */
   private val trackedObservers = mutableListOf<WeakReference<BackStackObserver<*>>>()
 
   /**
-   * Makes [observer] the active observer, replacing the current one if needed.
+   * Makes [observer] the owner of the scope.
    *
-   * A claim always succeeds, and the most recent claim wins. The previously active observer isn't
-   * notified; it finds out via [ownsScope] and holds its changes until it becomes active again. The
-   * claiming observer is responsible for publishing its own state.
+   * A claim always succeeds: the most recent claim wins, even if another observer owns the scope.
+   * The previous owner isn't notified. It learns that it no longer owns the scope via [ownsScope],
+   * and it remains a candidate to regain ownership when the new owner releases the scope. The new
+   * owner is responsible for publishing its own nav data.
    */
   fun claimScope(observer: BackStackObserver<*>) {
     trackedObservers.removeAll { it.get() == null || it.get() === observer }
     trackedObservers.add(WeakReference(observer))
   }
 
-  /** Whether [observer] is the active observer, i.e., the most recent claimant still tracked. */
+  /**
+   * Whether [observer] owns the scope, i.e., is the most recent claimant that hasn't released it.
+   */
   fun ownsScope(observer: BackStackObserver<*>): Boolean {
     trackedObservers.removeAll { it.get() == null }
     return trackedObservers.lastOrNull()?.get() === observer
   }
 
   /**
-   * Stops tracking [observer]. If it was the active observer, the most recent claimant still
-   * tracked becomes active and [republishes its state][BackStackObserver.onHandoff].
+   * Stops tracking [observer], and gives ownership to the most recent tracked claimant, if any.
    *
-   * Releasing the scope from an inactive observer has no effect on the active one.
+   * If `observer` didn't own the scope, it stops being tracked but the current owner is unaffected.
    */
-  fun releaseScope(observer: BackStackObserver<*>) {
+  fun handOffScope(observer: BackStackObserver<*>) {
     val ownedScope = ownsScope(observer)
     trackedObservers.removeAll { it.get() == null || it.get() === observer }
     if (ownedScope) {
