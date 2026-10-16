@@ -4,8 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
@@ -105,7 +103,6 @@ internal fun <T : Any> SentryNavEffect(
 ) {
   val currentBackStackEntryMapper = rememberUpdatedState(backStackEntryMapper)
   val lifecycle = LocalLifecycleOwner.current.lifecycle
-  val coordinator = remember(scopes) { NavEffectCoordinator.forScopes(scopes) }
 
   val observer =
     remember(scopes, options) {
@@ -113,23 +110,15 @@ internal fun <T : Any> SentryNavEffect(
         scopes = scopes,
         options = options,
         entryMapper = ForwardingBackStackEntryMapper { currentBackStackEntryMapper.value },
-        coordinator = coordinator,
       )
     }
 
-  // TODO ADAM: Consider internalizing inside observer.
-  // Republish this effect's data whenever its owner resumes (e.g., returning to an Activity), since
-  // another effect may have replaced it in the meantime. For an owner that's already resumed,
-  // addObserver() replays ON_RESUME immediately, before the first back stack update below; at that
-  // point this effect has nothing to republish yet.
+  // Register from an effect rather than the observer's constructor: remember {} runs during
+  // composition, which may be abandoned without ever disposing its effects. Keying on lifecycle
+  // re-registers the same observer if the owner changes.
   DisposableEffect(observer, lifecycle) {
-    val lifecycleObserver = LifecycleEventObserver { _, event ->
-      if (event == Lifecycle.Event.ON_RESUME) {
-        observer.onResume()
-      }
-    }
-    lifecycle.addObserver(lifecycleObserver)
-    onDispose { lifecycle.removeObserver(lifecycleObserver) }
+    lifecycle.addObserver(observer)
+    onDispose { lifecycle.removeObserver(observer) }
   }
 
   // Intentionally don't remember this copy. Snapshot-backed lists mutate in place, so

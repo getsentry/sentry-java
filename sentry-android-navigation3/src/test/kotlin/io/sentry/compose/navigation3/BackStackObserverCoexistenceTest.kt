@@ -1,5 +1,7 @@
 package io.sentry.compose.navigation3
 
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import com.google.common.truth.Truth.assertThat
 import io.sentry.IScope
 import io.sentry.ISentryClient
@@ -55,14 +57,14 @@ class BackStackObserverCoexistenceTest {
   }
 
   @Test
-  fun `onResume republishes screen and nav context replaced by another writer`() {
+  fun `ON_RESUME republishes screen and nav context replaced by another writer`() {
     val fixture = Fixture()
     val sut = fixture.getSut()
     sut.onBackStackChanged(listOf(HomeScreen()))
     fixture.scope.screen = "Other"
     fixture.scope.setContexts(NAVIGATION_CONTEXT_KEY, mapOf("other" to true))
 
-    sut.onResume()
+    sut.resume()
 
     assertThat(fixture.scope.screen).isEqualTo("/HomeScreen")
     assertThat(fixture.scope.navigationBackStack())
@@ -70,19 +72,19 @@ class BackStackObserverCoexistenceTest {
   }
 
   @Test
-  fun `onResume leaves values this observer never published untouched`() {
+  fun `ON_RESUME leaves values this observer never published untouched`() {
     val fixture = Fixture()
     val sut = fixture.getSut(enableScreenTracking = false)
     sut.onBackStackChanged(listOf(HomeScreen()))
     fixture.scope.screen = "HostScreen"
 
-    sut.onResume()
+    sut.resume()
 
     assertThat(fixture.scope.screen).isEqualTo("HostScreen")
   }
 
   @Test
-  fun `onResume rebinds an unfinished nav transaction only when the scope is free`() {
+  fun `ON_RESUME rebinds an unfinished nav transaction only when the scope is free`() {
     val fixture = Fixture()
     val sut = fixture.getSut()
     sut.onBackStackChanged(listOf(HomeScreen()))
@@ -94,16 +96,16 @@ class BackStackObserverCoexistenceTest {
       )
     fixture.scope.transaction = other
 
-    sut.onResume()
+    sut.resume()
     assertThat(fixture.scope.transaction).isSameInstanceAs(other)
 
     fixture.scope.clearTransaction()
-    sut.onResume()
+    sut.resume()
     assertThat(fixture.scope.transaction).isSameInstanceAs(navTransaction)
   }
 
   @Test
-  fun `onResume takes the scope back from another observer's nav transaction`() {
+  fun `ON_RESUME takes the scope back from another observer's nav transaction`() {
     val fixture = Fixture()
     val returning = fixture.getSut()
     returning.onBackStackChanged(listOf(HomeScreen()))
@@ -112,27 +114,34 @@ class BackStackObserverCoexistenceTest {
     other.onBackStackChanged(listOf(CartScreen("1")))
     val otherTransaction = requireNotNull(fixture.scope.transaction)
 
-    returning.onResume()
+    returning.resume()
 
     assertThat(fixture.scope.transaction).isSameInstanceAs(returningTransaction)
     assertThat(otherTransaction.isFinished).isFalse()
   }
 
   @Test
-  fun `only the first new top evicts another observer's nav transaction`() {
+  fun `an obscured observer holds its new top until the active observer is cleaned up`() {
     val fixture = Fixture()
     val outgoing = fixture.getSut()
     outgoing.onBackStackChanged(listOf(HomeScreen()))
     val outgoingTransaction = requireNotNull(fixture.scope.transaction)
     val incoming = fixture.getSut()
-
     incoming.onBackStackChanged(listOf(CartScreen("1")))
     val incomingTransaction = requireNotNull(fixture.scope.transaction)
+
     outgoing.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("1")))
 
-    assertThat(outgoingTransaction.isFinished).isTrue()
-    assertThat(incomingTransaction.name).isEqualTo("/CartScreen")
+    assertThat(outgoingTransaction.isFinished).isFalse()
     assertThat(fixture.scope.transaction).isSameInstanceAs(incomingTransaction)
+    assertThat(fixture.scope.screen).isEqualTo("/CartScreen")
+
+    incoming.cleanup()
+
+    assertThat(incomingTransaction.isFinished).isTrue()
+    assertThat(outgoingTransaction.isFinished).isTrue()
+    assertThat(fixture.scope.transaction?.name).isEqualTo("/ProfileScreen")
+    assertThat(fixture.scope.screen).isEqualTo("/ProfileScreen")
   }
 
   @Test
@@ -148,6 +157,10 @@ class BackStackObserverCoexistenceTest {
     assertThat(fixture.scope.screen).isEqualTo("/CartScreen")
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(listOf(mapOf("entry" to "/CartScreen")))
+  }
+
+  private fun BackStackObserver<*>.resume() {
+    onStateChanged(mock<LifecycleOwner>(), Lifecycle.Event.ON_RESUME)
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
