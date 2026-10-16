@@ -546,7 +546,7 @@ public class SentryOptions implements RateLimiterConfig {
    */
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<HostnameCache> hostnameCache =
-      new LazyEvaluator<>(() -> new HostnameCache());
+      new LazyEvaluator<>(() -> new HostnameCache(getMonotonicTicker()));
 
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 

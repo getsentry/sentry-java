@@ -12,7 +12,7 @@ concurrency:
 jobs:
   macrobenchmark:
     name: Macrobenchmark
-    runs-on: ubuntu-latest
+    runs-on: ["bitrise_pool_name:tahoe"]
 
     # we copy the secret to the env variable in order to access it in the workflow
     env:
