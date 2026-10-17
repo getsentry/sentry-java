@@ -35,24 +35,30 @@ import io.sentry.android.replay.gestures.ReplayGestureConverter
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
+import io.sentry.time.Deadline
+import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
 import java.util.Deque
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
-internal abstract class BaseCaptureStrategy(
+internal abstract class BaseCaptureStrategy
+@Suppress("LongParameterList")
+constructor(
   private val options: SentryOptions,
   private val scopes: IScopes?,
-  private val dateProvider: ICurrentDateProvider,
+  // TODO [v9]: We should consider replacing this with AnchoredClock in V9.
+  dateProvider: ICurrentDateProvider,
+  private val ticker: MonotonicTicker,
   protected val replayExecutor: ScheduledExecutorService,
   protected val persistingExecutor: ScheduledExecutorService,
   private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
@@ -63,7 +69,7 @@ internal abstract class BaseCaptureStrategy(
     private const val MAX_CONTEXT_VALUES = 100
   }
 
-  private val gestureConverter = ReplayGestureConverter(dateProvider)
+  private val gestureConverter = ReplayGestureConverter(dateProvider, ticker)
 
   protected val isTerminating = AtomicBoolean(false)
   protected var cache: ReplayCache? = null
@@ -85,7 +91,11 @@ internal abstract class BaseCaptureStrategy(
         if (newValue == null) null else DateUtils.getTimestamp(newValue),
       )
     }
-  protected val replayStartTimestamp = AtomicLong()
+  /**
+   * When the recording reaches its `sessionDuration` cap, or `null` while nothing is being
+   * recorded. Only [SessionCaptureStrategy] enforces a cap; buffer mode records indefinitely.
+   */
+  @Volatile protected var replayDeadline: Deadline? = null
   private var recordingMetadata: RecordingMetadata? by
     persistableAtomicNullable(propertyName = "") { _, _, newValue ->
       persistMetadataValue(SEGMENT_KEY_RELEASE, newValue?.release)
@@ -123,7 +133,7 @@ internal abstract class BaseCaptureStrategy(
     this.replayType = replayType ?: (if (this is SessionCaptureStrategy) SESSION else BUFFER)
 
     segmentTimestamp = DateUtils.getCurrentDateTime()
-    replayStartTimestamp.set(dateProvider.currentTimeMillis)
+    replayDeadline = Deadline.after(ticker, options.sessionReplay.sessionDuration, MILLISECONDS)
     // the same values MainEventProcessor applies to current-run segments
     recordingMetadata =
       RecordingMetadata(
@@ -152,7 +162,7 @@ internal abstract class BaseCaptureStrategy(
     replayExecutor.submit(
       ReplayRunnable("$TAG.stop") {
         cache?.close()
-        replayStartTimestamp.set(0)
+        replayDeadline = null
         segmentTimestamp = null
         currentReplayId = SentryId.EMPTY_ID
       }
