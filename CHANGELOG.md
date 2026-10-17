@@ -4,7 +4,7 @@
 
 ### Features
 
-- Monitor every Spring `@Scheduled` method with Sentry Crons by setting `sentry.monitor-scheduled-tasks=true`, without adding `@SentryCheckIn` to each method. Exclude methods with `sentry.exclude-scheduled-tasks` ([#6275](https://github.com/getsentry/sentry-java/pull/6275))
+- Monitor every Spring `@Scheduled` method with Sentry Crons by setting `sentry.monitor-scheduled-tasks=true`, without adding `@SentryCheckIn` to each method. Exclude methods with `sentry.exclude-scheduled-tasks` ([#6275](https://github.com/getsentry/sentry-java/pull/6275), [#6276](https://github.com/getsentry/sentry-java/pull/6276))
 - Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins by default, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = false)` to turn this off ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
 
