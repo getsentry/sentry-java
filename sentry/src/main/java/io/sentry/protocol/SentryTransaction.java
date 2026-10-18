@@ -58,14 +58,13 @@ public final class SentryTransaction extends SentryBaseEvent
   public SentryTransaction(final @NotNull SentryTracer sentryTracer) {
     super(sentryTracer.getEventId());
     Objects.requireNonNull(sentryTracer, "sentryTracer is required");
-    // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
-    this.startTimestamp = DateUtils.nanosToSeconds(sentryTracer.getStartDate().nanoTimestamp());
-    // we lose precision here, from potential nanosecond precision down to 10 microsecond precision
+    // Anchored, like the child spans: see SentrySpan's constructor.
+    // We lose precision here, from nanosecond precision down to 10 microsecond precision.
+    this.startTimestamp = DateUtils.nanosToSeconds(sentryTracer.startTimestamp().epochNanos());
+    final @Nullable io.sentry.time.Timestamp end = sentryTracer.endTimestamp();
     this.timestamp =
         DateUtils.nanosToSeconds(
-            sentryTracer
-                .getStartDate()
-                .laterDateNanosTimestampByDiff(sentryTracer.getFinishDate()));
+            end != null ? end.epochNanos() : sentryTracer.startTimestamp().epochNanos());
     this.transaction = sentryTracer.getName();
     for (final Span span : sentryTracer.getChildren()) {
       if (Boolean.TRUE.equals(span.isSampled())) {

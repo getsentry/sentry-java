@@ -190,7 +190,9 @@ class DefaultCompositePerformanceCollectorTest {
         SentryNanotimeDate(TimeUnit.SECONDS.toMillis(100), TimeUnit.SECONDS.toNanos(100)),
         SentryNanotimeDate(TimeUnit.SECONDS.toMillis(131), TimeUnit.SECONDS.toNanos(131)),
       )
-    whenever(mockDateProvider.now()).thenReturn(dates[0], dates[0], dates[0], dates[1])
+    // The first reading anchors the collector, every later one is a sampling tick. Stubbing an
+    // exact call sequence coupled this test to how often unrelated code read the provider.
+    whenever(mockDateProvider.now()).thenReturn(dates[0], dates[1])
     val collector = fixture.getSut {
       it.dateProvider = mockDateProvider
       it.addPerformanceCollector(mockCollector)
@@ -221,7 +223,9 @@ class DefaultCompositePerformanceCollectorTest {
         SentryNanotimeDate(TimeUnit.SECONDS.toMillis(100), TimeUnit.SECONDS.toNanos(100)),
         SentryNanotimeDate(TimeUnit.SECONDS.toMillis(130), TimeUnit.SECONDS.toNanos(130)),
       )
-    whenever(mockDateProvider.now()).thenReturn(dates[0], dates[0], dates[0], dates[1])
+    // The first reading anchors the collector, every later one is a sampling tick. Stubbing an
+    // exact call sequence coupled this test to how often unrelated code read the provider.
+    whenever(mockDateProvider.now()).thenReturn(dates[0], dates[1])
     val collector = fixture.getSut { it.dateProvider = mockDateProvider }
     collector.start(fixture.transaction1)
     verify(fixture.mockTimer, never())!!.cancel()
