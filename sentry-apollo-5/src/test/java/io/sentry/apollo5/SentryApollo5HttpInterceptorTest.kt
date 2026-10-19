@@ -300,7 +300,7 @@ abstract class SentryApollo5HttpInterceptorTest(
   private suspend fun interceptWithContentType(contentType: String?): Boolean {
     var bodyRead = false
     val body =
-      object : ForwardingSource(Buffer().writeUtf8("{\"errors\":[]}")) {
+      object : ForwardingSource(Buffer().writeUtf8("{\"errors\":[{\"message\":\"error\"}]}")) {
           override fun read(sink: Buffer, byteCount: Long): Long {
             bodyRead = true
             return super.read(sink, byteCount)
