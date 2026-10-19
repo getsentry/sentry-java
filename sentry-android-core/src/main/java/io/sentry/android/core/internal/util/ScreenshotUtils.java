@@ -14,6 +14,9 @@ import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
+import io.sentry.android.core.SentryAndroid;
+import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.util.LoadClass;
 import io.sentry.util.thread.IThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -49,6 +52,65 @@ public class ScreenshotUtils {
     final @Nullable Bitmap screenshot =
         captureScreenshot(activity, threadChecker, logger, buildInfoProvider);
     return compressBitmapToPng(screenshot, logger);
+  }
+
+  // Used by Hybrid SDKs
+  /**
+   * Takes a screenshot and masks it according to {@link SentryAndroidOptions#getScreenshot()}, the
+   * same way {@link io.sentry.android.core.ScreenshotEventProcessor} does for native errors.
+   *
+   * @see #captureMaskedScreenshot(Activity, SentryAndroidOptions, BuildInfoProvider, boolean)
+   * @noinspection unused
+   */
+  public static @Nullable byte[] takeMaskedScreenshot(
+      final @NotNull Activity activity,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider) {
+    final boolean isReplayAvailable =
+        new LoadClass()
+            .isClassAvailable(
+                SentryAndroid.SENTRY_REPLAY_INTEGRATION_CLASS_NAME, options.getLogger());
+    return compressBitmapToPng(
+        captureMaskedScreenshot(activity, options, buildInfoProvider, isReplayAvailable),
+        options.getLogger());
+  }
+
+  /**
+   * Captures a screenshot and masks it according to {@link SentryAndroidOptions#getScreenshot()}.
+   * Shared by {@link io.sentry.android.core.ScreenshotEventProcessor} and Hybrid SDKs, so native
+   * and hybrid screenshots follow the same masking rules.
+   *
+   * <p>If no masking is configured, the screenshot is returned unmasked. If masking is configured
+   * but the `sentry-android-replay` module is not available, or masking fails, null is returned to
+   * avoid leaking sensitive data.
+   */
+  public static @Nullable Bitmap captureMaskedScreenshot(
+      final @NotNull Activity activity,
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull BuildInfoProvider buildInfoProvider,
+      final boolean isReplayAvailable) {
+    final boolean isMaskingConfigured = !options.getScreenshot().getMaskViewClasses().isEmpty();
+    if (isMaskingConfigured && !isReplayAvailable) {
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
+      return null;
+    }
+
+    final @Nullable Bitmap screenshot =
+        captureScreenshot(
+            activity, options.getThreadChecker(), options.getLogger(), buildInfoProvider);
+    if (screenshot == null || !isMaskingConfigured) {
+      return screenshot;
+    }
+
+    // mask() recycles the screenshot on failure, so a raw screenshot is never returned
+    return ScreenshotMasking.mask(
+        activity,
+        screenshot,
+        options.getScreenshot(),
+        options.getThreadChecker(),
+        options.getLogger());
   }
 
   public static @Nullable Bitmap captureScreenshot(

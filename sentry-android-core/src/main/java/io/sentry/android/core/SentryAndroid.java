@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +39,8 @@ public final class SentryAndroid {
   static final String SENTRY_TIMBER_INTEGRATION_CLASS_NAME =
       "io.sentry.android.timber.SentryTimberIntegration";
 
-  static final String SENTRY_REPLAY_INTEGRATION_CLASS_NAME =
+  @ApiStatus.Internal
+  public static final String SENTRY_REPLAY_INTEGRATION_CLASS_NAME =
       "io.sentry.android.replay.ReplayIntegration";
 
   static final String SENTRY_DISTRIBUTION_INTEGRATION_CLASS_NAME =
