@@ -64,7 +64,6 @@ dependencies {
   testImplementation(libs.awaitility.kotlin)
   testImplementation(libs.context.propagation)
   testImplementation(libs.graphql.java24)
-  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.inline)
