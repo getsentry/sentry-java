@@ -9,6 +9,7 @@ import io.sentry.android.core.SentryScreenshotOptions;
 import io.sentry.android.replay.util.MaskRenderer;
 import io.sentry.android.replay.util.ViewsKt;
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.thread.IThreadChecker;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -81,8 +82,9 @@ public final class ScreenshotMasking {
             SentryLevel.WARNING, "Timed out waiting for view hierarchy capture on main thread");
         return null;
       }
-    } catch (Throwable e) {
-      logger.log(SentryLevel.ERROR, "Failed to capture view hierarchy", e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      logger.log(SentryLevel.ERROR, "Interrupted while capturing view hierarchy", e);
       return null;
     }
 
@@ -109,6 +111,8 @@ public final class ScreenshotMasking {
       ViewsKt.traverse(rootView, rootNode, screenshotOptions, logger, null);
       return rootNode;
     } catch (Throwable e) {
+      // Traversal calls into arbitrary (custom) View code, which can throw anything
+      ExceptionUtils.rethrowIfFatal(e);
       logger.log(SentryLevel.ERROR, "Failed to build view hierarchy", e);
       return null;
     }
@@ -139,7 +143,7 @@ public final class ScreenshotMasking {
       }
 
       return mutableBitmap;
-    } catch (Throwable e) {
+    } catch (RuntimeException e) {
       logger.log(SentryLevel.ERROR, "Failed to mask screenshot", e);
       if (createdCopy) {
         if (!mutableBitmap.isRecycled()) {
