@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add `ScreenshotUtils.takeMaskedScreenshot` so Hybrid SDKs can capture screenshots masked according to `SentryAndroidOptions.getScreenshot()` ([#6281](https://github.com/getsentry/sentry-java/pull/6281))
+
 ### Fixes
 
 - Measure Session Replay's 1h recording cap and its touch-move debounce on a monotonic clock, so a device time change no longer stops a healthy recording early, keeps a finished one alive, or suppresses gesture events ([#6090](https://github.com/getsentry/sentry-java/pull/6090))
