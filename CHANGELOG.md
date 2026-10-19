@@ -15,6 +15,12 @@
 - Measure the hostname cache TTL on the monotonic ticker the options provide, so that a device time change no longer shortens or extends it ([#6100](https://github.com/getsentry/sentry-java/pull/6100))
 - Measure Session Replay's 1h recording cap and its touch-move debounce on a monotonic clock, so a device time change no longer stops a healthy recording early, keeps a finished one alive, or suppresses gesture events ([#6090](https://github.com/getsentry/sentry-java/pull/6090))
 
+### Dependencies
+
+- Bump Native SDK from v0.17.3 to v0.17.4 ([#6278](https://github.com/getsentry/sentry-java/pull/6278))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0174)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.3...0.17.4)
+
 ## 8.61.0
 
 ### Fixes
