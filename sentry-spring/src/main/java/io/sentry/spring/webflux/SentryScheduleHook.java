@@ -20,9 +20,13 @@ public final class SentryScheduleHook implements Function<Runnable, Runnable> {
    * scope parent chain buildup.
    *
    * @see <a href="https://github.com/getsentry/sentry-java/issues/5051">GitHub Issue #5051</a>
+   * @see <a href="https://github.com/getsentry/sentry-java/issues/6248">GitHub Issue #6248</a>
    */
   private static final String[] EXCLUDED_RUNNABLE_PREFIXES = {
-    "reactor.kafka.receiver.internals.ConsumerEventLoop"
+    "reactor.kafka.receiver.internals.ConsumerEventLoop",
+    "reactor.netty.internal.shaded.reactor.pool.SimpleDequePool",
+    "reactor.pool.SimpleDequePool",
+    "reactor.netty.resources.PooledConnectionProvider"
   };
 
   @Override
