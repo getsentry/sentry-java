@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
+
 ## 8.61.0
 
 ### Fixes
