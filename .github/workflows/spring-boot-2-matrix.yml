@@ -77,14 +77,16 @@ jobs:
           ./gradlew \
             :sentry-samples:sentry-samples-spring-boot-opentelemetry:shadowJar \
             :sentry-samples:sentry-samples-spring-boot-opentelemetry:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent:shadowJar \
-            :sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent:testClasses \
             :sentry-samples:sentry-samples-spring:war \
             :sentry-samples:sentry-samples-spring:testClasses \
             :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
       - name: Test sentry-spring-boot integration suites
-        run: ./gradlew :sentry-spring-boot:integrationTest :sentry-spring-boot:integrationTestWebflux
+        run: |
+          ./gradlew \
+            :sentry-spring-boot:integrationTest \
+            :sentry-spring-boot:integrationTestWebflux \
+            :sentry-spring-boot:integrationTestOtelNoAgent
 
       - name: Test sentry-samples-spring-boot-opentelemetry agent init true
         run: |
@@ -99,13 +101,6 @@ jobs:
             --module "sentry-samples-spring-boot-opentelemetry" \
             --agent true \
             --auto-init "false"
-
-      - name: Test sentry-samples-spring-boot-opentelemetry-noagent
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-opentelemetry-noagent" \
-            --agent false \
-            --auto-init "true"
 
       - name: Test sentry-samples-spring
         run: |
