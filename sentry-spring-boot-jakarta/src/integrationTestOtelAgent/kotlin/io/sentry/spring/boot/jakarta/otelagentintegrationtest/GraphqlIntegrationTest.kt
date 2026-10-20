@@ -72,6 +72,8 @@ class GraphqlIntegrationTest : IntegrationTest() {
     val tasks = response["data"]["tasks"]
     assertThat(tasks.size()).isEqualTo(5)
     assertThat(tasks[0]["id"].asText()).isEqualTo("T1")
+    assertThat(tasks[0]["assigneeId"].asText()).isEqualTo("A3")
+    assertThat(tasks[0]["creatorId"].asText()).isEqualTo("C3")
     assertThat(tasks[0]["assignee"]["id"].asText()).isEqualTo("A3")
     assertThat(tasks[0]["creator"]["id"].asText()).isEqualTo("C3")
 
