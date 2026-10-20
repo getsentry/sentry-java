@@ -218,6 +218,18 @@ tasks.register("buildForCodeQL") {
         }
 }
 
+// Each module's suites start their own servers on free ports, so Gradle can run them all at once.
+tasks.register("integrationTests") {
+    group = "verification"
+    description = "Runs the integration test suites of every module."
+    dependsOn(
+        ":sentry-spring-boot:integrationTest",
+        ":sentry-spring-boot-jakarta:integrationTest",
+        ":sentry-spring-boot-jakarta:integrationTestOtelAgent",
+        ":sentry-spring-boot-4:integrationTest",
+    )
+}
+
 /*
  * Adapted from https://github.com/androidx/androidx/blob/c799cba927a71f01ea6b421a8f83c181682633fb/buildSrc/private/src/main/kotlin/androidx/build/MavenUploadHelper.kt#L524-L549
  *
