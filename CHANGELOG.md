@@ -21,6 +21,8 @@
 - Session Replay: Keep the segment videos of a replay that stopped before the startup cleanup of previous replays ran ([#6343](https://github.com/getsentry/sentry-java/pull/6343))
 - Report the number of dropped spans in client reports when a batched span envelope item is discarded, instead of a quantity of 1 (e.g. for Flutter span streaming) ([#6265](https://github.com/getsentry/sentry-java/pull/6265))
 - Session Replay: Keep the flushed video and do not reuse its segment id when `stop()` is called right after `flush()` in buffer mode ([#6340](https://github.com/getsentry/sentry-java/pull/6340))
+- Keep UI profiling running when `startProfiler` is called before a requested stop takes effect at the end of the current chunk ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+  - Before, the start call was ignored and the profiler still stopped at the end of the chunk, even in `TRACE` mode while sampled spans were active. On API 34 and lower, every later profile also stopped after one chunk.
 - Keep sending events from Android 7.1.0 and older devices after Sentry changes its TLS certificate authority ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
   - In February 2027, Sentry moves its TLS certificates from DigiCert to Let's Encrypt and Google Trust Services ([announcement](https://sentry.io/changelog/were-changing-our-tls-certificate-authority-in-february-2027)).
   - Android 7.1.0 (API 25) and older don't trust the Let's Encrypt root certificate (ISRG Root X1), so without this fix, the SDK on those devices can no longer send events to Sentry after the switch.
