@@ -43,6 +43,8 @@ match on values only they produce.
   - `integrationTestOtelNoAgent`: `sentry-opentelemetry-agentless-spring`.
   - `integrationTestOtelAgent` and `integrationTestOtelAgentWithoutAutoInit`: the built agent.
   - `integrationTestOtlp` (Boot 4): `sentry-opentelemetry-otlp-spring`.
+  - `integrationTestLog4j2` (Boot 3, 4): Log4j2 instead of Logback, for the auto-configured
+    Log4j2 appender.
 
   Each suite has a base class with `@SpringBootTest(RANDOM_PORT)` and a `@DynamicPropertySource`
   that sets `sentry.dsn`. Subclasses share one context and one server.
@@ -68,8 +70,9 @@ it. Gradle runs the two in parallel.
 
 ## Gotchas
 
-- In OpenTelemetry mode, the OpenTelemetry starter instruments the context's `TestRestTemplate`,
-  which then replaces the trace headers a test sends. Build one outside the context instead.
+- Don't use the context's `TestRestTemplate`. It comes from the `RestTemplateBuilder` that Sentry
+  customizes, and that the OpenTelemetry starter instruments, so it adds or replaces trace headers
+  on the requests a test sends. Build one outside the context.
 - Sentry exports OpenTelemetry spans in batches every 5 seconds. In-process, flush the tracer
   provider from the server's hook. With the agent this isn't possible, so each test waits for a
   batch and negative checks wait at least 6 seconds.
