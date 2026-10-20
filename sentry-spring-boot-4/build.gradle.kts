@@ -169,6 +169,7 @@ testing {
         implementation(projects.sentryAsyncProfiler)
         implementation(projects.sentryGraphql22)
         implementation(projects.sentryJdbc)
+        implementation(projects.sentryKafka)
         implementation(projects.sentryLogback)
         implementation(projects.sentryOkhttp)
         implementation(projects.sentryTestSupport)
@@ -184,11 +185,13 @@ testing {
         implementation(libs.springboot4.starter.cache)
         implementation(libs.springboot4.starter.graphql)
         implementation(libs.springboot4.starter.jdbc)
+        implementation(libs.springboot4.starter.kafka)
         implementation(libs.springboot4.starter.restclient)
         implementation(libs.springboot4.starter.test)
         implementation(libs.springboot4.starter.web)
         implementation(libs.springboot4.starter.webclient)
         implementation(libs.springboot4.starter.webflux)
+        implementation(libs.spring.kafka4.test)
         runtimeOnly(libs.hsqldb)
       }
     }
