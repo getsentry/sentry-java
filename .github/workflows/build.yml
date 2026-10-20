@@ -13,9 +13,7 @@ jobs:
   build:
     # Job name is a required status check in the main branch ruleset; keep it stable.
     name: Build Job ubuntu-latest - Java 17
-    # Runs on Bitrise-hosted runners (same pattern as sentry-cocoa) instead of
-    # GitHub-hosted ubuntu-latest, which ran out of memory during `make preMerge`.
-    runs-on: ["bitrise_pool_name:tahoe"]
+    runs-on: ubuntu-latest
 
     env:
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}

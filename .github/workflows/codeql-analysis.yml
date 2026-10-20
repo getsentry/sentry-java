@@ -13,7 +13,7 @@ concurrency:
 jobs:
   analyze:
     name: Analyze
-    runs-on: ["bitrise_pool_name:tahoe"]
+    runs-on: macos-15
 
     env:
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}

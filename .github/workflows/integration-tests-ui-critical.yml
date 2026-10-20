@@ -20,9 +20,7 @@ env:
 jobs:
   build:
     name: Build
-    # Only the APK build runs on Bitrise; the Maestro job below needs KVM for the
-    # x86_64 emulator, which the macOS Bitrise VMs don't provide.
-    runs-on: ["bitrise_pool_name:tahoe"]
+    runs-on: ubuntu-latest
 
     env:
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
