@@ -846,7 +846,6 @@ class SystemTestRunner:
             ModuleConfig("sentry-samples-spring-boot-opentelemetry-noagent", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-opentelemetry", "true", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-opentelemetry", "true", "false", "false"),
-            ModuleConfig("sentry-samples-spring-boot-webflux-jakarta", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-webflux", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry-noagent", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "true", "false"),

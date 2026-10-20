@@ -71,8 +71,6 @@ jobs:
       - name: Build sample artifacts
         run: |
           ./gradlew \
-            :sentry-samples:sentry-samples-spring-boot-webflux-jakarta:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-webflux-jakarta:testClasses \
             :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry:bootJar \
             :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry:testClasses \
             :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent:bootJar \
@@ -85,15 +83,9 @@ jobs:
         run: |
           ./gradlew \
             :sentry-spring-boot-jakarta:integrationTest \
+            :sentry-spring-boot-jakarta:integrationTestWebflux \
             :sentry-spring-boot-jakarta:integrationTestLog4j2 \
             :sentry-spring-boot-jakarta:integrationTestOtelAgent
-
-      - name: Test sentry-samples-spring-boot-webflux-jakarta
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-webflux-jakarta" \
-            --agent false \
-            --auto-init "true"
 
       - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init true
         run: |
