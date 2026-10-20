@@ -88,6 +88,8 @@ class SentryEndToEndTest {
       server
         .awaitEnvelope { it.event()?.exceptions?.any { e -> e.value == "Some error!" } == true }
         .event()!!
+    assertThat(error.exceptions!!.map { it.type to it.value })
+      .contains("RuntimeException" to "Some error!")
     assertThat(error.hasFlag("my-feature-flag", true)).isTrue()
 
     val detailed =
