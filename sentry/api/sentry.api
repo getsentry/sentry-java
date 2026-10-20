@@ -508,6 +508,7 @@ public final class io/sentry/DiagnosticLogger : io/sentry/ILogger {
 
 public final class io/sentry/DsnUtil {
 	public fun <init> ()V
+	public static fun getHost (Ljava/lang/String;)Ljava/lang/String;
 	public static fun urlContainsDsnHost (Lio/sentry/SentryOptions;Ljava/lang/String;)Z
 }
 
