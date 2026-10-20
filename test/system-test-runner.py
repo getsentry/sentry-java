@@ -828,7 +828,6 @@ class SystemTestRunner:
         """Get list of all available test modules."""
         return [
             ModuleConfig("sentry-samples-spring", "false", "true", "false"),
-            ModuleConfig("sentry-samples-spring-7", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-4-otlp", "false", "true", "false"),
             ModuleConfig("sentry-samples-console", "false", "true", "false"),
             ModuleConfig("sentry-samples-console-otlp", "false", "true", "false"),
