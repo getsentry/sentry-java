@@ -1,4 +1,11 @@
-# Contributing to sentry-java
+<p align="center">
+  <a href="https://sentry.io" target="_blank" align="center">
+    <img src="https://sentry-brand.storage.googleapis.com/sentry-logo-black.png" width="280">
+  </a>
+  <br />
+</p>
+
+# Contributing
 
 Thanks for your interest in contributing to `sentry-java`! This guide explains how we work with external contributions and how to get your environment set up. If you have questions, reach out on [Discord](https://discord.com/invite/sentry).
 
