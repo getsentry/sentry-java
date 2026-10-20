@@ -180,6 +180,7 @@ testing {
         implementation(projects.sentryAsyncProfiler)
         implementation(projects.sentryGraphql22)
         implementation(projects.sentryJdbc)
+        implementation(projects.sentryKafka)
         implementation(projects.sentryLogback)
         implementation(projects.sentryOkhttp)
         implementation(projects.sentryOpenfeature)
@@ -200,6 +201,8 @@ testing {
         implementation(libs.springboot3.starter.test)
         implementation(libs.springboot3.starter.web)
         implementation(libs.springboot3.starter.webflux)
+        implementation(libs.spring.kafka3)
+        implementation(libs.spring.kafka3.test)
         runtimeOnly(libs.hsqldb)
       }
     }
