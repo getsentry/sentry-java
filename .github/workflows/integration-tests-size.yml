@@ -13,7 +13,7 @@ concurrency:
 jobs:
   build:
     name: Build and Analyze SDK Size
-    runs-on: ["bitrise_pool_name:tahoe"]
+    runs-on: ubuntu-latest
 
     env:
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
