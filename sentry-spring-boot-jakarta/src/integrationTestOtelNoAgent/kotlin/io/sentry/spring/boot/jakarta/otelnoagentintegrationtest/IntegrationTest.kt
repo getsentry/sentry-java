@@ -54,8 +54,7 @@ abstract class IntegrationTest {
   @LocalServerPort private var port = 0
 
   // The context's TestRestTemplate is instrumented by the OpenTelemetry starter, which would
-  // replace
-  // the trace headers tests send with its own, so tests use one built outside the context.
+  // replace the trace headers tests send with its own, so tests use one built outside the context.
   val restTemplate: TestRestTemplate by lazy {
     TestRestTemplate(RestTemplateBuilder().rootUri("http://localhost:$port"))
   }
