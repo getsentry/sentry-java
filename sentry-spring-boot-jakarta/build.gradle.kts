@@ -160,10 +160,17 @@ val otelAgentJar =
 dependencies {
   "agentFixtureImplementation"(platform(SpringBootPlugin.BOM_COORDINATES))
   "agentFixtureImplementation"(projects.sentrySpringBootStarterJakarta)
+  "agentFixtureImplementation"(projects.sentryAsyncProfiler)
+  "agentFixtureImplementation"(projects.sentryJdbc)
   "agentFixtureImplementation"(projects.sentryLogback)
   "agentFixtureImplementation"(kotlin(Config.kotlinStdLib))
+  // Reactor's automatic context propagation needs it to carry the Sentry scope across threads.
+  "agentFixtureImplementation"(libs.context.propagation)
   "agentFixtureImplementation"(libs.otel)
+  "agentFixtureImplementation"(libs.springboot3.starter.jdbc)
   "agentFixtureImplementation"(libs.springboot3.starter.web)
+  "agentFixtureImplementation"(libs.springboot3.starter.webflux)
+  "agentFixtureRuntimeOnly"(libs.hsqldb)
 
   otelAgentJar(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
 }
@@ -293,25 +300,48 @@ testing {
       }
     }
 
+    // Runs agentFixture's app with the agent initializing Sentry.
     register<JvmTestSuite>("integrationTestOtelAgent") {
       useJUnit()
       dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
         implementation(projects.sentryTestSupport)
         implementation(libs.kotlin.test.junit)
         implementation(libs.google.truth)
+        // For TestRestTemplate. Only the app's JVM runs the agent, so it doesn't trace the tests.
+        implementation(libs.springboot3.starter.test)
+        implementation(libs.springboot3.starter.web)
       }
-      targets.all {
-        testTask.configure {
-          jvmArgumentProviders.add(
-            objects.newInstance<ChildJvmTestArguments>().apply {
-              agentJar.from(otelAgentJar)
-              appClasspath.from(agentFixture.runtimeClasspath)
-            }
-          )
-        }
-      }
+      targets.all { testTask.configure { runAgentFixture(autoInit = true) } }
     }
   }
+}
+
+/**
+ * Has the OpenTelemetry agent tests start agentFixture's app in a child JVM, with the built agent
+ * attached. [autoInit] decides whether the agent initializes Sentry or, as with
+ * `SENTRY_AUTO_INIT=false`, the Spring Boot starter.
+ */
+fun Test.runAgentFixture(autoInit: Boolean) {
+  jvmArgumentProviders.add(
+    objects.newInstance<ChildJvmTestArguments>().apply {
+      agentJar.from(otelAgentJar)
+      appClasspath.from(agentFixture.runtimeClasspath)
+    }
+  )
+  systemProperty("sentry.test.agentAutoInit", autoInit)
+}
+
+// The same tests with the Spring Boot starter initializing Sentry. Each test JVM starts one app, so
+// this mode needs a task of its own, which Gradle runs in parallel with the suite's.
+tasks.register<Test>("integrationTestOtelAgentWithoutAutoInit") {
+  description = "Runs the OpenTelemetry agent tests with SENTRY_AUTO_INIT=false."
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  val sources = sourceSets["integrationTestOtelAgent"]
+  testClassesDirs = sources.output.classesDirs
+  classpath = sources.runtimeClasspath
+  useJUnit()
+  runAgentFixture(autoInit = false)
 }
 
 // The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example

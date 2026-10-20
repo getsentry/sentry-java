@@ -84,7 +84,8 @@ jobs:
             :sentry-spring-boot-jakarta:integrationTestWebflux \
             :sentry-spring-boot-jakarta:integrationTestOtelNoAgent \
             :sentry-spring-boot-jakarta:integrationTestLog4j2 \
-            :sentry-spring-boot-jakarta:integrationTestOtelAgent
+            :sentry-spring-boot-jakarta:integrationTestOtelAgent \
+            :sentry-spring-boot-jakarta:integrationTestOtelAgentWithoutAutoInit
 
       - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init true
         run: |
