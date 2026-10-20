@@ -40,8 +40,11 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
       args = listOf("--server.port=0") + args,
     )
 
+  // The agent instruments classes as they load, which on a busy CI runner has taken over a minute.
   val restTemplate =
-    TestRestTemplate(RestTemplateBuilder().rootUri("http://localhost:${app.awaitPort()}"))
+    TestRestTemplate(
+      RestTemplateBuilder().rootUri("http://localhost:${app.awaitPort(timeoutSeconds = 180)}")
+    )
 
   override fun close() {
     app.close()
