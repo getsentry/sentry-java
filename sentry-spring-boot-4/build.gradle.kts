@@ -227,9 +227,38 @@ testing {
         implementation(libs.springboot4.starter.web)
       }
     }
+
+    // The same for a reactive app: without the servlet stack, Spring Boot starts a WebFlux server.
+    register<JvmTestSuite>("integrationTestWebflux") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBoot4Starter)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql22)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        implementation(libs.context.propagation)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.caffeine)
+        implementation(libs.springboot4.resttestclient)
+        // For TestRestTemplate; it doesn't add the servlet stack.
+        implementation(libs.springboot4.starter.restclient)
+        implementation(libs.springboot4.starter.cache)
+        implementation(libs.springboot4.starter.graphql)
+        implementation(libs.springboot4.starter.test)
+        implementation(libs.springboot4.starter.webclient)
+        implementation(libs.springboot4.starter.webflux)
+      }
+    }
   }
 }
 
 // The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
 // to resolve `#id` in a cache key.
-tasks.named<KotlinCompile>("compileIntegrationTestKotlin") { compilerOptions.javaParameters = true }
+listOf("compileIntegrationTestKotlin", "compileIntegrationTestWebfluxKotlin").forEach {
+  tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }
+}
