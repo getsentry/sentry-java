@@ -153,6 +153,8 @@ tasks.register<Test>("systemTest").configure {
     if (!includeKafka) {
       excludeTestsMatching("io.sentry.systemtest.Kafka*")
     }
+    // The other tests moved into sentry-spring-boot, so without GraphQL and Kafka none are left.
+    isFailOnNoMatchingTests = includeGraphql || includeKafka
   }
 }
 
