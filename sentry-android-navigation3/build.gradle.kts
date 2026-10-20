@@ -62,6 +62,9 @@ dependencies {
   implementation(projects.sentry)
 
   compileOnly(libs.androidx.compose.runtime)
+  // Provides lifecycle types used to coordinate overlapping navigation roots. Hosts get it at
+  // runtime through Compose UI 1.7+ and navigation3-ui, both of which depend on it.
+  compileOnly(libs.androidx.lifecycle.runtime.compose)
 
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.test.core)
