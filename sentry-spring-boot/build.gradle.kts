@@ -177,14 +177,36 @@ testing {
         }
       }
     }
+
+    // The same for a reactive app: without the servlet stack, Spring Boot starts a WebFlux server.
+    register<JvmTestSuite>("integrationTestWebflux") {
+      useJUnit()
+      dependencies {
+        implementation(platform(libs.springboot2.bom))
+        implementation(projects.sentrySpringBootStarter)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryTestSupport)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.springboot.starter.test)
+        implementation(libs.springboot.starter.webflux)
+        if (bootSupportsGraphqlAndKafka) {
+          implementation(projects.sentryGraphql)
+          implementation(libs.springboot.starter.graphql)
+        }
+      }
+    }
   }
 }
 
 // The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
 // to resolve `#id` in a cache key.
-tasks.named<KotlinCompile>("compileIntegrationTestKotlin") {
-  compilerOptions.javaParameters = true
-  if (!bootSupportsGraphqlAndKafka) {
-    exclude("**/Graphql*", "**/Kafka*")
+listOf("compileIntegrationTestKotlin", "compileIntegrationTestWebfluxKotlin").forEach {
+  tasks.named<KotlinCompile>(it) {
+    compilerOptions.javaParameters = true
+    if (!bootSupportsGraphqlAndKafka) {
+      exclude("**/Graphql*", "**/Greeting*", "**/Kafka*")
+    }
   }
 }
