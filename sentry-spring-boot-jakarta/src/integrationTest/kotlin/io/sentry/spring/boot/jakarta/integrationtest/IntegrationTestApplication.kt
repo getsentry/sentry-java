@@ -2,8 +2,11 @@ package io.sentry.spring.boot.jakarta.integrationtest
 
 import io.sentry.Sentry
 import io.sentry.spring.jakarta.tracing.SentrySpan
+import okhttp3.OkHttpClient
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.context.annotation.Bean
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.GetMapping
@@ -12,11 +15,33 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.client.RestClient
+import org.springframework.web.client.RestTemplate
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 
 // Classes and methods are open because Spring proxies them and this module doesn't apply the
 // kotlin-spring plugin.
 
-@SpringBootApplication open class IntegrationTestApplication
+@SpringBootApplication
+open class IntegrationTestApplication {
+  // Built from Spring Boot's builders, which Sentry customizes to trace outgoing requests.
+  @Bean open fun restTemplate(builder: RestTemplateBuilder): RestTemplate = builder.build()
+
+  @Bean open fun restClient(builder: RestClient.Builder): RestClient = builder.build()
+
+  @Bean open fun webClient(builder: WebClient.Builder): WebClient = builder.build()
+
+  // Traced through sentry.clients.ok-http-enabled.
+  @Bean open fun okHttpClient(): OkHttpClient = OkHttpClient()
+}
+
+/**
+ * The URL of [path] on this app, which listens on a random port. Only works on a request thread,
+ * because it reads the address from the current request.
+ */
+fun selfUrl(path: String): String =
+  ServletUriComponentsBuilder.fromCurrentContextPath().path(path).toUriString()
 
 open class Person(var firstName: String? = null, var lastName: String? = null)
 
