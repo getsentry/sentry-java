@@ -131,6 +131,8 @@ public class AndroidContinuousProfiler
         logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
         return;
       }
+      // A stop only takes effect when the current chunk ends, so a start before then cancels it.
+      shouldStop = false;
       switch (profileLifecycle) {
         case TRACE:
           // rootSpanCounter should never be negative, unless the user changed profile lifecycle
