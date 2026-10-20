@@ -85,6 +85,7 @@ jobs:
         run: |
           ./gradlew \
             :sentry-spring-boot-jakarta:integrationTest \
+            :sentry-spring-boot-jakarta:integrationTestLog4j2 \
             :sentry-spring-boot-jakarta:integrationTestOtelAgent
 
       - name: Test sentry-samples-spring-boot-webflux-jakarta

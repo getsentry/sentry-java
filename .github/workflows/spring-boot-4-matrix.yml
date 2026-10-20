@@ -82,7 +82,7 @@ jobs:
             :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
       - name: Test sentry-spring-boot-4 integration suite
-        run: ./gradlew :sentry-spring-boot-4:integrationTest
+        run: ./gradlew :sentry-spring-boot-4:integrationTest :sentry-spring-boot-4:integrationTestLog4j2
 
       - name: Run sentry-samples-spring-boot-4-webflux
         run: |

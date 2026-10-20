@@ -168,6 +168,19 @@ dependencies {
   otelAgentJar(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
 }
 
+// Swaps Logback for Log4j2 where a classpath has both starters, which only
+// integrationTestLog4j2's has.
+dependencies {
+  modules {
+    module("org.springframework.boot:spring-boot-starter-logging") {
+      replacedBy(
+        "org.springframework.boot:spring-boot-starter-log4j2",
+        "Use Log4j2 instead of Logback",
+      )
+    }
+  }
+}
+
 testing {
   suites {
     // Runs a Spring Boot app in the test's JVM against MockSentryServer. It is a suite of its own
@@ -204,6 +217,23 @@ testing {
         implementation(libs.spring.kafka3)
         implementation(libs.spring.kafka3.test)
         runtimeOnly(libs.hsqldb)
+      }
+    }
+
+    // The servlet app with Log4j2 instead of Logback, so Sentry's auto-configuration attaches its
+    // Log4j2 appender.
+    register<JvmTestSuite>("integrationTestLog4j2") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBootStarterJakarta)
+        implementation(projects.sentryLog4j2)
+        implementation(projects.sentryTestSupport)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation("org.springframework.boot:spring-boot-starter-log4j2")
+        implementation(libs.springboot3.starter.test)
+        implementation(libs.springboot3.starter.web)
       }
     }
 
