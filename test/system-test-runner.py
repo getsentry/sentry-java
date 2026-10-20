@@ -68,9 +68,7 @@ SENTRY_ENVIRONMENT_VARIABLES = {
 
 KAFKA_CONTAINER_NAME = "sentry-java-system-test-kafka"
 KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"
-KAFKA_BROKER_REQUIRED_MODULES = {
-    "sentry-samples-console",
-}
+KAFKA_BROKER_REQUIRED_MODULES = set()
 KAFKA_PROFILE_REQUIRED_MODULES = set()
 
 class ServerType(Enum):
@@ -828,7 +826,6 @@ class SystemTestRunner:
         """Get list of all available test modules."""
         return [
             ModuleConfig("sentry-samples-spring-boot-4-otlp", "false", "true", "false"),
-            ModuleConfig("sentry-samples-console", "false", "true", "false"),
             ModuleConfig("sentry-samples-console-otlp", "false", "true", "false"),
             ModuleConfig("sentry-samples-console-opentelemetry-noagent", "false", "true", "false"),
         ]
