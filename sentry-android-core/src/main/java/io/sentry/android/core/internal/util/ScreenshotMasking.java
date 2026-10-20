@@ -10,6 +10,7 @@ import io.sentry.android.replay.util.MaskRenderer;
 import io.sentry.android.replay.util.ViewsKt;
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode;
 import io.sentry.util.ExceptionUtils;
+import io.sentry.util.LoadClass;
 import io.sentry.util.thread.IThreadChecker;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -20,14 +21,24 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Applies screenshot masking using the Session Replay view hierarchy approach. Requires the
- * `sentry-android-replay` module at runtime, callers must check for its availability first.
+ * `sentry-android-replay` module at runtime, callers must check {@link #isAvailable} first.
  */
 @ApiStatus.Internal
 public final class ScreenshotMasking {
 
   private static final long MASKING_TIMEOUT_MS = 2000;
 
+  // Checked instead of the masking classes, since it's the only replay class whose name is kept
+  // by the consumer proguard rules
+  private static final String REPLAY_INTEGRATION_CLASS_NAME =
+      "io.sentry.android.replay.ReplayIntegration";
+
   private ScreenshotMasking() {}
+
+  /** Whether the `sentry-android-replay` module, required for masking, is available at runtime. */
+  public static boolean isAvailable(final @NotNull ILogger logger) {
+    return new LoadClass().isClassAvailable(REPLAY_INTEGRATION_CLASS_NAME, logger);
+  }
 
   /**
    * Masks the given screenshot according to the screenshot options.

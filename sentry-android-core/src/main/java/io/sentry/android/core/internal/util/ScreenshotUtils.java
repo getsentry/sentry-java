@@ -14,9 +14,7 @@ import androidx.annotation.Nullable;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.BuildInfoProvider;
-import io.sentry.android.core.SentryAndroid;
 import io.sentry.android.core.SentryAndroidOptions;
-import io.sentry.util.LoadClass;
 import io.sentry.util.thread.IThreadChecker;
 import java.io.ByteArrayOutputStream;
 import java.util.concurrent.CountDownLatch;
@@ -66,10 +64,7 @@ public class ScreenshotUtils {
       final @NotNull Activity activity,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    final boolean isReplayAvailable =
-        new LoadClass()
-            .isClassAvailable(
-                SentryAndroid.SENTRY_REPLAY_INTEGRATION_CLASS_NAME, options.getLogger());
+    final boolean isReplayAvailable = ScreenshotMasking.isAvailable(options.getLogger());
     return compressBitmapToPng(
         captureMaskedScreenshot(activity, options, buildInfoProvider, isReplayAvailable),
         options.getLogger());

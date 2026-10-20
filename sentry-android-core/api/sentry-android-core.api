@@ -409,7 +409,6 @@ public final class io/sentry/android/core/ScreenshotEventProcessor : io/sentry/i
 }
 
 public final class io/sentry/android/core/SentryAndroid {
-	public static final field SENTRY_REPLAY_INTEGRATION_CLASS_NAME Ljava/lang/String;
 	public static fun init (Landroid/content/Context;)V
 	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;)V
 	public static fun init (Landroid/content/Context;Lio/sentry/ILogger;Lio/sentry/Sentry$OptionsConfiguration;)V
