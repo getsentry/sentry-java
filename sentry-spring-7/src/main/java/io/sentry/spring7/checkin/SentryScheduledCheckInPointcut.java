@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.aop.support.StaticMethodMatcherPointcut;
+import org.springframework.core.ReactiveAdapterRegistry;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ClassUtils;
 
@@ -17,7 +18,7 @@ import org.springframework.util.ClassUtils;
  * Matches {@code @Scheduled} methods without {@link SentryCheckIn}, except excluded ones. Excludes
  * match the task name ({@code ClassName.methodName}) exactly or as a regex.
  */
-@ApiStatus.Experimental
+@ApiStatus.Internal
 public final class SentryScheduledCheckInPointcut extends StaticMethodMatcherPointcut {
   private final @NotNull List<FilterString> excludedScheduledTasks = new ArrayList<>();
 
@@ -41,6 +42,12 @@ public final class SentryScheduledCheckInPointcut extends StaticMethodMatcherPoi
     final @NotNull Method specificMethod = AopUtils.getMostSpecificMethod(method, userClass);
     if (!SentryCheckInAdvice.isScheduled(specificMethod)
         || AnnotationUtils.findAnnotation(specificMethod, SentryCheckIn.class) != null) {
+      return false;
+    }
+    // Spring calls reactive and suspend methods once and subscribes to the result on each run
+    if (specificMethod.getParameterCount() > 0
+        || ReactiveAdapterRegistry.getSharedInstance().getAdapter(specificMethod.getReturnType())
+            != null) {
       return false;
     }
     final @NotNull String taskName =

@@ -241,10 +241,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       scopes
           .getOptions()
           .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Could not derive a monitor config from @Scheduled for method annotated with @SentryCheckIn.",
-              e);
+          .log(SentryLevel.WARNING, "Could not derive a monitor config from @Scheduled.", e);
       return null;
     }
   }
@@ -275,7 +272,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
           .getLogger()
           .log(
               SentryLevel.DEBUG,
-              "Not sending a monitor config for @SentryCheckIn because the @Scheduled period '%s' could not be parsed.",
+              "Not sending a monitor config because the @Scheduled period '%s' could not be parsed.",
               trimmed);
     }
     return millis;

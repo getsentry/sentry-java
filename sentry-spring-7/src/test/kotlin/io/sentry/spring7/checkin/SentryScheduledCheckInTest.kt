@@ -38,6 +38,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import org.springframework.test.context.junit4.SpringRunner
+import reactor.core.publisher.Mono
 
 @RunWith(SpringRunner::class)
 @SpringJUnitConfig(SentryScheduledCheckInTest.Config::class)
@@ -103,6 +104,12 @@ class SentryScheduledCheckInTest {
   @Test
   fun `methods without @Scheduled are not monitored`() {
     jobs.notScheduled()
+    verify(scopes, never()).captureCheckIn(any())
+  }
+
+  @Test
+  fun `reactive methods are not monitored`() {
+    jobs.reactive().block()
     verify(scopes, never()).captureCheckIn(any())
   }
 
@@ -226,6 +233,8 @@ class SentryScheduledCheckInTest {
     @Scheduled(cron = "0 0 2 * * *") open fun excluded() {}
 
     open fun notScheduled() {}
+
+    @Scheduled(cron = "0 0 2 * * *") open fun reactive(): Mono<Void> = Mono.empty()
   }
 
   open class ExcludedJobs {
