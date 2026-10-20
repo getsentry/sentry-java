@@ -20,9 +20,8 @@ import org.springframework.test.context.junit4.SpringRunner
  * they produce.
  */
 @RunWith(SpringRunner::class)
-// A KRaft broker in this JVM, so no Docker is needed. It belongs to the context, so it starts
-// before
-// the app's Kafka listener connects and stops after it.
+// An in-JVM KRaft broker, so no Docker is needed. As part of the context, it starts before the
+// app's Kafka listener connects and stops after it.
 @EmbeddedKafka(topics = [KAFKA_TOPIC], bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 @SpringBootTest(
   classes = [IntegrationTestApplication::class],
