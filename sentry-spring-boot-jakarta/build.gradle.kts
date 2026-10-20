@@ -181,6 +181,7 @@ testing {
         implementation(projects.sentryJdbc)
         implementation(projects.sentryLogback)
         implementation(projects.sentryOkhttp)
+        implementation(projects.sentryOpenfeature)
         implementation(projects.sentryTestSupport)
         // Reactor's automatic context propagation needs it to carry the Sentry scope across
         // threads.
@@ -188,8 +189,11 @@ testing {
         implementation(libs.context.propagation)
         implementation(libs.kotlin.test.junit)
         implementation(libs.google.truth)
+        implementation(libs.caffeine)
         implementation(libs.okhttp)
+        implementation(libs.openfeature)
         implementation(libs.springboot3.starter.aop)
+        implementation(libs.springboot3.starter.cache)
         implementation(libs.springboot3.starter.jdbc)
         implementation(libs.springboot3.starter.test)
         implementation(libs.springboot3.starter.web)
@@ -218,3 +222,7 @@ testing {
     }
   }
 }
+
+// The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
+// to resolve `#id` in a cache key.
+tasks.named<KotlinCompile>("compileIntegrationTestKotlin") { compilerOptions.javaParameters = true }
