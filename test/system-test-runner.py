@@ -74,14 +74,12 @@ KAFKA_BROKER_REQUIRED_MODULES = {
     "sentry-samples-spring-boot-opentelemetry-noagent",
     "sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples-spring-boot-4-opentelemetry",
-    "sentry-samples-spring-boot-4-opentelemetry-noagent",
 }
 KAFKA_PROFILE_REQUIRED_MODULES = {
     "sentry-samples-spring-boot-opentelemetry",
     "sentry-samples-spring-boot-opentelemetry-noagent",
     "sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples-spring-boot-4-opentelemetry",
-    "sentry-samples-spring-boot-4-opentelemetry-noagent",
 }
 
 class ServerType(Enum):
@@ -846,7 +844,6 @@ class SystemTestRunner:
             ModuleConfig("sentry-samples-spring-boot-opentelemetry", "true", "false", "false"),
             ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-jakarta-opentelemetry", "true", "false", "false"),
-            ModuleConfig("sentry-samples-spring-boot-4-opentelemetry-noagent", "false", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-4-opentelemetry", "true", "true", "false"),
             ModuleConfig("sentry-samples-spring-boot-4-opentelemetry", "true", "false", "false"),
             ModuleConfig("sentry-samples-spring-boot-4-otlp", "false", "true", "false"),
