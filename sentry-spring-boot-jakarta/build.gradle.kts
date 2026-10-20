@@ -260,6 +260,39 @@ testing {
       }
     }
 
+    // The same with Sentry tracing through the OpenTelemetry SDK in the app's JVM instead of the
+    // agent.
+    register<JvmTestSuite>("integrationTestOtelNoAgent") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBootStarterJakarta)
+        implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql22)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryKafka)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        implementation(libs.context.propagation)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.caffeine)
+        implementation(libs.springboot3.starter.aop)
+        implementation(libs.springboot3.starter.cache)
+        implementation(libs.springboot3.starter.graphql)
+        implementation(libs.springboot3.starter.jdbc)
+        implementation(libs.springboot3.starter.test)
+        implementation(libs.springboot3.starter.web)
+        implementation(libs.springboot3.starter.webflux)
+        implementation(libs.spring.kafka3)
+        implementation(libs.spring.kafka3.test)
+        runtimeOnly(libs.hsqldb)
+      }
+    }
+
     register<JvmTestSuite>("integrationTestOtelAgent") {
       useJUnit()
       dependencies {
@@ -283,6 +316,11 @@ testing {
 
 // The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
 // to resolve `#id` in a cache key.
-listOf("compileIntegrationTestKotlin", "compileIntegrationTestWebfluxKotlin").forEach {
-  tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }
-}
+listOf(
+    "compileIntegrationTestKotlin",
+    "compileIntegrationTestWebfluxKotlin",
+    "compileIntegrationTestOtelNoAgentKotlin",
+  )
+  .forEach {
+    tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }
+  }
