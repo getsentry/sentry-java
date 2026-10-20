@@ -827,7 +827,6 @@ class SystemTestRunner:
         return [
             ModuleConfig("sentry-samples-spring-boot-4-otlp", "false", "true", "false"),
             ModuleConfig("sentry-samples-console-otlp", "false", "true", "false"),
-            ModuleConfig("sentry-samples-console-opentelemetry-noagent", "false", "true", "false"),
         ]
 
     def _find_module_number(self, module_name: str, agent: str, auto_init: str) -> int:
