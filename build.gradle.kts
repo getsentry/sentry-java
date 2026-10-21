@@ -29,6 +29,10 @@ plugins {
     alias(libs.plugins.sentry) apply false
 }
 
+check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
+    "This build requires JDK 21 or newer, but runs on JDK ${JavaVersion.current()}."
+}
+
 buildscript {
     repositories {
         google()
@@ -111,6 +115,7 @@ allprojects {
 
 subprojects {
     apply { plugin("io.sentry.spotless") }
+    apply { plugin("io.sentry.jdk-target") }
 
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
@@ -162,28 +167,6 @@ subprojects {
 
             configure<JavaPluginExtension> {
                 withJavadocJar()
-
-                sourceCompatibility = JavaVersion.VERSION_1_8
-                targetCompatibility = JavaVersion.VERSION_1_8
-            }
-        }
-
-        // AGP 9 defaults Android modules to Java 11. Pin the published library modules back
-        // to Java 8 so their bytecode stays consumable by Java 8 projects, mirroring the
-        // java-library pin above.
-        plugins.withId("com.android.library") {
-            configure<com.android.build.gradle.BaseExtension> {
-                compileOptions {
-                    sourceCompatibility = JavaVersion.VERSION_1_8
-                    targetCompatibility = JavaVersion.VERSION_1_8
-                }
-
-                // AGP 9 defaults the AAR metadata minCompileSdk to the library's compileSdk,
-                // which would force every consumer onto that compile SDK. Pin it to our minSdk
-                // so consumers remain free to compile against any SDK we support, as before.
-                defaultConfig {
-                    aarMetadata { minCompileSdk = libs.versions.minSdk.get().toInt() }
-                }
             }
         }
 
