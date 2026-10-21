@@ -11,6 +11,8 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 /** The JDK every module compiles and tests with, whatever JDK runs Gradle. */
@@ -87,21 +89,28 @@ class JdkTargetConvention : Plugin<Project> {
    */
   private fun Project.targetBuildJdkForUnitTests() {
     plugins.withId("org.jetbrains.kotlin.android") {
+      extensions.getByType(KotlinAndroidProjectExtension::class.java).target.targetBuildJdk()
+    }
+    plugins.withId("org.jetbrains.kotlin.multiplatform") {
       extensions
-        .getByType(KotlinAndroidProjectExtension::class.java)
-        .target
-        .compilations
-        .configureEach {
-          if (name.endsWith("UnitTest")) {
-            compileTaskProvider.configure {
-              compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
-            }
-            compileJavaTaskProvider?.configure {
-              sourceCompatibility = BUILD_JDK.toString()
-              targetCompatibility = BUILD_JDK.toString()
-            }
-          }
+        .getByType(KotlinMultiplatformExtension::class.java)
+        .targets
+        .withType(KotlinAndroidTarget::class.java)
+        .configureEach { targetBuildJdk() }
+    }
+  }
+
+  private fun KotlinAndroidTarget.targetBuildJdk() {
+    compilations.configureEach {
+      if (name.endsWith("UnitTest")) {
+        compileTaskProvider.configure {
+          compilerOptions.jvmTarget.set(JvmTarget.fromTarget(BUILD_JDK.toString()))
         }
+        compileJavaTaskProvider?.configure {
+          sourceCompatibility = BUILD_JDK.toString()
+          targetCompatibility = BUILD_JDK.toString()
+        }
+      }
     }
   }
 }
