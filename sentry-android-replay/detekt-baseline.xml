@@ -158,6 +158,7 @@
     <ID>TooManyFunctions:WindowRecorder.kt$WindowRecorder : RecorderOnRootViewsChangedListenerExecutorProvider</ID>
     <ID>UnusedPrivateProperty:DebugOverlayDrawable.kt$DebugOverlayDrawable$private val padding = 6f</ID>
     <ID>UseCheckOrError:ReplayShadowMediaCodec.kt$ReplayShadowMediaCodec$throw IllegalStateException("Simulated codec start failure")</ID>
+    <ID>UtilityClassWithPublicConstructor:CanvasStrategyTest.kt$DeferredSurfacePixelCopyShadow</ID>
     <ID>UtilityClassWithPublicConstructor:PixelCopyStrategyTest.kt$DeferredWindowPixelCopyShadow</ID>
   </CurrentIssues>
 </SmellBaseline>
