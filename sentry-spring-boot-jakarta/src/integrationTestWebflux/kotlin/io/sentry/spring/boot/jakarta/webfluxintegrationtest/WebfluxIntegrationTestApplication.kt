@@ -3,6 +3,7 @@ package io.sentry.spring.boot.jakarta.webfluxintegrationtest
 import io.sentry.Sentry
 import java.time.Duration
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.graphql.data.method.annotation.Argument
 import org.springframework.graphql.data.method.annotation.QueryMapping
@@ -23,6 +24,7 @@ import reactor.core.scheduler.Schedulers
 // kotlin-spring plugin.
 
 @SpringBootApplication
+@EnableCaching
 open class WebfluxIntegrationTestApplication {
   // Built from Spring Boot's builder, which Sentry customizes to trace outgoing requests.
   @Bean open fun webClient(builder: WebClient.Builder): WebClient = builder.build()
