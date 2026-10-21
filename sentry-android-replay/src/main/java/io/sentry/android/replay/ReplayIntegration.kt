@@ -59,7 +59,7 @@ import java.io.Closeable
 import java.io.File
 import java.util.Date
 import java.util.LinkedList
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
@@ -141,7 +141,7 @@ public class ReplayIntegration(
   private val state = AtomicReference(ReplayState())
   // Replays recorded by this process. Their folders hold segment videos the transport may still
   // read after the replay stopped, so the startup cleanup of previous replays must keep them.
-  private val replayIdsOfThisProcess: MutableSet<String> = ConcurrentHashMap.newKeySet()
+  private val replayIdsOfThisProcess = CopyOnWriteArraySet<String>()
 
   override fun register(scopes: IScopes, options: SentryOptions) {
     this.options = options
