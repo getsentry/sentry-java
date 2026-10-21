@@ -244,7 +244,7 @@ internal class NavScopes(
 
     attachedLifecycle = lifecycle
 
-    coordinator.registerCandidate(
+    coordinator.registry.register(
       owner = owner,
       lifecycleState = lifecycle.currentState,
       onPublishData = stagedNavData::publishTo,
@@ -256,7 +256,7 @@ internal class NavScopes(
 
   override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
     when (event) {
-      ON_START -> coordinator.startCandidate(owner)
+      ON_START -> coordinator.registry.find(owner)?.start()
       ON_RESUME -> withScopeOrNull { coordinator.resumeCandidate(owner, it) }
       ON_PAUSE -> withScopeOrNull { coordinator.pauseCandidate(owner, it) }
       ON_STOP -> withScopeOrNull { coordinator.stopCandidate(owner, it) }

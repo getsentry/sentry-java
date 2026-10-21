@@ -156,7 +156,7 @@ class NavScopeTest {
 
     fixture.navScope.unbindTransaction(transaction)
 
-    assertThat(fixture.coordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(fixture.coordinator.registry.retainsTransaction(transaction)).isFalse()
   }
 
   @Test
@@ -168,7 +168,7 @@ class NavScopeTest {
 
     fixture.navScope.unbindTransaction(transaction)
 
-    assertThat(fixture.coordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(fixture.coordinator.registry.retainsTransaction(transaction)).isFalse()
   }
 
   @Test
@@ -209,7 +209,7 @@ class NavScopeTest {
     val fixture = Fixture.create()
     val other = Any()
     val otherTransaction = mock<ITransaction>()
-    fixture.coordinator.registerCandidate(other, Lifecycle.State.RESUMED, {}, {})
+    fixture.coordinator.registry.register(other, Lifecycle.State.RESUMED, {}, {})
     fixture.coordinator.onBackStackUpdate(other, fixture.realScope)
     fixture.coordinator.retainTransaction(other, otherTransaction, fixture.realScope)
     fixture.realScope.transaction = otherTransaction
@@ -253,13 +253,13 @@ class NavScopeTest {
     /** Retains [transaction] as the owner's nav transaction; the owner must hold the nav lease. */
     fun retainTransaction(transaction: ITransaction) {
       coordinator.retainTransaction(owner, transaction, realScope)
-      check(coordinator.isNavTransaction(transaction))
+      check(coordinator.registry.retainsTransaction(transaction))
     }
 
     /** Lets another resumed owner take the nav lease from the owner. */
     fun giveLeaseToAnotherOwner() {
       val other = Any()
-      coordinator.registerCandidate(other, Lifecycle.State.RESUMED, {}, {})
+      coordinator.registry.register(other, Lifecycle.State.RESUMED, {}, {})
       coordinator.onBackStackUpdate(other, realScope)
       check(!coordinator.hasLease(owner))
     }
@@ -271,7 +271,7 @@ class NavScopeTest {
         val stagedNavData = StagedNavData()
         val coordinator = NavLeaseCoordinator()
         val owner = Any()
-        coordinator.registerCandidate(
+        coordinator.registry.register(
           owner,
           Lifecycle.State.RESUMED,
           stagedNavData::publishTo,

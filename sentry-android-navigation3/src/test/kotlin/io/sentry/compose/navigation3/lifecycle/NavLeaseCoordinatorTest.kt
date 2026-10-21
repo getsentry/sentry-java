@@ -42,35 +42,6 @@ class NavLeaseCoordinatorTest {
   }
 
   @Test
-  fun `registering the same owner twice preserves its first publication callback`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    fixture.register(owner, Lifecycle.State.CREATED)
-
-    navLeaseCoordinator.registerCandidate(
-      owner,
-      Lifecycle.State.RESUMED,
-      { fixture.published += "duplicate" },
-      { fixture.cleared += "duplicate" },
-    )
-    navLeaseCoordinator.onBackStackUpdate(owner, fixture.scope)
-
-    assertThat(fixture.published).containsExactly(owner)
-  }
-
-  @Test
-  fun `registering a destroyed owner does not make it eligible for the nav lease`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-
-    fixture.register(owner, Lifecycle.State.DESTROYED)
-    navLeaseCoordinator.onBackStackUpdate(owner, fixture.scope)
-
-    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
-    assertThat(fixture.published).isEmpty()
-  }
-
-  @Test
   fun `equal but distinct owners do not share the nav lease`() {
     val fixture = Fixture.create()
     val navLeaseCoordinator = fixture.navLeaseCoordinator
@@ -90,7 +61,7 @@ class NavLeaseCoordinatorTest {
     val navLeaseCoordinator = fixture.navLeaseCoordinator
     fixture.register(owner, Lifecycle.State.CREATED)
 
-    navLeaseCoordinator.startCandidate(owner)
+    navLeaseCoordinator.registry.find(owner)?.start()
     navLeaseCoordinator.onBackStackUpdate(owner, fixture.scope)
 
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
@@ -104,7 +75,7 @@ class NavLeaseCoordinatorTest {
     navLeaseCoordinator.stopCandidate(owner, fixture.scope)
     fixture.acquireLease(incumbent)
 
-    navLeaseCoordinator.startCandidate(owner)
+    navLeaseCoordinator.registry.find(owner)?.start()
     navLeaseCoordinator.onBackStackUpdate(owner, fixture.scope)
 
     assertThat(navLeaseCoordinator.hasLease(incumbent)).isTrue()
@@ -218,14 +189,14 @@ class NavLeaseCoordinatorTest {
     val fixture = Fixture.create()
     val navLeaseCoordinator = fixture.navLeaseCoordinator
     val calls = mutableListOf<String>()
-    navLeaseCoordinator.registerCandidate(
+    navLeaseCoordinator.registry.register(
       previous,
       Lifecycle.State.RESUMED,
       onPublishData = { calls += "publish previous" },
       onClearPublishedData = { calls += "clear previous" },
     )
     navLeaseCoordinator.onBackStackUpdate(previous, fixture.scope)
-    navLeaseCoordinator.registerCandidate(
+    navLeaseCoordinator.registry.register(
       incoming,
       Lifecycle.State.RESUMED,
       onPublishData = { calls += "publish incoming" },
@@ -342,7 +313,7 @@ class NavLeaseCoordinatorTest {
     val secondOwner = incoming
     val thirdOwner = owner
     fixture.acquireLease(firstOwner)
-    navLeaseCoordinator.registerCandidate(
+    navLeaseCoordinator.registry.register(
       secondOwner,
       Lifecycle.State.RESUMED,
       onPublishData = { throw failure },
@@ -580,7 +551,7 @@ class NavLeaseCoordinatorTest {
     navLeaseCoordinator.pauseCandidate(owner, fixture.scope)
     navLeaseCoordinator.stopCandidate(owner, fixture.scope)
 
-    navLeaseCoordinator.startCandidate(owner)
+    navLeaseCoordinator.registry.find(owner)?.start()
 
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
     assertThat(fixture.published).containsExactly(owner)
@@ -682,7 +653,7 @@ class NavLeaseCoordinatorTest {
     navLeaseCoordinator.unregisterCandidate(incoming, fixture.scope)
 
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
     assertThat(fixture.scope.transaction).isNull()
 
     navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
@@ -730,7 +701,7 @@ class NavLeaseCoordinatorTest {
 
     assertThat(fixture.scope.transaction).isNull()
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
   }
 
   @Test
@@ -745,7 +716,7 @@ class NavLeaseCoordinatorTest {
 
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
     assertThat(fixture.scope.transaction).isNull()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
     verify(transaction, never()).finish(any())
   }
 
@@ -761,7 +732,7 @@ class NavLeaseCoordinatorTest {
 
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
     assertThat(fixture.scope.transaction).isNull()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
     verify(transaction, never()).finish(any())
   }
 
@@ -772,12 +743,12 @@ class NavLeaseCoordinatorTest {
     fixture.acquireLease(owner, transaction = transaction)
     fixture.acquireLease(incoming, state = Lifecycle.State.RESUMED)
 
-    navLeaseCoordinator.releaseTransaction(owner, transaction)
+    navLeaseCoordinator.registry.find(owner)?.releaseTransaction(transaction)
     navLeaseCoordinator.pauseCandidate(incoming, fixture.scope)
 
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
     assertThat(fixture.scope.transaction).isNull()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
   }
 
   @Test
@@ -787,7 +758,7 @@ class NavLeaseCoordinatorTest {
     fixture.acquireLease(owner, transaction = transaction)
     fixture.acquireLease(incoming, state = Lifecycle.State.RESUMED)
 
-    navLeaseCoordinator.releaseTransaction(owner, unrelatedTransaction)
+    navLeaseCoordinator.registry.find(owner)?.releaseTransaction(unrelatedTransaction)
     navLeaseCoordinator.pauseCandidate(incoming, fixture.scope)
 
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
@@ -801,12 +772,12 @@ class NavLeaseCoordinatorTest {
     fixture.acquireLease(owner, transaction = transaction)
     fixture.acquireLease(incoming, state = Lifecycle.State.RESUMED)
 
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isTrue()
-    assertThat(navLeaseCoordinator.isNavTransaction(unrelatedTransaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isTrue()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(unrelatedTransaction)).isFalse()
 
     navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
 
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
   }
 
   @Test
@@ -814,7 +785,7 @@ class NavLeaseCoordinatorTest {
     val fixture = Fixture.create()
     val navLeaseCoordinator = fixture.navLeaseCoordinator
     val transactionAtPublication = mutableListOf<ITransaction?>()
-    navLeaseCoordinator.registerCandidate(
+    navLeaseCoordinator.registry.register(
       owner,
       Lifecycle.State.RESUMED,
       onPublishData = { transactionAtPublication += it.transaction },
@@ -855,7 +826,7 @@ class NavLeaseCoordinatorTest {
     navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
 
     verify(transaction, never()).finish(any())
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
     assertThat(fixture.scope.transaction).isNull()
   }
 
@@ -869,7 +840,7 @@ class NavLeaseCoordinatorTest {
     navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
 
     verify(transaction, never()).finish(any())
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
     assertThat(fixture.scope.transaction).isNull()
   }
 
@@ -965,7 +936,7 @@ class NavLeaseCoordinatorTest {
 
     assertThat(thrown).isSameInstanceAs(failure)
     assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
 
     fixture.published.clear()
     navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
@@ -991,7 +962,7 @@ class NavLeaseCoordinatorTest {
 
     assertThat(thrown).isSameInstanceAs(failure)
     assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
 
     fixture.published.clear()
     navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
@@ -1041,7 +1012,7 @@ class NavLeaseCoordinatorTest {
 
     assertThat(thrown).isSameInstanceAs(failure)
     assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isTrue()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isTrue()
 
     fixture.published.clear()
     fixture.cleared.clear()
@@ -1058,7 +1029,7 @@ class NavLeaseCoordinatorTest {
     val navLeaseCoordinator = fixture.navLeaseCoordinator
     val failure = IllegalStateException("fallback publication failed")
     var failPublication = false
-    navLeaseCoordinator.registerCandidate(
+    navLeaseCoordinator.registry.register(
       previous,
       Lifecycle.State.RESUMED,
       onPublishData = {
@@ -1080,7 +1051,7 @@ class NavLeaseCoordinatorTest {
     assertThat(thrown).isSameInstanceAs(failure)
     assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
     assertThat(navLeaseCoordinator.hasLease(previous)).isTrue()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navLeaseCoordinator.registry.retainsTransaction(transaction)).isFalse()
 
     fixture.published.clear()
     navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
@@ -1105,7 +1076,7 @@ class NavLeaseCoordinatorTest {
       state: Lifecycle.State,
       onClearPublishedData: (IScope) -> Unit = { cleared += owner },
     ) {
-      navLeaseCoordinator.registerCandidate(
+      navLeaseCoordinator.registry.register(
         owner,
         state,
         onPublishData = { published += owner },

@@ -57,7 +57,7 @@ internal class NavScope(
   override val transaction: ITransaction?
     get() =
       delegate.transaction?.takeUnless { current ->
-        !hasLease && coordinator.isNavTransaction(current)
+        !hasLease && coordinator.registry.retainsTransaction(current)
       }
 
   override fun bindTransaction(transaction: ITransaction) {
@@ -81,7 +81,7 @@ internal class NavScope(
         delegate.clearTransaction()
       }
     }
-    coordinator.releaseTransaction(owner, transaction)
+    coordinator.registry.find(owner)?.releaseTransaction(transaction)
   }
 
   override fun clearFinishedTransaction() {

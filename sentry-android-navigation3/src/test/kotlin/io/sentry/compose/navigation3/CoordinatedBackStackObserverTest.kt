@@ -146,7 +146,7 @@ class CoordinatedBackStackObserverTest {
     /** Registers another owner that takes the nav lease and then pauses, keeping the lease. */
     fun givenPausedLeaseholder() {
       val other = Any()
-      coordinator.registerCandidate(other, Lifecycle.State.RESUMED, {}, {})
+      coordinator.registry.register(other, Lifecycle.State.RESUMED, {}, {})
       coordinator.onBackStackUpdate(other, scope)
       coordinator.pauseCandidate(other, scope)
       check(coordinator.hasLease(other))
