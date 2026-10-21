@@ -35,8 +35,6 @@ class ImmediateExecutorService : ISentryExecutorService {
   override fun close(timeoutMillis: Long) {}
 
   override fun isClosed(): Boolean = false
-
-  override fun prewarm() = Unit
 }
 
 class DeferredExecutorService : ISentryExecutorService {
@@ -74,24 +72,23 @@ class DeferredExecutorService : ISentryExecutorService {
 
   override fun isClosed(): Boolean = false
 
-  override fun prewarm() = Unit
-
   fun hasScheduledRunnables(): Boolean = scheduledRunnables.isNotEmpty()
 }
 
 class NonOverridableNoOpSentryExecutorService : ISentryExecutorService {
-  override fun submit(runnable: Runnable): Future<*> = FutureTask<Void> { null }
+  // mirrors NoOpSentryExecutorService: a task that is never run is reported as cancelled, so
+  // callers can tell it apart from a queued one
+  private fun <T> cancelledFuture(): FutureTask<T> = FutureTask<T> { null }.apply { cancel(false) }
 
-  override fun <T> submit(callable: Callable<T>): Future<T> = FutureTask<T> { null }
+  override fun submit(runnable: Runnable): Future<*> = cancelledFuture<Void>()
 
-  override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> =
-    FutureTask<Void> { null }
+  override fun <T> submit(callable: Callable<T>): Future<T> = cancelledFuture()
+
+  override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> = cancelledFuture<Void>()
 
   override fun close(timeoutMillis: Long) {}
 
   override fun isClosed(): Boolean = false
-
-  override fun prewarm() = Unit
 }
 
 fun createSentryClientMock(enabled: Boolean = true) =

@@ -1,11 +1,69 @@
 package io.sentry.util.network
 
+import io.sentry.ILogger
 import java.util.LinkedHashMap
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.Test
+import org.mockito.kotlin.mock
 
 class NetworkDetailCaptureUtilsTest {
+
+  @Test
+  fun `createResponse uses originalByteCount when bodySize is unknown`() {
+    val logger = mock<ILogger>()
+    val jsonBytes = """{"key":"value"}""".toByteArray()
+
+    val result =
+      NetworkDetailCaptureUtils.createResponse(
+        jsonBytes,
+        -1L,
+        true,
+        { bytes ->
+          NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
+        },
+        emptyList(),
+        { emptyMap() },
+      )
+
+    assertEquals(jsonBytes.size.toLong(), result.size)
+  }
+
+  @Test
+  fun `createResponse keeps explicit bodySize when available`() {
+    val logger = mock<ILogger>()
+    val jsonBytes = """{"key":"value"}""".toByteArray()
+
+    val result =
+      NetworkDetailCaptureUtils.createResponse(
+        jsonBytes,
+        42L,
+        true,
+        { bytes ->
+          NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
+        },
+        emptyList(),
+        { emptyMap() },
+      )
+
+    assertEquals(42L, result.size)
+  }
+
+  @Test
+  fun `createResponse keeps null bodySize when body capture is off`() {
+    val result =
+      NetworkDetailCaptureUtils.createResponse(
+        "unused",
+        null,
+        false,
+        { null },
+        emptyList(),
+        { emptyMap() },
+      )
+
+    assertNull(result.size)
+  }
 
   @Test
   fun `getCaptureHeaders should match headers case-insensitively`() {

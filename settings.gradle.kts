@@ -1,15 +1,25 @@
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
+  repositories {
+    // Prefer local SAGP artifact if one exists; otherwise fall back to libs.versions.toml.
+    if (providers.gradleProperty("useSagp").isPresent) {
+      mavenLocal {
+        content {
+          includeGroup("io.sentry")
+          includeGroup("io.sentry.android.gradle")
+        }
+      }
     }
+    mavenCentral()
+    gradlePluginPortal()
+    google()
+  }
 }
 
 plugins {
-    id("com.gradle.develocity") version "4.4.2"
-    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.6.0"
+    id("com.gradle.develocity") version "4.5.0"
+    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.8.0"
 }
 
 develocity {
@@ -41,12 +51,14 @@ include(
     "sentry-android-timber",
     "sentry-android-fragment",
     "sentry-android-navigation",
+    "sentry-android-navigation3",
     "sentry-android-sqlite",
     "sentry-android-replay",
     "sentry-compose",
     "sentry-apollo",
     "sentry-apollo-3",
     "sentry-apollo-4",
+    "sentry-apollo-5",
     "sentry-system-test-support",
     "sentry-test-support",
     "sentry-log4j2",
@@ -75,6 +87,7 @@ include(
     "sentry-opentelemetry:sentry-opentelemetry-core",
     "sentry-opentelemetry:sentry-opentelemetry-agentcustomization",
     "sentry-opentelemetry:sentry-opentelemetry-agent",
+    "sentry-opentelemetry:sentry-opentelemetry-bom",
     "sentry-opentelemetry:sentry-opentelemetry-agentless",
     "sentry-opentelemetry:sentry-opentelemetry-agentless-spring",
     "sentry-opentelemetry:sentry-opentelemetry-otlp",
@@ -104,21 +117,21 @@ include(
     "sentry-samples:sentry-samples-spring-boot-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-jakarta",
+    "sentry-samples:sentry-samples-spring-boot-jakarta-log4j2",
     "sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-webflux",
     "sentry-samples:sentry-samples-spring-boot-webflux-jakarta",
     "sentry-samples:sentry-samples-spring-boot-4",
+    "sentry-samples:sentry-samples-spring-boot-4-log4j2",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-4-otlp",
     "sentry-samples:sentry-samples-spring-boot-4-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
     "sentry-android-integration-tests:sentry-uitest-android-critical",
-    "sentry-android-integration-tests:sentry-uitest-android-benchmark",
+    "sentry-android-integration-tests:sentry-uitest-android-macrobenchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
-    "sentry-android-integration-tests:test-app-plain",
-    "sentry-android-integration-tests:test-app-sentry",
     "sentry-android-integration-tests:test-app-size",
     "sentry-samples:sentry-samples-openfeign"
 )

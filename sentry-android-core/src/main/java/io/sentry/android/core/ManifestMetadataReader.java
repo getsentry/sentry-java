@@ -3,8 +3,11 @@ package io.sentry.android.core;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
+import io.sentry.DataCollection;
+import io.sentry.HttpBodyType;
 import io.sentry.ILogger;
 import io.sentry.InitPriority;
+import io.sentry.KeyValueCollectionBehavior;
 import io.sentry.ProfileLifecycle;
 import io.sentry.ScreenshotStrategyType;
 import io.sentry.SentryFeedbackOptions;
@@ -16,14 +19,20 @@ import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Class responsible for reading values from manifest and setting them to the options */
 final class ManifestMetadataReader {
+
+  // Populated by the Sentry Android Gradle plugin from the merged manifest at build time.
+  static @Nullable Map<String, Object> manifestMetadata;
 
   static final String DSN = "io.sentry.dsn";
   static final String DEBUG = "io.sentry.debug";
@@ -35,8 +44,19 @@ final class ManifestMetadataReader {
   static final String ANR_ATTACH_THREAD_DUMPS = "io.sentry.anr.attach-thread-dumps";
   static final String ANR_REPORT_HISTORICAL = "io.sentry.anr.report-historical";
 
+  static final String NDK_APP_HANG_TRACKING_ENABLE = "io.sentry.ndk.app-hang.enable";
+
+  static final String NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS =
+      "io.sentry.ndk.app-hang.timeout-interval-millis";
+
   static final String TOMBSTONE_ENABLE = "io.sentry.tombstone.enable";
   static final String TOMBSTONE_ATTACH_RAW = "io.sentry.tombstone.attach-raw";
+  static final String TOMBSTONE_REPORT_HISTORICAL = "io.sentry.tombstone.report-historical";
+  static final String TOMBSTONE_MERGE_TIME_THRESHOLD_MILLIS =
+      "io.sentry.tombstone.merge-time-threshold-millis";
+  static final String MEMORY_LIMITER_ENABLE = "io.sentry.memory-limiter.enable";
+  static final String MEMORY_LIMITER_REPORT_HISTORICAL =
+      "io.sentry.memory-limiter.report-historical";
 
   static final String AUTO_INIT = "io.sentry.auto-init";
   static final String NDK_ENABLE = "io.sentry.ndk.enable";
@@ -96,6 +116,23 @@ final class ManifestMetadataReader {
 
   static final String SEND_DEFAULT_PII = "io.sentry.send-default-pii";
 
+  static final String DATA_COLLECTION_USER_INFO = "io.sentry.data-collection.user-info";
+  static final String DATA_COLLECTION_HTTP_BODIES = "io.sentry.data-collection.http-bodies";
+  static final String DATA_COLLECTION_COOKIES = "io.sentry.data-collection.cookies";
+  static final String DATA_COLLECTION_HTTP_REQUEST_HEADERS =
+      "io.sentry.data-collection.http-headers.request";
+  static final String DATA_COLLECTION_HTTP_RESPONSE_HEADERS =
+      "io.sentry.data-collection.http-headers.response";
+  static final String DATA_COLLECTION_URL_QUERY_PARAMS =
+      "io.sentry.data-collection.url-query-params";
+  static final String DATA_COLLECTION_GRAPHQL_DOCUMENT =
+      "io.sentry.data-collection.graphql.document";
+  static final String DATA_COLLECTION_GRAPHQL_VARIABLES =
+      "io.sentry.data-collection.graphql.variables";
+  static final String DATA_COLLECTION_DATABASE_QUERY_DATA =
+      "io.sentry.data-collection.database-query-data";
+  static final String DATA_COLLECTION_FILE_PATHS = "io.sentry.data-collection.file-paths";
+
   static final String PERFORM_FRAMES_TRACKING = "io.sentry.traces.frames-tracking";
 
   static final String SENTRY_GRADLE_PLUGIN_INTEGRATIONS = "io.sentry.gradle-plugin-integrations";
@@ -108,7 +145,12 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_PERFORMANCE_V2 = "io.sentry.performance-v2.enable";
 
+  static final String ENABLE_STANDALONE_APP_START_TRACING =
+      "io.sentry.standalone-app-start-tracing.enable";
+
   static final String ENABLE_APP_START_PROFILING = "io.sentry.profiling.enable-app-start";
+
+  static final String ENABLE_LEGACY_PROFILING = "io.sentry.profiling.enable-legacy-profiling";
 
   static final String ENABLE_SCOPE_PERSISTENCE = "io.sentry.enable-scope-persistence";
 
@@ -176,6 +218,9 @@ final class ManifestMetadataReader {
 
   static final String FEEDBACK_USE_SHAKE_GESTURE = "io.sentry.feedback.use-shake-gesture";
 
+  static final String FEEDBACK_ENABLE_ATTACH_SCREENSHOT =
+      "io.sentry.feedback.enable-attach-screenshot";
+
   static final String SPOTLIGHT_ENABLE = "io.sentry.spotlight.enable";
 
   static final String SPOTLIGHT_CONNECTION_URL = "io.sentry.spotlight.url";
@@ -210,7 +255,7 @@ final class ManifestMetadataReader {
     Objects.requireNonNull(options, "The options object is required.");
 
     try {
-      final Bundle metadata = getMetadata(context, options.getLogger(), buildInfoProvider);
+      final Object metadata = getMetadata(context, options.getLogger(), buildInfoProvider);
       final ILogger logger = options.getLogger();
 
       if (metadata != null) {
@@ -233,6 +278,26 @@ final class ManifestMetadataReader {
             readBool(metadata, logger, TOMBSTONE_ENABLE, options.isTombstoneEnabled()));
         options.setAttachRawTombstone(
             readBool(metadata, logger, TOMBSTONE_ATTACH_RAW, options.isAttachRawTombstone()));
+        options.setReportHistoricalTombstones(
+            readBool(
+                metadata,
+                logger,
+                TOMBSTONE_REPORT_HISTORICAL,
+                options.isReportHistoricalTombstones()));
+        options.setTombstoneMergeTimeThresholdMillis(
+            readLong(
+                metadata,
+                logger,
+                TOMBSTONE_MERGE_TIME_THRESHOLD_MILLIS,
+                options.getTombstoneMergeTimeThresholdMillis()));
+        options.setMemoryLimiterEnabled(
+            readBool(metadata, logger, MEMORY_LIMITER_ENABLE, options.isMemoryLimiterEnabled()));
+        options.setReportHistoricalMemoryLimiterExits(
+            readBool(
+                metadata,
+                logger,
+                MEMORY_LIMITER_REPORT_HISTORICAL,
+                options.isReportHistoricalMemoryLimiterExits()));
 
         // use enableAutoSessionTracking as fallback
         options.setEnableAutoSessionTracking(
@@ -264,6 +329,20 @@ final class ManifestMetadataReader {
 
         options.setReportHistoricalAnrs(
             readBool(metadata, logger, ANR_REPORT_HISTORICAL, options.isReportHistoricalAnrs()));
+
+        options.setEnableNdkAppHangTracking(
+            readBool(
+                metadata,
+                logger,
+                NDK_APP_HANG_TRACKING_ENABLE,
+                options.isEnableNdkAppHangTracking()));
+
+        options.setNdkAppHangTimeoutIntervalMillis(
+            readLong(
+                metadata,
+                logger,
+                NDK_APP_HANG_TIMEOUT_INTERVAL_MILLIS,
+                options.getNdkAppHangTimeoutIntervalMillis()));
 
         final @Nullable String dsn = readString(metadata, logger, DSN, options.getDsn());
         final boolean enabled = readBool(metadata, logger, ENABLE_SENTRY, options.isEnabled());
@@ -464,7 +543,7 @@ final class ManifestMetadataReader {
         List<String> tracePropagationTargets =
             readList(metadata, logger, TRACE_PROPAGATION_TARGETS);
 
-        if (metadata.containsKey(TRACE_PROPAGATION_TARGETS) && tracePropagationTargets == null) {
+        if (containsKey(metadata, TRACE_PROPAGATION_TARGETS) && tracePropagationTargets == null) {
           options.setTracePropagationTargets(Collections.emptyList());
         } else if (tracePropagationTargets != null) {
           options.setTracePropagationTargets(tracePropagationTargets);
@@ -506,9 +585,19 @@ final class ManifestMetadataReader {
         options.setEnablePerformanceV2(
             readBool(metadata, logger, ENABLE_PERFORMANCE_V2, options.isEnablePerformanceV2()));
 
+        options.setEnableStandaloneAppStartTracing(
+            readBool(
+                metadata,
+                logger,
+                ENABLE_STANDALONE_APP_START_TRACING,
+                options.isEnableStandaloneAppStartTracing()));
+
         options.setEnableAppStartProfiling(
             readBool(
                 metadata, logger, ENABLE_APP_START_PROFILING, options.isEnableAppStartProfiling()));
+
+        options.setEnableLegacyProfiling(
+            readBool(metadata, logger, ENABLE_LEGACY_PROFILING, options.isEnableLegacyProfiling()));
 
         options.setEnableScopePersistence(
             readBool(
@@ -691,6 +780,12 @@ final class ManifestMetadataReader {
         feedbackOptions.setUseShakeGesture(
             readBool(
                 metadata, logger, FEEDBACK_USE_SHAKE_GESTURE, feedbackOptions.isUseShakeGesture()));
+        feedbackOptions.setEnableAttachScreenshot(
+            readBool(
+                metadata,
+                logger,
+                FEEDBACK_ENABLE_ATTACH_SCREENSHOT,
+                feedbackOptions.isEnableAttachScreenshot()));
 
         options.setStrictTraceContinuation(
             readBool(
@@ -735,6 +830,12 @@ final class ManifestMetadataReader {
 
         options.setEnableBinderLogging(
             readBool(metadata, logger, ENABLE_BINDER_LOGGING, options.isEnableBinderLogging()));
+
+        final @Nullable DataCollection dataCollection =
+            readDataCollection(metadata, logger, options.getDataCollection());
+        if (dataCollection != null) {
+          mergeDataCollection(options.getDataCollection(), dataCollection);
+        }
       }
       options
           .getLogger()
@@ -747,40 +848,225 @@ final class ManifestMetadataReader {
     }
   }
 
+  private static @Nullable DataCollection readDataCollection(
+      final @NotNull Object metadata,
+      final @NotNull ILogger logger,
+      final @NotNull DataCollection currentDataCollection) {
+    final @NotNull DataCollection dataCollection = new DataCollection();
+
+    if (containsKey(metadata, DATA_COLLECTION_USER_INFO)) {
+      dataCollection.setUserInfo(readBool(metadata, logger, DATA_COLLECTION_USER_INFO, false));
+    }
+
+    if (containsKey(metadata, DATA_COLLECTION_HTTP_BODIES)) {
+      dataCollection.setHttpBodies(readHttpBodyTypes(metadata, logger));
+    }
+
+    final @Nullable KeyValueCollectionBehavior cookies =
+        readKeyValueCollectionBehavior(
+            metadata, logger, DATA_COLLECTION_COOKIES, currentDataCollection.getCookies());
+    if (cookies != null) {
+      dataCollection.setCookies(cookies);
+    }
+
+    final @Nullable KeyValueCollectionBehavior requestHeaders =
+        readKeyValueCollectionBehavior(
+            metadata,
+            logger,
+            DATA_COLLECTION_HTTP_REQUEST_HEADERS,
+            currentDataCollection.getHttpHeaders().getRequest());
+    if (requestHeaders != null) {
+      dataCollection.getHttpHeaders().setRequest(requestHeaders);
+    }
+
+    final @Nullable KeyValueCollectionBehavior responseHeaders =
+        readKeyValueCollectionBehavior(
+            metadata,
+            logger,
+            DATA_COLLECTION_HTTP_RESPONSE_HEADERS,
+            currentDataCollection.getHttpHeaders().getResponse());
+    if (responseHeaders != null) {
+      dataCollection.getHttpHeaders().setResponse(responseHeaders);
+    }
+
+    final @Nullable KeyValueCollectionBehavior urlQueryParams =
+        readKeyValueCollectionBehavior(
+            metadata,
+            logger,
+            DATA_COLLECTION_URL_QUERY_PARAMS,
+            currentDataCollection.getUrlQueryParams());
+    if (urlQueryParams != null) {
+      dataCollection.setUrlQueryParams(urlQueryParams);
+    }
+
+    if (containsKey(metadata, DATA_COLLECTION_GRAPHQL_DOCUMENT)) {
+      dataCollection
+          .getGraphql()
+          .setDocument(readBool(metadata, logger, DATA_COLLECTION_GRAPHQL_DOCUMENT, false));
+    }
+
+    if (containsKey(metadata, DATA_COLLECTION_GRAPHQL_VARIABLES)) {
+      dataCollection
+          .getGraphql()
+          .setVariables(readBool(metadata, logger, DATA_COLLECTION_GRAPHQL_VARIABLES, false));
+    }
+
+    if (containsKey(metadata, DATA_COLLECTION_DATABASE_QUERY_DATA)) {
+      dataCollection.setDatabaseQueryData(
+          readBool(metadata, logger, DATA_COLLECTION_DATABASE_QUERY_DATA, false));
+    }
+
+    if (containsKey(metadata, DATA_COLLECTION_FILE_PATHS)) {
+      dataCollection.setFilePaths(readBool(metadata, logger, DATA_COLLECTION_FILE_PATHS, false));
+    }
+
+    return dataCollection.isExplicitlyConfigured() ? dataCollection : null;
+  }
+
+  private static void mergeDataCollection(
+      final @NotNull DataCollection target, final @NotNull DataCollection source) {
+    if (source.getUserInfo() != null) {
+      target.setUserInfo(source.getUserInfo());
+    }
+    if (source.getHttpBodies() != null) {
+      target.setHttpBodies(source.getHttpBodies());
+    }
+    if (source.getCookies() != null) {
+      target.setCookies(source.getCookies());
+    }
+    if (source.getHttpHeaders().getRequest() != null) {
+      target.getHttpHeaders().setRequest(source.getHttpHeaders().getRequest());
+    }
+    if (source.getHttpHeaders().getResponse() != null) {
+      target.getHttpHeaders().setResponse(source.getHttpHeaders().getResponse());
+    }
+    if (source.getUrlQueryParams() != null) {
+      target.setUrlQueryParams(source.getUrlQueryParams());
+    }
+    if (source.getGraphql().getDocument() != null) {
+      target.getGraphql().setDocument(source.getGraphql().getDocument());
+    }
+    if (source.getGraphql().getVariables() != null) {
+      target.getGraphql().setVariables(source.getGraphql().getVariables());
+    }
+    if (source.getDatabaseQueryData() != null) {
+      target.setDatabaseQueryData(source.getDatabaseQueryData());
+    }
+    if (source.getFilePaths() != null) {
+      target.setFilePaths(source.getFilePaths());
+    }
+  }
+
+  private static @NotNull Set<HttpBodyType> readHttpBodyTypes(
+      final @NotNull Object metadata, final @NotNull ILogger logger) {
+    final @Nullable List<String> bodyTypes =
+        readList(metadata, logger, DATA_COLLECTION_HTTP_BODIES);
+    if (bodyTypes == null || (bodyTypes.size() == 1 && bodyTypes.get(0).isEmpty())) {
+      return Collections.emptySet();
+    }
+
+    final @NotNull Set<HttpBodyType> result = EnumSet.noneOf(HttpBodyType.class);
+    for (final String bodyType : bodyTypes) {
+      result.add(HttpBodyType.valueOf(bodyType.toUpperCase(Locale.ROOT)));
+    }
+    return result;
+  }
+
+  private static @Nullable KeyValueCollectionBehavior readKeyValueCollectionBehavior(
+      final @NotNull Object metadata,
+      final @NotNull ILogger logger,
+      final @NotNull String key,
+      final @Nullable KeyValueCollectionBehavior currentBehavior) {
+    final @NotNull String modeKey = key + ".mode";
+    final @NotNull String termsKey = key + ".terms";
+    if (!containsKey(metadata, modeKey) && !containsKey(metadata, termsKey)) {
+      return null;
+    }
+
+    final @NotNull KeyValueCollectionBehavior behavior = new KeyValueCollectionBehavior();
+    if (currentBehavior != null) {
+      behavior.setMode(currentBehavior.getMode());
+      behavior.setTerms(currentBehavior.getTerms());
+    }
+    if (containsKey(metadata, modeKey)) {
+      final @Nullable String mode = readString(metadata, logger, modeKey, null);
+      if (mode != null) {
+        behavior.setMode(KeyValueCollectionBehavior.Mode.valueOf(mode.toUpperCase(Locale.ROOT)));
+      }
+    }
+    if (containsKey(metadata, termsKey)) {
+      final @Nullable List<String> terms = readList(metadata, logger, termsKey);
+      behavior.setTerms(terms == null ? Collections.<String>emptyList() : terms);
+    }
+    return behavior;
+  }
+
   private static boolean readBool(
-      final @NotNull Bundle metadata,
+      final @NotNull Object metadata,
       final @NotNull ILogger logger,
       final @NotNull String key,
       final boolean defaultValue) {
-    final boolean value = metadata.getBoolean(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    final boolean value;
+    if (metadata instanceof Bundle) {
+      value = ((Bundle) metadata).getBoolean(key, defaultValue);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof Boolean ? (Boolean) raw : defaultValue;
+    }
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
   private static @Nullable String readString(
-      final @NotNull Bundle metadata,
+      final @NotNull Object metadata,
       final @NotNull ILogger logger,
       final @NotNull String key,
       final @Nullable String defaultValue) {
-    final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    final String value;
+    if (metadata instanceof Bundle) {
+      value = ((Bundle) metadata).getString(key, defaultValue);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof String ? (String) raw : defaultValue;
+    }
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
   private static @NotNull String readStringNotNull(
-      final @NotNull Bundle metadata,
+      final @NotNull Object metadata,
       final @NotNull ILogger logger,
       final @NotNull String key,
       final @NotNull String defaultValue) {
-    final String value = metadata.getString(key, defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    final String value;
+    if (metadata instanceof Bundle) {
+      value = ((Bundle) metadata).getString(key, defaultValue);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof String ? (String) raw : defaultValue;
+    }
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
   private static @Nullable List<String> readList(
-      final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
-    final String value = metadata.getString(key);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+      final @NotNull Object metadata, final @NotNull ILogger logger, final @NotNull String key) {
+    final String value;
+    if (metadata instanceof Bundle) {
+      value = ((Bundle) metadata).getString(key);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof String ? (String) raw : null;
+    }
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     if (value != null) {
       return Arrays.asList(value.split(",", -1));
     } else {
@@ -789,24 +1075,44 @@ final class ManifestMetadataReader {
   }
 
   private static double readDouble(
-      final @NotNull Bundle metadata, final @NotNull ILogger logger, final @NotNull String key) {
-    // manifest meta-data only reads float
-    double value = ((Float) metadata.getFloat(key, -1)).doubleValue();
-    if (value == -1) {
-      value = ((Integer) metadata.getInt(key, -1)).doubleValue();
+      final @NotNull Object metadata, final @NotNull ILogger logger, final @NotNull String key) {
+    final double value;
+    if (metadata instanceof Bundle) {
+      // manifest meta-data only reads float
+      double bundleValue = ((Float) ((Bundle) metadata).getFloat(key, -1)).doubleValue();
+      if (bundleValue == -1) {
+        bundleValue = ((Integer) ((Bundle) metadata).getInt(key, -1)).doubleValue();
+      }
+      value = bundleValue;
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value =
+          raw instanceof Float
+              ? ((Float) raw).doubleValue()
+              : raw instanceof Integer ? ((Integer) raw).doubleValue() : -1;
     }
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
   private static long readLong(
-      final @NotNull Bundle metadata,
+      final @NotNull Object metadata,
       final @NotNull ILogger logger,
       final @NotNull String key,
       final long defaultValue) {
-    // manifest meta-data only reads int if the value is not big enough
-    final long value = metadata.getInt(key, (int) defaultValue);
-    logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    final long value;
+    if (metadata instanceof Bundle) {
+      // manifest meta-data only reads int if the value is not big enough
+      value = ((Bundle) metadata).getInt(key, (int) defaultValue);
+    } else {
+      final Object raw = ((Map<?, ?>) metadata).get(key);
+      value = raw instanceof Integer ? (Integer) raw : defaultValue;
+    }
+    if (logger.isEnabled(SentryLevel.DEBUG)) {
+      logger.log(SentryLevel.DEBUG, key + " read: " + value);
+    }
     return value;
   }
 
@@ -822,7 +1128,7 @@ final class ManifestMetadataReader {
 
     boolean autoInit = true;
     try {
-      final Bundle metadata = getMetadata(context, logger, null);
+      final Object metadata = getMetadata(context, logger, null);
       if (metadata != null) {
         autoInit = readBool(metadata, logger, AUTO_INIT, true);
       }
@@ -833,18 +1139,28 @@ final class ManifestMetadataReader {
   }
 
   /**
-   * Returns the Bundle attached from the given Context
+   * Returns build-time metadata when available, otherwise metadata attached to the given Context.
    *
    * @param context the application context
-   * @return the Bundle attached to the PackageManager
+   * @return metadata as a Map or PackageManager Bundle
    */
-  private static @Nullable Bundle getMetadata(
+  private static @Nullable Object getMetadata(
       final @NotNull Context context,
       final @NotNull ILogger logger,
       final @Nullable BuildInfoProvider buildInfoProvider) {
+    final @Nullable Map<String, Object> injected = manifestMetadata;
+    if (injected != null) {
+      return injected;
+    }
     final ApplicationInfo app =
         ContextUtils.getApplicationInfo(
             context, buildInfoProvider != null ? buildInfoProvider : new BuildInfoProvider(logger));
     return app != null ? app.metaData : null;
+  }
+
+  private static boolean containsKey(final @NotNull Object metadata, final @NotNull String key) {
+    return metadata instanceof Bundle
+        ? ((Bundle) metadata).containsKey(key)
+        : ((Map<?, ?>) metadata).containsKey(key);
   }
 }

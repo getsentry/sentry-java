@@ -7,10 +7,13 @@ private object Consts {
     val taskRegex = Regex("(.*)DistZip")
 }
 
+private fun Project.versionName(): String =
+    providers.gradleProperty("versionName").get()
+
 // configure distZip tasks for multiplatform
 fun DistributionContainer.configureForMultiplatform(project: Project) {
     val sep = File.separator
-    val version = project.properties["versionName"].toString()
+    val version = project.versionName()
     val name = project.name
 
     this.maybeCreate("android").contents {
@@ -69,7 +72,7 @@ fun DistributionContainer.configureForMultiplatform(project: Project) {
 
 fun DistributionContainer.configureForJvm(project: Project) {
     val sep = File.separator
-    val version = project.properties["versionName"].toString()
+    val version = project.versionName()
     val name = project.name
 
     this.getByName("main").contents {

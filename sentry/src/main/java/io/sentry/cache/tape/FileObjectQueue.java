@@ -1,5 +1,6 @@
 /*
  * Adapted from: https://github.com/square/tape/tree/445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8/tape/src/main/java/com/squareup/tape2
+ * Upstream was archived on 2024-10-25 and receives no further fixes; this copy has local changes.
  *
  *  Copyright (C) 2010 Square, Inc.
  *
@@ -57,6 +58,11 @@ final class FileObjectQueue<T> extends ObjectQueue<T> {
     bytes.reset();
     converter.toStream(entry, bytes);
     queueFile.add(bytes.getArray(), 0, bytes.size());
+  }
+
+  @Override
+  public void sync() throws IOException {
+    queueFile.sync();
   }
 
   @Override

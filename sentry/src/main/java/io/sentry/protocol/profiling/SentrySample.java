@@ -1,15 +1,16 @@
 package io.sentry.protocol.profiling;
 
+import static io.sentry.DateUtils.doubleToBigDecimal;
+
 import io.sentry.ILogger;
 import io.sentry.JsonDeserializer;
 import io.sentry.JsonSerializable;
 import io.sentry.JsonUnknown;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
+import io.sentry.util.CollectionUtils;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
@@ -26,6 +27,15 @@ public final class SentrySample implements JsonUnknown, JsonSerializable {
   private @Nullable String threadId;
 
   private @Nullable Map<String, Object> unknown;
+
+  public SentrySample() {}
+
+  public SentrySample(final @NotNull SentrySample sample) {
+    this.timestamp = sample.timestamp;
+    this.stackId = sample.stackId;
+    this.threadId = sample.threadId;
+    this.unknown = CollectionUtils.newConcurrentHashMap(sample.unknown);
+  }
 
   public double getTimestamp() {
     return timestamp;
@@ -76,10 +86,6 @@ public final class SentrySample implements JsonUnknown, JsonSerializable {
     }
 
     writer.endObject();
-  }
-
-  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
-    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Nullable

@@ -1,5 +1,6 @@
 /*
  * Adapted from: https://github.com/square/tape/tree/445cd3fd0a7b3ec48c9ea3e0e86663fe6d3735d8/tape/src/main/java/com/squareup/tape2
+ * Upstream was archived on 2024-10-25 and receives no further fixes; this copy has local changes.
  *
  *  Copyright (C) 2010 Square, Inc.
  *
@@ -33,11 +34,18 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A reliable, efficient, file-based, FIFO queue. Additions and removals are O(1). All operations
- * are atomic. Writes are synchronous; data will be written to disk before an operation returns. The
- * underlying file is structured to survive process and even system crashes. If an I/O exception is
- * thrown during a mutating change, the change is aborted. It is safe to continue to use a {@code
+ * A reliable, efficient, file-based, FIFO queue. Additions and removals are O(1). The underlying
+ * file is structured to survive process and even system crashes. If an I/O exception is thrown
+ * during a mutating change, the change is aborted. It is safe to continue to use a {@code
  * QueueFile} instance after an exception.
+ *
+ * <p>By default all operations are atomic and writes are synchronous: data is on disk before an
+ * operation returns. Queues built with {@link Builder#synchronousWrites(boolean)
+ * synchronousWrites(false)} leave writes in the OS page cache until {@link #sync()} is called,
+ * which lets callers batch many mutations behind a single fsync. Such writes still survive process
+ * death and are immediately visible to readers, but a system crash before the next {@code sync()}
+ * can lose recent mutations — and because the OS may flush the data and header pages in either
+ * order, it can leave a committed header pointing at data that never reached disk.
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
  *
@@ -50,9 +58,16 @@ import org.jetbrains.annotations.Nullable;
  * <p><strong>NOTE:</strong> The current implementation is built for file systems that support
  * atomic segment writes (like YAFFS). Most conventional file systems don't support this; if the
  * power goes out while writing a segment, the segment will contain garbage and the file will be
- * corrupt. We'll add journaling support so this class can be used with more file systems later.
+ * corrupt. Upstream intended to add journaling support for those file systems but never did; this
+ * fork instead accepts the risk and recovers by deleting and recreating the file, losing its
+ * contents (see {@code ringRead}).
  *
  * <p>Construct instances with {@link Builder}.
+ *
+ * <p><strong>This is a vendored fork.</strong> Square archived Tape on 2024-10-25, so the upstream
+ * link in the header is a historical reference, not a source of fixes. This copy has diverged:
+ * corruption recovery, a bounded ring size, and optional buffered writes. Report problems against
+ * sentry-java rather than upstream.
  *
  * @author Bob Lee (bob@squareup.com)
  */
@@ -130,13 +145,22 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   /** A number of elements at which this queue will wrap around (ring buffer). */
   private final int maxElements;
 
+  /**
+   * When {@code false}, writes are buffered by the OS and callers must call {@link #sync()} to
+   * write to disk. This lets callers batch many adds behind a single fsync instead of paying one
+   * fsync per write.
+   */
+  private final boolean synchronousWrites;
+
   boolean closed;
 
-  static RandomAccessFile initializeFromFile(File file) throws IOException {
+  static RandomAccessFile initializeFromFile(File file, boolean synchronousWrites)
+      throws IOException {
     if (!file.exists()) {
       // Use a temp file so we don't leave a partially-initialized file.
       File tempFile = new File(file.getPath() + ".tmp");
-      RandomAccessFile raf = open(tempFile);
+      // The one-time initialization is always synchronous so the header is written before rename.
+      RandomAccessFile raf = open(tempFile, true);
       try {
         raf.setLength(INITIAL_LENGTH);
         raf.seek(0);
@@ -152,21 +176,34 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
       }
     }
 
-    return open(file);
+    return open(file, synchronousWrites);
   }
 
-  /** Opens a random access file that writes synchronously. */
-  private static RandomAccessFile open(File file) throws FileNotFoundException {
-    return new RandomAccessFile(file, "rwd");
+  private static RandomAccessFile open(File file, boolean synchronousWrites)
+      throws FileNotFoundException {
+    return new RandomAccessFile(file, synchronousWrites ? "rwd" : "rw");
   }
 
-  QueueFile(File file, RandomAccessFile raf, boolean zero, int maxElements) throws IOException {
+  QueueFile(
+      File file, RandomAccessFile raf, boolean zero, int maxElements, boolean synchronousWrites)
+      throws IOException {
     this.file = file;
     this.raf = raf;
     this.zero = zero;
     this.maxElements = maxElements;
+    this.synchronousWrites = synchronousWrites;
 
     readInitialData();
+  }
+
+  /**
+   * Flushes buffered writes to storage. No-op when the queue was opened with synchronous writes,
+   * since those are already durable.
+   */
+  public void sync() throws IOException {
+    if (!synchronousWrites) {
+      raf.getChannel().force(false);
+    }
   }
 
   private void readInitialData() throws IOException {
@@ -196,7 +233,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
   private void resetFile() throws IOException {
     raf.close();
     file.delete();
-    raf = initializeFromFile(file);
+    raf = initializeFromFile(file, synchronousWrites);
     readInitialData();
   }
 
@@ -767,6 +804,7 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     final File file;
     boolean zero = true;
     int size = -1;
+    boolean synchronousWrites = true;
 
     /** Start constructing a new queue backed by the given file. */
     public Builder(File file) {
@@ -789,14 +827,23 @@ public final class QueueFile implements Closeable, Iterable<byte[]> {
     }
 
     /**
+     * When {@code false}, writes are buffered and the caller must call {@link QueueFile#sync()} to
+     * write to disk. Defaults to {@code true} (every write is fsync'd).
+     */
+    public Builder synchronousWrites(boolean synchronousWrites) {
+      this.synchronousWrites = synchronousWrites;
+      return this;
+    }
+
+    /**
      * Constructs a new queue backed by the given builder. Only one instance should access a given
      * file at a time.
      */
     public QueueFile build() throws IOException {
-      RandomAccessFile raf = initializeFromFile(file);
+      RandomAccessFile raf = initializeFromFile(file, synchronousWrites);
       QueueFile qf = null;
       try {
-        qf = new QueueFile(file, raf, zero, size);
+        qf = new QueueFile(file, raf, zero, size, synchronousWrites);
         return qf;
       } finally {
         if (qf == null) {

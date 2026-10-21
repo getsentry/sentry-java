@@ -95,6 +95,22 @@ class SentryExecutorServiceTest {
   }
 
   @Test
+  fun `SentryExecutorService enables removeOnCancelPolicy when requested`() {
+    val sentryExecutor = SentryExecutorService(null, true, 30, TimeUnit.SECONDS)
+    val executor = sentryExecutor.getProperty<ScheduledThreadPoolExecutor>("executorService")
+    assertTrue(executor.removeOnCancelPolicy)
+    sentryExecutor.close(15000)
+  }
+
+  @Test
+  fun `SentryExecutorService does not enable removeOnCancelPolicy by default`() {
+    val sentryExecutor = SentryExecutorService(null)
+    val executor = sentryExecutor.getProperty<ScheduledThreadPoolExecutor>("executorService")
+    assertFalse(executor.removeOnCancelPolicy)
+    sentryExecutor.close(15000)
+  }
+
+  @Test
   fun `SentryExecutorService isClosed returns true if executor is shutdown`() {
     val executor = mock<ScheduledThreadPoolExecutor>()
     val sentryExecutor = SentryExecutorService(executor, null)
@@ -189,21 +205,6 @@ class SentryExecutorServiceTest {
     sentryExecutor.schedule({}, 1000L)
 
     verify(executor).schedule(any<Runnable>(), any(), any())
-  }
-
-  @Test
-  fun `SentryExecutorService prewarm schedules dummy tasks and clears queue`() {
-    val executor = ScheduledThreadPoolExecutor(1)
-
-    val sentryExecutor = SentryExecutorService(executor, null)
-    sentryExecutor.prewarm()
-
-    Thread.sleep(1000)
-
-    // the internal queue/array should be resized 4 times to 54
-    assertEquals(54, (executor.queue.getProperty("queue") as Array<*>).size)
-    // the queue should be empty
-    assertEquals(0, executor.queue.size)
   }
 
   @Test

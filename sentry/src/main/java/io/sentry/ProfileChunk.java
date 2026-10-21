@@ -1,5 +1,7 @@
 package io.sentry;
 
+import static io.sentry.DateUtils.doubleToBigDecimal;
+
 import io.sentry.profilemeasurements.ProfileMeasurement;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SdkVersion;
@@ -8,8 +10,6 @@ import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   public static final String PLATFORM_ANDROID = "android";
   public static final String PLATFORM_JAVA = "java";
+  public static final String CONTENT_TYPE_PERFETTO = "application/x-perfetto-trace";
 
   private @Nullable DebugMeta debugMeta;
   private @NotNull SentryId profilerId;
@@ -33,6 +34,8 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
   private @Nullable String environment;
   private @NotNull String version;
   private double timestamp;
+
+  private @Nullable String contentType;
 
   private final @Nullable File traceFile;
 
@@ -131,6 +134,10 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     return version;
   }
 
+  public @Nullable String getContentType() {
+    return contentType;
+  }
+
   public @Nullable SentryProfile getSentryProfile() {
     return sentryProfile;
   }
@@ -181,8 +188,8 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     private final @NotNull Map<String, ProfileMeasurement> measurements;
     private final @NotNull File traceFile;
     private final double timestamp;
-
     private final @NotNull String platform;
+    private @Nullable String contentType;
 
     public Builder(
         final @NotNull SentryId profilerId,
@@ -199,9 +206,17 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       this.platform = platform;
     }
 
+    public Builder setContentType(final @Nullable String contentType) {
+      this.contentType = contentType;
+      return this;
+    }
+
     public ProfileChunk build(SentryOptions options) {
-      return new ProfileChunk(
-          profilerId, chunkId, traceFile, measurements, timestamp, platform, options);
+      final ProfileChunk chunk =
+          new ProfileChunk(
+              profilerId, chunkId, traceFile, measurements, timestamp, platform, options);
+      chunk.contentType = contentType;
+      return chunk;
     }
   }
 
@@ -220,6 +235,7 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     public static final String SAMPLED_PROFILE = "sampled_profile";
     public static final String TIMESTAMP = "timestamp";
     public static final String SENTRY_PROFILE = "profile";
+    public static final String CONTENT_TYPE = "content_type";
   }
 
   @Override
@@ -248,6 +264,9 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       writer.name(JsonKeys.ENVIRONMENT).value(logger, environment);
     }
     writer.name(JsonKeys.VERSION).value(logger, version);
+    if (contentType != null) {
+      writer.name(JsonKeys.CONTENT_TYPE).value(logger, contentType);
+    }
     if (sampledProfile != null) {
       writer.name(JsonKeys.SAMPLED_PROFILE).value(logger, sampledProfile);
     }
@@ -262,10 +281,6 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
       }
     }
     writer.endObject();
-  }
-
-  private @NotNull BigDecimal doubleToBigDecimal(final @NotNull Double value) {
-    return BigDecimal.valueOf(value).setScale(6, RoundingMode.DOWN);
   }
 
   @Nullable
@@ -356,6 +371,12 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
             Double timestamp = reader.nextDoubleOrNull();
             if (timestamp != null) {
               data.timestamp = timestamp;
+            }
+            break;
+          case JsonKeys.CONTENT_TYPE:
+            String contentType = reader.nextStringOrNull();
+            if (contentType != null) {
+              data.contentType = contentType;
             }
             break;
           case JsonKeys.SENTRY_PROFILE:

@@ -7,7 +7,6 @@ plugins {
   alias(libs.plugins.kotlin.multiplatform)
   alias(libs.plugins.kotlin.compose)
   id("com.android.library")
-  alias(libs.plugins.kover)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
   alias(libs.plugins.dokka)
@@ -45,13 +44,13 @@ kotlin {
   }
 
   sourceSets {
-    val commonMain by getting {
+    getByName("commonMain") {
       compilerOptions {
         apiVersion.set(KotlinVersion.KOTLIN_1_9)
         languageVersion.set(KotlinVersion.KOTLIN_1_9)
       }
     }
-    val androidMain by getting {
+    getByName("androidMain") {
       dependencies {
         api(projects.sentry)
         api(projects.sentryAndroidNavigation)
@@ -61,15 +60,16 @@ kotlin {
         implementation(libs.androidx.lifecycle.common.java8)
       }
     }
-    val androidUnitTest by getting {
+    getByName("androidUnitTest") {
       dependencies {
         implementation(libs.androidx.compose.ui.test.junit4)
         implementation(libs.androidx.navigation.compose)
         implementation(libs.androidx.test.ext.junit)
         implementation(libs.androidx.test.rules)
         implementation(libs.androidx.test.runner)
+        implementation(libs.google.truth)
         implementation(libs.kotlin.test.junit)
-        implementation(libs.mockito.inline)
+        implementation(libs.mockito.core)
         implementation(libs.mockito.kotlin)
         implementation(libs.roboelectric)
       }
@@ -79,6 +79,7 @@ kotlin {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.compose"
 
   defaultConfig {
@@ -88,12 +89,14 @@ android {
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
   }
 
-  sourceSets["main"].apply { manifest.srcFile("src/androidMain/AndroidManifest.xml") }
-
   buildTypes {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
+
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
+  testBuildType = "release"
 
   testOptions {
     animationsDisabled = true
@@ -117,6 +120,9 @@ android {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
   }
 }
+
+// The default detekt source set is src/{main,test}, which doesn't exist in a multiplatform module.
+detekt { source.setFrom("src/androidMain/kotlin", "src/androidUnitTest/kotlin") }
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.

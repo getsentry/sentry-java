@@ -262,9 +262,14 @@ class EnvelopeTests : BaseUiTest() {
       optionsRef = options
     }
 
+    // The SDK creates the outbox dir lazily on its executor, so an external writer racing
+    // Sentry.init has to create it itself.
+    val outboxDir = File(optionsRef!!.outboxPath!!)
+    outboxDir.mkdirs()
+
     // based on
     // https://github.com/getsentry/sentry-native/blob/20d5d5f75f1f48228f2f47e2bb99b17f9996ebbf/ndk/lib/src/androidTest/java/io/sentry/ndk/SentryNdkTest.java#L131
-    File(optionsRef!!.outboxPath, "14779dbf-b2f0-4c00-f4e5-4a287abc4267")
+    File(outboxDir, "14779dbf-b2f0-4c00-f4e5-4a287abc4267")
       .writeText(
         """
         {"dsn":"https://key@sentry.io/proj","event_id":"729ff878-5539-458d-f657-a1acf423a127","sent_at":"2025-04-02T10:02:04.732577Z"}

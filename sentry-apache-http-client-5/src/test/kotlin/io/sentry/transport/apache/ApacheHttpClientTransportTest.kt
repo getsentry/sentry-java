@@ -213,7 +213,7 @@ class ApacheHttpClientTransportTest {
     val now = Date(9001)
     val sut = fixture.getSut()
     fixture.options.dateProvider = mock()
-    whenever(fixture.options.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+    whenever(fixture.options.dateProvider.now()).thenReturn(SentryNanotimeDate(now.time, 0))
 
     val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
     sut.send(envelope)
@@ -226,7 +226,7 @@ class ApacheHttpClientTransportTest {
     val now = Date(9001)
     val sut = fixture.getSut()
     fixture.options.dateProvider = mock()
-    whenever(fixture.options.dateProvider.now()).thenReturn(SentryNanotimeDate(now, 0))
+    whenever(fixture.options.dateProvider.now()).thenReturn(SentryNanotimeDate(now.time, 0))
 
     val envelope = SentryEnvelope.from(fixture.options.serializer, SentryEvent(), null)
     sut.send(envelope, Hint())

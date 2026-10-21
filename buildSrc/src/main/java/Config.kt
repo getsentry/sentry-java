@@ -1,8 +1,6 @@
 
-import java.math.BigDecimal
-
 object Config {
-    val AGP = System.getenv("VERSION_AGP") ?: "8.13.1"
+    val AGP = System.getenv("VERSION_AGP") ?: "9.4.0"
     val kotlinStdLib = "stdlib-jdk8"
     val kotlinStdLibVersionAndroid = "1.9.24"
     val kotlinTestJunit = "test-junit"
@@ -14,8 +12,10 @@ object Config {
     object Android {
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
 
+        // Debug variants are disabled everywhere. Unit tests run against the release
+        // variant, so building the debug variant would only add overhead.
         fun shouldSkipDebugVariant(name: String?): Boolean {
-            return System.getenv("CI")?.toBoolean() ?: false && name == "debug"
+            return name == "debug"
         }
     }
 
@@ -37,11 +37,6 @@ object Config {
     }
 
     object QualityPlugins {
-        object Jacoco {
-            // TODO [POTEL] add tests and restore
-            val minimumCoverage = BigDecimal.valueOf(0.1)
-        }
-
         // this can be removed when we upgrade to Gradle 8, which allows us to use a getter for the plugin ID
         val detektPlugin = "io.gitlab.arturbosch.detekt"
     }
@@ -73,6 +68,7 @@ object Config {
         val SENTRY_OPENFEIGN_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.openfeign"
         val SENTRY_APOLLO3_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo3"
         val SENTRY_APOLLO4_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo4"
+        val SENTRY_APOLLO5_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo5"
         val SENTRY_APOLLO_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.apollo"
         val SENTRY_GRAPHQL_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql"
         val SENTRY_GRAPHQL_CORE_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.graphql-core"
@@ -103,6 +99,7 @@ object Config {
             "sentry-android-ndk",
             "sentry-android-fragment",
             "sentry-android-navigation",
+            "sentry-android-navigation3",
             "sentry-android-timber",
             "sentry-compose-android",
             "sentry-android-sqlite",

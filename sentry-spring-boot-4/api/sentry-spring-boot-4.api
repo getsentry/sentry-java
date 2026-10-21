@@ -13,6 +13,17 @@ public class io/sentry/spring/boot4/SentryAutoConfiguration {
 	public fun <init> ()V
 }
 
+public class io/sentry/spring/boot4/SentryLog4j2AppenderAutoConfiguration {
+	public fun <init> ()V
+	public fun sentryLog4j2Initializer (Lio/sentry/spring/boot4/SentryProperties;)Lio/sentry/spring/boot4/SentryLog4j2Initializer;
+}
+
+public class io/sentry/spring/boot4/SentryLog4j2Initializer : org/springframework/context/event/GenericApplicationListener {
+	public fun <init> (Lio/sentry/spring/boot4/SentryProperties;)V
+	public fun onApplicationEvent (Lorg/springframework/context/ApplicationEvent;)V
+	public fun supportsEventType (Lorg/springframework/core/ResolvableType;)Z
+}
+
 public class io/sentry/spring/boot4/SentryLogbackAppenderAutoConfiguration {
 	public fun <init> ()V
 	public fun sentryLogbackInitializer (Lio/sentry/spring/boot4/SentryProperties;)Lio/sentry/spring/boot4/SentryLogbackInitializer;
@@ -30,6 +41,7 @@ public class io/sentry/spring/boot4/SentryProfilerAutoConfiguration {
 
 public class io/sentry/spring/boot4/SentryProperties : io/sentry/SentryOptions {
 	public fun <init> ()V
+	public fun getClients ()Lio/sentry/spring/boot4/SentryProperties$Clients;
 	public fun getExceptionResolverOrder ()I
 	public fun getGraphql ()Lio/sentry/spring/boot4/SentryProperties$Graphql;
 	public fun getLogging ()Lio/sentry/spring/boot4/SentryProperties$Logging;
@@ -38,6 +50,7 @@ public class io/sentry/spring/boot4/SentryProperties : io/sentry/SentryOptions {
 	public fun isEnableAotCompatibility ()Z
 	public fun isKeepTransactionsOpenForAsyncResponses ()Z
 	public fun isUseGitCommitIdAsRelease ()Z
+	public fun setClients (Lio/sentry/spring/boot4/SentryProperties$Clients;)V
 	public fun setEnableAotCompatibility (Z)V
 	public fun setExceptionResolverOrder (I)V
 	public fun setGraphql (Lio/sentry/spring/boot4/SentryProperties$Graphql;)V
@@ -46,6 +59,12 @@ public class io/sentry/spring/boot4/SentryProperties : io/sentry/SentryOptions {
 	public fun setReactive (Lio/sentry/spring/boot4/SentryProperties$Reactive;)V
 	public fun setUseGitCommitIdAsRelease (Z)V
 	public fun setUserFilterOrder (Ljava/lang/Integer;)V
+}
+
+public class io/sentry/spring/boot4/SentryProperties$Clients {
+	public fun <init> ()V
+	public fun isOkHttpEnabled ()Z
+	public fun setOkHttpEnabled (Z)V
 }
 
 public class io/sentry/spring/boot4/SentryProperties$Graphql {

@@ -27,7 +27,6 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
 
   private final @NotNull SentryOptions options;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
-  private long lastCollectionTimestamp = 0;
 
   public DefaultCompositePerformanceCollector(final @NotNull SentryOptions options) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
@@ -112,16 +111,8 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
             new TimerTask() {
               @Override
               public void run() {
-                long now = System.currentTimeMillis();
-                // The timer is scheduled to run every 100ms on average. In case it takes longer,
-                // subsequent tasks are executed more quickly. If two tasks are scheduled to run in
-                // less than 10ms, the measurement that we collect is not meaningful, so we skip it
-                if (now - lastCollectionTimestamp <= 10) {
-                  return;
-                }
                 timedOutTransactions.clear();
 
-                lastCollectionTimestamp = now;
                 final @NotNull PerformanceCollectionData tempData =
                     new PerformanceCollectionData(options.getDateProvider().now().nanoTimestamp());
 
@@ -133,7 +124,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                 // Add the enriched tempData to all transactions/profiles/objects that collect data.
                 // Then Check if that object timed out.
                 for (CompositeData data : compositeDataMap.values()) {
-                  if (data.addDataAndCheckTimeout(tempData)) {
+                  if (data.addDataAndCheckTimeout(tempData, tempData.getNanoTimestamp())) {
                     // timed out
                     if (data.transaction != null) {
                       timedOutTransactions.add(data.transaction);
@@ -147,7 +138,7 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                 }
               }
             };
-        timer.scheduleAtFixedRate(
+        timer.schedule(
             timerTask,
             TRANSACTION_COLLECTION_INTERVAL_MILLIS,
             TRANSACTION_COLLECTION_INTERVAL_MILLIS);
@@ -233,12 +224,19 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
      * Adds the data to the internal list of PerformanceCollectionData. Then it checks if data
      * collection timed out (for transactions only).
      *
+     * @param nowNanos the timestamp of the current collection, passed in so a single clock reading
+     *     is shared by every transaction in this collection round.
      * @return true if data collection timed out (for transactions only).
      */
-    boolean addDataAndCheckTimeout(final @NotNull PerformanceCollectionData data) {
-      dataList.add(data);
+    boolean addDataAndCheckTimeout(
+        final @NotNull PerformanceCollectionData data, final long nowNanos) {
+      // stop() hands dataList out while this timer thread may still be writing to it, so consumers
+      // synchronize on the list while iterating. We must hold the same monitor here.
+      synchronized (dataList) {
+        dataList.add(data);
+      }
       return transaction != null
-          && options.getDateProvider().now().nanoTimestamp()
+          && nowNanos
               > startTimestamp
                   + TimeUnit.MILLISECONDS.toNanos(TRANSACTION_COLLECTION_TIMEOUT_MILLIS);
     }

@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -7,17 +6,12 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.systemtest")
 }
 
 group = "io.sentry.sample.spring-boot-jakarta"
 
 version = "0.0.1-SNAPSHOT"
-
-java.sourceCompatibility = JavaVersion.VERSION_17
-
-java.targetCompatibility = JavaVersion.VERSION_17
-
-repositories { mavenCentral() }
 
 dependencyManagement {
   imports {
@@ -28,17 +22,9 @@ dependencyManagement {
 // Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
 extra["kotlin-coroutines.version"] = "1.9.0"
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
-}
-
-tasks.withType<KotlinCompile>().configureEach { compilerOptions.jvmTarget = JvmTarget.JVM_17 }
-
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = JvmTarget.JVM_17
   }
 }
 
@@ -74,6 +60,10 @@ dependencies {
   // OpenFeature SDK
   implementation(libs.openfeature)
 
+  // okhttp client instrumentation
+  implementation(projects.sentryOkhttp)
+  implementation(libs.okhttp)
+
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)
@@ -98,13 +88,7 @@ tasks.register<Test>("systemTest").configure {
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
 
-  outputs.upToDateWhen { false }
-
   maxParallelForks = 1
-
-  // Cap JVM args per test
-  minHeapSize = "128m"
-  maxHeapSize = "1g"
 
   filter { includeTestsMatching("io.sentry.systemtest*") }
 }

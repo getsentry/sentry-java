@@ -13,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -201,6 +202,51 @@ class PreviousSessionFinalizerTest {
   }
 
   @Test
+  fun `if previous session has a non-terminating unhandled error and no crash marker, finalizes as unhandled`() {
+    val finalizer =
+      fixture.getSut(
+        tmpDir,
+        session =
+          Session(null, null, null, "io.sentry.sample@1.0").apply {
+            recordNonTerminatingUnhandledError()
+          },
+      )
+    finalizer.run()
+
+    verify(fixture.scopes)
+      .captureEnvelope(
+        argThat {
+          val session = fixture.sessionFromEnvelope(this)
+          session.release == "io.sentry.sample@1.0" &&
+            session.status == Session.State.Unhandled &&
+            session.hasNonTerminatingUnhandledError()
+        }
+      )
+  }
+
+  @Test
+  fun `if previous session has a non-terminating unhandled error but a native crash marker exists, finalizes as crashed`() {
+    val finalizer =
+      fixture.getSut(
+        tmpDir,
+        session =
+          Session(null, null, null, "io.sentry.sample@1.0").apply {
+            recordNonTerminatingUnhandledError()
+          },
+        nativeCrashTimestamp = DateUtils.getDateTime("2023-10-01T00:00:00.000Z"),
+      )
+    finalizer.run()
+
+    verify(fixture.scopes)
+      .captureEnvelope(
+        argThat {
+          val session = fixture.sessionFromEnvelope(this)
+          session.release == "io.sentry.sample@1.0" && session.status == Crashed
+        }
+      )
+  }
+
+  @Test
   fun `if previous session file exists, deletes previous session file`() {
     val finalizer = fixture.getSut(tmpDir, sessionFileExists = true)
     finalizer.run()
@@ -235,7 +281,7 @@ class PreviousSessionFinalizerTest {
             "Timed out waiting to flush previous session to its own file in session finalizer."
           )
         },
-        any<Any>(),
+        anyVararg<Any>(),
       )
     verify(fixture.scopes, never()).captureEnvelope(any())
   }

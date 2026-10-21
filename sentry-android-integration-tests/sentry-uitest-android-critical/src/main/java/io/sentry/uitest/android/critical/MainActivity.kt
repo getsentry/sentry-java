@@ -29,7 +29,7 @@ import java.io.File
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
-  private lateinit var requestPermissionLauncher: ActivityResultLauncher<String?>
+  private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
   override fun onCreate(savedInstanceState: Bundle?) {
     setTheme(android.R.style.Theme_DeviceDefault_NoActionBar)
@@ -66,6 +66,9 @@ class MainActivity : ComponentActivity() {
             Button(onClick = { Sentry.close() }) { Text("Close SDK") }
             Button(
               onClick = {
+                // The SDK creates the outbox dir lazily on its executor, so an external
+                // writer has to create it itself.
+                File(outboxPath).mkdirs()
                 val file = File(outboxPath, "corrupted.envelope")
                 val corruptedEnvelopeContent =
                   """

@@ -13,7 +13,6 @@ import io.sentry.SpanDataConvention;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.util.AutoClosableReentrantLock;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -33,7 +32,7 @@ public class SpanFrameMetricsCollector
   // grow indefinitely in case of a long running span
   private static final int MAX_FRAMES_COUNT = 3600;
   private static final long ONE_SECOND_NANOS = TimeUnit.SECONDS.toNanos(1);
-  private static final SentryNanotimeDate EMPTY_NANO_TIME = new SentryNanotimeDate(new Date(0), 0);
+  private static final SentryNanotimeDate EMPTY_NANO_TIME = new SentryNanotimeDate(0, 0);
 
   private final boolean enabled;
   protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();

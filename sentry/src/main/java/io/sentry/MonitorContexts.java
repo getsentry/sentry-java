@@ -1,10 +1,9 @@
 package io.sentry;
 
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,13 +43,16 @@ public final class MonitorContexts extends ConcurrentHashMap<String, Object>
 
   // region json
 
+  // temp fix for JDK 21: ConcurrentHashMap.keySet() compiled against JDK 8+ returns KeySetView,
+  // which crashes on Android
+  // < 24.
+  @SuppressWarnings("JdkObsolete")
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {
     writer.beginObject();
     // Serialize in alphabetical order to keep determinism.
-    final List<String> sortedKeys = Collections.list(keys());
-    Collections.sort(sortedKeys);
+    final String[] sortedKeys = CollectionUtils.toSortedStringArray(keys(), size());
     for (final String key : sortedKeys) {
       final Object value = get(key);
       if (value != null) {

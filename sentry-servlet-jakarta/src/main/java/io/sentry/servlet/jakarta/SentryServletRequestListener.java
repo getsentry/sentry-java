@@ -59,7 +59,8 @@ public class SentryServletRequestListener implements ServletRequestListener {
 
       scopes.configureScope(
           scope -> {
-            scope.addEventProcessor(new SentryRequestHttpServletRequestProcessor(httpRequest));
+            scope.addEventProcessor(
+                new SentryRequestHttpServletRequestProcessor(httpRequest, scopes.getOptions()));
           });
     }
   }

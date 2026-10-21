@@ -1,13 +1,11 @@
 package io.sentry.android.core
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.PerformanceCollectionData
 import io.sentry.test.getCtor
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
-import kotlin.test.assertNotEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import org.mockito.kotlin.mock
 
 class AndroidCpuCollectorTest {
@@ -30,7 +28,7 @@ class AndroidCpuCollectorTest {
   fun `collect works only after setup`() {
     val data = PerformanceCollectionData(10)
     fixture.getSut().collect(data)
-    assertNull(data.cpuUsagePercentage)
+    assertThat(data.hasCpuUsagePercentage()).isFalse()
   }
 
   @Test
@@ -39,8 +37,7 @@ class AndroidCpuCollectorTest {
     val collector = fixture.getSut()
     collector.setup()
     collector.collect(data)
-    val cpuData = data.cpuUsagePercentage
-    assertNotNull(cpuData)
-    assertNotEquals(0.0, cpuData)
+    assertThat(data.hasCpuUsagePercentage()).isTrue()
+    assertThat(data.cpuUsagePercentage).isNotEqualTo(0.0)
   }
 }

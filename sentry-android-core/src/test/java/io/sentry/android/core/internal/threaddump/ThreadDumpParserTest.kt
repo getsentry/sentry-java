@@ -2,7 +2,9 @@ package io.sentry.android.core.internal.threaddump
 
 import io.sentry.SentryLockReason
 import io.sentry.SentryOptions
+import java.io.BufferedReader
 import java.io.File
+import java.io.StringReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -52,8 +54,9 @@ class ThreadDumpParserTest {
     assertEquals(SentryLockReason.SLEEPING, blockingThread.heldLocks!!["0x09228c2d"]!!.type)
     assertEquals(null, blockingThread.heldLocks!!["0x09228c2d"]!!.threadId)
 
-    val randomThread =
-      threads.find { it.name == "io.sentry.android.core.internal.util.SentryFrameMetricsCollector" }
+    val randomThread = threads.find {
+      it.name == "io.sentry.android.core.internal.util.SentryFrameMetricsCollector"
+    }
     assertEquals(19, randomThread!!.id)
     assertEquals("Native", randomThread.state)
     assertEquals(false, randomThread.isCrashed)
@@ -100,12 +103,15 @@ class ThreadDumpParserTest {
     parser.parse(lines)
     val threads = parser.threads
     // just verifying a few important threads, as there are many
-    val thread = threads.find { it.name == "samples.android" }
+    // the OS named the main thread after the process; it is detected via sysTid==processId (9955)
+    // and its name is normalized back to "main"
+    val thread = threads.find { it.isMain == true }
     assertEquals(9955, thread!!.id)
+    assertEquals("main", thread.name)
     assertNull(thread.state)
-    assertEquals(false, thread.isCrashed)
-    assertEquals(false, thread.isMain)
-    assertEquals(false, thread.isCurrent)
+    assertEquals(true, thread.isCrashed)
+    assertEquals(true, thread.isMain)
+    assertEquals(true, thread.isCurrent)
 
     // Reverse frames so we can index them with the active frame at index 0
     val frames = thread.stacktrace!!.frames!!.reversed()
@@ -152,8 +158,9 @@ class ThreadDumpParserTest {
     assertNull(deletedFrame.addrMode)
 
     val debugImages = parser.debugImages
-    val image =
-      debugImages.first { image -> image.debugId == "499d48ba-c085-17cf-3209-da67405662f9" }
+    val image = debugImages.first { image ->
+      image.debugId == "499d48ba-c085-17cf-3209-da67405662f9"
+    }
     assertNotNull(image)
     assertEquals("499d48ba-c085-17cf-3209-da67405662f9", image.debugId)
     assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
@@ -180,6 +187,88 @@ class ThreadDumpParserTest {
     assertEquals(11.873, artContext.gcBlockingTime)
     assertEquals(0L, artContext.gcPreOomeCount)
     assertEquals(8.054, artContext.gcWaitingTime)
+  }
+
+  @Test
+  fun `detects main thread via sysTid matching the process id when OS renames it`() {
+    val lines = Lines.readLines(File("src/test/resources/thread_dump_process_name_main.txt"))
+    val parser =
+      ThreadDumpParser(SentryOptions().apply { addInAppInclude("io.sentry.samples") }, false)
+    parser.parse(lines)
+    val threads = parser.threads
+    // the main thread has been renamed to the (truncated) process name, but its sysTid equals the
+    // process id, which is how we detect it - its name is then normalized back to "main"
+    val main = threads.find { it.isMain == true }
+    assertNotNull(main)
+    assertEquals("main", main!!.name)
+    assertEquals(true, main.isCrashed)
+    assertEquals(true, main.isCurrent)
+    val background = threads.find { it.name == "Thread-2" }
+    assertNotNull(background)
+    assertEquals(false, background!!.isMain)
+    assertEquals(false, background.isCrashed)
+  }
+
+  @Test
+  fun `skips threads without a stacktrace`() {
+    val lines = Lines.readLines(File("src/test/resources/thread_dump_no_stacktrace.txt"))
+    val parser =
+      ThreadDumpParser(SentryOptions().apply { addInAppInclude("io.sentry.samples") }, false)
+    parser.parse(lines)
+    val threads = parser.threads
+    // the thread without any frames is skipped, only the one with a stacktrace remains
+    assertEquals(1, threads.size)
+    assertEquals("main", threads.first().name)
+  }
+
+  @Test
+  fun `uses class name as module when a Java frame has no package`() {
+    val lines =
+      Lines.readLines(
+        BufferedReader(
+          StringReader(
+            """
+            ----- pid 123 at 2023-04-04 22:06:31.064728684+0200 -----
+            "main" prio=5 tid=1 Runnable
+              | sysTid=123 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
+              at MainActivity.run(MainActivity.java:177)
+            """
+              .trimIndent()
+          )
+        )
+      )
+    val parser = ThreadDumpParser(SentryOptions(), false)
+
+    parser.parse(lines)
+
+    val frame = parser.threads.single().stacktrace!!.frames!!.last()
+    assertEquals("MainActivity", frame.module)
+  }
+
+  @Test
+  fun `uses class name as module when a JNI frame has no package`() {
+    val lines =
+      Lines.readLines(
+        BufferedReader(
+          StringReader(
+            """
+            ----- pid 123 at 2023-04-04 22:06:31.064728684+0200 -----
+            "main" prio=5 tid=1 Runnable
+              | sysTid=123 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
+              at MainActivity.nativeRun(Native method)
+            """
+              .trimIndent()
+          )
+        )
+      )
+    val parser = ThreadDumpParser(SentryOptions(), false)
+
+    parser.parse(lines)
+
+    val frame = parser.threads.single().stacktrace!!.frames!!.last()
+    assertEquals("MainActivity", frame.module)
+    assertEquals("nativeRun", frame.function)
+    assertEquals(true, frame.isNative)
   }
 
   @Test

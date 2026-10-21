@@ -19,7 +19,8 @@ class AnrStackTraceConverterTest {
     val profile = StackTraceConverter.convert(AnrProfile(anrStackTraces))
 
     Assert.assertNotNull(profile)
-    Assert.assertEquals(1, profile.samples.size)
+    // Two samples are present b/c the converter adds a synthetic one to keep Relay happy.
+    Assert.assertEquals(2, profile.samples.size)
     Assert.assertEquals(2, profile.frames.size)
     Assert.assertEquals(1, profile.stacks.size)
 
@@ -44,6 +45,57 @@ class AnrStackTraceConverterTest {
     Assert.assertEquals(0, sample.stackId)
     Assert.assertEquals("0", sample.threadId)
     Assert.assertEquals(1.0, sample.timestamp, 0.001) // 1000ms = 1s
+  }
+
+  @Test
+  fun testAddSyntheticSampleIfOnlyOneSamplePresent() {
+    val elements = arrayOf(StackTraceElement("com.example.MyClass", "method1", "MyClass.java", 42))
+
+    val anrStackTraces: MutableList<AnrStackTrace?> = ArrayList()
+    anrStackTraces.add(AnrStackTrace(1000, elements))
+
+    val profile = StackTraceConverter.convert(AnrProfile(anrStackTraces))
+
+    val originalSample = profile.samples[0]
+    val syntheticSample = profile.samples[1]
+    val expectedOffsetSeconds = AnrProfilingIntegration.POLLING_INTERVAL_MS / 2.0 / 1000.0
+
+    Assert.assertEquals(
+      originalSample.timestamp + expectedOffsetSeconds,
+      syntheticSample.timestamp,
+      0.001,
+    )
+
+    Assert.assertTrue(profile.stacks[syntheticSample.stackId].isNotEmpty())
+    Assert.assertEquals(2, profile.samples.size)
+    Assert.assertEquals(1, profile.stacks.size)
+    Assert.assertEquals(1, profile.frames.size)
+  }
+
+  @Test
+  fun testDoNotAddSyntheticSampleIfMultipleSamplesPresent() {
+    val elements = arrayOf(StackTraceElement("com.example.MyClass", "method1", "MyClass.java", 42))
+
+    val anrStackTraces: MutableList<AnrStackTrace?> = ArrayList()
+    anrStackTraces.add(AnrStackTrace(1000, elements))
+    anrStackTraces.add(AnrStackTrace(2000, elements))
+
+    val profile = StackTraceConverter.convert(AnrProfile(anrStackTraces))
+
+    Assert.assertEquals(2, profile.samples.size)
+    Assert.assertEquals(1.0, profile.samples[0].timestamp, 0.001)
+    Assert.assertEquals(2.0, profile.samples[1].timestamp, 0.001)
+    Assert.assertEquals(1, profile.stacks.size)
+    Assert.assertEquals(1, profile.frames.size)
+  }
+
+  @Test
+  fun testDoNotAddSyntheticSampleIfNoSamplesPresent() {
+    val profile = StackTraceConverter.convert(AnrProfile(ArrayList()))
+
+    Assert.assertEquals(0, profile.samples.size)
+    Assert.assertEquals(0, profile.stacks.size)
+    Assert.assertEquals(0, profile.frames.size)
   }
 
   @Test

@@ -7,7 +7,8 @@ description: Create a pull request in sentry-java. Use when asked to "create pr"
 
 Prepare local changes and create a pull request for the sentry-java repo.
 
-**Required reading:** Before proceeding, read `.cursor/rules/pr.mdc` for the full PR and stacked PR workflow details. That file is the source of truth for PR conventions, stack comment format, branch naming, and merge strategy.
+**For stacked PRs:** read `references/stacked-prs.md` before proceeding. It is the source of truth for
+stack structure, title naming, stack list format, and merge strategy.
 
 ## Step 0: Determine PR Type From Git Branch Context
 
@@ -66,7 +67,7 @@ git checkout -b <type>/<short-description>
 
 Derive the branch name from the changes being made. Use `feat/`, `fix/`, `ref/`, etc. matching the commit type conventions.
 
-**For stacked PRs:** For the first PR in a new stack, first create and push the collection branch (see `.cursor/rules/pr.mdc` § "Creating the Collection Branch"), then branch the PR off it. For subsequent PRs, branch off the previous stack branch. Use the naming conventions from `.cursor/rules/pr.mdc` § "Branch Naming".
+**For stacked PRs:** For the first PR in a new stack, first create and push the collection branch (see `references/stacked-prs.md` § "Why a Collection Branch"), then branch the PR off it. For subsequent PRs, branch off the previous stack branch. Give every branch in the stack a shared prefix naming the feature, with a descriptive suffix per PR.
 
 **CRITICAL: Never merge, fast-forward, or push commits into the collection branch.** It stays at its initial position until the user merges stack PRs through GitHub. Updating it will auto-merge and destroy the entire PR stack.
 
@@ -88,7 +89,13 @@ Check for uncommitted changes:
 git status --porcelain
 ```
 
-If there are uncommitted changes, invoke the `sentry-skills:commit` skill to stage and commit them following Sentry conventions.
+If there are uncommitted changes, invoke the `sentry-skills:commit` skill to stage and commit them following [Sentry commit message conventions](https://develop.sentry.dev/engineering-practices/commit-messages/):
+
+```
+<type>(<scope>): <subject>
+```
+
+Allowed types: `feat`, `fix`, `ref`, `chore`, `docs`, `test`, `perf`, `build`, `ci`, `style`, `meta`, `license`
 
 **Important:** When staging, ignore changes that are only relevant for local testing and should not be part of the PR. Common examples:
 
@@ -114,39 +121,28 @@ If the push fails due to diverged history, ask the user how to proceed rather th
 
 ## Step 5: Create PR
 
-Invoke the `sentry-skills:create-pr` skill to create a draft PR. When providing the PR body, use the repo's PR template structure from `.github/pull_request_template.md`:
+Invoke the `sentry-skills:create-pr` skill to create a draft PR.
+
+Read `.github/pull_request_template.md` and use it as the PR body structure — it is the single source
+of truth for the sections and checklist, so never reproduce it from memory. Fill in each section based
+on the changes being PR'd, drop the HTML comment hints, and check any checklist items that apply.
+
+**PR title format** — same as the commit subject (Step 3):
 
 ```
-## :scroll: Description
-<Describe the changes in detail>
-
-## :bulb: Motivation and Context
-<Why is this change required? What problem does it solve?>
-
-## :green_heart: How did you test it?
-<Describe how you tested>
-
-## :pencil: Checklist
-- [ ] I added GH Issue ID _&_ Linear ID
-- [ ] I added tests to verify the changes.
-- [ ] No new PII added or SDK only sends newly added PII if `sendDefaultPII` is enabled.
-- [ ] I updated the docs if needed.
-- [ ] I updated the wizard if needed.
-- [ ] Review from the native team if needed.
-- [ ] No breaking change or entry added to the changelog.
-- [ ] No breaking change for hybrid SDKs or communicated to hybrid SDKs.
-
-## :crystal_ball: Next steps
+<type>(<scope>): <Subject>
 ```
 
-Fill in each section based on the changes being PR'd. Check any checklist items that apply.
+Examples:
+- `feat(core): Add structured logging support`
+- `fix(android): Prevent crash on API 21 when registering receiver`
 
 **For stacked PRs:**
 
 - Pass `--base <previous-stack-branch>` so the PR targets the previous branch (first PR in a stack targets the collection branch).
-- Use the stacked PR title format: `<type>(<scope>): [<Topic> <N>] <Subject>` (see `.cursor/rules/pr.mdc` § "PR Title Naming").
-- Include the stack list at the top of the PR body, before the `## :scroll: Description` section (see `.cursor/rules/pr.mdc` § "Stack List in PR Description" for the format).
-- Add a merge method reminder at the very end of the PR body (see `.cursor/rules/pr.mdc` § "Stack List in PR Description" for the exact text). This only applies to stack PRs, not the collection branch PR.
+- Use the stacked PR title format: `<type>(<scope>): [<Topic> <N>] <Subject>` (see `references/stacked-prs.md` § "PR Title Naming").
+- Include the stack list at the top of the PR body, before the `## :scroll: Description` section (see `references/stacked-prs.md` § "Stack List in PR Description" for the format).
+- Add a merge method reminder at the very end of the PR body (see `references/stacked-prs.md` § "Stack List in PR Description" for the exact text). This only applies to stack PRs, not the collection branch PR.
 
 Then continue to Step 5.5 (stacked PRs only) or Step 6.
 
@@ -154,13 +150,9 @@ Then continue to Step 5.5 (stacked PRs only) or Step 6.
 
 Skip this step for standalone PRs.
 
-After creating the PR, update the PR description on **every other PR in the stack — including the collection branch PR** — so all PRs have the same up-to-date stack list. Follow the format and commands in `.cursor/rules/pr.mdc` § "Stack List in PR Description".
+After creating the PR, update the PR description on **every other PR in the stack — including the collection branch PR** — so all PRs have the same up-to-date stack list. Follow the format and commands in `references/stacked-prs.md` § "Stack List in PR Description".
 
-**Important:** When updating PR bodies, never use shell redirects (`>`, `>>`) or pipes (`|`) or compound commands (`&&`). These create compound shell expressions that won't match permission patterns. Instead:
-- Use `gh pr view <NUMBER> --json body --jq '.body'` to get the body (output returned directly)
-- Use the `Write` tool to save it to a temp file
-- Use the `Edit` tool to modify the temp file
-- Use `gh pr edit <NUMBER> --body-file /tmp/pr-body.md` to update
+Edit each body using the procedure in § "Editing PR Descriptions" below.
 
 ## Step 6: Update Changelog
 
@@ -190,6 +182,8 @@ Add an entry to `CHANGELOG.md` under the `## Unreleased` section.
 
 Create the subsection under `## Unreleased` if it does not already exist.
 
+**When rebasing:** A rebase onto `main` can land your branch after a release was cut, where the `## Unreleased` heading your entry lived under has since been renamed to that version number. If that happens, move your new entry into an `## Unreleased` section at the top of `CHANGELOG.md` (create the section if it no longer exists) so it is not left under an already-released version.
+
 #### Entry format
 
 ```markdown
@@ -210,8 +204,14 @@ git push
 
 ### No changelog needed
 
-If no changelog entry is needed, add `#skip-changelog` to the PR description to disable the changelog CI check:
+If no changelog entry is needed, append `#skip-changelog` to the end of the PR description to disable
+the changelog CI check, using the procedure in § "Editing PR Descriptions" below.
 
-1. Get the current body: `gh pr view <PR_NUMBER> --json body --jq '.body'`
-2. Use the `Write` tool to save the output to `/tmp/pr-body.md`, appending `\n#skip-changelog\n` at the end
-3. Update: `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`
+## Editing PR Descriptions
+
+Do not use shell redirects (`>`, `>>`), pipes (`|`), or compound commands (`&&`, `||`). These create
+compound shell expressions that won't match permission patterns. Instead:
+
+1. Read the body with `gh pr view <PR_NUMBER> --json body --jq '.body'` (output is returned directly)
+2. Use the `Write` tool to save it to `/tmp/pr-body.md`, and the `Edit` tool to modify it
+3. Update with `gh pr edit <PR_NUMBER> --body-file /tmp/pr-body.md`

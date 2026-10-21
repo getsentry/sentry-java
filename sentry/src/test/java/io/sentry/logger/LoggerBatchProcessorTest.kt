@@ -1,7 +1,9 @@
 package io.sentry.logger
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DataCategory
 import io.sentry.ISentryClient
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryLogEvent
 import io.sentry.SentryLogEvents
 import io.sentry.SentryLogLevel
@@ -18,12 +20,60 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 
 class LoggerBatchProcessorTest {
+  @Test
+  fun `flush without accepted items does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = LoggerBatchProcessor(SentryOptions(), mock(), mockExecutor)
+
+    processor.flush(0)
+
+    verifyNoInteractions(mockExecutor)
+  }
+
+  @Test
+  fun `close without accepted items does not submit processor work`() {
+    for (isRestarting in listOf(false, true)) {
+      val mockExecutor = mock<ISentryExecutorService>()
+      val processor = LoggerBatchProcessor(SentryOptions(), mock(), mockExecutor)
+
+      processor.close(isRestarting)
+
+      verify(mockExecutor).close(any())
+      verify(mockExecutor, never()).schedule(any(), any())
+      verify(mockExecutor, never()).submit(any<Runnable>())
+    }
+  }
+
+  @Test
+  fun `schedules another flush after previous flush has run`() {
+    val mockClient = mock<ISentryClient>()
+    val mockExecutor = DeferredExecutorService()
+    val processor = LoggerBatchProcessor(SentryOptions(), mockClient, mockExecutor)
+
+    processor.add(SentryLogEvent(SentryId(), SentryNanotimeDate(), "first", SentryLogLevel.INFO))
+    mockExecutor.runAll()
+
+    processor.add(SentryLogEvent(SentryId(), SentryNanotimeDate(), "second", SentryLogLevel.INFO))
+    assertThat(mockExecutor.hasScheduledRunnables()).isTrue()
+    mockExecutor.runAll()
+
+    val captor = argumentCaptor<SentryLogEvents>()
+    verify(mockClient, times(2)).captureBatchedLogEvents(captor.capture())
+    assertThat(captor.allValues.flatMap { it.items }.map { it.body })
+      .containsExactly("first", "second")
+      .inOrder()
+  }
+
   @Test
   fun `drops log events after reaching MAX_QUEUE_SIZE limit`() {
     // given

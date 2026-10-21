@@ -11,6 +11,7 @@ import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.IpAddressUtils
 import io.sentry.NoOpLogger
+import io.sentry.ProfileChunk
 import io.sentry.Sentry
 import io.sentry.SentryBaseEvent
 import io.sentry.SentryEvent
@@ -27,6 +28,7 @@ import io.sentry.cache.PersistingOptionsObserver.PROGUARD_UUID_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.REPLAY_ERROR_SAMPLE_RATE_FILENAME
 import io.sentry.cache.PersistingOptionsObserver.SDK_VERSION_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.TAGS_FILENAME as OPTIONS_TAGS_FILENAME
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME
@@ -48,6 +50,8 @@ import io.sentry.protocol.Contexts
 import io.sentry.protocol.DebugImage
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.Device
+import io.sentry.protocol.Mechanism
+import io.sentry.protocol.Message
 import io.sentry.protocol.OperatingSystem
 import io.sentry.protocol.Request
 import io.sentry.protocol.Response
@@ -74,7 +78,9 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
@@ -152,7 +158,7 @@ class ApplicationExitInfoEventProcessorTest {
         persistOptions(SDK_VERSION_FILENAME, SdkVersion("sentry.java.android", "6.15.0"))
         persistOptions(DIST_FILENAME, "232")
         persistOptions(ENVIRONMENT_FILENAME, "debug")
-        persistOptions(TAGS_FILENAME, mapOf("option" to "tag"))
+        persistOptions(OPTIONS_TAGS_FILENAME, mapOf("option" to "tag"))
         replayErrorSampleRate?.let {
           persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, it.toString())
         }
@@ -197,7 +203,6 @@ class ApplicationExitInfoEventProcessorTest {
 
   @BeforeTest
   fun `set up`() {
-    DeviceInfoUtil.resetInstance()
     fixture.context = ApplicationProvider.getApplicationContext()
   }
 
@@ -212,7 +217,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `when backfillable event is not enrichable, sets different mechanism`() {
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false))
+    val hint = anrHint(shouldEnrich = false)
 
     val processed = processEvent(hint)
 
@@ -221,11 +226,31 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `when backfillable event is not enrichable, sets platform`() {
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false))
+    val hint = anrHint(shouldEnrich = false)
 
     val processed = processEvent(hint)
 
     assertEquals(SentryBaseEvent.DEFAULT_PLATFORM, processed.platform)
+  }
+
+  @Test
+  fun `when user info is disabled, sets device id`() {
+    fixture.options.dataCollection.setUserInfo(false)
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+
+    val processed = processEvent(hint)
+
+    assertNotNull(processed.contexts.device!!.id)
+  }
+
+  @Test
+  fun `when user info is enabled, sets device id`() {
+    fixture.options.dataCollection.setUserInfo(true)
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+
+    val processed = processEvent(hint, isSendDefaultPii = false)
+
+    assertNotNull(processed.contexts.device!!.id)
   }
 
   @Test
@@ -285,7 +310,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `when backfillable event is enrichable, still sets static data`() {
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+    val hint = anrHint()
 
     val processed = processEvent(hint)
 
@@ -330,10 +355,47 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `when backfillable event already has breadcrumbs, does not duplicate them with persisted ones`() {
+    // simulates a tombstone-merged native crash event, which already carries its own
+    // breadcrumb history captured at crash time, overlapping with what was persisted to disk
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+
+    val processed =
+      processEvent(hint, populateScopeCache = true) {
+        breadcrumbs = listOf(Breadcrumb.debug("own-crash-time-breadcrumb"))
+      }
+
+    assertEquals(1, processed.breadcrumbs!!.size)
+    assertEquals("own-crash-time-breadcrumb", processed.breadcrumbs!![0].message)
+  }
+
+  @Test
   fun `when backfillable event is enrichable, does not backfill user ip`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
     val processed = processEvent(hint, isSendDefaultPii = false, populateScopeCache = true)
     assertNull(processed.user!!.ipAddress)
+  }
+
+  @Test
+  fun `when user info is disabled, does not backfill automatic user data`() {
+    fixture.options.dataCollection.setUserInfo(false)
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+    val processed = processEvent(hint, isSendDefaultPii = true, populateScopeCache = true)
+
+    assertEquals("bot", processed.user!!.username)
+    assertEquals("bot@me.com", processed.user!!.id)
+    assertNull(processed.user!!.ipAddress)
+  }
+
+  @Test
+  fun `when user info is enabled, backfills automatic user data`() {
+    fixture.options.dataCollection.setUserInfo(true)
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+    val processed = processEvent(hint, isSendDefaultPii = false, populateScopeCache = true)
+
+    assertEquals("bot", processed.user!!.username)
+    assertEquals("bot@me.com", processed.user!!.id)
+    assertEquals("{{auto}}", processed.user!!.ipAddress)
   }
 
   @Test
@@ -367,7 +429,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `when ANR event is enrichable, sets foreground flag`() {
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+    val hint = anrHint()
 
     val processed = processEvent(hint, populateOptionsCache = true)
 
@@ -390,12 +452,272 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `if environment is not persisted, uses environment from options`() {
-    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+  fun `if environment is not persisted and app was not updated, uses environment from options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    setLastUpdateTime(1_000)
 
     val processed = processEvent(hint)
 
     assertEquals("release", processed.environment)
+  }
+
+  @Test
+  fun `if release is not persisted and app was not updated, uses release from options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.2.0+232", processed.release)
+  }
+
+  @Test
+  fun `if release is not persisted and app was updated, leaves release empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 1_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+  }
+
+  @Test
+  fun `if exit timestamp is unknown, leaves release empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+  }
+
+  @Test
+  fun `if last update time is invalid, leaves release empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 1_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(-1)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+  }
+
+  @Test
+  fun `if dist is not persisted and app was not updated, uses version code from options release`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("232", processed.dist)
+  }
+
+  @Test
+  fun `if app version is not persisted and app was not updated, uses options release`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("1.2.0", processed.contexts.app!!.appVersion)
+    assertEquals("232", processed.contexts.app!!.appBuild)
+  }
+
+  @Test
+  fun `historical event uses current options when app was not updated`() {
+    val hint =
+      HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false, timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    fixture.options.environment = "production"
+    fixture.options.dist = "custom-dist"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.2.0+232", processed.release)
+    assertEquals("production", processed.environment)
+    assertEquals("custom-dist", processed.dist)
+    val app = processed.contexts.app!!
+    assertEquals("1.2.0", app.appVersion)
+    assertEquals("232", app.appBuild)
+    assertNull(app.appName)
+    assertNull(app.appIdentifier)
+  }
+
+  @Test
+  fun `if options cache is from an older app update, uses current options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 3_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@2.0.0+300"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.options.proguardUuid = "current-uuid"
+    fixture.options.sdkVersion = SdkVersion("current-sdk", "2.0.0")
+    fixture.options.setTag("account", "current-tag")
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "previous-user")
+    fixture.persistOptions(DIST_FILENAME, "previous-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "previous-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("previous-sdk", "1.0.0"))
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "previous-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@2.0.0+300", processed.release)
+    assertEquals("current-user", processed.environment)
+    assertEquals("current-dist", processed.dist)
+    assertEquals("current-uuid", processed.debugMeta!!.images!![0].uuid)
+    assertEquals("current-sdk", processed.sdk!!.name)
+    assertEquals("current-tag", processed.tags!!["account"])
+  }
+
+  @Test
+  fun `if options cache is from current app update, uses persisted options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.0.0+100"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.options.setTag("account", "current-tag")
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "crashed-user")
+    fixture.persistOptions(DIST_FILENAME, "crashed-dist")
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "crashed-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.0.0+100", processed.release)
+    assertEquals("crashed-user", processed.environment)
+    assertEquals("crashed-dist", processed.dist)
+    assertEquals("crashed-tag", processed.tags!!["account"])
+  }
+
+  @Test
+  fun `if options cache was written after the exit, ignores persisted options`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@2.0.0+200")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "newer-user")
+    fixture.persistOptions(DIST_FILENAME, "newer-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "newer-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("newer-sdk", "2.0.0"))
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "newer-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 2_500L).setRelease(null)
+    setLastUpdateTime(3_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+    assertNull(processed.environment)
+    assertNull(processed.dist)
+    assertTrue(processed.debugMeta!!.images!!.isEmpty())
+    assertNull(processed.sdk)
+    assertNull(processed.tags?.get("account"))
+  }
+
+  @Test
+  fun `historical event leaves release empty when app was updated`() {
+    val hint =
+      HintUtils.createWithTypeCheckHint(AbnormalExitHint(shouldEnrich = false, timestamp = 1_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2.0+232"
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+    assertNull(processed.contexts.app)
+  }
+
+  @Test
+  fun `memory limiter event uses current options when cache generation is stale`() {
+    val hint = memoryLimiterHint(timestamp = 3_000)
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@2.0.0+300"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.options.proguardUuid = "current-uuid"
+    fixture.options.sdkVersion = SdkVersion("current-sdk", "2.0.0")
+    fixture.options.setTag("account", "current-tag")
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "previous-user")
+    fixture.persistOptions(DIST_FILENAME, "previous-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "previous-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("previous-sdk", "1.0.0"))
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "previous-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(2_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@2.0.0+300", processed.release)
+    assertEquals("current-user", processed.environment)
+    assertEquals("current-dist", processed.dist)
+    assertEquals("current-uuid", processed.debugMeta!!.images!![0].uuid)
+    assertEquals("current-sdk", processed.sdk!!.name)
+    assertEquals("current-tag", processed.tags!!["account"])
+  }
+
+  @Test
+  fun `memory limiter event uses persisted options when cache generation matches crashed app`() {
+    val hint = memoryLimiterHint(timestamp = 2_000)
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.0.0+100"
+    fixture.options.environment = "current-user"
+    fixture.options.dist = "current-dist"
+    fixture.options.setTag("account", "current-tag")
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.0.0+100")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "crashed-user")
+    fixture.persistOptions(DIST_FILENAME, "crashed-dist")
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "crashed-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.0.0+100", processed.release)
+    assertEquals("crashed-user", processed.environment)
+    assertEquals("crashed-dist", processed.dist)
+    assertEquals("crashed-tag", processed.tags!!["account"])
+  }
+
+  @Test
+  fun `memory limiter event ignores persisted options when cache generation is newer than exit`() {
+    val hint = memoryLimiterHint(timestamp = 2_000)
+    val processor = fixture.getSut(tmpDir)
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@2.0.0+200")
+    fixture.persistOptions(ENVIRONMENT_FILENAME, "newer-user")
+    fixture.persistOptions(DIST_FILENAME, "newer-dist")
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "newer-uuid")
+    fixture.persistOptions(SDK_VERSION_FILENAME, SdkVersion("newer-sdk", "2.0.0"))
+    fixture.persistOptions(OPTIONS_TAGS_FILENAME, mapOf("account" to "newer-tag"))
+    PersistingOptionsCacheGenerationObserver(fixture.options, 2_500L).setRelease(null)
+    setLastUpdateTime(3_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.release)
+    assertNull(processed.environment)
+    assertNull(processed.dist)
+    assertTrue(processed.debugMeta!!.images!!.isEmpty())
+    assertNull(processed.sdk)
+    assertNull(processed.tags?.get("account"))
   }
 
   @Test
@@ -427,6 +749,19 @@ class ApplicationExitInfoEventProcessorTest {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
     val original = SentryEvent()
 
+    val processor = fixture.getSut(tmpDir)
+    fixture.persistOptions(USER_FILENAME, User())
+
+    val processed = processor.process(original, hint)
+
+    assertEquals(Installation.deviceId, processed!!.user!!.id)
+  }
+
+  @Test
+  fun `when user info is disabled, sets installation id for missing user id`() {
+    fixture.options.dataCollection.setUserInfo(false)
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+    val original = SentryEvent()
     val processor = fixture.getSut(tmpDir)
     fixture.persistOptions(USER_FILENAME, User())
 
@@ -480,10 +815,11 @@ class ApplicationExitInfoEventProcessorTest {
 
     assertEquals("MainActivity", processed.transaction)
     assertEquals(DEBUG, processed.level)
-    assertEquals(3, processed.breadcrumbs!!.size)
+    // breadcrumbs already set on the event are preserved as-is, not merged with the persisted
+    // ones, since the event already carries its own authoritative breadcrumb history
+    assertEquals(1, processed.breadcrumbs!!.size)
     assertEquals("debug", processed.breadcrumbs!![0].type)
-    assertEquals("debug", processed.breadcrumbs!![1].type)
-    assertEquals("navigation", processed.breadcrumbs!![2].type)
+    assertEquals("test", processed.breadcrumbs!![0].message)
 
     assertEquals("debug", processed.environment)
     assertEquals("io.sentry.samples@1.1.0+220", processed.release)
@@ -509,7 +845,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `populates exception from main thread`() {
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+    val hint = anrHint()
     val stacktrace =
       SentryStackTrace().apply {
         frames =
@@ -549,7 +885,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `populates exception without stacktrace when there is no main thread in threads`() {
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint())
+    val hint = anrHint()
 
     val processed = processEvent(hint) { threads = listOf(SentryThread()) }
 
@@ -563,7 +899,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `adds Background to the message when mechanism is anr_background`() {
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_background"))
+    val hint = anrHint(mechanism = "anr_background")
 
     val processed =
       processEvent(hint) {
@@ -582,7 +918,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `does not add Background to the message when mechanism is anr_foreground`() {
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val hint = anrHint(mechanism = "anr_foreground")
 
     val processed =
       processEvent(hint) {
@@ -601,8 +937,7 @@ class ApplicationExitInfoEventProcessorTest {
 
   @Test
   fun `sets default fingerprint to distinguish between background and foreground ANRs`() {
-    val backgroundHint =
-      HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_background"))
+    val backgroundHint = anrHint(mechanism = "anr_background")
     val processedBackground =
       processEvent(backgroundHint, populateScopeCache = false) {
         exceptions =
@@ -622,8 +957,7 @@ class ApplicationExitInfoEventProcessorTest {
       }
     assertEquals(listOf("{{ default }}", "background-anr"), processedBackground.fingerprints)
 
-    val foregroundHint =
-      HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val foregroundHint = anrHint(mechanism = "anr_foreground")
     val processedForeground =
       processEvent(foregroundHint, populateScopeCache = false) {
         exceptions =
@@ -668,9 +1002,63 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `memory limiter hint does not apply ANR-specific enrichment`() {
+    val expectedMessage =
+      MemoryLimiterIntegration.MEMORY_LIMITER_MESSAGE_PREFIX +
+        " (importance_foreground: " +
+        ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND +
+        ")"
+    val hint =
+      HintUtils.createWithTypeCheckHint(
+        MemoryLimiterIntegration.MemoryLimiterHint(
+          fixture.options.flushTimeoutMillis,
+          NoOpLogger.getInstance(),
+          1_000,
+          true,
+        )
+      )
+
+    val processed =
+      processEvent(hint, populateScopeCache = false, populateOptionsCache = false) {
+        level = SentryLevel.FATAL
+        platform = SentryBaseEvent.DEFAULT_PLATFORM
+        message = Message().apply { formatted = expectedMessage }
+        fingerprints =
+          listOf(
+            MemoryLimiterIntegration.MEMORY_LIMITER_FINGERPRINT,
+            MemoryLimiterIntegration.PROCESS_IMPORTANCE_FINGERPRINT_PREFIX +
+              ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+          )
+        exceptions =
+          listOf(
+            SentryException().apply {
+              type = "MemoryLimitExceeded"
+              value = expectedMessage
+              mechanism = Mechanism().apply { type = "AppExitInfo" }
+            }
+          )
+      }
+
+    assertEquals(SentryBaseEvent.DEFAULT_PLATFORM, processed.platform)
+    assertEquals(expectedMessage, processed.message!!.formatted)
+    assertEquals("MemoryLimitExceeded", processed.exceptions!!.first().type)
+    assertEquals("AppExitInfo", processed.exceptions!!.first().mechanism!!.type)
+    assertEquals(
+      listOf(
+        MemoryLimiterIntegration.MEMORY_LIMITER_FINGERPRINT,
+        MemoryLimiterIntegration.PROCESS_IMPORTANCE_FINGERPRINT_PREFIX +
+          ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+      ),
+      processed.fingerprints,
+    )
+    assertNull(processed.contexts.app?.inForeground)
+    assertNull(processed.contexts.profile)
+  }
+
+  @Test
   fun `sets system-frames-only fingerprint when ANR fingerprinting enabled and no app frames`() {
     fixture.options.isEnableAnrFingerprinting = true
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val hint = anrHint(mechanism = "anr_foreground")
 
     val processed =
       processEvent(hint, populateScopeCache = false) {
@@ -699,7 +1087,7 @@ class ApplicationExitInfoEventProcessorTest {
   @Test
   fun `does not set system-frames-only fingerprint when ANR fingerprinting is disabled and no app frames are present`() {
     fixture.options.isEnableAnrFingerprinting = false
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val hint = anrHint(mechanism = "anr_foreground")
 
     val processed =
       processEvent(hint, populateScopeCache = false) {
@@ -728,7 +1116,7 @@ class ApplicationExitInfoEventProcessorTest {
   @Test
   fun `sets default fingerprint when ANR fingerprinting enabled and app frames are present`() {
     fixture.options.isEnableAnrFingerprinting = true
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val hint = anrHint(mechanism = "anr_foreground")
 
     val processed =
       processEvent(hint, populateScopeCache = false) {
@@ -756,7 +1144,7 @@ class ApplicationExitInfoEventProcessorTest {
   @Test
   fun `does not set profile context when ANR profiling is disabled`() {
     fixture.options.anrProfilingSampleRate = null
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val hint = anrHint(mechanism = "anr_foreground")
     val processed =
       processEvent(hint, populateScopeCache = false) {
         threads =
@@ -790,7 +1178,8 @@ class ApplicationExitInfoEventProcessorTest {
         isSendDefaultPii = false,
       )
 
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val hintTimestamp = System.currentTimeMillis()
+    val hint = anrHint(mechanism = "anr_foreground", timestamp = hintTimestamp)
 
     AnrProfileManager(
         fixture.options,
@@ -799,7 +1188,7 @@ class ApplicationExitInfoEventProcessorTest {
       .apply {
         add(
           AnrStackTrace(
-            System.currentTimeMillis(),
+            hintTimestamp,
             arrayOf(
               StackTraceElement(
                 "android.view.Choreographer",
@@ -822,9 +1211,66 @@ class ApplicationExitInfoEventProcessorTest {
       mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
 
       val processed = processor.process(SentryEvent(), hint)
+      val chunkCaptor = argumentCaptor<ProfileChunk>()
+      verify(scopes).captureProfileChunk(chunkCaptor.capture())
+      val sentryProfile = chunkCaptor.firstValue.sentryProfile
 
       assertNotNull(processed?.contexts?.profile)
       assertNotNull(processed.contexts.profile?.profilerId)
+      assertNotNull(sentryProfile)
+      // Two samples are present b/c the converter adds a synthetic one to keep Relay happy.
+      assertEquals(2, sentryProfile.samples.size)
+    }
+  }
+
+  @Test
+  fun `uses persisted proguard uuid for ANR profile chunk after app update`() {
+    fixture.options.anrProfilingSampleRate = 1.0
+    fixture.options.proguardUuid = "current-uuid"
+    val processor =
+      fixture.getSut(
+        tmpDir,
+        populateScopeCache = false,
+        populateOptionsCache = false,
+        isSendDefaultPii = false,
+      )
+    fixture.persistOptions(PROGUARD_UUID_FILENAME, "previous-uuid")
+    setLastUpdateTime(2_000)
+
+    val hint = anrHint(mechanism = "anr_foreground", timestamp = 1_000)
+
+    AnrProfileManager(
+        fixture.options,
+        AnrProfileRotationHelper.getFileForRecording(File(fixture.options.cacheDirPath!!)),
+      )
+      .apply {
+        add(
+          AnrStackTrace(
+            1_000,
+            arrayOf(
+              StackTraceElement("com.example.MyApp", "blocked", "MyApp.java", 42),
+              StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
+            ),
+          )
+        )
+        close()
+      }
+    AnrProfileRotationHelper.rotate()
+
+    val scopes = mock<IScopes>()
+    whenever(scopes.captureProfileChunk(any())).thenReturn(SentryId())
+
+    mockStatic(Sentry::class.java).use { mockedSentry ->
+      mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+
+      processor.process(SentryEvent(), hint)
+
+      val chunkCaptor = argumentCaptor<ProfileChunk>()
+      verify(scopes).captureProfileChunk(chunkCaptor.capture())
+      val images = chunkCaptor.firstValue.debugMeta!!.images!!
+      assertEquals(1, images.size)
+      assertEquals(DebugImage.PROGUARD, images[0].type)
+      assertEquals("previous-uuid", images[0].uuid)
     }
   }
 
@@ -832,7 +1278,7 @@ class ApplicationExitInfoEventProcessorTest {
   fun `does not crash when ANR profiling is enabled but cache dir is null`() {
     fixture.options.anrProfilingSampleRate = 1.0
     fixture.options.cacheDirPath = null
-    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(mechanism = "anr_foreground"))
+    val hint = anrHint(mechanism = "anr_foreground")
     val original = SentryEvent()
 
     val processor = fixture.getSut(tmpDir)
@@ -891,6 +1337,39 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `if options cache is current, uses persisted replay error sample rate`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.options.sessionReplay.onErrorSampleRate = 1.0
+    fixture.persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, "0.0")
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertNull(processed.contexts[Contexts.REPLAY_ID])
+  }
+
+  @Test
+  fun `if options cache is stale, uses current replay error sample rate`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 3_000))
+    val processor = fixture.getSut(tmpDir, populateScopeCache = true)
+    fixture.options.sessionReplay.onErrorSampleRate = 1.0
+    fixture.persistOptions(REPLAY_ERROR_SAMPLE_RATE_FILENAME, "0.0")
+    PersistingOptionsCacheGenerationObserver(fixture.options, 1_000L).setRelease(null)
+    setLastUpdateTime(2_000)
+    val replayId = SentryId()
+    File(fixture.options.cacheDirPath, "replay_$replayId").also {
+      it.mkdirs()
+      it.setLastModified(1_000)
+    }
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals(replayId.toString(), processed.contexts[Contexts.REPLAY_ID].toString())
+  }
+
+  @Test
   fun `set replayId of the last modified folder`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
     val processor =
@@ -938,15 +1417,51 @@ class ApplicationExitInfoEventProcessorTest {
     return processor.process(original, hint)!!
   }
 
+  private fun setLastUpdateTime(lastUpdateTime: Long) {
+    ContextUtils.getPackageInfo(fixture.context, fixture.buildInfo)!!.lastUpdateTime =
+      lastUpdateTime
+  }
+
+  private fun anrHint(
+    mechanism: String = "anr_foreground",
+    shouldEnrich: Boolean = true,
+    timestamp: Long = 0,
+  ): Hint {
+    return HintUtils.createWithTypeCheckHint(
+      AnrV2Integration.AnrV2Hint(
+        fixture.options.flushTimeoutMillis,
+        NoOpLogger.getInstance(),
+        timestamp,
+        shouldEnrich,
+        mechanism == "anr_background",
+      )
+    )
+  }
+
+  private fun memoryLimiterHint(
+    shouldEnrich: Boolean = true,
+    timestamp: Long,
+  ): Hint {
+    return HintUtils.createWithTypeCheckHint(
+      MemoryLimiterIntegration.MemoryLimiterHint(
+        fixture.options.flushTimeoutMillis,
+        NoOpLogger.getInstance(),
+        timestamp,
+        shouldEnrich,
+      )
+    )
+  }
+
   internal class AbnormalExitHint(
     val mechanism: String? = null,
     private val shouldEnrich: Boolean = true,
+    private val timestamp: Long? = null,
   ) : AbnormalExit, Backfillable {
     override fun mechanism(): String? = mechanism
 
     override fun ignoreCurrentThread(): Boolean = false
 
-    override fun timestamp(): Long? = null
+    override fun timestamp(): Long? = timestamp
 
     override fun shouldEnrich(): Boolean = shouldEnrich
   }

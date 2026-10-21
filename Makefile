@@ -1,9 +1,8 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleBenchmarkTestRelease assembleUiTestRelease assembleUiTestCriticalRelease createCoverageReports runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical setupPython systemTest systemTestInteractive check preMerge publish
 
-all: stop clean javadocs compile createCoverageReports
-assembleBenchmarks: assembleBenchmarkTestRelease
+all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
-preMerge: check createCoverageReports
+preMerge: check
 publish: clean dryRelease
 
 # deep clean
@@ -35,10 +34,6 @@ checkFormat:
 api:
 	./gradlew apiDump
 
-# Assemble release and Android test apk of the uitest-android-benchmark module
-assembleBenchmarkTestRelease:
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleRelease :sentry-android-integration-tests:sentry-uitest-android-benchmark:assembleAndroidTest
-
 # Assemble release and Android test apk of the uitest-android module
 assembleUiTestRelease:
 	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
@@ -50,13 +45,6 @@ assembleUiTestCriticalRelease:
 # Run Maestro tests for the uitest-android-critical module
 runUiTestCritical:
 	./scripts/test-ui-critical.sh
-
-# Create coverage reports
-#  - Jacoco for Java & Android modules
-#  - Kover for KMP modules e.g sentry-compose
-createCoverageReports:
-	./gradlew jacocoTestReport
-	./gradlew koverXmlReportRelease
 
 # Create the Python virtual environment for system tests, and install the necessary dependencies
 setupPython:

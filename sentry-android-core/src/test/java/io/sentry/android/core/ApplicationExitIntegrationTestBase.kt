@@ -27,6 +27,7 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.atMost
 import org.mockito.kotlin.check
@@ -171,7 +172,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
 
     verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
     verify(fixture.logger, never())
-      .log(any(), argThat { startsWith(config.flushLogPrefix) }, any<Any>())
+      .log(any(), argThat { startsWith(config.flushLogPrefix) }, anyVararg<Any>())
   }
 
   @Test
@@ -184,7 +185,34 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
 
     verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
     verify(fixture.logger, never())
-      .log(any(), argThat { startsWith(config.flushLogPrefix) }, any<Any>())
+      .log(any(), argThat { startsWith(config.flushLogPrefix) }, anyVararg<Any>())
+  }
+
+  @Test
+  fun `when latest event was dropped, marks the exit as reported`() {
+    val integration =
+      fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp, lastEventId = SentryId.EMPTY_ID)
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    assertEquals(newTimestamp.toString(), fixture.lastReportedFile.readText())
+  }
+
+  @Test
+  fun `when capturing the latest event failed, does not mark the exit as reported`() {
+    val integration =
+      fixture.getSut(
+        tmpDir,
+        lastReportedTimestamp = oldTimestamp,
+        lastEventId = SentryId.EMPTY_ID,
+        captureFailed = true,
+      )
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    assertEquals(oldTimestamp.toString(), fixture.lastReportedFile.readText())
   }
 
   @Test
@@ -289,7 +317,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
       .log(
         any(),
         argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
-        any<Any>(),
+        anyVararg<Any>(),
       )
   }
 
@@ -310,7 +338,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
       .log(
         any(),
         argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
-        any<Any>(),
+        anyVararg<Any>(),
       )
     verify(fixture.scopes).captureEvent(any(), any<Hint>())
   }
@@ -327,7 +355,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
       .log(
         any(),
         argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
-        any<Any>(),
+        anyVararg<Any>(),
       )
     assertTrue((fixture.options.envelopeDiskCache as EnvelopeCache).waitPreviousSessionFlush())
   }
@@ -369,7 +397,11 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
     val hintAccessors: HintAccessors<THint>,
     val addExitInfo:
       ApplicationExitTestFixture<THint>.(
-        reason: Int?, timestamp: Long?, importance: Int?, addTrace: Boolean, addBadTrace: Boolean,
+        reason: Int?,
+        timestamp: Long?,
+        importance: Int?,
+        addTrace: Boolean,
+        addBadTrace: Boolean,
       ) -> Unit,
     val flushLogPrefix: String,
   )
@@ -399,6 +431,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
       sessionFlushTimeoutMillis: Long = 0L,
       lastReportedTimestamp: Long? = null,
       lastEventId: SentryId = SentryId(),
+      captureFailed: Boolean = false,
       sessionTrackingEnabled: Boolean = true,
       reportHistorical: Boolean = true,
       extraOptions: (SentryAndroidOptions) -> Unit = {},
@@ -422,7 +455,12 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
         lastReportedFile = File(cacheDir, config.lastReportedFileName)
         lastReportedFile.writeText(lastReportedTimestamp.toString())
       }
-      whenever(scopes.captureEvent(any(), anyOrNull<Hint>())).thenReturn(lastEventId)
+      whenever(scopes.captureEvent(any(), anyOrNull<Hint>())).thenAnswer { invocation ->
+        if (captureFailed) {
+          HintUtils.setCaptureFailed(invocation.getArgument(1))
+        }
+        lastEventId
+      }
       return config.createIntegration(context)
     }
 

@@ -1,6 +1,11 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
+import java.io.StringReader
 import java.util.Date
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -327,6 +332,93 @@ class BreadcrumbTest {
   fun `remove null key data does not throw`() {
     val breadcrumb = Breadcrumb()
     breadcrumb.removeData(null)
+  }
+
+  @Test
+  fun `getData returns mutable map for new breadcrumb`() {
+    val breadcrumb = Breadcrumb()
+
+    breadcrumb.data["k"] = "v"
+
+    assertEquals("v", breadcrumb.getData("k"))
+  }
+
+  @Test
+  fun `concurrent first writes keep all data entries`() {
+    val breadcrumb = Breadcrumb()
+    val count = 32
+    val executor = Executors.newFixedThreadPool(count)
+    val start = CountDownLatch(1)
+    val futures =
+      (0 until count).map { index ->
+        executor.submit {
+          start.await()
+          breadcrumb.setData("key-$index", index)
+        }
+      }
+
+    start.countDown()
+    futures.forEach { it.get(5, TimeUnit.SECONDS) }
+    executor.shutdown()
+
+    assertEquals(count, breadcrumb.data.size)
+    for (index in 0 until count) {
+      assertEquals(index, breadcrumb.data["key-$index"])
+    }
+  }
+
+  @Test
+  fun `breadcrumbs sharing a timestamp keep the order they were recorded in`() {
+    val timestamp = Date(1_600_000_000_000)
+    val first = Breadcrumb(timestamp).apply { message = "first" }
+    val second = Breadcrumb(timestamp).apply { message = "second" }
+    val third = Breadcrumb(timestamp).apply { message = "third" }
+
+    val sorted = listOf(third, first, second).sorted().map { it.message }
+
+    assertThat(sorted).containsExactly("first", "second", "third").inOrder()
+  }
+
+  @Test
+  fun `a deserialized breadcrumb is ordered by its own timestamp, not by when it was parsed`() {
+    val live = Breadcrumb(Date(1_600_000_000_000)).apply { message = "live" }
+    val restored =
+      Breadcrumb.fromMap(
+        mapOf(
+          Breadcrumb.JsonKeys.TIMESTAMP to DateUtils.getTimestamp(Date(1_500_000_000_000)),
+          Breadcrumb.JsonKeys.MESSAGE to "restored",
+        ),
+        SentryOptions(),
+      )
+
+    val sorted = listOf(live, restored).sorted().map { it.message }
+
+    assertThat(sorted).containsExactly("restored", "live").inOrder()
+  }
+
+  @Test
+  fun `a breadcrumb read back from JSON is ordered by its own timestamp, not by when it was parsed`() {
+    val live = Breadcrumb(Date(1_600_000_000_000)).apply { message = "live" }
+    val json =
+      """{"timestamp":"${DateUtils.getTimestamp(Date(1_500_000_000_000))}","message":"restored"}"""
+    val restored =
+      Breadcrumb.Deserializer()
+        .deserialize(JsonObjectReader(StringReader(json)), NoOpLogger.getInstance())
+
+    val sorted = listOf(live, restored).sorted().map { it.message }
+
+    assertThat(sorted).containsExactly("restored", "live").inOrder()
+  }
+
+  @Test
+  fun `cloning a breadcrumb keeps its position among breadcrumbs sharing its timestamp`() {
+    val timestamp = Date(1_600_000_000_000)
+    val first = Breadcrumb(timestamp).apply { message = "first" }
+    val second = Breadcrumb(timestamp).apply { message = "second" }
+
+    val sorted = listOf(second, Breadcrumb(first)).sorted().map { it.message }
+
+    assertThat(sorted).containsExactly("first", "second").inOrder()
   }
 
   class TestKey(val id: Long) {

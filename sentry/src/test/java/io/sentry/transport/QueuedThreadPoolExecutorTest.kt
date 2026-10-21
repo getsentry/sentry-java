@@ -145,11 +145,10 @@ class QueuedThreadPoolExecutorTest {
     val jobBlocker2 = CountDownLatch(1)
     val sync2 = CountDownLatch(1)
 
-    f =
-      sut.submit {
-        sync2.countDown()
-        jobBlocker2.await()
-      }
+    f = sut.submit {
+      sync2.countDown()
+      jobBlocker2.await()
+    }
     assertFalse(
       f.isCancelled,
       "A task should be successfully enqueued after making a place in the queue",

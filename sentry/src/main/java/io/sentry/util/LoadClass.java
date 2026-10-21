@@ -4,6 +4,7 @@ import com.jakewharton.nopen.annotation.Open;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,16 +12,27 @@ import org.jetbrains.annotations.Nullable;
 @Open
 public class LoadClass {
 
+  // Populated by the Sentry Android Gradle plugin for class names it can resolve at build time.
+  static @Nullable Map<String, Boolean> classAvailability;
+
   /**
-   * Try to load a class via reflection
+   * Loads and initializes a class via reflection. Use this when you intend to actually use the
+   * class (e.g. instantiate it or invoke its methods). The returned class is fully initialized, so
+   * its static initializers run. To merely check whether a class is on the classpath, use {@link
+   * #isClassAvailable} instead, which avoids running those initializers.
    *
    * @param clazz the full class name
    * @param logger an instance of ILogger
    * @return a Class&lt;?&gt; if it's available, or null
    */
   public @Nullable Class<?> loadClass(final @NotNull String clazz, final @Nullable ILogger logger) {
+    return loadClass(clazz, logger, true);
+  }
+
+  private @Nullable Class<?> loadClass(
+      final @NotNull String clazz, final @Nullable ILogger logger, final boolean initialize) {
     try {
-      return Class.forName(clazz);
+      return Class.forName(clazz, initialize, LoadClass.class.getClassLoader());
     } catch (ClassNotFoundException e) {
       if (logger != null) {
         logger.log(SentryLevel.INFO, "Class not available: " + clazz);
@@ -37,8 +49,29 @@ public class LoadClass {
     return null;
   }
 
+  /**
+   * Probes whether a class is on the classpath without initializing it. Use this for availability
+   * checks (e.g. deciding whether to register an integration); the class is not initialized, so its
+   * static initializers do not run until something actually uses it. This keeps SDK init cheap by
+   * not triggering unrelated initializers. If you need to use the class, use {@link #loadClass}
+   * instead.
+   *
+   * @param clazz the full class name
+   * @param logger an instance of ILogger
+   * @return true if the class is on the classpath
+   */
   public boolean isClassAvailable(final @NotNull String clazz, final @Nullable ILogger logger) {
-    return loadClass(clazz, logger) != null;
+    final @Nullable Map<String, Boolean> availability = classAvailability;
+    if (availability != null) {
+      final @Nullable Boolean available = availability.get(clazz);
+      if (available != null) {
+        if (!available && logger != null) {
+          logger.log(SentryLevel.INFO, "Class not available: " + clazz);
+        }
+        return available;
+      }
+    }
+    return loadClass(clazz, logger, false) != null;
   }
 
   public boolean isClassAvailable(
@@ -46,6 +79,15 @@ public class LoadClass {
     return isClassAvailable(clazz, options != null ? options.getLogger() : null);
   }
 
+  /**
+   * Like {@link #isClassAvailable}, but defers the (non-initializing) availability check until the
+   * result is first read. Use this when the check itself should not run during SDK init but only
+   * later, on first access.
+   *
+   * @param clazz the full class name
+   * @param logger an instance of ILogger
+   * @return a lazily-evaluated availability check
+   */
   public LazyEvaluator<Boolean> isClassAvailableLazy(
       final @NotNull String clazz, final @Nullable ILogger logger) {
     return new LazyEvaluator<>(() -> isClassAvailable(clazz, logger));

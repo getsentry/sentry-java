@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -7,17 +6,12 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.systemtest")
 }
 
 group = "io.sentry.sample.spring-boot-webflux-jakarta"
 
 version = "0.0.1-SNAPSHOT"
-
-java.sourceCompatibility = JavaVersion.VERSION_17
-
-java.targetCompatibility = JavaVersion.VERSION_17
-
-repositories { mavenCentral() }
 
 dependencyManagement {
   imports {
@@ -60,7 +54,6 @@ dependencies {
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = JvmTarget.JVM_17
   }
 }
 
@@ -72,13 +65,7 @@ tasks.register<Test>("systemTest").configure {
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
 
-  outputs.upToDateWhen { false }
-
   maxParallelForks = 1
-
-  // Cap JVM args per test
-  minHeapSize = "128m"
-  maxHeapSize = "1g"
 
   filter { includeTestsMatching("io.sentry.systemtest*") }
 }

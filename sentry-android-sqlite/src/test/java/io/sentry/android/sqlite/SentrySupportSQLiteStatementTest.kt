@@ -18,7 +18,7 @@ import org.mockito.kotlin.whenever
 class SentrySupportSQLiteStatementTest {
   private class Fixture {
     private val scopes = mock<IScopes>()
-    private val spanManager = SQLiteSpanManager(scopes)
+    private val spans = OpenHelperSpans(scopes)
     val mockStatement = mock<SupportSQLiteStatement>()
     lateinit var sentryTracer: SentryTracer
     lateinit var options: SentryOptions
@@ -31,7 +31,7 @@ class SentrySupportSQLiteStatementTest {
       if (isSpanActive) {
         whenever(scopes.span).thenReturn(sentryTracer)
       }
-      return SentrySupportSQLiteStatement(mockStatement, spanManager, sql)
+      return SentrySupportSQLiteStatement(mockStatement, spans, sql)
     }
   }
 

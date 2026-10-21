@@ -1,18 +1,18 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
-  jacoco
-  alias(libs.plugins.jacoco.android)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.core"
 
   defaultConfig {
@@ -35,13 +35,20 @@ android {
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
-  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
+  testBuildType = "release"
+
+  kotlin { compilerOptions.jvmTarget = JVM_1_8 }
 
   testOptions {
     animationsDisabled = true
     unitTests.apply {
       isReturnDefaultValues = true
       isIncludeAndroidResources = true
+      // Robolectric loads the android-all jar into each test JVM, which needs more heap
+      // than the default.
+      all { it.maxHeapSize = "2g" }
     }
   }
 
@@ -74,7 +81,7 @@ tasks.withType<JavaCompile>().configureEach {
 // outputs so Gradle's build cache restores them on cache hits (otherwise the CLI upload step
 // finds an empty directory).
 tasks
-  .matching { it.name == "testDebugUnitTest" || it.name == "testReleaseUnitTest" }
+  .matching { it.name == "testReleaseUnitTest" }
   .configureEach { outputs.dir(layout.buildDirectory.dir("test-snapshots")) }
 
 dependencies {
@@ -91,6 +98,9 @@ dependencies {
   implementation(libs.androidx.lifecycle.common.java8)
   implementation(libs.androidx.lifecycle.process)
   implementation(libs.androidx.core)
+  // photo picker for user feedback screenshot attachments
+  compileOnly(libs.androidx.activity)
+
   implementation(libs.epitaph)
 
   errorprone(libs.errorprone.core)
@@ -106,8 +116,9 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.awaitility.kotlin)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentrySpotlight)
   testImplementation(projects.sentryAndroidFragment)

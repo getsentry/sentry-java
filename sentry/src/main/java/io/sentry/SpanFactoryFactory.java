@@ -21,7 +21,7 @@ public final class SpanFactoryFactory {
           try {
             final @Nullable Object otelSpanFactory =
                 otelSpanFactoryClazz.getDeclaredConstructor().newInstance();
-            if (otelSpanFactory != null && otelSpanFactory instanceof ISpanFactory) {
+            if (otelSpanFactory instanceof ISpanFactory) {
               return (ISpanFactory) otelSpanFactory;
             }
           } catch (InstantiationException e) {

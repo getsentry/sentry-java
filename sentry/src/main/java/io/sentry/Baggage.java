@@ -257,6 +257,10 @@ public final class Baggage {
     return thirdPartyHeader;
   }
 
+  // temp fix for JDK 21: ConcurrentHashMap.keySet() compiled against JDK 8+ returns KeySetView,
+  // which crashes on Android
+  // < 24.
+  @SuppressWarnings("JdkObsolete")
   public @NotNull String toHeaderString(@Nullable String thirdPartyBaggageHeaderString) {
     final StringBuilder sb = new StringBuilder();
     String separator = "";
@@ -325,10 +329,14 @@ public final class Baggage {
     return sb.toString();
   }
 
+  // temp fix for JDK 21: The Charset overload requires Java 10.
+  @SuppressWarnings("JdkObsolete")
   private String encode(final @NotNull String value) throws UnsupportedEncodingException {
     return URLEncoder.encode(value, CHARSET).replaceAll("\\+", "%20");
   }
 
+  // temp fix for JDK 21: The Charset overload requires Java 10.
+  @SuppressWarnings("JdkObsolete")
   private static String decode(final @NotNull String value) throws UnsupportedEncodingException {
     return URLDecoder.decode(value, CHARSET);
   }
@@ -449,6 +457,19 @@ public final class Baggage {
   @ApiStatus.Internal
   public void setReplayId(final @Nullable String replayId) {
     set(DSCKeys.REPLAY_ID, replayId);
+  }
+
+  /**
+   * Sets replay_id on the baggage bypassing the freeze check. In buffer mode the replay_id is
+   * unknown when the baggage is frozen, so it must be injected after {@link
+   * ReplayController#captureReplay} sets it on scope. This mirrors the JS SDK's <a
+   * href="https://github.com/getsentry/sentry-javascript/blob/develop/packages/replay-internal/src/util/resetReplayIdOnDynamicSamplingContext.ts">setReplayIdOnDynamicSamplingContext</a>.
+   */
+  @ApiStatus.Internal
+  public void forceSetReplayId(final @NotNull SentryId replayId) {
+    if (!SentryId.EMPTY_ID.equals(replayId)) {
+      keyValues.put(DSCKeys.REPLAY_ID, replayId.toString());
+    }
   }
 
   @ApiStatus.Internal

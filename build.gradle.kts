@@ -3,19 +3,15 @@ import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import groovy.util.Node
 import io.gitlab.arturbosch.detekt.extensions.DetektExtension
-import kotlinx.kover.gradle.plugin.dsl.KoverReportExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     `java-library`
     alias(libs.plugins.spotless) apply false
-    jacoco
     alias(libs.plugins.detekt)
     `maven-publish`
     alias(libs.plugins.binary.compatibility.validator)
-    alias(libs.plugins.jacoco.android) apply false
-    alias(libs.plugins.kover) apply false
     alias(libs.plugins.vanniktech.maven.publish) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -31,6 +27,10 @@ plugins {
     alias(libs.plugins.spring.dependency.management) apply false
     id("io.sentry.javadoc.aggregate")
     alias(libs.plugins.sentry) apply false
+}
+
+check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
+    "This build requires JDK 21 or newer, but runs on JDK ${JavaVersion.current()}."
 }
 
 buildscript {
@@ -70,21 +70,20 @@ apiValidation {
             "sentry-samples-spring-boot-opentelemetry",
             "sentry-samples-spring-boot-opentelemetry-noagent",
             "sentry-samples-spring-boot-jakarta",
+            "sentry-samples-spring-boot-jakarta-log4j2",
             "sentry-samples-spring-boot-jakarta-opentelemetry",
             "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
             "sentry-samples-spring-boot-webflux",
             "sentry-samples-spring-boot-webflux-jakarta",
             "sentry-samples-spring-boot-4",
+            "sentry-samples-spring-boot-4-log4j2",
             "sentry-samples-spring-boot-4-opentelemetry",
             "sentry-samples-spring-boot-4-opentelemetry-noagent",
             "sentry-samples-spring-boot-4-otlp",
             "sentry-samples-spring-boot-4-webflux",
             "sentry-samples-ktor-client",
             "sentry-uitest-android",
-            "sentry-uitest-android-benchmark",
             "sentry-uitest-android-critical",
-            "test-app-plain",
-            "test-app-sentry",
             "test-app-size",
             "sentry-samples-netflix-dgs",
             "sentry-samples-console-otlp",
@@ -96,7 +95,7 @@ apiValidation {
 
 allprojects {
     group = Config.Sentry.group
-    version = properties[Config.Sentry.versionNameProp].toString()
+    version = providers.gradleProperty(Config.Sentry.versionNameProp).get()
     description = Config.Sentry.description
     tasks {
         withType<Test>().configureEach {
@@ -107,63 +106,23 @@ allprojects {
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
-
-            // Cap JVM args per test
-            minHeapSize = "256m"
-            maxHeapSize = "2g"
         }
         withType<JavaCompile>().configureEach {
-            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try"))
+            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try", "-Xlint:-options"))
         }
     }
 }
 
 subprojects {
     apply { plugin("io.sentry.spotless") }
-
-    val jacocoAndroidModules = listOf(
-        "sentry-android-core",
-        "sentry-android-fragment",
-        "sentry-android-navigation",
-        "sentry-android-ndk",
-        "sentry-android-sqlite",
-        "sentry-android-replay",
-        "sentry-android-timber"
-    )
-    if (jacocoAndroidModules.contains(name)) {
-        afterEvaluate {
-            jacoco {
-                toolVersion = "0.8.10"
-            }
-
-            tasks.withType<Test>().configureEach {
-                configure<JacocoTaskExtension> {
-                    isIncludeNoLocationClasses = true
-                    excludes = listOf("jdk.internal.*")
-                }
-            }
-        }
-    }
-
-    val koverKmpModules = listOf("sentry-compose")
-    if (koverKmpModules.contains(name)) {
-        afterEvaluate {
-            configure<KoverReportExtension> {
-                androidReports("release") {
-                    xml {
-                        // Change the report file name so the Codecov Github action can find it
-                        setReportFile(project.layout.buildDirectory.file("reports/kover/report.xml").get().asFile)
-                    }
-                }
-            }
-        }
-    }
+    apply { plugin("io.sentry.jdk-target") }
 
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
             buildUponDefaultConfig = true
             allRules = true
             config.setFrom("${rootProject.rootDir}/detekt.yml")
+            baseline = file("detekt-baseline.xml")
         }
     }
 
@@ -208,9 +167,6 @@ subprojects {
 
             configure<JavaPluginExtension> {
                 withJavadocJar()
-
-                sourceCompatibility = JavaVersion.VERSION_1_8
-                targetCompatibility = JavaVersion.VERSION_1_8
             }
         }
 

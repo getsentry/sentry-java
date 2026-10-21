@@ -16,6 +16,7 @@ import io.sentry.util.EventProcessorUtils;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.Pair;
+import io.sentry.util.SentryCallbackReentrancyGuard;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -462,23 +463,19 @@ public final class Scope implements IScope {
    */
   private @Nullable Breadcrumb executeBeforeBreadcrumb(
       final @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
-      @NotNull Breadcrumb breadcrumb,
+      final @NotNull Breadcrumb breadcrumb,
       final @NotNull Hint hint) {
-    try {
-      breadcrumb = callback.execute(breadcrumb, hint);
+    try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
+      return callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
       options
           .getLogger()
           .log(
               SentryLevel.ERROR,
-              "The BeforeBreadcrumbCallback callback threw an exception. Exception details will be added to the breadcrumb.",
+              "The BeforeBreadcrumb callback threw an exception. Dropping breadcrumb.",
               e);
-
-      if (e.getMessage() != null) {
-        breadcrumb.setData("sentry:message", e.getMessage());
-      }
+      return null;
     }
-    return breadcrumb;
   }
 
   /**
@@ -493,12 +490,15 @@ public final class Scope implements IScope {
     if (breadcrumb == null || breadcrumbs instanceof DisabledQueue) {
       return;
     }
-    if (hint == null) {
-      hint = new Hint();
+    // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
+    if (SentryCallbackReentrancyGuard.isActive()) {
+      return;
     }
-
     SentryOptions.BeforeBreadcrumbCallback callback = options.getBeforeBreadcrumb();
     if (callback != null) {
+      if (hint == null) {
+        hint = new Hint();
+      }
       breadcrumb = executeBeforeBreadcrumb(callback, breadcrumb, hint);
     }
     if (breadcrumb != null) {
@@ -571,10 +571,15 @@ public final class Scope implements IScope {
     tags.clear();
     attributes.clear();
     extra.clear();
+    contexts.clear();
     eventProcessors.clear();
     clearTransaction();
     clearAttachments();
     clearFeatureFlags();
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setContexts(contexts);
+    }
   }
 
   /**
@@ -1009,7 +1014,8 @@ public final class Scope implements IScope {
   }
 
   /** The IWithSession callback */
-  interface IWithSession {
+  @ApiStatus.Internal
+  public interface IWithSession {
 
     /**
      * The accept method of the callback
@@ -1147,7 +1153,9 @@ public final class Scope implements IScope {
   @ApiStatus.Internal
   @Override
   public void clearSession() {
-    session = null;
+    try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
+      session = null;
+    }
   }
 
   @ApiStatus.Internal

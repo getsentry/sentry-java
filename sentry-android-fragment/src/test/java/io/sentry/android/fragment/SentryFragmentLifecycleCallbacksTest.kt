@@ -43,9 +43,15 @@ class SentryFragmentLifecycleCallbacksTest {
       enableAutoFragmentLifecycleTracing: Boolean = false,
       tracesSampleRate: Double? = 1.0,
       isAdded: Boolean = true,
+      enableScreenTracking: Boolean = false,
     ): SentryFragmentLifecycleCallbacks {
       whenever(scopes.options)
-        .thenReturn(SentryOptions().apply { setTracesSampleRate(tracesSampleRate) })
+        .thenReturn(
+          SentryOptions().apply {
+            setTracesSampleRate(tracesSampleRate)
+            isEnableScreenTracking = enableScreenTracking
+          }
+        )
       whenever(span.spanContext)
         .thenReturn(SpanContext(SentryId.EMPTY_ID, SpanId.EMPTY_ID, "op", null, null))
       whenever(transaction.startChild(any<String>(), any<String>())).thenReturn(span)
@@ -247,6 +253,115 @@ class SentryFragmentLifecycleCallbacksTest {
 
     sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
     sut.onFragmentDestroyed(fixture.fragmentManager, fixture.fragment)
+
+    verify(fixture.span).finish(check { assertEquals(SpanStatus.OK, it) })
+  }
+
+  @Test
+  fun `When fragment view is created via detach-attach, it should start tracing if enabled`() {
+    // Simulates detach/attach navigation: onFragmentCreated is NOT called, only
+    // onFragmentViewCreated
+    val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
+
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
+
+    verify(fixture.transaction)
+      .startChild(
+        check<String> { assertEquals(SentryFragmentLifecycleCallbacks.FRAGMENT_LOAD_OP, it) },
+        check<String> { assertEquals("androidx.fragment.app.Fragment", it) },
+      )
+  }
+
+  @Test
+  fun `When fragment view is created via detach-attach, it should update screen name`() {
+    val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true, enableScreenTracking = true)
+
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
+
+    verify(fixture.scope).screen = "androidx.fragment.app.Fragment"
+  }
+
+  @Test
+  fun `When performance is disabled, it should still update screen name`() {
+    val sut =
+      fixture.getSut(enableAutoFragmentLifecycleTracing = false, enableScreenTracking = true)
+
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
+
+    verify(fixture.scope).screen = "androidx.fragment.app.Fragment"
+    verify(fixture.transaction, never()).startChild(any<String>(), any<String>())
+  }
+
+  @Test
+  fun `When fragment view is created after onFragmentCreated, it should not start a second span`() {
+    // Normal path: onFragmentCreated already started the span; onFragmentViewCreated is a no-op
+    val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
+
+    sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
+
+    verify(fixture.transaction).startChild(any<String>(), any<String>())
+  }
+
+  @Test
+  fun `When fragment is resumed, it should stop tracing if span is still running`() {
+    // Simulates detach/attach path where onFragmentStarted may be skipped
+    val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
+
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
+    sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
+
+    verify(fixture.span).finish(check { assertEquals(SpanStatus.OK, it) })
+  }
+
+  @Test
+  fun `When fragment is resumed after started, it should not double-finish the span`() {
+    // Normal path: onFragmentStarted already stopped the span; onFragmentResumed is a no-op
+    val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
+
+    sut.onFragmentCreated(fixture.fragmentManager, fixture.fragment, savedInstanceState = null)
+    sut.onFragmentStarted(fixture.fragmentManager, fixture.fragment)
+    sut.onFragmentResumed(fixture.fragmentManager, fixture.fragment)
+
+    verify(fixture.span).finish(any())
+  }
+
+  @Test
+  fun `When fragment view is destroyed before started, it should stop tracing as failsafe`() {
+    val sut = fixture.getSut(enableAutoFragmentLifecycleTracing = true)
+
+    sut.onFragmentViewCreated(
+      fixture.fragmentManager,
+      fixture.fragment,
+      view = mock(),
+      savedInstanceState = null,
+    )
+    sut.onFragmentViewDestroyed(fixture.fragmentManager, fixture.fragment)
 
     verify(fixture.span).finish(check { assertEquals(SpanStatus.OK, it) })
   }

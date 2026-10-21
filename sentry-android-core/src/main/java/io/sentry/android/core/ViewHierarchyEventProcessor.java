@@ -7,7 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import io.sentry.Attachment;
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.ILogger;
 import io.sentry.ISerializer;
@@ -18,10 +17,12 @@ import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.ClassUtil;
 import io.sentry.android.core.internal.util.Debouncer;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.internal.viewhierarchy.ViewHierarchyExporter;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.ViewHierarchy;
 import io.sentry.protocol.ViewHierarchyNode;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.JsonSerializationUtils;
 import io.sentry.util.Objects;
@@ -37,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** ViewHierarchyEventProcessor responsible for taking a snapshot of the current view hierarchy. */
 @ApiStatus.Internal
-public final class ViewHierarchyEventProcessor implements EventProcessor {
+public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull Debouncer debouncer;
@@ -46,6 +47,8 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
   private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
   private static final int DEBOUNCE_MAX_EXECUTIONS = 3;
 
+  // TODO: JAVA-729
+  @SuppressWarnings("deprecation")
   public ViewHierarchyEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
     this.debouncer =
@@ -89,7 +92,18 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
         options.getBeforeViewHierarchyCaptureCallback();
     if (beforeCaptureCallback != null) {
-      if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+      try {
+        if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+          return event;
+        }
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The beforeViewHierarchyCapture callback threw an exception. Skipping view hierarchy capture.",
+                e);
         return event;
       }
     } else if (shouldDebounce) {
@@ -256,8 +270,10 @@ public final class ViewHierarchyEventProcessor implements EventProcessor {
     node.setType(className);
 
     try {
-      final String identifier = ViewUtils.getResourceId(view);
-      node.setIdentifier(identifier);
+      final @Nullable String identifier = ViewUtils.getResourceIdOrNull(view);
+      if (identifier != null) {
+        node.setIdentifier(identifier);
+      }
     } catch (Throwable e) {
       // ignored
     }

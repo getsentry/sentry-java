@@ -9,25 +9,22 @@ import androidx.sqlite.db.SupportSQLiteStatement
  * [SentrySupportSQLiteDatabase.compileStatement].
  *
  * @param delegate The [SupportSQLiteStatement] instance to delegate calls to.
- * @param sqLiteSpanManager The [SQLiteSpanManager] responsible for the creation of the spans.
+ * @param spans The [OpenHelperSpans] manager responsible for the creation of the spans.
  * @param sql The query string.
  */
 internal class SentrySupportSQLiteStatement(
   private val delegate: SupportSQLiteStatement,
-  private val sqLiteSpanManager: SQLiteSpanManager,
+  private val spans: OpenHelperSpans,
   private val sql: String,
 ) : SupportSQLiteStatement by delegate {
-  override fun execute() = sqLiteSpanManager.performSql(sql) { delegate.execute() }
+  override fun execute() = spans.performSql(sql) { delegate.execute() }
 
-  override fun executeUpdateDelete(): Int =
-    sqLiteSpanManager.performSql(sql) { delegate.executeUpdateDelete() }
+  override fun executeUpdateDelete(): Int = spans.performSql(sql) { delegate.executeUpdateDelete() }
 
-  override fun executeInsert(): Long =
-    sqLiteSpanManager.performSql(sql) { delegate.executeInsert() }
+  override fun executeInsert(): Long = spans.performSql(sql) { delegate.executeInsert() }
 
-  override fun simpleQueryForLong(): Long =
-    sqLiteSpanManager.performSql(sql) { delegate.simpleQueryForLong() }
+  override fun simpleQueryForLong(): Long = spans.performSql(sql) { delegate.simpleQueryForLong() }
 
   override fun simpleQueryForString(): String? =
-    sqLiteSpanManager.performSql(sql) { delegate.simpleQueryForString() }
+    spans.performSql(sql) { delegate.simpleQueryForString() }
 }

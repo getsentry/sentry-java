@@ -1,6 +1,7 @@
 package io.sentry.android.sqlite
 
 import android.database.CrossProcessCursor
+import android.database.CursorWrapper
 import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.SentryOptions
@@ -20,7 +21,7 @@ import org.mockito.kotlin.whenever
 class SentryCrossProcessCursorTest {
   private class Fixture {
     private val scopes = mock<IScopes>()
-    private val spanManager = SQLiteSpanManager(scopes)
+    private val spans = OpenHelperSpans(scopes)
     val mockCursor = mock<CrossProcessCursor>()
     lateinit var options: SentryOptions
     lateinit var sentryTracer: SentryTracer
@@ -33,7 +34,7 @@ class SentryCrossProcessCursorTest {
       if (isSpanActive) {
         whenever(scopes.span).thenReturn(sentryTracer)
       }
-      return SentryCrossProcessCursor(mockCursor, spanManager, sql)
+      return SentryCrossProcessCursor(mockCursor, spans, sql)
     }
   }
 
@@ -52,13 +53,14 @@ class SentryCrossProcessCursorTest {
 
     cursor.fillWindow(0, mock())
     verify(fixture.mockCursor).fillWindow(eq(0), any())
+  }
 
-    // Let's verify other methods are delegated, even if not explicitly
-    cursor.close()
-    verify(fixture.mockCursor).close()
+  @Test
+  fun `ordinary cursor methods are delegated by Android CursorWrapper`() {
+    val getStringMethod =
+      SentryCrossProcessCursor::class.java.getMethod("getString", Int::class.javaPrimitiveType!!)
 
-    cursor.getString(1)
-    verify(fixture.mockCursor).getString(eq(1))
+    assertEquals(CursorWrapper::class.java, getStringMethod.declaringClass)
   }
 
   @Test

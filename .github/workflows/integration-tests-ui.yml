@@ -22,18 +22,18 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: 'recursive'
 
       - name: 'Set up Java: 17'
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -43,7 +43,7 @@ jobs:
         run: make assembleUiTests
 
       - name: Install SauceLabs CLI
-        uses: saucelabs/saucectl-run-action@bc81720eb01738d9c664b07fe42621bd0014283f # pin@v4.4.0
+        uses: saucelabs/saucectl-run-action@283660aa934c02723c497efa151d582a3acc5801 # pin@v4.5.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -75,17 +75,19 @@ jobs:
 
       - name: Install Sentry CLI
         if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
-        run: curl -sL https://sentry.io/get-cli/ | bash
+        uses: getsentry/action-setup-cli@70d7e587b84c2e78cf4d37cd33d7b74fb3729c1b # v1
 
       - name: Upload Replay Snapshots to Sentry
-        if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
+        # Skip on PRs from forks, which don't have access to the upload secret
+        if: ${{ !cancelled() && env.SAUCE_USERNAME != null && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
-          shopt -s globstar nullglob
-          pngs=(artifacts/**/*.png)
-          if [ ${#pngs[@]} -gt 0 ]; then
-            mkdir -p replay-snapshots
-            cp "${pngs[@]}" replay-snapshots/
-            sentry-cli build snapshots ./replay-snapshots \
+          # find instead of `shopt -s globstar`, which macOS's bash 3.2 doesn't support
+          mkdir -p replay-snapshots
+          if [ -d artifacts ]; then
+            find artifacts -type f -name '*.png' -exec cp {} replay-snapshots/ \;
+          fi
+          if [ -n "$(ls -A replay-snapshots)" ]; then
+            sentry-cli snapshots upload ./replay-snapshots \
               --app-id sentry-android-replay
           else
             echo "No replay snapshot files found, skipping upload"
@@ -94,10 +96,3 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: sentry-sdks
           SENTRY_PROJECT: sentry-android
-
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@0fa95f0e1eeaafde2c782583b36b28ad0d8c77d3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./artifacts/*.xml

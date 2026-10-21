@@ -171,10 +171,31 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull Queue<Breadcrumb> getBreadcrumbs() {
+    final @NotNull Queue<Breadcrumb> globalBreadcrumbs = globalScope.getBreadcrumbs();
+    final @NotNull Queue<Breadcrumb> isolationBreadcrumbs = isolationScope.getBreadcrumbs();
+    final @NotNull Queue<Breadcrumb> currentBreadcrumbs = scope.getBreadcrumbs();
+
+    final boolean hasGlobalBreadcrumbs = !globalBreadcrumbs.isEmpty();
+    final boolean hasIsolationBreadcrumbs = !isolationBreadcrumbs.isEmpty();
+    final boolean hasCurrentBreadcrumbs = !currentBreadcrumbs.isEmpty();
+
+    if (!hasGlobalBreadcrumbs && !hasIsolationBreadcrumbs && !hasCurrentBreadcrumbs) {
+      return getDefaultScopeValue(globalBreadcrumbs, isolationBreadcrumbs, currentBreadcrumbs);
+    }
+    if (!hasIsolationBreadcrumbs && !hasCurrentBreadcrumbs) {
+      return globalBreadcrumbs;
+    }
+    if (!hasGlobalBreadcrumbs && !hasCurrentBreadcrumbs) {
+      return isolationBreadcrumbs;
+    }
+    if (!hasGlobalBreadcrumbs && !hasIsolationBreadcrumbs) {
+      return currentBreadcrumbs;
+    }
+
     final @NotNull List<Breadcrumb> allBreadcrumbs = new ArrayList<>();
-    allBreadcrumbs.addAll(globalScope.getBreadcrumbs());
-    allBreadcrumbs.addAll(isolationScope.getBreadcrumbs());
-    allBreadcrumbs.addAll(scope.getBreadcrumbs());
+    allBreadcrumbs.addAll(globalBreadcrumbs);
+    allBreadcrumbs.addAll(isolationBreadcrumbs);
+    allBreadcrumbs.addAll(currentBreadcrumbs);
     Collections.sort(allBreadcrumbs);
 
     final @NotNull Queue<Breadcrumb> breadcrumbs =
@@ -224,10 +245,31 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull Map<String, String> getTags() {
+    final @NotNull Map<String, String> globalTags = globalScope.getTags();
+    final @NotNull Map<String, String> isolationTags = isolationScope.getTags();
+    final @NotNull Map<String, String> currentTags = scope.getTags();
+
+    final boolean hasGlobalTags = !globalTags.isEmpty();
+    final boolean hasIsolationTags = !isolationTags.isEmpty();
+    final boolean hasCurrentTags = !currentTags.isEmpty();
+
+    if (!hasGlobalTags && !hasIsolationTags && !hasCurrentTags) {
+      return getDefaultScopeValue(globalTags, isolationTags, currentTags);
+    }
+    if (!hasIsolationTags && !hasCurrentTags) {
+      return globalTags;
+    }
+    if (!hasGlobalTags && !hasCurrentTags) {
+      return isolationTags;
+    }
+    if (!hasGlobalTags && !hasIsolationTags) {
+      return currentTags;
+    }
+
     final @NotNull Map<String, String> allTags = new ConcurrentHashMap<>();
-    allTags.putAll(globalScope.getTags());
-    allTags.putAll(isolationScope.getTags());
-    allTags.putAll(scope.getTags());
+    allTags.putAll(globalTags);
+    allTags.putAll(isolationTags);
+    allTags.putAll(currentTags);
     return allTags;
   }
 
@@ -243,10 +285,32 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull Map<String, SentryAttribute> getAttributes() {
+    final @NotNull Map<String, SentryAttribute> globalAttributes = globalScope.getAttributes();
+    final @NotNull Map<String, SentryAttribute> isolationAttributes =
+        isolationScope.getAttributes();
+    final @NotNull Map<String, SentryAttribute> currentAttributes = scope.getAttributes();
+
+    final boolean hasGlobalAttributes = !globalAttributes.isEmpty();
+    final boolean hasIsolationAttributes = !isolationAttributes.isEmpty();
+    final boolean hasCurrentAttributes = !currentAttributes.isEmpty();
+
+    if (!hasGlobalAttributes && !hasIsolationAttributes && !hasCurrentAttributes) {
+      return getDefaultScopeValue(globalAttributes, isolationAttributes, currentAttributes);
+    }
+    if (!hasIsolationAttributes && !hasCurrentAttributes) {
+      return globalAttributes;
+    }
+    if (!hasGlobalAttributes && !hasCurrentAttributes) {
+      return isolationAttributes;
+    }
+    if (!hasGlobalAttributes && !hasIsolationAttributes) {
+      return currentAttributes;
+    }
+
     final @NotNull Map<String, SentryAttribute> allAttributes = new ConcurrentHashMap<>();
-    allAttributes.putAll(globalScope.getAttributes());
-    allAttributes.putAll(isolationScope.getAttributes());
-    allAttributes.putAll(scope.getAttributes());
+    allAttributes.putAll(globalAttributes);
+    allAttributes.putAll(isolationAttributes);
+    allAttributes.putAll(currentAttributes);
     return allAttributes;
   }
 
@@ -272,11 +336,32 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull Map<String, Object> getExtras() {
-    final @NotNull Map<String, Object> allTags = new ConcurrentHashMap<>();
-    allTags.putAll(globalScope.getExtras());
-    allTags.putAll(isolationScope.getExtras());
-    allTags.putAll(scope.getExtras());
-    return allTags;
+    final @NotNull Map<String, Object> globalExtras = globalScope.getExtras();
+    final @NotNull Map<String, Object> isolationExtras = isolationScope.getExtras();
+    final @NotNull Map<String, Object> currentExtras = scope.getExtras();
+
+    final boolean hasGlobalExtras = !globalExtras.isEmpty();
+    final boolean hasIsolationExtras = !isolationExtras.isEmpty();
+    final boolean hasCurrentExtras = !currentExtras.isEmpty();
+
+    if (!hasGlobalExtras && !hasIsolationExtras && !hasCurrentExtras) {
+      return getDefaultScopeValue(globalExtras, isolationExtras, currentExtras);
+    }
+    if (!hasIsolationExtras && !hasCurrentExtras) {
+      return globalExtras;
+    }
+    if (!hasGlobalExtras && !hasCurrentExtras) {
+      return isolationExtras;
+    }
+    if (!hasGlobalExtras && !hasIsolationExtras) {
+      return currentExtras;
+    }
+
+    final @NotNull Map<String, Object> allExtras = new ConcurrentHashMap<>();
+    allExtras.putAll(globalExtras);
+    allExtras.putAll(isolationExtras);
+    allExtras.putAll(currentExtras);
+    return allExtras;
   }
 
   @Override
@@ -342,6 +427,23 @@ public final class CombinedScopeView implements IScope {
     return getSpecificScope(null);
   }
 
+  private <T> @NotNull T getDefaultScopeValue(
+      final @NotNull T globalValue,
+      final @NotNull T isolationValue,
+      final @NotNull T currentValue) {
+    switch (getOptions().getDefaultScopeType()) {
+      case CURRENT:
+        return currentValue;
+      case ISOLATION:
+        return isolationValue;
+      case GLOBAL:
+        return globalValue;
+      default:
+        // calm the compiler
+        return currentValue;
+    }
+  }
+
   IScope getSpecificScope(final @Nullable ScopeType scopeType) {
     if (scopeType != null) {
       switch (scopeType) {
@@ -373,10 +475,31 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @NotNull List<Attachment> getAttachments() {
+    final @NotNull List<Attachment> globalAttachments = globalScope.getAttachments();
+    final @NotNull List<Attachment> isolationAttachments = isolationScope.getAttachments();
+    final @NotNull List<Attachment> currentAttachments = scope.getAttachments();
+
+    final boolean hasGlobalAttachments = !globalAttachments.isEmpty();
+    final boolean hasIsolationAttachments = !isolationAttachments.isEmpty();
+    final boolean hasCurrentAttachments = !currentAttachments.isEmpty();
+
+    if (!hasGlobalAttachments && !hasIsolationAttachments && !hasCurrentAttachments) {
+      return getDefaultScopeValue(globalAttachments, isolationAttachments, currentAttachments);
+    }
+    if (!hasIsolationAttachments && !hasCurrentAttachments) {
+      return globalAttachments;
+    }
+    if (!hasGlobalAttachments && !hasCurrentAttachments) {
+      return isolationAttachments;
+    }
+    if (!hasGlobalAttachments && !hasIsolationAttachments) {
+      return currentAttachments;
+    }
+
     final @NotNull List<Attachment> allAttachments = new CopyOnWriteArrayList<>();
-    allAttachments.addAll(globalScope.getAttachments());
-    allAttachments.addAll(isolationScope.getAttachments());
-    allAttachments.addAll(scope.getAttachments());
+    allAttachments.addAll(globalAttachments);
+    allAttachments.addAll(isolationAttachments);
+    allAttachments.addAll(currentAttachments);
     return allAttachments;
   }
 

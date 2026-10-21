@@ -5,11 +5,11 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Process;
 import android.os.SystemClock;
+import android.os.Trace;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
-import io.sentry.OptionsContainer;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
@@ -97,9 +97,12 @@ public final class SentryAndroid {
       @NotNull final Context context,
       @NotNull ILogger logger,
       @NotNull Sentry.OptionsConfiguration<SentryAndroidOptions> configuration) {
+    // Started before acquiring the lock so it stays balanced with the endSection() in the finally
+    // even if acquire() throws.
+    Trace.beginSection("SentryAndroid.init");
     try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
       Sentry.init(
-          OptionsContainer.create(SentryAndroidOptions.class),
+          new SentryAndroidOptionsContainer(),
           options -> {
             final io.sentry.util.LoadClass classLoader = new io.sentry.util.LoadClass();
             final boolean isTimberUpstreamAvailable =
@@ -204,7 +207,7 @@ public final class SentryAndroid {
             scopes.startSession();
           }
         }
-        scopes.getOptions().getReplayController().start();
+        scopes.getOptions().getReplayController().onAppForegrounded(true);
       }
     } catch (IllegalAccessException e) {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
@@ -224,6 +227,8 @@ public final class SentryAndroid {
       logger.log(SentryLevel.FATAL, "Fatal error during SentryAndroid.init(...)", e);
 
       throw new RuntimeException("Failed to initialize Sentry's SDK", e);
+    } finally {
+      Trace.endSection();
     }
   }
 

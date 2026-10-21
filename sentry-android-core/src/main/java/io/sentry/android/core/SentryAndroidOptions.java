@@ -3,8 +3,10 @@ package io.sentry.android.core;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
+import android.content.Context;
 import io.sentry.Hint;
 import io.sentry.IScope;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
@@ -12,11 +14,13 @@ import io.sentry.SentryFeedbackOptions;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SpanStatus;
+import io.sentry.android.core.internal.time.AndroidMonotonicTicker;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.MonotonicTicker;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -36,6 +40,22 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   /** Enable or disable ANR on Debug mode Default is disabled Used by AnrIntegration */
   private boolean anrReportInDebug = false;
+
+  /**
+   * Enable or disable in-process, heartbeat-based app-hang detection in sentry-native. Default is
+   * disabled. When enabled, sentry-native's background watchdog captures an app-hang event if no
+   * heartbeat is received within {@link #ndkAppHangTimeoutIntervalMillis} on the monitored thread.
+   *
+   * <p>This is intended for downstream/hybrid SDKs that emit the heartbeat by calling the native
+   * {@code sentry_app_hang_heartbeat()} from their main thread. It is independent of the JVM-based
+   * {@link #anrEnabled} ANR detection.
+   */
+  private boolean enableNdkAppHangTracking = false;
+
+  /**
+   * The app-hang detection timeout interval in millis used by sentry-native. Default is 5000 = 5s.
+   */
+  private long ndkAppHangTimeoutIntervalMillis = 5000;
 
   /**
    * Enable or disable automatic breadcrumbs for Activity lifecycle. Using
@@ -125,6 +145,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enables or disables collecting of external storage context. */
   private boolean collectExternalStorageContext = false;
 
+  private volatile @Nullable DeviceInfoUtil deviceInfoUtil;
+
   /**
    * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
    * previous run. Sentry SDKs normally send events from a background queue, but in the case of
@@ -184,6 +206,18 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable intent extras reporting for system event breadcrumbs. Default is false. */
   private boolean enableSystemEventBreadcrumbsExtras = false;
 
+  @NotNull
+  DeviceInfoUtil getOrCreateDeviceInfoUtil(final @NotNull Context context) {
+    if (deviceInfoUtil == null) {
+      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+        if (deviceInfoUtil == null) {
+          deviceInfoUtil = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), this);
+        }
+      }
+    }
+    return deviceInfoUtil;
+  }
+
   public interface BeforeCaptureCallback {
 
     /**
@@ -233,6 +267,25 @@ public final class SentryAndroidOptions extends SentryOptions {
   private boolean reportHistoricalTombstones = false;
 
   /**
+   * Controls whether to report <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits from
+   * the {@link ApplicationExitInfo} system API.
+   *
+   * <p>If this flag is true and {@link #reportHistoricalMemoryLimiterExits} is false, then only the
+   * latest MemoryLimiter exit is reported. If both are true, then all available exits are reported.
+   */
+  private boolean memoryLimiterEnabled = false;
+
+  /**
+   * Controls whether to report historical <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits from
+   * the {@link ApplicationExitInfo} system API (where "historical" means "older than the latest").
+   *
+   * <p>No-ops if {@link #memoryLimiterEnabled} is false.
+   */
+  private boolean reportHistoricalMemoryLimiterExits = false;
+
+  /**
    * Controls whether to send ANR (v2) thread dump as an attachment with plain text. The thread dump
    * is being attached from {@link ApplicationExitInfo#getTraceInputStream()}, if available.
    */
@@ -246,9 +299,18 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private boolean enablePerformanceV2 = true;
 
+  private boolean enableStandaloneAppStartTracing = false;
+
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
   private boolean enableTombstone = false;
+
+  /**
+   * The maximum time difference, in milliseconds, between a tombstone from {@link
+   * ApplicationExitInfo} and a native crash event in the outbox for the two to be merged into a
+   * single event.
+   */
+  private long tombstoneMergeTimeThresholdMillis = 5000;
 
   /**
    * Screenshot masking options. Configure which views should be masked when capturing screenshots
@@ -259,6 +321,10 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
+  /**
+   * Sample rate for capturing main-thread stack profiles when a foreground ANR is detected. {@code
+   * null} disables ANR profiling (default). Values must be between {@code 0.0} and {@code 1.0}.
+   */
   private @Nullable Double anrProfilingSampleRate;
 
   private boolean enableAnrFingerprinting = true;
@@ -340,6 +406,50 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setAnrReportInDebug(boolean anrReportInDebug) {
     this.anrReportInDebug = anrReportInDebug;
+  }
+
+  /**
+   * Checks if heartbeat-based app-hang detection in sentry-native is enabled. Default is disabled.
+   *
+   * @return true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableNdkAppHangTracking() {
+    return enableNdkAppHangTracking;
+  }
+
+  /**
+   * Enables or disables heartbeat-based app-hang detection in sentry-native. Default is disabled.
+   * Requires the NDK integration to be present and emitting heartbeats via the native {@code
+   * sentry_app_hang_heartbeat()}.
+   *
+   * @param enableNdkAppHangTracking true for enabled and false for disabled
+   */
+  @ApiStatus.Experimental
+  public void setEnableNdkAppHangTracking(boolean enableNdkAppHangTracking) {
+    this.enableNdkAppHangTracking = enableNdkAppHangTracking;
+  }
+
+  /**
+   * Returns the app-hang detection timeout interval in millis used by sentry-native. Default is
+   * 5000 = 5s.
+   *
+   * @return the timeout in millis
+   */
+  @ApiStatus.Experimental
+  public long getNdkAppHangTimeoutIntervalMillis() {
+    return ndkAppHangTimeoutIntervalMillis;
+  }
+
+  /**
+   * Sets the app-hang detection timeout interval in millis used by sentry-native. Default is 5000 =
+   * 5s.
+   *
+   * @param ndkAppHangTimeoutIntervalMillis the timeout interval in millis
+   */
+  @ApiStatus.Experimental
+  public void setNdkAppHangTimeoutIntervalMillis(long ndkAppHangTimeoutIntervalMillis) {
+    this.ndkAppHangTimeoutIntervalMillis = ndkAppHangTimeoutIntervalMillis;
   }
 
   /**
@@ -655,12 +765,91 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.attachAnrThreadDump = attachAnrThreadDump;
   }
 
+  public long getTombstoneMergeTimeThresholdMillis() {
+    return tombstoneMergeTimeThresholdMillis;
+  }
+
+  /**
+   * Sets the maximum time difference, in milliseconds, between a tombstone from {@link
+   * ApplicationExitInfo} and a native crash event in the outbox for the two to be merged into a
+   * single event. Defaults to 5000 ms.
+   *
+   * <p>The two timestamps come from different sources: the tombstone timestamp is recorded by the
+   * system when the process died, the native event timestamp is recorded by the SDK signal handler.
+   * Raise the threshold when crashes are reported as separate 'signalhandler' events instead of a
+   * merged event, because the gap between the two exceeded the threshold.
+   *
+   * <p>Do not raise it more than necessary. The threshold is the only criterion used to pair the
+   * two, so a high value can merge a tombstone with a native crash that belongs to a different
+   * process death. The merged event then reports the wrong stack trace, and the native crash it
+   * consumed is never sent on its own.
+   *
+   * <p>A value of 0 merges only events with identical timestamps. A negative value disables merging
+   * completely, so tombstone and native crash are both reported as separate events.
+   *
+   * @param tombstoneMergeTimeThresholdMillis the threshold in milliseconds
+   */
+  public void setTombstoneMergeTimeThresholdMillis(final long tombstoneMergeTimeThresholdMillis) {
+    this.tombstoneMergeTimeThresholdMillis = tombstoneMergeTimeThresholdMillis;
+  }
+
   public boolean isAttachRawTombstone() {
     return attachRawTombstone;
   }
 
   public void setAttachRawTombstone(final boolean attachRawTombstone) {
     this.attachRawTombstone = attachRawTombstone;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isMemoryLimiterEnabled() {
+    return memoryLimiterEnabled;
+  }
+
+  /**
+   * Enables or disables reporting of Android <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits.
+   * Disabled by default.
+   *
+   * <p>Enabling this flag allows the SDK to inspect retained {@link ApplicationExitInfo} records on
+   * the next app start and report the latest retained matching MemoryLimiter exit as a Sentry
+   * event.
+   *
+   * <p>See {@link #setReportHistoricalMemoryLimiterExits(boolean)} if you also want to create
+   * Sentry events from MemoryLimiter exits before the latest.
+   *
+   * <p>Available on Android API ≥ 37. No-ops if the Android API is below 37 or if the {@link
+   * #setCacheDirPath cache dir path} hasn't been set.
+   */
+  @ApiStatus.Experimental
+  public void setMemoryLimiterEnabled(final boolean memoryLimiterEnabled) {
+    this.memoryLimiterEnabled = memoryLimiterEnabled;
+  }
+
+  @ApiStatus.Experimental
+  public boolean isReportHistoricalMemoryLimiterExits() {
+    return reportHistoricalMemoryLimiterExits;
+  }
+
+  /**
+   * Enables or disables reporting of historical retained <a
+   * href="https://source.android.com/docs/core/perf/memory-limiter">MemoryLimiter</a> exits on
+   * startup (where "historical" means "older than the latest"). Disabled by default.
+   *
+   * <p>Use this together with {@link #setMemoryLimiterEnabled(boolean)} when you want the
+   * platform's complete retained exit history.
+   *
+   * <p>Note: unlike the latest exit, historical exits are <b>not</b> enriched with contextual
+   * Sentry data.
+   *
+   * <p>Available on Android API ≥ 37. No-ops if the Android API is below 37, if the {@link
+   * #setCacheDirPath cache dir path} hasn't been set, or if {@link #setMemoryLimiterEnabled the
+   * MemoryLimiter integration} hasn't been enabled.
+   */
+  @ApiStatus.Experimental
+  public void setReportHistoricalMemoryLimiterExits(
+      final boolean reportHistoricalMemoryLimiterExits) {
+    this.reportHistoricalMemoryLimiterExits = reportHistoricalMemoryLimiterExits;
   }
 
   /**
@@ -681,6 +870,53 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
     this.enablePerformanceV2 = enablePerformanceV2;
+  }
+
+  /**
+   * @return true if standalone app start tracing is enabled. See {@link
+   *     #setEnableStandaloneAppStartTracing(boolean)} for more details.
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableStandaloneAppStartTracing() {
+    return enableStandaloneAppStartTracing;
+  }
+
+  /**
+   * Enables or disables standalone app start tracing.
+   *
+   * <p>When enabled, app start is sent as its own transaction instead of an {@code app.start.*}
+   * child span on the first Activity transaction.
+   *
+   * <p>The SDK reports app start through these paths:
+   *
+   * <ul>
+   *   <li>With an Activity: the SDK sends an "App Start" transaction with operation {@code
+   *       app.start}, plus a separate {@code ui.load} transaction for the Activity. Both
+   *       transactions share the same trace ID.
+   *   <li>Headless app start: for launches started by something like a broadcast receiver, service,
+   *       or content provider without an Activity, the SDK sends only the standalone app-start
+   *       transaction.
+   *       <ul>
+   *         <li>On devices running Android 15 (API level 35) or newer, the SDK can use {@code
+   *             ApplicationStartInfo} to classify cold versus warm starts and anchor the end time
+   *             at the {@code Application.onCreate} start.
+   *         <li>On devices running older Android versions, headless launches are treated as cold
+   *             once {@code Application.onCreate} finishes without an Activity. The end time falls
+   *             back to the best SDK/plugin timing available.
+   *         <li>With {@code Application.onCreate} instrumentation, the SDK can add an {@code
+   *             application.load} phase span and use the exact {@code Application.onCreate} end
+   *             time. Without that instrumentation, the standalone transaction is still sent, but
+   *             it may only include the {@code process.load} phase span.
+   *       </ul>
+   *   <li>If an Activity opens after a headless start, its {@code ui.load} transaction reuses the
+   *       app-start trace ID.
+   * </ul>
+   *
+   * @param enableStandaloneAppStartTracing true if enabled or false otherwise
+   */
+  @ApiStatus.Experimental
+  public void setEnableStandaloneAppStartTracing(final boolean enableStandaloneAppStartTracing) {
+    this.enableStandaloneAppStartTracing = enableStandaloneAppStartTracing;
   }
 
   @ApiStatus.Internal
@@ -720,10 +956,25 @@ public final class SentryAndroidOptions extends SentryOptions {
     return screenshot;
   }
 
+  /**
+   * Returns the sample rate used when deciding whether to capture a main-thread stack profile for a
+   * detected foreground ANR.
+   *
+   * @return the ANR profiling sample rate, or {@code null} when ANR profiling is disabled
+   */
   public @Nullable Double getAnrProfilingSampleRate() {
     return anrProfilingSampleRate;
   }
 
+  /**
+   * Sets the sample rate for capturing main-thread stack profiles when a foreground ANR is
+   * detected. The profile is attached to the ANR event on the next app start.
+   *
+   * <p>Use {@code null} to disable ANR profiling (default). Values must be between {@code 0.0} and
+   * {@code 1.0}.
+   *
+   * @param anrProfilingSampleRate the sample rate, or {@code null} to disable
+   */
   public void setAnrProfilingSampleRate(final @Nullable Double anrProfilingSampleRate) {
     if (!SampleRateUtils.isValidSampleRate(anrProfilingSampleRate)) {
       throw new IllegalArgumentException(
@@ -734,6 +985,12 @@ public final class SentryAndroidOptions extends SentryOptions {
     this.anrProfilingSampleRate = anrProfilingSampleRate;
   }
 
+  /**
+   * Returns whether ANR profiling is enabled. ANR profiling is enabled when {@link
+   * #getAnrProfilingSampleRate()} is non-null and greater than {@code 0.0}.
+   *
+   * @return {@code true} if ANR profiling is enabled
+   */
   public boolean isAnrProfilingEnabled() {
     return anrProfilingSampleRate != null && anrProfilingSampleRate > 0;
   }
@@ -795,6 +1052,12 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public void setEnableBinderLogging(final boolean enableBinderLogging) {
     this.enableBinderLogging = enableBinderLogging;
+  }
+
+  @Override
+  @ApiStatus.Internal
+  public @NotNull MonotonicTicker getMonotonicTicker() {
+    return AndroidMonotonicTicker.getInstance();
   }
 
   static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {

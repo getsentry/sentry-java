@@ -50,6 +50,12 @@ class RestTestClient(private val backendBaseUrl: String) : LoggingInsecureRestCl
     return callTyped(request, true)
   }
 
+  fun getTodoOkHttp(id: Long): Todo? {
+    val request = Request.Builder().url("$backendBaseUrl/todo-okhttp/$id")
+
+    return callTyped(request, true)
+  }
+
   fun getCachedTodo(id: Long): Todo? {
     val request = Request.Builder().url("$backendBaseUrl/cache/$id")
 

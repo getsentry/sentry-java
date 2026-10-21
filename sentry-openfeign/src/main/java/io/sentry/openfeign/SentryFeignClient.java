@@ -10,14 +10,18 @@ import feign.Response;
 import io.sentry.BaggageHeader;
 import io.sentry.Breadcrumb;
 import io.sentry.BuildConfig;
+import io.sentry.DataCategory;
 import io.sentry.Hint;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.SentryIntegrationPackageStorage;
+import io.sentry.SentryLevel;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.W3CTraceparentHeader;
+import io.sentry.clientreport.DiscardReason;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import io.sentry.util.TracingUtils;
@@ -73,7 +77,8 @@ public final class SentryFeignClient implements Client {
       final @NotNull SpanOptions spanOptions = new SpanOptions();
       spanOptions.setOrigin(TRACE_ORIGIN);
       ISpan span = activeSpan.startChild("http.client", null, spanOptions);
-      final @NotNull UrlUtils.UrlDetails urlDetails = UrlUtils.parse(request.url());
+      final @NotNull UrlUtils.UrlDetails urlDetails =
+          UrlUtils.parse(request.url(), scopes.getOptions().getDataCollectionResolver());
       final @NotNull String method = request.httpMethod().name();
       span.setDescription(method + " " + urlDetails.getUrlOrFallback());
       span.setData(SpanDataConvention.HTTP_METHOD_KEY, method.toUpperCase(Locale.ROOT));
@@ -94,7 +99,27 @@ public final class SentryFeignClient implements Client {
         throw e;
       } finally {
         if (beforeSpan != null) {
-          final ISpan result = beforeSpan.execute(span, request, response);
+          final boolean wasSampled = Boolean.TRUE.equals(span.isSampled());
+          ISpan result = span;
+          try {
+            result = beforeSpan.execute(span, request, response);
+          } catch (Throwable e) {
+            ExceptionUtils.rethrowIfFatal(e);
+            span.getSpanContext().setSampled(false);
+            if (wasSampled) {
+              scopes
+                  .getOptions()
+                  .getClientReportRecorder()
+                  .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Span);
+            }
+            scopes
+                .getOptions()
+                .getLogger()
+                .log(
+                    SentryLevel.ERROR,
+                    "The beforeSpan callback threw an exception in SentryFeignClient. Dropping span.",
+                    e);
+          }
 
           if (result == null) {
             // span is dropped
@@ -158,7 +183,8 @@ public final class SentryFeignClient implements Client {
         Breadcrumb.http(
             request.url(),
             request.httpMethod().name(),
-            response != null ? response.status() : null);
+            response != null ? response.status() : null,
+            scopes.getOptions().getDataCollectionResolver());
     breadcrumb.setData("request_body_size", request.body() != null ? request.body().length : 0);
     if (response != null && response.body() != null && response.body().length() != null) {
       breadcrumb.setData("response_body_size", response.body().length());

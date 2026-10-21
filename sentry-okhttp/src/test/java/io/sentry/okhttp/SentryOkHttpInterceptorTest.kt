@@ -2,15 +2,20 @@
 
 package io.sentry.okhttp
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
+import io.sentry.ILogger
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.Sentry
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -20,12 +25,15 @@ import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TypeCheckHint
 import io.sentry.W3CTraceparentHeader
+import io.sentry.clientreport.DiscardReason
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
+import io.sentry.util.network.NetworkRequestData
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -45,13 +53,16 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
+@Suppress("LargeClass")
 class SentryOkHttpInterceptorTest {
   class Fixture {
     val scopes = mock<IScopes>()
@@ -292,6 +303,15 @@ class SentryOkHttpInterceptorTest {
   }
 
   @Test
+  fun `does not create a span when span origin is ignored`() {
+    val sut = fixture.getSut { options ->
+      options.setIgnoredSpanOrigins(listOf("auto.http.okhttp"))
+    }
+    sut.newCall(getRequest()).execute()
+    assertEquals(0, fixture.sentryTracer.children.size)
+  }
+
+  @Test
   fun `maps http status code to SpanStatus`() {
     val sut = fixture.getSut(httpStatusCode = 400)
     sut.newCall(getRequest()).execute()
@@ -322,6 +342,35 @@ class SentryOkHttpInterceptorTest {
         },
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `data collection settings do not affect Session Replay network details`() {
+    val sut =
+      fixture.getSut(
+        optionsConfiguration = {
+          it.dataCollection.httpBodies = emptySet()
+          it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+          it.dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+          it.sessionReplay.setNetworkDetailAllowUrls(listOf(".*"))
+        }
+      )
+
+    val request = postRequest().newBuilder().addHeader("Accept", "application/json").build()
+    sut.newCall(request).execute()
+
+    val hint = argumentCaptor<Hint>()
+    verify(fixture.scopes).addBreadcrumb(any(), hint.capture())
+    val networkDetails =
+      assertNotNull(
+        hint.firstValue.getAs(
+          TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS,
+          NetworkRequestData::class.java,
+        )
+      )
+    assertEquals("request-body", networkDetails.request?.body?.body)
+    assertEquals("application/json", networkDetails.request?.headers?.get("Accept"))
+    assertNotNull(networkDetails.response)
   }
 
   @SuppressWarnings("SwallowedException")
@@ -396,10 +445,119 @@ class SentryOkHttpInterceptorTest {
   @Test
   fun `customizer can drop the span`() {
     val sut = fixture.getSut(beforeSpan = { _, _, _ -> null })
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.options.onDiscard = onDiscard
+    fixture.sentryTracer.spanContext.sampled = true
     sut.newCall(getRequest()).execute()
+    verifyNoMoreInteractions(onDiscard)
     val httpClientSpan = fixture.sentryTracer.children.first()
     assertTrue(httpClientSpan.isFinished)
     assertNotNull(httpClientSpan.spanContext.sampled) { assertFalse(it) }
+  }
+
+  @Test
+  fun `reports callback errors only for sampled spans`() {
+    for (sampled in listOf(true, false, null)) {
+      val fixture = Fixture()
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _, _ ->
+            span.spanContext.sampled = false
+            error("callback failed")
+          }
+        )
+      fixture.sentryTracer.spanContext.sampled = sampled
+      fixture.options.onDiscard = onDiscard
+
+      sut.newCall(Request.Builder().url(fixture.server.url("/hello")).build()).execute().close()
+      fixture.sentryTracer.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws a nonfatal throwable, drops span and preserves response`() {
+    val failure = AssertionError("callback failed")
+    val logger = mock<ILogger>()
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _, _ ->
+          span.description = "partially modified"
+          throw failure
+        }
+      )
+    fixture.options.isDebug = true
+    fixture.options.setLogger(logger)
+
+    sut.newCall(getRequest()).execute().use { response ->
+      assertThat(response.code).isEqualTo(201)
+      assertThat(response.body!!.string()).isEqualTo("success")
+    }
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+    verify(logger)
+      .log(
+        SentryLevel.ERROR,
+        "The beforeSpan callback threw an exception in SentryOkHttpInterceptor. Dropping span.",
+        failure,
+      )
+  }
+
+  @Test
+  fun `fatal error from beforeSpan is not swallowed`() {
+    val failure = OutOfMemoryError("callback failed")
+    val sut = fixture.getSut(beforeSpan = { _, _, _ -> throw failure })
+
+    val thrown = assertFailsWith<OutOfMemoryError> { sut.newCall(getRequest()).execute() }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+  }
+
+  @Test
+  fun `when beforeSpan throws, event listener still finishes span`() {
+    val sut =
+      fixture.getSut(
+        beforeSpan = { _, _, _ -> throw IllegalStateException("callback failed") },
+        eventListener = SentryOkHttpEventListener(fixture.scopes),
+      )
+    val call = sut.newCall(getRequest())
+    call.execute().use { response ->
+      assertThat(response.code).isEqualTo(201)
+      assertThat(SentryOkHttpEventListener.eventMap[call]!!.isEventFinished.get()).isTrue()
+    }
+    val span = fixture.sentryTracer.children.first { it.operation == "http.client" }
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    assertThat(SentryOkHttpEventListener.eventMap).doesNotContainKey(call)
+  }
+
+  @Test
+  fun `when beforeSpan throws, preserves original request exception`() {
+    val requestFailure = IOException("request failed")
+    val sut =
+      fixture
+        .getSut(
+          beforeSpan = { _, _, _ ->
+            throw IllegalStateException("callback failed")
+          }
+        )
+        .newBuilder()
+        .addInterceptor { throw requestFailure }
+        .build()
+
+    val thrown = assertFailsWith<IOException> { sut.newCall(getRequest()).execute() }
+    assertThat(thrown).isSameInstanceAs(requestFailure)
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.throwable).isSameInstanceAs(requestFailure)
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
   }
 
   @Test
@@ -499,6 +657,26 @@ class SentryOkHttpInterceptorTest {
           assertNull(sentryResponse.cookies)
 
           assertTrue(it.throwable is SentryHttpClientException)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters failed request query parameters`() {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration = { it.dataCollection.setUserInfo(false) },
+      )
+
+    sut.newCall(getRequest(url = "/hello?name=value&token=secret")).execute()
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check {
+          assertEquals("name=value&token=[Filtered]", it.request!!.queryString)
         },
         any<Hint>(),
       )

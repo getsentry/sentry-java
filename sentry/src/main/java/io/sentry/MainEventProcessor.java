@@ -2,30 +2,26 @@ package io.sentry;
 
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Cached;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
 import io.sentry.util.HintUtils;
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
-public final class MainEventProcessor implements EventProcessor, Closeable {
+public final class MainEventProcessor implements SentryEventProcessor {
 
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
-  private volatile @Nullable HostnameCache hostnameCache = null;
 
   public MainEventProcessor(final @NotNull SentryOptions options) {
     this.options = options;
@@ -164,16 +160,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
     }
 
     if (options.isAttachServerName() && event.getServerName() == null) {
-      ensureHostnameCache();
-      if (hostnameCache != null) {
-        event.setServerName(hostnameCache.getHostname());
-      }
-    }
-  }
-
-  private void ensureHostnameCache() {
-    if (hostnameCache == null) {
-      hostnameCache = HostnameCache.getInstance();
+      event.setServerName(options.getHostnameCache().getHostname());
     }
   }
 
@@ -191,7 +178,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
 
   private void setTags(final @NotNull SentryBaseEvent event) {
     if (event.getTags() == null) {
-      event.setTags(new HashMap<>(options.getTags()));
+      event.setTags(options.getTags());
     } else {
       for (Map.Entry<String, String> item : options.getTags().entrySet()) {
         if (!event.getTags().containsKey(item.getKey())) {
@@ -207,7 +194,7 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
       user = new User();
       event.setUser(user);
     }
-    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
+    if (user.getIpAddress() == null && options.getDataCollectionResolver().isUserInfo()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -270,27 +257,6 @@ public final class MainEventProcessor implements EventProcessor, Closeable {
    */
   private boolean isCachedHint(final @NotNull Hint hint) {
     return HintUtils.hasType(hint, Cached.class);
-  }
-
-  @Override
-  public void close() throws IOException {
-    if (hostnameCache != null) {
-      hostnameCache.close();
-    }
-  }
-
-  boolean isClosed() {
-    if (hostnameCache != null) {
-      return hostnameCache.isClosed();
-    } else {
-      return true;
-    }
-  }
-
-  @VisibleForTesting
-  @Nullable
-  HostnameCache getHostnameCache() {
-    return hostnameCache;
   }
 
   @Override

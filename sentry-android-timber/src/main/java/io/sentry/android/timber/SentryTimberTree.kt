@@ -246,10 +246,15 @@ public class SentryTimberTree(
     throwable: Throwable?,
     vararg args: Any?,
   ) {
+    if (!scopes.options.logs.isEnabled) {
+      return
+    }
+
     // checks the log level
     if (isLoggable(sentryLogLevel, minLogLevel)) {
-      val attributes =
-        tag?.let { SentryAttributes.of(SentryAttribute.stringAttribute("timber.tag", tag)) }
+      val attributes = tag?.let {
+        SentryAttributes.of(SentryAttribute.stringAttribute("timber.tag", tag))
+      }
       val params = SentryLogParameters.create(attributes)
       params.origin = "auto.log.timber"
 

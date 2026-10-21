@@ -1,7 +1,9 @@
 package io.sentry.metrics
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DataCategory
 import io.sentry.ISentryClient
+import io.sentry.ISentryExecutorService
 import io.sentry.SentryMetricsEvent
 import io.sentry.SentryMetricsEvents
 import io.sentry.SentryNanotimeDate
@@ -12,16 +14,68 @@ import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.injectForField
+import io.sentry.util.JsonSerializationUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeast
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 
 class MetricsBatchProcessorTest {
+  @Test
+  fun `flush without accepted items does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = MetricsBatchProcessor(SentryOptions(), mock())
+    processor.injectForField("executorService", mockExecutor)
+
+    processor.flush(0)
+
+    verifyNoInteractions(mockExecutor)
+  }
+
+  @Test
+  fun `close without accepted items does not submit processor work`() {
+    for (isRestarting in listOf(false, true)) {
+      val mockExecutor = mock<ISentryExecutorService>()
+      val processor = MetricsBatchProcessor(SentryOptions(), mock())
+      processor.injectForField("executorService", mockExecutor)
+
+      processor.close(isRestarting)
+
+      verify(mockExecutor).close(any())
+      verify(mockExecutor, never()).schedule(any(), any())
+      verify(mockExecutor, never()).submit(any<Runnable>())
+    }
+  }
+
+  @Test
+  fun `schedules another flush after previous flush has run`() {
+    val mockClient = mock<ISentryClient>()
+    val mockExecutor = DeferredExecutorService()
+    val processor = MetricsBatchProcessor(SentryOptions(), mockClient)
+    processor.injectForField("executorService", mockExecutor)
+
+    processor.add(SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "first", "gauge", 1.0))
+    mockExecutor.runAll()
+
+    processor.add(SentryMetricsEvent(SentryId(), SentryNanotimeDate(), "second", "gauge", 2.0))
+    assertThat(mockExecutor.hasScheduledRunnables()).isTrue()
+    mockExecutor.runAll()
+
+    val captor = argumentCaptor<SentryMetricsEvents>()
+    verify(mockClient, times(2)).captureBatchedMetricsEvents(captor.capture())
+    assertThat(captor.allValues.flatMap { it.items }.map { it.name })
+      .containsExactly("first", "second")
+      .inOrder()
+  }
+
   @Test
   fun `drops metrics events after reaching MAX_QUEUE_SIZE limit`() {
     // given
@@ -80,9 +134,16 @@ class MetricsBatchProcessorTest {
     processor.add(droppedMetricsEvent)
 
     // verify that a client report was recorded for the dropped metrics item
+    val droppedBytes =
+      JsonSerializationUtils.byteSizeOf(options.serializer, options.logger, droppedMetricsEvent)
     val expectedEvents =
       mutableListOf(
-        DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.TraceMetric.category, 1)
+        DiscardedEvent(DiscardReason.QUEUE_OVERFLOW.reason, DataCategory.TraceMetric.category, 1),
+        DiscardedEvent(
+          DiscardReason.QUEUE_OVERFLOW.reason,
+          DataCategory.TraceMetricByte.category,
+          droppedBytes,
+        ),
       )
 
     ClientReportTestHelper.assertClientReport(options.clientReportRecorder, expectedEvents)

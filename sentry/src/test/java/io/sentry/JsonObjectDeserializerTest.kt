@@ -1,8 +1,10 @@
 package io.sentry
 
+import java.io.IOException
 import java.io.StringReader
 import java.lang.Exception
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.fail
 import org.junit.Test
@@ -40,6 +42,54 @@ class JsonObjectDeserializerTest {
     val json = "1.1"
     val actual = deserialize(json)
     assertEquals(1.1, actual)
+  }
+
+  // A value that is integral and fits an int is typed as Integer (regardless of how it was
+  // written); anything else is a Double. This matches the behavior prior to removing the
+  // exception-based number typing.
+
+  @Test
+  fun `deserialize negative int`() {
+    assertEquals(-5, deserialize("-5"))
+  }
+
+  @Test
+  fun `deserialize negative double`() {
+    assertEquals(-3.14, deserialize("-3.14"))
+  }
+
+  @Test
+  fun `deserialize integral exponent notation as int`() {
+    assertEquals(100, deserialize("1e2"))
+    assertEquals(100, deserialize("1E2"))
+  }
+
+  @Test
+  fun `deserialize fractional exponent notation as double`() {
+    assertEquals(0.0025, deserialize("2.5e-3"))
+  }
+
+  @Test
+  fun `deserialize whole-valued decimal as int`() {
+    assertEquals(1, deserialize("1.0"))
+  }
+
+  @Test
+  fun `deserialize integer larger than int range as double`() {
+    assertEquals(1.0e10, deserialize("10000000000"))
+    assertEquals(2147483648.0, deserialize("2147483648"))
+  }
+
+  @Test
+  fun `deserialize max int as int`() {
+    assertEquals(Int.MAX_VALUE, deserialize("2147483647"))
+  }
+
+  @Test
+  fun `deserialize rejects literal overflowing to infinity`() {
+    // Strict JSON forbids non-finite numbers, so an out-of-range literal must fail rather than be
+    // stored as Infinity.
+    assertFailsWith<IOException> { deserialize("1e400") }
   }
 
   @Test

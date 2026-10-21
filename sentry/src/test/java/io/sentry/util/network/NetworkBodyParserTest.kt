@@ -341,6 +341,27 @@ class NetworkBodyParserTest {
     val body = NetworkBodyParser.fromBytes(bytes, "image/png", null, bytes.size, logger)
     assertNotNull(body)
     assertEquals("[Binary data, 100 bytes, type: image/png]", body.body)
+    assertEquals(100, body.originalByteCount)
+  }
+
+  @Test
+  fun `originalByteCount is set when body fits within limit`() {
+    val logger = mock<ILogger>()
+    val bytes = """{"key":"value"}""".toByteArray()
+
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size, logger)
+    assertNotNull(body)
+    assertEquals(bytes.size.toLong(), body.originalByteCount)
+  }
+
+  @Test
+  fun `originalByteCount is set to capped size when body is truncated`() {
+    val logger = mock<ILogger>()
+    val bytes = """{"key":"value"}""".toByteArray()
+
+    val body = NetworkBodyParser.fromBytes(bytes, "application/json", null, bytes.size - 1, logger)
+    assertNotNull(body)
+    assertEquals(bytes.size.toLong(), body.originalByteCount)
   }
 
   @Test

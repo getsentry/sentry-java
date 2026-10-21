@@ -1,15 +1,17 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.ApplyScopeData
 import io.sentry.protocol.DebugMeta
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.protocol.User
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.HintUtils
 import java.lang.RuntimeException
 import java.net.InetAddress
-import kotlin.test.AfterTest
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -17,8 +19,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import org.awaitility.kotlin.await
-import org.mockito.Mockito
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.reset
 import org.mockito.kotlin.times
@@ -27,17 +27,24 @@ import org.mockito.kotlin.whenever
 
 class MainEventProcessorTest {
   class Fixture {
-    val sentryOptions: SentryOptions =
-      SentryOptions().apply {
-        dsn = dsnString
-        release = "release"
-        dist = "dist"
-        sdkVersion = SdkVersion("test", "1.2.3")
-      }
     val scopes = mock<IScopes>()
     val getLocalhost = mock<InetAddress>()
+    val hostnameCacheTicker = TestMonotonicTicker()
+    // Built in getSut() rather than here: the constructor resolves the hostname straight away,
+    // so it has to run after getLocalhost is stubbed.
+    lateinit var hostnameCache: HostnameCache
+    val sentryOptions: SentryOptions =
+      object : SentryOptions() {
+          // Qualified: an unqualified name here would resolve to this override, not the field.
+          override fun getHostnameCache(): HostnameCache = this@Fixture.hostnameCache
+        }
+        .apply {
+          dsn = dsnString
+          release = "release"
+          dist = "dist"
+          sdkVersion = SdkVersion("test", "1.2.3")
+        }
     lateinit var sentryTracer: SentryTracer
-    private val hostnameCacheMock = Mockito.mockStatic(HostnameCache::class.java)
 
     fun getSut(
       attachThreads: Boolean = true,
@@ -48,7 +55,6 @@ class MainEventProcessorTest {
       serverName: String? = "server",
       host: String? = null,
       resolveHostDelay: Long? = null,
-      hostnameCacheDuration: Long = 10,
       proguardUuid: String? = null,
       bundleIds: List<String>? = null,
       modules: Map<String, String>? = null,
@@ -75,21 +81,10 @@ class MainEventProcessorTest {
       }
       whenever(scopes.options).thenReturn(sentryOptions)
       sentryTracer = SentryTracer(TransactionContext("", ""), scopes)
-
-      val hostnameCache = HostnameCache(hostnameCacheDuration) { getLocalhost }
-      hostnameCacheMock.`when`<Any> { HostnameCache.getInstance() }.thenReturn(hostnameCache)
+      hostnameCache = HostnameCache({ getLocalhost }, hostnameCacheTicker)
 
       return MainEventProcessor(sentryOptions)
     }
-
-    fun teardown() {
-      hostnameCacheMock.close()
-    }
-  }
-
-  @AfterTest
-  fun teardown() {
-    fixture.teardown()
   }
 
   private val fixture = Fixture()
@@ -322,6 +317,39 @@ class MainEventProcessorTest {
   }
 
   @Test
+  fun `when user info is disabled, do not enrich ip address if sendDefaultPii is true`() {
+    fixture.sentryOptions.dataCollection.setUserInfo(false)
+    val sut = fixture.getSut(sendDefaultPii = true)
+    val event = SentryEvent()
+
+    sut.process(event, Hint())
+
+    assertThat(event.user?.ipAddress).isNull()
+  }
+
+  @Test
+  fun `when user info is enabled, enrich ip address if sendDefaultPii is false`() {
+    fixture.sentryOptions.dataCollection.setUserInfo(true)
+    val sut = fixture.getSut(sendDefaultPii = false)
+    val event = SentryEvent()
+
+    sut.process(event, Hint())
+
+    assertThat(event.user?.ipAddress).isEqualTo("{{auto}}")
+  }
+
+  @Test
+  fun `when another data collection setting is configured, omitted user info uses its default`() {
+    fixture.sentryOptions.dataCollection.cookies = KeyValueCollectionBehavior.off()
+    val sut = fixture.getSut(sendDefaultPii = false)
+    val event = SentryEvent()
+
+    sut.process(event, Hint())
+
+    assertThat(event.user?.ipAddress).isEqualTo("{{auto}}")
+  }
+
+  @Test
   fun `when event has ip address set, keeps original ip address`() {
     val sut = fixture.getSut(sendDefaultPii = true)
     val event = SentryEvent()
@@ -359,6 +387,19 @@ class MainEventProcessorTest {
   }
 
   @Test
+  fun `options tags are copied when applied to event`() {
+    val sut = fixture.getSut(tags = mapOf("tag1" to "value1"))
+    val event = SentryEvent()
+
+    sut.process(event, Hint())
+    val eventTags = event.tags!!
+
+    fixture.sentryOptions.setTag("tag2", "value2")
+
+    assertFalse(eventTags.containsKey("tag2"))
+  }
+
+  @Test
   fun `when event has a tag set with the same name as SentryOptions tags, the tag value from the event is retained`() {
     val sut = fixture.getSut(tags = mapOf("tag1" to "value1", "tag2" to "value2"))
     val event = SentryEvent()
@@ -388,7 +429,7 @@ class MainEventProcessorTest {
 
   @Test
   fun `uses cache to retrieve servername for subsequent events`() {
-    val processor = fixture.getSut(serverName = null, host = "aHost", hostnameCacheDuration = 1000)
+    val processor = fixture.getSut(serverName = null, host = "aHost")
     val firstEvent = SentryEvent()
     processor.process(firstEvent, Hint())
     assertEquals("aHost", firstEvent.serverName)
@@ -407,12 +448,11 @@ class MainEventProcessorTest {
 
     reset(fixture.getLocalhost)
     whenever(fixture.getLocalhost.canonicalHostName).thenReturn("newHost")
+    fixture.hostnameCacheTicker.advance(6, TimeUnit.HOURS)
 
-    await.untilAsserted {
-      val secondEvent = SentryEvent()
-      processor.process(secondEvent, Hint())
-      assertEquals("newHost", secondEvent.serverName)
-    }
+    val secondEvent = SentryEvent()
+    processor.process(secondEvent, Hint())
+    assertEquals("newHost", secondEvent.serverName)
   }
 
   @Test
@@ -556,16 +596,6 @@ class MainEventProcessorTest {
         assertEquals("jvm", images[1].type)
       }
     }
-  }
-
-  @Test
-  fun `when processor is closed, closes hostname cache`() {
-    val sut = fixture.getSut(serverName = null)
-
-    sut.process(SentryTransaction(fixture.sentryTracer), Hint())
-
-    sut.close()
-    assertNotNull(sut.hostnameCache) { assertTrue(it.isClosed) }
   }
 
   @Test

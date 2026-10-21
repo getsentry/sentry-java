@@ -376,7 +376,8 @@ class SentrySpringIntegrationTest {
             assertThat(transaction.spans).hasSize(1)
             val span = transaction.spans.first()
             assertThat(span.op).isEqualTo("http.client")
-            assertThat(span.description).isEqualTo("GET http://localhost:$port/hello")
+            assertThat(span.description)
+              .isEqualTo("GET http://[Filtered]:[Filtered]@localhost:$port/hello")
             assertThat(span.data?.get(SpanDataConvention.HTTP_STATUS_CODE_KEY)).isEqualTo(200)
             assertThat(span.status).isEqualTo(SpanStatus.OK)
           },
@@ -519,7 +520,7 @@ class HelloController(private val webClient: WebClient, private val env: Environ
   fun webClient(): String? {
     return webClient
       .get()
-      .uri("http://localhost:${env.getProperty("local.server.port")}/hello")
+      .uri("http://user:password@localhost:${env.getProperty("local.server.port")}/hello")
       .retrieve()
       .bodyToMono(String::class.java)
       .block()

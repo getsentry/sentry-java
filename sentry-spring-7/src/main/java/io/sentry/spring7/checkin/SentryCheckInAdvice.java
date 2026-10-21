@@ -9,6 +9,7 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryLevel;
 import io.sentry.protocol.SentryId;
+import io.sentry.time.Stopwatch;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
@@ -43,9 +44,11 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
   }
 
   @Override
-  public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
+  public @Nullable Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
+    final @Nullable Object target = invocation.getThis();
     final Method mostSpecificMethod =
-        AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
+        AopUtils.getMostSpecificMethod(
+            invocation.getMethod(), target != null ? target.getClass() : null);
 
     @Nullable
     SentryCheckIn checkInAnnotation =
@@ -91,7 +94,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       TracingUtils.startNewTrace(scopes);
 
       @Nullable SentryId checkInId = null;
-      final long startTime = System.currentTimeMillis();
+      final @NotNull Stopwatch stopwatch =
+          Stopwatch.started(scopes.getOptions().getMonotonicTicker());
       boolean didError = false;
 
       try {
@@ -105,7 +109,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       } finally {
         final @NotNull CheckInStatus status = didError ? CheckInStatus.ERROR : CheckInStatus.OK;
         CheckIn checkIn = new CheckIn(checkInId, monitorSlug, status);
-        checkIn.setDuration(DateUtils.millisToSeconds(System.currentTimeMillis() - startTime));
+        checkIn.setDuration(DateUtils.nanosToSeconds(stopwatch.elapsedNanos()));
         scopes.captureCheckIn(checkIn);
       }
     }

@@ -16,6 +16,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.spy
@@ -64,7 +65,7 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
           }
         shadowActivityManager.addApplicationExitInfo(exitInfo)
       },
-      flushLogPrefix = "Timed out waiting to flush Tombstone event to disk.",
+      flushLogPrefix = "Timed out waiting to flush %s event to disk.",
     )
 
   override fun assertEnrichedEvent(event: SentryEvent) {
@@ -75,7 +76,8 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     val crashedThreadId = 21891L
     assertEquals(crashedThreadId, event.exceptions!![0].threadId)
     val crashedThread = event.threads!!.find { thread -> thread.id == crashedThreadId }
-    assertEquals("samples.android", crashedThread!!.name)
+    assertEquals("main", crashedThread!!.name)
+    assertTrue(crashedThread.isMain!!)
     assertTrue(crashedThread.isCrashed!!)
 
     // Verify that frames from the app's native library are marked as in-app
@@ -133,6 +135,18 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
     integration.register(fixture.scopes, fixture.options)
 
     verify(fixture.scopes).captureEvent(any(), argThat<Hint> { this.tombstone == null })
+  }
+
+  @Test
+  fun `memory limiter marker does not suppress matching tombstone exit`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    File(fixture.options.cacheDirPath!!, AndroidEnvelopeCache.LAST_MEMORY_LIMITER_REPORT)
+      .writeText(newTimestamp.toString())
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
   }
 
   @Test

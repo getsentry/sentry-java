@@ -29,3 +29,9 @@
 # Rules to detect a PreviewView view to later mask it
 -dontwarn androidx.camera.view.PreviewView
 -keepnames class androidx.camera.view.PreviewView
+# Rules to walk the Compose Node tree.
+-keep class androidx.compose.ui.node.LayoutNode {
+    *** getChildren*(...);
+    *** getOuterCoordinator*(...);
+    *** getCollapsedSemantics*(...);
+}

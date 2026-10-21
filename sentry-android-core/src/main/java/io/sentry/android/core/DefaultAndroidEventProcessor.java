@@ -8,6 +8,7 @@ import io.sentry.*;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.App;
 import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.SentryException;
@@ -27,11 +28,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-final class DefaultAndroidEventProcessor implements EventProcessor {
+final class DefaultAndroidEventProcessor implements SentryEventProcessor {
 
   @TestOnly final Context context;
 
@@ -56,7 +58,8 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     // noinspection Convert2MethodRef
     // some device info performs disk I/O, but it's result is cached, let's pre-cache it
     @Nullable Future<DeviceInfoUtil> deviceInfoUtil;
-    final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
+    final @NotNull ExecutorService executorService =
+        Executors.newSingleThreadExecutor(new DeviceInfoCacheThreadFactory());
     try {
       deviceInfoUtil =
           executorService.submit(() -> DeviceInfoUtil.getInstance(this.context, options));
@@ -176,7 +179,7 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
     if (user.getId() == null) {
       user.setId(Installation.id(context));
     }
-    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
+    if (user.getIpAddress() == null && options.getDataCollectionResolver().isUserInfo()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -424,5 +427,14 @@ final class DefaultAndroidEventProcessor implements EventProcessor {
   @Override
   public @Nullable Long getOrder() {
     return 8000L;
+  }
+
+  private static final class DeviceInfoCacheThreadFactory implements ThreadFactory {
+    @Override
+    public @NotNull Thread newThread(final @NotNull Runnable r) {
+      final Thread ret = new Thread(r, "SentryDeviceInfoCache");
+      ret.setDaemon(true);
+      return ret;
+    }
   }
 }

@@ -14,10 +14,11 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-@Deprecated
 /**
  * @deprecated use {@link NoOpScopes} instead.
  */
+@Deprecated
+@ApiStatus.Internal
 public final class NoOpHub implements IHub {
 
   private static final NoOpHub instance = new NoOpHub();

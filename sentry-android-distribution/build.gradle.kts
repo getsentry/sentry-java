@@ -1,16 +1,23 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.detekt)
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.distribution"
 
   defaultConfig { minSdk = libs.versions.minSdk.get().toInt() }
   buildFeatures { buildConfig = false }
+
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
+  testBuildType = "release"
 
   testOptions {
     unitTests.apply {
@@ -21,7 +28,7 @@ android {
 }
 
 kotlin {
-  jvmToolchain(17)
+  compilerOptions.jvmTarget = JVM_1_8
   compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
   explicitApi()
 }

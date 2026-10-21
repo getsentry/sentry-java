@@ -3,13 +3,12 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
-  jacoco
-  alias(libs.plugins.jacoco.android)
   alias(libs.plugins.gradle.versions)
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.ndk"
 
   defaultConfig {
@@ -27,6 +26,10 @@ android {
     getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
     getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
+
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
+  testBuildType = "release"
 
   kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
 

@@ -98,8 +98,7 @@ public final class App implements JsonUnknown, JsonSerializable {
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public @Nullable Date getAppStartTime() {
-    final Date appStartTimeRef = appStartTime;
-    return appStartTimeRef != null ? (Date) appStartTimeRef.clone() : null;
+    return appStartTime;
   }
 
   public void setAppStartTime(final @Nullable Date appStartTime) {

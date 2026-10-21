@@ -114,7 +114,7 @@ public final class SentryEvent extends SentryBaseEvent implements JsonUnknown, J
 
   @SuppressWarnings({"JdkObsolete", "JavaUtilDate"})
   public Date getTimestamp() {
-    return (Date) timestamp.clone();
+    return timestamp;
   }
 
   public void setTimestamp(final @NotNull Date timestamp) {

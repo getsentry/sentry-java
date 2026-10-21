@@ -186,6 +186,12 @@ class SentryAndroidOptionsTest {
     assertFalse(sentryOptions.isEnablePerformanceV2)
   }
 
+  @Test
+  fun `standalone app start tracing is disabled by default`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertFalse(sentryOptions.isEnableStandaloneAppStartTracing)
+  }
+
   fun `when options is initialized, enableScopeSync is enabled by default`() {
     assertTrue(SentryAndroidOptions().isEnableScopeSync)
   }
@@ -261,6 +267,22 @@ class SentryAndroidOptionsTest {
   fun `anr profiling rejects invalid sample rate`() {
     val sentryOptions = SentryAndroidOptions()
     sentryOptions.anrProfilingSampleRate = 2.0
+  }
+
+  @Test
+  fun `app hang tracking is disabled by default with a 5s timeout`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertFalse(sentryOptions.isEnableNdkAppHangTracking)
+    assertEquals(5000L, sentryOptions.ndkAppHangTimeoutIntervalMillis)
+  }
+
+  @Test
+  fun `tombstone merge time threshold defaults to 5s and is configurable`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertEquals(5000L, sentryOptions.tombstoneMergeTimeThresholdMillis)
+
+    sentryOptions.tombstoneMergeTimeThresholdMillis = 10000L
+    assertEquals(10000L, sentryOptions.tombstoneMergeTimeThresholdMillis)
   }
 
   private class CustomDebugImagesLoader : IDebugImagesLoader {

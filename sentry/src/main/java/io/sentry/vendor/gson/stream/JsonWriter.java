@@ -17,7 +17,7 @@
 // Source: https://github.com/google/gson
 // Tag: gson-parent-2.8.7
 // Commit Hash: 4520489c29e770c64b11ca35e0a0fdf17a1874ab
-// Changes: @ApiStatus.Internal, SuppressWarnings
+// Changes: @ApiStatus.Internal, SuppressWarnings, reduced stack size
 
 package io.sentry.vendor.gson.stream;
 
@@ -175,7 +175,7 @@ public class JsonWriter implements Closeable, Flushable {
   /** The output data, containing at most one top-level array or object. */
   private final Writer out;
 
-  private int[] stack = new int[32];
+  private int[] stack = new int[8];
   private int stackSize = 0;
   {
     push(EMPTY_DOCUMENT);

@@ -2,9 +2,13 @@ package io.sentry.android.core
 
 import android.content.ContentProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Hint
 import io.sentry.IScopes
+import io.sentry.ISpan
+import io.sentry.ITransaction
 import io.sentry.MeasurementUnit
+import io.sentry.SentryLongDate
 import io.sentry.SentryTracer
 import io.sentry.SpanContext
 import io.sentry.SpanDataConvention
@@ -13,7 +17,11 @@ import io.sentry.SpanStatus
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_COLD
+import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_EXTENDED_OP
+import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCREEN_DATA
+import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_TYPE_DATA
 import io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
+import io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP
 import io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP
 import io.sentry.android.core.performance.ActivityLifecycleTimeSpan
 import io.sentry.android.core.performance.AppStartMetrics
@@ -87,7 +95,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `add cold start measurement`() {
     val sut = fixture.getSut()
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
     setAppStart(fixture.options)
 
     tr = sut.process(tr, Hint())
@@ -96,10 +104,364 @@ class PerformanceAndroidEventProcessorTest {
   }
 
   @Test
+  fun `add cold start measurement for standalone app start transaction launched from background`() {
+    val sut = fixture.getSut()
+
+    var tr = createStandaloneAppStartTransaction()
+    setStandaloneColdAppStartMetrics()
+
+    tr = sut.process(tr, Hint())
+
+    assertTrue(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+  }
+
+  @Test
+  fun `standalone app start with instrumented application onCreate attaches process and application spans`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics(withApplicationOnCreate = true)
+
+    var tr = createStandaloneAppStartTransaction()
+    val rootSpanId = tr.contexts.trace!!.spanId
+
+    tr = sut.process(tr, Hint())
+
+    assertTrue(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertEquals(listOf("process.load", "application.load"), tr.spans.map { it.op })
+    assertTrue(tr.spans.all { it.parentSpanId == rootSpanId })
+  }
+
+  @Test
+  fun `standalone app start without instrumented application onCreate attaches only process span`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics(withApplicationOnCreate = false)
+
+    var tr = createStandaloneAppStartTransaction()
+    val rootSpanId = tr.contexts.trace!!.spanId
+
+    tr = sut.process(tr, Hint())
+
+    assertTrue(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertEquals(listOf("process.load"), tr.spans.map { it.op })
+    assertEquals(rootSpanId, tr.spans.single().parentSpanId)
+  }
+
+  @Test
+  fun `standalone app start uses the transaction root span id as parent`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics()
+
+    var tr = createStandaloneAppStartTransaction()
+    val rootSpanId = tr.contexts.trace!!.spanId
+
+    tr = sut.process(tr, Hint())
+
+    val processLoadSpan = tr.spans.first { it.op == "process.load" }
+    assertEquals(rootSpanId, processLoadSpan.parentSpanId)
+  }
+
+  @Test
+  fun `standalone app start spans do not carry TTID or TTFD contributing flags`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics(withApplicationOnCreate = true)
+
+    var tr = createStandaloneAppStartTransaction()
+
+    tr = sut.process(tr, Hint())
+
+    assertTrue(tr.spans.isNotEmpty())
+    for (span in tr.spans) {
+      assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTID))
+      assertNull(span.data?.get(SpanDataConvention.CONTRIBUTES_TTFD))
+    }
+  }
+
+  @Test
+  fun `foreground standalone app start sets screen and type on root and breakdown children`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = true
+      classLoadedUptimeMs = 50
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(100)
+      }
+      applicationOnCreateTimeSpan.apply {
+        setStartedAt(10)
+        description = "com.example.App.onCreate"
+        setStoppedAt(42)
+      }
+    }
+
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "Activity")
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.contexts.trace!!.data[APP_START_SCREEN_DATA]).isEqualTo("Activity")
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("cold")
+    assertThat(tr.spans).isNotEmpty()
+    for (span in tr.spans) {
+      assertThat(span.data?.get(APP_START_SCREEN_DATA)).isEqualTo("Activity")
+      assertThat(span.data?.get(APP_START_TYPE_DATA)).isEqualTo("cold")
+    }
+  }
+
+  @Test
+  fun `cold standalone app start reports the same type on measurement, contexts and spans`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = true
+      classLoadedUptimeMs = 50
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(100)
+      }
+      applicationOnCreateTimeSpan.apply {
+        setStartedAt(10)
+        description = "com.example.App.onCreate"
+        setStoppedAt(42)
+      }
+    }
+
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "Activity")
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.measurements).containsKey(MeasurementValue.KEY_APP_START_COLD)
+    assertThat(tr.measurements).doesNotContainKey(MeasurementValue.KEY_APP_START_WARM)
+    assertThat(tr.contexts.app!!.startType).isEqualTo("cold")
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("cold")
+    // cold starts attach the process init / Application.onCreate breakdown children
+    assertThat(tr.spans).isNotEmpty()
+    for (span in tr.spans) {
+      assertThat(span.data?.get(APP_START_TYPE_DATA)).isEqualTo("cold")
+    }
+  }
+
+  @Test
+  fun `warm standalone app start reports the same type on measurement, contexts and spans`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.WARM
+      isAppLaunchedInForeground = true
+      classLoadedUptimeMs = 50
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(100)
+      }
+    }
+
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "Activity")
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.measurements).containsKey(MeasurementValue.KEY_APP_START_WARM)
+    assertThat(tr.measurements).doesNotContainKey(MeasurementValue.KEY_APP_START_COLD)
+    assertThat(tr.contexts.app!!.startType).isEqualTo("warm")
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("warm")
+    for (span in tr.spans) {
+      assertThat(span.data?.get(APP_START_TYPE_DATA)).isEqualTo("warm")
+    }
+  }
+
+  @Test
+  fun `standalone app start sets screen and type on user spans under the extended span`() {
+    val sut = fixture.getSut()
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = true
+    }
+
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "Activity")
+    val traceId = tr.contexts.trace!!.traceId
+    val extendedSpanId = SpanId()
+    val childSpanId = SpanId()
+    tr.spans.add(
+      SentrySpan(
+        0.0,
+        1.0,
+        traceId,
+        extendedSpanId,
+        tr.contexts.trace!!.spanId,
+        APP_START_EXTENDED_OP,
+        APP_START_EXTENDED_OP,
+        SpanStatus.OK,
+        null,
+        emptyMap(),
+        emptyMap(),
+        null,
+      )
+    )
+    tr.spans.add(
+      SentrySpan(
+        0.0,
+        1.0,
+        traceId,
+        childSpanId,
+        extendedSpanId,
+        "user.work",
+        "user.work",
+        SpanStatus.OK,
+        null,
+        emptyMap(),
+        emptyMap(),
+        null,
+      )
+    )
+    tr.spans.add(
+      SentrySpan(
+        0.0,
+        1.0,
+        traceId,
+        SpanId(),
+        childSpanId,
+        "user.work.child",
+        "user.work.child",
+        SpanStatus.OK,
+        null,
+        emptyMap(),
+        emptyMap(),
+        null,
+      )
+    )
+
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.contexts.trace!!.data[APP_START_SCREEN_DATA]).isEqualTo("Activity")
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("cold")
+    assertThat(tr.spans).hasSize(3)
+    assertThat(tr.spans.map { it.data?.get(APP_START_SCREEN_DATA) })
+      .containsExactly("Activity", "Activity", "Activity")
+    assertThat(tr.spans.map { it.data?.get(APP_START_TYPE_DATA) })
+      .containsExactly("cold", "cold", "cold")
+  }
+
+  @Test
+  fun `headless standalone app start sets type but not screen on children`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    setStandaloneColdAppStartMetrics(withApplicationOnCreate = true)
+
+    var tr = createStandaloneAppStartTransaction()
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.contexts.trace!!.data[APP_START_SCREEN_DATA]).isNull()
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isEqualTo("cold")
+    assertThat(tr.spans).isNotEmpty()
+    for (span in tr.spans) {
+      assertThat(span.data?.get(APP_START_SCREEN_DATA)).isNull()
+      assertThat(span.data?.get(APP_START_TYPE_DATA)).isEqualTo("cold")
+    }
+  }
+
+  @Test
+  fun `ui load attached app start child does not get standalone vitals attributes`() {
+    setAppStart(fixture.options, coldStart = true)
+
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.contexts.trace!!.data[APP_START_SCREEN_DATA]).isNull()
+    assertThat(tr.contexts.trace!!.data[APP_START_TYPE_DATA]).isNull()
+    val appStartSpan = tr.spans.single { it.op == APP_START_COLD }
+    assertThat(appStartSpan.data?.get(APP_START_SCREEN_DATA)).isNull()
+    assertThat(appStartSpan.data?.get(APP_START_TYPE_DATA)).isNull()
+  }
+
+  @Test
+  fun `foreground standalone app start measurement uses foreground fallback time span`() {
+    val sut = fixture.getSut(enablePerformanceV2 = false)
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = true
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(101)
+      }
+      sdkInitTimeSpan.apply {
+        setStartedAt(10)
+        setStoppedAt(30)
+      }
+    }
+
+    var tr = createStandaloneAppStartTransaction(appStartScreen = "MainActivity")
+
+    tr = sut.process(tr, Hint())
+
+    assertEquals(20f, tr.measurements[MeasurementValue.KEY_APP_START_COLD]?.value)
+  }
+
+  private fun extendAppStartFinishedWith(status: SpanStatus, endMs: Long) {
+    val span = mock<ISpan>()
+    whenever(span.isFinished).thenReturn(true)
+    whenever(span.status).thenReturn(status)
+    whenever(span.finishDate).thenReturn(SentryLongDate(endMs * 1_000_000L))
+    val ext = AppStartMetrics.getInstance().appStartExtension
+    ext.setExtendAppStartListener { AppStartExtension.ExtendedAppStart(mock<ITransaction>(), span) }
+    ext.extendAppStart()
+  }
+
+  @Test
+  fun `extended app start uses the extended end for the cold start measurement`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartType = AppStartType.COLD
+    metrics.isAppLaunchedInForeground = true
+    metrics.appStartTimeSpan.apply {
+      setStartedAt(1)
+      setStoppedAt(100)
+    }
+    val startMs = metrics.appStartTimeSpan.startTimestampMs
+    extendAppStartFinishedWith(SpanStatus.OK, startMs + 500)
+
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
+    tr = sut.process(tr, Hint())
+
+    assertEquals(500f, tr.measurements[MeasurementValue.KEY_APP_START_COLD]?.value)
+  }
+
+  @Test
+  fun `extended app start never reports shorter than the natural first frame duration`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartType = AppStartType.COLD
+    metrics.isAppLaunchedInForeground = true
+    metrics.appStartTimeSpan.apply {
+      setStartedAt(1)
+      setStoppedAt(1000)
+    }
+    val startMs = metrics.appStartTimeSpan.startTimestampMs
+    extendAppStartFinishedWith(SpanStatus.OK, startMs + 100)
+
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
+    tr = sut.process(tr, Hint())
+
+    assertEquals(999f, tr.measurements[MeasurementValue.KEY_APP_START_COLD]?.value)
+  }
+
+  @Test
+  fun `extended app start that hit the deadline suppresses the measurement`() {
+    val sut = fixture.getSut(enablePerformanceV2 = true)
+    val metrics = AppStartMetrics.getInstance()
+    metrics.appStartType = AppStartType.COLD
+    metrics.isAppLaunchedInForeground = true
+    metrics.appStartTimeSpan.apply {
+      setStartedAt(1)
+      setStoppedAt(100)
+    }
+    val startMs = metrics.appStartTimeSpan.startTimestampMs
+    extendAppStartFinishedWith(SpanStatus.DEADLINE_EXCEEDED, startMs + 30_000)
+
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
+    tr = sut.process(tr, Hint())
+
+    assertFalse(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertFalse(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
+  }
+
+  @Test
   fun `add cold start measurement for performance-v2`() {
     val sut = fixture.getSut(enablePerformanceV2 = true)
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
     setAppStart(fixture.options)
 
     tr = sut.process(tr, Hint())
@@ -111,7 +473,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `add warm start measurement`() {
     val sut = fixture.getSut()
 
-    var tr = getTransaction(AppStartType.WARM)
+    var tr = createUiLoadTransactionWithAppStartChildSpan(coldStart = false)
     setAppStart(fixture.options, false)
 
     tr = sut.process(tr, Hint())
@@ -123,7 +485,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `set app cold start unit measurement`() {
     val sut = fixture.getSut()
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
     setAppStart(fixture.options)
 
     tr = sut.process(tr, Hint())
@@ -136,12 +498,12 @@ class PerformanceAndroidEventProcessorTest {
   fun `do not add app start metric twice`() {
     val sut = fixture.getSut()
 
-    var tr1 = getTransaction(AppStartType.COLD)
+    var tr1 = createUiLoadTransactionWithAppStartChildSpan()
     setAppStart(fixture.options, false)
 
     tr1 = sut.process(tr1, Hint())
 
-    var tr2 = getTransaction(AppStartType.UNKNOWN)
+    var tr2 = createUiLoadTransaction()
     tr2 = sut.process(tr2, Hint())
 
     assertTrue(tr1.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
@@ -149,10 +511,27 @@ class PerformanceAndroidEventProcessorTest {
   }
 
   @Test
+  fun `do not add standalone app start metric twice`() {
+    val sut = fixture.getSut()
+
+    setStandaloneColdAppStartMetrics()
+
+    var tr1 = createStandaloneAppStartTransaction()
+    tr1 = sut.process(tr1, Hint())
+
+    var tr2 = createStandaloneAppStartTransaction()
+    tr2 = sut.process(tr2, Hint())
+
+    assertTrue(tr1.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertFalse(tr2.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
+    assertFalse(tr2.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
+  }
+
+  @Test
   fun `do not add app start metric if its not ready`() {
     val sut = fixture.getSut()
 
-    var tr = getTransaction(AppStartType.UNKNOWN)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
 
     tr = sut.process(tr, Hint())
 
@@ -163,7 +542,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `do not add app start metric if performance is disabled`() {
     val sut = fixture.getSut(tracesSampleRate = null)
 
-    var tr = getTransaction(AppStartType.COLD)
+    var tr = createUiLoadTransactionWithAppStartChildSpan()
 
     tr = sut.process(tr, Hint())
 
@@ -174,7 +553,7 @@ class PerformanceAndroidEventProcessorTest {
   fun `do not add app start metric if no app_start span`() {
     val sut = fixture.getSut(tracesSampleRate = null)
 
-    var tr = getTransaction(AppStartType.UNKNOWN)
+    var tr = createUiLoadTransaction()
 
     tr = sut.process(tr, Hint())
 
@@ -184,7 +563,7 @@ class PerformanceAndroidEventProcessorTest {
   @Test
   fun `do not add slow and frozen frames if not auto transaction`() {
     val sut = fixture.getSut()
-    var tr = getTransaction(AppStartType.UNKNOWN)
+    var tr = createTransaction("custom.op")
 
     tr = sut.process(tr, Hint())
 
@@ -194,7 +573,7 @@ class PerformanceAndroidEventProcessorTest {
   @Test
   fun `do not add slow and frozen frames if tracing is disabled`() {
     val sut = fixture.getSut(null)
-    var tr = getTransaction(AppStartType.UNKNOWN)
+    var tr = createUiLoadTransaction()
 
     tr = sut.process(tr, Hint())
 
@@ -464,10 +843,10 @@ class PerformanceAndroidEventProcessorTest {
     val appStartSpan = createAppStartSpan(tr.contexts.trace!!.traceId)
     tr.spans.add(appStartSpan)
 
-    assertTrue(appStartMetrics.shouldSendStartMeasurements())
+    assertTrue(appStartMetrics.shouldSendStartMeasurements(false))
     // then the app start metrics should be attached
     tr = sut.process(tr, Hint())
-    assertFalse(appStartMetrics.shouldSendStartMeasurements())
+    assertFalse(appStartMetrics.shouldSendStartMeasurements(false))
 
     assertTrue(tr.spans.any { "application.load" == it.op })
 
@@ -867,13 +1246,44 @@ class PerformanceAndroidEventProcessorTest {
     }
   }
 
-  private fun getTransaction(type: AppStartType): SentryTransaction {
-    val op =
-      when (type) {
-        AppStartType.COLD -> "app.start.cold"
-        AppStartType.WARM -> "app.start.warm"
-        AppStartType.UNKNOWN -> "ui.load"
+  private fun setStandaloneColdAppStartMetrics(withApplicationOnCreate: Boolean = false) {
+    AppStartMetrics.getInstance().apply {
+      appStartType = AppStartType.COLD
+      isAppLaunchedInForeground = false
+      classLoadedUptimeMs = 50
+      appStartTimeSpan.apply {
+        setStartedAt(1)
+        setStoppedAt(100)
       }
+      if (withApplicationOnCreate) {
+        applicationOnCreateTimeSpan.apply {
+          setStartedAt(10)
+          description = "com.example.App.onCreate"
+          setStoppedAt(42)
+        }
+      }
+    }
+  }
+
+  private fun createUiLoadTransactionWithAppStartChildSpan(
+    coldStart: Boolean = true
+  ): SentryTransaction =
+    createUiLoadTransaction().also { txn ->
+      txn.spans.add(createAppStartSpan(txn.contexts.trace!!.traceId, coldStart))
+    }
+
+  private fun createUiLoadTransaction(): SentryTransaction = createTransaction(UI_LOAD_OP)
+
+  private fun createStandaloneAppStartTransaction(
+    appStartScreen: String? = null
+  ): SentryTransaction =
+    createTransaction(STANDALONE_APP_START_OP).also { txn ->
+      if (appStartScreen != null) {
+        txn.contexts.trace!!.setData(APP_START_SCREEN_DATA, appStartScreen)
+      }
+    }
+
+  private fun createTransaction(op: String): SentryTransaction {
     val txn = SentryTransaction(fixture.tracer)
     txn.contexts.setTrace(SpanContext(op, TracesSamplingDecision(false)))
     return txn

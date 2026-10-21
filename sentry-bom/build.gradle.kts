@@ -9,6 +9,7 @@ dependencies {
       .filter {
         !it.name.startsWith("sentry-samples") &&
           it.name != project.name &&
+          !it.name.endsWith("-bom") &&
           !it.name.contains("test", ignoreCase = true) &&
           !it.name.contains("sentry-android-distribution")
       }

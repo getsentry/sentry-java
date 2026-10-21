@@ -1,5 +1,6 @@
 package io.sentry.util;
 
+import static io.sentry.TypeCheckHint.SENTRY_CAPTURE_FAILED;
 import static io.sentry.TypeCheckHint.SENTRY_DART_SDK_NAME;
 import static io.sentry.TypeCheckHint.SENTRY_DOTNET_SDK_NAME;
 import static io.sentry.TypeCheckHint.SENTRY_EVENT_DROP_REASON;
@@ -43,6 +44,21 @@ public final class HintUtils {
   @Nullable
   public static EventDropReason getEventDropReason(final @NotNull Hint hint) {
     return hint.getAs(SENTRY_EVENT_DROP_REASON, EventDropReason.class);
+  }
+
+  /**
+   * Marks the event as not captured because of a technical failure, as opposed to being dropped on
+   * purpose. Callers that keep an event around for a later attempt use this to tell the two apart:
+   * an empty event id alone does not, because almost every drop also returns one.
+   */
+  public static void setCaptureFailed(final @Nullable Hint hint) {
+    if (hint != null) {
+      hint.set(SENTRY_CAPTURE_FAILED, true);
+    }
+  }
+
+  public static boolean isCaptureFailed(final @NotNull Hint hint) {
+    return Boolean.TRUE.equals(hint.getAs(SENTRY_CAPTURE_FAILED, Boolean.class));
   }
 
   public static Hint createWithTypeCheckHint(Object typeCheckHint) {

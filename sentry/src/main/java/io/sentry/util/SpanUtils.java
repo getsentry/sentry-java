@@ -10,6 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class SpanUtils {
 
   /**
@@ -49,6 +50,7 @@ public final class SpanUtils {
     if (SentryOpenTelemetryMode.AGENT == mode) {
       origins.add("auto.graphql.graphql");
       origins.add("auto.graphql.graphql22");
+      origins.add("auto.http.okhttp");
     }
 
     return origins;

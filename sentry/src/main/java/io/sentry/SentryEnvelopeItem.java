@@ -28,6 +28,7 @@ import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +41,8 @@ public final class SentryEnvelopeItem {
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
+
+  private static final int WRITER_BUFFER_SIZE = 512;
 
   private final SentryEnvelopeItemHeader header;
   // Either dataFactory is set or data needs to be set.
@@ -85,7 +88,9 @@ public final class SentryEnvelopeItem {
         new CachedItem(
             () -> {
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Writer writer =
+                      new BufferedWriter(
+                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                 serializer.serialize(session, writer);
                 return stream.toByteArray();
               }
@@ -119,7 +124,9 @@ public final class SentryEnvelopeItem {
         new CachedItem(
             () -> {
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Writer writer =
+                      new BufferedWriter(
+                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                 serializer.serialize(event, writer);
                 return stream.toByteArray();
               }
@@ -179,7 +186,9 @@ public final class SentryEnvelopeItem {
         new CachedItem(
             () -> {
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Writer writer =
+                      new BufferedWriter(
+                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                 serializer.serialize(userFeedback, writer);
                 return stream.toByteArray();
               }
@@ -206,7 +215,9 @@ public final class SentryEnvelopeItem {
         new CachedItem(
             () -> {
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Writer writer =
+                      new BufferedWriter(
+                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                 serializer.serialize(checkIn, writer);
                 return stream.toByteArray();
               }
@@ -344,7 +355,9 @@ public final class SentryEnvelopeItem {
               }
 
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Writer writer =
+                      new BufferedWriter(
+                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                 serializer.serialize(profileChunk, writer);
                 return stream.toByteArray();
               } catch (IOException e) {
@@ -367,6 +380,79 @@ public final class SentryEnvelopeItem {
             null,
             profileChunk.getPlatform(),
             null);
+
+    // avoid method refs on Android due to some issues with older AGP setups
+    // noinspection Convert2MethodRef
+    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
+  }
+
+  public static @NotNull SentryEnvelopeItem fromPerfettoProfileChunk(
+      final @NotNull ProfileChunk profileChunk, final @NotNull ISerializer serializer)
+      throws SentryEnvelopeException {
+
+    final @Nullable File traceFile = profileChunk.getTraceFile();
+
+    if (traceFile == null || !traceFile.exists()) {
+      throw new SentryEnvelopeException(
+          String.format(
+              "Dropping perfetto profile chunk, because the trace file '%s' doesn't exist",
+              traceFile != null ? traceFile.getName() : "null"));
+    }
+
+    // Perfetto profile chunks are serialized as [JSON metadata][raw .pftrace bytes] with no
+    // delimiter. The server needs meta_length in the envelope header to know where the JSON
+    // ends and the binary begins. meta_length is not known until the CachedItem payload lambda
+    // runs, so we track it here as an envelope serialization concern rather than on ProfileChunk.
+    final AtomicReference<Integer> metaLength = new AtomicReference<>(null);
+
+    final CachedItem cachedItem =
+        new CachedItem(
+            () -> {
+              // Serialize JSON metadata
+              final byte[] metadataBytes;
+              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                serializer.serialize(profileChunk, writer);
+                writer.flush();
+                metadataBytes = stream.toByteArray();
+                metaLength.set(metadataBytes.length);
+              } catch (IOException e) {
+                throw new SentryEnvelopeException(
+                    String.format(
+                        "Failed to serialize perfetto profile chunk\n%s", e.getMessage()));
+              }
+
+              // Read binary Perfetto trace
+              final byte[] traceBytes;
+              try {
+                traceBytes = readBytesFromFile(traceFile.getPath(), MAX_PROFILE_CHUNK_SIZE);
+              } catch (IOException e) {
+                throw new SentryEnvelopeException(
+                    String.format("Failed to read perfetto trace file\n%s", e.getMessage()));
+              } finally {
+                traceFile.delete();
+              }
+
+              // Concatenate: [JSON metadata bytes][raw .pftrace binary bytes]
+              final byte[] payload = new byte[metadataBytes.length + traceBytes.length];
+              System.arraycopy(metadataBytes, 0, payload, 0, metadataBytes.length);
+              System.arraycopy(traceBytes, 0, payload, metadataBytes.length, traceBytes.length);
+
+              return payload;
+            });
+
+    SentryEnvelopeItemHeader itemHeader =
+        new SentryEnvelopeItemHeader(
+            SentryItemType.ProfileChunk,
+            () -> cachedItem.getBytes().length,
+            profileChunk.getContentType(),
+            traceFile.getName(),
+            null,
+            profileChunk.getPlatform(),
+            null,
+            // avoid method refs on Android due to some issues with older AGP setups
+            // noinspection Convert2MethodRef
+            () -> metaLength.get());
 
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
@@ -403,7 +489,9 @@ public final class SentryEnvelopeItem {
               profilingTraceData.readDeviceCpuFrequencies();
 
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Writer writer =
+                      new BufferedWriter(
+                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                 serializer.serialize(profilingTraceData, writer);
                 return stream.toByteArray();
               } catch (IOException e) {
@@ -437,7 +525,9 @@ public final class SentryEnvelopeItem {
         new CachedItem(
             () -> {
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Writer writer =
+                      new BufferedWriter(
+                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                 serializer.serialize(clientReport, writer);
                 return stream.toByteArray();
               }
@@ -481,7 +571,8 @@ public final class SentryEnvelopeItem {
               try {
                 try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                     final Writer writer =
-                        new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                        new BufferedWriter(
+                            new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                   // relay expects the payload to be in this exact order: [event,rrweb,video]
                   final Map<String, byte[]> replayPayload = new LinkedHashMap<>();
                   // first serialize replay event json bytes
@@ -541,7 +632,9 @@ public final class SentryEnvelopeItem {
         new CachedItem(
             () -> {
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Writer writer =
+                      new BufferedWriter(
+                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                 serializer.serialize(logEvents, writer);
                 return stream.toByteArray();
               }
@@ -571,7 +664,9 @@ public final class SentryEnvelopeItem {
         new CachedItem(
             () -> {
               try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer = new BufferedWriter(new OutputStreamWriter(stream, UTF_8))) {
+                  final Writer writer =
+                      new BufferedWriter(
+                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
                 serializer.serialize(metricsEvents, writer);
                 return stream.toByteArray();
               }
@@ -596,11 +691,12 @@ public final class SentryEnvelopeItem {
     private @Nullable byte[] bytes;
     private final @Nullable Callable<byte[]> dataFactory;
 
-    public CachedItem(final @Nullable Callable<byte[]> dataFactory) {
+    CachedItem(final @Nullable Callable<byte[]> dataFactory) {
       this.dataFactory = dataFactory;
     }
 
-    public @NotNull byte[] getBytes() throws Exception {
+    @NotNull
+    byte[] getBytes() throws Exception {
       if (bytes == null && dataFactory != null) {
         bytes = dataFactory.call();
       }

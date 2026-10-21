@@ -76,14 +76,7 @@ public class SentryFragmentLifecycleCallbacks(
   ) {
     addBreadcrumb(fragment, FragmentLifecycleState.CREATED)
 
-    // we only start the tracing for the fragment if the fragment has been added to its activity
-    // and not only to the backstack
-    if (fragment.isAdded) {
-      if (scopes.options.isEnableScreenTracking) {
-        scopes.configureScope { it.screen = getFragmentName(fragment) }
-      }
-      startTracing(fragment)
-    }
+    startTracing(fragment)
   }
 
   override fun onFragmentViewCreated(
@@ -93,17 +86,30 @@ public class SentryFragmentLifecycleCallbacks(
     savedInstanceState: Bundle?,
   ) {
     addBreadcrumb(fragment, FragmentLifecycleState.VIEW_CREATED)
+
+    // For detach/attach navigation (e.g. manual tab switching, ViewPager v1 with
+    // FragmentPagerAdapter, custom navigation frameworks), onFragmentCreated is never called for
+    // off-screen fragments that are re-attached. Starting here enables a narrower
+    // "view created -> resumed" span for those paths. startTracing is idempotent, so for the
+    // normal onFragmentCreated -> onFragmentViewCreated path this is a no-op.
+    startTracing(fragment)
   }
 
   override fun onFragmentStarted(fragmentManager: FragmentManager, fragment: Fragment) {
     addBreadcrumb(fragment, FragmentLifecycleState.STARTED)
 
-    // ViewPager2 locks background fragments to STARTED state
+    // ViewPager2 locks background fragments to STARTED state, so we stop here to avoid
+    // spans hanging for off-screen fragments that never reach RESUMED.
     stopTracing(fragment)
   }
 
   override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
     addBreadcrumb(fragment, FragmentLifecycleState.RESUMED)
+
+    // For detach/attach navigation, onFragmentStarted may not fire before onFragmentResumed.
+    // If a span is still running here, stop it now. stopTracing is idempotent, so this is a
+    // no-op for the normal path where onFragmentStarted already stopped the span.
+    stopTracing(fragment)
   }
 
   override fun onFragmentPaused(fragmentManager: FragmentManager, fragment: Fragment) {
@@ -116,6 +122,10 @@ public class SentryFragmentLifecycleCallbacks(
 
   override fun onFragmentViewDestroyed(fragmentManager: FragmentManager, fragment: Fragment) {
     addBreadcrumb(fragment, FragmentLifecycleState.VIEW_DESTROYED)
+
+    // Failsafe: cancel any span that didn't finish via the normal started/resumed path
+    // (e.g. fragment view destroyed before reaching STARTED or RESUMED).
+    stopTracing(fragment)
   }
 
   override fun onFragmentDestroyed(fragmentManager: FragmentManager, fragment: Fragment) {
@@ -153,6 +163,16 @@ public class SentryFragmentLifecycleCallbacks(
     fragmentsWithOngoingTransactions.containsKey(fragment)
 
   private fun startTracing(fragment: Fragment) {
+    if (!fragment.isAdded) {
+      return
+    }
+
+    val fragmentName = getFragmentName(fragment)
+
+    if (scopes.options.isEnableScreenTracking) {
+      scopes.configureScope { it.screen = fragmentName }
+    }
+
     if (!isPerformanceEnabled || isRunningSpan(fragment)) {
       return
     }
@@ -160,7 +180,6 @@ public class SentryFragmentLifecycleCallbacks(
     var transaction: ISpan? = null
     scopes.configureScope { transaction = it.transaction }
 
-    val fragmentName = getFragmentName(fragment)
     val span = transaction?.startChild(FRAGMENT_LOAD_OP, fragmentName)
 
     span?.let {

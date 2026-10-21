@@ -4,9 +4,11 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import io.sentry.ISpan;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class OtelSpanUtils {
   public static <T> void maybeTransferOtelAttribute(
       final @NotNull SpanData otelSpan,

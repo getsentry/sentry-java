@@ -31,11 +31,26 @@
     android:theme="@style/AppTheme"
     tools:ignore="GoogleAppIndexingWarning, UnusedAttribute">
 
+    <!-- Allows Macrobenchmark (and `am profile`) to profile non-debuggable release/benchmark
+         builds. Harmless in debug; required for the benchmark build type. -->
+    <profileable
+      android:shell="true"
+      tools:targetApi="29" />
+
     <service
       android:name=".DummyService"
       android:enabled="true"
       android:exported="true"
       android:foregroundServiceType="remoteMessaging" />
+
+    <receiver
+      android:name=".TestBroadcastReceiver"
+      android:enabled="true"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="io.sentry.samples.android.TEST_BROADCAST" />
+      </intent-filter>
+    </receiver>
 
     <activity
       android:name=".MainActivity"
@@ -57,6 +72,11 @@
       android:exported="false" />
 
     <activity
+      android:name=".DetachAttachTabsActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
       android:name=".GesturesActivity"
       android:exported="false" />
 
@@ -70,7 +90,8 @@
 
     <activity
       android:name=".ProfilingActivity"
-      android:exported="false" />
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
 
     <activity
       android:name=".CustomTabsActivity"
@@ -79,6 +100,28 @@
     <activity
       android:name=".compose.ComposeActivity"
       android:exported="false" />
+
+    <activity
+      android:name=".navigation.nav2.Nav2SetupActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
+      android:name=".navigation.nav2.Nav2Activity"
+      android:exported="false"
+      android:screenOrientation="portrait"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
+      android:name=".navigation.nav3.Nav3SetupActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
+      android:name=".navigation.nav3.Nav3Activity"
+      android:exported="false"
+      android:screenOrientation="portrait"
+      android:theme="@style/AppTheme.Main" />
 
     <activity
       android:name=".FrameDataForSpansActivity"
@@ -92,6 +135,19 @@
       android:name=".TriggerHttpRequestActivity"
       android:exported="false" />
 
+    <activity
+      android:name=".sqlite.SQLiteActivity"
+      android:exported="false" />
+
+    <activity
+      android:name=".sqlite.UiLoadActivity"
+      android:exported="false" />
+
+    <activity
+      android:name=".memory.MemoryLimiterActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
     <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
     <meta-data
       android:name="io.sentry.dsn"
@@ -101,6 +157,11 @@
     <meta-data
       android:name="io.sentry.debug"
       android:value="${sentryDebug}" />
+
+    <!--    how to enable automatic Sentry Logs from Logcat and Timber-->
+    <meta-data
+      android:name="io.sentry.logs.enabled"
+      android:value="true" />
 
     <!--    how to disable verbose logging of the session replay feature-->
     <meta-data
@@ -166,7 +227,7 @@
     <!-- Enable profiling on app start -->
     <meta-data
       android:name="io.sentry.traces.profiling.start-on-app-start"
-      android:value="true" />
+      android:value="false" />
 
     <!--    how to disable the Activity auto instrumentation for tracing-->
     <!--    <meta-data android:name="io.sentry.traces.activity.enable" android:value="false" />-->
@@ -230,11 +291,15 @@
       android:value="true" />
 
     <meta-data
+      android:name="io.sentry.standalone-app-start-tracing.enable"
+      android:value="true" />
+
+    <meta-data
       android:name="io.sentry.session-replay.screenshot-strategy"
       android:value="canvas" />
     <meta-data
       android:name="io.sentry.session-replay.session-sample-rate"
-      android:value="1" />
+      android:value="1.0" />
     <meta-data
       android:name="io.sentry.session-replay.mask-all-text"
       android:value="true" />
@@ -268,6 +333,9 @@
       android:value="true" />
     <meta-data
       android:name="io.sentry.tombstone.enable"
+      android:value="true" />
+    <meta-data
+      android:name="io.sentry.memory-limiter.enable"
       android:value="true" />
     <meta-data
       android:name="io.sentry.anr.profiling.sample-rate"

@@ -6,6 +6,7 @@ plugins {
 android {
   namespace = "io.sentry.tests.size"
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
 
   defaultConfig {
     applicationId = "io.sentry.tests.size"

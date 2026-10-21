@@ -7,6 +7,8 @@ import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicIntegerArray
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import org.junit.Test
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
@@ -193,6 +195,21 @@ internal class JsonObjectSerializerTest {
   }
 
   @Test
+  fun `serialize json serializable does not create reflection serializer`() {
+    val serializer = fixture.getSUT()
+    val jsonSerializable: JsonSerializable = mock()
+    serializer.serialize(fixture.writer, fixture.logger, jsonSerializable)
+    assertNull(serializer.reflectionObjectSerializer)
+  }
+
+  @Test
+  fun `serialize unknown object creates reflection serializer`() {
+    val serializer = fixture.getSUT()
+    serializer.serialize(fixture.writer, fixture.logger, object {})
+    assertNotNull(serializer.reflectionObjectSerializer)
+  }
+
+  @Test
   fun `serialize unknown object without data`() {
     val value = object {}
     fixture.getSUT().serialize(fixture.writer, fixture.logger, value)
@@ -355,3 +372,10 @@ internal class JsonObjectSerializerTest {
 data class ClassWithEnumProperty(val enumProperty: DataCategory)
 
 data class ClassWithLocaleProperty(val localeProperty: Locale)
+
+private val JsonObjectSerializer.reflectionObjectSerializer: JsonReflectionObjectSerializer?
+  get() {
+    val field = JsonObjectSerializer::class.java.getDeclaredField("jsonReflectionObjectSerializer")
+    field.isAccessible = true
+    return field.get(this) as JsonReflectionObjectSerializer?
+  }

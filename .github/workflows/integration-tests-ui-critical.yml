@@ -15,7 +15,7 @@ env:
   BUILD_PATH: "build/outputs/apk/release"
   APK_NAME: "sentry-uitest-android-critical-release.apk"
   APK_ARTIFACT_NAME: "sentry-uitest-android-critical-release"
-  MAESTRO_VERSION: "2.1.0"
+  MAESTRO_VERSION: "2.7.0"
 
 jobs:
   build:
@@ -27,16 +27,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Java 17
-        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -44,7 +44,7 @@ jobs:
         run: make assembleUiTestCriticalRelease
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: ${{env.APK_ARTIFACT_NAME}}
           path: "${{env.BASE_PATH}}/${{env.BUILD_PATH}}/${{env.APK_NAME}}"
@@ -63,21 +63,30 @@ jobs:
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: 33 # Android 13
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: 35 # Android 15
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
           - api-level: 36 # Android 16
             target: google_apis
             channel: canary # Necessary for ATDs
             arch: x86_64
+            memory: 4096
+          - api-level: "37.0" # Android 17; API 37 ships only as a minor-versioned image
+            target: google_apis_ps16k # API 37 has no plain google_apis image
+            channel: canary # Necessary for ATDs
+            arch: x86_64
+            memory: 8192
     steps:
       - name: Checkout code
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Enable KVM
         run: |
@@ -85,18 +94,36 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # The runner ships an outdated avdmanager that writes target=android-0 into the
+      # AVD config for minor-versioned packages (android-37.x), so the emulator clamps
+      # to API 3 and boots misconfigured. Update cmdline-tools so avdmanager parses it.
+      # See https://github.com/ReactiveCircus/android-emulator-runner/issues/482
+      - name: Update SDK cmdline-tools
+        id: cmdline-tools
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --install "cmdline-tools;latest" > /dev/null
+          # sdkmanager won't overwrite the preinstalled dir, so it installs to latest-2.
+          if [ -d "$SDK/cmdline-tools/latest-2" ]; then
+            rm -rf "$SDK/cmdline-tools/latest"
+            mv "$SDK/cmdline-tools/latest-2" "$SDK/cmdline-tools/latest"
+          fi
+          echo "version=$("$SDK/cmdline-tools/latest/bin/sdkmanager" --version 2>/dev/null | grep -Eo '^[0-9][0-9.]*' | head -1)" >> "$GITHUB_OUTPUT"
+
       - name: AVD cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: avd-cache
         with:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
+          # Keyed on memory and the cmdline-tools version so incompatible snapshots
+          # and AVDs created by the old, broken avdmanager are invalidated automatically.
+          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}-memory${{ matrix.memory }}-tools${{ steps.cmdline-tools.outputs.version }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # pin@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
@@ -105,12 +132,12 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory ${{ matrix.memory }} -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
       - name: Download APK artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: ${{env.APK_ARTIFACT_NAME}}
 
@@ -120,7 +147,7 @@ jobs:
           version: ${{env.MAESTRO_VERSION}}
 
       - name: Run tests
-        uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # pin@v2.37.0
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2.38.0
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
@@ -129,7 +156,7 @@ jobs:
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          emulator-options: -memory ${{ matrix.memory }} -no-window -gpu auto -noaudio -no-boot-anim -camera-back none -no-snapshot-save
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
@@ -137,7 +164,7 @@ jobs:
 
       - name: Upload Maestro test results
         if: ${{ always() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: maestro-logs-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}
           path: "${{env.BASE_PATH}}/maestro-logs"

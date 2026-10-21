@@ -1,7 +1,10 @@
 version = 1
 
 [defaults]
-model = "anthropic/claude-sonnet-4-6"
+# Model intentionally unset so CI inherits the org base default from
+# getsentry/.github/warden.toml (currently openrouter/moonshotai/kimi-k3).
+# getsentry Warden CI only provides WARDEN_OPENROUTER_API_KEY; pinning an
+# anthropic/* model fails auth.
 
 # Warden's schema does not support per-skill verification config; this is the only
 # placement available. Disabled for attribution policy checks: a second verifier

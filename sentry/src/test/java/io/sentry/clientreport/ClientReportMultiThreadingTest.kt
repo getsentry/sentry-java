@@ -118,10 +118,9 @@ class ClientReportMultiThreadingTest {
     println("took ${t2 - t1}ms")
 
     clientReportRecorder.resetCountsAndGenerateClientReport()?.let { clientReports.add(it) }
-    val numberOfLostItems =
-      clientReports.sumOf { clientReport ->
-        clientReport.discardedEvents.sumOf { it.quantity.toInt() }
-      }
+    val numberOfLostItems = clientReports.sumOf { clientReport ->
+      clientReport.discardedEvents.sumOf { it.quantity.toInt() }
+    }
 
     assertEquals(numberOfIncrementThreads * numberOfIncrementsPerThread, numberOfLostItems)
   }

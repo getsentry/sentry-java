@@ -1,0 +1,24 @@
+
+----- pid 12345 at 2024-01-01 10:00:00.000000000+0000 -----
+Cmd line: io.sentry.samples.android
+Build fingerprint: 'google/sdk_gphone64_arm64/emu64a:13/TE1A.220922.012/9302419:userdebug/dev-keys'
+ABI: 'arm64'
+
+DALVIK THREADS (2):
+"io.sentry.samples.android" prio=5 tid=1 Runnable
+  | group="main" sCount=0 ucsCount=0 flags=0 obj=0x72a985e0 self=0xb400007cabc57380
+  | sysTid=12345 nice=-10 cgrp=top-app sched=0/0 handle=0x7deceb74f8
+  | state=R schedstat=( 324804784 183300334 997 ) utm=23 stm=8 core=3 HZ=100
+  | stack=0x7ff93a9000-0x7ff93ab000 stackSize=8188KB
+  | held mutexes=
+  at io.sentry.samples.android.MainActivity.onCreate(MainActivity.java:42)
+
+"Thread-2" prio=5 tid=2 Sleeping
+  | group="main" sCount=1 ucsCount=0 flags=1 obj=0x136c0518 self=0xb400007cabc82ad0
+  | sysTid=12346 nice=0 cgrp=top-app sched=0/0 handle=0x7ace0a9cb0
+  | state=S schedstat=( 574039 4838087 11 ) utm=0 stm=0 core=1 HZ=100
+  | stack=0x7acdfb2000-0x7acdfb4000 stackSize=991KB
+  | held mutexes=
+  at java.lang.Thread.sleep(Native method)
+  at io.sentry.samples.android.BackgroundWorker.run(BackgroundWorker.java:20)
+

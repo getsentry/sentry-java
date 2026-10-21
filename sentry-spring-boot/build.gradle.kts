@@ -6,13 +6,13 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  jacoco
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
+  id("io.sentry.animalsniffer")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
@@ -29,6 +29,8 @@ dependencies {
   api(projects.sentry)
   api(projects.sentrySpring)
   compileOnly(projects.sentryLogback)
+  compileOnly(projects.sentryOkhttp)
+  compileOnly(libs.okhttp)
   compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
@@ -58,12 +60,14 @@ dependencies {
 
   // tests
   testImplementation(projects.sentryLogback)
+  testImplementation(projects.sentryOkhttp)
   testImplementation(projects.sentryQuartz)
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryKafka)
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.okhttp)
   testImplementation(libs.okhttp.mockwebserver)
@@ -83,25 +87,6 @@ dependencies {
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   testImplementation(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
   testImplementation(projects.sentryAsyncProfiler)
-}
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
 }
 
 buildConfig {

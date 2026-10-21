@@ -32,3 +32,15 @@
 -dontwarn org.openjsse.javax.net.ssl.SSLParameters
 -dontwarn org.openjsse.javax.net.ssl.SSLSocket
 -dontwarn org.openjsse.net.ssl.OpenJSSE
+
+# Retrofit relies on generic signatures for its service methods. Under R8 full mode these are
+# stripped for classes that aren't kept, which breaks call-adapter creation (SecondActivity's
+# GithubAPI request). Keep the signature attributes and Retrofit's generic types.
+-keepattributes Signature, InnerClasses, EnclosingMethod
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+-if interface * { @retrofit2.http.* <methods>; }
+-keep,allowobfuscation interface <1>
+# Keep the response model so Gson can deserialize it.
+-keep class io.sentry.samples.android.Repo { *; }

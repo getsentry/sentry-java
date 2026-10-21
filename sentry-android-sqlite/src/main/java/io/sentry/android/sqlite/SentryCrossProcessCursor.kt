@@ -2,20 +2,20 @@ package io.sentry.android.sqlite
 
 import android.database.CrossProcessCursor
 import android.database.CursorWindow
+import android.database.CursorWrapper
 
 /*
  * SQLiteCursor executes the query lazily, when one of getCount() and onMove() is called.
  * Also, by docs, fillWindow() can be used to fill the cursor with data.
  * So we wrap these methods to create a span.
- * SQLiteCursor is never used directly in the code, but only the Cursor interface.
- *  This means we can use CrossProcessCursor - that extends Cursor - as wrapper, since
- *   CrossProcessCursor is an interface and we can use Kotlin delegation.
+ * Ordinary Cursor methods are delegated through CursorWrapper to avoid adding Sentry frames to
+ * app database exceptions that the wrapper did not instrument.
  */
 internal class SentryCrossProcessCursor(
   private val delegate: CrossProcessCursor,
-  private val spanManager: SQLiteSpanManager,
+  private val spans: OpenHelperSpans,
   private val sql: String,
-) : CrossProcessCursor by delegate {
+) : CursorWrapper(delegate), CrossProcessCursor {
   // We have to start the span only the first time, regardless of how many times its methods get
   // called.
   private var isSpanStarted = false
@@ -25,7 +25,7 @@ internal class SentryCrossProcessCursor(
       return delegate.count
     }
     isSpanStarted = true
-    return spanManager.performSql(sql) { delegate.count }
+    return spans.performSql(sql) { delegate.count }
   }
 
   override fun onMove(oldPosition: Int, newPosition: Int): Boolean {
@@ -33,14 +33,16 @@ internal class SentryCrossProcessCursor(
       return delegate.onMove(oldPosition, newPosition)
     }
     isSpanStarted = true
-    return spanManager.performSql(sql) { delegate.onMove(oldPosition, newPosition) }
+    return spans.performSql(sql) { delegate.onMove(oldPosition, newPosition) }
   }
+
+  override fun getWindow(): CursorWindow? = delegate.window
 
   override fun fillWindow(position: Int, window: CursorWindow?) {
     if (isSpanStarted) {
       return delegate.fillWindow(position, window)
     }
     isSpanStarted = true
-    return spanManager.performSql(sql) { delegate.fillWindow(position, window) }
+    return spans.performSql(sql) { delegate.fillWindow(position, window) }
   }
 }

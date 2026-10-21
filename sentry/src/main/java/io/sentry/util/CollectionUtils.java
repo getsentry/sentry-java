@@ -1,7 +1,9 @@
 package io.sentry.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -15,8 +17,27 @@ import org.jetbrains.annotations.Nullable;
 /** Util class for Collections */
 @ApiStatus.Internal
 public final class CollectionUtils {
+  private static final String[] EMPTY_STRINGS = new String[0];
 
   private CollectionUtils() {}
+
+  public static @NotNull String[] toSortedStringArray(
+      final @NotNull Enumeration<String> source, final int size) {
+    String[] sorted = size == 0 ? EMPTY_STRINGS : new String[size];
+    int index = 0;
+    while (source.hasMoreElements()) {
+      if (index == sorted.length) {
+        sorted = Arrays.copyOf(sorted, sorted.length + 1);
+      }
+      sorted[index] = source.nextElement();
+      index++;
+    }
+    if (index != sorted.length) {
+      sorted = Arrays.copyOf(sorted, index);
+    }
+    Arrays.sort(sorted);
+    return sorted;
+  }
 
   /**
    * Returns an Iterator size

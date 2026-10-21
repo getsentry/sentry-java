@@ -14,12 +14,14 @@ import android.view.FrameMetrics;
 import android.view.Window;
 import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
+import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryUUID;
 import io.sentry.android.core.BuildInfoProvider;
 import io.sentry.android.core.ContextUtils;
 import io.sentry.android.core.SentryFramesDelayResult;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
@@ -45,7 +47,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private final @NotNull Set<Window> trackedWindows = new CopyOnWriteArraySet<>();
 
   private final @NotNull ILogger logger;
-  private @Nullable Handler handler;
+  private volatile @Nullable Handler handler;
+  private final @NotNull AutoClosableReentrantLock handlerLock = new AutoClosableReentrantLock();
   private @Nullable WeakReference<Window> currentWindow;
   private final @NotNull Map<String, FrameMetricsCollectorListener> listenerMap =
       new ConcurrentHashMap<>();
@@ -53,8 +56,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private final WindowFrameMetricsManager windowFrameMetricsManager;
 
   private @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener;
-  private @Nullable Choreographer choreographer;
-  private @Nullable Field choreographerLastFrameTimeField;
+  private volatile @Nullable Choreographer choreographer;
+  private volatile @Nullable Field choreographerLastFrameTimeField;
   private long lastFrameStartNanos = 0;
   private long lastFrameEndNanos = 0;
 
@@ -88,7 +91,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   @SuppressWarnings("deprecation")
-  @SuppressLint({"NewApi", "PrivateApi"})
+  @SuppressLint({"NewApi", "PrivateApi", "DiscouragedPrivateApi"})
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull ILogger logger,
@@ -113,12 +116,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     }
     isAvailable = true;
 
-    HandlerThread handlerThread =
-        new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector");
-    handlerThread.setUncaughtExceptionHandler(
-        (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
-    handlerThread.start();
-    handler = new Handler(handlerThread.getLooper());
+    // The frame metrics HandlerThread is started lazily on the first startCollection() call.
+    // Starting it here would block the main thread on HandlerThread.getLooper() during SDK init.
 
     // We have to register the lifecycle callback, even if no profile is started, otherwise when we
     // start a profile, we wouldn't have the current activity and couldn't get the frameMetrics.
@@ -127,7 +126,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     // Most considerations regarding timestamps of frames are inspired from JankStats library:
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt
 
-    // The Choreographer instance must be accessed on the main thread
+    // The Choreographer instance should be initialized asynchronously on the main thread to avoid
+    // reflection during SDK init.
     new Handler(Looper.getMainLooper())
         .post(
             () -> {
@@ -139,15 +139,19 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
                     "Error retrieving Choreographer instance. Slow and frozen frames will not be reported.",
                     e);
               }
+
+              // Let's get the last frame timestamp from the choreographer private field
+              try {
+                choreographerLastFrameTimeField =
+                    Choreographer.class.getDeclaredField("mLastFrameTimeNanos");
+                choreographerLastFrameTimeField.setAccessible(true);
+              } catch (NoSuchFieldException e) {
+                logger.log(
+                    SentryLevel.ERROR,
+                    "Unable to get the frame timestamp from the choreographer: ",
+                    e);
+              }
             });
-    // Let's get the last frame timestamp from the choreographer private field
-    try {
-      choreographerLastFrameTimeField = Choreographer.class.getDeclaredField("mLastFrameTimeNanos");
-      choreographerLastFrameTimeField.setAccessible(true);
-    } catch (NoSuchFieldException e) {
-      logger.log(
-          SentryLevel.ERROR, "Unable to get the frame timestamp from the choreographer: ", e);
-    }
 
     frameMetricsAvailableListener =
         (window, frameMetrics, dropCountSinceLastInvocation) -> {
@@ -166,7 +170,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           final long delayNanos = Math.max(0, cpuDuration - expectedFrameDuration);
 
           long startTime = getFrameStartTimestamp(frameMetrics);
-          // If we couldn't get the timestamp through reflection, we use current time
+          // If we couldn't get the timestamp through FrameMetrics or reflection, we use the current
+          // time.
           if (startTime < 0) {
             startTime = now - cpuDuration;
           }
@@ -218,8 +223,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   /**
-   * Return the internal timestamp in the choreographer of the last frame start timestamp through
-   * reflection. On Android O the value is read from the frameMetrics itself.
+   * Return the frame start timestamp. On API 26+, this value is read directly from {@link
+   * FrameMetrics}; older APIs use the reflected Choreographer timestamp.
    */
   @SuppressLint("NewApi")
   private long getFrameStartTimestamp(final @NotNull FrameMetrics frameMetrics) {
@@ -281,10 +286,32 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (!isAvailable) {
       return null;
     }
+    ensureHandlerThreadStarted();
     final String uid = SentryUUID.generateSentryId();
     listenerMap.put(uid, listener);
     trackCurrentWindow();
     return uid;
+  }
+
+  /**
+   * Lazily starts the background HandlerThread used to receive frame metrics. Deferred out of the
+   * constructor because {@link HandlerThread#getLooper()} blocks the caller (the main thread during
+   * SDK init) until the thread is ready, and the handler is only needed once collection starts.
+   */
+  private void ensureHandlerThreadStarted() {
+    if (handler != null) {
+      return;
+    }
+    try (final @NotNull ISentryLifecycleToken ignored = handlerLock.acquire()) {
+      if (handler == null) {
+        final HandlerThread handlerThread =
+            new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector");
+        handlerThread.setUncaughtExceptionHandler(
+            (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+      }
+    }
   }
 
   public void stopCollection(final @Nullable String listenerId) {

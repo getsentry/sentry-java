@@ -18,15 +18,19 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class CacheUtils {
+@ApiStatus.Internal
+public final class CacheUtils {
 
   @SuppressWarnings("CharsetObjectCanBeUsed")
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  static <T> void store(
+  private CacheUtils() {}
+
+  public static <T> void store(
       final @NotNull SentryOptions options,
       final @NotNull T entity,
       final @NotNull String dirName,
@@ -63,7 +67,7 @@ final class CacheUtils {
     }
   }
 
-  static <T, R> @Nullable T read(
+  public static <T, R> @Nullable T read(
       final @NotNull SentryOptions options,
       final @NotNull String dirName,
       final @NotNull String fileName,

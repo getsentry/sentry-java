@@ -2,16 +2,24 @@ package io.sentry.android.core
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.BatteryManager
+import android.os.Build
+import android.os.LocaleList
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.internal.util.CpuInfoUtils
+import java.util.Locale
+import java.util.TimeZone
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNotSame
 import kotlin.test.assertNull
+import kotlin.test.assertSame
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 class DeviceInfoUtilTest {
@@ -26,7 +34,45 @@ class DeviceInfoUtilTest {
         .putExtra(BatteryManager.EXTRA_LEVEL, 75)
         .putExtra(BatteryManager.EXTRA_PLUGGED, 0)
     )
-    DeviceInfoUtil.resetInstance()
+  }
+
+  @Test
+  fun `same options reuse device info util`() {
+    val options = SentryAndroidOptions()
+
+    val first = DeviceInfoUtil.getInstance(context, options)
+    val second = DeviceInfoUtil.getInstance(context, options)
+
+    assertSame(first, second)
+  }
+
+  @Test
+  fun `different options use isolated device info utils`() {
+    val enabledOptions =
+      SentryAndroidOptions().apply {
+        dataCollection.setUserInfo(true)
+        isCollectAdditionalContext = true
+        isEnableRootCheck = true
+      }
+    val disabledOptions =
+      SentryAndroidOptions().apply {
+        dataCollection.setUserInfo(false)
+        isCollectAdditionalContext = false
+        isEnableRootCheck = false
+      }
+
+    val enabled = DeviceInfoUtil.getInstance(context, enabledOptions)
+    val disabled = DeviceInfoUtil.getInstance(context, disabledOptions)
+    val enabledDevice = enabled.collectDeviceInformation(true, false)
+    val disabledDevice = disabled.collectDeviceInformation(true, false)
+
+    assertNotSame(enabled, disabled)
+    assertNotNull(enabledDevice.id)
+    assertNotNull(enabledDevice.storageSize)
+    assertNotNull(enabled.operatingSystem.isRooted)
+    assertNotNull(disabledDevice.id)
+    assertNull(disabledDevice.storageSize)
+    assertNull(disabled.operatingSystem.isRooted)
   }
 
   @Test
@@ -45,6 +91,50 @@ class DeviceInfoUtilTest {
 
     assertNotNull(deviceInfo.isSimulator)
     assertNotNull(deviceInfo.memorySize)
+  }
+
+  @Test
+  fun `sets device id when user info is disabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(false) }
+    val deviceInfo =
+      DeviceInfoUtil.getInstance(context, options).collectDeviceInformation(false, false)
+
+    assertNotNull(deviceInfo.id)
+  }
+
+  @Test
+  fun `sets device id when user info is enabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(true) }
+    val deviceInfo =
+      DeviceInfoUtil.getInstance(context, options).collectDeviceInformation(false, false)
+
+    assertNotNull(deviceInfo.id)
+  }
+
+  @Test
+  fun `sets default timezone`() {
+    val deviceInfoUtil = DeviceInfoUtil.getInstance(context, SentryAndroidOptions())
+    val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
+
+    assertEquals(TimeZone.getDefault(), deviceInfo.timezone)
+  }
+
+  @Test
+  @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
+  fun `preserves timezone from locale unicode extension`() {
+    val defaultTimeZone = TimeZone.getDefault()
+    try {
+      TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+      val configuration = Configuration(context.resources.configuration)
+      configuration.setLocales(LocaleList(Locale.forLanguageTag("en-US-u-tz-usnyc")))
+      val localizedContext = context.createConfigurationContext(configuration)
+      val deviceInfoUtil = DeviceInfoUtil(localizedContext, SentryAndroidOptions())
+      val deviceInfo = deviceInfoUtil.collectDeviceInformation(false, false)
+
+      assertEquals("America/New_York", deviceInfo.timezone?.id)
+    } finally {
+      TimeZone.setDefault(defaultTimeZone)
+    }
   }
 
   @Test

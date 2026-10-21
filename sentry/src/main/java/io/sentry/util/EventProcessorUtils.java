@@ -5,8 +5,10 @@ import io.sentry.internal.eventprocessor.EventProcessorAndOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class EventProcessorUtils {
 
   public static List<EventProcessor> unwrap(

@@ -22,6 +22,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import okhttp3.Headers
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -99,11 +100,19 @@ class SentryOkHttpEventTest {
     val callSpan = sut.callSpan
     assertNotNull(callSpan)
     assertEquals("http.client", callSpan.operation)
+    assertEquals("auto.http.okhttp", callSpan.spanContext.origin)
     assertEquals("${fixture.mockRequest.method} ${fixture.mockRequest.url}", callSpan.description)
     assertEquals(fixture.mockRequest.url.toString(), callSpan.getData("url"))
     assertEquals(fixture.mockRequest.url.host, callSpan.getData("host"))
     assertEquals(fixture.mockRequest.url.encodedPath, callSpan.getData("path"))
     assertEquals(fixture.mockRequest.method, callSpan.getData(SpanDataConvention.HTTP_METHOD_KEY))
+  }
+
+  @Test
+  fun `when span origin is ignored, call span is a no-op`() {
+    fixture.scopes.options.setIgnoredSpanOrigins(listOf("auto.http.okhttp"))
+    val sut = fixture.getSut()
+    assertTrue(sut.callSpan!!.isNoOp)
   }
 
   @Test
@@ -382,6 +391,7 @@ class SentryOkHttpEventTest {
     val sut = fixture.getSut()
     val clientErrorResponse = mock<Response>()
     whenever(clientErrorResponse.request).thenReturn(fixture.mockRequest)
+    whenever(clientErrorResponse.headers).thenReturn(Headers.headersOf())
     sut.setClientErrorResponse(clientErrorResponse)
     verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
     sut.finish()
@@ -403,6 +413,7 @@ class SentryOkHttpEventTest {
     val sut = fixture.getSut(currentSpan = null)
     val clientErrorResponse = mock<Response>()
     whenever(clientErrorResponse.request).thenReturn(fixture.mockRequest)
+    whenever(clientErrorResponse.headers).thenReturn(Headers.headersOf())
     sut.setClientErrorResponse(clientErrorResponse)
     verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
     sut.finish()

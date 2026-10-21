@@ -6,7 +6,6 @@ import io.sentry.JsonSerializable;
 import io.sentry.ObjectReader;
 import io.sentry.ObjectWriter;
 import io.sentry.SentryUUID;
-import io.sentry.util.LazyEvaluator;
 import io.sentry.util.StringUtils;
 import io.sentry.util.UUIDStringUtils;
 import java.io.IOException;
@@ -19,19 +18,15 @@ public final class SentryId implements JsonSerializable {
   public static final SentryId EMPTY_ID =
       new SentryId(StringUtils.PROPER_NIL_UUID.replace("-", ""));
 
-  private final @NotNull LazyEvaluator<String> lazyStringValue;
+  private volatile @Nullable String value;
+  private final @Nullable UUID uuid;
 
   public SentryId() {
     this((UUID) null);
   }
 
   public SentryId(@Nullable UUID uuid) {
-    if (uuid != null) {
-      this.lazyStringValue =
-          new LazyEvaluator<>(() -> normalize(UUIDStringUtils.toSentryIdString(uuid)));
-    } else {
-      this.lazyStringValue = new LazyEvaluator<>(SentryUUID::generateSentryId);
-    }
+    this.uuid = uuid;
   }
 
   public SentryId(final @NotNull String sentryIdString) {
@@ -42,16 +37,30 @@ public final class SentryId implements JsonSerializable {
               + "or 36 characters long (completed UUID). Received: "
               + sentryIdString);
     }
-    if (normalized.length() == 36) {
-      this.lazyStringValue = new LazyEvaluator<>(() -> normalize(normalized));
-    } else {
-      this.lazyStringValue = new LazyEvaluator<>(() -> normalized);
+    this.uuid = null;
+    this.value = normalized.length() == 36 ? normalized.replace("-", "") : normalized;
+  }
+
+  private @NotNull String getValue() {
+    String result = value;
+    if (result == null) {
+      synchronized (this) {
+        result = value;
+        if (result == null) {
+          result =
+              uuid != null
+                  ? normalize(UUIDStringUtils.toSentryIdString(uuid))
+                  : SentryUUID.generateSentryId();
+          value = result;
+        }
+      }
     }
+    return result;
   }
 
   @Override
   public String toString() {
-    return lazyStringValue.getValue();
+    return getValue();
   }
 
   @Override
@@ -59,12 +68,12 @@ public final class SentryId implements JsonSerializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SentryId sentryId = (SentryId) o;
-    return lazyStringValue.getValue().equals(sentryId.lazyStringValue.getValue());
+    return getValue().equals(sentryId.getValue());
   }
 
   @Override
   public int hashCode() {
-    return lazyStringValue.getValue().hashCode();
+    return getValue().hashCode();
   }
 
   private @NotNull String normalize(@NotNull String uuidString) {

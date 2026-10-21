@@ -1,7 +1,9 @@
 package io.sentry.android.core;
 
 import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
+import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -33,7 +35,6 @@ import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
@@ -176,12 +177,17 @@ final class AndroidOptionsInitializer {
     if (options.getConnectionStatusProvider() instanceof NoOpConnectionStatusProvider) {
       options.setConnectionStatusProvider(
           new AndroidConnectionStatusProvider(
-              context, options, buildInfoProvider, AndroidCurrentDateProvider.getInstance()));
+              context, options, buildInfoProvider, options.getMonotonicTicker()));
     }
 
     if (options.getCacheDirPath() != null) {
       options.addScopeObserver(new PersistingScopeObserver(options));
       options.addOptionsObserver(new PersistingOptionsObserver(options));
+      final PackageInfo packageInfo = ContextUtils.getPackageInfo(context, buildInfoProvider);
+      if (packageInfo != null && packageInfo.lastUpdateTime > 0) {
+        options.addOptionsObserver(
+            new PersistingOptionsCacheGenerationObserver(options, packageInfo.lastUpdateTime));
+      }
     }
 
     options.addEventProcessor(new DeduplicateMultithreadedEventProcessor(options));
@@ -196,8 +202,17 @@ final class AndroidOptionsInitializer {
     if (options.getTransportGate() instanceof NoOpTransportGate) {
       options.setTransportGate(new AndroidTransportGate(options));
     }
+    // API 25 and lower may lack ISRG Root X1 (Let's Encrypt), so the SDK's own envelope uploads to
+    // Sentry SaaS trust the bundled root in addition to the system ones. Self-hosted DSNs keep the
+    // platform default, so Network Security Config domain-config trust anchors still apply there.
+    if (buildInfoProvider.getSdkInfoVersion() <= Build.VERSION_CODES.N_MR1
+        && options.getSslSocketFactory() == null
+        && SentryRootCaSslSocketFactory.isSentrySaasDsn(options.getDsn())) {
+      options.setSslSocketFactory(new SentryRootCaSslSocketFactory(options.getLogger()));
+    }
 
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+    options.setAppStartExtender(appStartMetrics.getAppStartExtension());
 
     if (options.getModulesLoader() instanceof NoOpModulesLoader) {
       options.setModulesLoader(new AssetsModulesLoader(context, options));
@@ -293,6 +308,7 @@ final class AndroidOptionsInitializer {
   }
 
   /** Setup the correct profiler (transaction or continuous) based on the options. */
+  @SuppressLint("NewApi")
   private static void setupProfiler(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
@@ -302,6 +318,28 @@ final class AndroidOptionsInitializer {
       final @NotNull CompositePerformanceCollector performanceCollector) {
     if (options.isProfilingEnabled() || options.getProfilesSampleRate() != null) {
       options.setContinuousProfiler(NoOpContinuousProfiler.getInstance());
+      // Transaction-based profiling always relies on the legacy Debug-based profiler, so it is
+      // disabled together with legacy profiling. Perfetto profiling only supports continuous
+      // profiling.
+      if (!options.isEnableLegacyProfiling()) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "Transaction-based profiling (profilesSampleRate/profilesSampler) is disabled "
+                    + "because enableLegacyProfiling is false. Transaction-based profiling always "
+                    + "uses the legacy profiler and is not supported by Perfetto. No profiling "
+                    + "data will be collected. Use profileSessionSampleRate for continuous "
+                    + "profiling instead.");
+        options.setTransactionProfiler(NoOpTransactionProfiler.getInstance());
+        if (appStartTransactionProfiler != null) {
+          appStartTransactionProfiler.close();
+        }
+        if (appStartContinuousProfiler != null) {
+          appStartContinuousProfiler.close(true);
+        }
+        return;
+      }
       // This is a safeguard, but it should never happen, as the app start profiler should be the
       // continuous one.
       if (appStartContinuousProfiler != null) {
@@ -335,16 +373,38 @@ final class AndroidOptionsInitializer {
           performanceCollector.start(chunkId.toString());
         }
       } else {
-        options.setContinuousProfiler(
-            new AndroidContinuousProfiler(
-                buildInfoProvider,
-                Objects.requireNonNull(
-                    options.getFrameMetricsCollector(),
-                    "options.getFrameMetricsCollector is required"),
-                options.getLogger(),
-                options.getProfilingTracesDirPath(),
-                options.getProfilingTracesHz(),
-                () -> options.getExecutorService()));
+        final @NotNull SentryFrameMetricsCollector frameMetricsCollector =
+            Objects.requireNonNull(
+                options.getFrameMetricsCollector(), "options.getFrameMetricsCollector is required");
+        if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+          final @NotNull Context appContext = ContextUtils.getApplicationContext(context);
+          options.setContinuousProfiler(
+              new PerfettoContinuousProfiler(
+                  options.getLogger(),
+                  frameMetricsCollector,
+                  () -> options.getExecutorService(),
+                  () ->
+                      new PerfettoProfiler(
+                          appContext, options.getLogger(), options.getExecutorService())));
+          // Report adoption of the Perfetto continuous profiling backend (API 35+).
+          addIntegrationToSdkVersion("PerfettoContinuousProfiling");
+        } else if (options.isEnableLegacyProfiling()) {
+          options.setContinuousProfiler(
+              new AndroidContinuousProfiler(
+                  buildInfoProvider,
+                  frameMetricsCollector,
+                  options.getLogger(),
+                  options.getProfilingTracesDirPath(),
+                  options.getProfilingTracesHz(),
+                  () -> options.getExecutorService()));
+        } else {
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.WARNING,
+                  "enableLegacyProfiling is disabled and device is below API 35. "
+                      + "No profiling data will be collected.");
+        }
       }
     }
   }
@@ -380,6 +440,10 @@ final class AndroidOptionsInitializer {
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
       options.addIntegration(new TombstoneIntegration(context));
+    }
+
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.CINNAMON_BUN) {
+      options.addIntegration(new MemoryLimiterIntegration(context, buildInfoProvider));
     }
 
     // this integration uses android.os.FileObserver, we can't move to sentry

@@ -34,6 +34,9 @@ public final class NetworkBodyParser {
    * @param logger Optional logger
    * @return A NetworkBody or null if bytes are null/empty
    */
+  // temp fix for JDK 21: The charset is a name from the Content-Type header; unsupported names are
+  // handled below.
+  @SuppressWarnings("JdkObsolete")
   public static @Nullable NetworkBody fromBytes(
       @Nullable final byte[] bytes,
       @Nullable final String contentType,
@@ -45,24 +48,33 @@ public final class NetworkBodyParser {
       return null;
     }
 
+    final boolean isTruncated = bytes.length > maxSizeBytes;
+    final long originalByteCount = bytes.length;
+
     if (contentType != null && isBinaryContentType(contentType)) {
       // For binary content, return a description instead of the actual content
       return new NetworkBody(
-          "[Binary data, " + bytes.length + " bytes, type: " + contentType + "]");
+          "[Binary data, " + bytes.length + " bytes, type: " + contentType + "]",
+          null,
+          originalByteCount);
     }
 
     // Convert to string and parse
     try {
       final String effectiveCharset = charset != null ? charset : "UTF-8";
       final int size = Math.min(bytes.length, maxSizeBytes);
-      final boolean isPartial = bytes.length > maxSizeBytes;
       final String content = new String(bytes, 0, size, effectiveCharset);
-      return parse(content, contentType, isPartial, logger);
+      final NetworkBody parsed = parse(content, contentType, isTruncated, logger);
+      if (parsed == null) {
+        return null;
+      }
+      return new NetworkBody(parsed.getBody(), parsed.getWarnings(), originalByteCount);
     } catch (UnsupportedEncodingException e) {
       logger.log(SentryLevel.WARNING, "Failed to decode bytes: " + e.getMessage());
       return new NetworkBody(
           "[Failed to decode bytes, " + bytes.length + " bytes]",
-          Collections.singletonList(NetworkBody.NetworkBodyWarning.BODY_PARSE_ERROR));
+          Collections.singletonList(NetworkBody.NetworkBodyWarning.BODY_PARSE_ERROR),
+          originalByteCount);
     }
   }
 
@@ -122,6 +134,8 @@ public final class NetworkBodyParser {
   }
 
   /** Parses URL-encoded form data into a JsonObject NetworkBody. */
+  // temp fix for JDK 21: The Charset overload requires Java 10.
+  @SuppressWarnings("JdkObsolete")
   @NotNull
   private static NetworkBody parseFormUrlEncoded(
       @NotNull final String content, final boolean isPartial, @Nullable final ILogger logger) {
@@ -197,7 +211,7 @@ public final class NetworkBodyParser {
     private SaferJsonParser() {}
 
     @NotNull
-    public static SaferJsonParser.Result parse(final @NotNull JsonReader reader) {
+    static SaferJsonParser.Result parse(final @NotNull JsonReader reader) {
       final SaferJsonParser parser = new SaferJsonParser();
       parser.result.data = parser.parse(reader, 0);
       return parser.result;

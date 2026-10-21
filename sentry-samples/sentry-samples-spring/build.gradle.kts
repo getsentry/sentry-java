@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -8,6 +7,17 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
+  id("io.sentry.systemtest")
+}
+
+// Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version
+// the Spring Boot 2.x matrix covers (2.4.13, Spring 5.3.13) fails on class files as new as the
+// toolchain's: "Unsupported class file major version 65". Only the app is scanned, so its test
+// code keeps following the toolchain.
+tasks.named<JavaCompile>("compileJava") { options.release.set(8) }
+
+tasks.named<KotlinCompile>("compileKotlin") {
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
 application { mainClass.set("io.sentry.samples.spring.Main") }
@@ -18,13 +28,6 @@ tasks.named("run") { dependsOn(tasks.named("war")) }
 group = "io.sentry.sample.spring"
 
 version = "0.0.1-SNAPSHOT"
-
-java {
-  sourceCompatibility = JavaVersion.VERSION_1_8
-  targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-repositories { mavenCentral() }
 
 // Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
 extra["kotlin-coroutines.version"] = "1.9.0"
@@ -66,7 +69,6 @@ dependencies {
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   }
 }
 
@@ -78,13 +80,7 @@ tasks.register<Test>("systemTest").configure {
   testClassesDirs = test.output.classesDirs
   classpath = test.runtimeClasspath
 
-  outputs.upToDateWhen { false }
-
   maxParallelForks = 1
-
-  // Cap JVM args per test
-  minHeapSize = "128m"
-  maxHeapSize = "1g"
 
   filter { includeTestsMatching("io.sentry.systemtest*") }
 }

@@ -5,7 +5,6 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
-  jacoco
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   alias(libs.plugins.errorprone)
@@ -14,12 +13,10 @@ plugins {
   alias(libs.plugins.springboot4) apply false
 }
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
-}
+// Published code targets Java 17. Test code is not published and follows the toolchain.
+tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
@@ -31,6 +28,7 @@ dependencies {
   api(projects.sentry)
   api(projects.sentrySpring7)
   compileOnly(projects.sentryLogback)
+  compileOnly(projects.sentryLog4j2)
   compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
   compileOnly(projects.sentryGraphql)
@@ -42,6 +40,10 @@ dependencies {
   compileOnly(libs.context.propagation)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
+  compileOnly(libs.log4j.api)
+  compileOnly(libs.log4j.core)
+  compileOnly(projects.sentryOkhttp)
+  compileOnly(libs.okhttp)
   compileOnly(libs.otel)
   compileOnly(libs.reactor.core)
   compileOnly(libs.servlet.jakarta.api)
@@ -66,6 +68,8 @@ dependencies {
 
   // tests
   testImplementation(projects.sentryLogback)
+  testImplementation(projects.sentryLog4j2)
+  testImplementation(projects.sentryOkhttp)
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
@@ -82,8 +86,11 @@ dependencies {
   testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
   testImplementation(libs.context.propagation)
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.okhttp)
+  testImplementation(libs.log4j.api)
+  testImplementation(libs.log4j.core)
   testImplementation(libs.okhttp.mockwebserver)
   testImplementation(libs.otel)
   testImplementation(libs.otel.extension.autoconfigure.spi)
@@ -107,27 +114,6 @@ dependencies {
   testImplementation(libs.springboot4.starter.restclient)
   testImplementation(libs.springboot4.starter.webclient)
   testImplementation(libs.springboot4.resttestclient)
-}
-
-configure<SourceSetContainer> { test { java.srcDir("src/test/java") } }
-
-jacoco { toolVersion = libs.versions.jacoco.get() }
-
-tasks.jacocoTestReport {
-  reports {
-    xml.required.set(true)
-    html.required.set(false)
-  }
-}
-
-tasks {
-  jacocoTestCoverageVerification {
-    violationRules { rule { limit { minimum = Config.QualityPlugins.Jacoco.minimumCoverage } } }
-  }
-  check {
-    dependsOn(jacocoTestCoverageVerification)
-    dependsOn(jacocoTestReport)
-  }
 }
 
 buildConfig {

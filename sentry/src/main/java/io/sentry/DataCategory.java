@@ -12,6 +12,7 @@ public enum DataCategory {
   LogItem("log_item"),
   LogByte("log_byte"),
   TraceMetric("trace_metric"),
+  TraceMetricByte("trace_metric_byte"),
   Monitor("monitor"),
   Profile("profile"),
   ProfileChunkUi("profile_chunk_ui"),

@@ -10,14 +10,13 @@ import io.sentry.ObjectWriter;
 import io.sentry.ProfileContext;
 import io.sentry.SpanContext;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.CollectionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import io.sentry.vendor.gson.stream.JsonToken;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +36,9 @@ public class Contexts implements JsonSerializable {
 
   public Contexts() {}
 
+  // temp fix for JDK 21: Constructors call overridable methods; making them final would break the
+  // public API.
+  @SuppressWarnings("this-escape")
   public Contexts(final @NotNull Contexts contexts) {
     for (final Map.Entry<String, Object> entry : contexts.entrySet()) {
       if (entry != null) {
@@ -249,6 +251,14 @@ public class Contexts implements JsonSerializable {
     return internalStorage.remove(key);
   }
 
+  public void clear() {
+    internalStorage.clear();
+  }
+
+  // temp fix for JDK 21: ConcurrentHashMap.keySet() compiled against JDK 8+ returns KeySetView,
+  // which crashes on Android
+  // < 24.
+  @SuppressWarnings("JdkObsolete")
   public @NotNull Enumeration<String> keys() {
     return internalStorage.keys();
   }
@@ -282,7 +292,7 @@ public class Contexts implements JsonSerializable {
 
   @Override
   public boolean equals(final @Nullable Object obj) {
-    if (obj != null && obj instanceof Contexts) {
+    if (obj instanceof Contexts) {
       final @NotNull Contexts otherContexts = (Contexts) obj;
       return internalStorage.equals(otherContexts.internalStorage);
     }
@@ -302,8 +312,7 @@ public class Contexts implements JsonSerializable {
       throws IOException {
     writer.beginObject();
     // Serialize in alphabetical order to keep determinism.
-    final List<String> sortedKeys = Collections.list(keys());
-    Collections.sort(sortedKeys);
+    final String[] sortedKeys = CollectionUtils.toSortedStringArray(keys(), internalStorage.size());
     for (final String key : sortedKeys) {
       final Object value = get(key);
       if (value != null) {

@@ -1,0 +1,4 @@
+<resources>
+  <string name="app_name">Sentry Sample</string>
+  <string name="build_type">RELEASE</string>
+</resources>

@@ -14,14 +14,13 @@ class CpuInfoUtilsTest {
   private lateinit var cpuDirs: File
   private lateinit var ciu: CpuInfoUtils
 
-  private fun populateCpuFiles(values: List<String>) =
-    values.mapIndexed { i, v ->
-      val cpuMaxFreqFile =
-        File(cpuDirs, "cpu$i${File.separator}${CpuInfoUtils.CPUINFO_MAX_FREQ_PATH}")
-      cpuMaxFreqFile.parentFile?.mkdirs()
-      cpuMaxFreqFile.writeText(v)
-      cpuMaxFreqFile
-    }
+  private fun populateCpuFiles(values: List<String>) = values.mapIndexed { i, v ->
+    val cpuMaxFreqFile =
+      File(cpuDirs, "cpu$i${File.separator}${CpuInfoUtils.CPUINFO_MAX_FREQ_PATH}")
+    cpuMaxFreqFile.parentFile?.mkdirs()
+    cpuMaxFreqFile.writeText(v)
+    cpuMaxFreqFile
+  }
 
   @BeforeTest
   fun `set up`() {

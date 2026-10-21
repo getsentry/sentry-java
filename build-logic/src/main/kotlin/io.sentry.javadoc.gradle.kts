@@ -1,4 +1,4 @@
-val javadocConfig: Configuration by configurations.creating {
+val javadocConfig: Configuration = configurations.create("javadocConfig") {
     isCanBeResolved = false
     isCanBeConsumed = true
 

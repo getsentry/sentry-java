@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryFeedbackOptions.IFormHandler
 import io.sentry.SentryOptions.ProfilesSamplerCallback
 import io.sentry.SentryOptions.TracesSamplerCallback
@@ -21,6 +22,7 @@ import io.sentry.test.NonOverridableNoOpSentryExecutorService
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.initForTest
 import io.sentry.test.injectForField
+import io.sentry.transport.ITransport
 import io.sentry.util.PlatformTestManipulator
 import io.sentry.util.thread.IThreadChecker
 import io.sentry.util.thread.ThreadChecker
@@ -51,6 +53,8 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
@@ -174,6 +178,30 @@ class SentryTest {
   }
 
   @Test
+  fun `manual Logs and Metrics reach transport when automatic collection is disabled`() {
+    val transport = mock<ITransport>()
+    val transportFactory = mock<ITransportFactory>()
+    whenever(transportFactory.create(any(), any())).thenReturn(transport)
+    initForTest {
+      it.dsn = dsn
+      it.logs.isEnabled = false
+      it.metrics.isEnabled = false
+      it.setTransportFactory(transportFactory)
+      it.shutdownTimeoutMillis = 5_000
+    }
+
+    Sentry.logger().info("manual log")
+    Sentry.metrics().count("manual metric")
+    Sentry.flush(5_000)
+
+    val envelopes = argumentCaptor<SentryEnvelope>()
+    verify(transport, atLeastOnce()).send(envelopes.capture())
+    val itemTypes =
+      envelopes.allValues.flatMap { envelope -> envelope.items.map { it.header.type } }
+    assertThat(itemTypes).containsAtLeast(SentryItemType.Log, SentryItemType.TraceMetric)
+  }
+
+  @Test
   fun `close calls scopes close with isRestarting false`() {
     val scopes = mock<IScopes>()
     initForTest { it.dsn = dsn }
@@ -183,7 +211,7 @@ class SentryTest {
   }
 
   @Test
-  fun `outboxPath should be created at initialization`() {
+  fun `outboxPath is not created during initialization`() {
     var sentryOptions: SentryOptions? = null
     initForTest {
       it.dsn = dsn
@@ -191,13 +219,13 @@ class SentryTest {
       sentryOptions = it
     }
 
+    // The outbox dir is created lazily by its consumers (file observer, native SDK), not at init.
     val file = File(sentryOptions!!.outboxPath!!)
-    assertTrue(file.exists())
-    file.deleteOnExit()
+    assertFalse(file.exists())
   }
 
   @Test
-  fun `cacheDirPath should be created at initialization`() {
+  fun `cacheDirPath is not created during initialization`() {
     var sentryOptions: SentryOptions? = null
     initForTest {
       it.dsn = dsn
@@ -205,13 +233,13 @@ class SentryTest {
       sentryOptions = it
     }
 
+    // The cache dir is created lazily on the first envelope store, not at init.
     val file = File(sentryOptions!!.cacheDirPath!!)
-    assertTrue(file.exists())
-    file.deleteOnExit()
+    assertFalse(file.exists())
   }
 
   @Test
-  fun `getCacheDirPathWithoutDsn should be created at initialization`() {
+  fun `cacheDirPathWithoutDsn is not created during initialization`() {
     var sentryOptions: SentryOptions? = null
     initForTest {
       it.dsn = dsn
@@ -221,8 +249,7 @@ class SentryTest {
 
     val cacheDirPathWithoutDsn = sentryOptions!!.cacheDirPathWithoutDsn!!
     val file = File(cacheDirPathWithoutDsn)
-    assertTrue(file.exists())
-    file.deleteOnExit()
+    assertFalse(file.exists())
   }
 
   @Test
@@ -509,11 +536,10 @@ class SentryTest {
       initForTest {
         it.dsn = dsn
         it.isDebug = true
-        it.beforeSend =
-          SentryOptions.BeforeSendCallback { event, hint ->
-            capturedEvents.add(event)
-            event
-          }
+        it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+          capturedEvents.add(event)
+          event
+        }
       }
     }
     thread.start()
@@ -533,8 +559,9 @@ class SentryTest {
 
     assertEquals(2, capturedEvents.size)
     val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-    val currentScopesEvent =
-      capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+    val currentScopesEvent = capturedEvents.firstOrNull {
+      it.message?.formatted == "messageCurrent"
+    }
 
     assertNotNull(mainCloneEvent)
     assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
@@ -563,11 +590,10 @@ class SentryTest {
         {
           it.dsn = dsn
           it.isDebug = true
-          it.beforeSend =
-            SentryOptions.BeforeSendCallback { event, hint ->
-              capturedEvents.add(event)
-              event
-            }
+          it.beforeSend = SentryOptions.BeforeSendCallback { event, hint ->
+            capturedEvents.add(event)
+            event
+          }
         },
         true,
       )
@@ -589,8 +615,9 @@ class SentryTest {
 
     assertEquals(2, capturedEvents.size)
     val mainCloneEvent = capturedEvents.firstOrNull { it.message?.formatted == "messageMainClone" }
-    val currentScopesEvent =
-      capturedEvents.firstOrNull { it.message?.formatted == "messageCurrent" }
+    val currentScopesEvent = capturedEvents.firstOrNull {
+      it.message?.formatted == "messageCurrent"
+    }
 
     assertNotNull(mainCloneEvent)
     assertNotNull(mainCloneEvent.breadcrumbs?.firstOrNull { it.message == "breadcrumbMainClone" })
@@ -778,7 +805,6 @@ class SentryTest {
       it.cacheDirPath = getTempPath()
       it.setLogger(logger)
       it.executorService = SentryExecutorService()
-      it.executorService.prewarm()
       it.executorService.close(0)
       it.isDebug = true
     }
@@ -1319,6 +1345,23 @@ class SentryTest {
   }
 
   @Test
+  fun `init creates app start profiling config when the cache dir does not exist yet`() {
+    val path = getTempPath()
+    // Profiling is left disabled on purpose: it is the only other init-time consumer that creates
+    // the cache dir, so with it off nothing materializes the dir before the config is written.
+    initForTest {
+      it.dsn = dsn
+      it.cacheDirPath = path
+      it.isEnableAppStartProfiling = false
+      it.isStartProfilerOnAppStart = true
+      it.tracesSampleRate = 0.0
+      it.profilesSampleRate = null
+      it.executorService = ImmediateExecutorService()
+    }
+    assertTrue(File(path, "app_start_profiling_config").exists())
+  }
+
+  @Test
   fun `init saves SentryAppStartProfilingOptions to disk`() {
     var options = SentryOptions()
     val path = getTempPath()
@@ -1419,6 +1462,93 @@ class SentryTest {
     assertNotSame(s1, s2)
   }
 
+  private fun initCapturingEvents(globalHubMode: Boolean): MutableList<SentryEvent> {
+    val events = mutableListOf<SentryEvent>()
+    initForTest(
+      { o ->
+        o.dsn = dsn
+        o.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
+          events.add(event)
+          null
+        }
+      },
+      globalHubMode,
+    )
+    return events
+  }
+
+  @Test
+  fun `withScope data is applied to events captured inside the callback`() {
+    for (globalHubMode in listOf(false, true)) {
+      val events = initCapturingEvents(globalHubMode)
+
+      Sentry.withScope { scope ->
+        scope.setTag("http-url", "https://example.com")
+        Sentry.captureException(RuntimeException("failed"))
+      }
+
+      assertThat(events.single().tags).containsEntry("http-url", "https://example.com")
+    }
+  }
+
+  @Test
+  fun `withIsolationScope data is applied to events captured inside the callback`() {
+    for (globalHubMode in listOf(false, true)) {
+      val events = initCapturingEvents(globalHubMode)
+
+      Sentry.withIsolationScope { scope ->
+        scope.setTag("http-url", "https://example.com")
+        Sentry.captureException(RuntimeException("failed"))
+      }
+
+      assertThat(events.single().tags).containsEntry("http-url", "https://example.com")
+    }
+  }
+
+  @Test
+  fun `withScope data does not leak into events captured after the callback`() {
+    for (globalHubMode in listOf(false, true)) {
+      val events = initCapturingEvents(globalHubMode)
+
+      Sentry.withScope { scope -> scope.setTag("http-url", "https://example.com") }
+      Sentry.captureException(RuntimeException("failed"))
+
+      assertThat(events.single().tags?.get("http-url")).isNull()
+    }
+  }
+
+  @Test
+  fun `in globalHubMode scopes are not forked for a thread that has none`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+
+    val fromOtherThread = CompletableFuture.supplyAsync { Sentry.getCurrentScopes() }.get()
+
+    assertSame(Sentry.getCurrentScopes(), fromOtherThread)
+  }
+
+  @Test
+  fun `in globalHubMode scopes left over from a closed SDK are ignored`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+    val stale = Sentry.forkedCurrentScope("stale")
+
+    Sentry.close()
+    // close only clears the storage of the calling thread, other threads may still hold stale ones
+    Sentry.setCurrentScopes(stale)
+
+    assertTrue(Sentry.getCurrentScopes().isNoOp)
+  }
+
+  @Test
+  fun `in globalHubMode scopes left over from a previous init are ignored`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+    val stale = Sentry.forkedCurrentScope("stale")
+
+    initForTest({ o -> o.dsn = dsn }, true)
+    Sentry.setCurrentScopes(stale)
+
+    assertNotSame(stale, Sentry.getCurrentScopes())
+  }
+
   @Test
   fun `startProfiler starts the continuous profiler`() {
     val profiler = mock<IContinuousProfiler>()
@@ -1490,16 +1620,29 @@ class SentryTest {
   }
 
   @Test
-  fun `replay debug masking is forwarded to replay controller`() {
+  fun `replay API is forwarded to replay controller`() {
     val replayController = mock<ReplayController>()
     initForTest {
       it.dsn = dsn
       it.setReplayController(replayController)
     }
-    Sentry.replay().enableDebugMaskingOverlay()
-    verify(replayController).enableDebugMaskingOverlay()
+    Sentry.replay().start()
+    Sentry.replay().startBuffering()
+    Sentry.replay().pause()
+    Sentry.replay().resume()
+    Sentry.replay().flush()
+    Sentry.replay().stop()
 
+    verify(replayController).start()
+    verify(replayController).startBuffering()
+    verify(replayController).pause()
+    verify(replayController).resume()
+    verify(replayController).flush()
+    verify(replayController).stop()
+
+    Sentry.replay().enableDebugMaskingOverlay()
     Sentry.replay().disableDebugMaskingOverlay()
+    verify(replayController).enableDebugMaskingOverlay()
     verify(replayController).disableDebugMaskingOverlay()
   }
 
@@ -1769,4 +1912,53 @@ class SentryTest {
     val scopes = Sentry.getCurrentScopes()
     assertFalse(scopes.isNoOp)
   }
+
+  // region app start extension
+
+  private fun initWithExtender(extender: IAppStartExtender) {
+    initForTest {
+      it.dsn = dsn
+      it.setAppStartExtender(extender)
+    }
+  }
+
+  @Test
+  fun `extendAppStart delegates to the app start extender`() {
+    val extender = mock<IAppStartExtender>()
+    initWithExtender(extender)
+
+    Sentry.extendAppStart()
+
+    verify(extender).extendAppStart()
+  }
+
+  @Test
+  fun `finishExtendedAppStart delegates to the app start extender`() {
+    val extender = mock<IAppStartExtender>()
+    initWithExtender(extender)
+
+    Sentry.finishExtendedAppStart()
+
+    verify(extender).finishExtendedAppStart()
+  }
+
+  @Test
+  fun `getExtendedAppStartSpan delegates to the app start extender`() {
+    val span = mock<ISpan>()
+    val extender = mock<IAppStartExtender>()
+    whenever(extender.extendedAppStartSpan).thenReturn(span)
+    initWithExtender(extender)
+
+    assertSame(span, Sentry.getExtendedAppStartSpan())
+  }
+
+  @Test
+  fun `app start extension api is a no-op when the SDK is disabled`() {
+    // beforeTest called Sentry.close(), so the current scopes are NoOp.
+    Sentry.extendAppStart()
+    Sentry.finishExtendedAppStart()
+    assertNull(Sentry.getExtendedAppStartSpan())
+  }
+
+  // endregion
 }

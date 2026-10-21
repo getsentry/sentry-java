@@ -9,6 +9,7 @@ import io.sentry.SentryBaseEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.vendor.gson.stream.JsonToken
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -101,5 +102,27 @@ class SentryBaseEventSerializationTest {
     val actualJson = SerializationUtils.serializeToString(actual, fixture.logger)
 
     assertEquals(expectedJson, actualJson)
+  }
+
+  @Test
+  fun `setTags copies source map`() {
+    val source = mutableMapOf("a" to "1")
+    val sut = Sut()
+
+    sut.tags = source
+    source["b"] = "2"
+
+    assertFalse(sut.tags!!.containsKey("b"))
+  }
+
+  @Test
+  fun `setExtras copies source map`() {
+    val source = mutableMapOf<String, Any>("a" to "1")
+    val sut = Sut()
+
+    sut.setExtras(source)
+    source["b"] = "2"
+
+    assertFalse(sut.extras!!.containsKey("b"))
   }
 }

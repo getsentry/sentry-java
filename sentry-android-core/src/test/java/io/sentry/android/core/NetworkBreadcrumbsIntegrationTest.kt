@@ -5,7 +5,6 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
 import io.sentry.Breadcrumb
-import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.ISentryExecutorService
 import io.sentry.SentryDateProvider
@@ -54,8 +53,9 @@ class NetworkBreadcrumbsIntegrationTest {
           executorService = executor
           isEnableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs
           dateProvider = SentryDateProvider {
-            val nowNanos = TimeUnit.MILLISECONDS.toNanos(nowMs ?: System.currentTimeMillis())
-            SentryNanotimeDate(DateUtils.nanosToDate(nowNanos), nowNanos)
+            val nowMillis = nowMs ?: System.currentTimeMillis()
+            val nowNanos = TimeUnit.MILLISECONDS.toNanos(nowMillis)
+            SentryNanotimeDate(nowMillis, nowNanos)
           }
         }
       return NetworkBreadcrumbsIntegration(context, buildInfo)

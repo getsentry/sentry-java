@@ -6,11 +6,12 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 
 class DeviceTest {
 
   @Test
-  fun `copying device wont have the same references`() {
+  fun `copying device keeps date reference and copies other mutable references`() {
     val device = Device()
     device.archs = arrayOf("archs1", "archs2")
     device.bootTime = Date()
@@ -23,7 +24,7 @@ class DeviceTest {
     assertNotNull(clone)
     assertNotSame(device, clone)
     assertNotSame(device.archs, clone.archs)
-    assertNotSame(device.bootTime, clone.bootTime)
+    assertSame(device.bootTime, clone.bootTime)
     assertNotSame(device.timezone, clone.timezone)
     assertNotSame(device.unknown, clone.unknown)
   }
