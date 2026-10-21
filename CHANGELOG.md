@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Improvements
+
+- Navigation 3: Add `BackStackEntryMapper.serialName()` for generating Sentry data from back stack entries ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+  - Uses each entry's kotlinx.serialization `@SerialName`; if no serial name is available, falls back to `/unknown`
+  - Add a `BackStackEntryMapper.serialNameWithArguments()` which also records each entry's properties as `arguments` in Sentry data
+
 ### Fixes
 
 - Report the number of dropped spans in client reports when a batched span envelope item is discarded, instead of a quantity of 1 (e.g. for Flutter span streaming) ([#6265](https://github.com/getsentry/sentry-java/pull/6265))

@@ -1,5 +1,11 @@
 public abstract interface class io/sentry/compose/navigation3/BackStackEntryMapper {
+	public static final field Companion Lio/sentry/compose/navigation3/BackStackEntryMapper$Companion;
 	public abstract fun map (Ljava/lang/Object;)Lio/sentry/compose/navigation3/SentryBackStackEntry;
+}
+
+public final class io/sentry/compose/navigation3/BackStackEntryMapper$Companion {
+	public final fun serialName ()Lio/sentry/compose/navigation3/BackStackEntryMapper;
+	public final fun serialNameWithArguments ()Lio/sentry/compose/navigation3/BackStackEntryMapper;
 }
 
 public final class io/sentry/compose/navigation3/BuildConfig {
@@ -19,6 +25,21 @@ public final class io/sentry/compose/navigation3/SentryBackStackEntry {
 	public final fun getName ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
+}
+
+public final class io/sentry/compose/navigation3/SentryNavAutoInstrumentation {
+	public static final field $stable I
+	public static final field INSTANCE Lio/sentry/compose/navigation3/SentryNavAutoInstrumentation;
+	public static final fun Effect (Ljava/util/List;Lio/sentry/compose/navigation3/SentryNavAutoInstrumentation$BackStackMappingType;Lio/sentry/compose/navigation3/SentryNavOptions;Landroidx/compose/runtime/Composer;I)V
+}
+
+public final class io/sentry/compose/navigation3/SentryNavAutoInstrumentation$BackStackMappingType : java/lang/Enum {
+	public static final field DEFAULT Lio/sentry/compose/navigation3/SentryNavAutoInstrumentation$BackStackMappingType;
+	public static final field NAMES_AND_ARGUMENTS Lio/sentry/compose/navigation3/SentryNavAutoInstrumentation$BackStackMappingType;
+	public static final field NAMES_ONLY Lio/sentry/compose/navigation3/SentryNavAutoInstrumentation$BackStackMappingType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/compose/navigation3/SentryNavAutoInstrumentation$BackStackMappingType;
+	public static fun values ()[Lio/sentry/compose/navigation3/SentryNavAutoInstrumentation$BackStackMappingType;
 }
 
 public final class io/sentry/compose/navigation3/SentryNavEffectKt {
