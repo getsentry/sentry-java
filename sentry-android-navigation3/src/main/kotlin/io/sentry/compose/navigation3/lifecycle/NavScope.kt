@@ -36,6 +36,15 @@ internal class NavScope(
     }
   }
 
+  /**
+   * Copies the whole of [IScope.getContexts] in order to return a copy of its [App].
+   *
+   * [App]'s copy constructor isn't public, so an `App` can't be copied on its own. Going through
+   * [Contexts] deep-copies every context on the scope and discards all of it but the `App`.
+   *
+   * Called once per navigation that changes the top of the back stack, so the cost is bounded.
+   * Don't add call sites without reading [INavScope.app] first.
+   */
   override val app: App?
     get() = Contexts(delegate.contexts).app
 
@@ -106,7 +115,15 @@ internal interface INavScope {
 
   var screen: String?
 
-  /** A copy of the scope's app context, if any. */
+  /**
+   * A copy of the scope's app context, if any.
+   *
+   * A copy rather than the live instance, because callers mutate the result before binding it to a
+   * transaction, and mutating the scope's own [App] would corrupt shared scope state.
+   *
+   * Implementations may have to copy more than the [App] to produce it, so treat this as expensive:
+   * read it once where it's needed rather than per frame or in a loop. See [NavScope.app].
+   */
   val app: App?
 
   /**

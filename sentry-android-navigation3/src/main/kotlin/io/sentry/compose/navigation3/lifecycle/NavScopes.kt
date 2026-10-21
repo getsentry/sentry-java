@@ -57,8 +57,9 @@ internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
  * 1. each `SentryNavEffect` is called in the same composable as the `NavDisplay` it observes;
  * 2. no `SentryNavEffect` is called from inside a `NavDisplay`, e.g., from a nav entry, scene, or
  *    entry decorator†;
- * 3. each Activity or Fragment calls at most one `SentryNavEffect` from its own content (Fragments
- *    count separately from the Activity that hosts them); and
+ * 3. each Activity or Fragment calls at most one `SentryNavEffect` from its own content (sibling
+ *    Fragments may each have their own effect, but not alongside one in the Activity hosting them);
+ *    and
  * 4. the user can interact with only one of those Activities or Fragments at a time.
  *
  * † Meant to ensure each effect's `LocalLifecycleOwner` is an Activity or a Fragment and not a
