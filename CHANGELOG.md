@@ -10,6 +10,7 @@
   - Android 7.1.0 (API 25) and older don't trust the Let's Encrypt root certificate (ISRG Root X1), so without this fix, the SDK on those devices can no longer send events to Sentry after the switch.
   - The SDK now bundles ISRG Root X1 and trusts it in addition to the device's root certificates on API 25 and lower. This only applies to the SDK's own uploads to Sentry SaaS (DSNs on `sentry.io`), not to self-hosted Sentry, not to any other connection your app makes, and not if you set your own `SentryOptions.setSslSocketFactory`.
   - Apps need to update to an SDK version with this fix to keep sending events from these devices.
+- Session Replay: Use a software canvas for video encoding on the Android Emulator to avoid a native crash in `eglDestroySurface` ([#6282](https://github.com/getsentry/sentry-java/pull/6282))
 
 ### Internal
 
