@@ -17,9 +17,11 @@ import java.net.Proxy.Type
 import java.net.URL
 import java.nio.charset.Charset
 import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLPeerUnverifiedException
 import javax.net.ssl.SSLSocketFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -166,6 +168,18 @@ class HttpConnectionTest {
     transport.send(createEnvelope())
 
     verify(fixture.connection, never()).sslSocketFactory = any()
+  }
+
+  @Test
+  fun `does not send the envelope when the server presents a distrusted certificate`() {
+    whenever(fixture.connection.serverCertificates)
+      .thenReturn(arrayOf(DistrustedCertificatesTest.distrustedCertificate()))
+    val transport = fixture.getSUT()
+
+    assertFailsWith<SSLPeerUnverifiedException> { transport.send(createEnvelope()) }
+
+    verify(fixture.connection, never()).outputStream
+    verify(fixture.connection).disconnect()
   }
 
   @Test

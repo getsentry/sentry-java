@@ -143,6 +143,7 @@ final class HttpConnection {
     }
 
     connection.connect();
+    DistrustedCertificates.verify(connection);
     return connection;
   }
 

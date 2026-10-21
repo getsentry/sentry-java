@@ -2,6 +2,7 @@ package io.sentry.android.distribution
 
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
+import io.sentry.transport.DistrustedCertificates
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -92,6 +93,9 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       if (connection is HttpsURLConnection && options.sslSocketFactory != null) {
         connection.sslSocketFactory = options.sslSocketFactory
       }
+
+      connection.connect()
+      DistrustedCertificates.verify(connection)
 
       val responseCode = connection.responseCode
       val responseBody = readResponse(connection)

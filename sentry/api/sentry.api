@@ -7777,6 +7777,10 @@ public final class io/sentry/transport/CurrentDateProvider : io/sentry/transport
 	public static fun getInstance ()Lio/sentry/transport/ICurrentDateProvider;
 }
 
+public final class io/sentry/transport/DistrustedCertificates {
+	public static fun verify (Ljava/net/HttpURLConnection;)V
+}
+
 public abstract interface class io/sentry/transport/ICurrentDateProvider {
 	public abstract fun getCurrentTimeMillis ()J
 }
