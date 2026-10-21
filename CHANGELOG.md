@@ -4,12 +4,68 @@
 
 ### Features
 
+- Record ANR warnings from the system as `app.anr` breadcrumbs on Android 17 (API 37) and above ([#6245](https://github.com/getsentry/sentry-java/pull/6245))
+  - The breadcrumb contains the ANR type, the system description, the timeout, and how much of the timeout was already used. It is recorded when `enableAppLifecycleBreadcrumbs` is enabled.
+
+### Fixes
+
+- Report the number of dropped spans in client reports when a batched span envelope item is discarded, instead of a quantity of 1 (e.g. for Flutter span streaming) ([#6265](https://github.com/getsentry/sentry-java/pull/6265))
+- Keep sending events from Android 7.1.0 and older devices after Sentry changes its TLS certificate authority ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
+  - In February 2027, Sentry moves its TLS certificates from DigiCert to Let's Encrypt and Google Trust Services ([announcement](https://sentry.io/changelog/were-changing-our-tls-certificate-authority-in-february-2027)).
+  - Android 7.1.0 (API 25) and older don't trust the Let's Encrypt root certificate (ISRG Root X1), so without this fix, the SDK on those devices can no longer send events to Sentry after the switch.
+  - The SDK now bundles ISRG Root X1 and trusts it in addition to the device's root certificates on API 25 and lower. This only applies to the SDK's own uploads to Sentry SaaS (DSNs on `sentry.io`), not to self-hosted Sentry, not to any other connection your app makes, and not if you set your own `SentryOptions.setSslSocketFactory`.
+  - Apps need to update to an SDK version with this fix to keep sending events from these devices.
+
+### Internal
+
+- Measure the hostname cache TTL on the monotonic ticker the options provide, so that a device time change no longer shortens or extends it ([#6100](https://github.com/getsentry/sentry-java/pull/6100))
+- Measure Session Replay's 1h recording cap and its touch-move debounce on a monotonic clock, so a device time change no longer stops a healthy recording early, keeps a finished one alive, or suppresses gesture events ([#6090](https://github.com/getsentry/sentry-java/pull/6090))
+- Add `ScreenshotUtils.takeMaskedScreenshot` so Hybrid SDKs can capture screenshots masked according to `SentryAndroidOptions.getScreenshot()` ([#6281](https://github.com/getsentry/sentry-java/pull/6281))
+
+### Dependencies
+
+- Bump Native SDK from v0.17.3 to v0.17.4 ([#6278](https://github.com/getsentry/sentry-java/pull/6278))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0174)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.3...0.17.4)
+
+## 8.61.0
+
+### Fixes
+
+- Session Replay: Backfill release, environment and SDK info for replays sent on the next launch after the app was killed or crashed ([#6253](https://github.com/getsentry/sentry-java/pull/6253))
+- Fix SDK callback error handling ([#6140](https://github.com/getsentry/sentry-java/pull/6140))
+  - Drop telemetry when a `beforeSend*` callback throws and report it using `DiscardReason.CALLBACK_ERROR`.
+  - Drop transactions when `tracesSampler` throws instead of inheriting the parent sampling decision or falling back to `tracesSampleRate` ([#6163](https://github.com/getsentry/sentry-java/pull/6163)).
+  - Drop spans when `beforeSpan` throws without disrupting requests, covering OkHttp, OpenFeign, GraphQL, Ktor, and Apollo—including Apollo 5 ([#6167](https://github.com/getsentry/sentry-java/pull/6167), [#6238](https://github.com/getsentry/sentry-java/pull/6238)).
+  - Drop telemetry and record `callback_error` when a customer event processor throws instead of continuing with a potentially partially processed item. SDK-owned processor failures are logged and processing continues.
+  - Drop breadcrumbs when `beforeBreadcrumb` throws instead of storing exception details on the breadcrumb.
+  - No longer fail Spring requests when a `TransactionNameProvider` throws, falling back to `<unlabeled transaction>` ([#6241](https://github.com/getsentry/sentry-java/pull/6241)).
+  - No longer fail Spring requests when a `SentryUserProvider` throws and overwrite the user with an empty user object ([#6240](https://github.com/getsentry/sentry-java/pull/6240)).
+  - Disable profiling when `profilesSampler` throws instead of falling back to `profilesSampleRate` or inheriting the parent profiling decision ([#6164](https://github.com/getsentry/sentry-java/pull/6164)).
+  - Report attached profiles dropped by transaction callback errors as `callback_error` in client reports and `OnDiscardCallback` ([#6166](https://github.com/getsentry/sentry-java/pull/6166)).
+  - Skip replay capture when `beforeErrorSampling` throws while retaining the error event ([#6165](https://github.com/getsentry/sentry-java/pull/6165)).
+  - Skip Android screenshots or view hierarchies when their capture callbacks throw while retaining the error event ([#6167](https://github.com/getsentry/sentry-java/pull/6167)).
+  - Keep the Android feedback form available when its options configurator throws ([#6239](https://github.com/getsentry/sentry-java/pull/6239)).
+  - Isolate nonfatal callback throwables while continuing to propagate fatal JVM errors ([#6251](https://github.com/getsentry/sentry-java/pull/6251)).
+
+### Internal
+
+- Hold the hostname cache on `SentryOptions` instead of a static singleton ([#6117](https://github.com/getsentry/sentry-java/pull/6117))
+
+### Dependencies
+
+- Bump Native SDK from v0.17.2 to v0.17.3 ([#6250](https://github.com/getsentry/sentry-java/pull/6250))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0173)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.2...0.17.3)
+
+## 8.60.0
+
+### Features
+
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
   - Use `SentryNavEffect` to record navigation transactions, breadcrumbs, screen names, and additional context as your nav back stack changes.
   - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/) for additional details.
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
-- Record ANR warnings from the system as `app.anr` breadcrumbs on Android 17 (API 37) and above ([#6245](https://github.com/getsentry/sentry-java/pull/6245))
-  - The breadcrumb contains the ANR type, the system description, the timeout, and how much of the timeout was already used. It is recorded when `enableAppLifecycleBreadcrumbs` is enabled.
 
 ### Dependencies
 

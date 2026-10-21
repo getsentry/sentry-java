@@ -1502,7 +1502,7 @@ public class JsonReader implements Closeable {
    * @throws NumberFormatException if any unicode escape sequences are
    *     malformed.
    */
-  // Vendored from Gson, kept identical to upstream.
+  // temp fix for JDK 21: Vendored from Gson, kept identical to upstream.
   @SuppressWarnings("lossy-conversions")
   private char readEscapeCharacter() throws IOException {
     if (pos == limit && !fillBuffer(1)) {

@@ -257,7 +257,8 @@ public final class Baggage {
     return thirdPartyHeader;
   }
 
-  // ConcurrentHashMap.keySet() compiled against JDK 8+ returns KeySetView, which crashes on Android
+  // temp fix for JDK 21: ConcurrentHashMap.keySet() compiled against JDK 8+ returns KeySetView,
+  // which crashes on Android
   // < 24.
   @SuppressWarnings("JdkObsolete")
   public @NotNull String toHeaderString(@Nullable String thirdPartyBaggageHeaderString) {
@@ -328,13 +329,13 @@ public final class Baggage {
     return sb.toString();
   }
 
-  // The Charset overload requires Java 10.
+  // temp fix for JDK 21: The Charset overload requires Java 10.
   @SuppressWarnings("JdkObsolete")
   private String encode(final @NotNull String value) throws UnsupportedEncodingException {
     return URLEncoder.encode(value, CHARSET).replaceAll("\\+", "%20");
   }
 
-  // The Charset overload requires Java 10.
+  // temp fix for JDK 21: The Charset overload requires Java 10.
   @SuppressWarnings("JdkObsolete")
   private static String decode(final @NotNull String value) throws UnsupportedEncodingException {
     return URLDecoder.decode(value, CHARSET);

@@ -12,7 +12,7 @@ plugins {
   id("io.sentry.animalsniffer.android")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
@@ -35,6 +35,7 @@ dependencies {
   testImplementation(libs.apollo2.coroutines)
   testImplementation(libs.apollo2.runtime)
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlinx.coroutines)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.core)

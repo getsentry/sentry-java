@@ -16,7 +16,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
-// Constructors call overridable methods; making them final would break the public API.
+// temp fix for JDK 21: Constructors call overridable methods; making them final would break the
+// public API.
 @SuppressWarnings("this-escape")
 @Open
 public class SpanContext implements JsonUnknown, JsonSerializable {

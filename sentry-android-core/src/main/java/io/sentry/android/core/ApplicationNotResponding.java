@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 final class ApplicationNotResponding extends RuntimeException {
   private static final long serialVersionUID = 252541144579117016L;
 
-  // Never serialized.
+  // temp fix for JDK 21: Never serialized.
   @SuppressWarnings("serial")
   private final @Nullable Thread thread;
 

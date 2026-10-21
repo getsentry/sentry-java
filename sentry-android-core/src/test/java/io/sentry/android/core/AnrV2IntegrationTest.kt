@@ -121,7 +121,7 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
           }
         shadowActivityManager.addApplicationExitInfo(exitInfo)
       },
-      flushLogPrefix = "Timed out waiting to flush ANR event to disk.",
+      flushLogPrefix = "Timed out waiting to flush %s event to disk.",
     )
 
   override fun assertEnrichedEvent(event: SentryEvent) {

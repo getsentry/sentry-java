@@ -115,25 +115,7 @@ allprojects {
 
 subprojects {
     apply { plugin("io.sentry.spotless") }
-
-    // Mockito 5 and mockito-kotlin 5+ are built for Java 11, so test code (never published) can't
-    // share the Java 8 target of the published code; it compiles for the build JDK instead.
-    // Registered once each plugin is applied, so this afterEvaluate runs after the plugins and the
-    // module have pinned the JVM target of all compile tasks.
-    listOf("java", "com.android.library", "com.android.application").forEach { pluginId ->
-        plugins.withId(pluginId) {
-            afterEvaluate {
-                val isTestTask = { task: Task -> task.name.contains("Test") && !task.name.contains("AndroidTest") }
-                tasks.withType<JavaCompile>().matching(isTestTask).configureEach {
-                    sourceCompatibility = JavaVersion.VERSION_21.toString()
-                    targetCompatibility = JavaVersion.VERSION_21.toString()
-                }
-                tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().matching(isTestTask).configureEach {
-                    compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-                }
-            }
-        }
-    }
+    apply { plugin("io.sentry.jdk-target") }
     listOf("com.android.library", "com.android.application").forEach { pluginId ->
         plugins.withId(pluginId) {
             // Robolectric's SDK 37 sandbox (the default, as targetSdk is 37) reflectively writes
@@ -198,37 +180,6 @@ subprojects {
 
             configure<JavaPluginExtension> {
                 withJavadocJar()
-
-                sourceCompatibility = JavaVersion.VERSION_1_8
-                targetCompatibility = JavaVersion.VERSION_1_8
-            }
-
-            // Compile against the class library of the target Java version instead of the build
-            // JDK's, so newer JDK APIs (e.g. List.getFirst()) can't leak into published bytecode.
-            val javaExtension = the<JavaPluginExtension>()
-            tasks.named<JavaCompile>("compileJava") {
-                options.release.set(
-                    provider { javaExtension.targetCompatibility.majorVersion.toInt() }
-                )
-            }
-        }
-
-        // AGP 9 defaults Android modules to Java 11. Pin the published library modules back
-        // to Java 8 so their bytecode stays consumable by Java 8 projects, mirroring the
-        // java-library pin above.
-        plugins.withId("com.android.library") {
-            configure<com.android.build.gradle.BaseExtension> {
-                compileOptions {
-                    sourceCompatibility = JavaVersion.VERSION_1_8
-                    targetCompatibility = JavaVersion.VERSION_1_8
-                }
-
-                // AGP 9 defaults the AAR metadata minCompileSdk to the library's compileSdk,
-                // which would force every consumer onto that compile SDK. Pin it to our minSdk
-                // so consumers remain free to compile against any SDK we support, as before.
-                defaultConfig {
-                    aarMetadata { minCompileSdk = libs.versions.minSdk.get().toInt() }
-                }
             }
         }
 

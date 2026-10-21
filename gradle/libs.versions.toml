@@ -38,6 +38,9 @@ retrofit = "2.9.0"
 room2 = "2.8.4"
 room3 = "3.0.0-rc01"
 sagp = "6.13.0"
+# Compile-time only, for the AGP types the build-logic convention plugins use. The AGP that
+# actually runs the build comes from the root buildscript (Config.AGP, overridable via VERSION_AGP).
+agp = "9.4.0"
 sqlite = "2.6.2"
 sqliteRc = "2.7.0-rc01" # Required by Room3 3.0.0-rc*
 slf4j = "1.7.30"
@@ -152,6 +155,8 @@ log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "lo
 leakcanary = { module = "com.squareup.leakcanary:leakcanary-android", version = "2.14" }
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version = "6.7.1" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
 nopen-annotations = { module = "com.jakewharton.nopen:nopen-annotations", version.ref = "nopen" }
 nopen-checker = { module = "com.jakewharton.nopen:nopen-checker", version.ref = "nopen" }
 nullaway = { module = "com.uber.nullaway:nullaway", version = "0.14.2" }
@@ -179,7 +184,7 @@ quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.17.2" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.17.4" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }

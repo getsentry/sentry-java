@@ -13,10 +13,6 @@ group = "io.sentry.sample.spring-boot-4-webflux"
 
 version = "0.0.1-SNAPSHOT"
 
-java.sourceCompatibility = JavaVersion.VERSION_17
-
-java.targetCompatibility = JavaVersion.VERSION_17
-
 dependencies {
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
@@ -53,7 +49,6 @@ tasks.withType<KotlinCompile>().configureEach {
     // skip metadata version check, as Spring 7 / Spring Boot 4 is
     // compiled against a newer version of Kotlin
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict", "-Xskip-metadata-version-check")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
     compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   }

@@ -114,7 +114,7 @@ public final class SentryKafkaProducer {
     }
 
     @Override
-    // Proxy equals() is identity-based.
+    // temp fix for JDK 21: Proxy equals() is identity-based.
     @SuppressWarnings({"unchecked", "ReferenceEquality"})
     public @Nullable Object invoke(
         final @NotNull Object proxy, final @NotNull Method method, final @Nullable Object[] args)

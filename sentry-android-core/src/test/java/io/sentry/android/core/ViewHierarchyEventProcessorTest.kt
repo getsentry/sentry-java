@@ -5,11 +5,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Hint
 import io.sentry.JsonSerializable
 import io.sentry.JsonSerializer
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.TypeCheckHint
 import io.sentry.protocol.SentryException
 import io.sentry.util.thread.IThreadChecker
@@ -17,6 +19,7 @@ import java.io.Writer
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -340,6 +343,43 @@ class ViewHierarchyEventProcessorTest {
       fixture.process(true, SentryEvent().apply { exceptions = listOf(SentryException()) })
 
     assertNull(hint.viewHierarchy)
+  }
+
+  @Test
+  fun `when capture callback throws a nonfatal throwable, skips view hierarchy and retains event`() {
+    fixture.options.isDebug = true
+    fixture.options.setLogger(fixture.logger)
+    val failure = AssertionError("callback failed")
+    fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ -> throw failure }
+    val processor = fixture.getSut(true)
+    val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+    val hint = Hint()
+
+    assertThat(processor.process(event, hint)).isSameInstanceAs(event)
+    assertThat(hint.viewHierarchy).isNull()
+    verify(fixture.logger)
+      .log(
+        SentryLevel.ERROR,
+        "The beforeViewHierarchyCapture callback threw an exception. Skipping view hierarchy capture.",
+        failure,
+      )
+
+    fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ -> true }
+    val nextHint = Hint()
+    assertThat(processor.process(event, nextHint)).isSameInstanceAs(event)
+    assertThat(nextHint.viewHierarchy).isNotNull()
+  }
+
+  @Test
+  fun `when capture callback throws a fatal error, it is not swallowed`() {
+    val failure = OutOfMemoryError("callback failed")
+    fixture.options.setBeforeViewHierarchyCaptureCallback { _, _, _ -> throw failure }
+    val processor = fixture.getSut(true)
+    val event = SentryEvent().apply { exceptions = listOf(SentryException()) }
+
+    val thrown = assertFailsWith<OutOfMemoryError> { processor.process(event, Hint()) }
+
+    assertThat(thrown).isSameInstanceAs(failure)
   }
 
   @Test

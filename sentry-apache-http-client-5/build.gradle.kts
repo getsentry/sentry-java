@@ -1,6 +1,7 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
@@ -12,10 +13,11 @@ plugins {
 }
 
 kotlin {
-  compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
 }
+
+tasks.named<KotlinCompile>("compileKotlin") { compilerOptions.jvmTarget = JvmTarget.JVM_1_8 }
 
 dependencies {
   api(projects.sentry)
