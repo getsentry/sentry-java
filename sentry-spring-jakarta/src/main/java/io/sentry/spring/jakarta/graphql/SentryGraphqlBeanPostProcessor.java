@@ -12,8 +12,8 @@ public final class SentryGraphqlBeanPostProcessor implements BeanPostProcessor, 
 
   @Override
   public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-    if (bean instanceof BatchLoaderRegistry) {
-      return new SentryBatchLoaderRegistry((BatchLoaderRegistry) bean);
+    if (bean instanceof BatchLoaderRegistry batchLoaderRegistry) {
+      return new SentryBatchLoaderRegistry(batchLoaderRegistry);
     }
     return bean;
   }

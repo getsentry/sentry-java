@@ -45,13 +45,12 @@ public class SentryLog4j2Initializer implements GenericApplicationListener {
   @Override
   public void onApplicationEvent(final @NotNull ApplicationEvent event) {
     final Object context = LogManager.getContext(false);
-    if (!(context instanceof LoggerContext)) {
+    if (!(context instanceof LoggerContext loggerContext)) {
       logger.info(
           "Sentry Log4j2 appender was not configured because Log4j2 Core is not the active logging backend. Log4j2 API calls may be routed through SLF4J.");
       return;
     }
 
-    final LoggerContext loggerContext = (LoggerContext) context;
     final Configuration configuration = loggerContext.getConfiguration();
 
     boolean changed = false;
