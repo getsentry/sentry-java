@@ -42,16 +42,15 @@ import org.jetbrains.annotations.VisibleForTesting;
 public final class JavaContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 10000;
-  private final List<String> invalidFilenameChars =
-      Arrays.asList(
-          ".", ",", ":", ";", "|", "\\", "=", "%", "&", "[", "]", "(", ")", "<", ">", "{", "}", "!",
-          "*", "?", "~", "\"", "'", "$", "`", "^");
+  // async-profiler splits its arguments on "," and expands "%" patterns in the file name.
+  private final List<String> invalidFilenameChars = Arrays.asList(",", "%");
 
   private final @NotNull ILogger logger;
   private final @Nullable String profilingTracesDirPath;
   private final int profilingTracesHz;
   private final @NotNull ISentryExecutorService executorService;
   private boolean isInitialized = false;
+  private boolean hasValidOptions = false;
   private boolean isRunning = false;
   private @Nullable IScopes scopes;
   private @Nullable Future<?> stopFuture;
@@ -92,7 +91,7 @@ public final class JavaContinuousProfiler
 
   private boolean init() {
     if (isInitialized) {
-      return true;
+      return hasValidOptions;
     }
     isInitialized = true;
 
@@ -107,6 +106,7 @@ public final class JavaContinuousProfiler
           profilingTracesHz);
       return false;
     }
+    hasValidOptions = true;
     return true;
   }
 
