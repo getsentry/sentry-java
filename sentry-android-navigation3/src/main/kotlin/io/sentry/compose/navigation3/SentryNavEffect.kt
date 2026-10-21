@@ -44,10 +44,11 @@ import org.jetbrains.annotations.ApiStatus
  * By default, the following data is produced every time the top of the provided [backStack]
  * changes:
  *
- * - a new navigation transaction
+ * - a new navigation transaction (unless another transaction is already active on the current
+ *   scope)
  * - a breadcrumb
  * - a screen name
- * - a record of the current back stack (last 10 entries)
+ * - a record of the current back stack (last 5 entries)
  *
  * You can configure the above defaults via [SentryNavOptions]. (Screen names can be disabled via
  * [SentryOptions.setEnableScreenTracking].)
@@ -75,7 +76,6 @@ import org.jetbrains.annotations.ApiStatus
  * @param options The kinds of navigation info this effect should record.
  */
 @ApiStatus.Experimental
-@ApiStatus.Internal
 @Composable
 public fun <T : Any> SentryNavEffect(
   backStack: List<T>,

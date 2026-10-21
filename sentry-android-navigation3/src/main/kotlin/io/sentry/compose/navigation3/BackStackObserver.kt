@@ -273,7 +273,7 @@ private data class BackStackData<T>(
   val topEntryNormalized: NormalizedSentryBackStackEntry,
   /**
    * [NormalizedSentryBackStackEntry]s representing the newest
-   * [SentryNavOption.maxCapturedBackStackEntries] entries from the host app's back stack.
+   * [SentryNavOptions.maxCapturedBackStackEntries] entries from the host app's back stack.
    *
    * Possibly empty.
    */

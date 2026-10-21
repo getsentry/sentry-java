@@ -27,7 +27,7 @@ jobs:
           submodules: 'recursive'
 
       - name: 'Set up Java: 17'
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -81,11 +81,12 @@ jobs:
         # Skip on PRs from forks, which don't have access to the upload secret
         if: ${{ !cancelled() && env.SAUCE_USERNAME != null && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
-          shopt -s globstar nullglob
-          pngs=(artifacts/**/*.png)
-          if [ ${#pngs[@]} -gt 0 ]; then
-            mkdir -p replay-snapshots
-            cp "${pngs[@]}" replay-snapshots/
+          # find instead of `shopt -s globstar`, which macOS's bash 3.2 doesn't support
+          mkdir -p replay-snapshots
+          if [ -d artifacts ]; then
+            find artifacts -type f -name '*.png' -exec cp {} replay-snapshots/ \;
+          fi
+          if [ -n "$(ls -A replay-snapshots)" ]; then
             sentry-cli snapshots upload ./replay-snapshots \
               --app-id sentry-android-replay
           else

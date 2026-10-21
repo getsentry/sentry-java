@@ -10,7 +10,8 @@ import io.sentry.SentryMaskingOptions;
  * #setMaskAllText(boolean)} and/or {@link #setMaskAllImages(boolean)}.
  *
  * <p>Note: Screenshot masking requires the {@code sentry-android-replay} module to be present at
- * runtime. If the replay module is not available, screenshots will be captured without masking.
+ * runtime. If masking is enabled but the replay module is not available, no screenshot is captured
+ * to avoid leaking sensitive data.
  */
 public final class SentryScreenshotOptions extends SentryMaskingOptions {
 

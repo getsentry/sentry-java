@@ -22,6 +22,7 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent
 import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayLifecycleState.CLOSED
 import io.sentry.android.replay.ReplayLifecycleState.PAUSED
@@ -39,6 +40,10 @@ import io.sentry.android.replay.util.ReplayExecutorService
 import io.sentry.android.replay.util.appContext
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.cache.PersistingOptionsObserver
+import io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.hints.Backfillable
@@ -223,6 +228,7 @@ public class ReplayIntegration(
             options,
             scopes,
             dateProvider,
+            options.monotonicTicker,
             replayExecutor,
             persistingExecutor,
             replayCacheProvider,
@@ -232,6 +238,7 @@ public class ReplayIntegration(
             options,
             scopes,
             dateProvider,
+            options.monotonicTicker,
             replayExecutor,
             persistingExecutor,
             replayCacheProvider,
@@ -653,10 +660,6 @@ public class ReplayIntegration(
   }
 
   private fun finalizePreviousReplay() {
-    // TODO: read persisted options/scope values form the
-    // TODO: previous run and set them directly to the ReplayEvent so they don't get overwritten in
-    // MainEventProcessor
-
     options.executorService.submitSafely(options, "ReplayIntegration.finalize_previous_replay") {
       val persistingScopeObserver = options.findPersistingScopeObserver()
       val previousReplayIdString =
@@ -701,6 +704,7 @@ public class ReplayIntegration(
         )
 
       if (segment is ReplaySegment.Created) {
+        segment.replay.applyRecordingMetadata(lastSegment.metadata, options)
         val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint())
         segment.capture(scopes, hint)
       }
@@ -779,5 +783,32 @@ public class ReplayIntegration(
       ret.setDaemon(true)
       return ret
     }
+  }
+}
+
+/**
+ * Replays from the previous run are sent with a [Backfillable] hint, so MainEventProcessor does not
+ * apply release, environment, dist or SDK from the current run. Use the values persisted with the
+ * replay when it started recording instead.
+ *
+ * Replays recorded by older SDK versions don't have them stored. For those, read release,
+ * environment and dist from the options persisted by the previous run: this runs on the SDK
+ * executor before Sentry.init persists the current options, so they still describe that run. The
+ * SDK falls back to the one MainEventProcessor applies to current-run segments rather than none.
+ */
+private fun SentryReplayEvent.applyRecordingMetadata(
+  metadata: RecordingMetadata?,
+  options: SentryOptions,
+) {
+  if (metadata != null) {
+    release = metadata.release
+    environment = metadata.environment
+    dist = metadata.dist
+    sdk = metadata.sdkVersion ?: options.sessionReplay.sdkVersion ?: options.sdkVersion
+  } else {
+    release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java)
+    environment = PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String::class.java)
+    dist = PersistingOptionsObserver.read(options, DIST_FILENAME, String::class.java)
+    sdk = options.sessionReplay.sdkVersion ?: options.sdkVersion
   }
 }
