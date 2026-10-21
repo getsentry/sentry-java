@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3.lifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import io.sentry.IScope
+import io.sentry.ISentryClient
 import io.sentry.ITransaction
 import io.sentry.SpanStatus
 
@@ -198,6 +199,7 @@ internal class NavLeaseCoordinator {
       // just because cleanup failed, and preserve any successor selected during handoff.
       candidates.remove(candidate)
       candidate.transaction = null
+      candidate.transactionClient = null
       if (publishedDataCandidate === candidate) {
         publishedDataCandidate = null
       }
@@ -254,14 +256,16 @@ internal class NavLeaseCoordinator {
    * If [owner] loses the lease, the transaction is unbound but retained: it's rebound if [owner]
    * regains the lease while it's still unfinished and the scope is free, and finished when [owner]
    * is [unregistered][unregisterCandidate]. It's forgotten once [owner] retires it; see
-   * [releaseTransaction].
+   * [releaseTransaction]. The [scope]'s client identifies the SDK instance that started it, so a
+   * transaction from a closed or replaced client cannot be rebound after SDK restart.
    */
-  fun retainTransaction(owner: Any, transaction: ITransaction) {
+  fun retainTransaction(owner: Any, transaction: ITransaction, scope: IScope) {
     val candidate = leaseHolder ?: return
     if (candidate.owner !== owner) {
       return
     }
     candidate.transaction = transaction
+    candidate.transactionClient = scope.client
   }
 
   /**
@@ -276,6 +280,7 @@ internal class NavLeaseCoordinator {
     val candidate = findCandidate(owner) ?: return
     if (candidate.transaction === transaction) {
       candidate.transaction = null
+      candidate.transactionClient = null
     }
   }
 
@@ -327,8 +332,8 @@ internal class NavLeaseCoordinator {
 
     if (candidate != null) {
       // Unbind another owner's transaction without finishing it, so it can be restored if that
-      // owner returns. If this owner's retained transaction has since finished, discard it
-      // instead of binding a finished transaction to the shared scope.
+      // owner returns. Discard a finished transaction or one from a closed or replaced client
+      // instead of binding it to the current shared scope.
       scope.withTransaction { current ->
         if (current != null && candidates.any { it !== candidate && it.transaction === current }) {
           scope.clearTransaction()
@@ -336,9 +341,15 @@ internal class NavLeaseCoordinator {
       }
 
       val transaction = candidate.transaction
-      if (transaction?.isFinished == true) {
+      if (
+        transaction != null &&
+          (transaction.isFinished ||
+            candidate.transactionClient?.isEnabled != true ||
+            candidate.transactionClient !== scope.client)
+      ) {
         clearTransactionFromScope(candidate, scope)
         candidate.transaction = null
+        candidate.transactionClient = null
       } else if (transaction != null) {
         // The navigation lease doesn't give this owner control over an unrelated transaction
         // already bound to the shared scope. Restore the owner's retained nav transaction only if
@@ -381,13 +392,19 @@ internal class NavLeaseCoordinator {
     // advantage of keeping SDK work inside `configureScope`'s error handling.
     if (scope != null) {
       val transaction = candidate.transaction
-      if (transaction != null && !transaction.isFinished) {
+      if (
+        transaction != null &&
+          !transaction.isFinished &&
+          candidate.transactionClient?.isEnabled == true &&
+          candidate.transactionClient === scope.client
+      ) {
         transaction.finish(transaction.status ?: SpanStatus.OK)
       }
       clearTransactionFromScope(candidate, scope)
     }
 
     candidate.transaction = null
+    candidate.transactionClient = null
   }
 
   private fun clearTransactionFromScope(candidate: Candidate, scope: IScope) {
@@ -419,6 +436,8 @@ internal class NavLeaseCoordinator {
     private var wasStopped: Boolean = false
 
     var transaction: ITransaction? = null
+
+    var transactionClient: ISentryClient? = null
 
     /**
      * See [NavLeaseCoordinator.resumeOrder]. Non-zero once the candidate has been observed RESUMED

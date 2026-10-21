@@ -305,7 +305,9 @@ internal class NavScopes(
 
     return delegate.startTransaction(transactionContext, transactionOptions).also { transaction ->
       if (!transaction.isNoOp) {
-        coordinator.retainTransaction(owner, transaction)
+        delegate.configureScope { scope ->
+          coordinator.retainTransaction(owner, transaction, scope)
+        }
       }
     }
   }

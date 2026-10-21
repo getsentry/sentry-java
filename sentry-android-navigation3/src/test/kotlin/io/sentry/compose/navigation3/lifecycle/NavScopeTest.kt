@@ -211,7 +211,7 @@ class NavScopeTest {
     val otherTransaction = mock<ITransaction>()
     fixture.coordinator.registerCandidate(other, Lifecycle.State.RESUMED, {}, {})
     fixture.coordinator.onBackStackUpdate(other, fixture.realScope)
-    fixture.coordinator.retainTransaction(other, otherTransaction)
+    fixture.coordinator.retainTransaction(other, otherTransaction, fixture.realScope)
     fixture.realScope.transaction = otherTransaction
 
     val transaction = fixture.navScope.transaction
@@ -252,7 +252,7 @@ class NavScopeTest {
 
     /** Retains [transaction] as the owner's nav transaction; the owner must hold the nav lease. */
     fun retainTransaction(transaction: ITransaction) {
-      coordinator.retainTransaction(owner, transaction)
+      coordinator.retainTransaction(owner, transaction, realScope)
       check(coordinator.isNavTransaction(transaction))
     }
 

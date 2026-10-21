@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3.lifecycle
 import androidx.lifecycle.Lifecycle
 import com.google.common.truth.Truth.assertThat
 import io.sentry.IScope
+import io.sentry.ISentryClient
 import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.SentryOptions
@@ -664,7 +665,7 @@ class NavLeaseCoordinatorTest {
     val other = Any()
     fixture.acquireLease(owner)
 
-    navLeaseCoordinator.retainTransaction(other, transaction)
+    navLeaseCoordinator.retainTransaction(other, transaction, fixture.scope)
     navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
 
     verifyNoInteractions(transaction)
@@ -677,7 +678,7 @@ class NavLeaseCoordinatorTest {
     fixture.acquireLease(owner)
     fixture.acquireLease(incoming, state = Lifecycle.State.RESUMED)
 
-    navLeaseCoordinator.retainTransaction(owner, transaction)
+    navLeaseCoordinator.retainTransaction(owner, transaction, fixture.scope)
     navLeaseCoordinator.unregisterCandidate(incoming, fixture.scope)
 
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
@@ -730,6 +731,38 @@ class NavLeaseCoordinatorTest {
     assertThat(fixture.scope.transaction).isNull()
     assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
     assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+  }
+
+  @Test
+  fun `a nav transaction from a disabled client is discarded when its owner regains the lease`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(owner, transaction = transaction)
+    fixture.acquireLease(incoming)
+    whenever(fixture.client.isEnabled).thenReturn(false)
+
+    navLeaseCoordinator.pauseCandidate(incoming, fixture.scope)
+
+    assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    verify(transaction, never()).finish(any())
+  }
+
+  @Test
+  fun `a nav transaction from a replaced client is discarded when its owner regains the lease`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(owner, transaction = transaction)
+    fixture.acquireLease(incoming)
+    fixture.scope.bindClient(mock<ISentryClient> { on { isEnabled }.thenReturn(true) })
+
+    navLeaseCoordinator.pauseCandidate(incoming, fixture.scope)
+
+    assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    verify(transaction, never()).finish(any())
   }
 
   @Test
@@ -788,7 +821,7 @@ class NavLeaseCoordinatorTest {
       onClearPublishedData = {},
     )
     navLeaseCoordinator.onBackStackUpdate(owner, fixture.scope)
-    navLeaseCoordinator.retainTransaction(owner, transaction)
+    navLeaseCoordinator.retainTransaction(owner, transaction, fixture.scope)
     fixture.scope.transaction = transaction
     fixture.acquireLease(incoming, state = Lifecycle.State.RESUMED)
 
@@ -810,6 +843,34 @@ class NavLeaseCoordinatorTest {
     assertThat(fixture.scope.transaction).isNull()
     assertThat(fixture.cleared).containsExactly(owner)
     assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
+  }
+
+  @Test
+  fun `unregistering an owner does not finish a nav transaction from a replaced client`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(owner, transaction = transaction)
+    fixture.scope.bindClient(mock<ISentryClient> { on { isEnabled }.thenReturn(true) })
+
+    navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
+
+    verify(transaction, never()).finish(any())
+    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `unregistering an owner does not finish a nav transaction from a disabled client`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(owner, transaction = transaction)
+    whenever(fixture.client.isEnabled).thenReturn(false)
+
+    navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
+
+    verify(transaction, never()).finish(any())
+    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(fixture.scope.transaction).isNull()
   }
 
   @Test
@@ -1031,8 +1092,13 @@ class NavLeaseCoordinatorTest {
   private class Fixture {
     val navLeaseCoordinator = NavLeaseCoordinator()
     val scope = Scope(SentryOptions())
+    val client = mock<ISentryClient> { on { isEnabled }.thenReturn(true) }
     val published = mutableListOf<Any>()
     val cleared = mutableListOf<Any>()
+
+    init {
+      scope.bindClient(client)
+    }
 
     fun register(
       owner: Any,
@@ -1056,7 +1122,7 @@ class NavLeaseCoordinatorTest {
       register(owner, state, onClearPublishedData)
       navLeaseCoordinator.onBackStackUpdate(owner, scope)
       if (transaction != null) {
-        navLeaseCoordinator.retainTransaction(owner, transaction)
+        navLeaseCoordinator.retainTransaction(owner, transaction, scope)
         scope.transaction = transaction
       }
     }
