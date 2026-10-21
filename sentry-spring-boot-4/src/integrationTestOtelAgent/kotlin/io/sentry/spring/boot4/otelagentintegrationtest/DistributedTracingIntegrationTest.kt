@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryEnvelope
 import io.sentry.protocol.SentryId
 import io.sentry.test.transaction
+import kotlin.random.Random
 import kotlin.test.Test
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -27,16 +28,19 @@ class DistributedTracingIntegrationTest : IntegrationTest() {
       )
     assertThat(status).isEqualTo(500)
 
-    awaitTransaction("GET /tracing/{id}", traceId)
+    val incoming = awaitTransaction("GET /tracing/{id}", traceId).transaction()!!
+    assertThat(incoming.request?.url).endsWith("/tracing/1")
     awaitTransaction("GET /person/{id}", traceId)
   }
 
   @Test
   fun `unsampled trace sends no transactions`() {
     val traceId = SentryId()
+    // An id only this request uses, because a mishandled header could start a trace of its own.
+    val id = Random.nextLong(2, Long.MAX_VALUE)
     val status =
       get(
-        "/tracing/1",
+        "/tracing/$id",
         sentryTrace = "$traceId-424cffc8f94feeee-0",
         baggage =
           "sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=false,sentry-trace_id=$traceId,sentry-transaction=HTTP%20GET",
@@ -44,10 +48,7 @@ class DistributedTracingIntegrationTest : IntegrationTest() {
     assertThat(status).isEqualTo(500)
 
     // Longer than the 5 seconds the app's spans can wait for their batch to be exported.
-    server.assertNoEnvelope(millis = 6_000) {
-      isTransaction(it, "GET /tracing/{id}", traceId) ||
-        isTransaction(it, "GET /person/{id}", traceId)
-    }
+    server.assertNoEnvelope(millis = 6_000) { isForRequest(it, id) }
   }
 
   @Test
@@ -64,6 +65,8 @@ class DistributedTracingIntegrationTest : IntegrationTest() {
 
     val incoming = awaitTransaction("GET /tracing/{id}", traceId).header.traceContext!!
     val outgoing = awaitTransaction("GET /person/{id}", traceId).header.traceContext!!
+    assertThat(incoming.traceId).isEqualTo(traceId)
+    assertThat(outgoing.traceId).isEqualTo(traceId)
     assertThat(incoming.sampleRand).isNotNull()
     assertThat(outgoing.sampleRand).isEqualTo(incoming.sampleRand)
   }
@@ -82,6 +85,8 @@ class DistributedTracingIntegrationTest : IntegrationTest() {
 
     val incoming = awaitTransaction("GET /tracing/{id}", traceId).header.traceContext!!
     val outgoing = awaitTransaction("GET /person/{id}", traceId).header.traceContext!!
+    assertThat(incoming.traceId).isEqualTo(traceId)
+    assertThat(outgoing.traceId).isEqualTo(traceId)
     assertThat(incoming.sampleRate).isNotEqualTo("0.5")
     assertThat(outgoing.sampleRate).isEqualTo(incoming.sampleRate)
   }
@@ -130,6 +135,12 @@ class DistributedTracingIntegrationTest : IntegrationTest() {
     server.awaitEnvelope {
       isTransaction(it, name, traceId)
     }
+
+  /** Whether [envelope] is a transaction for `/tracing/[id]` or the `/person/[id]` it calls. */
+  private fun isForRequest(envelope: SentryEnvelope, id: Long): Boolean {
+    val url = envelope.transaction()?.request?.url ?: return false
+    return url.endsWith("/tracing/$id") || url.endsWith("/person/$id")
+  }
 
   private fun isTransaction(envelope: SentryEnvelope, name: String, traceId: SentryId): Boolean {
     val transaction = envelope.transaction() ?: return false
