@@ -3,10 +3,10 @@ package io.sentry.spring.boot4.webfluxintegrationtest
 import io.sentry.test.MockSentryServer
 import org.junit.Before
 import org.junit.runner.RunWith
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.restclient.RestTemplateBuilder
 import org.springframework.boot.resttestclient.TestRestTemplate
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -20,14 +20,13 @@ import org.springframework.test.context.junit4.SpringRunner
  * produce.
  */
 @RunWith(SpringRunner::class)
-// Spring Boot 4 only provides TestRestTemplate when asked to.
-@AutoConfigureTestRestTemplate
 @SpringBootTest(
   classes = [WebfluxIntegrationTestApplication::class],
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties =
     [
       "sentry.traces-sample-rate=1.0",
+      "sentry.enable-cache-tracing=true",
       "sentry.logs.enabled=true",
       "sentry.reactive.thread-local-accessor-enabled=true",
       "sentry.profile-session-sample-rate=1.0",
@@ -36,7 +35,13 @@ import org.springframework.test.context.junit4.SpringRunner
     ],
 )
 abstract class WebfluxIntegrationTest {
-  @Autowired lateinit var restTemplate: TestRestTemplate
+  @LocalServerPort private var port = 0
+
+  // The context's TestRestTemplate comes from the RestTemplateBuilder that Sentry customizes, so
+  // it would add trace headers of its own to the requests tests send. Tests use a plain one.
+  val restTemplate: TestRestTemplate by lazy {
+    TestRestTemplate(RestTemplateBuilder().rootUri("http://localhost:$port"))
+  }
 
   @Before
   fun resetServer() {
