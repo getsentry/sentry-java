@@ -86,6 +86,11 @@ public class ReplayIntegration(
       SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
     }
+
+    // Replays recorded by this process. Their folders hold segment videos the transport may still
+    // read after the replay stopped, so the startup cleanup of previous replays must keep them.
+    // Shared across instances, because a second SDK init registers a new ReplayIntegration.
+    val replayIdsOfThisProcess = CopyOnWriteArraySet<String>()
   }
 
   // needed for the Java's call site
@@ -139,9 +144,6 @@ public class ReplayIntegration(
   private var mainLooperHandler: MainLooperHandler = MainLooperHandler()
   private var gestureRecorderProvider: (() -> GestureRecorder)? = null
   private val state = AtomicReference(ReplayState())
-  // Replays recorded by this process. Their folders hold segment videos the transport may still
-  // read after the replay stopped, so the startup cleanup of previous replays must keep them.
-  private val replayIdsOfThisProcess = CopyOnWriteArraySet<String>()
 
   override fun register(scopes: IScopes, options: SentryOptions) {
     this.options = options

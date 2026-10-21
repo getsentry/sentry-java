@@ -1296,6 +1296,30 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `second SDK init keeps replays recorded by the first one`() {
+    val firstReplayId = SentryId()
+    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+    val firstStrategy = mock<CaptureStrategy> { on { currentReplayId }.thenReturn(firstReplayId) }
+    val first = fixture.getSut(context, replayCaptureStrategyProvider = { firstStrategy })
+    first.register(fixture.scopes, fixture.options)
+    first.startBuffering()
+    val firstReplay =
+      File(fixture.options.cacheDirPath, "replay_$firstReplayId").also {
+        it.mkdirs()
+        File(it, "0.mp4").writeBytes(byteArrayOf(1, 2, 3))
+      }
+    first.stop()
+    first.close()
+
+    // a new Sentry.init registers a new integration, which runs the startup cleanup again
+    val secondStrategy = mock<CaptureStrategy> { on { currentReplayId }.thenReturn(SentryId()) }
+    val second = fixture.getSut(context, replayCaptureStrategyProvider = { secondStrategy })
+    second.register(fixture.scopes, fixture.options)
+
+    assertTrue(File(firstReplay, "0.mp4").exists())
+  }
+
+  @Test
   fun `delayed startup task does not finalize a replay recorded by this process`() {
     val replayId = SentryId()
     fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
