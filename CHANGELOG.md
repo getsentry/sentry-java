@@ -5,6 +5,9 @@
 ### Fixes
 
 - Always remove the first-draw listener after the first frame, even if no layout pass follows it ([#6152](https://github.com/getsentry/sentry-java/pull/6152))
+- Refuse to send data to servers that present one of the leaked eMudhra intermediate certificates (CVE-2026-111943) ([#6336](https://github.com/getsentry/sentry-java/pull/6336))
+  - Anyone can recover the private keys of these intermediates, and they are cross-signed by a root that every Android version trusts, so device trust store updates don't protect every device.
+  - This applies to the SDK's own envelope uploads and to the distribution update check. Other HTTPS connections your app makes, including those instrumented by `sentry-okhttp` and the other HTTP client integrations, need their own fix, for example an OkHttp update.
 
 ## 8.61.1
 
