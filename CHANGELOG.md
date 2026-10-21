@@ -20,6 +20,7 @@
 - Refuse to send data to servers whose certificate was issued by one of the leaked eMudhra intermediates (CVE-2026-111943) ([#6336](https://github.com/getsentry/sentry-java/pull/6336))
 - Stop sending the whole release as `dist` on ANR and app-exit events when the release has no `+versionCode` ([#6450](https://github.com/getsentry/sentry-java/pull/6450))
   - Relay rejected these values (e.g. `invalid character '@'`). `dist` is now left empty unless `options.dist` is set or the release contains a version code.
+- Accept profiling traces directories whose path contains a `.` on the JVM, and keep profiling disabled after its first start rejects the options instead of starting on the next one ([#6334](https://github.com/getsentry/sentry-java/pull/6334))
 
 ### Dependencies
 
