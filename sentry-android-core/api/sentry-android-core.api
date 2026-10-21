@@ -576,7 +576,7 @@ public abstract interface class io/sentry/android/core/SentryShakeDetector$Liste
 	public abstract fun onShake ()V
 }
 
-public class io/sentry/android/core/SentryUserFeedbackForm : android/app/AlertDialog {
+public class io/sentry/android/core/SentryUserFeedbackForm : android/app/Dialog {
 	protected fun onCreate (Landroid/os/Bundle;)V
 	public fun onDetachedFromWindow ()V
 	protected fun onStart ()V
