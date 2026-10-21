@@ -4,6 +4,7 @@
 
 ### Fixes
 
+- Session Replay: Keep touch events and breadcrumbs that happen right after a segment is cut (e.g. after an error captures a buffered replay) ([#6350](https://github.com/getsentry/sentry-java/pull/6350))
 - Report the number of dropped spans in client reports when a batched span envelope item is discarded, instead of a quantity of 1 (e.g. for Flutter span streaming) ([#6265](https://github.com/getsentry/sentry-java/pull/6265))
 - Keep sending events from Android 7.1.0 and older devices after Sentry changes its TLS certificate authority ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
   - In February 2027, Sentry moves its TLS certificates from DigiCert to Let's Encrypt and Google Trust Services ([announcement](https://sentry.io/changelog/were-changing-our-tls-certificate-authority-in-february-2027)).
