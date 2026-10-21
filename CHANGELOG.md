@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add experimental, opt-in out-of-process crash reporting on Android ([#6347](https://github.com/getsentry/sentry-java/pull/6347))
+
 ### Fixes
 
 - Report the number of dropped spans in client reports when a batched span envelope item is discarded, instead of a quantity of 1 (e.g. for Flutter span streaming) ([#6265](https://github.com/getsentry/sentry-java/pull/6265))
