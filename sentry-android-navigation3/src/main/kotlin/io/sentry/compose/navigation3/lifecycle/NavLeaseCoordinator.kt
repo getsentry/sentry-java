@@ -16,6 +16,19 @@ import io.sentry.SpanStatus
  * Note: "Owner" below refers to the `LifecycleOwner` whose lifecycle events the candidate's
  * `NavScopes` relays.
  *
+ * **Exception semantics**
+ *
+ * Every method in this class with an `IScope` parameter can throw arbitrary exceptions due to:
+ *
+ * 1. the [onPublishData][registerCandidate] and [onClearPublishedData][registerCandidate] callbacks
+ *    supplied at registration;
+ * 2. the `IScope` the method is handed, whose mutators notify every observer registered through
+ *    `SentryOptions.addScopeObserver` – including the host app's – in an unguarded loop; and
+ * 3. `finish()` on a retained nav transaction, which may run the host app's event processors.
+ *
+ * This class restores its own bookkeeping before the exception leaves, so the coordinator remains
+ * usable.
+ *
  * **Thread safety**
  *
  * This class is ***not*** thread-safe. All `NavScopes` instances using this coordinator must
@@ -83,6 +96,8 @@ internal class NavLeaseCoordinator {
    *
    * A `null` scope (e.g., the SDK is disabled) still records the lifecycle transition so the
    * candidate remains eligible for fallback once a scope becomes available.
+   *
+   * Can throw arbitrary exceptions. See "Exception semantics" in the class KDoc.
    */
   fun resumeCandidate(owner: Any, scope: IScope?) {
     findCandidate(owner)?.let {
@@ -104,6 +119,8 @@ internal class NavLeaseCoordinator {
    *
    * A `null` scope (e.g., the SDK is disabled) still records the lifecycle transition so the
    * candidate remains eligible for fallback once a scope becomes available.
+   *
+   * Can throw arbitrary exceptions. See "Exception semantics" in the class KDoc.
    */
   fun pauseCandidate(owner: Any, scope: IScope?) {
     findCandidate(owner)?.let {
@@ -132,6 +149,8 @@ internal class NavLeaseCoordinator {
    *
    * A `null` scope (e.g., the SDK is disabled) still records the lifecycle transition so the
    * candidate remains eligible for fallback once a scope becomes available.
+   *
+   * Can throw arbitrary exceptions. See "Exception semantics" in the class KDoc.
    */
   fun stopCandidate(owner: Any, scope: IScope?) {
     findCandidate(owner)?.let {
@@ -156,36 +175,34 @@ internal class NavLeaseCoordinator {
    * left to time out, its published data is left in place, and the lease is released rather than
    * handed off.
    *
-   * Coordinator references are released even if scope cleanup or lease handoff throws. The
-   * exception is left to the caller to handle; remaining scope cleanup may be incomplete.
+   * Coordinator references are released even if scope cleanup or lease handoff throws. See
+   * "Exception semantics" in the class KDoc. The remaining scope cleanup is then skipped.
    */
   fun unregisterCandidate(owner: Any, scope: IScope?) {
-    findCandidate(owner)?.let {
-      try {
-        finishTransaction(it, scope)
-        candidates.remove(it)
+    val candidate = findCandidate(owner) ?: return
 
-        if (publishedDataCandidate === it) {
-          publishedDataCandidate = null
-          if (scope != null) {
-            it.onClearPublishedData(scope)
-          }
-        }
+    try {
+      finishTransaction(candidate, scope)
+      candidates.remove(candidate)
 
-        if (leaseHolder === it) {
-          handOffLease(mostRecentlyResumedCandidate(), scope)
-        }
-      } finally {
-        // Scope observers and transaction callbacks can throw. Never retain a departing owner
-        // just because cleanup failed, and preserve any successor selected during handoff.
-        candidates.remove(it)
-        it.transaction = null
-        if (publishedDataCandidate === it) {
-          publishedDataCandidate = null
-        }
-        if (leaseHolder === it) {
-          leaseHolder = null
-        }
+      if (publishedDataCandidate === candidate) {
+        publishedDataCandidate = null
+        scope?.let { candidate.onClearPublishedData(it) }
+      }
+
+      if (leaseHolder === candidate) {
+        handOffLease(mostRecentlyResumedCandidate(), scope)
+      }
+    } finally {
+      // Scope observers and transaction callbacks can throw. Never retain a departing owner
+      // just because cleanup failed, and preserve any successor selected during handoff.
+      candidates.remove(candidate)
+      candidate.transaction = null
+      if (publishedDataCandidate === candidate) {
+        publishedDataCandidate = null
+      }
+      if (leaseHolder === candidate) {
+        leaseHolder = null
       }
     }
   }
@@ -203,6 +220,8 @@ internal class NavLeaseCoordinator {
    * If the lease transfers, ownership and transaction binding are updated before the candidate's
    * staged nav data is published. Publication completes before this method returns, so the caller
    * can then apply the back-stack update. Later calls for the same [owner] do nothing.
+   *
+   * Can throw arbitrary exceptions. See "Exception semantics" in the class KDoc.
    */
   fun onBackStackUpdate(owner: Any, scope: IScope) {
     val candidate = findCandidate(owner) ?: return
@@ -293,6 +312,14 @@ internal class NavLeaseCoordinator {
     }
   }
 
+  /**
+   * Hands the lease to [candidate], or releases it given `null`.
+   *
+   * Maintains the invariant that, while a lease is held, the leaseholder is also the candidate
+   * recorded as having published the shared scope's nav data. The invariant holds even when a
+   * publish or clear callback throws part way through the handoff. See "Exception semantics" in the
+   * class KDoc.
+   */
   private fun transferLeaseTo(candidate: Candidate?, scope: IScope) {
     if (leaseHolder === candidate) {
       return
@@ -330,11 +357,20 @@ internal class NavLeaseCoordinator {
       // previous owner's values don't linger where the candidate has nothing staged to replace
       // them.
       val previousPublisher = publishedDataCandidate
-      if (previousPublisher != null && previousPublisher !== candidate) {
-        previousPublisher.onClearPublishedData(scope)
+      try {
+        if (previousPublisher != null && previousPublisher !== candidate) {
+          previousPublisher.onClearPublishedData(scope)
+        }
+        publishedDataCandidate = candidate
+        candidate.onPublishData(scope)
+      } finally {
+        // Scope observers can throw. A candidate owns the scope's nav data from the moment it
+        // takes the lease, so record it as the publisher even if clearing the previous owner's
+        // data threw. Leaving the previous owner recorded here would strand both owners' values
+        // b/c the next handoff would clear data the candidate may have already replaced, and would
+        // never clear the candidate's own.
+        publishedDataCandidate = candidate
       }
-      publishedDataCandidate = candidate
-      candidate.onPublishData(scope)
     }
   }
 

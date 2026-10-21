@@ -15,7 +15,6 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScope
 import io.sentry.IScopes
-import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -544,13 +543,6 @@ class SentryNavEffectTest {
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
-    val navigationContext = contexts[NAVIGATION_CONTEXT_KEY] as? Map<*, *> ?: return null
-
-    @Suppress("UNCHECKED_CAST")
-    return navigationContext[BACKSTACK_KEY] as? List<Map<String, Any?>>
-  }
-
-  private fun ITransaction.navigationBackStack(): List<Map<String, Any?>>? {
     val navigationContext = contexts[NAVIGATION_CONTEXT_KEY] as? Map<*, *> ?: return null
 
     @Suppress("UNCHECKED_CAST")

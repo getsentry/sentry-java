@@ -17,6 +17,7 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 
+@Suppress("LargeClass")
 class NavLeaseCoordinatorTest {
 
   private val owner = Any()
@@ -264,6 +265,126 @@ class NavLeaseCoordinatorTest {
     navLeaseCoordinator.pauseCandidate(owner, null)
 
     assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
+    assertThat(fixture.cleared).isEmpty()
+  }
+
+  /**
+   * An owner that leaves must not leave its nav data behind on the shared scope.
+   *
+   * The coordinator records which owner last published nav data. Each handoff uses that record to
+   * clear the previous owner's screen and back stack, then publishes the incoming owner's. If the
+   * clear attempt throws, the coordinator must still record the incoming owner as the one that last
+   * published.
+   *
+   * This test runs two handoffs over three owners. The first owner publishes; the second takes the
+   * lease; and then the first owner's clear attempt throws. The third then takes the lease. The
+   * test verifies that third handoff clears the second owner's data, and not the first's. That lets
+   * us ensure the second problem listed below doesn't happen.
+   *
+   * In the setup above, if the coordinator didn't record the second owner's data after the first
+   * owner's clear attempt threw, two things would happen when handing off to the third owner:
+   *
+   * 1. Harmless: The handoff logic would try to clear the first owner's data again. That'd remove
+   *    nothing because the scope no longer holds the values the first owner published.
+   * 2. Problematic: The handoff would never clear the second owner's data. Instead, the second
+   *    owner's data would stay on the scope, so later events would report stale nav data.
+   */
+  @Test
+  fun `if a clear attempt throws during a handoff, the next handoff clears the new leaseholder's nav data`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    val failure = IllegalStateException("clear failed")
+    var failClear = true
+    val firstOwner = previous
+    val secondOwner = incoming
+    val thirdOwner = owner
+    fixture.acquireLease(
+      firstOwner,
+      onClearPublishedData = {
+        if (failClear) {
+          failClear = false
+          throw failure
+        }
+        fixture.cleared += firstOwner
+      },
+    )
+    fixture.register(secondOwner, Lifecycle.State.RESUMED)
+
+    val thrown =
+      assertThrows(IllegalStateException::class.java) {
+        navLeaseCoordinator.onBackStackUpdate(secondOwner, fixture.scope)
+      }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+    assertThat(navLeaseCoordinator.hasLease(secondOwner)).isTrue()
+
+    fixture.acquireLease(thirdOwner)
+
+    assertThat(fixture.cleared).containsExactly(secondOwner)
+  }
+
+  /**
+   * The same guarantee as
+   * [if a clear attempt throws during a handoff, the next handoff clears the new leaseholder's nav data],
+   * but for a failure while publishing instead of while clearing.
+   *
+   * This case already worked before the fix, because the coordinator records the incoming owner
+   * before it publishes. The test exists to catch a future change that moves the record after the
+   * publish.
+   */
+  @Test
+  fun `if a publish attempt throws during a handoff, the next handoff clears the new leaseholder's nav data`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    val failure = IllegalStateException("publish failed")
+    val firstOwner = previous
+    val secondOwner = incoming
+    val thirdOwner = owner
+    fixture.acquireLease(firstOwner)
+    navLeaseCoordinator.registerCandidate(
+      secondOwner,
+      Lifecycle.State.RESUMED,
+      onPublishData = { throw failure },
+      onClearPublishedData = { fixture.cleared += secondOwner },
+    )
+
+    val thrown =
+      assertThrows(IllegalStateException::class.java) {
+        navLeaseCoordinator.onBackStackUpdate(secondOwner, fixture.scope)
+      }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+    assertThat(navLeaseCoordinator.hasLease(secondOwner)).isTrue()
+
+    fixture.acquireLease(thirdOwner)
+
+    assertThat(fixture.cleared).containsExactly(firstOwner, secondOwner).inOrder()
+  }
+
+  @Test
+  fun `unregistering an owner that threw while clearing its nav data preserves the new leaseholder's nav data`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    val failure = IllegalStateException("clear failed")
+    var failClear = true
+    fixture.acquireLease(
+      previous,
+      onClearPublishedData = {
+        if (failClear) {
+          failClear = false
+          throw failure
+        }
+        fixture.cleared += previous
+      },
+    )
+    fixture.register(incoming, Lifecycle.State.RESUMED)
+    assertThrows(IllegalStateException::class.java) {
+      navLeaseCoordinator.onBackStackUpdate(incoming, fixture.scope)
+    }
+
+    navLeaseCoordinator.unregisterCandidate(previous, fixture.scope)
+
+    assertThat(navLeaseCoordinator.hasLease(incoming)).isTrue()
     assertThat(fixture.cleared).isEmpty()
   }
 
