@@ -421,6 +421,31 @@ class JavaContinuousProfilerTest {
       )
   }
 
+  @Test
+  fun `profiler starts when the traces dir path contains a dot`() {
+    val profiler = fixture.getSut {
+      it.profilingTracesDirPath = File("tmp", "sentry.traces").absolutePath
+    }
+    File(fixture.options.profilingTracesDirPath!!).mkdirs()
+
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertTrue(profiler.isRunning)
+    profiler.close(true)
+  }
+
+  @Test
+  fun `profiler stays disabled when the traces dir is created after its first start`() {
+    val tracesDir = File(fixture.options.profilingTracesDirPath!!)
+    tracesDir.deleteRecursively()
+    val profiler = fixture.getSut()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertFalse(profiler.isRunning)
+
+    tracesDir.mkdirs()
+    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
+    assertFalse(profiler.isRunning)
+  }
+
   fun withMockScopes(closure: () -> Unit) =
     Mockito.mockStatic(Sentry::class.java).use {
       it.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(fixture.scopes)

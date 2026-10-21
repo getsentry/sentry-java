@@ -9,6 +9,7 @@
   - Android 7.1.0 (API 25) and older don't trust the Let's Encrypt root certificate (ISRG Root X1), so without this fix, the SDK on those devices can no longer send events to Sentry after the switch.
   - The SDK now bundles ISRG Root X1 and trusts it in addition to the device's root certificates on API 25 and lower. This only applies to the SDK's own uploads to Sentry SaaS (DSNs on `sentry.io`), not to self-hosted Sentry, not to any other connection your app makes, and not if you set your own `SentryOptions.setSslSocketFactory`.
   - Apps need to update to an SDK version with this fix to keep sending events from these devices.
+- Accept profiling traces directories whose path contains a `.` on the JVM, and keep profiling disabled after its first start rejects the options instead of starting on the next one ([#6334](https://github.com/getsentry/sentry-java/pull/6334))
 
 ### Internal
 
