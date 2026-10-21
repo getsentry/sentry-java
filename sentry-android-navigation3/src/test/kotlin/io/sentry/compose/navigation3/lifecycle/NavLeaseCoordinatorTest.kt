@@ -2,12 +2,15 @@ package io.sentry.compose.navigation3.lifecycle
 
 import androidx.lifecycle.Lifecycle
 import com.google.common.truth.Truth.assertThat
+import io.sentry.IScope
 import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -765,18 +768,161 @@ class NavLeaseCoordinatorTest {
     assertThat(fixture.cleared).isEmpty()
   }
 
+  @Test
+  fun `unregistering the leaseholder forgets the owner when finishing its transaction throws`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    val failure = IllegalStateException("finish failed")
+    fixture.acquireLease(owner, transaction = transaction)
+    doThrow(failure).whenever(transaction).finish(SpanStatus.OK)
+
+    val thrown =
+      assertThrows(IllegalStateException::class.java) {
+        navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
+      }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
+    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+
+    fixture.published.clear()
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+    fixture.acquireLease(incoming)
+
+    assertThat(fixture.published).containsExactly(incoming)
+    assertThat(fixture.cleared).isEmpty()
+  }
+
+  @Test
+  fun `unregistering the leaseholder forgets the owner when unbinding its transaction throws`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    val failure = IllegalStateException("unbind failed")
+    val failingScope = mock<IScope>()
+    fixture.acquireLease(owner, transaction = transaction)
+    doThrow(failure).whenever(failingScope).withTransaction(any())
+
+    val thrown =
+      assertThrows(IllegalStateException::class.java) {
+        navLeaseCoordinator.unregisterCandidate(owner, failingScope)
+      }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
+    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+
+    fixture.published.clear()
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+    fixture.acquireLease(incoming)
+
+    assertThat(fixture.published).containsExactly(incoming)
+    assertThat(fixture.cleared).isEmpty()
+  }
+
+  @Test
+  fun `unregistering the leaseholder forgets the owner when clearing its published nav data throws`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    val failure = IllegalStateException("clear failed")
+    fixture.acquireLease(owner, onClearPublishedData = { throw failure })
+
+    val thrown =
+      assertThrows(IllegalStateException::class.java) {
+        navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
+      }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
+
+    fixture.published.clear()
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+    fixture.acquireLease(incoming)
+
+    assertThat(fixture.published).containsExactly(incoming)
+    assertThat(navLeaseCoordinator.hasLease(incoming)).isTrue()
+  }
+
+  @Test
+  fun `unregistering the leaseholder forgets the owner when restoring a fallback transaction throws`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    val failure = IllegalStateException("fallback restoration failed")
+    val failingScope = mock<IScope>()
+    fixture.acquireLease(previous, transaction = transaction)
+    fixture.acquireLease(owner)
+    doThrow(failure).whenever(failingScope).withTransaction(any())
+
+    val thrown =
+      assertThrows(IllegalStateException::class.java) {
+        navLeaseCoordinator.unregisterCandidate(owner, failingScope)
+      }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
+    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isTrue()
+
+    fixture.published.clear()
+    fixture.cleared.clear()
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+    fixture.acquireLease(incoming)
+
+    assertThat(fixture.published).containsExactly(incoming)
+    assertThat(fixture.cleared).doesNotContain(owner)
+  }
+
+  @Test
+  fun `unregistering the leaseholder preserves the fallback lease when publishing fallback nav data throws`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    val failure = IllegalStateException("fallback publication failed")
+    var failPublication = false
+    navLeaseCoordinator.registerCandidate(
+      previous,
+      Lifecycle.State.RESUMED,
+      onPublishData = {
+        if (failPublication) {
+          throw failure
+        }
+      },
+      onClearPublishedData = {},
+    )
+    navLeaseCoordinator.onBackStackUpdate(previous, fixture.scope)
+    fixture.acquireLease(owner, transaction = transaction)
+    failPublication = true
+
+    val thrown =
+      assertThrows(IllegalStateException::class.java) {
+        navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
+      }
+
+    assertThat(thrown).isSameInstanceAs(failure)
+    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
+    assertThat(navLeaseCoordinator.hasLease(previous)).isTrue()
+    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
+
+    fixture.published.clear()
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+
+    assertThat(fixture.published).isEmpty()
+    assertThat(navLeaseCoordinator.hasLease(previous)).isTrue()
+  }
+
   private class Fixture {
     val navLeaseCoordinator = NavLeaseCoordinator()
     val scope = Scope(SentryOptions())
     val published = mutableListOf<Any>()
     val cleared = mutableListOf<Any>()
 
-    fun register(owner: Any, state: Lifecycle.State) {
+    fun register(
+      owner: Any,
+      state: Lifecycle.State,
+      onClearPublishedData: (IScope) -> Unit = { cleared += owner },
+    ) {
       navLeaseCoordinator.registerCandidate(
         owner,
         state,
         onPublishData = { published += owner },
-        onClearPublishedData = { cleared += owner },
+        onClearPublishedData = onClearPublishedData,
       )
     }
 
@@ -784,8 +930,9 @@ class NavLeaseCoordinatorTest {
       owner: Any,
       state: Lifecycle.State = Lifecycle.State.RESUMED,
       transaction: ITransaction? = null,
+      onClearPublishedData: (IScope) -> Unit = { cleared += owner },
     ) {
-      register(owner, state)
+      register(owner, state, onClearPublishedData)
       navLeaseCoordinator.onBackStackUpdate(owner, scope)
       if (transaction != null) {
         navLeaseCoordinator.retainTransaction(owner, transaction)

@@ -155,21 +155,37 @@ internal class NavLeaseCoordinator {
    * A `null` scope (e.g., the SDK is disabled) still removes the candidate, but its transaction is
    * left to time out, its published data is left in place, and the lease is released rather than
    * handed off.
+   *
+   * Coordinator references are released even if scope cleanup or lease handoff throws. The
+   * exception is left to the caller to handle; remaining scope cleanup may be incomplete.
    */
   fun unregisterCandidate(owner: Any, scope: IScope?) {
     findCandidate(owner)?.let {
-      finishTransaction(it, scope)
-      candidates.remove(it)
+      try {
+        finishTransaction(it, scope)
+        candidates.remove(it)
 
-      if (publishedDataCandidate === it) {
-        publishedDataCandidate = null
-        if (scope != null) {
-          it.onClearPublishedData(scope)
+        if (publishedDataCandidate === it) {
+          publishedDataCandidate = null
+          if (scope != null) {
+            it.onClearPublishedData(scope)
+          }
         }
-      }
 
-      if (leaseHolder === it) {
-        handOffLease(mostRecentlyResumedCandidate(), scope)
+        if (leaseHolder === it) {
+          handOffLease(mostRecentlyResumedCandidate(), scope)
+        }
+      } finally {
+        // Scope observers and transaction callbacks can throw. Never retain a departing owner
+        // just because cleanup failed, and preserve any successor selected during handoff.
+        candidates.remove(it)
+        it.transaction = null
+        if (publishedDataCandidate === it) {
+          publishedDataCandidate = null
+        }
+        if (leaseHolder === it) {
+          leaseHolder = null
+        }
       }
     }
   }
