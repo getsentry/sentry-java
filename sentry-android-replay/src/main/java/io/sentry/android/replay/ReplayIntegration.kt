@@ -340,23 +340,17 @@ public class ReplayIntegration(
       return
     }
 
-    var activeStrategy: CaptureStrategy = strategy
+    // Convert before capturing, so the callback knows which strategy continues the replay.
+    val activeStrategy = strategy.convert()
     capture(strategy) { newTimestamp ->
-      enqueueOnMainThread {
-        val latest = state.get()
-        // The flush completes asynchronously; ignore it if this replay was stopped, restarted,
-        // or handed to another strategy in the meantime.
-        if (
-          latest.matches(expectedGeneration, expectedReplayId) &&
-            latest.captureStrategy === activeStrategy
-        ) {
-          activeStrategy.currentSegment++
-          activeStrategy.segmentTimestamp = newTimestamp
-          activeStrategy.isFlushed = true
-        }
-      }
+      // Runs on the replay executor, which the converted strategy shares. Advancing the segment
+      // here lands before any segment the converted strategy creates later (e.g. on stop), so the
+      // flushed segment id is not reused. A stale strategy (stopped or restarted replay) is not
+      // in the state anymore, so updating it has no effect.
+      activeStrategy.currentSegment++
+      activeStrategy.segmentTimestamp = newTimestamp
+      activeStrategy.isFlushed = true
     }
-    activeStrategy = strategy.convert()
     val replayId: SentryId? = activeStrategy.currentReplayId
     state.set(
       current.copy(

@@ -43,6 +43,7 @@
     <ID>FunctionParameterNaming:PixelCopyStrategyTest.kt$DeferredWindowPixelCopyShadow.Companion$_dest: Bitmap</ID>
     <ID>FunctionParameterNaming:PixelCopyStrategyTest.kt$DeferredWindowPixelCopyShadow.Companion$_source: Window</ID>
     <ID>LargeClass:CanvasStrategy.kt$TextIgnoringDelegateCanvas : Canvas</ID>
+    <ID>LargeClass:ReplayCacheTest.kt$ReplayCacheTest</ID>
     <ID>LargeClass:ReplayIntegrationTest.kt$ReplayIntegrationTest</ID>
     <ID>LongMethod:CaptureStrategy.kt$CaptureStrategy.Companion$@Suppress("NewApi") private fun buildReplay( options: SentryOptions, video: File, currentReplayId: SentryId, segmentTimestamp: Date, segmentId: Int, height: Int, width: Int, frameCount: Int, frameRate: Int, videoDuration: Long, replayType: ReplayType, screenAtStart: String?, breadcrumbs: List&lt;Breadcrumb>, events: Deque&lt;RRWebEvent>, traceIds: List&lt;String>, segmentNames: List&lt;String>, ): ReplaySegment</ID>
     <ID>LongMethod:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$private fun fromComposeNode( node: LayoutNode, parent: ViewHierarchyNode?, distance: Int, isComposeRoot: Boolean, options: SentryMaskingOptions, logger: ILogger, ): ViewHierarchyNode?</ID>
