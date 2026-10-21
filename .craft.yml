@@ -95,11 +95,6 @@ targets:
         packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-jul
         mainDocsUrl: https://docs.sentry.io/platforms/java/guides/jul/
         apiDocsUrl: https://javadoc.io/doc/io.sentry
-      maven:io.sentry:sentry-apache-http-client-5:
-        name: io.sentry:sentry-apache-http-client-5
-        packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-apache-http-client-5
-        mainDocsUrl: https://docs.sentry.io/platforms/java/
-        apiDocsUrl: https://javadoc.io/doc/io.sentry
       maven:io.sentry:sentry-android:
         name: io.sentry:sentry-android
         packageUrl: https://central.sonatype.com/artifact/io.sentry/sentry-android

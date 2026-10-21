@@ -41,10 +41,17 @@ public class MetricsBatchProcessor implements IMetricsBatchProcessor {
 
   public MetricsBatchProcessor(
       final @NotNull SentryOptions options, final @NotNull ISentryClient client) {
+    this(options, client, new SentryExecutorService(options));
+  }
+
+  MetricsBatchProcessor(
+      final @NotNull SentryOptions options,
+      final @NotNull ISentryClient client,
+      final @NotNull ISentryExecutorService executorService) {
     this.options = options;
     this.client = client;
     this.queue = new ConcurrentLinkedQueue<>();
-    this.executorService = new SentryExecutorService(options);
+    this.executorService = executorService;
   }
 
   @Override

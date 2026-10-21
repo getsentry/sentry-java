@@ -39,7 +39,6 @@ body:
         - sentry-openfeign
         - sentry-openfeature
         - sentry-launchdarkly-server
-        - sentry-apache-http-client-5
         - sentry-okhttp
         - sentry-reactor
         - other
