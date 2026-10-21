@@ -59,6 +59,7 @@ import java.io.Closeable
 import java.io.File
 import java.util.Date
 import java.util.LinkedList
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
@@ -85,6 +86,11 @@ public class ReplayIntegration(
       SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
     }
+
+    // Replays recorded by this process. Their folders hold segment videos the transport may still
+    // read after the replay stopped, so the startup cleanup of previous replays must keep them.
+    // Shared across instances, because a second SDK init registers a new ReplayIntegration.
+    val replayIdsOfThisProcess = CopyOnWriteArraySet<String>()
   }
 
   // needed for the Java's call site
@@ -247,6 +253,9 @@ public class ReplayIntegration(
     recorder?.start()
     strategy.start()
     val replayId: SentryId? = strategy.currentReplayId
+    if (replayId != null && replayId != SentryId.EMPTY_ID) {
+      replayIdsOfThisProcess += replayId.toString()
+    }
     state.set(
       ReplayState(
         generation = current.generation + 1,
@@ -638,15 +647,13 @@ public class ReplayIntegration(
   }
 
   private fun cleanupReplays(unfinishedReplayId: String = "") {
-    // clean up old replays
+    // clean up old replays, but keep the replays of this process and the previous process's
+    // unfinished replay (its folder is cleaned up after its envelope is assembled)
+    val keptReplayIds = replayIdsOfThisProcess + listOfNotNull(unfinishedReplayId.ifBlank { null })
     options.cacheDirPath?.let { cacheDir ->
       File(cacheDir).listFiles()?.forEach { file ->
         val name = file.name
-        if (
-          name.startsWith("replay_") &&
-            !name.contains(replayId.toString()) &&
-            !(unfinishedReplayId.isNotBlank() && name.contains(unfinishedReplayId))
-        ) {
+        if (name.startsWith("replay_") && keptReplayIds.none { name.contains(it) }) {
           FileUtils.deleteRecursively(file)
         }
       }
@@ -663,7 +670,12 @@ public class ReplayIntegration(
             return@submitSafely
           }
       val previousReplayId = SentryId(previousReplayIdString)
-      if (previousReplayId == SentryId.EMPTY_ID) {
+      // when this task runs late, the persisted replay id can already be one this process recorded,
+      // which is not a previous replay to recover
+      if (
+        previousReplayId == SentryId.EMPTY_ID ||
+          previousReplayId.toString() in replayIdsOfThisProcess
+      ) {
         cleanupReplays()
         return@submitSafely
       }
