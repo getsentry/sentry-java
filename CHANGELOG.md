@@ -50,6 +50,8 @@
 
 - Support Navigation 3 integration for multi-Activity and multi-Fragment applications, where each Activity or Fragment has its own `SentryNavEffect` ([#6305](https://github.com/getsentry/sentry-java/pull/6305))
   - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/#supported-setups) for a detailed list of supported vs unsupported app setups.
+- `SentryUserFeedbackForm` now extends `android.app.Dialog` instead of `android.app.AlertDialog` ([#6338](https://github.com/getsentry/sentry-java/pull/6338))
+  - The form never used `AlertDialog` features. Code that calls `AlertDialog`-only methods on it, such as `setButton` or `setMessage`, no longer compiles.
 
 ### Fixes
 
