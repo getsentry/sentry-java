@@ -30,4 +30,6 @@ dependencies {
   implementation(kotlin(Config.kotlinStdLib))
   implementation(libs.kotlin.test.junit)
   implementation(libs.mockito.kotlin)
+
+  testImplementation(libs.google.truth)
 }
