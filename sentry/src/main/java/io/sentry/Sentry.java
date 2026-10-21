@@ -928,19 +928,6 @@ public final class Sentry {
   }
 
   /**
-   * Captures a manually created user feedback and sends it to Sentry.
-   *
-   * @param userFeedback The user feedback to send to Sentry.
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
-   *     with the new {@link Feedback} type instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
-    getCurrentScopes().captureUserFeedback(userFeedback);
-  }
-
-  /**
    * Adds a breadcrumb to the current Scope
    *
    * @param breadcrumb the breadcrumb

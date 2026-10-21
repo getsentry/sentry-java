@@ -366,19 +366,6 @@ class SentryTest {
   }
 
   @Test
-  fun `captureUserFeedback gets forwarded to client`() {
-    initForTest { it.dsn = dsn }
-
-    val client = createSentryClientMock()
-    Sentry.getCurrentScopes().bindClient(client)
-
-    val userFeedback = UserFeedback(SentryId.EMPTY_ID)
-    Sentry.captureUserFeedback(userFeedback)
-
-    verify(client).captureUserFeedback(argThat { eventId == userFeedback.eventId })
-  }
-
-  @Test
   fun `startTransaction sets operation and description`() {
     initForTest {
       it.dsn = dsn
