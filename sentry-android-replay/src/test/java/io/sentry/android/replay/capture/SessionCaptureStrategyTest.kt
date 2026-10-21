@@ -392,6 +392,79 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
+  fun `breadcrumbs after a flush go to the next segment when the video ends later`() {
+    val breadcrumbsPerSegment = recordBreadcrumbsPerSegment()
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val start = strategy.segmentTimestamp!!.time
+
+    // the flushed video is rounded up to VIDEO_DURATION, so it ends 2.5s after the cut
+    now = start + 2500
+    strategy.flush {}
+    fixture.scope.addBreadcrumb(navigation(at = start + 2800))
+    now = start + 6000
+    strategy.stop()
+
+    assertThat(breadcrumbsPerSegment).containsExactly(0, emptyList<Long>(), 1, listOf(start + 2800))
+  }
+
+  @Test
+  fun `breadcrumbs after a flush request are sent once, with the next segment`() {
+    val breadcrumbsPerSegment = recordBreadcrumbsPerSegment()
+    val tasks = mutableListOf<Runnable>()
+    val replayExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            tasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+    val strategy = fixture.getSut(dateProvider = { now }, replayExecutor = replayExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val start = strategy.segmentTimestamp!!.time
+
+    now = start + 2500
+    strategy.flush {}
+    // arrives before the queued flush segment is created
+    fixture.scope.addBreadcrumb(navigation(at = start + 2800))
+    now = start + 6000
+    strategy.stop()
+    tasks.forEach(Runnable::run)
+
+    assertThat(breadcrumbsPerSegment).containsExactly(0, emptyList<Long>(), 1, listOf(start + 2800))
+  }
+
+  private var now = 0L
+
+  private fun navigation(at: Long) =
+    Breadcrumb(DateUtils.getDateTime(at)).apply {
+      category = "navigation"
+      type = "navigation"
+      setData("to", "screen")
+    }
+
+  /** Collects the timestamps of the breadcrumb events of each captured segment. */
+  private fun recordBreadcrumbsPerSegment(): Map<Int, List<Long>> {
+    val result = linkedMapOf<Int, List<Long>>()
+    doAnswer {
+        val segmentId = (it.arguments[0] as SentryReplayEvent).segmentId
+        val hint = it.arguments[1] as io.sentry.Hint
+        result[segmentId] =
+          hint.replayRecording!!.payload!!.filterIsInstance<RRWebBreadcrumbEvent>().map { crumb ->
+            crumb.timestamp
+          }
+        SentryId.EMPTY_ID
+      }
+      .whenever(fixture.scopes)
+      .captureReplay(any(), any())
+    return result
+  }
+
+  @Test
   fun `resume updates the timeline after a queued pause`() {
     val tasks = mutableListOf<Runnable>()
     val now = System.currentTimeMillis()

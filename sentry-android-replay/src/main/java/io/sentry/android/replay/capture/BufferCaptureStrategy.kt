@@ -281,6 +281,9 @@ constructor(
             currentConfig.recordingWidth,
             currentConfig.frameRate,
             currentConfig.bitRate,
+            // the video ends at a time rounded up to whole frames, events after the cut belong to
+            // the next segment
+            eventsEnd = DateUtils.getDateTime(now),
           )
         onSegmentCreated(segment)
       }

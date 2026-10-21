@@ -1,6 +1,7 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
+import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -154,12 +155,14 @@ constructor(
               currentConfig.recordingWidth,
               currentConfig.frameRate,
               currentConfig.bitRate,
+              eventsStart = eventsStartTimestamp ?: currentSegmentTimestamp,
             )
           if (segment is ReplaySegment.Created) {
             segment.capture(scopes)
             currentSegment++
             // set next segment timestamp as close to the previous one as possible to avoid gaps
             segmentTimestamp = segment.replay.timestamp
+            eventsStartTimestamp = segment.replay.timestamp
           }
         }
 
@@ -215,7 +218,14 @@ constructor(
             currentConfig.recordingWidth,
             currentConfig.frameRate,
             currentConfig.bitRate,
+            eventsStart = eventsStartTimestamp ?: currentSegmentTimestamp,
+            eventsEnd = DateUtils.getDateTime(requestedAt),
           )
+        if (segment is ReplaySegment.Created) {
+          // the video ends at a time rounded up to whole frames, events after the request belong
+          // to the next segment
+          eventsStartTimestamp = DateUtils.getDateTime(requestedAt)
+        }
         onSegmentCreated(segment)
       }
     )

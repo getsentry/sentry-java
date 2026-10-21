@@ -98,6 +98,10 @@ internal interface CaptureStrategy {
       events: Deque<RRWebEvent>,
       traceIds: List<String> = emptyList(),
       segmentNames: List<String> = emptyList(),
+      // The window of breadcrumbs and events can differ from the video's: the video duration is
+      // rounded up to whole frames, so its end can be later than the time the segment was cut.
+      eventsStart: Date = currentSegmentTimestamp,
+      eventsEnd: Date? = null,
     ): ReplaySegment {
       val generatedVideo =
         cache?.createVideoOf(
@@ -138,6 +142,8 @@ internal interface CaptureStrategy {
         events,
         traceIds,
         segmentNames,
+        eventsStart,
+        eventsEnd,
       )
     }
 
@@ -159,8 +165,11 @@ internal interface CaptureStrategy {
       events: Deque<RRWebEvent>,
       traceIds: List<String>,
       segmentNames: List<String>,
+      eventsStart: Date,
+      eventsEnd: Date?,
     ): ReplaySegment {
       val endTimestamp = DateUtils.getDateTime(segmentTimestamp.time + videoDuration)
+      val eventsEndTimestamp = eventsEnd ?: endTimestamp
       val replay =
         SentryReplayEvent().apply {
           this.eventId = currentReplayId
@@ -206,10 +215,10 @@ internal interface CaptureStrategy {
         val isAfterNetworkReconnected =
           previousCrumb?.isNetworkAvailable() == true &&
             breadcrumb.isNetworkConnectivity() &&
-            breadcrumb.timestamp.time + NETWORK_BREADCRUMB_START_OFFSET >= segmentTimestamp.time
+            breadcrumb.timestamp.time + NETWORK_BREADCRUMB_START_OFFSET >= eventsStart.time
         if (
-          (breadcrumb.timestamp.time >= segmentTimestamp.time || isAfterNetworkReconnected) &&
-            breadcrumb.timestamp.time < endTimestamp.time
+          (breadcrumb.timestamp.time >= eventsStart.time || isAfterNetworkReconnected) &&
+            breadcrumb.timestamp.time < eventsEndTimestamp.time
         ) {
           val rrwebEvent = options.replayController.breadcrumbConverter.convert(breadcrumb)
 
@@ -232,8 +241,8 @@ internal interface CaptureStrategy {
         urls.addFirst(screenAtStart)
       }
 
-      rotateEvents(events, endTimestamp.time) { event ->
-        if (event.timestamp >= segmentTimestamp.time) {
+      rotateEvents(events, eventsEndTimestamp.time) { event ->
+        if (event.timestamp >= eventsStart.time) {
           recordingPayload += event
         }
       }

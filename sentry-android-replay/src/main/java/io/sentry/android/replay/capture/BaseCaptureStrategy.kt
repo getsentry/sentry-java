@@ -92,6 +92,12 @@ constructor(
       )
     }
   /**
+   * Where the breadcrumbs and events of the current segment start. Usually [segmentTimestamp], but
+   * after a segment is cut early (flush, configuration change, buffer conversion) the video ends at
+   * a time rounded up to whole frames, while events after the cut belong to the next segment.
+   */
+  @Volatile protected var eventsStartTimestamp: Date? = null
+  /**
    * When the recording reaches its `sessionDuration` cap, or `null` while nothing is being
    * recorded. Only [SessionCaptureStrategy] enforces a cap; buffer mode records indefinitely.
    */
@@ -133,6 +139,7 @@ constructor(
     this.replayType = replayType ?: (if (this is SessionCaptureStrategy) SESSION else BUFFER)
 
     segmentTimestamp = DateUtils.getCurrentDateTime()
+    eventsStartTimestamp = segmentTimestamp
     replayDeadline = Deadline.after(ticker, options.sessionReplay.sessionDuration, MILLISECONDS)
     // the same values MainEventProcessor applies to current-run segments
     recordingMetadata =
@@ -152,7 +159,12 @@ constructor(
   override fun resume() {
     val resumedAt = DateUtils.getCurrentDateTime()
     // Keep the timeline update behind queued frames and pause/flush segment creation.
-    replayExecutor.submit(ReplayRunnable("$TAG.resume") { segmentTimestamp = resumedAt })
+    replayExecutor.submit(
+      ReplayRunnable("$TAG.resume") {
+        segmentTimestamp = resumedAt
+        eventsStartTimestamp = resumedAt
+      }
+    )
   }
 
   override fun pause() = Unit
@@ -164,6 +176,7 @@ constructor(
         cache?.close()
         replayDeadline = null
         segmentTimestamp = null
+        eventsStartTimestamp = null
         currentReplayId = SentryId.EMPTY_ID
       }
     )
@@ -183,6 +196,8 @@ constructor(
     screenAtStart: String? = this.screenAtStart,
     breadcrumbs: List<Breadcrumb>? = null,
     events: Deque<RRWebEvent> = this.currentEvents,
+    eventsStart: Date = currentSegmentTimestamp,
+    eventsEnd: Date? = null,
   ): ReplaySegment {
     val (traceIds, segmentNames) =
       synchronized(replayContextLock) {
@@ -209,6 +224,8 @@ constructor(
       events,
       traceIds,
       segmentNames,
+      eventsStart,
+      eventsEnd,
     )
   }
 

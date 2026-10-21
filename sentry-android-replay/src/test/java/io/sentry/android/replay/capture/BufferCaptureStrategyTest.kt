@@ -2,7 +2,9 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import android.view.MotionEvent
+import io.sentry.Breadcrumb
 import io.sentry.DataCategory
+import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
@@ -23,6 +25,7 @@ import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Compan
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
+import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
@@ -39,6 +42,7 @@ import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -445,6 +449,49 @@ class BufferCaptureStrategyTest {
     }
 
     verify(fixture.scopes).captureReplay(any(), any())
+  }
+
+  @Test
+  fun `captureReplay leaves breadcrumbs after the cut to the next segment`() {
+    val now = System.currentTimeMillis()
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    whenever(fixture.replayCache.firstFrameTimestamp()).thenReturn(now - 4000)
+    // rounded up to whole frames, the video ends 1s after the cut
+    whenever(
+        fixture.replayCache.createVideoOf(
+          anyLong(),
+          anyLong(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          anyInt(),
+          any(),
+        )
+      )
+      .thenReturn(GeneratedVideo(File("0.mp4"), 5, 5000))
+    // arrived before the queued segment was created; the session strategy that continues the
+    // replay sends it, so the buffered segment must not
+    fixture.scope.addBreadcrumb(
+      Breadcrumb(DateUtils.getDateTime(now + 300)).apply {
+        category = "navigation"
+        type = "navigation"
+        setData("to", "screen")
+      }
+    )
+
+    strategy.captureReplay(false) {}
+
+    verify(fixture.scopes)
+      .captureReplay(
+        any(),
+        check {
+          val crumbs = it.replayRecording!!.payload!!.filterIsInstance<RRWebBreadcrumbEvent>()
+          assertTrue(crumbs.isEmpty())
+        },
+      )
   }
 
   @Test
