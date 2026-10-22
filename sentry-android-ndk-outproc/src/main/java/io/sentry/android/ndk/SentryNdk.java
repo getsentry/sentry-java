@@ -1,8 +1,10 @@
 package io.sentry.android.ndk;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.Application;
 import android.content.Context;
+import android.content.ServiceConnection;
 import android.os.Build;
 import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
@@ -20,6 +22,11 @@ import org.jetbrains.annotations.Nullable;
 public final class SentryNdk {
 
   private static final @NotNull CountDownLatch loadLibraryLatch = new CountDownLatch(1);
+
+  @SuppressLint("StaticFieldLeak") // the application context from NdkIntegration
+  private static @Nullable Context serviceContext;
+
+  private static @Nullable ServiceConnection serviceConnection;
 
   private SentryNdk() {}
 
@@ -62,6 +69,11 @@ public final class SentryNdk {
       return;
     }
 
+    // no fork/exec fallback, the native crash daemon only runs in the crash service
+    if (context == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+      throw new IllegalStateException("The NDK crash service needs a context and API 30+");
+    }
+
     SentryNdkUtil.addPackage(options.getSdkVersion());
     try {
       if (loadLibraryLatch.await(2000, TimeUnit.MILLISECONDS)) {
@@ -100,12 +112,21 @@ public final class SentryNdk {
         ndkOptions.setEnableAppHangTracking(options.isEnableNdkAppHangTracking());
         ndkOptions.setAppHangTimeoutMillis(options.getNdkAppHangTimeoutIntervalMillis());
 
-        if (context != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-          SentryNdkCrashService.start(context, options);
+        final @Nullable ServiceConnection connection =
+            SentryNdkCrashService.start(context, options);
+        if (connection == null) {
+          throw new IllegalStateException("Failed to start the NDK crash service");
         }
+        serviceContext = context;
+        serviceConnection = connection;
 
-        //noinspection UnstableApiUsage
-        io.sentry.ndk.SentryNdk.init(ndkOptions);
+        try {
+          //noinspection UnstableApiUsage
+          io.sentry.ndk.SentryNdk.init(ndkOptions);
+        } catch (IllegalStateException e) {
+          unbindCrashService();
+          throw e;
+        }
 
         // only add scope sync observer if the scope sync is enabled.
         if (options.isEnableScopeSync()) {
@@ -134,6 +155,18 @@ public final class SentryNdk {
     } catch (InterruptedException e) {
       throw new IllegalStateException(
           "Thread interrupted while waiting for NDK libs to be loaded", e);
+    } finally {
+      unbindCrashService();
+    }
+  }
+
+  private static void unbindCrashService() {
+    final @Nullable Context context = serviceContext;
+    final @Nullable ServiceConnection connection = serviceConnection;
+    serviceContext = null;
+    serviceConnection = null;
+    if (context != null && connection != null) {
+      context.unbindService(connection);
     }
   }
 

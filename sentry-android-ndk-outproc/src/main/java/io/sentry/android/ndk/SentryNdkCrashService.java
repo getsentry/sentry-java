@@ -16,6 +16,7 @@ import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.RemoteException;
 import io.sentry.DateUtils;
+import io.sentry.ILogger;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
@@ -39,8 +40,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -49,20 +48,6 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryNdkCrashService extends Service {
 
-  private static final @NotNull String EXTRA_NATIVE_DATABASE_PATH =
-      "io.sentry.android.ndk.NATIVE_DATABASE_PATH";
-  private static final @NotNull String EXTRA_NATIVE_LIBRARY_DIR =
-      "io.sentry.android.ndk.NATIVE_LIBRARY_DIR";
-  private static final @NotNull String EXTRA_TOMBSTONE_ENABLED =
-      "io.sentry.android.ndk.TOMBSTONE_ENABLED";
-  private static final @NotNull String EXTRA_DEBUG = "io.sentry.android.ndk.DEBUG";
-  private static final @NotNull String EXTRA_SHUTDOWN_TIMEOUT_MILLIS =
-      "io.sentry.android.ndk.SHUTDOWN_TIMEOUT_MILLIS";
-  private static final @NotNull String EXTRA_IN_APP_INCLUDES =
-      "io.sentry.android.ndk.IN_APP_INCLUDES";
-  private static final @NotNull String EXTRA_IN_APP_EXCLUDES =
-      "io.sentry.android.ndk.IN_APP_EXCLUDES";
-  private static final @NotNull String EXTRA_SHM_PATH = "io.sentry.android.ndk.SHM_PATH";
   private static final @NotNull String BINDER_DESCRIPTOR = "io.sentry.android.ndk.CrashService";
   private static final int TRANSACTION_CONFIGURE = IBinder.FIRST_CALL_TRANSACTION;
 
@@ -73,9 +58,6 @@ public final class SentryNdkCrashService extends Service {
   private final @NotNull Object lock = new Object();
 
   private @Nullable Thread daemonWorker;
-  private int lastStartId = 0;
-  private @Nullable String lastStartShmPath;
-  private volatile boolean running = false;
   private @Nullable File nativeDatabaseDir;
   private @Nullable String nativeLibraryDir;
   private @Nullable String shmPath;
@@ -140,14 +122,14 @@ public final class SentryNdkCrashService extends Service {
         }
       };
 
-  static boolean start(
+  static @Nullable ServiceConnection start(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
     final @Nullable String outboxPath = options.getOutboxPath();
     if (outboxPath == null) {
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "Outbox path is null, not starting NDK crash service.");
-      return false;
+      return null;
     }
 
     final @Nullable File cacheDir = new File(outboxPath).getParentFile();
@@ -155,13 +137,13 @@ public final class SentryNdkCrashService extends Service {
       options
           .getLogger()
           .log(SentryLevel.DEBUG, "Cache dir is null, not starting NDK crash service.");
-      return false;
+      return null;
     }
 
     final File nativeDatabaseDir = new File(cacheDir, ".sentry-native");
     if (!nativeDatabaseDir.exists() && !nativeDatabaseDir.mkdirs()) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to create NDK database directory.");
-      return false;
+      return null;
     }
 
     final long ipcId = System.nanoTime();
@@ -186,14 +168,11 @@ public final class SentryNdkCrashService extends Service {
       messageRead = messageSocket[1];
 
       final Intent intent = new Intent(context, SentryNdkCrashService.class);
-      putServiceOptions(context, options, nativeDatabaseDir, intent);
-      intent.putExtra(EXTRA_SHM_PATH, shmFile.getPath());
-
-      context.startService(intent);
-      final boolean configured =
+      final @Nullable ServiceConnection connection =
           configureService(
               context,
               intent,
+              options.getLogger(),
               nativeDatabaseDir.getPath(),
               context.getApplicationInfo().nativeLibraryDir,
               shmFile.getPath(),
@@ -207,21 +186,21 @@ public final class SentryNdkCrashService extends Service {
               notifyRead,
               readyWrite,
               messageRead);
-      if (!configured) {
+      if (connection == null) {
         options.getLogger().log(SentryLevel.DEBUG, "NDK crash service did not configure.");
-        return false;
+        return null;
       }
 
       io.sentry.ndk.SentryNdk.initCrashDaemon(
           shmFile.getPath(), notifyWrite.detachFd(), readyRead.detachFd(), messageWrite.detachFd());
-      return true;
+      return connection;
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       options.getLogger().log(SentryLevel.DEBUG, e, "Failed to start NDK crash service.");
-      return false;
-    } catch (IOException | SecurityException | IllegalStateException e) {
+      return null;
+    } catch (IOException | SecurityException e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Failed to start NDK crash service.");
-      return false;
+      return null;
     } finally {
       closeQuietly(notifyRead);
       closeQuietly(notifyWrite);
@@ -230,43 +209,6 @@ public final class SentryNdkCrashService extends Service {
       closeQuietly(messageWrite);
       closeQuietly(messageRead);
     }
-  }
-
-  @Override
-  public int onStartCommand(final @Nullable Intent intent, final int flags, final int startId) {
-    if (intent != null) {
-      final @Nullable String nativeDatabasePath = intent.getStringExtra(EXTRA_NATIVE_DATABASE_PATH);
-      if (nativeDatabasePath != null) {
-        nativeDatabaseDir = new File(nativeDatabasePath);
-      }
-      nativeLibraryDir = intent.getStringExtra(EXTRA_NATIVE_LIBRARY_DIR);
-      tombstoneEnabled = intent.getBooleanExtra(EXTRA_TOMBSTONE_ENABLED, false);
-      debug = intent.getBooleanExtra(EXTRA_DEBUG, false);
-      shutdownTimeoutMillis = intent.getLongExtra(EXTRA_SHUTDOWN_TIMEOUT_MILLIS, 0);
-      final @Nullable ArrayList<String> includes =
-          intent.getStringArrayListExtra(EXTRA_IN_APP_INCLUDES);
-      final @Nullable ArrayList<String> excludes =
-          intent.getStringArrayListExtra(EXTRA_IN_APP_EXCLUDES);
-      inAppIncludes = includes != null ? includes : new ArrayList<>();
-      inAppExcludes = excludes != null ? excludes : new ArrayList<>();
-    }
-
-    synchronized (lock) {
-      lastStartId = startId;
-      lastStartShmPath = intent != null ? intent.getStringExtra(EXTRA_SHM_PATH) : null;
-      startWorkersLocked();
-    }
-    return START_NOT_STICKY;
-  }
-
-  @Override
-  public void onDestroy() {
-    running = false;
-    final @Nullable Thread daemonThread = daemonWorker;
-    if (daemonThread != null) {
-      daemonThread.interrupt();
-    }
-    super.onDestroy();
   }
 
   @Override
@@ -284,27 +226,10 @@ public final class SentryNdkCrashService extends Service {
     }
   }
 
-  private static void putServiceOptions(
-      final @NotNull Context context,
-      final @NotNull SentryAndroidOptions options,
-      final @NotNull File nativeDatabaseDir,
-      final @NotNull Intent intent) {
-    intent.putExtra(EXTRA_NATIVE_DATABASE_PATH, nativeDatabaseDir.getPath());
-    intent.putExtra(EXTRA_NATIVE_LIBRARY_DIR, context.getApplicationInfo().nativeLibraryDir);
-    intent.putExtra(
-        EXTRA_TOMBSTONE_ENABLED,
-        options.isTombstoneEnabled() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S);
-    intent.putExtra(EXTRA_DEBUG, options.isDebug());
-    intent.putExtra(EXTRA_SHUTDOWN_TIMEOUT_MILLIS, options.getShutdownTimeoutMillis());
-    intent.putStringArrayListExtra(
-        EXTRA_IN_APP_INCLUDES, new ArrayList<>(options.getInAppIncludes()));
-    intent.putStringArrayListExtra(
-        EXTRA_IN_APP_EXCLUDES, new ArrayList<>(options.getInAppExcludes()));
-  }
-
-  private static boolean configureService(
+  private static @Nullable ServiceConnection configureService(
       final @NotNull Context context,
       final @NotNull Intent intent,
+      final @NotNull ILogger logger,
       final @NotNull String nativeDatabasePath,
       final @Nullable String nativeLibraryDir,
       final @NotNull String shmPath,
@@ -322,7 +247,6 @@ public final class SentryNdkCrashService extends Service {
     final CountDownLatch latch = new CountDownLatch(1);
     final boolean[] configured = new boolean[] {false};
     final boolean[] bound = new boolean[] {false};
-    final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     final ServiceConnection connection =
         new ServiceConnection() {
@@ -350,26 +274,35 @@ public final class SentryNdkCrashService extends Service {
 
           @Override
           public void onServiceDisconnected(final @NotNull ComponentName name) {
+            logger.log(SentryLevel.WARNING, "NDK crash service disconnected.");
+            latch.countDown();
+          }
+
+          @Override
+          public void onBindingDied(final @NotNull ComponentName name) {
+            logger.log(SentryLevel.WARNING, "NDK crash service binding died.");
             latch.countDown();
           }
         };
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      bound[0] = context.bindService(intent, Context.BIND_AUTO_CREATE, executor, connection);
+      // deliver callbacks on the binder thread, the caller blocks on the latch
+      bound[0] = context.bindService(intent, Context.BIND_AUTO_CREATE, Runnable::run, connection);
     } else {
       bound[0] = context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
     if (!bound[0]) {
-      executor.shutdown();
-      return false;
+      return null;
     }
+    boolean ready = false;
     try {
-      return latch.await(10000, TimeUnit.MILLISECONDS) && configured[0];
+      ready = latch.await(10000, TimeUnit.MILLISECONDS) && configured[0];
+      // stay bound, so the service process keeps the app's importance and is not frozen
+      return ready ? connection : null;
     } finally {
-      if (bound[0]) {
+      if (!ready) {
         context.unbindService(connection);
       }
-      executor.shutdown();
     }
   }
 
@@ -461,9 +394,6 @@ public final class SentryNdkCrashService extends Service {
   }
 
   private void startWorkersLocked() {
-    if (!running) {
-      running = true;
-    }
     if (daemonWorker == null && isDaemonConfigured()) {
       final @Nullable String path = shmPath;
       daemonWorker = new Thread(() -> runDaemonWorker(path), "SentryNdkCrashService");
@@ -477,46 +407,40 @@ public final class SentryNdkCrashService extends Service {
     options.setDebug(debug);
 
     try {
-      while (running) {
-        if (path == null
-            || notifyReadFd < 0
-            || readyWriteFd < 0
-            || messageReadFd < 0
-            || appPid < 0) {
+      if (path == null || notifyReadFd < 0 || readyWriteFd < 0 || messageReadFd < 0 || appPid < 0) {
+        return;
+      }
+
+      // keeps going after onDestroy, a crashed app's binding goes away mid-crash
+      try (final @Nullable CrashDaemon daemon =
+              io.sentry.ndk.SentryNdk.runCrashDaemon(
+                  appPid, appTid, notifyReadFd, readyWriteFd, messageReadFd, path)) {
+        if (daemon == null) {
+          return;
+        }
+        final @Nullable String envelopePath = daemon.getEnvelopePath();
+        if (envelopePath == null) {
           return;
         }
 
-        try (final @Nullable CrashDaemon daemon =
-                io.sentry.ndk.SentryNdk.runCrashDaemon(
-                    appPid, appTid, notifyReadFd, readyWriteFd, messageReadFd, path)) {
-          if (daemon == null || !running) {
-            return;
-          }
-          final @Nullable String envelopePath = daemon.getEnvelopePath();
-          if (envelopePath == null) {
-            return;
-          }
-
-          final long deadlineMillis = System.currentTimeMillis() + shutdownTimeoutMillis;
-          final File envelope = new File(envelopePath);
-          final @Nullable MergedEnvelope mergedEnvelope =
-              tombstoneEnabled ? waitForMergedEnvelope(options, envelope, deadlineMillis) : null;
-          if (tombstoneEnabled && mergedEnvelope == null) {
-            options
-                .getLogger()
-                .log(SentryLevel.DEBUG, "Sending NDK crash without tombstone enrichment.");
-          }
-
-          final long remainingMillis = Math.max(0, deadlineMillis - System.currentTimeMillis());
-          if (!daemon.sendEnvelope(
-              mergedEnvelope != null ? mergedEnvelope.file.getPath() : envelope.getPath(),
-              remainingMillis)) {
-            options.getLogger().log(SentryLevel.DEBUG, "Failed to send NDK crash envelope.");
-          } else if (mergedEnvelope != null) {
-            writeLastTombstoneMarker(envelope, mergedEnvelope.tombstoneTimestamp);
-          }
+        final long deadlineMillis = System.currentTimeMillis() + shutdownTimeoutMillis;
+        final File envelope = new File(envelopePath);
+        final @Nullable MergedEnvelope mergedEnvelope =
+            tombstoneEnabled ? waitForMergedEnvelope(options, envelope, deadlineMillis) : null;
+        if (tombstoneEnabled && mergedEnvelope == null) {
+          options
+              .getLogger()
+              .log(SentryLevel.DEBUG, "Sending NDK crash without tombstone enrichment.");
         }
-        return;
+
+        final long remainingMillis = Math.max(0, deadlineMillis - System.currentTimeMillis());
+        if (!daemon.sendEnvelope(
+            mergedEnvelope != null ? mergedEnvelope.file.getPath() : envelope.getPath(),
+            remainingMillis)) {
+          options.getLogger().log(SentryLevel.DEBUG, "Failed to send NDK crash envelope.");
+        } else if (mergedEnvelope != null) {
+          writeLastTombstoneMarker(envelope, mergedEnvelope.tombstoneTimestamp);
+        }
       }
     } catch (InterruptedException | IOException e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Error running NDK crash service.");
@@ -529,9 +453,6 @@ public final class SentryNdkCrashService extends Service {
         appPid = -1;
         appTid = 0;
         shmPath = null;
-        if (path != null && path.equals(lastStartShmPath)) {
-          stopSelf(lastStartId);
-        }
       }
     }
   }
@@ -549,7 +470,7 @@ public final class SentryNdkCrashService extends Service {
       final @NotNull File envelope,
       final long deadlineMillis)
       throws InterruptedException {
-    do {
+    while (true) {
       final @Nullable MergedEnvelope mergedEnvelope = processEnvelope(options, envelope);
       if (mergedEnvelope != null) {
         return mergedEnvelope;
@@ -560,8 +481,7 @@ public final class SentryNdkCrashService extends Service {
         return null;
       }
       Thread.sleep(Math.min(POLL_INTERVAL_MILLIS, remainingMillis));
-    } while (running);
-    return null;
+    }
   }
 
   @SuppressLint("NewApi")

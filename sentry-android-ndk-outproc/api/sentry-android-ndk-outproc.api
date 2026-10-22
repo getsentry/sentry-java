@@ -36,7 +36,5 @@ public final class io/sentry/android/ndk/SentryNdk {
 public final class io/sentry/android/ndk/SentryNdkCrashService : android/app/Service {
 	public fun <init> ()V
 	public fun onBind (Landroid/content/Intent;)Landroid/os/IBinder;
-	public fun onDestroy ()V
-	public fun onStartCommand (Landroid/content/Intent;II)I
 }
 
