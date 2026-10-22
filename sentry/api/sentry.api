@@ -729,7 +729,6 @@ public final class io/sentry/HubAdapter : io/sentry/IHub {
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
 	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -806,7 +805,6 @@ public final class io/sentry/HubScopesWrapper : io/sentry/IHub {
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
 	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -1105,7 +1103,6 @@ public abstract interface class io/sentry/IScopes {
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public abstract fun clearBreadcrumbs ()V
 	public abstract fun clone ()Lio/sentry/IHub;
 	public abstract fun close ()V
@@ -1206,7 +1203,6 @@ public abstract interface class io/sentry/ISentryClient {
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public abstract fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public abstract fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public abstract fun close ()V
 	public abstract fun close (Z)V
 	public abstract fun flush (J)V
@@ -1728,7 +1724,6 @@ public final class io/sentry/NoOpHub : io/sentry/IHub {
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
 	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -1923,7 +1918,6 @@ public final class io/sentry/NoOpScopes : io/sentry/IScopes {
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
 	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -2674,7 +2668,6 @@ public final class io/sentry/Scopes : io/sentry/IScopes {
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
 	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -2754,7 +2747,6 @@ public final class io/sentry/ScopesAdapter : io/sentry/IScopes {
 	public fun captureProfileChunk (Lio/sentry/ProfileChunk;)Lio/sentry/protocol/SentryId;
 	public fun captureReplay (Lio/sentry/SentryReplayEvent;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun clearBreadcrumbs ()V
 	public fun clone ()Lio/sentry/IHub;
 	public synthetic fun clone ()Ljava/lang/Object;
@@ -2873,14 +2865,10 @@ public final class io/sentry/Sentry {
 	public static fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public static fun captureException (Ljava/lang/Throwable;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public static fun captureException (Ljava/lang/Throwable;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public static fun captureFeedback (Lio/sentry/protocol/Feedback;)Lio/sentry/protocol/SentryId;
-	public static fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
-	public static fun captureFeedback (Lio/sentry/protocol/Feedback;Lio/sentry/Hint;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;)Lio/sentry/protocol/SentryId;
 	public static fun captureMessage (Ljava/lang/String;Lio/sentry/SentryLevel;Lio/sentry/ScopeCallback;)Lio/sentry/protocol/SentryId;
-	public static fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public static fun clearBreadcrumbs ()V
 	public static fun close ()V
 	public static fun configureScope (Lio/sentry/ScopeCallback;)V
@@ -2935,9 +2923,6 @@ public final class io/sentry/Sentry {
 	public static fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public static fun setTransaction (Ljava/lang/String;)V
 	public static fun setUser (Lio/sentry/protocol/User;)V
-	public static fun showUserFeedbackDialog ()V
-	public static fun showUserFeedbackDialog (Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
-	public static fun showUserFeedbackDialog (Lio/sentry/protocol/SentryId;Lio/sentry/SentryFeedbackOptions$OptionsConfigurator;)V
 	public static fun startProfiler ()V
 	public static fun startSession ()V
 	public static fun startTransaction (Lio/sentry/TransactionContext;)Lio/sentry/ITransaction;
@@ -3134,7 +3119,6 @@ public final class io/sentry/SentryClient : io/sentry/ISentryClient {
 	public fun captureReplayEvent (Lio/sentry/SentryReplayEvent;Lio/sentry/IScope;Lio/sentry/Hint;)Lio/sentry/protocol/SentryId;
 	public fun captureSession (Lio/sentry/Session;Lio/sentry/Hint;)V
 	public fun captureTransaction (Lio/sentry/protocol/SentryTransaction;Lio/sentry/TraceContext;Lio/sentry/IScope;Lio/sentry/Hint;Lio/sentry/ProfilingTraceData;)Lio/sentry/protocol/SentryId;
-	public fun captureUserFeedback (Lio/sentry/UserFeedback;)V
 	public fun close ()V
 	public fun close (Z)V
 	public fun flush (J)V
@@ -3218,7 +3202,6 @@ public final class io/sentry/SentryEnvelopeItem {
 	public static fun fromProfilingTrace (Lio/sentry/ProfilingTraceData;JLio/sentry/ISerializer;)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromReplay (Lio/sentry/ISerializer;Lio/sentry/ILogger;Lio/sentry/SentryReplayEvent;Lio/sentry/ReplayRecording;Z)Lio/sentry/SentryEnvelopeItem;
 	public static fun fromSession (Lio/sentry/ISerializer;Lio/sentry/Session;)Lio/sentry/SentryEnvelopeItem;
-	public static fun fromUserFeedback (Lio/sentry/ISerializer;Lio/sentry/UserFeedback;)Lio/sentry/SentryEnvelopeItem;
 	public fun getClientReport (Lio/sentry/ISerializer;)Lio/sentry/clientreport/ClientReport;
 	public fun getData ()[B
 	public fun getEvent (Lio/sentry/ISerializer;)Lio/sentry/SentryEvent;
@@ -4912,36 +4895,6 @@ public final class io/sentry/UpdateStatus$UpdateError : io/sentry/UpdateStatus {
 	public fun <init> (Ljava/lang/String;)V
 	public fun getMessage ()Ljava/lang/String;
 	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/sentry/UserFeedback : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
-	public fun <init> (Lio/sentry/protocol/SentryId;)V
-	public fun <init> (Lio/sentry/protocol/SentryId;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
-	public fun getComments ()Ljava/lang/String;
-	public fun getEmail ()Ljava/lang/String;
-	public fun getEventId ()Lio/sentry/protocol/SentryId;
-	public fun getName ()Ljava/lang/String;
-	public fun getUnknown ()Ljava/util/Map;
-	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
-	public fun setComments (Ljava/lang/String;)V
-	public fun setEmail (Ljava/lang/String;)V
-	public fun setName (Ljava/lang/String;)V
-	public fun setUnknown (Ljava/util/Map;)V
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/sentry/UserFeedback$Deserializer : io/sentry/JsonDeserializer {
-	public fun <init> ()V
-	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/UserFeedback;
-	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
-}
-
-public final class io/sentry/UserFeedback$JsonKeys {
-	public static final field COMMENTS Ljava/lang/String;
-	public static final field EMAIL Ljava/lang/String;
-	public static final field EVENT_ID Ljava/lang/String;
-	public static final field NAME Ljava/lang/String;
-	public fun <init> ()V
 }
 
 public final class io/sentry/W3CTraceparentHeader {

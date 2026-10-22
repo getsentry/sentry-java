@@ -96,13 +96,6 @@ class ScopesAdapterTest {
   }
 
   @Test
-  fun `captureUserFeedback calls Scopes`() {
-    val userFeedback = mock<UserFeedback>()
-    ScopesAdapter.getInstance().captureUserFeedback(userFeedback)
-    verify(scopes).captureUserFeedback(eq(userFeedback))
-  }
-
-  @Test
   fun `captureCheckIn calls Scopes`() {
     val checkIn = mock<CheckIn>()
     ScopesAdapter.getInstance().captureCheckIn(checkIn)

@@ -143,7 +143,6 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SpanStatus.class, new SpanStatus.Deserializer());
     deserializersByClass.put(User.class, new User.Deserializer());
     deserializersByClass.put(Geo.class, new Geo.Deserializer());
-    deserializersByClass.put(UserFeedback.class, new UserFeedback.Deserializer());
     deserializersByClass.put(ClientReport.class, new ClientReport.Deserializer());
     deserializersByClass.put(ViewHierarchyNode.class, new ViewHierarchyNode.Deserializer());
     deserializersByClass.put(ViewHierarchy.class, new ViewHierarchy.Deserializer());

@@ -1405,31 +1405,6 @@ class JsonSerializerTest {
   }
 
   @Test
-  fun `serializing user feedback`() {
-    val actual = serializeToString(userFeedback)
-
-    val expected =
-      "{\"event_id\":\"${userFeedback.eventId}\",\"name\":\"${userFeedback.name}\"," +
-        "\"email\":\"${userFeedback.email}\",\"comments\":\"${userFeedback.comments}\"}"
-
-    assertEquals(expected, actual)
-  }
-
-  @Test
-  fun `deserializing user feedback`() {
-    val jsonUserFeedback =
-      "{\"event_id\":\"c2fb8fee2e2b49758bcb67cda0f713c7\"," +
-        "\"name\":\"John\",\"email\":\"john@me.com\",\"comments\":\"comment\"}"
-    val actual =
-      fixture.serializer.deserialize(StringReader(jsonUserFeedback), UserFeedback::class.java)
-    assertNotNull(actual)
-    assertEquals(userFeedback.eventId, actual.eventId)
-    assertEquals(userFeedback.name, actual.name)
-    assertEquals(userFeedback.email, actual.email)
-    assertEquals(userFeedback.comments, actual.comments)
-  }
-
-  @Test
   fun `serialize envelope with item throwing`() {
     val eventID = SentryId()
     val header = SentryEnvelopeHeader(eventID)
@@ -1743,16 +1718,6 @@ class JsonSerializerTest {
       "io.sentry@1.0+123",
       "anr_foreground",
     )
-
-  private val userFeedback: UserFeedback
-    get() {
-      val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-      return UserFeedback(eventId).apply {
-        name = "John"
-        email = "john@me.com"
-        comments = "comment"
-      }
-    }
 
   private val appStartProfilingOptions =
     SentryAppStartProfilingOptions().apply {

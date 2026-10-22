@@ -76,11 +76,6 @@ public final class HubScopesWrapper implements IHub {
   }
 
   @Override
-  public void captureUserFeedback(@NotNull UserFeedback userFeedback) {
-    scopes.captureUserFeedback(userFeedback);
-  }
-
-  @Override
   public void startSession() {
     scopes.startSession();
   }
