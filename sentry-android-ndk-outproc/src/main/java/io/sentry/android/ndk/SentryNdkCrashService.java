@@ -72,6 +72,7 @@ public final class SentryNdkCrashService extends Service {
   private final @NotNull Object lock = new Object();
 
   private @Nullable Thread daemonWorker;
+  private int lastStartId = 0;
   private volatile boolean running = false;
   private @Nullable File nativeDatabaseDir;
   private @Nullable String nativeLibraryDir;
@@ -248,6 +249,7 @@ public final class SentryNdkCrashService extends Service {
     }
 
     synchronized (lock) {
+      lastStartId = startId;
       startWorkersLocked();
     }
     return START_NOT_STICKY;
@@ -459,12 +461,13 @@ public final class SentryNdkCrashService extends Service {
       running = true;
     }
     if (daemonWorker == null && isDaemonConfigured()) {
-      daemonWorker = new Thread(this::runDaemonWorker, "SentryNdkCrashService");
+      final int startId = lastStartId;
+      daemonWorker = new Thread(() -> runDaemonWorker(startId), "SentryNdkCrashService");
       daemonWorker.start();
     }
   }
 
-  private void runDaemonWorker() {
+  private void runDaemonWorker(final int startId) {
     final SentryAndroidOptions options = new SentryAndroidOptions();
     options.setLogger(new AndroidLogger("SentryNdkCrash"));
     options.setDebug(debug);
@@ -522,6 +525,7 @@ public final class SentryNdkCrashService extends Service {
         appTid = 0;
         shmPath = null;
       }
+      stopSelf(startId);
     }
   }
 
