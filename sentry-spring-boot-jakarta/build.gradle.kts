@@ -1,3 +1,4 @@
+import io.sentry.gradle.ChildJvmTestArguments
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -137,5 +138,55 @@ tasks.jar {
       "Implementation-Title" to project.name,
       "Implementation-Version" to project.version,
     )
+  }
+}
+
+// The OpenTelemetry agent tests run this app in a child JVM, on its own classpath like a real app
+// with the agent attached, rather than on the test's classpath.
+val agentFixture = sourceSets.create("agentFixture")
+
+// The built agent jar, rather than the plain jar the unit tests compile against.
+val otelAgentJar =
+  configurations.create("otelAgentJar") {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+    isTransitive = false
+    attributes {
+      attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+      attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.SHADOWED))
+    }
+  }
+
+dependencies {
+  "agentFixtureImplementation"(platform(SpringBootPlugin.BOM_COORDINATES))
+  "agentFixtureImplementation"(projects.sentrySpringBootStarterJakarta)
+  "agentFixtureImplementation"(projects.sentryLogback)
+  "agentFixtureImplementation"(kotlin(Config.kotlinStdLib))
+  "agentFixtureImplementation"(libs.otel)
+  "agentFixtureImplementation"(libs.springboot3.starter.web)
+
+  otelAgentJar(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
+}
+
+testing {
+  suites {
+    register<JvmTestSuite>("integrationTestOtelAgent") {
+      useJUnit()
+      dependencies {
+        implementation(projects.sentryTestSupport)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+      }
+      targets.all {
+        testTask.configure {
+          jvmArgumentProviders.add(
+            objects.newInstance<ChildJvmTestArguments>().apply {
+              agentJar.from(otelAgentJar)
+              appClasspath.from(agentFixture.runtimeClasspath)
+            }
+          )
+        }
+      }
+    }
   }
 }
