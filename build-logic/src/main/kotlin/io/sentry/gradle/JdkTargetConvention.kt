@@ -27,6 +27,7 @@ private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_1_8
  * - sample apps target the build JDK (21)
  * - unit test code will target the build JDK (21) (required for Mockito 5)
  * - published JVM modules main code pins the Java 1.8 release, for Java and for Kotlin
+ * - published modules main Java code drops the MethodParameters attribute javac 21 adds
  * - published Android modules main code targets Java 1.8
  * - minSdk is set for Android libraries
  */
@@ -39,6 +40,12 @@ class JdkTargetConvention : Plugin<Project> {
     }
 
     project.plugins.withId("com.vanniktech.maven.publish") {
+      // Published Java classes must stay dexable by older D8 versions, see StripMethodParameters
+      project.tasks.withType(JavaCompile::class.java).configureEach {
+        if (!name.contains("Test")) {
+          doLast(StripMethodParameters())
+        }
+      }
       // Only works for non-android modules
       // See https://issuetracker.google.com/issues/278800528
       project.plugins.withId("java-library") {
