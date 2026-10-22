@@ -19,22 +19,6 @@ import org.robolectric.annotation.Config
 @Config(sdk = [31])
 class NativeBackendTest {
   @Test
-  fun `starts service with tombstones disabled`() {
-    initialize({ isTombstoneEnabled = false }) { assertThat(it.isTombstoneEnabled).isFalse() }
-  }
-
-  @Test
-  fun `enables supported tombstone enrichment`() {
-    initialize({ isTombstoneEnabled = true }) { assertThat(it.isTombstoneEnabled).isTrue() }
-  }
-
-  @Test
-  @Config(sdk = [30])
-  fun `disables unavailable tombstone enrichment`() {
-    initialize({ isTombstoneEnabled = true }) { assertThat(it.isTombstoneEnabled).isFalse() }
-  }
-
-  @Test
   fun `defaults missing traces sample rate to zero`() {
     initialize({ tracesSampleRate = null }) { assertThat(it.tracesSampleRate).isEqualTo(0.0f) }
   }

@@ -99,9 +99,6 @@ public final class SentryNdk {
               io.sentry.ndk.NdkHandlerStrategy.SENTRY_HANDLER_STRATEGY_CHAIN_AT_START);
         }
 
-        ndkOptions.setTombstoneEnabled(
-            options.isTombstoneEnabled() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S);
-
         final @Nullable Double tracesSampleRate = options.getTracesSampleRate();
         if (tracesSampleRate == null) {
           ndkOptions.setTracesSampleRate(0.0f);
