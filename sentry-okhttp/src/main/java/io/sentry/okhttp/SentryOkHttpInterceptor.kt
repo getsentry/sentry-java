@@ -176,32 +176,30 @@ public open class SentryOkHttpInterceptor(
       )
 
       request = requestBuilder.build()
-      val rawResponse = chain.proceed(request)
-      response = rawResponse
-      code = rawResponse.code
+      response = chain.proceed(request)
+      code = response.code
       span?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, code)
       span?.status = SpanStatus.fromHttpStatusCode(code)
 
       // OkHttp errors (4xx, 5xx) don't throw, so it's safe to call within this block.
       // breadcrumbs are added on the finally block because we'd like to know if the device
       // had an unstable connection or something similar
-      if (shouldCaptureClientError(request, rawResponse)) {
+      if (shouldCaptureClientError(request, response)) {
         // If we capture the client error directly, it could be associated with the
         // currently running span by the backend. In case the listener is in use, that is
         // an inner span. So, if the listener is in use, we let it capture the client
         // error, to shown it in the http root call span in the dashboard.
         if (isFromEventListener && okHttpEvent != null) {
-          okHttpEvent.setClientErrorResponse(rawResponse)
+          okHttpEvent.setClientErrorResponse(response)
         } else {
-          SentryOkHttpUtils.captureClientError(scopes, request, rawResponse)
+          SentryOkHttpUtils.captureClientError(scopes, request, response)
         }
       }
 
-      // Wrapping comes last, after the client error was captured from the untouched response. The
-      // returned value is computed here, so the finally block below only reads it.
-      val capturingResponse = rawResponse.withNetworkBodyCapture(networkDetailData)
-      response = capturingResponse
-      return capturingResponse
+      // after the client error was captured from the untouched response
+      response = response.withNetworkBodyCapture(networkDetailData)
+
+      return response
     } catch (e: IOException) {
       span?.apply {
         this.throwable = e
@@ -369,7 +367,8 @@ public open class SentryOkHttpInterceptor(
                 logger,
               )
             }
-          } catch (e: Exception) {
+          } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+            ExceptionUtils.rethrowIfFatal(e)
             logger.log(
               io.sentry.SentryLevel.ERROR,
               "Failed to capture the http response body for Network Details: ${e.message}",
@@ -390,16 +389,14 @@ public open class SentryOkHttpInterceptor(
     body: () -> NetworkBody?,
   ) {
     networkDetailData.setResponseDetails(
-      NetworkRequestData.ResponseDetails(
+      NetworkDetailCaptureUtils.createResponse(
+        this,
         code,
-        NetworkDetailCaptureUtils.createResponse(
-          this,
-          bodySize,
-          true,
-          { body() },
-          scopes.options.sessionReplay.networkResponseHeaders,
-          { resp: Response -> resp.headers.toMap() },
-        ),
+        bodySize,
+        true,
+        { body() },
+        scopes.options.sessionReplay.networkResponseHeaders,
+        { resp: Response -> resp.headers.toMap() },
       )
     )
   }
