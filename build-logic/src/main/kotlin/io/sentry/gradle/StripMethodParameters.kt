@@ -10,14 +10,16 @@ import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 
 /**
- * Removes the MethodParameters attribute from the classes a JavaCompile task produced.
+ * Removes the
+ * [MethodParameters](https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.24)
+ * attribute from the classes a JavaCompile task produced.
  *
  * Since JDK 21 (JDK-8292275) javac writes MethodParameters for every method with synthetic or
  * mandated parameters, e.g. bridge methods, even without `-parameters`. Those entries carry flags
- * but no name, and the D8 of AGP 7.x (used e.g. by React Native 0.71 apps) crashes on them with
- * `NullPointerException: Cannot invoke "String.length()"` while dexing. Without `-parameters` this
- * attribute holds nothing the SDK relies on, so dropping it restores the class files javac 17
- * produced.
+ * but no name, and the D8 of AGP 8.0 and older fails the build while dexing. See the
+ * [R8 fix](https://r8.googlesource.com/r8/+/9da58a26e22f195d8187492fac350a90e3315e92) for more
+ * details. An alternative would be adding the `-parameters` compile flag, but this could lead to
+ * other binary incompatibility issues along the road.
  */
 internal class StripMethodParameters : Action<Task> {
   override fun execute(task: Task) {
