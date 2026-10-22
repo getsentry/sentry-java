@@ -1,10 +1,16 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
   id("io.sentry.animalsniffer")
   id("io.sentry.javadoc")
+  alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.shadow)
+}
+
+tasks.named<KotlinCompile>("compileKotlin") {
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
 fun relocatePackages(shadowJar: ShadowJar) {
@@ -76,6 +82,11 @@ dependencies {
   bootstrapLibs(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
   javaagentLibs(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   upstreamAgent(libs.otel.javaagent)
+
+  testImplementation(projects.sentryTestSupport)
+  testImplementation(kotlin(Config.kotlinStdLib))
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
 }
 
 fun isolateClasses(jars: Iterable<File>): CopySpec = copySpec {
@@ -197,6 +208,22 @@ tasks {
   }
 
   assemble { dependsOn(shadowJar) }
+
+  test {
+    jvmArgumentProviders.add(
+      objects.newInstance<AgentJarArgument>().apply {
+        agentJar.set(shadowJar.flatMap { it.archiveFile })
+      }
+    )
+  }
+}
+
+// Tests launch apps with the built agent attached, so the agent jar is a test input.
+abstract class AgentJarArgument : CommandLineArgumentProvider {
+  @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val agentJar: RegularFileProperty
+
+  override fun asArguments() =
+    listOf("-Dsentry.test.agentJar=${agentJar.get().asFile.absolutePath}")
 }
 
 tasks.named("distZip").configure { this.dependsOn("jar") }
