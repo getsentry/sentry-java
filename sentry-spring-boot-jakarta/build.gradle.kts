@@ -170,6 +170,27 @@ dependencies {
 
 testing {
   suites {
+    // Runs a Spring Boot app in the test's JVM against MockSentryServer. It is a suite of its own
+    // because the unit tests' classpath carries the agent, which switches Sentry into agent mode.
+    register<JvmTestSuite>("integrationTest") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBootStarterJakarta)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryTestSupport)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.springboot3.starter.aop)
+        implementation(libs.springboot3.starter.jdbc)
+        implementation(libs.springboot3.starter.test)
+        implementation(libs.springboot3.starter.web)
+        runtimeOnly(libs.hsqldb)
+      }
+    }
+
     register<JvmTestSuite>("integrationTestOtelAgent") {
       useJUnit()
       dependencies {

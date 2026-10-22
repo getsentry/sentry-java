@@ -83,6 +83,12 @@ jobs:
             :sentry-samples:sentry-samples-spring-jakarta:testClasses \
             :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
+      - name: Test sentry-spring-boot-jakarta integration suites
+        run: |
+          ./gradlew \
+            :sentry-spring-boot-jakarta:integrationTest \
+            :sentry-spring-boot-jakarta:integrationTestOtelAgent
+
       - name: Test sentry-samples-spring-boot-jakarta
         run: |
           python3 test/system-test-runner.py test \

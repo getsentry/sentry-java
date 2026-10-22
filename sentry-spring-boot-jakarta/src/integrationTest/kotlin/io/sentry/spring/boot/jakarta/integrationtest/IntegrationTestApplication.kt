@@ -1,0 +1,70 @@
+package io.sentry.spring.boot.jakarta.integrationtest
+
+import io.sentry.Sentry
+import io.sentry.spring.jakarta.tracing.SentrySpan
+import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.stereotype.Service
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+
+// Classes and methods are open because Spring proxies them and this module doesn't apply the
+// kotlin-spring plugin.
+
+@SpringBootApplication open class IntegrationTestApplication
+
+open class Person(var firstName: String? = null, var lastName: String? = null)
+
+@RestController
+@RequestMapping("/person/")
+open class PersonController(private val personService: PersonService) {
+  private val logger = LoggerFactory.getLogger(PersonController::class.java)
+
+  /** Reports to Sentry through every API an app uses, then fails the request. */
+  @GetMapping("{id}")
+  open fun person(@PathVariable("id") id: Long): Person {
+    Sentry.addFeatureFlag("transaction-feature-flag", true)
+    val sentrySpan = Sentry.getSpan()!!.startChild("spanCreatedThroughSentryApi")
+    try {
+      Sentry.setAttribute("user.type", "admin")
+      Sentry.setAttribute("feature.version", 2)
+      Sentry.setAttribute("debug.enabled", true)
+      Sentry.logger().warn("warn Sentry logging")
+      Sentry.logger().error("error Sentry logging")
+      Sentry.logger().info("hello %s %s", "there", "world!")
+      Sentry.addFeatureFlag("my-feature-flag", true)
+      logger.error("Trying person with id={}", id, RuntimeException("error while loading"))
+      throw IllegalArgumentException("Something went wrong [id=$id]")
+    } finally {
+      sentrySpan.finish()
+    }
+  }
+
+  @PostMapping
+  open fun create(@RequestBody person: Person): Person {
+    val sentrySpan = Sentry.getSpan()!!.startChild("spanCreatedThroughSentryApi")
+    try {
+      return personService.create(person)
+    } finally {
+      sentrySpan.finish()
+    }
+  }
+}
+
+@Service
+@SentrySpan
+open class PersonService(private val jdbcTemplate: JdbcTemplate) {
+  open fun create(person: Person): Person {
+    jdbcTemplate.update(
+      "insert into person (firstName, lastName) values (?, ?)",
+      person.firstName,
+      person.lastName,
+    )
+    return person
+  }
+}
