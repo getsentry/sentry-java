@@ -7,11 +7,8 @@ import kotlin.test.assertNull
 
 class NetworkRequestDataTest {
 
-  private fun responseDetails(statusCode: Int, size: Long): NetworkRequestData.ResponseDetails =
-    NetworkRequestData.ResponseDetails(
-      statusCode,
-      ReplayNetworkRequestOrResponse(size, null, emptyMap()),
-    )
+  private fun responseDetails(statusCode: Int, size: Long): ReplayNetworkRequestOrResponse =
+    ReplayNetworkRequestOrResponse(statusCode, size, null, emptyMap())
 
   @Test
   fun `response details are empty until they are set`() {
@@ -51,19 +48,23 @@ class NetworkRequestDataTest {
   }
 
   @Test
-  fun `the response details snapshot keeps the status code and the response together`() {
+  fun `the response keeps its status code and size together`() {
     val data = NetworkRequestData("GET")
-    assertNull(data.responseDetails)
+    assertNull(data.response)
 
     data.setResponseDetails(responseDetails(200, 42L))
-    val first = assertNotNull(data.responseDetails)
+    val first = assertNotNull(data.response)
 
     data.setResponseDetails(responseDetails(500, 7L))
 
-    assertEquals(200, first.statusCode, "a snapshot is unaffected by a later call")
-    assertEquals(42L, first.response.size)
-    assertEquals(500, data.responseDetails?.statusCode)
-    assertEquals(7L, data.responseDetails?.response?.size)
+    assertEquals(
+      200,
+      first.statusCode,
+      "a reader that took the response is unaffected by a later call",
+    )
+    assertEquals(42L, first.size)
+    assertEquals(500, data.response?.statusCode)
+    assertEquals(7L, data.response?.size)
   }
 
   @Test

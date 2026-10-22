@@ -8297,7 +8297,7 @@ public final class io/sentry/util/network/NetworkBodyParser {
 
 public final class io/sentry/util/network/NetworkDetailCaptureUtils {
 	public static fun createRequest (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
-	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
 	public static fun initializeForUrl (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Lio/sentry/util/network/NetworkRequestData;
 }
 
@@ -8316,25 +8316,19 @@ public final class io/sentry/util/network/NetworkRequestData {
 	public fun getRequestBodySize ()Ljava/lang/Long;
 	public fun getResponse ()Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
 	public fun getResponseBodySize ()Ljava/lang/Long;
-	public fun getResponseDetails ()Lio/sentry/util/network/NetworkRequestData$ResponseDetails;
 	public fun getStatusCode ()Ljava/lang/Integer;
 	public fun setRequestDetails (Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
-	public fun setResponseDetails (Lio/sentry/util/network/NetworkRequestData$ResponseDetails;)V
-	public fun toString ()Ljava/lang/String;
-}
-
-public final class io/sentry/util/network/NetworkRequestData$ResponseDetails {
-	public fun <init> (ILio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
-	public fun getResponse ()Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
-	public fun getStatusCode ()I
+	public fun setResponseDetails (Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/Long;Lio/sentry/util/network/NetworkBody;Ljava/util/Map;)V
 	public fun <init> (Ljava/lang/Long;Lio/sentry/util/network/NetworkBody;Ljava/util/Map;)V
 	public fun getBody ()Lio/sentry/util/network/NetworkBody;
 	public fun getHeaders ()Ljava/util/Map;
 	public fun getSize ()Ljava/lang/Long;
+	public fun getStatusCode ()Ljava/lang/Integer;
 	public fun toString ()Ljava/lang/String;
 }
 

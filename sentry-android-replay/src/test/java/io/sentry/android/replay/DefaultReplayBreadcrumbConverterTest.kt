@@ -429,13 +429,11 @@ class DefaultReplayBreadcrumbConverterTest {
       )
     )
     fakeOkHttpNetworkDetails.setResponseDetails(
-      NetworkRequestData.ResponseDetails(
+      ReplayNetworkRequestOrResponse(
         200,
-        ReplayNetworkRequestOrResponse(
-          500L,
-          NetworkBody(mapOf("status" to "success", "message" to "OK")),
-          mapOf("Content-Type" to "text/plain"),
-        ),
+        500L,
+        NetworkBody(mapOf("status" to "success", "message" to "OK")),
+        mapOf("Content-Type" to "text/plain"),
       )
     )
     val hintWithFakeOKHttpNetworkDetails = Hint()
@@ -493,13 +491,11 @@ class DefaultReplayBreadcrumbConverterTest {
       )
     )
     fakeOkHttpNetworkDetails.setResponseDetails(
-      NetworkRequestData.ResponseDetails(
+      ReplayNetworkRequestOrResponse(
         404,
-        ReplayNetworkRequestOrResponse(
-          550L,
-          NetworkBody(mapOf("status" to "success", "message" to "OK")),
-          mapOf("Content-Type" to "text/plain"),
-        ),
+        550L,
+        NetworkBody(mapOf("status" to "success", "message" to "OK")),
+        mapOf("Content-Type" to "text/plain"),
       )
     )
     val hintWithFakeOKHttpNetworkDetails = Hint()
@@ -550,13 +546,11 @@ class DefaultReplayBreadcrumbConverterTest {
       )
     )
     networkRequestData.setResponseDetails(
-      NetworkRequestData.ResponseDetails(
+      ReplayNetworkRequestOrResponse(
         200,
-        ReplayNetworkRequestOrResponse(
-          100L,
-          NetworkBody("response body content"),
-          mapOf("Content-Type" to "application/json"),
-        ),
+        100L,
+        NetworkBody("response body content"),
+        mapOf("Content-Type" to "application/json"),
       )
     )
     hint.set(SENTRY_REPLAY_NETWORK_DETAILS, networkRequestData)
