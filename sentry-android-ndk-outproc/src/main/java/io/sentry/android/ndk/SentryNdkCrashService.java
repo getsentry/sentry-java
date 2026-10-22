@@ -28,6 +28,7 @@ import io.sentry.android.core.TombstoneIntegration;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.tombstone.TombstoneParser;
 import io.sentry.ndk.SentryNdk.CrashDaemon;
+import io.sentry.util.FileUtils;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -625,8 +626,9 @@ public final class SentryNdkCrashService extends Service {
     return mergedFile;
   }
 
-  private void writeLastTombstoneMarker(final @NotNull File envelopeFile, final long timestamp)
-      throws IOException {
+  // workers for concurrent crashes must not move the marker back
+  private static synchronized void writeLastTombstoneMarker(
+      final @NotNull File envelopeFile, final long timestamp) throws IOException {
     final @Nullable File runDir = envelopeFile.getParentFile();
     final @Nullable File nativeDir = runDir != null ? runDir.getParentFile() : null;
     final @Nullable File cacheDir = nativeDir != null ? nativeDir.getParentFile() : null;
@@ -634,6 +636,14 @@ public final class SentryNdkCrashService extends Service {
       return;
     }
     final File marker = new File(cacheDir, AndroidEnvelopeCache.LAST_TOMBSTONE_REPORT);
+    final @Nullable String lastTimestamp = FileUtils.readText(marker);
+    try {
+      if (lastTimestamp != null && Long.parseLong(lastTimestamp.trim()) >= timestamp) {
+        return;
+      }
+    } catch (NumberFormatException ignored) {
+      // overwrite an invalid marker
+    }
     try (final OutputStream outputStream = new FileOutputStream(marker)) {
       outputStream.write(String.valueOf(timestamp).getBytes("UTF-8"));
     }
