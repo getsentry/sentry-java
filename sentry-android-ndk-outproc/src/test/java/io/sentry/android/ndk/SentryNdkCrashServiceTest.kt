@@ -8,13 +8,20 @@ import android.os.Binder
 import android.os.Parcel
 import android.os.ParcelFileDescriptor
 import com.google.common.truth.Truth.assertThat
+import io.sentry.DateUtils
+import io.sentry.SentryEnvelope
+import io.sentry.SentryEvent
 import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.ndk.NdkOptions
 import io.sentry.ndk.SentryNdk.CrashDaemon
+import java.io.File
+import java.io.InputStream
 import java.util.Date
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
+import java.util.zip.GZIPInputStream
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -141,19 +148,105 @@ class SentryNdkCrashServiceTest {
     }
   }
 
-  private fun addExitInfo(context: Context, pid: Int, timestamp: Long) {
+  @Test
+  @Config(instrumentedPackages = ["io.sentry.ndk"], shadows = [CrashDaemonShadow::class])
+  fun `sends the merged envelope and writes the marker`() {
+    val service = Robolectric.setupService(SentryNdkCrashService::class.java)
+    val envelope = writeNativeEnvelope(timestamp = 1000)
+    addExitInfo(service, pid = 1, timestamp = 2000, trace = tombstone())
+    crashDaemon(envelope, CrashDaemon.SendResult.SENT)
+
+    configureDaemon(service, pid = 1, fd = 10, tombstoneEnabled = true)
+    awaitWorker()
+
+    assertThat(CrashDaemonShadow.sends).containsExactly(listOf("${envelope.path}.merged", 2000L))
+    assertThat(marker().readText()).isEqualTo("2000")
+  }
+
+  @Test
+  @Config(instrumentedPackages = ["io.sentry.ndk"], shadows = [CrashDaemonShadow::class])
+  fun `writes the marker when the merged envelope is kept`() {
+    val service = Robolectric.setupService(SentryNdkCrashService::class.java)
+    val envelope = writeNativeEnvelope(timestamp = 1000)
+    addExitInfo(service, pid = 1, timestamp = 2000, trace = tombstone())
+    crashDaemon(envelope, CrashDaemon.SendResult.KEPT)
+
+    configureDaemon(service, pid = 1, fd = 10, tombstoneEnabled = true)
+    awaitWorker()
+
+    assertThat(marker().readText()).isEqualTo("2000")
+  }
+
+  @Test
+  @Config(instrumentedPackages = ["io.sentry.ndk"], shadows = [CrashDaemonShadow::class])
+  fun `writes no marker when the send fails`() {
+    val service = Robolectric.setupService(SentryNdkCrashService::class.java)
+    val envelope = writeNativeEnvelope(timestamp = 1000)
+    addExitInfo(service, pid = 1, timestamp = 2000, trace = tombstone())
+    crashDaemon(envelope, CrashDaemon.SendResult.FAILED)
+
+    configureDaemon(service, pid = 1, fd = 10, tombstoneEnabled = true)
+    awaitWorker()
+
+    assertThat(CrashDaemonShadow.sends).containsExactly(listOf("${envelope.path}.merged", 2000L))
+    assertThat(marker().exists()).isFalse()
+  }
+
+  @Test
+  @Config(instrumentedPackages = ["io.sentry.ndk"], shadows = [CrashDaemonShadow::class])
+  fun `sends without a tombstone when the app did not crash natively`() {
+    val service = Robolectric.setupService(SentryNdkCrashService::class.java)
+    val envelope = writeNativeEnvelope(timestamp = 1000)
+    addExitInfo(service, pid = 1, timestamp = 2000, reason = ApplicationExitInfo.REASON_SIGNALED)
+    crashDaemon(envelope, CrashDaemon.SendResult.SENT)
+
+    configureDaemon(service, pid = 1, fd = 10, tombstoneEnabled = true)
+    awaitWorker()
+
+    assertThat(CrashDaemonShadow.sends).containsExactly(listOf(envelope.path, 2000L))
+    assertThat(marker().exists()).isFalse()
+  }
+
+  @Test
+  @Config(instrumentedPackages = ["io.sentry.ndk"], shadows = [CrashDaemonShadow::class])
+  fun `sends without a tombstone when it does not parse`() {
+    val service = Robolectric.setupService(SentryNdkCrashService::class.java)
+    val envelope = writeNativeEnvelope(timestamp = 1000)
+    addExitInfo(service, pid = 1, timestamp = 2000, trace = "invalid".byteInputStream())
+    crashDaemon(envelope, CrashDaemon.SendResult.SENT)
+
+    configureDaemon(service, pid = 1, fd = 10, tombstoneEnabled = true)
+    awaitWorker()
+
+    assertThat(CrashDaemonShadow.sends).containsExactly(listOf(envelope.path, 2000L))
+    assertThat(marker().exists()).isFalse()
+  }
+
+  private fun addExitInfo(
+    context: Context,
+    pid: Int,
+    timestamp: Long,
+    reason: Int = ApplicationExitInfo.REASON_CRASH_NATIVE,
+    trace: InputStream? = null,
+  ) {
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     shadowOf(activityManager)
       .addApplicationExitInfo(
         ApplicationExitInfoBuilder.newBuilder()
           .setPid(pid)
-          .setReason(ApplicationExitInfo.REASON_CRASH_NATIVE)
+          .setReason(reason)
           .setTimestamp(timestamp)
+          .setTraceInputStream(trace)
           .build()
       )
   }
 
-  private fun configureDaemon(service: SentryNdkCrashService, pid: Int, fd: Int) {
+  private fun configureDaemon(
+    service: SentryNdkCrashService,
+    pid: Int,
+    fd: Int,
+    tombstoneEnabled: Boolean = false,
+  ) {
     val configured =
       service.configureDaemon(
         "db",
@@ -161,9 +254,9 @@ class SentryNdkCrashServiceTest {
         "shm-$pid",
         pid,
         0L,
+        tombstoneEnabled,
         false,
-        false,
-        0L,
+        2000L,
         null,
         null,
         descriptor(fd),
@@ -172,6 +265,34 @@ class SentryNdkCrashServiceTest {
       )
     assertThat(configured).isTrue()
   }
+
+  private fun writeNativeEnvelope(timestamp: Long): File {
+    val event = SentryEvent(DateUtils.getDateTime(timestamp)).apply { platform = "native" }
+    val file = File(app.cacheDir, ".sentry-native/test.run/${event.eventId}.envelope")
+    file.parentFile!!.mkdirs()
+    file.outputStream().use {
+      options.serializer.serialize(SentryEnvelope.from(options.serializer, event, null), it)
+    }
+    return file
+  }
+
+  private fun tombstone(): InputStream =
+    GZIPInputStream(File("../sentry-android-core/src/test/resources/tombstone.pb.gz").inputStream())
+
+  private fun crashDaemon(envelope: File, result: CrashDaemon.SendResult) {
+    CrashDaemonShadow.envelopePath = envelope.path
+    CrashDaemonShadow.result = result
+    CrashDaemonShadow.sends.clear()
+  }
+
+  private fun awaitWorker() {
+    Thread.getAllStackTraces()
+      .keys
+      .filter { it.name == "SentryNdkCrashService" }
+      .forEach { it.join(5000) }
+  }
+
+  private fun marker(): File = File(app.cacheDir, AndroidEnvelopeCache.LAST_TOMBSTONE_REPORT)
 
   private fun descriptor(fd: Int): ParcelFileDescriptor = mock { on { detachFd() } doReturn fd }
 
@@ -208,6 +329,42 @@ class BlockingCrashDaemonShadow {
       daemons.add(listOf(appPid, notifyFd, readyFd, messageFd, shmPath))
       release.await(10, TimeUnit.SECONDS)
       return null
+    }
+  }
+}
+
+@Implements(io.sentry.ndk.SentryNdk::class)
+class CrashDaemonShadow {
+  companion object {
+    var envelopePath = ""
+    var result = CrashDaemon.SendResult.SENT
+    val sends = mutableListOf<List<Any>>()
+
+    @Suppress("unused") @Implementation @JvmStatic fun loadNativeLibraries() {}
+
+    @Suppress("unused", "UNUSED_PARAMETER")
+    @Implementation
+    @JvmStatic
+    fun nativeRunCrashDaemon(
+      appPid: Int,
+      appTid: Long,
+      notifyFd: Int,
+      readyFd: Int,
+      messageFd: Int,
+      shmPath: String,
+    ): Long = 1L
+
+    @Suppress("unused", "UNUSED_PARAMETER")
+    @Implementation
+    @JvmStatic
+    fun nativeGetCrashEnvelopePath(handle: Long): String = envelopePath
+
+    @Suppress("unused", "UNUSED_PARAMETER")
+    @Implementation
+    @JvmStatic
+    fun nativeSendEnvelope(handle: Long, path: String, timeout: Long): Int {
+      sends.add(listOf(path, timeout))
+      return result.ordinal
     }
   }
 }

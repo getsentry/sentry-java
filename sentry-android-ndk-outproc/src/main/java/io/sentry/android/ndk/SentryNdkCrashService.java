@@ -406,22 +406,20 @@ public final class SentryNdkCrashService extends Service {
           return;
         }
 
-        final long deadlineMillis = System.currentTimeMillis() + config.shutdownTimeoutMillis;
         final File envelope = new File(envelopePath);
         final @Nullable MergedEnvelope mergedEnvelope =
-            config.tombstoneEnabled
-                ? waitForMergedEnvelope(options, envelope, deadlineMillis, config)
-                : null;
+            config.tombstoneEnabled ? waitForMergedEnvelope(options, envelope, config) : null;
         if (config.tombstoneEnabled && mergedEnvelope == null) {
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Sending NDK crash without tombstone enrichment.");
         }
 
-        final long remainingMillis = Math.max(0, deadlineMillis - System.currentTimeMillis());
-        if (!daemon.sendEnvelope(
-            mergedEnvelope != null ? mergedEnvelope.file.getPath() : envelope.getPath(),
-            remainingMillis)) {
+        final CrashDaemon.SendResult result =
+            daemon.sendEnvelope(
+                mergedEnvelope != null ? mergedEnvelope.file.getPath() : envelope.getPath(),
+                config.shutdownTimeoutMillis);
+        if (result == CrashDaemon.SendResult.FAILED) {
           options.getLogger().log(SentryLevel.DEBUG, "Failed to send NDK crash envelope.");
         } else if (mergedEnvelope != null) {
           writeLastTombstoneMarker(envelope, mergedEnvelope.tombstoneTimestamp);
@@ -432,16 +430,42 @@ public final class SentryNdkCrashService extends Service {
     }
   }
 
+  @SuppressLint("NewApi")
   private @Nullable MergedEnvelope waitForMergedEnvelope(
       final @NotNull SentryAndroidOptions options,
       final @NotNull File envelope,
-      final long deadlineMillis,
       final @NotNull DaemonConfig config)
       throws InterruptedException {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+      return null;
+    }
+
+    final @Nullable NativeEnvelope nativeEnvelope = readNativeEnvelope(options, envelope);
+    final @Nullable Date nativeTimestamp =
+        nativeEnvelope != null ? nativeEnvelope.event.getTimestamp() : null;
+    if (nativeTimestamp == null) {
+      return null;
+    }
+
+    // the app exits once its tombstone is written, a later exit would not match
+    final long deadlineMillis = System.currentTimeMillis() + MATCH_TOLERANCE_MILLIS;
     while (true) {
-      final @Nullable MergedEnvelope mergedEnvelope = processEnvelope(options, envelope, config);
-      if (mergedEnvelope != null) {
-        return mergedEnvelope;
+      final @Nullable ApplicationExitInfo exitInfo =
+          findMatchingExitInfo(options, nativeTimestamp, config.appPid);
+      if (exitInfo != null) {
+        if (exitInfo.getReason() != ApplicationExitInfo.REASON_CRASH_NATIVE) {
+          return null;
+        }
+        try {
+          final @Nullable MergedEnvelope mergedEnvelope =
+              processEnvelope(options, envelope, nativeEnvelope, exitInfo, config);
+          if (mergedEnvelope != null) {
+            return mergedEnvelope;
+          }
+        } catch (Exception e) {
+          options.getLogger().log(SentryLevel.DEBUG, e, "Failed to merge NDK tombstone envelope.");
+          return null;
+        }
       }
 
       final long remainingMillis = deadlineMillis - System.currentTimeMillis();
@@ -456,27 +480,10 @@ public final class SentryNdkCrashService extends Service {
   private @Nullable MergedEnvelope processEnvelope(
       final @NotNull SentryAndroidOptions options,
       final @NotNull File file,
-      final @NotNull DaemonConfig config) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-      return null;
-    }
-
-    final @Nullable NativeEnvelope nativeEnvelope = readNativeEnvelope(options, file);
-    if (nativeEnvelope == null) {
-      return null;
-    }
-
-    final @Nullable Date nativeTimestamp = nativeEnvelope.event.getTimestamp();
-    if (nativeTimestamp == null) {
-      return null;
-    }
-
-    final @Nullable ApplicationExitInfo exitInfo =
-        findMatchingExitInfo(options, nativeTimestamp, config.appPid);
-    if (exitInfo == null) {
-      return null;
-    }
-
+      final @NotNull NativeEnvelope nativeEnvelope,
+      final @NotNull ApplicationExitInfo exitInfo,
+      final @NotNull DaemonConfig config)
+      throws Exception {
     try (final @Nullable InputStream tombstoneInputStream = exitInfo.getTraceInputStream()) {
       if (tombstoneInputStream == null) {
         return null;
@@ -496,10 +503,7 @@ public final class SentryNdkCrashService extends Service {
       TombstoneIntegration.TombstonePolicy.mergeNativeCrashes(nativeEnvelope.event, tombstoneEvent);
       final File mergedEnvelope = writeMergedEnvelope(options, file, nativeEnvelope);
       return new MergedEnvelope(mergedEnvelope, exitInfo.getTimestamp());
-    } catch (Exception e) {
-      options.getLogger().log(SentryLevel.DEBUG, e, "Failed to merge NDK tombstone envelope.");
     }
-    return null;
   }
 
   @VisibleForTesting
@@ -520,8 +524,7 @@ public final class SentryNdkCrashService extends Service {
     ApplicationExitInfo bestMatch = null;
     long bestDiff = Long.MAX_VALUE;
     for (ApplicationExitInfo exitInfo : exitInfos) {
-      if (exitInfo.getReason() != ApplicationExitInfo.REASON_CRASH_NATIVE
-          || exitInfo.getPid() != pid) {
+      if (exitInfo.getPid() != pid) {
         continue;
       }
       final long diff = Math.abs(exitInfo.getTimestamp() - nativeTimestamp.getTime());
