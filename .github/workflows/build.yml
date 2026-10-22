@@ -55,7 +55,7 @@ jobs:
       # TODO: remove once sentry-native publishes sentry-native-ndk-outproc
       - name: Publish sentry-native-ndk-outproc to Maven Local
         working-directory: sentry-native/ndk
-        run: ./gradlew :sentry-native-ndk-outproc:publishToMavenLocal
+        run: ./gradlew --no-daemon :sentry-native-ndk-outproc:publishToMavenLocal
 
       - name: Run Tests and Lint
         run: make preMerge
