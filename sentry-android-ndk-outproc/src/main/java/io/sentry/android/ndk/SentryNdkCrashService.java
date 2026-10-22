@@ -56,22 +56,6 @@ public final class SentryNdkCrashService extends Service {
   private static final long POLL_INTERVAL_MILLIS = 250;
   private static final long MATCH_TOLERANCE_MILLIS = 30000;
 
-  private final @NotNull Object lock = new Object();
-
-  private @Nullable Thread daemonWorker;
-  private @Nullable File nativeDatabaseDir;
-  private @Nullable String nativeLibraryDir;
-  private @Nullable String shmPath;
-  private int notifyReadFd = -1;
-  private int readyWriteFd = -1;
-  private int messageReadFd = -1;
-  private int appPid = -1;
-  private long appTid = 0;
-  private long shutdownTimeoutMillis = 0;
-  private @NotNull List<String> inAppIncludes = new ArrayList<>();
-  private @NotNull List<String> inAppExcludes = new ArrayList<>();
-  private boolean tombstoneEnabled = false;
-  private boolean debug = false;
   private final @NotNull IBinder binder =
       new Binder() {
         @Override
@@ -352,7 +336,8 @@ public final class SentryNdkCrashService extends Service {
     }
   }
 
-  private boolean configureDaemon(
+  @VisibleForTesting
+  boolean configureDaemon(
       final @Nullable String nativeDatabasePath,
       final @Nullable String nativeLibraryDir,
       final @Nullable String shmPath,
@@ -375,48 +360,44 @@ public final class SentryNdkCrashService extends Service {
       return false;
     }
 
-    synchronized (lock) {
-      nativeDatabaseDir = new File(nativeDatabasePath);
-      this.nativeLibraryDir = nativeLibraryDir;
-      this.shmPath = shmPath;
-      this.appPid = appPid;
-      this.appTid = appTid;
-      this.tombstoneEnabled = tombstoneEnabled;
-      this.debug = debug;
-      this.shutdownTimeoutMillis = shutdownTimeoutMillis;
-      inAppIncludes = includes != null ? includes : new ArrayList<>();
-      inAppExcludes = excludes != null ? excludes : new ArrayList<>();
-      notifyReadFd = notifyRead.detachFd();
-      readyWriteFd = readyWrite.detachFd();
-      messageReadFd = messageRead.detachFd();
-      startWorkersLocked();
-    }
+    final DaemonConfig config =
+        new DaemonConfig(
+            nativeLibraryDir,
+            shmPath,
+            notifyRead.detachFd(),
+            readyWrite.detachFd(),
+            messageRead.detachFd(),
+            appPid,
+            appTid,
+            shutdownTimeoutMillis,
+            includes != null ? includes : new ArrayList<>(),
+            excludes != null ? excludes : new ArrayList<>(),
+            tombstoneEnabled,
+            debug);
+    // a relaunched app configures while the previous daemon may still be finishing
+    new Thread(() -> runDaemonWorker(config), "SentryNdkCrashService").start();
     return true;
   }
 
-  private void startWorkersLocked() {
-    if (daemonWorker == null && isDaemonConfigured()) {
-      final @Nullable String path = shmPath;
-      final int pid = appPid;
-      daemonWorker = new Thread(() -> runDaemonWorker(path, pid), "SentryNdkCrashService");
-      daemonWorker.start();
-    }
-  }
-
-  private void runDaemonWorker(final @Nullable String path, final int pid) {
+  private void runDaemonWorker(final @NotNull DaemonConfig config) {
     final SentryAndroidOptions options = new SentryAndroidOptions();
     options.setLogger(new AndroidLogger("SentryNdkCrash"));
-    options.setDebug(debug);
+    options.setDebug(config.debug);
 
     try {
-      if (path == null || notifyReadFd < 0 || readyWriteFd < 0 || messageReadFd < 0 || pid < 0) {
+      if (config.notifyReadFd < 0 || config.readyWriteFd < 0 || config.messageReadFd < 0) {
         return;
       }
 
       // keeps going after onDestroy, a crashed app's binding goes away mid-crash
       try (final @Nullable CrashDaemon daemon =
               io.sentry.ndk.SentryNdk.runCrashDaemon(
-                  pid, appTid, notifyReadFd, readyWriteFd, messageReadFd, path)) {
+                  config.appPid,
+                  config.appTid,
+                  config.notifyReadFd,
+                  config.readyWriteFd,
+                  config.messageReadFd,
+                  config.shmPath)) {
         if (daemon == null) {
           return;
         }
@@ -425,11 +406,13 @@ public final class SentryNdkCrashService extends Service {
           return;
         }
 
-        final long deadlineMillis = System.currentTimeMillis() + shutdownTimeoutMillis;
+        final long deadlineMillis = System.currentTimeMillis() + config.shutdownTimeoutMillis;
         final File envelope = new File(envelopePath);
         final @Nullable MergedEnvelope mergedEnvelope =
-            tombstoneEnabled ? waitForMergedEnvelope(options, envelope, deadlineMillis, pid) : null;
-        if (tombstoneEnabled && mergedEnvelope == null) {
+            config.tombstoneEnabled
+                ? waitForMergedEnvelope(options, envelope, deadlineMillis, config)
+                : null;
+        if (config.tombstoneEnabled && mergedEnvelope == null) {
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Sending NDK crash without tombstone enrichment.");
@@ -446,35 +429,17 @@ public final class SentryNdkCrashService extends Service {
       }
     } catch (InterruptedException | IOException e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Error running NDK crash service.");
-    } finally {
-      synchronized (lock) {
-        daemonWorker = null;
-        notifyReadFd = -1;
-        readyWriteFd = -1;
-        messageReadFd = -1;
-        appPid = -1;
-        appTid = 0;
-        shmPath = null;
-      }
     }
-  }
-
-  private boolean isDaemonConfigured() {
-    return shmPath != null
-        && notifyReadFd >= 0
-        && readyWriteFd >= 0
-        && messageReadFd >= 0
-        && appPid >= 0;
   }
 
   private @Nullable MergedEnvelope waitForMergedEnvelope(
       final @NotNull SentryAndroidOptions options,
       final @NotNull File envelope,
       final long deadlineMillis,
-      final int pid)
+      final @NotNull DaemonConfig config)
       throws InterruptedException {
     while (true) {
-      final @Nullable MergedEnvelope mergedEnvelope = processEnvelope(options, envelope, pid);
+      final @Nullable MergedEnvelope mergedEnvelope = processEnvelope(options, envelope, config);
       if (mergedEnvelope != null) {
         return mergedEnvelope;
       }
@@ -489,7 +454,9 @@ public final class SentryNdkCrashService extends Service {
 
   @SuppressLint("NewApi")
   private @Nullable MergedEnvelope processEnvelope(
-      final @NotNull SentryAndroidOptions options, final @NotNull File file, final int pid) {
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull File file,
+      final @NotNull DaemonConfig config) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
       return null;
     }
@@ -505,7 +472,7 @@ public final class SentryNdkCrashService extends Service {
     }
 
     final @Nullable ApplicationExitInfo exitInfo =
-        findMatchingExitInfo(options, nativeTimestamp, pid);
+        findMatchingExitInfo(options, nativeTimestamp, config.appPid);
     if (exitInfo == null) {
       return null;
     }
@@ -518,7 +485,10 @@ public final class SentryNdkCrashService extends Service {
       final SentryEvent tombstoneEvent;
       try (final TombstoneParser parser =
           new TombstoneParser(
-              tombstoneInputStream, inAppIncludes, inAppExcludes, nativeLibraryDir)) {
+              tombstoneInputStream,
+              config.inAppIncludes,
+              config.inAppExcludes,
+              config.nativeLibraryDir)) {
         tombstoneEvent = parser.parse();
       }
       tombstoneEvent.setTimestamp(DateUtils.getDateTime(exitInfo.getTimestamp()));
@@ -651,6 +621,48 @@ public final class SentryNdkCrashService extends Service {
     private MergedEnvelope(final @NotNull File file, final long tombstoneTimestamp) {
       this.file = file;
       this.tombstoneTimestamp = tombstoneTimestamp;
+    }
+  }
+
+  private static final class DaemonConfig {
+    private final @Nullable String nativeLibraryDir;
+    private final @NotNull String shmPath;
+    private final int notifyReadFd;
+    private final int readyWriteFd;
+    private final int messageReadFd;
+    private final int appPid;
+    private final long appTid;
+    private final long shutdownTimeoutMillis;
+    private final @NotNull List<String> inAppIncludes;
+    private final @NotNull List<String> inAppExcludes;
+    private final boolean tombstoneEnabled;
+    private final boolean debug;
+
+    private DaemonConfig(
+        final @Nullable String nativeLibraryDir,
+        final @NotNull String shmPath,
+        final int notifyReadFd,
+        final int readyWriteFd,
+        final int messageReadFd,
+        final int appPid,
+        final long appTid,
+        final long shutdownTimeoutMillis,
+        final @NotNull List<String> inAppIncludes,
+        final @NotNull List<String> inAppExcludes,
+        final boolean tombstoneEnabled,
+        final boolean debug) {
+      this.nativeLibraryDir = nativeLibraryDir;
+      this.shmPath = shmPath;
+      this.notifyReadFd = notifyReadFd;
+      this.readyWriteFd = readyWriteFd;
+      this.messageReadFd = messageReadFd;
+      this.appPid = appPid;
+      this.appTid = appTid;
+      this.shutdownTimeoutMillis = shutdownTimeoutMillis;
+      this.inAppIncludes = inAppIncludes;
+      this.inAppExcludes = inAppExcludes;
+      this.tombstoneEnabled = tombstoneEnabled;
+      this.debug = debug;
     }
   }
 }
