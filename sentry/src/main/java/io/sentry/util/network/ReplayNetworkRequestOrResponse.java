@@ -17,7 +17,6 @@ public final class ReplayNetworkRequestOrResponse {
   private final @Nullable NetworkBody body;
   private final @NotNull Map<String, String> headers;
 
-  /** Creates the request side, which has no status code. */
   public ReplayNetworkRequestOrResponse(
       @Nullable final Long size,
       @Nullable final NetworkBody body,
