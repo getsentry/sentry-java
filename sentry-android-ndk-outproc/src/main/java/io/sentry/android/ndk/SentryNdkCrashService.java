@@ -62,6 +62,7 @@ public final class SentryNdkCrashService extends Service {
       "io.sentry.android.ndk.IN_APP_INCLUDES";
   private static final @NotNull String EXTRA_IN_APP_EXCLUDES =
       "io.sentry.android.ndk.IN_APP_EXCLUDES";
+  private static final @NotNull String EXTRA_SHM_PATH = "io.sentry.android.ndk.SHM_PATH";
   private static final @NotNull String BINDER_DESCRIPTOR = "io.sentry.android.ndk.CrashService";
   private static final int TRANSACTION_CONFIGURE = IBinder.FIRST_CALL_TRANSACTION;
 
@@ -73,6 +74,7 @@ public final class SentryNdkCrashService extends Service {
 
   private @Nullable Thread daemonWorker;
   private int lastStartId = 0;
+  private @Nullable String lastStartShmPath;
   private volatile boolean running = false;
   private @Nullable File nativeDatabaseDir;
   private @Nullable String nativeLibraryDir;
@@ -185,6 +187,7 @@ public final class SentryNdkCrashService extends Service {
 
       final Intent intent = new Intent(context, SentryNdkCrashService.class);
       putServiceOptions(context, options, nativeDatabaseDir, intent);
+      intent.putExtra(EXTRA_SHM_PATH, shmFile.getPath());
 
       context.startService(intent);
       final boolean configured =
@@ -250,6 +253,7 @@ public final class SentryNdkCrashService extends Service {
 
     synchronized (lock) {
       lastStartId = startId;
+      lastStartShmPath = intent != null ? intent.getStringExtra(EXTRA_SHM_PATH) : null;
       startWorkersLocked();
     }
     return START_NOT_STICKY;
@@ -461,20 +465,19 @@ public final class SentryNdkCrashService extends Service {
       running = true;
     }
     if (daemonWorker == null && isDaemonConfigured()) {
-      final int startId = lastStartId;
-      daemonWorker = new Thread(() -> runDaemonWorker(startId), "SentryNdkCrashService");
+      final @Nullable String path = shmPath;
+      daemonWorker = new Thread(() -> runDaemonWorker(path), "SentryNdkCrashService");
       daemonWorker.start();
     }
   }
 
-  private void runDaemonWorker(final int startId) {
+  private void runDaemonWorker(final @Nullable String path) {
     final SentryAndroidOptions options = new SentryAndroidOptions();
     options.setLogger(new AndroidLogger("SentryNdkCrash"));
     options.setDebug(debug);
 
     try {
       while (running) {
-        final @Nullable String path = shmPath;
         if (path == null
             || notifyReadFd < 0
             || readyWriteFd < 0
@@ -524,8 +527,10 @@ public final class SentryNdkCrashService extends Service {
         appPid = -1;
         appTid = 0;
         shmPath = null;
+        if (path != null && path.equals(lastStartShmPath)) {
+          stopSelf(lastStartId);
+        }
       }
-      stopSelf(startId);
     }
   }
 
