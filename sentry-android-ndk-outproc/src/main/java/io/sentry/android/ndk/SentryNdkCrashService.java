@@ -211,7 +211,11 @@ public final class SentryNdkCrashService extends Service {
       io.sentry.ndk.SentryNdk.initCrashDaemon(
           shmFile.getPath(), notifyWrite.detachFd(), readyRead.detachFd(), messageWrite.detachFd());
       return true;
-    } catch (Throwable e) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      options.getLogger().log(SentryLevel.DEBUG, e, "Failed to start NDK crash service.");
+      return false;
+    } catch (IOException | SecurityException | IllegalStateException e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Failed to start NDK crash service.");
       return false;
     } finally {
@@ -400,7 +404,7 @@ public final class SentryNdkCrashService extends Service {
       }
       reply.readException();
       return reply.readInt() == 1;
-    } catch (Throwable ignored) {
+    } catch (RemoteException | RuntimeException ignored) {
       return false;
     } finally {
       data.recycle();
@@ -506,7 +510,7 @@ public final class SentryNdkCrashService extends Service {
         }
         return;
       }
-    } catch (Throwable e) {
+    } catch (InterruptedException e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Error running NDK crash service.");
     } finally {
       synchronized (lock) {
@@ -588,7 +592,7 @@ public final class SentryNdkCrashService extends Service {
       final File mergedEnvelope = writeMergedEnvelope(options, file, nativeEnvelope);
       writeLastTombstoneMarker(file, exitInfo.getTimestamp());
       return mergedEnvelope;
-    } catch (Throwable e) {
+    } catch (Exception e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Failed to merge NDK tombstone envelope.");
     }
     return null;
@@ -643,7 +647,7 @@ public final class SentryNdkCrashService extends Service {
           return new NativeEnvelope(envelope, event);
         }
       }
-    } catch (Throwable e) {
+    } catch (Exception e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Failed to read NDK envelope.");
     }
     return null;
