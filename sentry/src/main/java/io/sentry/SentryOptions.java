@@ -520,9 +520,8 @@ public class SentryOptions implements RateLimiterConfig {
 
   private @NotNull IThreadChecker threadChecker = NoOpThreadChecker.getInstance();
 
-  // TODO [MAJOR] this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
-  private boolean traceOptionsRequests = true;
+  private boolean traceOptionsRequests = false;
 
   /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
   private boolean enableDatabaseTransactionTracing = false;
