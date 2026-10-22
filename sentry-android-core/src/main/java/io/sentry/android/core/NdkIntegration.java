@@ -57,12 +57,22 @@ public final class NdkIntegration implements Integration, Closeable {
       }
 
       try {
-        final Method method;
-        final Object[] args;
+        Method method = null;
+        Object[] args = null;
         if (context != null) {
-          method = sentryNdkClass.getMethod("init", Context.class, SentryAndroidOptions.class);
-          args = new Object[] {context, this.options};
-        } else {
+          try {
+            method = sentryNdkClass.getMethod("init", Context.class, SentryAndroidOptions.class);
+            args = new Object[] {context, this.options};
+          } catch (NoSuchMethodException e) {
+            // an older sentry-android-ndk
+            this.options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "SentryNdk.init(Context, SentryAndroidOptions) not found, using SentryNdk.init(SentryAndroidOptions).");
+          }
+        }
+        if (method == null) {
           method = sentryNdkClass.getMethod("init", SentryAndroidOptions.class);
           args = new Object[] {this.options};
         }
