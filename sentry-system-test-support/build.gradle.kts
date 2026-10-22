@@ -5,6 +5,8 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   id("com.apollographql.apollo") version "4.1.1"
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

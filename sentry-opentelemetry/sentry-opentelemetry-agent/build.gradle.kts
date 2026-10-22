@@ -5,6 +5,9 @@ plugins {
   id("io.sentry.animalsniffer")
   id("io.sentry.javadoc")
   alias(libs.plugins.shadow)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
 }
 
 fun relocatePackages(shadowJar: ShadowJar) {

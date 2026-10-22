@@ -1,8 +1,3 @@
-import com.vanniktech.maven.publish.JavaLibrary
-import com.vanniktech.maven.publish.JavadocJar
-import com.vanniktech.maven.publish.MavenPublishBaseExtension
-import groovy.util.Node
-import io.gitlab.arturbosch.detekt.extensions.DetektExtension
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -12,13 +7,12 @@ plugins {
     alias(libs.plugins.detekt)
     `maven-publish`
     alias(libs.plugins.binary.compatibility.validator)
-    alias(libs.plugins.vanniktech.maven.publish) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.spring) apply false
     alias(libs.plugins.buildconfig) apply false
-    // dokka is required by gradle-maven-publish-plugin.
+    // dokka is applied directly by sentry-compose; pinned here so it is on the classpath.
     alias(libs.plugins.dokka) apply false
     alias(libs.plugins.dokka.javadoc) apply false
     alias(libs.plugins.kotlin.compose) apply false
@@ -113,90 +107,6 @@ allprojects {
     }
 }
 
-subprojects {
-    apply { plugin("io.sentry.spotless") }
-    apply { plugin("io.sentry.jdk-target") }
-
-    plugins.withId(Config.QualityPlugins.detektPlugin) {
-        configure<DetektExtension> {
-            buildUponDefaultConfig = true
-            allRules = true
-            config.setFrom("${rootProject.rootDir}/detekt.yml")
-            baseline = file("detekt-baseline.xml")
-        }
-    }
-
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support") {
-        apply<DistributionPlugin>()
-        apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
-
-        val sep = File.separator
-
-        configure<DistributionContainer> {
-            if (this@subprojects.name.contains("-compose")) {
-                this.configureForMultiplatform(this@subprojects)
-            } else {
-                this.configureForJvm(this@subprojects)
-            }
-            // craft only uses zip archives
-            this.forEach { dist ->
-                if (dist.name == DistributionPlugin.MAIN_DISTRIBUTION_NAME) {
-                    tasks.named("distTar").configure { enabled = false }
-                } else {
-                    tasks.named(dist.name + "DistTar").configure { enabled = false }
-                }
-            }
-        }
-
-        tasks.named("distZip").configure {
-            this.dependsOn("publishToMavenLocal")
-            val file = this.project.layout.buildDirectory.file("distributions${sep}${this.project.name}-${this.project.version}.zip").get().asFile
-            this.doLast {
-                if (!file.exists()) throw IllegalStateException("Distribution file: ${file.absolutePath} does not exist")
-                if (file.length() == 0L) throw IllegalStateException("Distribution file: ${file.absolutePath} is empty")
-            }
-        }
-
-        plugins.withId("java-library") {
-            configure<MavenPublishBaseExtension> {
-                // we have to disable javadoc publication in maven-publish plugin as it's not
-                // including it in the .module file https://github.com/vanniktech/gradle-maven-publish-plugin/issues/861
-                // and do it ourselves
-                configure(JavaLibrary(JavadocJar.None(), sourcesJar = true))
-            }
-
-            configure<JavaPluginExtension> {
-                withJavadocJar()
-            }
-        }
-
-        apply<MavenPublishPlugin>()
-
-        afterEvaluate {
-            configure<MavenPublishBaseExtension> {
-                assignAarTypes()
-            }
-
-            // this is needed for sentry-unity to consume our artifacts locally as proper maven publication
-            configure<PublishingExtension> {
-                repositories {
-                    maven {
-                        name = "unityMaven"
-                        url = rootProject.layout.buildDirectory.file("unityMaven").get().asFile.toURI()
-                    }
-                }
-            }
-
-            // maven central info go to:
-            // ~/.gradle/gradle.properties
-
-            // maven central info:
-            // mavenCentralUsername=user name
-            // mavenCentralPassword=password
-        }
-    }
-}
-
 tasks.register("buildForCodeQL") {
     subprojects
         .filter {
@@ -216,54 +126,4 @@ tasks.register("buildForCodeQL") {
                 }
             }
         }
-}
-
-/*
- * Adapted from https://github.com/androidx/androidx/blob/c799cba927a71f01ea6b421a8f83c181682633fb/buildSrc/private/src/main/kotlin/androidx/build/MavenUploadHelper.kt#L524-L549
- *
- * Copyright 2018 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-// Workaround for https://github.com/gradle/gradle/issues/3170
-fun MavenPublishBaseExtension.assignAarTypes() {
-    pom {
-        withXml {
-            val dependencies = asNode().children().find {
-                it is Node && it.name().toString().endsWith("dependencies")
-            } as Node?
-
-            dependencies?.children()?.forEach { dep ->
-                if (dep !is Node) {
-                    return@forEach
-                }
-                val group = dep.children().firstOrNull {
-                    it is Node && it.name().toString().endsWith("groupId")
-                } as? Node
-                val groupValue = group?.children()?.firstOrNull() as? String
-
-                val artifactId = dep.children().firstOrNull {
-                    it is Node && it.name().toString().endsWith("artifactId")
-                } as? Node
-                val artifactIdValue = artifactId?.children()?.firstOrNull() as? String
-
-                if (artifactIdValue in Config.BuildScript.androidLibs) {
-                    dep.appendNode("type", "aar")
-                } else if ("$groupValue:$artifactIdValue" in Config.BuildScript.androidXLibs) {
-                    dep.appendNode("type", "aar")
-                }
-            }
-        }
-    }
 }

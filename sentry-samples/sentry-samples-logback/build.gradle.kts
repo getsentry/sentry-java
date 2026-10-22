@@ -7,6 +7,8 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.shadow)
   id("io.sentry.systemtest")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 application { mainClass.set("io.sentry.samples.logback.Main") }

@@ -2,6 +2,8 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   application
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 application { mainClass.set("io.sentry.samples.ktorClient.Main") }

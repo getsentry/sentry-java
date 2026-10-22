@@ -7,6 +7,8 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   id("io.sentry.systemtest")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 group = "io.sentry.sample.spring-boot-4-log4j2"

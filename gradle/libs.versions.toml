@@ -10,6 +10,8 @@ asyncProfiler = "4.4"
 camerax = "1.4.0"
 composeCompiler = "1.5.14"
 coroutines = "1.6.1"
+detekt = "1.23.8"
+dokka = "2.0.0"
 espresso = "3.7.0"
 feign = "11.6"
 gummyBears = "0.12.0"
@@ -49,6 +51,7 @@ springboot2 = "2.7.18"
 springboot3 = "3.5.0"
 springboot4 = "4.1.0"
 sqldelight = "2.3.2"
+vanniktechMavenPublish = "0.30.0"
 
 # Android
 targetSdk = "37"
@@ -64,14 +67,14 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
-dokka = { id = "org.jetbrains.dokka", version = "2.0.0" }
-dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version = "2.0.0" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.13.0" }
 errorprone = { id = "net.ltgt.errorprone", version = "5.1.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
-detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
-vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktechMavenPublish" }
 springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
@@ -191,6 +194,8 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.5" }
 spotlessLib = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless"}
+detektLib = { module = "io.gitlab.arturbosch.detekt:io.gitlab.arturbosch.detekt.gradle.plugin", version.ref = "detekt" }
+vanniktechMavenPublishLib = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version.ref = "vanniktechMavenPublish" }
 springboot2-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springboot2" }
 springboot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot2" }
 spring-graphql = { module = "org.springframework.graphql:spring-graphql", version = "1.0.6" }

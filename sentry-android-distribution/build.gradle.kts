@@ -4,7 +4,10 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
-  alias(libs.plugins.detekt)
+  id("io.sentry.detekt")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
 }
 
 android {

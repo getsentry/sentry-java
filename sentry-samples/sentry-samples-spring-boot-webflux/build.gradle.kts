@@ -8,6 +8,8 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   id("io.sentry.systemtest")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 // Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version

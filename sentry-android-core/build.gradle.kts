@@ -8,6 +8,9 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
 }
 
 android {
