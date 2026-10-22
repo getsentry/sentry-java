@@ -68,7 +68,6 @@ class CapturedResponseBodyTest {
 
   /** Emits one chunk, then parks until it is closed, like a stream that has gone quiet. */
   private class ParkingSource(private val chunk: ByteArray) : Source {
-    val emitted = CountDownLatch(1)
     private val closed = CountDownLatch(1)
     private var sent = false
 
@@ -76,7 +75,6 @@ class CapturedResponseBodyTest {
       if (!sent) {
         sent = true
         sink.write(chunk)
-        emitted.countDown()
         return chunk.size.toLong()
       }
       closed.await(10, TimeUnit.SECONDS)
@@ -259,15 +257,19 @@ class CapturedResponseBodyTest {
     val chunk = "data: event-0\n\n".toByteArray()
     val source = ParkingSource(chunk)
     val (wrapper, captured) = capture(source, 1024)
+    val chunkRead = CountDownLatch(1)
     val readDone = CountDownLatch(1)
     val reader = Thread {
-      wrapper.source().readByteArray()
+      val bodySource = wrapper.source()
+      bodySource.readByteArray(chunk.size.toLong())
+      chunkRead.countDown()
+      bodySource.readByteArray()
       readDone.countDown()
     }
     reader.isDaemon = true
     reader.start()
 
-    assertTrue(source.emitted.await(10, TimeUnit.SECONDS), "the reader must have taken the chunk")
+    assertTrue(chunkRead.await(10, TimeUnit.SECONDS), "the reader must have received the chunk")
     wrapper.close()
 
     assertTrue(

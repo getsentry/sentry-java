@@ -104,7 +104,8 @@ internal class CapturedResponseBody(
   /**
    * [captured] is written by the thread reading the body and read here, which [close] may reach
    * from another thread — cancelling a stream from elsewhere is ordinary use — and [Buffer] is not
-   * thread-safe.
+   * thread-safe. Such a close reports what was copied by then: waiting for a read that may be
+   * parked for minutes is the deadlock this class exists to avoid.
    */
   private fun reportCaptured() {
     if (reported.compareAndSet(false, true)) {
