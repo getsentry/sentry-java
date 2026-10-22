@@ -20,6 +20,10 @@ import org.objectweb.asm.Opcodes
  * [R8 fix](https://r8.googlesource.com/r8/+/9da58a26e22f195d8187492fac350a90e3315e92) for more
  * details. An alternative would be adding the `-parameters` compile flag, but this could lead to
  * other binary incompatibility issues along the road.
+ *
+ * The action removes every MethodParameters entry, also the named ones that `-parameters` writes.
+ * Keep it away from code that compiles with `-parameters`, e.g. the Spring Boot samples, where
+ * Spring resolves bean and handler parameters by name at runtime.
  */
 internal class StripMethodParameters : Action<Task> {
   override fun execute(task: Task) {
