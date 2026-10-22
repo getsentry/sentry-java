@@ -196,6 +196,22 @@ class SentryNdkCrashServiceTest {
 
   @Test
   @Config(instrumentedPackages = ["io.sentry.ndk"], shadows = [CrashDaemonShadow::class])
+  fun `keeps a newer marker`() {
+    val service = Robolectric.setupService(SentryNdkCrashService::class.java)
+    val envelope = writeNativeEnvelope(timestamp = 1000)
+    addExitInfo(service, pid = 1, timestamp = 2000, trace = tombstone())
+    crashDaemon(envelope, CrashDaemon.SendResult.SENT)
+    marker().writeText("3000")
+
+    configureDaemon(service, pid = 1, fd = 10, tombstoneEnabled = true)
+    awaitWorker()
+
+    assertThat(CrashDaemonShadow.sends).containsExactly(listOf("${envelope.path}.merged", 2000L))
+    assertThat(marker().readText()).isEqualTo("3000")
+  }
+
+  @Test
+  @Config(instrumentedPackages = ["io.sentry.ndk"], shadows = [CrashDaemonShadow::class])
   fun `writes no marker when the send fails`() {
     val service = Robolectric.setupService(SentryNdkCrashService::class.java)
     val envelope = writeNativeEnvelope(timestamp = 1000)
