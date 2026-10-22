@@ -16,13 +16,14 @@ import org.mockito.kotlin.whenever
 class DistrustedCertificatesTest {
 
   private val connection = mock<HttpsURLConnection>()
+  private val sut = DistrustedCertificates.getInstance()
 
   @Test
   fun `throws and disconnects when the chain contains a distrusted certificate`() {
     val certificates = arrayOf(trustedCertificate(), distrustedCertificate())
     whenever(connection.serverCertificates).thenReturn(certificates)
 
-    assertFailsWith<SSLPeerUnverifiedException> { DistrustedCertificates.verify(connection) }
+    assertFailsWith<SSLPeerUnverifiedException> { sut.verify(connection) }
 
     verify(connection).disconnect()
   }
@@ -32,7 +33,7 @@ class DistrustedCertificatesTest {
     val certificates = arrayOf(trustedCertificate())
     whenever(connection.serverCertificates).thenReturn(certificates)
 
-    DistrustedCertificates.verify(connection)
+    sut.verify(connection)
 
     verify(connection, never()).disconnect()
   }
@@ -41,7 +42,7 @@ class DistrustedCertificatesTest {
   fun `accepts a connection without server certificates`() {
     whenever(connection.serverCertificates).thenReturn(null)
 
-    DistrustedCertificates.verify(connection)
+    sut.verify(connection)
 
     verify(connection, never()).disconnect()
   }
@@ -50,26 +51,22 @@ class DistrustedCertificatesTest {
   fun `ignores plain HTTP connections`() {
     val connection = mock<HttpURLConnection>()
 
-    DistrustedCertificates.verify(connection)
+    sut.verify(connection)
 
     verify(connection, never()).disconnect()
   }
 
-  companion object {
-    /** EM DV TLS CA - G3B as cross-signed by Sectigo's AAA Certificate Services root. */
-    fun distrustedCertificate(): Certificate =
-      DistrustedCertificatesTest::class
-        .java
-        .classLoader!!
-        .getResourceAsStream("emudhra-em-dv-tls-ca-g3b.pem")!!
-        .use { CertificateFactory.getInstance("X.509").generateCertificate(it) }
-
-    private fun trustedCertificate(): Certificate {
-      val publicKey = mock<PublicKey>()
-      whenever(publicKey.encoded).thenReturn(byteArrayOf(1, 2, 3))
-      val certificate = mock<Certificate>()
-      whenever(certificate.publicKey).thenReturn(publicKey)
-      return certificate
+  /** EM DV TLS CA - G3B as cross-signed by Sectigo's AAA Certificate Services root. */
+  private fun distrustedCertificate(): Certificate =
+    javaClass.classLoader!!.getResourceAsStream("emudhra-em-dv-tls-ca-g3b.pem")!!.use {
+      CertificateFactory.getInstance("X.509").generateCertificate(it)
     }
+
+  private fun trustedCertificate(): Certificate {
+    val publicKey = mock<PublicKey>()
+    whenever(publicKey.encoded).thenReturn(byteArrayOf(1, 2, 3))
+    val certificate = mock<Certificate>()
+    whenever(certificate.publicKey).thenReturn(publicKey)
+    return certificate
   }
 }

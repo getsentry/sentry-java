@@ -95,7 +95,7 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       }
 
       connection.connect()
-      DistrustedCertificates.verify(connection)
+      DistrustedCertificates.getInstance().verify(connection)
 
       val responseCode = connection.responseCode
       val responseBody = readResponse(connection)
