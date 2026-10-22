@@ -990,9 +990,9 @@ class SentryTest {
     val feedback = Feedback("message")
     val hint = Hint()
 
-    Sentry.captureFeedback(feedback)
-    Sentry.captureFeedback(feedback, hint)
-    Sentry.captureFeedback(feedback, hint) { it.setTag("testKey", "testValue") }
+    Sentry.feedback().capture(feedback)
+    Sentry.feedback().capture(feedback, hint)
+    Sentry.feedback().capture(feedback, hint) { it.setTag("testKey", "testValue") }
 
     verify(client).captureFeedback(eq(feedback), eq(null), anyOrNull())
     verify(client)

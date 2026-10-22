@@ -6,6 +6,8 @@
 
 - Remove the deprecated user feedback APIs ([#6337](https://github.com/getsentry/sentry-java/pull/6337))
   - `UserFeedback` and `Sentry.captureUserFeedback(...)`: use `Sentry.feedback().capture(...)` with `io.sentry.protocol.Feedback` instead
+  - `Sentry.captureFeedback(...)`: use `Sentry.feedback().capture(...)` instead
+  - `Sentry.showUserFeedbackDialog(...)`: use `Sentry.feedback().show(...)` instead
   - Android: `SentryUserFeedbackDialog`: use `SentryUserFeedbackForm` instead
   - Android: the `SentryUserFeedbackButton` view and composable: call `Sentry.feedback().show()` from your own button instead
 

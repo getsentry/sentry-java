@@ -16,7 +16,6 @@ import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.metrics.IMetricsApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
-import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -845,40 +844,6 @@ public final class Sentry {
   }
 
   /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
-   *     instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static @NotNull SentryId captureFeedback(final @NotNull Feedback feedback) {
-    return feedback().capture(feedback);
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint)
-   *     capture(feedback, hint)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static @NotNull SentryId captureFeedback(
-      final @NotNull Feedback feedback, final @Nullable Hint hint) {
-    return feedback().capture(feedback, hint);
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint, ScopeCallback)
-   *     capture(feedback, hint, callback)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static @NotNull SentryId captureFeedback(
-      final @NotNull Feedback feedback,
-      final @Nullable Hint hint,
-      final @Nullable ScopeCallback callback) {
-    return feedback().capture(feedback, hint, callback);
-  }
-
-  /**
    * Captures the exception.
    *
    * @param throwable The exception.
@@ -1413,38 +1378,6 @@ public final class Sentry {
   @NotNull
   public static IFeedbackApi feedback() {
     return getCurrentScopes().feedback();
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show() show()} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void showUserFeedbackDialog() {
-    feedback().show();
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link
-   *     IFeedbackApi#show(SentryFeedbackOptions.OptionsConfigurator) show(configurator)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void showUserFeedbackDialog(
-      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    feedback().show(configurator);
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show(SentryId,
-   *     SentryFeedbackOptions.OptionsConfigurator) show(associatedEventId, configurator)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void showUserFeedbackDialog(
-      final @Nullable SentryId associatedEventId,
-      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    feedback().show(associatedEventId, configurator);
   }
 
   /**

@@ -55,18 +55,18 @@ public final class HubAdapter implements IHub {
 
   @Override
   public @NotNull SentryId captureFeedback(@NotNull Feedback feedback) {
-    return Sentry.captureFeedback(feedback);
+    return Sentry.feedback().capture(feedback);
   }
 
   @Override
   public @NotNull SentryId captureFeedback(@NotNull Feedback feedback, @Nullable Hint hint) {
-    return Sentry.captureFeedback(feedback, hint);
+    return Sentry.feedback().capture(feedback, hint);
   }
 
   @Override
   public @NotNull SentryId captureFeedback(
       @NotNull Feedback feedback, @Nullable Hint hint, @Nullable ScopeCallback callback) {
-    return Sentry.captureFeedback(feedback, hint, callback);
+    return Sentry.feedback().capture(feedback, hint, callback);
   }
 
   @ApiStatus.Internal
