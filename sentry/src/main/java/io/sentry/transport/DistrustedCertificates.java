@@ -47,6 +47,12 @@ public final class DistrustedCertificates {
               "ebed6475c2c2d80fcb199f3fe8dd6e6b3ce60b77eb15d4e42c3dec0c6f5b5105",
               "ec4ffa1ad0ac88081314b7aaffef6a91f97cd57291bb5ba686c5415f5eb4f6b6"));
 
+  private static final DistrustedCertificates instance = new DistrustedCertificates();
+
+  public static @NotNull DistrustedCertificates getInstance() {
+    return instance;
+  }
+
   private DistrustedCertificates() {}
 
   /**
@@ -57,7 +63,7 @@ public final class DistrustedCertificates {
    * do this check, because the JVM's {@link HttpsURLConnection} only calls it when its own hostname
    * check fails.
    */
-  public static void verify(final @NotNull HttpURLConnection connection)
+  public void verify(final @NotNull HttpURLConnection connection)
       throws SSLPeerUnverifiedException {
     if (!(connection instanceof HttpsURLConnection)) {
       return;

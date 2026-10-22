@@ -33,6 +33,7 @@ final class HttpConnection {
   private final @NotNull RequestDetails requestDetails;
   private final @NotNull SentryOptions options;
   private final @NotNull RateLimiter rateLimiter;
+  private final @NotNull DistrustedCertificates distrustedCertificates;
 
   /**
    * Constructs a new HTTP transport instance. Notably, the provided {@code requestUpdater} must set
@@ -47,17 +48,24 @@ final class HttpConnection {
       final @NotNull SentryOptions options,
       final @NotNull RequestDetails requestDetails,
       final @NotNull RateLimiter rateLimiter) {
-    this(options, requestDetails, AuthenticatorWrapper.getInstance(), rateLimiter);
+    this(
+        options,
+        requestDetails,
+        AuthenticatorWrapper.getInstance(),
+        rateLimiter,
+        DistrustedCertificates.getInstance());
   }
 
   HttpConnection(
       final @NotNull SentryOptions options,
       final @NotNull RequestDetails requestDetails,
       final @NotNull AuthenticatorWrapper authenticatorWrapper,
-      final @NotNull RateLimiter rateLimiter) {
+      final @NotNull RateLimiter rateLimiter,
+      final @NotNull DistrustedCertificates distrustedCertificates) {
     this.requestDetails = requestDetails;
     this.options = options;
     this.rateLimiter = rateLimiter;
+    this.distrustedCertificates = distrustedCertificates;
 
     this.proxy = resolveProxy(options.getProxy());
 
@@ -143,7 +151,7 @@ final class HttpConnection {
     }
 
     connection.connect();
-    DistrustedCertificates.verify(connection);
+    distrustedCertificates.verify(connection);
     return connection;
   }
 
