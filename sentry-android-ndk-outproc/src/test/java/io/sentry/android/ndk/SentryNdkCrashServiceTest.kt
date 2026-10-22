@@ -6,21 +6,30 @@ import android.content.ComponentName
 import android.content.Context
 import android.os.Binder
 import android.os.Parcel
+import android.os.ParcelFileDescriptor
 import com.google.common.truth.Truth.assertThat
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.ndk.NdkOptions
+import io.sentry.ndk.SentryNdk.CrashDaemon
 import java.util.Date
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
 
 @RunWith(RobolectricTestRunner::class)
@@ -115,6 +124,23 @@ class SentryNdkCrashServiceTest {
     assertThat(service.findMatchingExitInfo(options, Date(1000), 2)).isNull()
   }
 
+  @Test
+  @Config(instrumentedPackages = ["io.sentry.ndk"], shadows = [BlockingCrashDaemonShadow::class])
+  fun `starts a daemon for a relaunched app while the previous one finishes`() {
+    val service = Robolectric.setupService(SentryNdkCrashService::class.java)
+    try {
+      configureDaemon(service, pid = 1, fd = 10)
+      assertThat(BlockingCrashDaemonShadow.daemons.poll(5, TimeUnit.SECONDS))
+        .isEqualTo(listOf(1, 10, 11, 12, "shm-1"))
+
+      configureDaemon(service, pid = 2, fd = 20)
+      assertThat(BlockingCrashDaemonShadow.daemons.poll(5, TimeUnit.SECONDS))
+        .isEqualTo(listOf(2, 20, 21, 22, "shm-2"))
+    } finally {
+      BlockingCrashDaemonShadow.release.countDown()
+    }
+  }
+
   private fun addExitInfo(context: Context, pid: Int, timestamp: Long) {
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     shadowOf(activityManager)
@@ -127,6 +153,28 @@ class SentryNdkCrashServiceTest {
       )
   }
 
+  private fun configureDaemon(service: SentryNdkCrashService, pid: Int, fd: Int) {
+    val configured =
+      service.configureDaemon(
+        "db",
+        null,
+        "shm-$pid",
+        pid,
+        0L,
+        false,
+        false,
+        0L,
+        null,
+        null,
+        descriptor(fd),
+        descriptor(fd + 1),
+        descriptor(fd + 2),
+      )
+    assertThat(configured).isTrue()
+  }
+
+  private fun descriptor(fd: Int): ParcelFileDescriptor = mock { on { detachFd() } doReturn fd }
+
   private fun configure(configured: Boolean) {
     val binder =
       object : Binder() {
@@ -137,5 +185,29 @@ class SentryNdkCrashServiceTest {
         }
       }
     shadowOf(app).setComponentNameAndServiceForBindService(component, binder)
+  }
+}
+
+@Implements(io.sentry.ndk.SentryNdk::class)
+class BlockingCrashDaemonShadow {
+  companion object {
+    val daemons = LinkedBlockingQueue<List<Any>>()
+    val release = CountDownLatch(1)
+
+    @Suppress("unused")
+    @Implementation
+    @JvmStatic
+    fun runCrashDaemon(
+      appPid: Int,
+      appTid: Long,
+      notifyFd: Int,
+      readyFd: Int,
+      messageFd: Int,
+      shmPath: String,
+    ): CrashDaemon? {
+      daemons.add(listOf(appPid, notifyFd, readyFd, messageFd, shmPath))
+      release.await(10, TimeUnit.SECONDS)
+      return null
+    }
   }
 }
