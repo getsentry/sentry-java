@@ -11,3 +11,6 @@ sentry {
 ```
 
 The default is the inproc backend.
+
+The crash service needs API 30+. On older versions, native crash reporting is
+disabled.

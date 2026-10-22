@@ -82,4 +82,5 @@ dependencies {
 
 extensions.configure<com.android.build.gradle.BaseExtension> {
   sourceSets.getByName("main").java.srcDir("src/inproc/java")
+  sourceSets.getByName("test").java.srcDir("src/inprocTest/java")
 }
