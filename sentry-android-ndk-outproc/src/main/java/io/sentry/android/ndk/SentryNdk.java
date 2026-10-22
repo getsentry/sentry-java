@@ -1,8 +1,6 @@
 package io.sentry.android.ndk;
 
 import android.annotation.SuppressLint;
-import android.app.ActivityManager;
-import android.app.Application;
 import android.content.Context;
 import android.content.ServiceConnection;
 import android.os.Build;
@@ -11,7 +9,6 @@ import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.ndk.NdkOptions;
 import io.sentry.util.Objects;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
@@ -64,11 +61,6 @@ public final class SentryNdk {
    */
   public static void init(
       @Nullable final Context context, @NotNull final SentryAndroidOptions options) {
-    if (context != null && isCrashServiceProcess(context)) {
-      options.getLogger().log(io.sentry.SentryLevel.DEBUG, "Skipping NDK init in crash service.");
-      return;
-    }
-
     // no fork/exec fallback, the native crash daemon only runs in the crash service
     if (context == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
       throw new IllegalStateException("The NDK crash service needs a context and API 30+");
@@ -165,32 +157,5 @@ public final class SentryNdk {
     if (context != null && connection != null) {
       context.unbindService(connection);
     }
-  }
-
-  private static boolean isCrashServiceProcess(final @NotNull Context context) {
-    final @NotNull String crashServiceProcess = context.getPackageName() + ".sentry_ndk_crash";
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-      return crashServiceProcess.equals(Application.getProcessName());
-    }
-
-    final @Nullable ActivityManager activityManager =
-        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-    if (activityManager == null) {
-      return false;
-    }
-
-    final int pid = android.os.Process.myPid();
-    final @Nullable List<ActivityManager.RunningAppProcessInfo> processes =
-        activityManager.getRunningAppProcesses();
-    if (processes == null) {
-      return false;
-    }
-
-    for (ActivityManager.RunningAppProcessInfo process : processes) {
-      if (process.pid == pid) {
-        return crashServiceProcess.equals(process.processName);
-      }
-    }
-    return false;
   }
 }
