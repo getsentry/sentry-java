@@ -24,18 +24,26 @@ public final class SentryScheduleHook implements Function<Runnable, Runnable> {
    */
   private static final String[] EXCLUDED_RUNNABLE_PREFIXES = {
     "reactor.kafka.receiver.internals.ConsumerEventLoop",
-    "reactor.netty.internal.shaded.reactor.pool.SimpleDequePool",
-    "reactor.pool.SimpleDequePool",
-    "reactor.netty.resources.PooledConnectionProvider"
+    "reactor.netty.internal.shaded.reactor.pool.SimpleDequePool$$Lambda",
+    "reactor.netty.http.client.Http2Pool$$Lambda",
+    "reactor.netty.resources.PooledConnectionProvider$$Lambda"
   };
+
+  // The standalone reactor.pool.SimpleDequePool is intentionally not excluded because it also
+  // schedules acquisition-delivery tasks that require scope propagation.
+  static boolean isExcluded(final @NotNull String runnableClassName) {
+    for (final String excludedPrefix : EXCLUDED_RUNNABLE_PREFIXES) {
+      if (runnableClassName.startsWith(excludedPrefix)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   @Override
   public Runnable apply(final @NotNull Runnable runnable) {
-    final String runnableClassName = runnable.getClass().getName();
-    for (final String excludedPrefix : EXCLUDED_RUNNABLE_PREFIXES) {
-      if (runnableClassName.startsWith(excludedPrefix)) {
-        return runnable;
-      }
+    if (isExcluded(runnable.getClass().getName())) {
+      return runnable;
     }
 
     final IScopes newScopes = Sentry.getCurrentScopes().forkedCurrentScope("spring.scheduleHook");
