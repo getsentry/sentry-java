@@ -1,5 +1,8 @@
 package io.sentry.compose.navigation3
 
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.Hint
@@ -16,6 +19,9 @@ import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
+import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
+import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.lifecycle.NavScopes
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import org.junit.Test
@@ -90,7 +96,7 @@ class BackStackObserverTest {
       scope.options.isEnableScreenTracking = config.enableScreenTracking
 
       return BackStackObserver(
-        scopes = scopes,
+        scopes = leaseholderNavScopes(),
         options =
           SentryNavOptions {
             enableNavigationBreadcrumbs = config.enableNavigationBreadcrumbs
@@ -100,6 +106,23 @@ class BackStackObserverTest {
           },
         entryMapper = ForwardingBackStackEntryMapper { entryMapper },
       )
+    }
+
+    /**
+     * Real [NavScopes] that hold the nav lease for the whole test, so [BackStackObserver] writes
+     * straight through to [scope] without lease coordination getting in the way.
+     */
+    private fun leaseholderNavScopes(): NavScopes {
+      val owner =
+        object : LifecycleOwner {
+          override val lifecycle =
+            LifecycleRegistry.createUnsafe(this).apply { currentState = Lifecycle.State.RESUMED }
+        }
+      return NavScopes(scopes, NavLeaseCoordinator()).apply {
+        attach(owner.lifecycle)
+        // The sole resumed owner's first update acquires the lease, which it then keeps.
+        onBackStackUpdate()
+      }
     }
 
     private companion object {
@@ -741,20 +764,58 @@ class BackStackObserverTest {
   }
 
   @Test
-  fun `cleanup clears observer owned tracked state`() {
+  fun `dispose finishes the active nav transaction and unbinds it from the scope`() {
     val fixture = Fixture()
     val sut = fixture.getSut()
-
     sut.onBackStackChanged(listOf(HomeScreen()))
     val transaction = fixture.startedTransactions.single()
 
-    sut.cleanup()
+    sut.dispose()
 
     assertThat(transaction.isFinished).isTrue()
     assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `dispose clears the screen name and back stack context it recorded`() {
+    val fixture = Fixture()
+    val sut = fixture.getSut()
+    sut.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("123")))
+
+    sut.dispose()
+
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
     assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
+  }
+
+  @Test
+  fun `dispose keeps a screen name that was set after the observer recorded its own`() {
+    val fixture = Fixture()
+    val sut = fixture.getSut()
+    sut.onBackStackChanged(listOf(HomeScreen()))
+    fixture.scope.screen = "/HostScreen"
+
+    sut.dispose()
+
+    assertThat(fixture.scope.screen).isEqualTo("/HostScreen")
+  }
+
+  @Test
+  fun `dispose makes the next back stack update a first navigation with no from entry`() {
+    val fixture = Fixture()
+    val sut = fixture.getSut()
+    val home = HomeScreen()
+    sut.onBackStackChanged(listOf(home))
+
+    sut.dispose()
+    sut.onBackStackChanged(listOf(home))
+
+    assertThat(fixture.breadcrumbs).hasSize(2)
+    assertThat(fixture.breadcrumbs.last().data).containsExactly("to", "/HomeScreen")
+    assertThat(fixture.startedTransactions).hasSize(2)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.last())
+    assertThat(fixture.scope.screen).isEqualTo("/HomeScreen")
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
