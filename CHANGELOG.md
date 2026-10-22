@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+- Fix a D8 crash (`NullPointerException: Cannot invoke "String.length()"`) when dexing the SDK with AGP 8.0 and older, a regression from 8.61.1 ([#6356](https://github.com/getsentry/sentry-java/pull/6356))
+
 ## 8.61.1
 
 ### Fixes
