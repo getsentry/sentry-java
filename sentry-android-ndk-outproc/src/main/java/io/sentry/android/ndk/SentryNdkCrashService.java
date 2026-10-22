@@ -38,7 +38,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
@@ -52,6 +54,7 @@ public final class SentryNdkCrashService extends Service {
   private static final @NotNull String BINDER_DESCRIPTOR = "io.sentry.android.ndk.CrashService";
   private static final int TRANSACTION_CONFIGURE = IBinder.FIRST_CALL_TRANSACTION;
 
+  private static final @NotNull String SHM_PREFIX = ".sentry-shm-service-";
   private static final @NotNull String MERGED_SUFFIX = ".merged";
   private static final long POLL_INTERVAL_MILLIS = 250;
   private static final long MATCH_TOLERANCE_MILLIS = 30000;
@@ -131,9 +134,11 @@ public final class SentryNdkCrashService extends Service {
       return null;
     }
 
+    deleteStaleShmFiles(context, nativeDatabaseDir);
+
     final long ipcId = System.nanoTime();
     final File shmFile =
-        new File(nativeDatabaseDir, ".sentry-shm-service-" + Long.toHexString(ipcId));
+        new File(nativeDatabaseDir, SHM_PREFIX + Process.myPid() + "-" + Long.toHexString(ipcId));
 
     ParcelFileDescriptor notifyRead = null;
     ParcelFileDescriptor notifyWrite = null;
@@ -207,6 +212,34 @@ public final class SentryNdkCrashService extends Service {
         closeable.close();
       } catch (IOException ignored) {
         // ignored
+      }
+    }
+  }
+
+  // a setup that failed before the daemon attached leaves its file behind
+  private static void deleteStaleShmFiles(
+      final @NotNull Context context, final @NotNull File nativeDatabaseDir) {
+    final @Nullable ActivityManager activityManager =
+        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+    final @Nullable List<ActivityManager.RunningAppProcessInfo> processes =
+        activityManager != null ? activityManager.getRunningAppProcesses() : null;
+    final @Nullable File[] files = nativeDatabaseDir.listFiles();
+    if (processes == null || files == null) {
+      return;
+    }
+
+    final Set<String> pids = new HashSet<>();
+    for (ActivityManager.RunningAppProcessInfo process : processes) {
+      pids.add(String.valueOf(process.pid));
+    }
+    for (File file : files) {
+      final String name = file.getName();
+      if (!name.startsWith(SHM_PREFIX)) {
+        continue;
+      }
+      final int end = name.indexOf('-', SHM_PREFIX.length());
+      if (end < 0 || !pids.contains(name.substring(SHM_PREFIX.length(), end))) {
+        file.delete();
       }
     }
   }

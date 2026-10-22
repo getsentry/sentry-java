@@ -115,6 +115,23 @@ class SentryNdkCrashServiceTest {
   }
 
   @Test
+  fun `deletes the shared memory files of exited processes`() {
+    configure(true)
+    val dir = File(options.cacheDirPath, ".sentry-native").apply { mkdirs() }
+    val running = File(dir, ".sentry-shm-service-1-a").apply { createNewFile() }
+    val exited = File(dir, ".sentry-shm-service-2-b").apply { createNewFile() }
+    val activityManager = app.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    shadowOf(activityManager)
+      .setProcesses(listOf(ActivityManager.RunningAppProcessInfo().apply { pid = 1 }))
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use {
+      SentryNdkCrashService.start(app, options)
+    }
+
+    assertThat(running.exists()).isTrue()
+    assertThat(exited.exists()).isFalse()
+  }
+
+  @Test
   fun `matches the exit info of the app pid`() {
     val service = Robolectric.setupService(SentryNdkCrashService::class.java)
     addExitInfo(service, pid = 1, timestamp = 2000)
