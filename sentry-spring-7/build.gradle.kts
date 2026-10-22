@@ -12,12 +12,10 @@ plugins {
   alias(libs.plugins.springboot4) apply false
 }
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
-}
+// Published code targets Java 17. Test code is not published and follows the toolchain.
+tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1)
@@ -67,8 +65,8 @@ dependencies {
   testImplementation(libs.context.propagation)
   testImplementation(libs.graphql.java24)
   testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.mockito.kotlin.spring7)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.kotlin)
+  testImplementation(libs.mockito.core)
   testImplementation(libs.springboot4.starter.aspectj)
   testImplementation(libs.springboot4.starter.graphql)
   testImplementation(libs.spring.kafka4)

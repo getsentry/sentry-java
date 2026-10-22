@@ -13,12 +13,10 @@ plugins {
   alias(libs.plugins.springboot4) apply false
 }
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
-}
+// Published code targets Java 17. Test code is not published and follows the toolchain.
+tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
