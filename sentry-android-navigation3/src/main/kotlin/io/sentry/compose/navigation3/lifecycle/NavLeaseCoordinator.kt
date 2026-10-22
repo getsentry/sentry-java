@@ -18,16 +18,13 @@ import io.sentry.SpanStatus
  *
  * **Exception semantics**
  *
- * Every method in this class with an `IScope` parameter can throw arbitrary exceptions due to:
+ * Methods in this class with an `IScope` parameter can throw arbitrary exceptions†, which propagate
+ * to the caller. This class restores its own bookkeeping first, so the coordinator remains usable
+ * if the exception is caught.
  *
- * 1. the [onPublishData][registerCandidate] and [onClearPublishedData][registerCandidate] callbacks
- *    supplied at registration;
- * 2. the `IScope` the method is handed, whose mutators notify every observer registered through
- *    `SentryOptions.addScopeObserver` – including the host app's – in an unguarded loop; and
- * 3. `finish()` on a retained nav transaction, which may run the host app's event processors.
- *
- * This class restores its own bookkeeping before the exception leaves, so the coordinator remains
- * usable.
+ * † E.g., `IScope` can throw arbitrary exceptions when scope mutators notify registered observers –
+ * including the host app – in an unguarded loop, or when `finish()` is called on a retained nav
+ * transaction, which can trigger the host app's event processors.
  *
  * **Thread safety**
  *
@@ -56,8 +53,8 @@ internal class NavLeaseCoordinator {
   private var resumeOrder: Long = 0
 
   /**
-   * Registers [owner] as a candidate for the nav lease. No-ops if `owner` is already registered or
-   * [lifecycleState] is [destroyed][Lifecycle.State.DESTROYED].
+   * Registers [owner] as a candidate for the nav lease. No-ops if `owner` instance is already
+   * registered or [lifecycleState] is [destroyed][Lifecycle.State.DESTROYED].
    *
    * [onPublishData] publishes `owner`'s staged nav data to the given scope when `owner` acquires
    * the lease. [onClearPublishedData] clears `owner`'s published nav data from the given scope when
@@ -164,7 +161,7 @@ internal class NavLeaseCoordinator {
 
   /**
    * Stops tracking [owner] (e.g., because it was destroyed or its effect left the composition).
-   * No-ops if `owner` isn't registered.
+   * No-ops if `owner` instance isn't registered.
    *
    * Finishes and unbinds `owner`'s nav transaction, and clears its published nav data if that data
    * is the most recently published. If `owner` holds the lease, hands it to the eligible candidate
