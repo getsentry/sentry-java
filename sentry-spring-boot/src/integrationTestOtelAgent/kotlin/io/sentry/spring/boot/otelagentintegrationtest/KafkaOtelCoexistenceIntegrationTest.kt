@@ -17,7 +17,7 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker
  */
 class KafkaOtelCoexistenceIntegrationTest : IntegrationTest() {
   override val app: AgentApp
-    get() = kafkaApp
+    get() = kafkaApp!!
 
   @Test
   fun `OpenTelemetry traces both sides of a message instead of Sentry's Kafka integration`() {
@@ -56,7 +56,8 @@ class KafkaOtelCoexistenceIntegrationTest : IntegrationTest() {
   companion object {
     // With the fixture's KAFKA_TOPIC, so no Docker is needed.
     private val kafka = EmbeddedKafkaBroker(1, true, 1, "sentry-topic")
-    private lateinit var kafkaApp: AgentApp
+    // Unset if the app didn't start, in which case stopApp still has to stop the broker.
+    private var kafkaApp: AgentApp? = null
 
     @JvmStatic
     @BeforeClass
@@ -74,7 +75,7 @@ class KafkaOtelCoexistenceIntegrationTest : IntegrationTest() {
     @JvmStatic
     @AfterClass
     fun stopApp() {
-      kafkaApp.close()
+      kafkaApp?.close()
       kafka.destroy()
     }
   }

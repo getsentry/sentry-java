@@ -41,10 +41,16 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
     )
 
   // The agent instruments classes as they load, which on a busy CI runner has taken over a minute.
-  val restTemplate =
-    TestRestTemplate(
-      RestTemplateBuilder().rootUri("http://localhost:${app.awaitPort(timeoutSeconds = 180)}")
-    )
+  private val port =
+    try {
+      app.awaitPort(timeoutSeconds = 180)
+    } catch (e: IllegalStateException) {
+      // The caller never gets this instance, so it can't stop the app.
+      close()
+      throw e
+    }
+
+  val restTemplate = TestRestTemplate(RestTemplateBuilder().rootUri("http://localhost:$port"))
 
   override fun close() {
     app.close()
@@ -56,10 +62,20 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
 
     /**
      * The app most test classes share. It takes seconds to start, so each test JVM starts it once
-     * and stops it when the JVM exits.
+     * and stops it when the JVM exits. If it doesn't start, the remaining tests fail with the same
+     * error rather than each waiting for a new app to time out.
      */
-    val shared: AgentApp by lazy {
-      AgentApp().also { app -> Runtime.getRuntime().addShutdownHook(Thread { app.close() }) }
+    val shared: AgentApp
+      get() = sharedApp.getOrThrow()
+
+    private val sharedApp: Result<AgentApp> by lazy {
+      try {
+        Result.success(
+          AgentApp().also { app -> Runtime.getRuntime().addShutdownHook(Thread { app.close() }) }
+        )
+      } catch (e: IllegalStateException) {
+        Result.failure(e)
+      }
     }
   }
 }
