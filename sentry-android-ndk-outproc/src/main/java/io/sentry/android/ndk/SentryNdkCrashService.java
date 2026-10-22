@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
 public final class SentryNdkCrashService extends Service {
@@ -396,25 +397,26 @@ public final class SentryNdkCrashService extends Service {
   private void startWorkersLocked() {
     if (daemonWorker == null && isDaemonConfigured()) {
       final @Nullable String path = shmPath;
-      daemonWorker = new Thread(() -> runDaemonWorker(path), "SentryNdkCrashService");
+      final int pid = appPid;
+      daemonWorker = new Thread(() -> runDaemonWorker(path, pid), "SentryNdkCrashService");
       daemonWorker.start();
     }
   }
 
-  private void runDaemonWorker(final @Nullable String path) {
+  private void runDaemonWorker(final @Nullable String path, final int pid) {
     final SentryAndroidOptions options = new SentryAndroidOptions();
     options.setLogger(new AndroidLogger("SentryNdkCrash"));
     options.setDebug(debug);
 
     try {
-      if (path == null || notifyReadFd < 0 || readyWriteFd < 0 || messageReadFd < 0 || appPid < 0) {
+      if (path == null || notifyReadFd < 0 || readyWriteFd < 0 || messageReadFd < 0 || pid < 0) {
         return;
       }
 
       // keeps going after onDestroy, a crashed app's binding goes away mid-crash
       try (final @Nullable CrashDaemon daemon =
               io.sentry.ndk.SentryNdk.runCrashDaemon(
-                  appPid, appTid, notifyReadFd, readyWriteFd, messageReadFd, path)) {
+                  pid, appTid, notifyReadFd, readyWriteFd, messageReadFd, path)) {
         if (daemon == null) {
           return;
         }
@@ -426,7 +428,7 @@ public final class SentryNdkCrashService extends Service {
         final long deadlineMillis = System.currentTimeMillis() + shutdownTimeoutMillis;
         final File envelope = new File(envelopePath);
         final @Nullable MergedEnvelope mergedEnvelope =
-            tombstoneEnabled ? waitForMergedEnvelope(options, envelope, deadlineMillis) : null;
+            tombstoneEnabled ? waitForMergedEnvelope(options, envelope, deadlineMillis, pid) : null;
         if (tombstoneEnabled && mergedEnvelope == null) {
           options
               .getLogger()
@@ -468,10 +470,11 @@ public final class SentryNdkCrashService extends Service {
   private @Nullable MergedEnvelope waitForMergedEnvelope(
       final @NotNull SentryAndroidOptions options,
       final @NotNull File envelope,
-      final long deadlineMillis)
+      final long deadlineMillis,
+      final int pid)
       throws InterruptedException {
     while (true) {
-      final @Nullable MergedEnvelope mergedEnvelope = processEnvelope(options, envelope);
+      final @Nullable MergedEnvelope mergedEnvelope = processEnvelope(options, envelope, pid);
       if (mergedEnvelope != null) {
         return mergedEnvelope;
       }
@@ -486,7 +489,7 @@ public final class SentryNdkCrashService extends Service {
 
   @SuppressLint("NewApi")
   private @Nullable MergedEnvelope processEnvelope(
-      final @NotNull SentryAndroidOptions options, final @NotNull File file) {
+      final @NotNull SentryAndroidOptions options, final @NotNull File file, final int pid) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
       return null;
     }
@@ -501,7 +504,8 @@ public final class SentryNdkCrashService extends Service {
       return null;
     }
 
-    final @Nullable ApplicationExitInfo exitInfo = findMatchingExitInfo(options, nativeTimestamp);
+    final @Nullable ApplicationExitInfo exitInfo =
+        findMatchingExitInfo(options, nativeTimestamp, pid);
     if (exitInfo == null) {
       return null;
     }
@@ -528,9 +532,13 @@ public final class SentryNdkCrashService extends Service {
     return null;
   }
 
+  @VisibleForTesting
   @SuppressLint("NewApi")
-  private @Nullable ApplicationExitInfo findMatchingExitInfo(
-      final @NotNull SentryAndroidOptions options, final @NotNull Date nativeTimestamp) {
+  @Nullable
+  ApplicationExitInfo findMatchingExitInfo(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull Date nativeTimestamp,
+      final int pid) {
     final @Nullable ActivityManager activityManager =
         (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
     if (activityManager == null) {
@@ -542,7 +550,8 @@ public final class SentryNdkCrashService extends Service {
     ApplicationExitInfo bestMatch = null;
     long bestDiff = Long.MAX_VALUE;
     for (ApplicationExitInfo exitInfo : exitInfos) {
-      if (exitInfo.getReason() != ApplicationExitInfo.REASON_CRASH_NATIVE) {
+      if (exitInfo.getReason() != ApplicationExitInfo.REASON_CRASH_NATIVE
+          || exitInfo.getPid() != pid) {
         continue;
       }
       final long diff = Math.abs(exitInfo.getTimestamp() - nativeTimestamp.getTime());
