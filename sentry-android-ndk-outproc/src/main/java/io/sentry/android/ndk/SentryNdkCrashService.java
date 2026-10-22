@@ -499,7 +499,7 @@ public final class SentryNdkCrashService extends Service {
 
           final long deadlineMillis = System.currentTimeMillis() + shutdownTimeoutMillis;
           final File envelope = new File(envelopePath);
-          final @Nullable File mergedEnvelope =
+          final @Nullable MergedEnvelope mergedEnvelope =
               tombstoneEnabled ? waitForMergedEnvelope(options, envelope, deadlineMillis) : null;
           if (tombstoneEnabled && mergedEnvelope == null) {
             options
@@ -509,14 +509,16 @@ public final class SentryNdkCrashService extends Service {
 
           final long remainingMillis = Math.max(0, deadlineMillis - System.currentTimeMillis());
           if (!daemon.sendEnvelope(
-              mergedEnvelope != null ? mergedEnvelope.getPath() : envelope.getPath(),
+              mergedEnvelope != null ? mergedEnvelope.file.getPath() : envelope.getPath(),
               remainingMillis)) {
             options.getLogger().log(SentryLevel.DEBUG, "Failed to send NDK crash envelope.");
+          } else if (mergedEnvelope != null) {
+            writeLastTombstoneMarker(envelope, mergedEnvelope.tombstoneTimestamp);
           }
         }
         return;
       }
-    } catch (InterruptedException e) {
+    } catch (InterruptedException | IOException e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Error running NDK crash service.");
     } finally {
       synchronized (lock) {
@@ -542,13 +544,13 @@ public final class SentryNdkCrashService extends Service {
         && appPid >= 0;
   }
 
-  private @Nullable File waitForMergedEnvelope(
+  private @Nullable MergedEnvelope waitForMergedEnvelope(
       final @NotNull SentryAndroidOptions options,
       final @NotNull File envelope,
       final long deadlineMillis)
       throws InterruptedException {
     do {
-      final @Nullable File mergedEnvelope = processEnvelope(options, envelope);
+      final @Nullable MergedEnvelope mergedEnvelope = processEnvelope(options, envelope);
       if (mergedEnvelope != null) {
         return mergedEnvelope;
       }
@@ -563,7 +565,7 @@ public final class SentryNdkCrashService extends Service {
   }
 
   @SuppressLint("NewApi")
-  private @Nullable File processEnvelope(
+  private @Nullable MergedEnvelope processEnvelope(
       final @NotNull SentryAndroidOptions options, final @NotNull File file) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
       return null;
@@ -599,8 +601,7 @@ public final class SentryNdkCrashService extends Service {
 
       TombstoneIntegration.TombstonePolicy.mergeNativeCrashes(nativeEnvelope.event, tombstoneEvent);
       final File mergedEnvelope = writeMergedEnvelope(options, file, nativeEnvelope);
-      writeLastTombstoneMarker(file, exitInfo.getTimestamp());
-      return mergedEnvelope;
+      return new MergedEnvelope(mergedEnvelope, exitInfo.getTimestamp());
     } catch (Exception e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Failed to merge NDK tombstone envelope.");
     }
@@ -690,7 +691,7 @@ public final class SentryNdkCrashService extends Service {
   }
 
   private void writeLastTombstoneMarker(final @NotNull File envelopeFile, final long timestamp)
-      throws Exception {
+      throws IOException {
     final @Nullable File runDir = envelopeFile.getParentFile();
     final @Nullable File nativeDir = runDir != null ? runDir.getParentFile() : null;
     final @Nullable File cacheDir = nativeDir != null ? nativeDir.getParentFile() : null;
@@ -711,6 +712,16 @@ public final class SentryNdkCrashService extends Service {
         final @NotNull SentryEnvelope envelope, final @NotNull SentryEvent event) {
       this.envelope = envelope;
       this.event = event;
+    }
+  }
+
+  private static final class MergedEnvelope {
+    private final @NotNull File file;
+    private final long tombstoneTimestamp;
+
+    private MergedEnvelope(final @NotNull File file, final long tombstoneTimestamp) {
+      this.file = file;
+      this.tombstoneTimestamp = tombstoneTimestamp;
     }
   }
 }
