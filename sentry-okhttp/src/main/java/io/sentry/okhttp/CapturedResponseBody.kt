@@ -13,14 +13,6 @@ import okio.buffer
 /**
  * A [ResponseBody] that copies the bytes the application reads into a capped buffer.
  *
- * Reading the body up front instead, with [okhttp3.Response.peekBody], deadlocks on a response of
- * unknown length: a peek is `request(byteCount)`, which waits for that many bytes or for the end of
- * the stream, and a server-sent-events stream, a long-poll or an open chunked endpoint delivers
- * neither. The caller would never receive the response at all.
- *
- * Nothing is therefore read on the capture's own account. Only what the application reads is
- * captured, which also keeps the cost of the instrumentation to a copy of those bytes.
- *
  * @param delegate the body to capture from.
  * @param maxBytes the maximum number of bytes to retain; capture stops once it is reached.
  * @param onCaptured invoked at most once, synchronously, on the thread that finishes the body — so
@@ -36,10 +28,9 @@ internal class CapturedResponseBody(
   private val captured = Buffer()
   private val reported = AtomicBoolean(false)
 
-  // Buffering the capturing source cannot re-introduce the deadlock above: a BufferedSource read
-  // takes at most one segment from the source below it and returns with whatever arrived, so a
-  // short event is still forwarded on its own. Only request/require/readByteArray() wait for a byte
-  // count, and those are the application's own calls.
+  // A buffered source still forwards a short event on its own: one read takes at most one segment
+  // from the source below and returns with whatever arrived. Only request/require/readByteArray()
+  // wait for a byte count, and those are the application's own calls.
   private val capturingSource: BufferedSource by lazy {
     CapturingSource(delegate.source()).buffer()
   }
@@ -101,12 +92,6 @@ internal class CapturedResponseBody(
     }
   }
 
-  /**
-   * [captured] is written by the thread reading the body and read here, which [close] may reach
-   * from another thread — cancelling a stream from elsewhere is ordinary use — and [Buffer] is not
-   * thread-safe. Such a close reports what was copied by then: waiting for a read that may be
-   * parked for minutes is the deadlock this class exists to avoid.
-   */
   private fun reportCaptured() {
     if (reported.compareAndSet(false, true)) {
       onCaptured(synchronized(captured) { captured.clone().readByteArray() })
