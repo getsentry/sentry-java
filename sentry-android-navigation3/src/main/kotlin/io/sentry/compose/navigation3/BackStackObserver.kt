@@ -2,12 +2,9 @@ package io.sentry.compose.navigation3
 
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.ITransaction
 import io.sentry.SentryIntegrationPackageStorage
-import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
-import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.BackStackConverter.RetentionPolicy
@@ -16,6 +13,7 @@ import io.sentry.compose.navigation3.PreparedChange.BackStackHasSameTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackIsEmpty
 import io.sentry.compose.navigation3.lifecycle.INavScope
 import io.sentry.compose.navigation3.lifecycle.INavScopes
+import io.sentry.compose.navigation3.lifecycle.INavTransaction
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
@@ -59,7 +57,7 @@ internal class BackStackObserver<T : Any>(
 
   private val backStackConverter = BackStackConverter(entryMapper, scopes.options.logger)
 
-  private val navTransaction = NavTransaction(scopes)
+  private val navTransactions = NavTransactions(scopes)
   private val navBreadcrumbs = NavBreadcrumbs(scopes)
   private val navScreen = NavScreen()
   private val navContext = NavContext(scopes, options)
@@ -83,7 +81,7 @@ internal class BackStackObserver<T : Any>(
   }
 
   /**
-   * Updates Sentry nav data based on the provided [backStack].
+   * Updates Sentry nav state based on the provided [backStack].
    *
    * **Data generated**
    *
@@ -113,7 +111,7 @@ internal class BackStackObserver<T : Any>(
   }
 
   /**
-   * Clears the nav data this observer recorded.
+   * Clears the nav state this observer recorded.
    *
    * Call it when observation ends so that no stale screen, nav context, or nav transaction outlives
    * it.
@@ -194,10 +192,10 @@ internal class BackStackObserver<T : Any>(
       navBreadcrumbs.emit(fromEntry = previousTop, toEntry = currentBackStack.topEntryNormalized)
     }
 
-    navTransaction.stop(scope)
+    navTransactions.stop(scope)
 
     if (areNavigationTransactionsEnabled) {
-      navTransaction
+      navTransactions
         .start(
           scope,
           currentTop.name,
@@ -231,7 +229,7 @@ internal class BackStackObserver<T : Any>(
   }
 
   private fun tearDown(scope: INavScope) {
-    navTransaction.stop(scope)
+    navTransactions.stop(scope)
     navContext.clear(scope)
     navScreen.clear(scope)
     clearPreviousTop()
@@ -277,32 +275,22 @@ private data class BackStackData<T>(
 )
 
 /** A helper class for managing nav transactions. */
-private class NavTransaction(private val scopes: INavScopes) {
+private class NavTransactions(private val scopes: INavScopes) {
 
   private companion object {
     private const val TRANSACTION_ORIGIN = "auto.navigation.nav3"
   }
 
-  private var activeNavTransaction: ITransaction? = null
-
-  /** Starts an idle navigation transaction, or no-ops if another transaction is already active. */
+  /**
+   * Starts an idle navigation transaction, or no-ops if another transaction is already active.
+   *
+   * See [INavScope.startNavTransaction].
+   */
   fun start(
     scope: INavScope,
     name: String,
     arguments: Map<String, Any?>,
-  ): ITransaction? {
-    scope.clearFinishedTransaction()
-
-    if (scope.transaction != null) {
-      scopes.options.logger.log(
-        DEBUG,
-        "Nav3 transaction for route %s won't be created because another transaction is active.",
-        name,
-      )
-
-      return null
-    }
-
+  ): INavTransaction? {
     val transactionOptions =
       TransactionOptions().also {
         it.isWaitForChildren = true
@@ -314,36 +302,25 @@ private class NavTransaction(private val scopes: INavScopes) {
       }
 
     val transaction =
-      scopes.startTransaction(
+      scope.startNavTransaction(
         TransactionContext(name, TransactionNameSource.ROUTE, NAVIGATION_OP),
         transactionOptions,
-      )
+      ) ?: return null
 
-    // Not an error: INavScopes.startTransaction may decline to start a transaction by design.
-    if (transaction.isNoOp) {
-      return null
+    if (arguments.isNotEmpty()) {
+      transaction.setData("arguments", arguments)
     }
-
-    activeNavTransaction = transaction
-
-    transaction.apply {
-      if (arguments.isNotEmpty()) {
-        setData("arguments", arguments)
-      }
-    }
-
-    scope.bindTransaction(transaction)
 
     return transaction
   }
 
-  /** Finishes and unsets the active navigation transaction, if one exists. */
+  /**
+   * Finishes and unsets the active navigation transaction, if one exists.
+   *
+   * See [INavScope.finishNavTransaction].
+   */
   fun stop(scope: INavScope) {
-    val transaction = activeNavTransaction ?: return
-    val status = transaction.status ?: SpanStatus.OK
-    transaction.finish(status)
-    scope.unbindTransaction(transaction)
-    activeNavTransaction = null
+    scope.finishNavTransaction()
   }
 }
 
@@ -377,15 +354,15 @@ private class NavContext(private val scopes: INavScopes, private val options: Se
    * proper values to the transaction context instead.
    */
   fun <T : Any> updateTransaction(
-    transaction: ITransaction,
+    transaction: INavTransaction,
     scope: INavScope,
     backStack: BackStackData<T>,
   ) {
     if (scopes.options.isEnableScreenTracking) {
-      val appContext = transaction.contexts.app ?: scope.app ?: App()
+      val appContext = scope.app ?: App()
 
       appContext.viewNames = listOf(backStack.topEntryNormalized.name)
-      transaction.contexts.setApp(appContext)
+      transaction.setApp(appContext)
     }
 
     if (options.captureBackStack && backStack.capturedEntriesNormalized.isNotEmpty()) {
