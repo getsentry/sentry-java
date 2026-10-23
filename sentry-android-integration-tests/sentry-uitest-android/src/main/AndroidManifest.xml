@@ -3,6 +3,7 @@
   xmlns:tools="http://schemas.android.com/tools">
 
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
   <application
     android:theme="@style/Theme.AppCompat"
@@ -29,6 +30,7 @@
       android:authorities="${applicationId}.SentryPerformanceProvider"
       tools:node="remove" />
 
+    <service android:name=".SlowStartService" android:exported="false" />
   </application>
 
 </manifest>

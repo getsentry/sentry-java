@@ -116,6 +116,19 @@ allprojects {
 subprojects {
     apply { plugin("io.sentry.spotless") }
     apply { plugin("io.sentry.jdk-target") }
+    listOf("com.android.library", "com.android.application").forEach { pluginId ->
+        plugins.withId(pluginId) {
+            // Robolectric's SDK 37 sandbox (the default, as targetSdk is 37) reflectively writes
+            // FileDescriptor fields in ApplicationSharedMemory; without this, setup fails with
+            // "Failed to interact with raw FileDescriptor internals".
+            tasks.withType<Test>().configureEach {
+                jvmArgs(
+                    "--add-opens=java.base/java.io=ALL-UNNAMED",
+                    "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
+                )
+            }
+        }
+    }
 
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
