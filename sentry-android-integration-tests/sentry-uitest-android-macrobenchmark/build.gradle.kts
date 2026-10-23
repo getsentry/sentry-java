@@ -1,6 +1,8 @@
 plugins {
   id("com.android.test")
   alias(libs.plugins.kotlin.android)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 android {

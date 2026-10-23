@@ -7,6 +7,8 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 group = "io.sentry.sample.spring-boot-jakarta"

@@ -1,6 +1,8 @@
 plugins {
   id("com.android.application")
   id("io.sentry.android.gradle")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 android {

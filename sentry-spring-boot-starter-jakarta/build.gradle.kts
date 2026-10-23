@@ -9,6 +9,9 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.springboot3) apply false
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
 }
 
 // Published code targets Java 17. Test code is not published and follows the toolchain.

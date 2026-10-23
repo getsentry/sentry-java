@@ -36,11 +36,6 @@ object Config {
         val springBootConfiguration = "org.springframework.boot:spring-boot-configuration-processor"
     }
 
-    object QualityPlugins {
-        // this can be removed when we upgrade to Gradle 8, which allows us to use a getter for the plugin ID
-        val detektPlugin = "io.gitlab.arturbosch.detekt"
-    }
-
     object Sentry {
         val SENTRY_JAVA_SDK_NAME = "sentry.java"
         val SENTRY_ANDROID_SDK_NAME = "$SENTRY_JAVA_SDK_NAME.android"
@@ -91,23 +86,5 @@ object Config {
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"
-    }
-
-    object BuildScript {
-        val androidLibs = setOf(
-            "sentry-android-core",
-            "sentry-android-ndk",
-            "sentry-android-fragment",
-            "sentry-android-navigation",
-            "sentry-android-navigation3",
-            "sentry-android-timber",
-            "sentry-compose-android",
-            "sentry-android-sqlite",
-            "sentry-android-replay"
-        )
-
-        val androidXLibs = listOf(
-            "androidx.core:core"
-        )
     }
 }

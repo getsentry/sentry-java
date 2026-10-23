@@ -1,4 +1,8 @@
-plugins { war }
+plugins {
+  war
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+}
 
 group = "io.sentry.sample.servlet"
 

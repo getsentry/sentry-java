@@ -9,6 +9,9 @@ plugins {
   alias(libs.plugins.gradle.versions)
   id("io.sentry.animalsniffer.android")
   alias(libs.plugins.buildconfig)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
