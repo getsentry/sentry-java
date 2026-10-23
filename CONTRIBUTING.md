@@ -76,7 +76,7 @@ or
 
 # Binary compatibility validation
 
-To prevent breaking ABI changes and exposing things we should not, we make use of https://github.com/Kotlin/binary-compatibility-validator. If your change intended to introduce a new public method/property or modify the existing one you can overwrite the API declarations to make CI happy as follows (overwrites them from scratch):
+To prevent breaking ABI changes and exposing things we should not, we make use of https://kotlinlang.org/docs/gradle-binary-compatibility-validation.html. If your change intended to introduce a new public method/property or modify the existing one you can overwrite the API declarations to make CI happy as follows (overwrites them from scratch):
 
 ```shell
 make api
