@@ -43,6 +43,20 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
+      # TODO: remove once sentry-native publishes sentry-native-ndk-outproc
+      - name: Checkout sentry-native
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: getsentry/sentry-native
+          ref: jpnurmi/feat/native-android
+          path: sentry-native
+          submodules: 'recursive'
+
+      # TODO: remove once sentry-native publishes sentry-native-ndk-outproc
+      - name: Publish sentry-native-ndk-outproc to Maven Local
+        working-directory: sentry-native/ndk
+        run: ./gradlew --no-daemon :sentry-native-ndk-outproc:publishToMavenLocal
+
       - name: Run Tests and Lint
         run: make preMerge
 

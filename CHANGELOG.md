@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add experimental, opt-in out-of-process crash reporting on Android ([#6347](https://github.com/getsentry/sentry-java/pull/6347))
+
 ### Fixes
 
 - Always remove the first-draw listener after the first frame, even if no layout pass follows it ([#6152](https://github.com/getsentry/sentry-java/pull/6152))

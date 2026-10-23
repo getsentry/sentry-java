@@ -2,6 +2,7 @@ package io.sentry.android.core;
 
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
+import android.content.Context;
 import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
@@ -19,11 +20,17 @@ public final class NdkIntegration implements Integration, Closeable {
 
   public static final String SENTRY_NDK_CLASS_NAME = "io.sentry.android.ndk.SentryNdk";
 
+  private final @Nullable Context context;
   private final @Nullable Class<?> sentryNdkClass;
 
   private @Nullable SentryAndroidOptions options;
 
   public NdkIntegration(final @Nullable Class<?> sentryNdkClass) {
+    this(null, sentryNdkClass);
+  }
+
+  NdkIntegration(final @Nullable Context context, final @Nullable Class<?> sentryNdkClass) {
+    this.context = context != null ? ContextUtils.getApplicationContext(context) : null;
     this.sentryNdkClass = sentryNdkClass;
   }
 
@@ -50,9 +57,25 @@ public final class NdkIntegration implements Integration, Closeable {
       }
 
       try {
-        final Method method = sentryNdkClass.getMethod("init", SentryAndroidOptions.class);
-        final Object[] args = new Object[1];
-        args[0] = this.options;
+        Method method = null;
+        Object[] args = null;
+        if (context != null) {
+          try {
+            method = sentryNdkClass.getMethod("init", Context.class, SentryAndroidOptions.class);
+            args = new Object[] {context, this.options};
+          } catch (NoSuchMethodException e) {
+            // an older sentry-android-ndk
+            this.options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "SentryNdk.init(Context, SentryAndroidOptions) not found, using SentryNdk.init(SentryAndroidOptions).");
+          }
+        }
+        if (method == null) {
+          method = sentryNdkClass.getMethod("init", SentryAndroidOptions.class);
+          args = new Object[] {this.options};
+        }
         method.invoke(null, args);
 
         this.options.getLogger().log(SentryLevel.DEBUG, "NdkIntegration installed.");

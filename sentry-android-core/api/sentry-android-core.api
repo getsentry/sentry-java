@@ -664,6 +664,7 @@ public class io/sentry/android/core/TombstoneIntegration$TombstonePolicy : io/se
 	public fun getLastReportedTimestamp ()Ljava/lang/Long;
 	public fun markReported (J)V
 	public fun matches (Landroid/app/ApplicationExitInfo;)Z
+	public static fun mergeNativeCrashes (Lio/sentry/SentryEvent;Lio/sentry/SentryEvent;)V
 	public fun shouldReportHistorical ()Z
 }
 

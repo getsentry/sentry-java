@@ -2,6 +2,7 @@ public final class io/sentry/android/ndk/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
 	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field SENTRY_PACKAGE_NAME Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
 	public fun <init> ()V
 }
@@ -28,6 +29,7 @@ public final class io/sentry/android/ndk/NdkScopeObserver : io/sentry/ScopeObser
 
 public final class io/sentry/android/ndk/SentryNdk {
 	public static fun close ()V
+	public static fun init (Landroid/content/Context;Lio/sentry/android/core/SentryAndroidOptions;)V
 	public static fun init (Lio/sentry/android/core/SentryAndroidOptions;)V
 }
 

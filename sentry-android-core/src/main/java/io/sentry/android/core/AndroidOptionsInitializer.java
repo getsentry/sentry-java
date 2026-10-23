@@ -436,7 +436,7 @@ final class AndroidOptionsInitializer {
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
     final Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
-    options.addIntegration(new NdkIntegration(sentryNdkClass));
+    options.addIntegration(new NdkIntegration(context, sentryNdkClass));
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
       options.addIntegration(new TombstoneIntegration(context));
