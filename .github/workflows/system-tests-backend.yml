@@ -24,13 +24,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sample: [ "sentry-samples-console" ]
+        sample: [ "sentry-samples-console-otlp" ]
         agent: [ "false" ]
         agent-auto-init: [ "true" ]
         include:
-          - sample: "sentry-samples-console-otlp"
-            agent: "false"
-            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-4-otlp"
             agent: "false"
             agent-auto-init: "true"
