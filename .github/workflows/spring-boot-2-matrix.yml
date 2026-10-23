@@ -75,8 +75,6 @@ jobs:
       - name: Build sample artifacts
         run: |
           ./gradlew \
-            :sentry-samples:sentry-samples-spring-boot:shadowJar \
-            :sentry-samples:sentry-samples-spring-boot:testClasses \
             :sentry-samples:sentry-samples-spring-boot-webflux:shadowJar \
             :sentry-samples:sentry-samples-spring-boot-webflux:testClasses \
             :sentry-samples:sentry-samples-spring-boot-opentelemetry:shadowJar \
@@ -87,12 +85,8 @@ jobs:
             :sentry-samples:sentry-samples-spring:testClasses \
             :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
-      - name: Test sentry-samples-spring-boot
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot" \
-            --agent false \
-            --auto-init "true"
+      - name: Test sentry-spring-boot integration suite
+        run: ./gradlew :sentry-spring-boot:integrationTest
 
       - name: Test sentry-samples-spring-boot-webflux
         run: |

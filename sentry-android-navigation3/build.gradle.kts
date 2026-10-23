@@ -63,12 +63,15 @@ kotlin { explicitApi() }
 
 dependencies {
   implementation(projects.sentry)
+  implementation(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
 
   testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.androidx.fragment.ktx)
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.ext.junit)
+  testImplementation(libs.androidx.viewpager2)
   testImplementation(libs.google.truth)
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.kotlin)
