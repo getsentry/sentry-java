@@ -197,16 +197,51 @@ testing {
         }
       }
     }
+
+    // The same with Sentry tracing through the OpenTelemetry SDK in the app's JVM instead of the
+    // agent.
+    register<JvmTestSuite>("integrationTestOtelNoAgent") {
+      useJUnit()
+      dependencies {
+        implementation(platform(libs.springboot2.bom))
+        implementation(projects.sentrySpringBootStarter)
+        implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryTestSupport)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.springboot.starter.aop)
+        implementation(libs.springboot.starter.jdbc)
+        implementation(libs.springboot.starter.test)
+        implementation(libs.springboot.starter.web)
+        implementation(libs.springboot.starter.webflux)
+        runtimeOnly(libs.hsqldb)
+        if (bootSupportsGraphqlAndKafka) {
+          implementation(projects.sentryGraphql)
+          implementation(projects.sentryKafka)
+          implementation(libs.springboot.starter.graphql)
+          implementation(libs.spring.kafka2)
+          implementation(libs.spring.kafka2.test)
+        }
+      }
+    }
   }
 }
 
 // The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
 // to resolve `#id` in a cache key.
-listOf("compileIntegrationTestKotlin", "compileIntegrationTestWebfluxKotlin").forEach {
-  tasks.named<KotlinCompile>(it) {
-    compilerOptions.javaParameters = true
-    if (!bootSupportsGraphqlAndKafka) {
-      exclude("**/Graphql*", "**/Greeting*", "**/Kafka*")
+listOf(
+    "compileIntegrationTestKotlin",
+    "compileIntegrationTestWebfluxKotlin",
+    "compileIntegrationTestOtelNoAgentKotlin",
+  )
+  .forEach {
+    tasks.named<KotlinCompile>(it) {
+      compilerOptions.javaParameters = true
+      if (!bootSupportsGraphqlAndKafka) {
+        exclude("**/Graphql*", "**/Greeting*", "**/Kafka*")
+      }
     }
   }
-}
