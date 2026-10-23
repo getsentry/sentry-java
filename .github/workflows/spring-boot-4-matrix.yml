@@ -83,6 +83,9 @@ jobs:
             :sentry-samples:sentry-samples-spring-7:testClasses \
             :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
+      - name: Test sentry-spring-boot-4 integration suite
+        run: ./gradlew :sentry-spring-boot-4:integrationTest
+
       - name: Run sentry-samples-spring-boot-4
         run: |
           python3 test/system-test-runner.py test \
