@@ -28,12 +28,6 @@ jobs:
         agent: [ "false" ]
         agent-auto-init: [ "true" ]
         include:
-          - sample: "sentry-samples-spring-boot-opentelemetry"
-            agent: "true"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-opentelemetry"
-            agent: "true"
-            agent-auto-init: "false"
           - sample: "sentry-samples-console-otlp"
             agent: "false"
             agent-auto-init: "true"
