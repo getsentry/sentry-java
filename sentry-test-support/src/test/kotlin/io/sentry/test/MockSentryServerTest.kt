@@ -31,4 +31,25 @@ class MockSentryServerTest {
   fun `awaitEnvelope fails once the timeout passes without a match`() {
     assertFailsWith<AssertionError> { server.awaitEnvelope(timeoutMillis = 100) { true } }
   }
+
+  @Test
+  fun `assertNoEnvelope passes when nothing matches`() {
+    initForTest { it.dsn = server.dsn }
+
+    Sentry.captureMessage("hello")
+    Sentry.flush(5000)
+
+    server.assertNoEnvelope(millis = 100) { it.header.eventId == null }
+  }
+
+  @Test
+  fun `assertNoEnvelope fails when a matching envelope arrives`() {
+    initForTest { it.dsn = server.dsn }
+
+    val eventId = Sentry.captureMessage("hello")
+
+    assertFailsWith<AssertionError> {
+      server.assertNoEnvelope(millis = 5000) { it.header.eventId == eventId }
+    }
+  }
 }

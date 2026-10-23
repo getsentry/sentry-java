@@ -3,9 +3,10 @@ package io.sentry.spring.boot.jakarta.integrationtest
 import io.sentry.test.MockSentryServer
 import org.junit.Before
 import org.junit.runner.RunWith
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -24,6 +25,7 @@ import org.springframework.test.context.junit4.SpringRunner
   properties =
     [
       "sentry.traces-sample-rate=1.0",
+      "sentry.clients.ok-http-enabled=true",
       "sentry.logs.enabled=true",
       "sentry.profile-session-sample-rate=1.0",
       "sentry.profile-lifecycle=TRACE",
@@ -33,7 +35,13 @@ import org.springframework.test.context.junit4.SpringRunner
     ],
 )
 abstract class IntegrationTest {
-  @Autowired lateinit var restTemplate: TestRestTemplate
+  @LocalServerPort private var port = 0
+
+  // The context's TestRestTemplate comes from the RestTemplateBuilder that Sentry customizes, so
+  // it would add trace headers of its own to the requests tests send. Tests use a plain one.
+  val restTemplate: TestRestTemplate by lazy {
+    TestRestTemplate(RestTemplateBuilder().rootUri("http://localhost:$port"))
+  }
 
   @Before
   fun resetServer() {

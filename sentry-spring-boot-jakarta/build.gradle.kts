@@ -180,13 +180,20 @@ testing {
         implementation(projects.sentryAsyncProfiler)
         implementation(projects.sentryJdbc)
         implementation(projects.sentryLogback)
+        implementation(projects.sentryOkhttp)
         implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        // The sample only had it because Spring GraphQL pulls it in.
+        implementation(libs.context.propagation)
         implementation(libs.kotlin.test.junit)
         implementation(libs.google.truth)
+        implementation(libs.okhttp)
         implementation(libs.springboot3.starter.aop)
         implementation(libs.springboot3.starter.jdbc)
         implementation(libs.springboot3.starter.test)
         implementation(libs.springboot3.starter.web)
+        implementation(libs.springboot3.starter.webflux)
         runtimeOnly(libs.hsqldb)
       }
     }
