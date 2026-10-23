@@ -8308,6 +8308,28 @@ public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class io/sentry/util/sql/SqlDialect {
+	public static final field CONSERVATIVE Lio/sentry/util/sql/SqlDialect;
+	public static fun fromDbSystem (Ljava/lang/String;)Lio/sentry/util/sql/SqlDialect;
+	public fun isBackslashEscapes ()Z
+	public fun isDollarQuotedStrings ()Z
+	public fun isDoubleQuotesAreIdentifiers ()Z
+	public fun isHashComments ()Z
+	public fun isNestedBlockComments ()Z
+}
+
+public final class io/sentry/util/sql/SqlQuery {
+	public fun getCollectionName ()Ljava/lang/String;
+	public fun getOperationName ()Ljava/lang/String;
+	public fun getQuerySummary ()Ljava/lang/String;
+	public fun getQueryText ()Ljava/lang/String;
+	public fun getStoredProcedureName ()Ljava/lang/String;
+}
+
+public final class io/sentry/util/sql/SqlQueryAnalyzer {
+	public static fun analyze (Ljava/lang/String;Lio/sentry/util/sql/SqlDialect;)Lio/sentry/util/sql/SqlQuery;
+}
+
 public abstract interface class io/sentry/util/thread/IThreadChecker {
 	public abstract fun currentThreadSystemId ()J
 	public abstract fun getCurrentThreadName ()Ljava/lang/String;
