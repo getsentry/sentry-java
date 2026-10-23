@@ -4,6 +4,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.google.common.truth.Truth.assertThat
+import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
@@ -51,7 +53,139 @@ class CoordinatedBackStackObserverTest {
     homeLifecycle.currentState = Lifecycle.State.RESUMED
 
     assertThat(fixture.scope.screen).isEqualTo("/Result")
-    // "/Result" was reached without the nav lease, so it has no nav transaction to bind.
+    // "/Result" was reached without the nav lease, so it gets a new nav transaction when the owner
+    // regains the lease, rather than the one retired by navigating to it.
+    assertThat(fixture.scope.transaction).isNotSameInstanceAs(homeTransaction)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Result"))
+  }
+
+  @Test
+  fun `a page swiped to starts a nav transaction when it resumes`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle)
+    val pageB = fixture.getSut(pageBLifecycle)
+    pageA.onBackStackChanged(listOf("PageA"))
+    // Page B is dragged into view while page A is still resumed, so it doesn't get the nav lease.
+    pageB.onBackStackChanged(listOf("PageB"))
+    check(fixture.startedTransactions.map { it.name } == listOf("/PageA"))
+
+    // The swipe settles: ViewPager2 resumes page B and pauses page A.
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+
+    val pageBTransaction = fixture.startedTransaction("/PageB")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(pageBTransaction)
+    assertThat(fixture.scope.screen).isEqualTo("/PageB")
+    assertThat(fixture.scope.contexts[NAVIGATION_CONTEXT_KEY])
+      .isEqualTo(mapOf("Back Stack" to listOf(mapOf("entry" to "/PageB"))))
+    assertThat(fixture.breadcrumbs.last().data).containsExactly("to", "/PageB")
+  }
+
+  @Test
+  fun `a page swiped to starts a nav transaction when the previous page pauses before it resumes`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle)
+    val pageB = fixture.getSut(pageBLifecycle)
+    pageA.onBackStackChanged(listOf("PageA"))
+    pageB.onBackStackChanged(listOf("PageB"))
+
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/PageB"))
+    assertThat(fixture.scope.screen).isEqualTo("/PageB")
+  }
+
+  @Test
+  fun `swiping back to a page restores its unfinished nav transaction instead of starting another`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle)
+    val pageB = fixture.getSut(pageBLifecycle)
+    pageA.onBackStackChanged(listOf("PageA"))
+    val pageATransaction = fixture.startedTransaction("/PageA")
+    pageATransaction.startChild("http.client")
+    pageB.onBackStackChanged(listOf("PageB"))
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+
+    pageALifecycle.currentState = Lifecycle.State.RESUMED
+    pageBLifecycle.currentState = Lifecycle.State.STARTED
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(pageATransaction)
+    assertThat(fixture.startedTransactions.map { it.name })
+      .containsExactly("/PageA", "/PageB")
+      .inOrder()
+  }
+
+  @Test
+  fun `swiping back to a page whose nav transaction finished starts another`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle)
+    val pageB = fixture.getSut(pageBLifecycle)
+    pageA.onBackStackChanged(listOf("PageA"))
+    val pageATransaction = fixture.startedTransaction("/PageA")
+    pageB.onBackStackChanged(listOf("PageB"))
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+    pageATransaction.finish()
+
+    pageALifecycle.currentState = Lifecycle.State.RESUMED
+    pageBLifecycle.currentState = Lifecycle.State.STARTED
+
+    val transactions = fixture.startedTransactions.map { it.name }
+    assertThat(transactions).containsExactly("/PageA", "/PageB", "/PageA").inOrder()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.last())
+    assertThat(fixture.scope.screen).isEqualTo("/PageA")
+  }
+
+  @Test
+  fun `with nav transactions disabled, a page swiped back to records a breadcrumb and a fresh trace`() {
+    val fixture = Fixture()
+    val options = SentryNavOptions { enableNavigationTransactions = false }
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle, options)
+    val pageB = fixture.getSut(pageBLifecycle, options)
+    // Page A applies its update with the nav lease, so it has no rotation pending when it regains
+    // the lease below: any new propagation context then comes from the replay.
+    pageA.onBackStackChanged(listOf("PageA"))
+    pageB.onBackStackChanged(listOf("PageB"))
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+    val propagationContext = fixture.scope.propagationContext
+    fixture.breadcrumbs.clear()
+
+    pageALifecycle.currentState = Lifecycle.State.RESUMED
+    pageBLifecycle.currentState = Lifecycle.State.STARTED
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.screen).isEqualTo("/PageA")
+    assertThat(fixture.breadcrumbs.map { it.data }).containsExactly(mapOf("to" to "/PageA"))
+    assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(propagationContext)
+  }
+
+  @Test
+  fun `regaining the nav lease after observing an empty back stack starts no nav transaction`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle)
+    val pageB = fixture.getSut(pageBLifecycle)
+    pageA.onBackStackChanged(listOf("PageA"))
+    pageB.onBackStackChanged(emptyList())
+
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+
+    assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/PageA")
     assertThat(fixture.scope.transaction).isNull()
   }
 
@@ -120,9 +254,16 @@ class CoordinatedBackStackObserverTest {
       )
     val coordinator = NavLeaseCoordinator()
     val startedTransactions = mutableListOf<SentryTracer>()
+    val breadcrumbs = mutableListOf<Breadcrumb>()
     private val scopes =
       mock<IScopes>().also { scopes ->
         whenever(scopes.options).thenReturn(scope.options)
+        doAnswer {
+            breadcrumbs += it.arguments[0] as Breadcrumb
+            null
+          }
+          .whenever(scopes)
+          .addBreadcrumb(any<Breadcrumb>(), any<Hint>())
         doAnswer {
             (it.arguments[0] as ScopeCallback).run(scope)
             null
@@ -152,10 +293,13 @@ class CoordinatedBackStackObserverTest {
       check(coordinator.hasLease(other))
     }
 
-    fun getSut(lifecycle: Lifecycle = resumedLifecycle()): CoordinatedBackStackObserver<String> =
+    fun getSut(
+      lifecycle: Lifecycle = resumedLifecycle(),
+      options: SentryNavOptions = SentryNavOptions(),
+    ): CoordinatedBackStackObserver<String> =
       CoordinatedBackStackObserver(
           scopes = scopes,
-          options = SentryNavOptions(),
+          options = options,
           entryMapper =
             ForwardingBackStackEntryMapper {
               BackStackEntryMapper<String> { SentryBackStackEntry(it) }
@@ -164,11 +308,18 @@ class CoordinatedBackStackObserverTest {
         )
         .apply { attach(lifecycle) }
 
+    /**
+     * Owners of the lifecycles created by [resumedLifecycle]. `LifecycleRegistry` holds its owner
+     * weakly and throws once it's collected, so the fixture keeps them alive for the test.
+     */
+    private val lifecycleOwners = mutableListOf<LifecycleOwner>()
+
     fun resumedLifecycle(): LifecycleRegistry =
       object : LifecycleOwner {
           override val lifecycle =
             LifecycleRegistry.createUnsafe(this).apply { currentState = Lifecycle.State.RESUMED }
         }
+        .also(lifecycleOwners::add)
         .lifecycle
   }
 }

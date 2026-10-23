@@ -833,11 +833,204 @@ class NavLeaseCoordinatorTest {
     assertThat(fixture.cleared).isEmpty()
   }
 
+  @Test
+  fun `acquiring the nav lease on a first back stack update doesn't notify of an empty slot`() {
+    val fixture = Fixture.create()
+    fixture.acquireLease(incumbent)
+
+    fixture.acquireLease(owner)
+
+    assertThat(fixture.notified).isEmpty()
+  }
+
+  @Test
+  fun `resuming an owner kept from the nav lease notifies it of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(incumbent, transaction = transaction)
+    fixture.acquireLease(owner, state = Lifecycle.State.STARTED)
+
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.notified).containsExactly(owner)
+  }
+
+  @Test
+  fun `regaining the nav lease with an unfinished nav transaction doesn't notify of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(owner, transaction = transaction)
+    navLeaseCoordinator.pauseCandidate(owner, fixture.scope)
+    fixture.acquireLease(incoming)
+    navLeaseCoordinator.pauseCandidate(incoming, fixture.scope)
+
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(transaction)
+    assertThat(fixture.notified).isEmpty()
+  }
+
+  @Test
+  fun `regaining the nav lease after its nav transaction finished notifies of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(owner, transaction = transaction)
+    navLeaseCoordinator.pauseCandidate(owner, fixture.scope)
+    fixture.acquireLease(incoming)
+    navLeaseCoordinator.pauseCandidate(incoming, fixture.scope)
+    whenever(transaction.isFinished).thenReturn(true)
+
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+
+    assertThat(fixture.notified).containsExactly(owner)
+  }
+
+  @Test
+  fun `regaining the nav lease while an unrelated transaction is bound doesn't notify of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(incumbent)
+    fixture.acquireLease(owner, state = Lifecycle.State.STARTED)
+    fixture.scope.transaction = unrelatedTransaction
+
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+
+    assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
+    assertThat(fixture.notified).isEmpty()
+  }
+
+  @Test
+  fun `resuming the leaseholder doesn't notify of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(owner)
+    navLeaseCoordinator.pauseCandidate(owner, fixture.scope)
+
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+
+    assertThat(fixture.notified).isEmpty()
+  }
+
+  @Test
+  fun `pausing the leaseholder notifies the resumed owner it hands the nav lease to of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(previous)
+    fixture.acquireLease(owner, transaction = transaction)
+
+    navLeaseCoordinator.pauseCandidate(owner, fixture.scope)
+
+    assertThat(navLeaseCoordinator.hasLease(previous)).isTrue()
+    assertThat(fixture.notified).containsExactly(previous)
+  }
+
+  @Test
+  fun `stopping the leaseholder notifies the resumed owner it hands the nav lease to of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(previous)
+    fixture.acquireLease(owner, transaction = transaction)
+
+    navLeaseCoordinator.stopCandidate(owner, fixture.scope)
+
+    assertThat(navLeaseCoordinator.hasLease(previous)).isTrue()
+    assertThat(fixture.notified).containsExactly(previous)
+  }
+
+  @Test
+  fun `unregistering the leaseholder notifies the owner it hands the nav lease to of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(previous)
+    navLeaseCoordinator.pauseCandidate(previous, fixture.scope)
+    fixture.acquireLease(owner, transaction = transaction)
+
+    navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
+
+    assertThat(navLeaseCoordinator.hasLease(previous)).isTrue()
+    assertThat(fixture.notified).containsExactly(previous)
+  }
+
+  @Test
+  fun `unregistering the leaseholder with no successor doesn't notify of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(owner)
+
+    navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
+
+    assertThat(fixture.notified).isEmpty()
+  }
+
+  @Test
+  fun `handing off the nav lease without a scope doesn't notify of an empty slot`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(previous)
+    fixture.acquireLease(owner)
+
+    navLeaseCoordinator.pauseCandidate(owner, null)
+
+    assertThat(fixture.notified).isEmpty()
+  }
+
+  @Test
+  fun `an empty slot is notified after the handoff completes`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    val observed = mutableListOf<Any>()
+    fixture.acquireLease(incumbent)
+    navLeaseCoordinator.registerCandidate(
+      owner,
+      Lifecycle.State.STARTED,
+      onPublishData = { fixture.published += owner },
+      onClearPublishedData = {},
+      onLeaseGainedWithEmptySlot = {
+        observed.add(navLeaseCoordinator.hasLease(owner))
+        observed.add(fixture.published.toList())
+      },
+    )
+    navLeaseCoordinator.onBackStackUpdate(owner, fixture.scope)
+
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+
+    assertThat(observed).containsExactly(true, listOf(incumbent, owner)).inOrder()
+  }
+
+  @Test
+  fun `a nav transaction retained while handling an empty slot is restored when the owner regains the lease`() {
+    val fixture = Fixture.create()
+    val navLeaseCoordinator = fixture.navLeaseCoordinator
+    fixture.acquireLease(incumbent)
+    navLeaseCoordinator.registerCandidate(
+      owner,
+      Lifecycle.State.STARTED,
+      onPublishData = {},
+      onClearPublishedData = {},
+      onLeaseGainedWithEmptySlot = {
+        navLeaseCoordinator.retainTransaction(owner, transaction)
+        fixture.scope.transaction = transaction
+      },
+    )
+    navLeaseCoordinator.onBackStackUpdate(owner, fixture.scope)
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+    // Hands the lease back to the resumed incumbent, unbinding the owner's transaction.
+    navLeaseCoordinator.pauseCandidate(owner, fixture.scope)
+    assertThat(fixture.scope.transaction).isNull()
+
+    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
+
+    assertThat(navLeaseCoordinator.hasLease(owner)).isTrue()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(transaction)
+  }
+
   private class Fixture {
     val navLeaseCoordinator = NavLeaseCoordinator()
     val scope = Scope(SentryOptions())
     val published = mutableListOf<Any>()
     val cleared = mutableListOf<Any>()
+    val notified = mutableListOf<Any>()
 
     fun register(
       owner: Any,
@@ -849,6 +1042,7 @@ class NavLeaseCoordinatorTest {
         state,
         onPublishData = { published += owner },
         onClearPublishedData = onClearPublishedData,
+        onLeaseGainedWithEmptySlot = { notified += owner },
       )
     }
 

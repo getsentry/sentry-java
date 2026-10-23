@@ -60,12 +60,21 @@ internal class NavLeaseCoordinator {
    * the lease. [onClearPublishedData] clears `owner`'s published nav data from the given scope when
    * its data is the most recently published and either another owner acquires the lease or `owner`
    * is unregistered.
+   *
+   * [onLeaseGainedWithEmptySlot] is invoked when `owner` acquires the lease other than through a
+   * [back stack update][onBackStackUpdate] (e.g., by resuming, or by another owner pausing,
+   * stopping, or unregistering) and the shared scope is left without a transaction: `owner` has no
+   * unfinished nav transaction to restore, and no other transaction is bound. It lets `owner` start
+   * a nav transaction for the destination it's showing (e.g., a ViewPager2 page the user just
+   * swiped to). It's invoked once the handoff's bookkeeping and publication have completed, and may
+   * call back into this coordinator.
    */
   fun registerCandidate(
     owner: Any,
     lifecycleState: Lifecycle.State,
     onPublishData: (IScope) -> Unit,
     onClearPublishedData: (IScope) -> Unit,
+    onLeaseGainedWithEmptySlot: () -> Unit = {},
   ) {
     if (findCandidate(owner) != null) {
       return
@@ -77,7 +86,14 @@ internal class NavLeaseCoordinator {
 
     val initialResumeOrder = if (lifecycleState == Lifecycle.State.RESUMED) ++resumeOrder else 0
     candidates +=
-      Candidate(owner, onPublishData, onClearPublishedData, lifecycleState, initialResumeOrder)
+      Candidate(
+        owner,
+        onPublishData,
+        onClearPublishedData,
+        onLeaseGainedWithEmptySlot,
+        lifecycleState,
+        initialResumeOrder,
+      )
   }
 
   /** Records that [owner] started. */
@@ -100,8 +116,8 @@ internal class NavLeaseCoordinator {
     findCandidate(owner)?.let {
       it.resume(++resumeOrder)
 
-      if (scope != null && it.hasAppliedInitialBackStackUpdate) {
-        transferLeaseTo(it, scope)
+      if (scope != null && it.hasAppliedInitialBackStackUpdate && transferLeaseTo(it, scope)) {
+        notifyIfSlotEmpty(it, scope)
       }
     }
   }
@@ -203,7 +219,10 @@ internal class NavLeaseCoordinator {
       candidate.onClearPublishedData(scope)
     }
     if (wasLeaseHolder) {
-      transferLeaseTo(mostRecentlyResumedCandidate(), scope)
+      val successor = mostRecentlyResumedCandidate()
+      if (transferLeaseTo(successor, scope) && successor != null) {
+        notifyIfSlotEmpty(successor, scope)
+      }
     }
   }
 
@@ -301,28 +320,46 @@ internal class NavLeaseCoordinator {
       .maxByOrNull { it.resumeOrder }
 
   /**
-   * Hands the current lease to [next]. Without a [scope], the lease is released instead, as [next]
-   * could not publish its staged data.
+   * Hands the current lease to [next], and notifies it if the scope is left without a transaction.
+   * Without a [scope], the lease is released instead, as [next] could not publish its staged data.
    */
-  private fun handOffLease(next: Candidate?, scope: IScope?) {
-    if (scope != null) {
-      transferLeaseTo(next, scope)
-    } else {
+  private fun handOffLease(next: Candidate, scope: IScope?) {
+    if (scope == null) {
       leaseHolder = null
+    } else if (transferLeaseTo(next, scope)) {
+      notifyIfSlotEmpty(next, scope)
     }
   }
 
   /**
-   * Hands the lease to [candidate], or releases it given `null`.
+   * Notifies [candidate] that it acquired the lease without a back stack update and that [scope]
+   * has no transaction bound, so it can start a nav transaction for the destination it's showing.
+   *
+   * Called after a handoff completes. By then, [transferLeaseTo] has restored the candidate's
+   * unfinished nav transaction (keeping it recorded) or discarded a finished one, and unbound other
+   * owners' nav transactions. So a candidate with a recorded transaction already has one in the
+   * slot (or the slot holds a transaction the lease doesn't control), and any transaction left in
+   * the slot belongs to the host app.
+   */
+  private fun notifyIfSlotEmpty(candidate: Candidate, scope: IScope) {
+    if (leaseHolder !== candidate || candidate.transaction != null || scope.transaction != null) {
+      return
+    }
+    candidate.onLeaseGainedWithEmptySlot()
+  }
+
+  /**
+   * Hands the lease to [candidate], or releases it given `null`. Returns whether the leaseholder
+   * changed.
    *
    * Maintains the invariant that, while a lease is held, the leaseholder is also the candidate
    * recorded as having published the shared scope's nav data. The invariant holds even when a
    * publish or clear callback throws part way through the handoff. See "Exception semantics" in the
    * class KDoc.
    */
-  private fun transferLeaseTo(candidate: Candidate?, scope: IScope) {
+  private fun transferLeaseTo(candidate: Candidate?, scope: IScope): Boolean {
     if (leaseHolder === candidate) {
-      return
+      return false
     }
 
     if (candidate != null) {
@@ -367,6 +404,7 @@ internal class NavLeaseCoordinator {
       }
       candidate.onPublishData(scope)
     }
+    return true
   }
 
   /**
@@ -397,6 +435,7 @@ internal class NavLeaseCoordinator {
     val owner: Any,
     val onPublishData: (IScope) -> Unit,
     val onClearPublishedData: (IScope) -> Unit,
+    val onLeaseGainedWithEmptySlot: () -> Unit,
     initialState: Lifecycle.State,
     initialResumeOrder: Long,
   ) {

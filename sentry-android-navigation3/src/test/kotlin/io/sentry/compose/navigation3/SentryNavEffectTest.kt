@@ -629,7 +629,7 @@ class SentryNavEffectTest {
   }
 
   @Test
-  fun `navigating without the lease records breadcrumbs, then publishes with a fresh trace on resume`() {
+  fun `navigating without the lease records breadcrumbs, then starts a nav transaction on resume`() {
     val fixture = NavTestFixture()
     val ownerA = NavTestLifecycle(Lifecycle.State.RESUMED)
     val ownerB = NavTestLifecycle()
@@ -674,10 +674,10 @@ class SentryNavEffectTest {
       ownerA.resume()
     }
 
-    // A gets no nav transaction for /Result: one started without the lease would have collected no
-    // spans of its own. It publishes its screen and gets the fresh trace a transaction would have.
+    // A got no nav transaction for /Result while it lacked the lease: one started then would have
+    // collected no spans of its own. It starts one when it regains the lease, with a fresh trace.
     composeRule.runOnIdle {
-      assertThat(fixture.scope.transaction).isNull()
+      assertThat(fixture.scope.transaction?.name).isEqualTo("/Result")
       assertThat(fixture.scope.screen).isEqualTo("/Result")
       assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(contextBeforeResume)
     }

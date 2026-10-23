@@ -31,22 +31,44 @@ internal class CoordinatedBackStackObserver<T : Any>(
   coordinator: NavLeaseCoordinator,
 ) {
 
-  private val navScopes = NavScopes(scopes, coordinator)
+  private val navScopes = NavScopes(scopes, coordinator, onLeaseGainedWithEmptySlot = ::reobserve)
   private val observer = BackStackObserver(navScopes, options, entryMapper)
+
+  /** The back stack most recently passed to [observer], replayed by [reobserve]. */
+  private var lastBackStack: List<T> = emptyList()
 
   fun attach(lifecycle: Lifecycle) {
     navScopes.attach(lifecycle)
   }
 
   fun onBackStackChanged(backStack: List<T>) {
+    lastBackStack = backStack
     navScopes.onBackStackUpdate()
     observer.onBackStackChanged(backStack)
   }
 
+  /**
+   * Restarts observation of [lastBackStack], so [observer] records it as a first observation: a new
+   * top and, with it, a nav transaction for the destination that's showing.
+   *
+   * Called when this instance gains the nav lease without a back stack update and nothing occupies
+   * the scope's transaction slot (e.g., a ViewPager2 page the user just swiped to). Its back stack
+   * top didn't change, so [observer] would otherwise start no transaction, and spans would be lost
+   * until it did.
+   *
+   * Bypasses [NavScopes.onBackStackUpdate], as the lease is already held.
+   */
+  private fun reobserve() {
+    val backStack = lastBackStack.takeIf { it.isNotEmpty() } ?: return
+    observer.reset()
+    observer.onBackStackChanged(backStack)
+  }
+
   fun dispose() {
+    lastBackStack = emptyList()
     // Call disposal on both the observer and navScopes in case their (currently overlapping)
     // implementations drift over time.
-    observer.dispose()
+    observer.reset()
     navScopes.dispose()
   }
 }

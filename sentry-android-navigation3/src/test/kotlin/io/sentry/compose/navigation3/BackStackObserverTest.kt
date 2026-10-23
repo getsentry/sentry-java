@@ -764,25 +764,25 @@ class BackStackObserverTest {
   }
 
   @Test
-  fun `dispose finishes the active nav transaction and unbinds it from the scope`() {
+  fun `reset finishes the active nav transaction and unbinds it from the scope`() {
     val fixture = Fixture()
     val sut = fixture.getSut()
     sut.onBackStackChanged(listOf(HomeScreen()))
     val transaction = fixture.startedTransactions.single()
 
-    sut.dispose()
+    sut.reset()
 
     assertThat(transaction.isFinished).isTrue()
     assertThat(fixture.scope.transaction).isNull()
   }
 
   @Test
-  fun `dispose clears the screen name and back stack context it recorded`() {
+  fun `reset clears the screen name and back stack context it recorded`() {
     val fixture = Fixture()
     val sut = fixture.getSut()
     sut.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("123")))
 
-    sut.dispose()
+    sut.reset()
 
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
@@ -790,25 +790,25 @@ class BackStackObserverTest {
   }
 
   @Test
-  fun `dispose keeps a screen name that was set after the observer recorded its own`() {
+  fun `reset keeps a screen name that was set after the observer recorded its own`() {
     val fixture = Fixture()
     val sut = fixture.getSut()
     sut.onBackStackChanged(listOf(HomeScreen()))
     fixture.scope.screen = "/HostScreen"
 
-    sut.dispose()
+    sut.reset()
 
     assertThat(fixture.scope.screen).isEqualTo("/HostScreen")
   }
 
   @Test
-  fun `dispose makes the next back stack update a first navigation with no from entry`() {
+  fun `reset makes the next back stack update a first navigation with no from entry`() {
     val fixture = Fixture()
     val sut = fixture.getSut()
     val home = HomeScreen()
     sut.onBackStackChanged(listOf(home))
 
-    sut.dispose()
+    sut.reset()
     sut.onBackStackChanged(listOf(home))
 
     assertThat(fixture.breadcrumbs).hasSize(2)

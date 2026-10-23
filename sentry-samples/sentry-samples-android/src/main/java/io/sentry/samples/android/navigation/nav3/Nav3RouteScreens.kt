@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import io.sentry.ITransaction
 import io.sentry.Sentry
 import io.sentry.compose.SentryModifier.sentryTag
@@ -80,6 +81,13 @@ internal fun TracedNav3Route(
   val hostName = LocalNav3SampleHost.current ?: activityName
   // Tag after composition is applied so abandoned compositions don't tag anything.
   SideEffect { tagCurrentNav3Scenario(route, scenario, hostName, activityName) }
+  // Tag again on resume: a root can get its nav transaction without composing (e.g., a ViewPager2
+  // page composes while it's dragged into view, but only gets the nav lease and a transaction once
+  // it resumes). That transaction would otherwise go untagged and be missing from the history.
+  LifecycleResumeEffect(route, scenario, hostName, activityName) {
+    tagCurrentNav3Scenario(route, scenario, hostName, activityName)
+    onPauseOrDispose {}
+  }
   SentryTraced(
     tag = "Nav3 /${route.routeName}",
     enableUserInteractionTracing = false,

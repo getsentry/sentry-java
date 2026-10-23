@@ -48,7 +48,7 @@ private const val NAVIGATION_OP: String = "navigation"
  * **Thread safety**
  *
  * This class is ***not*** thread-safe. Clients should serialize calls to [onBackStackChanged] and
- * [dispose] (e.g., via invocation from an `*Effect` or another form of thread confinement).
+ * [reset] (e.g., via invocation from an `*Effect` or another form of thread confinement).
  */
 @Suppress("TooManyFunctions")
 internal class BackStackObserver<T : Any>(
@@ -113,12 +113,13 @@ internal class BackStackObserver<T : Any>(
   }
 
   /**
-   * Clears the nav data this observer recorded.
+   * Clears the nav data this observer recorded and forgets the current top.
    *
    * Call it when observation ends so that no stale screen, nav context, or nav transaction outlives
-   * it.
+   * it. The observer remains usable: a later [onBackStackChanged] is treated as a first
+   * observation, with a new top.
    */
-  internal fun dispose() {
+  internal fun reset() {
     scopes.configureScope { scope -> tearDown(scope) }
   }
 

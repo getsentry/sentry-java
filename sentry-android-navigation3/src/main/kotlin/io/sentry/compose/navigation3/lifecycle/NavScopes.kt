@@ -109,6 +109,12 @@ internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
  * a preloaded ViewPager2 Fragment page next to the current one). Such an owner acquires the lease
  * when it resumes instead.
  *
+ * An owner that acquires the lease without a back stack update and has no unfinished transaction to
+ * restore (e.g., the ViewPager2 page the user just swiped to) would otherwise leave the scope
+ * without a transaction until its back stack top changes. In that case, this instance invokes
+ * [onLeaseGainedWithEmptySlot], so the caller can start a nav transaction for the destination
+ * that's showing.
+ *
  * The following diagram illustrates how handoff works:
  * ```
  *  Time
@@ -210,6 +216,7 @@ internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
 internal class NavScopes(
   private val delegate: IScopes,
   private val coordinator: NavLeaseCoordinator,
+  private val onLeaseGainedWithEmptySlot: () -> Unit = {},
 ) : INavScopes, LifecycleEventObserver {
 
   override val options: SentryOptions
@@ -249,6 +256,7 @@ internal class NavScopes(
       lifecycleState = lifecycle.currentState,
       onPublishData = stagedNavData::publishTo,
       onClearPublishedData = stagedNavData::clearPublishedStateFrom,
+      onLeaseGainedWithEmptySlot = onLeaseGainedWithEmptySlot,
     )
 
     lifecycle.addObserver(this)

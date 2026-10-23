@@ -407,17 +407,36 @@ class SentryNavEffectLifecycleIntegrationTest {
   }
 
   @Test
-  fun `switching to a preloaded view pager page publishes a new propagation context instead of a nav transaction`() {
+  fun `switching to a preloaded view pager page starts a nav transaction for it`() {
     val fixture = Fixture.create()
     val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
     fixture.idle()
-    val propagationContext = fixture.scope.propagationContext
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
 
     activity.get().viewPager.setCurrentItem(1, false)
     fixture.idle()
 
-    assertThat(fixture.scope.transaction).isNull()
-    assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(propagationContext)
+    assertThat(fixture.scope.transaction?.name).isEqualTo("/Checkout")
+    assertThat(fixture.scope.transaction).isNotSameInstanceAs(homeTransaction)
+  }
+
+  @Test
+  fun `switching back to a view pager page restores its unfinished nav transaction`() {
+    val fixture = Fixture.create()
+    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    activity.get().viewPager.setCurrentItem(1, false)
+    fixture.idle()
+    val checkoutTransaction = requireNotNull(fixture.scope.transaction)
+
+    activity.get().viewPager.setCurrentItem(0, false)
+    fixture.idle()
+
+    assertThat(homeTransaction.isFinished).isFalse()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
+    assertThat(fixture.scope.transaction).isNotSameInstanceAs(checkoutTransaction)
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
   }
 
   // Dialogs
