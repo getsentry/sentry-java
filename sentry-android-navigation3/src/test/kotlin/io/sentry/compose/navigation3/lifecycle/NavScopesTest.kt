@@ -8,9 +8,11 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.ITransaction
+import io.sentry.NoOpTransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
+import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import org.junit.Test
@@ -91,55 +93,216 @@ class NavScopesTest {
   }
 
   @Test
-  fun `startTransaction() - returns a no-op transaction without the nav lease`() {
+  fun `startTransaction() - starts and retains a transaction with the nav lease`() {
     val fixture = Fixture()
-    val covered = fixture.navScopes()
-    covered.attach(TestLifecycleOwner(Lifecycle.State.RESUMED).lifecycle)
-    covered.applyFirstBackStackUpdate()
-    val incoming = fixture.navScopes()
-    incoming.attach(TestLifecycleOwner(Lifecycle.State.RESUMED).lifecycle)
-    incoming.applyFirstBackStackUpdate()
+    val navScopes = fixture.navScopes()
+    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.applyFirstBackStackUpdate()
 
-    val transaction =
-      covered.startTransaction(TransactionContext("name", "op"), TransactionOptions())
+    val transaction = navScopes.startTransaction(TransactionContext("/Home", "op"), options)
+
+    val started = fixture.startedTransaction("/Home")
+    assertThat(transaction?.backingTransaction).isSameInstanceAs(started)
+    assertThat(fixture.coordinator.isNavTransaction(started)).isTrue()
+  }
+
+  @Test
+  fun `startTransaction() - returns null when the delegate declines with the nav lease`() {
+    val fixture = Fixture()
+    fixture.declinesTransactions = true
+    val navScopes = fixture.navScopes()
+    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.applyFirstBackStackUpdate()
+
+    val transaction = navScopes.startTransaction(TransactionContext("/Home", "op"), options)
+
+    assertThat(transaction).isNull()
+  }
+
+  @Test
+  fun `startTransaction() - defers the transaction start without the nav lease`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+
+    val transaction = covered.startTransaction(TransactionContext("/Result", "op"), options)
 
     assertThat(fixture.hasLease(covered)).isFalse()
-    assertThat(transaction.isNoOp).isTrue()
+    assertThat(transaction).isNotNull()
+    assertThat(transaction?.backingTransaction).isNull()
+    assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isNull()
   }
 
   @Test
-  fun `startTransaction() - declining without the nav lease defers a propagation context rotation`() {
+  fun `startTransaction() - without the nav lease defers a propagation context rotation until the lease is acquired`() {
     val fixture = Fixture()
-    val covered = fixture.navScopes()
-    covered.attach(TestLifecycleOwner(Lifecycle.State.RESUMED).lifecycle)
-    covered.applyFirstBackStackUpdate()
-    val incoming = fixture.navScopes()
-    incoming.attach(TestLifecycleOwner(Lifecycle.State.RESUMED).lifecycle)
-    incoming.applyFirstBackStackUpdate()
+    val covered = fixture.coveredNavScopes()
     val incomingContext = fixture.scope.propagationContext
 
-    covered.startTransaction(TransactionContext("name", "op"), TransactionOptions())
+    covered.startTransaction(TransactionContext("/Result", "op"), options)
     assertThat(fixture.scope.propagationContext).isSameInstanceAs(incomingContext)
 
-    incoming.dispose()
+    fixture.incoming.dispose()
 
     assertThat(fixture.hasLease(covered)).isTrue()
     assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(incomingContext)
   }
 
   @Test
-  fun `startTransaction() - returns a no-op transaction after dispose`() {
+  fun `startTransaction() - starts no transaction after dispose`() {
     val fixture = Fixture()
     val navScopes = fixture.navScopes()
-    navScopes.attach(TestLifecycleOwner().lifecycle)
+    navScopes.attach(fixture.lifecycle())
     navScopes.applyFirstBackStackUpdate()
     navScopes.dispose()
 
-    val transaction =
-      navScopes.startTransaction(TransactionContext("name", "op"), TransactionOptions())
+    val transaction = navScopes.startTransaction(TransactionContext("/Home", "op"), options)
 
-    assertThat(transaction.isNoOp).isTrue()
+    assertThat(transaction?.backingTransaction).isNull()
+    assertThat(fixture.startedTransactions).isEmpty()
+  }
+
+  @Test
+  fun `a deferred transaction starts and is bound when the nav lease is acquired`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+    val transaction = covered.startTransaction(TransactionContext("/Result", "op"), options)
+
+    fixture.incoming.dispose()
+
+    val started = fixture.startedTransaction("/Result")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(started)
+    assertThat(transaction?.backingTransaction).isSameInstanceAs(started)
+  }
+
+  @Test
+  fun `a preloaded owner's deferred transaction starts when the owner resumes`() {
+    val fixture = Fixture()
+    val current = fixture.navScopes()
+    current.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    current.applyFirstBackStackUpdate()
+    val preloaded = fixture.navScopes()
+    val preloadedLifecycle = fixture.lifecycle(Lifecycle.State.STARTED)
+    preloaded.attach(preloadedLifecycle)
+    preloaded.applyFirstBackStackUpdate()
+    preloaded.startTransaction(TransactionContext("/PageB", "op"), options)
+    check(!fixture.hasLease(preloaded))
+
+    preloadedLifecycle.currentState = Lifecycle.State.RESUMED
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/PageB"))
+  }
+
+  @Test
+  fun `a started deferred transaction is restored when the nav lease is regained`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+    covered.startTransaction(TransactionContext("/Result", "op"), options)
+    fixture.incoming.dispose()
+    val started = fixture.startedTransaction("/Result")
+    val nextIncoming = fixture.navScopes()
+    nextIncoming.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    nextIncoming.applyFirstBackStackUpdate()
+    check(fixture.scope.transaction == null)
+
+    nextIncoming.dispose()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(started)
+    assertThat(fixture.startedTransactions).containsExactly(started)
+  }
+
+  @Test
+  fun `a started deferred transaction is finished on dispose`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+    covered.startTransaction(TransactionContext("/Result", "op"), options)
+    fixture.incoming.dispose()
+    val started = fixture.startedTransaction("/Result")
+
+    covered.dispose()
+
+    verify(started).finish(any())
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `a deferred transaction does not start while a host transaction is bound`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+    covered.startTransaction(TransactionContext("/Result", "op"), options)
+    val hostTransaction = mock<ITransaction>()
+    fixture.scope.transaction = hostTransaction
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
+  }
+
+  @Test
+  fun `a deferred transaction starts in place of a finished bound transaction`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+    covered.startTransaction(TransactionContext("/Result", "op"), options)
+    fixture.scope.transaction =
+      mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Result"))
+  }
+
+  @Test
+  fun `a finished deferred transaction does not start when the nav lease is acquired`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+    val transaction = covered.startTransaction(TransactionContext("/Result", "op"), options)
+    transaction?.finish(SpanStatus.OK)
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `only the most recently deferred transaction starts when the nav lease is acquired`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+    covered.startTransaction(TransactionContext("/Result", "op"), options)
+    covered.startTransaction(TransactionContext("/Receipt", "op"), options)
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/Receipt")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Receipt"))
+  }
+
+  @Test
+  fun `a deferred transaction does not start after dispose`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+    covered.startTransaction(TransactionContext("/Result", "op"), options)
+
+    covered.dispose()
+    fixture.incoming.dispose()
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `a declined deferred start binds no transaction but still rotates the propagation context`() {
+    val fixture = Fixture()
+    val covered = fixture.coveredNavScopes()
+    val incomingContext = fixture.scope.propagationContext
+    covered.startTransaction(TransactionContext("/Result", "op"), options)
+    fixture.declinesTransactions = true
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(incomingContext)
   }
 
   @Test
@@ -161,6 +324,11 @@ class NavScopesTest {
     assertThat(fixture.hasLease(covered)).isTrue()
     assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(incomingContext)
   }
+
+  private val options = TransactionOptions()
+
+  private val INavTransaction.backingTransaction: ITransaction?
+    get() = (this as NavTransactionHandle).transaction
 
   private fun NavScopes.applyFirstBackStackUpdate() {
     onBackStackUpdate()
@@ -188,10 +356,54 @@ class NavScopesTest {
           .whenever(scopes)
           .configureScope(any())
         whenever(scopes.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
-          .thenAnswer { mock<ITransaction>() }
+          .thenAnswer {
+            if (declinesTransactions) {
+              NoOpTransaction.getInstance()
+            } else {
+              val name = (it.arguments[0] as TransactionContext).name
+              mock<ITransaction>()
+                .also { transaction -> whenever(transaction.name).thenReturn(name) }
+                .also(startedTransactions::add)
+            }
+          }
       }
 
+    /** Whether [scopes] declines to start transactions, returning a no-op transaction instead. */
+    var declinesTransactions = false
+    val startedTransactions = mutableListOf<ITransaction>()
+
+    /** The resumed leaseholder that covers the [NavScopes] returned by [coveredNavScopes]. */
+    lateinit var incoming: NavScopes
+
+    /**
+     * `LifecycleRegistry` holds its owner weakly and throws once it's collected, so the fixture
+     * keeps the owners created by [lifecycle] alive for the test.
+     */
+    private val lifecycleOwners = mutableListOf<LifecycleOwner>()
+
     fun navScopes(): NavScopes = NavScopes(scopes, coordinator)
+
+    fun lifecycle(state: Lifecycle.State = Lifecycle.State.CREATED): LifecycleRegistry =
+      TestLifecycleOwner(state).also(lifecycleOwners::add).lifecycle
+
+    fun startedTransaction(name: String): ITransaction = startedTransactions.single {
+      it.name == name
+    }
+
+    /**
+     * Returns a resumed [NavScopes] that applied its first back stack update and then lost the nav
+     * lease to the resumed [incoming] one. It regains the lease when [incoming] is disposed.
+     */
+    fun coveredNavScopes(): NavScopes {
+      val covered = navScopes()
+      covered.attach(lifecycle(Lifecycle.State.RESUMED))
+      covered.onBackStackUpdate()
+      incoming = navScopes()
+      incoming.attach(lifecycle(Lifecycle.State.RESUMED))
+      incoming.onBackStackUpdate()
+      check(!hasLease(covered))
+      return covered
+    }
 
     private var leaseProbeCount = 0
 

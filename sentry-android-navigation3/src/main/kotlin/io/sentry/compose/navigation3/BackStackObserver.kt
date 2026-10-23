@@ -2,7 +2,6 @@ package io.sentry.compose.navigation3
 
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.ITransaction
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -16,6 +15,7 @@ import io.sentry.compose.navigation3.PreparedChange.BackStackHasSameTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackIsEmpty
 import io.sentry.compose.navigation3.lifecycle.INavScope
 import io.sentry.compose.navigation3.lifecycle.INavScopes
+import io.sentry.compose.navigation3.lifecycle.INavTransaction
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
@@ -283,14 +283,14 @@ private class NavTransaction(private val scopes: INavScopes) {
     private const val TRANSACTION_ORIGIN = "auto.navigation.nav3"
   }
 
-  private var activeNavTransaction: ITransaction? = null
+  private var activeNavTransaction: INavTransaction? = null
 
   /** Starts an idle navigation transaction, or no-ops if another transaction is already active. */
   fun start(
     scope: INavScope,
     name: String,
     arguments: Map<String, Any?>,
-  ): ITransaction? {
+  ): INavTransaction? {
     scope.clearFinishedTransaction()
 
     if (scope.transaction != null) {
@@ -313,16 +313,12 @@ private class NavTransaction(private val scopes: INavScopes) {
         it.origin = TRANSACTION_ORIGIN
       }
 
+    // Not an error: INavScopes.startTransaction may decline to start a transaction by design.
     val transaction =
       scopes.startTransaction(
         TransactionContext(name, TransactionNameSource.ROUTE, NAVIGATION_OP),
         transactionOptions,
-      )
-
-    // Not an error: INavScopes.startTransaction may decline to start a transaction by design.
-    if (transaction.isNoOp) {
-      return null
-    }
+      ) ?: return null
 
     activeNavTransaction = transaction
 
@@ -377,15 +373,15 @@ private class NavContext(private val scopes: INavScopes, private val options: Se
    * proper values to the transaction context instead.
    */
   fun <T : Any> updateTransaction(
-    transaction: ITransaction,
+    transaction: INavTransaction,
     scope: INavScope,
     backStack: BackStackData<T>,
   ) {
     if (scopes.options.isEnableScreenTracking) {
-      val appContext = transaction.contexts.app ?: scope.app ?: App()
+      val appContext = scope.app ?: App()
 
       appContext.viewNames = listOf(backStack.topEntryNormalized.name)
-      transaction.contexts.setApp(appContext)
+      transaction.setApp(appContext)
     }
 
     if (options.captureBackStack && backStack.capturedEntriesNormalized.isNotEmpty()) {

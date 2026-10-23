@@ -6,6 +6,8 @@ import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeObserverAdapter
 import io.sentry.SentryOptions
+import io.sentry.TransactionContext
+import io.sentry.TransactionOptions
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -114,7 +116,7 @@ class NavScopeTest {
     val fixture = Fixture.create(ownsLease = true)
     val transaction = mock<ITransaction>()
 
-    fixture.navScope.bindTransaction(transaction)
+    fixture.navScope.bindTransaction(NavTransactionHandle.started(transaction))
 
     assertThat(fixture.realScope.transaction).isSameInstanceAs(transaction)
   }
@@ -125,7 +127,7 @@ class NavScopeTest {
     val bound = mock<ITransaction>()
     fixture.realScope.transaction = bound
 
-    fixture.navScope.bindTransaction(mock<ITransaction>())
+    fixture.navScope.bindTransaction(NavTransactionHandle.started(mock<ITransaction>()))
 
     assertThat(fixture.realScope.transaction).isSameInstanceAs(bound)
   }
@@ -134,7 +136,16 @@ class NavScopeTest {
   fun `bindTransaction() - does nothing without the nav lease`() {
     val fixture = Fixture.create()
 
-    fixture.navScope.bindTransaction(mock<ITransaction>())
+    fixture.navScope.bindTransaction(NavTransactionHandle.started(mock<ITransaction>()))
+
+    assertThat(fixture.realScope.transaction).isNull()
+  }
+
+  @Test
+  fun `bindTransaction() - does nothing for a deferred transaction that hasn't started`() {
+    val fixture = Fixture.create(ownsLease = true)
+
+    fixture.navScope.bindTransaction(deferredTransaction())
 
     assertThat(fixture.realScope.transaction).isNull()
   }
@@ -145,7 +156,7 @@ class NavScopeTest {
     val transaction = mock<ITransaction>()
     fixture.realScope.transaction = transaction
 
-    fixture.navScope.unbindTransaction(transaction)
+    fixture.navScope.unbindTransaction(NavTransactionHandle.started(transaction))
 
     assertThat(fixture.realScope.transaction).isNull()
   }
@@ -156,7 +167,7 @@ class NavScopeTest {
     val transaction = mock<ITransaction>()
     fixture.retainTransaction(transaction)
 
-    fixture.navScope.unbindTransaction(transaction)
+    fixture.navScope.unbindTransaction(NavTransactionHandle.started(transaction))
 
     assertThat(fixture.coordinator.isNavTransaction(transaction)).isFalse()
   }
@@ -168,7 +179,7 @@ class NavScopeTest {
     fixture.retainTransaction(transaction)
     fixture.giveLeaseToAnotherOwner()
 
-    fixture.navScope.unbindTransaction(transaction)
+    fixture.navScope.unbindTransaction(NavTransactionHandle.started(transaction))
 
     assertThat(fixture.coordinator.isNavTransaction(transaction)).isFalse()
   }
@@ -189,7 +200,7 @@ class NavScopeTest {
     )
 
     assertThrows(ThrowingScopeObserverException::class.java) {
-      fixture.navScope.unbindTransaction(transaction)
+      fixture.navScope.unbindTransaction(NavTransactionHandle.started(transaction))
     }
 
     assertThat(fixture.coordinator.isNavTransaction(transaction)).isFalse()
@@ -201,9 +212,22 @@ class NavScopeTest {
     val bound = mock<ITransaction>()
     fixture.realScope.transaction = bound
 
-    fixture.navScope.unbindTransaction(mock<ITransaction>())
+    fixture.navScope.unbindTransaction(NavTransactionHandle.started(mock<ITransaction>()))
 
     assertThat(fixture.realScope.transaction).isSameInstanceAs(bound)
+  }
+
+  @Test
+  fun `unbindTransaction() - preserves the bound transaction for a deferred transaction that hasn't started`() {
+    val fixture = Fixture.create(ownsLease = true)
+    val bound = mock<ITransaction>()
+    fixture.retainTransaction(bound)
+    fixture.realScope.transaction = bound
+
+    fixture.navScope.unbindTransaction(deferredTransaction())
+
+    assertThat(fixture.realScope.transaction).isSameInstanceAs(bound)
+    assertThat(fixture.coordinator.isNavTransaction(bound)).isTrue()
   }
 
   @Test
@@ -264,6 +288,9 @@ class NavScopeTest {
 
     assertThat(transaction).isSameInstanceAs(boundTransaction)
   }
+
+  private fun deferredTransaction(): NavTransactionHandle =
+    NavTransactionHandle.deferred(TransactionContext("name", "op"), TransactionOptions())
 
   /** Thrown by a scope observer, to stand in for one the host app registered. */
   private class ThrowingScopeObserverException : RuntimeException()

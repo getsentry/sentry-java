@@ -12,8 +12,6 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScope
 import io.sentry.IScopes
-import io.sentry.ITransaction
-import io.sentry.NoOpTransaction
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.TransactionContext
@@ -94,6 +92,10 @@ internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
  * `NavScopes` instances without a lease write to their own copy of [stagedNavData], which lets them
  * preserve their latest updates without overwriting another instance's published data. When an
  * instance acquires the lease, it publishes its staged data to the shared `IScope`.
+ *
+ * Likewise, a nav transaction requested without the lease is deferred: it starts when the instance
+ * acquires the lease, provided no other transaction is bound to the shared `IScope` by then. See
+ * [startTransaction].
  *
  * **Lease handoff policy**
  *
@@ -219,6 +221,9 @@ internal class NavScopes(
   private var attachedLifecycle: Lifecycle? = null
   private val stagedNavData = StagedNavData()
 
+  /** The nav transaction most recently requested without the lease, if it's yet to start. */
+  private var deferredTransaction: NavTransactionHandle? = null
+
   /**
    * Registers this [NavScopes] instance with [lifecycle]. No-ops if `lifecycle` has already been
    * attached or is [destroyed][Lifecycle.Event.ON_DESTROY].
@@ -247,7 +252,10 @@ internal class NavScopes(
     coordinator.registerCandidate(
       owner = owner,
       lifecycleState = lifecycle.currentState,
-      onPublishData = stagedNavData::publishTo,
+      onPublishData = { scope ->
+        stagedNavData.publishTo(scope)
+        startDeferredTransaction(scope)
+      },
       onClearPublishedData = stagedNavData::clearPublishedStateFrom,
     )
 
@@ -284,12 +292,16 @@ internal class NavScopes(
   }
 
   /**
-   * Starts a nav transaction, provided this instance holds the nav lease.
+   * Starts a nav transaction if this instance holds the nav lease, or defers its start otherwise.
    *
-   * Without the lease, returns a no-op transaction and defers the propagation context rotation a
-   * new transaction would have implied until the lease is acquired. A transaction started without
-   * the lease couldn't be bound to the scope, so its destination's spans would attach to the
-   * leaseholder's bound transaction instead, and the empty transaction would be dropped.
+   * Without the lease, returns a handle whose transaction starts when this instance acquires the
+   * lease (e.g., a preloaded ViewPager2 page the user swipes to), provided the handle hasn't been
+   * [finished][INavTransaction.finish] and no other transaction is bound to the scope by then. A
+   * transaction started right away couldn't be bound to the scope, so its destination's spans would
+   * attach to the leaseholder's bound transaction instead, and the empty transaction would be
+   * dropped. Only the most recently requested transaction is deferred. The propagation context
+   * rotation a new transaction implies is deferred until the lease is acquired, too, so the
+   * destination gets a fresh trace even if its transaction never starts.
    *
    * The [coordinator] retains the leaseholder's transaction, so it can be restored if this instance
    * loses the lease and regains it while the transaction is still unfinished.
@@ -297,15 +309,54 @@ internal class NavScopes(
   override fun startTransaction(
     transactionContext: TransactionContext,
     transactionOptions: TransactionOptions,
-  ): ITransaction {
+  ): INavTransaction? {
     if (!coordinator.hasLease(owner)) {
       stagedNavData.deferPropagationContextRotation()
-      return NoOpTransaction.getInstance()
+      return NavTransactionHandle.deferred(transactionContext, transactionOptions).also {
+        deferredTransaction = it
+      }
     }
 
-    return delegate.startTransaction(transactionContext, transactionOptions).also { transaction ->
-      if (!transaction.isNoOp) {
-        coordinator.retainTransaction(owner, transaction)
+    val transaction =
+      delegate.startTransaction(transactionContext, transactionOptions).takeUnless { it.isNoOp }
+        ?: return null
+    coordinator.retainTransaction(owner, transaction)
+    return NavTransactionHandle.started(transaction)
+  }
+
+  /**
+   * Starts the [deferredTransaction], if any, and binds it to [scope] unless another transaction is
+   * bound to it.
+   *
+   * Called once this instance acquires the lease and publishes its staged data. A deferred
+   * transaction exists only if this instance applied a back stack update without the lease, after
+   * which it can only acquire the lease without a back stack update (see
+   * [NavLeaseCoordinator.onBackStackUpdate]). So the start never races a back stack update that's
+   * about to start a transaction of its own.
+   */
+  private fun startDeferredTransaction(scope: IScope) {
+    val handle = deferredTransaction ?: return
+    deferredTransaction = null
+    if (!handle.isAwaitingStart) {
+      return
+    }
+
+    // As when starting a nav transaction with the lease, a finished transaction doesn't block a new
+    // one, but any other bound transaction (e.g., the host app's) does.
+    scope.withTransaction { current ->
+      if (current?.isFinished == true) {
+        scope.clearTransaction()
+      }
+    }
+    if (scope.transaction != null) {
+      return
+    }
+
+    val transaction = handle.startDeferred(delegate) ?: return
+    coordinator.retainTransaction(owner, transaction)
+    scope.withTransaction { current ->
+      if (current == null) {
+        scope.transaction = transaction
       }
     }
   }
@@ -323,6 +374,7 @@ internal class NavScopes(
   fun dispose() {
     attachedLifecycle?.removeObserver(this)
     attachedLifecycle = null
+    deferredTransaction = null
 
     // Clear nav state, unbind the nav transaction, and avoid leaking the LifecycleOwner.
     withScopeOrNull { coordinator.unregisterCandidate(owner, it) }
@@ -363,13 +415,14 @@ internal interface INavScopes {
   fun configureScope(callback: (INavScope) -> Unit)
 
   /**
-   * Starts a transaction, or returns a no-op transaction if none can be started (e.g., tracing is
-   * disabled, or the implementation declines to start one; see [NavScopes.startTransaction]).
+   * Starts a transaction, or returns `null` if none can be started (e.g., tracing is disabled, or
+   * the transaction isn't sampled). The implementation may defer the start; see
+   * [NavScopes.startTransaction].
    */
   fun startTransaction(
     transactionContext: TransactionContext,
     transactionOptions: TransactionOptions,
-  ): ITransaction
+  ): INavTransaction?
 
   fun addBreadcrumb(breadcrumb: Breadcrumb, hint: Hint)
 }

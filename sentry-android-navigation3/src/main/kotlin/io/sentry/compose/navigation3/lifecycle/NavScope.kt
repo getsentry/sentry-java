@@ -60,24 +60,30 @@ internal class NavScope(
         !hasLease && coordinator.isNavTransaction(current)
       }
 
-  override fun bindTransaction(transaction: ITransaction) {
+  /**
+   * Binds [transaction] if it has started; a deferred transaction is bound by [NavScopes] once it
+   * starts.
+   */
+  override fun bindTransaction(transaction: INavTransaction) {
+    val started = transaction.started ?: return
     if (!hasLease) {
       return
     }
     delegate.withTransaction { current ->
       if (current == null) {
-        delegate.transaction = transaction
+        delegate.transaction = started
       }
     }
   }
 
-  override fun unbindTransaction(transaction: ITransaction) {
+  override fun unbindTransaction(transaction: INavTransaction) {
+    val started = transaction.started ?: return
     // Coordinator is called before clearTransaction() because the latter notifies the host app's
     // scope observer(s), which could throw. Clearing the transaction first would cause the
     // coordinator to retain a stale transaction.
-    coordinator.releaseTransaction(owner, transaction)
+    coordinator.releaseTransaction(owner, started)
     delegate.withTransaction { current ->
-      if (current === transaction) {
+      if (current === started) {
         delegate.clearTransaction()
       }
     }
@@ -132,13 +138,13 @@ internal interface INavScope {
   val transaction: ITransaction?
 
   /** Binds [transaction] to the scope if no transaction is bound to it. */
-  fun bindTransaction(transaction: ITransaction)
+  fun bindTransaction(transaction: INavTransaction)
 
   /**
    * Unbinds [transaction] from the scope if it's the bound transaction, and ensures it won't be
    * bound to the scope again.
    */
-  fun unbindTransaction(transaction: ITransaction)
+  fun unbindTransaction(transaction: INavTransaction)
 
   /** Unbinds the scope's transaction if it has finished. */
   fun clearFinishedTransaction()
@@ -154,3 +160,10 @@ internal interface INavScope {
   /** Replaces the scope's propagation context with a new one. */
   fun rotatePropagationContext()
 }
+
+/** The transaction backing the receiver, or `null` if it hasn't started. */
+private val INavTransaction.started: ITransaction?
+  get() =
+    when (this) {
+      is NavTransactionHandle -> transaction
+    }
