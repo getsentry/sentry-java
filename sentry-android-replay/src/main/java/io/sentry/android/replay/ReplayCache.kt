@@ -139,15 +139,16 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     bitRate: Int,
     videoFile: File = File(replayCacheDir, "$segmentId.mp4"),
   ): GeneratedVideo? {
-    if (videoFile.exists() && videoFile.length() > 0) {
-      videoFile.delete()
-    }
     // Work on a snapshot of frames to avoid races with writers
     val framesSnapshot =
       framesLock.acquire().use { if (frames.isEmpty()) mutableListOf() else frames.toMutableList() }
     if (framesSnapshot.isEmpty()) {
+      // keep an existing video intact, e.g. one from a flush whose envelope is still queued
       options.logger.log(DEBUG, "No captured frames, skipping generating a video segment")
       return null
+    }
+    if (videoFile.exists() && videoFile.length() > 0) {
+      videoFile.delete()
     }
 
     encoder =

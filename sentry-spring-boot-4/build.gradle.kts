@@ -13,12 +13,10 @@ plugins {
   alias(libs.plugins.springboot4) apply false
 }
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
-}
+// Published code targets Java 17. Test code is not published and follows the toolchain.
+tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
@@ -158,3 +156,48 @@ kotlin {
     freeCompilerArgs.add("-Xskip-metadata-version-check")
   }
 }
+
+testing {
+  suites {
+    // Runs a Spring Boot app in the test's JVM against MockSentryServer. It is a suite of its own
+    // because the unit tests' classpath carries the agent, which switches Sentry into agent mode.
+    register<JvmTestSuite>("integrationTest") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBoot4Starter)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql22)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryKafka)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryOkhttp)
+        implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        implementation(libs.context.propagation)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.caffeine)
+        implementation(libs.okhttp)
+        implementation(libs.springboot4.resttestclient)
+        implementation(libs.springboot4.starter.aspectj)
+        implementation(libs.springboot4.starter.cache)
+        implementation(libs.springboot4.starter.graphql)
+        implementation(libs.springboot4.starter.jdbc)
+        implementation(libs.springboot4.starter.kafka)
+        implementation(libs.springboot4.starter.restclient)
+        implementation(libs.springboot4.starter.test)
+        implementation(libs.springboot4.starter.web)
+        implementation(libs.springboot4.starter.webclient)
+        implementation(libs.springboot4.starter.webflux)
+        implementation(libs.spring.kafka4.test)
+        runtimeOnly(libs.hsqldb)
+      }
+    }
+  }
+}
+
+// The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
+// to resolve `#id` in a cache key.
+tasks.named<KotlinCompile>("compileIntegrationTestKotlin") { compilerOptions.javaParameters = true }

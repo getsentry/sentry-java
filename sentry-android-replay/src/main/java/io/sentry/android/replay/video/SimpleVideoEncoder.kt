@@ -177,25 +177,8 @@ internal class SimpleVideoEncoder(
   }
 
   fun encode(image: Bitmap) {
-    /**
-     * it seems that Xiaomi devices have problems with hardware canvas, so we have to use lockCanvas
-     * instead https://stackoverflow.com/a/73520742
-     * ---
-     * Same for Motorola devices.
-     * ---
-     * As for the Spreadtrum/Unisoc chipset, it can be spread across various devices, so we have to
-     * check the SOC_MANUFACTURER property, as the manufacturer name might have changed.
-     * https://github.com/getsentry/sentry-android-gradle-plugin/issues/861#issuecomment-2867021256
-     */
     val canvas =
-      if (
-        Build.MANUFACTURER.contains("xiaomi", ignoreCase = true) ||
-          Build.MANUFACTURER.contains("motorola", ignoreCase = true) ||
-          SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER)
-            .equals("spreadtrum", ignoreCase = true) ||
-          SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER)
-            .equals("unisoc", ignoreCase = true)
-      ) {
+      if (shouldUseSoftwareCanvas()) {
         surface?.lockCanvas(null)
       } else {
         surface?.lockHardwareCanvas()
@@ -337,6 +320,34 @@ internal class SimpleVideoEncoder(
     }
   }
 }
+
+/**
+ * Whether frames should be drawn onto the encoder's input surface with a software canvas
+ * ([Surface.lockCanvas]) instead of a hardware one ([Surface.lockHardwareCanvas]).
+ *
+ * It seems that Xiaomi devices have problems with hardware canvas, so we have to use lockCanvas
+ * instead https://stackoverflow.com/a/73520742
+ * ---
+ * Same for Motorola devices.
+ * ---
+ * As for the Spreadtrum/Unisoc chipset, it can be spread across various devices, so we have to
+ * check the SOC_MANUFACTURER property, as the manufacturer name might have changed.
+ * https://github.com/getsentry/sentry-android-gradle-plugin/issues/861#issuecomment-2867021256
+ * ---
+ * On the Android Emulator (goldfish/ranchu), a hardware canvas makes hwui own an EGL window surface
+ * on the input surface. The emulator's EGL driver keeps a dequeued buffer on it and cancels that
+ * buffer when the surface is destroyed, which can crash natively in eglDestroySurface once the
+ * encoder has been torn down. https://github.com/getsentry/sentry-java/issues/6279
+ */
+internal fun shouldUseSoftwareCanvas(): Boolean =
+  Build.MANUFACTURER.contains("xiaomi", ignoreCase = true) ||
+    Build.MANUFACTURER.contains("motorola", ignoreCase = true) ||
+    SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER)
+      .equals("spreadtrum", ignoreCase = true) ||
+    SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER)
+      .equals("unisoc", ignoreCase = true) ||
+    Build.HARDWARE.contains("goldfish", ignoreCase = true) ||
+    Build.HARDWARE.contains("ranchu", ignoreCase = true)
 
 @SuppressLint("UseRequiresApi")
 @TargetApi(24)

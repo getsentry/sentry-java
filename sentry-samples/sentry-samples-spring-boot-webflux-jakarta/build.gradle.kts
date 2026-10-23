@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -13,10 +12,6 @@ plugins {
 group = "io.sentry.sample.spring-boot-webflux-jakarta"
 
 version = "0.0.1-SNAPSHOT"
-
-java.sourceCompatibility = JavaVersion.VERSION_17
-
-java.targetCompatibility = JavaVersion.VERSION_17
 
 dependencyManagement {
   imports {
@@ -59,7 +54,6 @@ dependencies {
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = JvmTarget.JVM_17
   }
 }
 

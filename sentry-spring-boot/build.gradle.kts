@@ -12,11 +12,26 @@ plugins {
   id("io.sentry.animalsniffer")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
+
+// Spring scans the integration test apps' own bytecode with its repackaged ASM at startup, and
+// the ASM in Spring before 5.3.26 fails on class files as new as the toolchain's: "Unsupported
+// class file major version 65". In the Spring Boot 2.x matrix, 2.4.13 (Spring 5.3.13) reads up
+// to Java 18 and 2.7.0 (Spring 5.3.20) up to Java 19, so the suites target 17. Remove this once
+// the matrix drops 2.4.13 and moves 2.7.0 to 2.7.10 or later.
+// The suites are Kotlin only. Their Java tasks keep the toolchain's level, because it decides
+// which Java version their classpaths ask for, and sentry-test-support needs the toolchain's.
+tasks
+  .withType<KotlinCompile>()
+  .matching { it.name !in setOf("compileKotlin", "compileTestKotlin") }
+  .configureEach {
+    compilerOptions.jvmTarget = JvmTarget.JVM_17
+    jvmTargetValidationMode = org.jetbrains.kotlin.gradle.dsl.jvm.JvmTargetValidationMode.IGNORE
+  }
 
 dependencies {
   constraints {
@@ -118,5 +133,58 @@ tasks.jar {
       "Implementation-Title" to project.name,
       "Implementation-Version" to project.version,
     )
+  }
+}
+
+// Spring Boot supports GraphQL only from 2.7, and its Kafka auto-configuration needs 2.7 for the
+// spring-kafka version Sentry integrates with. The Spring Boot 2 matrix also covers older versions.
+val bootSupportsGraphqlAndKafka =
+  libs.versions.springboot2.get().split(".").let { (major, minor) ->
+    major.toInt() > 2 || minor.toInt() >= 7
+  }
+
+testing {
+  suites {
+    // Runs a Spring Boot app in the test's JVM against MockSentryServer. It is a suite of its own
+    // because the unit tests' classpath carries the agent, which switches Sentry into agent mode.
+    register<JvmTestSuite>("integrationTest") {
+      useJUnit()
+      dependencies {
+        implementation(platform(libs.springboot2.bom))
+        implementation(projects.sentrySpringBootStarter)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryOkhttp)
+        implementation(projects.sentryTestSupport)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.caffeine)
+        implementation(libs.okhttp)
+        implementation(libs.springboot.starter.aop)
+        implementation(libs.springboot.starter.cache)
+        implementation(libs.springboot.starter.jdbc)
+        implementation(libs.springboot.starter.test)
+        implementation(libs.springboot.starter.web)
+        implementation(libs.springboot.starter.webflux)
+        runtimeOnly(libs.hsqldb)
+        if (bootSupportsGraphqlAndKafka) {
+          implementation(projects.sentryGraphql)
+          implementation(projects.sentryKafka)
+          implementation(libs.springboot.starter.graphql)
+          implementation(libs.spring.kafka2)
+          implementation(libs.spring.kafka2.test)
+        }
+      }
+    }
+  }
+}
+
+// The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
+// to resolve `#id` in a cache key.
+tasks.named<KotlinCompile>("compileIntegrationTestKotlin") {
+  compilerOptions.javaParameters = true
+  if (!bootSupportsGraphqlAndKafka) {
+    exclude("**/Graphql*", "**/Kafka*")
   }
 }

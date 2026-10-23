@@ -1,0 +1,4 @@
+public final class io/sentry/opentelemetry/agent/AgentMarker {
+	public fun <init> ()V
+}
+

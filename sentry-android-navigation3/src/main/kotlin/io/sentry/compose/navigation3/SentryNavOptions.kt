@@ -3,7 +3,7 @@ package io.sentry.compose.navigation3
 import androidx.compose.runtime.Immutable
 import org.jetbrains.annotations.ApiStatus
 
-// Keep the default low: every captured entry may require argument extraction and recursive
+// Keep the default low, as every captured entry may require argument extraction and recursive
 // sanitization when navigation changes are observed.
 private const val DEFAULT_MAX_CAPTURED_BACK_STACK_ENTRIES = 5
 
