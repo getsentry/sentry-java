@@ -11,7 +11,7 @@ plugins {
 }
 
 // Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version
-// the Spring Boot 2.x matrix covers (2.4.13, Spring 5.3.13) fails on class files as new as the
+// the Spring Boot 2.x matrix covers (2.7.0, Spring 5.3.20) fails on class files as new as the
 // toolchain's: "Unsupported class file major version 65". Only the app is scanned, so its test
 // code keeps following the toolchain.
 tasks.named<JavaCompile>("compileJava") { options.release.set(11) }
@@ -26,17 +26,8 @@ group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-fun springBoot2SupportsOptionalIntegrations(): Boolean {
-  val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
-  val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
-  val major = parts.getOrElse(0) { 0 }
-  val minor = parts.getOrElse(1) { 0 }
-  return major > 2 || (major == 2 && minor >= 7)
-}
-
-val includeGraphql =
-  !project.hasProperty("excludeGraphql") && springBoot2SupportsOptionalIntegrations()
-val includeKafka = !project.hasProperty("excludeKafka") && springBoot2SupportsOptionalIntegrations()
+val includeGraphql = !project.hasProperty("excludeGraphql")
+val includeKafka = !project.hasProperty("excludeKafka")
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
