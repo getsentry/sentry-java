@@ -11,7 +11,7 @@ plugins {
 }
 
 // Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version
-// the Spring Boot 2.x matrix covers (2.7.0, Spring 5.3.20) fails on class files as new as the
+// the Spring Boot 2.x matrix covers (2.4.13, Spring 5.3.13) fails on class files as new as the
 // toolchain's: "Unsupported class file major version 65". Only the app is scanned, so its test
 // code keeps following the toolchain.
 tasks.named<JavaCompile>("compileJava") { options.release.set(8) }
