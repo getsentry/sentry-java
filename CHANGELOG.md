@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Improvements
+
+- Support Navigation 3 integration for multi-Activity and multi-Fragment applications, where each Activity or Fragment has its own `SentryNavEffect` ([#6305](https://github.com/getsentry/sentry-java/pull/6305))
+  - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/#supported-setups) for a detailed list of supported vs unsupported app setups.
+
 ### Features
 
 - Add opt-in binder (IPC) tracing and logging instrumentation for Android ([#5515](https://github.com/getsentry/sentry-java/pull/5515))
@@ -10,12 +15,22 @@
 
 ### Fixes
 
+- Always remove the first-draw listener after the first frame, even if no layout pass follows it ([#6152](https://github.com/getsentry/sentry-java/pull/6152))
+
+## 8.61.1
+
+### Fixes
+
+- Session Replay: Fix a native crash (`SIGABRT` on the RenderThread) when stopping a replay that uses the canvas screenshot strategy ([#6342](https://github.com/getsentry/sentry-java/pull/6342))
+- Session Replay: Keep the segment videos of a replay that stopped before the startup cleanup of previous replays ran ([#6343](https://github.com/getsentry/sentry-java/pull/6343))
 - Report the number of dropped spans in client reports when a batched span envelope item is discarded, instead of a quantity of 1 (e.g. for Flutter span streaming) ([#6265](https://github.com/getsentry/sentry-java/pull/6265))
+- Session Replay: Keep the flushed video and do not reuse its segment id when `stop()` is called right after `flush()` in buffer mode ([#6340](https://github.com/getsentry/sentry-java/pull/6340))
 - Keep sending events from Android 7.1.0 and older devices after Sentry changes its TLS certificate authority ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
   - In February 2027, Sentry moves its TLS certificates from DigiCert to Let's Encrypt and Google Trust Services ([announcement](https://sentry.io/changelog/were-changing-our-tls-certificate-authority-in-february-2027)).
   - Android 7.1.0 (API 25) and older don't trust the Let's Encrypt root certificate (ISRG Root X1), so without this fix, the SDK on those devices can no longer send events to Sentry after the switch.
   - The SDK now bundles ISRG Root X1 and trusts it in addition to the device's root certificates on API 25 and lower. This only applies to the SDK's own uploads to Sentry SaaS (DSNs on `sentry.io`), not to self-hosted Sentry, not to any other connection your app makes, and not if you set your own `SentryOptions.setSslSocketFactory`.
   - Apps need to update to an SDK version with this fix to keep sending events from these devices.
+- Session Replay: Use a software canvas for video encoding on the Android Emulator to avoid a native crash in `eglDestroySurface` ([#6282](https://github.com/getsentry/sentry-java/pull/6282))
 
 ### Internal
 

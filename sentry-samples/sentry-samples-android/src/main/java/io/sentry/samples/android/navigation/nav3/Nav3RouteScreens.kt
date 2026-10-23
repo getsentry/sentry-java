@@ -28,25 +28,30 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.sentry.ITransaction
 import io.sentry.Sentry
 import io.sentry.compose.SentryModifier.sentryTag
 import io.sentry.compose.SentryTraced
 import io.sentry.samples.android.R
+import io.sentry.samples.android.getActivity
 import io.sentry.samples.android.navigation.common.RouteNames
 import io.sentry.samples.android.navigation.common.RouteSpec
 import io.sentry.samples.android.navigation.common.RouteSpecs
@@ -58,6 +63,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 
+/**
+ * Names the Activity or Fragment hosting the current Nav3 root, for the sample's transaction tags.
+ * Defaults to the Activity's class name when unset.
+ */
+internal val LocalNav3SampleHost = staticCompositionLocalOf<String?> { null }
+
 @ExperimentalComposeUiApi
 @Composable
 internal fun TracedNav3Route(
@@ -65,7 +76,10 @@ internal fun TracedNav3Route(
   scenario: Nav3Scenario,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  tagCurrentNav3Scenario(scenario)
+  val activityName = LocalContext.current.getActivity().javaClass.simpleName
+  val hostName = LocalNav3SampleHost.current ?: activityName
+  // Tag after composition is applied so abandoned compositions don't tag anything.
+  SideEffect { tagCurrentNav3Scenario(route, scenario, hostName, activityName) }
   SentryTraced(
     tag = "Nav3 /${route.routeName}",
     enableUserInteractionTracing = false,
@@ -73,9 +87,52 @@ internal fun TracedNav3Route(
   )
 }
 
-private fun tagCurrentNav3Scenario(scenario: Nav3Scenario) {
-  Sentry.getSpan()?.setTag("sample_nav3_scenario", scenario.label)
-  tagCurrentNavigationSampleScenario(scenario.label)
+private fun tagCurrentNav3Scenario(
+  route: Nav3Route,
+  scenario: Nav3Scenario,
+  hostName: String,
+  activityName: String,
+) {
+  val sessionId = NavigationTransactionHistory.sessionId
+  Sentry.configureScope { scope ->
+    scope.withTransaction { transaction ->
+      tagNavigationSampleTransaction(
+        transaction,
+        route,
+        scenario,
+        hostName,
+        activityName,
+        sessionId,
+      )
+    }
+  }
+}
+
+private fun tagNavigationSampleTransaction(
+  transaction: ITransaction?,
+  route: Nav3Route,
+  scenario: Nav3Scenario,
+  hostName: String,
+  activityName: String,
+  sessionId: String,
+) {
+  // A covered root can remain composed and re-run this SideEffect after another root acquires the
+  // navigation lease. Only tag this destination's transaction, or an untagged ui.load transaction
+  // owned by its Activity.
+  val activeTransaction = transaction ?: return
+  val ownsNavigationTransaction = activeTransaction.name == "/${route.routeName}"
+  val ownsUiLoadTransaction =
+    activeTransaction.operation == ACTIVITY_UI_LOAD_OP &&
+      activeTransaction.name == activityName &&
+      activeTransaction.getTag(NAVIGATION_SAMPLE_ACTIVITY_TAG) == null
+  if (!ownsNavigationTransaction && !ownsUiLoadTransaction) {
+    return
+  }
+
+  activeTransaction.setTag(NAV3_SCENARIO_TAG, scenario.label)
+  activeTransaction.setTag(NAVIGATION_SAMPLE_SCENARIO_TAG, scenario.label)
+  activeTransaction.setTag(NAVIGATION_SAMPLE_ACTIVITY_TAG, hostName)
+  activeTransaction.setTag(NAVIGATION_SAMPLE_SESSION_TAG, sessionId)
 }
 
 @Composable
@@ -496,6 +553,9 @@ internal fun ProductListRoute(backStack: SnapshotStateList<Nav3Route>) {
 internal fun ProductDetailRoute(
   route: Nav3Route.ProductDetail,
   backStack: SnapshotStateList<Nav3Route>,
+  onCheckout: () -> Unit = { backStack.add(Nav3Route.Checkout(route.productId)) },
+  showOverlays: Boolean = true,
+  extraActions: @Composable ColumnScope.() -> Unit = {},
 ) {
   LaunchedEffect(route.productId, route.source, route.campaign) {
     recordSimulatedBackgroundSpan(RouteNames.PRODUCT_DETAIL)
@@ -508,21 +568,24 @@ internal fun ProductDetailRoute(
       RouteSpecs.productDetail.displayArguments(route.arguments).forEach { (label, value) ->
         RouteInfo(label, value)
       }
-      RouteButton(
-        "Show Promo Dialog",
-        onClick = { backStack.add(Nav3Route.PromoDialog("detail-${route.productId}")) },
-        testTag = nav3TestTag("product_detail_show_promo_dialog"),
-      )
-      RouteButton(
-        "Open Share Sheet",
-        onClick = { backStack.add(Nav3Route.ShareSheet(route.productId)) },
-        testTag = nav3TestTag("product_detail_open_share_sheet"),
-      )
+      if (showOverlays) {
+        RouteButton(
+          "Show Promo Dialog",
+          onClick = { backStack.add(Nav3Route.PromoDialog("detail-${route.productId}")) },
+          testTag = nav3TestTag("product_detail_show_promo_dialog"),
+        )
+        RouteButton(
+          "Open Share Sheet",
+          onClick = { backStack.add(Nav3Route.ShareSheet(route.productId)) },
+          testTag = nav3TestTag("product_detail_open_share_sheet"),
+        )
+      }
       RouteButton(
         "Go to Checkout",
-        onClick = { backStack.add(Nav3Route.Checkout(route.productId)) },
+        onClick = onCheckout,
         testTag = nav3TestTag("product_detail_go_to_checkout"),
       )
+      extraActions()
     },
     footerContent = {
       RouteButton(
@@ -538,6 +601,7 @@ internal fun ProductDetailRoute(
 internal fun CheckoutRoute(
   route: Nav3Route.Checkout,
   backStack: SnapshotStateList<Nav3Route>,
+  onCompleteOrder: (orderId: String) -> Unit = { backStack.add(Nav3Route.Confirmation(it)) },
 ) {
   RouteScaffold(
     routeSpec = RouteSpecs.checkout,
@@ -548,7 +612,7 @@ internal fun CheckoutRoute(
       }
       RouteButton(
         "Complete Order",
-        onClick = { backStack.add(Nav3Route.Confirmation(orderId = "order-${route.productId}")) },
+        onClick = { onCompleteOrder("order-${route.productId}") },
         testTag = nav3TestTag("checkout_complete_order"),
       )
     },
