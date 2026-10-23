@@ -26,15 +26,7 @@ group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-fun springBoot2SupportsGraphql(): Boolean {
-  val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
-  val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
-  val major = parts.getOrElse(0) { 0 }
-  val minor = parts.getOrElse(1) { 0 }
-  return major > 2 || (major == 2 && minor >= 7)
-}
-
-val includeGraphql = !project.hasProperty("excludeGraphql") && springBoot2SupportsGraphql()
+val includeGraphql = !project.hasProperty("excludeGraphql")
 
 dependencies {
   implementation(platform(libs.springboot2.bom))

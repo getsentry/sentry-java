@@ -26,17 +26,8 @@ group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-fun springBoot2SupportsOptionalIntegrations(): Boolean {
-  val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
-  val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
-  val major = parts.getOrElse(0) { 0 }
-  val minor = parts.getOrElse(1) { 0 }
-  return major > 2 || (major == 2 && minor >= 7)
-}
-
-val includeGraphql =
-  !project.hasProperty("excludeGraphql") && springBoot2SupportsOptionalIntegrations()
-val includeKafka = !project.hasProperty("excludeKafka") && springBoot2SupportsOptionalIntegrations()
+val includeGraphql = !project.hasProperty("excludeGraphql")
+val includeKafka = !project.hasProperty("excludeKafka")
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
