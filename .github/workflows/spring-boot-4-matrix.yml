@@ -71,11 +71,8 @@ jobs:
       - name: Build sample artifacts
         run: |
           ./gradlew \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry:testClasses \
             :sentry-samples:sentry-samples-spring-7:war \
-            :sentry-samples:sentry-samples-spring-7:testClasses \
-            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
+            :sentry-samples:sentry-samples-spring-7:testClasses
 
       - name: Test sentry-spring-boot-4 integration suites
         run: |
@@ -83,21 +80,9 @@ jobs:
             :sentry-spring-boot-4:integrationTest \
             :sentry-spring-boot-4:integrationTestWebflux \
             :sentry-spring-boot-4:integrationTestOtelNoAgent \
-            :sentry-spring-boot-4:integrationTestLog4j2
-
-      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init true
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry" \
-            --agent true \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init false
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry" \
-            --agent true \
-            --auto-init "false"
+            :sentry-spring-boot-4:integrationTestLog4j2 \
+            :sentry-spring-boot-4:integrationTestOtelAgent \
+            :sentry-spring-boot-4:integrationTestOtelAgentWithoutAutoInit
 
       - name: Run sentry-samples-spring-7
         run: |
