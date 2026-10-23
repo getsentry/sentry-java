@@ -233,10 +233,12 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
 
       // Add Network Details data when available
       networkDetailData?.let { networkData ->
+        val responseDetails = networkData.response
+
         networkData.method?.let { breadcrumbData["method"] = it }
-        networkData.statusCode?.let { breadcrumbData["statusCode"] = it }
+        responseDetails?.statusCode?.let { breadcrumbData["statusCode"] = it }
         networkData.requestBodySize?.let { breadcrumbData["requestBodySize"] = it }
-        networkData.responseBodySize?.let { breadcrumbData["responseBodySize"] = it }
+        responseDetails?.size?.let { breadcrumbData["responseBodySize"] = it }
 
         networkData.request?.let { request ->
           val requestData = mutableMapOf<String, Any?>()
@@ -257,7 +259,7 @@ public open class DefaultReplayBreadcrumbConverter() : ReplayBreadcrumbConverter
           }
         }
 
-        networkData.response?.let { response ->
+        responseDetails?.let { response ->
           val responseData = mutableMapOf<String, Any?>()
           response.size?.let { responseData["size"] = it }
           response.body?.let {

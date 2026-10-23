@@ -18,6 +18,7 @@ class NetworkDetailCaptureUtilsTest {
     val result =
       NetworkDetailCaptureUtils.createResponse(
         jsonBytes,
+        200,
         -1L,
         true,
         { bytes ->
@@ -38,6 +39,7 @@ class NetworkDetailCaptureUtilsTest {
     val result =
       NetworkDetailCaptureUtils.createResponse(
         jsonBytes,
+        200,
         42L,
         true,
         { bytes ->
@@ -55,6 +57,7 @@ class NetworkDetailCaptureUtilsTest {
     val result =
       NetworkDetailCaptureUtils.createResponse(
         "unused",
+        200,
         null,
         false,
         { null },
