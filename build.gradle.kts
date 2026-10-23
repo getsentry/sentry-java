@@ -29,10 +29,6 @@ plugins {
     alias(libs.plugins.sentry) apply false
 }
 
-check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
-    "This build requires JDK 21 or newer, but runs on JDK ${JavaVersion.current()}."
-}
-
 buildscript {
     repositories {
         google()
