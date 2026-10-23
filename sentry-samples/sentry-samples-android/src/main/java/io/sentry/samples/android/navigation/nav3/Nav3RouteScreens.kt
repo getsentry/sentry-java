@@ -95,6 +95,7 @@ private fun tagCurrentNav3Scenario(scenario: Nav3Scenario, activityName: String)
   }
   Sentry.configureScope { scope ->
     scope.withTransaction { transaction ->
+      transaction?.setTag(NAV3_SCENARIO_TAG, scenario.label)
       transaction?.setTag(NAVIGATION_SAMPLE_ACTIVITY_TAG, activityName)
       transaction?.setTag(NAVIGATION_SAMPLE_SESSION_TAG, sessionId)
     }

@@ -270,8 +270,8 @@ internal fun MultiActivityRoute(onOpenProducts: () -> Unit) {
  *   covered by another one.
  * @param onCompleteOrder Handles Checkout's "Complete Order" outside this root (e.g., by returning
  *   a result). When `null`, the confirmation is pushed onto this root's own back stack.
- * @param crashOnFirstComposition Crashes while composing the Checkout destination, i.e., while the
- *   root's first screen is being created, to check that the crash is attributed to that screen.
+ * @param crashOnFirstComposition Crashes when the Checkout destination's first composition is
+ *   applied, so its navigation transaction and tags can attribute the crash to that screen.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -417,12 +417,14 @@ internal fun MultiRootNavDisplay(
               }
             }
             entry<Nav3Route.Checkout> { route ->
-              if (crashOnFirstComposition) {
-                throw RuntimeException(
-                  "Fatal Nav3 ${scenario.label} crash during first composition"
-                )
-              }
               TracedNav3Route(route, scenario) {
+                if (crashOnFirstComposition) {
+                  SideEffect {
+                    throw RuntimeException(
+                      "Fatal Nav3 ${scenario.label} crash after first composition"
+                    )
+                  }
+                }
                 Nav3RouteWorkEffect(route, routeWorkOptions)
                 CheckoutRoute(
                   route = route,
