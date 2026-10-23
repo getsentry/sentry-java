@@ -4,6 +4,7 @@ import io.sentry.test.ChildJvmApp
 import io.sentry.test.MockSentryServer
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.kafka.test.EmbeddedKafkaKraftBroker
 
 /**
  * The agent fixture app, running in a child JVM with the built OpenTelemetry agent attached, and
@@ -18,6 +19,9 @@ object AgentApp {
 
   val server = MockSentryServer()
 
+  // An in-JVM KRaft broker with the fixture's KAFKA_TOPIC, so no Docker is needed.
+  private val kafka = EmbeddedKafkaKraftBroker(1, 1, "sentry-topic").apply { afterPropertiesSet() }
+
   private val app =
     ChildJvmApp.start(
       mainClass = "io.sentry.spring.boot.jakarta.agentfixture.AgentFixtureApplicationKt",
@@ -30,6 +34,8 @@ object AgentApp {
           "SENTRY_DSN" to server.dsn,
           "SENTRY_TRACES_SAMPLE_RATE" to "1.0",
           "SENTRY_LOGS_ENABLED" to "true",
+          "SENTRY_ENABLE_CACHE_TRACING" to "true",
+          "SENTRY_ENABLE_QUEUE_TRACING" to "true",
           "SENTRY_PROFILE_SESSION_SAMPLE_RATE" to "1.0",
           "SENTRY_PROFILE_LIFECYCLE" to "TRACE",
           "SENTRY_PROFILING_TRACES_DIR_PATH" to
@@ -38,7 +44,7 @@ object AgentApp {
           "OTEL_METRICS_EXPORTER" to "none",
           "OTEL_LOGS_EXPORTER" to "none",
         ),
-      args = listOf("--server.port=0"),
+      args = listOf("--server.port=0", "--spring.kafka.bootstrap-servers=${kafka.brokersAsString}"),
     )
 
   init {
@@ -46,6 +52,7 @@ object AgentApp {
       .addShutdownHook(
         Thread {
           app.close()
+          kafka.destroy()
           server.close()
         }
       )

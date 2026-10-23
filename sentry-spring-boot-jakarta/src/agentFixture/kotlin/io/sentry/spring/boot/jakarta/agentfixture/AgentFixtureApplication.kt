@@ -8,6 +8,7 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.boot.web.context.WebServerPortFileWriter
+import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
@@ -26,6 +27,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 // kotlin-spring plugin.
 
 @SpringBootApplication
+@EnableCaching
 open class AgentFixtureApplication {
   @Bean open fun restTemplate(builder: RestTemplateBuilder): RestTemplate = builder.build()
 

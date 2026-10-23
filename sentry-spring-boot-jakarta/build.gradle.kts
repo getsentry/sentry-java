@@ -161,15 +161,21 @@ dependencies {
   "agentFixtureImplementation"(platform(SpringBootPlugin.BOM_COORDINATES))
   "agentFixtureImplementation"(projects.sentrySpringBootStarterJakarta)
   "agentFixtureImplementation"(projects.sentryAsyncProfiler)
+  "agentFixtureImplementation"(projects.sentryGraphql22)
   "agentFixtureImplementation"(projects.sentryJdbc)
+  "agentFixtureImplementation"(projects.sentryKafka)
   "agentFixtureImplementation"(projects.sentryLogback)
   "agentFixtureImplementation"(kotlin(Config.kotlinStdLib))
   // Reactor's automatic context propagation needs it to carry the Sentry scope across threads.
   "agentFixtureImplementation"(libs.context.propagation)
+  "agentFixtureImplementation"(libs.caffeine)
   "agentFixtureImplementation"(libs.otel)
+  "agentFixtureImplementation"(libs.springboot3.starter.cache)
+  "agentFixtureImplementation"(libs.springboot3.starter.graphql)
   "agentFixtureImplementation"(libs.springboot3.starter.jdbc)
   "agentFixtureImplementation"(libs.springboot3.starter.web)
   "agentFixtureImplementation"(libs.springboot3.starter.webflux)
+  "agentFixtureImplementation"(libs.spring.kafka3)
   "agentFixtureRuntimeOnly"(libs.hsqldb)
 
   otelAgentJar(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
@@ -311,6 +317,7 @@ testing {
         // For TestRestTemplate. Only the app's JVM runs the agent, so it doesn't trace the tests.
         implementation(libs.springboot3.starter.test)
         implementation(libs.springboot3.starter.web)
+        implementation(libs.spring.kafka3.test)
       }
       targets.all { testTask.configure { runAgentFixture(autoInit = true) } }
     }
@@ -350,6 +357,7 @@ listOf(
     "compileIntegrationTestKotlin",
     "compileIntegrationTestWebfluxKotlin",
     "compileIntegrationTestOtelNoAgentKotlin",
+    "compileAgentFixtureKotlin",
   )
   .forEach {
     tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }
