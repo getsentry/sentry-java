@@ -6,9 +6,13 @@ add_library(native-sample SHARED src/main/cpp/native-sample.cpp)
 find_package(sentry-native-ndk REQUIRED CONFIG)
 
 find_library(LOG_LIB log)
+find_library(DL_LIB dl)
+
+target_compile_options(native-sample PRIVATE -fno-omit-frame-pointer -fno-optimize-sibling-calls)
 
 target_link_libraries(native-sample PRIVATE
     ${LOG_LIB}
+    ${DL_LIB}
     sentry-native-ndk::sentry-android
     sentry-native-ndk::sentry
 )

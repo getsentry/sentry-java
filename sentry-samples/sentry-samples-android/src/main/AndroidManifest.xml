@@ -148,6 +148,11 @@
       android:exported="false"
       android:theme="@style/AppTheme.Main" />
 
+    <activity
+      android:name=".NativeCrashActivity"
+      android:exported="true"
+      android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
     <!--    NOTE: Replace the test DSN below with YOUR OWN DSN to see the events from this app in your Sentry project/dashboard-->
     <meta-data
       android:name="io.sentry.dsn"

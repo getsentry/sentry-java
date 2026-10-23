@@ -157,7 +157,13 @@ android {
     }
   }
 
-  @Suppress("UnstableApiUsage") packagingOptions { jniLibs { useLegacyPackaging = true } }
+  @Suppress("UnstableApiUsage")
+  packagingOptions {
+    jniLibs {
+      useLegacyPackaging =
+        providers.gradleProperty("sentryLegacyPackaging").map(String::toBoolean).getOrElse(true)
+    }
+  }
 }
 
 sqldelight {

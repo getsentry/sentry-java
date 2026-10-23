@@ -43,6 +43,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
@@ -179,6 +180,16 @@ class MainActivity : AppCompatActivity() {
 
 enum class Category(val displayName: String, val icon: ImageVector) {
   ERRORS("Errors", Icons.Filled.Error),
+  NATIVE(
+    if (
+      Sentry.getCurrentScopes().options.sdkVersion?.packageSet?.any {
+        it.name == "maven:io.sentry:sentry-android-ndk-outproc"
+      } == true
+    )
+      "Native (outproc)"
+    else "Native (inproc)",
+    Icons.Filled.Memory,
+  ),
   TRACING("Tracing", Icons.Filled.Speed),
   SESSION_REPLAY("Session Replay", Icons.Filled.Videocam),
   USER_FEEDBACK("User & Feedback", Icons.Filled.Person),
@@ -210,6 +221,7 @@ fun MainScreen() {
       ) {
         when (selectedCategory) {
           Category.ERRORS -> ErrorsScreen()
+          Category.NATIVE -> NativeScreen()
           Category.TRACING -> TracingScreen()
           Category.SESSION_REPLAY -> SessionReplayScreen()
           Category.USER_FEEDBACK -> UserFeedbackScreen()
@@ -359,7 +371,7 @@ fun ErrorsScreen() {
         OutlinedButton(
           onClick = {
             tagSampleAction("native_crash")
-            NativeSample.crash()
+            NativeCrashScenario.BASELINE.run()
           },
           modifier = Modifier,
         ) {
@@ -1077,6 +1089,35 @@ fun UpdatesScreen() {
           modifier = Modifier,
         ) {
           Text("Check for Update", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun NativeScreen() {
+  val scenarios =
+    NativeCrashScenario.entries.filter {
+      it != NativeCrashScenario.BASELINE && it != NativeCrashScenario.MANY_THREADS
+    }
+  LazyVerticalGrid(
+    columns = GridCells.Adaptive(minSize = 180.dp),
+    contentPadding = PaddingValues(16.dp),
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+    verticalArrangement = Arrangement.spacedBy(12.dp),
+  ) {
+    items(scenarios.size) { index ->
+      val scenario = scenarios[index]
+      val action = "native_${scenario.id}"
+      SentryTraced(action) {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction(action)
+            scenario.run()
+          }
+        ) {
+          Text(scenario.displayName, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
     }
