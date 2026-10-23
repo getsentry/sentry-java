@@ -7,7 +7,6 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
-  id("io.sentry.systemtest")
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
 }
@@ -53,18 +52,6 @@ dependencies {
     implementation(projects.sentryGraphql)
   }
   implementation(projects.sentryAsyncProfiler)
-
-  testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.apollo3.kotlin)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.slf4j2.api)
-  testImplementation(libs.springboot.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
-  testImplementation("ch.qos.logback:logback-classic:1.5.16")
-  testImplementation("ch.qos.logback:logback-core:1.5.16")
-  testImplementation("org.apache.httpcomponents:httpclient")
 }
 
 val runtimeClasspath = configurations.named("runtimeClasspath")
@@ -102,28 +89,4 @@ tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
   }
-}
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter {
-    includeTestsMatching("io.sentry.systemtest*")
-    if (!includeGraphql) {
-      excludeTestsMatching("io.sentry.systemtest.Graphql*")
-    }
-  }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }

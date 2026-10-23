@@ -6,7 +6,6 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
-  id("io.sentry.systemtest")
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
 }
@@ -32,17 +31,6 @@ dependencies {
   // cache tracing
   implementation(libs.springboot4.starter.cache)
   implementation(libs.caffeine)
-
-  testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.apollo3.kotlin)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.slf4j2.api)
-  testImplementation(libs.springboot4.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
-  testImplementation("ch.qos.logback:logback-classic:1.5.16")
-  testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -54,23 +42,4 @@ tasks.withType<KotlinCompile>().configureEach {
     compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
     compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   }
-}
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter { includeTestsMatching("io.sentry.systemtest*") }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }
