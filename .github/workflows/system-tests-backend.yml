@@ -24,13 +24,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sample: [ "sentry-samples-spring-boot-jakarta" ]
+        sample: [ "sentry-samples-spring-boot" ]
         agent: [ "false" ]
         agent-auto-init: [ "true" ]
         include:
-          - sample: "sentry-samples-spring-boot"
-            agent: "false"
-            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
             agent: "false"
             agent-auto-init: "true"
@@ -64,16 +61,10 @@ jobs:
           - sample: "sentry-samples-console-otlp"
             agent: "false"
             agent-auto-init: "true"
-          - sample: "sentry-samples-logback"
-            agent: "false"
-            agent-auto-init: "true"
           - sample: "sentry-samples-log4j2"
             agent: "false"
             agent-auto-init: "true"
           - sample: "sentry-samples-jul"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-4"
             agent: "false"
             agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-4-log4j2"
