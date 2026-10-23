@@ -233,6 +233,10 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_ANR_FINGERPRINTING = "io.sentry.anr.enable-fingerprinting";
 
+  static final String ENABLE_BINDER_TRACING = "io.sentry.traces.binder.enable";
+
+  static final String ENABLE_BINDER_LOGGING = "io.sentry.logs.binder.enable";
+
   /** ManifestMetadataReader ctor */
   private ManifestMetadataReader() {}
 
@@ -820,6 +824,12 @@ final class ManifestMetadataReader {
         options.setEnableAnrFingerprinting(
             readBool(
                 metadata, logger, ENABLE_ANR_FINGERPRINTING, options.isEnableAnrFingerprinting()));
+
+        options.setEnableBinderTracing(
+            readBool(metadata, logger, ENABLE_BINDER_TRACING, options.isEnableBinderTracing()));
+
+        options.setEnableBinderLogging(
+            readBool(metadata, logger, ENABLE_BINDER_LOGGING, options.isEnableBinderLogging()));
 
         final @Nullable DataCollection dataCollection =
             readDataCollection(metadata, logger, options.getDataCollection());
