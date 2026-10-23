@@ -20,8 +20,11 @@ import java.util.zip.GZIPInputStream
  * Envelopes travel through the real HTTP transport, so serialization, compression and the DSN are
  * covered too. It binds a free port so that test tasks running in parallel don't clash, and it
  * works for an app in a child process as well as in the test's own JVM.
+ *
+ * [beforeEachCheck] runs before each look at the received envelopes while waiting, for example to
+ * flush spans that a batching processor would otherwise hold for seconds.
  */
-class MockSentryServer : Closeable {
+class MockSentryServer(private val beforeEachCheck: () -> Unit = {}) : Closeable {
   private val serializer = JsonSerializer(SentryOptions.empty())
   private val received = CopyOnWriteArrayList<SentryEnvelope>()
   private val server =
@@ -43,6 +46,7 @@ class MockSentryServer : Closeable {
     val deadline =
       Deadline.after(JavaMonotonicTicker.getInstance(), timeoutMillis, TimeUnit.MILLISECONDS)
     while (true) {
+      beforeEachCheck()
       received.firstOrNull(predicate)?.let {
         return it
       }
@@ -64,6 +68,7 @@ class MockSentryServer : Closeable {
   fun assertNoEnvelope(millis: Long = 2_000, predicate: (SentryEnvelope) -> Boolean) {
     val deadline = Deadline.after(JavaMonotonicTicker.getInstance(), millis, TimeUnit.MILLISECONDS)
     while (true) {
+      beforeEachCheck()
       if (received.any(predicate)) {
         throw AssertionError("Received an envelope that should not have been sent")
       }
