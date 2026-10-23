@@ -19,8 +19,8 @@ import io.sentry.SpanStatus
  * **Exception semantics**
  *
  * Methods in this class with an `IScope` parameter can throw arbitrary exceptions†, which propagate
- * to the caller. This class restores its own bookkeeping first, so the coordinator remains usable
- * if the exception is caught.
+ * to the caller. Each method updates its own bookkeeping before calling into the scope, so the
+ * coordinator remains usable if the exception is caught.
  *
  * † E.g., `IScope` can throw arbitrary exceptions when scope mutators notify registered observers –
  * including the host app – in an unguarded loop, or when `finish()` is called on a retained nav
@@ -172,35 +172,38 @@ internal class NavLeaseCoordinator {
    * left to time out, its published data is left in place, and the lease is released rather than
    * handed off.
    *
-   * Coordinator references are released even if scope cleanup or lease handoff throws. See
-   * "Exception semantics" in the class KDoc. The remaining scope cleanup is then skipped.
+   * Can throw arbitrary exceptions. See "Exception semantics" in the class KDoc. Coordinator
+   * references to `owner` are released before any scope call, so they're released even if scope
+   * cleanup or lease handoff throws. The remaining scope cleanup is then skipped.
    */
   fun unregisterCandidate(owner: Any, scope: IScope?) {
     val candidate = findCandidate(owner) ?: return
+    val transaction = candidate.transaction
+    val wasPublisher = publishedDataCandidate === candidate
+    val wasLeaseHolder = leaseHolder === candidate
 
-    try {
-      finishTransaction(candidate, scope)
-      candidates.remove(candidate)
+    candidates.remove(candidate)
+    candidate.transaction = null
+    if (wasPublisher) {
+      publishedDataCandidate = null
+    }
+    if (wasLeaseHolder) {
+      leaseHolder = null
+    }
 
-      if (publishedDataCandidate === candidate) {
-        publishedDataCandidate = null
-        scope?.let { candidate.onClearPublishedData(it) }
-      }
+    // No need to finish the transaction if we don't have a scope (e.g., the SDK is disabled), as
+    // the transaction can't be sent and it will time out anyway. Not finishing it has the added
+    // advantage of keeping SDK work inside `configureScope`'s error handling.
+    if (scope == null) {
+      return
+    }
 
-      if (leaseHolder === candidate) {
-        handOffLease(mostRecentlyResumedCandidate(), scope)
-      }
-    } finally {
-      // Scope observers and transaction callbacks can throw. Never retain a departing owner
-      // just because cleanup failed, and preserve any successor selected during handoff.
-      candidates.remove(candidate)
-      candidate.transaction = null
-      if (publishedDataCandidate === candidate) {
-        publishedDataCandidate = null
-      }
-      if (leaseHolder === candidate) {
-        leaseHolder = null
-      }
+    finishTransaction(transaction, scope)
+    if (wasPublisher) {
+      candidate.onClearPublishedData(scope)
+    }
+    if (wasLeaseHolder) {
+      transferLeaseTo(mostRecentlyResumedCandidate(), scope)
     }
   }
 
@@ -334,8 +337,8 @@ internal class NavLeaseCoordinator {
 
       val transaction = candidate.transaction
       if (transaction?.isFinished == true) {
-        clearTransactionFromScope(candidate, scope)
         candidate.transaction = null
+        clearTransactionFromScope(transaction, scope)
       } else if (transaction != null) {
         // The navigation lease doesn't give this owner control over an unrelated transaction
         // already bound to the shared scope. Restore the owner's retained nav transaction only if
@@ -348,47 +351,40 @@ internal class NavLeaseCoordinator {
       }
     }
 
+    val previousPublisher = publishedDataCandidate
     leaseHolder = candidate
     if (candidate != null) {
+      // Record the candidate as the publisher before calling into the scope: it owns the scope's
+      // nav data from the moment it takes the lease. If clearing the previous owner's data then
+      // throws, the next handoff still clears the candidate's data rather than never clearing it.
+      //
       // Clear the previous publisher's nav data before publishing the candidate's, so the
       // previous owner's values don't linger where the candidate has nothing staged to replace
       // them.
-      val previousPublisher = publishedDataCandidate
-      try {
-        if (previousPublisher != null && previousPublisher !== candidate) {
-          previousPublisher.onClearPublishedData(scope)
-        }
-        publishedDataCandidate = candidate
-        candidate.onPublishData(scope)
-      } finally {
-        // Scope observers can throw. A candidate owns the scope's nav data from the moment it
-        // takes the lease, so record it as the publisher even if clearing the previous owner's
-        // data threw. Leaving the previous owner recorded here would strand both owners' values
-        // b/c the next handoff would clear data the candidate may have already replaced, and would
-        // never clear the candidate's own.
-        publishedDataCandidate = candidate
+      publishedDataCandidate = candidate
+      if (previousPublisher != null && previousPublisher !== candidate) {
+        previousPublisher.onClearPublishedData(scope)
       }
+      candidate.onPublishData(scope)
     }
   }
 
-  /** Finishes and unbinds [candidate]'s nav transaction, then forgets it. */
-  private fun finishTransaction(candidate: Candidate, scope: IScope?) {
-    // No need to finish the transaction if we don't have a scope (e.g., the SDK is disabled), as
-    // the transaction can't be sent and it will time out anyway. Not finishing it has the added
-    // advantage of keeping SDK work inside `configureScope`'s error handling.
-    if (scope != null) {
-      val transaction = candidate.transaction
-      if (transaction != null && !transaction.isFinished) {
-        transaction.finish(transaction.status ?: SpanStatus.OK)
-      }
-      clearTransactionFromScope(candidate, scope)
+  /**
+   * Finishes [transaction] if it's unfinished, and unbinds it from [scope].
+   *
+   * Callers must forget the transaction first.
+   */
+  private fun finishTransaction(transaction: ITransaction?, scope: IScope) {
+    if (transaction == null) {
+      return
     }
-
-    candidate.transaction = null
+    if (!transaction.isFinished) {
+      transaction.finish(transaction.status ?: SpanStatus.OK)
+    }
+    clearTransactionFromScope(transaction, scope)
   }
 
-  private fun clearTransactionFromScope(candidate: Candidate, scope: IScope) {
-    val transaction = candidate.transaction ?: return
+  private fun clearTransactionFromScope(transaction: ITransaction, scope: IScope) {
     scope.withTransaction { current ->
       if (current === transaction) {
         scope.clearTransaction()

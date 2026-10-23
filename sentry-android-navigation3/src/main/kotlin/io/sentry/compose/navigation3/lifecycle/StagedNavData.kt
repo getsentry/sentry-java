@@ -4,7 +4,7 @@ import io.sentry.IScope
 import io.sentry.PropagationContext
 
 /**
- * Holds navigation state staged for publication: a screen name and back stack nav context.
+ * Holds navigation state staged for publication.
  *
  * Only state that occupies a single slot in the shared [IScope] is staged. Nav events (i.e.,
  * breadcrumbs) only append to the scope, so they can't overwrite another instance's data and are

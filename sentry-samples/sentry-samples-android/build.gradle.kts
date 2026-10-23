@@ -208,6 +208,7 @@ dependencies {
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.recyclerview)
+  implementation(libs.androidx.viewpager2)
   implementation(libs.androidx.browser)
   implementation(libs.androidx.room3.runtime)
   implementation(libs.bundles.androidx.room2)
@@ -230,6 +231,9 @@ dependencies {
 
   debugImplementation(projects.sentryAndroidDistribution)
   debugImplementation(libs.leakcanary)
+
+  testImplementation(libs.google.truth)
+  testImplementation(libs.kotlin.test.junit)
 }
 
 abstract class ToggleNativeLoggingTask : Exec() {
