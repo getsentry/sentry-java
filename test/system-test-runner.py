@@ -825,7 +825,6 @@ class SystemTestRunner:
     def get_available_modules(self) -> List[ModuleConfig]:
         """Get list of all available test modules."""
         return [
-            ModuleConfig("sentry-samples-spring-boot-4-otlp", "false", "true", "false"),
         ]
 
     def _find_module_number(self, module_name: str, agent: str, auto_init: str) -> int:
