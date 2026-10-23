@@ -1,26 +1,41 @@
 package io.sentry.compose.navigation3.lifecycle
 
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import com.google.common.truth.Truth.assertThat
+import io.sentry.IScopes
 import io.sentry.ITransaction
 import io.sentry.Scope
+import io.sentry.ScopeCallback
 import io.sentry.ScopeObserverAdapter
 import io.sentry.SentryOptions
+import io.sentry.SpanStatus
+import io.sentry.TransactionContext
+import io.sentry.TransactionOptions
+import io.sentry.protocol.App
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
+/**
+ * Tests for the [INavScope] that [NavScopes.configureScope] hands out, which is only reachable
+ * through it.
+ */
 class NavScopeTest {
 
   @Test
   fun `getScreen() - reads the real screen with the nav lease`() {
     val fixture = Fixture.create(ownsLease = true)
-    val navScope = fixture.navScope
-    navScope.screen = "Staged"
-    fixture.realScope.screen = "Host"
+    val navScopes = fixture.navScopes
+    navScopes.withNavScope { it.screen = "Staged" }
+    fixture.scope.screen = "Host"
 
-    val screen = navScope.screen
+    val screen = navScopes.withNavScope { it.screen }
 
     assertThat(screen).isEqualTo("Host")
   }
@@ -28,11 +43,11 @@ class NavScopeTest {
   @Test
   fun `getScreen() - reads the staged screen without the nav lease`() {
     val fixture = Fixture.create()
-    val navScope = fixture.navScope
-    fixture.realScope.screen = "Host"
-    fixture.stagedNavData.stageScreen("Staged")
+    val navScopes = fixture.navScopes
+    fixture.scope.screen = "Host"
+    navScopes.withNavScope { it.screen = "Staged" }
 
-    val screen = navScope.screen
+    val screen = navScopes.withNavScope { it.screen }
 
     assertThat(screen).isEqualTo("Staged")
   }
@@ -40,147 +55,288 @@ class NavScopeTest {
   @Test
   fun `setScreen() - publishes the screen with the nav lease`() {
     val fixture = Fixture.create(ownsLease = true)
-    val navScope = fixture.navScope
+    val navScopes = fixture.navScopes
 
-    navScope.screen = "Profile"
+    navScopes.withNavScope { it.screen = "Profile" }
 
-    assertThat(fixture.realScope.screen).isEqualTo("Profile")
+    assertThat(fixture.scope.screen).isEqualTo("Profile")
   }
 
   @Test
-  fun `setScreen() - stages the screen without the nav lease`() {
+  fun `setScreen() - stages the screen without the nav lease until the lease is acquired`() {
     val fixture = Fixture.create()
-    val navScope = fixture.navScope
-    fixture.realScope.screen = "Host"
+    val navScopes = fixture.navScopes
+    fixture.scope.screen = "Host"
 
-    navScope.screen = "Profile"
+    navScopes.withNavScope { it.screen = "Profile" }
+    assertThat(fixture.scope.screen).isEqualTo("Host")
 
-    assertThat(fixture.realScope.screen).isEqualTo("Host")
-    assertThat(navScope.screen).isEqualTo("Profile")
+    fixture.acquireLease()
+    assertThat(fixture.scope.screen).isEqualTo("Profile")
+  }
+
+  @Test
+  fun `getApp() - returns a copy of the scope's app context`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    val hostApp = App().apply { appName = "Host" }
+    fixture.scope.contexts.setApp(hostApp)
+
+    val app = navScopes.withNavScope { it.app }
+
+    assertThat(app?.appName).isEqualTo("Host")
+    assertThat(app).isNotSameInstanceAs(hostApp)
+  }
+
+  @Test
+  fun `getApp() - returns null when the scope has no app context`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+
+    val app = navScopes.withNavScope { it.app }
+
+    assertThat(app).isNull()
   }
 
   @Test
   fun `setNavigationContext() - publishes the navigation context with the nav lease`() {
     val fixture = Fixture.create(ownsLease = true)
-    val navScope = fixture.navScope
-    val navigationContext = mapOf("route" to "Profile")
+    val navScopes = fixture.navScopes
 
-    navScope.setNavigationContext(navigationContext)
+    navScopes.withNavScope { it.setNavigationContext(navigationContext) }
 
-    assertThat(fixture.realScope.contexts[NAVIGATION_CONTEXT_KEY])
-      .isSameInstanceAs(navigationContext)
+    assertThat(fixture.scope.contexts[NAVIGATION_CONTEXT_KEY]).isSameInstanceAs(navigationContext)
   }
 
   @Test
-  fun `setNavigationContext() - stages the navigation context without the nav lease`() {
+  fun `setNavigationContext() - clears the published navigation context given null with the nav lease`() {
+    val fixture = Fixture.create(ownsLease = true)
+    val navScopes = fixture.navScopes
+    navScopes.withNavScope { it.setNavigationContext(navigationContext) }
+
+    navScopes.withNavScope { it.setNavigationContext(null) }
+
+    assertThat(fixture.scope.contexts[NAVIGATION_CONTEXT_KEY]).isNull()
+  }
+
+  @Test
+  fun `setNavigationContext() - stages the navigation context without the nav lease until the lease is acquired`() {
     val fixture = Fixture.create()
-    val navScope = fixture.navScope
+    val navScopes = fixture.navScopes
     val hostContext = mapOf("route" to "Host")
-    val navigationContext = mapOf("route" to "Profile")
-    fixture.realScope.setContexts(NAVIGATION_CONTEXT_KEY, hostContext)
+    fixture.scope.setContexts(NAVIGATION_CONTEXT_KEY, hostContext)
 
-    navScope.setNavigationContext(navigationContext)
+    navScopes.withNavScope { it.setNavigationContext(navigationContext) }
+    assertThat(fixture.scope.contexts[NAVIGATION_CONTEXT_KEY]).isSameInstanceAs(hostContext)
 
-    assertThat(fixture.realScope.contexts[NAVIGATION_CONTEXT_KEY]).isSameInstanceAs(hostContext)
-    fixture.stagedNavData.publishTo(fixture.realScope)
-    assertThat(fixture.realScope.contexts[NAVIGATION_CONTEXT_KEY])
-      .isSameInstanceAs(navigationContext)
+    fixture.acquireLease()
+    assertThat(fixture.scope.contexts[NAVIGATION_CONTEXT_KEY]).isSameInstanceAs(navigationContext)
   }
 
   @Test
-  fun `rotatePropagationContext() - replaces the real context with the nav lease`() {
+  fun `rotatePropagationContext() - replaces the real propagation context with the nav lease`() {
     val fixture = Fixture.create(ownsLease = true)
-    val realContext = fixture.realScope.propagationContext
+    val navScopes = fixture.navScopes
+    val realContext = fixture.scope.propagationContext
 
-    fixture.navScope.rotatePropagationContext()
+    navScopes.withNavScope { it.rotatePropagationContext() }
 
-    assertThat(fixture.realScope.propagationContext).isNotSameInstanceAs(realContext)
+    assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(realContext)
   }
 
   @Test
-  fun `rotatePropagationContext() - defers rotating the real context without the nav lease`() {
+  fun `rotatePropagationContext() - defers the rotation without the nav lease until the lease is acquired`() {
     val fixture = Fixture.create()
-    val realContext = fixture.realScope.propagationContext
+    val navScopes = fixture.navScopes
+    val realContext = fixture.scope.propagationContext
 
-    fixture.navScope.rotatePropagationContext()
+    navScopes.withNavScope { it.rotatePropagationContext() }
+    assertThat(fixture.scope.propagationContext).isSameInstanceAs(realContext)
 
-    assertThat(fixture.realScope.propagationContext).isSameInstanceAs(realContext)
-    fixture.stagedNavData.publishTo(fixture.realScope)
-    assertThat(fixture.realScope.propagationContext).isNotSameInstanceAs(realContext)
+    fixture.acquireLease()
+    assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(realContext)
   }
 
   @Test
-  fun `bindTransaction() - binds to a free scope with the nav lease`() {
+  fun `startNavTransaction() - binds the nav transaction to a free scope with the nav lease`() {
     val fixture = Fixture.create(ownsLease = true)
-    val transaction = mock<ITransaction>()
+    val navScopes = fixture.navScopes
 
-    fixture.navScope.bindTransaction(transaction)
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(fixture.realScope.transaction).isSameInstanceAs(transaction)
+    assertThat(navTransaction).isNotNull()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
   }
 
   @Test
-  fun `bindTransaction() - preserves an already bound transaction`() {
+  fun `startNavTransaction() - starts none and keeps a bound host transaction with the nav lease`() {
     val fixture = Fixture.create(ownsLease = true)
-    val bound = mock<ITransaction>()
-    fixture.realScope.transaction = bound
+    val navScopes = fixture.navScopes
+    val hostTransaction = mock<ITransaction>()
+    fixture.scope.transaction = hostTransaction
 
-    fixture.navScope.bindTransaction(mock<ITransaction>())
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(fixture.realScope.transaction).isSameInstanceAs(bound)
+    assertThat(navTransaction).isNull()
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
   }
 
   @Test
-  fun `bindTransaction() - does nothing without the nav lease`() {
+  fun `startNavTransaction() - replaces a finished bound transaction with the nav lease`() {
+    val fixture = Fixture.create(ownsLease = true)
+    val navScopes = fixture.navScopes
+    fixture.scope.transaction =
+      mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
+
+    assertThat(navTransaction).isNotNull()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
+  }
+
+  @Test
+  fun `startNavTransaction() - starts none while a host transaction is bound without the nav lease`() {
     val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    val hostTransaction = mock<ITransaction>()
+    fixture.scope.transaction = hostTransaction
 
-    fixture.navScope.bindTransaction(mock<ITransaction>())
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(fixture.realScope.transaction).isNull()
+    assertThat(navTransaction).isNull()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
   }
 
   @Test
-  fun `unbindTransaction() - unbinds the given transaction without the nav lease`() {
+  fun `startNavTransaction() - defers the start despite another owner's bound nav transaction without the nav lease`() {
     val fixture = Fixture.create()
-    val transaction = mock<ITransaction>()
-    fixture.realScope.transaction = transaction
+    val navScopes = fixture.navScopes
+    val otherTransaction = fixture.startAnotherOwnersNavTransaction()
 
-    fixture.navScope.unbindTransaction(transaction)
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(fixture.realScope.transaction).isNull()
+    assertThat(navTransaction).isNotNull()
+    assertThat(fixture.startedTransactions).containsExactly(otherTransaction)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(otherTransaction)
   }
 
   @Test
-  fun `unbindTransaction() - releases the owner's retained nav transaction with the nav lease`() {
-    val fixture = Fixture.create(ownsLease = true)
-    val transaction = mock<ITransaction>()
-    fixture.retainTransaction(transaction)
+  fun `startNavTransaction() - defers the start and keeps a finished bound transaction without the nav lease`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    val finished = mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+    fixture.scope.transaction = finished
 
-    fixture.navScope.unbindTransaction(transaction)
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(fixture.coordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navTransaction).isNotNull()
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(finished)
   }
 
   @Test
-  fun `unbindTransaction() - releases the owner's retained nav transaction without the nav lease`() {
+  fun `startNavTransaction() - finishes the previous nav transaction and binds the new one with the nav lease`() {
     val fixture = Fixture.create(ownsLease = true)
-    val transaction = mock<ITransaction>()
-    fixture.retainTransaction(transaction)
-    fixture.giveLeaseToAnotherOwner()
+    val navScopes = fixture.navScopes
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    val previous = fixture.startedTransactions.single()
 
-    fixture.navScope.unbindTransaction(transaction)
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
 
-    assertThat(fixture.coordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(navTransaction).isNotNull()
+    verify(previous).finish(SpanStatus.OK)
+    assertThat(fixture.startedTransactions.map { it.name })
+      .containsExactly("/Profile", "/Settings")
+      .inOrder()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.last())
   }
 
   @Test
-  fun `unbindTransaction() - releases the retained nav transaction when a scope observer throws`() {
+  fun `startNavTransaction() - discards the previous deferred transaction without the nav lease`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    val previous = navScopes.withNavScope { it.startNavTransaction("/Profile") } as NavTransaction
+
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+    fixture.acquireLease()
+
+    assertThat(navTransaction).isNotNull()
+    assertThat(previous.isPending).isFalse()
+    assertThat(previous.transaction).isNull()
+    assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/Settings")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
+  }
+
+  @Test
+  fun `startNavTransaction() - finishes the previous nav transaction while a host transaction is bound`() {
     val fixture = Fixture.create(ownsLease = true)
-    val transaction = mock<ITransaction>()
-    fixture.retainTransaction(transaction)
-    fixture.realScope.transaction = transaction
-    // Registered last, so that only clearTransaction() reaches it.
-    fixture.realScope.options.addScopeObserver(
+    val navScopes = fixture.navScopes
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    val previous = fixture.startedTransactions.single()
+    val hostTransaction = mock<ITransaction>()
+    fixture.scope.transaction = hostTransaction
+
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+
+    assertThat(navTransaction).isNull()
+    verify(previous).finish(SpanStatus.OK)
+    assertThat(fixture.startedTransactions).containsExactly(previous)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
+  }
+
+  @Test
+  fun `startNavTransaction() - discards the previous deferred transaction while a host transaction is bound`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    val previous = navScopes.withNavScope { it.startNavTransaction("/Profile") } as NavTransaction
+    fixture.scope.transaction = mock<ITransaction>()
+
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+    fixture.scope.clearTransaction()
+    fixture.acquireLease()
+
+    assertThat(navTransaction).isNull()
+    assertThat(previous.isPending).isFalse()
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `finishNavTransaction() - unbinds and disowns the nav transaction`() {
+    val fixture = Fixture.create(ownsLease = true)
+    val navScopes = fixture.navScopes
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    val started = fixture.startedTransactions.single()
+
+    navScopes.withNavScope { it.finishNavTransaction() }
+
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.coordinator.isNavTransaction(started)).isFalse()
+  }
+
+  @Test
+  fun `finishNavTransaction() - disowns the nav transaction without the nav lease`() {
+    val fixture = Fixture.create(ownsLease = true)
+    val navScopes = fixture.navScopes
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    val started = fixture.startedTransactions.single()
+    fixture.startAnotherOwnersNavTransaction()
+    check(fixture.coordinator.isNavTransaction(started))
+
+    navScopes.withNavScope { it.finishNavTransaction() }
+
+    assertThat(fixture.coordinator.isNavTransaction(started)).isFalse()
+  }
+
+  @Test
+  fun `finishNavTransaction() - disowns the nav transaction if unbinding throws`() {
+    val fixture = Fixture.create(ownsLease = true)
+    val navScopes = fixture.navScopes
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    val started = fixture.startedTransactions.single()
+    // Registered after the start, so that only unbinding the transaction reaches it.
+    fixture.scope.options.addScopeObserver(
       object : ScopeObserverAdapter() {
         override fun setTransaction(transaction: String?) {
           throw ThrowingScopeObserverException()
@@ -189,133 +345,120 @@ class NavScopeTest {
     )
 
     assertThrows(ThrowingScopeObserverException::class.java) {
-      fixture.navScope.unbindTransaction(transaction)
+      navScopes.withNavScope { it.finishNavTransaction() }
     }
 
-    assertThat(fixture.coordinator.isNavTransaction(transaction)).isFalse()
+    assertThat(fixture.coordinator.isNavTransaction(started)).isFalse()
   }
 
   @Test
-  fun `unbindTransaction() - preserves a different bound transaction`() {
+  fun `finishNavTransaction() - keeps a different bound transaction`() {
     val fixture = Fixture.create(ownsLease = true)
-    val bound = mock<ITransaction>()
-    fixture.realScope.transaction = bound
-
-    fixture.navScope.unbindTransaction(mock<ITransaction>())
-
-    assertThat(fixture.realScope.transaction).isSameInstanceAs(bound)
-  }
-
-  @Test
-  fun `clearFinishedTransaction() - unbinds a finished transaction with the nav lease`() {
-    val fixture = Fixture.create(ownsLease = true)
-    fixture.realScope.transaction =
-      mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
-
-    fixture.navScope.clearFinishedTransaction()
-
-    assertThat(fixture.realScope.transaction).isNull()
-  }
-
-  @Test
-  fun `clearFinishedTransaction() - does nothing without the nav lease`() {
-    val fixture = Fixture.create()
-    val finished = mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
-    fixture.realScope.transaction = finished
-
-    fixture.navScope.clearFinishedTransaction()
-
-    assertThat(fixture.realScope.transaction).isSameInstanceAs(finished)
-  }
-
-  @Test
-  fun `transaction - hides another owner's nav transaction without the nav lease`() {
-    val fixture = Fixture.create()
-    val other = Any()
-    val otherTransaction = mock<ITransaction>()
-    fixture.coordinator.registerCandidate(other, Lifecycle.State.RESUMED, {}, {})
-    fixture.coordinator.onBackStackUpdate(other, fixture.realScope)
-    fixture.coordinator.retainTransaction(other, otherTransaction)
-    fixture.realScope.transaction = otherTransaction
-
-    val transaction = fixture.navScope.transaction
-
-    assertThat(transaction).isNull()
-  }
-
-  @Test
-  fun `transaction - reports a non-nav transaction without the nav lease`() {
-    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
     val hostTransaction = mock<ITransaction>()
-    fixture.realScope.transaction = hostTransaction
+    fixture.scope.transaction = hostTransaction
 
-    val transaction = fixture.navScope.transaction
+    navScopes.withNavScope { it.finishNavTransaction() }
 
-    assertThat(transaction).isSameInstanceAs(hostTransaction)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
   }
 
   @Test
-  fun `transaction - reports the bound transaction with the nav lease`() {
-    val fixture = Fixture.create(ownsLease = true)
-    val boundTransaction = mock<ITransaction>()
-    fixture.realScope.transaction = boundTransaction
+  fun `finishNavTransaction() - keeps the bound transaction when the nav transaction has not started`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    val otherTransaction = fixture.startAnotherOwnersNavTransaction()
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    val transaction = fixture.navScope.transaction
+    navScopes.withNavScope { it.finishNavTransaction() }
 
-    assertThat(transaction).isSameInstanceAs(boundTransaction)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(otherTransaction)
+    assertThat(fixture.coordinator.isNavTransaction(otherTransaction)).isTrue()
   }
+
+  private val navigationContext = mapOf("route" to "Profile")
+
+  /** Runs [block] with the [INavScope] handed out by [NavScopes.configureScope]. */
+  private fun <T> NavScopes.withNavScope(block: (INavScope) -> T): T {
+    val results = mutableListOf<T>()
+    configureScope { results += block(it) }
+    return results.single()
+  }
+
+  private fun INavScope.startNavTransaction(name: String): INavTransaction? =
+    startNavTransaction(TransactionContext(name, "navigation"), TransactionOptions())
 
   /** Thrown by a scope observer, to stand in for one the host app registered. */
   private class ThrowingScopeObserverException : RuntimeException()
 
-  private class Fixture
-  private constructor(
-    val realScope: Scope,
-    val stagedNavData: StagedNavData,
-    val coordinator: NavLeaseCoordinator,
-    val navScope: NavScope,
-    private val owner: Any,
-  ) {
+  private class TestLifecycleOwner : LifecycleOwner {
+    override val lifecycle: LifecycleRegistry =
+      LifecycleRegistry.createUnsafe(this).apply { currentState = Lifecycle.State.RESUMED }
+  }
 
-    /** Retains [transaction] as the owner's nav transaction; the owner must hold the nav lease. */
-    fun retainTransaction(transaction: ITransaction) {
-      coordinator.retainTransaction(owner, transaction)
-      check(coordinator.isNavTransaction(transaction))
+  private class Fixture private constructor() {
+    val scope = Scope(SentryOptions())
+    val coordinator = NavLeaseCoordinator()
+    val startedTransactions = mutableListOf<ITransaction>()
+
+    /**
+     * `LifecycleRegistry` holds its owner weakly and throws once it's collected, so the fixture
+     * keeps the owners it creates alive for the test.
+     */
+    private val lifecycleOwners = mutableListOf<LifecycleOwner>()
+
+    private val scopes =
+      mock<IScopes>().also { scopes ->
+        whenever(scopes.options).thenReturn(SentryOptions())
+        doAnswer {
+            (it.arguments[0] as ScopeCallback).run(scope)
+            null
+          }
+          .whenever(scopes)
+          .configureScope(any())
+        whenever(scopes.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
+          .thenAnswer {
+            val name = (it.arguments[0] as TransactionContext).name
+            mock<ITransaction>()
+              .also { transaction -> whenever(transaction.name).thenReturn(name) }
+              .also(startedTransactions::add)
+          }
+      }
+
+    /** Attached to a resumed owner, but without the nav lease until [acquireLease]. */
+    val navScopes = resumedNavScopes()
+
+    /** Lets [navScopes] acquire the nav lease by applying its first back stack update. */
+    fun acquireLease() {
+      navScopes.onBackStackUpdate()
     }
 
-    /** Lets another resumed owner take the nav lease from the owner. */
-    fun giveLeaseToAnotherOwner() {
-      val other = Any()
-      coordinator.registerCandidate(other, Lifecycle.State.RESUMED, {}, {})
-      coordinator.onBackStackUpdate(other, realScope)
-      check(!coordinator.hasLease(owner))
+    /**
+     * Lets another resumed owner acquire the nav lease and start a nav transaction, which is
+     * returned.
+     */
+    fun startAnotherOwnersNavTransaction(): ITransaction {
+      val other = resumedNavScopes()
+      other.onBackStackUpdate()
+      other.configureScope {
+        it.startNavTransaction(TransactionContext("/Other", "navigation"), TransactionOptions())
+      }
+      return startedTransactions.single { it.name == "/Other" }
     }
+
+    private fun resumedNavScopes(): NavScopes =
+      NavScopes(scopes, coordinator).also {
+        it.attach(TestLifecycleOwner().also(lifecycleOwners::add).lifecycle)
+      }
 
     companion object {
-
-      fun create(ownsLease: Boolean = false): Fixture {
-        val realScope = Scope(SentryOptions.empty())
-        val stagedNavData = StagedNavData()
-        val coordinator = NavLeaseCoordinator()
-        val owner = Any()
-        coordinator.registerCandidate(
-          owner,
-          Lifecycle.State.RESUMED,
-          stagedNavData::publishTo,
-          stagedNavData::clearPublishedStateFrom,
-        )
-        if (ownsLease) {
-          coordinator.onBackStackUpdate(owner, realScope)
+      fun create(ownsLease: Boolean = false): Fixture =
+        Fixture().also {
+          if (ownsLease) {
+            it.acquireLease()
+          }
         }
-
-        return Fixture(
-          realScope,
-          stagedNavData,
-          coordinator,
-          NavScope(realScope, stagedNavData, coordinator, owner),
-          owner,
-        )
-      }
     }
   }
 }
