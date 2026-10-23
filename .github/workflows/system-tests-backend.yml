@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sample: [ "sentry-samples-spring-boot-opentelemetry-noagent" ]
+        sample: [ "sentry-samples-console" ]
         agent: [ "false" ]
         agent-auto-init: [ "true" ]
         include:
@@ -34,15 +34,6 @@ jobs:
           - sample: "sentry-samples-spring-boot-opentelemetry"
             agent: "true"
             agent-auto-init: "false"
-          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: "true"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: "true"
-            agent-auto-init: "false"
-          - sample: "sentry-samples-console"
-            agent: "false"
-            agent-auto-init: "true"
           - sample: "sentry-samples-console-otlp"
             agent: "false"
             agent-auto-init: "true"
@@ -50,9 +41,6 @@ jobs:
             agent: "false"
             agent-auto-init: "true"
           - sample: "sentry-samples-jul"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-4-opentelemetry-noagent"
             agent: "false"
             agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-4-opentelemetry"
