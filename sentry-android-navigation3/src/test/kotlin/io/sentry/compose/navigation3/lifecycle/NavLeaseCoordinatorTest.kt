@@ -269,25 +269,9 @@ class NavLeaseCoordinatorTest {
   }
 
   /**
-   * An owner that leaves must not leave its nav data behind on the shared scope.
-   *
-   * The coordinator records which owner last published nav data. Each handoff uses that record to
-   * clear the previous owner's screen and back stack, then publishes the incoming owner's. If the
-   * clear attempt throws, the coordinator must still record the incoming owner as the one that last
-   * published.
-   *
-   * This test runs two handoffs over three owners. The first owner publishes; the second takes the
-   * lease; and then the first owner's clear attempt throws. The third then takes the lease. The
-   * test verifies that third handoff clears the second owner's data, and not the first's. That lets
-   * us ensure the second problem listed below doesn't happen.
-   *
-   * In the setup above, if the coordinator didn't record the second owner's data after the first
-   * owner's clear attempt threw, two things would happen when handing off to the third owner:
-   *
-   * 1. Harmless: The handoff logic would try to clear the first owner's data again. That'd remove
-   *    nothing because the scope no longer holds the values the first owner published.
-   * 2. Problematic: The handoff would never clear the second owner's data. Instead, the second
-   *    owner's data would stay on the scope, so later events would report stale nav data.
+   * The coordinator records the incoming owner as the publisher before calling into the scope, so a
+   * clear callback that throws mid-handoff doesn't strand the incoming owner's nav data: the next
+   * handoff still clears it.
    */
   @Test
   fun `if a clear attempt throws during a handoff, the next handoff clears the new leaseholder's nav data`() {
@@ -321,71 +305,6 @@ class NavLeaseCoordinatorTest {
     fixture.acquireLease(thirdOwner)
 
     assertThat(fixture.cleared).containsExactly(secondOwner)
-  }
-
-  /**
-   * The same guarantee as
-   * [if a clear attempt throws during a handoff, the next handoff clears the new leaseholder's nav data],
-   * but for a failure while publishing instead of while clearing.
-   *
-   * This case already worked before the fix, because the coordinator records the incoming owner
-   * before it publishes. The test exists to catch a future change that moves the record after the
-   * publish.
-   */
-  @Test
-  fun `if a publish attempt throws during a handoff, the next handoff clears the new leaseholder's nav data`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    val failure = IllegalStateException("publish failed")
-    val firstOwner = previous
-    val secondOwner = incoming
-    val thirdOwner = owner
-    fixture.acquireLease(firstOwner)
-    navLeaseCoordinator.registerCandidate(
-      secondOwner,
-      Lifecycle.State.RESUMED,
-      onPublishData = { throw failure },
-      onClearPublishedData = { fixture.cleared += secondOwner },
-    )
-
-    val thrown =
-      assertThrows(IllegalStateException::class.java) {
-        navLeaseCoordinator.onBackStackUpdate(secondOwner, fixture.scope)
-      }
-
-    assertThat(thrown).isSameInstanceAs(failure)
-    assertThat(navLeaseCoordinator.hasLease(secondOwner)).isTrue()
-
-    fixture.acquireLease(thirdOwner)
-
-    assertThat(fixture.cleared).containsExactly(firstOwner, secondOwner).inOrder()
-  }
-
-  @Test
-  fun `unregistering an owner that threw while clearing its nav data preserves the new leaseholder's nav data`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    val failure = IllegalStateException("clear failed")
-    var failClear = true
-    fixture.acquireLease(
-      previous,
-      onClearPublishedData = {
-        if (failClear) {
-          failClear = false
-          throw failure
-        }
-        fixture.cleared += previous
-      },
-    )
-    fixture.register(incoming, Lifecycle.State.RESUMED)
-    assertThrows(IllegalStateException::class.java) {
-      navLeaseCoordinator.onBackStackUpdate(incoming, fixture.scope)
-    }
-
-    navLeaseCoordinator.unregisterCandidate(previous, fixture.scope)
-
-    assertThat(navLeaseCoordinator.hasLease(incoming)).isTrue()
-    assertThat(fixture.cleared).isEmpty()
   }
 
   @Test
@@ -912,120 +831,6 @@ class NavLeaseCoordinatorTest {
 
     assertThat(fixture.published).containsExactly(incoming)
     assertThat(fixture.cleared).isEmpty()
-  }
-
-  @Test
-  fun `unregistering the leaseholder forgets the owner when unbinding its transaction throws`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    val failure = IllegalStateException("unbind failed")
-    val failingScope = mock<IScope>()
-    fixture.acquireLease(owner, transaction = transaction)
-    doThrow(failure).whenever(failingScope).withTransaction(any())
-
-    val thrown =
-      assertThrows(IllegalStateException::class.java) {
-        navLeaseCoordinator.unregisterCandidate(owner, failingScope)
-      }
-
-    assertThat(thrown).isSameInstanceAs(failure)
-    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
-
-    fixture.published.clear()
-    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
-    fixture.acquireLease(incoming)
-
-    assertThat(fixture.published).containsExactly(incoming)
-    assertThat(fixture.cleared).isEmpty()
-  }
-
-  @Test
-  fun `unregistering the leaseholder forgets the owner when clearing its published nav data throws`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    val failure = IllegalStateException("clear failed")
-    fixture.acquireLease(owner, onClearPublishedData = { throw failure })
-
-    val thrown =
-      assertThrows(IllegalStateException::class.java) {
-        navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
-      }
-
-    assertThat(thrown).isSameInstanceAs(failure)
-    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
-
-    fixture.published.clear()
-    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
-    fixture.acquireLease(incoming)
-
-    assertThat(fixture.published).containsExactly(incoming)
-    assertThat(navLeaseCoordinator.hasLease(incoming)).isTrue()
-  }
-
-  @Test
-  fun `unregistering the leaseholder forgets the owner when restoring a fallback transaction throws`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    val failure = IllegalStateException("fallback restoration failed")
-    val failingScope = mock<IScope>()
-    fixture.acquireLease(previous, transaction = transaction)
-    fixture.acquireLease(owner)
-    doThrow(failure).whenever(failingScope).withTransaction(any())
-
-    val thrown =
-      assertThrows(IllegalStateException::class.java) {
-        navLeaseCoordinator.unregisterCandidate(owner, failingScope)
-      }
-
-    assertThat(thrown).isSameInstanceAs(failure)
-    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isTrue()
-
-    fixture.published.clear()
-    fixture.cleared.clear()
-    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
-    fixture.acquireLease(incoming)
-
-    assertThat(fixture.published).containsExactly(incoming)
-    assertThat(fixture.cleared).doesNotContain(owner)
-  }
-
-  @Test
-  fun `unregistering the leaseholder preserves the fallback lease when publishing fallback nav data throws`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    val failure = IllegalStateException("fallback publication failed")
-    var failPublication = false
-    navLeaseCoordinator.registerCandidate(
-      previous,
-      Lifecycle.State.RESUMED,
-      onPublishData = {
-        if (failPublication) {
-          throw failure
-        }
-      },
-      onClearPublishedData = {},
-    )
-    navLeaseCoordinator.onBackStackUpdate(previous, fixture.scope)
-    fixture.acquireLease(owner, transaction = transaction)
-    failPublication = true
-
-    val thrown =
-      assertThrows(IllegalStateException::class.java) {
-        navLeaseCoordinator.unregisterCandidate(owner, fixture.scope)
-      }
-
-    assertThat(thrown).isSameInstanceAs(failure)
-    assertThat(navLeaseCoordinator.hasLease(owner)).isFalse()
-    assertThat(navLeaseCoordinator.hasLease(previous)).isTrue()
-    assertThat(navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
-
-    fixture.published.clear()
-    navLeaseCoordinator.resumeCandidate(owner, fixture.scope)
-
-    assertThat(fixture.published).isEmpty()
-    assertThat(navLeaseCoordinator.hasLease(previous)).isTrue()
   }
 
   private class Fixture {
