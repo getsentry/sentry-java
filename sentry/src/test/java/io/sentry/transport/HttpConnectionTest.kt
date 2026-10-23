@@ -17,15 +17,19 @@ import java.net.Proxy.Type
 import java.net.URL
 import java.nio.charset.Charset
 import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLPeerUnverifiedException
 import javax.net.ssl.SSLSocketFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.check
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -39,6 +43,7 @@ class HttpConnectionTest {
     val currentDateProvider = mock<ICurrentDateProvider>()
     val authenticatorWrapper = mock<AuthenticatorWrapper>()
     val rateLimiter = mock<RateLimiter>()
+    val distrustedCertificates = mock<DistrustedCertificates>()
     var sslSocketFactory: SSLSocketFactory? = null
     val requestDetails = mock<RequestDetails>()
     val socketTagger = mock<ISocketTagger>()
@@ -61,7 +66,13 @@ class HttpConnectionTest {
       options.sslSocketFactory = sslSocketFactory
       options.setSocketTagger(socketTagger)
 
-      return HttpConnection(options, requestDetails, authenticatorWrapper, rateLimiter)
+      return HttpConnection(
+        options,
+        requestDetails,
+        authenticatorWrapper,
+        rateLimiter,
+        distrustedCertificates,
+      )
     }
   }
 
@@ -166,6 +177,30 @@ class HttpConnectionTest {
     transport.send(createEnvelope())
 
     verify(fixture.connection, never()).sslSocketFactory = any()
+  }
+
+  @Test
+  fun `verifies the server certificates after connecting and before writing the envelope`() {
+    val transport = fixture.getSUT()
+
+    transport.send(createEnvelope())
+
+    val order = inOrder(fixture.connection, fixture.distrustedCertificates)
+    order.verify(fixture.connection).connect()
+    order.verify(fixture.distrustedCertificates).verify(fixture.connection)
+    order.verify(fixture.connection).outputStream
+  }
+
+  @Test
+  fun `does not send the envelope when the server presents a distrusted certificate`() {
+    doThrow(SSLPeerUnverifiedException("distrusted"))
+      .whenever(fixture.distrustedCertificates)
+      .verify(fixture.connection)
+    val transport = fixture.getSUT()
+
+    assertFailsWith<SSLPeerUnverifiedException> { transport.send(createEnvelope()) }
+
+    verify(fixture.connection, never()).outputStream
   }
 
   @Test
