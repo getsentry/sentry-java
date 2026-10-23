@@ -33,6 +33,18 @@ class MockSentryServerTest {
   }
 
   @Test
+  fun `beforeEachCheck runs while waiting`() {
+    var checks = 0
+    MockSentryServer { checks++ }
+      .use { server ->
+        assertFailsWith<AssertionError> { server.awaitEnvelope(timeoutMillis = 200) { true } }
+        server.assertNoEnvelope(millis = 200) { true }
+      }
+
+    assertThat(checks).isGreaterThan(2)
+  }
+
+  @Test
   fun `assertNoEnvelope passes when nothing matches`() {
     initForTest { it.dsn = server.dsn }
 
