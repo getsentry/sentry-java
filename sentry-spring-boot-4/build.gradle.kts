@@ -11,6 +11,7 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   alias(libs.plugins.springboot4) apply false
+  id("io.sentry.api-validation")
 }
 
 // Published code targets Java 17. Test code is not published and follows the toolchain.
