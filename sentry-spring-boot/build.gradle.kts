@@ -136,6 +136,13 @@ tasks.jar {
   }
 }
 
+// Spring Boot supports GraphQL only from 2.7, and its Kafka auto-configuration needs 2.7 for the
+// spring-kafka version Sentry integrates with. The Spring Boot 2 matrix also covers older versions.
+val bootSupportsGraphqlAndKafka =
+  libs.versions.springboot2.get().split(".").let { (major, minor) ->
+    major.toInt() > 2 || minor.toInt() >= 7
+  }
+
 testing {
   suites {
     // Runs a Spring Boot app in the test's JVM against MockSentryServer. It is a suite of its own
@@ -161,6 +168,13 @@ testing {
         implementation(libs.springboot.starter.web)
         implementation(libs.springboot.starter.webflux)
         runtimeOnly(libs.hsqldb)
+        if (bootSupportsGraphqlAndKafka) {
+          implementation(projects.sentryGraphql)
+          implementation(projects.sentryKafka)
+          implementation(libs.springboot.starter.graphql)
+          implementation(libs.spring.kafka2)
+          implementation(libs.spring.kafka2.test)
+        }
       }
     }
   }
@@ -168,4 +182,9 @@ testing {
 
 // The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
 // to resolve `#id` in a cache key.
-tasks.named<KotlinCompile>("compileIntegrationTestKotlin") { compilerOptions.javaParameters = true }
+tasks.named<KotlinCompile>("compileIntegrationTestKotlin") {
+  compilerOptions.javaParameters = true
+  if (!bootSupportsGraphqlAndKafka) {
+    exclude("**/Graphql*", "**/Kafka*")
+  }
+}

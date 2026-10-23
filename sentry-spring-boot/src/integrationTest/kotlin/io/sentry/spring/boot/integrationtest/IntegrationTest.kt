@@ -31,7 +31,9 @@ import org.springframework.test.context.junit4.SpringRunner
       "sentry.profile-session-sample-rate=1.0",
       "sentry.profile-lifecycle=TRACE",
       "sentry.profiling-traces-dir-path=\${java.io.tmpdir}/sentry-integration-test/profiling-traces",
-      "spring.datasource.url=jdbc:p6spy:hsqldb:mem:testdb",
+      // A database per context, because KafkaIntegrationTest runs a second one that would
+      // otherwise find the first one's tables.
+      "spring.datasource.url=jdbc:p6spy:hsqldb:mem:\${random.uuid}",
       "spring.datasource.driver-class-name=com.p6spy.engine.spy.P6SpyDriver",
     ],
 )
