@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.sentry.ITransaction
 import io.sentry.Sentry
 import io.sentry.compose.SentryModifier.sentryTag
 import io.sentry.compose.SentryTraced
@@ -75,10 +76,10 @@ internal fun TracedNav3Route(
   scenario: Nav3Scenario,
   content: @Composable BoxScope.() -> Unit,
 ) {
-  val activityName =
-    LocalNav3SampleHost.current ?: LocalContext.current.getActivity().javaClass.simpleName
+  val activityName = LocalContext.current.getActivity().javaClass.simpleName
+  val hostName = LocalNav3SampleHost.current ?: activityName
   // Tag after composition is applied so abandoned compositions don't tag anything.
-  SideEffect { tagCurrentNav3Scenario(scenario, activityName) }
+  SideEffect { tagCurrentNav3Scenario(route, scenario, hostName, activityName) }
   SentryTraced(
     tag = "Nav3 /${route.routeName}",
     enableUserInteractionTracing = false,
@@ -86,21 +87,52 @@ internal fun TracedNav3Route(
   )
 }
 
-private fun tagCurrentNav3Scenario(scenario: Nav3Scenario, activityName: String) {
+private fun tagCurrentNav3Scenario(
+  route: Nav3Route,
+  scenario: Nav3Scenario,
+  hostName: String,
+  activityName: String,
+) {
   val sessionId = NavigationTransactionHistory.sessionId
-  Sentry.getSpan()?.let { span ->
-    span.setTag(NAV3_SCENARIO_TAG, scenario.label)
-    span.setTag(NAVIGATION_SAMPLE_ACTIVITY_TAG, activityName)
-    span.setTag(NAVIGATION_SAMPLE_SESSION_TAG, sessionId)
-  }
   Sentry.configureScope { scope ->
     scope.withTransaction { transaction ->
-      transaction?.setTag(NAV3_SCENARIO_TAG, scenario.label)
-      transaction?.setTag(NAVIGATION_SAMPLE_ACTIVITY_TAG, activityName)
-      transaction?.setTag(NAVIGATION_SAMPLE_SESSION_TAG, sessionId)
+      tagNavigationSampleTransaction(
+        transaction,
+        route,
+        scenario,
+        hostName,
+        activityName,
+        sessionId,
+      )
     }
   }
-  tagCurrentNavigationSampleScenario(scenario.label)
+}
+
+private fun tagNavigationSampleTransaction(
+  transaction: ITransaction?,
+  route: Nav3Route,
+  scenario: Nav3Scenario,
+  hostName: String,
+  activityName: String,
+  sessionId: String,
+) {
+  // A covered root can remain composed and re-run this SideEffect after another root acquires the
+  // navigation lease. Only tag this destination's transaction, or an untagged ui.load transaction
+  // owned by its Activity.
+  val activeTransaction = transaction ?: return
+  val ownsNavigationTransaction = activeTransaction.name == "/${route.routeName}"
+  val ownsUiLoadTransaction =
+    activeTransaction.operation == ACTIVITY_UI_LOAD_OP &&
+      activeTransaction.name == activityName &&
+      activeTransaction.getTag(NAVIGATION_SAMPLE_ACTIVITY_TAG) == null
+  if (!ownsNavigationTransaction && !ownsUiLoadTransaction) {
+    return
+  }
+
+  activeTransaction.setTag(NAV3_SCENARIO_TAG, scenario.label)
+  activeTransaction.setTag(NAVIGATION_SAMPLE_SCENARIO_TAG, scenario.label)
+  activeTransaction.setTag(NAVIGATION_SAMPLE_ACTIVITY_TAG, hostName)
+  activeTransaction.setTag(NAVIGATION_SAMPLE_SESSION_TAG, sessionId)
 }
 
 @Composable
