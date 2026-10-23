@@ -304,11 +304,13 @@ public final class SentryNdkCrashService extends Service {
           }
         };
 
+    // a foreground app raises the service process only to visible without BIND_IMPORTANT
+    final int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       // deliver callbacks on the binder thread, the caller blocks on the latch
-      bound[0] = context.bindService(intent, Context.BIND_AUTO_CREATE, Runnable::run, connection);
+      bound[0] = context.bindService(intent, flags, Runnable::run, connection);
     } else {
-      bound[0] = context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
+      bound[0] = context.bindService(intent, connection, flags);
     }
     if (!bound[0]) {
       return null;
