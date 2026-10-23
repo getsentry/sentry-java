@@ -8319,15 +8319,13 @@ public final class io/sentry/util/sql/SqlDialect {
 }
 
 public final class io/sentry/util/sql/SqlQuery {
-	public fun getCollectionName ()Ljava/lang/String;
-	public fun getOperationName ()Ljava/lang/String;
 	public fun getQuerySummary ()Ljava/lang/String;
 	public fun getQueryText ()Ljava/lang/String;
 	public fun getStoredProcedureName ()Ljava/lang/String;
 }
 
 public final class io/sentry/util/sql/SqlQueryAnalyzer {
-	public static fun analyze (Ljava/lang/String;Lio/sentry/util/sql/SqlDialect;)Lio/sentry/util/sql/SqlQuery;
+	public static fun analyze (Ljava/lang/String;Lio/sentry/util/sql/SqlDialect;I)Lio/sentry/util/sql/SqlQuery;
 }
 
 public abstract interface class io/sentry/util/thread/IThreadChecker {

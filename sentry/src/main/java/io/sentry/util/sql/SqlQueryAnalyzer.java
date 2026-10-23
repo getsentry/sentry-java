@@ -19,15 +19,16 @@ public final class SqlQueryAnalyzer {
   /**
    * Analyzes a SQL statement.
    *
-   * <p>Never throws for any input. When the statement cannot be sanitized safely, {@link
-   * SqlQuery#getQueryText()} is {@code null}.
+   * <p>Never throws for any input.
    *
    * @param sql the statement as passed to the database driver, may be {@code null}
    * @param dialect how dialect-specific syntax is interpreted
+   * @param maxQueryTextLength maximum length of {@link SqlQuery#getQueryText()}, must be positive.
+   *     Longer text is cut at a token boundary and scanning stops there.
    * @return the analysis result, never {@code null}
    */
   public static @NotNull SqlQuery analyze(
-      final @Nullable String sql, final @NotNull SqlDialect dialect) {
+      final @Nullable String sql, final @NotNull SqlDialect dialect, final int maxQueryTextLength) {
     // Fail-closed stub until an analyzer implementation lands.
     return SqlQuery.EMPTY;
   }
