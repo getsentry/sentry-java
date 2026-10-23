@@ -6,6 +6,7 @@ import okhttp3.OkHttpClient
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.cache.annotation.EnableCaching
 import org.springframework.context.annotation.Bean
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Service
@@ -24,6 +25,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 // kotlin-spring plugin.
 
 @SpringBootApplication
+@EnableCaching
 open class IntegrationTestApplication {
   // Built from Spring Boot's builders, which Sentry customizes to trace outgoing requests.
   @Bean open fun restTemplate(builder: RestTemplateBuilder): RestTemplate = builder.build()

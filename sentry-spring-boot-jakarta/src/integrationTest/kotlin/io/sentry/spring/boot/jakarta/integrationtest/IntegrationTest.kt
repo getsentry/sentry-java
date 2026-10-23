@@ -26,6 +26,7 @@ import org.springframework.test.context.junit4.SpringRunner
     [
       "sentry.traces-sample-rate=1.0",
       "sentry.clients.ok-http-enabled=true",
+      "sentry.enable-cache-tracing=true",
       "sentry.logs.enabled=true",
       "sentry.profile-session-sample-rate=1.0",
       "sentry.profile-lifecycle=TRACE",
