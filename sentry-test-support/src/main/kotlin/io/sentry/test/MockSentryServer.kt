@@ -55,6 +55,25 @@ class MockSentryServer : Closeable {
     }
   }
 
+  /**
+   * Fails if an envelope matching [predicate] has arrived or arrives within [millis].
+   *
+   * A flush alone can't prove an absence: the SDK may not have produced the envelope yet when the
+   * flush runs, for example when a server finishes its transaction after sending the response.
+   */
+  fun assertNoEnvelope(millis: Long = 2_000, predicate: (SentryEnvelope) -> Boolean) {
+    val deadline = Deadline.after(JavaMonotonicTicker.getInstance(), millis, TimeUnit.MILLISECONDS)
+    while (true) {
+      if (received.any(predicate)) {
+        throw AssertionError("Received an envelope that should not have been sent")
+      }
+      if (deadline.hasPassed()) {
+        return
+      }
+      Thread.sleep(POLL_INTERVAL_MILLIS)
+    }
+  }
+
   fun reset() {
     received.clear()
   }

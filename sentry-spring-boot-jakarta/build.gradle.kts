@@ -1,3 +1,4 @@
+import io.sentry.gradle.ChildJvmTestArguments
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -142,3 +143,94 @@ tasks.jar {
     )
   }
 }
+
+// The OpenTelemetry agent tests run this app in a child JVM, on its own classpath like a real app
+// with the agent attached, rather than on the test's classpath.
+val agentFixture = sourceSets.create("agentFixture")
+
+// The built agent jar, rather than the plain jar the unit tests compile against.
+val otelAgentJar =
+  configurations.create("otelAgentJar") {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+    isTransitive = false
+    attributes {
+      attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+      attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.SHADOWED))
+    }
+  }
+
+dependencies {
+  "agentFixtureImplementation"(platform(SpringBootPlugin.BOM_COORDINATES))
+  "agentFixtureImplementation"(projects.sentrySpringBootStarterJakarta)
+  "agentFixtureImplementation"(projects.sentryLogback)
+  "agentFixtureImplementation"(kotlin(Config.kotlinStdLib))
+  "agentFixtureImplementation"(libs.otel)
+  "agentFixtureImplementation"(libs.springboot3.starter.web)
+
+  otelAgentJar(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
+}
+
+testing {
+  suites {
+    // Runs a Spring Boot app in the test's JVM against MockSentryServer. It is a suite of its own
+    // because the unit tests' classpath carries the agent, which switches Sentry into agent mode.
+    register<JvmTestSuite>("integrationTest") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBootStarterJakarta)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql22)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryKafka)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryOkhttp)
+        implementation(projects.sentryOpenfeature)
+        implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        // The sample only had it because Spring GraphQL pulls it in.
+        implementation(libs.context.propagation)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.caffeine)
+        implementation(libs.okhttp)
+        implementation(libs.openfeature)
+        implementation(libs.springboot3.starter.aop)
+        implementation(libs.springboot3.starter.cache)
+        implementation(libs.springboot3.starter.graphql)
+        implementation(libs.springboot3.starter.jdbc)
+        implementation(libs.springboot3.starter.test)
+        implementation(libs.springboot3.starter.web)
+        implementation(libs.springboot3.starter.webflux)
+        implementation(libs.spring.kafka3)
+        implementation(libs.spring.kafka3.test)
+        runtimeOnly(libs.hsqldb)
+      }
+    }
+
+    register<JvmTestSuite>("integrationTestOtelAgent") {
+      useJUnit()
+      dependencies {
+        implementation(projects.sentryTestSupport)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+      }
+      targets.all {
+        testTask.configure {
+          jvmArgumentProviders.add(
+            objects.newInstance<ChildJvmTestArguments>().apply {
+              agentJar.from(otelAgentJar)
+              appClasspath.from(agentFixture.runtimeClasspath)
+            }
+          )
+        }
+      }
+    }
+  }
+}
+
+// The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
+// to resolve `#id` in a cache key.
+tasks.named<KotlinCompile>("compileIntegrationTestKotlin") { compilerOptions.javaParameters = true }
