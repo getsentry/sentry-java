@@ -34,38 +34,13 @@ internal class StripMethodParameters : Action<Task> {
       .filter { it.isFile && it.extension == "class" }
       .forEach { file ->
         val reader = ClassReader(file.readBytes())
-        val methods = methodsWithUnnamedParameters(reader)
+        val methods = reader.methodsWithUnnamedParameters()
         if (methods.isNotEmpty()) {
           val writer = ClassWriter(reader, 0)
           reader.accept(MethodParametersStripper(writer, methods), 0)
           file.writeBytes(writer.toByteArray())
         }
       }
-  }
-
-  /** Returns `name + descriptor` of every method that has a parameter entry without a name. */
-  private fun methodsWithUnnamedParameters(reader: ClassReader): Set<String> {
-    val methods = mutableSetOf<String>()
-    val scanner =
-      object : ClassVisitor(Opcodes.ASM9) {
-        override fun visitMethod(
-          access: Int,
-          name: String?,
-          descriptor: String?,
-          signature: String?,
-          exceptions: Array<out String>?,
-        ): MethodVisitor =
-          object : MethodVisitor(Opcodes.ASM9) {
-            override fun visitParameter(parameterName: String?, access: Int) {
-              if (parameterName == null) {
-                methods.add(name + descriptor)
-              }
-            }
-          }
-      }
-    // no SKIP_DEBUG here, ASM counts MethodParameters as debug info and then skips it
-    reader.accept(scanner, ClassReader.SKIP_CODE)
-    return methods
   }
 
   private class MethodParametersStripper(next: ClassVisitor, private val methods: Set<String>) :
