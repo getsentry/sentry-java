@@ -15,8 +15,9 @@ import okio.buffer
  *
  * @param delegate the body to capture from.
  * @param maxBytes the maximum number of bytes to retain; capture stops once it is reached.
- * @param onCaptured invoked at most once, synchronously, on the thread that finishes the body — so
- *   it must not block. A body that is abandoned without being read to the end or closed never
+ * @param onCaptured invoked at most once, as soon as the capture can no longer grow: the cap is
+ *   reached, the stream ends, a read fails, or the body is closed. Runs synchronously on the thread
+ *   that read or closed the body, so it must not block. A body abandoned without any of those never
  *   reaches it.
  */
 internal class CapturedResponseBody(
@@ -26,11 +27,10 @@ internal class CapturedResponseBody(
 ) : ResponseBody() {
 
   private val captured = Buffer()
+  private val capturedOut = captured.outputStream()
+
   private val reported = AtomicBoolean(false)
 
-  // A buffered source still forwards a short event on its own: one read takes at most one segment
-  // from the source below and returns with whatever arrived. Only request/require/readByteArray()
-  // wait for a byte count, and those are the application's own calls.
   private val capturingSource: BufferedSource by lazy {
     CapturingSource(delegate.source()).buffer()
   }
@@ -42,13 +42,9 @@ internal class CapturedResponseBody(
   override fun source(): BufferedSource = capturingSource
 
   override fun close() {
-    try {
-      // Closing the delegate notifies listeners, which may serialize the breadcrumb this capture
-      // belongs to, so report first.
-      reportCaptured()
-    } finally {
-      delegate.close()
-    }
+    // Closing the delegate notifies listeners, which may serialize the breadcrumb this capture
+    // belongs to, so report first.
+    delegate.use { reportCaptured() }
   }
 
   private inner class CapturingSource(source: Source) : ForwardingSource(source) {
@@ -70,7 +66,7 @@ internal class CapturedResponseBody(
             // the application may not have taken everything in the sink yet, hence the offset
             val toTake = minOf(maxBytes - captured.size, sink.size - sinkBefore)
             if (toTake > 0L) {
-              sink.copyTo(captured, sinkBefore, toTake)
+              sink.copyTo(capturedOut, sinkBefore, toTake)
             }
             captured.size >= maxBytes
           }

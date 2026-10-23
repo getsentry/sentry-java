@@ -370,8 +370,9 @@ public open class SentryOkHttpInterceptor(
           } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
             ExceptionUtils.rethrowIfFatal(e)
             logger.log(
-              io.sentry.SentryLevel.ERROR,
-              "Failed to capture the http response body for Network Details: ${e.message}",
+              SentryLevel.ERROR,
+              "Failed to capture the http response body for Network Details",
+              e,
             )
           }
         }

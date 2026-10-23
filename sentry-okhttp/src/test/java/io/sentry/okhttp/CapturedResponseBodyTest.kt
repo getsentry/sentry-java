@@ -239,13 +239,11 @@ class CapturedResponseBodyTest {
   }
 
   @Test
-  fun `a failing capture callback does not reach the application`() {
+  fun `closes the delegate even when the capture callback throws`() {
     val source = ChunkedSource(listOf("payload".toByteArray()))
     val body = bodyOf(source)
     val wrapper = CapturedResponseBody(body, 1024) { throw IllegalStateException("parse failed") }
 
-    // The interceptor guards its own callback; the wrapper must not swallow the failure silently
-    // while leaving the delegate open.
     assertFailsWith<IllegalStateException> { wrapper.close() }
     assertTrue(source.isClosed, "the delegate is closed even though the callback threw")
   }

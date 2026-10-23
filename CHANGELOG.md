@@ -4,7 +4,7 @@
 
 ### Fixes
 
-- Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
+- Session Replay: Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response, when network details are enabled for the URL ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
 - Session Replay: Fix a native crash (`SIGABRT` on the RenderThread) when stopping a replay that uses the canvas screenshot strategy ([#6342](https://github.com/getsentry/sentry-java/pull/6342))
 - Session Replay: Keep the segment videos of a replay that stopped before the startup cleanup of previous replays ran ([#6343](https://github.com/getsentry/sentry-java/pull/6343))
 - Report the number of dropped spans in client reports when a batched span envelope item is discarded, instead of a quantity of 1 (e.g. for Flutter span streaming) ([#6265](https://github.com/getsentry/sentry-java/pull/6265))
