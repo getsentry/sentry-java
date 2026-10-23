@@ -94,11 +94,13 @@ class TodoController(private val webClient: WebClient) {
 /** Throws when given "crash", so tests can check error reporting. */
 @Controller
 class GreetingController {
+  // Returns a Mono, as a reactive app would, so the test covers Sentry finishing the field's span
+  // asynchronously.
   @QueryMapping
-  fun greeting(@Argument name: String): String {
+  fun greeting(@Argument name: String): Mono<String> {
     if (name == "crash") {
       throw RuntimeException("causing an error for $name")
     }
-    return "Hello $name!"
+    return Mono.just("Hello $name!")
   }
 }
