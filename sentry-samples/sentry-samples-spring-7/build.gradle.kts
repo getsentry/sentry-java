@@ -10,7 +10,6 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
-  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.spring7.Main") }
@@ -47,12 +46,6 @@ dependencies {
 
   implementation(libs.tomcat.catalina.jakarta)
   implementation(libs.tomcat.embed.jasper.jakarta)
-
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.springboot4.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -64,23 +57,4 @@ tasks.withType<KotlinCompile>().configureEach {
     compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
     compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   }
-}
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter { includeTestsMatching("io.sentry.systemtest*") }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }
