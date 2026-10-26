@@ -8311,11 +8311,22 @@ public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
 public final class io/sentry/util/sql/SqlDialect {
 	public static final field CONSERVATIVE Lio/sentry/util/sql/SqlDialect;
 	public static fun fromDbSystem (Ljava/lang/String;)Lio/sentry/util/sql/SqlDialect;
-	public fun isBackslashEscapes ()Z
-	public fun isDollarQuotedStrings ()Z
-	public fun isDoubleQuotesAreIdentifiers ()Z
-	public fun isHashComments ()Z
-	public fun isNestedBlockComments ()Z
+	public fun getBackslashEscapes ()Lio/sentry/util/sql/SqlDialect$Support;
+	public fun getBracketIdentifiers ()Lio/sentry/util/sql/SqlDialect$Support;
+	public fun getDashDashCommentNeedsWhitespace ()Lio/sentry/util/sql/SqlDialect$Support;
+	public fun getDollarQuotedStrings ()Lio/sentry/util/sql/SqlDialect$Support;
+	public fun getDoubleQuotedIdentifiers ()Lio/sentry/util/sql/SqlDialect$Support;
+	public fun getDoubleSlashComments ()Lio/sentry/util/sql/SqlDialect$Support;
+	public fun getHashComments ()Lio/sentry/util/sql/SqlDialect$Support;
+	public fun getNestedBlockComments ()Lio/sentry/util/sql/SqlDialect$Support;
+}
+
+public final class io/sentry/util/sql/SqlDialect$Support : java/lang/Enum {
+	public static final field NO Lio/sentry/util/sql/SqlDialect$Support;
+	public static final field UNKNOWN Lio/sentry/util/sql/SqlDialect$Support;
+	public static final field YES Lio/sentry/util/sql/SqlDialect$Support;
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/util/sql/SqlDialect$Support;
+	public static fun values ()[Lio/sentry/util/sql/SqlDialect$Support;
 }
 
 public final class io/sentry/util/sql/SqlQuery {
