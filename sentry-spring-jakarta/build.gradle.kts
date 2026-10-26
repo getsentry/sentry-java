@@ -1,3 +1,4 @@
+import io.sentry.gradle.SpringBootVersions
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -5,6 +6,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spring-boot-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -128,4 +130,10 @@ testing {
       }
     }
   }
+}
+
+// The suites on each Spring Boot 3 version the CI matrix tests.
+springBootMatrix {
+  versions(SpringBootVersions.BOOT_3)
+  test("integrationTest")
 }

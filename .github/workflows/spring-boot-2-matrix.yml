@@ -18,12 +18,7 @@ jobs:
   spring-boot-2-matrix:
     timeout-minutes: 45
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        springboot-version: [ '2.7.0', '2.7.18' ]
-
-    name: Spring Boot ${{ matrix.springboot-version }}
+    name: Spring Boot 2.x
     env:
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -51,27 +46,15 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Update Spring Boot 2.x version
-        run: |
-          springboot_version="${{ matrix.springboot-version }}"
-          perl -0pi -e 'BEGIN { $v = shift } s/^springboot2[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot2 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
-          echo "Updated Spring Boot 2.x version to $springboot_version"
-
       - name: Test integration suites
-        run: |
-          ./gradlew \
-            :sentry-spring:integrationTest \
-            :sentry-spring-boot:integrationTest \
-            :sentry-spring-boot:integrationTestWebflux \
-            :sentry-spring-boot:integrationTestOtelNoAgent \
-            :sentry-spring-boot:integrationTestOtelAgent \
-            :sentry-spring-boot:integrationTestOtelAgentWithoutAutoInit
+        # Runs every version even after one fails, as separate jobs per version would.
+        run: ./gradlew allIntegrationTestsBoot2 --continue
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: test-results-springboot-2-${{ matrix.springboot-version }}
+          name: test-results-springboot-2
           path: |
             **/build/reports/*
             **/build/test-results/**/*.xml
@@ -80,7 +63,7 @@ jobs:
         uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16
         if: always()
         with:
-          name: JUnit Spring Boot 2.x ${{ matrix.springboot-version }}
+          name: JUnit Spring Boot 2.x
           path: |
             **/build/test-results/**/*.xml
           reporter: java-junit

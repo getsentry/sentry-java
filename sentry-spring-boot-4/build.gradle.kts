@@ -1,4 +1,5 @@
 import io.sentry.gradle.ChildJvmTestArguments
+import io.sentry.gradle.SpringBootVersions
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -6,6 +7,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spring-boot-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
   alias(libs.plugins.errorprone)
@@ -387,13 +389,17 @@ testing {
 /**
  * Has the OpenTelemetry agent tests start agentFixture's app in a child JVM, with the built agent
  * attached. [autoInit] decides whether the agent initializes Sentry or, as with
- * `SENTRY_AUTO_INIT=false`, the Spring Boot starter.
+ * `SENTRY_AUTO_INIT=false`, the Spring Boot starter. [appClasspath] is the app's classpath for
+ * another Spring Boot version.
  */
-fun Test.runAgentFixture(autoInit: Boolean) {
+fun Test.runAgentFixture(
+  autoInit: Boolean,
+  appClasspath: FileCollection = agentFixture.runtimeClasspath,
+) {
   jvmArgumentProviders.add(
     objects.newInstance<ChildJvmTestArguments>().apply {
       agentJar.from(otelAgentJar)
-      appClasspath.from(agentFixture.runtimeClasspath)
+      this.appClasspath.from(appClasspath)
     }
   )
   systemProperty("sentry.test.agentAutoInit", autoInit)
@@ -423,3 +429,19 @@ listOf(
   .forEach {
     tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }
   }
+
+// The suites on each Spring Boot 4 version the CI matrix tests.
+springBootMatrix {
+  versions(SpringBootVersions.BOOT_4)
+  test("integrationTest")
+  test("integrationTestLog4j2")
+  test("integrationTestWebflux")
+  test("integrationTestOtelNoAgent")
+  test("integrationTestOtlp")
+  test("integrationTestOtelAgent") { version ->
+    runAgentFixture(autoInit = true, appClasspath = runtimeClasspath("agentFixture", version))
+  }
+  test("integrationTestOtelAgent", name = "integrationTestOtelAgentWithoutAutoInit") { version ->
+    runAgentFixture(autoInit = false, appClasspath = runtimeClasspath("agentFixture", version))
+  }
+}
