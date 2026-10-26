@@ -76,6 +76,8 @@ it. Gradle runs the two in parallel.
   module once it's added to its workflow.
 - Suite code may only use APIs that exist in the oldest version of its line. Compiled against a
   newer one, a missing API fails at runtime with `NoSuchMethodError` or `NoClassDefFoundError`.
+- The oldest version's aggregate also compiles the module's main code against that version, e.g.
+  `compileJavaBoot3_2_12`, since nothing else checks that the SDK compiles against it.
 
 ## Gotchas
 
