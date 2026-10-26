@@ -11,8 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 
 const val KAFKA_TOPIC = "sentry-topic"
 
-// Kafka only works with Spring Boot 2.7 and later, so its beans and broker belong to a profile
-// rather than to every test's context. See KafkaIntegrationTest.
+// The beans belong to a profile, so only KafkaIntegrationTest's context needs a broker.
 
 @RestController
 @Profile("kafka")

@@ -11,8 +11,8 @@ import org.springframework.test.context.TestPropertySource
 /**
  * With OpenTelemetry active, it traces Kafka instead of Sentry's own Spring Kafka integration.
  *
- * Unlike the other tests, this one adds Kafka and an in-JVM broker to its application context. The
- * others leave them out, because they have to work on Spring Boot versions without Kafka support.
+ * Unlike the other tests, this one adds Kafka and an in-JVM broker to its application context, so
+ * the others don't need a broker.
  */
 @ActiveProfiles("kafka")
 @EmbeddedKafka(topics = [KAFKA_TOPIC], bootstrapServersProperty = "spring.kafka.bootstrap-servers")

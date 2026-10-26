@@ -11,8 +11,8 @@ import org.springframework.test.context.TestPropertySource
 /**
  * A message sent through Kafka is traced on both sides: where it's published and processed.
  *
- * Unlike the other tests, this one runs its own application context with an in-JVM broker, because
- * the shared context has to work on Spring Boot versions without Kafka support.
+ * Unlike the other tests, this one runs its own application context with an in-JVM broker, so the
+ * shared context doesn't need one.
  */
 @ActiveProfiles("kafka")
 @EmbeddedKafka(topics = [KAFKA_TOPIC], bootstrapServersProperty = "spring.kafka.bootstrap-servers")
