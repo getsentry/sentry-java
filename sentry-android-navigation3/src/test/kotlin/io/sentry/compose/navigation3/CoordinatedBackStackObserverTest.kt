@@ -4,6 +4,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import com.google.common.truth.Truth.assertThat
+import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
@@ -11,6 +12,7 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
+import io.sentry.compose.navigation3.lifecycle.LeasedNavState
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
 import org.junit.Test
@@ -145,11 +147,11 @@ class CoordinatedBackStackObserverTest {
 
     /** Registers another owner that takes the nav lease and then pauses, keeping the lease. */
     fun givenPausedLeaseholder() {
-      val other = Any()
-      coordinator.registerCandidate(other, Lifecycle.State.RESUMED, {}, {})
-      coordinator.onBackStackUpdate(other, scope)
-      coordinator.pauseCandidate(other, scope)
-      check(coordinator.hasLease(other))
+      val otherLifecycle = resumedLifecycle()
+      val other = checkNotNull(coordinator.register(otherLifecycle, scopes, NoOpLeasedNavState))
+      other.onBackStackUpdate()
+      otherLifecycle.currentState = Lifecycle.State.STARTED
+      check(other.hasLease)
     }
 
     fun getSut(lifecycle: Lifecycle = resumedLifecycle()): CoordinatedBackStackObserver<String> =
@@ -164,11 +166,27 @@ class CoordinatedBackStackObserverTest {
         )
         .apply { attach(lifecycle) }
 
+    /**
+     * Owners of the lifecycles created by [resumedLifecycle]. `LifecycleRegistry` holds its owner
+     * weakly and throws once it's collected, so the fixture keeps them alive for the test.
+     */
+    private val lifecycleOwners = mutableListOf<LifecycleOwner>()
+
     fun resumedLifecycle(): LifecycleRegistry =
       object : LifecycleOwner {
           override val lifecycle =
             LifecycleRegistry.createUnsafe(this).apply { currentState = Lifecycle.State.RESUMED }
         }
+        .also(lifecycleOwners::add)
         .lifecycle
+  }
+
+  /** Nav state for a competing owner that has nothing to publish. */
+  private object NoOpLeasedNavState : LeasedNavState {
+    override fun publishTo(scope: IScope) = Unit
+
+    override fun unpublishFrom(scope: IScope) = Unit
+
+    override fun onUnregistered(scope: IScope?) = Unit
   }
 }
