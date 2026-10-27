@@ -55,6 +55,16 @@ tasks.withType<JavaCompile>().configureEach {
   }
 }
 
+// log4j's GraalVmProcessor warns (and fails the build under -Werror) without these options
+tasks.named<JavaCompile>("compileJava") {
+  options.compilerArgs.addAll(
+    listOf(
+      "-Alog4j.graalvm.groupId=${project.group}",
+      "-Alog4j.graalvm.artifactId=${project.name}",
+    )
+  )
+}
+
 tasks.jar {
   manifest {
     attributes(
