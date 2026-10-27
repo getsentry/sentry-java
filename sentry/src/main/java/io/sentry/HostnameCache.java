@@ -1,6 +1,7 @@
 package io.sentry;
 
-import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.time.Deadline;
+import io.sentry.time.MonotonicTicker;
 import io.sentry.util.Objects;
 import java.net.InetAddress;
 import java.util.concurrent.Callable;
@@ -8,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -16,17 +18,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 /**
  * Time sensitive cache in charge of keeping track of the hostname. The {@code
  * InetAddress.getLocalHost().getCanonicalHostName()} call can be quite expensive and could be
  * called for the creation of each {@link SentryEvent}. This system will prevent unnecessary costs
- * by keeping track of the hostname for a period defined during the construction. For performance
- * purposes, the operation of retrieving the hostname will automatically fail after a period of time
- * defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
+ * by keeping track of the hostname for a period defined by {@link #HOSTNAME_CACHE_DURATION}. For
+ * performance purposes, the operation of retrieving the hostname will automatically fail after a
+ * period of time defined by {@link #GET_HOSTNAME_TIMEOUT} without result.
  *
- * <p>HostnameCache is a singleton and its instance should be obtained through {@link
- * HostnameCache#getInstance()}.
+ * <p>One instance is held per {@link SentryOptions} and should be obtained through {@link
+ * SentryOptions#getHostnameCache()}.
  */
 @ApiStatus.Internal
 public final class HostnameCache {
@@ -38,18 +41,13 @@ public final class HostnameCache {
   /** How long the worker thread may stay idle before it self-terminates. */
   private static final long THREAD_KEEP_ALIVE_SECONDS = 30;
 
-  private static volatile @Nullable HostnameCache INSTANCE;
-  private static final @NotNull AutoClosableReentrantLock staticLock =
-      new AutoClosableReentrantLock();
-
-  /** Time for which the cache is kept. */
-  private final long cacheDuration;
+  private final @NotNull MonotonicTicker ticker;
 
   /** Current value for hostname (might change over time). */
   @Nullable private volatile String hostname;
 
-  /** Time at which the cache should expire. */
-  private volatile long expirationTimestamp;
+  /** When the cached hostname goes stale. */
+  private volatile @NotNull Deadline cacheFreshUntil;
 
   /** Whether a cache update thread is currently running or not. */
   private final @NotNull AtomicBoolean updateRunning = new AtomicBoolean(false);
@@ -58,40 +56,37 @@ public final class HostnameCache {
 
   private final @NotNull ExecutorService executorService;
 
-  public static @NotNull HostnameCache getInstance() {
-    if (INSTANCE == null) {
-      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
-        if (INSTANCE == null) {
-          INSTANCE = new HostnameCache();
-        }
-      }
-    }
-
-    return INSTANCE;
-  }
-
-  private HostnameCache() {
-    this(HOSTNAME_CACHE_DURATION);
-  }
-
-  HostnameCache(long cacheDuration) {
+  /**
+   * Do not construct a hostname cache directly; get it from {@link
+   * SentryOptions#getHostnameCache()}. Every instance resolves the hostname as soon as it is built
+   * and caches it on its own, so another instance would repeat that blocking lookup instead of
+   * sharing the cached value.
+   *
+   * @param ticker the ticker the cache lifetime is measured on
+   */
+  HostnameCache(final @NotNull MonotonicTicker ticker) {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
-    this(cacheDuration, () -> InetAddress.getLocalHost());
+    this(() -> InetAddress.getLocalHost(), ticker);
   }
 
   /**
    * Sets up a cache for the hostname.
    *
-   * @param cacheDuration cache duration in milliseconds.
    * @param getLocalhost a callback to obtain the localhost address - this is mostly here because of
    *     testability
+   * @param ticker the ticker the cache lifetime is measured on
    */
-  HostnameCache(long cacheDuration, final @NotNull Callable<InetAddress> getLocalhost) {
-    this.cacheDuration = cacheDuration;
+  @VisibleForTesting
+  HostnameCache(
+      final @NotNull Callable<InetAddress> getLocalhost, final @NotNull MonotonicTicker ticker) {
     this.getLocalhost = Objects.requireNonNull(getLocalhost, "getLocalhost is required");
+    this.ticker = Objects.requireNonNull(ticker, "ticker is required");
+    // Nothing resolved yet, so the cache is stale rather than fresh until updateCache says
+    // otherwise.
+    this.cacheFreshUntil = Deadline.passed(ticker);
     // A single thread executor whose worker thread times out while idle, so no thread is kept
-    // alive between the infrequent cache refreshes.
+    // alive between the infrequent cache refreshes and nothing has to shut it down.
     final @NotNull ThreadPoolExecutor executor =
         new ThreadPoolExecutor(
             1,
@@ -105,14 +100,6 @@ public final class HostnameCache {
     updateCache();
   }
 
-  void close() {
-    this.executorService.shutdown();
-  }
-
-  boolean isClosed() {
-    return this.executorService.isShutdown();
-  }
-
   /**
    * Gets the hostname of the current machine.
    *
@@ -122,8 +109,7 @@ public final class HostnameCache {
    */
   @Nullable
   public String getHostname() {
-    if (expirationTimestamp < System.currentTimeMillis()
-        && updateRunning.compareAndSet(false, true)) {
+    if (cacheFreshUntil.hasPassed() && updateRunning.compareAndSet(false, true)) {
       updateCache();
     }
 
@@ -136,7 +122,8 @@ public final class HostnameCache {
         () -> {
           try {
             hostname = getLocalhost.call().getCanonicalHostName();
-            expirationTimestamp = System.currentTimeMillis() + cacheDuration;
+            cacheFreshUntil =
+                Deadline.after(ticker, HOSTNAME_CACHE_DURATION, TimeUnit.MILLISECONDS);
           } finally {
             updateRunning.set(false);
           }
@@ -144,8 +131,21 @@ public final class HostnameCache {
           return null;
         };
 
+    final Future<Void> futureTask;
     try {
-      final Future<Void> futureTask = executorService.submit(hostRetriever);
+      futureTask = executorService.submit(hostRetriever);
+    } catch (RejectedExecutionException e) {
+      // updateRunning is cleared by the callable's finally block, which never runs if the callable
+      // was never queued. Clearing it here keeps a failure to queue from latching the flag on and
+      // silencing every later refresh.
+      updateRunning.set(false);
+      handleCacheUpdateFailure();
+      return;
+    }
+
+    // A timeout or interrupt below leaves the callable running, so it still clears updateRunning
+    // itself; doing it here as well would let refreshes pile up behind a slow lookup.
+    try {
       futureTask.get(GET_HOSTNAME_TIMEOUT, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -156,7 +156,7 @@ public final class HostnameCache {
   }
 
   private void handleCacheUpdateFailure() {
-    expirationTimestamp = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(1);
+    cacheFreshUntil = Deadline.after(ticker, 1, TimeUnit.SECONDS);
   }
 
   private static final class HostnameCacheThreadFactory implements ThreadFactory {

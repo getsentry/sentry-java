@@ -21,6 +21,9 @@ You can also apply the [Sentry Android Gradle Plugin](https://github.com/getsent
 
 In Android Studio, add `useSagp=` (empty value) to `gradle.properties`, or pass `-PuseSagp` as a Gradle project property.
 
+For LLM-driven verification, use `adb` to inspect and interact with the running emulator. Compose-based screens often expose stable
+`Modifier.testTag()` values, which can be used with the UI hierarchy dump to locate controls reliably.
+
 ## Build modes
 
 ### With or without SAGP

@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
-
 plugins {
   id("com.android.test")
   alias(libs.plugins.kotlin.android)
@@ -8,6 +6,7 @@ plugins {
 android {
   namespace = "io.sentry.uitest.android.macrobenchmark"
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
 
   defaultConfig {
     // Macrobenchmark requires API 23+.
@@ -26,13 +25,6 @@ android {
       matchingFallbacks += listOf("release")
     }
   }
-
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-
-  kotlin { compilerOptions.jvmTarget = JVM_11 }
 
   targetProjectPath = ":sentry-samples:sentry-samples-android"
   // Run the test in its own process so it measures the target app cold, not itself.

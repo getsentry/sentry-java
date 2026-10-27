@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.backpressure.IBackpressureMonitor
 import io.sentry.cache.EnvelopeCache
 import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
@@ -236,22 +237,23 @@ class ScopesTest {
   }
 
   @Test
-  fun `when beforeSend throws an exception, breadcrumb adds an entry to the data field with exception message`() {
-    val exception = Exception("test")
-
+  fun `when beforeBreadcrumb throws an exception, breadcrumb is dropped`() {
     val options = SentryOptions()
     options.cacheDirPath = file.absolutePath
     options.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { _: Breadcrumb, _: Any? ->
-      throw exception
+      throw Exception("test")
     }
     options.dsn = "https://key@sentry.io/proj"
     options.setSerializer(mock())
     val sut = createScopes(options)
 
-    val actual = Breadcrumb()
-    sut.addBreadcrumb(actual)
+    val breadcrumb = Breadcrumb()
+    sut.addBreadcrumb(breadcrumb)
 
-    assertEquals("test", actual.data["sentry:message"])
+    var breadcrumbs: Queue<Breadcrumb>? = null
+    sut.configureScope { breadcrumbs = it.breadcrumbs }
+    assertThat(breadcrumbs).isEmpty()
+    assertThat(breadcrumb.data).doesNotContainKey("sentry:message")
   }
 
   @Test
@@ -1659,6 +1661,121 @@ class ScopesTest {
   }
 
   @Test
+  fun `tracesSampler failures report callback errors and retain normal sampling loss accounting`() {
+    for (parentSampled in listOf(null, false, true)) {
+      for (downsampleFactor in listOf(0, 1)) {
+        val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+        val profiler = mock<ITransactionProfiler>()
+        val options =
+          SentryOptions().apply {
+            dsn = "https://key@sentry.io/proj"
+            tracesSampleRate = 1.0
+            profilesSampleRate = 1.0
+            tracesSampler = SentryOptions.TracesSamplerCallback {
+              throw IllegalStateException("sampler")
+            }
+            this.onDiscard = onDiscard
+            setTransactionProfiler(profiler)
+            backpressureMonitor =
+              mock<IBackpressureMonitor>().also {
+                whenever(it.downsampleFactor).thenReturn(downsampleFactor)
+              }
+          }
+        val scopes = createScopes(options)
+        val client = createSentryClientMock()
+        scopes.bindClient(client)
+        val context =
+          TransactionContext("name", "op").apply {
+            setParentSampled(parentSampled, true)
+          }
+
+        val transaction = scopes.startTransaction(context)
+        assertThat(transaction.isSampled).isFalse()
+        assertThat(transaction.isProfileSampled).isFalse()
+        transaction.startChild("child").finish()
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Transaction, 1)
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+        verifyNoMoreInteractions(onDiscard)
+        transaction.finish()
+        transaction.finish()
+
+        verify(client, never())
+          .captureTransaction(any(), anyOrNull(), any(), anyOrNull(), anyOrNull())
+        verify(profiler, never()).start()
+        val samplingReason =
+          if (downsampleFactor > 0) DiscardReason.BACKPRESSURE else DiscardReason.SAMPLE_RATE
+        verify(onDiscard).execute(samplingReason, DataCategory.Transaction, 1)
+        verify(onDiscard).execute(samplingReason, DataCategory.Span, 1)
+        verifyNoMoreInteractions(onDiscard)
+        assertClientReport(
+          options.clientReportRecorder,
+          listOf(
+            DiscardedEvent(
+              DiscardReason.CALLBACK_ERROR.reason,
+              DataCategory.Transaction.category,
+              1,
+            ),
+            DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Span.category, 1),
+            DiscardedEvent(samplingReason.reason, DataCategory.Transaction.category, 1),
+            DiscardedEvent(samplingReason.reason, DataCategory.Span.category, 1),
+          ),
+        )
+      }
+    }
+  }
+
+  @Test
+  fun `tracesSampler failure does not affect subsequent successful sampling`() {
+    var fail = true
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        tracesSampler = SentryOptions.TracesSamplerCallback {
+          if (fail) throw IllegalStateException("sampler") else 1.0
+        }
+      }
+    val scopes = createScopes(options)
+    val client = createSentryClientMock()
+    scopes.bindClient(client)
+    scopes.startTransaction("failed", "op").finish()
+    fail = false
+    val transaction = scopes.startTransaction("successful", "op")
+    transaction.finish()
+
+    assertThat(transaction.isSampled).isTrue()
+    verify(client).captureTransaction(any(), anyOrNull(), any(), anyOrNull(), anyOrNull())
+    assertClientReport(
+      options.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Transaction.category, 1),
+        DiscardedEvent(DiscardReason.CALLBACK_ERROR.reason, DataCategory.Span.category, 1),
+        DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1),
+        DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Span.category, 1),
+      ),
+    )
+  }
+
+  @Test
+  fun `null tracesSampler results still use normal sampling loss accounting`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        tracesSampleRate = 0.0
+        tracesSampler = SentryOptions.TracesSamplerCallback { null }
+      }
+    val scopes = createScopes(options)
+    scopes.startTransaction("name", "op").finish()
+
+    assertClientReport(
+      options.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Transaction.category, 1),
+        DiscardedEvent(DiscardReason.SAMPLE_RATE.reason, DataCategory.Span.category, 1),
+      ),
+    )
+  }
+
+  @Test
   fun `transactions lost due to sampling caused by backpressure are recorded as lost`() {
     val options = SentryOptions()
     options.cacheDirPath = file.absolutePath
@@ -2536,11 +2653,21 @@ class ScopesTest {
   }
 
   @Test
-  fun `when logging is not enabled, do nothing`() {
+  fun `when Logs option is omitted, capture manual log`() {
     val (sut, mockClient) = getEnabledScopes()
 
     sut.logger().warn("test message")
-    verify(mockClient, never()).captureLog(any(), anyOrNull())
+
+    verify(mockClient).captureLog(any(), anyOrNull())
+  }
+
+  @Test
+  fun `when Logs option is disabled, capture manual log`() {
+    val (sut, mockClient) = getEnabledScopes { it.logs.isEnabled = false }
+
+    sut.logger().warn("test message")
+
+    verify(mockClient).captureLog(any(), anyOrNull())
   }
 
   @Test
@@ -3334,11 +3461,12 @@ class ScopesTest {
   }
 
   @Test
-  fun `when metrics is not enabled, do nothing`() {
+  fun `when Metrics option is disabled, capture manual metric`() {
     val (sut, mockClient) = getEnabledScopes { it.metrics.isEnabled = false }
 
     sut.metrics().count("metric name")
-    verify(mockClient, never()).captureMetric(any(), anyOrNull(), anyOrNull())
+
+    verify(mockClient).captureMetric(any(), anyOrNull(), anyOrNull())
   }
 
   @Test

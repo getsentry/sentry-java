@@ -22,10 +22,6 @@ group = "io.sentry.sample.spring-7"
 
 version = "0.0.1-SNAPSHOT"
 
-java.sourceCompatibility = JavaVersion.VERSION_17
-
-java.targetCompatibility = JavaVersion.VERSION_17
-
 dependencyManagement {
   imports {
     mavenBom(SpringBootPlugin.BOM_COORDINATES)
@@ -65,7 +61,6 @@ tasks.withType<KotlinCompile>().configureEach {
     // skip metadata version check, as Spring 7 / Spring Boot 4 is
     // compiled against a newer version of Kotlin
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict", "-Xskip-metadata-version-check")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
     compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   }
@@ -80,10 +75,6 @@ tasks.register<Test>("systemTest").configure {
   classpath = test.runtimeClasspath
 
   maxParallelForks = 1
-
-  // Cap JVM args per test
-  minHeapSize = "128m"
-  maxHeapSize = "1g"
 
   filter { includeTestsMatching("io.sentry.systemtest*") }
 }

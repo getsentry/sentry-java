@@ -24,6 +24,7 @@ import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Compan
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
@@ -112,6 +113,8 @@ class BufferCaptureStrategyTest {
         ?.discardedEvents
         .orEmpty()
 
+    val ticker = TestMonotonicTicker()
+
     fun getSut(
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
       replayCacheDir: File? = null,
@@ -121,6 +124,7 @@ class BufferCaptureStrategyTest {
         options,
         scopes,
         dateProvider,
+        ticker,
         mock {
           whenever(it.submit(any<Runnable>())).doAnswer { invocation ->
             (invocation.arguments[0] as Runnable).run()
@@ -204,6 +208,23 @@ class BufferCaptureStrategyTest {
     assertEquals(-1, strategy.currentSegment)
     assertFalse(currentReplay.exists())
     verify(fixture.replayCache).close()
+  }
+
+  @Test
+  fun `stop keeps the segment videos and deletes everything else`() {
+    val replayId = SentryId()
+    // a temporary folder, not options.cacheDirPath: the kept video would outlive the test there
+    val currentReplay = tmpDir.newFolder("replay_$replayId")
+    val video = File(currentReplay, "0.mp4").also { it.writeText("video") }
+    val frame = File(currentReplay, "1727500000000.jpg").also { it.writeText("frame") }
+
+    val strategy = fixture.getSut(replayCacheDir = currentReplay)
+    strategy.start(0, replayId)
+
+    strategy.stop()
+
+    assertTrue(video.exists(), "a captured segment's video is still queued for sending")
+    assertFalse(frame.exists())
   }
 
   @Test

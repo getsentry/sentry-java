@@ -24,6 +24,10 @@ class SentryTimberIntegrationTest {
     val scopes = mock<IScopes>()
     val options = SentryOptions().apply { sdkVersion = SdkVersion("test", "1.2.3") }
 
+    init {
+      whenever(scopes.options).thenReturn(options)
+    }
+
     fun getSut(
       minEventLevel: SentryLevel = SentryLevel.ERROR,
       minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,

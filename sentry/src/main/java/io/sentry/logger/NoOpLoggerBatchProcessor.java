@@ -1,8 +1,10 @@
 package io.sentry.logger;
 
 import io.sentry.SentryLogEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+@ApiStatus.Internal
 public final class NoOpLoggerBatchProcessor implements ILoggerBatchProcessor {
 
   private static final NoOpLoggerBatchProcessor instance = new NoOpLoggerBatchProcessor();

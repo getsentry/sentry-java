@@ -15,15 +15,16 @@ import android.os.StatFs;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
 import io.sentry.DateUtils;
-import io.sentry.ISentryLifecycleToken;
+import io.sentry.IConnectionStatusProvider;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
+import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.android.core.internal.util.DeviceOrientations;
+import io.sentry.android.core.internal.util.NetworkConnection;
 import io.sentry.android.core.internal.util.RootChecker;
 import io.sentry.protocol.Device;
 import io.sentry.protocol.OperatingSystem;
-import io.sentry.util.AutoClosableReentrantLock;
 import java.io.File;
 import java.util.Calendar;
 import java.util.Collections;
@@ -34,16 +35,9 @@ import java.util.TimeZone;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public final class DeviceInfoUtil {
-
-  @SuppressLint("StaticFieldLeak")
-  private static volatile DeviceInfoUtil instance;
-
-  private static final @NotNull AutoClosableReentrantLock staticLock =
-      new AutoClosableReentrantLock();
 
   private final @NotNull Context context;
   private final @NotNull SentryAndroidOptions options;
@@ -80,19 +74,7 @@ public final class DeviceInfoUtil {
   @NotNull
   public static DeviceInfoUtil getInstance(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
-    if (instance == null) {
-      try (final @NotNull ISentryLifecycleToken ignored = staticLock.acquire()) {
-        if (instance == null) {
-          instance = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), options);
-        }
-      }
-    }
-    return instance;
-  }
-
-  @TestOnly
-  public static void resetInstance() {
-    instance = null;
+    return options.getOrCreateDeviceInfoUtil(context);
   }
 
   // we can get some inspiration here
@@ -249,8 +231,19 @@ public final class DeviceInfoUtil {
     }
 
     if (device.getConnectionType() == null) {
-      // wifi, ethernet or cellular, null if none
-      device.setConnectionType(options.getConnectionStatusProvider().getConnectionType());
+      final @NotNull IConnectionStatusProvider connectionStatusProvider =
+          options.getConnectionStatusProvider();
+      if (connectionStatusProvider instanceof AndroidConnectionStatusProvider) {
+        // Reading both at once keeps the type and the technology describing the same network.
+        final NetworkConnection connection =
+            ((AndroidConnectionStatusProvider) connectionStatusProvider).getConnection();
+        // wifi, ethernet or cellular, null if none
+        device.setConnectionType(connection.type);
+        // 2g, 3g, 4g or 5g, null unless the device is on a known cellular technology
+        device.setConnectionEffectiveType(connection.effectiveType);
+      } else {
+        device.setConnectionType(connectionStatusProvider.getConnectionType());
+      }
     }
   }
 

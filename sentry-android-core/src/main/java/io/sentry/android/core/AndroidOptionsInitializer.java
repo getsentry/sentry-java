@@ -35,7 +35,6 @@ import io.sentry.android.core.internal.debugmeta.AssetsDebugMetaLoader;
 import io.sentry.android.core.internal.gestures.AndroidViewGestureTargetLocator;
 import io.sentry.android.core.internal.modules.AssetsModulesLoader;
 import io.sentry.android.core.internal.util.AndroidConnectionStatusProvider;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.android.core.performance.AppStartMetrics;
@@ -178,7 +177,7 @@ final class AndroidOptionsInitializer {
     if (options.getConnectionStatusProvider() instanceof NoOpConnectionStatusProvider) {
       options.setConnectionStatusProvider(
           new AndroidConnectionStatusProvider(
-              context, options, buildInfoProvider, AndroidCurrentDateProvider.getInstance()));
+              context, options, buildInfoProvider, options.getMonotonicTicker()));
     }
 
     if (options.getCacheDirPath() != null) {
@@ -202,6 +201,14 @@ final class AndroidOptionsInitializer {
         new ApplicationExitInfoEventProcessor(context, options, buildInfoProvider));
     if (options.getTransportGate() instanceof NoOpTransportGate) {
       options.setTransportGate(new AndroidTransportGate(options));
+    }
+    // API 25 and lower may lack ISRG Root X1 (Let's Encrypt), so the SDK's own envelope uploads to
+    // Sentry SaaS trust the bundled root in addition to the system ones. Self-hosted DSNs keep the
+    // platform default, so Network Security Config domain-config trust anchors still apply there.
+    if (buildInfoProvider.getSdkInfoVersion() <= Build.VERSION_CODES.N_MR1
+        && options.getSslSocketFactory() == null
+        && SentryRootCaSslSocketFactory.isSentrySaasDsn(options.getDsn())) {
+      options.setSslSocketFactory(new SentryRootCaSslSocketFactory(options.getLogger()));
     }
 
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
@@ -433,6 +440,10 @@ final class AndroidOptionsInitializer {
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
       options.addIntegration(new TombstoneIntegration(context));
+    }
+
+    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.CINNAMON_BUN) {
+      options.addIntegration(new MemoryLimiterIntegration(context, buildInfoProvider));
     }
 
     // this integration uses android.os.FileObserver, we can't move to sentry

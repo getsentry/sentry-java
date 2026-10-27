@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ClassNaming:LaunchDetailsQuery_ResponseAdapter.kt$LaunchDetailsQuery_ResponseAdapter</ID>
+    <ID>ClassNaming:LaunchDetailsQuery_VariablesAdapter.kt$LaunchDetailsQuery_VariablesAdapter : Adapter</ID>
+    <ID>CyclomaticComplexMethod:SentryApollo4HttpInterceptor.kt$SentryApollo4HttpInterceptor$private fun captureEvent( request: HttpRequest, response: HttpResponse, operationName: String?, operationType: String?, )</ID>
+    <ID>LongMethod:SentryApollo4HttpInterceptor.kt$SentryApollo4HttpInterceptor$private fun captureEvent( request: HttpRequest, response: HttpResponse, operationName: String?, operationType: String?, )</ID>
+    <ID>LongParameterList:SentryApollo4BuilderExtensionsClientErrorsTest.kt$SentryApollo4BuilderExtensionsClientErrorsTest.Fixture$( captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS, failedRequestTargets: List&lt;String> = listOf(DEFAULT_PROPAGATION_TARGETS), httpStatusCode: Int = 200, responseBody: String = responseBodyOk, sendDefaultPii: Boolean = false, includeCookies: Boolean = sendDefaultPii, socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN, configureOptions: SentryOptions.() -> Unit = {}, )</ID>
+    <ID>LongParameterList:SentryApollo4HttpInterceptor.kt$SentryApollo4HttpInterceptor$( span: ISpan?, request: HttpRequest, response: HttpResponse?, statusCode: Int?, operationName: String?, operationType: String?, operationId: String?, )</ID>
+    <ID>MaxLineLength:LaunchDetailsQuery.kt$LaunchDetailsQuery.Companion$"query LaunchDetails(${'$'}id: ID!) { launch(id: ${'$'}id) { id site mission { name missionPatch(size: LARGE) } rocket { name type } } }"</ID>
+    <ID>MaxLineLength:LaunchDetailsQuerySelections.kt$LaunchDetailsQuerySelections$CompiledArgument.Builder(CompiledArgumentDefinition.Builder("size").build()).value("LARGE").build()</ID>
+    <ID>MaxLineLength:SentryApollo4HttpInterceptorTest.kt$SentryApollo4HttpInterceptorTest$"thirdPartyBaggage=someValue,secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"</ID>
+    <ID>MaxLineLength:SentryApollo4HttpInterceptorTest.kt$SentryApollo4HttpInterceptorTest.Fixture$"secondThirdPartyBaggage=secondValue; property;propertyKey=propertyValue,anotherThirdPartyBaggage=anotherValue"</ID>
+    <ID>NestedBlockDepth:SentryApollo4HttpInterceptor.kt$SentryApollo4HttpInterceptor$private fun captureEvent( request: HttpRequest, response: HttpResponse, operationName: String?, operationType: String?, )</ID>
+    <ID>NestedBlockDepth:SentryApollo4HttpInterceptor.kt$SentryApollo4HttpInterceptor$private fun finish( span: ISpan?, request: HttpRequest, response: HttpResponse?, statusCode: Int?, operationName: String?, operationType: String?, operationId: String?, )</ID>
+    <ID>NestedBlockDepth:SentryApollo4HttpInterceptor.kt$SentryApollo4HttpInterceptor$private fun maybeAddTracingHeaders( scopes: IScopes, request: HttpRequest, span: ISpan?, ): HttpRequest</ID>
+    <ID>ReturnCount:SentryApollo4HttpInterceptor.kt$SentryApollo4HttpInterceptor$private fun captureEvent( request: HttpRequest, response: HttpResponse, operationName: String?, operationType: String?, )</ID>
+    <ID>SwallowedException:SentryApollo4BuilderExtensionsClientErrorsTest.kt$SentryApollo4BuilderExtensionsClientErrorsTest$e: ApolloException</ID>
+    <ID>SwallowedException:SentryApollo4BuilderExtensionsTest.kt$SentryApollo4BuilderExtensionsTest$e: ApolloException</ID>
+    <ID>SwallowedException:SentryApollo4HttpInterceptorTest.kt$SentryApollo4HttpInterceptorTest$e: ApolloException</ID>
+    <ID>TooGenericExceptionCaught:SentryApollo4HttpInterceptor.kt$SentryApollo4HttpInterceptor$e: Throwable</ID>
+    <ID>TooGenericExceptionThrown:SentryApollo4HttpInterceptorTest.kt$SentryApollo4HttpInterceptorTest$throw RuntimeException()</ID>
+    <ID>TooManyFunctions:SentryApollo4HttpInterceptor.kt$SentryApollo4HttpInterceptor : HttpInterceptor</ID>
+    <ID>UseCheckOrError:LaunchDetailsQuery_VariablesAdapter.kt$LaunchDetailsQuery_VariablesAdapter$throw IllegalStateException("Input type used in output position")</ID>
+    <ID>UtilityClassWithPublicConstructor:GraphQLBoolean.kt$GraphQLBoolean</ID>
+    <ID>UtilityClassWithPublicConstructor:GraphQLID.kt$GraphQLID</ID>
+    <ID>UtilityClassWithPublicConstructor:GraphQLString.kt$GraphQLString</ID>
+    <ID>UtilityClassWithPublicConstructor:Launch.kt$Launch</ID>
+    <ID>UtilityClassWithPublicConstructor:Mission.kt$Mission</ID>
+    <ID>UtilityClassWithPublicConstructor:Query.kt$Query</ID>
+    <ID>UtilityClassWithPublicConstructor:Rocket.kt$Rocket</ID>
+  </CurrentIssues>
+</SmellBaseline>

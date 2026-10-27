@@ -12,7 +12,6 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import org.junit.After
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
@@ -122,7 +121,7 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
           }
         shadowActivityManager.addApplicationExitInfo(exitInfo)
       },
-      flushLogPrefix = "Timed out waiting to flush ANR event to disk.",
+      flushLogPrefix = "Timed out waiting to flush %s event to disk.",
     )
 
   override fun assertEnrichedEvent(event: SentryEvent) {
@@ -161,11 +160,6 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
       event.debugMeta?.images?.find { it.debugId == "741f3301-bbb0-b92c-58bd-c15282b8ec7b" }
     assertNotNull(image)
     assertEquals("/apex/com.android.runtime/lib64/bionic/libc.so", image.codeFile)
-  }
-
-  @After
-  fun cleanup() {
-    fixture.options.cacheDirPath?.let { File(it).deleteRecursively() }
   }
 
   @Test
@@ -219,6 +213,18 @@ class AnrV2IntegrationTest : ApplicationExitIntegrationTestBase<AnrV2Hint>() {
     integration.register(fixture.scopes, fixture.options)
 
     verify(fixture.scopes).captureEvent(any(), check<Hint> { assertNotNull(it.threadDump) })
+  }
+
+  @Test
+  fun `MemoryLimiter marker does not suppress matching ANR exit`() {
+    val integration = fixture.getSut(tmpDir, lastReportedTimestamp = oldTimestamp)
+    File(fixture.options.cacheDirPath!!, AndroidEnvelopeCache.LAST_MEMORY_LIMITER_REPORT)
+      .writeText(newTimestamp.toString())
+    fixture.addAppExitInfo(timestamp = newTimestamp)
+
+    integration.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
   }
 
   @Test

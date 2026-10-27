@@ -11,6 +11,7 @@ plugins {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.timber"
 
   defaultConfig {
@@ -79,7 +80,7 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
 }
 
 tasks.withType<Detekt>().configureEach {

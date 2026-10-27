@@ -15,7 +15,7 @@ class ThirdFragment : Fragment(R.layout.third_fragment) {
     val span = Sentry.getSpan()
     val child = span?.startChild("calc")
 
-    GithubAPI.service
+    GitHubApi.service
       .listRepos("getsentry")
       .enqueue(
         object : Callback<List<Repo>> {

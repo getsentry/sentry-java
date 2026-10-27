@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>MagicNumber:SentryKtorClientUtils.kt$SentryKtorClientUtils$1000L</ID>
+    <ID>MaxLineLength:SentryKtorClientPluginTest.kt$SentryKtorClientPluginTest$fun</ID>
+    <ID>TooGenericExceptionCaught:SentryKtorClientPlugin.kt$t: Throwable</ID>
+    <ID>UnusedParameter:SentryKtorClientPluginTest.kt$SentryKtorClientPluginTest.Fixture$beforeSpan: SentryKtorClientPluginConfig.BeforeSpanCallback? = null</ID>
+    <ID>WildcardImport:SentryKtorClientPlugin.kt$import io.ktor.client.plugins.api.*</ID>
+    <ID>WildcardImport:SentryKtorClientPlugin.kt$import io.ktor.client.request.*</ID>
+    <ID>WildcardImport:SentryKtorClientPlugin.kt$import io.ktor.client.statement.*</ID>
+    <ID>WildcardImport:SentryKtorClientPlugin.kt$import io.ktor.util.*</ID>
+    <ID>WildcardImport:SentryKtorClientPlugin.kt$import io.ktor.util.pipeline.*</ID>
+  </CurrentIssues>
+</SmellBaseline>

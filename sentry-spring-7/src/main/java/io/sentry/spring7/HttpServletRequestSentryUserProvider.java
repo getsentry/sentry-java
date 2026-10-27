@@ -23,11 +23,10 @@ public final class HttpServletRequestSentryUserProvider implements SentryUserPro
 
   @Override
   public @Nullable User provideUser() {
-    if (options.isSendDefaultPii()) {
+    if (options.getDataCollectionResolver().isUserInfo()) {
       final RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-      if (requestAttributes instanceof ServletRequestAttributes) {
-        final ServletRequestAttributes servletRequestAttributes =
-            (ServletRequestAttributes) requestAttributes;
+      if (requestAttributes instanceof ServletRequestAttributes servletRequestAttributes) {
+
         final HttpServletRequest request = servletRequestAttributes.getRequest();
 
         final User user = new User();

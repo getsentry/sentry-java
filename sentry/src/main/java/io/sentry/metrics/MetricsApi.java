@@ -1,6 +1,5 @@
 package io.sentry.metrics;
 
-import io.sentry.HostnameCache;
 import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
@@ -118,15 +117,6 @@ public final class MetricsApi implements IMetricsApi {
         return;
       }
 
-      if (!options.getMetrics().isEnabled()) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING,
-                "Sentry Metrics is disabled and this 'metrics' call is a no-op.");
-        return;
-      }
-
       if (name == null) {
         return;
       }
@@ -165,7 +155,7 @@ public final class MetricsApi implements IMetricsApi {
     }
   }
 
-  private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
+  private @NotNull Map<String, SentryLogEventAttributeValue> createAttributes(
       final @NotNull SentryMetricsParameters params) {
     final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes = new HashMap<>();
 
@@ -243,8 +233,7 @@ public final class MetricsApi implements IMetricsApi {
     return attributes;
   }
 
-  private void setServerName(
-      final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
+  private void setServerName(final @NotNull Map<String, SentryLogEventAttributeValue> attributes) {
     final @NotNull SentryOptions options = scopes.getOptions();
     final @Nullable String optionsServerName = options.getServerName();
     if (optionsServerName != null) {
@@ -252,7 +241,7 @@ public final class MetricsApi implements IMetricsApi {
           "server.address",
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, optionsServerName));
     } else if (options.isAttachServerName()) {
-      final @Nullable String hostname = HostnameCache.getInstance().getHostname();
+      final @Nullable String hostname = options.getHostnameCache().getHostname();
       if (hostname != null) {
         attributes.put(
             "server.address",
@@ -261,7 +250,7 @@ public final class MetricsApi implements IMetricsApi {
     }
   }
 
-  private void setUser(final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
+  private void setUser(final @NotNull Map<String, SentryLogEventAttributeValue> attributes) {
     final @Nullable User user = scopes.getCombinedScopeView().getUser();
     if (user == null) {
       // In case no user is set, we should fallback to the distinct id, known as installation id,

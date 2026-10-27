@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:SentryOkHttpInterceptor.kt$SentryOkHttpInterceptor$@Suppress("LongMethod") @Throws(IOException::class) override fun intercept(chain: Interceptor.Chain): Response</ID>
+    <ID>NestedBlockDepth:SentryOkHttpInterceptor.kt$SentryOkHttpInterceptor$@Suppress("LongMethod") @Throws(IOException::class) override fun intercept(chain: Interceptor.Chain): Response</ID>
+    <ID>ReturnCount:SentryOkHttpInterceptor.kt$SentryOkHttpInterceptor$private fun shouldCaptureClientError(request: Request, response: Response): Boolean</ID>
+    <ID>TooGenericExceptionCaught:SentryOkHttpInterceptor.kt$SentryOkHttpInterceptor$e: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

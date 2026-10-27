@@ -44,6 +44,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import org.awaitility.kotlin.await
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -85,6 +86,12 @@ class InternalSentrySdkTest {
           }
         }
       }
+
+      // Sentry.init moves any leftover session.json to previous_session.json on the executor. Wait
+      // for that to finish, otherwise it can move the session a test has just persisted. Test
+      // options set sessionFlushTimeoutMillis to 0, so waitPreviousSessionFlush() only polls.
+      val cache = options.envelopeDiskCache as EnvelopeCache
+      await.until { cache.waitPreviousSessionFlush() }
 
       capturedEnvelopes.clear()
     }
@@ -258,7 +265,6 @@ class InternalSentrySdkTest {
   fun `set up`() {
     Sentry.close()
     context = ApplicationProvider.getApplicationContext()
-    DeviceInfoUtil.resetInstance()
   }
 
   @Test
@@ -351,6 +357,28 @@ class InternalSentrySdkTest {
     scope.user = null
 
     val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
+    assertTrue((serializedScope["user"] as Map<*, *>).containsKey("id"))
+  }
+
+  @Test
+  fun `serializeScope provides fallback user id when user info is disabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(false) }
+    val scope = Scope(options)
+    scope.user = null
+
+    val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
+
+    assertTrue((serializedScope["user"] as Map<*, *>).containsKey("id"))
+  }
+
+  @Test
+  fun `serializeScope provides fallback user id when user info is enabled`() {
+    val options = SentryAndroidOptions().apply { dataCollection.setUserInfo(true) }
+    val scope = Scope(options)
+    scope.user = null
+
+    val serializedScope = InternalSentrySdk.serializeScope(context, options, scope)
+
     assertTrue((serializedScope["user"] as Map<*, *>).containsKey("id"))
   }
 

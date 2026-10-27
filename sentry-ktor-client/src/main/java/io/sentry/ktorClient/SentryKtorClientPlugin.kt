@@ -9,6 +9,7 @@ import io.ktor.util.*
 import io.ktor.util.pipeline.*
 import io.sentry.BaggageHeader
 import io.sentry.BuildConfig
+import io.sentry.DataCategory
 import io.sentry.HttpStatusCodeRange
 import io.sentry.IScopes
 import io.sentry.ISpan
@@ -16,14 +17,18 @@ import io.sentry.ScopesAdapter
 import io.sentry.Sentry
 import io.sentry.SentryDate
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SpanStatus
+import io.sentry.clientreport.DiscardReason
 import io.sentry.kotlin.SentryContext
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
+import io.sentry.util.UrlUtils
 import kotlinx.coroutines.withContext
 
 /** Configuration for the Sentry Ktor client plugin. */
@@ -98,20 +103,20 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
     val requestSpanKey = AttributeKey<ISpan>("SentryRequestSpan")
 
     onRequest { request, _ ->
+      val effectiveScopes = if (forceScopes) scopes else Sentry.getCurrentScopes()
       request.attributes.put(
         requestStartTimestampKey,
-        (if (forceScopes) scopes else Sentry.getCurrentScopes()).options.dateProvider.now(),
+        effectiveScopes.options.dateProvider.now(),
       )
 
       val parentSpan: ISpan? =
         if (forceScopes) scopes.getSpan()
-        else {
-          val currentScopes = Sentry.getCurrentScopes()
-          if (Platform.isAndroid()) currentScopes.transaction else currentScopes.span
-        }
+        else if (Platform.isAndroid()) effectiveScopes.transaction else effectiveScopes.span
 
       val spanOp = "http.client"
-      val spanDescription = "${request.method.value.toString()} ${request.url.buildString()}"
+      val rawUrl = request.url.buildString()
+      val urlDetails = UrlUtils.parse(rawUrl, effectiveScopes.options.dataCollectionResolver)
+      val spanDescription = "${request.method.value.toString()} ${urlDetails.urlOrFallback}"
       val span: ISpan? = parentSpan?.startChild(spanOp, spanDescription)
       if (span != null) {
         span.spanContext.origin = TRACE_ORIGIN
@@ -120,13 +125,13 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
 
       if (
         !SpanUtils.isIgnored(
-          (if (forceScopes) scopes else Sentry.getCurrentScopes()).options.getIgnoredSpanOrigins(),
+          effectiveScopes.options.getIgnoredSpanOrigins(),
           TRACE_ORIGIN,
         )
       ) {
         TracingUtils.traceIfAllowed(
-            if (forceScopes) scopes else Sentry.getCurrentScopes(),
-            request.url.buildString(),
+            effectiveScopes,
+            rawUrl,
             request.headers.getAll(BaggageHeader.BAGGAGE_HEADER),
             span,
           )
@@ -185,7 +190,29 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
         var result: ISpan? = span
 
         if (beforeSpan != null) {
-          result = beforeSpan.execute(span, request)
+          val wasSampled = span.isSampled == true
+          result =
+            try {
+              beforeSpan.execute(span, request)
+            } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+              ExceptionUtils.rethrowIfFatal(e)
+              span.spanContext.sampled = false
+              if (wasSampled) {
+                (if (forceScopes) scopes else Sentry.getCurrentScopes())
+                  .options
+                  .clientReportRecorder
+                  .recordLostEvent(DiscardReason.CALLBACK_ERROR, DataCategory.Span)
+              }
+              (if (forceScopes) scopes else Sentry.getCurrentScopes())
+                .options
+                .logger
+                .log(
+                  SentryLevel.ERROR,
+                  "The beforeSpan callback threw an exception in SentryKtorClientPlugin. Dropping span.",
+                  e,
+                )
+              null
+            }
         }
 
         if (result == null) {

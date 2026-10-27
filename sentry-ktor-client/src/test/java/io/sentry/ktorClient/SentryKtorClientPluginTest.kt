@@ -1,24 +1,30 @@
 package io.sentry.ktorClient
 
+import com.google.common.truth.Truth.assertThat
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.java.Java
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
+import io.sentry.ILogger
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.ScopeType
 import io.sentry.Sentry
 import io.sentry.SentryEvent
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -26,12 +32,14 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.W3CTraceparentHeader
+import io.sentry.clientreport.DiscardReason
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.mockServerRequestTimeoutMillis
 import java.util.concurrent.TimeUnit
 import kotlin.Unit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -46,6 +54,7 @@ import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryKtorClientPluginTest {
@@ -107,6 +116,7 @@ class SentryKtorClientPluginTest {
         MockResponse()
           .setBody(responseBody)
           .addHeader("myResponseHeader", "myValue")
+          .addHeader("Set-Cookie", "theme=dark; Path=/")
           .setSocketPolicy(socketPolicy)
           .setResponseCode(httpStatusCode)
       )
@@ -114,6 +124,7 @@ class SentryKtorClientPluginTest {
       return HttpClient(httpClientEngine) {
         install(SentryKtorClientPlugin) {
           this.scopes = this@Fixture.scopes
+          this.beforeSpan = beforeSpan
           this.captureFailedRequests = captureFailedRequests
           this.failedRequestTargets = failedRequestTargets
           this.failedRequestStatusCodes = failedRequestStatusCodes
@@ -260,6 +271,163 @@ class SentryKtorClientPluginTest {
   }
 
   @Test
+  fun `data collection filters cookies`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.cookies = KeyValueCollectionBehavior.denyList("theme")
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) {
+      headers["Cookie"] = "language=en; theme=dark; sessionId=secret"
+    }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertEquals(
+            "language=en; theme=[Filtered]; sessionId=[Filtered]",
+            it.request!!.cookies,
+          )
+          assertEquals("theme=[Filtered]; Path=/", it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable cookies`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        sendDefaultPii = true,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.cookies = KeyValueCollectionBehavior.off()
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) { headers["Cookie"] = "theme=dark" }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertNull(it.request!!.cookies)
+          assertNull(it.contexts.response!!.cookies)
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters request headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.denyList("customer")
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) {
+      headers["content-type"] = "application/json"
+      headers["authorization"] = "Bearer token"
+      headers["x-customer"] = "customer value"
+    }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertEquals("application/json", it.request!!.headers!!["content-type"])
+          assertEquals("[Filtered]", it.request!!.headers!!["authorization"])
+          assertEquals("[Filtered]", it.request!!.headers!!["x-customer"])
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable request headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.request = KeyValueCollectionBehavior.off()
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString()) { headers["myHeader"] = "myValue" }
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { assertTrue(it.request!!.headers!!.isEmpty()) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection filters response headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.response = KeyValueCollectionBehavior.denyList("response")
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString())
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> {
+          assertEquals(
+            "[Filtered]",
+            it.contexts.response!!
+              .headers!!
+              .entries
+              .firstOrNull { header ->
+                header.key.equals("myResponseHeader", ignoreCase = true)
+              }
+              ?.value,
+          )
+        },
+        any<Hint>(),
+      )
+  }
+
+  @Test
+  fun `data collection can disable response headers`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        captureFailedRequests = true,
+        httpStatusCode = 500,
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.httpHeaders.response = KeyValueCollectionBehavior.off()
+          },
+      )
+
+    sut.get(fixture.server.url("/hello").toString())
+
+    verify(fixture.scopes)
+      .captureEvent(
+        check<SentryEvent> { assertTrue(it.contexts.response!!.headers!!.isEmpty()) },
+        any<Hint>(),
+      )
+  }
+
+  @Test
   fun `does not capture headers when sendDefaultPii is disabled`(): Unit = runBlocking {
     val sut =
       fixture.getSut(captureFailedRequests = true, httpStatusCode = 500, sendDefaultPii = false)
@@ -280,6 +448,103 @@ class SentryKtorClientPluginTest {
   }
 
   @Test
+  fun `reports callback errors only for sampled spans`(): Unit = runBlocking {
+    for (sampled in listOf(true, false, null)) {
+      val fixture = Fixture()
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      val sut =
+        fixture.getSut(
+          beforeSpan = { span, _ ->
+            span.spanContext.sampled = false
+            error("callback failed")
+          }
+        )
+      fixture.sentryTracer.spanContext.sampled = sampled
+      fixture.options.onDiscard = onDiscard
+
+      sut.use { sut.get(fixture.server.url("/hello").toString()) }
+      fixture.sentryTracer.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
+    val failure = AssertionError("callback failed")
+    val logger = mock<ILogger>()
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _ ->
+          span.description = "partially modified"
+          throw failure
+        }
+      )
+    fixture.options.isDebug = true
+    fixture.options.setLogger(logger)
+    sut.use {
+      val response = sut.get(fixture.server.url("/hello").toString())
+      assertThat(response.status.value).isEqualTo(201)
+      assertThat(response.bodyAsText()).isEqualTo("success")
+    }
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    assertThat(span.status).isEqualTo(SpanStatus.OK)
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+    verify(logger)
+      .log(
+        SentryLevel.ERROR,
+        "The beforeSpan callback threw an exception in SentryKtorClientPlugin. Dropping span.",
+        failure,
+      )
+  }
+
+  @Test
+  fun `fatal error from beforeSpan is not swallowed`(): Unit = runBlocking {
+    val failure = OutOfMemoryError("callback failed")
+    val sut = fixture.getSut(beforeSpan = { _, _ -> throw failure })
+
+    val thrown =
+      assertFailsWith<OutOfMemoryError> {
+        sut.use { sut.get(fixture.server.url("/hello").toString()) }
+      }
+
+    assertThat(generateSequence<Throwable>(thrown) { it.cause }.last()).isSameInstanceAs(failure)
+  }
+
+  @Test
+  fun `beforeSpan can drop span`(): Unit = runBlocking {
+    val sut = fixture.getSut(beforeSpan = { _, _ -> null })
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.options.onDiscard = onDiscard
+    fixture.sentryTracer.spanContext.sampled = true
+    sut.use { sut.get(fixture.server.url("/hello").toString()) }
+    verifyNoMoreInteractions(onDiscard)
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+  }
+
+  @Test
+  fun `beforeSpan can modify span`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        beforeSpan = { span, _ ->
+          span.description = "changed"
+          span
+        }
+      )
+    sut.use { sut.get(fixture.server.url("/hello").toString()) }
+    val span = fixture.sentryTracer.children.single()
+    assertThat(span.description).isEqualTo("changed")
+    assertThat(span.isFinished).isTrue()
+  }
+
+  @Test
   fun `creates a span around the request`(): Unit = runBlocking {
     val sut = fixture.getSut()
     val url = fixture.server.url("/hello").toString()
@@ -292,6 +557,16 @@ class SentryKtorClientPluginTest {
     assertEquals("auto.http.ktor-client", httpClientSpan.spanContext.origin)
     assertEquals(SpanStatus.OK, httpClientSpan.status)
     assertTrue(httpClientSpan.isFinished)
+  }
+
+  @Test
+  fun `span description excludes query parameters and fragment`(): Unit = runBlocking {
+    val sut = fixture.getSut()
+    sut.get(fixture.server.url("/hello?token=secret&page=1#results").toString())
+
+    val httpClientSpan = fixture.sentryTracer.children.first()
+    assertEquals("GET ${fixture.server.url("/hello")}", httpClientSpan.description)
+    assertNull(httpClientSpan.data[SpanDataConvention.HTTP_QUERY_KEY])
   }
 
   @Test

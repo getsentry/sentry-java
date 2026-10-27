@@ -13,12 +13,10 @@ plugins {
   alias(libs.plugins.springboot4) apply false
 }
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
-}
+// Published code targets Java 17. Test code is not published and follows the toolchain.
+tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions {
     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
@@ -30,6 +28,7 @@ dependencies {
   api(projects.sentry)
   api(projects.sentrySpring7)
   compileOnly(projects.sentryLogback)
+  compileOnly(projects.sentryLog4j2)
   compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(platform(SpringBootPlugin.BOM_COORDINATES))
   compileOnly(projects.sentryGraphql)
@@ -41,6 +40,10 @@ dependencies {
   compileOnly(libs.context.propagation)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
+  compileOnly(libs.log4j.api)
+  compileOnly(libs.log4j.core)
+  compileOnly(projects.sentryOkhttp)
+  compileOnly(libs.okhttp)
   compileOnly(libs.otel)
   compileOnly(libs.reactor.core)
   compileOnly(libs.servlet.jakarta.api)
@@ -65,6 +68,8 @@ dependencies {
 
   // tests
   testImplementation(projects.sentryLogback)
+  testImplementation(projects.sentryLog4j2)
+  testImplementation(projects.sentryOkhttp)
   testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryGraphql)
   testImplementation(projects.sentryGraphql22)
@@ -81,8 +86,11 @@ dependencies {
   testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
   testImplementation(libs.context.propagation)
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.okhttp)
+  testImplementation(libs.log4j.api)
+  testImplementation(libs.log4j.core)
   testImplementation(libs.okhttp.mockwebserver)
   testImplementation(libs.otel)
   testImplementation(libs.otel.extension.autoconfigure.spi)
@@ -148,3 +156,148 @@ kotlin {
     freeCompilerArgs.add("-Xskip-metadata-version-check")
   }
 }
+
+// Swaps Logback for Log4j2 where a classpath has both starters, which only
+// integrationTestLog4j2's has.
+dependencies {
+  modules {
+    module("org.springframework.boot:spring-boot-starter-logging") {
+      replacedBy(
+        "org.springframework.boot:spring-boot-starter-log4j2",
+        "Use Log4j2 instead of Logback",
+      )
+    }
+  }
+}
+
+testing {
+  suites {
+    // Runs a Spring Boot app in the test's JVM against MockSentryServer. It is a suite of its own
+    // because the unit tests' classpath carries the agent, which switches Sentry into agent mode.
+    register<JvmTestSuite>("integrationTest") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBoot4Starter)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql22)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryKafka)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryOkhttp)
+        implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        implementation(libs.context.propagation)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.caffeine)
+        implementation(libs.okhttp)
+        implementation(libs.springboot4.resttestclient)
+        implementation(libs.springboot4.starter.aspectj)
+        implementation(libs.springboot4.starter.cache)
+        implementation(libs.springboot4.starter.graphql)
+        implementation(libs.springboot4.starter.jdbc)
+        implementation(libs.springboot4.starter.kafka)
+        implementation(libs.springboot4.starter.restclient)
+        implementation(libs.springboot4.starter.test)
+        implementation(libs.springboot4.starter.web)
+        implementation(libs.springboot4.starter.webclient)
+        implementation(libs.springboot4.starter.webflux)
+        implementation(libs.spring.kafka4.test)
+        runtimeOnly(libs.hsqldb)
+      }
+    }
+
+    // The servlet app with Log4j2 instead of Logback, so Sentry's auto-configuration attaches its
+    // Log4j2 appender.
+    register<JvmTestSuite>("integrationTestLog4j2") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBoot4Starter)
+        implementation(projects.sentryLog4j2)
+        implementation(projects.sentryTestSupport)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation("org.springframework.boot:spring-boot-starter-log4j2")
+        implementation(libs.springboot4.resttestclient)
+        implementation(libs.springboot4.starter.restclient)
+        implementation(libs.springboot4.starter.test)
+        implementation(libs.springboot4.starter.web)
+      }
+    }
+
+    // The same for a reactive app: without the servlet stack, Spring Boot starts a WebFlux server.
+    register<JvmTestSuite>("integrationTestWebflux") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBoot4Starter)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql22)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        implementation(libs.context.propagation)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.caffeine)
+        implementation(libs.springboot4.resttestclient)
+        // For TestRestTemplate; it doesn't add the servlet stack.
+        implementation(libs.springboot4.starter.restclient)
+        implementation(libs.springboot4.starter.cache)
+        implementation(libs.springboot4.starter.graphql)
+        implementation(libs.springboot4.starter.test)
+        implementation(libs.springboot4.starter.webclient)
+        implementation(libs.springboot4.starter.webflux)
+      }
+    }
+
+    // The same with Sentry tracing through the OpenTelemetry SDK in the app's JVM instead of the
+    // agent.
+    register<JvmTestSuite>("integrationTestOtelNoAgent") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBoot4Starter)
+        implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql22)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryKafka)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        implementation(libs.context.propagation)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.springboot4.resttestclient)
+        implementation(libs.springboot4.starter.aspectj)
+        implementation(libs.springboot4.starter.graphql)
+        implementation(libs.springboot4.starter.jdbc)
+        implementation(libs.springboot4.starter.kafka)
+        implementation(libs.springboot4.starter.restclient)
+        implementation(libs.springboot4.starter.test)
+        implementation(libs.springboot4.starter.web)
+        implementation(libs.springboot4.starter.webclient)
+        implementation(libs.springboot4.starter.webflux)
+        implementation(libs.spring.kafka4.test)
+        runtimeOnly(libs.hsqldb)
+      }
+    }
+  }
+}
+
+// The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
+// to resolve `#id` in a cache key.
+listOf(
+    "compileIntegrationTestKotlin",
+    "compileIntegrationTestWebfluxKotlin",
+    "compileIntegrationTestOtelNoAgentKotlin",
+  )
+  .forEach {
+    tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }
+  }

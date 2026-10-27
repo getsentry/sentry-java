@@ -6,6 +6,7 @@ import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.SentryDate
 import io.sentry.SpanDataConvention
+import io.sentry.SpanOptions
 import io.sentry.TypeCheckHint
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.Platform
@@ -34,14 +35,14 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
   private var method: String
 
   init {
-    val urlDetails = UrlUtils.parse(request.url.toString())
+    val urlDetails = UrlUtils.parse(request.url.toString(), scopes.options.dataCollectionResolver)
     url = urlDetails.urlOrFallback
     method = request.method
 
     // We start the call span that will contain all the others
     val parentSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
-    callSpan = parentSpan?.startChild("http.client")
-    callSpan?.spanContext?.origin = TRACE_ORIGIN
+    callSpan =
+      parentSpan?.startChild("http.client", null, SpanOptions().apply { origin = TRACE_ORIGIN })
 
     breadcrumb =
       Breadcrumb().apply {
@@ -62,7 +63,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
    * due to interceptors.
    */
   fun setRequest(request: Request) {
-    val urlDetails = UrlUtils.parse(request.url.toString())
+    val urlDetails = UrlUtils.parse(request.url.toString(), scopes.options.dataCollectionResolver)
     url = urlDetails.urlOrFallback
 
     val host: String = request.url.host
@@ -78,8 +79,8 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
       breadcrumb.setData("url", urlDetails.url!!)
     }
     breadcrumb.setData("method", method.uppercase())
-    if (urlDetails.query != null) {
-      breadcrumb.setData("http.query", urlDetails.query!!)
+    urlDetails.query?.let {
+      breadcrumb.setData("http.query", it)
     }
     if (urlDetails.fragment != null) {
       breadcrumb.setData("http.fragment", urlDetails.fragment!!)

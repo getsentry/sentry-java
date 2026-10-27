@@ -23,6 +23,7 @@ import io.sentry.test.NonOverridableNoOpSentryExecutorService
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.initForTest
 import io.sentry.test.injectForField
+import io.sentry.transport.ITransport
 import io.sentry.util.PlatformTestManipulator
 import io.sentry.util.thread.IThreadChecker
 import io.sentry.util.thread.ThreadChecker
@@ -53,6 +54,8 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
@@ -199,6 +202,30 @@ class SentryTest {
       Sentry.getGlobalScope().replaceOptions(SentryOptions.empty())
       Sentry.getGlobalScope().environment = null
     }
+  }
+
+  @Test
+  fun `manual Logs and Metrics reach transport when automatic collection is disabled`() {
+    val transport = mock<ITransport>()
+    val transportFactory = mock<ITransportFactory>()
+    whenever(transportFactory.create(any(), any())).thenReturn(transport)
+    initForTest {
+      it.dsn = dsn
+      it.logs.isEnabled = false
+      it.metrics.isEnabled = false
+      it.setTransportFactory(transportFactory)
+      it.shutdownTimeoutMillis = 5_000
+    }
+
+    Sentry.logger().info("manual log")
+    Sentry.metrics().count("manual metric")
+    Sentry.flush(5_000)
+
+    val envelopes = argumentCaptor<SentryEnvelope>()
+    verify(transport, atLeastOnce()).send(envelopes.capture())
+    val itemTypes =
+      envelopes.allValues.flatMap { envelope -> envelope.items.map { it.header.type } }
+    assertThat(itemTypes).containsAtLeast(SentryItemType.Log, SentryItemType.TraceMetric)
   }
 
   @Test
@@ -1879,7 +1906,9 @@ class SentryTest {
     }
 
     verify(customStorage).init()
-    verify(customStorage).set(any())
+    // get() always returns null here, so every later getCurrentScopes() call forks the root scopes
+    // and calls set() again, e.g. the BackpressureMonitor health check on the executor
+    verify(customStorage, atLeastOnce()).set(any())
   }
 
   @Test
