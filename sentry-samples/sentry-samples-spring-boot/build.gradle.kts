@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import io.sentry.gradle.MergeSpringMetadataAction
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -48,9 +49,9 @@ dependencies {
 
   implementation(libs.spring.kafka2)
   implementation(projects.sentryKafka)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation("org.aspectj:aspectjweaver")
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation(projects.sentrySpringBootStarter)
   implementation(projects.sentryLogback)
   implementation(projects.sentryGraphql)

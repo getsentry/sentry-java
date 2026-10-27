@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -36,9 +36,9 @@ dependencies {
   implementation(libs.springboot4.starter.websocket)
   implementation(libs.springboot4.starter.restclient)
   implementation(libs.springboot4.starter.webclient)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation("org.aspectj:aspectjweaver")
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation(projects.sentrySpringBoot4Starter)
   implementation(projects.sentryGraphql22)
   implementation(projects.sentryQuartz)
