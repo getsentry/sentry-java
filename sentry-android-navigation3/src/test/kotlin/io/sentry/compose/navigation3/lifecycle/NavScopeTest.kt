@@ -197,40 +197,57 @@ class NavScopeTest {
   }
 
   @Test
-  fun `startNavTransaction() - starts none without the nav lease`() {
+  fun `startNavTransaction() - defers the start despite a bound host transaction without the nav lease`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes
+    val hostTransaction = mock<ITransaction>()
+    fixture.scope.transaction = hostTransaction
 
     val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(navTransaction).isNull()
+    assertThat(navTransaction).isNotNull()
     assertThat(fixture.startedTransactions).isEmpty()
-    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
   }
 
   @Test
-  fun `startNavTransaction() - starts none without the nav lease, even once the lease is acquired`() {
+  fun `startNavTransaction() - starts a deferred transaction once the host's is unbound and the lease acquired`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes
+    fixture.scope.transaction = mock<ITransaction>()
     navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    fixture.scope.clearTransaction()
 
     fixture.acquireLease()
 
-    assertThat(fixture.startedTransactions).isEmpty()
-    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
   }
 
   @Test
-  fun `startNavTransaction() - starts none and keeps another owner's bound nav transaction without the nav lease`() {
+  fun `startNavTransaction() - defers the start despite another owner's bound nav transaction without the nav lease`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes
     val otherTransaction = fixture.startAnotherOwnersNavTransaction()
 
     val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
 
-    assertThat(navTransaction).isNull()
+    assertThat(navTransaction).isNotNull()
     assertThat(fixture.startedTransactions).containsExactly(otherTransaction)
     assertThat(fixture.scope.transaction).isSameInstanceAs(otherTransaction)
+  }
+
+  @Test
+  fun `startNavTransaction() - defers the start and keeps a finished bound transaction without the nav lease`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    val finished = mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+    fixture.scope.transaction = finished
+
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Profile") }
+
+    assertThat(navTransaction).isNotNull()
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(finished)
   }
 
   @Test
@@ -262,6 +279,21 @@ class NavScopeTest {
   }
 
   @Test
+  fun `startNavTransaction() - replaces the previous deferred transaction without the nav lease`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    val previous = navScopes.withNavScope { it.startNavTransaction("/Profile") } as NavTransaction
+
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+    fixture.acquireLease()
+
+    assertThat(navTransaction).isNotNull()
+    assertThat(previous.transaction).isNull()
+    assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/Settings")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
+  }
+
+  @Test
   fun `startNavTransaction() - starts none while a host transaction is bound after the previous one finishes`() {
     val fixture = Fixture.create(ownsLease = true)
     val navScopes = fixture.navScopes
@@ -277,6 +309,23 @@ class NavScopeTest {
     verify(previous).finish(SpanStatus.OK)
     assertThat(fixture.startedTransactions).containsExactly(previous)
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
+  }
+
+  @Test
+  fun `startNavTransaction() - replaces the previous deferred transaction while a host transaction is bound`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes
+    val previous = navScopes.withNavScope { it.startNavTransaction("/Profile") } as NavTransaction
+    fixture.scope.transaction = mock<ITransaction>()
+
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+    fixture.scope.clearTransaction()
+    fixture.acquireLease()
+
+    assertThat(navTransaction).isNotNull()
+    assertThat(previous.transaction).isNull()
+    assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/Settings")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
   }
 
   @Test

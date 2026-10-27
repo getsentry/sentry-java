@@ -209,6 +209,20 @@ class NavScopesTest {
   }
 
   @Test
+  fun `dispose() - forgets a nav transaction staged while never attached`() {
+    val fixture = Fixture.create()
+    val navScopes = fixture.navScopes()
+    navScopes.startNavTransaction("/Home")
+
+    navScopes.dispose()
+    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.applyFirstBackStackUpdate()
+
+    assertThat(fixture.hasLease(navScopes)).isTrue()
+    assertThat(fixture.startedTransactions).isEmpty()
+  }
+
+  @Test
   fun `startNavTransaction() - starts and binds a nav transaction with the nav lease`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
@@ -248,14 +262,14 @@ class NavScopesTest {
   }
 
   @Test
-  fun `startNavTransaction() - starts no nav transaction without the nav lease`() {
+  fun `startNavTransaction() - defers the nav transaction start without the nav lease`() {
     val fixture = Fixture.create()
     val covered = fixture.coveredNavScopes()
 
     val transaction = covered.startNavTransaction("/Result")
 
     assertThat(fixture.hasLease(covered)).isFalse()
-    assertThat(transaction).isNull()
+    assertThat(transaction).isNotNull()
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isNull()
   }
@@ -411,6 +425,230 @@ class NavScopesTest {
 
     assertThat(fixture.hasLease(covered)).isTrue()
     assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `a deferred transaction starts and is bound when the nav lease is acquired`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Result"))
+  }
+
+  @Test
+  fun `a deferred transaction receives the data recorded on its handle once it starts`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    val transaction = covered.startNavTransaction("/Result")
+    transaction?.setData("arguments", "id=1")
+
+    fixture.incoming.dispose()
+
+    verify(fixture.startedTransaction("/Result")).setData("arguments", "id=1")
+  }
+
+  @Test
+  fun `a preloaded owner's deferred transaction starts when the owner resumes`() {
+    val fixture = Fixture.create()
+    val current = fixture.navScopes()
+    current.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    current.applyFirstBackStackUpdate()
+    val preloaded = fixture.navScopes()
+    val preloadedLifecycle = fixture.lifecycle(Lifecycle.State.STARTED)
+    preloaded.attach(preloadedLifecycle)
+    preloaded.applyFirstBackStackUpdate()
+    preloaded.startNavTransaction("/PageB")
+    check(!fixture.hasLease(preloaded))
+
+    preloadedLifecycle.currentState = Lifecycle.State.RESUMED
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/PageB"))
+  }
+
+  @Test
+  fun `a started deferred transaction is restored when the nav lease is regained`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+    fixture.incoming.dispose()
+    val started = fixture.startedTransaction("/Result")
+    val nextIncoming = fixture.navScopes()
+    nextIncoming.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    nextIncoming.applyFirstBackStackUpdate()
+    check(fixture.scope.transaction == null)
+
+    nextIncoming.dispose()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(started)
+    assertThat(fixture.startedTransactions).containsExactly(started)
+  }
+
+  @Test
+  fun `regaining the nav lease with a started nav transaction logs no blocked nav transaction start`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+    fixture.incoming.dispose()
+    val nextIncoming = fixture.navScopes()
+    nextIncoming.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    nextIncoming.applyFirstBackStackUpdate()
+
+    nextIncoming.dispose()
+
+    verify(fixture.logger, never()).log(eq(SentryLevel.DEBUG), any<String>(), eq("/Result"))
+  }
+
+  @Test
+  fun `a started deferred transaction is finished on dispose`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+    fixture.incoming.dispose()
+    val started = fixture.startedTransaction("/Result")
+
+    covered.dispose()
+
+    verify(started).finish(any())
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `a deferred transaction does not start while a host transaction is bound`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+    val hostTransaction = mock<ITransaction>()
+    fixture.scope.transaction = hostTransaction
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
+  }
+
+  @Test
+  fun `a deferred transaction blocked by a host transaction logs its route`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+    fixture.scope.transaction = mock<ITransaction>()
+
+    fixture.incoming.dispose()
+
+    verify(fixture.logger).log(eq(SentryLevel.DEBUG), any<String>(), eq("/Result"))
+  }
+
+  @Test
+  fun `a deferred transaction starts in place of a finished bound transaction`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+    fixture.scope.transaction =
+      mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Result"))
+  }
+
+  @Test
+  fun `a deferred transaction requested while a finished transaction is bound starts in its place`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    fixture.scope.transaction =
+      mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+    covered.startNavTransaction("/Result")
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Result"))
+  }
+
+  @Test
+  fun `a finished deferred transaction does not start when the nav lease is acquired`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+    covered.finishNavTransaction()
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `only the most recently deferred transaction starts when the nav lease is acquired`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+    covered.finishNavTransaction()
+    covered.startNavTransaction("/Receipt")
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/Receipt")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Receipt"))
+  }
+
+  @Test
+  fun `a deferred transaction interrupted by a failed nav lease acquisition starts on the next one`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.configureScope { it.screen = "/Result" }
+    covered.startNavTransaction("/Result")
+    val failure = IllegalStateException("observer failure")
+    var observerThrows = true
+    fixture.scope.options.addScopeObserver(
+      object : ScopeObserverAdapter() {
+        override fun setContexts(contexts: Contexts) {
+          if (observerThrows) throw failure
+        }
+      }
+    )
+    val thrown = assertThrows(IllegalStateException::class.java) { fixture.incoming.dispose() }
+    assertThat(thrown).isSameInstanceAs(failure)
+    check(fixture.startedTransactions.isEmpty())
+    observerThrows = false
+    val nextIncoming = fixture.navScopes()
+    nextIncoming.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    nextIncoming.applyFirstBackStackUpdate()
+    check(!fixture.hasLease(covered))
+
+    nextIncoming.dispose()
+
+    assertThat(fixture.hasLease(covered)).isTrue()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Result"))
+  }
+
+  @Test
+  fun `a deferred transaction does not start after dispose`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    covered.startNavTransaction("/Result")
+
+    covered.dispose()
+    fixture.incoming.dispose()
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `a declined deferred start binds no transaction but still rotates the propagation context`() {
+    val fixture = Fixture.create()
+    val covered = fixture.coveredNavScopes()
+    val incomingContext = fixture.scope.propagationContext
+    covered.startNavTransaction("/Result")
+    fixture.declinesTransactions = true
+
+    fixture.incoming.dispose()
+
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(incomingContext)
   }
 
   /** Starts a nav transaction for [name] through the [INavScope] handed out by [NavScopes]. */
