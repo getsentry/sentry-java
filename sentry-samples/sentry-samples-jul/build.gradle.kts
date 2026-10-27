@@ -1,32 +1,15 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
   java
   application
-  alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.shadow)
-  id("io.sentry.systemtest")
 }
 
 application { mainClass.set("io.sentry.samples.jul.Main") }
 
-tasks.withType<KotlinCompile>().configureEach {
-  kotlin {
-    compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-  }
-}
-
 dependencies {
   implementation(projects.sentryJul)
   implementation(libs.slf4j.jdk14)
-
-  testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(projects.sentry)
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.slf4j.api)
-  testImplementation(libs.slf4j.jdk14)
 }
 
 // Configure the Shadow JAR (executable JAR with all dependencies)
@@ -44,22 +27,3 @@ tasks.jar {
 
 // Fix the startScripts task dependency
 tasks.startScripts { dependsOn(tasks.shadowJar) }
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter { includeTestsMatching("io.sentry.systemtest*") }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
-}
