@@ -11,19 +11,9 @@ plugins {
 
 application { mainClass.set("io.sentry.samples.jul.Main") }
 
-java.sourceCompatibility = JavaVersion.VERSION_17
-
-java.targetCompatibility = JavaVersion.VERSION_17
-
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
-}
-
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
   }
 }
 

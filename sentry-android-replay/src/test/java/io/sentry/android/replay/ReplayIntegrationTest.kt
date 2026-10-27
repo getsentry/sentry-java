@@ -24,11 +24,15 @@ import io.sentry.SentryReplayOptions
 import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayCache.Companion.ONGOING_SEGMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ENVIRONMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_RELEASE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDING
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_NAME
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_VERSION
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.capture.BufferCaptureStrategy
@@ -38,8 +42,10 @@ import io.sentry.android.replay.capture.SessionCaptureStrategyTest.Fixture.Compa
 import io.sentry.android.replay.gestures.GestureRecorder
 import io.sentry.android.replay.util.MainLooperHandler
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
+import io.sentry.cache.PersistingOptionsObserver
 import io.sentry.cache.PersistingScopeObserver
 import io.sentry.cache.tape.QueueFile
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
@@ -1080,6 +1086,123 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `register backfills previous replay recorded by an older sdk from persisted options`() {
+    val oldReplayId = SentryId()
+    writePreviousReplay(oldReplayId)
+    PersistingOptionsObserver(fixture.options).apply {
+      setRelease("io.sentry.sample@1.0.0+1")
+      setEnvironment("previous-env")
+      setDist("1")
+    }
+    // current run options differ and must not be used for the previous replay
+    fixture.options.release = "io.sentry.sample@2.0.0+2"
+    fixture.options.environment = "current-env"
+    fixture.options.dist = "2"
+
+    val replay = fixture.getSut(context)
+    replay.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureReplay(
+        check {
+          assertThat(it.replayId).isEqualTo(oldReplayId)
+          assertThat(it.release).isEqualTo("io.sentry.sample@1.0.0+1")
+          assertThat(it.environment).isEqualTo("previous-env")
+          assertThat(it.dist).isEqualTo("1")
+        },
+        any(),
+      )
+  }
+
+  @Test
+  fun `register backfills previous replay with the metadata stored with the replay`() {
+    val oldReplayId = SentryId()
+    writePreviousReplay(
+      oldReplayId,
+      mapOf(
+        SEGMENT_KEY_RELEASE to "io.sentry.sample@1.0.0+1",
+        SEGMENT_KEY_ENVIRONMENT to "recording-env",
+        SEGMENT_KEY_SDK_NAME to "sentry.javascript.react-native",
+        SEGMENT_KEY_SDK_VERSION to "7.0.0",
+      ),
+    )
+    // neither the persisted options nor the current ones may be mixed in
+    PersistingOptionsObserver(fixture.options).apply {
+      setRelease("io.sentry.sample@0.9.0+0")
+      setEnvironment("persisted-env")
+      setDist("0")
+    }
+    fixture.options.release = "io.sentry.sample@2.0.0+2"
+    fixture.options.sessionReplay.sdkVersion = SdkVersion("sentry.javascript.react-native", "7.1.0")
+
+    val replay = fixture.getSut(context)
+    replay.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureReplay(
+        check {
+          assertThat(it.replayId).isEqualTo(oldReplayId)
+          assertThat(it.release).isEqualTo("io.sentry.sample@1.0.0+1")
+          assertThat(it.environment).isEqualTo("recording-env")
+          assertThat(it.dist).isNull()
+          assertThat(it.sdk?.name).isEqualTo("sentry.javascript.react-native")
+          assertThat(it.sdk?.version).isEqualTo("7.0.0")
+        },
+        any(),
+      )
+  }
+
+  @Test
+  fun `register falls back to current replay sdk when the previous replay did not store it`() {
+    val oldReplayId = SentryId()
+    writePreviousReplay(oldReplayId)
+    fixture.options.sessionReplay.sdkVersion = SdkVersion("sentry.javascript.react-native", "7.1.0")
+
+    val replay = fixture.getSut(context)
+    replay.register(fixture.scopes, fixture.options)
+
+    verify(fixture.scopes)
+      .captureReplay(
+        check {
+          assertThat(it.replayId).isEqualTo(oldReplayId)
+          assertThat(it.sdk?.name).isEqualTo("sentry.javascript.react-native")
+          assertThat(it.sdk?.version).isEqualTo("7.1.0")
+          assertThat(it.release).isNull()
+          assertThat(it.environment).isNull()
+        },
+        any(),
+      )
+  }
+
+  private fun writePreviousReplay(
+    replayId: SentryId,
+    extraSegmentValues: Map<String, String> = emptyMap(),
+  ) {
+    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+    fixture.options.addScopeObserver(PersistingScopeObserver(fixture.options))
+    val oldReplay = File(fixture.options.cacheDirPath, "replay_$replayId").also { it.mkdirs() }
+    File(oldReplay, "1720693523997.jpg").outputStream().use {
+      Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+      it.flush()
+    }
+    val scopeCache =
+      File(fixture.options.cacheDirPath, PersistingScopeObserver.SCOPE_CACHE).also { it.mkdirs() }
+    File(scopeCache, PersistingScopeObserver.REPLAY_FILENAME).writeText("\"$replayId\"")
+    val segmentValues =
+      mutableListOf(
+        "$SEGMENT_KEY_HEIGHT=912",
+        "$SEGMENT_KEY_WIDTH=416",
+        "$SEGMENT_KEY_FRAME_RATE=1",
+        "$SEGMENT_KEY_BIT_RATE=75000",
+        "$SEGMENT_KEY_ID=0",
+        "$SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z",
+        "$SEGMENT_KEY_REPLAY_TYPE=BUFFER",
+      )
+    extraSegmentValues.forEach { (key, value) -> segmentValues += "$key=$value" }
+    File(oldReplay, ONGOING_SEGMENT).writeText(segmentValues.joinToString("\n"))
+  }
+
+  @Test
   fun `register cleans up old replays`() {
     val replayId = SentryId()
 
@@ -1254,6 +1377,7 @@ class ReplayIntegrationTest {
             ICurrentDateProvider {
               System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
             },
+            fixture.options.monotonicTicker,
             // run tasks synchronously in tests
             mock {
               whenever(mock.submit(any<Runnable>())).doAnswer {
@@ -1638,6 +1762,7 @@ class ReplayIntegrationTest {
       options,
       null,
       CurrentDateProvider.getInstance(),
+      options.monotonicTicker,
       executor =
         mock {
           whenever(mock.submit(any<Runnable>())).doAnswer {

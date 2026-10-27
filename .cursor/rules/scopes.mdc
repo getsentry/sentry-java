@@ -79,7 +79,7 @@ There were several implementations of the `IHub` interface:
 `HubAdapter` has been replaced by `ScopesAdapter`
 `Hub.clone` should be replaced by using `pushScope` or `pushIsolationScope`
 `Sentry.getCurrentHub` has been replaced by `Sentry.getCurrentScopes`
-`Sentry.popScope` has been deprecated. Instead `close` should be called on the `ISentryLifecycleToken` returned e.g. by `pushScope`. This can also be done in a `try-with-resource` block.
+`Sentry.popScope` was deprecated in version 8 and removed in version 9. Instead, `close` should be called on the `ISentryLifecycleToken` returned e.g. by `pushScope`. This can also be done in a `try-with-resources` block.
 
 ## `globalHubMode`
 The SDK has a `globalHubMode` option which affects forking behaviour of the SDK.
@@ -93,8 +93,8 @@ For JVM Backend applications (servers) we discourage enabling `globalHubMode` si
 If `globalHubMode` is enabled, the SDK avoids forking scopes _implicitly_.
 
 This means, retrieving current scopes on a thread where specific scopes do not exist yet for the thread, the root scopes are not forked but returned directly.
-`Sentry.pushScope`, `Sentry.pushIsolationScope` and `Sentry.popScope` are no-ops.
-They are unbalanced API: the caller may never restore the previous scopes, or restore them on a different thread, which would corrupt the globally shared scopes.
+`Sentry.pushScope` and `Sentry.pushIsolationScope` are no-ops and return no-op lifecycle tokens.
+Implicit forking is suppressed because callers could otherwise fail to restore the previous scopes, or restore them on a different thread, which would corrupt the globally shared scopes.
 
 `Sentry.withScope` and `Sentry.withIsolationScope` do fork, also when `globalHubMode` is enabled.
 They are balanced by construction and always restore the previous scopes before returning, so they cannot corrupt the shared scopes.

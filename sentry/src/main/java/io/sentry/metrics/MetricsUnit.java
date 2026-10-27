@@ -3,7 +3,13 @@ package io.sentry.metrics;
 /**
  * String constants for metric units.
  *
- * <p>These constants represent the API names of measurement units that can be used with metrics.
+ * <p>These constants are for the Metrics product and the {@link IMetricsApi} exposed through {@link
+ * io.sentry.Sentry#metrics()} and {@link io.sentry.IScopes#metrics()}. {@link
+ * io.sentry.MeasurementUnit} is instead used by transaction and span measurement APIs, including
+ * mobile vitals.
+ *
+ * <p>Metrics APIs accept strings so older SDK versions can use units introduced after their
+ * release.
  */
 public final class MetricsUnit {
 

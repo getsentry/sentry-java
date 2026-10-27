@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -11,15 +10,21 @@ plugins {
   id("io.sentry.systemtest")
 }
 
+// Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version
+// the Spring Boot 2.x matrix covers (2.4.13, Spring 5.3.13) fails on class files as new as the
+// toolchain's: "Unsupported class file major version 65". Only the app is scanned, so its test
+// code keeps following the toolchain.
+tasks.named<JavaCompile>("compileJava") { options.release.set(11) }
+
+tasks.named<KotlinCompile>("compileKotlin") {
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+}
+
 application { mainClass.set("io.sentry.samples.spring.boot.SentryDemoApplication") }
 
 group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
-
-java.sourceCompatibility = JavaVersion.VERSION_11
-
-java.targetCompatibility = JavaVersion.VERSION_11
 
 fun springBoot2SupportsOptionalIntegrations(): Boolean {
   val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
@@ -33,16 +38,9 @@ val includeGraphql =
   !project.hasProperty("excludeGraphql") && springBoot2SupportsOptionalIntegrations()
 val includeKafka = !project.hasProperty("excludeKafka") && springBoot2SupportsOptionalIntegrations()
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_11
-  targetCompatibility = JavaVersion.VERSION_11
-}
-
 tasks.withType<KotlinCompile>().configureEach {
-  compilerOptions.jvmTarget = JvmTarget.JVM_11
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
-    compilerOptions.jvmTarget = JvmTarget.JVM_11
   }
 }
 

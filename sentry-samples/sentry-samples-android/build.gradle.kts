@@ -129,14 +129,6 @@ android {
     }
   }
 
-  // Java 11 b/c androidx.room3 requires it.
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-
-  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 }
-
   androidComponents.onVariants { variant ->
     variant.buildConfigFields?.put(
       "USE_SAGP",

@@ -3,7 +3,7 @@ package io.sentry.compose.navigation3
 import android.app.Application
 import android.content.ComponentName
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -317,9 +317,10 @@ class SentryNavEffectTest {
       )
 
       val currentTop = backStack.last()
-      LaunchedEffect(currentTop) {
+      DisposableEffect(currentTop) {
         val transaction = fixture.scopes.getSpan() as? SentryTracer
         observedTransactionNames += transaction?.name ?: "<none>"
+        onDispose {}
       }
     }
     composeRule.waitForIdle()
