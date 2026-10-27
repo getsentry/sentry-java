@@ -14,6 +14,7 @@ import io.sentry.protocol.User;
 import io.sentry.util.Objects;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -57,7 +58,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   public void setEnvironment(@Nullable String environment) {
     try {
       options.getExecutorService().submit(() -> nativeScope.setEnvironment(environment));
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setEnvironment has an error.");
     }
   }
