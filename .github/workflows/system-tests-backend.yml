@@ -24,43 +24,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sample: [ "sentry-samples-spring-boot-jakarta" ]
+        sample: [ "sentry-samples-console" ]
         agent: [ "false" ]
         agent-auto-init: [ "true" ]
         include:
-          - sample: "sentry-samples-spring-boot"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-opentelemetry-noagent"
-            agent: "false"
-            agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-opentelemetry"
             agent: "true"
             agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-opentelemetry"
             agent: "true"
             agent-auto-init: "false"
-          - sample: "sentry-samples-spring-boot-webflux-jakarta"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-webflux"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-jakarta-log4j2"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry-noagent"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: "true"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-jakarta-opentelemetry"
-            agent: "true"
-            agent-auto-init: "false"
-          - sample: "sentry-samples-console"
-            agent: "false"
-            agent-auto-init: "true"
           - sample: "sentry-samples-console-otlp"
             agent: "false"
             agent-auto-init: "true"
@@ -68,18 +41,6 @@ jobs:
             agent: "false"
             agent-auto-init: "true"
           - sample: "sentry-samples-jul"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-4"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-4-log4j2"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-4-webflux"
-            agent: "false"
-            agent-auto-init: "true"
-          - sample: "sentry-samples-spring-boot-4-opentelemetry-noagent"
             agent: "false"
             agent-auto-init: "true"
           - sample: "sentry-samples-spring-boot-4-opentelemetry"
@@ -105,7 +66,7 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.10'
 

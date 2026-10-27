@@ -35,7 +35,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.10'
 
@@ -71,52 +71,18 @@ jobs:
       - name: Build sample artifacts
         run: |
           ./gradlew \
-            :sentry-samples:sentry-samples-spring-boot-jakarta:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-jakarta:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-webflux-jakarta:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-webflux-jakarta:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent:testClasses \
             :sentry-samples:sentry-samples-spring-jakarta:war \
-            :sentry-samples:sentry-samples-spring-jakarta:testClasses \
-            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
+            :sentry-samples:sentry-samples-spring-jakarta:testClasses
 
-      - name: Test sentry-samples-spring-boot-jakarta
+      - name: Test sentry-spring-boot-jakarta integration suites
         run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-jakarta" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-boot-webflux-jakarta
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-webflux-jakarta" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init true
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-jakarta-opentelemetry" \
-            --agent true \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init false
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-jakarta-opentelemetry" \
-            --agent true \
-            --auto-init "false"
-
-      - name: Test sentry-samples-spring-boot-jakarta-opentelemetry-noagent
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-jakarta-opentelemetry-noagent" \
-            --agent false \
-            --auto-init "true"
+          ./gradlew \
+            :sentry-spring-boot-jakarta:integrationTest \
+            :sentry-spring-boot-jakarta:integrationTestWebflux \
+            :sentry-spring-boot-jakarta:integrationTestOtelNoAgent \
+            :sentry-spring-boot-jakarta:integrationTestLog4j2 \
+            :sentry-spring-boot-jakarta:integrationTestOtelAgent \
+            :sentry-spring-boot-jakarta:integrationTestOtelAgentWithoutAutoInit
 
       - name: Test sentry-samples-spring-jakarta
         run: |

@@ -1160,9 +1160,11 @@ class SentryTracerTest {
     val span = transaction.startChild("op")
     span.finish()
 
-    await.untilFalse(transaction.isFinishTimerRunning)
-
-    verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    // finish() clears isFinishTimerRunning before it captures the transaction, so wait for the
+    // capture itself
+    await.untilAsserted {
+      verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
   }
 
   @Test
@@ -1221,18 +1223,20 @@ class SentryTracerTest {
     val span2 = transaction.startChild("op2") as Span
     span2.finish()
 
-    await.untilFalse(transaction.isFinishTimerRunning)
-
-    verify(fixture.scopes)
-      .captureTransaction(
-        check {
-          assertEquals(2, it.spans.size)
-          assertEquals(transaction.root.finishDate, span2.finishDate)
-        },
-        anyOrNull(),
-        anyOrNull(),
-        anyOrNull(),
-      )
+    // finish() clears isFinishTimerRunning before it captures the transaction, so wait for the
+    // capture itself
+    await.untilAsserted {
+      verify(fixture.scopes)
+        .captureTransaction(
+          check {
+            assertEquals(2, it.spans.size)
+            assertEquals(transaction.root.finishDate, span2.finishDate)
+          },
+          anyOrNull(),
+          anyOrNull(),
+          anyOrNull(),
+        )
+    }
   }
 
   @Test

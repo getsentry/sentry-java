@@ -11,7 +11,7 @@ import java.nio.file.Paths;
 
 /**
  * An app for the agent to instrument. It only uses the JDK, so a test can run it with nothing but
- * this class on the classpath, and it writes its port to the file named by the first argument.
+ * this class on the classpath, and it writes its port to the file named by {@code PORTFILE}.
  */
 public final class HelloServer {
   public static void main(final String[] args) throws IOException {
@@ -28,7 +28,7 @@ public final class HelloServer {
         });
     server.start();
     Files.write(
-        Paths.get(args[0]),
+        Paths.get(System.getenv("PORTFILE")),
         String.valueOf(server.getAddress().getPort()).getBytes(StandardCharsets.UTF_8));
   }
 }

@@ -35,7 +35,7 @@ jobs:
           submodules: 'recursive'
 
       - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.10'
 
@@ -71,31 +71,19 @@ jobs:
       - name: Build sample artifacts
         run: |
           ./gradlew \
-            :sentry-samples:sentry-samples-spring-boot-4:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-4-webflux:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4-webflux:testClasses \
             :sentry-samples:sentry-samples-spring-boot-4-opentelemetry:bootJar \
             :sentry-samples:sentry-samples-spring-boot-4-opentelemetry:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent:testClasses \
             :sentry-samples:sentry-samples-spring-7:war \
             :sentry-samples:sentry-samples-spring-7:testClasses \
             :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
 
-      - name: Run sentry-samples-spring-boot-4
+      - name: Test sentry-spring-boot-4 integration suites
         run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-boot-4-webflux
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-webflux" \
-            --agent false \
-            --auto-init "true"
+          ./gradlew \
+            :sentry-spring-boot-4:integrationTest \
+            :sentry-spring-boot-4:integrationTestWebflux \
+            :sentry-spring-boot-4:integrationTestOtelNoAgent \
+            :sentry-spring-boot-4:integrationTestLog4j2
 
       - name: Run sentry-samples-spring-boot-4-opentelemetry agent init true
         run: |
@@ -110,13 +98,6 @@ jobs:
             --module "sentry-samples-spring-boot-4-opentelemetry" \
             --agent true \
             --auto-init "false"
-
-      - name: Run sentry-samples-spring-boot-4-opentelemetry-noagent
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry-noagent" \
-            --agent false \
-            --auto-init "true"
 
       - name: Run sentry-samples-spring-7
         run: |

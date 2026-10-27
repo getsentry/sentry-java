@@ -21,7 +21,7 @@ kotlin-compatible-version = "1.9"
 ksp = "2.3.9"
 ktorClient = "3.0.0"
 logback = "1.2.9"
-log4j2 = "2.20.0"
+log4j2 = "2.26.1"
 nopen = "1.0.1"
 # see https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-compatibility-and-versioning.html#kotlin-compatibility
 # see https://developer.android.com/jetpack/androidx/releases/compose-kotlin
@@ -48,6 +48,8 @@ spotless = "8.8.0"
 springboot2 = "2.7.18"
 springboot3 = "3.5.0"
 springboot4 = "4.1.0"
+springKafka2 = "2.8.11"
+springKafka3 = "3.3.5"
 sqldelight = "2.3.2"
 
 # Android
@@ -110,11 +112,13 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.7.0" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version = "1.3.5" }
 androidx-lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-common-java8", version.ref = "androidxLifecycle" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.3" }
 androidx-navigation-runtime = { module = "androidx.navigation:navigation-runtime", version.ref = "androidxNavigation" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
 androidx-navigation-fragment = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "androidxNavigation" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "androidxNavigation3" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "androidxNavigation3" }
+androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version = "1.1.0" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room2" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room2" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room2" }
@@ -157,6 +161,7 @@ lottie-compose = { module = "com.airbnb.android:lottie-compose", version = "6.7.
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+asm = { module = "org.ow2.asm:asm", version = "9.9" }
 nopen-annotations = { module = "com.jakewharton.nopen:nopen-annotations", version.ref = "nopen" }
 nopen-checker = { module = "com.jakewharton.nopen:nopen-checker", version.ref = "nopen" }
 nullaway = { module = "com.uber.nullaway:nullaway", version = "0.14.2" }
@@ -218,9 +223,12 @@ springboot3-starter-security = { module = "org.springframework.boot:spring-boot-
 springboot3-starter-jdbc = { module = "org.springframework.boot:spring-boot-starter-jdbc", version.ref = "springboot3" }
 springboot3-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator", version.ref = "springboot3" }
 springboot3-starter-cache = { module = "org.springframework.boot:spring-boot-starter-cache", version.ref = "springboot3" }
-spring-kafka2 = { module = "org.springframework.kafka:spring-kafka", version = "2.8.11" }
-spring-kafka3 = { module = "org.springframework.kafka:spring-kafka", version = "3.3.5" }
+spring-kafka2 = { module = "org.springframework.kafka:spring-kafka", version.ref = "springKafka2" }
+spring-kafka2-test = { module = "org.springframework.kafka:spring-kafka-test", version.ref = "springKafka2" }
+spring-kafka3 = { module = "org.springframework.kafka:spring-kafka", version.ref = "springKafka3" }
+spring-kafka3-test = { module = "org.springframework.kafka:spring-kafka-test", version.ref = "springKafka3" }
 spring-kafka4 = { module = "org.springframework.kafka:spring-kafka" }
+spring-kafka4-test = { module = "org.springframework.kafka:spring-kafka-test" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version = "3.8.1" }
 springboot4-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
 springboot4-resttestclient = { module = "org.springframework.boot:spring-boot-resttestclient", version.ref = "springboot4" }
