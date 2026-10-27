@@ -979,6 +979,16 @@ fun IntegrationsScreen() {
       }
     }
     item {
+      SentryTraced("open_webview_activity") {
+        OutlinedButton(
+          onClick = { activity.startActivity(Intent(activity, WebViewActivity::class.java)) },
+          modifier = Modifier,
+        ) {
+          Text("Open WebView Trace Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
       SentryTraced("open_camera_activity") {
         OutlinedButton(
           onClick = { activity.startActivity(Intent(activity, CameraXActivity::class.java)) },

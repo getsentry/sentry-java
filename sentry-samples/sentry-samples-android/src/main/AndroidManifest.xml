@@ -98,6 +98,11 @@
       android:exported="false" />
 
     <activity
+      android:name=".WebViewActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
       android:name=".compose.ComposeActivity"
       android:exported="false" />
 

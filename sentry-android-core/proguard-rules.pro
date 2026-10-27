@@ -30,6 +30,12 @@
 -dontwarn androidx.activity.ComponentActivity
 -dontwarn androidx.activity.result.**
 
+# androidx.webkit is a compileOnly dependency, used by WebView trace propagation
+# its presence is checked at runtime before use
+-dontwarn androidx.webkit.**
+# keep the name of the class the presence check looks up, so it still finds it in minified apps
+-keepnames class androidx.webkit.ScriptHandler
+
 # To ensure that stack traces is unambiguous
 # https://developer.android.com/studio/build/shrink-code#decode-stack-trace
 -keepattributes LineNumberTable,SourceFile

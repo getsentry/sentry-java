@@ -100,6 +100,8 @@ dependencies {
   implementation(libs.androidx.core)
   // photo picker for user feedback screenshot attachments
   compileOnly(libs.androidx.activity)
+  // document-start script injection for WebView trace propagation
+  compileOnly(libs.androidx.webkit)
 
   implementation(libs.epitaph)
 
@@ -128,6 +130,8 @@ dependencies {
   testImplementation(projects.sentryAndroidNdk)
 
   testImplementation(libs.androidx.activity.compose)
+  testImplementation(libs.androidx.webkit)
+  testImplementation(libs.rhino)
   testImplementation(libs.androidx.compose.ui)
   testImplementation(libs.androidx.compose.foundation)
   testImplementation(libs.androidx.compose.foundation.layout)
