@@ -15,7 +15,6 @@ class EnvelopeMatchersTest {
     initForTest {
       it.dsn = server.dsn
       it.tracesSampleRate = 1.0
-      it.logs.isEnabled = true
     }
   }
 
