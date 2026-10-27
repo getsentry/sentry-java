@@ -1,8 +1,15 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer")
+}
+
+tasks.named<KotlinCompile>("compileKotlin") {
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
 dependencies {
@@ -13,7 +20,16 @@ dependencies {
   api(libs.otel.semconv)
   api(libs.otel.semconv.incubating)
   api(libs.otel.extension.autoconfigure)
+
+  testImplementation(projects.sentryAsyncProfiler)
+  testImplementation(projects.sentryTestSupport)
+  testImplementation(kotlin(Config.kotlinStdLib))
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
 }
+
+// Sentry's OpenTelemetry customizer only initializes Sentry when the environment asks it to.
+tasks.test { environment("SENTRY_AUTO_INIT", "true") }
 
 buildConfig {
   useJavaOutput()

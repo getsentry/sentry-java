@@ -349,29 +349,6 @@ public final class Scopes implements IScopes {
     return sentryId;
   }
 
-  @Deprecated
-  @Override
-  public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
-    if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
-    } else {
-      try {
-        getClient().captureUserFeedback(userFeedback);
-      } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "Error while capturing captureUserFeedback: " + userFeedback.toString(),
-                e);
-      }
-    }
-  }
-
   @Override
   public void startSession() {
     if (!isEnabled()) {
@@ -687,25 +664,6 @@ public final class Scopes implements IScopes {
     return Sentry.setCurrentScopes(this);
   }
 
-  /**
-   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
-   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
-   */
-  @Override
-  @Deprecated
-  public void popScope() {
-    if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(SentryLevel.WARNING, "Instance is disabled and this 'popScope' call is a no-op.");
-    } else {
-      final @Nullable Scopes parent = parentScopes;
-      if (parent != null) {
-        parent.makeCurrent();
-      }
-    }
-  }
-
   @Override
   public void withScope(final @NotNull ScopeCallback callback) {
     if (!isEnabled()) {
@@ -797,20 +755,6 @@ public final class Scopes implements IScopes {
         getOptions().getLogger().log(SentryLevel.ERROR, "Error in the 'client.flush'.", e);
       }
     }
-  }
-
-  /**
-   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
-   *     IScopes#forkedCurrentScope(String)} instead.
-   */
-  @Override
-  @Deprecated
-  @SuppressWarnings("deprecation")
-  public @NotNull IHub clone() {
-    if (!isEnabled()) {
-      getOptions().getLogger().log(SentryLevel.WARNING, "Disabled Scopes cloned.");
-    }
-    return new HubScopesWrapper(forkedScopes("scopes clone"));
   }
 
   @ApiStatus.Internal

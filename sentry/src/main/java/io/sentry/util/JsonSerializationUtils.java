@@ -85,7 +85,7 @@ public final class JsonSerializationUtils {
     }
     try {
       final ByteCountingWriter writer = new ByteCountingWriter();
-      serializer.serialize(serializable, writer);
+      serializer.serialize(serializable, writer, false);
       return writer.getByteCount();
     } catch (Throwable t) {
       logger.log(SentryLevel.ERROR, "Could not calculate size of serializable", t);
@@ -129,7 +129,7 @@ public final class JsonSerializationUtils {
       // Nothing to close
     }
 
-    public long getByteCount() {
+    long getByteCount() {
       return byteCount;
     }
 

@@ -1,30 +1,23 @@
 package io.sentry.android.core;
 
 import static io.sentry.TypeCheckHint.ANDROID_ACTIVITY;
-import static io.sentry.android.core.internal.util.ScreenshotUtils.captureScreenshot;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
-import android.view.View;
 import io.sentry.Attachment;
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SentryLevel;
 import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.android.core.internal.util.ScreenshotUtils;
-import io.sentry.android.replay.util.MaskRenderer;
-import io.sentry.android.replay.util.ViewsKt;
-import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * captured.
  */
 @ApiStatus.Internal
-public final class ScreenshotEventProcessor implements EventProcessor {
+public final class ScreenshotEventProcessor implements SentryEventProcessor {
 
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
@@ -42,7 +35,6 @@ public final class ScreenshotEventProcessor implements EventProcessor {
   private final @NotNull Debouncer debouncer;
   private static final long DEBOUNCE_WAIT_TIME_MS = 2000;
   private static final int DEBOUNCE_MAX_EXECUTIONS = 3;
-  private static final long MASKING_TIMEOUT_MS = 2000;
 
   private final boolean isReplayAvailable;
   private final AtomicBoolean isReplayModuleAbsenceLogged = new AtomicBoolean(false);
@@ -67,10 +59,6 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     if (options.isAttachScreenshot()) {
       addIntegrationToSdkVersion("Screenshot");
     }
-  }
-
-  private boolean isMaskingEnabled() {
-    return !options.getScreenshot().getMaskViewClasses().isEmpty() && isReplayAvailable;
   }
 
   @Override
@@ -112,140 +100,39 @@ public final class ScreenshotEventProcessor implements EventProcessor {
     final @Nullable SentryAndroidOptions.BeforeCaptureCallback beforeCaptureCallback =
         options.getBeforeScreenshotCaptureCallback();
     if (beforeCaptureCallback != null) {
-      if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+      try {
+        if (!beforeCaptureCallback.execute(event, hint, shouldDebounce)) {
+          return event;
+        }
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR,
+                "The beforeScreenshotCapture callback threw an exception. Skipping screenshot capture.",
+                e);
         return event;
       }
     } else if (shouldDebounce) {
       return event;
     }
 
-    Bitmap screenshot =
-        captureScreenshot(
-            activity, options.getThreadChecker(), options.getLogger(), buildInfoProvider);
+    final @Nullable Bitmap screenshot =
+        ScreenshotUtils.captureMaskedScreenshot(
+            activity, options, buildInfoProvider, isReplayAvailable);
     if (screenshot == null) {
       return event;
     }
 
-    // Apply masking if enabled and replay module is available
-    if (isMaskingEnabled()) {
-      final @Nullable ViewHierarchyNode rootNode = captureViewHierarchy(activity);
-      if (rootNode == null) {
-        screenshot.recycle();
-        return event;
-      }
-      final @Nullable Bitmap masked = applyMasking(screenshot, rootNode);
-      if (masked == null) {
-        // applyMasking already recycles its bitmaps on failure
-        return event;
-      }
-      screenshot = masked;
-    }
-
-    final Bitmap finalScreenshot = screenshot;
     hint.setScreenshot(
         Attachment.fromByteProvider(
-            () -> ScreenshotUtils.compressBitmapToPng(finalScreenshot, options.getLogger()),
+            () -> ScreenshotUtils.compressBitmapToPng(screenshot, options.getLogger()),
             "screenshot.png",
             "image/png",
             false));
     hint.set(ANDROID_ACTIVITY, activity);
     return event;
-  }
-
-  /**
-   * Captures the view hierarchy on the main thread, since view traversal requires it. If already on
-   * the main thread, captures directly; otherwise posts to the main thread and waits.
-   */
-  private @Nullable ViewHierarchyNode captureViewHierarchy(final @NotNull Activity activity) {
-    if (options.getThreadChecker().isMainThread()) {
-      return buildViewHierarchy(activity);
-    }
-
-    final AtomicReference<ViewHierarchyNode> result = new AtomicReference<>(null);
-    final CountDownLatch latch = new CountDownLatch(1);
-
-    try {
-      activity.runOnUiThread(
-          () -> {
-            try {
-              result.set(buildViewHierarchy(activity));
-            } finally {
-              latch.countDown();
-            }
-          });
-
-      if (!latch.await(MASKING_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-        options
-            .getLogger()
-            .log(
-                SentryLevel.WARNING, "Timed out waiting for view hierarchy capture on main thread");
-        return null;
-      }
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to capture view hierarchy", e);
-      return null;
-    }
-
-    return result.get();
-  }
-
-  private @Nullable ViewHierarchyNode buildViewHierarchy(final @NotNull Activity activity) {
-    try {
-      final @Nullable View rootView =
-          activity.getWindow() != null
-                  && activity.getWindow().peekDecorView() != null
-                  && activity.getWindow().peekDecorView().getRootView() != null
-              ? activity.getWindow().peekDecorView().getRootView()
-              : null;
-      if (rootView == null) {
-        return null;
-      }
-
-      final ViewHierarchyNode rootNode =
-          ViewHierarchyNode.Companion.fromView(rootView, null, 0, options.getScreenshot());
-      ViewsKt.traverse(rootView, rootNode, options.getScreenshot(), options.getLogger(), null);
-      return rootNode;
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to build view hierarchy", e);
-      return null;
-    }
-  }
-
-  private @Nullable Bitmap applyMasking(
-      final @NotNull Bitmap screenshot, final @NotNull ViewHierarchyNode rootNode) {
-    Bitmap mutableBitmap = screenshot;
-    boolean createdCopy = false;
-    try (final MaskRenderer maskRenderer = new MaskRenderer()) {
-      // Make bitmap mutable if needed
-      if (!screenshot.isMutable()) {
-        mutableBitmap = screenshot.copy(Bitmap.Config.RGB_565, true);
-        if (mutableBitmap == null) {
-          screenshot.recycle();
-          return null;
-        }
-        createdCopy = true;
-      }
-
-      maskRenderer.renderMasks(mutableBitmap, rootNode, null);
-
-      // Recycle original if we created a copy
-      if (createdCopy && !screenshot.isRecycled()) {
-        screenshot.recycle();
-      }
-
-      return mutableBitmap;
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Failed to mask screenshot", e);
-      if (createdCopy) {
-        if (!mutableBitmap.isRecycled()) {
-          mutableBitmap.recycle();
-        }
-      }
-      if (!screenshot.isRecycled()) {
-        screenshot.recycle();
-      }
-      return null;
-    }
   }
 
   @Override

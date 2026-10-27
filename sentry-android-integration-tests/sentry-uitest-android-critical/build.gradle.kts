@@ -1,5 +1,4 @@
 import io.gitlab.arturbosch.detekt.Detekt
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.application")
@@ -33,7 +32,6 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
-  kotlin { compilerOptions.jvmTarget = JvmTarget.JVM_11 }
   buildFeatures { compose = true }
   composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
   androidComponents.beforeVariants {
