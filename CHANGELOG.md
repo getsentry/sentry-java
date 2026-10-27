@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Features
+
+- Added `Environment` to the `Scope`, allowing you to overwrite the `Environment` set on the options ([#5772](https://github.com/getsentry/sentry-java/pull/5772))
+  - The scope `Environment` is also applied to the trace envelope header (DSC), logs, metrics and profiles, so all telemetry of a trace reports the same environment
+
 ### Improvements
 
 - Support Navigation 3 integration for multi-Activity and multi-Fragment applications, where each Activity or Fragment has its own `SentryNavEffect` ([#6305](https://github.com/getsentry/sentry-java/pull/6305))
@@ -213,8 +218,6 @@
 ### Features
 
 - Add `Session.State.Unhandled` for unhandled errors that do not terminate the process ([#5919](https://github.com/getsentry/sentry-java/pull/5919))
-- Added `Environment` to the `Scope`, allowing you to overwrite the `Environment` set on the options ([#5772](https://github.com/getsentry/sentry-java/pull/5772))
-  - The scope `Environment` is also applied to the trace envelope header (DSC), logs, metrics and profiles, so all telemetry of a trace reports the same environment
 
 ### Improvements
 
