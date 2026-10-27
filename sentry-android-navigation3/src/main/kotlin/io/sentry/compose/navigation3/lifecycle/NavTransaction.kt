@@ -17,7 +17,7 @@ import io.sentry.protocol.App
  *
  * **Thread safety**
  *
- * This class is ***not*** thread-safe. Adhere to the thread safety policy from [NavScopes].
+ * This class is ***not*** thread-safe. Apply the thread safety policy from [NavScopes].
  */
 internal class NavTransaction
 private constructor(
@@ -61,7 +61,7 @@ private constructor(
    * it.
    *
    * Returns the started transaction, or `null` if the handle was started already or discarded, or
-   * [scopes] declined to start one. A handle whose start is declined can be started again.
+   * [scopes] declined to start one.
    */
   fun start(scopes: IScopes): ITransaction? {
     val pending = state as? State.Pending ?: return null
@@ -96,11 +96,7 @@ private constructor(
     }
   }
 
-  /**
-   * Lifecycle state for a [NavTransaction] handle.
-   *
-   * Starts in [Pending] state and terminates in either [Started] or [Discarded] state.
-   */
+  /** Lifecycle state for a [NavTransaction] handle. */
   private sealed interface State {
 
     /**

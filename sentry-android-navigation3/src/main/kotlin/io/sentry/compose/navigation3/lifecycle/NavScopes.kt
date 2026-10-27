@@ -180,9 +180,6 @@ internal class NavScopes(
   /**
    * An [INavScope] that maintains a [stagedNavTransaction] and [stagedNavData], and only writes to
    * or reads from the [delegate IScope][IScope] when this instance holds the nav lease.
-   *
-   * A `NavScope` holds no state of its own. What it stages belongs to the enclosing [NavScopes]
-   * instance.
    */
   private inner class NavScope(private val delegate: IScope) : INavScope {
 
@@ -223,23 +220,9 @@ internal class NavScopes(
     }
 
     /**
-     * Starts a nav transaction and binds it to the shared [IScope] if this instance holds the nav
-     * lease, or defers its start otherwise. First [finishes][finishNavTransaction] the nav
-     * transaction most recently requested, if any.
-     *
-     * With the lease, this method will **not** start a transaction if another unfinished
-     * transaction (e.g., the host app's) is already bound to the shared scope, as the new one
-     * couldn't be bound in its place. A finished transaction doesn't block (see
-     * [StagedNavTransaction.start]).
-     *
-     * Without the lease, the start is always deferred, whatever is bound to the shared scope at the
-     * time: what matters is what's bound when the lease is acquired, which is checked then (see
-     * [StagedNavTransaction.publishTo]). Checking now would drop the transaction of an owner that
-     * stages it while a short-lived host transaction is bound (e.g., a ViewPager2 page preloaded
-     * during an Activity's `ui.load` transaction), even if that transaction finishes long before
-     * the owner acquires the lease. If the transaction can't start when the lease is acquired, it's
-     * discarded rather than kept for a later acquisition (see "Nav transactions follow navigation,
-     * not the lease" in [NavLeaseCoordinator]).
+     * Starts and binds a nav transaction with the nav lease, or defers it until the lease is
+     * acquired (see [StagedNavTransaction]). Callers must [finish][finishNavTransaction] the
+     * previous nav transaction first.
      *
      * **Deferred transactions may mis-parent spans generated before lease acquisition**
      *
@@ -248,18 +231,11 @@ internal class NavScopes(
      * Activity that navigates from a result callback before it resumes). Spans created in the
      * meantime attach to whichever transaction is bound to the scope at that time, usually the
      * leaseholder's.
-     *
-     * If the destination creates no spans once its transaction starts, the idle transaction is
-     * dropped once it finishes.
      */
     override fun startNavTransaction(
       transactionContext: TransactionContext,
       transactionOptions: TransactionOptions,
     ): INavTransaction? {
-      // StagedNavTransaction replaces its current nav transaction without finishing it, which
-      // would leave that one running with no way to finish it later, so we do so here.
-      finishNavTransaction()
-
       return if (hasLease) {
         stagedNavTransaction.start(delegate, transactionContext, transactionOptions)
       } else {
@@ -332,12 +308,15 @@ internal sealed interface INavScope {
 
   /**
    * Starts a nav transaction and binds it to the scope, unless another unfinished transaction is
-   * already bound to it. Returns `null` if no transaction was started. First
-   * [finishes][finishNavTransaction] the nav transaction most recently requested, if any.
+   * already bound to it. Returns `null` if no transaction was started.
+   *
+   * (Note: Callers must first [finish][finishNavTransaction] the nav transaction most recently
+   * requested, if any. Otherwise, with the nav lease, it blocks the new one while it's bound;
+   * without the lease, it's replaced without being finished.)
    *
    * The start may be deferred until the nav lease is acquired, in which case writes to the returned
-   * transaction are staged until then, and whether another transaction blocks it is decided then
-   * (see [NavScopes.NavScope.startNavTransaction]).
+   * transaction are staged in the meantime, and whether another transaction blocks it is decided
+   * then (see [StagedNavTransaction.publishTo]).
    */
   fun startNavTransaction(
     transactionContext: TransactionContext,

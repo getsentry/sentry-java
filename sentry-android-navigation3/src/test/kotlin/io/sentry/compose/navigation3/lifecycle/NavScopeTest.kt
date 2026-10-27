@@ -251,7 +251,7 @@ class NavScopeTest {
   }
 
   @Test
-  fun `startNavTransaction() - finishes the previous nav transaction and binds the new one with the nav lease`() {
+  fun `startNavTransaction() - starts none while the unfinished previous nav transaction is bound with the nav lease`() {
     val fixture = Fixture.create(ownsLease = true)
     val navScopes = fixture.navScopes
     navScopes.withNavScope { it.startNavTransaction("/Profile") }
@@ -259,16 +259,27 @@ class NavScopeTest {
 
     val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
 
+    assertThat(navTransaction).isNull()
+    verify(previous, never()).finish(any())
+    assertThat(fixture.startedTransactions).containsExactly(previous)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(previous)
+  }
+
+  @Test
+  fun `startNavTransaction() - binds the new nav transaction once the previous one is finished with the nav lease`() {
+    val fixture = Fixture.create(ownsLease = true)
+    val navScopes = fixture.navScopes
+    navScopes.withNavScope { it.startNavTransaction("/Profile") }
+    navScopes.withNavScope { it.finishNavTransaction() }
+
+    val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
+
     assertThat(navTransaction).isNotNull()
-    verify(previous).finish(SpanStatus.OK)
-    assertThat(fixture.startedTransactions.map { it.name })
-      .containsExactly("/Profile", "/Settings")
-      .inOrder()
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.last())
   }
 
   @Test
-  fun `startNavTransaction() - discards the previous deferred transaction without the nav lease`() {
+  fun `startNavTransaction() - replaces the previous deferred transaction without the nav lease`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes
     val previous = navScopes.withNavScope { it.startNavTransaction("/Profile") } as NavTransaction
@@ -283,13 +294,14 @@ class NavScopeTest {
   }
 
   @Test
-  fun `startNavTransaction() - finishes the previous nav transaction while a host transaction is bound`() {
+  fun `startNavTransaction() - starts none after the previous nav transaction is finished while a host transaction is bound`() {
     val fixture = Fixture.create(ownsLease = true)
     val navScopes = fixture.navScopes
     navScopes.withNavScope { it.startNavTransaction("/Profile") }
     val previous = fixture.startedTransactions.single()
     val hostTransaction = mock<ITransaction>()
     fixture.scope.transaction = hostTransaction
+    navScopes.withNavScope { it.finishNavTransaction() }
 
     val navTransaction = navScopes.withNavScope { it.startNavTransaction("/Settings") }
 
@@ -300,7 +312,7 @@ class NavScopeTest {
   }
 
   @Test
-  fun `startNavTransaction() - discards the previous deferred transaction while a host transaction is bound`() {
+  fun `startNavTransaction() - replaces the previous deferred transaction while a host transaction is bound`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes
     val previous = navScopes.withNavScope { it.startNavTransaction("/Profile") } as NavTransaction

@@ -10,20 +10,18 @@ import io.sentry.TransactionOptions
 /**
  * Holds a nav transaction staged for publication to a shared [IScope].
  *
- * An `IScope` has a single, mutually-exclusive transaction slot. A transaction requested while
- * publishing isn't permitted is [staged][stage] rather than started, and starts when it's next
- * [published][publishTo]. That publication is its only chance to start: if it can't start then,
- * it's discarded, just as a transaction requested while publishing is permitted is never started if
- * it can't start right away. A started transaction that's [unpublished][unpublishFrom] is unbound
- * but keeps running, so that it can be bound again if it's republished while unfinished. Once
- * [finished][finish], a transaction is forgotten and never bound again.
+ * A transaction requested while publishing isn't permitted is [staged][stage] rather than started,
+ * and starts when it's next [published][publishTo]. That publication is its only chance to start:
+ * if it can't start then, it's discarded. A started transaction that's [unpublished][unpublishFrom]
+ * is unbound but keeps running, so that it can be bound again if it's republished while unfinished.
+ * Once [finished][finish], a transaction is forgotten and never bound again.
  *
  * Starting or publishing a nav transaction never displaces an unfinished transaction bound to the
  * scope by someone else (e.g., the host app).
  *
  * **Thread safety**
  *
- * This class is ***not*** thread-safe. Adhere to the thread safety policy from [NavScopes].
+ * This class is ***not*** thread-safe. Apply the thread safety policy from [NavScopes].
  */
 internal class StagedNavTransaction(private val scopes: IScopes) {
 
@@ -38,8 +36,6 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
    * couldn't be bound. Returns `null` if no transaction was started (including when [scopes]
    * returned a no-op transaction, e.g., because the SDK is disabled or ignores the transaction's
    * origin), in which case the instance's current nav transaction, if any, is kept.
-   *
-   * A transaction that isn't sampled still starts (as a non-recording transaction) and is bound.
    *
    * **Warning**: [Finish][finish] the current nav transaction before calling this method, as this
    * method replaces the current transaction without finishing it.
@@ -80,9 +76,7 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
    *
    * If another unfinished transaction is bound to [scope], a started transaction stays unbound, so
    * it can be bound the next time it's published. A staged transaction is discarded instead, as it
-   * is if [scopes] return a no-op transaction for it (see [start]). Otherwise, it would start
-   * whenever its owner next acquires the nav lease, possibly long after the destination was
-   * reached, where a transaction requested with the lease would never have started at all.
+   * is if [scopes] return a no-op transaction for it (see [start]).
    */
   fun publishTo(scope: IScope) {
     val navTransaction = navTransaction ?: return
@@ -141,11 +135,6 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
   /**
    * Reports whether the receiver's transaction slot can hold [transaction], or a new transaction
    * given `null` (see [canHold]).
-   *
-   * Logs the route [name] of the nav transaction if another unfinished transaction is bound.
-   *
-   * A check before starting or binding, made outside the scope's transaction lock; [bind] checks
-   * again under it.
    */
   private fun IScope.isFreeFor(name: String, transaction: ITransaction?): Boolean {
     if (canHold(current = this.transaction, transaction)) {
@@ -171,11 +160,7 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
 
   /**
    * Whether a transaction slot holding [current] can hold [transaction], or a new transaction given
-   * `null`: it's empty, holds a finished transaction (which is about to be dropped from the scope
-   * anyway, so it's replaced), or already holds `transaction`.
-   *
-   * Starting or binding a nav transaction never displaces an unfinished transaction bound by
-   * someone else (e.g., the host app).
+   * `null`: it's empty, holds a finished transaction, or already holds `transaction`.
    */
   private fun canHold(current: ITransaction?, transaction: ITransaction?): Boolean =
     current == null || current.isFinished || current === transaction

@@ -284,7 +284,7 @@ private class NavTransactions(private val scopes: INavScopes) {
   /**
    * Starts an idle navigation transaction, or no-ops if another transaction is already active.
    *
-   * See [INavScope.startNavTransaction].
+   * [Stop][stop] the current navigation transaction first. See [INavScope.startNavTransaction].
    */
   fun start(
     scope: INavScope,

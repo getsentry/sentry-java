@@ -52,17 +52,6 @@ import io.sentry.IScopes
  * a preloaded ViewPager2 Fragment page next to the current one). Such an owner acquires the lease
  * when it resumes instead.
  *
- * **Nav transactions follow navigation, not the lease**
- *
- * A candidate gets a nav transaction for a destination it navigates to, never merely for acquiring
- * the lease. A destination reached without the lease gets its transaction when the lease is next
- * acquired, if it can start then; otherwise it gets none. On reacquiring the lease without having
- * navigated in the meantime, a candidate only gets its unfinished transaction back, if any.
- *
- * Hence the asymmetry for, e.g., ViewPager2 pages: the first time the user swipes to a preloaded
- * page, it gets the transaction for the destination it reached while offscreen, but swiping back to
- * a page whose transaction has finished starts none.
- *
  * The following diagram illustrates how handoff works:
  * ```
  *  Time
@@ -144,6 +133,17 @@ import io.sentry.IScopes
  *                              Finish txB if unfinished                 │
  * ```
  *
+ * **Nav transactions follow navigation, not the lease**
+ *
+ * A candidate gets a nav transaction for a destination it navigates to, never merely for acquiring
+ * the lease. A destination reached without the lease gets its transaction when the lease is next
+ * acquired, if it can start then; otherwise it gets none. On reacquiring the lease without having
+ * navigated in the meantime, a candidate only gets its unfinished transaction back, if any.
+ *
+ * Hence the asymmetry for, e.g., ViewPager2 pages: the first time the user swipes to a preloaded
+ * page, it gets the transaction for the destination it reached while offscreen, but swiping back to
+ * a page whose transaction has finished starts none.
+ *
  * **Exception policy**
  *
  * Methods in this class with an `IScope` parameter can throw arbitrary exceptions†, which propagate
@@ -205,8 +205,6 @@ internal class NavLeaseCoordinator {
    * the owner's lifecycle permits it.
    *
    * Later calls for the same [candidate] do nothing.
-   *
-   * Can throw arbitrary exceptions. See "Exception policy" in the class KDoc.
    */
   private fun onBackStackUpdate(candidate: Candidate, scope: IScope) {
     if (candidate.hasAppliedInitialBackStackUpdate) {
@@ -235,8 +233,6 @@ internal class NavLeaseCoordinator {
    *
    * Restores the lease to `candidate` if it already applied a back stack update and [scope] is
    * non-null.
-   *
-   * Can throw arbitrary exceptions. See "Exception policy" in the class KDoc.
    */
   private fun resumeCandidate(candidate: Candidate, scope: IScope?) {
     // A null scope (e.g., the SDK is disabled) still records the lifecycle transition so that the
@@ -253,8 +249,6 @@ internal class NavLeaseCoordinator {
    *
    * Hands the lease to another owner only if that owner is resumed (e.g., a Fragment whose dialog
    * is being dismissed); otherwise keeps it.
-   *
-   * Can throw arbitrary exceptions. See "Exception policy" in the class KDoc.
    */
   private fun pauseCandidate(candidate: Candidate, scope: IScope?) {
     candidate.pause()
@@ -276,8 +270,6 @@ internal class NavLeaseCoordinator {
    * stopped owner keeps it. Keeping it lets a lone owner go on recording navigation that happens
    * while it isn't resumed (e.g., while the app is in the background, or after it restarts but
    * before it resumes), including starting nav transactions.
-   *
-   * Can throw arbitrary exceptions. See "Exception policy" in the class KDoc.
    */
   private fun stopCandidate(candidate: Candidate, scope: IScope?) {
     candidate.stop()
@@ -350,8 +342,6 @@ internal class NavLeaseCoordinator {
    * Unpublishes `candidate`'s nav state from [scope] if it's the most recently published. If
    * `candidate` holds the lease, hands it to the eligible candidate most recently observed resumed,
    * even if that candidate is now only started or paused, or releases it if there's none.
-   *
-   * Can throw arbitrary exceptions. See "Exception policy" in the class KDoc.
    */
   private fun unregisterCandidate(candidate: Candidate, scope: IScope?) {
     val wasPublisher = publisher === candidate
@@ -415,10 +405,9 @@ internal class NavLeaseCoordinator {
 
     /**
      * Whether the candidate's lifecycle permits its first back stack update since
-     * [registration][NavLeaseCoordinator.register] to acquire the nav lease, including taking it
-     * from another owner that isn't resumed: it's resumed, or it has neither resumed nor stopped
-     * since registration (i.e., it's still coming up for the first time). A paused or restarted
-     * candidate is returning to the screen rather than arriving on it.
+     * [registration][NavLeaseCoordinator.register] to acquire the nav lease: it's resumed, or it
+     * has neither resumed nor stopped since registration (i.e., it's still coming up for the first
+     * time).
      */
     val canAcquireLeaseOnFirstUpdate: Boolean
       get() = state == Lifecycle.State.RESUMED || (resumeOrder == 0L && !wasStopped)
@@ -517,8 +506,7 @@ internal interface NavLeaseRegistration {
 
   /**
    * Announces that the candidate is about to apply a back stack update, so it can acquire the nav
-   * lease if it's eligible to. Does nothing once the candidate is unregistered. See
-   * [NavScopes.onBackStackUpdate].
+   * lease if it's eligible to. Does nothing once the candidate is unregistered.
    */
   fun onBackStackUpdate()
 

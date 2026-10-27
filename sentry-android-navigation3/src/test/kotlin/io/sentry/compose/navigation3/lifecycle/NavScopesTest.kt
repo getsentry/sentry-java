@@ -585,6 +585,7 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val covered = fixture.coveredNavScopes()
     covered.startNavTransaction("/Result")
+    covered.finishNavTransaction()
     covered.startNavTransaction("/Receipt")
 
     fixture.incoming.dispose()

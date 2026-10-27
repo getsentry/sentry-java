@@ -19,7 +19,7 @@ import io.sentry.PropagationContext
  *
  * **Thread safety**
  *
- * This class is ***not*** thread-safe. Adhere to the thread safety policy from [NavScopes].
+ * This class is ***not*** thread-safe. Apply the thread safety policy from [NavScopes].
  */
 internal class StagedNavData {
 
