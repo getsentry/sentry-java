@@ -1,5 +1,6 @@
 package io.sentry.gradle
 
+import groovy.json.JsonSlurper
 import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -25,14 +26,18 @@ abstract class SpringBootMatrixExtension @Inject constructor(private val project
   private var versions = emptyList<String>()
 
   /**
-   * Registers `allIntegrationTestsBoot<version>` for each of [versions], and
-   * `allIntegrationTestsBoot<major>` for all of them, which CI runs from the root project for every
-   * module of the line at once.
+   * Registers `allIntegrationTestsBoot<version>` for each version of Spring Boot [line] in
+   * `gradle/spring-boot-versions.json`, and `allIntegrationTestsBoot<line>` for all of them. The CI
+   * workflows read the same file and run each version in its own job. A WAR module uses its Boot
+   * module's line, because the Boot BOM decides its Spring version.
    */
-  fun versions(versions: List<String>) {
+  fun versions(line: Int) {
+    val file = project.layout.settingsDirectory.file("gradle/spring-boot-versions.json")
+    val lines =
+      JsonSlurper().parseText(project.providers.fileContents(file).asText.get()) as Map<*, *>
+    val versions = (lines["boot$line"] as List<*>).map { it as String }
     this.versions = versions
-    val major = versions.map { it.substringBefore('.') }.distinct().single()
-    project.tasks.register("allIntegrationTestsBoot$major") {
+    project.tasks.register("allIntegrationTestsBoot$line") {
       description = "Runs the integration suites on Spring Boot ${versions.joinToString()}."
       group = LifecycleBasePlugin.VERIFICATION_GROUP
       dependsOn(versions.map { aggregateName(it) })

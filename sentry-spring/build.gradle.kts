@@ -1,4 +1,3 @@
-import io.sentry.gradle.SpringBootVersions
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -122,6 +121,6 @@ testing {
 
 // The suites on each Spring Boot 2 version the CI matrix tests.
 springBootMatrix {
-  versions(SpringBootVersions.BOOT_2)
+  versions(line = 2)
   test("integrationTest")
 }

@@ -64,14 +64,16 @@ it. Gradle runs the two in parallel.
 
 ## Running them
 
-- The `springBootMatrix` block in each Spring module's build file runs its suites on every Spring
-  Boot version in `SpringBootVersions` (build-logic), with a task per suite and version, e.g.
-  `integrationTestWebfluxBoot3_2_12`. The suites and the SDK compile once, against the catalog's
-  version; only the runtime classpath changes. `allIntegrationTestsBoot3_2_12` runs one version's
-  suites, `allIntegrationTestsBoot3` every version's.
-- The `spring-boot-{2,3,4}-matrix.yml` workflows run `./gradlew allIntegrationTestsBoot<major>`,
-  which picks up every module of the line. The suites aren't part of `check`, so a new suite only
-  runs on CI once it's added to its module's `springBootMatrix` block.
+- The `springBootMatrix` block in each Spring module's build file runs its suites on every version
+  of its Spring Boot line in `gradle/spring-boot-versions.json`, with a task per suite and version,
+  e.g. `integrationTestWebfluxBoot3_2_12`. The suites and the SDK compile once, against the
+  catalog's version; only the runtime classpath changes. `allIntegrationTestsBoot3_2_12` runs one
+  version's suites, `allIntegrationTestsBoot3` every version's.
+- The `spring-boot-{2,3,4}-matrix.yml` workflows read the same file and run each version in its own
+  job, e.g. `./gradlew :sentry-spring-jakarta:allIntegrationTestsBoot3_2_12
+  :sentry-spring-boot-jakarta:allIntegrationTestsBoot3_2_12`. The suites aren't part of `check`, so
+  a new suite only runs on CI once it's added to its module's `springBootMatrix` block, and a new
+  module once it's added to its workflow.
 - Suite code may only use APIs that exist in the oldest version of its line. Compiled against a
   newer one, a missing API fails at runtime with `NoSuchMethodError` or `NoClassDefFoundError`.
 

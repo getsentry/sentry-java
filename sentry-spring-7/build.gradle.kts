@@ -1,4 +1,3 @@
-import io.sentry.gradle.SpringBootVersions
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -147,6 +146,6 @@ testing {
 
 // The suites on each Spring Boot 4 version the CI matrix tests.
 springBootMatrix {
-  versions(SpringBootVersions.BOOT_4)
+  versions(line = 4)
   test("integrationTest")
 }
