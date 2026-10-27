@@ -8,6 +8,9 @@ plugins {
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.shadow)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {

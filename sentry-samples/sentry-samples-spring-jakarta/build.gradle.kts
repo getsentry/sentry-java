@@ -8,6 +8,8 @@ plugins {
   id("war")
   alias(libs.plugins.gretty)
   id("io.sentry.systemtest")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 application { mainClass.set("io.sentry.samples.spring.jakarta.Main") }
