@@ -25,7 +25,6 @@ jobs:
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
-      SENTRY_URL: http://127.0.0.1:8000
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
@@ -33,16 +32,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: 'recursive'
-
-      - name: Set up Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version: '3.10'
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
 
       - name: Set up Java
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
@@ -68,28 +57,16 @@ jobs:
           perl -0pi -e 'BEGIN { $v = shift } s/^springboot3[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot3 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
           echo "Updated Spring Boot 3.x version to $springboot_version"
 
-      - name: Build sample artifacts
+      - name: Test integration suites
         run: |
           ./gradlew \
-            :sentry-samples:sentry-samples-spring-jakarta:war \
-            :sentry-samples:sentry-samples-spring-jakarta:testClasses
-
-      - name: Test sentry-spring-boot-jakarta integration suites
-        run: |
-          ./gradlew \
+            :sentry-spring-jakarta:integrationTest \
             :sentry-spring-boot-jakarta:integrationTest \
             :sentry-spring-boot-jakarta:integrationTestWebflux \
             :sentry-spring-boot-jakarta:integrationTestOtelNoAgent \
             :sentry-spring-boot-jakarta:integrationTestLog4j2 \
             :sentry-spring-boot-jakarta:integrationTestOtelAgent \
             :sentry-spring-boot-jakarta:integrationTestOtelAgentWithoutAutoInit
-
-      - name: Test sentry-samples-spring-jakarta
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-jakarta" \
-            --agent false \
-            --auto-init "true"
 
       - name: Upload test results
         if: always()
@@ -99,8 +76,6 @@ jobs:
           path: |
             **/build/reports/*
             **/build/test-results/**/*.xml
-            sentry-mock-server.txt
-            spring-server.txt
 
       - name: Test Report
         uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16

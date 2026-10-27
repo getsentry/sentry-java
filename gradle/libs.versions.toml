@@ -258,6 +258,8 @@ tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0
 tomcat-embed-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "9.0.108" }
 tomcat-catalina-jakarta = { module = "org.apache.tomcat:tomcat-catalina", version = "11.0.22" }
 tomcat-embed-jasper-jakarta = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version = "11.0.22" }
+# The version comes from the Spring Boot BOM of whichever Spring line uses it.
+tomcat-embed-core = { module = "org.apache.tomcat.embed:tomcat-embed-core" }
 
 # test libraries
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version = "1.4.1" }
