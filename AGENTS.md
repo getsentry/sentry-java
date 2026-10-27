@@ -9,7 +9,7 @@ rule file in `.cursor/rules/`:
 
 | Rule | Read it when working on |
 |---|---|
-| `api` | Public API surface, binary compatibility, `.api` files, `apiDump`, `IScope`/`IScopes`/`Sentry` static API, protocol classes |
+| `api` | Public API surface, binary compatibility, `.api` files, `updateKotlinAbi`, `IScope`/`IScopes`/`Sentry` static API, protocol classes |
 | `options` | `SentryOptions`, namespaced options, `ExternalOptions`, `sentry.properties`, `ManifestMetadataReader`, Spring Boot properties |
 | `scopes` | Scope management, forking, lifecycle, `ScopeType`, thread-local storage, scope bleeding, Hub → Scopes migration |
 | `deduplication` | Duplicate event detection, `DuplicateEventDetectionEventProcessor`, `enableDeduplication` |
@@ -42,7 +42,7 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 
 ```bash
 # Format code and regenerate .api files (REQUIRED before committing)
-./gradlew spotlessApply apiDump
+./gradlew spotlessApply updateKotlinAbi
 
 # Run all tests and linter
 ./gradlew check
@@ -74,7 +74,7 @@ resolves the per-module test task, including integration test suites, for you.
 3. **Use todo tracking**: Work through todo items, marking them as complete as you go
 4. **High-level communication**: Give high-level explanations of changes made, not step-by-step descriptions
 5. **Simplicity first**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible.
-6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply apiDump`
+6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply updateKotlinAbi`
 7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
 
 ## Repository Skills

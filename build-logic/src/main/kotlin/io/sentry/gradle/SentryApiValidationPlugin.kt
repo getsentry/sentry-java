@@ -32,10 +32,6 @@ class SentryApiValidationPlugin : Plugin<Project> {
     KOTLIN_PLUGIN_IDS.forEach {
       project.pluginManager.withPlugin(it) { enable(project, extension) }
     }
-
-    // Aliases for backwards compat with the old binary-compatibility-validator plugin.
-    project.tasks.register("apiDump") { dependsOn("updateKotlinAbi") }
-    project.tasks.register("apiCheck") { dependsOn("checkKotlinAbi") }
   }
 
   private fun enable(project: Project, extension: ApiValidationExtension) {

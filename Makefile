@@ -32,7 +32,7 @@ checkFormat:
 
 # Binary compatibility validator
 api:
-	./gradlew apiDump
+	./gradlew updateKotlinAbi
 
 # Assemble release and Android test apk of the uitest-android module
 assembleUiTestRelease:

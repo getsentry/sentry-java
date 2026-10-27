@@ -86,7 +86,7 @@ make api
 or 
 
 ```shell
-./gradlew apiDump
+./gradlew updateKotlinAbi
 ```
 
 However, if your change did not intend to modify the public API, consider changing the method/property visibility or removing the change altogether.
