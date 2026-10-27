@@ -6,6 +6,7 @@
 
 - Support Navigation 3 integration for multi-Activity and multi-Fragment applications, where each Activity or Fragment has its own `SentryNavEffect` ([#6305](https://github.com/getsentry/sentry-java/pull/6305))
   - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/#supported-setups) for a detailed list of supported vs unsupported app setups.
+- The OpenTelemetry agent now honors `OTEL_BSP_SCHEDULE_DELAY` (`otel.bsp.schedule.delay`) for how often it sends spans to Sentry, instead of always waiting 5 seconds ([#6388](https://github.com/getsentry/sentry-java/pull/6388))
 
 ### Fixes
 
