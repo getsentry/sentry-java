@@ -6,6 +6,8 @@ plugins {
   id("io.sentry.jdk-target")
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 application { mainClass.set("io.sentry.samples.ktorClient.Main") }
 
 configure<JavaPluginExtension> {
@@ -21,8 +23,8 @@ dependencies {
   implementation(libs.ktor.client.core)
   implementation(libs.ktor.client.java)
   implementation(libs.kotlinx.coroutines)
-  implementation(projects.sentry)
-  implementation(projects.sentryKtorClient)
+  implementation("io.sentry:sentry:$sentryVersion")
+  implementation("io.sentry:sentry-ktor-client:$sentryVersion")
 }
 
 tasks.test { useJUnitPlatform() }

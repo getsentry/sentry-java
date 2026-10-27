@@ -1,8 +1,8 @@
-.PHONY: all clean compile javadocs dryRelease update format checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update format checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check checkSamples preMerge publish
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
-preMerge: check
+preMerge: check checkSamples
 publish: clean dryRelease
 
 # deep clean
@@ -28,12 +28,14 @@ update:
 # Spotless formats the code. The root spotlessApply doesn't reach the separate builds.
 format:
 	./gradlew spotlessApply
+	./gradlew -p sentry-samples spotlessApply
 	./gradlew -p sentry-samples/sentry-samples-android spotlessApply
 	./gradlew -p sentry-android-integration-tests spotlessApply
 
 # Spotless check's code
 checkFormat:
 	./gradlew spotlessJavaCheck spotlessKotlinCheck
+	./gradlew -p sentry-samples spotlessJavaCheck spotlessKotlinCheck
 	./gradlew -p sentry-samples/sentry-samples-android spotlessJavaCheck spotlessKotlinCheck
 	./gradlew -p sentry-android-integration-tests spotlessJavaCheck spotlessKotlinCheck
 
@@ -56,3 +58,7 @@ runUiTestCritical:
 # Run tests and lint
 check:
 	./gradlew check
+
+# The samples are separate builds, so the root `check` doesn't reach them
+checkSamples:
+	./gradlew -p sentry-samples check

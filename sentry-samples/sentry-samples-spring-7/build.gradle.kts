@@ -14,6 +14,8 @@ plugins {
   id("io.sentry.jdk-target")
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 application { mainClass.set("io.sentry.samples.spring7.Main") }
 
 // Ensure WAR is up to date before run task
@@ -38,9 +40,9 @@ dependencies {
   implementation("org.springframework.security:spring-security-config")
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
-  implementation(projects.sentrySpring7)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("io.sentry:sentry-spring-7:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
   implementation(libs.jackson.databind)
   implementation(libs.logback.classic)
   implementation(libs.servlet.jakarta.api)

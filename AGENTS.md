@@ -67,6 +67,9 @@ resolves the per-module test task, including integration test suites, for you.
 
 # Build the Android sample, a separate Gradle build that includes this one
 ./gradlew -p sentry-samples/sentry-samples-android assembleDebug
+
+# Build the JVM samples, another separate Gradle build that includes this one
+./gradlew -p sentry-samples assemble
 ```
 
 ## Development Workflow Rules
@@ -113,7 +116,7 @@ The repository is organized into multiple modules:
 
 ### Utility Modules
 - **`sentry-test-support`** - Shared test utilities, including `MockSentryServer` and envelope matchers
-- **`sentry-samples`** - Example applications. `sentry-samples-android` is a separate Gradle build that includes this one, so root tasks such as `check` and `spotlessApply` don't reach it
+- **`sentry-samples`** - Example applications, in two separate Gradle builds that include this one: `sentry-samples` (JVM) and `sentry-samples/sentry-samples-android`. Root tasks such as `check` and `spotlessApply` don't reach them, and `sentry-android-integration-tests` is a separate build too
 - **`sentry-bom`** - Bill of Materials for dependency management
 
 ### Key Architectural Patterns
