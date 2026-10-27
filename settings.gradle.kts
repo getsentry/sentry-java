@@ -112,7 +112,6 @@ include(
     "sentry-reactor",
     "sentry-async-profiler",
     "sentry-ktor-client",
-    "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-console-otlp",
     "sentry-samples:sentry-samples-console-opentelemetry-noagent",
@@ -141,7 +140,6 @@ include(
     "sentry-samples:sentry-samples-spring-boot-4-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
     "sentry-android-integration-tests:sentry-uitest-android-critical",
-    "sentry-android-integration-tests:sentry-uitest-android-macrobenchmark",
     "sentry-android-integration-tests:sentry-uitest-android",
     "sentry-android-integration-tests:test-app-size",
     "sentry-samples:sentry-samples-openfeign"
