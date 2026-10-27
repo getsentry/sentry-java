@@ -95,3 +95,25 @@ tasks.jar {
     )
   }
 }
+
+testing {
+  suites {
+    // Runs a plain Spring MVC app in an embedded Tomcat against MockSentryServer, the way a servlet
+    // container runs a WAR. Spring Boot isn't on its classpath, because Sentry behaves differently
+    // with it.
+    register<JvmTestSuite>("integrationTest") {
+      useJUnit()
+      dependencies {
+        implementation(platform(libs.springboot2.bom))
+        implementation(project())
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryTestSupport)
+        implementation(Config.Libs.springWeb)
+        implementation(libs.jackson.databind)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.tomcat.embed.core)
+      }
+    }
+  }
+}
