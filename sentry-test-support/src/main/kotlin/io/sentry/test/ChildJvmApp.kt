@@ -4,16 +4,19 @@ import io.sentry.time.Deadline
 import io.sentry.time.JavaMonotonicTicker
 import java.io.Closeable
 import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 /**
  * An app running in a child JVM, for apps that must not share the test's JVM, such as one with the
- * OpenTelemetry agent attached.
+ * OpenTelemetry agent attached or one whose exit is under test.
  *
- * The app writes the port it listens on to the file named by the `PORTFILE` environment variable,
- * which Spring Boot's `WebServerPortFileWriter` reads too. [close] kills the app and prints its
- * output, which otherwise only lives in a temporary file.
+ * A server app writes the port it listens on to the file named by the `PORTFILE` environment
+ * variable, which Spring Boot's `WebServerPortFileWriter` reads too. The app's output goes to the
+ * test's standard output as it arrives, so Gradle's test report shows it with the test that was
+ * running.
  */
 class ChildJvmApp private constructor(private val process: Process, private val workDir: File) :
   Closeable {
@@ -35,18 +38,21 @@ class ChildJvmApp private constructor(private val process: Process, private val 
     }
   }
 
+  /** Waits for the app to exit on its own and returns its exit code. */
+  fun awaitExit(timeoutSeconds: Long = 30): Int {
+    check(process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+      "App did not exit within ${timeoutSeconds}s"
+    }
+    return process.exitValue()
+  }
+
   override fun close() {
     process.destroyForcibly().waitFor()
-    val log = File(workDir, LOG_FILE)
-    if (log.exists()) {
-      println(log.readText())
-    }
     workDir.deleteRecursively()
   }
 
   companion object {
     private const val PORT_FILE = "port"
-    private const val LOG_FILE = "app.log"
 
     fun start(
       mainClass: String,
@@ -60,12 +66,18 @@ class ChildJvmApp private constructor(private val process: Process, private val 
       val process =
         ProcessBuilder(listOf(java) + jvmArgs + listOf("-cp", classpath, mainClass) + args)
           .redirectErrorStream(true)
-          .redirectOutput(File(workDir, LOG_FILE))
           .apply {
             environment().putAll(env)
             environment()["PORTFILE"] = File(workDir, PORT_FILE).path
           }
           .start()
+      thread(isDaemon = true, name = "child-jvm-app-output") {
+        try {
+          process.inputStream.bufferedReader().forEachLine(::println)
+        } catch (e: IOException) {
+          // The app was killed while its output was being read.
+        }
+      }
       return ChildJvmApp(process, workDir)
     }
   }

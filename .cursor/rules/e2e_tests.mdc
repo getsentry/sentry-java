@@ -3,26 +3,82 @@ alwaysApply: false
 description: Java SDK End to End Tests
 ---
 
-# Java SDK End to End Tests (System Tests)
+# Java SDK End to End Tests
 
-The samples in the `sentry-samples` directory are used to run end to end tests against them.
+End-to-end tests live in the module whose code they test, not in `sentry-samples`. Samples have no
+tests. A test runs the code the way an app would and asserts what reaches Sentry over the real HTTP
+transport.
 
-There is a python script (`system-test-runner.py`) that can be used to run one (using `--module SAMPLE_NAME`) or all (using `--all`) system tests.
+## MockSentryServer
 
-The script has an interactive mode (`-i`) which allows selection of test setups to execute, whether to run the tests or just prepare infrastructure for testing from IDE.
+`MockSentryServer` (`sentry-test-support`) is an in-process HTTP server on a free port. Point the
+SDK at `server.dsn`, then:
 
-The tests run a mock Sentry server via `system-test-sentry-server.py`. Any system under test will then have a DSN set that reflects this local mock server like `http://502f25099c204a2fbf4cb16edc5975d1@localhost:8000/0`.
-By using this local DSN, the system under test sends events to the local mock server.
-The tests can then use `TestHelper` to assert envelopes that were received by the mock server.
-`TestHelper` uses HTTP requests to retrieve the JSON payload of the received events and deserialize them back to objects for easier assertion.
-Tests can then assert events, transactions, logs etc. similar to how they would appear in `beforeSend` and similar callbacks.
+- `awaitEnvelope(timeoutMillis) { predicate }` polls for a matching envelope and fails with what it
+  received on timeout.
+- `assertNoEnvelope(millis) { predicate }` checks that nothing matching arrives.
+- `MockSentryServer { ... }` takes a hook that runs before each check while waiting, for example to
+  flush an OpenTelemetry tracer provider.
 
-`TestHelper` has a lot of helper methods for asserting, e.g. by span name, log body etc.
+`EnvelopeMatchers.kt` has the accessors and matchers: `event()`, `transaction()`, `logs()`,
+`metrics()`, `profileChunk()`, `hasSpanWithOp`, `hasFlag`, `hasLogWithAttribute`, `hasMetric` and
+so on.
 
-The end to end tests either expect the system under test to either be running on a server or call `java -jar` to execute a CLI system under test.
+Call `Sentry.flush()` before awaiting when Sentry runs in the test's JVM: logs and metrics are
+batched. Envelopes that arrive late can outlive a server's `reset()`, so tests that share a server
+match on values only they produce.
 
-For Spring Boot, we spin up the Spring Boot server. The tests then send requests to that server and assert what is sent to Sentry.
+## Where the tests are
 
-End to end tests are also executed on CI using a matrix build, as defined in `.github/workflows/system-tests-backend.yml`.
+- **Core and plain integrations** use their module's `src/test`. Examples: `SentryEndToEndTest`
+  (`sentry`), `SentryAppenderIntegrationTest` (`sentry-logback`, `sentry-log4j2`, loading the
+  appender from XML), `SentryHandlerIntegrationTest` (`sentry-jul`),
+  `ContinuousProfilerEndToEndTest` (`sentry-async-profiler`), `SentryKafkaEndToEndTest`
+  (`sentry-kafka`), `AgentlessEndToEndTest` and `OtlpEndToEndTest` (`sentry-opentelemetry-*`).
+- **Spring Boot** (`sentry-spring-boot`, `sentry-spring-boot-jakarta`, `sentry-spring-boot-4`) has
+  one JVM test suite per flavor, because a flavor is a classpath: Sentry's auto-configuration and
+  OpenTelemetry mode switch on which classes are present.
+  - `integrationTest`: servlet app.
+  - `integrationTestWebflux`: reactive app.
+  - `integrationTestOtelNoAgent`: `sentry-opentelemetry-agentless-spring`.
+  - `integrationTestOtelAgent` and `integrationTestOtelAgentWithoutAutoInit`: the built agent.
+  - `integrationTestOtlp` (Boot 4): `sentry-opentelemetry-otlp-spring`.
+  - `integrationTestLog4j2` (Boot 3, 4): Log4j2 instead of Logback, for the auto-configured
+    Log4j2 appender.
 
-Some of the samples are tested in multiple ways, e.g. with OpenTelemetry Agent auto init turned on and off.
+  Each suite has a base class with `@SpringBootTest(RANDOM_PORT)` and a `@DynamicPropertySource`
+  that sets `sentry.dsn`. Subclasses share one context and one server.
+- **Plain Spring** (`sentry-spring`, `sentry-spring-jakarta`, `sentry-spring-7`) has an
+  `integrationTest` suite that starts the app in an embedded Tomcat, the way a WAR starts. Spring
+  Boot stays off its classpath, because `SentrySpringServletContainerInitializer` behaves
+  differently with it.
+
+## The OpenTelemetry agent
+
+The agent must not run in the test's JVM, because it would instrument the test's own HTTP client
+and server. The Spring Boot modules have an `agentFixture` source set with the app. `AgentApp`
+starts it once per test JVM in a child process, with `ChildJvmApp` and the agent jar passed through
+`ChildJvmTestArguments`. The suite's task runs with the agent initializing Sentry, and
+`integrationTestOtelAgentWithoutAutoInit` runs the same tests with the Spring Boot starter doing
+it. Gradle runs the two in parallel.
+
+## Running them
+
+- The `spring-boot-{2,3,4}-matrix.yml` workflows run the suites against each supported Spring Boot
+  version, by setting the version in `gradle/libs.versions.toml`. The suites aren't part of
+  `check`, so a new suite only runs on CI once it's added to its matrix.
+
+## Gotchas
+
+- Don't use the context's `TestRestTemplate`. It comes from the `RestTemplateBuilder` that Sentry
+  customizes, and that the OpenTelemetry starter instruments, so it adds or replaces trace headers
+  on the requests a test sends. Build one outside the context.
+- Sentry exports OpenTelemetry spans in batches every 5 seconds. In-process, flush the tracer
+  provider from the server's hook. With the agent this isn't possible, so each test waits for a
+  batch and negative checks wait at least 6 seconds.
+- Sentry is global, so a second live Spring context in an OpenTelemetry suite takes it over. Keep
+  one live context per JVM (`@DirtiesContext` when a test needs its own).
+- The async profiler rejects a traces path with a `.` anywhere in its absolute form. Put the path
+  in `java.io.tmpdir`.
+- Kafka uses an in-JVM broker (`@EmbeddedKafka` or spring-kafka-test's broker classes), so no
+  Docker is needed.

@@ -1,5 +1,7 @@
 package io.sentry.gradle
 
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.BaseExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
@@ -27,6 +29,8 @@ private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_1_8
  * - sample apps target the build JDK (21)
  * - unit test code will target the build JDK (21) (required for Mockito 5)
  * - published JVM modules main code pins the Java 1.8 release, for Java and for Kotlin
+ * - published modules Java code drops the MethodParameters attribute javac 21 adds, and their
+ *   archives are checked for it
  * - published Android modules main code targets Java 1.8
  * - minSdk is set for Android libraries
  */
@@ -39,6 +43,30 @@ class JdkTargetConvention : Plugin<Project> {
     }
 
     project.plugins.withId("com.vanniktech.maven.publish") {
+      // Published Java classes must stay dexable by older D8 versions, see StripMethodParameters
+      project.tasks.withType(JavaCompile::class.java).configureEach {
+        doLast(StripMethodParameters())
+      }
+      val verifyMethodParameters =
+        project.tasks.register("verifyMethodParameters", VerifyMethodParameters::class.java) {
+          description = "Checks the published archives for MethodParameters entries without a name"
+          group = "verification"
+          report.set(project.layout.buildDirectory.file("reports/method-parameters.txt"))
+        }
+      project.tasks.matching { it.name == "check" }.configureEach {
+        dependsOn(verifyMethodParameters)
+      }
+      project.plugins.withId("java-library") {
+        verifyMethodParameters.configure { archives.from(project.tasks.named("jar")) }
+      }
+      project.plugins.withId("com.android.library") {
+        project.extensions.getByType(LibraryAndroidComponentsExtension::class.java).onVariants {
+          variant ->
+          verifyMethodParameters.configure {
+            archives.from(variant.artifacts.get(SingleArtifact.AAR))
+          }
+        }
+      }
       // Only works for non-android modules
       // See https://issuetracker.google.com/issues/278800528
       project.plugins.withId("java-library") {

@@ -36,9 +36,10 @@ You are welcome to use whatever tools you prefer for making a contribution. Howe
 
 # Requirements
 
-The project requires you to run JDK 21 or newer. Compilation and tests always happen on JDK 21
-through a [toolchain](https://docs.gradle.org/current/userguide/toolchains.html), so a newer JDK
-runs the build but never changes its output.
+The project requires JDK 21. Gradle finds it through
+[toolchain auto-detection](https://docs.gradle.org/current/userguide/toolchains.html#sec:auto_detection)
+(SDKMAN!, asdf, IntelliJ, ...) and uses it for the build, compilation and tests, whatever JDK
+`JAVA_HOME` points to.
 
 ## Android
 

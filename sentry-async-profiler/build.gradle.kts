@@ -33,6 +33,7 @@ dependencies {
   // tests
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(projects.sentryTestSupport)
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.core)

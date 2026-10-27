@@ -29,10 +29,13 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.core)
   testImplementation(libs.kafka.clients)
+  // For an in-JVM broker. It brings no Spring application into the tests.
+  testImplementation(libs.spring.kafka3.test)
 }
 
 tasks.withType<JavaCompile>().configureEach {
