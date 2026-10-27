@@ -1,0 +1,16 @@
+<configuration>
+  <appender name="sentry" class="io.sentry.logback.SentryAppender">
+    <options>
+      <dsn>${dsn}</dsn>
+      <contextTag>userId</contextTag>
+    </options>
+    <minimumEventLevel>WARN</minimumEventLevel>
+    <minimumBreadcrumbLevel>DEBUG</minimumBreadcrumbLevel>
+    <minimumLevel>INFO</minimumLevel>
+    <logsEnabled>true</logsEnabled>
+  </appender>
+
+  <root level="debug">
+    <appender-ref ref="sentry"/>
+  </root>
+</configuration>

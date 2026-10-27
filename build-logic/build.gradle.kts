@@ -5,6 +5,7 @@ plugins {
 dependencies {
   implementation(libs.animalsniffer.gradle.plugin)
   implementation(libs.spotlessLib)
+  implementation(libs.asm)
   compileOnly(libs.kotlin.gradle.plugin)
   compileOnly(libs.android.gradle.plugin)
 }

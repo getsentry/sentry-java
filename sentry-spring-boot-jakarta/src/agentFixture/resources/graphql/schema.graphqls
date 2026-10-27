@@ -1,0 +1,38 @@
+type Query {
+    greeting(name: String!): String!
+    project(slug: ID!): Project
+    tasks(projectSlug: ID!): [Task]
+}
+
+type Mutation {
+    addProject(slug: ID!): String!
+}
+
+type Project {
+    slug: ID!
+    status: ProjectStatus!
+}
+
+enum ProjectStatus {
+    ACTIVE
+    COMMUNITY
+}
+
+type Task {
+    id: String!
+    name: String!
+    assigneeId: String
+    assignee: Assignee
+    creatorId: String
+    creator: Creator
+}
+
+type Assignee {
+    id: String!
+    name: String!
+}
+
+type Creator {
+    id: String!
+    name: String!
+}

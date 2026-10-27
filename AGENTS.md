@@ -20,7 +20,7 @@ rule file in `.cursor/rules/`:
 | `continuous_profiling_jvm` | `sentry-async-profiler`, `IContinuousProfiler`, `ProfileChunk`, JFR files, `ProfileLifecycle` |
 | `opentelemetry` | `sentry-opentelemetry-*`, agent vs agentless, span processing, sampling, context propagation |
 | `new_module` | Adding a new integration or sample module |
-| `e2e_tests` | System tests, sample applications, `system-test-runner.py`, mock Sentry server |
+| `e2e_tests` | End-to-end tests, `MockSentryServer`, integration test suites, the OpenTelemetry agent fixture |
 
 Rules can be combined — a tracing scope issue may need both `scopes` and `opentelemetry`.
 There is no rule for Android profiling yet; read the `sentry-android-core` profiling code
@@ -55,7 +55,7 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 ```
 
 To run tests, use the `test` skill rather than composing the Gradle invocation by hand — it
-resolves the per-module test task and the unit-test vs system-test split for you.
+resolves the per-module test task, including integration test suites, for you.
 
 ### Android-Specific Commands
 ```bash
@@ -109,8 +109,7 @@ The repository is organized into multiple modules:
 - **Other**: `sentry-spotlight`, `sentry-kotlin-extensions`, `sentry-android-distribution`
 
 ### Utility Modules
-- **`sentry-test-support`** - Shared test utilities
-- **`sentry-system-test-support`** - System testing infrastructure
+- **`sentry-test-support`** - Shared test utilities, including `MockSentryServer` and envelope matchers
 - **`sentry-samples`** - Example applications
 - **`sentry-bom`** - Bill of Materials for dependency management
 
@@ -158,7 +157,7 @@ PR description why the broad catch is necessary.
 ### Testing Requirements
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
-- System tests validate end-to-end functionality with sample applications
+- End-to-end tests run in the module they test, against `MockSentryServer`. Samples have no tests
 - **Assertions**: For new unit tests, prefer [Google Truth](https://truth.dev/) (`com.google.common.truth.Truth.assertThat`) over `kotlin.test`/JUnit assertions for its readable, fluent API. Keep using `kotlin.test` for test structure (`@Test`, `assertFailsWith`). See `sentry/src/test/java/io/sentry/DsnTest.kt` for the style. Don't rewrite existing `kotlin.test` assertions solely to switch libraries.
 - Truth is wired into the `sentry` module. When adding Truth-based tests to another module, add `testImplementation(libs.google.truth)` to that module's `build.gradle.kts`.
 
