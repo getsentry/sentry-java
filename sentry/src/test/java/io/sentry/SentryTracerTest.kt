@@ -1205,6 +1205,54 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `when idle transaction has only an unfinished idle span, finishes the transaction and the idle span after the idle timeout`() {
+    val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50)
+
+    val idleSpan = transaction.startChild("ui.load", null, SpanOptions().apply { isIdle = true })
+
+    await.untilAsserted {
+      verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+    assertThat(transaction.status).isEqualTo(SpanStatus.OK)
+    assertThat(idleSpan.isFinished).isTrue()
+    assertThat(idleSpan.status).isEqualTo(SpanStatus.OK)
+  }
+
+  @Test
+  fun `when idle transaction has an idle span with a finished child, finishes the transaction after the idle timeout`() {
+    val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50)
+    val idleSpan = transaction.startChild("ui.load", null, SpanOptions().apply { isIdle = true })
+
+    idleSpan.startChild("ui.render").finish()
+
+    await.untilAsserted {
+      verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+    assertThat(transaction.status).isEqualTo(SpanStatus.OK)
+  }
+
+  @Test
+  fun `when idle transaction has an unfinished span under an idle span, does not finish the transaction until that span finishes`() {
+    val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50)
+    val idleSpan = transaction.startChild("ui.load", null, SpanOptions().apply { isIdle = true })
+    val spanUnderIdleSpan = idleSpan.startChild("ui.render")
+
+    transaction.startChild("op").finish()
+    Thread.sleep(200)
+
+    assertThat(transaction.isFinished).isFalse()
+    verify(fixture.scopes, never())
+      .captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+
+    spanUnderIdleSpan.finish()
+
+    await.untilAsserted {
+      verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+    assertThat(transaction.status).isEqualTo(SpanStatus.OK)
+  }
+
+  @Test
   fun `when trimEnd, trims idle transaction time to the latest child timestamp`() {
     val transaction =
       fixture.getSut(
