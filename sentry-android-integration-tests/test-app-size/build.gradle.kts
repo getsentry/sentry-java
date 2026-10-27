@@ -5,6 +5,8 @@ plugins {
   id("io.sentry.jdk-target")
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 android {
   namespace = "io.sentry.tests.size"
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -15,7 +17,7 @@ android {
     minSdk = libs.versions.minSdk.get().toInt()
     targetSdk = libs.versions.targetSdk.get().toInt()
     versionCode = 1
-    versionName = project.version.toString()
+    versionName = sentryVersion
   }
 
   buildTypes {
@@ -44,12 +46,12 @@ configurations.configureEach {
 }
 
 dependencies {
-  implementation(projects.sentryAndroid)
-  implementation(projects.sentryAndroidTimber)
-  implementation(projects.sentryAndroidSqlite)
-  implementation(projects.sentryOkhttp)
-  implementation(projects.sentryCompose)
-  implementation(projects.sentryAndroidFragment)
+  implementation("io.sentry:sentry-android:$sentryVersion")
+  implementation("io.sentry:sentry-android-timber:$sentryVersion")
+  implementation("io.sentry:sentry-android-sqlite:$sentryVersion")
+  implementation("io.sentry:sentry-okhttp:$sentryVersion")
+  implementation("io.sentry:sentry-compose:$sentryVersion")
+  implementation("io.sentry:sentry-android-fragment:$sentryVersion")
 }
 
 sentry {

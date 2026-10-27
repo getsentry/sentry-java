@@ -59,8 +59,8 @@ resolves the per-module test task, including integration test suites, for you.
 
 ### Android-Specific Commands
 ```bash
-# Assemble Android test APKs
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
+# Assemble Android test APKs, in a separate Gradle build that includes this one
+./gradlew -p sentry-android-integration-tests :sentry-uitest-android:assembleRelease :sentry-uitest-android:assembleAndroidTest
 
 # Run critical UI tests
 ./scripts/test-ui-critical.sh

@@ -9,7 +9,7 @@ out_dir=$1
 device_dir=/sdcard/Download/sentry_replay_snapshots
 
 test_status=0
-./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest || test_status=$?
+./gradlew -p sentry-android-integration-tests :sentry-uitest-android:connectedReleaseAndroidTest || test_status=$?
 
 mkdir -p "$out_dir"
 if adb shell test -d "$device_dir"; then

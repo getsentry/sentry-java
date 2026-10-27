@@ -9,6 +9,8 @@ plugins {
   id("io.sentry.jdk-target")
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
   compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
@@ -49,7 +51,7 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.constraintlayout)
   implementation(libs.androidx.core)
-  implementation(projects.sentryAndroidCore)
+  implementation("io.sentry:sentry-android-core:$sentryVersion")
 }
 
 tasks.withType<Detekt>().configureEach {

@@ -5,7 +5,7 @@ By default the envelopes sent to relay are caught by a mock server which allows 
 
 # How to use
 
-Simply run `./gradlew connectedCheck` to run all ui tests of all modules (requires a connected device, either physical or an emulator).
+Simply run `./gradlew -p sentry-android-integration-tests connectedCheck` to run all ui tests of all modules (requires a connected device, either physical or an emulator).
 
 # CI
 CI runs these tests on a GitHub Actions emulator in the AGP matrix workflow (`.github/workflows/agp-matrix.yml`).
