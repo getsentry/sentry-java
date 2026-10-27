@@ -8,13 +8,17 @@ import org.gradle.internal.extensions.stdlib.capitalized
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
 plugins {
-  id("com.android.application")
+  alias(libs.plugins.android.application)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.ksp)
   alias(libs.plugins.sentry) apply false
   alias(libs.plugins.sqldelight)
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 if (providers.gradleProperty("useSagp").isPresent) {
   apply(plugin = "io.sentry.android.gradle")
@@ -53,7 +57,7 @@ android {
     minSdk = 23
     targetSdk = libs.versions.targetSdk.get().toInt()
     versionCode = 2
-    versionName = project.version.toString()
+    versionName = sentryVersion
 
     externalNativeBuild {
       cmake {
@@ -104,7 +108,7 @@ android {
 
   signingConfigs {
     getByName("debug") {
-      storeFile = rootProject.file("debug.keystore")
+      storeFile = file("../../debug.keystore")
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -146,7 +150,7 @@ android {
     val toggleNativeLoggingTask =
       project.tasks.register<ToggleNativeLoggingTask>(taskName) {
         mergedManifest.set(variant.artifacts.get(SingleArtifact.MERGED_MANIFEST))
-        rootDir.set(project.rootDir.absolutePath)
+        repoDir.set(layout.projectDirectory.dir("../..").asFile.canonicalPath)
       }
     project.afterEvaluate {
       (variant as? VariantImpl<*>)?.taskContainer?.assembleTask?.configure {
@@ -175,19 +179,19 @@ sqldelight {
 dependencies {
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
 
-  implementation(projects.sentryAndroid)
-  implementation(projects.sentryAndroidFragment)
-  implementation(projects.sentryAndroidNavigation)
-  implementation(projects.sentryAndroidNavigation3)
-  implementation(projects.sentryAndroidSqlite)
-  implementation(projects.sentryAndroidTimber)
-  implementation(projects.sentryCompose)
-  implementation(projects.sentryKotlinExtensions)
-  implementation(projects.sentryOkhttp)
-  implementation(projects.sentrySpotlight)
+  implementation("io.sentry:sentry-android:$sentryVersion")
+  implementation("io.sentry:sentry-android-fragment:$sentryVersion")
+  implementation("io.sentry:sentry-android-navigation:$sentryVersion")
+  implementation("io.sentry:sentry-android-navigation3:$sentryVersion")
+  implementation("io.sentry:sentry-android-sqlite:$sentryVersion")
+  implementation("io.sentry:sentry-android-timber:$sentryVersion")
+  implementation("io.sentry:sentry-compose:$sentryVersion")
+  implementation("io.sentry:sentry-kotlin-extensions:$sentryVersion")
+  implementation("io.sentry:sentry-okhttp:$sentryVersion")
+  implementation("io.sentry:sentry-spotlight:$sentryVersion")
 
   //    how to exclude androidx if release health feature is disabled
-  //    implementation(projects.sentryAndroid) {
+  //    implementation("io.sentry:sentry-android:$sentryVersion") {
   //        exclude(group = "androidx.lifecycle", module = "lifecycle-process")
   //        exclude(group = "androidx.lifecycle", module = "lifecycle-common-java8")
   //        exclude(group = "androidx.core", module = "core")
@@ -228,7 +232,7 @@ dependencies {
   ksp(libs.androidx.room.compiler)
   ksp(libs.androidx.room3.compiler)
 
-  debugImplementation(projects.sentryAndroidDistribution)
+  debugImplementation("io.sentry:sentry-android-distribution:$sentryVersion")
   debugImplementation(libs.leakcanary)
 
   testImplementation(libs.google.truth)
@@ -236,7 +240,7 @@ dependencies {
 }
 
 abstract class ToggleNativeLoggingTask : Exec() {
-  @get:Input abstract val rootDir: Property<String>
+  @get:Input abstract val repoDir: Property<String>
 
   @get:InputFile abstract val mergedManifest: RegularFileProperty
 
@@ -254,7 +258,7 @@ abstract class ToggleNativeLoggingTask : Exec() {
           args.add(0, "cmd")
           args.add(1, "/c")
         }
-        args.add("${rootDir.get()}/scripts/toggle-codec-logs.sh")
+        args.add("${repoDir.get()}/scripts/toggle-codec-logs.sh")
         args.add(if (value) "enable" else "disable")
         commandLine(args)
         super.exec()
