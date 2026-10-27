@@ -128,6 +128,27 @@ class CoordinatedBackStackObserverTest {
   }
 
   @Test
+  fun `a page preloaded while a host transaction is bound starts its nav transaction when swiped to after the host's finishes`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle)
+    val pageB = fixture.getSut(pageBLifecycle)
+    // E.g., the Activity's ui.load transaction, still running while the pager's pages load.
+    val hostTransaction = mock<ITransaction>()
+    fixture.scope.transaction = hostTransaction
+    pageA.onBackStackChanged(listOf("PageA"))
+    pageB.onBackStackChanged(listOf("PageB"))
+    whenever(hostTransaction.isFinished).thenReturn(true)
+
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+
+    assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/PageB")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/PageB"))
+  }
+
+  @Test
   fun `a page that navigates while offscreen starts only its latest destination's nav transaction when swiped to`() {
     val fixture = Fixture()
     val pageALifecycle = fixture.resumedLifecycle()
@@ -354,8 +375,6 @@ class CoordinatedBackStackObserverTest {
     override fun publishTo(scope: IScope) = Unit
 
     override fun unpublishFrom(scope: IScope) = Unit
-
-    override fun ownsTransaction(transaction: ITransaction): Boolean = false
 
     override fun onUnregistered(scope: IScope?) = Unit
   }

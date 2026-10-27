@@ -10,7 +10,6 @@ import androidx.lifecycle.LifecycleRegistry
 import com.google.common.truth.Truth.assertThat
 import io.sentry.IScope
 import io.sentry.IScopes
-import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
@@ -23,9 +22,6 @@ import org.mockito.kotlin.whenever
 
 @Suppress("LargeClass")
 class NavLeaseCoordinatorTest {
-
-  private val transaction = mock<ITransaction>()
-  private val unrelatedTransaction = mock<ITransaction>()
 
   // region registration
 
@@ -722,19 +718,13 @@ class NavLeaseCoordinatorTest {
       fixture.acquireLease(
         "owner",
         owner,
-        navState =
-          fixture.navState(
-            "owner",
-            ownedTransactions = setOf(transaction),
-            onUnpublishFrom = { throw failure },
-          ),
+        navState = fixture.navState("owner", onUnpublishFrom = { throw failure }),
       )
 
     val thrown = assertThrows(IllegalStateException::class.java) { registration.dispose() }
 
     assertThat(thrown).isSameInstanceAs(failure)
     assertThat(registration.hasLease).isFalse()
-    assertThat(fixture.navLeaseCoordinator.isNavTransaction(transaction)).isFalse()
 
     fixture.published.clear()
     owner.lifecycle.currentState = STARTED
@@ -851,71 +841,6 @@ class NavLeaseCoordinatorTest {
 
   // endregion
 
-  // region isNavTransaction()
-
-  @Test
-  fun `isNavTransaction() - is true for a transaction owned by the leaseholder's nav state`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    fixture.acquireLease(
-      "owner",
-      TestOwner(RESUMED),
-      navState = fixture.navState("owner", setOf(transaction)),
-    )
-
-    val result = navLeaseCoordinator.isNavTransaction(transaction)
-
-    assertThat(result).isTrue()
-  }
-
-  @Test
-  fun `isNavTransaction() - is true for a transaction owned by a nav state without the nav lease`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    val registration =
-      fixture.register("owner", TestOwner(CREATED), fixture.navState("owner", setOf(transaction)))
-    fixture.acquireLease("incoming", TestOwner(RESUMED))
-
-    val result = navLeaseCoordinator.isNavTransaction(transaction)
-
-    assertThat(registration.hasLease).isFalse()
-    assertThat(result).isTrue()
-  }
-
-  @Test
-  fun `isNavTransaction() - is false for a transaction no registered owner's nav state owns`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    fixture.acquireLease(
-      "owner",
-      TestOwner(RESUMED),
-      navState = fixture.navState("owner", setOf(transaction)),
-    )
-
-    val result = navLeaseCoordinator.isNavTransaction(unrelatedTransaction)
-
-    assertThat(result).isFalse()
-  }
-
-  @Test
-  fun `isNavTransaction() - is false for a transaction owned by an unregistered owner's nav state`() {
-    val fixture = Fixture.create()
-    val navLeaseCoordinator = fixture.navLeaseCoordinator
-    val registration =
-      fixture.acquireLease(
-        "owner",
-        TestOwner(RESUMED),
-        navState = fixture.navState("owner", setOf(transaction)),
-      )
-    registration.dispose()
-
-    val result = navLeaseCoordinator.isNavTransaction(transaction)
-
-    assertThat(result).isFalse()
-  }
-
-  // endregion
-
   /**
    * A [LifecycleOwner] whose lifecycle starts in [initialState] and can be moved through states by
    * setting [LifecycleRegistry.currentState], which dispatches the events in between.
@@ -964,17 +889,15 @@ class NavLeaseCoordinatorTest {
     private val owners = mutableListOf<LifecycleOwner>()
 
     /**
-     * Nav state named [name] that owns [ownedTransactions] and, by default, records its publication
-     * in [published], its unpublishing in [unpublished], and its unregistration in [unregistered].
+     * Nav state named [name] that, by default, records its publication in [published], its
+     * unpublishing in [unpublished], and its unregistration in [unregistered].
      */
     fun navState(
       name: String,
-      ownedTransactions: Set<ITransaction> = emptySet(),
       onPublishTo: (IScope) -> Unit = { published += name },
       onUnpublishFrom: (IScope) -> Unit = { unpublished += name },
       onUnregistered: (IScope?) -> Unit = { unregistered += name to it },
-    ): LeasedNavState =
-      FakeLeasedNavState(ownedTransactions, onPublishTo, onUnpublishFrom, onUnregistered)
+    ): LeasedNavState = FakeLeasedNavState(onPublishTo, onUnpublishFrom, onUnregistered)
 
     /** Registers a candidate for [owner]'s lifecycle with the nav state named [name]. */
     fun register(
@@ -1012,7 +935,6 @@ class NavLeaseCoordinatorTest {
   }
 
   private class FakeLeasedNavState(
-    private val ownedTransactions: Set<ITransaction>,
     private val onPublishTo: (IScope) -> Unit,
     private val onUnpublishFrom: (IScope) -> Unit,
     private val onUnregistered: (IScope?) -> Unit,
@@ -1020,10 +942,6 @@ class NavLeaseCoordinatorTest {
     override fun publishTo(scope: IScope) = onPublishTo(scope)
 
     override fun unpublishFrom(scope: IScope) = onUnpublishFrom(scope)
-
-    override fun ownsTransaction(transaction: ITransaction): Boolean = ownedTransactions.any {
-      it === transaction
-    }
 
     override fun onUnregistered(scope: IScope?) = onUnregistered.invoke(scope)
   }

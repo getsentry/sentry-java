@@ -223,7 +223,7 @@ class NavScopesTest {
   }
 
   @Test
-  fun `startNavTransaction() - starts and owns a nav transaction with the nav lease`() {
+  fun `startNavTransaction() - starts and binds a nav transaction with the nav lease`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
     navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
@@ -233,7 +233,7 @@ class NavScopesTest {
 
     val started = fixture.startedTransaction("/Home")
     assertThat(transaction).isNotNull()
-    assertThat(fixture.coordinator.isNavTransaction(started)).isTrue()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(started)
   }
 
   @Test
@@ -412,7 +412,6 @@ class NavScopesTest {
 
     assertThat(fixture.hasLease(covered)).isTrue()
     assertThat(fixture.scope.transaction).isNull()
-    assertThat(fixture.coordinator.isNavTransaction(started)).isFalse()
   }
 
   @Test

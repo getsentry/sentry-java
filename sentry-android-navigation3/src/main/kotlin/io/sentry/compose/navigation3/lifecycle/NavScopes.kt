@@ -5,7 +5,6 @@ import io.sentry.Breadcrumb
 import io.sentry.Hint
 import io.sentry.IScope
 import io.sentry.IScopes
-import io.sentry.ITransaction
 import io.sentry.PropagationContext
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -99,9 +98,6 @@ internal class NavScopes(
         stagedNavTransaction.unpublishFrom(scope)
         stagedNavData.clearPublishedStateFrom(scope)
       }
-
-      override fun ownsTransaction(transaction: ITransaction): Boolean =
-        stagedNavTransaction.owns(transaction)
 
       override fun onUnregistered(scope: IScope?) {
         // Unregistering on destroy detaches this instance, as dispose() does.
@@ -204,21 +200,6 @@ internal class NavScopes(
     override val app: App?
       get() = Contexts(delegate.contexts).app
 
-    /**
-     * The transaction bound to the shared [IScope], as far as starting a nav transaction is
-     * concerned.
-     *
-     * Without the lease, another owner's nav transaction isn't reported, so this instance's attempt
-     * to start a nav transaction is deferred rather than blocked (see [startNavTransaction]).
-     * Non-nav transactions (e.g., the host's) are always reported, so they still block nav
-     * transactions as usual.
-     */
-    private val transaction: ITransaction?
-      get() =
-        delegate.transaction?.takeUnless { current ->
-          !hasLease && coordinator.isNavTransaction(current)
-        }
-
     private val hasLease: Boolean
       get() = registration?.hasLease == true
 
@@ -242,10 +223,16 @@ internal class NavScopes(
      * lease, or defers its start otherwise. First [finishes][finishNavTransaction] the nav
      * transaction most recently requested, if any.
      *
-     * Either way, this method will **not** start a transaction if another unfinished transaction
-     * (e.g., the host app's) is already bound to the shared scope, as the new one couldn't be bound
-     * in its place. A finished transaction doesn't block. Without the lease, neither does another
-     * owner's nav transaction (see [transaction]).
+     * With the lease, this method will **not** start a transaction if another unfinished
+     * transaction (e.g., the host app's) is already bound to the shared scope, as the new one
+     * couldn't be bound in its place. A finished transaction doesn't block.
+     *
+     * Without the lease, the start is always deferred, whatever is bound to the shared scope at the
+     * time: what matters is what's bound when the lease is acquired, which is checked then (see
+     * [StagedNavTransaction.publishTo]). Checking now would drop the transaction of an owner that
+     * stages it while a short-lived host transaction is bound (e.g., a ViewPager2 page preloaded
+     * during an Activity's `ui.load` transaction), even if that transaction finishes long before
+     * the owner acquires the lease.
      *
      * **Deferred transactions may mis-parent spans generated before lease acquisition**
      *
@@ -265,11 +252,11 @@ internal class NavScopes(
       // StagedNavTransaction replaces its current nav transaction without finishing it, which
       // would leave that one running with no way to finish it later, so we do so here.
       finishNavTransaction()
-      if (!isIScopeTransactionSlotFree(transactionContext.name)) {
-        return null
-      }
 
       return if (hasLease) {
+        if (!isIScopeTransactionSlotFree(transactionContext.name)) {
+          return null
+        }
         stagedNavTransaction.start(delegate, transactionContext, transactionOptions)
       } else {
         stagedNavData.deferPropagationContextRotation()
@@ -282,12 +269,12 @@ internal class NavScopes(
     }
 
     /**
-     * Returns `true` if the transaction slot in the shared [IScope] is free, i.e., the current
-     * [transaction] is absent or finished. Otherwise, logs that the nav transaction for [name]
-     * won't be created.
+     * Returns `true` if the transaction slot in the shared [IScope] is free, i.e., the bound
+     * transaction is absent or finished. Otherwise, logs that the nav transaction for [name] won't
+     * be created.
      */
     private fun isIScopeTransactionSlotFree(name: String): Boolean {
-      val currentTransaction = transaction
+      val currentTransaction = delegate.transaction
       if (currentTransaction == null || currentTransaction.isFinished) {
         return true
       }
@@ -364,7 +351,8 @@ internal sealed interface INavScope {
    * [finishes][finishNavTransaction] the nav transaction most recently requested, if any.
    *
    * The start may be deferred until the nav lease is acquired, in which case writes to the returned
-   * transaction are staged until then (see [NavScopes.NavScope.startNavTransaction]).
+   * transaction are staged until then, and whether another transaction blocks it is decided then
+   * (see [NavScopes.NavScope.startNavTransaction]).
    */
   fun startNavTransaction(
     transactionContext: TransactionContext,

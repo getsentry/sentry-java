@@ -31,12 +31,6 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
   private var navTransaction: NavTransaction? = null
 
   /**
-   * Returns `true` if [transaction] is this instance's started nav transaction, whether it's bound
-   * to a scope or not.
-   */
-  fun owns(transaction: ITransaction): Boolean = navTransaction?.transaction === transaction
-
-  /**
    * Starts a nav transaction from [context] and [options] and binds it to [scope], unless another
    * unfinished transaction is already bound to `scope`. Returns `null` if no transaction was
    * started (e.g., because it isn't sampled), in which case the instance's current nav transaction,

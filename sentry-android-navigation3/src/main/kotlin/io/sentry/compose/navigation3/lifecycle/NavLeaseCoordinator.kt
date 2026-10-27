@@ -10,7 +10,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import io.sentry.IScope
 import io.sentry.IScopes
-import io.sentry.ITransaction
 
 /**
  * Manages a lease in order to determine which [NavScopes] instance can bind nav transactions and
@@ -188,11 +187,6 @@ internal class NavLeaseCoordinator {
 
     lifecycle.addObserver(candidate)
     return candidate
-  }
-
-  /** Whether [transaction] is the nav transaction of any registered owner. */
-  fun isNavTransaction(transaction: ITransaction): Boolean = candidates.any {
-    it.navState.ownsTransaction(transaction)
   }
 
   /**
@@ -540,9 +534,6 @@ internal interface LeasedNavState {
 
   /** Removes published nav state from [scope], keeping it staged so it can be republished. */
   fun unpublishFrom(scope: IScope)
-
-  /** Whether [transaction] is this leased nav state's nav transaction, published or not. */
-  fun ownsTransaction(transaction: ITransaction): Boolean
 
   /**
    * Called when the lease candidate is unregistered, after its nav state has been unpublished.

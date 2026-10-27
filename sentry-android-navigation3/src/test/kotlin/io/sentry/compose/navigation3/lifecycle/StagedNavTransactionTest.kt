@@ -32,89 +32,6 @@ class StagedNavTransactionTest {
   private val hostTransaction = mock<ITransaction>()
 
   @Test
-  fun `owns() - is true for the started nav transaction`() {
-    val fixture = Fixture.create()
-    val stagedNavTransaction = fixture.stagedNavTransaction
-    val started = fixture.start()
-
-    val result = stagedNavTransaction.owns(started)
-
-    assertThat(result).isTrue()
-  }
-
-  @Test
-  fun `owns() - is true for the started nav transaction once it's unpublished`() {
-    val fixture = Fixture.create()
-    val stagedNavTransaction = fixture.stagedNavTransaction
-    val started = fixture.start()
-    stagedNavTransaction.unpublishFrom(fixture.scope)
-
-    val result = stagedNavTransaction.owns(started)
-
-    assertThat(fixture.scope.transaction).isNull()
-    assertThat(result).isTrue()
-  }
-
-  @Test
-  fun `owns() - is true for a staged nav transaction once it starts`() {
-    val fixture = Fixture.create()
-    val stagedNavTransaction = fixture.stagedNavTransaction
-    stagedNavTransaction.stage(transactionContext, transactionOptions)
-    stagedNavTransaction.publishTo(fixture.scope)
-
-    val result = stagedNavTransaction.owns(fixture.startedTransaction("/Profile"))
-
-    assertThat(result).isTrue()
-  }
-
-  @Test
-  fun `owns() - is false for any transaction while the nav transaction is staged`() {
-    val fixture = Fixture.create()
-    val stagedNavTransaction = fixture.stagedNavTransaction
-    stagedNavTransaction.stage(transactionContext, transactionOptions)
-    fixture.scope.transaction = hostTransaction
-
-    val result = stagedNavTransaction.owns(hostTransaction)
-
-    assertThat(result).isFalse()
-  }
-
-  @Test
-  fun `owns() - is false for an unrelated transaction`() {
-    val fixture = Fixture.create()
-    val stagedNavTransaction = fixture.stagedNavTransaction
-    fixture.start()
-
-    val result = stagedNavTransaction.owns(hostTransaction)
-
-    assertThat(result).isFalse()
-  }
-
-  @Test
-  fun `owns() - is false for a finished nav transaction`() {
-    val fixture = Fixture.create()
-    val stagedNavTransaction = fixture.stagedNavTransaction
-    val started = fixture.start()
-    stagedNavTransaction.finish(fixture.scope)
-
-    val result = stagedNavTransaction.owns(started)
-
-    assertThat(result).isFalse()
-  }
-
-  @Test
-  fun `owns() - is false for a forgotten nav transaction`() {
-    val fixture = Fixture.create()
-    val stagedNavTransaction = fixture.stagedNavTransaction
-    val started = fixture.start()
-    stagedNavTransaction.forget()
-
-    val result = stagedNavTransaction.owns(started)
-
-    assertThat(result).isFalse()
-  }
-
-  @Test
   fun `start() - starts a nav transaction and binds it to a free scope`() {
     val fixture = Fixture.create()
     val stagedNavTransaction = fixture.stagedNavTransaction
@@ -139,8 +56,9 @@ class StagedNavTransactionTest {
 
     val started = fixture.startedTransaction("/Profile")
     assertThat(navTransaction?.transaction).isSameInstanceAs(started)
-    assertThat(stagedNavTransaction.owns(started)).isTrue()
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
+    stagedNavTransaction.finish(fixture.scope)
+    verify(started).finish(SpanStatus.OK)
   }
 
   @Test
@@ -154,7 +72,6 @@ class StagedNavTransactionTest {
 
     val started = fixture.startedTransaction("/Profile")
     assertThat(navTransaction?.transaction).isSameInstanceAs(started)
-    assertThat(stagedNavTransaction.owns(started)).isTrue()
     assertThat(fixture.scope.transaction).isSameInstanceAs(started)
   }
 
@@ -169,8 +86,9 @@ class StagedNavTransactionTest {
       stagedNavTransaction.start(fixture.scope, transactionContext, transactionOptions)
 
     assertThat(navTransaction).isNull()
-    assertThat(stagedNavTransaction.owns(current)).isTrue()
     assertThat(fixture.scope.transaction).isSameInstanceAs(current)
+    stagedNavTransaction.finish(fixture.scope)
+    verify(current).finish(SpanStatus.OK)
   }
 
   @Test
@@ -180,9 +98,10 @@ class StagedNavTransactionTest {
     val current = fixture.start("/Home")
 
     stagedNavTransaction.start(fixture.scope, transactionContext, transactionOptions)
+    verify(current, never()).finish(any())
 
-    assertThat(stagedNavTransaction.owns(fixture.startedTransaction("/Profile"))).isTrue()
-    assertThat(stagedNavTransaction.owns(current)).isFalse()
+    stagedNavTransaction.finish(fixture.scope)
+    verify(fixture.startedTransaction("/Profile")).finish(SpanStatus.OK)
     verify(current, never()).finish(any())
   }
 
@@ -222,8 +141,8 @@ class StagedNavTransactionTest {
     val current = fixture.start("/Home")
 
     stagedNavTransaction.stage(transactionContext, transactionOptions)
+    stagedNavTransaction.finish(fixture.scope)
 
-    assertThat(stagedNavTransaction.owns(current)).isFalse()
     verify(current, never()).finish(any())
   }
 
@@ -366,7 +285,8 @@ class StagedNavTransactionTest {
     stagedNavTransaction.publishTo(fixture.scope)
 
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
-    assertThat(stagedNavTransaction.owns(started)).isTrue()
+    stagedNavTransaction.finish(fixture.scope)
+    verify(started).finish(SpanStatus.OK)
   }
 
   @Test
@@ -379,7 +299,6 @@ class StagedNavTransactionTest {
     stagedNavTransaction.publishTo(fixture.scope)
 
     assertThat(fixture.scope.transaction).isNull()
-    assertThat(stagedNavTransaction.owns(started)).isFalse()
   }
 
   @Test
@@ -394,7 +313,6 @@ class StagedNavTransactionTest {
     stagedNavTransaction.publishTo(fixture.scope)
 
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
-    assertThat(stagedNavTransaction.owns(started)).isFalse()
   }
 
   @Test
@@ -507,9 +425,10 @@ class StagedNavTransactionTest {
     assertThrows(ThrowingScopeObserverException::class.java) {
       stagedNavTransaction.finish(fixture.scope)
     }
+    stagedNavTransaction.finish(fixture.scope)
 
+    // Finished once: the second call has no nav transaction left to finish or unbind.
     verify(started).finish(SpanStatus.OK)
-    assertThat(stagedNavTransaction.owns(started)).isFalse()
   }
 
   @Test
@@ -531,8 +450,8 @@ class StagedNavTransactionTest {
     val started = fixture.start()
 
     stagedNavTransaction.forget()
+    stagedNavTransaction.finish(fixture.scope)
 
-    assertThat(stagedNavTransaction.owns(started)).isFalse()
     assertThat(fixture.scope.transaction).isSameInstanceAs(started)
     verify(started, never()).finish(any())
   }
