@@ -1,8 +1,8 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check checkSampleAndroid preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check checkSampleAndroid checkIntegrationTests preMerge publish
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
-preMerge: check checkSampleAndroid
+preMerge: check checkSampleAndroid checkIntegrationTests
 publish: clean dryRelease
 
 # deep clean
@@ -29,6 +29,7 @@ update:
 checkFormat:
 	./gradlew spotlessJavaCheck spotlessKotlinCheck
 	./gradlew -p sentry-samples/sentry-samples-android spotlessJavaCheck spotlessKotlinCheck
+	./gradlew -p sentry-android-integration-tests spotlessJavaCheck spotlessKotlinCheck
 
 # Binary compatibility validator
 api:
@@ -36,11 +37,11 @@ api:
 
 # Assemble release and Android test apk of the uitest-android module
 assembleUiTestRelease:
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
+	./gradlew -p sentry-android-integration-tests :sentry-uitest-android:assembleRelease :sentry-uitest-android:assembleAndroidTest
 
 # Assemble release of the uitest-android-critical module
 assembleUiTestCriticalRelease:
-	./gradlew :sentry-android-integration-tests:sentry-uitest-android-critical:assembleRelease
+	./gradlew -p sentry-android-integration-tests :sentry-uitest-android-critical:assembleRelease
 
 # Run Maestro tests for the uitest-android-critical module
 runUiTestCritical:
@@ -53,3 +54,7 @@ check:
 # The Android sample is a separate build, so the root `check` doesn't reach it
 checkSampleAndroid:
 	./gradlew -p sentry-samples/sentry-samples-android check
+
+# The Android integration tests are a separate build, so the root `check` doesn't reach them
+checkIntegrationTests:
+	./gradlew -p sentry-android-integration-tests check

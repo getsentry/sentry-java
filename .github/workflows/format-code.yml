@@ -27,6 +27,7 @@ jobs:
         run: |
           ./gradlew spotlessApply
           ./gradlew -p sentry-samples/sentry-samples-android spotlessApply
+          ./gradlew -p sentry-android-integration-tests spotlessApply
 
       # actions/checkout fetches only a single commit in a detached HEAD state. Therefore
       # we need to pass the current branch, otherwise we can't commit the changes.
