@@ -26,13 +26,6 @@ private constructor(
 ) : INavTransaction {
 
   /**
-   * Whether the handle's transaction has yet to be [started][start], i.e., it's deferred and not
-   * finished.
-   */
-  val isPending: Boolean
-    get() = state is State.Pending
-
-  /**
    * The backing transaction, once [started][State.Started]; `null` while [pending][State.Pending]
    * or once [discarded][State.Discarded].
    */

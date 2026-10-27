@@ -43,51 +43,6 @@ class NavTransactionTest {
   }
 
   @Test
-  fun `isPending - is true for a deferred handle`() {
-    val handle = NavTransaction.deferred(transactionContext, transactionOptions)
-
-    assertThat(handle.isPending).isTrue()
-  }
-
-  @Test
-  fun `isPending - is false for a started handle`() {
-    val fixture = Fixture.create()
-
-    val handle = NavTransaction.started(fixture.transaction)
-
-    assertThat(handle.isPending).isFalse()
-  }
-
-  @Test
-  fun `isPending - is false once a deferred handle has started`() {
-    val fixture = Fixture.create()
-    val handle = NavTransaction.deferred(transactionContext, transactionOptions)
-
-    handle.start(fixture.scopes)
-
-    assertThat(handle.isPending).isFalse()
-  }
-
-  @Test
-  fun `isPending - stays true when the scopes decline to start a deferred handle's transaction`() {
-    val fixture = Fixture.create(declinesTransactions = true)
-    val handle = NavTransaction.deferred(transactionContext, transactionOptions)
-
-    handle.start(fixture.scopes)
-
-    assertThat(handle.isPending).isTrue()
-  }
-
-  @Test
-  fun `isPending - is false once a deferred handle is finished before it starts`() {
-    val handle = NavTransaction.deferred(transactionContext, transactionOptions)
-
-    handle.finish(onFinished = {})
-
-    assertThat(handle.isPending).isFalse()
-  }
-
-  @Test
   fun `transaction - is null for a deferred handle`() {
     val handle = NavTransaction.deferred(transactionContext, transactionOptions)
 

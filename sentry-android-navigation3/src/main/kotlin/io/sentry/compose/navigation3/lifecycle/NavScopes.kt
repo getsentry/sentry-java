@@ -232,7 +232,9 @@ internal class NavScopes(
      * [StagedNavTransaction.publishTo]). Checking now would drop the transaction of an owner that
      * stages it while a short-lived host transaction is bound (e.g., a ViewPager2 page preloaded
      * during an Activity's `ui.load` transaction), even if that transaction finishes long before
-     * the owner acquires the lease.
+     * the owner acquires the lease. If the transaction can't start when the lease is acquired, it's
+     * discarded rather than kept for a later acquisition (see "Nav transactions follow navigation,
+     * not the lease" in [NavLeaseCoordinator]).
      *
      * **Deferred transactions may mis-parent spans generated before lease acquisition**
      *

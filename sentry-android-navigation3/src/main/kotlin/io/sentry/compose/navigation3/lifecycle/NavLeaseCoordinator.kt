@@ -52,6 +52,17 @@ import io.sentry.IScopes
  * a preloaded ViewPager2 Fragment page next to the current one). Such an owner acquires the lease
  * when it resumes instead.
  *
+ * **Nav transactions follow navigation, not the lease**
+ *
+ * A candidate gets a nav transaction for a destination it navigates to, never merely for acquiring
+ * the lease. A destination reached without the lease gets its transaction when the lease is next
+ * acquired, if it can start then; otherwise it gets none. On reacquiring the lease without having
+ * navigated in the meantime, a candidate only gets its unfinished transaction back, if any.
+ *
+ * Hence the asymmetry for, e.g., ViewPager2 pages: the first time the user swipes to a preloaded
+ * page, it gets the transaction for the destination it reached while offscreen, but swiping back to
+ * a page whose transaction has finished starts none.
+ *
  * The following diagram illustrates how handoff works:
  * ```
  *  Time

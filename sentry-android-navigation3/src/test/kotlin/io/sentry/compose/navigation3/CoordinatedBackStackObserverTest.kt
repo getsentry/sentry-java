@@ -149,6 +149,33 @@ class CoordinatedBackStackObserverTest {
   }
 
   @Test
+  fun `a page swiped to while a host transaction is bound starts no nav transaction when swiped to again`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle)
+    val pageB = fixture.getSut(pageBLifecycle)
+    val hostTransaction = mock<ITransaction>()
+    fixture.scope.transaction = hostTransaction
+    pageA.onBackStackChanged(listOf("PageA"))
+    pageB.onBackStackChanged(listOf("PageB"))
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+    whenever(hostTransaction.isFinished).thenReturn(true)
+
+    // Swipe back to page A, then to page B again.
+    pageALifecycle.currentState = Lifecycle.State.RESUMED
+    pageBLifecycle.currentState = Lifecycle.State.STARTED
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+
+    // As with page A, which navigated while the host transaction was bound, page B's destination
+    // gets no nav transaction: it couldn't start one when it first got the nav lease.
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.screen).isEqualTo("/PageB")
+  }
+
+  @Test
   fun `a page that navigates while offscreen starts only its latest destination's nav transaction when swiped to`() {
     val fixture = Fixture()
     val pageALifecycle = fixture.resumedLifecycle()

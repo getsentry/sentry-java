@@ -128,7 +128,7 @@ class StagedNavTransactionTest {
 
     val navTransaction = stagedNavTransaction.stage(transactionContext, transactionOptions)
 
-    assertThat(navTransaction.isPending).isTrue()
+    assertThat(navTransaction.transaction).isNull()
     assertThat(navTransaction.name).isEqualTo("/Profile")
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isNull()
@@ -172,15 +172,14 @@ class StagedNavTransactionTest {
   }
 
   @Test
-  fun `publishTo() - keeps a staged nav transaction staged while another transaction is bound`() {
+  fun `publishTo() - doesn't start a staged nav transaction while another transaction is bound`() {
     val fixture = Fixture.create()
     val stagedNavTransaction = fixture.stagedNavTransaction
-    val navTransaction = stagedNavTransaction.stage(transactionContext, transactionOptions)
+    stagedNavTransaction.stage(transactionContext, transactionOptions)
     fixture.scope.transaction = hostTransaction
 
     stagedNavTransaction.publishTo(fixture.scope)
 
-    assertThat(navTransaction.isPending).isTrue()
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
   }
@@ -198,33 +197,34 @@ class StagedNavTransactionTest {
   }
 
   @Test
-  fun `publishTo() - starts a staged nav transaction blocked by another transaction once it's unbound`() {
+  fun `publishTo() - discards a staged nav transaction blocked by another transaction`() {
     val fixture = Fixture.create()
     val stagedNavTransaction = fixture.stagedNavTransaction
-    stagedNavTransaction.stage(transactionContext, transactionOptions)
+    val navTransaction = stagedNavTransaction.stage(transactionContext, transactionOptions)
     fixture.scope.transaction = hostTransaction
     stagedNavTransaction.publishTo(fixture.scope)
     fixture.scope.clearTransaction()
 
     stagedNavTransaction.publishTo(fixture.scope)
 
-    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
-  }
-
-  @Test
-  fun `publishTo() - keeps a staged nav transaction staged when its start is declined`() {
-    val fixture = Fixture.create(declinesTransactions = true)
-    val stagedNavTransaction = fixture.stagedNavTransaction
-    val navTransaction = stagedNavTransaction.stage(transactionContext, transactionOptions)
-
-    stagedNavTransaction.publishTo(fixture.scope)
-
-    assertThat(navTransaction.isPending).isTrue()
+    assertThat(navTransaction.start(fixture.scopes)).isNull()
+    assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isNull()
   }
 
   @Test
-  fun `publishTo() - starts a staged nav transaction whose start was declined on a later publication`() {
+  fun `publishTo() - binds nothing when a staged nav transaction's start is declined`() {
+    val fixture = Fixture.create(declinesTransactions = true)
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(transactionContext, transactionOptions)
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `publishTo() - discards a staged nav transaction whose start was declined`() {
     val fixture = Fixture.create(declinesTransactions = true)
     val stagedNavTransaction = fixture.stagedNavTransaction
     stagedNavTransaction.stage(transactionContext, transactionOptions)
@@ -233,7 +233,8 @@ class StagedNavTransactionTest {
 
     stagedNavTransaction.publishTo(fixture.scope)
 
-    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
   }
 
   @Test
@@ -360,7 +361,7 @@ class StagedNavTransactionTest {
     stagedNavTransaction.unpublishFrom(fixture.scope)
 
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
-    assertThat(navTransaction.isPending).isTrue()
+    assertThat(navTransaction.transaction).isNull()
   }
 
   @Test
@@ -410,7 +411,7 @@ class StagedNavTransactionTest {
 
     stagedNavTransaction.publishTo(fixture.scope)
 
-    assertThat(navTransaction.isPending).isFalse()
+    assertThat(navTransaction.start(fixture.scopes)).isNull()
     assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isNull()
   }

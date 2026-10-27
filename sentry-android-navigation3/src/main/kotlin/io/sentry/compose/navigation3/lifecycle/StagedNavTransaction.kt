@@ -11,9 +11,11 @@ import io.sentry.TransactionOptions
  * Holds a nav transaction staged for publication to a shared [IScope].
  *
  * An `IScope` has a single, mutually-exclusive transaction slot. A transaction requested while
- * publishing isn't permitted is [staged][stage] rather than started, and starts when it's
- * [published][publishTo]. A started transaction that's [unpublished][unpublishFrom] is unbound but
- * keeps running, so that it can be bound again if it's republished while unfinished. Once
+ * publishing isn't permitted is [staged][stage] rather than started, and starts when it's next
+ * [published][publishTo]. That publication is its only chance to start: if it can't start then,
+ * it's discarded, just as a transaction requested while publishing is permitted is never started if
+ * it can't start right away. A started transaction that's [unpublished][unpublishFrom] is unbound
+ * but keeps running, so that it can be bound again if it's republished while unfinished. Once
  * [finished][finish], a transaction is forgotten and never bound again.
  *
  * Starting or publishing a nav transaction never displaces an unfinished transaction bound to the
@@ -33,8 +35,11 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
   /**
    * Starts a nav transaction from [context] and [options] and binds it to [scope], unless another
    * unfinished transaction is already bound to `scope`. Returns `null` if no transaction was
-   * started (e.g., because it isn't sampled), in which case the instance's current nav transaction,
-   * if any, is kept.
+   * started (i.e., [scopes] returned a no-op transaction, e.g., because the SDK is disabled or
+   * ignores the transaction's origin), in which case the instance's current nav transaction, if
+   * any, is kept.
+   *
+   * A transaction that isn't sampled still starts (as a non-recording transaction) and is bound.
    *
    * **Warning**: [Finish][finish] the current nav transaction before calling this method, as this
    * method replaces the current transaction without finishing it.
@@ -70,18 +75,30 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
    * Binds the nav transaction to [scope], starting it first if it's staged. A started transaction
    * that has finished in the meantime is forgotten and unbound instead.
    *
-   * Does neither if another unfinished transaction is bound to [scope]; a staged transaction then
-   * stays staged, so it can start the next time it's published. If the transaction fails to start
-   * (e.g., because it isn't sampled), it also remains staged.
+   * If another unfinished transaction is bound to [scope], a started transaction stays unbound, so
+   * it can be bound the next time it's published. A staged transaction is discarded instead, as it
+   * is if [scopes] return a no-op transaction for it (see [start]). Otherwise, it would start
+   * whenever its owner next acquires the nav lease, possibly long after the destination was
+   * reached, where a transaction requested with the lease would never have started at all.
    */
   fun publishTo(scope: IScope) {
     val navTransaction = navTransaction ?: return
     val started = navTransaction.transaction
-    if (started?.isFinished == true) {
-      this.navTransaction = null
-      unbind(scope, started)
-    } else if (scope.isFreeFor(navTransaction)) {
-      (started ?: navTransaction.start(scopes))?.let { bind(scope, it) }
+    when {
+      started?.isFinished == true -> {
+        this.navTransaction = null
+        unbind(scope, started)
+      }
+      started != null -> if (scope.isFreeFor(navTransaction)) bind(scope, started)
+      else -> {
+        val startedNow = if (scope.isFreeFor(navTransaction)) navTransaction.start(scopes) else null
+        if (startedNow != null) {
+          bind(scope, startedNow)
+        } else {
+          this.navTransaction = null
+          navTransaction.finish(onFinished = {})
+        }
+      }
     }
   }
 

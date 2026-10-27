@@ -277,7 +277,6 @@ class NavScopeTest {
     fixture.acquireLease()
 
     assertThat(navTransaction).isNotNull()
-    assertThat(previous.isPending).isFalse()
     assertThat(previous.transaction).isNull()
     assertThat(fixture.startedTransactions.map { it.name }).containsExactly("/Settings")
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.single())
