@@ -133,6 +133,122 @@ class StagedNavTransactionTest {
   }
 
   @Test
+  fun `stage() - returns a pending nav transaction without starting a transaction`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+
+    val navTransaction = stagedNavTransaction.stage(transactionContext, transactionOptions)
+
+    assertThat(navTransaction.transaction).isNull()
+    assertThat(navTransaction.name).isEqualTo("/Profile")
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `stage() - replaces the current nav transaction without finishing it`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    val current = fixture.start("/Home")
+
+    stagedNavTransaction.stage(transactionContext, transactionOptions)
+    stagedNavTransaction.finish(fixture.scope)
+
+    verify(current, never()).finish(any())
+  }
+
+  @Test
+  fun `publishTo() - starts a staged nav transaction and binds it to a free scope`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    val navTransaction = stagedNavTransaction.stage(transactionContext, transactionOptions)
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    val started = fixture.startedTransaction("/Profile")
+    assertThat(navTransaction.transaction).isSameInstanceAs(started)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(started)
+  }
+
+  @Test
+  fun `publishTo() - starts a staged nav transaction in place of a finished bound transaction`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(transactionContext, transactionOptions)
+    fixture.scope.transaction = finishedTransaction
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
+  }
+
+  @Test
+  fun `publishTo() - doesn't start a staged nav transaction while another transaction is bound`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(transactionContext, transactionOptions)
+    fixture.scope.transaction = hostTransaction
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
+  }
+
+  @Test
+  fun `publishTo() - logs the route when another transaction blocks the nav transaction`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(transactionContext, transactionOptions)
+    fixture.scope.transaction = hostTransaction
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    verify(fixture.logger).log(eq(SentryLevel.DEBUG), any<String>(), eq("/Profile"))
+  }
+
+  @Test
+  fun `publishTo() - discards a staged nav transaction blocked by another transaction`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    val navTransaction = stagedNavTransaction.stage(transactionContext, transactionOptions)
+    fixture.scope.transaction = hostTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    assertThat(navTransaction.start(fixture.scopes)).isNull()
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `publishTo() - binds nothing when a staged nav transaction's start is declined`() {
+    val fixture = Fixture.create(declinesTransactions = true)
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(transactionContext, transactionOptions)
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `publishTo() - discards a staged nav transaction whose start was declined`() {
+    val fixture = Fixture.create(declinesTransactions = true)
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(transactionContext, transactionOptions)
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.declinesTransactions = false
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
   fun `publishTo() - binds an unpublished unfinished nav transaction again`() {
     val fixture = Fixture.create()
     val stagedNavTransaction = fixture.stagedNavTransaction
@@ -248,6 +364,19 @@ class StagedNavTransactionTest {
   }
 
   @Test
+  fun `unpublishFrom() - keeps the bound transaction while the nav transaction is staged`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    val navTransaction = stagedNavTransaction.stage(transactionContext, transactionOptions)
+    fixture.scope.transaction = hostTransaction
+
+    stagedNavTransaction.unpublishFrom(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
+    assertThat(navTransaction.transaction).isNull()
+  }
+
+  @Test
   fun `finish() - finishes the started nav transaction and unbinds it`() {
     val fixture = Fixture.create()
     val stagedNavTransaction = fixture.stagedNavTransaction
@@ -282,6 +411,20 @@ class StagedNavTransactionTest {
 
     stagedNavTransaction.publishTo(fixture.scope)
 
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `finish() - discards a staged nav transaction so that publishing never starts it`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    val navTransaction = stagedNavTransaction.stage(transactionContext, transactionOptions)
+    stagedNavTransaction.finish(fixture.scope)
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    assertThat(navTransaction.start(fixture.scopes)).isNull()
+    assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isNull()
   }
 
@@ -324,6 +467,19 @@ class StagedNavTransactionTest {
 
     assertThat(fixture.scope.transaction).isSameInstanceAs(started)
     verify(started, never()).finish(any())
+  }
+
+  @Test
+  fun `forget() - forgets a staged nav transaction so that publishing never starts it`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(transactionContext, transactionOptions)
+    stagedNavTransaction.forget()
+
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
   }
 
   /** Thrown by a scope observer, to stand in for one the host app registered. */
