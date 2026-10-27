@@ -348,6 +348,39 @@ testing {
       }
       targets.all { testTask.configure { runAgentFixture(autoInit = true) } }
     }
+
+    // The servlet app with the OpenTelemetry Spring Boot starter, set up by
+    // sentry-opentelemetry-otlp-spring to export traces over OTLP while Sentry handles the rest.
+    register<JvmTestSuite>("integrationTestOtlp") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBoot4Starter)
+        implementation(projects.sentryOpentelemetry.sentryOpentelemetryOtlpSpring)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql22)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        implementation(libs.context.propagation)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.caffeine)
+        implementation(libs.springboot4.resttestclient)
+        implementation(libs.springboot4.starter.aspectj)
+        implementation(libs.springboot4.starter.cache)
+        implementation(libs.springboot4.starter.graphql)
+        implementation(libs.springboot4.starter.jdbc)
+        implementation(libs.springboot4.starter.restclient)
+        implementation(libs.springboot4.starter.test)
+        implementation(libs.springboot4.starter.web)
+        implementation(libs.springboot4.starter.webclient)
+        implementation(libs.springboot4.starter.webflux)
+        runtimeOnly(libs.hsqldb)
+      }
+    }
   }
 }
 
@@ -385,6 +418,7 @@ listOf(
     "compileIntegrationTestWebfluxKotlin",
     "compileIntegrationTestOtelNoAgentKotlin",
     "compileAgentFixtureKotlin",
+    "compileIntegrationTestOtlpKotlin",
   )
   .forEach {
     tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }
