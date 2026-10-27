@@ -25,7 +25,6 @@ jobs:
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
-      SENTRY_URL: http://127.0.0.1:8000
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
@@ -33,16 +32,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: 'recursive'
-
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.10'
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
 
       - name: Set up Java
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
@@ -65,69 +54,18 @@ jobs:
       - name: Update Spring Boot 2.x version
         run: |
           springboot_version="${{ matrix.springboot-version }}"
-          if [[ ! "$springboot_version" =~ ^2\.7\. ]]; then
-            echo "ORG_GRADLE_PROJECT_excludeGraphql=true" >> "$GITHUB_ENV"
-            echo "ORG_GRADLE_PROJECT_excludeKafka=true" >> "$GITHUB_ENV"
-          fi
           perl -0pi -e 'BEGIN { $v = shift } s/^springboot2[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot2 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
           echo "Updated Spring Boot 2.x version to $springboot_version"
 
-      - name: Build sample artifacts
+      - name: Test integration suites
         run: |
           ./gradlew \
-            :sentry-samples:sentry-samples-spring-boot:shadowJar \
-            :sentry-samples:sentry-samples-spring-boot:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-webflux:shadowJar \
-            :sentry-samples:sentry-samples-spring-boot-webflux:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-opentelemetry:shadowJar \
-            :sentry-samples:sentry-samples-spring-boot-opentelemetry:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent:shadowJar \
-            :sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent:testClasses \
-            :sentry-samples:sentry-samples-spring:war \
-            :sentry-samples:sentry-samples-spring:testClasses \
-            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
-
-      - name: Test sentry-samples-spring-boot
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-boot-webflux
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-webflux" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-boot-opentelemetry agent init true
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-opentelemetry" \
-            --agent true \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-boot-opentelemetry agent init false
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-opentelemetry" \
-            --agent true \
-            --auto-init "false"
-
-      - name: Test sentry-samples-spring-boot-opentelemetry-noagent
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-opentelemetry-noagent" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring" \
-            --agent false \
-            --auto-init "true"
+            :sentry-spring:integrationTest \
+            :sentry-spring-boot:integrationTest \
+            :sentry-spring-boot:integrationTestWebflux \
+            :sentry-spring-boot:integrationTestOtelNoAgent \
+            :sentry-spring-boot:integrationTestOtelAgent \
+            :sentry-spring-boot:integrationTestOtelAgentWithoutAutoInit
 
       - name: Upload test results
         if: always()
@@ -137,8 +75,6 @@ jobs:
           path: |
             **/build/reports/*
             **/build/test-results/**/*.xml
-            sentry-mock-server.txt
-            spring-server.txt
 
       - name: Test Report
         uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16

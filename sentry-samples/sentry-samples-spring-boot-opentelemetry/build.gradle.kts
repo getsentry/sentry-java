@@ -7,7 +7,6 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
-  id("io.sentry.systemtest")
 }
 
 // Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version
@@ -78,18 +77,6 @@ dependencies {
   // database query tracing
   implementation(projects.sentryJdbc)
   runtimeOnly(libs.hsqldb)
-
-  testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.apollo3.kotlin)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.slf4j2.api)
-  testImplementation(libs.springboot.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
-  testImplementation("ch.qos.logback:logback-classic:1.5.16")
-  testImplementation("ch.qos.logback:logback-core:1.5.16")
-  testImplementation("org.apache.httpcomponents:httpclient")
 }
 
 val runtimeClasspath = configurations.named("runtimeClasspath")
@@ -149,34 +136,4 @@ tasks.register<JavaExec>("bootRunWithAgent").configure {
   environment("OTEL_LOGS_EXPORTER", "none")
 
   jvmArgs = listOf("-Dotel.javaagent.debug=true", "-javaagent:$agentJarPath")
-}
-
-// The runner launches this sample with -javaagent, so track the agent jar as a systemTest input.
-sentrySystemTest { usesOpenTelemetryAgent = true }
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter {
-    includeTestsMatching("io.sentry.systemtest*")
-    if (!includeGraphql) {
-      excludeTestsMatching("io.sentry.systemtest.Graphql*")
-    }
-    if (!includeKafka) {
-      excludeTestsMatching("io.sentry.systemtest.Kafka*")
-    }
-  }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }

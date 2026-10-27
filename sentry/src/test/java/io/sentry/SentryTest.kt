@@ -1864,7 +1864,9 @@ class SentryTest {
     }
 
     verify(customStorage).init()
-    verify(customStorage).set(any())
+    // get() always returns null here, so every later getCurrentScopes() call forks the root scopes
+    // and calls set() again, e.g. the BackpressureMonitor health check on the executor
+    verify(customStorage, atLeastOnce()).set(any())
   }
 
   @Test

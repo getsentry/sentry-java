@@ -7,7 +7,6 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
-  id("io.sentry.systemtest")
 }
 
 // Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version
@@ -28,9 +27,6 @@ tasks.named("run") { dependsOn(tasks.named("war")) }
 group = "io.sentry.sample.spring"
 
 version = "0.0.1-SNAPSHOT"
-
-// Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
-extra["kotlin-coroutines.version"] = "1.9.0"
 
 dependencyManagement {
   imports {
@@ -58,35 +54,10 @@ dependencies {
 
   implementation(libs.tomcat.catalina)
   implementation(libs.tomcat.embed.jasper)
-
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.springboot.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
   }
-}
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter { includeTestsMatching("io.sentry.systemtest*") }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }
