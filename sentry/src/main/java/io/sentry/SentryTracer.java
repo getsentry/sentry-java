@@ -469,7 +469,13 @@ public final class SentryTracer implements ITransaction {
     if (children.size() < scopes.getOptions().getMaxSpans()) {
       Objects.requireNonNull(parentSpanId, "parentSpanId is required");
       Objects.requireNonNull(operation, "operation is required");
-      cancelIdleTimer();
+
+      // When this transaction finishes, we want its idle spans to finish as well. We don't let idle
+      // spans cancel the idle timer b/c it would keep the transaction alive until its deadline.
+      if (!spanOptions.isIdle()) {
+        cancelIdleTimer();
+      }
+
       final Span span =
           new Span(
               this,
@@ -762,10 +768,20 @@ public final class SentryTracer implements ITransaction {
     return null;
   }
 
+  /**
+   * Returns true if no child span should keep this transaction from finishing.
+   *
+   * <p>Ignores idle spans. Including them would mean an idle transaction would never restart its
+   * idle timer once it had an unfinished idle span, causing the transaction to always live until
+   * its deadline.
+   */
   private boolean hasAllChildrenFinished() {
     @NotNull final ListIterator<Span> iterator = this.children.listIterator();
     while (iterator.hasNext()) {
       @NotNull final Span span = iterator.next();
+      if (span.getOptions().isIdle()) {
+        continue;
+      }
       // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
       // date
       if (!span.isFinished() && span.getFinishDate() == null) {

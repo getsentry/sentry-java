@@ -31,6 +31,7 @@ import io.sentry.ITransaction
 import io.sentry.NoOpSpan
 import io.sentry.Sentry
 import io.sentry.SentryOptions
+import io.sentry.SpanStatus
 import io.sentry.TransactionOptions
 import kotlin.test.assertFailsWith
 import org.junit.After
@@ -446,8 +447,30 @@ class SentryTracedTest {
     assertThat(renderingTx.countSpans(OP_RENDER)).isEqualTo(0)
   }
 
+  @Test
+  fun `an idle transaction hosting a traced composable finishes after the idle timeout`() {
+    val tx =
+      initSentryAndStartTransaction(
+        "tx",
+        configureTransactionOptions = { transactionOptions ->
+          transactionOptions.idleTimeout = 1_000
+          transactionOptions.isWaitForChildren = true
+        },
+      )
+
+    rule.setContent {
+      ProvideSentrySpan(tx) { SentryTraced(tag = "product_info") { Box(Modifier.size(1.dp)) } }
+    }
+    tx.waitForSpanCount(OP_COMPOSE, 1)
+
+    rule.waitUntil(timeoutMillis = 5_000) { tx.isFinished }
+    assertThat(tx.status).isEqualTo(SpanStatus.OK)
+    assertThat(tx.singleSpan(OP_PARENT_COMPOSITION).isFinished).isTrue()
+  }
+
   private fun initSentryAndStartTransaction(
     name: String,
+    configureTransactionOptions: (TransactionOptions) -> Unit = {},
     configureOptions: (SentryOptions) -> Unit = {},
   ): ITransaction {
     lateinit var tx: ITransaction
@@ -460,7 +483,7 @@ class SentryTracedTest {
         },
         true,
       )
-      tx = startBoundTransaction(name)
+      tx = startBoundTransaction(name, configureTransactionOptions)
       var boundTransaction: ITransaction? = null
       Sentry.configureScope { boundTransaction = it.transaction }
       assertThat(boundTransaction).isSameInstanceAs(tx)
@@ -468,9 +491,16 @@ class SentryTracedTest {
     return tx
   }
 
-  private fun startBoundTransaction(name: String): ITransaction {
-    val transaction =
-      Sentry.startTransaction(name, "test", TransactionOptions().apply { isBindToScope = true })
+  private fun startBoundTransaction(
+    name: String,
+    configureTransactionOptions: (TransactionOptions) -> Unit = {},
+  ): ITransaction {
+    val transactionOptions =
+      TransactionOptions().apply {
+        isBindToScope = true
+        configureTransactionOptions(this)
+      }
+    val transaction = Sentry.startTransaction(name, "test", transactionOptions)
     Sentry.configureScope { it.setTransaction(transaction) }
     return transaction
   }
