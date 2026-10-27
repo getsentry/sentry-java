@@ -8,6 +8,8 @@ plugins {
   alias(libs.plugins.kotlin.spring)
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 group = "io.sentry.sample.spring-boot-4-otlp"
 
 version = "0.0.1-SNAPSHOT"
@@ -39,19 +41,19 @@ dependencies {
   implementation("org.aspectj:aspectjweaver")
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
-  implementation(projects.sentrySpringBoot4Starter)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryGraphql22)
-  implementation(projects.sentryQuartz)
-  implementation(projects.sentryAsyncProfiler)
-  implementation(projects.sentryOpentelemetry.sentryOpentelemetryOtlpSpring)
+  implementation("io.sentry:sentry-spring-boot-4-starter:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-graphql-22:$sentryVersion")
+  implementation("io.sentry:sentry-quartz:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
+  implementation("io.sentry:sentry-opentelemetry-otlp-spring:$sentryVersion")
 
   // cache tracing
   implementation(libs.springboot4.starter.cache)
   implementation(libs.caffeine)
 
   // database query tracing
-  implementation(projects.sentryJdbc)
+  implementation("io.sentry:sentry-jdbc:$sentryVersion")
   runtimeOnly(libs.hsqldb)
 }
 

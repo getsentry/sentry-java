@@ -5,11 +5,13 @@ plugins {
   alias(libs.plugins.shadow)
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 application { mainClass.set("io.sentry.samples.console.Main") }
 
 dependencies {
-  implementation(projects.sentryOpentelemetry.sentryOpentelemetryOtlp)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("io.sentry:sentry-opentelemetry-otlp:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
   implementation(libs.otel.semconv)
   implementation(libs.otel.semconv.incubating)
   implementation(libs.otel.exporter.logging)

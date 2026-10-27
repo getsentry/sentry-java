@@ -10,6 +10,8 @@ plugins {
   alias(libs.plugins.kotlin.spring)
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 // Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version
 // the Spring Boot 2.x matrix covers (2.4.13, Spring 5.3.13) fails on class files as new as the
 // toolchain's: "Unsupported class file major version 65". Only the app is scanned, so its test
@@ -33,10 +35,10 @@ dependencies {
   implementation(libs.springboot.starter.webflux)
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
-  implementation(projects.sentrySpringBootStarter)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryGraphql)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("io.sentry:sentry-spring-boot-starter:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-graphql:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
 }
 
 val runtimeClasspath = configurations.named("runtimeClasspath")

@@ -71,7 +71,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support") {
+    if (this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
         apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 
@@ -145,9 +145,7 @@ subprojects {
 tasks.register("buildForCodeQL") {
     subprojects
         .filter {
-            !it.displayName.contains("sample") &&
-                !it.displayName.contains("integration-tests") &&
-                !it.displayName.contains("bom") &&
+            !it.displayName.contains("bom") &&
                 it.name != "sentry-opentelemetry"
         }
         .forEach { proj ->

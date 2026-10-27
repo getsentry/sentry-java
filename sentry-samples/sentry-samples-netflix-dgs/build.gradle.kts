@@ -10,6 +10,8 @@ plugins {
   alias(libs.plugins.kotlin.spring)
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 application { mainClass.set("io.sentry.samples.netflix.dgs.NetlixDgsApplication") }
 
 group = "io.sentry.sample.spring-boot"
@@ -25,8 +27,8 @@ dependencies {
   implementation(libs.springboot.starter.web)
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
-  implementation(projects.sentrySpringBootStarter)
-  implementation(projects.sentryGraphql)
+  implementation("io.sentry:sentry-spring-boot-starter:$sentryVersion")
+  implementation("io.sentry:sentry-graphql:$sentryVersion")
   implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.9.2"))
   implementation("com.netflix.graphql.dgs:graphql-dgs-subscriptions-websockets-autoconfigure:4.9.2")
   implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
