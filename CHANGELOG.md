@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+
+- Skip ANR profiling while a debugger is connected ([#6389](https://github.com/getsentry/sentry-java/pull/6389))
+
 ### Dependencies
 
 - Bump Native SDK from v0.17.2 to v0.17.3 ([#6250](https://github.com/getsentry/sentry-java/pull/6250))
