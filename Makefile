@@ -9,7 +9,6 @@ publish: clean dryRelease
 clean:
 	./gradlew clean --no-configuration-cache
 	rm -rf distributions
-	rm -rf .venv
 
 # build and run tests
 compile:
