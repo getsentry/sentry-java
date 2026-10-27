@@ -225,7 +225,8 @@ internal class NavScopes(
      *
      * With the lease, this method will **not** start a transaction if another unfinished
      * transaction (e.g., the host app's) is already bound to the shared scope, as the new one
-     * couldn't be bound in its place. A finished transaction doesn't block.
+     * couldn't be bound in its place. A finished transaction doesn't block (see
+     * [StagedNavTransaction.start]).
      *
      * Without the lease, the start is always deferred, whatever is bound to the shared scope at the
      * time: what matters is what's bound when the lease is acquired, which is checked then (see
@@ -256,9 +257,6 @@ internal class NavScopes(
       finishNavTransaction()
 
       return if (hasLease) {
-        if (!isIScopeTransactionSlotFree(transactionContext.name)) {
-          return null
-        }
         stagedNavTransaction.start(delegate, transactionContext, transactionOptions)
       } else {
         stagedNavData.deferPropagationContextRotation()
@@ -268,25 +266,6 @@ internal class NavScopes(
 
     override fun finishNavTransaction() {
       stagedNavTransaction.finish(delegate)
-    }
-
-    /**
-     * Returns `true` if the transaction slot in the shared [IScope] is free, i.e., the bound
-     * transaction is absent or finished. Otherwise, logs that the nav transaction for [name] won't
-     * be created.
-     */
-    private fun isIScopeTransactionSlotFree(name: String): Boolean {
-      val currentTransaction = delegate.transaction
-      if (currentTransaction == null || currentTransaction.isFinished) {
-        return true
-      }
-
-      options.logger.log(
-        SentryLevel.DEBUG,
-        "Nav transaction for route %s won't be created because another transaction is active.",
-        name,
-      )
-      return false
     }
   }
 }

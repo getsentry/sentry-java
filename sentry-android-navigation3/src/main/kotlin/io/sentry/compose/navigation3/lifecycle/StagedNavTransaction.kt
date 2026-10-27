@@ -34,10 +34,10 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
 
   /**
    * Starts a nav transaction from [context] and [options] and binds it to [scope], unless another
-   * unfinished transaction is already bound to `scope`. Returns `null` if no transaction was
-   * started (i.e., [scopes] returned a no-op transaction, e.g., because the SDK is disabled or
-   * ignores the transaction's origin), in which case the instance's current nav transaction, if
-   * any, is kept.
+   * unfinished transaction is already bound to `scope`, in which case none is started, as it
+   * couldn't be bound. Returns `null` if no transaction was started (including when [scopes]
+   * returned a no-op transaction, e.g., because the SDK is disabled or ignores the transaction's
+   * origin), in which case the instance's current nav transaction, if any, is kept.
    *
    * A transaction that isn't sampled still starts (as a non-recording transaction) and is bound.
    *
@@ -49,6 +49,9 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
     context: TransactionContext,
     options: TransactionOptions,
   ): NavTransaction? {
+    if (!scope.isFreeFor(context.name, transaction = null)) {
+      return null
+    }
     val transaction =
       scopes.startTransaction(context, options).takeUnless { it.isNoOp } ?: return null
 
@@ -89,9 +92,14 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
         this.navTransaction = null
         unbind(scope, started)
       }
-      started != null -> if (scope.isFreeFor(navTransaction)) bind(scope, started)
+      started != null -> if (scope.isFreeFor(navTransaction.name, started)) bind(scope, started)
       else -> {
-        val startedNow = if (scope.isFreeFor(navTransaction)) navTransaction.start(scopes) else null
+        val startedNow =
+          if (scope.isFreeFor(navTransaction.name, transaction = null)) {
+            navTransaction.start(scopes)
+          } else {
+            null
+          }
         if (startedNow != null) {
           bind(scope, startedNow)
         } else {
@@ -131,35 +139,46 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
   }
 
   /**
-   * Reports whether [navTransaction] can be bound to the receiver.
+   * Reports whether the receiver's transaction slot can hold [transaction], or a new transaction
+   * given `null` (see [canHold]).
    *
-   * Logs [navTransaction]'s route name if another unfinished transaction is already bound.
+   * Logs the route [name] of the nav transaction if another unfinished transaction is bound.
+   *
+   * A check before starting or binding, made outside the scope's transaction lock; [bind] checks
+   * again under it.
    */
-  private fun IScope.isFreeFor(navTransaction: NavTransaction): Boolean {
-    val current = transaction
-    if (current == null || current.isFinished || current === navTransaction.transaction) {
+  private fun IScope.isFreeFor(name: String, transaction: ITransaction?): Boolean {
+    if (canHold(current = this.transaction, transaction)) {
       return true
     }
 
     scopes.options.logger.log(
       SentryLevel.DEBUG,
-      "Nav3 transaction for route %s won't be bound because another transaction is active.",
-      navTransaction.name,
+      "Nav3 transaction for route %s is blocked by another active transaction.",
+      name,
     )
     return false
   }
 
-  /**
-   * Binds [transaction] to [scope] if no unfinished transaction is bound to it. A finished one is
-   * about to be dropped from the scope anyway, so it's replaced.
-   */
+  /** Binds [transaction] to [scope] if the scope's transaction slot can hold it (see [canHold]). */
   private fun bind(scope: IScope, transaction: ITransaction) {
     scope.withTransaction { current ->
-      if (current == null || current.isFinished) {
+      if (current !== transaction && canHold(current, transaction)) {
         scope.transaction = transaction
       }
     }
   }
+
+  /**
+   * Whether a transaction slot holding [current] can hold [transaction], or a new transaction given
+   * `null`: it's empty, holds a finished transaction (which is about to be dropped from the scope
+   * anyway, so it's replaced), or already holds `transaction`.
+   *
+   * Starting or binding a nav transaction never displaces an unfinished transaction bound by
+   * someone else (e.g., the host app).
+   */
+  private fun canHold(current: ITransaction?, transaction: ITransaction?): Boolean =
+    current == null || current.isFinished || current === transaction
 
   /** Unbinds [transaction] from [scope] if it's the bound transaction. */
   private fun unbind(scope: IScope, transaction: ITransaction) {

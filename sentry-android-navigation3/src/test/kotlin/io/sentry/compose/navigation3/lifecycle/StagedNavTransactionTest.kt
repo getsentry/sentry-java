@@ -46,7 +46,7 @@ class StagedNavTransactionTest {
   }
 
   @Test
-  fun `start() - starts a nav transaction without binding it while another transaction is bound`() {
+  fun `start() - starts no nav transaction while another transaction is bound`() {
     val fixture = Fixture.create()
     val stagedNavTransaction = fixture.stagedNavTransaction
     fixture.scope.transaction = hostTransaction
@@ -54,11 +54,20 @@ class StagedNavTransactionTest {
     val navTransaction =
       stagedNavTransaction.start(fixture.scope, transactionContext, transactionOptions)
 
-    val started = fixture.startedTransaction("/Profile")
-    assertThat(navTransaction?.transaction).isSameInstanceAs(started)
+    assertThat(navTransaction).isNull()
+    assertThat(fixture.startedTransactions).isEmpty()
     assertThat(fixture.scope.transaction).isSameInstanceAs(hostTransaction)
-    stagedNavTransaction.finish(fixture.scope)
-    verify(started).finish(SpanStatus.OK)
+  }
+
+  @Test
+  fun `start() - logs the route when another transaction blocks the start`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    fixture.scope.transaction = hostTransaction
+
+    stagedNavTransaction.start(fixture.scope, transactionContext, transactionOptions)
+
+    verify(fixture.logger).log(eq(SentryLevel.DEBUG), any<String>(), eq("/Profile"))
   }
 
   @Test
@@ -96,6 +105,8 @@ class StagedNavTransactionTest {
     val fixture = Fixture.create()
     val stagedNavTransaction = fixture.stagedNavTransaction
     val current = fixture.start("/Home")
+    // Unbound, so that it doesn't block the start.
+    stagedNavTransaction.unpublishFrom(fixture.scope)
 
     stagedNavTransaction.start(fixture.scope, transactionContext, transactionOptions)
     verify(current, never()).finish(any())
@@ -343,8 +354,9 @@ class StagedNavTransactionTest {
   fun `unpublishFrom() - keeps another bound transaction`() {
     val fixture = Fixture.create()
     val stagedNavTransaction = fixture.stagedNavTransaction
-    fixture.scope.transaction = hostTransaction
     fixture.start()
+    stagedNavTransaction.unpublishFrom(fixture.scope)
+    fixture.scope.transaction = hostTransaction
 
     stagedNavTransaction.unpublishFrom(fixture.scope)
 
