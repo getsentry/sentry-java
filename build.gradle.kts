@@ -83,8 +83,7 @@ apiValidation {
             "test-app-size",
             "sentry-samples-netflix-dgs",
             "sentry-samples-console-otlp",
-            "sentry-test-support",
-            "sentry-system-test-support"
+            "sentry-test-support"
         )
     )
 }
@@ -122,7 +121,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
         apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 
