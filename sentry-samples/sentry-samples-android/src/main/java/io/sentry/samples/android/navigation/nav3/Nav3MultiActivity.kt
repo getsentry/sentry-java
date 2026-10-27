@@ -89,9 +89,7 @@ class Nav3ProductsActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     val configuration = (intent.extras ?: Bundle()).nav3SampleConfiguration()
     NavigationTransactionHistory.install()
-    if (!configuration.enableActivityUiLoadTransaction) {
-      cancelCurrentActivityUiLoadTransaction()
-    }
+    applyActivityUiLoadTransactionSetting(this, configuration.enableActivityUiLoadTransaction)
     setContent {
       val stack = rememberSaveableNav3BackStack(Nav3Route.ProductList)
       SideEffect {
@@ -174,9 +172,7 @@ open class Nav3CheckoutActivity : ComponentActivity() {
     val crashOnFirstComposition =
       savedInstanceState == null && intent.getBooleanExtra(EXTRA_CRASH_ON_FIRST_COMPOSITION, false)
     NavigationTransactionHistory.install()
-    if (!configuration.enableActivityUiLoadTransaction) {
-      cancelCurrentActivityUiLoadTransaction()
-    }
+    applyActivityUiLoadTransactionSetting(this, configuration.enableActivityUiLoadTransaction)
     setContent {
       Nav3SampleTheme {
         if (showAsSheet) {
