@@ -1526,6 +1526,20 @@ class JsonSerializerTest {
   }
 
   @Test
+  fun `json serializer can disable serialization logging`() {
+    val logger = mock<ILogger>()
+    val options = SentryOptions()
+    options.setLogger(logger)
+    options.setDebug(true)
+    whenever(logger.isEnabled(any())).thenReturn(true)
+
+    (options.serializer as JsonSerializer).serialize(mapOf("key" to "val"), StringWriter(), false)
+
+    verify(logger, never())
+      .log(any(), check { assertTrue(it.startsWith("Serializing object:")) }, any<Any>())
+  }
+
+  @Test
   fun `json serializer does not close the stream that is passed in`() {
     val stream = mock<OutputStream>()
     JsonSerializer(SentryOptions())
