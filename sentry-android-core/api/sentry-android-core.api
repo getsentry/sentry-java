@@ -736,6 +736,7 @@ public class io/sentry/android/core/anr/AnrProfilingIntegration : io/sentry/Inte
 	public fun close ()V
 	protected fun getProfileManager ()Lio/sentry/android/core/anr/AnrProfileManager;
 	protected fun getState ()Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
+	protected fun isDebuggerConnected ()Z
 	public fun onBackground ()V
 	public fun onForeground ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
