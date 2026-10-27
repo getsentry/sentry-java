@@ -7,7 +7,6 @@ import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.create
 import org.jetbrains.kotlin.gradle.dsl.abi.AbiValidationExtension
 import org.jetbrains.kotlin.gradle.dsl.abi.AbiValidationMultiplatformExtension
-import org.jetbrains.kotlin.gradle.dsl.abi.AbiValidationVariantSpec
 import org.jetbrains.kotlin.gradle.dsl.abi.ExperimentalAbiValidation
 
 private val KOTLIN_PLUGIN_IDS =
@@ -36,14 +35,13 @@ class SentryApiValidationPlugin : Plugin<Project> {
 
   private fun enable(project: Project, extension: ApiValidationExtension) {
     val kotlin = project.extensions.getByName("kotlin") as ExtensionAware
-    val spec: AbiValidationVariantSpec =
-      when (val abi = kotlin.extensions.getByName("abiValidation")) {
-        is AbiValidationMultiplatformExtension -> abi.also { it.enabled.set(true) }
-        is AbiValidationExtension -> abi.also { it.enabled.set(true) }
-        else -> throw GradleException("Unexpected abiValidation extension: ${abi.javaClass.name}")
-      }
-    // Lazy, because the module configures the extension after this plugin has been applied.
-    val ignored = extension.ignoredPackages.map { packages -> packages.map { "$it.**" } }
-    spec.filters { exclude { byNames.addAll(ignored) } }
+    when (val abi = kotlin.extensions.getByName("abiValidation")) {
+      is AbiValidationMultiplatformExtension -> abi.also { it.enabled.set(true) }
+      is AbiValidationExtension -> abi.also { it.enabled.set(true) }
+      else -> throw GradleException("Unexpected abiValidation extension: ${abi.javaClass.name}")
+    }.filters {
+      // Lazy, because the module configures the extension after this plugin has been applied.
+      exclude { byNames.addAll(extension.ignoredPackages.map { it.map { pkg -> "$pkg.**" } }) }
+    }
   }
 }
