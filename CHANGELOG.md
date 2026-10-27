@@ -7,6 +7,12 @@
 - Support Navigation 3 integration for multi-Activity and multi-Fragment applications, where each Activity or Fragment has its own `SentryNavEffect` ([#6305](https://github.com/getsentry/sentry-java/pull/6305))
   - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/#supported-setups) for a detailed list of supported vs unsupported app setups.
 
+### Features
+
+- Add opt-in binder (IPC) tracing and logging instrumentation for Android ([#5515](https://github.com/getsentry/sentry-java/pull/5515))
+  - Enable spans via `options.isEnableBinderTracing = true` or manifest: `<meta-data android:name="io.sentry.traces.binder.enable" android:value="true" />`
+  - Enable logs via `options.isEnableBinderLogging = true` or manifest: `<meta-data android:name="io.sentry.logs.binder.enable" android:value="true" />`
+
 ### Fixes
 
 - Always remove the first-draw listener after the first frame, even if no layout pass follows it ([#6152](https://github.com/getsentry/sentry-java/pull/6152))
