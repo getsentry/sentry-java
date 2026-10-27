@@ -10,6 +10,7 @@
   - `Sentry.showUserFeedbackDialog(...)`: use `Sentry.feedback().show(...)` instead
   - Android: `SentryUserFeedbackDialog`: use `SentryUserFeedbackForm` instead
   - Android: the `SentryUserFeedbackButton` view and composable: call `Sentry.feedback().show()` from your own button instead
+- Remove deprecated Hub compatibility APIs in favor of `IScopes` and `Scopes` ([#6223](https://github.com/getsentry/sentry-java/pull/6223))
 - Remove the aggregate Sentry Logs and Metrics enable options from all configuration surfaces:
   - Java API: `options.getLogs().setEnabled(...)` and `options.getMetrics().setEnabled(...)`
   - Properties files: `logs.enabled` and `metrics.enabled`
