@@ -161,6 +161,7 @@ lottie-compose = { module = "com.airbnb.android:lottie-compose", version = "6.7.
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "agp" }
+asm = { module = "org.ow2.asm:asm", version = "9.9" }
 nopen-annotations = { module = "com.jakewharton.nopen:nopen-annotations", version.ref = "nopen" }
 nopen-checker = { module = "com.jakewharton.nopen:nopen-checker", version.ref = "nopen" }
 nullaway = { module = "com.uber.nullaway:nullaway", version = "0.14.2" }
