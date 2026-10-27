@@ -5,6 +5,7 @@ import io.sentry.android.gradle.extensions.InstrumentationFeature
 import io.sentry.android.gradle.extensions.SentryPluginExtension
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.internal.extensions.stdlib.capitalized
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
 plugins {
   id("com.android.application")
@@ -64,7 +65,7 @@ android {
       }
     }
 
-    ndk { abiFilters.addAll(Config.Android.abiFilters) }
+    ndk { abiFilters.addAll(listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")) }
   }
 
   lint {
@@ -172,9 +173,7 @@ sqldelight {
 }
 
 dependencies {
-  implementation(
-    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
-  )
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
 
   implementation(projects.sentryAndroid)
   implementation(projects.sentryAndroidFragment)

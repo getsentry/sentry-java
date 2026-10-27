@@ -15,6 +15,18 @@ pluginManagement {
     gradlePluginPortal()
     google()
   }
+
+  // Every build in a composite must use the same AGP, so each build's settings applies the AGP
+  // matrix job's override.
+  System.getenv("VERSION_AGP")?.let { agpVersion ->
+    resolutionStrategy {
+      eachPlugin {
+        if (requested.id.id.startsWith("com.android")) {
+          useVersion(agpVersion)
+        }
+      }
+    }
+  }
 }
 
 plugins {

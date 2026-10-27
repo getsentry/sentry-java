@@ -33,9 +33,23 @@ private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_1_8
  *   archives are checked for it
  * - published Android modules main code targets Java 1.8
  * - minSdk is set for Android libraries
+ * - javac warnings fail the build
  */
 class JdkTargetConvention : Plugin<Project> {
   override fun apply(project: Project) {
+    project.tasks.withType(JavaCompile::class.java).configureEach {
+      options.compilerArgs.addAll(
+        listOf(
+          "-Xlint:all",
+          "-Werror",
+          "-Xlint:-classfile",
+          "-Xlint:-processing",
+          "-Xlint:-try",
+          "-Xlint:-options",
+        )
+      )
+    }
+
     project.plugins.withType(JavaBasePlugin::class.java) {
       project.extensions.getByType(JavaPluginExtension::class.java).toolchain {
         languageVersion.set(BUILD_JDK)

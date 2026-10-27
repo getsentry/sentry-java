@@ -38,8 +38,7 @@ retrofit = "2.9.0"
 room2 = "2.8.4"
 room3 = "3.0.0-rc01"
 sagp = "6.13.0"
-# Compile-time only, for the AGP types the build-logic convention plugins use. The AGP that
-# actually runs the build comes from the root buildscript (Config.AGP, overridable via VERSION_AGP).
+# The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
 agp = "9.4.0"
 sqlite = "2.6.2"
 sqliteRc = "2.7.0-rc01" # Required by Room3 3.0.0-rc*
@@ -59,7 +58,8 @@ compileSdkMinor = "2"
 minSdk = "21"
 
 [plugins]
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android ={ id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
