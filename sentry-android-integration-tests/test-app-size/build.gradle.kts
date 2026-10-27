@@ -33,7 +33,7 @@ android {
     targetCompatibility = JavaVersion.VERSION_17
   }
   androidComponents.beforeVariants {
-    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    it.enable = it.buildType != "debug"
   }
 }
 
