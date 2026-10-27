@@ -105,12 +105,7 @@ class SentryOkHttpInterceptorTest {
         }
       scope = Scope(options)
       whenever(scopes.options).thenReturn(options)
-      doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
-        .whenever(scopes)
-        .configureScope(any())
-      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
-        .whenever(scopes)
-        .configureScope(anyOrNull<ScopeType>(), any())
+      stubConfigureScope()
 
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
 
@@ -155,6 +150,15 @@ class SentryOkHttpInterceptorTest {
           addInterceptor(interceptor)
         }
         .build()
+    }
+
+    private fun stubConfigureScope() {
+      doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
     }
   }
 
