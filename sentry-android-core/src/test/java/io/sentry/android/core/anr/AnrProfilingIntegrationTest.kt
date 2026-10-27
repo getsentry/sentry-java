@@ -197,6 +197,37 @@ class AnrProfilingIntegrationTest {
   }
 
   @Test
+  fun `debugger pauses are treated as idle`() {
+    val mainThread = Thread.currentThread()
+    SystemClock.setCurrentTimeMillis(1_000)
+
+    val androidOptions =
+      SentryAndroidOptions().apply {
+        cacheDirPath = tmpDir.root.absolutePath
+        setLogger(mockLogger)
+        anrProfilingSampleRate = 1.0
+      }
+
+    var debuggerConnected = true
+    val integration =
+      object : AnrProfilingIntegration() {
+        override fun isDebuggerConnected(): Boolean = debuggerConnected
+      }
+    integration.register(mockScopes, androidOptions)
+
+    SystemClock.setCurrentTimeMillis(20_000)
+    integration.checkMainThread(mainThread)
+    assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
+    assertEquals(0, integration.numCollectedStacks.get())
+
+    // the time spent paused must not count towards an ANR once the debugger detaches
+    debuggerConnected = false
+    SystemClock.setCurrentTimeMillis(20_100)
+    integration.checkMainThread(mainThread)
+    assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
+  }
+
+  @Test
   fun `background foreground transitions don't trigger an ANR`() {
     val mainThread = Thread.currentThread()
     SystemClock.setCurrentTimeMillis(1_000)

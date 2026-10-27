@@ -2,6 +2,7 @@ package io.sentry.android.core.anr;
 
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
+import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -211,6 +212,15 @@ public class AnrProfilingIntegration
 
   @ApiStatus.Internal
   protected void checkMainThread(final @NotNull Thread mainThread) throws IOException {
+    if (isDebuggerConnected()) {
+      // The main thread can sit at a breakpoint for a long time, which is not an ANR. Reset the
+      // timestamp, so the paused time does not count against us after the debugger detaches.
+      mainThreadState = MainThreadState.IDLE;
+      sampled = false;
+      updater.run();
+      return;
+    }
+
     final long now = SystemClock.uptimeMillis();
     final long diff = now - lastMainThreadExecutionTime;
 
@@ -266,6 +276,11 @@ public class AnrProfilingIntegration
       }
       mainThreadState = MainThreadState.ANR_DETECTED;
     }
+  }
+
+  @ApiStatus.Internal
+  protected boolean isDebuggerConnected() {
+    return Debug.isDebuggerConnected();
   }
 
   @TestOnly
