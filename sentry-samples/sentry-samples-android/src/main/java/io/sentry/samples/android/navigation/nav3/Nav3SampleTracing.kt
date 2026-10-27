@@ -1,8 +1,12 @@
 package io.sentry.samples.android.navigation.nav3
 
+import android.app.Activity
+import io.sentry.EventProcessor
+import io.sentry.Hint
 import io.sentry.Sentry
 import io.sentry.SpanStatus
 import io.sentry.protocol.SentryTransaction
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -20,6 +24,50 @@ internal fun SentryTransaction.navigationSampleScenarioLabel(): String =
     ?: getTag(NAV2_SCENARIO_TAG)
     ?: getTag(NAV3_SCENARIO_TAG)
     ?: UNKNOWN_NAVIGATION_SCENARIO_LABEL
+
+/**
+ * Applies the sample's "Activity ui.load transaction" toggle to [activity].
+ *
+ * Call from `onCreate` after `super.onCreate`, once the SDK has started the Activity's ui.load
+ * transaction. When [enabled] is false, the transaction is cancelled if it's bound to the scope.
+ * It's also dropped before sending, because the SDK doesn't bind it when another transaction (such
+ * as the previous Activity's nav transaction) is already bound, and the sample can't reach an
+ * unbound ui.load transaction to cancel it.
+ */
+internal fun applyActivityUiLoadTransactionSetting(activity: Activity, enabled: Boolean) {
+  // Matches the transaction name ActivityLifecycleIntegration uses.
+  val activityName = activity.javaClass.simpleName
+  if (enabled) {
+    SuppressedActivityUiLoadTransactions.activityNames.remove(activityName)
+    return
+  }
+  SuppressedActivityUiLoadTransactions.install()
+  SuppressedActivityUiLoadTransactions.activityNames.add(activityName)
+  cancelCurrentActivityUiLoadTransaction()
+}
+
+/** Drops ui.load transactions for sample Activities created with the ui.load toggle off. */
+private object SuppressedActivityUiLoadTransactions : EventProcessor {
+  val activityNames: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
+  @Volatile private var installed = false
+
+  fun install() {
+    if (installed) return
+    synchronized(this) {
+      if (installed) return
+      Sentry.getCurrentScopes().options.addEventProcessor(this)
+      installed = true
+    }
+  }
+
+  override fun process(transaction: SentryTransaction, hint: Hint): SentryTransaction? {
+    val isSuppressed =
+      transaction.contexts.trace?.operation == ACTIVITY_UI_LOAD_OP &&
+        transaction.transaction in activityNames
+    return if (isSuppressed) null else transaction
+  }
+}
 
 internal fun cancelCurrentActivityUiLoadTransaction() {
   Sentry.configureScope { scope ->
