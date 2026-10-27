@@ -352,6 +352,16 @@ private fun Nav3SampleApp(
     }
   }
 
+  val openFragmentScenario: (Nav3FragmentMode) -> Unit = { mode ->
+    activity?.let { host ->
+      host.startActivity(
+        Intent(host, Nav3FragmentsActivity::class.java)
+          .putExtra(Nav3FragmentsActivity.EXTRA_MODE, mode.name)
+          .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+      )
+    }
+  }
+
   Scaffold(
     // Expose test tags as resource IDs so adb/uiautomator can target them.
     modifier =
@@ -472,12 +482,19 @@ private fun Nav3SampleApp(
             entry<Nav3Route.MultiFragment> { route ->
               TracedNav3Route(route, selectedScenario) {
                 Nav3RouteWorkEffect(route, routeWorkOptions)
-                MultiFragmentRoute {
-                  activity?.startActivity(
-                    Intent(activity, Nav3FragmentsActivity::class.java)
-                      .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
-                  )
-                }
+                FragmentScenarioRoute(route, Nav3FragmentMode.REPLACE, openFragmentScenario)
+              }
+            }
+            entry<Nav3Route.FragmentOverlay> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                FragmentScenarioRoute(route, Nav3FragmentMode.DIALOG, openFragmentScenario)
+              }
+            }
+            entry<Nav3Route.ViewPager2> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                FragmentScenarioRoute(route, Nav3FragmentMode.PAGER, openFragmentScenario)
               }
             }
             entry<Nav3Route.Landing> { route ->
@@ -550,18 +567,6 @@ private fun Nav3SampleApp(
               }
             }
 
-            entry<Nav3Route.Multipane> { route ->
-              TracedNav3Route(route, selectedScenario) {
-                Nav3RouteWorkEffect(route, routeWorkOptions)
-                FutureRoute(routeName = "Multipane", scenario = "multipane")
-              }
-            }
-            entry<Nav3Route.Multistack> { route ->
-              TracedNav3Route(route, selectedScenario) {
-                Nav3RouteWorkEffect(route, routeWorkOptions)
-                FutureRoute(routeName = "Multiple Stacks", scenario = "multistack")
-              }
-            }
             entry<Nav3Route.Performance> { route ->
               TracedNav3Route(route, selectedScenario) {
                 Nav3RouteWorkEffect(route, routeWorkOptions)

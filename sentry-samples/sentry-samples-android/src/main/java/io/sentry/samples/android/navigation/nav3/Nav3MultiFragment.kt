@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +40,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.commit
+import androidx.fragment.app.commitNow
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import io.sentry.samples.android.R
@@ -48,7 +48,7 @@ import io.sentry.samples.android.navigation.common.NavigationSampleConfig
 
 /**
  * Hosts Fragments that each own a Nav3 root (back stack, `SentryNavEffect`, and `NavDisplay`), to
- * exercise how separate effects hand off during Fragment transactions:
+ * exercise how separate effects hand off in three independently selectable scenarios:
  *
  * - `replace` + back stack (Products → Checkout), optionally with a slow enter animation;
  * - a full-screen `DialogFragment` overlay whose host Fragment stays resumed;
@@ -57,6 +57,15 @@ import io.sentry.samples.android.navigation.common.NavigationSampleConfig
 // FragmentActivity rather than AppCompatActivity: AppCompatActivity.setContentView doesn't install
 // the NavigationEventDispatcherOwner that NavDisplay needs on the view tree.
 class Nav3FragmentsActivity : FragmentActivity() {
+
+  internal val mode: Nav3FragmentMode
+    get() =
+      Nav3FragmentMode.entries.firstOrNull { it.name == intent.getStringExtra(EXTRA_MODE) }
+        ?: Nav3FragmentMode.REPLACE
+
+  internal companion object {
+    const val EXTRA_MODE = "io.sentry.samples.android.navigation.nav3.FRAGMENT_MODE"
+  }
 
   /** When true, Fragment `replace` uses a slow enter animation. */
   internal var slowTransitions by mutableStateOf(false)
@@ -76,10 +85,9 @@ class Nav3FragmentsActivity : FragmentActivity() {
         setContent {
           Nav3SampleTheme {
             MultiFragmentControls(
+              mode = mode,
               slowTransitions = slowTransitions,
               onSlowTransitionsChanged = { slowTransitions = it },
-              onOpenCheckoutSheet = ::openCheckoutSheet,
-              onOpenPager = ::openPager,
             )
           }
         }
@@ -101,9 +109,22 @@ class Nav3FragmentsActivity : FragmentActivity() {
     )
 
     if (savedInstanceState == null) {
-      supportFragmentManager.commit {
-        setReorderingAllowed(true)
-        add(R.id.nav3_multi_fragment_container, Nav3RootFragment.products())
+      if (mode == Nav3FragmentMode.REPLACE) {
+        supportFragmentManager.commit {
+          setReorderingAllowed(true)
+          add(R.id.nav3_multi_fragment_container, Nav3RootFragment.products())
+        }
+      } else {
+        // Keep Products beneath the overlay or pager for dismissal and Back handoffs.
+        supportFragmentManager.commitNow {
+          setReorderingAllowed(true)
+          add(R.id.nav3_multi_fragment_container, Nav3RootFragment.products())
+        }
+        if (mode == Nav3FragmentMode.DIALOG) {
+          openCheckoutSheet()
+        } else {
+          openPager()
+        }
       }
     }
   }
@@ -153,6 +174,12 @@ class Nav3FragmentsActivity : FragmentActivity() {
   }
 }
 
+internal enum class Nav3FragmentMode(val scenario: Nav3Scenario) {
+  REPLACE(Nav3Scenario.MULTI_FRAGMENT),
+  DIALOG(Nav3Scenario.FRAGMENT_OVERLAY),
+  PAGER(Nav3Scenario.VIEW_PAGER2),
+}
+
 /** A Fragment that owns one Nav3 root. Pager pages are child Fragments of [Nav3PagerFragment]. */
 class Nav3RootFragment : Fragment() {
 
@@ -170,7 +197,8 @@ class Nav3RootFragment : Fragment() {
         KIND_PAGE -> pageRoots[args.getInt(ARG_PAGE)]
         else -> Nav3Route.ProductList
       }
-    val opensCheckoutFragment = args.getString(ARG_KIND) == KIND_PRODUCTS
+    val opensCheckoutFragment =
+      args.getString(ARG_KIND) == KIND_PRODUCTS && activity.mode == Nav3FragmentMode.REPLACE
 
     return nav3RootComposeView(
       activity = activity,
@@ -233,6 +261,7 @@ class Nav3CheckoutSheetFragment : DialogFragment() {
     return nav3RootComposeView(
       activity = activity,
       host = "CheckoutSheet",
+      title = "Checkout dialog",
       initialRoute = Nav3Route.Checkout("42"),
       configuration = activity.configuration,
       onFinish = ::dismiss,
@@ -307,23 +336,36 @@ class Nav3PagerFragment : Fragment() {
 }
 
 @Composable
-internal fun MultiFragmentRoute(onOpenFragments: () -> Unit) {
+internal fun FragmentScenarioRoute(
+  route: Nav3Route,
+  mode: Nav3FragmentMode,
+  onOpenFragments: (Nav3FragmentMode) -> Unit,
+) {
   RouteScaffold(
-    routeSpec = Nav3Route.MultiFragment.routeSpec(),
-    testTagPrefix = nav3TestTag("route_multi_fragment"),
+    routeSpec = route.routeSpec(),
+    testTagPrefix = nav3TestTag("route_${mode.name.lowercase()}_fragments"),
     cardContent = {
       RouteButton(
-        "Open fragments Activity",
-        onClick = onOpenFragments,
-        testTag = nav3TestTag("multi_fragment_open_fragments"),
+        when (mode) {
+          Nav3FragmentMode.REPLACE -> "Open Products Fragment"
+          Nav3FragmentMode.DIALOG -> "Open Checkout dialog"
+          Nav3FragmentMode.PAGER -> "Open ViewPager2"
+        },
+        onClick = { onOpenFragments(mode) },
+        testTag =
+          nav3TestTag(
+            if (mode == Nav3FragmentMode.REPLACE) "multi_fragment_open_fragments"
+            else "${mode.name.lowercase()}_open_fragments"
+          ),
       )
     },
   )
 }
 
 private fun Fragment.nav3RootComposeView(
-  activity: ComponentActivity,
+  activity: Nav3FragmentsActivity,
   host: String,
+  title: String = host,
   initialRoute: Nav3Route,
   configuration: NavigationSampleConfig,
   onFinish: () -> Unit,
@@ -338,9 +380,9 @@ private fun Fragment.nav3RootComposeView(
         CompositionLocalProvider(LocalNav3SampleHost provides host) {
           MultiRootNavDisplay(
             activity = activity,
-            title = host,
+            title = title,
             initialRoute = initialRoute,
-            scenario = Nav3Scenario.MULTI_FRAGMENT,
+            scenario = activity.mode.scenario,
             configuration = configuration,
             onFinish = onFinish,
             onCheckout = onCheckout,
@@ -353,38 +395,29 @@ private fun Fragment.nav3RootComposeView(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun MultiFragmentControls(
+  mode: Nav3FragmentMode,
   slowTransitions: Boolean,
   onSlowTransitionsChanged: (Boolean) -> Unit,
-  onOpenCheckoutSheet: () -> Unit,
-  onOpenPager: () -> Unit,
 ) {
   Surface(
     shadowElevation = 4.dp,
     modifier = Modifier.statusBarsPadding().semantics { testTagsAsResourceId = true },
   ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
-      Text("Fragments Activity", style = MaterialTheme.typography.titleMedium)
-      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(
-          onClick = onOpenCheckoutSheet,
-          modifier = Modifier.testTag(nav3TestTag("multi_fragment_open_checkout_sheet")),
-        ) {
-          Text("Checkout sheet")
+      Text(mode.scenario.label, style = MaterialTheme.typography.titleMedium)
+      when (mode) {
+        Nav3FragmentMode.REPLACE -> {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Slow Fragment transitions", modifier = Modifier.weight(1f))
+            Switch(
+              checked = slowTransitions,
+              onCheckedChange = onSlowTransitionsChanged,
+              modifier = Modifier.testTag(nav3TestTag("multi_fragment_slow_transitions")),
+            )
+          }
         }
-        OutlinedButton(
-          onClick = onOpenPager,
-          modifier = Modifier.testTag(nav3TestTag("multi_fragment_open_pager")),
-        ) {
-          Text("Pager")
-        }
-      }
-      Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("Slow Fragment transitions", modifier = Modifier.weight(1f))
-        Switch(
-          checked = slowTransitions,
-          onCheckedChange = onSlowTransitionsChanged,
-          modifier = Modifier.testTag(nav3TestTag("multi_fragment_slow_transitions")),
-        )
+        Nav3FragmentMode.DIALOG,
+        Nav3FragmentMode.PAGER -> Unit
       }
     }
   }

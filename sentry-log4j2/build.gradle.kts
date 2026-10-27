@@ -30,6 +30,7 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.log4j.api)
   testImplementation(libs.log4j.core)

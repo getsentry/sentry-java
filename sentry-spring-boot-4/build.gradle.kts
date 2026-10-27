@@ -1,3 +1,4 @@
+import io.sentry.gradle.ChildJvmTestArguments
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
@@ -157,6 +158,48 @@ kotlin {
   }
 }
 
+// The OpenTelemetry agent tests run this app in a child JVM, on its own classpath like a real app
+// with the agent attached, rather than on the test's classpath.
+val agentFixture = sourceSets.create("agentFixture")
+
+// The built agent jar, rather than the plain jar the unit tests compile against.
+val otelAgentJar =
+  configurations.create("otelAgentJar") {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+    isTransitive = false
+    attributes {
+      attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+      attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.SHADOWED))
+    }
+  }
+
+dependencies {
+  "agentFixtureImplementation"(platform(SpringBootPlugin.BOM_COORDINATES))
+  "agentFixtureImplementation"(projects.sentrySpringBoot4Starter)
+  "agentFixtureImplementation"(projects.sentryAsyncProfiler)
+  "agentFixtureImplementation"(projects.sentryGraphql22)
+  "agentFixtureImplementation"(projects.sentryJdbc)
+  "agentFixtureImplementation"(projects.sentryKafka)
+  "agentFixtureImplementation"(projects.sentryLogback)
+  "agentFixtureImplementation"(kotlin(Config.kotlinStdLib))
+  // Reactor's automatic context propagation needs it to carry the Sentry scope across threads.
+  "agentFixtureImplementation"(libs.context.propagation)
+  "agentFixtureImplementation"(libs.caffeine)
+  "agentFixtureImplementation"(libs.otel)
+  "agentFixtureImplementation"(libs.springboot4.starter.cache)
+  "agentFixtureImplementation"(libs.springboot4.starter.graphql)
+  "agentFixtureImplementation"(libs.springboot4.starter.jdbc)
+  "agentFixtureImplementation"(libs.springboot4.starter.kafka)
+  "agentFixtureImplementation"(libs.springboot4.starter.restclient)
+  "agentFixtureImplementation"(libs.springboot4.starter.web)
+  "agentFixtureImplementation"(libs.springboot4.starter.webclient)
+  "agentFixtureImplementation"(libs.springboot4.starter.webflux)
+  "agentFixtureRuntimeOnly"(libs.hsqldb)
+
+  otelAgentJar(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
+}
+
 // Swaps Logback for Log4j2 where a classpath has both starters, which only
 // integrationTestLog4j2's has.
 dependencies {
@@ -288,7 +331,84 @@ testing {
         runtimeOnly(libs.hsqldb)
       }
     }
+
+    // Runs agentFixture's app with the agent initializing Sentry.
+    register<JvmTestSuite>("integrationTestOtelAgent") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentryTestSupport)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        // For TestRestTemplate. Only the app's JVM runs the agent, so it doesn't trace the tests.
+        implementation(libs.springboot4.resttestclient)
+        implementation(libs.springboot4.starter.restclient)
+        implementation(libs.springboot4.starter.test)
+        implementation(libs.spring.kafka4.test)
+      }
+      targets.all { testTask.configure { runAgentFixture(autoInit = true) } }
+    }
+
+    // The servlet app with the OpenTelemetry Spring Boot starter, set up by
+    // sentry-opentelemetry-otlp-spring to export traces over OTLP while Sentry handles the rest.
+    register<JvmTestSuite>("integrationTestOtlp") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(projects.sentrySpringBoot4Starter)
+        implementation(projects.sentryOpentelemetry.sentryOpentelemetryOtlpSpring)
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql22)
+        implementation(projects.sentryJdbc)
+        implementation(projects.sentryLogback)
+        implementation(projects.sentryTestSupport)
+        // Reactor's automatic context propagation needs it to carry the Sentry scope across
+        // threads.
+        implementation(libs.context.propagation)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.caffeine)
+        implementation(libs.springboot4.resttestclient)
+        implementation(libs.springboot4.starter.aspectj)
+        implementation(libs.springboot4.starter.cache)
+        implementation(libs.springboot4.starter.graphql)
+        implementation(libs.springboot4.starter.jdbc)
+        implementation(libs.springboot4.starter.restclient)
+        implementation(libs.springboot4.starter.test)
+        implementation(libs.springboot4.starter.web)
+        implementation(libs.springboot4.starter.webclient)
+        implementation(libs.springboot4.starter.webflux)
+        runtimeOnly(libs.hsqldb)
+      }
+    }
   }
+}
+
+/**
+ * Has the OpenTelemetry agent tests start agentFixture's app in a child JVM, with the built agent
+ * attached. [autoInit] decides whether the agent initializes Sentry or, as with
+ * `SENTRY_AUTO_INIT=false`, the Spring Boot starter.
+ */
+fun Test.runAgentFixture(autoInit: Boolean) {
+  jvmArgumentProviders.add(
+    objects.newInstance<ChildJvmTestArguments>().apply {
+      agentJar.from(otelAgentJar)
+      appClasspath.from(agentFixture.runtimeClasspath)
+    }
+  )
+  systemProperty("sentry.test.agentAutoInit", autoInit)
+}
+
+// The same tests with the Spring Boot starter initializing Sentry. Each test JVM starts one app, so
+// this mode needs a task of its own, which Gradle runs in parallel with the suite's.
+tasks.register<Test>("integrationTestOtelAgentWithoutAutoInit") {
+  description = "Runs the OpenTelemetry agent tests with SENTRY_AUTO_INIT=false."
+  group = LifecycleBasePlugin.VERIFICATION_GROUP
+  val sources = sourceSets["integrationTestOtelAgent"]
+  testClassesDirs = sources.output.classesDirs
+  classpath = sources.runtimeClasspath
+  useJUnit()
+  runAgentFixture(autoInit = false)
 }
 
 // The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
@@ -297,6 +417,8 @@ listOf(
     "compileIntegrationTestKotlin",
     "compileIntegrationTestWebfluxKotlin",
     "compileIntegrationTestOtelNoAgentKotlin",
+    "compileAgentFixtureKotlin",
+    "compileIntegrationTestOtlpKotlin",
   )
   .forEach {
     tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }

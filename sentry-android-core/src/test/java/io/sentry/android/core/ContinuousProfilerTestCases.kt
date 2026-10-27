@@ -192,3 +192,23 @@ fun IContinuousProfiler.testCanBeStartedAgainAfterStopCycle(mocks: ProfilerMocks
   mocks.executor.runAll()
   assertTrue(isRunning, "shouldStop must be reset on start")
 }
+
+fun IContinuousProfiler.testManualStartCancelsPendingStop(mocks: ProfilerMocks) {
+  startProfiler(ProfileLifecycle.MANUAL, mocks.tracesSampler)
+  val profilerIdBeforeStop = profilerId
+  stopProfiler(ProfileLifecycle.MANUAL)
+  startProfiler(ProfileLifecycle.MANUAL, mocks.tracesSampler)
+  mocks.executor.runAll()
+  assertTrue(isRunning, "a start before the chunk ends must cancel the pending stop")
+  assertEquals(profilerIdBeforeStop, profilerId)
+}
+
+fun IContinuousProfiler.testTraceStartCancelsPendingStop(mocks: ProfilerMocks) {
+  startProfiler(ProfileLifecycle.TRACE, mocks.tracesSampler)
+  val profilerIdBeforeStop = profilerId
+  stopProfiler(ProfileLifecycle.TRACE)
+  startProfiler(ProfileLifecycle.TRACE, mocks.tracesSampler)
+  mocks.executor.runAll()
+  assertTrue(isRunning, "a start before the chunk ends must cancel the pending stop")
+  assertEquals(profilerIdBeforeStop, profilerId)
+}

@@ -141,6 +141,8 @@ public class PerfettoContinuousProfiler
         logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
         return;
       }
+      // A stop only takes effect when the current chunk ends, so a start before then cancels it.
+      shouldStop = false;
       switch (profileLifecycle) {
         case TRACE:
           activeTraceCount = Math.max(0, activeTraceCount); // safety check.
@@ -148,16 +150,13 @@ public class PerfettoContinuousProfiler
           break;
         case MANUAL:
           if (isRunning()) {
-            logger.log(
-                SentryLevel.WARNING,
-                "Unexpected call to startProfiler(MANUAL) while profiler already running. Skipping.");
+            logger.log(SentryLevel.DEBUG, "Profiler is already running.");
             return;
           }
           break;
       }
       if (!isRunning()) {
         logger.log(SentryLevel.DEBUG, "Started Profiler.");
-        shouldStop = false;
         startInternal();
       }
     }
