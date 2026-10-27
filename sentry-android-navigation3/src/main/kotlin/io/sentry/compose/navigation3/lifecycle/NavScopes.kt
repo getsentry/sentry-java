@@ -83,37 +83,7 @@ internal class NavScopes(
   private val stagedNavTransaction = StagedNavTransaction(delegate)
   private val stagedNavData = StagedNavData()
 
-  /** This instance's staged nav transaction and nav data, as published under the nav lease. */
-  private val leasedNavState =
-    object : LeasedNavState {
-
-      override fun publishTo(scope: IScope) {
-        // Publishing the data first ensures a staged transaction is sampled against the rotated
-        // propagation context when it starts.
-        stagedNavData.publishTo(scope)
-        stagedNavTransaction.publishTo(scope)
-      }
-
-      override fun unpublishFrom(scope: IScope) {
-        stagedNavTransaction.unpublishFrom(scope)
-        stagedNavData.clearPublishedStateFrom(scope)
-      }
-
-      override fun onUnregistered(scope: IScope?) {
-        // Unregistering on destroy detaches this instance, as dispose() does.
-        attachedLifecycle = null
-        registration = null
-
-        if (scope != null) {
-          stagedNavTransaction.finish(scope)
-        } else {
-          // Without a scope (e.g., the SDK is disabled), the transaction can't be sent and will
-          // time out anyway. Not finishing it immediately lets us ensure the error-handling policy
-          // from IScopes.configureScope covers all SDK work.
-          stagedNavTransaction.forget()
-        }
-      }
-    }
+  private val navStatePublisher = NavStatePublisher()
 
   /**
    * Registers this [NavScopes] instance with [lifecycle]. No-ops if `lifecycle` has already been
@@ -141,7 +111,7 @@ internal class NavScopes(
     }
 
     attachedLifecycle = lifecycle
-    registration = coordinator.register(lifecycle, delegate, leasedNavState)
+    registration = coordinator.register(lifecycle, delegate, navStatePublisher)
   }
 
   /**
@@ -171,6 +141,40 @@ internal class NavScopes(
     stagedNavTransaction.forget()
     attachedLifecycle = null
     registration = null
+  }
+
+  /**
+   * Publishes this instance's [stagedNavTransaction] and [stagedNavData] to the shared [IScope]
+   * while it holds the nav lease, as directed by the [coordinator].
+   */
+  private inner class NavStatePublisher : LeasedNavState {
+
+    override fun publishTo(scope: IScope) {
+      // Publishing the data first ensures a staged transaction is sampled against the rotated
+      // propagation context when it starts.
+      stagedNavData.publishTo(scope)
+      stagedNavTransaction.publishTo(scope)
+    }
+
+    override fun unpublishFrom(scope: IScope) {
+      stagedNavTransaction.unpublishFrom(scope)
+      stagedNavData.clearPublishedStateFrom(scope)
+    }
+
+    override fun onUnregistered(scope: IScope?) {
+      // Unregistering on destroy detaches this instance, as dispose() does.
+      attachedLifecycle = null
+      registration = null
+
+      if (scope != null) {
+        stagedNavTransaction.finish(scope)
+      } else {
+        // Without a scope (e.g., the SDK is disabled), the transaction can't be sent and will time
+        // out anyway. Not finishing it immediately lets us ensure the error-handling policy from
+        // IScopes.configureScope covers all SDK work.
+        stagedNavTransaction.forget()
+      }
+    }
   }
 
   /**
