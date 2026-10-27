@@ -29,7 +29,6 @@ import io.sentry.SentryReplayEvent
 import io.sentry.SentryTracer
 import io.sentry.Session
 import io.sentry.TransactionContext
-import io.sentry.UserFeedback
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.IClientReportRecorder
 import io.sentry.hints.DiskFlushNotification
@@ -40,9 +39,9 @@ import io.sentry.protocol.User
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
 import io.sentry.time.TestMonotonicTicker
+import io.sentry.userReportEnvelopeItem
 import io.sentry.util.HintUtils
 import java.io.File
-import java.util.UUID
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
@@ -259,15 +258,7 @@ class RateLimiterTest {
     val rateLimiter = fixture.getSUT()
 
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-    val userFeedbackItem =
-      SentryEnvelopeItem.fromUserFeedback(
-        fixture.serializer,
-        UserFeedback(SentryId(UUID.randomUUID())).also {
-          it.comments = "It broke on Android. I don't know why, but this happens."
-          it.email = "john@me.com"
-          it.setName("John Me")
-        },
-      )
+    val userFeedbackItem = userReportEnvelopeItem()
     val scopes = mock<IScopes>()
     whenever(scopes.options).thenReturn(SentryOptions())
     val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
@@ -342,15 +333,7 @@ class RateLimiterTest {
     whenever(scopes.options).thenReturn(SentryOptions())
 
     val eventItem = SentryEnvelopeItem.fromEvent(fixture.serializer, SentryEvent())
-    val userFeedbackItem =
-      SentryEnvelopeItem.fromUserFeedback(
-        fixture.serializer,
-        UserFeedback(SentryId(UUID.randomUUID())).also {
-          it.comments = "It broke on Android. I don't know why, but this happens."
-          it.email = "john@me.com"
-          it.setName("John Me")
-        },
-      )
+    val userFeedbackItem = userReportEnvelopeItem()
     val transaction = SentryTracer(TransactionContext("name", "op"), scopes)
     val profileItem =
       SentryEnvelopeItem.fromProfilingTrace(

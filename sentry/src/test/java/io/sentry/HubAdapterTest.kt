@@ -96,13 +96,6 @@ class HubAdapterTest {
   }
 
   @Test
-  fun `captureUserFeedback calls Hub`() {
-    val userFeedback = mock<UserFeedback>()
-    HubAdapter.getInstance().captureUserFeedback(userFeedback)
-    verify(scopes).captureUserFeedback(eq(userFeedback))
-  }
-
-  @Test
   fun `captureCheckIn calls Hub`() {
     val checkIn = mock<CheckIn>()
     HubAdapter.getInstance().captureCheckIn(checkIn)

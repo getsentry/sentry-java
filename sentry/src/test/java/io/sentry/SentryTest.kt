@@ -178,14 +178,12 @@ class SentryTest {
   }
 
   @Test
-  fun `manual Logs and Metrics reach transport when automatic collection is disabled`() {
+  fun `manual Logs and Metrics reach transport`() {
     val transport = mock<ITransport>()
     val transportFactory = mock<ITransportFactory>()
     whenever(transportFactory.create(any(), any())).thenReturn(transport)
     initForTest {
       it.dsn = dsn
-      it.logs.isEnabled = false
-      it.metrics.isEnabled = false
       it.setTransportFactory(transportFactory)
       it.shutdownTimeoutMillis = 5_000
     }
@@ -365,19 +363,6 @@ class SentryTest {
       "DSN is required. Use empty string or set enabled to false in SentryOptions to disable SDK.",
       exception.message,
     )
-  }
-
-  @Test
-  fun `captureUserFeedback gets forwarded to client`() {
-    initForTest { it.dsn = dsn }
-
-    val client = createSentryClientMock()
-    Sentry.getCurrentScopes().bindClient(client)
-
-    val userFeedback = UserFeedback(SentryId.EMPTY_ID)
-    Sentry.captureUserFeedback(userFeedback)
-
-    verify(client).captureUserFeedback(argThat { eventId == userFeedback.eventId })
   }
 
   @Test
@@ -1005,9 +990,9 @@ class SentryTest {
     val feedback = Feedback("message")
     val hint = Hint()
 
-    Sentry.captureFeedback(feedback)
-    Sentry.captureFeedback(feedback, hint)
-    Sentry.captureFeedback(feedback, hint) { it.setTag("testKey", "testValue") }
+    Sentry.feedback().capture(feedback)
+    Sentry.feedback().capture(feedback, hint)
+    Sentry.feedback().capture(feedback, hint) { it.setTag("testKey", "testValue") }
 
     verify(client).captureFeedback(eq(feedback), eq(null), anyOrNull())
     verify(client)

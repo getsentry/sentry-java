@@ -2176,66 +2176,52 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads logs enabled and keep default value if not found`() {
-    // Arrange
+  fun `applyMetadata keeps Timber log capture disabled if not found`() {
     val context = fixture.getContext()
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertFalse(fixture.options.logs.isEnabled)
+    assertFalse(fixture.options.timberLogCaptureEnabled)
   }
 
   @Test
-  fun `applyMetadata reads logs enabled to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_LOGS to true)
+  fun `applyMetadata reads Timber log capture enabled to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.TIMBER_LOG_CAPTURE_ENABLED to true)
     val context = fixture.getContext(metaData = bundle)
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertTrue(fixture.options.logs.isEnabled)
+    assertTrue(fixture.options.timberLogCaptureEnabled)
   }
 
   @Test
-  fun `applyMetadata reads metrics enabled and keep default value if not found`() {
-    // Arrange
+  fun `applyMetadata keeps Logcat log capture disabled if not found`() {
     val context = fixture.getContext()
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertTrue(fixture.options.metrics.isEnabled)
+    assertThat(fixture.options.logcatLogCaptureEnabled).isFalse()
   }
 
   @Test
-  fun `applyMetadata reads metrics enabled to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to false)
+  fun `applyMetadata reads Logcat log capture enabled to options`() {
+    val bundle = bundleOf(ManifestMetadataReader.LOGCAT_LOG_CAPTURE_ENABLED to true)
     val context = fixture.getContext(metaData = bundle)
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertFalse(fixture.options.metrics.isEnabled)
+    assertThat(fixture.options.logcatLogCaptureEnabled).isTrue()
   }
 
   @Test
-  fun `applyMetadata reads metrics enabled to options when set to true`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_METRICS to true)
+  fun `applyMetadata reads Logcat log capture disabled to options`() {
+    fixture.options.logcatLogCaptureEnabled = true
+    val bundle = bundleOf(ManifestMetadataReader.LOGCAT_LOG_CAPTURE_ENABLED to false)
     val context = fixture.getContext(metaData = bundle)
 
-    // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
-    // Assert
-    assertTrue(fixture.options.metrics.isEnabled)
+    assertThat(fixture.options.logcatLogCaptureEnabled).isFalse()
   }
 
   @Test

@@ -349,29 +349,6 @@ public final class Scopes implements IScopes {
     return sentryId;
   }
 
-  @Deprecated
-  @Override
-  public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
-    if (!isEnabled()) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Instance is disabled and this 'captureUserFeedback' call is a no-op.");
-    } else {
-      try {
-        getClient().captureUserFeedback(userFeedback);
-      } catch (Throwable e) {
-        getOptions()
-            .getLogger()
-            .log(
-                SentryLevel.ERROR,
-                "Error while capturing captureUserFeedback: " + userFeedback.toString(),
-                e);
-      }
-    }
-  }
-
   @Override
   public void startSession() {
     if (!isEnabled()) {

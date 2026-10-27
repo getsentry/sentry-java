@@ -746,8 +746,21 @@ class AndroidOptionsInitializerTest {
   fun `SentryTimberIntegration added to the integration list if available on classpath`() {
     fixture.initSutWithClassLoader(isTimberAvailable = true)
 
-    val actual = fixture.sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
-    assertNotNull(actual)
+    val actual =
+      fixture.sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
+        as SentryTimberIntegration
+    assertFalse(actual.logsEnabled)
+  }
+
+  @Test
+  fun `SentryTimberIntegration receives Timber log capture option`() {
+    fixture.sentryOptions.timberLogCaptureEnabled = true
+    fixture.initSutWithClassLoader(isTimberAvailable = true)
+
+    val actual =
+      fixture.sentryOptions.integrations.firstOrNull { it is SentryTimberIntegration }
+        as SentryTimberIntegration
+    assertTrue(actual.logsEnabled)
   }
 
   @Test

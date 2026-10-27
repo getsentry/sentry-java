@@ -81,10 +81,6 @@ public final class NoOpHub implements IHub {
     return SentryId.EMPTY_ID;
   }
 
-  @Deprecated
-  @Override
-  public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
-
   @Override
   public void startSession() {}
 
