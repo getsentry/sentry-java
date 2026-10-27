@@ -30,15 +30,11 @@ class SentryAppenderIntegrationTest {
     server.close()
     ThreadContext.clearAll()
     System.clearProperty("integrationTestDsn")
-    System.clearProperty("sentry.logs.enabled")
   }
 
   @Test
   fun `appender configured from XML sends events, breadcrumbs and logs`() {
     System.setProperty("integrationTestDsn", server.dsn)
-    // The appender has no attribute for logs, so they're enabled the way an app's sentry.properties
-    // would: as external configuration.
-    System.setProperty("sentry.logs.enabled", "true")
     loggerContext.start()
     val logger = loggerContext.getLogger(SentryAppenderIntegrationTest::class.java.name)
 
