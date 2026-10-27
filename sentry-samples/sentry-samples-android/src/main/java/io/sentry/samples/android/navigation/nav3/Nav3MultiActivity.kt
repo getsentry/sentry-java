@@ -301,6 +301,7 @@ internal fun MultiRootNavDisplay(
         maxCapturedBackStackEntries = configuration.maxCapturedBackStackEntries
       }
     }
+  // Keep this before the NavDisplay below: TracedNav3Route's resume tagging relies on it.
   SentryNavEffect(
     backStack = backStack,
     backStackEntryMapper = { route ->
