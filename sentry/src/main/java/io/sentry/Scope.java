@@ -148,7 +148,10 @@ public final class Scope implements IScope {
     this.request = requestRef != null ? new Request(requestRef) : null;
 
     this.fingerprint = new ArrayList<>(scope.fingerprint);
-    this.eventProcessors = new CopyOnWriteArrayList<>(scope.eventProcessors);
+    this.eventProcessors = new CopyOnWriteArrayList<>();
+    for (final EventProcessorAndOrder processor : scope.eventProcessors) {
+      this.eventProcessors.add(processor.fork(options.getLogger()));
+    }
 
     final Breadcrumb[] breadcrumbsRef = scope.breadcrumbs.toArray(new Breadcrumb[0]);
 

@@ -68,6 +68,19 @@ public interface EventProcessor {
   }
 
   /**
+   * Creates the processor instance to use when the SDK clones a scope.
+   *
+   * <p>The default implementation returns this processor so stateless processors remain shared.
+   * Stateful processors may return a new instance that preserves their configuration while
+   * resetting scope-local state.
+   *
+   * @return the processor to attach to the cloned scope
+   */
+  default @NotNull EventProcessor fork() {
+    return this;
+  }
+
+  /**
    * Controls when this EventProcessor is invoked.
    *
    * @return order higher number = later, lower number = earlier (negative values may also be
