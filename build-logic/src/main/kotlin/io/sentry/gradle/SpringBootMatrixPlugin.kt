@@ -55,18 +55,20 @@ abstract class SpringBootMatrixExtension @Inject constructor(private val project
     }
 
     val oldest = versions.first()
+    val main = sourceSet("main")
     val compileClasspath = classpath("main", oldest, compile = true)
+    val compileJava = project.tasks.named("compileJava", JavaCompile::class.java)
     val compileOldest =
       project.tasks.register("compileJava${suffix(oldest)}", JavaCompile::class.java) {
         description = "Compiles the main Java sources against Spring Boot $oldest."
         group = LifecycleBasePlugin.VERIFICATION_GROUP
-        val compileJava = project.tasks.named("compileJava", JavaCompile::class.java).get()
-        source = sourceSet("main").java
+        source = main.java
         classpath = compileClasspath
-        destinationDirectory.set(project.layout.buildDirectory.dir("classes/java/main${suffix(oldest)}"))
-        javaCompiler.set(compileJava.javaCompiler)
-        options.release.set(compileJava.options.release)
-        options.annotationProcessorPath = compileJava.options.annotationProcessorPath
+        destinationDirectory.set(
+          project.layout.buildDirectory.dir("classes/java/main${suffix(oldest)}")
+        )
+        options.release.set(compileJava.flatMap { it.options.release })
+        options.annotationProcessorPath = main.annotationProcessorPath
       }
     project.tasks.named(aggregateName(oldest)) { dependsOn(compileOldest) }
   }
@@ -104,20 +106,27 @@ abstract class SpringBootMatrixExtension @Inject constructor(private val project
     val base =
       if (compile) sources.compileClasspathConfigurationName
       else sources.runtimeClasspathConfigurationName
+    val only =
+      if (compile) sources.compileOnlyConfigurationName else sources.runtimeOnlyConfigurationName
     val name = "$sourceSet${suffix(version)}${if (compile) "Compile" else "Runtime"}Classpath"
     val configurations = project.configurations
     return configurations.findByName(name)
-      ?: configurations.create(name) {
-        isCanBeConsumed = false
-        val baseConfiguration = configurations.getByName(base)
-        extendsFrom(*baseConfiguration.extendsFrom.toTypedArray())
-        attributes.addAllLater(baseConfiguration.attributes)
-        // What setting the version in the catalog does: every Spring Boot artifact, the BOM
-        // included, is in this group. Libraries pinned to their own version still win conflicts.
-        resolutionStrategy.eachDependency {
-          if (requested.group == "org.springframework.boot") useVersion(version)
+      ?: configurations
+        .resolvable(name) {
+          // The base classpath's parents by name, since copying its extendsFrom would depend on
+          // what has been added to it by the time this runs.
+          extendsFrom(
+            configurations.getByName(sources.implementationConfigurationName),
+            configurations.getByName(only),
+          )
+          attributes.addAllLater(configurations.getByName(base).attributes)
+          // What setting the version in the catalog does: every Spring Boot artifact, the BOM
+          // included, is in this group. Libraries pinned to their own version still win conflicts.
+          resolutionStrategy.eachDependency {
+            if (requested.group == "org.springframework.boot") useVersion(version)
+          }
         }
-      }
+        .get()
   }
 
   private fun sourceSet(name: String) =
