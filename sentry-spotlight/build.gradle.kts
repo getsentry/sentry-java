@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.gradle.versions)
   id("io.sentry.animalsniffer.android")
   alias(libs.plugins.buildconfig)
+  id("io.sentry.api-validation")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {

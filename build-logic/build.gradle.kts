@@ -16,6 +16,10 @@ gradlePlugin {
       id = "io.sentry.jdk-target"
       implementationClass = "io.sentry.gradle.JdkTargetConvention"
     }
+    register("sentryApiValidation") {
+      id = "io.sentry.api-validation"
+      implementationClass = "io.sentry.gradle.SentryApiValidationPlugin"
+    }
     register("sentryAnimalSniffer") {
       id = "io.sentry.animalsniffer"
       implementationClass = "io.sentry.gradle.SentryAnimalSnifferPlugin"

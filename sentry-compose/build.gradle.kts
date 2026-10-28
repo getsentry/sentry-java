@@ -12,6 +12,7 @@ plugins {
   alias(libs.plugins.dokka)
   alias(libs.plugins.dokka.javadoc)
   `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
+  id("io.sentry.api-validation")
 }
 
 kotlin {
