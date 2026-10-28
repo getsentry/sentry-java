@@ -93,6 +93,10 @@ public abstract class SentryMaskingOptions {
   }
 
   public void addMaskViewClass(final @NotNull String className) {
+    // Hybrid SDKs may pass null despite the annotation, and the backing set rejects null keys
+    if (className == null) {
+      return;
+    }
     this.maskViewClasses.add(className);
     this.unmaskViewClasses.remove(className);
   }
@@ -103,6 +107,10 @@ public abstract class SentryMaskingOptions {
   }
 
   public void addUnmaskViewClass(final @NotNull String className) {
+    // Hybrid SDKs may pass null despite the annotation, and the backing set rejects null keys
+    if (className == null) {
+      return;
+    }
     this.unmaskViewClasses.add(className);
     this.maskViewClasses.remove(className);
   }
