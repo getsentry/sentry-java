@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.Window;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
@@ -60,6 +61,9 @@ public class SentryUserFeedbackForm extends Dialog {
       final @Nullable OptionsConfiguration configuration,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     super(context, resolveTheme(context, themeResId));
+    // The form draws its own title. AlertDialog requested this for us; without it, themes that
+    // don't set windowNoTitle, like Theme.Material.Dialog, add an empty system title bar.
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
     this.associatedEventId = associatedEventId;
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     @NotNull
