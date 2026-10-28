@@ -229,7 +229,7 @@ spring-kafka3 = { module = "org.springframework.kafka:spring-kafka", version.ref
 spring-kafka3-test = { module = "org.springframework.kafka:spring-kafka-test", version.ref = "springKafka3" }
 spring-kafka4 = { module = "org.springframework.kafka:spring-kafka" }
 spring-kafka4-test = { module = "org.springframework.kafka:spring-kafka-test" }
-kafka-clients = { module = "org.apache.kafka:kafka-clients", version = "3.8.1" }
+kafka-clients = { module = "org.apache.kafka:kafka-clients", version = "4.4.0" }
 springboot4-otel = { module = "io.opentelemetry.instrumentation:opentelemetry-spring-boot-starter", version.ref = "otelInstrumentation" }
 springboot4-resttestclient = { module = "org.springframework.boot:spring-boot-resttestclient", version.ref = "springboot4" }
 springboot4-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "springboot4" }
