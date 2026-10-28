@@ -11,7 +11,7 @@ final class SentryNdkUtil {
 
   static {
     SentryIntegrationPackageStorage.getInstance()
-        .addPackage("maven:io.sentry:sentry-android-ndk", BuildConfig.VERSION_NAME);
+        .addPackage("maven:io.sentry:" + BuildConfig.SENTRY_PACKAGE_NAME, BuildConfig.VERSION_NAME);
   }
 
   private SentryNdkUtil() {}
@@ -25,6 +25,7 @@ final class SentryNdkUtil {
     if (sdkVersion == null) {
       return;
     }
-    sdkVersion.addPackage("maven:io.sentry:sentry-android-ndk", BuildConfig.VERSION_NAME);
+    sdkVersion.addPackage(
+        "maven:io.sentry:" + BuildConfig.SENTRY_PACKAGE_NAME, BuildConfig.VERSION_NAME);
   }
 }

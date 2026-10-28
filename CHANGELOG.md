@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Features
+
+- Add experimental, opt-in out-of-process crash reporting on Android ([#6347](https://github.com/getsentry/sentry-java/pull/6347))
+
 ### Fixes
 
 - Keep UI profiling running when `startProfiler` is called before a requested stop takes effect at the end of the current chunk ([#6291](https://github.com/getsentry/sentry-java/pull/6291))
