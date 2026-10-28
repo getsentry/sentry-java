@@ -30,6 +30,7 @@ class SentryWebViewTracingTest {
   private class FakeInstaller(
     var supported: Boolean = true,
     var installFailure: IllegalArgumentException? = null,
+    var linkageError: LinkageError? = null,
   ) : WebViewScriptInstaller {
     var removeCount = 0
     val installed = mutableListOf<Pair<String, Set<String>>>()
@@ -37,6 +38,7 @@ class SentryWebViewTracingTest {
     override fun isDocumentStartScriptSupported(): Boolean = supported
 
     override fun removeInstalledScript(webView: WebView) {
+      linkageError?.let { throw it }
       removeCount++
     }
 
@@ -185,6 +187,26 @@ class SentryWebViewTracingTest {
     assertThat(result).isFalse()
     assertThat(installer.removeCount).isEqualTo(0)
     assertThat(installer.installed).isEmpty()
+  }
+
+  @Test
+  fun `returns false when androidx webkit is too old`() {
+    initSentry()
+    installer.linkageError = NoSuchMethodError("addDocumentStartJavaScript")
+
+    assertThat(add()).isFalse()
+
+    assertThat(installer.installed).isEmpty()
+  }
+
+  @Test
+  fun `passes a non-default port through to the origin rules`() {
+    initSentry()
+
+    assertThat(add(listOf("example.com:8443"))).isTrue()
+
+    val (_, rules) = installer.installed.single()
+    assertThat(rules).containsExactly("https://example.com:8443", "https://*.example.com:8443")
   }
 
   @Test

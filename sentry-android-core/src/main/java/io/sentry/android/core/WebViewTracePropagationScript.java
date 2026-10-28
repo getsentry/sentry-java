@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -86,17 +87,50 @@ final class WebViewTracePropagationScript {
 
   /**
    * Origin rules for {@code WebViewCompat.addDocumentStartJavaScript}: each host and its subdomains
-   * over https. IP literals cannot take a subdomain wildcard.
+   * over https. IP literals cannot take a subdomain wildcard. A rule without a port only matches
+   * port 443, so a non-default port given in an entry is kept and limits the rule to that port.
    */
-  static @NotNull Set<String> originRules(final @NotNull List<String> normalizedHosts) {
+  static @NotNull Set<String> originRules(final @NotNull Collection<String> allowedHosts) {
     final @NotNull Set<String> rules = new LinkedHashSet<>();
-    for (final @NotNull String host : normalizedHosts) {
-      rules.add("https://" + host);
+    for (final @Nullable String entry : allowedHosts) {
+      if (entry == null) {
+        continue;
+      }
+      final @NotNull String host = normalizeHost(entry);
+      if (host.isEmpty()) {
+        continue;
+      }
+      final @Nullable String port = port(entry);
+      final @NotNull String portSuffix = port == null || "443".equals(port) ? "" : ":" + port;
+      rules.add("https://" + host + portSuffix);
       if (!isIpLiteral(host)) {
-        rules.add("https://*." + host);
+        rules.add("https://*." + host + portSuffix);
       }
     }
     return rules;
+  }
+
+  /** Returns the port of an {@code allowedHosts} entry, or null if it has none. */
+  private static @Nullable String port(final @NotNull String entry) {
+    String hostAndPort = SCHEME.matcher(entry.trim()).replaceFirst("");
+    final int pathStart = indexOfAny(hostAndPort, "/?#");
+    if (pathStart != -1) {
+      hostAndPort = hostAndPort.substring(0, pathStart);
+    }
+
+    final int closingBracket = hostAndPort.indexOf(']');
+    final @NotNull String afterHost;
+    if (closingBracket != -1) {
+      afterHost = hostAndPort.substring(closingBracket + 1);
+    } else if (hostAndPort.indexOf(':') != hostAndPort.lastIndexOf(':')) {
+      // An unbracketed IPv6 literal has no port.
+      return null;
+    } else {
+      final int colon = hostAndPort.indexOf(':');
+      afterHost = colon == -1 ? "" : hostAndPort.substring(colon);
+    }
+    final @NotNull Matcher matcher = PORT.matcher(afterHost);
+    return matcher.matches() ? afterHost.substring(1) : null;
   }
 
   /**

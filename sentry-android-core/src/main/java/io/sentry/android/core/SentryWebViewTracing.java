@@ -57,7 +57,8 @@ public final class SentryWebViewTracing {
    *
    * <p>{@code allowedHosts} is a trust boundary: only list hosts whose content you control. A page
    * matches when its hostname equals an entry or is a subdomain of it, over https. Entries are
-   * normalized, so a scheme, a path, a port, and a trailing dot are ignored.
+   * normalized, so a scheme, a path, and a trailing dot are ignored. A port other than 443 limits
+   * the entry to pages served on that port (for example {@code "example.com:8443"}).
    *
    * <p>The trace is a snapshot taken when this is called. To propagate a newer trace to a later
    * page load, call this again: it replaces the script Sentry installed earlier and leaves other
@@ -114,6 +115,25 @@ public final class SentryWebViewTracing {
       return false;
     }
 
+    try {
+      return replaceScript(webView, allowedHosts, scopes, installer, logger);
+    } catch (LinkageError e) {
+      // androidx.webkit is compileOnly, so the version in the app's apk may be older than the one
+      // we compiled against and lack the APIs used here.
+      logger.log(
+          SentryLevel.WARNING,
+          "androidx.webkit is too old for WebView trace propagation, skipping.",
+          e);
+      return false;
+    }
+  }
+
+  private static boolean replaceScript(
+      final @NotNull WebView webView,
+      final @NotNull List<String> allowedHosts,
+      final @NotNull IScopes scopes,
+      final @NotNull WebViewScriptInstaller installer,
+      final @NotNull ILogger logger) {
     // Remove Sentry's previous script first, so a failed re-add never leaves a stale trace behind.
     installer.removeInstalledScript(webView);
 
@@ -151,7 +171,7 @@ public final class SentryWebViewTracing {
 
     try {
       if (!installer.installScript(
-          webView, script, WebViewTracePropagationScript.originRules(hosts))) {
+          webView, script, WebViewTracePropagationScript.originRules(allowedHosts))) {
         logger.log(
             SentryLevel.WARNING,
             "The WebView does not support document-start scripts, skipping WebView trace propagation.");

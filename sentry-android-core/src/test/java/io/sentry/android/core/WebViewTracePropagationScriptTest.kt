@@ -224,6 +224,31 @@ class WebViewTracePropagationScriptTest {
   }
 
   @Test
+  fun `originRules keep a non-default port`() {
+    val rules =
+      WebViewTracePropagationScript.originRules(
+        listOf("example.com:8443", "https://other.com:443/x", "[::1]:8080", "10.0.2.2:3000")
+      )
+
+    assertThat(rules)
+      .containsExactly(
+        "https://example.com:8443",
+        "https://*.example.com:8443",
+        "https://other.com",
+        "https://*.other.com",
+        "https://[::1]:8080",
+        "https://10.0.2.2:3000",
+      )
+  }
+
+  @Test
+  fun `originRules skip blank entries and treat unbracketed IPv6 as having no port`() {
+    val rules = WebViewTracePropagationScript.originRules(listOf("  ", "2001:db8::1"))
+
+    assertThat(rules).containsExactly("https://[2001:db8::1]")
+  }
+
+  @Test
   fun `stripTransactionFromBaggage removes sentry-transaction and keeps every other entry`() {
     val baggage =
       "sentry-trace_id=d4cda95b652f4a1592b449d5929fda1b,sentry-environment=prod," +
