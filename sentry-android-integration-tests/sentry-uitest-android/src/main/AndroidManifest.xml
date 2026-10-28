@@ -15,6 +15,7 @@
 
     <activity android:name=".EmptyActivity" />
     <activity android:name=".ProfilingSampleActivity" />
+    <activity android:name=".WebViewTraceActivity" />
     <activity
       android:theme="@style/Theme.AppCompat.NoActionBar"
       android:name=".ComposeActivity" />

@@ -123,6 +123,7 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room2" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room2" }
 androidx-room3-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room3" }
 androidx-room3-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }
+androidx-webkit = { module = "androidx.webkit:webkit", version = "1.14.0" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqliteRc" }
 androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteRc" }
@@ -294,6 +295,7 @@ okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.
 # apollo-runtime 5.x pulls in okhttp 5.x; mockwebserver 4.x is incompatible with that classpath
 okhttp-mockwebserver5 = { module = "com.squareup.okhttp3:mockwebserver", version = "5.3.0" }
 okio = { module = "com.squareup.okio:okio", version = "1.13.0" }
+rhino = { module = "org.mozilla:rhino", version = "1.8.0" }
 roboelectric = { module = "org.robolectric:robolectric", version = "4.15" }
 
 [bundles]

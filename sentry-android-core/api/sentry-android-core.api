@@ -623,6 +623,11 @@ public abstract interface class io/sentry/android/core/SentryUserFeedbackForm$Op
 	public abstract fun configure (Landroid/content/Context;Lio/sentry/SentryFeedbackOptions;)V
 }
 
+public final class io/sentry/android/core/SentryWebViewTracing {
+	public static fun addTracePropagation (Landroid/webkit/WebView;Ljava/util/List;)Z
+	public static fun addTracePropagation (Landroid/webkit/WebView;[Ljava/lang/String;)Z
+}
+
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {
 	protected final field lock Lio/sentry/util/AutoClosableReentrantLock;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;Lio/sentry/android/core/internal/util/SentryFrameMetricsCollector;)V
