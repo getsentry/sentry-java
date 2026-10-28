@@ -3,6 +3,7 @@ package io.sentry.android.core;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.os.Build;
+import android.os.Handler;
 import android.os.Looper;
 import android.webkit.WebView;
 import androidx.annotation.MainThread;
@@ -15,6 +16,7 @@ import io.sentry.util.LoadClass;
 import io.sentry.util.TracingUtils;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +36,9 @@ public final class SentryWebViewTracing {
   static final @NotNull String SCRIPT_HANDLER_CLASS_NAME = "androidx.webkit.ScriptHandler";
 
   private static final @NotNull String INTEGRATION_NAME = "WebViewTracePropagation";
+
+  /** Counts calls that replaced Sentry's script on a WebView's thread. */
+  private static final @NotNull AtomicLong replacements = new AtomicLong();
 
   private SentryWebViewTracing() {}
 
@@ -112,10 +117,12 @@ public final class SentryWebViewTracing {
       logger.log(
           SentryLevel.WARNING,
           "addTracePropagation must be called on the WebView's thread, skipping WebView trace propagation.");
+      removeOnWebViewThread(webView, installer, logger);
       return false;
     }
 
     try {
+      replacements.incrementAndGet();
       return replaceScript(webView, allowedHosts, scopes, installer, logger);
     } catch (LinkageError e) {
       // androidx.webkit is compileOnly, so the version in the app's apk may be older than the one
@@ -186,11 +193,40 @@ public final class SentryWebViewTracing {
     return true;
   }
 
+  /**
+   * A failed call must not leave a stale trace behind, but off the WebView's thread the script can
+   * only be removed later, on that thread. The removal is skipped if a call on the WebView's thread
+   * replaced the script in the meantime, so it never removes a newer script.
+   */
+  private static void removeOnWebViewThread(
+      final @NotNull WebView webView,
+      final @NotNull WebViewScriptInstaller installer,
+      final @NotNull ILogger logger) {
+    final long replacementsSeen = replacements.get();
+    new Handler(webViewLooper(webView))
+        .post(
+            () -> {
+              if (replacements.get() != replacementsSeen) {
+                return;
+              }
+              try {
+                installer.removeInstalledScript(webView);
+              } catch (LinkageError e) {
+                logger.log(
+                    SentryLevel.WARNING,
+                    "androidx.webkit is too old for WebView trace propagation, skipping.",
+                    e);
+              }
+            });
+  }
+
   private static boolean isOnWebViewThread(final @NotNull WebView webView) {
-    final @NotNull Looper webViewLooper =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-            ? webView.getWebViewLooper()
-            : Looper.getMainLooper();
-    return Looper.myLooper() == webViewLooper;
+    return Looper.myLooper() == webViewLooper(webView);
+  }
+
+  private static @NotNull Looper webViewLooper(final @NotNull WebView webView) {
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+        ? webView.getWebViewLooper()
+        : Looper.getMainLooper();
   }
 }

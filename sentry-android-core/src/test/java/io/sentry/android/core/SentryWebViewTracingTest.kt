@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import android.os.Looper
 import android.webkit.WebView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,6 +24,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class SentryWebViewTracingTest {
@@ -176,8 +178,9 @@ class SentryWebViewTracingTest {
   }
 
   @Test
-  fun `returns false and touches nothing when called off the WebView's thread`() {
+  fun `off the WebView's thread returns false and removes the previous script on that thread`() {
     initSentry()
+    assertThat(add()).isTrue()
     var result: Boolean? = null
 
     val thread = Thread { result = add() }
@@ -185,8 +188,24 @@ class SentryWebViewTracingTest {
     thread.join()
 
     assertThat(result).isFalse()
-    assertThat(installer.removeCount).isEqualTo(0)
-    assertThat(installer.installed).isEmpty()
+    assertThat(installer.removeCount).isEqualTo(1)
+    shadowOf(Looper.getMainLooper()).idle()
+    assertThat(installer.removeCount).isEqualTo(2)
+    assertThat(installer.installed).hasSize(1)
+  }
+
+  @Test
+  fun `the removal posted by an off-thread call does not remove a newer script`() {
+    initSentry()
+    val thread = Thread { add() }
+    thread.start()
+    thread.join()
+
+    assertThat(add()).isTrue()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertThat(installer.removeCount).isEqualTo(1)
+    assertThat(installer.installed).hasSize(1)
   }
 
   @Test
