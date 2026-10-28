@@ -3,6 +3,8 @@ package io.sentry.test
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Sentry
 import io.sentry.SentryItemType
+import java.net.HttpURLConnection
+import java.net.URI
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -63,5 +65,18 @@ class MockSentryServerTest {
     assertFailsWith<AssertionError> {
       server.assertNoEnvelope(millis = 5000) { it.header.eventId == eventId }
     }
+  }
+
+  @Test
+  fun `awaitEnvelope fails with the cause when a body is not an envelope`() {
+    val url = URI(server.dsn.replace("key@", "")).resolve("/api/0/envelope/").toURL()
+    val connection = url.openConnection() as HttpURLConnection
+    connection.requestMethod = "POST"
+    connection.doOutput = true
+    connection.outputStream.use { it.write("not an envelope".toByteArray()) }
+    assertThat(connection.responseCode).isEqualTo(500)
+
+    val error = assertFailsWith<AssertionError> { server.awaitEnvelope { true } }
+    assertThat(error).hasCauseThat().isNotNull()
   }
 }

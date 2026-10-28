@@ -27,6 +27,9 @@ import java.util.zip.GZIPInputStream
 class MockSentryServer(private val beforeEachCheck: () -> Unit = {}) : Closeable {
   private val serializer = JsonSerializer(SentryOptions.empty())
   private val received = CopyOnWriteArrayList<SentryEnvelope>()
+  // Rethrown while waiting, so an envelope the server can't read fails the test with its cause
+  // rather than looking like an envelope that never arrived.
+  private val receiveErrors = CopyOnWriteArrayList<Exception>()
   private val server =
     HttpServer.create(InetSocketAddress(InetAddress.getByName(HOST), 0), 0).apply {
       createContext("/api/") { exchange -> receive(exchange) }
@@ -47,6 +50,7 @@ class MockSentryServer(private val beforeEachCheck: () -> Unit = {}) : Closeable
       Deadline.after(JavaMonotonicTicker.getInstance(), timeoutMillis, TimeUnit.MILLISECONDS)
     while (true) {
       beforeEachCheck()
+      throwReceiveError()
       received.firstOrNull(predicate)?.let {
         return it
       }
@@ -69,6 +73,7 @@ class MockSentryServer(private val beforeEachCheck: () -> Unit = {}) : Closeable
     val deadline = Deadline.after(JavaMonotonicTicker.getInstance(), millis, TimeUnit.MILLISECONDS)
     while (true) {
       beforeEachCheck()
+      throwReceiveError()
       if (received.any(predicate)) {
         throw AssertionError("Received an envelope that should not have been sent")
       }
@@ -81,6 +86,7 @@ class MockSentryServer(private val beforeEachCheck: () -> Unit = {}) : Closeable
 
   fun reset() {
     received.clear()
+    receiveErrors.clear()
   }
 
   override fun close() {
@@ -95,11 +101,21 @@ class MockSentryServer(private val beforeEachCheck: () -> Unit = {}) : Closeable
         } else {
           exchange.requestBody
         }
-      serializer.deserializeEnvelope(body)?.let { received.add(it) }
+      val envelope =
+        serializer.deserializeEnvelope(body)
+          ?: throw IllegalStateException("Received a body that is not an envelope")
+      received.add(envelope)
       exchange.sendResponseHeaders(200, -1)
+    } catch (e: Exception) {
+      receiveErrors.add(e)
+      exchange.sendResponseHeaders(500, -1)
     } finally {
       exchange.close()
     }
+  }
+
+  private fun throwReceiveError() {
+    receiveErrors.firstOrNull()?.let { throw AssertionError("Could not read an envelope", it) }
   }
 
   private companion object {

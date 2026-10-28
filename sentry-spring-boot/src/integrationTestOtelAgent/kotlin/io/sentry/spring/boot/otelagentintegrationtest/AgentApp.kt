@@ -2,6 +2,7 @@ package io.sentry.spring.boot.otelagentintegrationtest
 
 import io.sentry.test.ChildJvmApp
 import io.sentry.test.MockSentryServer
+import io.sentry.test.requiredTestProperty
 import java.io.Closeable
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -19,8 +20,8 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
   private val app =
     ChildJvmApp.start(
       mainClass = "io.sentry.spring.boot.agentfixture.AgentFixtureApplicationKt",
-      classpath = System.getProperty("sentry.test.appClasspath"),
-      jvmArgs = listOf("-javaagent:${System.getProperty("sentry.test.agentJar")}"),
+      classpath = requiredTestProperty("sentry.test.appClasspath"),
+      jvmArgs = listOf("-javaagent:${requiredTestProperty("sentry.test.agentJar")}"),
       // Environment variables, because the agent doesn't read Spring Boot's properties.
       env =
         mapOf(
@@ -58,7 +59,7 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
   }
 
   companion object {
-    val autoInit = System.getProperty("sentry.test.agentAutoInit").toBoolean()
+    val autoInit = requiredTestProperty("sentry.test.agentAutoInit").toBoolean()
 
     /**
      * The app most test classes share. It takes seconds to start, so each test JVM starts it once
