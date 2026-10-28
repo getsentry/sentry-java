@@ -33,6 +33,7 @@ class SentryWebViewTracingTest {
     var supported: Boolean = true,
     var installFailure: IllegalArgumentException? = null,
     var linkageError: LinkageError? = null,
+    var onInstall: (() -> Unit)? = null,
   ) : WebViewScriptInstaller {
     var removeCount = 0
     val installed = mutableListOf<Pair<String, Set<String>>>()
@@ -50,6 +51,7 @@ class SentryWebViewTracingTest {
       allowedOriginRules: Set<String>,
     ): Boolean {
       installFailure?.let { throw it }
+      onInstall?.invoke()
       installed.add(script to allowedOriginRules)
       return true
     }
@@ -206,6 +208,47 @@ class SentryWebViewTracingTest {
 
     assertThat(installer.removeCount).isEqualTo(1)
     assertThat(installer.installed).hasSize(1)
+  }
+
+  @Test
+  fun `an off-thread call made while a script is installed does not remove it later`() {
+    initSentry()
+    installer.onInstall = {
+      // Runs on the WebView's thread while it installs the script.
+      val thread = Thread { add() }
+      thread.start()
+      thread.join()
+    }
+
+    assertThat(add()).isTrue()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertThat(installer.removeCount).isEqualTo(1)
+    assertThat(installer.installed).hasSize(1)
+  }
+
+  @Test
+  fun `a call on another WebView does not cancel the removal posted for this one`() {
+    initSentry()
+    assertThat(add()).isTrue()
+    val otherWebView = WebView(ApplicationProvider.getApplicationContext())
+    val thread = Thread { add() }
+    thread.start()
+    thread.join()
+
+    assertThat(
+        SentryWebViewTracing.install(
+          otherWebView,
+          listOf("example.com"),
+          Sentry.getCurrentScopes(),
+          installer,
+        )
+      )
+      .isTrue()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    // One removal per on-thread call, plus the one posted for the first WebView.
+    assertThat(installer.removeCount).isEqualTo(3)
   }
 
   @Test

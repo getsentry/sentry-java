@@ -15,8 +15,10 @@ import io.sentry.SentryLevel;
 import io.sentry.util.LoadClass;
 import io.sentry.util.TracingUtils;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.Map;
+import java.util.WeakHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,8 +39,12 @@ public final class SentryWebViewTracing {
 
   private static final @NotNull String INTEGRATION_NAME = "WebViewTracePropagation";
 
-  /** Counts calls that replaced Sentry's script on a WebView's thread. */
-  private static final @NotNull AtomicLong replacements = new AtomicLong();
+  /**
+   * Counts, per WebView, the calls that finished replacing Sentry's script on the WebView's thread.
+   * Weak keys, so it doesn't keep WebViews alive.
+   */
+  private static final @NotNull Map<WebView, Long> replacements =
+      Collections.synchronizedMap(new WeakHashMap<>());
 
   private SentryWebViewTracing() {}
 
@@ -122,7 +128,6 @@ public final class SentryWebViewTracing {
     }
 
     try {
-      replacements.incrementAndGet();
       return replaceScript(webView, allowedHosts, scopes, installer, logger);
     } catch (LinkageError e) {
       // androidx.webkit is compileOnly, so the version in the app's apk may be older than the one
@@ -132,6 +137,10 @@ public final class SentryWebViewTracing {
           "androidx.webkit is too old for WebView trace propagation, skipping.",
           e);
       return false;
+    } finally {
+      // Counted once the replacement is done, so an off-thread call made while it runs doesn't
+      // later remove the script it installed. Only written on the WebView's thread.
+      replacements.put(webView, replacementsOf(webView) + 1);
     }
   }
 
@@ -196,17 +205,17 @@ public final class SentryWebViewTracing {
   /**
    * A failed call must not leave a stale trace behind, but off the WebView's thread the script can
    * only be removed later, on that thread. The removal is skipped if a call on the WebView's thread
-   * replaced the script in the meantime, so it never removes a newer script.
+   * replaced this WebView's script in the meantime, so it never removes a newer script.
    */
   private static void removeOnWebViewThread(
       final @NotNull WebView webView,
       final @NotNull WebViewScriptInstaller installer,
       final @NotNull ILogger logger) {
-    final long replacementsSeen = replacements.get();
+    final long replacementsSeen = replacementsOf(webView);
     new Handler(webViewLooper(webView))
         .post(
             () -> {
-              if (replacements.get() != replacementsSeen) {
+              if (replacementsOf(webView) != replacementsSeen) {
                 return;
               }
               try {
@@ -218,6 +227,11 @@ public final class SentryWebViewTracing {
                     e);
               }
             });
+  }
+
+  private static long replacementsOf(final @NotNull WebView webView) {
+    final @Nullable Long count = replacements.get(webView);
+    return count == null ? 0 : count;
   }
 
   private static boolean isOnWebViewThread(final @NotNull WebView webView) {
