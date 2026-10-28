@@ -5,7 +5,11 @@ plugins {
   id("com.android.application")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -47,7 +51,7 @@ dependencies {
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.constraintlayout)
   implementation(libs.androidx.core)
-  implementation(projects.sentryAndroidCore)
+  implementation("io.sentry:sentry-android-core:$sentryVersion")
 }
 
 tasks.withType<Detekt>().configureEach {

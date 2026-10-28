@@ -41,6 +41,6 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Size Analysis
-        run: ./gradlew :sentry-android-integration-tests:test-app-size:bundleRelease
+        run: ./gradlew -p sentry-android-integration-tests :test-app-size:bundleRelease
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
