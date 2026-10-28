@@ -7,6 +7,11 @@
 - Keep UI profiling running when `startProfiler` is called before a requested stop takes effect at the end of the current chunk ([#6291](https://github.com/getsentry/sentry-java/pull/6291))
   - Before, the start call was ignored and the profiler still stopped at the end of the chunk, even in `TRACE` mode while sampled spans were active. On API 34 and lower, every later profile also stopped after one chunk.
 
+### Dependencies
+
+- Bump epitaph (Android tombstone parsing) from 0.1.1 to 0.2.0 ([#6402](https://github.com/getsentry/sentry-java/pull/6402))
+  - Reject malformed protobuf tags, oversized lengths, invalid varints, and invalid reader bounds instead of silently accepting partial/corrupt tombstone data.
+
 ## 8.62.0
 
 ### Improvements
