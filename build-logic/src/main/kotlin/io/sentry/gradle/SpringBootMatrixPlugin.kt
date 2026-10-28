@@ -80,21 +80,23 @@ abstract class SpringBootMatrixExtension @Inject constructor(private val project
     val configurations = project.configurations
     val dependencies =
       configurations.findByName(name)
-        ?: configurations.create(name) {
-          isCanBeConsumed = false
-          extendsFrom(
-            configurations.getByName(sources.implementationConfigurationName),
-            configurations.getByName(sources.runtimeOnlyConfigurationName),
-          )
-          attributes.addAllLater(
-            configurations.getByName(sources.runtimeClasspathConfigurationName).attributes
-          )
-          // What setting the version in the catalog does: every Spring Boot artifact, the BOM
-          // included, is in this group. Libraries pinned to their own version still win conflicts.
-          resolutionStrategy.eachDependency {
-            if (requested.group == "org.springframework.boot") useVersion(version)
+        ?: configurations
+          .resolvable(name) {
+            extendsFrom(
+              configurations.getByName(sources.implementationConfigurationName),
+              configurations.getByName(sources.runtimeOnlyConfigurationName),
+            )
+            attributes.addAllLater(
+              configurations.getByName(sources.runtimeClasspathConfigurationName).attributes
+            )
+            // What setting the version in the catalog does: every Spring Boot artifact, the BOM
+            // included, is in this group. Libraries pinned to their own version still win
+            // conflicts.
+            resolutionStrategy.eachDependency {
+              if (requested.group == "org.springframework.boot") useVersion(version)
+            }
           }
-        }
+          .get()
     return sources.output + dependencies
   }
 
