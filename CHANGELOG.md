@@ -16,6 +16,9 @@
 
 - Bump epitaph (Android tombstone parsing) from 0.1.1 to 0.2.0 ([#6402](https://github.com/getsentry/sentry-java/pull/6402))
   - Reject malformed protobuf tags, oversized lengths, invalid varints, and invalid reader bounds instead of silently accepting partial/corrupt tombstone data.
+- Bump Native SDK from v0.17.4 to v0.17.5 ([#6409](https://github.com/getsentry/sentry-java/pull/6409))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0175)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.4...0.17.5)
 
 ## 8.62.0
 
