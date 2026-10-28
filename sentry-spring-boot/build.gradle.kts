@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spring-boot-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -22,9 +23,8 @@ tasks.named<KotlinCompile>("compileKotlin") {
 
 // Spring scans the integration test apps' own bytecode with its repackaged ASM at startup, and
 // the ASM in Spring before 5.3.26 fails on class files as new as the toolchain's: "Unsupported
-// class file major version 65". In the Spring Boot 2.x matrix, 2.4.13 (Spring 5.3.13) reads up
-// to Java 18 and 2.7.0 (Spring 5.3.20) up to Java 19, so the suites target 17. Remove this once
-// the matrix drops 2.4.13 and moves 2.7.0 to 2.7.10 or later.
+// class file major version 65". The Spring Boot 2.x matrix's 2.7.0 (Spring 5.3.20) reads up to
+// Java 19, so the suites target 17. Remove this once the matrix moves 2.7.0 to 2.7.10 or later.
 // The suites are Kotlin only. Their Java tasks keep the toolchain's level, because it decides
 // which Java version their classpaths ask for, and sentry-test-support needs the toolchain's.
 tasks
@@ -138,13 +138,6 @@ tasks.jar {
   }
 }
 
-// Spring Boot supports GraphQL only from 2.7, and its Kafka auto-configuration needs 2.7 for the
-// spring-kafka version Sentry integrates with. The Spring Boot 2 matrix also covers older versions.
-val bootSupportsGraphqlAndKafka =
-  libs.versions.springboot2.get().split(".").let { (major, minor) ->
-    major.toInt() > 2 || minor.toInt() >= 7
-  }
-
 // The OpenTelemetry agent tests run this app in a child JVM, on its own classpath like a real app
 // with the agent attached, rather than on the test's classpath.
 val agentFixture = sourceSets.create("agentFixture")
@@ -165,20 +158,18 @@ dependencies {
   "agentFixtureImplementation"(platform(libs.springboot2.bom))
   "agentFixtureImplementation"(projects.sentrySpringBootStarter)
   "agentFixtureImplementation"(projects.sentryAsyncProfiler)
+  "agentFixtureImplementation"(projects.sentryGraphql)
   "agentFixtureImplementation"(projects.sentryJdbc)
+  "agentFixtureImplementation"(projects.sentryKafka)
   "agentFixtureImplementation"(projects.sentryLogback)
   "agentFixtureImplementation"(kotlin(Config.kotlinStdLib))
   "agentFixtureImplementation"(libs.otel)
+  "agentFixtureImplementation"(libs.springboot.starter.graphql)
   "agentFixtureImplementation"(libs.springboot.starter.jdbc)
   "agentFixtureImplementation"(libs.springboot.starter.web)
   "agentFixtureImplementation"(libs.springboot.starter.webflux)
+  "agentFixtureImplementation"(libs.spring.kafka2)
   "agentFixtureRuntimeOnly"(libs.hsqldb)
-  if (bootSupportsGraphqlAndKafka) {
-    "agentFixtureImplementation"(projects.sentryGraphql)
-    "agentFixtureImplementation"(projects.sentryKafka)
-    "agentFixtureImplementation"(libs.springboot.starter.graphql)
-    "agentFixtureImplementation"(libs.spring.kafka2)
-  }
 
   otelAgentJar(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
 }
@@ -193,7 +184,9 @@ testing {
         implementation(platform(libs.springboot2.bom))
         implementation(projects.sentrySpringBootStarter)
         implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql)
         implementation(projects.sentryJdbc)
+        implementation(projects.sentryKafka)
         implementation(projects.sentryLogback)
         implementation(projects.sentryOkhttp)
         implementation(projects.sentryTestSupport)
@@ -203,18 +196,14 @@ testing {
         implementation(libs.okhttp)
         implementation(libs.springboot.starter.aop)
         implementation(libs.springboot.starter.cache)
+        implementation(libs.springboot.starter.graphql)
         implementation(libs.springboot.starter.jdbc)
         implementation(libs.springboot.starter.test)
         implementation(libs.springboot.starter.web)
         implementation(libs.springboot.starter.webflux)
+        implementation(libs.spring.kafka2)
+        implementation(libs.spring.kafka2.test)
         runtimeOnly(libs.hsqldb)
-        if (bootSupportsGraphqlAndKafka) {
-          implementation(projects.sentryGraphql)
-          implementation(projects.sentryKafka)
-          implementation(libs.springboot.starter.graphql)
-          implementation(libs.spring.kafka2)
-          implementation(libs.spring.kafka2.test)
-        }
       }
     }
 
@@ -225,16 +214,14 @@ testing {
         implementation(platform(libs.springboot2.bom))
         implementation(projects.sentrySpringBootStarter)
         implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql)
         implementation(projects.sentryLogback)
         implementation(projects.sentryTestSupport)
         implementation(libs.kotlin.test.junit)
         implementation(libs.google.truth)
+        implementation(libs.springboot.starter.graphql)
         implementation(libs.springboot.starter.test)
         implementation(libs.springboot.starter.webflux)
-        if (bootSupportsGraphqlAndKafka) {
-          implementation(projects.sentryGraphql)
-          implementation(libs.springboot.starter.graphql)
-        }
       }
     }
 
@@ -247,24 +234,22 @@ testing {
         implementation(projects.sentrySpringBootStarter)
         implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
         implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryGraphql)
         implementation(projects.sentryJdbc)
+        implementation(projects.sentryKafka)
         implementation(projects.sentryLogback)
         implementation(projects.sentryTestSupport)
         implementation(libs.kotlin.test.junit)
         implementation(libs.google.truth)
         implementation(libs.springboot.starter.aop)
+        implementation(libs.springboot.starter.graphql)
         implementation(libs.springboot.starter.jdbc)
         implementation(libs.springboot.starter.test)
         implementation(libs.springboot.starter.web)
         implementation(libs.springboot.starter.webflux)
+        implementation(libs.spring.kafka2)
+        implementation(libs.spring.kafka2.test)
         runtimeOnly(libs.hsqldb)
-        if (bootSupportsGraphqlAndKafka) {
-          implementation(projects.sentryGraphql)
-          implementation(projects.sentryKafka)
-          implementation(libs.springboot.starter.graphql)
-          implementation(libs.spring.kafka2)
-          implementation(libs.spring.kafka2.test)
-        }
       }
     }
 
@@ -279,9 +264,7 @@ testing {
         // For TestRestTemplate. Only the app's JVM runs the agent, so it doesn't trace the tests.
         implementation(libs.springboot.starter.test)
         implementation(libs.springboot.starter.web)
-        if (bootSupportsGraphqlAndKafka) {
-          implementation(libs.spring.kafka2.test)
-        }
+        implementation(libs.spring.kafka2.test)
       }
       targets.all { testTask.configure { runAgentFixture(autoInit = true) } }
     }
@@ -291,13 +274,17 @@ testing {
 /**
  * Has the OpenTelemetry agent tests start agentFixture's app in a child JVM, with the built agent
  * attached. [autoInit] decides whether the agent initializes Sentry or, as with
- * `SENTRY_AUTO_INIT=false`, the Spring Boot starter.
+ * `SENTRY_AUTO_INIT=false`, the Spring Boot starter. [appClasspath] is the app's classpath for
+ * another Spring Boot version.
  */
-fun Test.runAgentFixture(autoInit: Boolean) {
+fun Test.runAgentFixture(
+  autoInit: Boolean,
+  appClasspath: FileCollection = agentFixture.runtimeClasspath,
+) {
   jvmArgumentProviders.add(
     objects.newInstance<ChildJvmTestArguments>().apply {
       agentJar.from(otelAgentJar)
-      appClasspath.from(agentFixture.runtimeClasspath)
+      this.appClasspath.from(appClasspath)
     }
   )
   systemProperty("sentry.test.agentAutoInit", autoInit)
@@ -325,10 +312,19 @@ listOf(
     "compileIntegrationTestOtelAgentKotlin",
   )
   .forEach {
-    tasks.named<KotlinCompile>(it) {
-      compilerOptions.javaParameters = true
-      if (!bootSupportsGraphqlAndKafka) {
-        exclude("**/Graphql*", "**/Greeting*", "**/Kafka*")
-      }
-    }
+    tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }
   }
+
+// The suites on each Spring Boot 2 version the CI matrix tests.
+springBootMatrix {
+  versions(line = 2)
+  test("integrationTest")
+  test("integrationTestWebflux")
+  test("integrationTestOtelNoAgent")
+  test("integrationTestOtelAgent") { version ->
+    runAgentFixture(autoInit = true, appClasspath = runtimeClasspath("agentFixture", version))
+  }
+  test("integrationTestOtelAgent", name = "integrationTestOtelAgentWithoutAutoInit") { version ->
+    runAgentFixture(autoInit = false, appClasspath = runtimeClasspath("agentFixture", version))
+  }
+}

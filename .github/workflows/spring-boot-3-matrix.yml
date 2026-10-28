@@ -15,13 +15,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versions:
+    runs-on: ubuntu-latest
+    name: Spring Boot 3.x versions
+    outputs:
+      versions: ${{ steps.versions.outputs.versions }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: gradle
+
+      - name: Read Spring Boot 3.x versions
+        id: versions
+        run: echo "versions=$(jq -c .boot3 gradle/spring-boot-versions.json)" >> "$GITHUB_OUTPUT"
+
   spring-boot-3-matrix:
+    needs: versions
     timeout-minutes: 45
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '3.2.12', '3.3.13', '3.4.13', '3.5.13' ]
+        springboot-version: ${{ fromJSON(needs.versions.outputs.versions) }}
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
@@ -51,22 +68,13 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Update Spring Boot 3.x version
-        run: |
-          springboot_version="${{ matrix.springboot-version }}"
-          perl -0pi -e 'BEGIN { $v = shift } s/^springboot3[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot3 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
-          echo "Updated Spring Boot 3.x version to $springboot_version"
-
       - name: Test integration suites
+        # Project paths, unlike a bare task name, keep Gradle from configuring every project.
         run: |
-          ./gradlew \
-            :sentry-spring-jakarta:integrationTest \
-            :sentry-spring-boot-jakarta:integrationTest \
-            :sentry-spring-boot-jakarta:integrationTestWebflux \
-            :sentry-spring-boot-jakarta:integrationTestOtelNoAgent \
-            :sentry-spring-boot-jakarta:integrationTestLog4j2 \
-            :sentry-spring-boot-jakarta:integrationTestOtelAgent \
-            :sentry-spring-boot-jakarta:integrationTestOtelAgentWithoutAutoInit
+          task="allIntegrationTestsBoot${SPRINGBOOT_VERSION//./_}"
+          ./gradlew ":sentry-spring-jakarta:$task" ":sentry-spring-boot-jakarta:$task"
+        env:
+          SPRINGBOOT_VERSION: ${{ matrix.springboot-version }}
 
       - name: Upload test results
         if: always()
