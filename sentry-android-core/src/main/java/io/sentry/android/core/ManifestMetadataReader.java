@@ -141,6 +141,9 @@ final class ManifestMetadataReader {
 
   static final String ENABLE_SENTRY = "io.sentry.enabled";
 
+  static final String ENABLE_SCOPE_BASED_DEDUPLICATION =
+      "io.sentry.enable-scope-based-deduplication";
+
   static final String SEND_MODULES = "io.sentry.send-modules";
 
   static final String ENABLE_PERFORMANCE_V2 = "io.sentry.performance-v2.enable";
@@ -357,6 +360,12 @@ final class ManifestMetadataReader {
 
         options.setEnabled(enabled);
         options.setDsn(dsn);
+        options.setEnableScopeBasedDeduplication(
+            readBool(
+                metadata,
+                logger,
+                ENABLE_SCOPE_BASED_DEDUPLICATION,
+                options.isEnableScopeBasedDeduplication()));
 
         options.setEnableNdk(readBool(metadata, logger, NDK_ENABLE, options.isEnableNdk()));
 

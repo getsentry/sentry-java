@@ -38,6 +38,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -216,6 +217,26 @@ class SentrySpringIntegrationTest {
             assertThat(ex.mechanism).isNotNull()
             assertThat(ex.mechanism!!.isHandled).isFalse()
             assertThat(ex.mechanism!!.type).isEqualTo(SentryExceptionResolver.MECHANISM_TYPE)
+          },
+          anyOrNull(),
+        )
+    }
+  }
+
+  @Test
+  fun `reused exception is sent for separate MVC requests`() {
+    val restTemplate = TestRestTemplate().withBasicAuth("user", "password")
+
+    repeat(2) {
+      restTemplate.getForEntity("http://localhost:$port/throws-reused", String::class.java)
+    }
+
+    await.untilAsserted {
+      verify(transport, times(2))
+        .send(
+          checkEvent { event ->
+            assertThat(event.exceptions!!.first().mechanism!!.type)
+              .isEqualTo(SentryExceptionResolver.MECHANISM_TYPE)
           },
           anyOrNull(),
         )
@@ -406,6 +427,13 @@ open class App {
   @Bean open fun tracesSamplerCallback() = SentryOptions.TracesSamplerCallback { 1.0 }
 
   @Bean
+  open fun sentryOptionsConfiguration() =
+    Sentry.OptionsConfiguration<SentryOptions> {
+      it.isEnableDeduplication = false
+      it.isEnableScopeBasedDeduplication = true
+    }
+
+  @Bean
   open fun springSecuritySentryUserProvider(sentryOptions: SentryOptions) =
     SpringSecuritySentryUserProvider(sentryOptions)
 
@@ -479,6 +507,9 @@ open class SomeService {
 
 @RestController
 class HelloController(private val webClient: WebClient, private val env: Environment) {
+  companion object {
+    private val reusableException = RuntimeException("reused exception")
+  }
 
   @GetMapping("/hello")
   fun hello(): String {
@@ -499,6 +530,11 @@ class HelloController(private val webClient: WebClient, private val env: Environ
   @GetMapping("/throws")
   fun throws() {
     throw RuntimeException("something went wrong")
+  }
+
+  @GetMapping("/throws-reused")
+  fun throwsReused() {
+    throw reusableException
   }
 
   @GetMapping("/throws-handled")

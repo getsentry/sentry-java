@@ -28,6 +28,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.slf4j.MDC
 
@@ -40,6 +41,8 @@ class SentryHandlerTest {
     val transport: ITransport = mock(),
     contextTags: List<String>? = null,
     printfStyle: Boolean? = null,
+    enableDeduplication: Boolean = true,
+    enableScopeBasedDeduplication: Boolean = false,
   ) {
     var logger: Logger
     var handler: SentryHandler
@@ -48,6 +51,8 @@ class SentryHandlerTest {
       val options = SentryOptions()
       options.dsn = "http://key@localhost/proj"
       options.setTransportFactory { _, _ -> transport }
+      options.isEnableDeduplication = enableDeduplication
+      options.isEnableScopeBasedDeduplication = enableScopeBasedDeduplication
       options.logs.loggerBatchProcessorFactory = ILoggerBatchProcessorFactory { options, client ->
         LoggerBatchProcessor(options, client, ImmediateExecutorService())
       }
@@ -476,6 +481,28 @@ class SentryHandlerTest {
 
     verify(fixture.transport)
       .send(checkLogs { event -> assertEquals(SentryLogLevel.WARN, event.items.first().level) })
+  }
+
+  @Test
+  fun `scope-based deduplication sends repeated reusable exceptions from JUL`() {
+    fixture =
+      Fixture(
+        minimumEventLevel = Level.SEVERE,
+        enableDeduplication = false,
+        enableScopeBasedDeduplication = true,
+      )
+    val throwable = RuntimeException("reused")
+
+    fixture.logger.log(Level.SEVERE, "first", throwable)
+    fixture.logger.log(Level.SEVERE, "second", throwable)
+
+    verify(fixture.transport, times(2))
+      .send(
+        checkEvent { event ->
+          assertEquals(SentryHandler.MECHANISM_TYPE, event.exceptions!!.first().mechanism!!.type)
+        },
+        anyOrNull(),
+      )
   }
 
   @Test

@@ -85,6 +85,40 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata enables scope-based deduplication from manifest`() {
+    val context =
+      fixture.getContext(bundleOf(ManifestMetadataReader.ENABLE_SCOPE_BASED_DEDUPLICATION to true))
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isEnableScopeBasedDeduplication).isTrue()
+  }
+
+  @Test
+  fun `applyMetadata disables scope-based deduplication from manifest`() {
+    fixture.options.isEnableScopeBasedDeduplication = true
+    val context =
+      fixture.getContext(bundleOf(ManifestMetadataReader.ENABLE_SCOPE_BASED_DEDUPLICATION to false))
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.isEnableScopeBasedDeduplication).isFalse()
+  }
+
+  @Test
+  fun `applyMetadata preserves scope-based deduplication when manifest value is absent`() {
+    fixture.options.isEnableScopeBasedDeduplication = true
+
+    ManifestMetadataReader.applyMetadata(
+      fixture.getContext(),
+      fixture.options,
+      fixture.buildInfoProvider,
+    )
+
+    assertThat(fixture.options.isEnableScopeBasedDeduplication).isTrue()
+  }
+
+  @Test
   fun `isAutoInit reads build-time metadata without querying context`() {
     val context = mock<Context>()
     ManifestMetadataReader.manifestMetadata = mapOf(ManifestMetadataReader.AUTO_INIT to false)

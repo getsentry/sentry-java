@@ -222,6 +222,25 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with scope-based deduplication enabled using external properties`() {
+    withPropertiesFile("enable-scope-based-deduplication=true") {
+      assertThat(it.enableScopeBasedDeduplication).isTrue()
+    }
+  }
+
+  @Test
+  fun `creates options with scope-based deduplication disabled using external properties`() {
+    withPropertiesFile("enable-scope-based-deduplication=false") {
+      assertThat(it.enableScopeBasedDeduplication).isFalse()
+    }
+  }
+
+  @Test
+  fun `creates options without scope-based deduplication using external properties`() {
+    withPropertiesFile { assertThat(it.enableScopeBasedDeduplication).isNull() }
+  }
+
+  @Test
   fun `creates options with sendClientReports using external properties`() {
     withPropertiesFile("send-client-reports=false") {
       assertNotNull(it.sendClientReports) { assertFalse(it) }

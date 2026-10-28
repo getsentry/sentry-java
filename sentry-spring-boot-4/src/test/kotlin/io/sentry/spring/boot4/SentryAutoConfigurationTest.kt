@@ -149,6 +149,25 @@ class SentryAutoConfigurationTest {
   }
 
   @Test
+  fun `scope-based deduplication property is applied before processor installation`() {
+    dsnEnabledRunner
+      .withPropertyValues(
+        "sentry.enable-deduplication=false",
+        "sentry.enable-scope-based-deduplication=true",
+      )
+      .run {
+        val scopes = it.getBean(IScopes::class.java)
+        assertThat(scopes.options.isEnableScopeBasedDeduplication).isTrue()
+        assertThat(
+            scopes.isolationScope.eventProcessors.filter { processor ->
+              processor.javaClass.simpleName == "ScopeBasedDuplicateEventDetectionEventProcessor"
+            }
+          )
+          .hasSize(1)
+      }
+  }
+
+  @Test
   fun `OptionsConfiguration is created if custom one with name sentryOptionsConfiguration is not provided`() {
     dsnEnabledRunner.run { assertThat(it).hasSingleBean(Sentry.OptionsConfiguration::class.java) }
   }
@@ -204,6 +223,7 @@ class SentryAutoConfigurationTest {
         "sentry.shutdown-timeout-millis=20",
         "sentry.flush-timeout-millis=30",
         "sentry.debug=true",
+        "sentry.enable-scope-based-deduplication=true",
         "sentry.diagnostic-level=INFO",
         "sentry.sentry-client-name=my-client",
         "sentry.max-breadcrumbs=100",
@@ -254,6 +274,7 @@ class SentryAutoConfigurationTest {
         assertThat(options.shutdownTimeoutMillis).isEqualTo(20)
         assertThat(options.flushTimeoutMillis).isEqualTo(30)
         assertThat(options.isDebug).isTrue()
+        assertThat(options.isEnableScopeBasedDeduplication).isTrue()
         assertThat(options.diagnosticLevel).isEqualTo(SentryLevel.INFO)
         assertThat(options.maxBreadcrumbs).isEqualTo(100)
         assertThat(options.release).isEqualTo("1.0.3")

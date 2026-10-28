@@ -562,6 +562,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getDist ()Ljava/lang/String;
 	public fun getDsn ()Ljava/lang/String;
 	public fun getEnableDeduplication ()Ljava/lang/Boolean;
+	public fun getEnableScopeBasedDeduplication ()Ljava/lang/Boolean;
 	public fun getEnableUncaughtExceptionHandler ()Ljava/lang/Boolean;
 	public fun getEnvironment ()Ljava/lang/String;
 	public fun getIdleTimeout ()Ljava/lang/Long;
@@ -619,6 +620,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setEnableMetrics (Ljava/lang/Boolean;)V
 	public fun setEnablePrettySerializationOutput (Ljava/lang/Boolean;)V
 	public fun setEnableQueueTracing (Ljava/lang/Boolean;)V
+	public fun setEnableScopeBasedDeduplication (Ljava/lang/Boolean;)V
 	public fun setEnableSpotlight (Ljava/lang/Boolean;)V
 	public fun setEnableUncaughtExceptionHandler (Ljava/lang/Boolean;)V
 	public fun setEnabled (Ljava/lang/Boolean;)V
@@ -3909,6 +3911,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun isEnableLegacyProfiling ()Z
 	public fun isEnablePrettySerializationOutput ()Z
 	public fun isEnableQueueTracing ()Z
+	public fun isEnableScopeBasedDeduplication ()Z
 	public fun isEnableScopePersistence ()Z
 	public fun isEnableScreenTracking ()Z
 	public fun isEnableShutdownHook ()Z
@@ -3973,6 +3976,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setEnableLegacyProfiling (Z)V
 	public fun setEnablePrettySerializationOutput (Z)V
 	public fun setEnableQueueTracing (Z)V
+	public fun setEnableScopeBasedDeduplication (Z)V
 	public fun setEnableScopePersistence (Z)V
 	public fun setEnableScreenTracking (Z)V
 	public fun setEnableShutdownHook (Z)V

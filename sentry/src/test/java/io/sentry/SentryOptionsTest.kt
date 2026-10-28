@@ -218,6 +218,22 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `scope-based deduplication defaults to disabled`() {
+    assertThat(SentryOptions().isEnableScopeBasedDeduplication).isFalse()
+  }
+
+  @Test
+  fun `scope-based deduplication can be enabled and disabled`() {
+    val options = SentryOptions()
+
+    options.isEnableScopeBasedDeduplication = true
+    assertThat(options.isEnableScopeBasedDeduplication).isTrue()
+
+    options.isEnableScopeBasedDeduplication = false
+    assertThat(options.isEnableScopeBasedDeduplication).isFalse()
+  }
+
+  @Test
   fun `when options is initialized, integrations contain UncaughtExceptionHandlerIntegration`() {
     assertTrue(SentryOptions().integrations.any { it is UncaughtExceptionHandlerIntegration })
   }
@@ -544,6 +560,7 @@ class SentryOptionsTest {
     externalOptions.setTag("tag1", "value1")
     externalOptions.setTag("tag2", "value2")
     externalOptions.enableUncaughtExceptionHandler = false
+    externalOptions.enableScopeBasedDeduplication = true
     externalOptions.sampleRate = 0.3
     externalOptions.tracesSampleRate = 0.5
     externalOptions.profilesSampleRate = 0.5
@@ -605,6 +622,7 @@ class SentryOptionsTest {
     assertEquals(java.net.Proxy.Type.SOCKS, options.proxy!!.type)
     assertEquals(mapOf("tag1" to "value1", "tag2" to "value2"), options.tags)
     assertFalse(options.isEnableUncaughtExceptionHandler)
+    assertTrue(options.isEnableScopeBasedDeduplication)
     assertEquals(0.3, options.sampleRate)
     assertEquals(0.5, options.tracesSampleRate)
     assertEquals(0.5, options.profilesSampleRate)
@@ -660,6 +678,26 @@ class SentryOptionsTest {
     val options = SentryOptions()
     options.merge(externalOptions)
     assertTrue(options.isEnableUncaughtExceptionHandler)
+  }
+
+  @Test
+  fun `merging options applies explicit scope-based deduplication values`() {
+    val options = SentryOptions()
+
+    options.merge(ExternalOptions().apply { enableScopeBasedDeduplication = true })
+    assertThat(options.isEnableScopeBasedDeduplication).isTrue()
+
+    options.merge(ExternalOptions().apply { enableScopeBasedDeduplication = false })
+    assertThat(options.isEnableScopeBasedDeduplication).isFalse()
+  }
+
+  @Test
+  fun `merging options without scope-based deduplication preserves the current value`() {
+    val options = SentryOptions().apply { isEnableScopeBasedDeduplication = true }
+
+    options.merge(ExternalOptions())
+
+    assertThat(options.isEnableScopeBasedDeduplication).isTrue()
   }
 
   @Test
