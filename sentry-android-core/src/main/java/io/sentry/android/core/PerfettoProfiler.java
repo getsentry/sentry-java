@@ -13,7 +13,9 @@ import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryExecutorService;
 import io.sentry.SentryLevel;
+import io.sentry.android.core.internal.profiling.ChunkRecord;
 import io.sentry.android.core.util.AndroidLazyEvaluator;
+import io.sentry.profiling.ProfileRecordingState;
 import java.io.File;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
@@ -75,6 +77,8 @@ public class PerfettoProfiler {
   private @Nullable Consumer<@Nullable File> resultListener = null;
   private volatile boolean started = false;
 
+  private volatile @Nullable ChunkRecord chunkRecord = null;
+
   @SuppressLint("WrongConstant")
   public PerfettoProfiler(
       final @NotNull Context context,
@@ -98,7 +102,14 @@ public class PerfettoProfiler {
     this.profilingPackageVersion = profilingPackageVersion;
   }
 
-  public boolean start(final long durationMs) {
+  /**
+   * Starts a profiling session for the given chunk, and tells whether it could be started. A
+   * failure the OS reports later is written to that record as it happens, so that whoever holds it
+   * knows that no trace file is coming.
+   *
+   * <p>The caller creates the record, so that it can make the chunk known before profiling starts.
+   */
+  boolean start(final @NotNull ChunkRecord chunkRecord, final long durationMs) {
     if (started) {
       logger.log(SentryLevel.WARNING, "PerfettoProfiler was already started.");
       return false;
@@ -109,6 +120,7 @@ public class PerfettoProfiler {
       logger.log(SentryLevel.WARNING, "ProfilingManager is not available.");
       return false;
     }
+    this.chunkRecord = chunkRecord;
 
     if (profilingPackageVersion == EMPTY_TRACE_PROFILING_PACKAGE_VERSION) {
       logger.log(
@@ -132,6 +144,8 @@ public class PerfettoProfiler {
           this::onProfilingResult);
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, "Failed to request Profiling.", e);
+      // No profiling was requested, so a late result from the OS must not write into the record
+      this.chunkRecord = null;
       return false;
     }
 
@@ -164,12 +178,20 @@ public class PerfettoProfiler {
     try {
       executorService.schedule(
           () -> {
+            boolean hasTimedOut = false;
             synchronized (profilingResultLock) {
               if (resultListener != null) {
                 logger.log(SentryLevel.WARNING, "Timed out waiting for Perfetto profiling result.");
                 resultListener.accept(null);
                 // Nobody consumes a late result anymore, so delete the trace file instead
                 resultListener = this::deleteTraceFile;
+                hasTimedOut = true;
+              }
+            }
+            if (hasTimedOut) {
+              final @Nullable ChunkRecord record = chunkRecord;
+              if (record != null) {
+                record.setRecordingState(ProfileRecordingState.NOT_RECORDED);
               }
             }
           },
@@ -185,6 +207,13 @@ public class PerfettoProfiler {
         "Perfetto ProfilingResult received: errorCode=%d, filePath=%s",
         result.getErrorCode(),
         result.getResultFilePath());
+
+    // Only a failure is reported here. The OS can report success and still leave no usable trace
+    // file behind, so only the collection of the chunk can tell that it was recorded.
+    final @Nullable ChunkRecord record = chunkRecord;
+    if (record != null && result.getErrorCode() != ProfilingResult.ERROR_NONE) {
+      record.setRecordingState(ProfileRecordingState.NOT_RECORDED);
+    }
 
     synchronized (profilingResultLock) {
       profilingResult = result;
@@ -211,6 +240,7 @@ public class PerfettoProfiler {
 
   private @Nullable File processResult(final @NotNull ProfilingResult result) {
     final int errorCode = result.getErrorCode();
+    final @Nullable ChunkRecord record = chunkRecord;
     if (errorCode != ProfilingResult.ERROR_NONE) {
       switch (errorCode) {
         case ProfilingResult.ERROR_FAILED_RATE_LIMIT_PROCESS:
@@ -237,12 +267,18 @@ public class PerfettoProfiler {
 
     final @Nullable String resultFilePath = result.getResultFilePath();
     if (resultFilePath == null) {
+      if (record != null) {
+        record.setRecordingState(ProfileRecordingState.NOT_RECORDED);
+      }
       logger.log(SentryLevel.WARNING, "Perfetto profiling result file path is null.");
       return null;
     }
 
     final File traceFile = new File(resultFilePath);
     if (!traceFile.exists() || traceFile.length() == 0) {
+      if (record != null) {
+        record.setRecordingState(ProfileRecordingState.NOT_RECORDED);
+      }
       logger.log(SentryLevel.WARNING, "Perfetto trace file does not exist or is empty.");
       return null;
     }

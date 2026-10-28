@@ -1,5 +1,6 @@
 package io.sentry.clientreport
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Attachment
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
@@ -58,11 +59,17 @@ import org.mockito.kotlin.whenever
 
 private const val LOG_CONTENT_TYPE = "application/vnd.sentry.items.log+json"
 private const val METRIC_CONTENT_TYPE = "application/vnd.sentry.items.trace-metric+json"
+private const val SPAN_CONTENT_TYPE = "application/vnd.sentry.items.span.v2+json"
 
 class ClientReportTest {
   lateinit var opts: SentryOptions
   lateinit var clientReportRecorder: ClientReportRecorder
   lateinit var testHelper: ClientReportTestHelper
+
+  @Test
+  fun `callback error has expected discard reason`() {
+    assertThat(DiscardReason.CALLBACK_ERROR.reason).isEqualTo("callback_error")
+  }
 
   @Test
   fun `lost envelope can be recorded`() {
@@ -495,6 +502,64 @@ class ClientReportTest {
 
     val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
     assertEquals(1, clientReport.quantityOf(DataCategory.TraceMetric))
+  }
+
+  @Test
+  fun `recording lost span item reads count from the header`() {
+    val onDiscardMock = mock<SentryOptions.OnDiscardCallback>()
+    givenClientReportRecorder { options -> options.onDiscard = onDiscardMock }
+
+    // Batched span items reach this SDK from hybrid SDKs (e.g. Flutter span streaming).
+    val item =
+      mockEnvelopeItem(
+        SentryItemType.Span,
+        SPAN_CONTENT_TYPE,
+        itemCount = 500,
+        data = "irrelevant payload".toByteArray(),
+      )
+
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, item)
+
+    verify(onDiscardMock, times(1)).execute(DiscardReason.NETWORK_ERROR, DataCategory.Span, 500)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    assertEquals(500, clientReport.quantityOf(DataCategory.Span))
+  }
+
+  @Test
+  fun `recording rate limited span item reads count from the header`() {
+    givenClientReportRecorder()
+
+    val item =
+      mockEnvelopeItem(SentryItemType.Span, SPAN_CONTENT_TYPE, itemCount = 7, data = ByteArray(0))
+
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.RATELIMIT_BACKOFF, item)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    val spanItem =
+      clientReport!!.discardedEvents!!.single {
+        it.category == DataCategory.Span.category &&
+          it.reason == DiscardReason.RATELIMIT_BACKOFF.reason
+      }
+    assertEquals(7, spanItem.quantity)
+  }
+
+  @Test
+  fun `recording lost span item without item count in header falls back to one`() {
+    givenClientReportRecorder()
+
+    val item =
+      mockEnvelopeItem(
+        SentryItemType.Span,
+        SPAN_CONTENT_TYPE,
+        itemCount = null,
+        data = ByteArray(0),
+      )
+
+    clientReportRecorder.recordLostEnvelopeItem(DiscardReason.NETWORK_ERROR, item)
+
+    val clientReport = clientReportRecorder.resetCountsAndGenerateClientReport()
+    assertEquals(1, clientReport.quantityOf(DataCategory.Span))
   }
 
   private fun mockEnvelopeItem(

@@ -4,10 +4,12 @@ plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.api-validation")
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.ndk"
 
   defaultConfig {

@@ -227,7 +227,7 @@ class SentryOkHttpEventListenerTest {
     val call = sut.newCall(request)
     val response = mock<Response>()
     whenever(response.protocol).thenReturn(Protocol.HTTP_1_1)
-    verifyDelegation(listener, fixture.mockEventListener, call, response)
+    verifyDelegation(listener, fixture.mockEventListener, call, sut.newCall(request), response)
   }
 
   @Test
@@ -238,7 +238,7 @@ class SentryOkHttpEventListenerTest {
     val call = sut.newCall(request)
     val response = mock<Response>()
     whenever(response.protocol).thenReturn(Protocol.HTTP_1_1)
-    verifyDelegation(listener, fixture.mockEventListener, call, response)
+    verifyDelegation(listener, fixture.mockEventListener, call, sut.newCall(request), response)
   }
 
   @Test
@@ -250,7 +250,7 @@ class SentryOkHttpEventListenerTest {
     val call = sut.newCall(request)
     val response = mock<Response>()
     whenever(response.protocol).thenReturn(Protocol.HTTP_1_1)
-    verifyDelegation(listener, originalListener, call, response)
+    verifyDelegation(listener, originalListener, call, sut.newCall(request), response)
   }
 
   @Test
@@ -262,7 +262,7 @@ class SentryOkHttpEventListenerTest {
     val call = sut.newCall(request)
     val response = mock<Response>()
     whenever(response.protocol).thenReturn(Protocol.HTTP_1_1)
-    verifyDelegation(listener, originalListener, call, response)
+    verifyDelegation(listener, originalListener, call, sut.newCall(request), response)
   }
 
   @Test
@@ -304,6 +304,7 @@ class SentryOkHttpEventListenerTest {
     listener: SentryOkHttpEventListener,
     originalListener: EventListener,
     call: Call,
+    failedCall: Call,
     response: Response,
   ) {
     listener.callStart(call)
@@ -352,7 +353,10 @@ class SentryOkHttpEventListenerTest {
     verify(originalListener).responseFailed(eq(call), any())
     listener.callEnd(call)
     verify(originalListener).callEnd(eq(call))
-    listener.callFailed(call, mock())
-    verify(originalListener).callFailed(eq(call), any())
+
+    // callEnd and callFailed are both terminal, so a failing call is a separate one
+    listener.callStart(failedCall)
+    listener.callFailed(failedCall, mock())
+    verify(originalListener).callFailed(eq(failedCall), any())
   }
 }

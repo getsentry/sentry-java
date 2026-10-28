@@ -1,6 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import net.ltgt.gradle.errorprone.errorprone
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.application")
@@ -13,6 +12,7 @@ plugins {
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.uitest.android"
 
   defaultConfig {
@@ -63,8 +63,6 @@ android {
       testProguardFiles("proguard-rules.pro")
     }
   }
-
-  kotlin { compilerOptions.jvmTarget = JvmTarget.JVM_11 }
 
   lint {
     warningsAsErrors = true

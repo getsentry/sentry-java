@@ -8,10 +8,12 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.api-validation")
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.core"
 
   defaultConfig {
@@ -47,10 +49,7 @@ android {
       isIncludeAndroidResources = true
       // Robolectric loads the android-all jar into each test JVM, which needs more heap
       // than the default.
-      all {
-        it.minHeapSize = "256m"
-        it.maxHeapSize = "2g"
-      }
+      all { it.maxHeapSize = "2g" }
     }
   }
 
@@ -120,7 +119,7 @@ dependencies {
   testImplementation(libs.awaitility.kotlin)
   testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentrySpotlight)
   testImplementation(projects.sentryAndroidFragment)
@@ -137,3 +136,5 @@ dependencies {
   testRuntimeOnly(libs.androidx.fragment.ktx)
   testRuntimeOnly(libs.timber)
 }
+
+sentryApiValidation { ignoredPackages.add("io.sentry.android.core.internal") }

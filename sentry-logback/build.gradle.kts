@@ -9,9 +9,10 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer")
+  id("io.sentry.api-validation")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
@@ -29,6 +30,7 @@ dependencies {
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.logback.classic)
   testImplementation(libs.mockito.kotlin)
 }

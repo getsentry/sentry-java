@@ -7,7 +7,6 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
 import static io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.MeasurementUnit;
@@ -20,6 +19,7 @@ import io.sentry.SpanStatus;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.App;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
@@ -36,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Event Processor responsible for adding Android metrics to transactions */
-final class PerformanceAndroidEventProcessor implements EventProcessor {
+final class PerformanceAndroidEventProcessor implements SentryEventProcessor {
 
   private static final String APP_METRICS_ORIGIN = "auto.ui";
 
@@ -86,6 +86,10 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
       }
 
       final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
+      // The app start type can flip (e.g. the last activity being destroyed marks the next start
+      // as warm) while this runs on the timer thread that finished the transaction. Read it once so
+      // the measurement key, contexts.app and the span attributes below cannot disagree.
+      final @NotNull AppStartMetrics.AppStartType appStartType = appStartMetrics.getAppStartType();
       // the app start measurement is only sent once and only if the transaction has
       // the app.start span, which is automatically created by the SDK.
       if (hasAppStartSpan(transaction)) {
@@ -141,14 +145,14 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
                       (float) appStartUpDurationMs, MeasurementUnit.Duration.MILLISECOND.apiName());
 
               final String appStartKey =
-                  appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.COLD
+                  appStartType == AppStartMetrics.AppStartType.COLD
                       ? MeasurementValue.KEY_APP_START_COLD
                       : MeasurementValue.KEY_APP_START_WARM;
 
               transaction.getMeasurements().put(appStartKey, value);
             }
 
-            attachAppStartSpans(appStartMetrics, transaction);
+            attachAppStartSpans(appStartMetrics, appStartType, transaction);
             appStartMetrics.onAppStartSpansSent();
           }
         }
@@ -158,14 +162,12 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
           appContext = new App();
           transaction.getContexts().setApp(appContext);
         }
-        final String appStartType =
-            appStartMetrics.getAppStartType() == AppStartMetrics.AppStartType.COLD
-                ? "cold"
-                : "warm";
-        appContext.setStartType(appStartType);
+        final String appStartTypeName =
+            appStartType == AppStartMetrics.AppStartType.COLD ? "cold" : "warm";
+        appContext.setStartType(appStartTypeName);
 
         if (isStandaloneAppStartTxn) {
-          setAppStartVitals(transaction, appStartType);
+          setAppStartVitals(transaction, appStartTypeName);
         }
       }
 
@@ -293,10 +295,12 @@ final class PerformanceAndroidEventProcessor implements EventProcessor {
   }
 
   private void attachAppStartSpans(
-      final @NotNull AppStartMetrics appStartMetrics, final @NotNull SentryTransaction txn) {
+      final @NotNull AppStartMetrics appStartMetrics,
+      final @NotNull AppStartMetrics.AppStartType appStartType,
+      final @NotNull SentryTransaction txn) {
 
     // We include process init, content providers and application.onCreate spans only on cold start
-    if (appStartMetrics.getAppStartType() != AppStartMetrics.AppStartType.COLD) {
+    if (appStartType != AppStartMetrics.AppStartType.COLD) {
       return;
     }
 

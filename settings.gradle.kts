@@ -18,8 +18,8 @@ pluginManagement {
 }
 
 plugins {
-    id("com.gradle.develocity") version "4.4.2"
-    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.6.0"
+    id("com.gradle.develocity") version "4.5.0"
+    id("com.gradle.common-custom-user-data-gradle-plugin") version "2.8.0"
 }
 
 develocity {
@@ -51,13 +51,14 @@ include(
     "sentry-android-timber",
     "sentry-android-fragment",
     "sentry-android-navigation",
+    "sentry-android-navigation3",
     "sentry-android-sqlite",
     "sentry-android-replay",
     "sentry-compose",
     "sentry-apollo",
     "sentry-apollo-3",
     "sentry-apollo-4",
-    "sentry-system-test-support",
+    "sentry-apollo-5",
     "sentry-test-support",
     "sentry-log4j2",
     "sentry-logback",
@@ -115,11 +116,13 @@ include(
     "sentry-samples:sentry-samples-spring-boot-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-jakarta",
+    "sentry-samples:sentry-samples-spring-boot-jakarta-log4j2",
     "sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-webflux",
     "sentry-samples:sentry-samples-spring-boot-webflux-jakarta",
     "sentry-samples:sentry-samples-spring-boot-4",
+    "sentry-samples:sentry-samples-spring-boot-4-log4j2",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry",
     "sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent",
     "sentry-samples:sentry-samples-spring-boot-4-otlp",

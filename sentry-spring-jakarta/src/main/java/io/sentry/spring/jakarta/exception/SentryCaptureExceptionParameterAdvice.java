@@ -42,8 +42,8 @@ public class SentryCaptureExceptionParameterAdvice implements MethodInterceptor 
     if (sentryCaptureExceptionParameter != null) {
       Object[] args = invocation.getArguments();
       for (Object arg : args) {
-        if (arg instanceof Exception) {
-          captureException((Exception) arg);
+        if (arg instanceof Exception exception) {
+          captureException(exception);
           break;
         }
       }

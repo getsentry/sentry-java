@@ -1,11 +1,23 @@
 package io.sentry.util
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.FilterString
+import io.sentry.SentryOpenTelemetryMode
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SpanUtilsTest {
+  @Test
+  fun `ignores okhttp origin only in OpenTelemetry agent mode`() {
+    assertThat(SpanUtils.ignoredSpanOriginsForOpenTelemetry(SentryOpenTelemetryMode.AGENT))
+      .contains("auto.http.okhttp")
+    assertThat(
+        SpanUtils.ignoredSpanOriginsForOpenTelemetry(SentryOpenTelemetryMode.AGENTLESS_SPRING)
+      )
+      .doesNotContain("auto.http.okhttp")
+  }
+
   @Test
   fun `isIgnored returns true for exact match`() {
     val ignoredOrigins = listOf(FilterString("auto.http.spring_jakarta.webmvc"))

@@ -6,9 +6,12 @@ import io.sentry.protocol.User
 import jakarta.servlet.FilterChain
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import org.assertj.core.api.Assertions.assertThat
 import org.mockito.kotlin.check
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.mock.web.MockHttpServletRequest
@@ -23,9 +26,14 @@ class SentryUserFilterTest {
 
     fun getSut(
       isSendDefaultPii: Boolean = false,
+      userInfo: Boolean? = null,
       userProviders: List<SentryUserProvider>,
     ): SentryUserFilter {
-      val options = SentryOptions().apply { this.isSendDefaultPii = isSendDefaultPii }
+      val options =
+        SentryOptions().apply {
+          this.isSendDefaultPii = isSendDefaultPii
+          userInfo?.let { dataCollection.setUserInfo(it) }
+        }
       whenever(scopes.options).thenReturn(options)
       return SentryUserFilter(scopes, userProviders)
     }
@@ -116,6 +124,70 @@ class SentryUserFilterTest {
     filter.doFilter(fixture.request, fixture.response, fixture.chain)
 
     verify(fixture.scopes).setUser(check { assertNull(it.ipAddress) })
+  }
+
+  @Test
+  fun `when user info is disabled, preserves auto ip from a custom provider`() {
+    val filter =
+      fixture.getSut(
+        isSendDefaultPii = true,
+        userInfo = false,
+        userProviders = listOf(SentryUserProvider { User().apply { ipAddress = "{{auto}}" } }),
+      )
+
+    filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    verify(fixture.scopes).setUser(check { assertEquals("{{auto}}", it.ipAddress) })
+  }
+
+  @Test
+  fun `when user info is enabled, removes auto ip from a custom provider`() {
+    val filter =
+      fixture.getSut(
+        isSendDefaultPii = false,
+        userInfo = true,
+        userProviders = listOf(SentryUserProvider { User().apply { ipAddress = "{{auto}}" } }),
+      )
+
+    filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    verify(fixture.scopes).setUser(check { assertNull(it.ipAddress) })
+  }
+
+  @Test
+  fun `provider failure discards user data while later providers and request continue`() {
+    val failure = RuntimeException("provider failed")
+    val laterProvider = mock<SentryUserProvider>()
+    whenever(laterProvider.provideUser()).thenReturn(sampleUser)
+    val filter =
+      fixture.getSut(
+        userProviders =
+          listOf(
+            SentryUserProvider { sampleUser },
+            SentryUserProvider { throw failure },
+            laterProvider,
+          )
+      )
+
+    filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    verify(fixture.scopes).setUser(check { assertEquals(User(), it) })
+    verify(laterProvider).provideUser()
+    verify(fixture.chain).doFilter(fixture.request, fixture.response)
+  }
+
+  @Test
+  fun `fatal provider failure propagates`() {
+    val failure = OutOfMemoryError("fatal")
+    val filter = fixture.getSut(userProviders = listOf(SentryUserProvider { throw failure }))
+
+    assertThat(
+        assertFailsWith<OutOfMemoryError> {
+          filter.doFilter(fixture.request, fixture.response, fixture.chain)
+        }
+      )
+      .isSameAs(failure)
+    verify(fixture.chain, never()).doFilter(fixture.request, fixture.response)
   }
 
   private fun assertEquals(user1: User, user2: User) {

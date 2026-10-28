@@ -16,25 +16,34 @@ import io.sentry.android.replay.DefaultReplayBreadcrumbConverter
 import io.sentry.android.replay.GeneratedVideo
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_DIST
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ENVIRONMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_RELEASE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_NAME
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_VERSION
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ReplayFrame
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.maskAllImages
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebBreadcrumbEvent
 import io.sentry.rrweb.RRWebMetaEvent
 import io.sentry.rrweb.RRWebOptionsEvent
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -56,6 +65,7 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
+@Suppress("LargeClass")
 class SessionCaptureStrategyTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
@@ -108,6 +118,8 @@ class SessionCaptureStrategyTest {
         bitRate = 20_000,
       )
 
+    val ticker = TestMonotonicTicker()
+
     fun getSut(
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
       replayCacheDir: File? = null,
@@ -125,6 +137,7 @@ class SessionCaptureStrategyTest {
         options,
         scopes,
         dateProvider,
+        ticker,
         replayExecutor,
         mock {
           doAnswer { invocation ->
@@ -152,6 +165,33 @@ class SessionCaptureStrategyTest {
     assertEquals(replayId, fixture.scope.replayId)
     assertEquals(replayId, strategy.currentReplayId)
     assertEquals(0, strategy.currentSegment)
+  }
+
+  @Test
+  fun `start persists the recording metadata`() {
+    fixture.options.release = "io.sentry.sample@1.0.0+1"
+    fixture.options.environment = "recording-env"
+    fixture.options.dist = "1"
+    fixture.options.sessionReplay.sdkVersion = SdkVersion("sentry.javascript.react-native", "7.0.0")
+    val strategy = fixture.getSut()
+
+    strategy.start(0, SentryId())
+
+    assertEquals("io.sentry.sample@1.0.0+1", fixture.persistedSegment[SEGMENT_KEY_RELEASE])
+    assertEquals("recording-env", fixture.persistedSegment[SEGMENT_KEY_ENVIRONMENT])
+    assertEquals("1", fixture.persistedSegment[SEGMENT_KEY_DIST])
+    assertEquals("sentry.javascript.react-native", fixture.persistedSegment[SEGMENT_KEY_SDK_NAME])
+    assertEquals("7.0.0", fixture.persistedSegment[SEGMENT_KEY_SDK_VERSION])
+  }
+
+  @Test
+  fun `start does not persist recording metadata with line breaks`() {
+    fixture.options.environment = "multi\nline"
+    val strategy = fixture.getSut()
+
+    strategy.start(0, SentryId())
+
+    assertNull(fixture.persistedSegment[SEGMENT_KEY_ENVIRONMENT])
   }
 
   @Test
@@ -215,6 +255,24 @@ class SessionCaptureStrategyTest {
     assertEquals(-1, strategy.currentSegment)
     assertFalse(currentReplay.exists())
     verify(fixture.replayCache).close()
+  }
+
+  @Test
+  fun `stop keeps the segment videos and deletes everything else`() {
+    val replayId = SentryId()
+    // a temporary folder, not options.cacheDirPath: the kept video would outlive the test there
+    val currentReplay = tmpDir.newFolder("replay_$replayId")
+    val video = File(currentReplay, "0.mp4").also { it.writeText("video") }
+    val frame = File(currentReplay, "1727500000000.jpg").also { it.writeText("frame") }
+
+    val strategy = fixture.getSut(replayCacheDir = currentReplay)
+    strategy.start(0, replayId)
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+
+    strategy.stop()
+
+    assertTrue(video.exists(), "a captured segment's video is still queued for sending")
+    assertFalse(frame.exists())
   }
 
   @Test
@@ -390,6 +448,7 @@ class SessionCaptureStrategyTest {
 
     strategy.onScreenshotRecorded(mock<Bitmap>()) {}
     now += fixture.options.sessionReplay.sessionDuration
+    fixture.ticker.advance(fixture.options.sessionReplay.sessionDuration, MILLISECONDS)
     tasks.forEach(Runnable::run)
 
     verify(fixture.scopes, never()).captureReplay(any(), any())
@@ -447,6 +506,37 @@ class SessionCaptureStrategyTest {
     strategy.start()
     strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
     now += fixture.options.sessionReplay.sessionDuration * 2
+    fixture.ticker.advance(fixture.options.sessionReplay.sessionDuration * 2, MILLISECONDS)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.options.replayController).stop()
+  }
+
+  @Test
+  fun `onScreenshotRecorded does not stop replay when the wall clock jumps past the deadline`() {
+    var now = System.currentTimeMillis()
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
+    // the device corrects its clock two hours forwards a second into the recording
+    now += fixture.options.sessionReplay.sessionDuration * 2
+    fixture.ticker.advance(1, SECONDS)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) {}
+
+    verify(fixture.options.replayController, never()).stop()
+  }
+
+  @Test
+  fun `onScreenshotRecorded stops replay when the wall clock steps backwards past the deadline`() {
+    var now = System.currentTimeMillis()
+    val strategy = fixture.getSut(dateProvider = { now })
+    strategy.start()
+    strategy.onConfigurationChanged(mock<ScreenshotRecorderConfig>())
+    // an hour of recording, during which the device drags its clock back to before the start
+    fixture.ticker.advance(fixture.options.sessionReplay.sessionDuration, MILLISECONDS)
+    now -= 1000
 
     strategy.onScreenshotRecorded(mock<Bitmap>()) {}
 

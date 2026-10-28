@@ -10,9 +10,10 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer")
+  id("io.sentry.api-validation")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = JvmTarget.JVM_1_8
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
@@ -54,7 +55,7 @@ dependencies {
   testImplementation(libs.graphql.java17)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(libs.springboot.starter.aop)
   testImplementation(libs.springboot.starter.graphql)
   testImplementation(libs.springboot.starter.security)
@@ -93,5 +94,27 @@ tasks.jar {
       "Implementation-Title" to project.name,
       "Implementation-Version" to project.version,
     )
+  }
+}
+
+testing {
+  suites {
+    // Runs a plain Spring MVC app in an embedded Tomcat against MockSentryServer, the way a servlet
+    // container runs a WAR. Spring Boot isn't on its classpath, because Sentry behaves differently
+    // with it.
+    register<JvmTestSuite>("integrationTest") {
+      useJUnit()
+      dependencies {
+        implementation(platform(libs.springboot2.bom))
+        implementation(project())
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryTestSupport)
+        implementation(Config.Libs.springWeb)
+        implementation(libs.jackson.databind)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.tomcat.embed.core)
+      }
+    }
   }
 }

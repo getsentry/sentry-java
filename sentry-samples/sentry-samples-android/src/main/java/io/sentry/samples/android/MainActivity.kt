@@ -76,6 +76,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -91,6 +92,8 @@ import io.sentry.android.core.SentryUserFeedbackForm
 import io.sentry.compose.SentryTraced
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.User
+import io.sentry.samples.android.memory.MemoryLimiterActivity
+import io.sentry.samples.android.navigation.nav3.Nav3SetupActivity
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -898,12 +901,25 @@ fun IntegrationsScreen() {
         OutlinedButton(
           onClick = {
             activity.startActivity(
-              Intent(activity, io.sentry.samples.android.navigation.Nav2SetupActivity::class.java)
+              Intent(
+                activity,
+                io.sentry.samples.android.navigation.nav2.Nav2SetupActivity::class.java,
+              )
             )
           },
           modifier = Modifier,
         ) {
           Text("Open Nav2Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("open_nav3_activity") {
+        OutlinedButton(
+          onClick = { activity.startActivity(Intent(activity, Nav3SetupActivity::class.java)) },
+          modifier = Modifier,
+        ) {
+          Text("Open Nav3 Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
     }
@@ -981,6 +997,19 @@ fun IntegrationsScreen() {
           modifier = Modifier,
         ) {
           Text("Open HTTP Request Activity", maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+      }
+    }
+    item {
+      SentryTraced("memory_limiter") {
+        OutlinedButton(
+          onClick = {
+            tagSampleAction("memory_limiter")
+            activity.startActivity(Intent(activity, MemoryLimiterActivity::class.java))
+          },
+          modifier = Modifier.testTag("open_memory_limiter_demo"),
+        ) {
+          Text("MemoryLimiter Demo", maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
       }
     }

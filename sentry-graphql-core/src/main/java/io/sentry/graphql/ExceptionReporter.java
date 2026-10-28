@@ -45,7 +45,7 @@ public final class ExceptionReporter {
     final @NotNull Hint hint = new Hint();
     setRequestDetailsOnEvent(scopes, exceptionDetails, event);
 
-    if (result != null && isAllowedToAttachBody(scopes)) {
+    if (result != null && isAllowedToAttachResponseBody(scopes)) {
       final @NotNull Response response = new Response();
       final @NotNull Map<String, Object> responseBody = result.toSpecification();
       response.setData(responseBody);
@@ -55,10 +55,17 @@ public final class ExceptionReporter {
     scopes.captureEvent(event, hint);
   }
 
-  private boolean isAllowedToAttachBody(final @NotNull IScopes scopes) {
+  private boolean isAllowedToAttachRequestBody(final @NotNull IScopes scopes) {
     final @NotNull SentryOptions options = scopes.getOptions();
-    return options.isSendDefaultPii()
-        && !SentryOptions.RequestSize.NONE.equals(options.getMaxRequestBodySize());
+    return options.getDataCollectionResolver().isGraphqlDocumentWithLegacyBodyGate()
+        || options.getDataCollectionResolver().isGraphqlVariablesWithLegacyBodyGate();
+  }
+
+  private boolean isAllowedToAttachResponseBody(final @NotNull IScopes scopes) {
+    return scopes
+        .getOptions()
+        .getDataCollectionResolver()
+        .isOutgoingResponseBodyWithLegacyBodyGate();
   }
 
   private void setRequestDetailsOnEvent(
@@ -80,20 +87,27 @@ public final class ExceptionReporter {
       final @NotNull Request request) {
     request.setApiTarget("graphql");
 
-    if (isAllowedToAttachBody(scopes)
+    if (isAllowedToAttachRequestBody(scopes)
         && (exceptionDetails.isSubscription() || captureRequestBodyForNonSubscriptions)) {
       final @NotNull Map<String, Object> data = new HashMap<>();
+      final @NotNull SentryOptions options = scopes.getOptions();
 
-      data.put("query", exceptionDetails.getQuery());
+      if (options.getDataCollectionResolver().isGraphqlDocumentWithLegacyBodyGate()) {
+        data.put("query", exceptionDetails.getQuery());
+      }
 
-      final @Nullable Map<String, Object> variables = exceptionDetails.getVariables();
-      if (variables != null && !variables.isEmpty()) {
-        data.put("variables", variables);
+      if (options.getDataCollectionResolver().isGraphqlVariablesWithLegacyBodyGate()) {
+        final @Nullable Map<String, Object> variables = exceptionDetails.getVariables();
+        if (variables != null && !variables.isEmpty()) {
+          data.put("variables", variables);
+        }
       }
 
       // for Spring HTTP this will be replaced by RequestBodyExtractingEventProcessor
       // for non subscription (websocket) errors
-      request.setData(data);
+      if (!data.isEmpty()) {
+        request.setData(data);
+      }
     }
   }
 
