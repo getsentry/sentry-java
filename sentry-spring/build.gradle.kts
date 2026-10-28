@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spring-boot-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -116,4 +117,10 @@ testing {
       }
     }
   }
+}
+
+// The suites on each Spring Boot 2 version the CI matrix tests.
+springBootMatrix {
+  versions(line = 2)
+  test("integrationTest")
 }

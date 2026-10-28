@@ -24,5 +24,9 @@ gradlePlugin {
       id = "io.sentry.animalsniffer.android"
       implementationClass = "io.sentry.gradle.SentryAnimalSnifferAndroidPlugin"
     }
+    register("sentrySpringBootMatrix") {
+      id = "io.sentry.spring-boot-matrix"
+      implementationClass = "io.sentry.gradle.SpringBootMatrixPlugin"
+    }
   }
 }

@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spring-boot-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -272,13 +273,17 @@ testing {
 /**
  * Has the OpenTelemetry agent tests start agentFixture's app in a child JVM, with the built agent
  * attached. [autoInit] decides whether the agent initializes Sentry or, as with
- * `SENTRY_AUTO_INIT=false`, the Spring Boot starter.
+ * `SENTRY_AUTO_INIT=false`, the Spring Boot starter. [appClasspath] is the app's classpath for
+ * another Spring Boot version.
  */
-fun Test.runAgentFixture(autoInit: Boolean) {
+fun Test.runAgentFixture(
+  autoInit: Boolean,
+  appClasspath: FileCollection = agentFixture.runtimeClasspath,
+) {
   jvmArgumentProviders.add(
     objects.newInstance<ChildJvmTestArguments>().apply {
       agentJar.from(otelAgentJar)
-      appClasspath.from(agentFixture.runtimeClasspath)
+      this.appClasspath.from(appClasspath)
     }
   )
   systemProperty("sentry.test.agentAutoInit", autoInit)
@@ -308,3 +313,17 @@ listOf(
   .forEach {
     tasks.named<KotlinCompile>(it) { compilerOptions.javaParameters = true }
   }
+
+// The suites on each Spring Boot 2 version the CI matrix tests.
+springBootMatrix {
+  versions(line = 2)
+  test("integrationTest")
+  test("integrationTestWebflux")
+  test("integrationTestOtelNoAgent")
+  test("integrationTestOtelAgent") { version ->
+    runAgentFixture(autoInit = true, appClasspath = runtimeClasspath("agentFixture", version))
+  }
+  test("integrationTestOtelAgent", name = "integrationTestOtelAgentWithoutAutoInit") { version ->
+    runAgentFixture(autoInit = false, appClasspath = runtimeClasspath("agentFixture", version))
+  }
+}
