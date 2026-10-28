@@ -8,6 +8,8 @@ plugins {
   alias(libs.plugins.kotlin.spring)
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 group = "io.sentry.sample.spring-boot-webflux-jakarta"
 
 version = "0.0.1-SNAPSHOT"
@@ -24,11 +26,11 @@ extra["kotlin-coroutines.version"] = "1.9.0"
 dependencies {
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
-  implementation(projects.sentrySpringBootStarterJakarta)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryJdbc)
-  implementation(projects.sentryGraphql22)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-jdbc:$sentryVersion")
+  implementation("io.sentry:sentry-graphql-22:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
   implementation(libs.context.propagation)
   implementation(libs.springboot3.starter.actuator)
   implementation(libs.springboot3.starter.graphql)

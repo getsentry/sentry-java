@@ -26,6 +26,7 @@ jobs:
       - name: Format with spotlessApply
         run: |
           ./gradlew spotlessApply
+          ./gradlew -p sentry-samples spotlessApply
           ./gradlew -p sentry-samples/sentry-samples-android spotlessApply
           ./gradlew -p sentry-android-integration-tests spotlessApply
 

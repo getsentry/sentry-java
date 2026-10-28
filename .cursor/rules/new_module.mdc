@@ -31,16 +31,10 @@ the release that first ships it. All of the following have to be merged **before
 
 2. Add the module to the include list in `settings.gradle.kts`
 
-If adding a `sentry-samples` module, also add it to the `ignoredProjects` list in the root `build.gradle.kts`:
-
-```kotlin
-ignoredProjects.addAll(
-    listOf(
-        // ... existing projects ...
-        "sentry-samples-{module-name}"
-    )
-)
-```
+If adding a sample, add it to the include list in `sentry-samples/settings.gradle.kts` instead. The
+samples are a separate Gradle build that includes the SDK build, so a sample depends on
+`"io.sentry:sentry-{module-name}:$sentryVersion"` (with `val sentryVersion =
+libs.versions.sentry.get()`), and Gradle substitutes the SDK's project for it.
 
 3. Add a `SENTRY_{MODULE}_SDK_NAME` constant to the `Config.Sentry` block in
    `buildSrc/src/main/java/Config.kt`:

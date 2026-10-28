@@ -5,13 +5,15 @@ plugins {
   alias(libs.plugins.shadow)
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 application { mainClass.set("io.sentry.samples.console.Main") }
 
 dependencies {
-  implementation(projects.sentry)
-  implementation(projects.sentryAsyncProfiler)
-  implementation(projects.sentryJcache)
-  implementation(projects.sentryKafka)
+  implementation("io.sentry:sentry:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
+  implementation("io.sentry:sentry-jcache:$sentryVersion")
+  implementation("io.sentry:sentry-kafka:$sentryVersion")
   implementation(libs.jcache)
   implementation(libs.caffeine.jcache)
   implementation(libs.kafka.clients)

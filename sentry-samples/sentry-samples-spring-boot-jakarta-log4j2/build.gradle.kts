@@ -8,6 +8,8 @@ plugins {
   alias(libs.plugins.kotlin.spring)
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 group = "io.sentry.sample.spring-boot-jakarta-log4j2"
 
 version = "0.0.1-SNAPSHOT"
@@ -41,8 +43,8 @@ dependencies {
   implementation("org.aspectj:aspectjweaver")
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
-  implementation(projects.sentrySpringBootStarterJakarta)
-  implementation(projects.sentryLog4j2)
+  implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
+  implementation("io.sentry:sentry-log4j2:$sentryVersion")
   implementation("org.springframework.boot:spring-boot-starter-log4j2")
   modules {
     module("org.springframework.boot:spring-boot-starter-logging") {
@@ -52,10 +54,10 @@ dependencies {
       )
     }
   }
-  implementation(projects.sentryGraphql22)
-  implementation(projects.sentryQuartz)
-  implementation(projects.sentryAsyncProfiler)
-  implementation(projects.sentryOpenfeature)
+  implementation("io.sentry:sentry-graphql-22:$sentryVersion")
+  implementation("io.sentry:sentry-quartz:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
+  implementation("io.sentry:sentry-openfeature:$sentryVersion")
 
   // cache tracing
   implementation(libs.springboot3.starter.cache)
@@ -63,12 +65,12 @@ dependencies {
 
   // kafka
   implementation(libs.spring.kafka3)
-  implementation(projects.sentryKafka)
+  implementation("io.sentry:sentry-kafka:$sentryVersion")
 
   // OpenFeature SDK
   implementation(libs.openfeature)
 
   // database query tracing
-  implementation(projects.sentryJdbc)
+  implementation("io.sentry:sentry-jdbc:$sentryVersion")
   runtimeOnly(libs.hsqldb)
 }
