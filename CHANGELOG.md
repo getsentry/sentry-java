@@ -38,9 +38,10 @@
 - Fix a D8 crash (`NullPointerException: Cannot invoke "String.length()"`) when dexing the SDK with AGP 8.0 and older, a regression from 8.61.1 ([#6356](https://github.com/getsentry/sentry-java/pull/6356))
 - Always remove the first-draw listener after the first frame, even if no layout pass follows it ([#6152](https://github.com/getsentry/sentry-java/pull/6152))
 - Prevent Reactor pool maintenance tasks from retaining unbounded Sentry scope chains ([#6283](https://github.com/getsentry/sentry-java/pull/6283))
-- Refuse to send data to servers that present one of the leaked eMudhra intermediate certificates (CVE-2026-111943) ([#6336](https://github.com/getsentry/sentry-java/pull/6336))
+- Refuse to send data to servers whose certificate was issued by one of the leaked eMudhra intermediates (CVE-2026-111943) ([#6336](https://github.com/getsentry/sentry-java/pull/6336))
   - Anyone can recover the private keys of these intermediates, and they are cross-signed by a root that every Android version trusts, so device trust store updates don't protect every device.
-  - This applies to the SDK's own envelope uploads and to the distribution update check. Other HTTPS connections your app makes, including those instrumented by `sentry-okhttp` and the other HTTP client integrations, need their own fix, for example an OkHttp update.
+  - The check runs on every TLS handshake, including the new connections `HttpURLConnection` opens on its own to retry a request.
+  - This applies to the default envelope transport and to the distribution update check, but not yet to `ApacheHttpClientTransport` from `sentry-apache-http-client-5`. Other HTTPS connections your app makes, including those instrumented by `sentry-okhttp` and the other HTTP client integrations, need their own fix, for example an OkHttp update.
 
 ## 8.61.1
 

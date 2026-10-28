@@ -90,12 +90,10 @@ internal class DistributionHttpClient(private val options: SentryOptions) {
       connection.connectTimeout = options.connectionTimeoutMillis
       connection.readTimeout = options.readTimeoutMillis
 
-      if (connection is HttpsURLConnection && options.sslSocketFactory != null) {
-        connection.sslSocketFactory = options.sslSocketFactory
+      if (connection is HttpsURLConnection) {
+        connection.sslSocketFactory =
+          DistrustedCertificates.wrap(options.sslSocketFactory ?: connection.sslSocketFactory)
       }
-
-      connection.connect()
-      DistrustedCertificates.getInstance().verify(connection)
 
       val responseCode = connection.responseCode
       val responseBody = readResponse(connection)

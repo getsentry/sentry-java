@@ -7778,8 +7778,7 @@ public final class io/sentry/transport/CurrentDateProvider : io/sentry/transport
 }
 
 public final class io/sentry/transport/DistrustedCertificates {
-	public static fun getInstance ()Lio/sentry/transport/DistrustedCertificates;
-	public fun verify (Ljava/net/HttpURLConnection;)V
+	public static fun wrap (Ljavax/net/ssl/SSLSocketFactory;)Ljavax/net/ssl/SSLSocketFactory;
 }
 
 public abstract interface class io/sentry/transport/ICurrentDateProvider {
