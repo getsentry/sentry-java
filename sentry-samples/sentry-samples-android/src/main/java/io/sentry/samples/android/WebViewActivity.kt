@@ -22,10 +22,8 @@ import io.sentry.android.core.SentryWebViewTracing
  *
  * The page is bundled in `assets/webview` and served over https by [WebViewAssetLoader], so its
  * host can be allowed like any other. It runs `@sentry/browser`, which continues the injected trace
- * on pageload, and reports back what it received so the result can be checked on the device:
- * - the `sentry-trace` meta tag must be present in the first synchronous `<head>` script, and match
- *   the app's trace;
- * - the iframe on the page must not receive it.
+ * on pageload, and reports back the `sentry-trace` meta tag its first synchronous `<head>` script
+ * saw, so the connection can be checked on the device.
  */
 class WebViewActivity : AppCompatActivity() {
 
@@ -34,7 +32,6 @@ class WebViewActivity : AppCompatActivity() {
 
   private var nativeTrace: String? = null
   private var pageTrace: String? = null
-  private var iframeInjected: Boolean? = null
   private var installed = false
 
   @SuppressLint("SetJavaScriptEnabled", "AddJavascriptInterface")
@@ -91,14 +88,11 @@ class WebViewActivity : AppCompatActivity() {
 
   private fun updateStatus() {
     receivedView.text = pageTrace?.ifEmpty { "(none, not injected)" } ?: "(waiting…)"
-    val connected = pageTrace != null && pageTrace == nativeTrace
     statusView.text =
       when {
         !installed -> "Trace propagation not installed, see the Sentry logs"
-        pageTrace == null || iframeInjected == null -> "WebView trace not connected"
-        !connected -> "WebView trace not connected"
-        iframeInjected == true -> "WebView trace connected, but the iframe received it"
-        else -> "WebView trace connected ✓"
+        pageTrace != null && pageTrace == nativeTrace -> "WebView trace connected ✓"
+        else -> "WebView trace not connected"
       }
   }
 
@@ -123,14 +117,6 @@ class WebViewActivity : AppCompatActivity() {
     fun onPageTrace(trace: String) {
       runOnUiThread {
         pageTrace = trace
-        updateStatus()
-      }
-    }
-
-    @JavascriptInterface
-    fun onIframeTrace(injected: Boolean) {
-      runOnUiThread {
-        iframeInjected = injected
         updateStatus()
       }
     }
