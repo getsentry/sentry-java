@@ -95,7 +95,9 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
     if (checkInAnnotation == null) {
       if (monitorScheduledTasks && isScheduled(mostSpecificMethod)) {
         final @NotNull String taskName =
-            scheduledTaskName(invocation.getThis().getClass(), mostSpecificMethod);
+            scheduledTaskName(
+                target != null ? target.getClass() : mostSpecificMethod.getDeclaringClass(),
+                mostSpecificMethod);
         final @Nullable MonitorConfig monitorConfig = monitorConfig(mostSpecificMethod);
         if (monitorConfig == null) {
           scopes
@@ -151,7 +153,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
     return captureCheckIns(invocation, monitorSlug, isHeartbeatOnly, monitorConfig);
   }
 
-  private Object captureCheckIns(
+  private @Nullable Object captureCheckIns(
       final @NotNull MethodInvocation invocation,
       final @NotNull String monitorSlug,
       final boolean isHeartbeatOnly,
