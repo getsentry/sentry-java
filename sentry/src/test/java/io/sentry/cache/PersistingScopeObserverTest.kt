@@ -9,6 +9,7 @@ import io.sentry.SpanContext
 import io.sentry.SpanId
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.CONTEXTS_FILENAME
+import io.sentry.cache.PersistingScopeObserver.ENVIRONMENT_FILENAME
 import io.sentry.cache.PersistingScopeObserver.EXTRAS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.FINGERPRINT_FILENAME
 import io.sentry.cache.PersistingScopeObserver.LEVEL_FILENAME
@@ -196,6 +197,15 @@ class PersistingScopeObserverTest<T>(
         DeletedEntityProvider { null },
       )
 
+    private fun environment(): Array<Any?> =
+      arrayOf(
+        "staging",
+        StoreScopeValue<String> { environment, _ -> setEnvironment(environment) },
+        ENVIRONMENT_FILENAME,
+        DeleteScopeValue { setEnvironment(null) },
+        DeletedEntityProvider { null },
+      )
+
     private fun transaction(): Array<Any?> =
       arrayOf(
         "MainActivity",
@@ -296,6 +306,7 @@ class PersistingScopeObserverTest<T>(
         request(),
         fingerprint(),
         level(),
+        environment(),
         transaction(),
         trace(),
         contexts(),

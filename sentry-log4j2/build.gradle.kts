@@ -9,9 +9,10 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer")
+  id("io.sentry.api-validation")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
@@ -30,6 +31,7 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.log4j.api)
   testImplementation(libs.log4j.core)
@@ -53,6 +55,16 @@ tasks.withType<JavaCompile>().configureEach {
     check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
     option("NullAway:AnnotatedPackages", "io.sentry")
   }
+}
+
+// log4j's GraalVmProcessor warns (and fails the build under -Werror) without these options
+tasks.named<JavaCompile>("compileJava") {
+  options.compilerArgs.addAll(
+    listOf(
+      "-Alog4j.graalvm.groupId=${project.group}",
+      "-Alog4j.graalvm.artifactId=${project.name}",
+    )
+  )
 }
 
 tasks.jar {
