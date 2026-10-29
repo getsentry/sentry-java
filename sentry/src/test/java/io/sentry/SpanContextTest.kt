@@ -42,7 +42,7 @@ class SpanContextTest {
 
     val traceContext = spanContext.withDefaultStatus()
 
-    assertThat(traceContext).isSameInstanceAs(spanContext)
+    assertThat(traceContext).isNotSameInstanceAs(spanContext)
     assertThat(traceContext.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
   }
 
