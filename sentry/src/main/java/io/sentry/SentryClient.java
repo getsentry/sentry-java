@@ -1442,7 +1442,7 @@ public final class SentryClient implements ISentryClient {
               .getContexts()
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
-          event.getContexts().setTrace(span.getSpanContext());
+          event.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
         }
       }
 
@@ -1487,7 +1487,7 @@ public final class SentryClient implements ISentryClient {
             .getContexts()
             .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
       } else {
-        event.getContexts().setTrace(span.getSpanContext());
+        event.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
       }
     }
 
@@ -1505,7 +1505,7 @@ public final class SentryClient implements ISentryClient {
               .getContexts()
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
-          checkIn.getContexts().setTrace(span.getSpanContext());
+          checkIn.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
         }
       }
     }
@@ -1546,7 +1546,7 @@ public final class SentryClient implements ISentryClient {
               .getContexts()
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
-          replayEvent.getContexts().setTrace(span.getSpanContext());
+          replayEvent.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
         }
       }
     }
