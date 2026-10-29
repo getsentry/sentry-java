@@ -44,7 +44,17 @@ class SentryApolloInterceptor(
     }
   }
 
+  private var attachTracingHeaders: Boolean = true
+
   constructor(scopes: IScopes) : this(scopes, null)
+
+  constructor(
+    scopes: IScopes = ScopesAdapter.getInstance(),
+    beforeSpan: BeforeSpanCallback? = null,
+    attachTracingHeaders: Boolean,
+  ) : this(scopes, beforeSpan) {
+    this.attachTracingHeaders = attachTracingHeaders
+  }
 
   constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
@@ -134,7 +144,7 @@ class SentryApolloInterceptor(
   private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
     val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
-    if (scopes.options.isTraceSampling && !isIgnored()) {
+    if (attachTracingHeaders && scopes.options.isTraceSampling && !isIgnored()) {
       // we have no access to URI, no way to verify tracing origins
       TracingUtils.trace(
           scopes,
