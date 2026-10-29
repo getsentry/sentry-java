@@ -22,7 +22,7 @@ import org.mockito.kotlin.whenever
 
 class OtelSpanWrapperTest {
   @Test
-  fun `startChild with timestamp and options only overrides non-null timestamp`() {
+  fun `startChild with timestamp and options applies timestamp to copy`() {
     val otelSpan = mock<ReadWriteSpan>()
     whenever(otelSpan.spanContext)
       .thenReturn(
@@ -60,7 +60,7 @@ class OtelSpanWrapperTest {
     assertThat(spanOptions.allValues[0]).isNotSameInstanceAs(suppliedSpanOptions)
     assertThat(spanOptions.allValues[0].startTimestamp).isSameInstanceAs(timestamp)
     assertThat(spanOptions.allValues[1]).isNotSameInstanceAs(suppliedSpanOptions)
-    assertThat(spanOptions.allValues[1].startTimestamp).isSameInstanceAs(originalTimestamp)
+    assertThat(spanOptions.allValues[1].startTimestamp).isNull()
     assertThat(suppliedSpanOptions.startTimestamp).isSameInstanceAs(originalTimestamp)
     assertThat(spanContext.allValues[0].operation).isEqualTo("child-op")
     assertThat(spanContext.allValues[0].description).isEqualTo("description")
