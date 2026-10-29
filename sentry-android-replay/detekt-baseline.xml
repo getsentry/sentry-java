@@ -33,8 +33,6 @@
     <ID>ForbiddenComment:Persistable.kt$PersistableLinkedList$// TODO: enable this back after we are able to serialize individual touches to disk to not overload</ID>
     <ID>ForbiddenComment:PixelCopyStrategy.kt$PixelCopyStrategy$// TODO: disableAllMasking here and dont traverse?</ID>
     <ID>ForbiddenComment:ReplayCache.kt$ReplayCache$// TODO: it's awful, choose a better serialization format</ID>
-    <ID>ForbiddenComment:ReplayIntegration.kt$ReplayIntegration$// TODO: previous run and set them directly to the ReplayEvent so they don't get overwritten in</ID>
-    <ID>ForbiddenComment:ReplayIntegration.kt$ReplayIntegration$// TODO: read persisted options/scope values form the</ID>
     <ID>ForbiddenComment:ReplaySmokeTest.kt$ReplaySmokeTest$// TODO: figure out why there's more than 10</ID>
     <ID>ForbiddenComment:SimpleVideoEncoder.kt$SimpleVideoEncoder$// TODO: because the screenshot config has to match the video config</ID>
     <ID>ForbiddenComment:SimpleVideoEncoder.kt$SimpleVideoEncoder$// TODO: if this ever becomes a problem, move this to ScreenshotRecorderConfig.from()</ID>
@@ -45,6 +43,7 @@
     <ID>FunctionParameterNaming:PixelCopyStrategyTest.kt$DeferredWindowPixelCopyShadow.Companion$_dest: Bitmap</ID>
     <ID>FunctionParameterNaming:PixelCopyStrategyTest.kt$DeferredWindowPixelCopyShadow.Companion$_source: Window</ID>
     <ID>LargeClass:CanvasStrategy.kt$TextIgnoringDelegateCanvas : Canvas</ID>
+    <ID>LargeClass:ReplayCacheTest.kt$ReplayCacheTest</ID>
     <ID>LargeClass:ReplayIntegrationTest.kt$ReplayIntegrationTest</ID>
     <ID>LongMethod:CaptureStrategy.kt$CaptureStrategy.Companion$@Suppress("NewApi") private fun buildReplay( options: SentryOptions, video: File, currentReplayId: SentryId, segmentTimestamp: Date, segmentId: Int, height: Int, width: Int, frameCount: Int, frameRate: Int, videoDuration: Long, replayType: ReplayType, screenAtStart: String?, breadcrumbs: List&lt;Breadcrumb>, events: Deque&lt;RRWebEvent>, traceIds: List&lt;String>, segmentNames: List&lt;String>, ): ReplaySegment</ID>
     <ID>LongMethod:ComposeViewHierarchyNode.kt$ComposeViewHierarchyNode$private fun fromComposeNode( node: LayoutNode, parent: ViewHierarchyNode?, distance: Int, isComposeRoot: Boolean, options: SentryMaskingOptions, logger: ILogger, ): ViewHierarchyNode?</ID>
@@ -160,6 +159,7 @@
     <ID>TooManyFunctions:WindowRecorder.kt$WindowRecorder : RecorderOnRootViewsChangedListenerExecutorProvider</ID>
     <ID>UnusedPrivateProperty:DebugOverlayDrawable.kt$DebugOverlayDrawable$private val padding = 6f</ID>
     <ID>UseCheckOrError:ReplayShadowMediaCodec.kt$ReplayShadowMediaCodec$throw IllegalStateException("Simulated codec start failure")</ID>
+    <ID>UtilityClassWithPublicConstructor:CanvasStrategyTest.kt$DeferredSurfacePixelCopyShadow</ID>
     <ID>UtilityClassWithPublicConstructor:PixelCopyStrategyTest.kt$DeferredWindowPixelCopyShadow</ID>
   </CurrentIssues>
 </SmellBaseline>

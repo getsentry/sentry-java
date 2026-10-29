@@ -463,23 +463,19 @@ public final class Scope implements IScope {
    */
   private @Nullable Breadcrumb executeBeforeBreadcrumb(
       final @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
-      @NotNull Breadcrumb breadcrumb,
+      final @NotNull Breadcrumb breadcrumb,
       final @NotNull Hint hint) {
     try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
-      breadcrumb = callback.execute(breadcrumb, hint);
+      return callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
       options
           .getLogger()
           .log(
               SentryLevel.ERROR,
-              "The BeforeBreadcrumbCallback callback threw an exception. Exception details will be added to the breadcrumb.",
+              "The BeforeBreadcrumb callback threw an exception. Dropping breadcrumb.",
               e);
-
-      if (e.getMessage() != null) {
-        breadcrumb.setData("sentry:message", e.getMessage());
-      }
+      return null;
     }
-    return breadcrumb;
   }
 
   /**

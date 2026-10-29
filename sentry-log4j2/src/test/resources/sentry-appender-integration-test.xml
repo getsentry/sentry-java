@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <Sentry name="Sentry"
+            dsn="${sys:integrationTestDsn}"
+            minimumBreadcrumbLevel="DEBUG"
+            minimumEventLevel="WARN"
+            minimumLevel="DEBUG"
+            contextTags="userId"
+            logsEnabled="true"
+    />
+  </Appenders>
+  <Loggers>
+    <Root level="debug">
+      <AppenderRef ref="Sentry"/>
+    </Root>
+  </Loggers>
+</Configuration>

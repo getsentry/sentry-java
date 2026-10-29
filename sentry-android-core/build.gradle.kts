@@ -118,7 +118,7 @@ dependencies {
   testImplementation(libs.awaitility.kotlin)
   testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentrySpotlight)
   testImplementation(projects.sentryAndroidFragment)

@@ -366,19 +366,6 @@ class SentryTest {
   }
 
   @Test
-  fun `captureUserFeedback gets forwarded to client`() {
-    initForTest { it.dsn = dsn }
-
-    val client = createSentryClientMock()
-    Sentry.getCurrentScopes().bindClient(client)
-
-    val userFeedback = UserFeedback(SentryId.EMPTY_ID)
-    Sentry.captureUserFeedback(userFeedback)
-
-    verify(client).captureUserFeedback(argThat { eventId == userFeedback.eventId })
-  }
-
-  @Test
   fun `startTransaction sets operation and description`() {
     initForTest {
       it.dsn = dsn
@@ -1003,9 +990,9 @@ class SentryTest {
     val feedback = Feedback("message")
     val hint = Hint()
 
-    Sentry.captureFeedback(feedback)
-    Sentry.captureFeedback(feedback, hint)
-    Sentry.captureFeedback(feedback, hint) { it.setTag("testKey", "testValue") }
+    Sentry.feedback().capture(feedback)
+    Sentry.feedback().capture(feedback, hint)
+    Sentry.feedback().capture(feedback, hint) { it.setTag("testKey", "testValue") }
 
     verify(client).captureFeedback(eq(feedback), eq(null), anyOrNull())
     verify(client)
@@ -1877,7 +1864,9 @@ class SentryTest {
     }
 
     verify(customStorage).init()
-    verify(customStorage).set(any())
+    // get() always returns null here, so every later getCurrentScopes() call forks the root scopes
+    // and calls set() again, e.g. the BackpressureMonitor health check on the executor
+    verify(customStorage, atLeastOnce()).set(any())
   }
 
   @Test

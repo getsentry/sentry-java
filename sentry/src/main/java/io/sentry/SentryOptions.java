@@ -58,6 +58,9 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options */
+// temp fix for JDK 21: Constructors call overridable methods; making them final would break the
+// public API.
+@SuppressWarnings("this-escape")
 @Open
 public class SentryOptions implements RateLimiterConfig {
 
@@ -531,6 +534,16 @@ public class SentryOptions implements RateLimiterConfig {
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
       new LazyEvaluator<>(() -> new SentryAutoDateProvider());
+
+  /**
+   * Cache of the local hostname, used when {@link #isAttachServerName()} is enabled.
+   *
+   * <p>Evaluated lazily because resolving the hostname blocks on {@code
+   * InetAddress.getLocalHost()}, which no {@code Sentry.init} should pay for up front.
+   */
+  @ApiStatus.Internal
+  private final @NotNull LazyEvaluator<HostnameCache> hostnameCache =
+      new LazyEvaluator<>(() -> new HostnameCache(getMonotonicTicker()));
 
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
@@ -3109,6 +3122,12 @@ public class SentryOptions implements RateLimiterConfig {
   @ApiStatus.Internal
   public @NotNull MonotonicTicker getMonotonicTicker() {
     return JavaMonotonicTicker.getInstance();
+  }
+
+  /** Returns the hostname cache, resolving the hostname on first use. */
+  @ApiStatus.Internal
+  public @NotNull HostnameCache getHostnameCache() {
+    return hostnameCache.getValue();
   }
 
   /**

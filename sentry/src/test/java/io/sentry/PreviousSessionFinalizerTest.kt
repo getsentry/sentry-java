@@ -13,6 +13,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -280,7 +281,7 @@ class PreviousSessionFinalizerTest {
             "Timed out waiting to flush previous session to its own file in session finalizer."
           )
         },
-        any<Any>(),
+        anyVararg<Any>(),
       )
     verify(fixture.scopes, never()).captureEnvelope(any())
   }

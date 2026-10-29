@@ -11,7 +11,7 @@ plugins {
   id("io.sentry.animalsniffer")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
@@ -31,6 +31,7 @@ dependencies {
   testImplementation(libs.awaitility.kotlin)
   testImplementation(libs.feign.core)
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.okhttp.mockwebserver)
 }
