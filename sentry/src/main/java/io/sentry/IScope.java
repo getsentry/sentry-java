@@ -27,6 +27,21 @@ public interface IScope {
   void setLevel(final @Nullable SentryLevel level);
 
   /**
+   * Returns the Scope's environment.
+   *
+   * @return the environment or {@code null} if not set on the scope
+   */
+  @Nullable
+  String getEnvironment();
+
+  /**
+   * Sets the Scope's environment. Takes precedence over {@link SentryOptions#getEnvironment()}.
+   *
+   * @param environment the environment
+   */
+  void setEnvironment(final @Nullable String environment);
+
+  /**
    * Returns the Scope's transaction name.
    *
    * @return the transaction

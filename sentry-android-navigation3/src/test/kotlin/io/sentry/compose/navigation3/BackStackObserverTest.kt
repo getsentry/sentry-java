@@ -1,5 +1,8 @@
 package io.sentry.compose.navigation3
 
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.Hint
@@ -15,6 +18,10 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
+import io.sentry.compose.navigation3.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
+import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
+import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.lifecycle.NavScopes
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
 import org.junit.Test
@@ -89,7 +96,7 @@ class BackStackObserverTest {
       scope.options.isEnableScreenTracking = config.enableScreenTracking
 
       return BackStackObserver(
-        scopes = scopes,
+        scopes = leaseholderNavScopes(),
         options =
           SentryNavOptions {
             enableNavigationBreadcrumbs = config.enableNavigationBreadcrumbs
@@ -99,6 +106,23 @@ class BackStackObserverTest {
           },
         entryMapper = ForwardingBackStackEntryMapper { entryMapper },
       )
+    }
+
+    /**
+     * Real [NavScopes] that hold the nav lease for the whole test, so [BackStackObserver] writes
+     * straight through to [scope] without lease coordination getting in the way.
+     */
+    private fun leaseholderNavScopes(): NavScopes {
+      val owner =
+        object : LifecycleOwner {
+          override val lifecycle =
+            LifecycleRegistry.createUnsafe(this).apply { currentState = Lifecycle.State.RESUMED }
+        }
+      return NavScopes(scopes, NavLeaseCoordinator()).apply {
+        attach(owner.lifecycle)
+        // The sole resumed owner's first update acquires the lease, which it then keeps.
+        onBackStackUpdate()
+      }
     }
 
     private companion object {
@@ -272,8 +296,11 @@ class BackStackObserverTest {
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("entry" to "/ProfileScreen", "arguments" to mapOf("userId" to "123")),
-          mapOf("entry" to "/HomeScreen"),
+          mapOf("entry" to "/ProfileScreen", "entry_arguments" to mapOf("userId" to "123")),
+          mapOf(
+            "entry" to "/HomeScreen",
+            "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
+          ),
         )
       )
     assertThat(fixture.startedTransactions.single().getData("arguments"))
@@ -333,14 +360,14 @@ class BackStackObserverTest {
         config = ObserverConfig(captureBackStack = true, maxCapturedBackStackEntries = 0)
       )
     fixture.scope.setContexts(
-      "navigation",
-      mapOf("backstack" to listOf(mapOf("entry" to "/Stale"))),
+      NAVIGATION_CONTEXT_KEY,
+      mapOf(BACKSTACK_KEY to listOf(mapOf("entry" to "/Stale"))),
     )
 
     sut.onBackStackChanged(listOf(HomeScreen()))
 
     // Doesn't emit a back stack...
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
 
     // ...but continues to emit all other Sentry data.
     assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/HomeScreen")
@@ -354,14 +381,14 @@ class BackStackObserverTest {
     val fixture = Fixture()
     val sut = fixture.getSut(config = ObserverConfig(captureBackStack = false))
     fixture.scope.setContexts(
-      "navigation",
-      mapOf("backstack" to listOf(mapOf("entry" to "/Stale"))),
+      NAVIGATION_CONTEXT_KEY,
+      mapOf(BACKSTACK_KEY to listOf(mapOf("entry" to "/Stale"))),
     )
 
     sut.onBackStackChanged(listOf(HomeScreen()))
 
     // Doesn't emit a back stack...
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
 
     // ...but continues to emit all other Sentry data.
     assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/HomeScreen")
@@ -457,7 +484,7 @@ class BackStackObserverTest {
     assertThat(transaction.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("entry" to "/ProfileScreen", "arguments" to mapOf("userId" to "123")),
+          mapOf("entry" to "/ProfileScreen", "entry_arguments" to mapOf("userId" to "123")),
           mapOf("entry" to "/HomeScreen"),
         )
       )
@@ -602,7 +629,7 @@ class BackStackObserverTest {
     assertThat(fixture.scope.transaction).isNull()
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
     assertThat(fixture.breadcrumbs).hasSize(1)
   }
 
@@ -672,6 +699,8 @@ class BackStackObserverTest {
     val cartTransaction = fixture.startedTransactions.last()
     assertThat(cartTransaction.isFinished).isFalse()
     assertThat(cartTransaction.name).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
+    assertThat(cartTransaction.getData("arguments"))
+      .isEqualTo(mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"))
     assertThat(fixture.scope.transaction).isSameInstanceAs(cartTransaction)
     assertThat(fixture.scope.screen).isEqualTo(NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME)
     assertThat(fixture.scope.contexts.app?.viewNames)
@@ -683,11 +712,16 @@ class BackStackObserverTest {
         NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
         "to",
         NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+        "to_arguments",
+        mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
       )
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf(
+            "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+            "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
+          ),
           mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
         )
@@ -707,12 +741,22 @@ class BackStackObserverTest {
     assertThat(fixture.scope.contexts.app?.viewNames).isEqualTo(listOf("/settings"))
     assertThat(fixture.breadcrumbs).hasSize(4)
     assertThat(fixture.breadcrumbs.last().data)
-      .containsExactly("from", NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME, "to", "/settings")
+      .containsExactly(
+        "from",
+        NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+        "from_arguments",
+        mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
+        "to",
+        "/settings",
+      )
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(
         listOf(
           mapOf("entry" to "/settings"),
-          mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
+          mapOf(
+            "entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME,
+            "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "mapping_failed"),
+          ),
           mapOf("entry" to NormalizedSentryBackStackEntry.UNKNOWN_ENTRY_NAME),
           mapOf("entry" to "/home"),
         )
@@ -720,20 +764,58 @@ class BackStackObserverTest {
   }
 
   @Test
-  fun `cleanup clears observer owned tracked state`() {
+  fun `dispose finishes the active nav transaction and unbinds it from the scope`() {
     val fixture = Fixture()
     val sut = fixture.getSut()
-
     sut.onBackStackChanged(listOf(HomeScreen()))
     val transaction = fixture.startedTransactions.single()
 
-    sut.cleanup()
+    sut.dispose()
 
     assertThat(transaction.isFinished).isTrue()
     assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `dispose clears the screen name and back stack context it recorded`() {
+    val fixture = Fixture()
+    val sut = fixture.getSut()
+    sut.onBackStackChanged(listOf(HomeScreen(), ProfileScreen("123")))
+
+    sut.dispose()
+
     assertThat(fixture.scope.screen).isNull()
     assertThat(fixture.scope.contexts.app?.viewNames).isNull()
-    assertThat(fixture.scope.contexts.containsKey("navigation")).isFalse()
+    assertThat(fixture.scope.contexts.containsKey(NAVIGATION_CONTEXT_KEY)).isFalse()
+  }
+
+  @Test
+  fun `dispose keeps a screen name that was set after the observer recorded its own`() {
+    val fixture = Fixture()
+    val sut = fixture.getSut()
+    sut.onBackStackChanged(listOf(HomeScreen()))
+    fixture.scope.screen = "/HostScreen"
+
+    sut.dispose()
+
+    assertThat(fixture.scope.screen).isEqualTo("/HostScreen")
+  }
+
+  @Test
+  fun `dispose makes the next back stack update a first navigation with no from entry`() {
+    val fixture = Fixture()
+    val sut = fixture.getSut()
+    val home = HomeScreen()
+    sut.onBackStackChanged(listOf(home))
+
+    sut.dispose()
+    sut.onBackStackChanged(listOf(home))
+
+    assertThat(fixture.breadcrumbs).hasSize(2)
+    assertThat(fixture.breadcrumbs.last().data).containsExactly("to", "/HomeScreen")
+    assertThat(fixture.startedTransactions).hasSize(2)
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.last())
+    assertThat(fixture.scope.screen).isEqualTo("/HomeScreen")
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
@@ -751,7 +833,7 @@ class BackStackObserverTest {
   }
 
   private companion object {
-    const val NAVIGATION_CONTEXT_KEY = "navigation"
-    const val BACKSTACK_KEY = "backstack"
+    const val NAVIGATION_CONTEXT_KEY = "Navigation"
+    const val BACKSTACK_KEY = "Back Stack"
   }
 }

@@ -5,7 +5,112 @@
 ### Features
 
 - Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins by default, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = false)` to turn this off ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
+- Added `Environment` to the `Scope`, allowing you to overwrite the `Environment` set on the options ([#5772](https://github.com/getsentry/sentry-java/pull/5772))
+  - The scope `Environment` is also applied to the trace envelope header (DSC), logs, metrics and profiles, so all telemetry of a trace reports the same environment
+- Add an `attachTracingHeaders` flag to `SentryApolloInterceptor` to stop attaching `sentry-trace` and `baggage` headers to Apollo v2 requests ([#6414](https://github.com/getsentry/sentry-java/pull/6414))
+  - Apollo v2 has no request URL in the interceptor, so these headers are attached without checking `tracePropagationTargets`. Pass `attachTracingHeaders = false` to opt out.
+
+### Improvements
+
+- Speed up Session Replay and screenshot masking for large `maskViewClasses`/`unmaskViewClasses` lists by using constant-time class lookups ([#6410](https://github.com/getsentry/sentry-java/pull/6410))
+
+### Fixes
+
+- Keep UI profiling running when `startProfiler` is called before a requested stop takes effect at the end of the current chunk ([#6291](https://github.com/getsentry/sentry-java/pull/6291))
+  - Before, the start call was ignored and the profiler still stopped at the end of the chunk, even in `TRACE` mode while sampled spans were active. On API 34 and lower, every later profile also stopped after one chunk.
+
+### Dependencies
+
+- Bump epitaph (Android tombstone parsing) from 0.1.1 to 0.2.0 ([#6402](https://github.com/getsentry/sentry-java/pull/6402))
+  - Reject malformed protobuf tags, oversized lengths, invalid varints, and invalid reader bounds instead of silently accepting partial/corrupt tombstone data.
+- Bump Native SDK from v0.17.4 to v0.17.5 ([#6409](https://github.com/getsentry/sentry-java/pull/6409))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0175)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.4...0.17.5)
+
+## 8.62.0
+
+### Improvements
+
+- Support Navigation 3 integration for multi-Activity and multi-Fragment applications, where each Activity or Fragment has its own `SentryNavEffect` ([#6305](https://github.com/getsentry/sentry-java/pull/6305))
+  - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/#supported-setups) for a detailed list of supported vs unsupported app setups.
+
+### Fixes
+
+- Fix a D8 crash (`NullPointerException: Cannot invoke "String.length()"`) when dexing the SDK with AGP 8.0 and older, a regression from 8.61.1 ([#6356](https://github.com/getsentry/sentry-java/pull/6356))
+- Always remove the first-draw listener after the first frame, even if no layout pass follows it ([#6152](https://github.com/getsentry/sentry-java/pull/6152))
+- Prevent Reactor pool maintenance tasks from retaining unbounded Sentry scope chains ([#6283](https://github.com/getsentry/sentry-java/pull/6283))
+
+## 8.61.1
+
+### Fixes
+
+- Session Replay: Fix a native crash (`SIGABRT` on the RenderThread) when stopping a replay that uses the canvas screenshot strategy ([#6342](https://github.com/getsentry/sentry-java/pull/6342))
+- Session Replay: Keep the segment videos of a replay that stopped before the startup cleanup of previous replays ran ([#6343](https://github.com/getsentry/sentry-java/pull/6343))
+- Report the number of dropped spans in client reports when a batched span envelope item is discarded, instead of a quantity of 1 (e.g. for Flutter span streaming) ([#6265](https://github.com/getsentry/sentry-java/pull/6265))
+- Session Replay: Keep the flushed video and do not reuse its segment id when `stop()` is called right after `flush()` in buffer mode ([#6340](https://github.com/getsentry/sentry-java/pull/6340))
+- Keep sending events from Android 7.1.0 and older devices after Sentry changes its TLS certificate authority ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
+  - In February 2027, Sentry moves its TLS certificates from DigiCert to Let's Encrypt and Google Trust Services ([announcement](https://sentry.io/changelog/were-changing-our-tls-certificate-authority-in-february-2027)).
+  - Android 7.1.0 (API 25) and older don't trust the Let's Encrypt root certificate (ISRG Root X1), so without this fix, the SDK on those devices can no longer send events to Sentry after the switch.
+  - The SDK now bundles ISRG Root X1 and trusts it in addition to the device's root certificates on API 25 and lower. This only applies to the SDK's own uploads to Sentry SaaS (DSNs on `sentry.io`), not to self-hosted Sentry, not to any other connection your app makes, and not if you set your own `SentryOptions.setSslSocketFactory`.
+  - Apps need to update to an SDK version with this fix to keep sending events from these devices.
+- Session Replay: Use a software canvas for video encoding on the Android Emulator to avoid a native crash in `eglDestroySurface` ([#6282](https://github.com/getsentry/sentry-java/pull/6282))
+
+### Internal
+
+- Measure the hostname cache TTL on the monotonic ticker the options provide, so that a device time change no longer shortens or extends it ([#6100](https://github.com/getsentry/sentry-java/pull/6100))
+- Measure Session Replay's 1h recording cap and its touch-move debounce on a monotonic clock, so a device time change no longer stops a healthy recording early, keeps a finished one alive, or suppresses gesture events ([#6090](https://github.com/getsentry/sentry-java/pull/6090))
+- Add `ScreenshotUtils.takeMaskedScreenshot` so Hybrid SDKs can capture screenshots masked according to `SentryAndroidOptions.getScreenshot()` ([#6281](https://github.com/getsentry/sentry-java/pull/6281))
+
+### Dependencies
+
+- Bump Native SDK from v0.17.3 to v0.17.4 ([#6278](https://github.com/getsentry/sentry-java/pull/6278))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0174)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.3...0.17.4)
+
+## 8.61.0
+
+### Fixes
+
+- Session Replay: Backfill release, environment and SDK info for replays sent on the next launch after the app was killed or crashed ([#6253](https://github.com/getsentry/sentry-java/pull/6253))
+- Fix SDK callback error handling ([#6140](https://github.com/getsentry/sentry-java/pull/6140))
+  - Drop telemetry when a `beforeSend*` callback throws and report it using `DiscardReason.CALLBACK_ERROR`.
+  - Drop transactions when `tracesSampler` throws instead of inheriting the parent sampling decision or falling back to `tracesSampleRate` ([#6163](https://github.com/getsentry/sentry-java/pull/6163)).
+  - Drop spans when `beforeSpan` throws without disrupting requests, covering OkHttp, OpenFeign, GraphQL, Ktor, and Apollo—including Apollo 5 ([#6167](https://github.com/getsentry/sentry-java/pull/6167), [#6238](https://github.com/getsentry/sentry-java/pull/6238)).
+  - Drop telemetry and record `callback_error` when a customer event processor throws instead of continuing with a potentially partially processed item. SDK-owned processor failures are logged and processing continues.
+  - Drop breadcrumbs when `beforeBreadcrumb` throws instead of storing exception details on the breadcrumb.
+  - No longer fail Spring requests when a `TransactionNameProvider` throws, falling back to `<unlabeled transaction>` ([#6241](https://github.com/getsentry/sentry-java/pull/6241)).
+  - No longer fail Spring requests when a `SentryUserProvider` throws and overwrite the user with an empty user object ([#6240](https://github.com/getsentry/sentry-java/pull/6240)).
+  - Disable profiling when `profilesSampler` throws instead of falling back to `profilesSampleRate` or inheriting the parent profiling decision ([#6164](https://github.com/getsentry/sentry-java/pull/6164)).
+  - Report attached profiles dropped by transaction callback errors as `callback_error` in client reports and `OnDiscardCallback` ([#6166](https://github.com/getsentry/sentry-java/pull/6166)).
+  - Skip replay capture when `beforeErrorSampling` throws while retaining the error event ([#6165](https://github.com/getsentry/sentry-java/pull/6165)).
+  - Skip Android screenshots or view hierarchies when their capture callbacks throw while retaining the error event ([#6167](https://github.com/getsentry/sentry-java/pull/6167)).
+  - Keep the Android feedback form available when its options configurator throws ([#6239](https://github.com/getsentry/sentry-java/pull/6239)).
+  - Isolate nonfatal callback throwables while continuing to propagate fatal JVM errors ([#6251](https://github.com/getsentry/sentry-java/pull/6251)).
+
+### Internal
+
+- Hold the hostname cache on `SentryOptions` instead of a static singleton ([#6117](https://github.com/getsentry/sentry-java/pull/6117))
+
+### Dependencies
+
+- Bump Native SDK from v0.17.2 to v0.17.3 ([#6250](https://github.com/getsentry/sentry-java/pull/6250))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0173)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.2...0.17.3)
+
+## 8.60.0
+
+### Features
+
+- Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
+  - Use `SentryNavEffect` to record navigation transactions, breadcrumbs, screen names, and additional context as your nav back stack changes.
+  - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/) for additional details.
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
+
+### Dependencies
+
+- Bump Native SDK from v0.17.1 to v0.17.2 ([#6230](https://github.com/getsentry/sentry-java/pull/6230))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0172)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.1...0.17.2)
 
 ## 8.59.0
 

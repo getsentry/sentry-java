@@ -14,6 +14,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -326,7 +327,7 @@ class SentryTimberTreeTest {
   fun `Tree adds a log if min level is higher`() {
     val sut = fixture.getSut()
     sut.e(Throwable("test"))
-    verify(fixture.logs).log(any(), any<SentryLogParameters>(), any<String>(), any())
+    verify(fixture.logs).log(any(), any<SentryLogParameters>(), any<String>(), anyVararg<Any>())
   }
 
   @Test

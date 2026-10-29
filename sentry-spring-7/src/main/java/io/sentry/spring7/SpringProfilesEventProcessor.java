@@ -1,10 +1,10 @@
 package io.sentry.spring7;
 
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryReplayEvent;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.Spring;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +15,7 @@ import org.springframework.core.env.Environment;
  * Attaches the list of active Spring profiles (an empty list if only the default profile is active)
  * to the {@link io.sentry.TraceContext} associated with the event.
  */
-public final class SpringProfilesEventProcessor implements EventProcessor {
+public final class SpringProfilesEventProcessor implements SentryEventProcessor {
   private final @NotNull Environment environment;
 
   @Override

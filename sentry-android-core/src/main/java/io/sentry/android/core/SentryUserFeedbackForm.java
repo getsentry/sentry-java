@@ -62,14 +62,37 @@ public class SentryUserFeedbackForm extends AlertDialog {
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
     super(context, themeResId);
     this.associatedEventId = associatedEventId;
-    this.resolvedFeedbackOptions =
-        new SentryFeedbackOptions(Sentry.getCurrentScopes().getOptions().getFeedbackOptions());
+    final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
+    @NotNull
+    SentryFeedbackOptions feedbackOptions = new SentryFeedbackOptions(options.getFeedbackOptions());
     if (configuration != null) {
-      configuration.configure(context, resolvedFeedbackOptions);
+      final @NotNull SentryFeedbackOptions configuredOptions =
+          new SentryFeedbackOptions(feedbackOptions);
+      try {
+        configuration.configure(context, configuredOptions);
+        feedbackOptions = configuredOptions;
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
+        options
+            .getLogger()
+            .log(
+                SentryLevel.ERROR, "Feedback OptionsConfiguration callback threw an exception.", e);
+      }
     }
     if (configurator != null) {
-      configurator.configure(resolvedFeedbackOptions);
+      final @NotNull SentryFeedbackOptions configuredOptions =
+          new SentryFeedbackOptions(feedbackOptions);
+      try {
+        configurator.configure(configuredOptions);
+        feedbackOptions = configuredOptions;
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
+        options
+            .getLogger()
+            .log(SentryLevel.ERROR, "Feedback OptionsConfigurator callback threw an exception.", e);
+      }
     }
+    this.resolvedFeedbackOptions = feedbackOptions;
     SentryIntegrationPackageStorage.getInstance().addIntegration("UserFeedbackWidget");
     maybeStartShakeDetection(context);
   }

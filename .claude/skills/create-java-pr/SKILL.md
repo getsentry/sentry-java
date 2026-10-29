@@ -74,7 +74,7 @@ Derive the branch name from the changes being made. Use `feat/`, `fix/`, `ref/`,
 ## Step 2: Format Code and Regenerate API Files
 
 ```bash
-./gradlew spotlessApply apiDump
+./gradlew spotlessApply updateKotlinAbi
 ```
 
 This is **required** before every PR in this repo. It formats all Java/Kotlin code via Spotless and regenerates the `.api` binary compatibility files.
