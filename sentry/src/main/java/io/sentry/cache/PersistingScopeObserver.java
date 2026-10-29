@@ -57,6 +57,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   public static final String CONTEXTS_FILENAME = "contexts.json";
   public static final String REQUEST_FILENAME = "request.json";
   public static final String LEVEL_FILENAME = "level.json";
+  public static final String ENVIRONMENT_FILENAME = "environment.json";
   public static final String FINGERPRINT_FILENAME = "fingerprint.json";
   public static final String TRANSACTION_FILENAME = "transaction.json";
   public static final String TRACE_FILENAME = "trace.json";
@@ -190,6 +191,11 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
   }
 
   @Override
+  public void setEnvironment(@Nullable String environment) {
+    enqueue(ENVIRONMENT_FILENAME, environment);
+  }
+
+  @Override
   public void setTransaction(@Nullable String transaction) {
     enqueue(TRANSACTION_FILENAME, transaction);
   }
@@ -265,6 +271,9 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     }
   }
 
+  // temp fix for JDK 21: DELETE_MARKER and CLEAR_MARKER are sentinels, so identity comparison is
+  // intended.
+  @SuppressWarnings("ReferenceEquality")
   private void writePending() {
     // ConcurrentHashMap's iterator is weakly consistent, so removing while iterating is safe. Keys
     // added after iteration starts may be missed, but flush() re-checks and queues another write.
@@ -371,6 +380,7 @@ public final class PersistingScopeObserver extends ScopeObserverAdapter {
     // the rest we can safely delete
     delete(USER_FILENAME);
     delete(LEVEL_FILENAME);
+    delete(ENVIRONMENT_FILENAME);
     delete(REQUEST_FILENAME);
     delete(FINGERPRINT_FILENAME);
     delete(CONTEXTS_FILENAME);

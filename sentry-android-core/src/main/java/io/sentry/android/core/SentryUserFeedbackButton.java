@@ -13,6 +13,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * @deprecated `SentryUserFeedbackButton` will be removed in the next major version
  */
+// temp fix for JDK 21: Constructors call overridable methods; making them final would break the
+// public API.
+@SuppressWarnings("this-escape")
 @Deprecated
 public class SentryUserFeedbackButton extends Button {
 

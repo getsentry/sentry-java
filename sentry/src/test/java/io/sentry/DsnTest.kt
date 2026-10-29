@@ -249,4 +249,29 @@ class DsnTest {
     assertThat(dsn.sentryUri.toURL().toString())
       .isEqualTo("https://o123.ingest.sentry.io/api/1234567")
   }
+
+  @Test
+  fun `parseHost returns the same host as the parsed DSN`() {
+    listOf(
+        "https://key@o1.ingest.us.sentry.io/1",
+        "https://key:secret@sentry.io:443/path/1",
+        "  https://key@host/id  ",
+        "http://key@localhost:9000/456",
+        "https://key@host:443/id?foo=bar&baz=1",
+        "https://key@host/id#fragment",
+        "http://key@[::1]:9000/1",
+        "https://key@evil.com/x@o1.ingest.sentry.io/1",
+      )
+      .forEach { dsn -> assertThat(Dsn.parseHost(dsn)).isEqualTo(Dsn(dsn).sentryUri.host) }
+  }
+
+  @Test
+  fun `parseHost returns null when there is no host`() {
+    assertThat(Dsn.parseHost(null)).isNull()
+    assertThat(Dsn.parseHost("")).isNull()
+    assertThat(Dsn.parseHost("host/id")).isNull()
+    assertThat(Dsn.parseHost("https://host/id")).isNull()
+    assertThat(Dsn.parseHost("https://key@host")).isNull()
+    assertThat(Dsn.parseHost("https://key@/id")).isNull()
+  }
 }
