@@ -1,6 +1,5 @@
 package io.sentry.logger;
 
-import io.sentry.HostnameCache;
 import io.sentry.IScope;
 import io.sentry.ISpan;
 import io.sentry.PropagationContext;
@@ -152,7 +151,7 @@ public final class LoggerApi implements ILoggerApi {
     }
   }
 
-  private @NotNull HashMap<String, SentryLogEventAttributeValue> createAttributes(
+  private @NotNull Map<String, SentryLogEventAttributeValue> createAttributes(
       final @NotNull SentryLogParameters params,
       final @NotNull String message,
       final @Nullable Object... args) {
@@ -206,7 +205,9 @@ public final class LoggerApi implements ILoggerApi {
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, sdkVersion.getVersion()));
     }
 
-    final @Nullable String environment = scopes.getOptions().getEnvironment();
+    final @Nullable String scopeEnvironment = scopes.getCombinedScopeView().getEnvironment();
+    final @Nullable String environment =
+        scopeEnvironment != null ? scopeEnvironment : scopes.getOptions().getEnvironment();
     if (environment != null) {
       attributes.put(
           "sentry.environment",
@@ -247,8 +248,7 @@ public final class LoggerApi implements ILoggerApi {
     return attributes;
   }
 
-  private void setServerName(
-      final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
+  private void setServerName(final @NotNull Map<String, SentryLogEventAttributeValue> attributes) {
     final @NotNull SentryOptions options = scopes.getOptions();
     final @Nullable String optionsServerName = options.getServerName();
     if (optionsServerName != null) {
@@ -256,7 +256,7 @@ public final class LoggerApi implements ILoggerApi {
           "server.address",
           new SentryLogEventAttributeValue(SentryAttributeType.STRING, optionsServerName));
     } else if (options.isAttachServerName()) {
-      final @Nullable String hostname = HostnameCache.getInstance().getHostname();
+      final @Nullable String hostname = options.getHostnameCache().getHostname();
       if (hostname != null) {
         attributes.put(
             "server.address",
@@ -265,7 +265,7 @@ public final class LoggerApi implements ILoggerApi {
     }
   }
 
-  private void setUser(final @NotNull HashMap<String, SentryLogEventAttributeValue> attributes) {
+  private void setUser(final @NotNull Map<String, SentryLogEventAttributeValue> attributes) {
     final @Nullable User user = scopes.getCombinedScopeView().getUser();
     if (user == null) {
       // In case no user is set, we should fallback to the distinct id, known as installation id,

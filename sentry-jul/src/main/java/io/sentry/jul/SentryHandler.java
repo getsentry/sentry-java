@@ -40,6 +40,9 @@ import org.jetbrains.annotations.TestOnly;
 import org.slf4j.MDC;
 
 /** Logging handler in charge of sending the java.util.logging records to a Sentry server. */
+// temp fix for JDK 21: Constructors call overridable methods; making them final would break the
+// public API.
+@SuppressWarnings("this-escape")
 @Open
 public class SentryHandler extends Handler {
   public static final String MECHANISM_TYPE = "JulSentryHandler";

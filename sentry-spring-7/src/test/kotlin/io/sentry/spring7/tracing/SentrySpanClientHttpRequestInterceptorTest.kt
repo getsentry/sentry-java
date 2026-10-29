@@ -3,6 +3,7 @@ package io.sentry.spring7.tracing
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
@@ -13,6 +14,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -44,6 +46,9 @@ class SentrySpanClientHttpRequestInterceptorTest {
       doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
         .whenever(scopes)
         .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
 
       whenever(requestExecution.execute(any(), any())).thenReturn(mock<ClientHttpResponse>())
     }

@@ -65,7 +65,7 @@ class TombstoneIntegrationTest : ApplicationExitIntegrationTestBase<TombstoneHin
           }
         shadowActivityManager.addApplicationExitInfo(exitInfo)
       },
-      flushLogPrefix = "Timed out waiting to flush Tombstone event to disk.",
+      flushLogPrefix = "Timed out waiting to flush %s event to disk.",
     )
 
   override fun assertEnrichedEvent(event: SentryEvent) {

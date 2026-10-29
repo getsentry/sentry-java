@@ -102,6 +102,11 @@ public final class ProfileChunk implements JsonUnknown, JsonSerializable {
     return environment;
   }
 
+  @ApiStatus.Internal
+  public void setEnvironment(final @Nullable String environment) {
+    this.environment = environment;
+  }
+
   public @NotNull String getPlatform() {
     return platform;
   }

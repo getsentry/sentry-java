@@ -12,6 +12,7 @@ plugins {
   alias(libs.plugins.dokka)
   alias(libs.plugins.dokka.javadoc)
   `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
+  id("io.sentry.api-validation")
 }
 
 kotlin {
@@ -69,7 +70,7 @@ kotlin {
         implementation(libs.androidx.test.runner)
         implementation(libs.google.truth)
         implementation(libs.kotlin.test.junit)
-        implementation(libs.mockito.inline)
+        implementation(libs.mockito.core)
         implementation(libs.mockito.kotlin)
         implementation(libs.roboelectric)
       }

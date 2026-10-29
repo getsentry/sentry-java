@@ -4,6 +4,7 @@
   <item name="nav2_tab_compose" type="id" />
   <item name="nav2_tab_fragments" type="id" />
   <item name="nav2_tab_deep_link" type="id" />
+  <item name="nav2_tab_custom" type="id" />
   <item name="nav2_tab_performance" type="id" />
   <item name="nav2_recent_transactions" type="id" />
   <item name="nav2_route_work_settings" type="id" />
@@ -22,4 +23,7 @@
   <item name="nav2_modal_crash_app" type="id" />
   <item name="nav2_modal_dismiss" type="id" />
   <item name="nav2_share_sheet_done" type="id" />
+  <!-- Nav3 Multi-Fragment sample. Stable IDs let FragmentManager and ViewPager2 restore state. -->
+  <item name="nav3_multi_fragment_container" type="id" />
+  <item name="nav3_multi_fragment_pager" type="id" />
 </resources>

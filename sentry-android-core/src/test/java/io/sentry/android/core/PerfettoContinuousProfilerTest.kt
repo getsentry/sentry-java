@@ -178,6 +178,14 @@ class PerfettoContinuousProfilerTest {
   fun `manual profiler can be started again after a full start-stop cycle`() =
     fixture.getSut().testCanBeStartedAgainAfterStopCycle(mocks)
 
+  @Test
+  fun `manual start cancels a pending stop`() =
+    fixture.getSut().testManualStartCancelsPendingStop(mocks)
+
+  @Test
+  fun `trace start cancels a pending stop`() =
+    fixture.getSut().testTraceStartCancelsPendingStop(mocks)
+
   // -- Perfetto-specific tests --
 
   @Test
@@ -503,10 +511,6 @@ class PerfettoContinuousProfilerTest {
     assertTrue(profiler.isRunning)
     profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
     assertTrue(profiler.isRunning)
-    verify(fixture.mockLogger)
-      .log(
-        eq(SentryLevel.WARNING),
-        eq("Unexpected call to startProfiler(MANUAL) while profiler already running. Skipping."),
-      )
+    verify(fixture.mockLogger).log(eq(SentryLevel.DEBUG), eq("Profiler is already running."))
   }
 }
