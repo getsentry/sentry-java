@@ -40,7 +40,9 @@ public final class Span implements ISpan {
 
   private final @NotNull AtomicBoolean isFinishing = new AtomicBoolean(false);
 
-  private final @NotNull SpanOptions options;
+  private final boolean trimStart;
+  private final boolean trimEnd;
+  private final boolean idle;
 
   private @Nullable SpanFinishedCallback spanFinishedCallback;
 
@@ -59,7 +61,9 @@ public final class Span implements ISpan {
     this.context.setOrigin(options.getOrigin());
     this.transaction = Objects.requireNonNull(transaction, "transaction is required");
     this.scopes = Objects.requireNonNull(scopes, "Scopes are required");
-    this.options = options;
+    this.trimStart = options.isTrimStart();
+    this.trimEnd = options.isTrimEnd();
+    this.idle = options.isIdle();
     this.spanFinishedCallback = spanFinishedCallback;
     final @Nullable SentryDate startTimestamp = options.getStartTimestamp();
     if (startTimestamp != null) {
@@ -78,6 +82,9 @@ public final class Span implements ISpan {
     this.context.setOrigin(options.getOrigin());
     this.transaction = Objects.requireNonNull(sentryTracer, "sentryTracer is required");
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
+    this.trimStart = options.isTrimStart();
+    this.trimEnd = options.isTrimEnd();
+    this.idle = options.isIdle();
     this.spanFinishedCallback = null;
     final @Nullable SentryDate startTimestamp = options.getStartTimestamp();
     if (startTimestamp != null) {
@@ -85,7 +92,6 @@ public final class Span implements ISpan {
     } else {
       this.startTimestamp = scopes.getOptions().getDateProvider().now();
     }
-    this.options = options;
   }
 
   @Override
@@ -188,7 +194,7 @@ public final class Span implements ISpan {
 
     this.context.setStatus(status);
     this.timestamp = timestamp == null ? scopes.getOptions().getDateProvider().now() : timestamp;
-    if (options.isTrimStart() || options.isTrimEnd()) {
+    if (trimStart || trimEnd) {
       @Nullable SentryDate minChildStart = null;
       @Nullable SentryDate maxChildEnd = null;
 
@@ -207,12 +213,10 @@ public final class Span implements ISpan {
           maxChildEnd = child.getFinishDate();
         }
       }
-      if (options.isTrimStart()
-          && minChildStart != null
-          && startTimestamp.isBefore(minChildStart)) {
+      if (trimStart && minChildStart != null && startTimestamp.isBefore(minChildStart)) {
         updateStartDate(minChildStart);
       }
-      if (options.isTrimEnd()
+      if (trimEnd
           && maxChildEnd != null
           && (this.timestamp == null || this.timestamp.isAfter(maxChildEnd))) {
         updateEndDate(maxChildEnd);
@@ -431,9 +435,8 @@ public final class Span implements ISpan {
     this.startTimestamp = date;
   }
 
-  @NotNull
-  SpanOptions getOptions() {
-    return options;
+  boolean isIdle() {
+    return idle;
   }
 
   @NotNull
