@@ -32,16 +32,20 @@ public class io/sentry/spring/boot/SentryProperties : io/sentry/SentryOptions {
 	public fun <init> ()V
 	public fun getClients ()Lio/sentry/spring/boot/SentryProperties$Clients;
 	public fun getExceptionResolverOrder ()I
+	public fun getExcludeScheduledTasks ()Ljava/util/List;
 	public fun getGraphql ()Lio/sentry/spring/boot/SentryProperties$Graphql;
 	public fun getLogging ()Lio/sentry/spring/boot/SentryProperties$Logging;
 	public fun getUserFilterOrder ()Ljava/lang/Integer;
 	public fun isKeepTransactionsOpenForAsyncResponses ()Z
+	public fun isMonitorScheduledTasks ()Z
 	public fun isUseGitCommitIdAsRelease ()Z
 	public fun setClients (Lio/sentry/spring/boot/SentryProperties$Clients;)V
 	public fun setExceptionResolverOrder (I)V
+	public fun setExcludeScheduledTasks (Ljava/util/List;)V
 	public fun setGraphql (Lio/sentry/spring/boot/SentryProperties$Graphql;)V
 	public fun setKeepTransactionsOpenForAsyncResponses (Z)V
 	public fun setLogging (Lio/sentry/spring/boot/SentryProperties$Logging;)V
+	public fun setMonitorScheduledTasks (Z)V
 	public fun setUseGitCommitIdAsRelease (Z)V
 	public fun setUserFilterOrder (Ljava/lang/Integer;)V
 }
