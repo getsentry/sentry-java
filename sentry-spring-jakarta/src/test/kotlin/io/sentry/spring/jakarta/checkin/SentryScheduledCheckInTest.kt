@@ -83,9 +83,15 @@ class SentryScheduledCheckInTest {
   }
 
   @Test
-  fun `fixed delay is monitored without config`() {
-    val checkIns = capture { jobs.fixedDelay() }
-    assertEquals(2, checkIns.size)
+  fun `tasks with unsupported schedules are not monitored`() {
+    jobs.fixedDelay()
+    verify(scopes, never()).captureCheckIn(any())
+  }
+
+  @Test
+  fun `@SentryCheckIn with an unsupported schedule checks in without config`() {
+    val checkIns = capture { jobs.explicitFixedDelay() }
+    assertEquals(listOf("explicit-delay", "explicit-delay"), checkIns.map { it.monitorSlug })
     assertNull(checkIns[0].monitorConfig)
   }
 
@@ -229,6 +235,8 @@ class SentryScheduledCheckInTest {
     }
 
     @SentryCheckIn("explicit") @Scheduled(cron = "0 0 2 * * *") open fun explicit() {}
+
+    @SentryCheckIn("explicit-delay") @Scheduled(fixedDelay = 1000) open fun explicitFixedDelay() {}
 
     @Scheduled(cron = "0 0 2 * * *") open fun excluded() {}
 
