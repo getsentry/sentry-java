@@ -36,6 +36,7 @@ private const val TRACE_ORIGIN = "auto.graphql.apollo"
 class SentryApolloInterceptor(
   private val scopes: IScopes = ScopesAdapter.getInstance(),
   private val beforeSpan: BeforeSpanCallback? = null,
+  private val attachTracingHeaders: Boolean = true,
 ) : ApolloInterceptor {
   private companion object {
     init {
@@ -45,6 +46,8 @@ class SentryApolloInterceptor(
   }
 
   constructor(scopes: IScopes) : this(scopes, null)
+
+  constructor(scopes: IScopes, beforeSpan: BeforeSpanCallback?) : this(scopes, beforeSpan, true)
 
   constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
@@ -134,7 +137,7 @@ class SentryApolloInterceptor(
   private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
     val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
-    if (scopes.options.isTraceSampling && !isIgnored()) {
+    if (attachTracingHeaders && scopes.options.isTraceSampling && !isIgnored()) {
       // we have no access to URI, no way to verify tracing origins
       TracingUtils.trace(
           scopes,

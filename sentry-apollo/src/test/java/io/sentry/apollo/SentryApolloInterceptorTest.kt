@@ -88,6 +88,7 @@ class SentryApolloInterceptorTest {
   }
 }""",
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+      attachTracingHeaders: Boolean = true,
       beforeSpan: SentryApolloInterceptor.BeforeSpanCallback? = null,
     ): ApolloClient {
       server.enqueue(
@@ -97,8 +98,8 @@ class SentryApolloInterceptorTest {
           .setResponseCode(httpStatusCode)
       )
 
-      if (beforeSpan != null) {
-        interceptor = SentryApolloInterceptor(scopes, beforeSpan)
+      if (beforeSpan != null || !attachTracingHeaders) {
+        interceptor = SentryApolloInterceptor(scopes, beforeSpan, attachTracingHeaders)
       }
       return ApolloClient.builder()
         .serverUrl(server.url("/"))
@@ -199,6 +200,16 @@ class SentryApolloInterceptorTest {
   fun `does not add sentry-trace header when span origin is ignored`() {
     fixture.options.setIgnoredSpanOrigins(listOf("auto.graphql.apollo"))
     executeQuery(isSpanActive = false)
+
+    val recorderRequest =
+      fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+    assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+  }
+
+  @Test
+  fun `does not add sentry-trace header when attaching tracing headers is disabled`() {
+    executeQuery(fixture.getSut(attachTracingHeaders = false))
 
     val recorderRequest =
       fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
