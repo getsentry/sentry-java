@@ -33,7 +33,7 @@ otelInstrumentation = "2.29.0"
 otelInstrumentationAlpha = "2.29.0-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
 otelSemanticConventions = "1.42.0"
-otelSemanticConventionsAlpha = "1.42.0-alpha"
+otelSemanticConventionsAlpha = "1.44.0-alpha"
 retrofit = "2.9.0"
 room2 = "2.8.4"
 room3 = "3.0.0-rc01"
