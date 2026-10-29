@@ -247,7 +247,7 @@ public final class SentryKafkaConsumerTracing {
 
     try {
       final double enqueuedTimeSeconds = Double.parseDouble(enqueuedTimeStr);
-      final double nowSeconds = DateUtils.millisToSeconds(System.currentTimeMillis());
+      final double nowSeconds = DateUtils.millisToSeconds((double) System.currentTimeMillis());
       final long latencyMs = (long) ((nowSeconds - enqueuedTimeSeconds) * 1000);
       return latencyMs >= 0 ? latencyMs : null;
     } catch (NumberFormatException ignored) {

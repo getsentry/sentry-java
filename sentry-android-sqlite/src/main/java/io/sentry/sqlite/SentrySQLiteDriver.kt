@@ -3,9 +3,8 @@ package io.sentry.sqlite
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import io.sentry.ScopesAdapter
-import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
-import org.jetbrains.annotations.ApiStatus
+import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 
 /**
  * Wraps a [SQLiteDriver] and automatically adds spans for each SQL statement it executes.
@@ -23,16 +22,15 @@ import org.jetbrains.annotations.ApiStatus
  * ```
  *
  * If you're using the Sentry Android Gradle Plugin (SAGP) 6.13.0+, wrapping will be performed
- * automatically.
+ * automatically for Room.
  *
  * @param delegate The [SQLiteDriver] instance to delegate calls to.
  */
-@ApiStatus.Experimental
 public class SentrySQLiteDriver private constructor(private val delegate: SQLiteDriver) :
   SQLiteDriver {
 
   init {
-    SentryIntegrationPackageStorage.getInstance().addIntegration("SQLiteDriver")
+    addIntegrationToSdkVersion("SQLiteDriver")
   }
 
   @Suppress("INAPPLICABLE_JVM_NAME")

@@ -93,6 +93,13 @@ abstract class DirectoryProcessor {
         // InterruptedException will be handled by the outer try-catch
         Thread.sleep(ENVELOPE_PROCESSING_DELAY);
       }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      logger.log(
+          SentryLevel.INFO,
+          e,
+          "Thread interrupted during processing '%s'",
+          directory.getAbsolutePath());
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
     }
@@ -113,7 +120,7 @@ abstract class DirectoryProcessor {
     private final @NotNull String filePath;
     private final @NotNull Queue<String> processedEnvelopes;
 
-    public SendCachedEnvelopeHint(
+    SendCachedEnvelopeHint(
         final long flushTimeoutMillis,
         final @NotNull ILogger logger,
         final @NotNull String filePath,

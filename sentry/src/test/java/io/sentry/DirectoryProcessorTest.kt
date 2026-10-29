@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.hints.ApplyScopeData
 import io.sentry.hints.Enqueable
 import io.sentry.hints.Retryable
@@ -133,6 +134,28 @@ class DirectoryProcessorTest {
 
     // should only capture once
     verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
+  fun `when envelope processing delay is interrupted, restores interrupt flag`() {
+    getTempEnvelope("envelope-event-attachment.txt")
+    val sut =
+      object : DirectoryProcessor(fixture.scopes, fixture.logger, 500, 30) {
+        override fun processFile(file: File, hint: Hint) = Unit
+
+        override fun isRelevantFileName(fileName: String): Boolean = true
+      }
+
+    Thread.currentThread().interrupt()
+    val interruptFlagRestored =
+      try {
+        sut.processDirectory(file)
+        Thread.currentThread().isInterrupted
+      } finally {
+        Thread.interrupted()
+      }
+
+    assertThat(interruptFlagRestored).isTrue()
   }
 
   private fun getTempEnvelope(fileName: String): String {

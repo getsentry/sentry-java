@@ -4,7 +4,7 @@ public final class io/sentry/opentelemetry/OpenTelemetryAttributesExtractor {
 	public fun extractUrl (Lio/opentelemetry/api/common/Attributes;Lio/sentry/SentryOptions;)Ljava/lang/String;
 }
 
-public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/internal/eventprocessor/SentryEventProcessor {
 	public fun <init> ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
@@ -99,6 +99,7 @@ public final class io/sentry/opentelemetry/OtelSpanWrapper : io/sentry/opentelem
 	public fun startChild (Lio/sentry/SpanContext;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;)Lio/sentry/ISpan;
+	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SentryDate;Lio/sentry/Instrumenter;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;
 	public fun startChild (Ljava/lang/String;Ljava/lang/String;Lio/sentry/SpanOptions;)Lio/sentry/ISpan;

@@ -10,6 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class ErrorUtils {
 
   /** Checks if an error has been ignored. */

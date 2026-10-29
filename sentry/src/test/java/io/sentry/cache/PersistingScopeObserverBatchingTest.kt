@@ -6,7 +6,9 @@ import io.sentry.ISentryExecutorService
 import io.sentry.ISerializer
 import io.sentry.SentryOptions
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
+import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME
+import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
 import java.io.Writer
 import java.util.concurrent.atomic.AtomicBoolean
@@ -27,6 +29,9 @@ class PersistingScopeObserverBatchingTest {
 
   private fun PersistingScopeObserver.readTransaction(): String? =
     read(options, TRANSACTION_FILENAME, String::class.java)
+
+  private fun PersistingScopeObserver.readReplayId(): String? =
+    read(options, REPLAY_FILENAME, String::class.java)
 
   @Suppress("UNCHECKED_CAST")
   private fun PersistingScopeObserver.readBreadcrumbs(): List<Breadcrumb> =
@@ -116,6 +121,20 @@ class PersistingScopeObserverBatchingTest {
       }
       delegate.serialize(entity, writer)
     }
+  }
+
+  @Test
+  fun `resetCache clears the replay id left behind by the previous process`() {
+    val executor = DeferredExecutorService()
+    val sut = getSut(executor)
+
+    sut.setReplayId(SentryId("afcb46b1140ade5187c4bbb5daa804df"))
+    executor.runAll()
+    assertThat(sut.readReplayId()).isEqualTo("afcb46b1140ade5187c4bbb5daa804df")
+
+    sut.resetCache()
+
+    assertThat(sut.readReplayId()).isNull()
   }
 
   @Test

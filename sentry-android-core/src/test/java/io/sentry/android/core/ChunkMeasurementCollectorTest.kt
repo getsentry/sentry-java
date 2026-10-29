@@ -111,11 +111,12 @@ class ChunkMeasurementCollectorTest {
    */
   private fun futureFrameEndNanos() = System.nanoTime() + TimeUnit.MINUTES.toNanos(1)
 
+  /** A null measurement is left unset, as it would be by a collector that did not report it. */
   private fun perfData(nanos: Long, cpu: Double?, heap: Long?, native: Long?) =
     PerformanceCollectionData(nanos).apply {
-      cpuUsagePercentage = cpu
-      usedHeapMemory = heap
-      usedNativeMemory = native
+      cpu?.let { cpuUsagePercentage = it }
+      heap?.let { usedHeapMemory = it }
+      native?.let { usedNativeMemory = it }
     }
 
   private fun assertChunkCounts(

@@ -4,17 +4,24 @@ import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat.JPEG
 import android.graphics.Bitmap.Config.ARGB_8888
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import io.sentry.DateUtils
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.ReplayCache.Companion.ONGOING_SEGMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_DIST
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ENVIRONMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FLUSHED
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_RELEASE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_RECORDING
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_NAME
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_VERSION
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
@@ -24,7 +31,9 @@ import io.sentry.rrweb.RRWebInteractionEvent.InteractionType.TouchEnd
 import io.sentry.rrweb.RRWebInteractionEvent.InteractionType.TouchStart
 import java.io.File
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -59,6 +68,8 @@ class ReplayCacheTest {
   fun `set up`() {
     ReplayShadowMediaCodec.framesToEncode = 5
     ReplayShadowMediaCodec.throwOnStart = false
+    ReplayShadowMediaCodec.neverSignalEos = false
+    ReplayShadowMediaCodec.released = false
     ShadowBitmapFactory.setAllowInvalidImageData(true)
   }
 
@@ -94,6 +105,18 @@ class ReplayCacheTest {
     val video = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
 
     assertNull(video)
+  }
+
+  @Test
+  fun `when no frames are provided, does not delete existing video`() {
+    val replayCache = fixture.getSut(tmpDir)
+    val existingVideo =
+      File(replayCache.replayCacheDir, "0.mp4").also { it.writeBytes(byteArrayOf(1, 2, 3)) }
+
+    val video = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
+
+    assertNull(video)
+    assertEquals(3, existingVideo.length())
   }
 
   @Test
@@ -499,6 +522,76 @@ class ReplayCacheTest {
   }
 
   @Test
+  fun `fromDisk reads the recording metadata stored with the replay`() {
+    fixture.options.run { cacheDirPath = tmpDir.newFolder()?.absolutePath }
+    val replayId = SentryId()
+    val replayCacheFolder =
+      File(fixture.options.cacheDirPath!!, "replay_$replayId").also { it.mkdirs() }
+    File(replayCacheFolder, ONGOING_SEGMENT).also {
+      it.writeText(
+        """
+                $SEGMENT_KEY_HEIGHT=912
+                $SEGMENT_KEY_WIDTH=416
+                $SEGMENT_KEY_FRAME_RATE=1
+                $SEGMENT_KEY_BIT_RATE=75000
+                $SEGMENT_KEY_ID=0
+                $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
+                $SEGMENT_KEY_REPLAY_TYPE=BUFFER
+                $SEGMENT_KEY_RELEASE=io.sentry.sample@1.0.0+1
+                $SEGMENT_KEY_ENVIRONMENT=recording-env
+                $SEGMENT_KEY_DIST=1
+                $SEGMENT_KEY_SDK_NAME=sentry.java.android
+                $SEGMENT_KEY_SDK_VERSION=8.0.0
+                """
+          .trimIndent()
+      )
+    }
+    File(replayCacheFolder, "1720693523997.jpg").outputStream().use {
+      Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+      it.flush()
+    }
+
+    val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
+
+    val metadata = lastSegment.metadata!!
+    assertEquals("io.sentry.sample@1.0.0+1", metadata.release)
+    assertEquals("recording-env", metadata.environment)
+    assertEquals("1", metadata.dist)
+    assertEquals("sentry.java.android", metadata.sdkVersion?.name)
+    assertEquals("8.0.0", metadata.sdkVersion?.version)
+  }
+
+  @Test
+  fun `fromDisk returns no recording metadata for replays recorded by older sdks`() {
+    fixture.options.run { cacheDirPath = tmpDir.newFolder()?.absolutePath }
+    val replayId = SentryId()
+    val replayCacheFolder =
+      File(fixture.options.cacheDirPath!!, "replay_$replayId").also { it.mkdirs() }
+    File(replayCacheFolder, ONGOING_SEGMENT).also {
+      it.writeText(
+        """
+                $SEGMENT_KEY_HEIGHT=912
+                $SEGMENT_KEY_WIDTH=416
+                $SEGMENT_KEY_FRAME_RATE=1
+                $SEGMENT_KEY_BIT_RATE=75000
+                $SEGMENT_KEY_ID=0
+                $SEGMENT_KEY_TIMESTAMP=2024-07-11T10:25:21.454Z
+                $SEGMENT_KEY_REPLAY_TYPE=BUFFER
+                """
+          .trimIndent()
+      )
+    }
+    File(replayCacheFolder, "1720693523997.jpg").outputStream().use {
+      Bitmap.createBitmap(1, 1, ARGB_8888).compress(JPEG, 80, it)
+      it.flush()
+    }
+
+    val lastSegment = ReplayCache.fromDisk(fixture.options, replayId)!!
+
+    assertNull(lastSegment.metadata)
+  }
+
+  @Test
   fun `preserves segmentId for buffer mode when already flushed`() {
     fixture.options.run { cacheDirPath = tmpDir.newFolder()?.absolutePath }
     val replayId = SentryId()
@@ -653,5 +746,49 @@ class ReplayCacheTest {
 
     // No crash is success
     assertNull(error.get())
+  }
+
+  @Test
+  fun `createVideoOf returns when the encoder never signals end of stream`() {
+    ReplayShadowMediaCodec.neverSignalEos = true
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 1)
+
+    val done = CountDownLatch(1)
+    val error = AtomicReference<Throwable?>()
+    val encoder =
+      thread(isDaemon = true) {
+        try {
+          replayCache.createVideoOf(1000L, 0L, 0, 100, 200, 1, 20_000)
+        } catch (t: Throwable) {
+          error.set(t)
+        } finally {
+          done.countDown()
+        }
+      }
+
+    assertWithMessage("createVideoOf did not return, the drain loop is spinning")
+      .that(done.await(30, SECONDS))
+      .isTrue()
+    encoder.join(SECONDS.toMillis(10))
+    assertThat(error.get()).isNull()
+  }
+
+  @Test
+  fun `createVideoOf releases the encoder even when EOS is never signalled`() {
+    ReplayShadowMediaCodec.neverSignalEos = true
+    val replayCache = fixture.getSut(tmpDir)
+
+    val bitmap = Bitmap.createBitmap(1, 1, ARGB_8888)
+    replayCache.addFrame(bitmap, 1)
+
+    // the stall bound breaks the drain loop, but release() must still be called
+    replayCache.createVideoOf(1000L, 0L, 0, 100, 200, 1, 20_000)
+
+    assertWithMessage("encoder should be released even when EOS was never signalled")
+      .that(ReplayShadowMediaCodec.released)
+      .isTrue()
   }
 }

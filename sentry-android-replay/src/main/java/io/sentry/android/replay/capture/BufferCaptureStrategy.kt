@@ -18,12 +18,10 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.Companion.rotateEvents
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
-import io.sentry.android.replay.util.sample
 import io.sentry.clientreport.DiscardReason.RATELIMIT_BACKOFF
 import io.sentry.protocol.SentryId
+import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
-import io.sentry.util.FileUtils
-import io.sentry.util.Random
 import java.io.File
 import java.util.Date
 import java.util.concurrent.ScheduledExecutorService
@@ -42,11 +40,13 @@ import java.util.concurrent.ScheduledExecutorService
  */
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
-internal class BufferCaptureStrategy(
+internal class BufferCaptureStrategy
+@Suppress("LongParameterList")
+constructor(
   private val options: SentryOptions,
   private val scopes: IScopes?,
   private val dateProvider: ICurrentDateProvider,
-  private val random: Random,
+  private val ticker: MonotonicTicker,
   executor: ScheduledExecutorService,
   persistingExecutor: ScheduledExecutorService,
   replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
@@ -55,6 +55,7 @@ internal class BufferCaptureStrategy(
     options,
     scopes,
     dateProvider,
+    ticker,
     executor,
     persistingExecutor,
     replayCacheProvider = replayCacheProvider,
@@ -83,7 +84,7 @@ internal class BufferCaptureStrategy(
     val replayCacheDir = cache?.replayCacheDir
     replayExecutor.submit(
       ReplayRunnable("$TAG.stop") {
-        FileUtils.deleteRecursively(replayCacheDir)
+        ReplayCache.deleteExceptSegmentVideos(replayCacheDir)
         currentSegment = -1
       }
     )
@@ -91,20 +92,6 @@ internal class BufferCaptureStrategy(
   }
 
   override fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit) {
-    val sampled = random.sample(options.sessionReplay.onErrorSampleRate)
-
-    if (!sampled) {
-      options.logger.log(
-        INFO,
-        "Replay wasn't sampled by onErrorSampleRate, not capturing for event",
-      )
-      return
-    }
-
-    // write replayId to scope right away, so it gets picked up by the event that caused buffer
-    // to flush
-    scopes?.configureScope { it.replayId = currentReplayId }
-
     if (isTerminating) {
       this.isTerminating.set(true)
       // avoid capturing replay, because the video will be malformed
@@ -139,6 +126,8 @@ internal class BufferCaptureStrategy(
       }
     }
   }
+
+  override fun flush(onSegmentSent: (Date) -> Unit) = captureReplay(false, onSegmentSent)
 
   override fun onScreenshotRecorded(
     bitmap: Bitmap?,
@@ -188,7 +177,14 @@ internal class BufferCaptureStrategy(
     // we hand over replayExecutor and persistingExecutor to the new strategy to preserve order of
     // execution
     val captureStrategy =
-      SessionCaptureStrategy(options, scopes, dateProvider, replayExecutor, persistingExecutor)
+      SessionCaptureStrategy(
+        options,
+        scopes,
+        dateProvider,
+        ticker,
+        replayExecutor,
+        persistingExecutor,
+      )
     captureStrategy.recorderConfig = recorderConfig
     captureStrategy.start(
       segmentId = currentSegment,

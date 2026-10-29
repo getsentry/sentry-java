@@ -1,0 +1,147 @@
+package io.sentry
+
+import com.google.common.truth.Truth.assertThat
+import kotlin.test.Test
+import kotlin.test.assertFailsWith
+
+class DataCollectionTest {
+  @Test
+  fun `public constructor does not force Data Collection for empty configuration`() {
+    val dataCollection = DataCollection()
+
+    assertThat(dataCollection.userInfo).isNull()
+    assertThat(dataCollection.cookies).isNull()
+    assertThat(dataCollection.urlQueryParams).isNull()
+    assertThat(dataCollection.httpBodies).isNull()
+    assertThat(dataCollection.databaseQueryData).isNull()
+    assertThat(dataCollection.filePaths).isNull()
+    assertThat(dataCollection.httpHeaders.request).isNull()
+    assertThat(dataCollection.httpHeaders.response).isNull()
+    assertThat(dataCollection.graphql.document).isNull()
+    assertThat(dataCollection.graphql.variables).isNull()
+    assertThat(dataCollection.isExplicitlyConfigured()).isFalse()
+  }
+
+  @Test
+  fun `force Data Collection makes empty configuration explicit`() {
+    val dataCollection = DataCollection()
+
+    dataCollection.forceDataCollection()
+
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `nested override makes configuration explicit`() {
+    val dataCollection = DataCollection()
+
+    dataCollection.graphql.setVariables(false)
+
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `explicit false is distinct from unset`() {
+    val dataCollection = DataCollection()
+
+    dataCollection.setUserInfo(false)
+
+    assertThat(dataCollection.userInfo).isFalse()
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `nullable Boolean options are mutable Kotlin properties`() {
+    val dataCollection = DataCollection()
+
+    dataCollection.userInfo = false
+    dataCollection.databaseQueryData = false
+    dataCollection.filePaths = false
+    dataCollection.graphql.document = false
+    dataCollection.graphql.variables = false
+
+    assertThat(dataCollection.userInfo).isFalse()
+    assertThat(dataCollection.databaseQueryData).isFalse()
+    assertThat(dataCollection.filePaths).isFalse()
+    assertThat(dataCollection.graphql.document).isFalse()
+    assertThat(dataCollection.graphql.variables).isFalse()
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+
+    dataCollection.userInfo = null
+    dataCollection.databaseQueryData = null
+    dataCollection.filePaths = null
+    dataCollection.graphql.document = null
+    dataCollection.graphql.variables = null
+
+    assertThat(dataCollection.userInfo).isNull()
+    assertThat(dataCollection.databaseQueryData).isNull()
+    assertThat(dataCollection.filePaths).isNull()
+    assertThat(dataCollection.graphql.document).isNull()
+    assertThat(dataCollection.graphql.variables).isNull()
+    assertThat(dataCollection.isExplicitlyConfigured()).isFalse()
+  }
+
+  @Test
+  fun `empty HTTP body set is distinct from unset`() {
+    val dataCollection = DataCollection()
+
+    dataCollection.setHttpBodies(emptySet())
+
+    assertThat(dataCollection.httpBodies).isEmpty()
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `HTTP body set is copied and immutable`() {
+    val bodies = mutableSetOf(HttpBodyType.INCOMING_REQUEST)
+    val dataCollection = DataCollection()
+
+    dataCollection.setHttpBodies(bodies)
+    bodies += HttpBodyType.OUTGOING_REQUEST
+
+    assertThat(dataCollection.httpBodies).containsExactly(HttpBodyType.INCOMING_REQUEST)
+    assertFailsWith<UnsupportedOperationException> {
+      dataCollection.httpBodies!!.add(HttpBodyType.OUTGOING_REQUEST)
+    }
+  }
+
+  @Test
+  fun `database query data false is distinct from unset`() {
+    val dataCollection = DataCollection()
+
+    dataCollection.setDatabaseQueryData(false)
+
+    assertThat(dataCollection.databaseQueryData).isFalse()
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `file paths false is distinct from unset`() {
+    val dataCollection = DataCollection()
+
+    dataCollection.setFilePaths(false)
+
+    assertThat(dataCollection.filePaths).isFalse()
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `nested HTTP header override marks configuration explicit`() {
+    val dataCollection = DataCollection()
+    val behavior = KeyValueCollectionBehavior.denyList("authorization")
+
+    dataCollection.httpHeaders.setRequest(behavior)
+
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+
+  @Test
+  fun `nested GraphQL false marks configuration explicit`() {
+    val dataCollection = DataCollection()
+
+    dataCollection.graphql.setVariables(false)
+
+    assertThat(dataCollection.graphql.variables).isFalse()
+    assertThat(dataCollection.isExplicitlyConfigured()).isTrue()
+  }
+}

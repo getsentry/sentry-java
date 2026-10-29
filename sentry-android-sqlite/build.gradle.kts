@@ -7,10 +7,12 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
+  id("io.sentry.api-validation")
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.sqlite"
 
   defaultConfig {
@@ -53,10 +55,6 @@ android {
 
   buildFeatures { buildConfig = true }
 
-  // Needed b/c Kotlin 1.4.x would otherwise pull in an older version without the annotations we
-  // want.
-  configurations.all { resolutionStrategy.force(libs.jetbrains.annotations.get()) }
-
   androidComponents.beforeVariants {
     it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
   }
@@ -75,16 +73,14 @@ dependencies {
   api(projects.sentry)
 
   compileOnly(libs.androidx.sqlite)
-  compileOnly(libs.jetbrains.annotations)
 
   implementation(kotlin(Config.kotlinStdLib, Config.kotlinStdLibVersionAndroid))
 
   // tests
   testImplementation(libs.androidx.sqlite)
   testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
 }
 
 tasks.withType<Detekt>().configureEach {

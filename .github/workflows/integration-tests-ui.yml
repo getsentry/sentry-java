@@ -27,13 +27,13 @@ jobs:
           submodules: 'recursive'
 
       - name: 'Set up Java: 17'
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
@@ -75,17 +75,18 @@ jobs:
 
       - name: Install Sentry CLI
         if: ${{ !cancelled() && env.SAUCE_USERNAME != null }}
-        run: curl -sL https://sentry.io/get-cli/ | bash
+        uses: getsentry/action-setup-cli@70d7e587b84c2e78cf4d37cd33d7b74fb3729c1b # v1
 
       - name: Upload Replay Snapshots to Sentry
         # Skip on PRs from forks, which don't have access to the upload secret
         if: ${{ !cancelled() && env.SAUCE_USERNAME != null && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         run: |
-          shopt -s globstar nullglob
-          pngs=(artifacts/**/*.png)
-          if [ ${#pngs[@]} -gt 0 ]; then
-            mkdir -p replay-snapshots
-            cp "${pngs[@]}" replay-snapshots/
+          # find instead of `shopt -s globstar`, which macOS's bash 3.2 doesn't support
+          mkdir -p replay-snapshots
+          if [ -d artifacts ]; then
+            find artifacts -type f -name '*.png' -exec cp {} replay-snapshots/ \;
+          fi
+          if [ -n "$(ls -A replay-snapshots)" ]; then
             sentry-cli snapshots upload ./replay-snapshots \
               --app-id sentry-android-replay
           else

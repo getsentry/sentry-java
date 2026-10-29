@@ -39,7 +39,14 @@ internal interface CaptureStrategy {
 
   fun resume()
 
+  /**
+   * Captures replay data for an event. Session mode may defer sending until its normal segment
+   * boundary because the replay is already being uploaded continuously.
+   */
   fun captureReplay(isTerminating: Boolean, onSegmentSent: (Date) -> Unit)
+
+  /** Explicitly sends the current replay data to Sentry in either session or buffer mode. */
+  fun flush(onSegmentSent: (Date) -> Unit)
 
   fun onScreenshotRecorded(
     bitmap: Bitmap? = null,

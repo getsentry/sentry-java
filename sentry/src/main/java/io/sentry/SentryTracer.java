@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.profiling.ProfileRecordingState;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
@@ -14,6 +15,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -155,7 +157,8 @@ public final class SentryTracer implements ITransaction {
       final long elapsedNanos =
           scopes.getOptions().getDateProvider().now().nanoTimestamp()
               - deadlineTimeoutScheduledAtNanos;
-      if (deadlineTimeout > 0 && DateUtils.nanosToMillis(elapsedNanos) > deadlineTimeout * 2.0) {
+      if (deadlineTimeout > 0
+          && TimeUnit.NANOSECONDS.toMillis(elapsedNanos) > deadlineTimeout * 2) {
         scopes
             .getOptions()
             .getLogger()
@@ -195,7 +198,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   @Override
-  public @NotNull void forceFinish(
+  public void forceFinish(
       final @NotNull SpanStatus status, final boolean dropIfNoChildren, final @Nullable Hint hint) {
     if (isFinished()) {
       return;
@@ -303,6 +306,8 @@ public final class SentryTracer implements ITransaction {
                   }
                 });
           });
+      dropUnrecordedProfilerIds(finishTimestamp);
+
       final SentryTransaction transaction = new SentryTransaction(this);
 
       if (timersEnabled) {
@@ -594,6 +599,65 @@ public final class SentryTracer implements ITransaction {
     span.setData(SpanDataConvention.THREAD_NAME, threadChecker.getCurrentThreadName());
   }
 
+  /**
+   * Spans are tagged with the profiler id when they start, but the profiler may only learn later
+   * that no profile was recorded, e.g. when the OS rate limits profiling requests. Spans that no
+   * profile covers drop the reference here, so they don't point to a profile that never arrives.
+   */
+  private void dropUnrecordedProfilerIds(final @NotNull SentryDate finishTimestamp) {
+    final @NotNull IContinuousProfiler continuousProfiler =
+        scopes.getOptions().getContinuousProfiler();
+    if (continuousProfiler instanceof NoOpContinuousProfiler) {
+      // Without a profiler no span can carry a profiler id, so the children are not worth walking
+      return;
+    }
+
+    if (isProfileMissing(continuousProfiler, root, finishTimestamp)) {
+      root.setData(SpanDataConvention.PROFILER_ID, null);
+      contexts.remove(ProfileContext.TYPE);
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "No profile was recorded for transaction, dropping its profiler id.");
+    }
+
+    for (final @NotNull Span child : children) {
+      if (isProfileMissing(continuousProfiler, child, finishTimestamp)) {
+        child.setData(SpanDataConvention.PROFILER_ID, null);
+      }
+    }
+  }
+
+  /**
+   * Whether the profiler knows that no profile covers the given span.
+   *
+   * @param finishTimestamp end of the window for a span that never finished
+   */
+  private boolean isProfileMissing(
+      final @NotNull IContinuousProfiler continuousProfiler,
+      final @NotNull Span span,
+      final @NotNull SentryDate finishTimestamp) {
+    final @Nullable Object data = span.getData(SpanDataConvention.PROFILER_ID);
+    if (!(data instanceof String)) {
+      return false;
+    }
+    final @NotNull SentryId profilerId;
+    try {
+      profilerId = new SentryId((String) data);
+    } catch (IllegalArgumentException e) {
+      // The span data key is public API, so the value is not necessarily an id the SDK wrote
+      return false;
+    }
+    final @Nullable SentryDate spanFinishDate = span.getFinishDate();
+    return continuousProfiler.getProfileRecordingState(
+            profilerId,
+            span.getStartDate(),
+            spanFinishDate != null ? spanFinishDate : finishTimestamp)
+        == ProfileRecordingState.NOT_RECORDED;
+  }
+
   private @NotNull SentryId getProfilerId() {
     return !root.getSpanContext().getProfilerId().equals(SentryId.EMPTY_ID)
         ? root.getSpanContext().getProfilerId()
@@ -718,14 +782,20 @@ public final class SentryTracer implements ITransaction {
     try (final @NotNull ISentryLifecycleToken ignored = tracerLock.acquire()) {
       if (baggage.isMutable()) {
         final AtomicReference<SentryId> replayId = new AtomicReference<>();
+        final AtomicReference<String> environment = new AtomicReference<>();
+        // the combined view resolves current -> isolation -> global, matching what event capture
+        // sees, so the DSC cannot disagree with the environment on the events of the same trace
         scopes.configureScope(
+            ScopeType.COMBINED,
             scope -> {
               replayId.set(scope.getReplayId());
+              environment.set(scope.getEnvironment());
             });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
             replayId.get(),
             scopes.getOptions(),
+            environment.get(),
             this.getSamplingDecision(),
             getName(),
             getTransactionNameSource());

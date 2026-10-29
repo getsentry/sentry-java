@@ -16,6 +16,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.util.ReplayShadowMediaCodec
@@ -25,14 +26,12 @@ import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
 import java.time.Duration
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.BeforeTest
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
-import kotlin.test.assertTrue
 import org.awaitility.core.ConditionTimeoutException
 import org.awaitility.kotlin.await
 import org.junit.Rule
@@ -74,6 +73,9 @@ class ReplaySmokeTest {
         doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
           .whenever(it)
           .configureScope(any())
+        doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+          .whenever(it)
+          .configureScope(anyOrNull<ScopeType>(), any())
 
         on { rateLimiter }.doReturn(rateLimiter)
       }
@@ -186,7 +188,7 @@ class ReplaySmokeTest {
     val controller = buildActivity(ExampleActivity::class.java, null).setup()
     controller.create().start().resume()
 
-    replay.start()
+    replay.onAppForegrounded(true)
     // wait for windows to be registered in our listeners
     shadowOf(Looper.getMainLooper()).idle()
 
@@ -255,45 +257,6 @@ class ReplaySmokeTest {
 
     assertNotEquals(falseReplay.rootViewsSpy, replay.rootViewsSpy)
     assertEquals(0, falseReplay.rootViewsSpy.listeners.size)
-  }
-
-  @Test
-  fun `close does not deadlock when executor task is waiting on lifecycleLock`() {
-    fixture.options.sessionReplay.sessionSampleRate = 1.0
-    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
-
-    val replay = fixture.getSut(context)
-    replay.register(fixture.scopes, fixture.options)
-    replay.start()
-
-    val taskBlocked = CountDownLatch(1)
-    val lockReleased = CountDownLatch(1)
-
-    // hold lifecycleLock on this thread
-    val token = replay.lifecycleLock.acquire()
-
-    // submit a task on the executor that tries to acquire the same lock — it will block
-    replay.replayExecutor.submit {
-      taskBlocked.countDown()
-      replay.lifecycleLock.acquire().use {}
-    }
-
-    // wait for the executor task to actually be running and blocked
-    assertTrue(taskBlocked.await(2, TimeUnit.SECONDS))
-
-    // release the lock, then close — if shutdown were inside the lock this would deadlock
-    token.close()
-
-    // close() must complete within a reasonable time
-    val closedInTime = AtomicBoolean(false)
-    val closeThread = Thread {
-      replay.close()
-      closedInTime.set(true)
-    }
-    closeThread.start()
-    closeThread.join(5000)
-
-    assertTrue(closedInTime.get(), "close() deadlocked")
   }
 }
 

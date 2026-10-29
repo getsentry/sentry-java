@@ -17,6 +17,7 @@ import io.sentry.ITransactionProfiler
 import io.sentry.MainEventProcessor
 import io.sentry.NoOpContinuousProfiler
 import io.sentry.NoOpTransactionProfiler
+import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryOptions
 import io.sentry.android.core.SentryAndroidOptions.AndroidUserFeedbackFormHandler
 import io.sentry.android.core.cache.AndroidEnvelopeCache
@@ -58,6 +59,8 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
+
+private const val SAAS_DSN = "https://key@o1.ingest.us.sentry.io/1"
 
 @RunWith(AndroidJUnit4::class)
 class AndroidOptionsInitializerTest {
@@ -367,6 +370,44 @@ class AndroidOptionsInitializerTest {
     assertTrue(fixture.sentryOptions.transportGate is AndroidTransportGate)
   }
 
+  @Config(sdk = [Build.VERSION_CODES.N_MR1])
+  @Test
+  fun `init on API 25 and lower sets SSLSocketFactory with bundled Sentry root CAs`() {
+    fixture.initSut(configureOptions = { dsn = SAAS_DSN })
+
+    assertIs<SentryRootCaSslSocketFactory>(fixture.sentryOptions.sslSocketFactory)
+  }
+
+  @Config(sdk = [Build.VERSION_CODES.N_MR1])
+  @Test
+  fun `init on API 25 and lower does not set SSLSocketFactory for self-hosted DSN`() {
+    fixture.initSut(configureOptions = { dsn = "https://key@sentry.example.com/1" })
+
+    assertNull(fixture.sentryOptions.sslSocketFactory)
+  }
+
+  @Config(sdk = [Build.VERSION_CODES.O])
+  @Test
+  fun `init on API 26 and higher does not set SSLSocketFactory`() {
+    fixture.initSut(configureOptions = { dsn = SAAS_DSN })
+
+    assertNull(fixture.sentryOptions.sslSocketFactory)
+  }
+
+  @Config(sdk = [Build.VERSION_CODES.N_MR1])
+  @Test
+  fun `init on API 25 and lower keeps user provided SSLSocketFactory`() {
+    val sslSocketFactory = mock<javax.net.ssl.SSLSocketFactory>()
+    fixture.initSut(
+      configureOptions = {
+        dsn = SAAS_DSN
+        this.sslSocketFactory = sslSocketFactory
+      }
+    )
+
+    assertEquals(sslSocketFactory, fixture.sentryOptions.sslSocketFactory)
+  }
+
   @Test
   fun `init should set Android continuous profiler`() {
     fixture.initSut()
@@ -381,6 +422,32 @@ class AndroidOptionsInitializerTest {
   fun `init on API 35+ always sets PerfettoContinuousProfiler`() {
     fixture.initSut()
     assertTrue(fixture.sentryOptions.continuousProfiler is PerfettoContinuousProfiler)
+  }
+
+  @Config(sdk = [35])
+  @Test
+  fun `init on API 35+ reports PerfettoContinuousProfiling integration`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    fixture.initSut()
+
+    assertTrue(
+      SentryIntegrationPackageStorage.getInstance()
+        .integrations
+        .contains("PerfettoContinuousProfiling")
+    )
+  }
+
+  @Config(sdk = [34])
+  @Test
+  fun `init below API 35 does not report PerfettoContinuousProfiling integration`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    fixture.initSut(configureOptions = { isEnableLegacyProfiling = true })
+
+    assertFalse(
+      SentryIntegrationPackageStorage.getInstance()
+        .integrations
+        .contains("PerfettoContinuousProfiling")
+    )
   }
 
   @Config(sdk = [34])
@@ -960,6 +1027,56 @@ class AndroidOptionsInitializerTest {
 
     val anrv1Integration = fixture.sentryOptions.integrations.firstOrNull { it is AnrIntegration }
     assertNull(anrv1Integration)
+  }
+
+  @Test
+  fun `MemoryLimiterIntegration added to integrations list for API 37 and above`() {
+    val options = SentryAndroidOptions()
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(37)
+    val loadClass = LoadClass()
+    val activityFramesTracker = ActivityFramesTracker(loadClass, options)
+
+    AndroidOptionsInitializer.installDefaultIntegrations(
+      fixture.context,
+      options,
+      buildInfo,
+      loadClass,
+      activityFramesTracker,
+      false,
+      false,
+      false,
+      false,
+    )
+
+    val integration = options.integrations.firstOrNull { it is MemoryLimiterIntegration }
+
+    assertNotNull(integration)
+  }
+
+  @Test
+  fun `MemoryLimiterIntegration not added to integrations list below API 37`() {
+    val options = SentryAndroidOptions()
+    val buildInfo = mock<BuildInfoProvider>()
+    whenever(buildInfo.sdkInfoVersion).thenReturn(36)
+    val loadClass = LoadClass()
+    val activityFramesTracker = ActivityFramesTracker(loadClass, options)
+
+    AndroidOptionsInitializer.installDefaultIntegrations(
+      fixture.context,
+      options,
+      buildInfo,
+      loadClass,
+      activityFramesTracker,
+      false,
+      false,
+      false,
+      false,
+    )
+
+    val integration = options.integrations.firstOrNull { it is MemoryLimiterIntegration }
+
+    assertNull(integration)
   }
 
   @Test

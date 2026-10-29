@@ -21,10 +21,15 @@ import io.sentry.metrics.DefaultMetricsBatchProcessorFactory;
 import io.sentry.metrics.IMetricsBatchProcessorFactory;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryTransaction;
+import io.sentry.time.EpochClock;
+import io.sentry.time.JavaMonotonicTicker;
+import io.sentry.time.MonotonicTicker;
+import io.sentry.time.SystemEpochClock;
 import io.sentry.transport.ITransport;
 import io.sentry.transport.ITransportGate;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
+import io.sentry.transport.RateLimiterConfig;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.LazyEvaluator;
 import io.sentry.util.LoadClass;
@@ -53,8 +58,11 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** Sentry SDK options */
+// temp fix for JDK 21: Constructors call overridable methods; making them final would break the
+// public API.
+@SuppressWarnings("this-escape")
 @Open
-public class SentryOptions {
+public class SentryOptions implements RateLimiterConfig {
 
   @ApiStatus.Internal public static final @NotNull String DEFAULT_PROPAGATION_TARGETS = ".*";
 
@@ -347,6 +355,11 @@ public class SentryOptions {
   /** whether to send personal identifiable information along with events */
   private boolean sendDefaultPii = false;
 
+  private @NotNull DataCollection dataCollection = new DataCollection();
+
+  private final @NotNull DataCollectionResolver dataCollectionResolver =
+      new DataCollectionResolver(this);
+
   /** SSLSocketFactory for self-signed certificate trust * */
   private @Nullable SSLSocketFactory sslSocketFactory;
 
@@ -524,6 +537,16 @@ public class SentryOptions {
   @ApiStatus.Internal
   private final @NotNull LazyEvaluator<SentryDateProvider> dateProvider =
       new LazyEvaluator<>(() -> new SentryAutoDateProvider());
+
+  /**
+   * Cache of the local hostname, used when {@link #isAttachServerName()} is enabled.
+   *
+   * <p>Evaluated lazily because resolving the hostname blocks on {@code
+   * InetAddress.getLocalHost()}, which no {@code Sentry.init} should pay for up front.
+   */
+  @ApiStatus.Internal
+  private final @NotNull LazyEvaluator<HostnameCache> hostnameCache =
+      new LazyEvaluator<>(() -> new HostnameCache(getMonotonicTicker()));
 
   private final @NotNull List<IPerformanceCollector> performanceCollectors = new ArrayList<>();
 
@@ -843,6 +866,7 @@ public class SentryOptions {
    *
    * @return the logger
    */
+  @Override
   public @NotNull ILogger getLogger() {
     return logger;
   }
@@ -1606,6 +1630,7 @@ public class SentryOptions {
    * @return the timer executor service
    */
   @ApiStatus.Internal
+  @Override
   @NotNull
   public ISentryExecutorService getTimerExecutorService() {
     return timerExecutorService;
@@ -1743,12 +1768,55 @@ public class SentryOptions {
     this.sdkVersion = sdkVersion;
   }
 
+  /**
+   * Returns whether personally identifiable information is sent by default.
+   *
+   * @deprecated use {@link #getDataCollection()} instead. This option will be removed in 9.0.
+   */
+  @ApiStatus.ScheduledForRemoval(inVersion = "9.0")
+  @Deprecated
   public boolean isSendDefaultPii() {
     return sendDefaultPii;
   }
 
+  /**
+   * Sets whether personally identifiable information is sent by default.
+   *
+   * @deprecated use {@link #getDataCollection()} instead. This option will be removed in 9.0.
+   */
+  @ApiStatus.ScheduledForRemoval(inVersion = "9.0")
+  @Deprecated
   public void setSendDefaultPii(boolean sendDefaultPii) {
     this.sendDefaultPii = sendDefaultPii;
+  }
+
+  /**
+   * Returns the configuration for data that the SDK collects automatically.
+   *
+   * <p>The returned object is always present. Accessing it does not configure data collection, but
+   * setting one of its options does.
+   */
+  public @NotNull DataCollection getDataCollection() {
+    return dataCollection;
+  }
+
+  /**
+   * Replaces the configuration for data that the SDK collects automatically.
+   *
+   * <p>This discards any Data Collection options already configured on this instance. To opt into
+   * the documented defaults while preserving them, call {@link
+   * DataCollection#forceDataCollection()} on the object returned by {@link #getDataCollection()}.
+   */
+  public void setDataCollection(final @NotNull DataCollection dataCollection) {
+    if (dataCollection != null) {
+      this.dataCollection = dataCollection;
+    }
+  }
+
+  /** Returns the Data Collection policy resolver used by SDK integrations. */
+  @ApiStatus.Internal
+  public @NotNull DataCollectionResolver getDataCollectionResolver() {
+    return dataCollectionResolver;
   }
 
   /**
@@ -2597,6 +2665,7 @@ public class SentryOptions {
    * @return a client report recorder or NoOp
    */
   @ApiStatus.Internal
+  @Override
   public @NotNull IClientReportRecorder getClientReportRecorder() {
     return clientReportRecorder;
   }
@@ -3057,6 +3126,37 @@ public class SentryOptions {
   @ApiStatus.Internal
   public void setDateProvider(final @NotNull SentryDateProvider dateProvider) {
     this.dateProvider.setValue(dateProvider);
+  }
+
+  /**
+   * Returns the wall clock, for stamping an instant that will be serialized.
+   *
+   * <p>Reports the same epoch as {@link #getDateProvider()}, but a {@link io.sentry.time.Timestamp}
+   * carries no {@link System#nanoTime()} tick of its own the way a {@link SentryNanotimeDate} does.
+   * Instants that will be subtracted from each other come from an {@link
+   * io.sentry.time.AnchoredClock} built on this and {@link #getMonotonicTicker()}.
+   */
+  @ApiStatus.Internal
+  public @NotNull EpochClock getEpochClock() {
+    return SystemEpochClock.getInstance();
+  }
+
+  /**
+   * Returns the ticker used to measure elapsed time, such as rate-limit windows, cache expiry and
+   * ANR thresholds.
+   *
+   * <p>Android overrides this with a {@code SystemClock.elapsedRealtimeNanos()}-backed ticker,
+   * which this module cannot reference. On the JVM there is no suspend state to account for.
+   */
+  @ApiStatus.Internal
+  public @NotNull MonotonicTicker getMonotonicTicker() {
+    return JavaMonotonicTicker.getInstance();
+  }
+
+  /** Returns the hostname cache, resolving the hostname on first use. */
+  @ApiStatus.Internal
+  public @NotNull HostnameCache getHostnameCache() {
+    return hostnameCache.getValue();
   }
 
   /**
@@ -3538,7 +3638,24 @@ public class SentryOptions {
     feedbackOptions =
         new SentryFeedbackOptions(
             (associatedEventId, configurator) ->
-                logger.log(SentryLevel.WARNING, "showForm() can only be called in Android."));
+                logger.log(SentryLevel.WARNING, "showForm() can only be called in Android."),
+            new SentryFeedbackOptions.IShakeController() {
+              @Override
+              public void enableOnShake() {
+                logger.log(SentryLevel.WARNING, "Shake to report is only supported on Android.");
+              }
+
+              @Override
+              public void disableOnShake() {
+                logger.log(SentryLevel.WARNING, "Shake to report is only supported on Android.");
+              }
+
+              @Override
+              public boolean isOnShakeEnabled() {
+                return false;
+              }
+            },
+            new LoadClass());
 
     if (!empty) {
       setSpanFactory(SpanFactoryFactory.create(new LoadClass(), NoOpLogger.getInstance()));
@@ -3695,6 +3812,9 @@ public class SentryOptions {
     if (options.isSendDefaultPii() != null) {
       setSendDefaultPii(options.isSendDefaultPii());
     }
+    if (options.getDataCollection() != null) {
+      mergeDataCollection(options.getDataCollection());
+    }
     if (options.isCaptureOpenTelemetryEvents() != null) {
       setCaptureOpenTelemetryEvents(options.isCaptureOpenTelemetryEvents());
     }
@@ -3757,6 +3877,43 @@ public class SentryOptions {
     }
     if (options.getOrgId() != null) {
       setOrgId(options.getOrgId());
+    }
+  }
+
+  private void mergeDataCollection(final @NotNull DataCollection externalDataCollection) {
+    if (externalDataCollection.getUserInfo() != null) {
+      dataCollection.setUserInfo(externalDataCollection.getUserInfo());
+    }
+    if (externalDataCollection.getHttpBodies() != null) {
+      dataCollection.setHttpBodies(externalDataCollection.getHttpBodies());
+    }
+    if (externalDataCollection.getCookies() != null) {
+      dataCollection.setCookies(externalDataCollection.getCookies());
+    }
+    if (externalDataCollection.getHttpHeaders().getRequest() != null) {
+      dataCollection
+          .getHttpHeaders()
+          .setRequest(externalDataCollection.getHttpHeaders().getRequest());
+    }
+    if (externalDataCollection.getHttpHeaders().getResponse() != null) {
+      dataCollection
+          .getHttpHeaders()
+          .setResponse(externalDataCollection.getHttpHeaders().getResponse());
+    }
+    if (externalDataCollection.getUrlQueryParams() != null) {
+      dataCollection.setUrlQueryParams(externalDataCollection.getUrlQueryParams());
+    }
+    if (externalDataCollection.getGraphql().getDocument() != null) {
+      dataCollection.getGraphql().setDocument(externalDataCollection.getGraphql().getDocument());
+    }
+    if (externalDataCollection.getGraphql().getVariables() != null) {
+      dataCollection.getGraphql().setVariables(externalDataCollection.getGraphql().getVariables());
+    }
+    if (externalDataCollection.getDatabaseQueryData() != null) {
+      dataCollection.setDatabaseQueryData(externalDataCollection.getDatabaseQueryData());
+    }
+    if (externalDataCollection.getFilePaths() != null) {
+      dataCollection.setFilePaths(externalDataCollection.getFilePaths());
     }
   }
 
@@ -3954,7 +4111,7 @@ public class SentryOptions {
 
   public static final class Logs {
 
-    /** Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry. */
+    /** Whether automatic logging integrations send Logs to Sentry. */
     private boolean enable = false;
 
     /**
@@ -3967,18 +4124,20 @@ public class SentryOptions {
         new DefaultLoggerBatchProcessorFactory();
 
     /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
+     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
+     * calls are always captured when the SDK is enabled.
      *
-     * @return true if Sentry Logs should be enabled
+     * @return true if automatic Logs should be enabled
      */
     public boolean isEnabled() {
       return enable;
     }
 
     /**
-     * Whether Sentry Logs feature is enabled and Sentry.logger() usages are sent to Sentry.
+     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
+     * calls are always captured when the SDK is enabled.
      *
-     * @param enableLogs true if Sentry Logs should be enabled
+     * @param enableLogs true if automatic Logs should be enabled
      */
     public void setEnabled(boolean enableLogs) {
       this.enable = enableLogs;
@@ -4033,7 +4192,7 @@ public class SentryOptions {
 
   public static final class Metrics {
 
-    /** Whether Sentry Metrics feature is enabled and metrics are sent to Sentry. */
+    /** The configured state for automatic Metrics integrations, which currently do not exist. */
     private boolean enable = true;
 
     /**
@@ -4046,18 +4205,24 @@ public class SentryOptions {
         new DefaultMetricsBatchProcessorFactory();
 
     /**
-     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     * Returns the configured state for automatic Metrics integrations.
      *
-     * @return true if Sentry Metrics should be enabled
+     * <p>This option currently has no effect because there are no automatic Metrics integrations.
+     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
+     *
+     * @return the configured value for automatic Metrics integrations
      */
     public boolean isEnabled() {
       return enable;
     }
 
     /**
-     * Whether Sentry Metrics feature is enabled and metrics are sent to Sentry.
+     * Configures whether automatic Metrics integrations send Metrics to Sentry.
      *
-     * @param enableMetrics true if Sentry Metrics should be enabled
+     * <p>This option currently has no effect because there are no automatic Metrics integrations.
+     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
+     *
+     * @param enableMetrics whether automatic Metrics integrations should be enabled
      */
     public void setEnabled(final boolean enableMetrics) {
       this.enable = enableMetrics;

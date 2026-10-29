@@ -8,14 +8,13 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
+  id("io.sentry.api-validation")
 }
 
-configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_17
-  targetCompatibility = JavaVersion.VERSION_17
-}
+// Published code targets Java 17. Test code is not published and follows the toolchain.
+tasks.named<JavaCompile>("compileJava") { options.release.set(17) }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
@@ -39,7 +38,7 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.reactor.core)
-  testImplementation(platform("org.junit:junit-bom:5.10.0"))
+  testImplementation(platform("org.junit:junit-bom:6.1.3"))
   testImplementation("org.junit.jupiter:junit-jupiter")
 }
 

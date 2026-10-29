@@ -57,6 +57,24 @@ public final class CombinedScopeView implements IScope {
   }
 
   @Override
+  public @Nullable String getEnvironment() {
+    final @Nullable String current = scope.getEnvironment();
+    if (current != null) {
+      return current;
+    }
+    final @Nullable String isolation = isolationScope.getEnvironment();
+    if (isolation != null) {
+      return isolation;
+    }
+    return globalScope.getEnvironment();
+  }
+
+  @Override
+  public void setEnvironment(@Nullable String environment) {
+    getDefaultWriteScope().setEnvironment(environment);
+  }
+
+  @Override
   public @Nullable String getTransactionName() {
     final @Nullable String current = scope.getTransactionName();
     if (current != null) {
@@ -540,7 +558,11 @@ public final class CombinedScopeView implements IScope {
 
   @Override
   public @Nullable Scope.SessionPair startSession() {
-    return getDefaultWriteScope().startSession();
+    final IScope defaultScope = getDefaultWriteScope();
+    if (defaultScope instanceof Scope) {
+      return ((Scope) defaultScope).startSession(getEnvironment());
+    }
+    return defaultScope.startSession();
   }
 
   @Override

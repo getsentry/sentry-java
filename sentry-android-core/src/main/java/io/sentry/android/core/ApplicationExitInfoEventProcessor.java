@@ -52,6 +52,7 @@ import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.NativeCrashExit;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
@@ -89,7 +90,8 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 @WorkerThread
-public final class ApplicationExitInfoEventProcessor implements BackfillingEventProcessor {
+public final class ApplicationExitInfoEventProcessor
+    implements BackfillingEventProcessor, SentryEventProcessor {
 
   private final @NotNull Context context;
 
@@ -196,6 +198,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     setRequest(event);
     setUser(event);
     setScopeTags(event);
+    setScopeEnvironment(event);
     setBreadcrumbs(event);
     setExtras(event);
     setContexts(event);
@@ -349,16 +352,19 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
   @SuppressWarnings("unchecked")
   private void setBreadcrumbs(final @NotNull SentryBaseEvent event) {
+    final List<Breadcrumb> eventBreadcrumbs = event.getBreadcrumbs();
+    if (eventBreadcrumbs != null && !eventBreadcrumbs.isEmpty()) {
+      // the event already carries its own breadcrumbs (e.g. a tombstone-merged native
+      // crash event), so appending the persisted ones here would duplicate entries. Skip the
+      // disk read altogether since the result would be discarded anyway.
+      return;
+    }
     final List<Breadcrumb> breadcrumbs =
         (List<Breadcrumb>) readFromDisk(options, BREADCRUMBS_FILENAME, List.class);
     if (breadcrumbs == null) {
       return;
     }
-    if (event.getBreadcrumbs() == null) {
-      event.setBreadcrumbs(breadcrumbs);
-    } else {
-      event.getBreadcrumbs().addAll(breadcrumbs);
-    }
+    event.setBreadcrumbs(breadcrumbs);
   }
 
   @SuppressWarnings("unchecked")
@@ -484,6 +490,16 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       event.setEnvironment(
           getLaunchOption(
               ENVIRONMENT_FILENAME, String.class, options.getEnvironment(), optionsSource));
+    }
+  }
+
+  private void setScopeEnvironment(final @NotNull SentryBaseEvent event) {
+    if (event.getEnvironment() == null) {
+      final @Nullable String scopeEnvironment =
+          readFromDisk(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String.class);
+      if (scopeEnvironment != null) {
+        event.setEnvironment(scopeEnvironment);
+      }
     }
   }
 
@@ -678,7 +694,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     if (user.getId() == null) {
       user.setId(getDeviceId());
     }
-    if (user.getIpAddress() == null && options.isSendDefaultPii()) {
+    if (user.getIpAddress() == null && options.getDataCollectionResolver().isUserInfo()) {
       user.setIpAddress(IpAddressUtils.DEFAULT_IP_ADDRESS);
     }
   }
@@ -797,9 +813,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
 
     @Override
     public boolean supports(@NotNull Object hint) {
-      // While this is specifically an ANR enricher we discriminate enrichment application
-      // on the broader AbnormalExit hints for now.
-      return hint instanceof AbnormalExit;
+      return hint instanceof AnrV2Integration.AnrV2Hint;
     }
 
     // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"

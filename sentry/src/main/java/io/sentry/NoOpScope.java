@@ -20,6 +20,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@ApiStatus.Internal
 public final class NoOpScope implements IScope {
 
   private static final NoOpScope instance = new NoOpScope();
@@ -40,6 +41,14 @@ public final class NoOpScope implements IScope {
 
   @Override
   public void setLevel(@Nullable SentryLevel level) {}
+
+  @Override
+  public @Nullable String getEnvironment() {
+    return null;
+  }
+
+  @Override
+  public void setEnvironment(@Nullable String environment) {}
 
   @Override
   public @Nullable String getTransactionName() {

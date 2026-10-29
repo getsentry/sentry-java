@@ -87,7 +87,6 @@ class DefaultAndroidEventProcessorTest {
   fun `set up`() {
     context = ApplicationProvider.getApplicationContext()
     AppState.getInstance().resetInstance()
-    DeviceInfoUtil.resetInstance()
     CpuInfoUtils.getInstance().clear()
   }
 
@@ -283,6 +282,34 @@ class DefaultAndroidEventProcessorTest {
     val event = SentryEvent().apply { user = User() }
     sut.process(event, Hint())
     assertNotNull(event.user) { assertEquals("{{auto}}", it.ipAddress) }
+  }
+
+  @Test
+  fun `when user info is disabled, sets installation id but not automatic ip`() {
+    fixture.options.dataCollection.setUserInfo(false)
+    val sut = fixture.getSut(context, isSendDefaultPii = true)
+    val event = SentryEvent().apply { user = User() }
+
+    sut.process(event, Hint())
+
+    assertNotNull(event.user) {
+      assertNotNull(it.id)
+      assertNull(it.ipAddress)
+    }
+  }
+
+  @Test
+  fun `when user info is enabled, sets automatic user data`() {
+    fixture.options.dataCollection.setUserInfo(true)
+    val sut = fixture.getSut(context, isSendDefaultPii = false)
+    val event = SentryEvent().apply { user = User() }
+
+    sut.process(event, Hint())
+
+    assertNotNull(event.user) {
+      assertNotNull(it.id)
+      assertEquals("{{auto}}", it.ipAddress)
+    }
   }
 
   @Test

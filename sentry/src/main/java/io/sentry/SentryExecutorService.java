@@ -55,6 +55,10 @@ public final class SentryExecutorService implements ISentryExecutorService {
     executorService.setRemoveOnCancelPolicy(removeOnCancelPolicy);
     executorService.setKeepAliveTime(keepAliveTime, keepAliveTimeUnit);
     executorService.allowCoreThreadTimeOut(true);
+    // by default shutdown() keeps queued delayed tasks, so awaitTermination blocks for the full
+    // shutdown timeout whenever a long timeout is still pending. Those tasks are discarded by the
+    // subsequent shutdownNow() anyway, so dropping them upfront only saves the wait.
+    executorService.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
   }
 
   public SentryExecutorService() {

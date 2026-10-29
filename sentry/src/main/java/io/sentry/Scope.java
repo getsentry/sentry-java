@@ -54,6 +54,9 @@ public final class Scope implements IScope {
   /** Scope's screen */
   private @Nullable String screen;
 
+  /** Scope's environment */
+  private @Nullable String environment;
+
   /** Scope's request */
   private @Nullable Request request;
 
@@ -138,6 +141,7 @@ public final class Scope implements IScope {
     final User userRef = scope.user;
     this.user = userRef != null ? new User(userRef) : null;
     this.screen = scope.screen;
+    this.environment = scope.environment;
     this.replayId = scope.replayId;
 
     final Request requestRef = scope.request;
@@ -222,6 +226,30 @@ public final class Scope implements IScope {
 
     for (final IScopeObserver observer : options.getScopeObservers()) {
       observer.setLevel(level);
+    }
+  }
+
+  /**
+   * Returns the Scope's environment.
+   *
+   * @return the environment or {@code null} if not set on the scope
+   */
+  @Override
+  public @Nullable String getEnvironment() {
+    return environment;
+  }
+
+  /**
+   * Sets the Scope's environment. Takes precedence over {@link SentryOptions#getEnvironment()}.
+   *
+   * @param environment the environment
+   */
+  @Override
+  public void setEnvironment(final @Nullable String environment) {
+    this.environment = environment;
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setEnvironment(environment);
     }
   }
 
@@ -463,23 +491,19 @@ public final class Scope implements IScope {
    */
   private @Nullable Breadcrumb executeBeforeBreadcrumb(
       final @NotNull SentryOptions.BeforeBreadcrumbCallback callback,
-      @NotNull Breadcrumb breadcrumb,
+      final @NotNull Breadcrumb breadcrumb,
       final @NotNull Hint hint) {
     try (final @NotNull ISentryLifecycleToken ignored = SentryCallbackReentrancyGuard.enter()) {
-      breadcrumb = callback.execute(breadcrumb, hint);
+      return callback.execute(breadcrumb, hint);
     } catch (Throwable e) {
       options
           .getLogger()
           .log(
               SentryLevel.ERROR,
-              "The BeforeBreadcrumbCallback callback threw an exception. Exception details will be added to the breadcrumb.",
+              "The BeforeBreadcrumb callback threw an exception. Dropping breadcrumb.",
               e);
-
-      if (e.getMessage() != null) {
-        breadcrumb.setData("sentry:message", e.getMessage());
-      }
+      return null;
     }
-    return breadcrumb;
   }
 
   /**
@@ -566,7 +590,8 @@ public final class Scope implements IScope {
   /** Resets the Scope to its default state */
   @Override
   public void clear() {
-    level = null;
+    setLevel(null);
+    setEnvironment(null);
     user = null;
     request = null;
     screen = null;
@@ -575,10 +600,15 @@ public final class Scope implements IScope {
     tags.clear();
     attributes.clear();
     extra.clear();
+    contexts.clear();
     eventProcessors.clear();
     clearTransaction();
     clearAttachments();
     clearFeatureFlags();
+
+    for (final IScopeObserver observer : options.getScopeObservers()) {
+      observer.setContexts(contexts);
+    }
   }
 
   /**
@@ -1013,7 +1043,8 @@ public final class Scope implements IScope {
   }
 
   /** The IWithSession callback */
-  interface IWithSession {
+  @ApiStatus.Internal
+  public interface IWithSession {
 
     /**
      * The accept method of the callback
@@ -1032,6 +1063,11 @@ public final class Scope implements IScope {
   @Nullable
   @Override
   public SessionPair startSession() {
+    return startSession(environment);
+  }
+
+  @Nullable
+  SessionPair startSession(final @Nullable String sessionEnvironment) {
     Session previousSession;
     SessionPair pair = null;
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
@@ -1046,7 +1082,10 @@ public final class Scope implements IScope {
       if (options.getRelease() != null) {
         session =
             new Session(
-                options.getDistinctId(), user, options.getEnvironment(), options.getRelease());
+                options.getDistinctId(),
+                user,
+                sessionEnvironment != null ? sessionEnvironment : options.getEnvironment(),
+                options.getRelease());
 
         final Session previousClone = previousSession != null ? previousSession.clone() : null;
         pair = new SessionPair(session.clone(), previousClone);

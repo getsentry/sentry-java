@@ -5,13 +5,15 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.detekt)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer.android")
+  id("io.sentry.api-validation")
 }
 
-tasks.withType<KotlinCompile>().configureEach {
+tasks.named<KotlinCompile>("compileKotlin") {
   compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
@@ -33,9 +35,10 @@ dependencies {
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.apollo3.kotlin)
   testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlinx.coroutines)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(libs.okhttp.mockwebserver)
 }
 

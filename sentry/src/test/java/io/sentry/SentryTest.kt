@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryFeedbackOptions.IFormHandler
 import io.sentry.SentryOptions.ProfilesSamplerCallback
 import io.sentry.SentryOptions.TracesSamplerCallback
@@ -7,6 +8,7 @@ import io.sentry.backpressure.BackpressureMonitor
 import io.sentry.backpressure.NoOpBackpressureMonitor
 import io.sentry.cache.EnvelopeCache
 import io.sentry.cache.IEnvelopeCache
+import io.sentry.cache.PersistingScopeObserver
 import io.sentry.internal.debugmeta.IDebugMetaLoader
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader
 import io.sentry.internal.modules.CompositeModulesLoader
@@ -21,6 +23,7 @@ import io.sentry.test.NonOverridableNoOpSentryExecutorService
 import io.sentry.test.createSentryClientMock
 import io.sentry.test.initForTest
 import io.sentry.test.injectForField
+import io.sentry.transport.ITransport
 import io.sentry.util.PlatformTestManipulator
 import io.sentry.util.thread.IThreadChecker
 import io.sentry.util.thread.ThreadChecker
@@ -51,6 +54,8 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
@@ -171,6 +176,56 @@ class SentryTest {
     Sentry.close()
     verify(scopes).close(eq(false))
     assertFalse(Sentry.getGlobalScope().client.isEnabled)
+  }
+
+  @Test
+  fun `init persists pre-init global scope environment`() {
+    val options =
+      SentryOptions().apply {
+        dsn = this@SentryTest.dsn
+        cacheDirPath = getTempPath()
+        executorService = ImmediateExecutorService()
+        addScopeObserver(PersistingScopeObserver(this))
+      }
+    Sentry.getGlobalScope().environment = "pre-init-environment"
+
+    try {
+      initForTest(options)
+
+      assertEquals(
+        "pre-init-environment",
+        PersistingScopeObserver(options)
+          .read(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String::class.java),
+      )
+    } finally {
+      Sentry.close()
+      Sentry.getGlobalScope().replaceOptions(SentryOptions.empty())
+      Sentry.getGlobalScope().environment = null
+    }
+  }
+
+  @Test
+  fun `manual Logs and Metrics reach transport when automatic collection is disabled`() {
+    val transport = mock<ITransport>()
+    val transportFactory = mock<ITransportFactory>()
+    whenever(transportFactory.create(any(), any())).thenReturn(transport)
+    initForTest {
+      it.dsn = dsn
+      it.logs.isEnabled = false
+      it.metrics.isEnabled = false
+      it.setTransportFactory(transportFactory)
+      it.shutdownTimeoutMillis = 5_000
+    }
+
+    Sentry.logger().info("manual log")
+    Sentry.metrics().count("manual metric")
+    Sentry.flush(5_000)
+
+    val envelopes = argumentCaptor<SentryEnvelope>()
+    verify(transport, atLeastOnce()).send(envelopes.capture())
+    val itemTypes =
+      envelopes.allValues.flatMap { envelope -> envelope.items.map { it.header.type } }
+    assertThat(itemTypes).containsAtLeast(SentryItemType.Log, SentryItemType.TraceMetric)
   }
 
   @Test
@@ -1434,6 +1489,93 @@ class SentryTest {
     assertNotSame(s1, s2)
   }
 
+  private fun initCapturingEvents(globalHubMode: Boolean): MutableList<SentryEvent> {
+    val events = mutableListOf<SentryEvent>()
+    initForTest(
+      { o ->
+        o.dsn = dsn
+        o.beforeSend = SentryOptions.BeforeSendCallback { event, _ ->
+          events.add(event)
+          null
+        }
+      },
+      globalHubMode,
+    )
+    return events
+  }
+
+  @Test
+  fun `withScope data is applied to events captured inside the callback`() {
+    for (globalHubMode in listOf(false, true)) {
+      val events = initCapturingEvents(globalHubMode)
+
+      Sentry.withScope { scope ->
+        scope.setTag("http-url", "https://example.com")
+        Sentry.captureException(RuntimeException("failed"))
+      }
+
+      assertThat(events.single().tags).containsEntry("http-url", "https://example.com")
+    }
+  }
+
+  @Test
+  fun `withIsolationScope data is applied to events captured inside the callback`() {
+    for (globalHubMode in listOf(false, true)) {
+      val events = initCapturingEvents(globalHubMode)
+
+      Sentry.withIsolationScope { scope ->
+        scope.setTag("http-url", "https://example.com")
+        Sentry.captureException(RuntimeException("failed"))
+      }
+
+      assertThat(events.single().tags).containsEntry("http-url", "https://example.com")
+    }
+  }
+
+  @Test
+  fun `withScope data does not leak into events captured after the callback`() {
+    for (globalHubMode in listOf(false, true)) {
+      val events = initCapturingEvents(globalHubMode)
+
+      Sentry.withScope { scope -> scope.setTag("http-url", "https://example.com") }
+      Sentry.captureException(RuntimeException("failed"))
+
+      assertThat(events.single().tags?.get("http-url")).isNull()
+    }
+  }
+
+  @Test
+  fun `in globalHubMode scopes are not forked for a thread that has none`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+
+    val fromOtherThread = CompletableFuture.supplyAsync { Sentry.getCurrentScopes() }.get()
+
+    assertSame(Sentry.getCurrentScopes(), fromOtherThread)
+  }
+
+  @Test
+  fun `in globalHubMode scopes left over from a closed SDK are ignored`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+    val stale = Sentry.forkedCurrentScope("stale")
+
+    Sentry.close()
+    // close only clears the storage of the calling thread, other threads may still hold stale ones
+    Sentry.setCurrentScopes(stale)
+
+    assertTrue(Sentry.getCurrentScopes().isNoOp)
+  }
+
+  @Test
+  fun `in globalHubMode scopes left over from a previous init are ignored`() {
+    initForTest({ o -> o.dsn = dsn }, true)
+    val stale = Sentry.forkedCurrentScope("stale")
+
+    initForTest({ o -> o.dsn = dsn }, true)
+    Sentry.setCurrentScopes(stale)
+
+    assertNotSame(stale, Sentry.getCurrentScopes())
+  }
+
   @Test
   fun `startProfiler starts the continuous profiler`() {
     val profiler = mock<IContinuousProfiler>()
@@ -1505,16 +1647,29 @@ class SentryTest {
   }
 
   @Test
-  fun `replay debug masking is forwarded to replay controller`() {
+  fun `replay API is forwarded to replay controller`() {
     val replayController = mock<ReplayController>()
     initForTest {
       it.dsn = dsn
       it.setReplayController(replayController)
     }
-    Sentry.replay().enableDebugMaskingOverlay()
-    verify(replayController).enableDebugMaskingOverlay()
+    Sentry.replay().start()
+    Sentry.replay().startBuffering()
+    Sentry.replay().pause()
+    Sentry.replay().resume()
+    Sentry.replay().flush()
+    Sentry.replay().stop()
 
+    verify(replayController).start()
+    verify(replayController).startBuffering()
+    verify(replayController).pause()
+    verify(replayController).resume()
+    verify(replayController).flush()
+    verify(replayController).stop()
+
+    Sentry.replay().enableDebugMaskingOverlay()
     Sentry.replay().disableDebugMaskingOverlay()
+    verify(replayController).enableDebugMaskingOverlay()
     verify(replayController).disableDebugMaskingOverlay()
   }
 
@@ -1751,7 +1906,9 @@ class SentryTest {
     }
 
     verify(customStorage).init()
-    verify(customStorage).set(any())
+    // get() always returns null here, so every later getCurrentScopes() call forks the root scopes
+    // and calls set() again, e.g. the BackpressureMonitor health check on the executor
+    verify(customStorage, atLeastOnce()).set(any())
   }
 
   @Test

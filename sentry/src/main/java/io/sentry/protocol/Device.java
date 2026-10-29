@@ -129,6 +129,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
   private @Nullable String locale;
 
   private @Nullable String connectionType;
+  private @Nullable String connectionEffectiveType;
 
   /** battery's temperature in celsius */
   private @Nullable Float batteryTemperature;
@@ -179,6 +180,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.bootTime = device.bootTime;
     this.id = device.id;
     this.connectionType = device.connectionType;
+    this.connectionEffectiveType = device.connectionEffectiveType;
     this.batteryTemperature = device.batteryTemperature;
     this.batteryLevel = device.batteryLevel;
     final String[] archsRef = device.archs;
@@ -421,6 +423,20 @@ public final class Device implements JsonUnknown, JsonSerializable {
     this.connectionType = connectionType;
   }
 
+  /**
+   * The generation of the cellular network technology, for example {@code 4g} or {@code 5g}. Maps
+   * to the {@code network.connection.effective_type} attribute.
+   *
+   * @return the effective connection type or {@code null} if not set
+   */
+  public @Nullable String getConnectionEffectiveType() {
+    return connectionEffectiveType;
+  }
+
+  public void setConnectionEffectiveType(final @Nullable String connectionEffectiveType) {
+    this.connectionEffectiveType = connectionEffectiveType;
+  }
+
   public @Nullable Float getBatteryTemperature() {
     return batteryTemperature;
   }
@@ -494,6 +510,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
         && Objects.equals(id, device.id)
         && Objects.equals(locale, device.locale)
         && Objects.equals(connectionType, device.connectionType)
+        && Objects.equals(connectionEffectiveType, device.connectionEffectiveType)
         && Objects.equals(batteryTemperature, device.batteryTemperature)
         && Objects.equals(processorCount, device.processorCount)
         && Objects.equals(processorFrequency, device.processorFrequency)
@@ -533,6 +550,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
             id,
             locale,
             connectionType,
+            connectionEffectiveType,
             batteryTemperature,
             processorCount,
             processorFrequency,
@@ -596,6 +614,7 @@ public final class Device implements JsonUnknown, JsonSerializable {
     public static final String TIMEZONE = "timezone";
     public static final String ID = "id";
     public static final String CONNECTION_TYPE = "connection_type";
+    public static final String CONNECTION_EFFECTIVE_TYPE = "connection_effective_type";
     public static final String BATTERY_TEMPERATURE = "battery_temperature";
     public static final String LOCALE = "locale";
     public static final String PROCESSOR_COUNT = "processor_count";
@@ -691,6 +710,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
     }
     if (connectionType != null) {
       writer.name(JsonKeys.CONNECTION_TYPE).value(connectionType);
+    }
+    if (connectionEffectiveType != null) {
+      writer.name(JsonKeys.CONNECTION_EFFECTIVE_TYPE).value(connectionEffectiveType);
     }
     if (batteryTemperature != null) {
       writer.name(JsonKeys.BATTERY_TEMPERATURE).value(batteryTemperature);
@@ -839,6 +861,9 @@ public final class Device implements JsonUnknown, JsonSerializable {
             break;
           case JsonKeys.CONNECTION_TYPE:
             device.connectionType = reader.nextStringOrNull();
+            break;
+          case JsonKeys.CONNECTION_EFFECTIVE_TYPE:
+            device.connectionEffectiveType = reader.nextStringOrNull();
             break;
           case JsonKeys.BATTERY_TEMPERATURE:
             device.batteryTemperature = reader.nextFloatOrNull();

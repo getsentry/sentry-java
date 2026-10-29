@@ -13,6 +13,8 @@ body:
         - sentry-jdbc
         - sentry-apollo
         - sentry-apollo-3
+        - sentry-apollo-4
+        - sentry-apollo-5
         - sentry-kotlin-extensions
         - sentry-opentelemetry-agent
         - sentry-opentelemetry-agentless

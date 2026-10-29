@@ -15,17 +15,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versions:
+    runs-on: ubuntu-latest
+    name: Spring Boot 3.x versions
+    outputs:
+      versions: ${{ steps.versions.outputs.versions }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: gradle
+
+      - name: Read Spring Boot 3.x versions
+        id: versions
+        run: echo "versions=$(jq -c .boot3 gradle/spring-boot-versions.json)" >> "$GITHUB_OUTPUT"
+
   spring-boot-3-matrix:
+    needs: versions
     timeout-minutes: 45
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '3.2.12', '3.3.13', '3.4.13', '3.5.13' ]
+        springboot-version: ${{ fromJSON(needs.versions.outputs.versions) }}
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
-      SENTRY_URL: http://127.0.0.1:8000
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
@@ -34,21 +50,11 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.10.5'
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
-
       - name: Set up Java
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
       - name: Cache buildSrc
@@ -58,83 +64,26 @@ jobs:
           key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Update Spring Boot 3.x version
+      - name: Test integration suites
+        # Project paths, unlike a bare task name, keep Gradle from configuring every project.
         run: |
-          springboot_version="${{ matrix.springboot-version }}"
-          perl -0pi -e 'BEGIN { $v = shift } s/^springboot3[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot3 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
-          echo "Updated Spring Boot 3.x version to $springboot_version"
-
-      - name: Build sample artifacts
-        run: |
-          ./gradlew \
-            :sentry-samples:sentry-samples-spring-boot-jakarta:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-jakarta:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-webflux-jakarta:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-webflux-jakarta:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-jakarta-opentelemetry-noagent:testClasses \
-            :sentry-samples:sentry-samples-spring-jakarta:war \
-            :sentry-samples:sentry-samples-spring-jakarta:testClasses \
-            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
-
-      - name: Test sentry-samples-spring-boot-jakarta
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-jakarta" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-boot-webflux-jakarta
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-webflux-jakarta" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init true
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-jakarta-opentelemetry" \
-            --agent true \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-boot-jakarta-opentelemetry agent init false
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-jakarta-opentelemetry" \
-            --agent true \
-            --auto-init "false"
-
-      - name: Test sentry-samples-spring-boot-jakarta-opentelemetry-noagent
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-jakarta-opentelemetry-noagent" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Test sentry-samples-spring-jakarta
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-jakarta" \
-            --agent false \
-            --auto-init "true"
+          task="allIntegrationTestsBoot${SPRINGBOOT_VERSION//./_}"
+          ./gradlew ":sentry-spring-jakarta:$task" ":sentry-spring-boot-jakarta:$task"
+        env:
+          SPRINGBOOT_VERSION: ${{ matrix.springboot-version }}
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-results-springboot-3-${{ matrix.springboot-version }}
           path: |
             **/build/reports/*
             **/build/test-results/**/*.xml
-            sentry-mock-server.txt
-            spring-server.txt
 
       - name: Test Report
         uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16

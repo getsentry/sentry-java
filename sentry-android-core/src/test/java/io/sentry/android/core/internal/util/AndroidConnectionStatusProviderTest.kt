@@ -17,6 +17,7 @@ import android.net.NetworkInfo
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.telephony.TelephonyManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
@@ -26,7 +27,8 @@ import io.sentry.android.core.BuildInfoProvider
 import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.SystemEventsBreadcrumbsIntegration
 import io.sentry.test.ImmediateExecutorService
-import io.sentry.transport.ICurrentDateProvider
+import io.sentry.time.TestMonotonicTicker
+import java.util.concurrent.TimeUnit.MINUTES
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -46,6 +48,7 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.mockingDetails
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -61,14 +64,12 @@ class AndroidConnectionStatusProviderTest {
   private lateinit var connectivityManager: ConnectivityManager
   private lateinit var networkInfo: NetworkInfo
   private lateinit var buildInfo: BuildInfoProvider
-  private lateinit var timeProvider: ICurrentDateProvider
+  private lateinit var ticker: TestMonotonicTicker
   private lateinit var options: SentryOptions
   private lateinit var network: Network
   private lateinit var networkCapabilities: NetworkCapabilities
   private lateinit var logger: ILogger
   private lateinit var contextUtilsStaticMock: MockedStatic<ContextUtils>
-
-  private var currentTime = 1000L
 
   @BeforeTest
   fun beforeTest() {
@@ -96,16 +97,12 @@ class AndroidConnectionStatusProviderTest {
     whenever(networkCapabilities.hasCapability(NET_CAPABILITY_VALIDATED)).thenReturn(true)
     whenever(networkCapabilities.hasTransport(TRANSPORT_WIFI)).thenReturn(true)
 
-    timeProvider = mock()
-    whenever(timeProvider.currentTimeMillis).thenAnswer { currentTime }
+    ticker = TestMonotonicTicker()
 
     logger = mock()
     options = SentryOptions()
     options.setLogger(logger)
     options.executorService = ImmediateExecutorService()
-
-    // Reset current time for each test to ensure cache isolation
-    currentTime = 1000L
 
     // Mock ContextUtils to return foreground importance
     contextUtilsStaticMock = mockStatic(ContextUtils::class.java)
@@ -120,7 +117,7 @@ class AndroidConnectionStatusProviderTest {
     AppState.getInstance().registerLifecycleObserver(options)
 
     connectionStatusProvider =
-      AndroidConnectionStatusProvider(contextMock, options, buildInfo, timeProvider)
+      AndroidConnectionStatusProvider(contextMock, options, buildInfo, ticker)
   }
 
   @AfterTest
@@ -144,6 +141,10 @@ class AndroidConnectionStatusProviderTest {
   @Test
   fun `When network is active but not connected with permission, return DISCONNECTED for isConnected`() {
     whenever(networkInfo.isConnected).thenReturn(false)
+    // buildInfo reports API 24, so the provider reads NetworkCapabilities rather than the legacy
+    // activeNetworkInfo. The active network has to report it cannot reach the internet too.
+    whenever(networkCapabilities.hasCapability(NET_CAPABILITY_INTERNET)).thenReturn(false)
+    whenever(networkCapabilities.hasCapability(NET_CAPABILITY_VALIDATED)).thenReturn(false)
 
     assertEquals(
       IConnectionStatusProvider.ConnectionStatus.DISCONNECTED,
@@ -195,7 +196,7 @@ class AndroidConnectionStatusProviderTest {
 
     // Create a new provider with the null connectivity manager
     val providerWithNullConnectivity =
-      AndroidConnectionStatusProvider(nullConnectivityContext, options, buildInfo, timeProvider)
+      AndroidConnectionStatusProvider(nullConnectivityContext, options, buildInfo, ticker)
 
     assertEquals(
       IConnectionStatusProvider.ConnectionStatus.UNKNOWN,
@@ -253,6 +254,78 @@ class AndroidConnectionStatusProviderTest {
     assertEquals("cellular", connectionStatusProvider.connectionType)
   }
 
+  /// Lets a test reject work only after the setup that needs a working executor is done.
+  @Test
+  @Config(sdk = [Build.VERSION_CODES.S])
+  fun `When the network callback cannot be registered, the telephony listener is not started`() {
+    // Without ACCESS_NETWORK_STATE the network callback registration fails, and onBackground skips
+    // unregistering while there is no network callback, so the listener must not be started here.
+    val telephonyManager = mock<TelephonyManager>()
+    whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
+      .thenReturn(telephonyManager)
+    whenever(
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+      )
+      .thenReturn(PERMISSION_DENIED)
+    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
+
+    val provider = AndroidConnectionStatusProvider(contextMock, options, buildInfo, ticker)
+
+    verify(telephonyManager, never()).registerTelephonyCallback(any(), any())
+    provider.close()
+  }
+
+  @Test
+  fun `When on cellular with a known technology, the effective type is the generation`() {
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(false)
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(false)
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
+    val telephonyManager = mock<TelephonyManager>()
+    whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
+      .thenReturn(telephonyManager)
+    whenever(contextMock.checkPermission(eq(Manifest.permission.READ_PHONE_STATE), any(), any()))
+      .thenReturn(PERMISSION_GRANTED)
+    whenever(telephonyManager.dataNetworkType).thenReturn(TelephonyManager.NETWORK_TYPE_NR)
+
+    // The connection type keeps its documented values, the generation is reported separately.
+    assertEquals("cellular", connectionStatusProvider.connectionType)
+    assertEquals("5g", connectionStatusProvider.connection.effectiveType)
+  }
+
+  @Test
+  fun `When the cellular network technology is unknown, the effective type is null`() {
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(false)
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_ETHERNET))).thenReturn(false)
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_CELLULAR))).thenReturn(true)
+    val telephonyManager = mock<TelephonyManager>()
+    whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
+      .thenReturn(telephonyManager)
+    whenever(contextMock.checkPermission(eq(Manifest.permission.READ_PHONE_STATE), any(), any()))
+      .thenReturn(PERMISSION_DENIED)
+    whenever(
+        contextMock.checkPermission(eq(Manifest.permission.READ_BASIC_PHONE_STATE), any(), any())
+      )
+      .thenReturn(PERMISSION_DENIED)
+
+    assertEquals("cellular", connectionStatusProvider.connectionType)
+    assertNull(connectionStatusProvider.connection.effectiveType)
+    verify(telephonyManager, never()).dataNetworkType
+  }
+
+  @Test
+  fun `When not on cellular, the effective type is null`() {
+    whenever(networkCapabilities.hasTransport(eq(TRANSPORT_WIFI))).thenReturn(true)
+    val telephonyManager = mock<TelephonyManager>()
+    whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
+      .thenReturn(telephonyManager)
+    whenever(contextMock.checkPermission(eq(Manifest.permission.READ_PHONE_STATE), any(), any()))
+      .thenReturn(PERMISSION_GRANTED)
+    whenever(telephonyManager.dataNetworkType).thenReturn(TelephonyManager.NETWORK_TYPE_NR)
+
+    assertEquals("wifi", connectionStatusProvider.connectionType)
+    assertNull(connectionStatusProvider.connection.effectiveType)
+  }
+
   @Test
   fun `unregisterNetworkCallback calls connectivityManager unregisterDefaultNetworkCallback`() {
     whenever(contextMock.getSystemService(any())).thenReturn(connectivityManager)
@@ -307,6 +380,27 @@ class AndroidConnectionStatusProviderTest {
   }
 
   @Test
+  fun `an unpopulated cache is not treated as fresh shortly after boot`() {
+    whenever(networkInfo.isConnected).thenReturn(true)
+
+    // elapsedRealtimeNanos() counts from boot, so a provider created moments after boot sees a
+    // tick near zero. The cache is still empty and must not be read as up to date.
+    val provider =
+      AndroidConnectionStatusProvider(contextMock, options, buildInfo, TestMonotonicTicker())
+
+    val callsBefore =
+      mockingDetails(connectivityManager).invocations.count { it.method.name == "getActiveNetwork" }
+
+    assertEquals(IConnectionStatusProvider.ConnectionStatus.CONNECTED, provider.connectionStatus)
+
+    val callsAfter =
+      mockingDetails(connectivityManager).invocations.count { it.method.name == "getActiveNetwork" }
+    assertTrue(callsAfter > callsBefore, "An empty cache must be populated before it is read")
+
+    provider.close()
+  }
+
+  @Test
   fun `cache TTL works correctly`() {
     // Setup: Mock network info to return connected
     whenever(networkInfo.isConnected).thenReturn(true)
@@ -323,7 +417,7 @@ class AndroidConnectionStatusProviderTest {
       mockingDetails(connectivityManager).invocations.count { it.method.name == "getActiveNetwork" }
 
     // Advance time by 1 minute (less than 2 minute TTL)
-    currentTime += 60 * 1000L
+    ticker.advance(1, MINUTES)
 
     // Second call should use cache - no additional calls to getActiveNetwork
     val secondResult = connectionStatusProvider.connectionStatus
@@ -336,7 +430,7 @@ class AndroidConnectionStatusProviderTest {
     assertEquals(initialCallCount, callCountAfterSecond, "Second call should use cache")
 
     // Advance time beyond TTL (total 3 minutes)
-    currentTime += 2 * 60 * 1000L
+    ticker.advance(2, MINUTES)
 
     // Third call should refresh cache - should make new calls to getActiveNetwork
     val thirdResult = connectionStatusProvider.connectionStatus
@@ -543,7 +637,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(connectivityManager.getNetworkCapabilities(any())).thenReturn(goodCaps)
 
     // Force cache invalidation by advancing time beyond TTL
-    currentTime += 3 * 60 * 1000L // 3 minutes
+    ticker.advance(3, MINUTES)
 
     // Should return CONNECTED for good capabilities
     assertEquals(
@@ -560,7 +654,7 @@ class AndroidConnectionStatusProviderTest {
     whenever(connectivityManager.getNetworkCapabilities(any())).thenReturn(unvalidatedCaps)
 
     // Force cache invalidation again
-    currentTime += 3 * 60 * 1000L
+    ticker.advance(3, MINUTES)
 
     assertEquals(
       IConnectionStatusProvider.ConnectionStatus.DISCONNECTED,

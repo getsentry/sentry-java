@@ -14,6 +14,7 @@ import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import com.apollographql.apollo.request.RequestHeaders
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.ISpan
@@ -24,6 +25,7 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
+import io.sentry.clientreport.DiscardReason
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
@@ -42,7 +44,17 @@ class SentryApolloInterceptor(
     }
   }
 
+  private var attachTracingHeaders: Boolean = true
+
   constructor(scopes: IScopes) : this(scopes, null)
+
+  constructor(
+    scopes: IScopes = ScopesAdapter.getInstance(),
+    beforeSpan: BeforeSpanCallback? = null,
+    attachTracingHeaders: Boolean,
+  ) : this(scopes, beforeSpan) {
+    this.attachTracingHeaders = attachTracingHeaders
+  }
 
   constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
@@ -74,7 +86,9 @@ class SentryApolloInterceptor(
       val requestWithHeader = request.toBuilder().requestHeaders(headers).build()
 
       span.setData("operationId", requestWithHeader.operation.operationId())
-      span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
+      if (scopes.options.dataCollectionResolver.isGraphqlVariablesWithLegacyAlways) {
+        span.setData("variables", requestWithHeader.operation.variables().valueMap().toString())
+      }
 
       chain.proceedAsync(
         requestWithHeader,
@@ -130,7 +144,7 @@ class SentryApolloInterceptor(
   private fun addTracingHeaders(request: InterceptorRequest, span: ISpan?): RequestHeaders {
     val requestHeaderBuilder = request.requestHeaders.toBuilder()
 
-    if (scopes.options.isTraceSampling && !isIgnored()) {
+    if (attachTracingHeaders && scopes.options.isTraceSampling && !isIgnored()) {
       // we have no access to URI, no way to verify tracing origins
       TracingUtils.trace(
           scopes,
@@ -173,9 +187,17 @@ class SentryApolloInterceptor(
   ) {
     var newSpan: ISpan? = span
     if (beforeSpan != null) {
+      val wasSampled = span.isSampled == true
       try {
         newSpan = beforeSpan.execute(span, request, response)
       } catch (e: Exception) {
+        span.spanContext.sampled = false
+        if (wasSampled) {
+          scopes.options.clientReportRecorder.recordLostEvent(
+            DiscardReason.CALLBACK_ERROR,
+            DataCategory.Span,
+          )
+        }
         scopes.options.logger.log(
           SentryLevel.ERROR,
           "An error occurred while executing beforeSpan on ApolloInterceptor",
@@ -196,7 +218,12 @@ class SentryApolloInterceptor(
         val httpRequest = httpResponse.request()
 
         val breadcrumb =
-          Breadcrumb.http(httpRequest.url().toString(), httpRequest.method(), httpResponse.code())
+          Breadcrumb.http(
+            httpRequest.url().toString(),
+            httpRequest.method(),
+            httpResponse.code(),
+            scopes.options.dataCollectionResolver,
+          )
 
         httpRequest.body()?.contentLength().ifHasValidLength { contentLength ->
           breadcrumb.setData("request_body_size", contentLength)

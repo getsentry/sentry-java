@@ -8,12 +8,13 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
-  // TODO: enable it later
-  //    alias(libs.plugins.detekt)
+  alias(libs.plugins.detekt)
+  id("io.sentry.api-validation")
 }
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
   namespace = "io.sentry.android.replay"
 
   defaultConfig {
@@ -83,8 +84,9 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.awaitility.kotlin)
+  testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(libs.androidx.compose.ui)
   testImplementation(libs.androidx.compose.foundation)
   testImplementation(libs.androidx.compose.foundation.layout)

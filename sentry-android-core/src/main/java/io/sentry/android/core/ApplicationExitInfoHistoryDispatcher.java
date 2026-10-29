@@ -14,6 +14,7 @@ import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.protocol.SentryId;
 import io.sentry.transport.ICurrentDateProvider;
+import io.sentry.util.HintUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -23,6 +24,23 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Shared startup-time pipeline for reporting process deaths recovered from Android's {@link
+ * ApplicationExitInfo} history.
+ *
+ * <p>This class provides the generic flow used by integrations like ANR, tombstone, and
+ * MemoryLimiter recovery. That flow involves:
+ *
+ * <ul>
+ *   <li>reading the system's historical exit list;
+ *   <li>finding matching records through an {@link ApplicationExitInfoPolicy};
+ *   <li>skipping exits that are too old or have already been reported; and
+ *   <li>capturing synthetic Sentry events for the remaining matches.
+ * </ul>
+ *
+ * <p>The {@code ApplicationExitInfoPolicy} provides the exit-specific rules, while the dispatcher
+ * owns the lifecycle and bookkeeping around them.
+ */
 @ApiStatus.Internal
 final class ApplicationExitInfoHistoryDispatcher implements Runnable {
 
@@ -69,7 +87,13 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
 
     waitPreviousSessionFlush();
 
-    final List<ApplicationExitInfo> exitInfos = new ArrayList<>(applicationExitInfoList);
+    final List<ApplicationExitInfo> exitInfos = new ArrayList<>(applicationExitInfoList.size());
+    for (final ApplicationExitInfo exitInfo : applicationExitInfoList) {
+      if (exitInfo != null) {
+        exitInfos.add(exitInfo);
+      }
+    }
+
     final @Nullable Long lastReportedTimestamp = policy.getLastReportedTimestamp();
 
     final ApplicationExitInfo latest = removeLatest(exitInfos);
@@ -134,7 +158,7 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
       final @NotNull List<ApplicationExitInfo> exitInfos) {
     for (Iterator<ApplicationExitInfo> it = exitInfos.iterator(); it.hasNext(); ) {
       ApplicationExitInfo applicationExitInfo = it.next();
-      if (applicationExitInfo.getReason() == policy.getTargetReason()) {
+      if (policy.matches(applicationExitInfo)) {
         it.remove();
         return applicationExitInfo;
       }
@@ -148,7 +172,7 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
       final @Nullable Long lastReportedTimestamp) {
     Collections.reverse(exitInfos);
     for (ApplicationExitInfo applicationExitInfo : exitInfos) {
-      if (applicationExitInfo.getReason() == policy.getTargetReason()) {
+      if (policy.matches(applicationExitInfo)) {
         if (applicationExitInfo.getTimestamp() < threshold) {
           options
               .getLogger()
@@ -177,6 +201,7 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
     }
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.R)
   private void report(final @NotNull ApplicationExitInfo exitInfo, final boolean enrich) {
     final @Nullable Report report = policy.buildReport(exitInfo, enrich);
 
@@ -186,7 +211,28 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
 
     final @NotNull SentryId sentryId = scopes.captureEvent(report.getEvent(), report.getHint());
     final boolean isEventDropped = sentryId.equals(SentryId.EMPTY_ID);
-    if (!isEventDropped) {
+    if (isEventDropped) {
+      // A dropped event never reaches the envelope disk cache, which is where the last reported
+      // marker is normally written. Without writing it here, the very same exit would be turned
+      // into an event again on the next app start, no matter why it was dropped. Only a technical
+      // failure to hand the event over keeps the exit eligible for another attempt.
+      if (HintUtils.isCaptureFailed(report.getHint())) {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Capturing the %s event failed, leaving the exit for the next app start.",
+                policy.getLabel());
+      } else {
+        options
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "%s event was dropped, marking the exit as reported.",
+                policy.getLabel());
+        policy.markReported(exitInfo.getTimestamp());
+      }
+    } else {
       final @Nullable BlockingFlushHint flushHint = report.getFlushHint();
       if (flushHint != null && !flushHint.waitFlush()) {
         options
@@ -200,17 +246,43 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
     }
   }
 
+  /**
+   * Exit-specific contract for the shared {@link ApplicationExitInfo} recovery pipeline.
+   *
+   * <p>{@link ApplicationExitInfoHistoryDispatcher} owns the generic startup flow for recovering
+   * past process deaths from Android's historical exit list. An {@code ApplicationExitInfoPolicy}
+   * provides the rules for a given exit family, including how to recognize matching records,
+   * whether older matches should also be reported, how deduplication is tracked, and how matching
+   * record is turned into a synthetic Sentry event.
+   */
   interface ApplicationExitInfoPolicy {
+
+    /** Returns the human-readable label used in dispatcher logs for this exit family. */
     @NotNull
     String getLabel();
 
-    int getTargetReason();
+    /** Returns {@code true} when the given {@link ApplicationExitInfo} belongs to this policy. */
+    boolean matches(@NotNull ApplicationExitInfo exitInfo);
 
+    /** Returns whether older matching exits should be reported in addition to the latest one. */
     boolean shouldReportHistorical();
 
+    /** Returns the timestamp of the most recently reported matching exit, if one was recorded. */
     @Nullable
     Long getLastReportedTimestamp();
 
+    /**
+     * Records {@code timestamp} as the last reported matching exit, so it is not reported again.
+     */
+    void markReported(long timestamp);
+
+    /**
+     * Builds the synthetic report for a matching exit.
+     *
+     * <p>{@code enrich} indicates whether the dispatcher is reporting the latest recovered exit,
+     * which may be backfilled with persisted launch state, or an older historical one, which is
+     * typically kept leaner.
+     */
     @Nullable
     Report buildReport(@NotNull ApplicationExitInfo exitInfo, boolean enrich);
   }

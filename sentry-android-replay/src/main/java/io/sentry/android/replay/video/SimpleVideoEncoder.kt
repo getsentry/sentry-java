@@ -37,6 +37,7 @@ import android.media.MediaFormat
 import android.os.Build
 import android.view.Surface
 import io.sentry.SentryLevel.DEBUG
+import io.sentry.SentryLevel.WARNING
 import io.sentry.SentryOptions
 import io.sentry.android.replay.util.SystemProperties
 import java.io.File
@@ -44,6 +45,16 @@ import java.nio.ByteBuffer
 import kotlin.LazyThreadSafetyMode.NONE
 
 private const val TIMEOUT_USEC = 100_000L
+
+/**
+ * How many consecutive [MediaCodec.dequeueOutputBuffer] calls may come back without producing
+ * anything before we give up on the encoder. At [TIMEOUT_USEC] per call that's ~1s.
+ *
+ * Some hardware encoders never emit [MediaCodec.BUFFER_FLAG_END_OF_STREAM] after
+ * [MediaCodec.signalEndOfInputStream], which used to spin the drain loop forever while holding the
+ * encoder lock, wedging the whole replay pipeline (and with it the app's lifecycle callbacks).
+ */
+private const val MAX_EOS_STALL_ITERATIONS = 10
 
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
@@ -166,25 +177,8 @@ internal class SimpleVideoEncoder(
   }
 
   fun encode(image: Bitmap) {
-    /**
-     * it seems that Xiaomi devices have problems with hardware canvas, so we have to use lockCanvas
-     * instead https://stackoverflow.com/a/73520742
-     * ---
-     * Same for Motorola devices.
-     * ---
-     * As for the Spreadtrum/Unisoc chipset, it can be spread across various devices, so we have to
-     * check the SOC_MANUFACTURER property, as the manufacturer name might have changed.
-     * https://github.com/getsentry/sentry-android-gradle-plugin/issues/861#issuecomment-2867021256
-     */
     val canvas =
-      if (
-        Build.MANUFACTURER.contains("xiaomi", ignoreCase = true) ||
-          Build.MANUFACTURER.contains("motorola", ignoreCase = true) ||
-          SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER)
-            .equals("spreadtrum", ignoreCase = true) ||
-          SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER)
-            .equals("unisoc", ignoreCase = true)
-      ) {
+      if (shouldUseSoftwareCanvas()) {
         surface?.lockCanvas(null)
       } else {
         surface?.lockHardwareCanvas()
@@ -214,19 +208,26 @@ internal class SimpleVideoEncoder(
       mediaCodec.signalEndOfInputStream()
     }
     var encoderOutputBuffers: Array<ByteBuffer?>? = mediaCodec.outputBuffers
+    // counts consecutive iterations that made no progress, so a codec that never signals EOS can't
+    // spin us forever, see MAX_EOS_STALL_ITERATIONS
+    var stalledIterations = 0
     while (true) {
       val encoderStatus: Int = mediaCodec.dequeueOutputBuffer(bufferInfo, TIMEOUT_USEC)
       if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
         // no output available yet
         if (!endOfStream) {
           break // out of while
-        } else if (options.sessionReplay.isDebug) {
+        }
+        stalledIterations++
+        if (options.sessionReplay.isDebug) {
           options.logger.log(DEBUG, "[Encoder]: no output available, spinning to await EOS")
         }
       } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+        stalledIterations = 0
         // not expected for an encoder
         encoderOutputBuffers = mediaCodec.outputBuffers
       } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+        stalledIterations = 0
         // should happen before receiving buffers, and should only happen once
         if (frameMuxer.isStarted()) {
           throw RuntimeException("format changed twice")
@@ -245,8 +246,10 @@ internal class SimpleVideoEncoder(
             "[Encoder]: unexpected result from encoder.dequeueOutputBuffer: $encoderStatus",
           )
         }
-        // let's ignore it
+        // let's ignore it, but still count it as no progress so we can't loop on it forever
+        stalledIterations++
       } else {
+        stalledIterations = 0
         val encodedData =
           encoderOutputBuffers?.get(encoderStatus)
             ?: throw RuntimeException("encoderOutputBuffer $encoderStatus was null")
@@ -279,6 +282,14 @@ internal class SimpleVideoEncoder(
           break // out of while
         }
       }
+
+      if (stalledIterations >= MAX_EOS_STALL_ITERATIONS) {
+        options.logger.log(
+          WARNING,
+          "[Encoder]: encoder made no progress for $stalledIterations iterations, dropping the remaining frames",
+        )
+        break // out of while
+      }
     }
   }
 
@@ -309,6 +320,34 @@ internal class SimpleVideoEncoder(
     }
   }
 }
+
+/**
+ * Whether frames should be drawn onto the encoder's input surface with a software canvas
+ * ([Surface.lockCanvas]) instead of a hardware one ([Surface.lockHardwareCanvas]).
+ *
+ * It seems that Xiaomi devices have problems with hardware canvas, so we have to use lockCanvas
+ * instead https://stackoverflow.com/a/73520742
+ * ---
+ * Same for Motorola devices.
+ * ---
+ * As for the Spreadtrum/Unisoc chipset, it can be spread across various devices, so we have to
+ * check the SOC_MANUFACTURER property, as the manufacturer name might have changed.
+ * https://github.com/getsentry/sentry-android-gradle-plugin/issues/861#issuecomment-2867021256
+ * ---
+ * On the Android Emulator (goldfish/ranchu), a hardware canvas makes hwui own an EGL window surface
+ * on the input surface. The emulator's EGL driver keeps a dequeued buffer on it and cancels that
+ * buffer when the surface is destroyed, which can crash natively in eglDestroySurface once the
+ * encoder has been torn down. https://github.com/getsentry/sentry-java/issues/6279
+ */
+internal fun shouldUseSoftwareCanvas(): Boolean =
+  Build.MANUFACTURER.contains("xiaomi", ignoreCase = true) ||
+    Build.MANUFACTURER.contains("motorola", ignoreCase = true) ||
+    SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER)
+      .equals("spreadtrum", ignoreCase = true) ||
+    SystemProperties.get(SystemProperties.Property.SOC_MANUFACTURER)
+      .equals("unisoc", ignoreCase = true) ||
+    Build.HARDWARE.contains("goldfish", ignoreCase = true) ||
+    Build.HARDWARE.contains("ranchu", ignoreCase = true)
 
 @SuppressLint("UseRequiresApi")
 @TargetApi(24)
