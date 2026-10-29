@@ -386,6 +386,17 @@ public final class SentryTracer implements ITransaction {
     return createChild(parentSpanId, operation, description, spanOptions);
   }
 
+  @NotNull
+  ISpan startChild(
+      final @NotNull SpanId parentSpanId,
+      final @NotNull String operation,
+      final @Nullable String description,
+      final @Nullable SentryDate timestamp,
+      final @NotNull SpanOptions spanOptions) {
+    spanOptions.setStartTimestamp(timestamp);
+    return createChild(parentSpanId, operation, description, spanOptions);
+  }
+
   /**
    * Starts a child Span with given trace id and parent span id.
    *
@@ -584,9 +595,16 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp) {
-    final @NotNull SpanOptions spanOptions = new SpanOptions();
-    spanOptions.setStartTimestamp(timestamp);
-    return root.startChild(operation, description, spanOptions);
+    return startChild(operation, description, timestamp, new SpanOptions());
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      final @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull SpanOptions spanOptions) {
+    return root.startChild(operation, description, timestamp, spanOptions);
   }
 
   @Override

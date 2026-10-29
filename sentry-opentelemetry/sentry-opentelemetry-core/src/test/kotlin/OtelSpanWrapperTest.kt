@@ -21,7 +21,7 @@ import org.mockito.kotlin.whenever
 
 class OtelSpanWrapperTest {
   @Test
-  fun `startChild with timestamp forwards timestamp`() {
+  fun `startChild with timestamp and options forwards both`() {
     val otelSpan = mock<ReadWriteSpan>()
     whenever(otelSpan.spanContext)
       .thenReturn(
@@ -43,14 +43,16 @@ class OtelSpanWrapperTest {
     val expectedChild = mock<ISpan>()
     whenever(spanFactory.createSpan(eq(scopes), any(), any(), eq(parent))).thenReturn(expectedChild)
     val timestamp = SentryLongDate(1234)
+    val suppliedSpanOptions = SpanOptions()
 
-    val child = parent.startChild("child-op", "description", timestamp)
+    val child = parent.startChild("child-op", "description", timestamp, suppliedSpanOptions)
 
     val spanOptions = argumentCaptor<SpanOptions>()
     val spanContext = argumentCaptor<io.sentry.SpanContext>()
     verify(spanFactory)
       .createSpan(eq(scopes), spanOptions.capture(), spanContext.capture(), eq(parent))
     assertThat(child).isSameInstanceAs(expectedChild)
+    assertThat(spanOptions.firstValue).isSameInstanceAs(suppliedSpanOptions)
     assertThat(spanOptions.firstValue.startTimestamp).isSameInstanceAs(timestamp)
     assertThat(spanContext.firstValue.operation).isEqualTo("child-op")
     assertThat(spanContext.firstValue.description).isEqualTo("description")

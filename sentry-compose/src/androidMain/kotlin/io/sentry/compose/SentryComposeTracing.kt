@@ -127,10 +127,8 @@ private fun recordCompositionSpan(
     .startChild(
       OP_COMPOSITION_SPAN,
       tag,
-      SpanOptions().apply {
-        origin = OP_TRACE_ORIGIN
-        this.startTimestamp = startTimestamp
-      },
+      startTimestamp,
+      SpanOptions().apply { origin = OP_TRACE_ORIGIN },
     )
     .run { finish(null, endTimestamp) }
 }
@@ -153,10 +151,8 @@ private fun recordRenderSpan(
     .startChild(
       OP_RENDER_SPAN,
       tag,
-      SpanOptions().apply {
-        origin = OP_TRACE_ORIGIN
-        this.startTimestamp = startTimestamp
-      },
+      startTimestamp,
+      SpanOptions().apply { origin = OP_TRACE_ORIGIN },
     )
     .run { finish(null, endTimestamp) }
 }
@@ -244,9 +240,9 @@ private class BucketSpans {
       ownerSpan.startChild(
         operation,
         description,
+        startTimestamp,
         SpanOptions().apply {
           origin = OP_TRACE_ORIGIN
-          this.startTimestamp = startTimestamp
           isTrimStart = true
           isTrimEnd = true
           isIdle = true

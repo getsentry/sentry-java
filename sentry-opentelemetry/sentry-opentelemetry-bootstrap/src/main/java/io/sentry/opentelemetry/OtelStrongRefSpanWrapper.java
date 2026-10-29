@@ -126,6 +126,15 @@ public final class OtelStrongRefSpanWrapper implements IOtelSpanWrapper {
 
   @Override
   public @NotNull ISpan startChild(
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull SpanOptions spanOptions) {
+    return delegate.startChild(operation, description, timestamp, spanOptions);
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
     return delegate.startChild(operation, description, timestamp);
   }

@@ -360,22 +360,24 @@ public final class ActivityLifecycleIntegration
 
         if (isAppStart) {
           if (!createStandaloneAppStart && !options.isEnableStandaloneAppStartTracing()) {
-            spanOptions.setStartTimestamp(appStartTime);
             appStartSpan =
                 transaction.startChild(
-                    getAppStartOp(coldStart), getAppStartDesc(coldStart), spanOptions);
+                    getAppStartOp(coldStart),
+                    getAppStartDesc(coldStart),
+                    appStartTime,
+                    spanOptions);
 
             finishAppStartSpan();
           }
         }
-        spanOptions.setStartTimestamp(ttidStartTime);
         final @NotNull ISpan ttidSpan =
-            transaction.startChild(TTID_OP, getTtidDesc(activityName), spanOptions);
+            transaction.startChild(TTID_OP, getTtidDesc(activityName), ttidStartTime, spanOptions);
         ttidSpanMap.put(activity, ttidSpan);
 
         if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
           final @NotNull ISpan ttfdSpan =
-              transaction.startChild(TTFD_OP, getTtfdDesc(activityName), spanOptions);
+              transaction.startChild(
+                  TTFD_OP, getTtfdDesc(activityName), ttidStartTime, spanOptions);
           try {
             ttfdSpanMap.put(activity, ttfdSpan);
             ttfdAutoCloseFuture =
@@ -1112,9 +1114,12 @@ public final class ActivityLifecycleIntegration
 
     final SpanOptions spanOptions = new SpanOptions();
     setSpanOrigin(spanOptions);
-    spanOptions.setStartTimestamp(AndroidDateUtils.getCurrentSentryDateTime());
     final @NotNull ISpan extendedSpan =
-        transaction.startChild(APP_START_EXTENDED_OP, APP_START_EXTENDED_DESC, spanOptions);
+        transaction.startChild(
+            APP_START_EXTENDED_OP,
+            APP_START_EXTENDED_DESC,
+            AndroidDateUtils.getCurrentSentryDateTime(),
+            spanOptions);
 
     return new AppStartExtension.ExtendedAppStart(transaction, extendedSpan);
   }

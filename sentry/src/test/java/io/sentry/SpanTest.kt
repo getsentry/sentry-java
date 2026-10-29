@@ -293,9 +293,8 @@ class SpanTest {
       span.startChild(
         "op1",
         "desc",
-        SpanOptions().apply {
-          startTimestamp = SentryLongDate(span.startDate.nanoTimestamp() - 1000L)
-        },
+        SentryLongDate(span.startDate.nanoTimestamp() - 1000L),
+        SpanOptions(),
       ) as Span
     child1.finish()
     span.finish(SpanStatus.OK)

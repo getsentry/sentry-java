@@ -52,6 +52,15 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   }
 
   @Override
+  public @NotNull ISpan startChild(
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull SpanOptions spanOptions) {
+    return rootSpan.startChild(operation, description, timestamp, spanOptions);
+  }
+
+  @Override
   public @NotNull ISpan startChild(@NotNull String operation, @Nullable String description) {
     return rootSpan.startChild(operation, description);
   }

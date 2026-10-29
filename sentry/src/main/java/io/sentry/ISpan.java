@@ -39,6 +39,14 @@ public interface ISpan {
   @NotNull
   ISpan startChild(@NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions);
 
+  @ApiStatus.Internal
+  @NotNull
+  ISpan startChild(
+      @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull SpanOptions spanOptions);
+
   /**
    * Starts a child Span.
    *
