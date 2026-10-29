@@ -50,7 +50,6 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull AtomicBoolean isDeadlineTimerRunning = new AtomicBoolean(false);
 
   private @NotNull TransactionNameSource transactionNameSource;
-  private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
   private final @Nullable CompositePerformanceCollector compositePerformanceCollector;
   private final @NotNull TransactionOptions transactionOptions;
@@ -77,7 +76,6 @@ public final class SentryTracer implements ITransaction {
     this.root = new Span(context, this, scopes, transactionOptions);
 
     this.name = context.getName();
-    this.instrumenter = context.getInstrumenter();
     this.scopes = scopes;
     // Let's collect performance data (cpu, ram, frames) only when the transaction is sampled
     this.compositePerformanceCollector =
@@ -394,34 +392,9 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String operation,
       final @Nullable String description,
       final @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter) {
-    final @NotNull SpanContext spanContext =
-        getSpanContext().copyForChild(operation, parentSpanId, null);
-    spanContext.setDescription(description);
-    spanContext.setInstrumenter(instrumenter);
-
-    final @NotNull SpanOptions spanOptions = new SpanOptions();
-    spanOptions.setStartTimestamp(timestamp);
-
-    return createChild(spanContext, spanOptions);
-  }
-
-  @NotNull
-  ISpan startChild(
-      final @NotNull SpanId parentSpanId,
-      final @NotNull String operation,
-      final @Nullable String description,
-      final @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter,
       final @NotNull SpanOptions spanOptions) {
-    final @NotNull SpanContext spanContext =
-        getSpanContext().copyForChild(operation, parentSpanId, null);
-    spanContext.setDescription(description);
-    spanContext.setInstrumenter(instrumenter);
-
     spanOptions.setStartTimestamp(timestamp);
-
-    return createChild(spanContext, spanOptions);
+    return createChild(parentSpanId, operation, description, spanOptions);
   }
 
   /**
@@ -442,7 +415,6 @@ public final class SentryTracer implements ITransaction {
     final @NotNull SpanContext spanContext =
         getSpanContext().copyForChild(operation, parentSpanId, null);
     spanContext.setDescription(description);
-    spanContext.setInstrumenter(Instrumenter.SENTRY);
 
     return createChild(spanContext, options);
   }
@@ -451,10 +423,6 @@ public final class SentryTracer implements ITransaction {
   private ISpan createChild(
       final @NotNull SpanContext spanContext, final @NotNull SpanOptions spanOptions) {
     if (root.isFinished()) {
-      return NoOpSpan.getInstance();
-    }
-
-    if (!this.instrumenter.equals(spanContext.getInstrumenter())) {
       return NoOpSpan.getInstance();
     }
 
@@ -624,76 +592,37 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter) {
-    return startChild(operation, description, timestamp, instrumenter, new SpanOptions());
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
-      final @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter,
-      @NotNull SpanOptions spanOptions) {
-    return createChild(operation, description, timestamp, instrumenter, spanOptions);
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
       final @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp) {
-    return createChild(operation, description, timestamp, Instrumenter.SENTRY, new SpanOptions());
+    return startChild(operation, description, timestamp, new SpanOptions());
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      final @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull SpanOptions spanOptions) {
+    return root.startChild(operation, description, timestamp, spanOptions);
   }
 
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    return startChild(operation, description, null, Instrumenter.SENTRY, new SpanOptions());
+    return root.startChild(operation, description);
   }
 
   @Override
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions) {
-    return createChild(operation, description, null, Instrumenter.SENTRY, spanOptions);
+    return root.startChild(operation, description, spanOptions);
   }
 
   @Override
   public @NotNull ISpan startChild(
       @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
     return createChild(spanContext, spanOptions);
-  }
-
-  private @NotNull ISpan createChild(
-      final @NotNull String operation,
-      final @Nullable String description,
-      @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter,
-      final @NotNull SpanOptions spanOptions) {
-    if (root.isFinished()) {
-      return NoOpSpan.getInstance();
-    }
-
-    if (!this.instrumenter.equals(instrumenter)) {
-      return NoOpSpan.getInstance();
-    }
-
-    if (children.size() < scopes.getOptions().getMaxSpans()) {
-      return root.startChild(operation, description, timestamp, instrumenter, spanOptions);
-    } else {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
-              operation,
-              description);
-      return NoOpSpan.getInstance();
-    }
   }
 
   @Override

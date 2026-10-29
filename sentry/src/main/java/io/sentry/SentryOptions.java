@@ -506,9 +506,6 @@ public class SentryOptions implements RateLimiterConfig {
   /** Enable or disable automatic breadcrumbs for User interactions */
   private boolean enableUserInteractionBreadcrumbs = true;
 
-  /** Which framework is responsible for instrumenting. */
-  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
-
   /** Contains a list of GestureTargetLocator instances used for user interaction tracking */
   private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
 
@@ -2630,32 +2627,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public void setEnableUserInteractionBreadcrumbs(boolean enableUserInteractionBreadcrumbs) {
     this.enableUserInteractionBreadcrumbs = enableUserInteractionBreadcrumbs;
-  }
-
-  /**
-   * Sets the instrumenter used for performance instrumentation.
-   *
-   * <p>If you set this to something other than {@link Instrumenter#SENTRY} Sentry will not create
-   * any transactions automatically nor will it create transactions if you call
-   * startTransaction(...), nor will it create child spans if you call startChild(...)
-   *
-   * @param instrumenter - the instrumenter to use
-   * @deprecated this should no longer be needed with our current OpenTelmetry integration. Use
-   *     {@link SentryOptions#setIgnoredSpanOrigins(List)} instead if you need fine grained control
-   *     over what integrations can create spans.
-   */
-  @Deprecated
-  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
-    this.instrumenter = instrumenter;
-  }
-
-  /**
-   * Returns the instrumenter used for performance instrumentation
-   *
-   * @return the configured instrumenter
-   */
-  public @NotNull Instrumenter getInstrumenter() {
-    return instrumenter;
   }
 
   /**

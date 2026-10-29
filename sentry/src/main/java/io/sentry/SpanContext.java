@@ -56,8 +56,6 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   private @Nullable Map<String, Object> unknown;
 
-  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
-
   protected @Nullable Baggage baggage;
 
   protected @NotNull IFeatureFlagBuffer featureFlags = SpanFeatureFlagBuffer.create();
@@ -254,14 +252,6 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   public void setOrigin(final @Nullable String origin) {
     this.origin = origin;
-  }
-
-  public @NotNull Instrumenter getInstrumenter() {
-    return instrumenter;
-  }
-
-  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
-    this.instrumenter = instrumenter;
   }
 
   public @Nullable Baggage getBaggage() {
