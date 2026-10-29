@@ -16,12 +16,13 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class OtelSpanWrapperTest {
   @Test
-  fun `startChild with timestamp and options forwards both`() {
+  fun `startChild with timestamp and options only overrides non-null timestamp`() {
     val otelSpan = mock<ReadWriteSpan>()
     whenever(otelSpan.spanContext)
       .thenReturn(
@@ -42,19 +43,28 @@ class OtelSpanWrapperTest {
     val parent = OtelSpanWrapper(otelSpan, scopes, SentryLongDate(0), null, null, null, null)
     val expectedChild = mock<ISpan>()
     whenever(spanFactory.createSpan(eq(scopes), any(), any(), eq(parent))).thenReturn(expectedChild)
-    val timestamp = SentryLongDate(1234)
-    val suppliedSpanOptions = SpanOptions()
+    val originalTimestamp = SentryLongDate(1234)
+    val timestamp = SentryLongDate(5678)
+    val suppliedSpanOptions = SpanOptions().apply { startTimestamp = originalTimestamp }
 
     val child = parent.startChild("child-op", "description", timestamp, suppliedSpanOptions)
+    val childWithoutTimestamp =
+      parent.startChild("second-child-op", "second-description", null, suppliedSpanOptions)
 
     val spanOptions = argumentCaptor<SpanOptions>()
     val spanContext = argumentCaptor<io.sentry.SpanContext>()
-    verify(spanFactory)
+    verify(spanFactory, times(2))
       .createSpan(eq(scopes), spanOptions.capture(), spanContext.capture(), eq(parent))
     assertThat(child).isSameInstanceAs(expectedChild)
-    assertThat(spanOptions.firstValue).isSameInstanceAs(suppliedSpanOptions)
-    assertThat(spanOptions.firstValue.startTimestamp).isSameInstanceAs(timestamp)
-    assertThat(spanContext.firstValue.operation).isEqualTo("child-op")
-    assertThat(spanContext.firstValue.description).isEqualTo("description")
+    assertThat(childWithoutTimestamp).isSameInstanceAs(expectedChild)
+    assertThat(spanOptions.allValues[0]).isNotSameInstanceAs(suppliedSpanOptions)
+    assertThat(spanOptions.allValues[0].startTimestamp).isSameInstanceAs(timestamp)
+    assertThat(spanOptions.allValues[1]).isNotSameInstanceAs(suppliedSpanOptions)
+    assertThat(spanOptions.allValues[1].startTimestamp).isSameInstanceAs(originalTimestamp)
+    assertThat(suppliedSpanOptions.startTimestamp).isSameInstanceAs(originalTimestamp)
+    assertThat(spanContext.allValues[0].operation).isEqualTo("child-op")
+    assertThat(spanContext.allValues[0].description).isEqualTo("description")
+    assertThat(spanContext.allValues[1].operation).isEqualTo("second-child-op")
+    assertThat(spanContext.allValues[1].description).isEqualTo("second-description")
   }
 }

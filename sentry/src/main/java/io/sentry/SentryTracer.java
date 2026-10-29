@@ -52,7 +52,10 @@ public final class SentryTracer implements ITransaction {
   private @NotNull TransactionNameSource transactionNameSource;
   private final @NotNull Contexts contexts = new Contexts();
   private final @Nullable CompositePerformanceCollector compositePerformanceCollector;
-  private final @NotNull TransactionOptions transactionOptions;
+  private final boolean waitForChildren;
+  private final @Nullable Long idleTimeout;
+  private final @Nullable Long deadlineTimeout;
+  private final @Nullable TransactionFinishedCallback transactionFinishedCallback;
 
   public SentryTracer(final @NotNull TransactionContext context, final @NotNull IScopes scopes) {
     this(context, scopes, new TransactionOptions(), null);
@@ -81,7 +84,10 @@ public final class SentryTracer implements ITransaction {
     this.compositePerformanceCollector =
         Boolean.TRUE.equals(isSampled()) ? compositePerformanceCollector : null;
     this.transactionNameSource = context.getTransactionNameSource();
-    this.transactionOptions = transactionOptions;
+    this.waitForChildren = transactionOptions.isWaitForChildren();
+    this.idleTimeout = transactionOptions.getIdleTimeout();
+    this.deadlineTimeout = transactionOptions.getDeadlineTimeout();
+    this.transactionFinishedCallback = transactionOptions.getTransactionFinishedCallback();
 
     setDefaultSpanData(root);
 
@@ -97,8 +103,7 @@ public final class SentryTracer implements ITransaction {
       this.compositePerformanceCollector.start(this);
     }
 
-    if (transactionOptions.getIdleTimeout() != null
-        || transactionOptions.getDeadlineTimeout() != null) {
+    if (idleTimeout != null || deadlineTimeout != null) {
       timersEnabled = true;
 
       scheduleDeadlineTimeout();
@@ -110,8 +115,6 @@ public final class SentryTracer implements ITransaction {
   public void scheduleFinish() {
     try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
       if (timersEnabled) {
-        final @Nullable Long idleTimeout = transactionOptions.getIdleTimeout();
-
         if (idleTimeout != null) {
           cancelIdleTimer();
           isIdleFinishTimerRunning.set(true);
@@ -145,9 +148,7 @@ public final class SentryTracer implements ITransaction {
   private void onDeadlineTimeoutReached() {
     final @Nullable SpanStatus status = getStatus();
     forceFinish(
-        (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
-        transactionOptions.getIdleTimeout() != null,
-        null);
+        (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED, idleTimeout != null, null);
     isDeadlineTimerRunning.set(false);
   }
 
@@ -195,14 +196,13 @@ public final class SentryTracer implements ITransaction {
 
     // auto-finish any idle spans first
     for (final Span span : children) {
-      if (span.getOptions().isIdle()) {
+      if (span.isIdle()) {
         span.finish((status != null) ? status : getSpanContext().status, finishTimestamp);
       }
     }
 
     this.finishStatus = FinishStatus.finishing(status);
-    if (!root.isFinished()
-        && (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished())) {
+    if (!root.isFinished() && (!waitForChildren || hasAllChildrenFinished())) {
 
       final @NotNull AtomicReference<List<PerformanceCollectionData>> performanceCollectionData =
           new AtomicReference<>();
@@ -218,7 +218,7 @@ public final class SentryTracer implements ITransaction {
             // Let's call the finishCallback here, when the root span has a finished date but it's
             // not finished, yet
             final @Nullable TransactionFinishedCallback finishedCallback =
-                transactionOptions.getTransactionFinishedCallback();
+                transactionFinishedCallback;
             if (finishedCallback != null) {
               finishedCallback.execute(this);
             }
@@ -274,7 +274,7 @@ public final class SentryTracer implements ITransaction {
         }
       }
 
-      if (dropIfNoChildren && children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
+      if (dropIfNoChildren && children.isEmpty() && idleTimeout != null) {
         // if it's an idle transaction which has no children, we drop it to save user's quota
         scopes
             .getOptions()
@@ -302,7 +302,7 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void scheduleDeadlineTimeout() {
-    final @Nullable Long deadlineTimeOut = transactionOptions.getDeadlineTimeout();
+    final @Nullable Long deadlineTimeOut = deadlineTimeout;
     if (deadlineTimeOut != null) {
       try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
         if (timersEnabled) {
@@ -393,8 +393,9 @@ public final class SentryTracer implements ITransaction {
       final @Nullable String description,
       final @Nullable SentryDate timestamp,
       final @NotNull SpanOptions spanOptions) {
-    spanOptions.setStartTimestamp(timestamp);
-    return createChild(parentSpanId, operation, description, spanOptions);
+    final @NotNull SpanOptions spanOptionsSnapshot = new SpanOptions(spanOptions);
+    spanOptionsSnapshot.setStartTimestamp(timestamp);
+    return createChild(parentSpanId, operation, description, spanOptionsSnapshot);
   }
 
   /**
@@ -449,11 +450,11 @@ public final class SentryTracer implements ITransaction {
                   compositePerformanceCollector.onSpanFinished(finishingSpan);
                 }
                 final FinishStatus finishStatus = this.finishStatus;
-                if (transactionOptions.getIdleTimeout() != null) {
+                if (idleTimeout != null) {
                   // if it's an idle transaction, no matter the status, we'll reset the timeout here
                   // so the transaction will either idle and finish itself, or a new child will be
                   // added and we'll wait for it again
-                  if (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished()) {
+                  if (!waitForChildren || hasAllChildrenFinished()) {
                     scheduleFinish();
                   }
                 } else if (finishStatus.isFinishing) {
@@ -475,13 +476,13 @@ public final class SentryTracer implements ITransaction {
       //                  compositePerformanceCollector.onSpanFinished(finishingSpan);
       //                }
       //                final FinishStatus finishStatus = this.finishStatus;
-      //                if (transactionOptions.getIdleTimeout() != null) {
+      //                if (idleTimeout != null) {
       //                  // if it's an idle transaction, no matter the status, we'll reset the
       // timeout here
       //                  // so the transaction will either idle and finish itself, or a new child
       // will be
       //                  // added and we'll wait for it again
-      //                  if (!transactionOptions.isWaitForChildren() || hasAllChildrenFinished()) {
+      //                  if (!waitForChildren || hasAllChildrenFinished()) {
       //                    scheduleFinish();
       //                  }
       //                } else if (finishStatus.isFinishing) {

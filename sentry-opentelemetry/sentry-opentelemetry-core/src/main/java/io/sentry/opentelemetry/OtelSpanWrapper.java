@@ -152,11 +152,11 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
       @Nullable String description,
       @Nullable SentryDate timestamp,
       @NotNull SpanOptions spanOptions) {
+    final @NotNull SpanOptions spanOptionsSnapshot = new SpanOptions(spanOptions);
     if (timestamp != null) {
-      spanOptions.setStartTimestamp(timestamp);
+      spanOptionsSnapshot.setStartTimestamp(timestamp);
     }
-
-    return startChild(operation, description, spanOptions);
+    return startChild(operation, description, spanOptionsSnapshot);
   }
 
   @Override
