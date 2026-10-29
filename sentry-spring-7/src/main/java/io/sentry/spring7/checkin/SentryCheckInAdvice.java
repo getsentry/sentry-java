@@ -92,12 +92,20 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         AnnotationUtils.findAnnotation(mostSpecificMethod, SentryCheckIn.class);
     if (checkInAnnotation == null) {
       if (monitorScheduledTasks && isScheduled(mostSpecificMethod)) {
-        return captureCheckIns(
-            invocation,
-            scheduledTaskSlug(
-                scheduledTaskName(invocation.getThis().getClass(), mostSpecificMethod)),
-            false,
-            monitorConfig(mostSpecificMethod));
+        final @NotNull String taskName =
+            scheduledTaskName(invocation.getThis().getClass(), mostSpecificMethod);
+        final @Nullable MonitorConfig monitorConfig = monitorConfig(mostSpecificMethod);
+        if (monitorConfig == null) {
+          scopes
+              .getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Not monitoring %s because Sentry Crons can't express its @Scheduled schedule.",
+                  taskName);
+          return invocation.proceed();
+        }
+        return captureCheckIns(invocation, scheduledTaskSlug(taskName), false, monitorConfig);
       }
       return invocation.proceed();
     }
