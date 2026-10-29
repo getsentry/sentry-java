@@ -3,12 +3,14 @@ package io.sentry.opentelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
+import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
@@ -75,10 +77,15 @@ public final class OtelSentryPropagator implements TextMapPropagator {
     }
 
     final @Nullable String url = getUrl(sentrySpan, scopes.getOptions());
-    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
-        url == null
-            ? TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan)
-            : TracingUtils.traceIfAllowed(scopes, url, Collections.emptyList(), sentrySpan);
+    final @Nullable TracingUtils.TracingHeaders tracingHeaders;
+    if (url != null) {
+      tracingHeaders =
+          TracingUtils.traceIfAllowed(scopes, url, Collections.emptyList(), sentrySpan);
+    } else if (isProducerSpan(otelSpan)) {
+      tracingHeaders = TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan);
+    } else {
+      tracingHeaders = null;
+    }
 
     if (tracingHeaders != null) {
       final @NotNull SentryTraceHeader sentryTraceHeader = tracingHeaders.getSentryTraceHeader();
@@ -88,6 +95,11 @@ public final class OtelSentryPropagator implements TextMapPropagator {
         setter.set(carrier, baggageHeader.getName(), baggageHeader.getValue());
       }
     }
+  }
+
+  private boolean isProducerSpan(final @NotNull Span otelSpan) {
+    return otelSpan instanceof ReadableSpan
+        && SpanKind.PRODUCER.equals(((ReadableSpan) otelSpan).getKind());
   }
 
   private @Nullable String getUrl(

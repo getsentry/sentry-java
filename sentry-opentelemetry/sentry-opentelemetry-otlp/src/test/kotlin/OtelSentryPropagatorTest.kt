@@ -2,6 +2,7 @@ package io.sentry.opentelemetry.otlp
 
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.TraceFlags
 import io.opentelemetry.api.trace.TraceState
 import io.opentelemetry.context.Context
@@ -144,7 +145,7 @@ class OpenTelemetryOtlpPropagatorTest {
   }
 
   @Test
-  fun `injects headers`() {
+  fun `does not inject headers if URL is unavailable`() {
     val propagator = OpenTelemetryOtlpPropagator()
     val carrier = mutableMapOf<String, String>()
 
@@ -165,11 +166,8 @@ class OpenTelemetryOtlpPropagatorTest {
 
     propagator.inject(context, carrier, MapSetter())
 
-    assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", carrier["sentry-trace"])
-    assertEquals(
-      "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
-      carrier["baggage"],
-    )
+    assertNull(carrier["sentry-trace"])
+    assertNull(carrier["baggage"])
   }
 
   @Test
@@ -240,7 +238,7 @@ class OpenTelemetryOtlpPropagatorTest {
   }
 
   @Test
-  fun `injects headers if tracePropagationTargets is restricted and URL is unavailable`() {
+  fun `does not inject headers if tracePropagationTargets is restricted and URL is unavailable`() {
     Sentry.init { options ->
       options.dsn = "https://key@sentry.io/proj"
       options.setTracePropagationTargets(listOf("sentry.io"))
@@ -259,8 +257,43 @@ class OpenTelemetryOtlpPropagatorTest {
 
     propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
 
-    assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", carrier["sentry-trace"])
+    assertNull(carrier["sentry-trace"])
     assertNull(carrier["baggage"])
+  }
+
+  @Test
+  fun `injects headers for producer span without URL`() {
+    Sentry.init { options ->
+      options.dsn = "https://key@sentry.io/proj"
+      options.setTracePropagationTargets(listOf("sentry.io"))
+    }
+    val propagator = OpenTelemetryOtlpPropagator()
+    val carrier = mutableMapOf<String, String>()
+    val tracerProvider = SdkTracerProvider.builder().build()
+    val otelSpan =
+      tracerProvider.get("test").spanBuilder("test").setSpanKind(SpanKind.PRODUCER).startSpan()
+    val baggage =
+      Baggage.fromHeader(
+        "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
+      )
+
+    try {
+      val context =
+        Context.root().with(otelSpan).with(OpenTelemetryOtlpPropagator.SENTRY_BAGGAGE_KEY, baggage)
+      propagator.inject(context, carrier, MapSetter())
+    } finally {
+      otelSpan.end()
+      tracerProvider.shutdown()
+    }
+
+    assertEquals(
+      "${otelSpan.spanContext.traceId}-${otelSpan.spanContext.spanId}-1",
+      carrier["sentry-trace"],
+    )
+    assertEquals(
+      "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
+      carrier["baggage"],
+    )
   }
 
   @Test
@@ -289,19 +322,25 @@ class OpenTelemetryOtlpPropagatorTest {
   fun `does not inject baggage header when baggage is missing from context`() {
     val propagator = OpenTelemetryOtlpPropagator()
     val carrier = mutableMapOf<String, String>()
+    val tracerProvider = SdkTracerProvider.builder().build()
+    val otelSpan =
+      tracerProvider
+        .get("test")
+        .spanBuilder("test")
+        .setAttribute("url.full", "https://sentry.io/api/0/")
+        .startSpan()
 
-    val otelSpanContext =
-      SpanContext.create(
-        "f9118105af4a2d42b4124532cd1065ff",
-        "424cffc8f94feeee",
-        TraceFlags.getSampled(),
-        TraceState.getDefault(),
-      )
-    val otelSpan = Span.wrap(otelSpanContext)
+    try {
+      propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
+    } finally {
+      otelSpan.end()
+      tracerProvider.shutdown()
+    }
 
-    propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
-
-    assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", carrier["sentry-trace"])
+    assertEquals(
+      "${otelSpan.spanContext.traceId}-${otelSpan.spanContext.spanId}-1",
+      carrier["sentry-trace"],
+    )
     assertNull(carrier["baggage"])
   }
 }

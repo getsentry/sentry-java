@@ -5,6 +5,7 @@ import static io.sentry.SentryTraceHeader.SENTRY_TRACE_HEADER;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.context.Context;
@@ -91,8 +92,12 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
     final @NotNull SentryOptions options = scopes.getOptions();
     final @Nullable String url = extractUrl(otelSpan, options);
 
-    return url == null
-        || PropagationTargetsUtils.contain(options.getTracePropagationTargets(), url);
+    if (url != null) {
+      return PropagationTargetsUtils.contain(options.getTracePropagationTargets(), url);
+    }
+
+    return otelSpan instanceof ReadableSpan
+        && SpanKind.PRODUCER.equals(((ReadableSpan) otelSpan).getKind());
   }
 
   private @Nullable String extractUrl(

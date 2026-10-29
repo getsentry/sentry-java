@@ -83,3 +83,12 @@ Sentry.init(
   }
 )
 ```
+
+## Trace propagation
+
+The Sentry propagator only injects tracing headers into outgoing requests when the OpenTelemetry
+span contains a URL that matches `tracePropagationTargets`. If no URL can be determined, tracing
+headers are not injected.
+
+Messaging producer spans (`SpanKind.PRODUCER`) are an exception because queue and messaging
+instrumentations propagate tracing information through message metadata rather than a URL.
