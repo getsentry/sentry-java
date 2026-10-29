@@ -225,38 +225,6 @@ class TracingUtilsTest {
   }
 
   @Test
-  fun `does not return headers if not trace sampling without span`() {
-    fixture.options.isTraceSampling = false
-    fixture.setup()
-
-    val headers =
-      TracingUtils.traceIfAllowed(
-        fixture.scopes,
-        "https://sentry.io/hello",
-        fixture.preExistingBaggage,
-        null,
-      )
-
-    assertNull(headers)
-  }
-
-  @Test
-  fun `does not return headers if not trace sampling from span`() {
-    fixture.options.isTraceSampling = false
-    fixture.setup()
-
-    val headers =
-      TracingUtils.traceIfAllowed(
-        fixture.scopes,
-        "https://sentry.io/hello",
-        fixture.preExistingBaggage,
-        fixture.span,
-      )
-
-    assertNull(headers)
-  }
-
-  @Test
   fun `does not return headers if host is disallowed without span`() {
     fixture.options.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
     fixture.setup()

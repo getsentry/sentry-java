@@ -720,12 +720,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @Nullable TraceContext traceContext() {
-    if (scopes.getOptions().isTraceSampling()) {
-      final @Nullable Baggage baggage = getSpanContext().getBaggage();
-      if (baggage != null) {
-        updateBaggageValues(baggage);
-        return baggage.toTraceContext();
-      }
+    final @Nullable Baggage baggage = getSpanContext().getBaggage();
+    if (baggage != null) {
+      updateBaggageValues(baggage);
+      return baggage.toTraceContext();
     }
     return null;
   }
@@ -752,12 +750,10 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    if (scopes.getOptions().isTraceSampling()) {
-      final @Nullable Baggage baggage = getSpanContext().getBaggage();
-      if (baggage != null) {
-        updateBaggageValues(baggage);
-        return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
-      }
+    final @Nullable Baggage baggage = getSpanContext().getBaggage();
+    if (baggage != null) {
+      updateBaggageValues(baggage);
+      return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
     }
     return null;
   }

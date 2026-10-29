@@ -412,12 +412,6 @@ public class SentryOptions implements RateLimiterConfig {
   private @NotNull RequestSize maxRequestBodySize = RequestSize.NONE;
 
   /**
-   * Controls if the `baggage` header is attached to HTTP client integrations and if the `trace`
-   * header is attached to envelopes.
-   */
-  private boolean traceSampling = true;
-
-  /**
    * Configures the profiles sample rate as a percentage of sampled transactions to be sent in the
    * range of 0.0 to 1.0. if 1.0 is set it means that 100% of sampled transactions will send a
    * profile. If set to 0.1 only 10% of sampled transactions will send a profile. Profiles are
@@ -2140,33 +2134,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public void setMaxRequestBodySize(final @NotNull RequestSize maxRequestBodySize) {
     this.maxRequestBodySize = maxRequestBodySize;
-  }
-
-  /**
-   * Returns whether the `baggage` header is attached to HTTP client integrations and the `trace`
-   * header is attached to envelopes.
-   *
-   * <p>Note: this is an experimental API and will be removed without notice.
-   *
-   * @return true if enabled
-   */
-  @ApiStatus.Experimental
-  public boolean isTraceSampling() {
-    return traceSampling;
-  }
-
-  /**
-   * Controls if the `baggage` header is attached HTTP client integrations and if the `trace` header
-   * is attached to envelopes. Defaults to false.
-   *
-   * <p>Note: this is an experimental API and will be removed without notice.
-   *
-   * @deprecated please use {{@link SentryOptions#setTracePropagationTargets(List)}} instead
-   * @param traceSampling - if trace sampling should be enabled
-   */
-  @Deprecated
-  public void setTraceSampling(boolean traceSampling) {
-    this.traceSampling = traceSampling;
   }
 
   /**

@@ -1035,31 +1035,6 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads traceSampling to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to false)
-    val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertFalse(fixture.options.isTraceSampling)
-  }
-
-  @Test
-  fun `applyMetadata reads traceSampling to options and keeps default`() {
-    // Arrange
-    val context = fixture.getContext()
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.isTraceSampling)
-  }
-
-  @Test
   fun `applyMetadata reads profilesSampleRate from metadata`() {
     // Arrange
     val expectedSampleRate = 0.99f

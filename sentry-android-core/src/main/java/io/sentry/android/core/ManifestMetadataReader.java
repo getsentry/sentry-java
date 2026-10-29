@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -101,7 +100,6 @@ final class ManifestMetadataReader {
 
   static final String PROFILER_START_ON_APP_START = "io.sentry.traces.profiling.start-on-app-start";
 
-  @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
@@ -473,9 +471,6 @@ final class ManifestMetadataReader {
             options.setTracesSampleRate(tracesSampleRate);
           }
         }
-
-        options.setTraceSampling(
-            readBool(metadata, logger, TRACE_SAMPLING, options.isTraceSampling()));
 
         options.setEnableAutoActivityLifecycleTracing(
             readBool(
