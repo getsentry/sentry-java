@@ -232,9 +232,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       final @Nullable Object timeUnitAttribute =
           AnnotationUtils.getAnnotationAttributes(scheduled).get("timeUnit");
       final @NotNull TimeUnit timeUnit =
-          timeUnitAttribute instanceof TimeUnit
-              ? (TimeUnit) timeUnitAttribute
-              : TimeUnit.MILLISECONDS;
+          timeUnitAttribute instanceof TimeUnit unit ? unit : TimeUnit.MILLISECONDS;
       final @Nullable String cron = resolve(scheduled.cron());
       // Spring only reads the zone for a cron
       final @Nullable String zone =
