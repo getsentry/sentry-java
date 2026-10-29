@@ -4,6 +4,7 @@
 
 ### Breaking Changes
 
+- Remove the deprecated `traceSampling` option (`SentryOptions.setTraceSampling`/`isTraceSampling` and the `io.sentry.traces.trace-sampling` manifest key); use `tracePropagationTargets` to control which outgoing requests get tracing headers ([#6415](https://github.com/getsentry/sentry-java/pull/6415))
 - Remove the deprecated user feedback APIs ([#6337](https://github.com/getsentry/sentry-java/pull/6337))
   - `UserFeedback` and `Sentry.captureUserFeedback(...)`: use `Sentry.feedback().capture(...)` with `io.sentry.protocol.Feedback` instead
   - `Sentry.captureFeedback(...)`: use `Sentry.feedback().capture(...)` instead
