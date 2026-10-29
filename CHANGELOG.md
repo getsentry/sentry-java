@@ -4,6 +4,8 @@
 
 ### Breaking Changes
 
+- Stop OpenTelemetry propagators from injecting tracing headers when an outgoing span has no URL ([#6419](https://github.com/getsentry/sentry-java/pull/6419))
+  - Messaging producer spans continue to propagate trace context through message metadata
 - Default trace context status to `ok` when an active span has no explicit status ([#6418](https://github.com/getsentry/sentry-java/pull/6418))
 - Remove the deprecated user feedback APIs ([#6337](https://github.com/getsentry/sentry-java/pull/6337))
   - `UserFeedback` and `Sentry.captureUserFeedback(...)`: use `Sentry.feedback().capture(...)` with `io.sentry.protocol.Feedback` instead
