@@ -4,6 +4,7 @@
 
 ### Features
 
+- Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins by default, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = false)` to turn this off ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
 - Added `Environment` to the `Scope`, allowing you to overwrite the `Environment` set on the options ([#5772](https://github.com/getsentry/sentry-java/pull/5772))
   - The scope `Environment` is also applied to the trace envelope header (DSC), logs, metrics and profiles, so all telemetry of a trace reports the same environment
 - Add an `attachTracingHeaders` flag to `SentryApolloInterceptor` to stop attaching `sentry-trace` and `baggage` headers to Apollo v2 requests ([#6414](https://github.com/getsentry/sentry-java/pull/6414))
