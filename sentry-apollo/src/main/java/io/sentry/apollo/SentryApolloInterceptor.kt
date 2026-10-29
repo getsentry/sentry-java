@@ -36,7 +36,6 @@ private const val TRACE_ORIGIN = "auto.graphql.apollo"
 class SentryApolloInterceptor(
   private val scopes: IScopes = ScopesAdapter.getInstance(),
   private val beforeSpan: BeforeSpanCallback? = null,
-  private val attachTracingHeaders: Boolean = true,
 ) : ApolloInterceptor {
   private companion object {
     init {
@@ -45,9 +44,17 @@ class SentryApolloInterceptor(
     }
   }
 
+  private var attachTracingHeaders: Boolean = true
+
   constructor(scopes: IScopes) : this(scopes, null)
 
-  constructor(scopes: IScopes, beforeSpan: BeforeSpanCallback?) : this(scopes, beforeSpan, true)
+  constructor(
+    scopes: IScopes = ScopesAdapter.getInstance(),
+    beforeSpan: BeforeSpanCallback? = null,
+    attachTracingHeaders: Boolean,
+  ) : this(scopes, beforeSpan) {
+    this.attachTracingHeaders = attachTracingHeaders
+  }
 
   constructor(beforeSpan: BeforeSpanCallback) : this(ScopesAdapter.getInstance(), beforeSpan)
 
