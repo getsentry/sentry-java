@@ -13,6 +13,7 @@ import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.SentryTracer
 import io.sentry.SpanContext
 import io.sentry.SpanId
@@ -31,6 +32,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import org.mockito.ArgumentCaptor
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doAnswer
@@ -94,6 +96,9 @@ class SentryGestureListenerTracingTest {
       doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
         .whenever(scopes)
         .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
 
       return SentryGestureListener(activity, scopes, options)
     }

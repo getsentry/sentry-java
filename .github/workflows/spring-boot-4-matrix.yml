@@ -15,17 +15,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  versions:
+    runs-on: ubuntu-latest
+    name: Spring Boot 4.x versions
+    outputs:
+      versions: ${{ steps.versions.outputs.versions }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: gradle
+
+      - name: Read Spring Boot 4.x versions
+        id: versions
+        run: echo "versions=$(jq -c .boot4 gradle/spring-boot-versions.json)" >> "$GITHUB_OUTPUT"
+
   spring-boot-4-matrix:
+    needs: versions
     timeout-minutes: 45
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        springboot-version: [ '4.0.0', '4.0.5', '4.1.0' ]
+        springboot-version: ${{ fromJSON(needs.versions.outputs.versions) }}
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
-      SENTRY_URL: http://127.0.0.1:8000
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
@@ -34,21 +50,11 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.10.5'
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
-
       - name: Set up Java
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
       - name: Cache buildSrc
@@ -62,79 +68,22 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Update Spring Boot 4.x version
+      - name: Test integration suites
+        # Project paths, unlike a bare task name, keep Gradle from configuring every project.
         run: |
-          springboot_version="${{ matrix.springboot-version }}"
-          perl -0pi -e 'BEGIN { $v = shift } s/^springboot4[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot4 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
-          echo "Updated Spring Boot 4.x version to $springboot_version"
-
-      - name: Build sample artifacts
-        run: |
-          ./gradlew \
-            :sentry-samples:sentry-samples-spring-boot-4:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-4-webflux:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4-webflux:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent:testClasses \
-            :sentry-samples:sentry-samples-spring-7:war \
-            :sentry-samples:sentry-samples-spring-7:testClasses \
-            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
-
-      - name: Run sentry-samples-spring-boot-4
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-boot-4-webflux
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-webflux" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init true
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry" \
-            --agent true \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init false
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry" \
-            --agent true \
-            --auto-init "false"
-
-      - name: Run sentry-samples-spring-boot-4-opentelemetry-noagent
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry-noagent" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-7
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-7" \
-            --agent false \
-            --auto-init "true"
+          task="allIntegrationTestsBoot${SPRINGBOOT_VERSION//./_}"
+          ./gradlew ":sentry-spring-7:$task" ":sentry-spring-boot-4:$task"
+        env:
+          SPRINGBOOT_VERSION: ${{ matrix.springboot-version }}
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-results-springboot-4-${{ matrix.springboot-version }}
           path: |
             **/build/reports/*
             **/build/test-results/**/*.xml
-            sentry-mock-server.txt
-            spring-server.txt
 
       - name: Test Report
         uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16

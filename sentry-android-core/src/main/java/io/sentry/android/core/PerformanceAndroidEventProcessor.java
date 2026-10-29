@@ -7,7 +7,6 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM
 import static io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP;
 import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.MeasurementUnit;
@@ -20,6 +19,7 @@ import io.sentry.SpanStatus;
 import io.sentry.android.core.internal.util.AndroidThreadChecker;
 import io.sentry.android.core.performance.AppStartMetrics;
 import io.sentry.android.core.performance.TimeSpan;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.App;
 import io.sentry.protocol.MeasurementValue;
 import io.sentry.protocol.SentryId;
@@ -36,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Event Processor responsible for adding Android metrics to transactions */
-final class PerformanceAndroidEventProcessor implements EventProcessor {
+final class PerformanceAndroidEventProcessor implements SentryEventProcessor {
 
   private static final String APP_METRICS_ORIGIN = "auto.ui";
 

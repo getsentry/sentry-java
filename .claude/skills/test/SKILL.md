@@ -1,13 +1,14 @@
 ---
 name: test
-description: Run tests for a specific SDK module. Use when asked to "run tests", "test module", "run unit tests", "run system tests", "run e2e tests", or test a specific class. Auto-detects unit vs system tests. Supports interactive mode.
+description: Run tests for a specific SDK module. Use when asked to "run tests", "test module", "run unit tests", "run integration tests", "run e2e tests", or test a specific class. Auto-detects unit tests vs integration test suites. Supports interactive mode.
 allowed-tools: Bash, Read, Glob, AskUserQuestion
 argument-hint: [interactive] <module-name-or-file-path> [test-class-filter]
 ---
 
 # Run Tests
 
-Run tests for a specific module. Auto-detects whether to run unit tests or system tests.
+Run tests for a specific module. Auto-detects whether to run unit tests or an integration test
+suite.
 
 ## Step 0: Check for Interactive Mode
 
@@ -19,7 +20,7 @@ In interactive mode, use AskUserQuestion at decision points as described in the 
 
 The argument can be either:
 - A **file path** (e.g., `@sentry/src/test/java/io/sentry/ScopesTest.kt`)
-- A **module name** (e.g., `sentry-android-core`, `sentry-samples-spring-boot-4`)
+- A **module name** (e.g., `sentry-android-core`, `sentry-spring-boot-4`)
 - A **module name + test filter** (e.g., `sentry ScopesTest`)
 
 Extract the module name and optional test class filter from the argument.
@@ -30,9 +31,13 @@ Extract the module name and optional test class filter from the argument.
 
 | Signal | Test Type |
 |--------|-----------|
-| Path contains `sentry-samples/` | System test |
-| Module name starts with `sentry-samples-` | System test |
+| Path contains `/src/integrationTest*/` or `/src/agentFixture/` | Integration test suite |
+| Module name only, and the user asks for integration or end-to-end tests | Integration test suite: each `src/integrationTest*/` directory of the module |
+| Path contains `sentry-samples/`, or module name starts with `sentry-samples-` | None: samples have no tests |
 | Everything else | Unit test |
+
+For a sample, tell the user that samples have no tests, and that the end-to-end tests for what
+the sample shows live in the module it uses (see the `e2e_tests` rule).
 
 ## Step 3a: Run Unit Tests
 
@@ -60,30 +65,20 @@ Without a filter:
 ./gradlew ':<module>:<task>' --info
 ```
 
-## Step 3b: Run System Tests
+## Step 3b: Run an Integration Test Suite
 
-System tests require the Python-based test runner which manages a mock Sentry server and sample app lifecycle.
+The suite's task is named after its source set directory: `src/integrationTestWebflux/...` runs
+with `integrationTestWebflux`. The OpenTelemetry agent suite runs in two tasks, one per init mode,
+so for `src/integrationTestOtelAgent/` or `src/agentFixture/` run both:
 
-1. Ensure the Python venv exists:
 ```bash
-test -d .venv || make setupPython
+./gradlew ':<module>:integrationTestOtelAgent' ':<module>:integrationTestOtelAgentWithoutAutoInit'
 ```
 
-2. Extract the sample module name. For file paths like `sentry-samples/<sample-module>/src/...`, the sample module is the directory name (e.g., `sentry-samples-spring`).
-
-3. Run the system test:
-```bash
-.venv/bin/python test/system-test-runner.py test --module <sample-module>
-```
-
-This starts the mock Sentry server, starts the sample app (Spring Boot/Tomcat/CLI), runs tests via `./gradlew :sentry-samples:<sample-module>:systemTest`, and cleans up afterwards.
-
-To run **every** system test instead of one module, use the Makefile targets — they also create the
-venv for you:
+Otherwise, with or without a test class filter:
 
 ```bash
-make systemTest             # all system tests (--all)
-make systemTestInteractive  # pick the setups to run (--interactive)
+./gradlew ':<module>:<suite>' --tests="*<filter>*"
 ```
 
 ## Step 4: Report Results

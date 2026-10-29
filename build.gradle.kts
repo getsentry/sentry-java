@@ -11,7 +11,6 @@ plugins {
     alias(libs.plugins.spotless) apply false
     alias(libs.plugins.detekt)
     `maven-publish`
-    alias(libs.plugins.binary.compatibility.validator)
     alias(libs.plugins.vanniktech.maven.publish) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -43,52 +42,6 @@ buildscript {
     }
 }
 
-apiValidation {
-    ignoredPackages.addAll(
-        setOf(
-            "io.sentry.android.core.internal"
-        )
-    )
-    ignoredProjects.addAll(
-        listOf(
-            "sentry-samples-android",
-            "sentry-samples-console",
-            "sentry-samples-console-opentelemetry-noagent",
-            "sentry-samples-jul",
-            "sentry-samples-log4j2",
-            "sentry-samples-logback",
-            "sentry-samples-openfeign",
-            "sentry-samples-servlet",
-            "sentry-samples-spring",
-            "sentry-samples-spring-jakarta",
-            "sentry-samples-spring-7",
-            "sentry-samples-spring-boot",
-            "sentry-samples-spring-boot-opentelemetry",
-            "sentry-samples-spring-boot-opentelemetry-noagent",
-            "sentry-samples-spring-boot-jakarta",
-            "sentry-samples-spring-boot-jakarta-log4j2",
-            "sentry-samples-spring-boot-jakarta-opentelemetry",
-            "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
-            "sentry-samples-spring-boot-webflux",
-            "sentry-samples-spring-boot-webflux-jakarta",
-            "sentry-samples-spring-boot-4",
-            "sentry-samples-spring-boot-4-log4j2",
-            "sentry-samples-spring-boot-4-opentelemetry",
-            "sentry-samples-spring-boot-4-opentelemetry-noagent",
-            "sentry-samples-spring-boot-4-otlp",
-            "sentry-samples-spring-boot-4-webflux",
-            "sentry-samples-ktor-client",
-            "sentry-uitest-android",
-            "sentry-uitest-android-critical",
-            "test-app-size",
-            "sentry-samples-netflix-dgs",
-            "sentry-samples-console-otlp",
-            "sentry-test-support",
-            "sentry-system-test-support"
-        )
-    )
-}
-
 allprojects {
     group = Config.Sentry.group
     version = providers.gradleProperty(Config.Sentry.versionNameProp).get()
@@ -111,6 +64,7 @@ allprojects {
 
 subprojects {
     apply { plugin("io.sentry.spotless") }
+    apply { plugin("io.sentry.jdk-target") }
 
     plugins.withId(Config.QualityPlugins.detektPlugin) {
         configure<DetektExtension> {
@@ -121,7 +75,7 @@ subprojects {
         }
     }
 
-    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-system-test-support" && this.name != "sentry-test-support") {
+    if (!this.name.contains("sample") && !this.name.contains("integration-tests") && this.name != "sentry-test-support") {
         apply<DistributionPlugin>()
         apply<com.vanniktech.maven.publish.MavenPublishPlugin>()
 
@@ -162,28 +116,6 @@ subprojects {
 
             configure<JavaPluginExtension> {
                 withJavadocJar()
-
-                sourceCompatibility = JavaVersion.VERSION_1_8
-                targetCompatibility = JavaVersion.VERSION_1_8
-            }
-        }
-
-        // AGP 9 defaults Android modules to Java 11. Pin the published library modules back
-        // to Java 8 so their bytecode stays consumable by Java 8 projects, mirroring the
-        // java-library pin above.
-        plugins.withId("com.android.library") {
-            configure<com.android.build.gradle.BaseExtension> {
-                compileOptions {
-                    sourceCompatibility = JavaVersion.VERSION_1_8
-                    targetCompatibility = JavaVersion.VERSION_1_8
-                }
-
-                // AGP 9 defaults the AAR metadata minCompileSdk to the library's compileSdk,
-                // which would force every consumer onto that compile SDK. Pin it to our minSdk
-                // so consumers remain free to compile against any SDK we support, as before.
-                defaultConfig {
-                    aarMetadata { minCompileSdk = libs.versions.minSdk.get().toInt() }
-                }
             }
         }
 

@@ -3,12 +3,17 @@ package io.sentry.apollo
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.coroutines.await
 import com.apollographql.apollo.exception.ApolloException
+import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryTraceHeader
 import io.sentry.SentryTracer
@@ -17,6 +22,7 @@ import io.sentry.SpanStatus
 import io.sentry.TraceContext
 import io.sentry.TracesSamplingDecision
 import io.sentry.TransactionContext
+import io.sentry.clientreport.DiscardReason
 import io.sentry.mockServerRequestTimeoutMillis
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
@@ -39,6 +45,7 @@ import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 
 class SentryApolloInterceptorTest {
@@ -56,6 +63,9 @@ class SentryApolloInterceptorTest {
         doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
           .whenever(it)
           .configureScope(any())
+        doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+          .whenever(it)
+          .configureScope(anyOrNull<ScopeType>(), any())
       }
     private var interceptor = SentryApolloInterceptor(scopes)
 
@@ -78,6 +88,7 @@ class SentryApolloInterceptorTest {
   }
 }""",
       socketPolicy: SocketPolicy = SocketPolicy.KEEP_OPEN,
+      attachTracingHeaders: Boolean = true,
       beforeSpan: SentryApolloInterceptor.BeforeSpanCallback? = null,
     ): ApolloClient {
       server.enqueue(
@@ -87,8 +98,8 @@ class SentryApolloInterceptorTest {
           .setResponseCode(httpStatusCode)
       )
 
-      if (beforeSpan != null) {
-        interceptor = SentryApolloInterceptor(scopes, beforeSpan)
+      if (beforeSpan != null || !attachTracingHeaders) {
+        interceptor = SentryApolloInterceptor(scopes, beforeSpan, attachTracingHeaders)
       }
       return ApolloClient.builder()
         .serverUrl(server.url("/"))
@@ -197,6 +208,16 @@ class SentryApolloInterceptorTest {
   }
 
   @Test
+  fun `does not add sentry-trace header when attaching tracing headers is disabled`() {
+    executeQuery(fixture.getSut(attachTracingHeaders = false))
+
+    val recorderRequest =
+      fixture.server.takeRequest(mockServerRequestTimeoutMillis, TimeUnit.MILLISECONDS)!!
+    assertNull(recorderRequest.headers[SentryTraceHeader.SENTRY_TRACE_HEADER])
+    assertNull(recorderRequest.headers[BaggageHeader.BAGGAGE_HEADER])
+  }
+
+  @Test
   fun `when there is an active span, adds sentry trace headers to the request`() {
     executeQuery()
     val recorderRequest =
@@ -229,7 +250,10 @@ class SentryApolloInterceptorTest {
 
   @Test
   fun `when beforeSpan callback returns null, span is dropped`() {
+    val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+    fixture.options.onDiscard = onDiscard
     executeQuery(fixture.getSut { _, _, _ -> null })
+    verifyNoMoreInteractions(onDiscard)
 
     verify(fixture.scopes)
       .captureTransaction(
@@ -241,15 +265,61 @@ class SentryApolloInterceptorTest {
   }
 
   @Test
-  fun `when customizer throws, exception is handled`() {
-    executeQuery(fixture.getSut { _, _, _ -> throw RuntimeException() })
+  fun `reports callback errors only for sampled spans`(): Unit = runBlocking {
+    for (sampled in listOf(true, false, null)) {
+      val onDiscard = mock<SentryOptions.OnDiscardCallback>()
+      fixture.options.onDiscard = onDiscard
+      val tx = SentryTracer(TransactionContext("op", "desc"), fixture.scopes)
+      tx.spanContext.sampled = sampled
+      whenever(fixture.scopes.span).thenReturn(tx)
+      val sut = fixture.getSut { span, _, _ ->
+        span.spanContext.sampled = false
+        error("callback failed")
+      }
 
+      assertThat(sut.query(LaunchDetailsQuery.builder().id("83").build()).await().data).isNotNull()
+      tx.finish()
+
+      if (sampled == true) {
+        verify(onDiscard).execute(DiscardReason.CALLBACK_ERROR, DataCategory.Span, 1)
+      }
+      verifyNoMoreInteractions(onDiscard)
+    }
+  }
+
+  @Test
+  fun `when beforeSpan throws, drops span and preserves response`(): Unit = runBlocking {
+    val failure = IllegalStateException("callback failed")
+    val logger = mock<ILogger>()
+    fixture.options.isDebug = true
+    fixture.options.setLogger(logger)
+    val tx =
+      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(tx)
+    val sut = fixture.getSut { span, _, _ ->
+      span.description = "partially modified"
+      throw failure
+    }
+
+    val response = sut.query(LaunchDetailsQuery.builder().id("83").build()).await()
+    assertThat(response.data).isNotNull()
+    val span = tx.children.single()
+    assertThat(span.isSampled).isFalse()
+    assertThat(span.isFinished).isTrue()
+    tx.finish()
     verify(fixture.scopes)
       .captureTransaction(
-        check { assertEquals(1, it.spans.size) },
+        check { assertThat(it.spans).isEmpty() },
         anyOrNull<TraceContext>(),
         anyOrNull(),
         anyOrNull(),
+      )
+    verify(fixture.scopes).addBreadcrumb(any<Breadcrumb>(), anyOrNull())
+    verify(logger)
+      .log(
+        SentryLevel.ERROR,
+        "An error occurred while executing beforeSpan on ApolloInterceptor",
+        failure,
       )
   }
 
