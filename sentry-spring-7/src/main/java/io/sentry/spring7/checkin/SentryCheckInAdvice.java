@@ -15,12 +15,16 @@ import io.sentry.util.MonitorConfigUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.zip.CRC32;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.jetbrains.annotations.ApiStatus;
@@ -48,7 +52,13 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
           "org.springframework.scheduling.support.CronExpression",
           SentryCheckInAdvice.class.getClassLoader());
 
+  private static final @NotNull Pattern WORD_BOUNDARY =
+      Pattern.compile("(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])");
+  private static final int MAX_SLUG_LENGTH = 50;
+
   private final @NotNull IScopes scopes;
+
+  private final boolean monitorScheduledTasks;
 
   private @Nullable StringValueResolver resolver;
 
@@ -60,7 +70,16 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
   }
 
   public SentryCheckInAdvice(final @NotNull IScopes scopes) {
+    this(scopes, false);
+  }
+
+  /**
+   * @param monitorScheduledTasks whether to also monitor {@code @Scheduled} methods without {@link
+   *     SentryCheckIn}, using a slug derived from the class and method name
+   */
+  public SentryCheckInAdvice(final @NotNull IScopes scopes, final boolean monitorScheduledTasks) {
     this.scopes = Objects.requireNonNull(scopes, "scopes are required");
+    this.monitorScheduledTasks = monitorScheduledTasks;
   }
 
   @Override
@@ -74,6 +93,24 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
     SentryCheckIn checkInAnnotation =
         AnnotationUtils.findAnnotation(mostSpecificMethod, SentryCheckIn.class);
     if (checkInAnnotation == null) {
+      if (monitorScheduledTasks && isScheduled(mostSpecificMethod)) {
+        final @NotNull String taskName =
+            scheduledTaskName(
+                target != null ? target.getClass() : mostSpecificMethod.getDeclaringClass(),
+                mostSpecificMethod);
+        final @Nullable MonitorConfig monitorConfig = monitorConfig(mostSpecificMethod);
+        if (monitorConfig == null) {
+          scopes
+              .getOptions()
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG,
+                  "Not monitoring %s because Sentry Crons can't express its @Scheduled schedule.",
+                  taskName);
+          return invocation.proceed();
+        }
+        return captureCheckIns(invocation, scheduledTaskSlug(taskName), false, monitorConfig);
+      }
       return invocation.proceed();
     }
 
@@ -113,7 +150,15 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         !isHeartbeatOnly && checkInAnnotation.upsertMonitorConfig()
             ? monitorConfig(mostSpecificMethod)
             : null;
+    return captureCheckIns(invocation, monitorSlug, isHeartbeatOnly, monitorConfig);
+  }
 
+  private @Nullable Object captureCheckIns(
+      final @NotNull MethodInvocation invocation,
+      final @NotNull String monitorSlug,
+      final boolean isHeartbeatOnly,
+      final @Nullable MonitorConfig monitorConfig)
+      throws Throwable {
     try (final @NotNull ISentryLifecycleToken ignored =
             scopes.forkedScopes("SentryCheckInAdvice").makeCurrent()) {
       TracingUtils.startNewTrace(scopes);
@@ -140,6 +185,37 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         scopes.captureCheckIn(checkIn);
       }
     }
+  }
+
+  static boolean isScheduled(final @NotNull Method method) {
+    return !AnnotatedElementUtils.findMergedRepeatableAnnotations(method, Scheduled.class)
+        .isEmpty();
+  }
+
+  /** {@code ClassName.methodName}, with nested classes as {@code Outer.Inner}. */
+  static @NotNull String scheduledTaskName(
+      final @NotNull Class<?> targetClass, final @NotNull Method method) {
+    return ClassUtils.getShortName(ClassUtils.getUserClass(targetClass)) + "." + method.getName();
+  }
+
+  static @NotNull String scheduledTaskSlug(final @NotNull String taskName) {
+    final @NotNull String slug =
+        WORD_BOUNDARY
+            .matcher(taskName)
+            .replaceAll("-")
+            .toLowerCase(Locale.ROOT)
+            .replaceAll("[^a-z0-9]+", "-")
+            .replaceAll("^-+|-+$", "");
+    if (slug.length() <= MAX_SLUG_LENGTH) {
+      return slug;
+    }
+    // keep truncated slugs unique
+    final @NotNull CRC32 crc = new CRC32();
+    crc.update(slug.getBytes(StandardCharsets.UTF_8));
+    final @NotNull String hash = String.format(Locale.ROOT, "%08x", crc.getValue());
+    return slug.substring(0, MAX_SLUG_LENGTH - hash.length() - 1).replaceAll("-+$", "")
+        + "-"
+        + hash;
   }
 
   private @Nullable MonitorConfig monitorConfig(final @NotNull Method method) {
@@ -175,10 +251,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       scopes
           .getOptions()
           .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Could not derive a monitor config from @Scheduled for method annotated with @SentryCheckIn.",
-              e);
+          .log(SentryLevel.WARNING, "Could not derive a monitor config from @Scheduled.", e);
       return null;
     }
   }
@@ -209,7 +282,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
           .getLogger()
           .log(
               SentryLevel.DEBUG,
-              "Not sending a monitor config for @SentryCheckIn because the @Scheduled period '%s' could not be parsed.",
+              "Not sending a monitor config because the @Scheduled period '%s' could not be parsed.",
               trimmed);
     }
     return millis;
