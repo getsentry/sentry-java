@@ -9,12 +9,14 @@ import io.sentry.backpressure.NoOpBackpressureMonitor
 import io.sentry.cache.EnvelopeCache
 import io.sentry.cache.IEnvelopeCache
 import io.sentry.cache.PersistingScopeObserver
+import io.sentry.exception.ExceptionMechanismException
 import io.sentry.internal.debugmeta.IDebugMetaLoader
 import io.sentry.internal.debugmeta.ResourcesDebugMetaLoader
 import io.sentry.internal.modules.CompositeModulesLoader
 import io.sentry.internal.modules.IModulesLoader
 import io.sentry.internal.modules.NoOpModulesLoader
 import io.sentry.protocol.Feedback
+import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryThread
@@ -57,15 +59,22 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeastOnce
 import org.mockito.kotlin.check
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class SentryTest {
   private val dsn = "http://key@localhost/proj"
+
+  companion object {
+    private const val SCOPE_BASED_DEDUPLICATION_CONFLICT_WARNING =
+      "Scope-based and legacy event deduplication are both enabled. Legacy deduplication can still suppress reused throwable instances."
+  }
 
   @get:Rule val tmpDir = TemporaryFolder()
 
@@ -125,6 +134,202 @@ class SentryTest {
 
     Sentry.close()
     verify(integration2).close()
+  }
+
+  @Test
+  fun `scope-based deduplication is inactive by default`() {
+    initForTest { it.dsn = dsn }
+
+    assertThat(Sentry.getCurrentScopes().isolationScope.scopeBasedDeduplicationProcessors())
+      .isEmpty()
+  }
+
+  @Test
+  fun `scope-based deduplication is installed only on root isolation scope`() {
+    initForTest {
+      it.dsn = dsn
+      it.isEnableDeduplication = false
+      it.isEnableScopeBasedDeduplication = true
+      it.defaultScopeType = ScopeType.CURRENT
+    }
+
+    val scopes = Sentry.getCurrentScopes()
+    assertThat(scopes.isolationScope.scopeBasedDeduplicationProcessors()).hasSize(1)
+    assertThat(scopes.scope.scopeBasedDeduplicationProcessors()).isEmpty()
+    assertThat(scopes.globalScope.scopeBasedDeduplicationProcessors()).isEmpty()
+  }
+
+  @Test
+  fun `isolation scope clone receives a fresh scope-based deduplication processor`() {
+    initForTest {
+      it.dsn = dsn
+      it.isEnableDeduplication = false
+      it.isEnableScopeBasedDeduplication = true
+    }
+    val rootScopes = Sentry.getCurrentScopes()
+    val rootProcessor = rootScopes.isolationScope.scopeBasedDeduplicationProcessors().single()
+    val throwable = RuntimeException()
+    assertThat(rootProcessor.process(mechanismEvent(throwable, "LogbackSentryAppender"), Hint()))
+      .isNotNull()
+
+    val forkedScopes = rootScopes.forkedScopes("test")
+    val forkedProcessor = forkedScopes.isolationScope.scopeBasedDeduplicationProcessors().single()
+
+    assertThat(forkedProcessor).isNotSameInstanceAs(rootProcessor)
+    assertThat(
+        forkedProcessor.process(mechanismEvent(throwable, "Spring6ExceptionResolver"), Hint())
+      )
+      .isNotNull()
+  }
+
+  @Test
+  fun `current-scope fork shares scope-based deduplication processor`() {
+    initForTest {
+      it.dsn = dsn
+      it.isEnableDeduplication = false
+      it.isEnableScopeBasedDeduplication = true
+    }
+    val rootScopes = Sentry.getCurrentScopes()
+
+    val forkedScopes = rootScopes.forkedCurrentScope("test")
+
+    assertSame(rootScopes.isolationScope, forkedScopes.isolationScope)
+    assertSame(
+      rootScopes.isolationScope.scopeBasedDeduplicationProcessors().single(),
+      forkedScopes.isolationScope.scopeBasedDeduplicationProcessors().single(),
+    )
+  }
+
+  @Test
+  fun `nested isolation scope clones receive fresh processors`() {
+    initForTest {
+      it.dsn = dsn
+      it.isEnableDeduplication = false
+      it.isEnableScopeBasedDeduplication = true
+    }
+    val rootScopes = Sentry.getCurrentScopes()
+
+    val firstFork = rootScopes.forkedScopes("first")
+    val secondFork = firstFork.forkedScopes("second")
+
+    assertNotSame(
+      rootScopes.isolationScope.scopeBasedDeduplicationProcessors().single(),
+      firstFork.isolationScope.scopeBasedDeduplicationProcessors().single(),
+    )
+    assertNotSame(
+      firstFork.isolationScope.scopeBasedDeduplicationProcessors().single(),
+      secondFork.isolationScope.scopeBasedDeduplicationProcessors().single(),
+    )
+  }
+
+  @Test
+  fun `separate isolation scopes cannot suppress each other`() {
+    initForTest {
+      it.dsn = dsn
+      it.isEnableDeduplication = false
+      it.isEnableScopeBasedDeduplication = true
+    }
+    val rootScopes = Sentry.getCurrentScopes()
+    val firstProcessor =
+      rootScopes.forkedScopes("first").isolationScope.scopeBasedDeduplicationProcessors().single()
+    val secondProcessor =
+      rootScopes.forkedScopes("second").isolationScope.scopeBasedDeduplicationProcessors().single()
+    val throwable = RuntimeException()
+
+    assertThat(firstProcessor.process(mechanismEvent(throwable, "LogbackSentryAppender"), Hint()))
+      .isNotNull()
+    assertThat(
+        secondProcessor.process(mechanismEvent(throwable, "Spring6ExceptionResolver"), Hint())
+      )
+      .isNotNull()
+  }
+
+  @Test
+  fun `reinitialization creates a fresh scope-based deduplication processor`() {
+    val throwable = RuntimeException()
+    initForTest {
+      it.dsn = dsn
+      it.isEnableDeduplication = false
+      it.isEnableScopeBasedDeduplication = true
+    }
+    val firstProcessor =
+      Sentry.getCurrentScopes().isolationScope.scopeBasedDeduplicationProcessors().single()
+    firstProcessor.process(mechanismEvent(throwable, "LogbackSentryAppender"), Hint())
+
+    initForTest {
+      it.dsn = dsn
+      it.isEnableDeduplication = false
+      it.isEnableScopeBasedDeduplication = true
+    }
+    val secondProcessor =
+      Sentry.getCurrentScopes().isolationScope.scopeBasedDeduplicationProcessors().single()
+
+    assertThat(secondProcessor).isNotSameInstanceAs(firstProcessor)
+    assertThat(
+        secondProcessor.process(mechanismEvent(throwable, "Spring6ExceptionResolver"), Hint())
+      )
+      .isNotNull()
+  }
+
+  @Test
+  fun `changing scope-based deduplication after init requires reinitialization`() {
+    val options =
+      SentryOptions().apply {
+        dsn = this@SentryTest.dsn
+        isEnableDeduplication = false
+      }
+    initForTest(options)
+    assertThat(Sentry.getCurrentScopes().isolationScope.scopeBasedDeduplicationProcessors())
+      .isEmpty()
+
+    options.isEnableScopeBasedDeduplication = true
+    assertThat(Sentry.getCurrentScopes().isolationScope.scopeBasedDeduplicationProcessors())
+      .isEmpty()
+
+    initForTest(options)
+    assertThat(Sentry.getCurrentScopes().isolationScope.scopeBasedDeduplicationProcessors())
+      .hasSize(1)
+  }
+
+  @Test
+  fun `both deduplication options remain active and emit one warning`() {
+    val logger = mock<ILogger>()
+    initForTest {
+      it.dsn = dsn
+      it.isDebug = true
+      it.setLogger(logger)
+      it.isEnableDeduplication = true
+      it.isEnableScopeBasedDeduplication = true
+    }
+
+    val options = Sentry.getCurrentScopes().options
+    assertThat(options.isEnableDeduplication).isTrue()
+    assertThat(options.eventProcessors.filterIsInstance<DuplicateEventDetectionEventProcessor>())
+      .hasSize(1)
+    assertThat(Sentry.getCurrentScopes().isolationScope.scopeBasedDeduplicationProcessors())
+      .hasSize(1)
+    verify(logger, times(1))
+      .log(eq(SentryLevel.WARNING), eq(SCOPE_BASED_DEDUPLICATION_CONFLICT_WARNING))
+  }
+
+  @Test
+  fun `other deduplication option combinations do not emit conflict warning`() {
+    val logger = mock<ILogger>()
+    val combinations = listOf(false to false, false to true, true to false)
+
+    combinations.forEach { (scopeBased, legacy) ->
+      initForTest {
+        it.dsn = dsn
+        it.isDebug = true
+        it.setLogger(logger)
+        it.isEnableScopeBasedDeduplication = scopeBased
+        it.isEnableDeduplication = legacy
+      }
+
+      verify(logger, never())
+        .log(eq(SentryLevel.WARNING), eq(SCOPE_BASED_DEDUPLICATION_CONFLICT_WARNING))
+      clearInvocations(logger)
+    }
   }
 
   @Test
@@ -345,7 +550,14 @@ class SentryTest {
     val temporaryFolder = TemporaryFolder()
     temporaryFolder.create()
     val file = temporaryFolder.newFile("sentry.properties")
-    file.writeText("dsn=http://key@localhost/proj")
+    file.writeText(
+      """
+      dsn=http://key@localhost/proj
+      enable-deduplication=false
+      enable-scope-based-deduplication=true
+      """
+        .trimIndent()
+    )
     // set location of the sentry.properties file
     System.setProperty("sentry.properties.file", file.absolutePath)
 
@@ -353,7 +565,11 @@ class SentryTest {
       // initialize Sentry with empty DSN and enable loading properties from external sources
       initForTest { it.isEnableExternalConfiguration = true }
       assertTrue(ScopesAdapter.getInstance().isEnabled)
+      assertThat(Sentry.getCurrentScopes().options.isEnableDeduplication).isFalse()
+      assertThat(Sentry.getCurrentScopes().isolationScope.scopeBasedDeduplicationProcessors())
+        .hasSize(1)
     } finally {
+      System.clearProperty("sentry.properties.file")
       temporaryFolder.delete()
     }
   }
@@ -1861,6 +2077,14 @@ class SentryTest {
     override fun store(envelope: SentryEnvelope, hint: Hint) = Unit
 
     override fun discard(envelope: SentryEnvelope) = Unit
+  }
+
+  private fun IScope.scopeBasedDeduplicationProcessors() =
+    eventProcessors.filterIsInstance<ScopeBasedDuplicateEventDetectionEventProcessor>()
+
+  private fun mechanismEvent(throwable: Throwable, type: String): SentryEvent {
+    val mechanism = Mechanism().apply { this.type = type }
+    return SentryEvent(ExceptionMechanismException(mechanism, throwable, Thread.currentThread()))
   }
 
   private fun getTempPath(): String {

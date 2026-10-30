@@ -39,6 +39,7 @@ import kotlin.test.assertTrue
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.slf4j.Logger
@@ -405,6 +406,31 @@ class SentryAppenderTest {
           val exception = event.exceptions!!.first()
           assertEquals(SentryAppender.MECHANISM_TYPE, exception.mechanism!!.type)
           assertEquals("test exc", exception.value)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `scope-based deduplication sends repeated reusable exceptions from Logback`() {
+    fixture =
+      Fixture(
+        minimumEventLevel = Level.ERROR,
+        options =
+          SentryOptions().apply {
+            isEnableDeduplication = false
+            isEnableScopeBasedDeduplication = true
+          },
+      )
+    val throwable = RuntimeException("reused")
+
+    fixture.logger.error("first", throwable)
+    fixture.logger.error("second", throwable)
+
+    verify(fixture.transport, times(2))
+      .send(
+        checkEvent { event ->
+          assertEquals(SentryAppender.MECHANISM_TYPE, event.exceptions!!.first().mechanism!!.type)
         },
         anyOrNull(),
       )

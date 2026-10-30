@@ -347,6 +347,17 @@ public final class Sentry {
 
         final IScope rootScope = new Scope(options);
         final IScope rootIsolationScope = new Scope(options);
+        if (options.isEnableScopeBasedDeduplication()) {
+          rootIsolationScope.addEventProcessor(
+              new ScopeBasedDuplicateEventDetectionEventProcessor(options));
+          if (options.isEnableDeduplication()) {
+            options
+                .getLogger()
+                .log(
+                    SentryLevel.WARNING,
+                    "Scope-based and legacy event deduplication are both enabled. Legacy deduplication can still suppress reused throwable instances.");
+          }
+        }
         rootScopes = new Scopes(rootScope, rootIsolationScope, globalScope, "Sentry.init");
 
         initLogger(options);

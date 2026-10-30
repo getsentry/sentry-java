@@ -388,6 +388,12 @@ public class SentryOptions implements RateLimiterConfig {
   private boolean enableDeduplication = true;
 
   /**
+   * Enables scope-based event deduplication with {@link
+   * ScopeBasedDuplicateEventDetectionEventProcessor}.
+   */
+  private boolean enableScopeBasedDeduplication = false;
+
+  /**
    * Enables event size limiting with {@link EventSizeLimitingEventProcessor}. When enabled, events
    * exceeding 1MB will have breadcrumbs and stack frames reduced to stay under the limit.
    */
@@ -1949,6 +1955,40 @@ public class SentryOptions implements RateLimiterConfig {
    */
   public void setEnableDeduplication(final boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
+  }
+
+  /**
+   * Returns whether experimental scope-based event deduplication is enabled.
+   *
+   * <p>This option defaults to {@code false}. It is read during SDK initialization to decide
+   * whether to install the processor on the root isolation scope. Changing it after initialization
+   * has no effect until the SDK is reinitialized.
+   *
+   * <p>This option is independent from {@link #isEnableDeduplication()}. To use the scope-based
+   * behavior for reusable exception instances, disable legacy deduplication with {@link
+   * #setEnableDeduplication(boolean)}. If both options are enabled, both processors run and legacy
+   * deduplication can still suppress reused throwable instances.
+   *
+   * @return {@code true} if scope-based event deduplication is enabled
+   */
+  @ApiStatus.Experimental
+  public boolean isEnableScopeBasedDeduplication() {
+    return enableScopeBasedDeduplication;
+  }
+
+  /**
+   * Enables or disables experimental scope-based event deduplication.
+   *
+   * <p>The value is read during SDK initialization. The installed processor does not read this
+   * mutable option afterward, so changing it requires SDK reinitialization. This option does not
+   * disable {@link #isEnableDeduplication()} automatically; set legacy deduplication to {@code
+   * false} to use only the scope-based behavior.
+   *
+   * @param enableScopeBasedDeduplication {@code true} to enable scope-based event deduplication
+   */
+  @ApiStatus.Experimental
+  public void setEnableScopeBasedDeduplication(final boolean enableScopeBasedDeduplication) {
+    this.enableScopeBasedDeduplication = enableScopeBasedDeduplication;
   }
 
   /**
@@ -3724,6 +3764,9 @@ public class SentryOptions implements RateLimiterConfig {
     }
     if (options.getEnableDeduplication() != null) {
       setEnableDeduplication(options.getEnableDeduplication());
+    }
+    if (options.getEnableScopeBasedDeduplication() != null) {
+      setEnableScopeBasedDeduplication(options.getEnableScopeBasedDeduplication());
     }
     if (options.getSendClientReports() != null) {
       setSendClientReports(options.getSendClientReports());

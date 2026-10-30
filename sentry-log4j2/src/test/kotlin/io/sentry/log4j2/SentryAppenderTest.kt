@@ -36,6 +36,7 @@ import org.apache.logging.log4j.spi.ExtendedLogger
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -57,6 +58,8 @@ class SentryAppenderTest {
       minimumLevel: Level? = null,
       debug: Boolean? = null,
       contextTags: List<String>? = null,
+      enableDeduplication: Boolean = true,
+      enableScopeBasedDeduplication: Boolean = false,
     ): ExtendedLogger {
       if (transportFactory != null) {
         this.transportFactory = transportFactory
@@ -98,6 +101,8 @@ class SentryAppenderTest {
 
       appender.start(
         appender.getOptionsConfiguration { options ->
+          options.isEnableDeduplication = enableDeduplication
+          options.isEnableScopeBasedDeduplication = enableScopeBasedDeduplication
           options.logs.loggerBatchProcessorFactory =
             ILoggerBatchProcessorFactory { options, client ->
               LoggerBatchProcessor(options, client, ImmediateExecutorService())
@@ -157,6 +162,28 @@ class SentryAppenderTest {
             assertEquals(listOf("1", "2"), message.params)
           }
           assertEquals("io.sentry.log4j2.SentryAppenderTest", event.logger)
+        },
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `scope-based deduplication sends repeated reusable exceptions from Log4j2`() {
+    val logger =
+      fixture.getSut(
+        minimumEventLevel = Level.ERROR,
+        enableDeduplication = false,
+        enableScopeBasedDeduplication = true,
+      )
+    val throwable = RuntimeException("reused")
+
+    logger.error("first", throwable)
+    logger.error("second", throwable)
+
+    verify(fixture.transport, times(2))
+      .send(
+        checkEvent { event ->
+          assertEquals(SentryAppender.MECHANISM_TYPE, event.exceptions!!.first().mechanism!!.type)
         },
         anyOrNull(),
       )

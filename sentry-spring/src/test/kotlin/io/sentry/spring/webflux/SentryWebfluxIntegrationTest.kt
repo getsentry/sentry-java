@@ -22,6 +22,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -105,6 +106,29 @@ class SentryWebfluxIntegrationTest {
   }
 
   @Test
+  fun `reused exception is sent for separate WebFlux requests`() {
+    repeat(2) {
+      testClient
+        .get()
+        .uri("http://localhost:$port/throws-reused")
+        .exchange()
+        .expectStatus()
+        .is5xxServerError
+    }
+
+    await.untilAsserted {
+      verify(transport, times(2))
+        .send(
+          checkEvent { event ->
+            assertThat(event.exceptions!!.last().mechanism!!.type)
+              .isEqualTo(SentryWebExceptionHandler.MECHANISM_TYPE)
+          },
+          anyOrNull(),
+        )
+    }
+  }
+
+  @Test
   fun `does not send events for handled exceptions`() {
     testClient
       .get()
@@ -170,6 +194,8 @@ open class App {
       it.dsn = "http://key@localhost/proj"
       it.setDebug(true)
       it.setTransportFactory(transportFactory)
+      it.isEnableDeduplication = false
+      it.isEnableScopeBasedDeduplication = true
       it.tracesSampleRate = 1.0
     }
   }
@@ -177,6 +203,10 @@ open class App {
 
 @RestController
 class HelloController {
+  companion object {
+    private val reusableException = RuntimeException("reused exception")
+  }
+
   @GetMapping("/hello")
   fun hello(): Mono<Void> {
     Sentry.captureMessage("hello")
@@ -184,6 +214,8 @@ class HelloController {
   }
 
   @GetMapping("/throws") fun throws(): Unit = throw RuntimeException("something went wrong")
+
+  @GetMapping("/throws-reused") fun throwsReused(): Unit = throw reusableException
 
   @GetMapping("/throws-handled")
   fun throwsHandled(): Unit = throw CustomException("handled exception")

@@ -214,6 +214,30 @@ class SentryAndroidTest {
   }
 
   @Test
+  fun `manifest scope-based deduplication is applied before processor installation`() {
+    ContextUtils.resetInstance()
+    val metadata =
+      Bundle().apply {
+        putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+        putBoolean(ManifestMetadataReader.ENABLE_SCOPE_BASED_DEDUPLICATION, true)
+      }
+
+    fixture.initSut(ContextUtilsTestHelper.mockMetaData(metaData = metadata)) {
+      it.isEnableDeduplication = false
+    }
+
+    val scopes = Sentry.getCurrentScopes()
+    assertFalse(scopes.options.isEnableDeduplication)
+    assertTrue(scopes.options.isEnableScopeBasedDeduplication)
+    assertEquals(
+      1,
+      scopes.isolationScope.eventProcessors.count {
+        it.javaClass.simpleName == "ScopeBasedDuplicateEventDetectionEventProcessor"
+      },
+    )
+  }
+
+  @Test
   fun `init won't throw exception`() {
     val logger = mock<ILogger>()
 
