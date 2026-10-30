@@ -588,7 +588,7 @@ public class SentryOptions implements RateLimiterConfig {
    * Strings or regex patterns that the origin of a new span/transaction will be tested against. If
    * there is a match, the span/transaction will not be created.
    */
-  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredSpanOrigins = null;
+  private @Nullable List<FilterString> ignoredSpanOrigins = null;
 
   /**
    * Strings or regex patterns that captured transaction names will be tested against. If there is a
@@ -2949,7 +2949,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @return the list of strings or regex patterns
    */
-  @ApiStatus.Experimental
   public @Nullable List<FilterString> getIgnoredSpanOrigins() {
     return ignoredSpanOrigins;
   }
@@ -2960,7 +2959,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredSpanOrigin the string/regex pattern
    */
-  @ApiStatus.Experimental
   public void addIgnoredSpanOrigin(String ignoredSpanOrigin) {
     if (ignoredSpanOrigins == null) {
       ignoredSpanOrigins = new ArrayList<>();
@@ -2974,7 +2972,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredSpanOrigins the list of strings/regex patterns
    */
-  @ApiStatus.Experimental
   public void setIgnoredSpanOrigins(final @Nullable List<String> ignoredSpanOrigins) {
     if (ignoredSpanOrigins == null) {
       this.ignoredSpanOrigins = null;
