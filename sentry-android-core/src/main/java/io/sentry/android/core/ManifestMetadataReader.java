@@ -806,13 +806,12 @@ final class ManifestMetadataReader {
           options.setSpotlightConnectionUrl(spotlightUrl);
         }
 
-        // Screenshot masking options (default to false for backwards compatibility)
         options
             .getScreenshot()
-            .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, false));
+            .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, true));
         options
             .getScreenshot()
-            .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, false));
+            .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, true));
 
         if (options.getAnrProfilingSampleRate() == null) {
           final double anrProfilingSampleRate =

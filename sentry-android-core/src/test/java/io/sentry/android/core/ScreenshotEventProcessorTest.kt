@@ -73,7 +73,13 @@ class ScreenshotEventProcessorTest {
   private class Fixture {
     lateinit var activity: Activity
     val threadChecker = mock<IThreadChecker>()
-    val options = SentryAndroidOptions().apply { dsn = "https://key@sentry.io/proj" }
+    val options =
+      SentryAndroidOptions().apply {
+        dsn = "https://key@sentry.io/proj"
+        // Tests opt in to masking, so they also run without sentry-android-replay.
+        screenshot.setMaskAllText(false)
+        screenshot.setMaskAllImages(false)
+      }
     val mainProcessor = MainEventProcessor(options)
 
     init {
