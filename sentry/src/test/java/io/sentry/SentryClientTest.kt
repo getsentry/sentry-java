@@ -1023,66 +1023,6 @@ class SentryClientTest {
   }
 
   @Test
-  fun `when captureUserFeedback with empty id, envelope is not sent`() {
-    val sut = fixture.getSut()
-
-    sut.captureUserFeedback(UserFeedback(SentryId.EMPTY_ID))
-
-    verify(fixture.transport, never()).send(any(), anyOrNull())
-  }
-
-  @Test
-  fun `when captureUserFeedback, envelope is sent`() {
-    val sut = fixture.getSut()
-
-    sut.captureUserFeedback(userFeedback)
-
-    verify(fixture.transport)
-      .send(
-        check { actual ->
-          assertEquals(userFeedback.eventId, actual.header.eventId)
-          assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
-
-          assertEquals(1, actual.items.count())
-          val item = actual.items.first()
-          assertEquals(SentryItemType.UserFeedback, item.header.type)
-          assertEquals("application/json", item.header.contentType)
-
-          assertEnvelopeItemDataForUserFeedback(item)
-        }
-      )
-  }
-
-  private fun assertEnvelopeItemDataForUserFeedback(item: SentryEnvelopeItem) {
-    val stream = ByteArrayOutputStream()
-    val writer = stream.bufferedWriter(Charset.forName("UTF-8"))
-    fixture.sentryOptions.serializer.serialize(userFeedback, writer)
-    val expectedData = stream.toByteArray()
-    assertTrue(Arrays.equals(expectedData, item.data))
-  }
-
-  @Test
-  fun `when captureUserFeedback and connection throws, log exception`() {
-    val sut = fixture.getSut()
-
-    val exception = IOException("No connection")
-    whenever(fixture.transport.send(any())).thenThrow(exception)
-
-    val logger = mock<ILogger>()
-    fixture.sentryOptions.setLogger(logger)
-
-    sut.captureUserFeedback(userFeedback)
-
-    verify(logger)
-      .log(
-        SentryLevel.WARNING,
-        exception,
-        "Capturing user feedback %s failed.",
-        userFeedback.eventId,
-      )
-  }
-
-  @Test
   fun `when captureCheckIn, envelope is sent`() {
     val sut = fixture.getSut()
 
@@ -4516,19 +4456,6 @@ class SentryClientTest {
   private fun createSession(release: String = "rel"): Session {
     return Session("dis", User(), "env", release)
   }
-
-  private val userFeedback: UserFeedback
-    get() {
-      val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-      val userFeedback = UserFeedback(eventId)
-      userFeedback.apply {
-        name = "John"
-        email = "john@me.com"
-        comments = "comment"
-      }
-
-      return userFeedback
-    }
 
   private val checkIn = CheckIn("some_slug", CheckInStatus.OK)
 

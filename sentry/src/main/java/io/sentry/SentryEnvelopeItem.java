@@ -176,36 +176,6 @@ public final class SentryEnvelopeItem {
     }
   }
 
-  @Deprecated
-  public static SentryEnvelopeItem fromUserFeedback(
-      final @NotNull ISerializer serializer, final @NotNull UserFeedback userFeedback) {
-    Objects.requireNonNull(serializer, "ISerializer is required.");
-    Objects.requireNonNull(userFeedback, "UserFeedback is required.");
-
-    final CachedItem cachedItem =
-        new CachedItem(
-            () -> {
-              try (final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                  final Writer writer =
-                      new BufferedWriter(
-                          new OutputStreamWriter(stream, UTF_8), WRITER_BUFFER_SIZE)) {
-                serializer.serialize(userFeedback, writer);
-                return stream.toByteArray();
-              }
-            });
-
-    SentryEnvelopeItemHeader itemHeader =
-        new SentryEnvelopeItemHeader(
-            SentryItemType.UserFeedback,
-            () -> cachedItem.getBytes().length,
-            "application/json",
-            null);
-
-    // avoid method refs on Android due to some issues with older AGP setups
-    // noinspection Convert2MethodRef
-    return new SentryEnvelopeItem(itemHeader, () -> cachedItem.getBytes());
-  }
-
   public static SentryEnvelopeItem fromCheckIn(
       final @NotNull ISerializer serializer, final @NotNull CheckIn checkIn) {
     Objects.requireNonNull(serializer, "ISerializer is required.");
@@ -691,11 +661,12 @@ public final class SentryEnvelopeItem {
     private @Nullable byte[] bytes;
     private final @Nullable Callable<byte[]> dataFactory;
 
-    public CachedItem(final @Nullable Callable<byte[]> dataFactory) {
+    CachedItem(final @Nullable Callable<byte[]> dataFactory) {
       this.dataFactory = dataFactory;
     }
 
-    public @NotNull byte[] getBytes() throws Exception {
+    @NotNull
+    byte[] getBytes() throws Exception {
       if (bytes == null && dataFactory != null) {
         bytes = dataFactory.call();
       }

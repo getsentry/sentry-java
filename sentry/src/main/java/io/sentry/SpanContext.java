@@ -16,6 +16,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
+// temp fix for JDK 21: Constructors call overridable methods; making them final would break the
+// public API.
+@SuppressWarnings("this-escape")
 @Open
 public class SpanContext implements JsonUnknown, JsonSerializable {
   public static final String TYPE = "trace";
@@ -52,8 +55,6 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
   protected @NotNull Map<String, Object> data = new ConcurrentHashMap<>();
 
   private @Nullable Map<String, Object> unknown;
-
-  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
 
   protected @Nullable Baggage baggage;
 
@@ -251,14 +252,6 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
 
   public void setOrigin(final @Nullable String origin) {
     this.origin = origin;
-  }
-
-  public @NotNull Instrumenter getInstrumenter() {
-    return instrumenter;
-  }
-
-  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
-    this.instrumenter = instrumenter;
   }
 
   public @Nullable Baggage getBaggage() {

@@ -2,9 +2,98 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- Remove the deprecated user feedback APIs ([#6337](https://github.com/getsentry/sentry-java/pull/6337))
+  - `UserFeedback` and `Sentry.captureUserFeedback(...)`: use `Sentry.feedback().capture(...)` with `io.sentry.protocol.Feedback` instead
+  - `Sentry.captureFeedback(...)`: use `Sentry.feedback().capture(...)` instead
+  - `Sentry.showUserFeedbackDialog(...)`: use `Sentry.feedback().show(...)` instead
+  - Android: `SentryUserFeedbackDialog`: use `SentryUserFeedbackForm` instead
+  - Android: the `SentryUserFeedbackButton` view and composable: call `Sentry.feedback().show()` from your own button instead
+- Remove deprecated Hub compatibility APIs in favor of `IScopes` and `Scopes` ([#6223](https://github.com/getsentry/sentry-java/pull/6223))
+- Remove the aggregate Sentry Logs and Metrics enable options from all configuration surfaces:
+  - Java API: `options.getLogs().setEnabled(...)` and `options.getMetrics().setEnabled(...)`
+  - Properties files: `logs.enabled` and `metrics.enabled`
+  - Environment variables: `SENTRY_LOGS_ENABLED` and `SENTRY_METRICS_ENABLED`
+  - JVM system properties and Spring Boot: `sentry.logs.enabled` and `sentry.metrics.enabled`
+  - Android manifest metadata: `io.sentry.logs.enabled` and `io.sentry.metrics.enabled`
+
+  The Java accessors are removed. Values supplied through the other configuration surfaces no
+  longer affect capture.
+  ([#5939](https://github.com/getsentry/sentry-java/pull/5939),
+  [#5947](https://github.com/getsentry/sentry-java/pull/5947),
+  [#5953](https://github.com/getsentry/sentry-java/pull/5953))
+  - **Automatic Logs capture:** Disabled by default. Enable it separately for each integration:
+    - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
+      ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
+    - Logback appender: `logsEnabled` ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
+    - Log4j2 appender: `logsEnabled` ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
+    - JUL handler: `logsEnabled` or `io.sentry.jul.SentryHandler.logsEnabled`
+      ([#5942](https://github.com/getsentry/sentry-java/pull/5942))
+    - Auto-installed Timber integration: `timberLogCaptureEnabled` or
+      `io.sentry.timber.log-capture.enabled` manifest metadata
+      ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+    - Manually installed Timber integration or tree: `logsEnabled`
+      ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
+    - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.log-capture.enabled` manifest metadata
+      ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
+  - **Constructor migrations:**
+    - The remaining Log4j2 `SentryAppender` constructor and `createAppender` factory require a
+      `logsEnabled` argument. The deprecated constructor without `minimumLevel` is removed.
+    - Manually constructed `SentryTimberIntegration` and `SentryTimberTree` instances require a
+      `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
+- Disable tracing for HTTP `OPTIONS` requests by default. Set `traceOptionsRequests` to `true` to
+  preserve the previous behavior ([#6254](https://github.com/getsentry/sentry-java/pull/6254))
+- Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
+- Remove the deprecated `Instrumenter` enum, option, span context property, and `startChild` overloads ([#6252](https://github.com/getsentry/sentry-java/pull/6252))
+- Remove deprecated OpenTelemetry integration classes and the legacy `SentrySpanStorage` ([#6243](https://github.com/getsentry/sentry-java/pull/6243))
+- Decide whether foregrounding the app starts a new session on a monotonic clock instead of the wall clock, so that a device time change no longer starts a session that should have been resumed, or resumes one that should have ended. This affects session counts ([#6096](https://github.com/getsentry/sentry-java/pull/6096))
+- `SentryUserFeedbackForm` now extends `android.app.Dialog` instead of `android.app.AlertDialog` ([#6338](https://github.com/getsentry/sentry-java/pull/6338))
+  - The form never used `AlertDialog` features. Code that calls `AlertDialog`-only methods on it, such as `setButton` or `setMessage`, no longer compiles.
+
 ### Fixes
 
 - Do not capture failed Apollo 3, 4, and 5 requests when the GraphQL `errors` array is empty ([#6285](https://github.com/getsentry/sentry-java/pull/6285))
+
+## 8.62.0
+
+### Improvements
+
+- Support Navigation 3 integration for multi-Activity and multi-Fragment applications, where each Activity or Fragment has its own `SentryNavEffect` ([#6305](https://github.com/getsentry/sentry-java/pull/6305))
+  - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/#supported-setups) for a detailed list of supported vs unsupported app setups.
+
+### Fixes
+
+- Fix a D8 crash (`NullPointerException: Cannot invoke "String.length()"`) when dexing the SDK with AGP 8.0 and older, a regression from 8.61.1 ([#6356](https://github.com/getsentry/sentry-java/pull/6356))
+- Always remove the first-draw listener after the first frame, even if no layout pass follows it ([#6152](https://github.com/getsentry/sentry-java/pull/6152))
+- Prevent Reactor pool maintenance tasks from retaining unbounded Sentry scope chains ([#6283](https://github.com/getsentry/sentry-java/pull/6283))
+
+## 8.61.1
+
+### Fixes
+
+- Session Replay: Fix a native crash (`SIGABRT` on the RenderThread) when stopping a replay that uses the canvas screenshot strategy ([#6342](https://github.com/getsentry/sentry-java/pull/6342))
+- Session Replay: Keep the segment videos of a replay that stopped before the startup cleanup of previous replays ran ([#6343](https://github.com/getsentry/sentry-java/pull/6343))
+- Report the number of dropped spans in client reports when a batched span envelope item is discarded, instead of a quantity of 1 (e.g. for Flutter span streaming) ([#6265](https://github.com/getsentry/sentry-java/pull/6265))
+- Session Replay: Keep the flushed video and do not reuse its segment id when `stop()` is called right after `flush()` in buffer mode ([#6340](https://github.com/getsentry/sentry-java/pull/6340))
+- Keep sending events from Android 7.1.0 and older devices after Sentry changes its TLS certificate authority ([#6227](https://github.com/getsentry/sentry-java/pull/6227))
+  - In February 2027, Sentry moves its TLS certificates from DigiCert to Let's Encrypt and Google Trust Services ([announcement](https://sentry.io/changelog/were-changing-our-tls-certificate-authority-in-february-2027)).
+  - Android 7.1.0 (API 25) and older don't trust the Let's Encrypt root certificate (ISRG Root X1), so without this fix, the SDK on those devices can no longer send events to Sentry after the switch.
+  - The SDK now bundles ISRG Root X1 and trusts it in addition to the device's root certificates on API 25 and lower. This only applies to the SDK's own uploads to Sentry SaaS (DSNs on `sentry.io`), not to self-hosted Sentry, not to any other connection your app makes, and not if you set your own `SentryOptions.setSslSocketFactory`.
+  - Apps need to update to an SDK version with this fix to keep sending events from these devices.
+- Session Replay: Use a software canvas for video encoding on the Android Emulator to avoid a native crash in `eglDestroySurface` ([#6282](https://github.com/getsentry/sentry-java/pull/6282))
+
+### Internal
+
+- Measure the hostname cache TTL on the monotonic ticker the options provide, so that a device time change no longer shortens or extends it ([#6100](https://github.com/getsentry/sentry-java/pull/6100))
+- Measure Session Replay's 1h recording cap and its touch-move debounce on a monotonic clock, so a device time change no longer stops a healthy recording early, keeps a finished one alive, or suppresses gesture events ([#6090](https://github.com/getsentry/sentry-java/pull/6090))
+- Add `ScreenshotUtils.takeMaskedScreenshot` so Hybrid SDKs can capture screenshots masked according to `SentryAndroidOptions.getScreenshot()` ([#6281](https://github.com/getsentry/sentry-java/pull/6281))
+
+### Dependencies
+
+- Bump Native SDK from v0.17.3 to v0.17.4 ([#6278](https://github.com/getsentry/sentry-java/pull/6278))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0174)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.3...0.17.4)
 
 ## 8.61.0
 
@@ -38,48 +127,16 @@
 
 ## 8.60.0
 
-### Breaking Changes
-
-- Remove the aggregate Sentry Logs and Metrics enable options from all configuration surfaces:
-  - Java API: `options.getLogs().setEnabled(...)` and `options.getMetrics().setEnabled(...)`
-  - Properties files: `logs.enabled` and `metrics.enabled`
-  - Environment variables: `SENTRY_LOGS_ENABLED` and `SENTRY_METRICS_ENABLED`
-  - JVM system properties and Spring Boot: `sentry.logs.enabled` and `sentry.metrics.enabled`
-  - Android manifest metadata: `io.sentry.logs.enabled` and `io.sentry.metrics.enabled`
-
-  The Java accessors are removed. Values supplied through the other configuration surfaces no
-  longer affect capture.
-  ([#5939](https://github.com/getsentry/sentry-java/pull/5939),
-  [#5947](https://github.com/getsentry/sentry-java/pull/5947),
-  [#5953](https://github.com/getsentry/sentry-java/pull/5953))
-  - **Automatic Logs capture:** Disabled by default. Enable it separately for each integration:
-    - Spring Boot logging auto-configuration: `sentry.logging.logs-enabled`
-      ([#5946](https://github.com/getsentry/sentry-java/pull/5946))
-    - Logback appender: `logsEnabled` ([#5940](https://github.com/getsentry/sentry-java/pull/5940))
-    - Log4j2 appender: `logsEnabled` ([#5941](https://github.com/getsentry/sentry-java/pull/5941))
-    - JUL handler: `logsEnabled` or `io.sentry.jul.SentryHandler.logsEnabled`
-      ([#5942](https://github.com/getsentry/sentry-java/pull/5942))
-    - Auto-installed Timber integration: `timberLogCaptureEnabled` or
-      `io.sentry.timber.log-capture.enabled` manifest metadata
-      ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
-    - Manually installed Timber integration or tree: `logsEnabled`
-      ([#5943](https://github.com/getsentry/sentry-java/pull/5943))
-    - Logcat: `logcatLogCaptureEnabled` or `io.sentry.logcat.log-capture.enabled` manifest metadata
-      ([#5945](https://github.com/getsentry/sentry-java/pull/5945))
-  - **Constructor migrations:**
-    - The remaining Log4j2 `SentryAppender` constructor and `createAppender` factory require a
-      `logsEnabled` argument. The deprecated constructor without `minimumLevel` is removed.
-    - Manually constructed `SentryTimberIntegration` and `SentryTimberTree` instances require a
-      `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
-- Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
-- Decide whether foregrounding the app starts a new session on a monotonic clock instead of the wall clock, so that a device time change no longer starts a session that should have been resumed, or resumes one that should have ended. This affects session counts ([#6096](https://github.com/getsentry/sentry-java/pull/6096))
-
 ### Features
 
 - Add support for Android Navigation 3 through the new `sentry-android-navigation3` library ([#6233](https://github.com/getsentry/sentry-java/pull/6233))
   - Use `SentryNavEffect` to record navigation transactions, breadcrumbs, screen names, and additional context as your nav back stack changes.
   - See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/) for additional details.
 - Report the cellular network technology generation in `device.connection_effective_type`, for example `4g` or `5g` ([#6146](https://github.com/getsentry/sentry-java/pull/6146))
+
+### Fixes
+
+- Avoid duplicate serialization debug logs when calculating serialized object sizes ([#6255](https://github.com/getsentry/sentry-java/pull/6255))
 
 ### Dependencies
 

@@ -185,26 +185,6 @@ class SpanTest {
   }
 
   @Test
-  fun `starting a child with different instrumenter no-ops`() {
-    val transaction =
-      getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
-    val span = transaction.startChild("operation", "description")
-
-    span.startChild("op")
-    assertEquals(0, transaction.spans.size)
-  }
-
-  @Test
-  fun `starting a child with same instrumenter adds span to transaction`() {
-    val transaction =
-      getTransaction(TransactionContext("name", "op").also { it.instrumenter = Instrumenter.OTEL })
-    val span = transaction.startChild("operation", "description", null, Instrumenter.OTEL)
-
-    span.startChild("op", "desc", null, Instrumenter.OTEL)
-    assertEquals(2, transaction.spans.size)
-  }
-
-  @Test
   fun `when span was not finished, isFinished returns false`() {
     val span = startChildFromSpan()
 
@@ -314,7 +294,6 @@ class SpanTest {
         "op1",
         "desc",
         SentryLongDate(span.startDate.nanoTimestamp() - 1000L),
-        Instrumenter.SENTRY,
         SpanOptions(),
       ) as Span
     child1.finish()
