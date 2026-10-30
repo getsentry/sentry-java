@@ -41,6 +41,7 @@ public final class SentryTracer implements ITransaction {
   private volatile @Nullable Future<?> idleTimeoutFuture;
   private volatile @Nullable Future<?> deadlineTimeoutFuture;
   private volatile long deadlineTimeoutScheduledAtNanos;
+  private volatile boolean dropOnFinish = false;
 
   // Whether timeout tasks may still be scheduled. Set to false once the tracer is finished. The
   // executor itself is owned by the options (shared SDK-wide) and obtained from there when needed.
@@ -166,25 +167,11 @@ public final class SentryTracer implements ITransaction {
                 SentryLevel.DEBUG,
                 "Dropping transaction %s because the deadline timer fired too late",
                 name);
-        root.finish();
-        scopes.configureScope(
-            scope -> {
-              scope.withTransaction(
-                  transaction -> {
-                    if (transaction == this) {
-                      scope.clearTransaction();
-                    }
-                  });
-            });
-        if (timersEnabled) {
-          try (final @NotNull ISentryLifecycleToken ignored = timerLock.acquire()) {
-            if (timersEnabled) {
-              cancelIdleTimer();
-              cancelDeadlineTimer();
-              timersEnabled = false;
-            }
-          }
-        }
+        // run the regular finish path (child spans, callbacks, collectors, profilers, scope and
+        // timers) but skip capturing the transaction
+        dropOnFinish = true;
+        forceFinish(SpanStatus.DEADLINE_EXCEEDED, false, null);
+        isDeadlineTimerRunning.set(false);
         return;
       }
     }
@@ -318,6 +305,10 @@ public final class SentryTracer implements ITransaction {
             timersEnabled = false;
           }
         }
+      }
+
+      if (dropOnFinish) {
+        return;
       }
 
       if (dropIfNoChildren && children.isEmpty() && transactionOptions.getIdleTimeout() != null) {

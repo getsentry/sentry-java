@@ -1178,6 +1178,33 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `when deadline timer fires after device sleep the regular finish cleanup still runs`() {
+    val dateProvider = MutableDateProvider()
+    var transactionFinishedCallbackCalled = false
+    val transaction =
+      fixture.getSut(
+        optionsConfiguration = { it.setDateProvider(dateProvider) },
+        idleTimeout = 60_000,
+        deadlineTimeout = 10_000,
+        transactionFinishedCallback = { transactionFinishedCallbackCalled = true },
+        samplingDecision = TracesSamplingDecision(true),
+      )
+    val span = transaction.startChild("op")
+
+    dateProvider.currentTimeMillis = 30_000
+    transaction.deadlineTimeoutTask!!.run()
+
+    assertThat(transaction.isFinished).isTrue()
+    assertThat(span.isFinished).isTrue()
+    assertThat(span.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(transactionFinishedCallbackCalled).isTrue()
+    verify(fixture.compositePerformanceCollector)
+      .stop(check<ITransaction> { assertEquals(transaction, it) })
+    verify(fixture.scopes, never())
+      .captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
   fun `when deadline timer fires at twice the deadline transaction is still captured`() {
     val dateProvider = MutableDateProvider()
     val transaction =
