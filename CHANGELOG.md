@@ -50,6 +50,7 @@
 - Decide whether foregrounding the app starts a new session on a monotonic clock instead of the wall clock, so that a device time change no longer starts a session that should have been resumed, or resumes one that should have ended. This affects session counts ([#6096](https://github.com/getsentry/sentry-java/pull/6096))
 - `SentryUserFeedbackForm` now extends `android.app.Dialog` instead of `android.app.AlertDialog` ([#6338](https://github.com/getsentry/sentry-java/pull/6338))
   - The form never used `AlertDialog` features. Code that calls `AlertDialog`-only methods on it, such as `setButton` or `setMessage`, no longer compiles.
+- Raise the minimum supported Android API level (`minSdk`) of all Android modules from 21 to 26. Apps with a lower `minSdk` must raise it or stay on 8.x ([#6435](https://github.com/getsentry/sentry-java/pull/6435))
 
 ## 8.62.0
 
