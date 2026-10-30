@@ -309,7 +309,7 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
-  private boolean enableTombstone = false;
+  private boolean enableTombstone = true;
 
   /**
    * The maximum time difference, in milliseconds, between a tombstone from {@link
@@ -463,7 +463,7 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   /**
    * Checks if Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) is enabled or disabled
-   * Default is disabled
+   * Default is enabled
    *
    * @return true if enabled or false otherwise
    */

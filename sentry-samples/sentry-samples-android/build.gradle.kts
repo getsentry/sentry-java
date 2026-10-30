@@ -178,6 +178,7 @@ dependencies {
 
   implementation(projects.sentryAndroid)
   implementation(projects.sentryAndroidFragment)
+  implementation(projects.sentryAndroidNdk)
   implementation(projects.sentryAndroidNavigation)
   implementation(projects.sentryAndroidNavigation3)
   implementation(projects.sentryAndroidSqlite)
