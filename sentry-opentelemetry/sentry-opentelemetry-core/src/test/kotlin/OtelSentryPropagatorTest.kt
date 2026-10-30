@@ -262,43 +262,6 @@ class OtelSentryPropagatorTest {
   }
 
   @Test
-  fun `does not inject headers if URL in span attributes with tracePropagationTargets set to same url but trace sampling disabled`() {
-    Sentry.init { options ->
-      options.dsn = "https://key@sentry.io/proj"
-      options.setTracePropagationTargets(listOf("sentry.io"))
-      options.isTraceSampling = false
-    }
-    val propagator = OtelSentryPropagator()
-    val carrier = mutableMapOf<String, String>()
-
-    val otelAttributes = Attributes.of(UrlAttributes.URL_FULL, "https://sentry.io/some/path")
-    val sentrySpan = mock<IOtelSpanWrapper>()
-    whenever(sentrySpan.toSentryTrace())
-      .thenReturn(SentryTraceHeader("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"))
-    whenever(sentrySpan.toBaggageHeader(anyOrNull()))
-      .thenReturn(
-        BaggageHeader(
-          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
-        )
-      )
-    whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
-    val otelSpanContext =
-      SpanContext.create(
-        "f9118105af4a2d42b4124532cd1065ff",
-        "424cffc8f94feeee",
-        TraceFlags.getSampled(),
-        TraceState.getDefault(),
-      )
-    val otelSpan = Span.wrap(otelSpanContext)
-    spanStorage.storeSentrySpan(otelSpanContext, sentrySpan)
-
-    propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
-
-    assertNull(carrier["sentry-trace"])
-    assertNull(carrier["baggage"])
-  }
-
-  @Test
   fun `does not inject headers if sentry span missing`() {
     val propagator = OtelSentryPropagator()
     val carrier = mutableMapOf<String, String>()

@@ -912,7 +912,6 @@ class SentryTracerTest {
   fun `returns trace state`() {
     val transaction =
       fixture.getSut({
-        it.isTraceSampling = true
         it.isSendDefaultPii = true
       })
     fixture.scopes.setUser(User().apply { id = "user-id" })
@@ -931,7 +930,7 @@ class SentryTracerTest {
 
   @Test
   fun `returns trace state without userId if not send pii`() {
-    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    val transaction = fixture.getSut()
     fixture.scopes.setUser(User().apply { id = "user-id" })
     val trace = transaction.traceContext()
     assertNotNull(trace) {
@@ -946,7 +945,7 @@ class SentryTracerTest {
 
   @Test
   fun `trace state does not change once computed`() {
-    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    val transaction = fixture.getSut()
     val traceBeforeUserSet = transaction.traceContext()
     fixture.scopes.setUser(User().apply { id = "user-id" })
     val traceAfterUserSet = transaction.traceContext()
@@ -967,7 +966,6 @@ class SentryTracerTest {
   fun `returns baggage header`() {
     val transaction =
       fixture.getSut({
-        it.isTraceSampling = true
         it.environment = "production"
         it.release = "1.0.99-rc.7"
         it.isSendDefaultPii = true
@@ -996,7 +994,6 @@ class SentryTracerTest {
   fun `returns baggage header without userId if not send pii`() {
     val transaction =
       fixture.getSut({
-        it.isTraceSampling = true
         it.environment = "production"
         it.release = "1.0.99-rc.7"
       })
@@ -1021,7 +1018,6 @@ class SentryTracerTest {
   fun `returns baggage header without userId if send pii and null user`() {
     val transaction =
       fixture.getSut({
-        it.isTraceSampling = true
         it.environment = "production"
         it.release = "1.0.99-rc.7"
         it.isSendDefaultPii = true

@@ -38,6 +38,7 @@ class OutboxSenderTest {
 
     init {
       whenever(options.dsn).thenReturn("https://key@sentry.io/proj")
+      whenever(options.retrieveParsedDsn()).thenReturn(Dsn("https://key@sentry.io/proj"))
       whenever(options.dateProvider).thenReturn(SentryNanotimeDateProvider())
       whenever(options.threadChecker).thenReturn(NoOpThreadChecker.getInstance())
       whenever(options.continuousProfiler).thenReturn(NoOpContinuousProfiler.getInstance())

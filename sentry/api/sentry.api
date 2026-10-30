@@ -3641,7 +3641,6 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun isStartProfilerOnAppStart ()Z
 	public fun isStrictTraceContinuation ()Z
 	public fun isTraceOptionsRequests ()Z
-	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
 	public fun merge (Lio/sentry/ExternalOptions;)V
 	public fun setAppStartExtender (Lio/sentry/IAppStartExtender;)V
@@ -3766,7 +3765,6 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setTimerExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setTraceOptionsRequests (Z)V
 	public fun setTracePropagationTargets (Ljava/util/List;)V
-	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
