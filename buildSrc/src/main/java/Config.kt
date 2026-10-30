@@ -7,6 +7,11 @@ object Config {
 
     object BuildPlugins {
         val androidGradle = "com.android.tools.build:gradle:$AGP"
+
+        // The R8 bundled with AGP 9.0 and 9.2 crashes on androidx.core at minSdk 26, so builds that
+        // override AGP (the AGP matrix) run the R8 that ships with the default AGP instead.
+        val r8: String?
+            get() = if (System.getenv("VERSION_AGP") != null) "com.android.tools:r8:9.4.14" else null
     }
 
     object Android {
