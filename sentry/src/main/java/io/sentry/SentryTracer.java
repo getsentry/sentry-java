@@ -15,6 +15,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -39,6 +40,8 @@ public final class SentryTracer implements ITransaction {
 
   private volatile @Nullable Future<?> idleTimeoutFuture;
   private volatile @Nullable Future<?> deadlineTimeoutFuture;
+  private volatile long deadlineTimeoutScheduledAtNanos;
+  private volatile boolean dropOnFinish = false;
 
   // Whether timeout tasks may still be scheduled. Set to false once the tracer is finished. The
   // executor itself is owned by the options (shared SDK-wide) and obtained from there when needed.
@@ -145,6 +148,34 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void onDeadlineTimeoutReached() {
+    if (isFinished()) {
+      isDeadlineTimerRunning.set(false);
+      return;
+    }
+
+    final @Nullable Long deadlineTimeout = transactionOptions.getDeadlineTimeout();
+    if (deadlineTimeout != null) {
+      final long elapsedNanos =
+          scopes.getOptions().getDateProvider().now().nanoTimestamp()
+              - deadlineTimeoutScheduledAtNanos;
+      if (deadlineTimeout > 0
+          && TimeUnit.NANOSECONDS.toMillis(elapsedNanos) > deadlineTimeout * 2) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.DEBUG,
+                "Dropping transaction %s because the deadline timer fired too late",
+                name);
+        // run the regular finish path (child spans, callbacks, collectors, profilers, scope and
+        // timers) but skip capturing the transaction
+        dropOnFinish = true;
+        forceFinish(SpanStatus.DEADLINE_EXCEEDED, false, null);
+        isDeadlineTimerRunning.set(false);
+        return;
+      }
+    }
+
     final @Nullable SpanStatus status = getStatus();
     forceFinish(
         (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
@@ -276,6 +307,10 @@ public final class SentryTracer implements ITransaction {
         }
       }
 
+      if (dropOnFinish) {
+        return;
+      }
+
       if (dropIfNoChildren && children.isEmpty() && transactionOptions.getIdleTimeout() != null) {
         // if it's an idle transaction which has no children, we drop it to save user's quota
         scopes
@@ -310,6 +345,8 @@ public final class SentryTracer implements ITransaction {
         if (timersEnabled) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
+          deadlineTimeoutScheduledAtNanos =
+              scopes.getOptions().getDateProvider().now().nanoTimestamp();
           try {
             deadlineTimeoutFuture =
                 scopes
@@ -533,7 +570,8 @@ public final class SentryTracer implements ITransaction {
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
+              "Span operation: %s, description: %s dropped due to limit reached. Returning"
+                  + " NoOpSpan.",
               operation,
               description);
       return NoOpSpan.getInstance();
@@ -689,7 +727,8 @@ public final class SentryTracer implements ITransaction {
           .getLogger()
           .log(
               SentryLevel.WARNING,
-              "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
+              "Span operation: %s, description: %s dropped due to limit reached. Returning"
+                  + " NoOpSpan.",
               operation,
               description);
       return NoOpSpan.getInstance();
@@ -1043,6 +1082,24 @@ public final class SentryTracer implements ITransaction {
   @Nullable
   Future<?> getDeadlineTimeoutFuture() {
     return deadlineTimeoutFuture;
+  }
+
+  @TestOnly
+  @Nullable
+  Future<?> getIdleTimeoutTask() {
+    return idleTimeoutFuture;
+  }
+
+  @TestOnly
+  @Nullable
+  Runnable getDeadlineTimeoutTask() {
+    return deadlineTimeoutFuture == null ? null : this::onDeadlineTimeoutReached;
+  }
+
+  @TestOnly
+  @Nullable
+  Object getTimer() {
+    return null;
   }
 
   @TestOnly
