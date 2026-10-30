@@ -3170,7 +3170,6 @@ public class SentryOptions implements RateLimiterConfig {
     this.backpressureMonitor = backpressureMonitor;
   }
 
-  @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;
   }
@@ -3202,7 +3201,6 @@ public class SentryOptions implements RateLimiterConfig {
     this.profilingTracesHz = profilingTracesHz;
   }
 
-  @ApiStatus.Experimental
   public boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
   }

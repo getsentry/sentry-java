@@ -622,12 +622,10 @@ public final class ExternalOptions {
     return ignoredTransactions;
   }
 
-  @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final @Nullable Boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;
   }
 
-  @ApiStatus.Experimental
   public @Nullable Boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
   }
