@@ -582,7 +582,7 @@ public class SentryOptions implements RateLimiterConfig {
   private boolean enableScopePersistence = true;
 
   /** The monitor slugs for which captured check-ins should not be sent to Sentry. */
-  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredCheckIns = null;
+  private @Nullable List<FilterString> ignoredCheckIns = null;
 
   /**
    * Strings or regex patterns that the origin of a new span/transaction will be tested against. If
@@ -618,7 +618,7 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private int profilingTracesHz = 101;
 
-  @ApiStatus.Experimental private @Nullable Cron cron = null;
+  private @Nullable Cron cron = null;
 
   private final @NotNull ExperimentalOptions experimental;
 
@@ -2995,7 +2995,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @return the list of monitor slugs
    */
-  @ApiStatus.Experimental
   public @Nullable List<FilterString> getIgnoredCheckIns() {
     return ignoredCheckIns;
   }
@@ -3006,7 +3005,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredCheckIn the monitor slug
    */
-  @ApiStatus.Experimental
   public void addIgnoredCheckIn(String ignoredCheckIn) {
     if (ignoredCheckIns == null) {
       ignoredCheckIns = new ArrayList<>();
@@ -3019,7 +3017,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredCheckIns the list of monitor slugs for which check-ins should not be sent
    */
-  @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
     if (ignoredCheckIns == null) {
       this.ignoredCheckIns = null;
@@ -3262,7 +3259,6 @@ public class SentryOptions implements RateLimiterConfig {
     return cron;
   }
 
-  @ApiStatus.Experimental
   public void setCron(@Nullable Cron cron) {
     this.cron = cron;
   }

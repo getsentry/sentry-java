@@ -340,7 +340,6 @@ public final class ScopesAdapter implements IScopes {
   }
 
   @Override
-  @ApiStatus.Experimental
   public @NotNull SentryId captureCheckIn(final @NotNull CheckIn checkIn) {
     return Sentry.captureCheckIn(checkIn);
   }
