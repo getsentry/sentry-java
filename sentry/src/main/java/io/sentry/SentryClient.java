@@ -1350,7 +1350,6 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
-  @ApiStatus.Experimental
   @Override
   public void captureMetric(
       @Nullable SentryMetricsEvent metricsEvent,
