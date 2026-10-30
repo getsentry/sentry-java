@@ -83,3 +83,13 @@ Sentry.init(
   }
 )
 ```
+
+## Trace propagation
+
+The Sentry propagator only injects tracing headers into outgoing requests when the OpenTelemetry
+span contains a destination that matches `tracePropagationTargets`. URLs are used when available.
+For client spans without a URL, the destination is built from `server.address` and the optional
+`server.port`. Spans without a URL or server address do not receive tracing headers.
+
+Messaging producer spans (`SpanKind.PRODUCER`) are an exception because queue and messaging
+instrumentations propagate tracing information through message metadata rather than a URL.

@@ -5,3 +5,13 @@ This module provides a lightweight integration for using OpenTelemetry alongside
 Unlike the other `sentry-opentelemetry-*` modules, this module does not rely on OpenTelemetry for scope storage or span creation. It is intended for setups where OpenTelemetry handles performance/tracing and Sentry handles errors, logs, metrics, and other products.
 
 Please consult the documentation on how to install and use this integration in the [Sentry Docs for Java](https://docs.sentry.io/platforms/java/).
+
+## Trace propagation
+
+The Sentry propagator only injects tracing headers into outgoing requests when the OpenTelemetry
+span contains a destination that matches `tracePropagationTargets`. URLs are used when available.
+For client spans without a URL, the destination is built from `server.address` and the optional
+`server.port`. Spans without a URL or server address do not receive tracing headers.
+
+Messaging producer spans (`SpanKind.PRODUCER`) are an exception because queue and messaging
+instrumentations propagate tracing information through message metadata rather than a URL.

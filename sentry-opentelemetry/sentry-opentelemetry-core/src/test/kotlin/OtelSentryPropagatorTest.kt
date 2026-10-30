@@ -3,11 +3,14 @@ package io.sentry.opentelemetry
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.TraceFlags
 import io.opentelemetry.api.trace.TraceState
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.TextMapGetter
 import io.opentelemetry.context.propagation.TextMapSetter
+import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.semconv.ServerAttributes
 import io.opentelemetry.semconv.UrlAttributes
 import io.sentry.BaggageHeader
 import io.sentry.Sentry
@@ -119,7 +122,7 @@ class OtelSentryPropagatorTest {
   }
 
   @Test
-  fun `injects headers if no URL`() {
+  fun `does not inject headers if no URL`() {
     val propagator = OtelSentryPropagator()
     val carrier = mutableMapOf<String, String>()
 
@@ -144,11 +147,122 @@ class OtelSentryPropagatorTest {
 
     propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
 
-    assertEquals("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1", carrier["sentry-trace"])
+    assertNull(carrier["sentry-trace"])
+    assertNull(carrier["baggage"])
+  }
+
+  @Test
+  fun `injects headers for producer span without URL`() {
+    val propagator = OtelSentryPropagator()
+    val carrier = mutableMapOf<String, String>()
+
+    val sentrySpan = mock<IOtelSpanWrapper>()
+    whenever(sentrySpan.toSentryTrace())
+      .thenReturn(SentryTraceHeader("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"))
+    whenever(sentrySpan.toBaggageHeader(anyOrNull()))
+      .thenReturn(
+        BaggageHeader(
+          "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d"
+        )
+      )
+    val tracerProvider = SdkTracerProvider.builder().build()
+    val otelSpan =
+      tracerProvider.get("test").spanBuilder("test").setSpanKind(SpanKind.PRODUCER).startSpan()
+    spanStorage.storeSentrySpan(otelSpan.spanContext, sentrySpan)
+
+    try {
+      propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
+    } finally {
+      otelSpan.end()
+      tracerProvider.shutdown()
+    }
+
+    assertEquals(
+      "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
+      carrier["sentry-trace"],
+    )
     assertEquals(
       "sentry-environment=production,sentry-public_key=502f25099c204a2fbf4cb16edc5975d1,sentry-sample_rand=0.456789,sentry-sample_rate=0.5,sentry-sampled=true,sentry-trace_id=df71f5972f754b4c85af13ff5c07017d",
       carrier["baggage"],
     )
+  }
+
+  @Test
+  fun `injects headers for client span if server authority matches tracePropagationTargets`() {
+    Sentry.init { options ->
+      options.dsn = "https://key@sentry.io/proj"
+      options.setTracePropagationTargets(listOf("orders.internal:4317"))
+    }
+    val propagator = OtelSentryPropagator()
+    val carrier = mutableMapOf<String, String>()
+    val otelAttributes =
+      Attributes.builder()
+        .put(ServerAttributes.SERVER_ADDRESS, "orders.internal")
+        .put(ServerAttributes.SERVER_PORT, 4317L)
+        .build()
+    val sentrySpan = mock<IOtelSpanWrapper>()
+    whenever(sentrySpan.toSentryTrace())
+      .thenReturn(SentryTraceHeader("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"))
+    whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
+    val tracerProvider = SdkTracerProvider.builder().build()
+    val otelSpan =
+      tracerProvider
+        .get("test")
+        .spanBuilder("test")
+        .setSpanKind(SpanKind.CLIENT)
+        .setAllAttributes(otelAttributes)
+        .startSpan()
+    spanStorage.storeSentrySpan(otelSpan.spanContext, sentrySpan)
+
+    try {
+      propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
+    } finally {
+      otelSpan.end()
+      tracerProvider.shutdown()
+    }
+
+    assertEquals(
+      "f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1",
+      carrier["sentry-trace"],
+    )
+  }
+
+  @Test
+  fun `does not inject headers for client span if server authority does not match tracePropagationTargets`() {
+    Sentry.init { options ->
+      options.dsn = "https://key@sentry.io/proj"
+      options.setTracePropagationTargets(listOf("orders.internal:443"))
+    }
+    val propagator = OtelSentryPropagator()
+    val carrier = mutableMapOf<String, String>()
+    val otelAttributes =
+      Attributes.builder()
+        .put(ServerAttributes.SERVER_ADDRESS, "orders.internal")
+        .put(ServerAttributes.SERVER_PORT, 4317L)
+        .build()
+    val sentrySpan = mock<IOtelSpanWrapper>()
+    whenever(sentrySpan.toSentryTrace())
+      .thenReturn(SentryTraceHeader("f9118105af4a2d42b4124532cd1065ff-424cffc8f94feeee-1"))
+    whenever(sentrySpan.openTelemetrySpanAttributes).thenReturn(otelAttributes)
+    val tracerProvider = SdkTracerProvider.builder().build()
+    val otelSpan =
+      tracerProvider
+        .get("test")
+        .spanBuilder("test")
+        .setSpanKind(SpanKind.CLIENT)
+        .setAllAttributes(otelAttributes)
+        .startSpan()
+    spanStorage.storeSentrySpan(otelSpan.spanContext, sentrySpan)
+
+    try {
+      propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
+    } finally {
+      otelSpan.end()
+      tracerProvider.shutdown()
+    }
+
+    assertNull(carrier["sentry-trace"])
+    assertNull(carrier["baggage"])
   }
 
   @Test

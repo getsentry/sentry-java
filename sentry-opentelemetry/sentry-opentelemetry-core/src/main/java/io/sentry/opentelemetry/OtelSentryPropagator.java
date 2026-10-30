@@ -3,12 +3,15 @@ package io.sentry.opentelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.TraceFlags;
 import io.opentelemetry.api.trace.TraceState;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
+import io.opentelemetry.sdk.trace.ReadableSpan;
+import io.opentelemetry.semconv.ServerAttributes;
 import io.sentry.Baggage;
 import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
@@ -74,11 +77,18 @@ public final class OtelSentryPropagator implements TextMapPropagator {
       return;
     }
 
-    final @Nullable String url = getUrl(sentrySpan, scopes.getOptions());
-    final @Nullable TracingUtils.TracingHeaders tracingHeaders =
-        url == null
-            ? TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan)
-            : TracingUtils.traceIfAllowed(scopes, url, Collections.emptyList(), sentrySpan);
+    final @Nullable String propagationTarget =
+        getPropagationTarget(otelSpan, sentrySpan, scopes.getOptions());
+    final @Nullable TracingUtils.TracingHeaders tracingHeaders;
+    if (propagationTarget != null) {
+      tracingHeaders =
+          TracingUtils.traceIfAllowed(
+              scopes, propagationTarget, Collections.emptyList(), sentrySpan);
+    } else if (isSpanKind(otelSpan, SpanKind.PRODUCER)) {
+      tracingHeaders = TracingUtils.trace(scopes, Collections.emptyList(), sentrySpan);
+    } else {
+      tracingHeaders = null;
+    }
 
     if (tracingHeaders != null) {
       final @NotNull SentryTraceHeader sentryTraceHeader = tracingHeaders.getSentryTraceHeader();
@@ -90,13 +100,46 @@ public final class OtelSentryPropagator implements TextMapPropagator {
     }
   }
 
-  private @Nullable String getUrl(
-      final @NotNull IOtelSpanWrapper sentrySpan, final @NotNull SentryOptions options) {
+  private boolean isSpanKind(final @NotNull Span otelSpan, final @NotNull SpanKind spanKind) {
+    return otelSpan instanceof ReadableSpan && spanKind.equals(((ReadableSpan) otelSpan).getKind());
+  }
+
+  private @Nullable String getPropagationTarget(
+      final @NotNull Span otelSpan,
+      final @NotNull IOtelSpanWrapper sentrySpan,
+      final @NotNull SentryOptions options) {
     final @Nullable Attributes attributes = sentrySpan.getOpenTelemetrySpanAttributes();
     if (attributes == null) {
       return null;
     }
-    return attributesExtractor.extractUrl(attributes, options);
+
+    final @Nullable String url = attributesExtractor.extractUrl(attributes, options);
+    if (url != null) {
+      return url;
+    }
+
+    if (!isSpanKind(otelSpan, SpanKind.CLIENT)) {
+      return null;
+    }
+
+    return getServerAuthority(attributes);
+  }
+
+  private @Nullable String getServerAuthority(final @NotNull Attributes attributes) {
+    final @Nullable String serverAddress = attributes.get(ServerAttributes.SERVER_ADDRESS);
+    if (serverAddress == null || serverAddress.isEmpty()) {
+      return null;
+    }
+
+    final @Nullable Long serverPort = attributes.get(ServerAttributes.SERVER_PORT);
+    if (serverPort == null) {
+      return serverAddress;
+    }
+
+    final boolean isIpv6Address = serverAddress.indexOf(':') >= 0 && !serverAddress.startsWith("[");
+    final @NotNull String formattedAddress =
+        isIpv6Address ? "[" + serverAddress + "]" : serverAddress;
+    return formattedAddress + ":" + serverPort;
   }
 
   @Override
