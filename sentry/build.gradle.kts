@@ -31,6 +31,8 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.core)
   testImplementation(libs.msgpack)
+  testImplementation(libs.okhttp.mockwebserver)
+  testImplementation(libs.okhttp.tls)
   testImplementation(libs.okio)
   testImplementation(projects.sentryTestSupport)
 }

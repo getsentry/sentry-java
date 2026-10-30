@@ -136,10 +136,12 @@ final class HttpConnection {
     connection.setConnectTimeout(options.getConnectionTimeoutMillis());
     connection.setReadTimeout(options.getReadTimeoutMillis());
 
-    final SSLSocketFactory sslSocketFactory = options.getSslSocketFactory();
-
-    if (connection instanceof HttpsURLConnection && sslSocketFactory != null) {
-      ((HttpsURLConnection) connection).setSSLSocketFactory(sslSocketFactory);
+    if (connection instanceof HttpsURLConnection) {
+      final HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+      final @Nullable SSLSocketFactory sslSocketFactory = options.getSslSocketFactory();
+      httpsConnection.setSSLSocketFactory(
+          DistrustedCertificates.wrap(
+              sslSocketFactory != null ? sslSocketFactory : httpsConnection.getSSLSocketFactory()));
     }
 
     connection.connect();
