@@ -92,11 +92,10 @@ class Nav3Activity : ComponentActivity() {
     configuration.applyToCurrentOptions()
     showActivityUiLoadTransactionDelayMessage = configuration.hasOnlyActivityUiLoadTransactions
 
-    if (!configuration.enableActivityUiLoadTransaction) {
-      // Cancel the already-started Activity transaction before Compose installs SentryNavEffect,
-      // otherwise the initial /Landing route transaction gets preempted by the lingering ui.load.
-      cancelCurrentActivityUiLoadTransaction()
-    }
+    // When the toggle is off, cancel the already-started Activity transaction before Compose
+    // installs SentryNavEffect, otherwise the lingering ui.load preempts the initial /Landing route
+    // transaction.
+    applyActivityUiLoadTransactionSetting(this, configuration.enableActivityUiLoadTransaction)
 
     NavigationTransactionHistory.install()
 
