@@ -33,7 +33,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.N], shadows = [SentryShadowProcess::class])
+@Config(sdk = [Build.VERSION_CODES.O], shadows = [SentryShadowProcess::class])
 class SentryPerformanceProviderTest {
   private lateinit var cache: File
   private lateinit var sentryCache: File

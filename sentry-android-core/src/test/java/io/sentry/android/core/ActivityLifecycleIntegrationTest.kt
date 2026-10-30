@@ -704,33 +704,6 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  @Config(sdk = [Build.VERSION_CODES.M])
-  fun `onHeadlessAppStart creates standalone App Start transaction on API 23`() {
-    val sut = fixture.getSut {
-      it.tracesSampleRate = 1.0
-      it.isEnableStandaloneAppStartTracing = true
-    }
-    sut.register(fixture.scopes, fixture.options)
-    prepareHeadlessSdkInitAppStart()
-
-    driveHeadlessAppStart()
-
-    assertEquals(1, fixture.capturedContexts.size)
-    val context = fixture.capturedContexts.single()
-    val options = fixture.capturedOptions.single()
-    val transaction = fixture.createdTransactions.single()
-    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
-    assertEquals("App Start", context.name)
-    assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
-    assertEquals(
-      transaction.spanContext.traceId,
-      AppStartMetrics.getInstance().getAppStartTraceId(),
-    )
-    assertTrue(transaction.isFinished)
-    assertEquals(SpanStatus.OK, transaction.status)
-  }
-
-  @Test
   fun `onHeadlessAppStart creates standalone App Start transaction when appStartType is WARM`() {
     val sut = fixture.getSut {
       it.tracesSampleRate = 1.0

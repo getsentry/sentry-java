@@ -44,6 +44,8 @@ android {
   lint {
     warningsAsErrors = true
     checkDependencies = true
+    // TODO(JAVA-547): Re-enable once the SDK_INT checks made obsolete by minSdk 26 are removed.
+    disable += "ObsoleteSdkInt"
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
