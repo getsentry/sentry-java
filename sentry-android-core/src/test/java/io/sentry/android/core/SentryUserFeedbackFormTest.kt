@@ -10,7 +10,9 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Looper
 import android.provider.OpenableColumns
+import android.view.ContextThemeWrapper
 import android.view.View
+import android.view.Window
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
@@ -242,6 +244,39 @@ class SentryUserFeedbackFormTest {
     assertNotNull(window)
     val flags = window.attributes.flags
     assertEquals(0, flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+  }
+
+  @Test
+  fun `dialog window has no system title, even when the theme does not set windowNoTitle`() {
+    fixture.options.isEnabled = true
+    val sut =
+      SentryUserFeedbackForm(
+        fixture.application,
+        android.R.style.Theme_Material_Dialog,
+        null,
+        null,
+        null,
+      )
+    sut.show()
+    val window = sut.window
+    assertNotNull(window)
+    assertThat(window.hasFeature(Window.FEATURE_NO_TITLE)).isTrue()
+  }
+
+  @Test
+  fun `default theme resolves to the context's alert dialog theme`() {
+    val context = ContextThemeWrapper(fixture.application, android.R.style.Theme_Material_Light)
+
+    assertThat(SentryUserFeedbackForm.resolveTheme(context, 0))
+      .isEqualTo(android.R.style.Theme_Material_Light_Dialog_Alert)
+  }
+
+  @Test
+  fun `explicit theme is used as is`() {
+    val context = ContextThemeWrapper(fixture.application, android.R.style.Theme_Material_Light)
+
+    assertThat(SentryUserFeedbackForm.resolveTheme(context, android.R.style.Theme_Material_Dialog))
+      .isEqualTo(android.R.style.Theme_Material_Dialog)
   }
 
   @Test
