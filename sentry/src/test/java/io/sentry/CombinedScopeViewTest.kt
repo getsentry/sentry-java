@@ -255,6 +255,26 @@ class CombinedScopeViewTest {
   }
 
   @Test
+  fun `clone forks processors on current and isolation scopes`() {
+    val combined = fixture.getSut()
+    val globalProcessor =
+      ForkingTestEventProcessor(0).also { fixture.globalScope.addEventProcessor(it) }
+    val isolationProcessor =
+      ForkingTestEventProcessor(1).also { fixture.isolationScope.addEventProcessor(it) }
+    val currentProcessor = ForkingTestEventProcessor(2).also { fixture.scope.addEventProcessor(it) }
+
+    val clone = combined.clone()
+    val clonedProcessors = clone.eventProcessors
+
+    assertEquals(0, globalProcessor.forkInvocations)
+    assertEquals(1, isolationProcessor.forkInvocations)
+    assertEquals(1, currentProcessor.forkInvocations)
+    assertSame(globalProcessor, clonedProcessors[0])
+    assertSame(isolationProcessor.forkedProcessor, clonedProcessors[1])
+    assertSame(currentProcessor.forkedProcessor, clonedProcessors[2])
+  }
+
+  @Test
   fun `adds event processor to default scope`() {
     val combined = fixture.getSut()
 
@@ -1400,5 +1420,17 @@ class CombinedScopeViewTest {
 
   class TestEventProcessor(val orderNumber: Long?) : EventProcessor {
     override fun getOrder() = orderNumber
+  }
+
+  private class ForkingTestEventProcessor(private val order: Long) : EventProcessor {
+    var forkInvocations = 0
+    var forkedProcessor: EventProcessor? = null
+
+    override fun getOrder(): Long = order
+
+    override fun fork(): EventProcessor {
+      forkInvocations++
+      return ForkingTestEventProcessor(order).also { forkedProcessor = it }
+    }
   }
 }

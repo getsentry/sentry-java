@@ -10,6 +10,7 @@ import io.sentry.test.callMethod
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNotSame
@@ -475,6 +476,102 @@ class ScopeTest {
     val scope = Scope(SentryOptions())
     scope.addEventProcessor(processor)
     assertEquals(processor, scope.eventProcessors.first())
+  }
+
+  @Test
+  fun `event processor fork defaults to the same instance`() {
+    val processor = CustomEventProcessor()
+
+    assertSame(processor, processor.fork())
+  }
+
+  @Test
+  fun `copying scope forks each event processor once and preserves order`() {
+    val scope = Scope(SentryOptions())
+    val first = ForkingEventProcessor(null)
+    val second = ForkingEventProcessor(10)
+    scope.addEventProcessor(first)
+    scope.addEventProcessor(second)
+    val originalProcessors = scope.eventProcessorsWithOrder.toList()
+
+    val clone = scope.clone()
+    val clonedProcessors = clone.eventProcessorsWithOrder
+
+    assertEquals(1, first.forkInvocations)
+    assertEquals(1, second.forkInvocations)
+    assertEquals(2, clonedProcessors.size)
+    assertSame(first.forkedProcessor, clonedProcessors[0].eventProcessor)
+    assertSame(second.forkedProcessor, clonedProcessors[1].eventProcessor)
+    assertEquals(originalProcessors[0].order, clonedProcessors[0].order)
+    assertEquals(originalProcessors[1].order, clonedProcessors[1].order)
+  }
+
+  @Test
+  fun `copying scope reuses processor when fork returns null`() {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions().apply {
+        isDebug = true
+        setLogger(logger)
+      }
+    val processor = mock<EventProcessor>()
+    val scope = Scope(options)
+    scope.addEventProcessor(processor)
+    val originalOrder = scope.eventProcessorsWithOrder.single().order
+
+    val clone = scope.clone()
+
+    assertSame(processor, clone.eventProcessors.single())
+    assertEquals(originalOrder, clone.eventProcessorsWithOrder.single().order)
+    verify(logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("EventProcessor.fork() returned null; reusing the original processor."),
+      )
+  }
+
+  @Test
+  fun `copying scope reuses processor when fork fails`() {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions().apply {
+        isDebug = true
+        setLogger(logger)
+      }
+    val exception = IllegalStateException("failed")
+    val processor =
+      object : EventProcessor {
+        override fun fork(): EventProcessor = throw exception
+      }
+    val scope = Scope(options)
+    scope.addEventProcessor(processor)
+    val originalOrder = scope.eventProcessorsWithOrder.single().order
+
+    val clone = scope.clone()
+
+    assertSame(processor, clone.eventProcessors.single())
+    assertEquals(originalOrder, clone.eventProcessorsWithOrder.single().order)
+    verify(logger)
+      .log(
+        eq(SentryLevel.ERROR),
+        eq("EventProcessor.fork() failed; reusing the original processor."),
+        eq(exception),
+      )
+  }
+
+  @Test
+  fun `copying scope rethrows fatal processor fork failures`() {
+    val error = OutOfMemoryError("fatal")
+    val scope = Scope(SentryOptions())
+    scope.addEventProcessor(
+      object : EventProcessor {
+        override fun fork(): EventProcessor = throw error
+      }
+    )
+
+    val thrown = assertFailsWith<OutOfMemoryError> { scope.clone() }
+
+    assertSame(error, thrown)
   }
 
   @Test
@@ -1399,4 +1496,16 @@ class ScopeTest {
     object : EventProcessor {
       override fun process(event: SentryEvent, hint: Hint): SentryEvent? = event
     }
+
+  private class ForkingEventProcessor(private val order: Long?) : EventProcessor {
+    var forkInvocations = 0
+    var forkedProcessor: EventProcessor? = null
+
+    override fun getOrder(): Long? = order
+
+    override fun fork(): EventProcessor {
+      forkInvocations++
+      return ForkingEventProcessor(order).also { forkedProcessor = it }
+    }
+  }
 }
