@@ -24,7 +24,9 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
       - name: Format with spotlessApply
-        run: ./gradlew spotlessApply
+        run: |
+          ./gradlew spotlessApply
+          ./gradlew -p sentry-samples/sentry-samples-android spotlessApply
 
       # actions/checkout fetches only a single commit in a detached HEAD state. Therefore
       # we need to pass the current branch, otherwise we can't commit the changes.

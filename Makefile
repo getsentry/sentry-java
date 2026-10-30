@@ -1,8 +1,8 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check checkSampleAndroid preMerge publish
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
-preMerge: check
+preMerge: check checkSampleAndroid
 publish: clean dryRelease
 
 # deep clean
@@ -28,6 +28,7 @@ update:
 # Spotless check's code
 checkFormat:
 	./gradlew spotlessJavaCheck spotlessKotlinCheck
+	./gradlew -p sentry-samples/sentry-samples-android spotlessJavaCheck spotlessKotlinCheck
 
 # Binary compatibility validator
 api:
@@ -48,3 +49,7 @@ runUiTestCritical:
 # Run tests and lint
 check:
 	./gradlew check
+
+# The Android sample is a separate build, so the root `check` doesn't reach it
+checkSampleAndroid:
+	./gradlew -p sentry-samples/sentry-samples-android check
