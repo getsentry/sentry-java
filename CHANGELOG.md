@@ -4,7 +4,7 @@
 
 ### Features
 
-- Added experimental scope-based duplicate event detection for reusable exception instances ([#6365](https://github.com/getsentry/sentry-java/issues/6365))
+- Added experimental scope-based duplicate event detection for reusable exception instances ([#6431](https://github.com/getsentry/sentry-java/pull/6431))
   - Enable it with `enable-deduplication=false` and `enable-scope-based-deduplication=true`, or the equivalent `SentryOptions` setters.
   - Deduplication state is isolated per isolation scope, so request integrations that fork scopes no longer suppress later events when one exception instance is reused.
 - Added `Environment` to the `Scope`, allowing you to overwrite the `Environment` set on the options ([#5772](https://github.com/getsentry/sentry-java/pull/5772))
