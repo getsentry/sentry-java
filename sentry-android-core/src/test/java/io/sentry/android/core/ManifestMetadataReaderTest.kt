@@ -2869,33 +2869,8 @@ class ManifestMetadataReaderTest {
   @Test
   fun `applyMetadata reads screenshot mask-all-text to options`() {
     // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_TEXT to true)
+    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_TEXT to false)
     val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
-  }
-
-  @Test
-  fun `applyMetadata reads screenshot mask-all-images to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_IMAGES to true)
-    val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
-  }
-
-  @Test
-  fun `applyMetadata without specifying screenshot mask-all-text, stays false`() {
-    // Arrange
-    val context = fixture.getContext()
 
     // Act
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
@@ -2905,7 +2880,20 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata without specifying screenshot mask-all-images, stays false`() {
+  fun `applyMetadata reads screenshot mask-all-images to options`() {
+    // Arrange
+    val bundle = bundleOf(ManifestMetadataReader.SCREENSHOT_MASK_ALL_IMAGES to false)
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertFalse(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
+  }
+
+  @Test
+  fun `applyMetadata without specifying screenshot mask-all-text, stays true`() {
     // Arrange
     val context = fixture.getContext()
 
@@ -2913,7 +2901,19 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertFalse(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.TextView"))
+  }
+
+  @Test
+  fun `applyMetadata without specifying screenshot mask-all-images, stays true`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.screenshot.maskViewClasses.contains("android.widget.ImageView"))
   }
 
   @Test

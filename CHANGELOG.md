@@ -50,6 +50,7 @@
 - Decide whether foregrounding the app starts a new session on a monotonic clock instead of the wall clock, so that a device time change no longer starts a session that should have been resumed, or resumes one that should have ended. This affects session counts ([#6096](https://github.com/getsentry/sentry-java/pull/6096))
 - `SentryUserFeedbackForm` now extends `android.app.Dialog` instead of `android.app.AlertDialog` ([#6338](https://github.com/getsentry/sentry-java/pull/6338))
   - The form never used `AlertDialog` features. Code that calls `AlertDialog`-only methods on it, such as `setButton` or `setMessage`, no longer compiles.
+- Screenshots attached to errors and user feedback now mask all text and images by default. Turn it off with `options.screenshot.setMaskAllText(false)` and `setMaskAllImages(false)`, or the `io.sentry.screenshot.mask-all-text` and `io.sentry.screenshot.mask-all-images` manifest options. Masking needs `sentry-android-replay`, so apps that depend on `sentry-android-core` alone get no screenshot until they add it or turn masking off ([#6437](https://github.com/getsentry/sentry-java/pull/6437))
 
 ## 8.62.0
 
