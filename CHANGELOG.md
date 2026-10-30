@@ -63,6 +63,10 @@
 
 - Promote structured logs APIs from experimental to stable ([#6424](https://github.com/getsentry/sentry-java/pull/6424))
 
+### Improvements
+
+- Promote the metrics capture API from experimental to stable ([#6425](https://github.com/getsentry/sentry-java/pull/6425))
+
 ## 8.62.0
 
 ### Improvements
