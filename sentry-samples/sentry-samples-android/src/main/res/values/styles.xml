@@ -20,6 +20,12 @@
     <!--<item name="android:dialogTheme">@style/AppThemeDialog</item>-->
   </style>
 
+  <!-- A see-through window, so the Activity underneath stays visible (paused, not stopped). -->
+  <style name="AppTheme.Main.Translucent">
+    <item name="android:windowIsTranslucent">true</item>
+    <item name="android:windowBackground">@android:color/transparent</item>
+  </style>
+
   <!-- Base application theme. -->
   <style name="AppThemeDialog" parent="Theme.AppCompat.DayNight.Dialog">
     <!-- Customize your theme here. -->

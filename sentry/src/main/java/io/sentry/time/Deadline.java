@@ -79,6 +79,8 @@ public final class Deadline {
    * @throws IllegalArgumentException if the two were created from different tickers, whose origins
    *     are unrelated and whose ticks are therefore not comparable.
    */
+  // temp fix for JDK 21: Deadlines are only comparable when they share the same ticker instance.
+  @SuppressWarnings("ReferenceEquality")
   public boolean isAfter(final @NotNull Deadline other) {
     if (ticker != other.ticker) {
       throw new IllegalArgumentException(

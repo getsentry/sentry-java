@@ -213,16 +213,6 @@ public interface IScopes {
       final @Nullable Hint hint,
       final @NotNull ScopeCallback callback);
 
-  /**
-   * Captures a manually created user feedback and sends it to Sentry.
-   *
-   * @param userFeedback The user feedback to send to Sentry.
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(io.sentry.protocol.Feedback)
-   *     capture(feedback)} with the new {@link io.sentry.protocol.Feedback} type instead.
-   */
-  @Deprecated
-  void captureUserFeedback(@NotNull UserFeedback userFeedback);
-
   /** Starts a new session. If there's a running session, it ends it before starting the new one. */
   void startSession();
 
@@ -354,15 +344,6 @@ public interface IScopes {
   ISentryLifecycleToken pushIsolationScope();
 
   /**
-   * Removes the first scope and restores its parent.
-   *
-   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
-   *     IScopes#pushScope()} or {@link IScopes#pushIsolationScope()} instead.
-   */
-  @Deprecated
-  void popScope();
-
-  /**
    * Runs the callback with a new current scope which gets dropped at the end.
    *
    * <p>If you're using the Sentry SDK in globalHubMode (defaults to true on Android) {@link
@@ -423,17 +404,6 @@ public interface IScopes {
    * @param timeoutMillis time in milliseconds
    */
   void flush(long timeoutMillis);
-
-  /**
-   * Clones the Hub
-   *
-   * @deprecated please use {@link IScopes#forkedScopes(String)} or {@link
-   *     IScopes#forkedCurrentScope(String)} instead.
-   * @return the cloned Hub
-   */
-  @NotNull
-  @Deprecated
-  IHub clone();
 
   /**
    * Creates a fork of both current and isolation scope from current scopes.

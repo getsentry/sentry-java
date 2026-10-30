@@ -16,7 +16,6 @@ import io.sentry.internal.modules.ResourcesModulesLoader;
 import io.sentry.logger.ILoggerApi;
 import io.sentry.metrics.IMetricsApi;
 import io.sentry.opentelemetry.OpenTelemetryUtil;
-import io.sentry.protocol.Feedback;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.User;
 import io.sentry.transport.NoOpEnvelopeCache;
@@ -85,21 +84,7 @@ public final class Sentry {
 
   private static final AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
-  /**
-   * Returns the current (threads) hub, if none, clones the rootScopes and returns it.
-   *
-   * @deprecated please use {@link Sentry#getCurrentScopes()} instead
-   * @return the hub
-   */
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  @SuppressWarnings("deprecation")
-  @Deprecated
-  public static @NotNull IHub getCurrentHub() {
-    return new HubScopesWrapper(getCurrentScopes());
-  }
-
   @ApiStatus.Internal
-  @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes() {
     return getCurrentScopes(true);
   }
@@ -112,7 +97,6 @@ public final class Sentry {
    * @return current scopes, a root scopes fork or NoopScopes
    */
   @ApiStatus.Internal
-  @SuppressWarnings("deprecation")
   public static @NotNull IScopes getCurrentScopes(final boolean ensureForked) {
     // read the volatile rootScopes once, so a concurrent Sentry.init cannot make the check below
     // disagree with what we return
@@ -161,16 +145,6 @@ public final class Sentry {
 
   public static @NotNull IScopes forkedCurrentScope(final @NotNull String creator) {
     return getCurrentScopes().forkedCurrentScope(creator);
-  }
-
-  /**
-   * @deprecated please use {@link Sentry#setCurrentScopes} instead.
-   */
-  @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
-  @Deprecated
-  @SuppressWarnings({"deprecation", "InlineMeSuggester"})
-  public static @NotNull ISentryLifecycleToken setCurrentHub(final @NotNull IHub hub) {
-    return setCurrentScopes(hub);
   }
 
   @ApiStatus.Internal // exposed for the coroutines integration in SentryContext
@@ -845,40 +819,6 @@ public final class Sentry {
   }
 
   /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
-   *     instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static @NotNull SentryId captureFeedback(final @NotNull Feedback feedback) {
-    return feedback().capture(feedback);
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint)
-   *     capture(feedback, hint)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static @NotNull SentryId captureFeedback(
-      final @NotNull Feedback feedback, final @Nullable Hint hint) {
-    return feedback().capture(feedback, hint);
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback, Hint, ScopeCallback)
-   *     capture(feedback, hint, callback)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static @NotNull SentryId captureFeedback(
-      final @NotNull Feedback feedback,
-      final @Nullable Hint hint,
-      final @Nullable ScopeCallback callback) {
-    return feedback().capture(feedback, hint, callback);
-  }
-
-  /**
    * Captures the exception.
    *
    * @param throwable The exception.
@@ -925,19 +865,6 @@ public final class Sentry {
       final @Nullable Hint hint,
       final @NotNull ScopeCallback callback) {
     return getCurrentScopes().captureException(throwable, hint, callback);
-  }
-
-  /**
-   * Captures a manually created user feedback and sends it to Sentry.
-   *
-   * @param userFeedback The user feedback to send to Sentry.
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#capture(Feedback) capture(feedback)}
-   *     with the new {@link Feedback} type instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
-    getCurrentScopes().captureUserFeedback(userFeedback);
   }
 
   /**
@@ -1096,20 +1023,6 @@ public final class Sentry {
       return getCurrentScopes().pushIsolationScope();
     }
     return NoOpScopesLifecycleToken.getInstance();
-  }
-
-  /**
-   * Removes the first scope and restores its parent.
-   *
-   * @deprecated please call {@link ISentryLifecycleToken#close()} on the token returned by {@link
-   *     Sentry#pushScope()} or {@link Sentry#pushIsolationScope()} instead.
-   */
-  @Deprecated
-  public static void popScope() {
-    // popScope is no-op in global hub mode
-    if (!globalHubMode) {
-      getCurrentScopes().popScope();
-    }
   }
 
   /**
@@ -1426,38 +1339,6 @@ public final class Sentry {
   @NotNull
   public static IFeedbackApi feedback() {
     return getCurrentScopes().feedback();
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show() show()} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void showUserFeedbackDialog() {
-    feedback().show();
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link
-   *     IFeedbackApi#show(SentryFeedbackOptions.OptionsConfigurator) show(configurator)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void showUserFeedbackDialog(
-      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    feedback().show(configurator);
-  }
-
-  /**
-   * @deprecated Use {@link #feedback()}.{@link IFeedbackApi#show(SentryId,
-   *     SentryFeedbackOptions.OptionsConfigurator) show(associatedEventId, configurator)} instead.
-   */
-  @Deprecated
-  @SuppressWarnings("InlineMeSuggester")
-  public static void showUserFeedbackDialog(
-      final @Nullable SentryId associatedEventId,
-      final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    feedback().show(associatedEventId, configurator);
   }
 
   /**

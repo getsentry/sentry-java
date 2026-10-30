@@ -163,14 +163,6 @@ public final class ExceptionReporter {
       return isSubscription;
     }
 
-    /**
-     * @deprecated please use {@link ExceptionDetails#getScopes()} instead.
-     */
-    @Deprecated
-    public @NotNull IScopes getHub() {
-      return scopes;
-    }
-
     public @NotNull IScopes getScopes() {
       return scopes;
     }

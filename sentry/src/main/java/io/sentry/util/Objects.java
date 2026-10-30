@@ -14,6 +14,8 @@ public final class Objects {
     return obj;
   }
 
+  // temp fix for JDK 21: Identity short-circuit, same as java.util.Objects.equals (Java 7+).
+  @SuppressWarnings("ReferenceEquality")
   public static boolean equals(@Nullable Object a, @Nullable Object b) {
     return (a == b) || (a != null && a.equals(b));
   }

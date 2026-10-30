@@ -218,7 +218,9 @@ public class SentryAppender extends AbstractAppender {
    * @param loggingEvent the log4j2 event
    */
   // for the Android compatibility we must use old Java Date class
-  @SuppressWarnings("JdkObsolete")
+  // Message.getFormat() is deprecated since log4j 2.24.0 without a replacement for reading the
+  // message template
+  @SuppressWarnings({"JdkObsolete", "deprecation"})
   protected void captureLog(@NotNull LogEvent loggingEvent) {
     final @NotNull SentryLogLevel sentryLevel = toSentryLogLevel(loggingEvent.getLevel());
 
@@ -250,7 +252,9 @@ public class SentryAppender extends AbstractAppender {
    * @return the sentry event
    */
   // for the Android compatibility we must use old Java Date class
-  @SuppressWarnings("JdkObsolete")
+  // Message.getFormat() is deprecated since log4j 2.24.0 without a replacement for reading the
+  // message template
+  @SuppressWarnings({"JdkObsolete", "deprecation"})
   protected @NotNull SentryEvent createEvent(final @NotNull LogEvent loggingEvent) {
     final SentryEvent event = new SentryEvent(DateUtils.getDateTime(loggingEvent.getTimeMillis()));
     final Message message = new Message();

@@ -108,6 +108,18 @@ class ReplayCacheTest {
   }
 
   @Test
+  fun `when no frames are provided, does not delete existing video`() {
+    val replayCache = fixture.getSut(tmpDir)
+    val existingVideo =
+      File(replayCache.replayCacheDir, "0.mp4").also { it.writeBytes(byteArrayOf(1, 2, 3)) }
+
+    val video = replayCache.createVideoOf(5000L, 0, 0, 100, 200, 1, 20_000)
+
+    assertNull(video)
+    assertEquals(3, existingVideo.length())
+  }
+
+  @Test
   fun `releases the muxer when the encoder fails to start`() {
     ReplayShadowMediaCodec.throwOnStart = true
     val replayCache = fixture.getSut(tmpDir)

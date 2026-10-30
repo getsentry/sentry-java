@@ -787,54 +787,6 @@ class ScopesTest {
 
   // endregion
 
-  // region captureUserFeedback tests
-
-  @Test
-  fun `when captureUserFeedback is called it is forwarded to the client`() {
-    val (sut, mockClient) = getEnabledScopes()
-    sut.captureUserFeedback(userFeedback)
-
-    verify(mockClient)
-      .captureUserFeedback(
-        check {
-          assertEquals(userFeedback.eventId, it.eventId)
-          assertEquals(userFeedback.email, it.email)
-          assertEquals(userFeedback.name, it.name)
-          assertEquals(userFeedback.comments, it.comments)
-        }
-      )
-  }
-
-  @Test
-  fun `when captureUserFeedback is called on disabled client, do nothing`() {
-    val (sut, mockClient) = getEnabledScopes()
-    sut.close()
-
-    sut.captureUserFeedback(userFeedback)
-    verify(mockClient, never()).captureUserFeedback(any())
-  }
-
-  @Test
-  fun `when captureUserFeedback is called and client throws, don't crash`() {
-    val (sut, mockClient) = getEnabledScopes()
-
-    whenever(mockClient.captureUserFeedback(any())).doThrow(IllegalArgumentException(""))
-
-    sut.captureUserFeedback(userFeedback)
-  }
-
-  private val userFeedback: UserFeedback
-    get() {
-      val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-      return UserFeedback(eventId).apply {
-        name = "John"
-        email = "john@me.com"
-        comments = "comment"
-      }
-    }
-
-  // endregion
-
   // region captureCheckIn tests
 
   @Test
@@ -1101,39 +1053,6 @@ class ScopesTest {
     scopes.configureScope { it.setTransaction(tx) }
 
     assertEquals("test", scope?.transactionName)
-  }
-
-  @Test
-  fun `when startTransaction is called with different instrumenter, no-op is returned`() {
-    val scopes = generateScopes()
-
-    val transactionContext =
-      TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
-    val transactionOptions = TransactionOptions()
-    val tx = scopes.startTransaction(transactionContext, transactionOptions)
-
-    assertTrue(tx is NoOpTransaction)
-  }
-
-  @Test
-  fun `when startTransaction is called with different instrumenter, no-op is returned 2`() {
-    val scopes = generateScopes() { it.instrumenter = Instrumenter.OTEL }
-
-    val tx = scopes.startTransaction("test", "op")
-
-    assertTrue(tx is NoOpTransaction)
-  }
-
-  @Test
-  fun `when startTransaction is called with configured instrumenter, it works`() {
-    val scopes = generateScopes() { it.instrumenter = Instrumenter.OTEL }
-
-    val transactionContext =
-      TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
-    val transactionOptions = TransactionOptions()
-    val tx = scopes.startTransaction(transactionContext, transactionOptions)
-
-    assertFalse(tx is NoOpTransaction)
   }
 
   // endregion

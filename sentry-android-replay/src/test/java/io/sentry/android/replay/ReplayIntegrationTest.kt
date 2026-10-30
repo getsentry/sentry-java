@@ -753,6 +753,49 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `flush followed by immediate stop advances the converted strategy segment`() {
+    val replayId = SentryId()
+    var onSegmentSent: ((Date) -> Unit)? = null
+    val bufferStrategy = mock<BufferCaptureStrategy>()
+    whenever(bufferStrategy.currentReplayId).thenReturn(replayId)
+    doAnswer {
+        @Suppress("UNCHECKED_CAST")
+        onSegmentSent = it.arguments[0] as (Date) -> Unit
+      }
+      .whenever(bufferStrategy)
+      .flush(any())
+    val sessionStrategy = mock<SessionCaptureStrategy>()
+    whenever(sessionStrategy.currentReplayId).thenReturn(replayId)
+    whenever(sessionStrategy.currentSegment).thenReturn(0)
+    whenever(bufferStrategy.convert()).thenReturn(sessionStrategy)
+    val replay =
+      fixture.getSut(
+        context,
+        sessionSampleRate = 0.0,
+        onErrorSampleRate = 0.0,
+        replayCaptureStrategyProvider = { bufferStrategy },
+        mainLooperHandler = MainLooperHandler(),
+      )
+    replay.register(fixture.scopes, fixture.options)
+    replay.startBuffering()
+    shadowOf(Looper.getMainLooper()).idle()
+
+    replay.flush()
+    replay.stop()
+    shadowOf(Looper.getMainLooper()).idle()
+    verify(sessionStrategy).stop()
+
+    // the flushed segment completes on the replay executor after stop ran on the main thread,
+    // but before the stop segment of the converted strategy is created
+    val timestamp = Date()
+    onSegmentSent!!.invoke(timestamp)
+
+    verify(sessionStrategy).currentSegment = 1
+    verify(sessionStrategy).segmentTimestamp = timestamp
+    verify(sessionStrategy).isFlushed = true
+  }
+
+  @Test
   fun `pause does nothing when not recording`() {
     val captureStrategy = mock<CaptureStrategy>()
     val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
@@ -1221,6 +1264,95 @@ class ReplayIntegrationTest {
   }
 
   @Test
+  fun `delayed startup cleanup keeps replays recorded by this process`() {
+    val replayId = SentryId()
+    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+    val olderReplay =
+      File(fixture.options.cacheDirPath, "replay_${SentryId()}").also { it.mkdirs() }
+    // hold back the startup work, like a busy executor does
+    val deferredTasks = mutableListOf<Runnable>()
+    fixture.options.executorService = mock {
+      doAnswer { deferredTasks += it.arguments[0] as Runnable }
+        .whenever(mock)
+        .submit(any<Runnable>())
+    }
+
+    val captureStrategy = mock<CaptureStrategy> { on { currentReplayId }.thenReturn(replayId) }
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+    replay.register(fixture.scopes, fixture.options)
+    replay.startBuffering()
+    // a flushed segment video that is still waiting for the transport
+    val stoppedReplay =
+      File(fixture.options.cacheDirPath, "replay_$replayId").also {
+        it.mkdirs()
+        File(it, "0.mp4").writeBytes(byteArrayOf(1, 2, 3))
+      }
+    replay.stop()
+
+    deferredTasks.forEach { it.run() }
+
+    assertTrue(File(stoppedReplay, "0.mp4").exists())
+    assertFalse(olderReplay.exists())
+  }
+
+  @Test
+  fun `second SDK init keeps replays recorded by the first one`() {
+    val firstReplayId = SentryId()
+    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+    val firstStrategy = mock<CaptureStrategy> { on { currentReplayId }.thenReturn(firstReplayId) }
+    val first = fixture.getSut(context, replayCaptureStrategyProvider = { firstStrategy })
+    first.register(fixture.scopes, fixture.options)
+    first.startBuffering()
+    val firstReplay =
+      File(fixture.options.cacheDirPath, "replay_$firstReplayId").also {
+        it.mkdirs()
+        File(it, "0.mp4").writeBytes(byteArrayOf(1, 2, 3))
+      }
+    first.stop()
+    first.close()
+
+    // a new Sentry.init registers a new integration, which runs the startup cleanup again
+    val secondStrategy = mock<CaptureStrategy> { on { currentReplayId }.thenReturn(SentryId()) }
+    val second = fixture.getSut(context, replayCaptureStrategyProvider = { secondStrategy })
+    second.register(fixture.scopes, fixture.options)
+
+    assertTrue(File(firstReplay, "0.mp4").exists())
+  }
+
+  @Test
+  fun `delayed startup task does not finalize a replay recorded by this process`() {
+    val replayId = SentryId()
+    fixture.options.cacheDirPath = tmpDir.newFolder().absolutePath
+    fixture.options.addScopeObserver(PersistingScopeObserver(fixture.options))
+    val deferredTasks = mutableListOf<Runnable>()
+    fixture.options.executorService = mock {
+      doAnswer { deferredTasks += it.arguments[0] as Runnable }
+        .whenever(mock)
+        .submit(any<Runnable>())
+    }
+
+    val captureStrategy = mock<CaptureStrategy> { on { currentReplayId }.thenReturn(replayId) }
+    val replay = fixture.getSut(context, replayCaptureStrategyProvider = { captureStrategy })
+    replay.register(fixture.scopes, fixture.options)
+    replay.startBuffering()
+    val currentReplay =
+      File(fixture.options.cacheDirPath, "replay_$replayId").also {
+        it.mkdirs()
+        File(it, "0.mp4").writeBytes(byteArrayOf(1, 2, 3))
+      }
+    // the scope observer persisted this replay's id after a flush, before the startup task ran
+    File(fixture.options.cacheDirPath, PersistingScopeObserver.SCOPE_CACHE).also {
+      it.mkdirs()
+      File(it, PersistingScopeObserver.REPLAY_FILENAME).writeText("\"$replayId\"")
+    }
+
+    deferredTasks.forEach { it.run() }
+
+    assertTrue(File(currentReplay, "0.mp4").exists())
+    verify(fixture.scopes, never()).captureReplay(any(), any())
+  }
+
+  @Test
   fun `onScreenshotRecorded supplies screen from scope to replay cache`() {
     val captureStrategy =
       mock<CaptureStrategy> {
@@ -1377,6 +1509,7 @@ class ReplayIntegrationTest {
             ICurrentDateProvider {
               System.currentTimeMillis() + fixture.options.sessionReplay.sessionSegmentDuration
             },
+            fixture.options.monotonicTicker,
             // run tasks synchronously in tests
             mock {
               whenever(mock.submit(any<Runnable>())).doAnswer {
@@ -1761,6 +1894,7 @@ class ReplayIntegrationTest {
       options,
       null,
       CurrentDateProvider.getInstance(),
+      options.monotonicTicker,
       executor =
         mock {
           whenever(mock.submit(any<Runnable>())).doAnswer {

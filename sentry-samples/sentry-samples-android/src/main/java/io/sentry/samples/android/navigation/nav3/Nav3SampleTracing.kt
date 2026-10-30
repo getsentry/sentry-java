@@ -73,7 +73,9 @@ internal const val SENTRY_FLUSH_TIMEOUT_MILLIS = 5000L
 
 private const val BACKGROUND_WORK_MILLIS = 1000L
 private const val NAV2_SCENARIO_TAG = "sample_nav2_scenario"
-private const val NAV3_SCENARIO_TAG = "sample_nav3_scenario"
-private const val NAVIGATION_SAMPLE_SCENARIO_TAG = "sample_navigation_scenario"
+internal const val NAV3_SCENARIO_TAG = "sample_nav3_scenario"
+internal const val NAVIGATION_SAMPLE_ACTIVITY_TAG = "sample_navigation_activity"
+internal const val NAVIGATION_SAMPLE_SESSION_TAG = "sample_navigation_session"
+internal const val NAVIGATION_SAMPLE_SCENARIO_TAG = "sample_navigation_scenario"
 private const val UNKNOWN_NAVIGATION_SCENARIO_LABEL = "Unknown"
-private const val ACTIVITY_UI_LOAD_OP = "ui.load"
+internal const val ACTIVITY_UI_LOAD_OP = "ui.load"

@@ -25,7 +25,6 @@ jobs:
 
     name: Spring Boot ${{ matrix.springboot-version }}
     env:
-      SENTRY_URL: http://127.0.0.1:8000
       GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
     steps:
@@ -34,21 +33,11 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.10.5'
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements.txt
-
       - name: Set up Java
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
       - name: Cache buildSrc
@@ -68,62 +57,17 @@ jobs:
           perl -0pi -e 'BEGIN { $v = shift } s/^springboot4[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot4 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
           echo "Updated Spring Boot 4.x version to $springboot_version"
 
-      - name: Build sample artifacts
+      - name: Test integration suites
         run: |
           ./gradlew \
-            :sentry-samples:sentry-samples-spring-boot-4:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-4-webflux:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4-webflux:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry:testClasses \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent:bootJar \
-            :sentry-samples:sentry-samples-spring-boot-4-opentelemetry-noagent:testClasses \
-            :sentry-samples:sentry-samples-spring-7:war \
-            :sentry-samples:sentry-samples-spring-7:testClasses \
-            :sentry-opentelemetry:sentry-opentelemetry-agent:assemble
-
-      - name: Run sentry-samples-spring-boot-4
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-boot-4-webflux
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-webflux" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init true
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry" \
-            --agent true \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-boot-4-opentelemetry agent init false
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry" \
-            --agent true \
-            --auto-init "false"
-
-      - name: Run sentry-samples-spring-boot-4-opentelemetry-noagent
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-boot-4-opentelemetry-noagent" \
-            --agent false \
-            --auto-init "true"
-
-      - name: Run sentry-samples-spring-7
-        run: |
-          python3 test/system-test-runner.py test \
-            --module "sentry-samples-spring-7" \
-            --agent false \
-            --auto-init "true"
+            :sentry-spring-7:integrationTest \
+            :sentry-spring-boot-4:integrationTest \
+            :sentry-spring-boot-4:integrationTestWebflux \
+            :sentry-spring-boot-4:integrationTestOtelNoAgent \
+            :sentry-spring-boot-4:integrationTestLog4j2 \
+            :sentry-spring-boot-4:integrationTestOtelAgent \
+            :sentry-spring-boot-4:integrationTestOtelAgentWithoutAutoInit \
+            :sentry-spring-boot-4:integrationTestOtlp
 
       - name: Upload test results
         if: always()
@@ -133,8 +77,6 @@ jobs:
           path: |
             **/build/reports/*
             **/build/test-results/**/*.xml
-            sentry-mock-server.txt
-            spring-server.txt
 
       - name: Test Report
         uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16

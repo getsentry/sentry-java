@@ -769,47 +769,6 @@ public final class SentryClient implements ISentryClient {
     return feedbackEvent;
   }
 
-  @Deprecated
-  @Override
-  public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
-    Objects.requireNonNull(userFeedback, "SentryEvent is required.");
-
-    if (SentryId.EMPTY_ID.equals(userFeedback.getEventId())) {
-      options.getLogger().log(SentryLevel.WARNING, "Capturing userFeedback without a Sentry Id.");
-      return;
-    }
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
-
-    try {
-      final @NotNull SentryEnvelope envelope = buildEnvelope(userFeedback);
-      sendEnvelope(envelope, null);
-    } catch (IOException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              e,
-              "Capturing user feedback %s failed.",
-              userFeedback.getEventId());
-    }
-  }
-
-  @Deprecated
-  private @NotNull SentryEnvelope buildEnvelope(final @NotNull UserFeedback userFeedback) {
-    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
-
-    final SentryEnvelopeItem userFeedbackItem =
-        SentryEnvelopeItem.fromUserFeedback(options.getSerializer(), userFeedback);
-    envelopeItems.add(userFeedbackItem);
-
-    final SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(userFeedback.getEventId(), options.getSdkVersion());
-
-    return new SentryEnvelope(envelopeHeader, envelopeItems);
-  }
-
   private @NotNull SentryEnvelope buildEnvelope(
       final @NotNull CheckIn checkIn, final @Nullable TraceContext traceContext) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
