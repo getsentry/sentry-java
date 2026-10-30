@@ -28,6 +28,8 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
@@ -58,8 +60,11 @@ class PerfettoProfilerTest {
     context = ApplicationProvider.getApplicationContext()
   }
 
-  private fun getSut(profilingManager: ProfilingManager? = mockProfilingManager): PerfettoProfiler {
-    return PerfettoProfiler(mockLogger, executor, profilingManager)
+  private fun getSut(
+    profilingManager: ProfilingManager? = mockProfilingManager,
+    profilingPackageVersion: Long = 0L,
+  ): PerfettoProfiler {
+    return PerfettoProfiler(mockLogger, executor, profilingManager, profilingPackageVersion)
   }
 
   private fun PerfettoProfiler.startSession(): ChunkRecord? {
@@ -103,6 +108,22 @@ class PerfettoProfilerTest {
   fun `start returns null when ProfilingManager is null`() {
     val profiler = getSut(profilingManager = null)
     assertNull(profiler.startSession())
+  }
+
+  @Test
+  fun `start returns null and does not request profiling for unsupported package version`() {
+    val profiler = getSut(profilingPackageVersion = 370546200L)
+
+    assertNull(profiler.startSession())
+    verify(mockProfilingManager, never()).requestProfiling(any(), any(), any(), any(), any(), any())
+  }
+
+  @Test
+  fun `start requests profiling for other package versions`() {
+    val profiler = getSut(profilingPackageVersion = 370546201L)
+
+    assertNotNull(profiler.startSession())
+    verify(mockProfilingManager).requestProfiling(any(), any(), any(), any(), any(), any())
   }
 
   @Test
