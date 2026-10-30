@@ -4,6 +4,7 @@ import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.ApolloResponse
 import com.apollographql.apollo.api.Operation
+import com.apollographql.apollo.api.http.HttpMethod
 import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
 import com.apollographql.apollo.exception.ApolloException
@@ -39,9 +40,11 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.util.Apollo4PlatformTestManipulator
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.reflect.KSuspendFunction1
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -222,6 +225,25 @@ abstract class SentryApollo4HttpInterceptorTest(
         anyOrNull(),
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `sets span status to cancelled and rethrows CancellationException`(): Unit = runBlocking {
+    val tx =
+      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(tx)
+    val cancellation = CancellationException("cancelled")
+    val chain =
+      object : HttpInterceptorChain {
+        override suspend fun proceed(request: HttpRequest): HttpResponse = throw cancellation
+      }
+    val request = HttpRequest.Builder(HttpMethod.Post, "https://example.com/graphql").build()
+    val interceptor = SentryApollo4HttpInterceptor(fixture.scopes, captureFailedRequests = false)
+
+    val thrown = assertFailsWith<CancellationException> { interceptor.intercept(request, chain) }
+
+    assertThat(thrown).isSameInstanceAs(cancellation)
+    assertThat(tx.children.single().status).isEqualTo(SpanStatus.CANCELLED)
   }
 
   @Test
