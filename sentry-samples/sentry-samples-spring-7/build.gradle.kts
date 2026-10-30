@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
@@ -29,13 +29,13 @@ dependencyManagement {
 }
 
 dependencies {
-  implementation(Config.Libs.springWeb)
-  implementation(Config.Libs.springAop)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.springSecurityWeb)
-  implementation(Config.Libs.springSecurityConfig)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation("org.springframework:spring-webmvc")
+  implementation("org.springframework:spring-aop")
+  implementation("org.aspectj:aspectjweaver")
+  implementation("org.springframework.security:spring-security-web")
+  implementation("org.springframework.security:spring-security-config")
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation(projects.sentrySpring7)
   implementation(projects.sentryLogback)
   implementation(projects.sentryAsyncProfiler)

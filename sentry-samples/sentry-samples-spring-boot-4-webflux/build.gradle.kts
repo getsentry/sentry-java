@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -13,8 +13,8 @@ group = "io.sentry.sample.spring-boot-4-webflux"
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation(projects.sentrySpringBoot4Starter)
   implementation(projects.sentryLogback)
   implementation(projects.sentryJdbc)

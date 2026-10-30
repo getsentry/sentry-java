@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import io.sentry.gradle.MergeSpringMetadataAction
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -22,8 +23,8 @@ java.targetCompatibility = JavaVersion.VERSION_1_8
 dependencies {
   implementation(platform(libs.springboot2.bom))
   implementation(libs.springboot.starter.web)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation(projects.sentrySpringBootStarter)
   implementation(projects.sentryGraphql)
   implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.9.2"))

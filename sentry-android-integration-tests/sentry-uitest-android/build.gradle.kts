@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import net.ltgt.gradle.errorprone.errorprone
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
 plugins {
   id("com.android.application")
@@ -86,9 +87,7 @@ if (applySentryIntegrations) {
 }
 
 dependencies {
-  implementation(
-    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
-  )
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
 
   if (applySentryIntegrations) {
     implementation(projects.sentryAndroid)
