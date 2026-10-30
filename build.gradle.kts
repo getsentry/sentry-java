@@ -34,6 +34,8 @@ buildscript {
         google()
     }
     dependencies {
+        // R8 must come before AGP on the classpath to replace the R8 bundled with AGP.
+        Config.BuildPlugins.r8?.let { classpath(it) }
         classpath(Config.BuildPlugins.androidGradle)
 
         // add classpath of sentry android gradle plugin

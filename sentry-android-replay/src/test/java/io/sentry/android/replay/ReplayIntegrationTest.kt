@@ -184,16 +184,6 @@ class ReplayIntegrationTest {
   }
 
   @Test
-  @Config(sdk = [24])
-  fun `when API is below 26, does not register`() {
-    val replay = fixture.getSut(context)
-
-    replay.register(fixture.scopes, fixture.options)
-
-    assertFalse(replay.isEnabled.get())
-  }
-
-  @Test
   fun `when no sample rate is set, still registers`() {
     val replay = fixture.getSut(context, 0.0, 0.0)
 

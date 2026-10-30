@@ -268,7 +268,7 @@ class SentryUserFeedbackFormTest {
     val context = ContextThemeWrapper(fixture.application, android.R.style.Theme_Material_Light)
 
     assertThat(SentryUserFeedbackForm.resolveTheme(context, 0))
-      .isEqualTo(android.R.style.Theme_Material_Light_Dialog_Alert)
+      .isEqualTo(android.R.style.ThemeOverlay_Material_Dialog_Alert)
   }
 
   @Test

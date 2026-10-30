@@ -202,7 +202,7 @@ class ScreenshotEventProcessorTest {
   }
 
   @Test
-  @Config(sdk = [23])
+  @Config(sdk = [26])
   fun `when screenshot event processor is called from background thread it executes on main thread`() {
     val sut = fixture.getSut(true)
     whenever(fixture.threadChecker.isMainThread).thenReturn(false)

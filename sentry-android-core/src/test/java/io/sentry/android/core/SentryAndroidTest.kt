@@ -88,7 +88,7 @@ import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
 import timber.log.Timber
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.N], shadows = [SentryShadowProcess::class])
+@Config(sdk = [Build.VERSION_CODES.O], shadows = [SentryShadowProcess::class])
 class SentryAndroidTest {
   @get:Rule val tmpDir = TemporaryFolder()
 
@@ -178,6 +178,7 @@ class SentryAndroidTest {
   fun `set up`() {
     Sentry.close()
     AppStartMetrics.getInstance().clear()
+    ContextUtils.resetInstance()
     context = ApplicationProvider.getApplicationContext()
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
     fixture.shadowActivityManager = Shadow.extract(activityManager)

@@ -28,7 +28,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.N])
+@Config(sdk = [Build.VERSION_CODES.O])
 class AppStartExtensionTest {
 
   private val metrics = mock<AppStartMetrics>()

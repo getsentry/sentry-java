@@ -43,7 +43,7 @@ import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.N], shadows = [SentryShadowProcess::class])
+@Config(sdk = [Build.VERSION_CODES.O], shadows = [SentryShadowProcess::class])
 class AppStartMetricsTest {
   @Before
   fun setup() {

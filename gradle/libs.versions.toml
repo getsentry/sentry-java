@@ -56,7 +56,7 @@ sqldelight = "2.3.2"
 targetSdk = "37"
 compileSdk = "37"
 compileSdkMinor = "2"
-minSdk = "21"
+minSdk = "26"
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

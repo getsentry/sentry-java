@@ -9,8 +9,7 @@
     android:label="Sentry End2End Tests"
     android:largeHeap="true"
     android:icon="@android:mipmap/sym_def_app_icon"
-    android:usesCleartextTraffic="true"
-    tools:targetApi="m">
+    android:usesCleartextTraffic="true">
 <!--  android:usesCleartextTraffic="true" is needed to send data to http://localhost... (the mock relay server)  -->
 
     <activity android:name=".EmptyActivity" />
