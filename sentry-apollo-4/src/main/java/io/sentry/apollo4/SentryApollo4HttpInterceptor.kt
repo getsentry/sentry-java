@@ -280,6 +280,13 @@ constructor(
   private fun getHeader(key: String, headers: List<HttpHeader>): String? =
     headers.firstOrNull { it.name.equals(key, true) }?.value
 
+  private fun isStreamingResponse(response: HttpResponse): Boolean {
+    val contentType = getHeader("Content-Type", response.headers) ?: return false
+    // strip parameters such as boundary or charset, e.g. "multipart/mixed; boundary=xyz"
+    val mediaType = contentType.substringBefore(';').trim().lowercase(Locale.ROOT)
+    return mediaType in STREAMING_MEDIA_TYPES
+  }
+
   private fun getRequestHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
       val requestHeaders = mutableMapOf<String, String>()
@@ -346,6 +353,25 @@ constructor(
     // wrap everything up in a try catch block so every exception is swallowed and degraded
     // gracefully
     try {
+      // not possible to get a parameterized url, but we remove at least the
+      // query string and the fragment.
+      // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query
+      // url will be: https://api.github.com/users/getsentry/repos/
+      // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
+      // but that's not possible
+      val urlDetails = UrlUtils.parse(request.url, scopes.options.dataCollectionResolver)
+
+      // return before reading the response body if it's not a target match
+      if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {
+        return
+      }
+
+      // streaming responses (e.g. multipart incremental delivery, server-sent events) may never
+      // reach EOF or be unbounded, so peeking at them would block or buffer indefinitely
+      if (isStreamingResponse(response)) {
+        return
+      }
+
       // we pay the price to read the response in the memory to check if there's any errors
       // GraphQL does not throw status code 400+ for every type of error
       val body =
@@ -359,19 +385,6 @@ constructor(
 
       // if the response body does not have the errors field, do not raise an issue
       if (body.isEmpty() || !regex.containsMatchIn(body)) {
-        return
-      }
-
-      // not possible to get a parameterized url, but we remove at least the
-      // query string and the fragment.
-      // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query
-      // url will be: https://api.github.com/users/getsentry/repos/
-      // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
-      // but that's not possible
-      val urlDetails = UrlUtils.parse(request.url, scopes.options.dataCollectionResolver)
-
-      // return if it's not a target match
-      if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {
         return
       }
 
@@ -467,6 +480,8 @@ constructor(
 
   companion object {
     const val DEFAULT_CAPTURE_FAILED_REQUESTS = true
+
+    private val STREAMING_MEDIA_TYPES = setOf("multipart/mixed", "text/event-stream")
 
     init {
       SentryIntegrationPackageStorage.getInstance()
