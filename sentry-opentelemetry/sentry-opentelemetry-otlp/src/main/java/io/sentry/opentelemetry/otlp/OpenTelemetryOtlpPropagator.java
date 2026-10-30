@@ -89,24 +89,30 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
   }
 
   private boolean shouldInjectTracingHeaders(final @NotNull Span otelSpan) {
+    if (!(otelSpan instanceof ReadableSpan)) {
+      return false;
+    }
+
+    final @NotNull ReadableSpan readableSpan = (ReadableSpan) otelSpan;
     final @NotNull SentryOptions options = scopes.getOptions();
-    final @Nullable String url = extractUrl(otelSpan, options);
+    final @NotNull Attributes attributes = readableSpan.getAttributes();
+    final @Nullable String url = extractUrl(attributes, options);
 
     if (url != null) {
       return PropagationTargetsUtils.contain(options.getTracePropagationTargets(), url);
     }
 
-    return otelSpan instanceof ReadableSpan
-        && SpanKind.PRODUCER.equals(((ReadableSpan) otelSpan).getKind());
+    if (SpanKind.CLIENT.equals(readableSpan.getKind())) {
+      final @Nullable String serverAuthority = getServerAuthority(attributes);
+      return serverAuthority != null
+          && PropagationTargetsUtils.contain(options.getTracePropagationTargets(), serverAuthority);
+    }
+
+    return SpanKind.PRODUCER.equals(readableSpan.getKind());
   }
 
   private @Nullable String extractUrl(
-      final @NotNull Span otelSpan, final @NotNull SentryOptions options) {
-    if (!(otelSpan instanceof ReadableSpan)) {
-      return null;
-    }
-
-    final @NotNull Attributes attributes = ((ReadableSpan) otelSpan).getAttributes();
+      final @NotNull Attributes attributes, final @NotNull SentryOptions options) {
     final @Nullable String urlFull = attributes.get(UrlAttributes.URL_FULL);
     if (urlFull != null) {
       return urlFull;
@@ -134,6 +140,23 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
           .log(SentryLevel.WARNING, "Unable to combine URL span attributes into one.", t);
       return null;
     }
+  }
+
+  private @Nullable String getServerAuthority(final @NotNull Attributes attributes) {
+    final @Nullable String serverAddress = attributes.get(ServerAttributes.SERVER_ADDRESS);
+    if (serverAddress == null || serverAddress.isEmpty()) {
+      return null;
+    }
+
+    final @Nullable Long serverPort = attributes.get(ServerAttributes.SERVER_PORT);
+    if (serverPort == null) {
+      return serverAddress;
+    }
+
+    final boolean isIpv6Address = serverAddress.indexOf(':') >= 0 && !serverAddress.startsWith("[");
+    final @NotNull String formattedAddress =
+        isIpv6Address ? "[" + serverAddress + "]" : serverAddress;
+    return formattedAddress + ":" + serverPort;
   }
 
   @Override

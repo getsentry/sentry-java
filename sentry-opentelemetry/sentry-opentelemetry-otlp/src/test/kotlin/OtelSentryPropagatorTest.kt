@@ -9,6 +9,7 @@ import io.opentelemetry.context.Context
 import io.opentelemetry.context.propagation.TextMapGetter
 import io.opentelemetry.context.propagation.TextMapSetter
 import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.semconv.ServerAttributes
 import io.sentry.Baggage
 import io.sentry.Sentry
 import kotlin.test.AfterTest
@@ -256,6 +257,66 @@ class OpenTelemetryOtlpPropagatorTest {
     val otelSpan = Span.wrap(otelSpanContext)
 
     propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
+
+    assertNull(carrier["sentry-trace"])
+    assertNull(carrier["baggage"])
+  }
+
+  @Test
+  fun `injects headers for client span if server authority matches tracePropagationTargets`() {
+    Sentry.init { options ->
+      options.dsn = "https://key@sentry.io/proj"
+      options.setTracePropagationTargets(listOf("orders.internal:4317"))
+    }
+    val propagator = OpenTelemetryOtlpPropagator()
+    val carrier = mutableMapOf<String, String>()
+    val tracerProvider = SdkTracerProvider.builder().build()
+    val otelSpan =
+      tracerProvider
+        .get("test")
+        .spanBuilder("test")
+        .setSpanKind(SpanKind.CLIENT)
+        .setAttribute(ServerAttributes.SERVER_ADDRESS, "orders.internal")
+        .setAttribute(ServerAttributes.SERVER_PORT, 4317)
+        .startSpan()
+
+    try {
+      propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
+    } finally {
+      otelSpan.end()
+      tracerProvider.shutdown()
+    }
+
+    assertEquals(
+      "${otelSpan.spanContext.traceId}-${otelSpan.spanContext.spanId}-1",
+      carrier["sentry-trace"],
+    )
+  }
+
+  @Test
+  fun `does not inject headers for client span if server authority does not match tracePropagationTargets`() {
+    Sentry.init { options ->
+      options.dsn = "https://key@sentry.io/proj"
+      options.setTracePropagationTargets(listOf("orders.internal:443"))
+    }
+    val propagator = OpenTelemetryOtlpPropagator()
+    val carrier = mutableMapOf<String, String>()
+    val tracerProvider = SdkTracerProvider.builder().build()
+    val otelSpan =
+      tracerProvider
+        .get("test")
+        .spanBuilder("test")
+        .setSpanKind(SpanKind.CLIENT)
+        .setAttribute(ServerAttributes.SERVER_ADDRESS, "orders.internal")
+        .setAttribute(ServerAttributes.SERVER_PORT, 4317)
+        .startSpan()
+
+    try {
+      propagator.inject(Context.root().with(otelSpan), carrier, MapSetter())
+    } finally {
+      otelSpan.end()
+      tracerProvider.shutdown()
+    }
 
     assertNull(carrier["sentry-trace"])
     assertNull(carrier["baggage"])

@@ -4,7 +4,8 @@
 
 ### Breaking Changes
 
-- Stop OpenTelemetry propagators from injecting tracing headers when an outgoing span has no URL ([#6419](https://github.com/getsentry/sentry-java/pull/6419))
+- Stop OpenTelemetry propagators from injecting tracing headers when an outgoing span has no matchable destination ([#6419](https://github.com/getsentry/sentry-java/pull/6419))
+  - Client spans without a URL use `server.address` and optional `server.port` for matching `tracePropagationTargets`
   - Messaging producer spans continue to propagate trace context through message metadata
 - Remove the deprecated user feedback APIs ([#6337](https://github.com/getsentry/sentry-java/pull/6337))
   - `UserFeedback` and `Sentry.captureUserFeedback(...)`: use `Sentry.feedback().capture(...)` with `io.sentry.protocol.Feedback` instead
