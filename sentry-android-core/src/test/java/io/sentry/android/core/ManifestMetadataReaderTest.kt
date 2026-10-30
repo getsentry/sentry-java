@@ -436,7 +436,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     // Assert
-    assertEquals(false, fixture.options.isTombstoneEnabled)
+    assertEquals(true, fixture.options.isTombstoneEnabled)
   }
 
   @Test
