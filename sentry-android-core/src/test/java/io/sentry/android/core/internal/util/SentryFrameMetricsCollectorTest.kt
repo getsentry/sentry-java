@@ -118,15 +118,6 @@ class SentryFrameMetricsCollectorTest {
   }
 
   @Test
-  fun `collector works only on api 24+`() {
-    val buildInfo =
-      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M) }
-    val collector = fixture.getSut(context, buildInfo)
-    val id = collector.startCollection(mock())
-    assertNull(id)
-  }
-
-  @Test
   fun `collector works only if context is instance of Application`() {
     val collector = fixture.getSut(mock())
     val id = collector.startCollection(mock())
@@ -336,35 +327,6 @@ class SentryFrameMetricsCollectorTest {
     choreographer.injectForField("mLastFrameTimeNanos", 100)
 
     assertEquals(100, collector.getLastKnownFrameStartTimeNanos())
-  }
-
-  @Test
-  fun `collector reads frame start from choreographer field under version O`() {
-    val collector = fixture.getSut(context)
-    // Execute all posted tasks
-    Shadows.shadowOf(Looper.getMainLooper()).idle()
-    val listener =
-      collector.getProperty<Window.OnFrameMetricsAvailableListener>("frameMetricsAvailableListener")
-    val choreographer = collector.getProperty<Choreographer>("choreographer")
-    choreographer.injectForField("mLastFrameTimeNanos", 100)
-    val frameMetrics = createMockFrameMetrics()
-
-    var timesCalled = 0
-    collector.startCollection {
-      frameStartNanos,
-      frameEndNanos,
-      durationNanos,
-      delayNanos,
-      isSlow,
-      isFrozen,
-      refreshRate ->
-      // The frame end is 100 (Choreographer.mLastFrameTimeNanos) plus frame duration
-      assertEquals(100 + durationNanos, frameEndNanos)
-      timesCalled++
-    }
-    listener.onFrameMetricsAvailable(createMockWindow(), frameMetrics, 0)
-    // Assert the callback was called
-    assertEquals(1, timesCalled)
   }
 
   @Test
@@ -611,9 +573,7 @@ class SentryFrameMetricsCollectorTest {
 
   @Test
   fun `getFramesDelay returns -1 when not available`() {
-    val buildInfo =
-      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M) }
-    val collector = fixture.getSut(context, buildInfo)
+    val collector = fixture.getSut(mock())
 
     val result = collector.getFramesDelay(0, TimeUnit.SECONDS.toNanos(1))
     assertEquals(-1.0, result.delaySeconds)

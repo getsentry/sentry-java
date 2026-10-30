@@ -3,8 +3,6 @@ package io.sentry.android.core.internal.util;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.view.PixelCopy;
@@ -122,8 +120,8 @@ public class ScreenshotUtils {
       final @NotNull IThreadChecker threadChecker,
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider) {
-    // We are keeping BuildInfoProvider param for compatibility, as it's being used by
-    // cross-platform SDKs
+    // We are keeping the IThreadChecker and BuildInfoProvider params for compatibility, as they are
+    // being used by cross-platform SDKs
 
     if (!isActivityValid(activity)) {
       logger.log(SentryLevel.DEBUG, "Activity isn't valid, not taking screenshot.");
@@ -159,63 +157,38 @@ public class ScreenshotUtils {
 
       final @NotNull CountDownLatch latch = new CountDownLatch(1);
 
-      // Use Pixel Copy API on new devices, fallback to canvas rendering on older ones
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.O) {
+      final HandlerThread thread = new HandlerThread("SentryScreenshot");
+      thread.start();
 
-        final HandlerThread thread = new HandlerThread("SentryScreenshot");
-        thread.start();
+      boolean success = false;
+      final AtomicInteger copyResultCode = new AtomicInteger(-1);
+      try {
+        final Handler handler = new Handler(thread.getLooper());
 
-        boolean success = false;
-        final AtomicInteger copyResultCode = new AtomicInteger(-1);
-        try {
-          final Handler handler = new Handler(thread.getLooper());
+        PixelCopy.request(
+            window,
+            bitmap,
+            copyResult -> {
+              copyResultCode.set(copyResult);
+              latch.countDown();
+            },
+            handler);
 
-          PixelCopy.request(
-              window,
-              bitmap,
-              copyResult -> {
-                copyResultCode.set(copyResult);
-                latch.countDown();
-              },
-              handler);
+        final boolean completed = latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        success = completed && copyResultCode.get() == PixelCopy.SUCCESS;
+      } catch (Throwable e) {
+        // ignored
+        logger.log(SentryLevel.ERROR, "Taking screenshot using PixelCopy failed.", e);
+      } finally {
+        thread.quit();
+      }
 
-          final boolean completed = latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-          success = completed && copyResultCode.get() == PixelCopy.SUCCESS;
-        } catch (Throwable e) {
-          // ignored
-          logger.log(SentryLevel.ERROR, "Taking screenshot using PixelCopy failed.", e);
-        } finally {
-          thread.quit();
-        }
-
-        if (!success) {
-          logger.log(
-              SentryLevel.WARNING,
-              "PixelCopy failed for screenshot capture (result=%d).",
-              copyResultCode.get());
-          return null;
-        }
-      } else {
-        final Canvas canvas = new Canvas(bitmap);
-        if (threadChecker.isMainThread()) {
-          view.draw(canvas);
-          latch.countDown();
-        } else {
-          activity.runOnUiThread(
-              () -> {
-                try {
-                  view.draw(canvas);
-                } catch (Throwable e) {
-                  logger.log(SentryLevel.ERROR, "Taking screenshot failed (view.draw).", e);
-                } finally {
-                  latch.countDown();
-                }
-              });
-        }
-
-        if (!latch.await(CAPTURE_TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-          return null;
-        }
+      if (!success) {
+        logger.log(
+            SentryLevel.WARNING,
+            "PixelCopy failed for screenshot capture (result=%d).",
+            copyResultCode.get());
+        return null;
       }
       return bitmap;
     } catch (Throwable e) {

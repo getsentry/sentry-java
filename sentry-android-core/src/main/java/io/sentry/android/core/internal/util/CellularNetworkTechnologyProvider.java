@@ -144,10 +144,6 @@ public final class CellularNetworkTechnologyProvider {
 
   @SuppressLint({"MissingPermission", "InlinedApi", "NewApi"})
   private @Nullable String getDataNetworkTechnology() {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
-      // getDataNetworkType was added in API 24.
-      return null;
-    }
     // The SDK doesn't declare these permissions, so the technology is only available to apps that
     // already request one of them. READ_BASIC_PHONE_STATE only exists from API 31 on, where the
     // display info listener is used instead, but checking it is harmless.

@@ -554,28 +554,15 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
     if (!headlessAppStartCheckPending.compareAndSet(false, true)) {
       return;
     }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      Looper.getMainLooper()
-          .getQueue()
-          .addIdleHandler(
-              () -> {
-                firstIdle = SystemClock.uptimeMillis();
-                headlessAppStartCheckPending.set(false);
-                handleHeadlessAppStartIfNeededOnMain();
-                return false;
-              });
-    } else {
-      final Handler handler = new Handler(Looper.getMainLooper());
-      handler.post(
-          () -> {
-            firstIdle = SystemClock.uptimeMillis();
-            handler.post(
-                () -> {
-                  headlessAppStartCheckPending.set(false);
-                  handleHeadlessAppStartIfNeededOnMain();
-                });
-          });
-    }
+    Looper.getMainLooper()
+        .getQueue()
+        .addIdleHandler(
+            () -> {
+              firstIdle = SystemClock.uptimeMillis();
+              headlessAppStartCheckPending.set(false);
+              handleHeadlessAppStartIfNeededOnMain();
+              return false;
+            });
   }
 
   /**

@@ -3,7 +3,6 @@
 package io.sentry.android.replay.viewhierarchy
 
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.view.View
 import androidx.compose.ui.graphics.isUnspecified
 import androidx.compose.ui.graphics.toArgb
@@ -36,7 +35,6 @@ import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 
 @SuppressLint("UseRequiresApi")
-@TargetApi(26)
 internal object ComposeViewHierarchyNode {
   private val getCollapsedSemanticsMethod: Method? by
     lazy(LazyThreadSafetyMode.NONE) {

@@ -64,12 +64,6 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
 
     if (androidOptions.isEnableNetworkEventBreadcrumbs()) {
 
-      // The specific error is logged in the ConnectivityChecker method
-      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
-        options.getLogger().log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
-        return;
-      }
-
       try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
         networkCallback =
             new NetworkBreadcrumbsNetworkCallback(

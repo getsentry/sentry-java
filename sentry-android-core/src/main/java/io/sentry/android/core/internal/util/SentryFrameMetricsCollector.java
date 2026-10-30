@@ -12,7 +12,6 @@ import android.os.Looper;
 import android.view.Choreographer;
 import android.view.FrameMetrics;
 import android.view.Window;
-import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
@@ -108,10 +107,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (!(appContext instanceof Application)) {
-      return;
-    }
-    // FrameMetrics api is only available since sdk version N
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
       return;
     }
     isAvailable = true;
@@ -222,25 +217,14 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     return frameDuration > expectedFrameDuration;
   }
 
-  /**
-   * Return the frame start timestamp. On API 26+, this value is read directly from {@link
-   * FrameMetrics}; older APIs use the reflected Choreographer timestamp.
-   */
-  @SuppressLint("NewApi")
   private long getFrameStartTimestamp(final @NotNull FrameMetrics frameMetrics) {
-
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.O) {
-      return frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP);
-    }
-
-    return getLastKnownFrameStartTimeNanos();
+    return frameMetrics.getMetric(FrameMetrics.INTENDED_VSYNC_TIMESTAMP);
   }
 
   /**
    * Return time spent on the main thread (cpu) for frame creation. It doesn't consider time spent
    * on the render thread (gpu).
    */
-  @RequiresApi(api = Build.VERSION_CODES.N)
   private long getFrameCpuDuration(final @NotNull FrameMetrics frameMetrics) {
     // Inspired by JankStats
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt;l=74-79;drc=1de6215c6bd9e887e3d94556e9ac55cfb7b8c797
@@ -512,7 +496,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @ApiStatus.Internal
   public interface WindowFrameMetricsManager {
-    @RequiresApi(api = Build.VERSION_CODES.N)
     default void addOnFrameMetricsAvailableListener(
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener,
@@ -523,7 +506,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       window.addOnFrameMetricsAvailableListener(frameMetricsAvailableListener, handler);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     default void removeOnFrameMetricsAvailableListener(
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener) {

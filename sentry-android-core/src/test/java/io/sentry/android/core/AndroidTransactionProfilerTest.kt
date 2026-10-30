@@ -244,17 +244,6 @@ class AndroidTransactionProfilerTest {
   }
 
   @Test
-  fun `profiler works only on api 22+`() {
-    val buildInfo =
-      mock<BuildInfoProvider> {
-        whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
-      }
-    val profiler = fixture.getSut(context, buildInfo)
-    profiler.start()
-    assertFalse(profiler.isRunning)
-  }
-
-  @Test
   fun `profiler on profilesSampleRate=0 false`() {
     fixture.options.apply { profilesSampleRate = 0.0 }
     val profiler = fixture.getSut(context)

@@ -12,7 +12,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.test.getProperty
-import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -55,34 +54,7 @@ class FirstDrawDoneListenerTest {
   private val fixture = Fixture()
 
   @Test
-  fun `registerForNextDraw adds listener on attach state changed on sdk 25-`() {
-    val view = fixture.getSut(Build.VERSION_CODES.N_MR1)
-
-    // OnDrawListener is not registered, it is delayed for later
-    FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
-    assertTrue(fixture.onDrawListeners.isEmpty())
-
-    // Register listener after the view is attached to a window
-    val listenerInfo = Class.forName("android.view.View\$ListenerInfo")
-    val mListenerInfo: Any = view.getProperty("mListenerInfo")
-    val mOnAttachStateChangeListeners: CopyOnWriteArrayList<View.OnAttachStateChangeListener> =
-      mListenerInfo.getProperty(listenerInfo, "mOnAttachStateChangeListeners")
-    assertFalse(mOnAttachStateChangeListeners.isEmpty())
-
-    // Dispatch onViewAttachedToWindow()
-    for (listener in mOnAttachStateChangeListeners) {
-      listener.onViewAttachedToWindow(view)
-    }
-
-    assertFalse(fixture.onDrawListeners.isEmpty())
-    assertIs<FirstDrawDoneListener>(fixture.onDrawListeners[0])
-
-    // mOnAttachStateChangeListeners is automatically removed
-    assertTrue(mOnAttachStateChangeListeners.isEmpty())
-  }
-
-  @Test
-  fun `registerForNextDraw adds listener on sdk 26+`() {
+  fun `registerForNextDraw adds listener immediately`() {
     val view = fixture.getSut()
 
     // Immediately register an OnDrawListener to ViewTreeObserver

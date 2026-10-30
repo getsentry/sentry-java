@@ -28,7 +28,6 @@
 package io.sentry.android.replay.video
 
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.graphics.Bitmap
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
@@ -57,7 +56,6 @@ private const val TIMEOUT_USEC = 100_000L
 private const val MAX_EOS_STALL_ITERATIONS = 10
 
 @SuppressLint("UseRequiresApi")
-@TargetApi(26)
 internal class SimpleVideoEncoder(
   val options: SentryOptions,
   val muxerConfig: MuxerConfig,
@@ -350,7 +348,6 @@ internal fun shouldUseSoftwareCanvas(): Boolean =
     Build.HARDWARE.contains("ranchu", ignoreCase = true)
 
 @SuppressLint("UseRequiresApi")
-@TargetApi(24)
 internal data class MuxerConfig(
   val file: File,
   var recordingWidth: Int,
