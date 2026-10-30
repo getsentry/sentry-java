@@ -7,10 +7,8 @@ import android.net.ConnectivityManager;
 import android.net.ConnectivityManager.NetworkCallback;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.os.Build;
 import android.os.Handler;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import io.sentry.IConnectionStatusProvider;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
@@ -99,9 +97,7 @@ public final class AndroidConnectionStatusProvider
         new CellularNetworkTechnologyProvider(this.context, options.getLogger(), buildInfoProvider);
 
     capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
-      capabilities[1] = NetworkCapabilities.NET_CAPABILITY_VALIDATED;
-    }
+    capabilities[1] = NetworkCapabilities.NET_CAPABILITY_VALIDATED;
 
     // Register network callback immediately for caching
     //noinspection Convert2MethodRef
@@ -123,13 +119,9 @@ public final class AndroidConnectionStatusProvider
     }
 
     // Check for general internet capability AND validated status
-    boolean hasInternetAndValidated =
-        networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
-      hasInternetAndValidated =
-          hasInternetAndValidated
-              && networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
-    }
+    final boolean hasInternetAndValidated =
+        networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            && networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
 
     if (!hasInternetAndValidated) {
       return false;
@@ -223,7 +215,6 @@ public final class AndroidConnectionStatusProvider
               }
             }
 
-            @RequiresApi(Build.VERSION_CODES.O)
             @Override
             public void onUnavailable() {
               clearCacheAndNotifyObservers();
@@ -388,12 +379,6 @@ public final class AndroidConnectionStatusProvider
                 .log(
                     SentryLevel.INFO,
                     "No permission (ACCESS_NETWORK_STATE) to check network status.");
-            cachedNetworkCapabilities = null;
-            cacheFreshUntil = Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
-            return;
-          }
-
-          if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.M) {
             cachedNetworkCapabilities = null;
             cacheFreshUntil = Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
             return;
@@ -630,65 +615,25 @@ public final class AndroidConnectionStatusProvider
       boolean wifi = false;
       boolean cellular = false;
 
-      if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
-
-        final Network activeNetwork = connectivityManager.getActiveNetwork();
-        if (activeNetwork == null) {
-          logger.log(SentryLevel.INFO, "Network is null and cannot check network status");
-          return null;
-        }
-        final NetworkCapabilities networkCapabilities =
-            connectivityManager.getNetworkCapabilities(activeNetwork);
-        if (networkCapabilities == null) {
-          logger.log(SentryLevel.INFO, "NetworkCapabilities is null and cannot check network type");
-          return null;
-        }
-        if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
-          ethernet = true;
-        }
-        if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-          wifi = true;
-        }
-        if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
-          cellular = true;
-        }
-      } else {
-        // ideally using connectivityManager.getAllNetworks(), but its >= Android L only
-
-        // for some reason linting didn't allow a single @SuppressWarnings("deprecation") on method
-        // signature
-        @SuppressWarnings("deprecation")
-        final android.net.NetworkInfo activeNetworkInfo =
-            connectivityManager.getActiveNetworkInfo();
-
-        if (activeNetworkInfo == null) {
-          logger.log(SentryLevel.INFO, "NetworkInfo is null, there's no active network.");
-          return null;
-        }
-
-        @SuppressWarnings("deprecation")
-        final int type = activeNetworkInfo.getType();
-
-        @SuppressWarnings("deprecation")
-        final int TYPE_ETHERNET = ConnectivityManager.TYPE_ETHERNET;
-
-        @SuppressWarnings("deprecation")
-        final int TYPE_WIFI = ConnectivityManager.TYPE_WIFI;
-
-        @SuppressWarnings("deprecation")
-        final int TYPE_MOBILE = ConnectivityManager.TYPE_MOBILE;
-
-        switch (type) {
-          case TYPE_ETHERNET:
-            ethernet = true;
-            break;
-          case TYPE_WIFI:
-            wifi = true;
-            break;
-          case TYPE_MOBILE:
-            cellular = true;
-            break;
-        }
+      final Network activeNetwork = connectivityManager.getActiveNetwork();
+      if (activeNetwork == null) {
+        logger.log(SentryLevel.INFO, "Network is null and cannot check network status");
+        return null;
+      }
+      final NetworkCapabilities networkCapabilities =
+          connectivityManager.getNetworkCapabilities(activeNetwork);
+      if (networkCapabilities == null) {
+        logger.log(SentryLevel.INFO, "NetworkCapabilities is null and cannot check network type");
+        return null;
+      }
+      if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+        ethernet = true;
+      }
+      if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+        wifi = true;
+      }
+      if (networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+        cellular = true;
       }
 
       // TODO: change the protocol to be a list of transports as a device may have the capability of
@@ -758,10 +703,6 @@ public final class AndroidConnectionStatusProvider
       final @NotNull ILogger logger,
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @NotNull NetworkCallback networkCallback) {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
-      logger.log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
-      return false;
-    }
 
     if (!Permissions.hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
       logger.log(SentryLevel.INFO, "No permission (ACCESS_NETWORK_STATE) to check network status.");
@@ -787,10 +728,6 @@ public final class AndroidConnectionStatusProvider
       final @NotNull BuildInfoProvider buildInfoProvider,
       final @Nullable Handler handler,
       final @NotNull NetworkCallback networkCallback) {
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
-      logger.log(SentryLevel.DEBUG, "NetworkCallbacks need Android N+.");
-      return false;
-    }
     final ConnectivityManager connectivityManager = getConnectivityManager(context, logger);
     if (connectivityManager == null) {
       return false;

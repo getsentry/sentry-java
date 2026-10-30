@@ -440,22 +440,18 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     return delegate.clipRect(left, top, right, bottom)
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutRect(rect: RectF): Boolean {
     return delegate.clipOutRect(rect)
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutRect(rect: Rect): Boolean {
     return delegate.clipOutRect(rect)
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutRect(left: Float, top: Float, right: Float, bottom: Float): Boolean {
     return delegate.clipOutRect(left, top, right, bottom)
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutRect(left: Int, top: Int, right: Int, bottom: Int): Boolean {
     return delegate.clipOutRect(left, top, right, bottom)
   }
@@ -469,7 +465,6 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     return delegate.clipPath(path)
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   override fun clipOutPath(path: Path): Boolean {
     return delegate.clipOutPath(path)
   }
@@ -571,7 +566,6 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     delegate.drawARGB(a, r, g, b)
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, left: Float, top: Float, paint: Paint?) {
     val sampledColor = sampleBitmapColor(bitmap, paint, null)
     solidPaint.setColor(sampledColor)
@@ -579,7 +573,6 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     delegate.drawRect(left, top, left + bitmap.width, top + bitmap.height, solidPaint)
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: RectF, paint: Paint?) {
     val sampledColor = sampleBitmapColor(bitmap, paint, src)
     solidPaint.setColor(sampledColor)
@@ -587,7 +580,6 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     delegate.drawRect(dst, solidPaint)
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: Rect, paint: Paint?) {
     val sampledColor = sampleBitmapColor(bitmap, paint, src)
     solidPaint.setColor(sampledColor)
@@ -625,7 +617,6 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     // not supported
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   override fun drawBitmap(bitmap: Bitmap, matrix: Matrix, paint: Paint?) {
     val sampledColor = sampleBitmapColor(bitmap, paint, null)
     solidPaint.setColor(sampledColor)
@@ -964,7 +955,6 @@ private class TextIgnoringDelegateCanvas : Canvas() {
     drawMaskedText(paint, x, y)
   }
 
-  @RequiresApi(Build.VERSION_CODES.O)
   private fun sampleBitmapColor(bitmap: Bitmap, paint: Paint?, src: Rect?): Int {
     if (bitmap.isRecycled) {
       return Color.BLACK

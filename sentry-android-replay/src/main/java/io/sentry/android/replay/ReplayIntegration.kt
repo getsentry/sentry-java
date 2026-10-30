@@ -3,7 +3,6 @@ package io.sentry.android.replay
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Build
 import android.view.MotionEvent
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory.All
@@ -147,11 +146,6 @@ public class ReplayIntegration(
 
   override fun register(scopes: IScopes, options: SentryOptions) {
     this.options = options
-
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-      options.logger.log(INFO, "Session replay is only supported on API 26 and above")
-      return
-    }
 
     this.scopes = scopes
     recorder =

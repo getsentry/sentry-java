@@ -1,7 +1,6 @@
 package io.sentry.android.replay.util
 
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import io.sentry.ReplayRecording
 import io.sentry.SentryOptions
 import io.sentry.android.replay.ReplayCache
@@ -15,7 +14,6 @@ import java.util.concurrent.ScheduledExecutorService
 // cpu
 @SuppressLint("UseRequiresApi")
 @Suppress("unused")
-@TargetApi(26)
 internal class PersistableLinkedList(
   private val propertyName: String,
   private val options: SentryOptions,

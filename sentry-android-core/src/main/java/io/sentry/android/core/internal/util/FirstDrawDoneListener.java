@@ -19,7 +19,6 @@
 package io.sentry.android.core.internal.util;
 
 import android.app.Activity;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -69,32 +68,13 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   }
 
   /** Registers a post-draw callback for the next draw of a view. */
+  // The BuildInfoProvider param is kept for compatibility, as hybrid SDKs call this method.
   public static void registerForNextDraw(
       final @NotNull View view,
       final @NotNull Runnable drawDoneCallback,
       final @NotNull BuildInfoProvider buildInfoProvider) {
     final FirstDrawDoneListener listener = new FirstDrawDoneListener(view, drawDoneCallback);
-    // Handle bug prior to API 26 where OnDrawListener from the floating ViewTreeObserver is not
-    // merged into the real ViewTreeObserver.
-    // https://android.googlesource.com/platform/frameworks/base/+/9f8ec54244a5e0343b9748db3329733f259604f3
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.O
-        && !isAliveAndAttached(view)) {
-      view.addOnAttachStateChangeListener(
-          new View.OnAttachStateChangeListener() {
-            @Override
-            public void onViewAttachedToWindow(View view) {
-              view.getViewTreeObserver().addOnDrawListener(listener);
-              view.removeOnAttachStateChangeListener(this);
-            }
-
-            @Override
-            public void onViewDetachedFromWindow(View view) {
-              view.removeOnAttachStateChangeListener(this);
-            }
-          });
-    } else {
-      view.getViewTreeObserver().addOnDrawListener(listener);
-    }
+    view.getViewTreeObserver().addOnDrawListener(listener);
   }
 
   private FirstDrawDoneListener(final @NotNull View view, final @NotNull Runnable callback) {
@@ -119,18 +99,5 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
           }
         });
     mainThreadHandler.postAtFrontOfQueue(callback);
-  }
-
-  /**
-   * Helper to avoid <a
-   * href="https://android.googlesource.com/platform/frameworks/base/+/9f8ec54244a5e0343b9748db3329733f259604f3">bug
-   * prior to API 26</a>, where the floating ViewTreeObserver's OnDrawListeners are not merged into
-   * the real ViewTreeObserver during attach.
-   *
-   * @return true if the View is already attached and the ViewTreeObserver is not a floating
-   *     placeholder.
-   */
-  private static boolean isAliveAndAttached(final @NotNull View view) {
-    return view.getViewTreeObserver().isAlive() && view.isAttachedToWindow();
   }
 }

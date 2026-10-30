@@ -1,7 +1,6 @@
 package io.sentry.android.replay
 
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.content.Context
 import android.graphics.Bitmap
 import android.view.View
@@ -23,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
 
 @SuppressLint("UseKtx", "UseRequiresApi")
-@TargetApi(26)
 internal class ScreenshotRecorder(
   val config: ScreenshotRecorderConfig,
   val options: SentryOptions,

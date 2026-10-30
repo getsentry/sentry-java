@@ -294,17 +294,6 @@ class AndroidContinuousProfilerTest {
   }
 
   @Test
-  fun `profiler works only on api 22+`() {
-    val buildInfo =
-      mock<BuildInfoProvider> {
-        whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
-      }
-    val profiler = fixture.getSut(buildInfo)
-    profiler.startProfiler(ProfileLifecycle.MANUAL, fixture.mockTracesSampler)
-    assertFalse(profiler.isRunning)
-  }
-
-  @Test
   fun `profiler evaluates profilingTracesDirPath options only on first start`() {
     val profiler = fixture.getSut { it.cacheDirPath = null }
     verify(fixture.mockLogger, never())
