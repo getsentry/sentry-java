@@ -83,8 +83,10 @@ it. Gradle runs the two in parallel.
   customizes, and that the OpenTelemetry starter instruments, so it adds or replaces trace headers
   on the requests a test sends. Build one outside the context.
 - Sentry exports OpenTelemetry spans in batches every 5 seconds. In-process, flush the tracer
-  provider from the server's hook. With the agent this isn't possible, so each test waits for a
-  batch and negative checks wait at least 6 seconds.
+  provider from the server's hook. With the agent this isn't possible, so set
+  `OTEL_BSP_SCHEDULE_DELAY` on the app to shorten the batch delay, and make negative checks wait
+  well past it. The Boot 2 and Boot 3 agent suites don't set it yet: their tests wait 5 seconds
+  for a batch and their negative checks wait 6.
 - Sentry is global, so a second live Spring context in an OpenTelemetry suite takes it over. Keep
   one live context per JVM (`@DirtiesContext` when a test needs its own).
 - The async profiler rejects a traces path with a `.` anywhere in its absolute form. Put the path

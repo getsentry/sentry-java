@@ -47,8 +47,8 @@ class DistributedTracingIntegrationTest : IntegrationTest() {
       )
     assertThat(status).isEqualTo(500)
 
-    // Longer than the 5 seconds the app's spans can wait for their batch to be exported.
-    server.assertNoEnvelope(millis = 6_000) { isForRequest(it, id) }
+    // Ten times the app's batch delay, so the request's spans would have been exported.
+    server.assertNoEnvelope(millis = 1_000) { isForRequest(it, id) }
   }
 
   @Test
