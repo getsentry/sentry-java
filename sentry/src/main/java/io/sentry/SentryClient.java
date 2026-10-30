@@ -1305,7 +1305,6 @@ public final class SentryClient implements ISentryClient {
     return traceContext;
   }
 
-  @ApiStatus.Experimental
   @Override
   public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
     // Drop silently to prevent recursion; a log here can re-enter through a logging integration.

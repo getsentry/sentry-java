@@ -59,6 +59,10 @@
 
 - Promote the backpressure handling option from experimental to stable ([#6423](https://github.com/getsentry/sentry-java/pull/6423))
 
+### Improvements
+
+- Promote structured logs APIs from experimental to stable ([#6424](https://github.com/getsentry/sentry-java/pull/6424))
+
 ## 8.62.0
 
 ### Improvements

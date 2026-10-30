@@ -3918,12 +3918,10 @@ public class SentryOptions implements RateLimiterConfig {
     this.scopesStorageFactory = scopesStorageFactory;
   }
 
-  @ApiStatus.Experimental
   public @NotNull SentryOptions.Logs getLogs() {
     return logs;
   }
 
-  @ApiStatus.Experimental
   public void setLogs(@NotNull SentryOptions.Logs logs) {
     this.logs = logs;
   }
