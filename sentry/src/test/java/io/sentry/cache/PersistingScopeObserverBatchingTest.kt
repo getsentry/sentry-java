@@ -81,7 +81,7 @@ class PersistingScopeObserverBatchingTest {
     val sut = getSut(executor)
 
     sut.addBreadcrumb(Breadcrumb().apply { message = "dropped" })
-    sut.setBreadcrumbs(emptyList())
+    sut.clearBreadcrumbs()
     sut.addBreadcrumb(Breadcrumb().apply { message = "kept" })
     executor.runAll()
 
@@ -95,7 +95,7 @@ class PersistingScopeObserverBatchingTest {
     // fires while the flush is draining, i.e. after the first breadcrumb has been written
     options.setSerializer(
       SerializerHook(options.serializer) {
-        sut.setBreadcrumbs(emptyList())
+        sut.clearBreadcrumbs()
         sut.addBreadcrumb(Breadcrumb().apply { message = "kept" })
       }
     )
