@@ -17,7 +17,7 @@ public abstract class ScopeObserverAdapter implements IScopeObserver {
   public void addBreadcrumb(@NotNull Breadcrumb crumb) {}
 
   @Override
-  public void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs) {}
+  public void clearBreadcrumbs() {}
 
   @Override
   public void setTag(@NotNull String key, @NotNull String value) {}
