@@ -10,15 +10,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A Scope observer that tracks changes on Scope. All methods are "default", so implementors can
- * subscribe to only those properties, that they are interested in.
+ * A Scope observer that tracks changes on Scope.
  */
 public interface IScopeObserver {
   void setUser(@Nullable User user);
 
   void addBreadcrumb(@NotNull Breadcrumb crumb);
 
-  void setBreadcrumbs(@NotNull Collection<Breadcrumb> breadcrumbs);
+  void clearBreadcrumbs();
 
   void setTag(@NotNull String key, @NotNull String value);
 
