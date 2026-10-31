@@ -761,12 +761,10 @@ class ScopeTest {
     val breadcrumb = Breadcrumb()
     scope.addBreadcrumb(breadcrumb)
     verify(observer).addBreadcrumb(eq(breadcrumb))
-    verify(observer).setBreadcrumbs(argThat { elementAt(0) == breadcrumb })
 
     scope.addBreadcrumb(Breadcrumb.debug("test"))
     verify(observer).addBreadcrumb(argThat { message == "test" })
-    verify(observer, times(2))
-      .setBreadcrumbs(argThat { elementAt(0) == breadcrumb && elementAt(1).message == "test" })
+    verify(observer, never()).clearBreadcrumbs()
   }
 
   @Test
@@ -780,7 +778,7 @@ class ScopeTest {
     assertFalse(scope.breadcrumbs.isEmpty())
 
     scope.clearBreadcrumbs()
-    verify(observer, times(2)).setBreadcrumbs(argThat { isEmpty() })
+    verify(observer).clearBreadcrumbs()
   }
 
   @Test
