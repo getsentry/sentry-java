@@ -123,7 +123,7 @@ class PersistingScopeObserverTest<T>(
           breadcrumbs.forEach { addBreadcrumb(it) }
         },
         BREADCRUMBS_FILENAME,
-        DeleteScopeValue { setBreadcrumbs(emptyList()) },
+        DeleteScopeValue { clearBreadcrumbs() },
         DeletedEntityProvider { emptyList<Breadcrumb>() },
       )
 
@@ -141,7 +141,7 @@ class PersistingScopeObserverTest<T>(
           )
         },
         BREADCRUMBS_FILENAME,
-        DeleteScopeValue { setBreadcrumbs(emptyList()) },
+        DeleteScopeValue { clearBreadcrumbs() },
         DeletedEntityProvider { emptyList<Breadcrumb>() },
       )
 
