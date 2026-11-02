@@ -230,10 +230,7 @@ class ANRWatchDogTest {
   }
 
   @Test
-  fun `a device suspend does not trip the ANR threshold`() {
-    // The uptime clock stands still while the device is suspended, so a suspend cannot be mistaken
-    // for a blocked main thread. On an elapsed-real-time clock the suspended interval would count
-    // against the main thread and fabricate an ANR.
+  fun `measures the ANR threshold on the ticker, not on wall time`() {
     var anr: ApplicationNotResponding? = null
     val handler = mock<MainLooperHandler>()
     val latch = CountDownLatch(1)
@@ -258,7 +255,7 @@ class ANRWatchDogTest {
       es.submit { sut.run() }
 
       assertTrue(latch.await(10L, TimeUnit.SECONDS)) // wait until the watchdog is polling
-      Thread.sleep(200) // hundreds of polls of wall time, none of it uptime
+      Thread.sleep(200) // hundreds of polls of wall time while the ticker stands still
 
       assertNull(anr)
     } finally {

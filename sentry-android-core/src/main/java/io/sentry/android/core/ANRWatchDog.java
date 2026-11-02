@@ -68,7 +68,6 @@ final class ANRWatchDog extends Thread {
   @SuppressWarnings("UnnecessaryLambda")
   private final Runnable ticker;
 
-  /** Reads the timeout, the debug behavior, the logger and the ticker off {@code options}. */
   static @NotNull ANRWatchDog create(
       final @NotNull SentryAndroidOptions options,
       final @NotNull ANRListener listener,

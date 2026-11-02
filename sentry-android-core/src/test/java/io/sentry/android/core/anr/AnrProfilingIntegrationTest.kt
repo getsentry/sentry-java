@@ -180,7 +180,7 @@ class AnrProfilingIntegrationTest {
 
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
-    integration.installTickerFrom { ticker }
+    integration.installTicker(ticker)
     // Drive the state machine synchronously to avoid racing the background polling thread.
 
     ticker.advance(900, MILLISECONDS)
@@ -218,7 +218,7 @@ class AnrProfilingIntegrationTest {
 
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
-    integration.installTickerFrom { ticker }
+    integration.installTicker(ticker)
 
     ticker.advance(19_000, MILLISECONDS)
     integration.checkMainThread(mainThread)
@@ -245,7 +245,7 @@ class AnrProfilingIntegrationTest {
 
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
-    integration.installTickerFrom { ticker }
+    integration.installTicker(ticker)
     integration.onBackground()
 
     ticker.advance(19_000, MILLISECONDS)
@@ -260,7 +260,7 @@ class AnrProfilingIntegrationTest {
   fun `does not report a stall when the ticker origin is far from zero`() {
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, options)
-    integration.installTickerFrom { ticker }
+    integration.installTicker(ticker)
 
     integration.checkMainThread(Thread.currentThread())
 
@@ -324,7 +324,7 @@ class AnrProfilingIntegrationTest {
 
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
-    integration.installTickerFrom { ticker }
+    integration.installTicker(ticker)
     integration.onForeground()
 
     // Transition to suspicious

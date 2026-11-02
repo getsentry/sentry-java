@@ -15,7 +15,6 @@ import io.sentry.SentryOptions;
 import io.sentry.android.core.AppState;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.time.MonotonicTicker;
-import io.sentry.time.MonotonicTickerProvider;
 import io.sentry.time.Stopwatch;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
@@ -83,10 +82,9 @@ public class AnrProfilingIntegration
    * <p>Package-private so a test can install a fake ticker after {@link #register}, which {@code
    * SentryAndroidOptions} cannot supply.
    */
-  void installTickerFrom(final @NotNull MonotonicTickerProvider provider) {
-    final @NotNull MonotonicTicker installedTicker = provider.getMonotonicTicker();
-    this.ticker = installedTicker;
-    this.lastMainThreadExecutionNanos = installedTicker.tickNanos();
+  void installTicker(final @NotNull MonotonicTicker ticker) {
+    this.ticker = ticker;
+    this.lastMainThreadExecutionNanos = ticker.tickNanos();
   }
 
   @Override
@@ -96,7 +94,7 @@ public class AnrProfilingIntegration
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
     this.logger = options.getLogger();
-    installTickerFrom(options);
+    installTicker(options.getMonotonicTicker());
     this.debugManager = this.options.getDebugManager();
 
     if (this.options.isAnrProfilingEnabled()) {
