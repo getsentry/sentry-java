@@ -32,7 +32,6 @@ jobs:
           token: ${{ steps.token.outputs.token }}
           # Needs to be set, otherwise git describe --tags will fail with: No names found, cannot describe anything
           fetch-depth: 0
-          submodules: 'recursive'
       - name: Prepare release
         uses: getsentry/craft@90e8e203ad86c8ab8ee134e8d387def13e620e81 # v3
         env:
