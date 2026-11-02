@@ -42,7 +42,7 @@ sagp = "6.13.0"
 # actually runs the build comes from the root buildscript (Config.AGP, overridable via VERSION_AGP).
 agp = "9.4.0"
 sqlite = "2.6.2"
-sqliteRc = "2.7.0-rc01" # Required by Room3 3.0.0-rc*
+sqliteRc = "2.8.0-alpha03" # Required by Room3 3.0.0-rc*
 slf4j = "1.7.30"
 spotless = "8.8.0"
 springboot2 = "2.7.18"
