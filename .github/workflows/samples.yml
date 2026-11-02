@@ -22,6 +22,8 @@ jobs:
         include:
           - name: sentry-samples-android
             path: sentry-samples/sentry-samples-android
+          - name: sentry-android-integration-tests
+            path: sentry-android-integration-tests
 
     steps:
       - name: Checkout Repo
