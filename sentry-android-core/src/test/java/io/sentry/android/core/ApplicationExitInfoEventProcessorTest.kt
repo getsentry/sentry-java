@@ -747,6 +747,32 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
+  fun `if dist is not persisted and release has no version code, leaves dist empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
+
+    val processor = fixture.getSut(tmpDir)
+    fixture.persistOptions(RELEASE_FILENAME, "io.sentry.samples@1.2")
+
+    val processed = processor.process(SentryEvent(), hint)
+
+    assertEquals("io.sentry.samples@1.2", processed!!.release)
+    assertNull(processed.dist)
+  }
+
+  @Test
+  fun `if dist is not persisted and options release has no version code, leaves dist empty`() {
+    val hint = HintUtils.createWithTypeCheckHint(AbnormalExitHint(timestamp = 2_000))
+    val processor = fixture.getSut(tmpDir)
+    fixture.options.release = "io.sentry.samples@1.2"
+    setLastUpdateTime(1_000)
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertEquals("io.sentry.samples@1.2", processed.release)
+    assertNull(processed.dist)
+  }
+
+  @Test
   fun `merges user`() {
     val hint = HintUtils.createWithTypeCheckHint(BackfillableHint())
 
