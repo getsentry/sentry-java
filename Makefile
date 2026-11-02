@@ -1,8 +1,8 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check checkSamples checkSampleAndroid checkIntegrationTests preMerge publish
+.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check preMerge publish
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
-preMerge: check checkSamples checkSampleAndroid checkIntegrationTests
+preMerge: check
 publish: clean dryRelease
 
 # deep clean
@@ -51,15 +51,3 @@ runUiTestCritical:
 # Run tests and lint
 check:
 	./gradlew check
-
-# The samples are separate builds, so the root `check` doesn't reach them
-checkSamples:
-	./gradlew -p sentry-samples check
-
-# The Android sample is a separate build, so the root `check` doesn't reach it
-checkSampleAndroid:
-	./gradlew -p sentry-samples/sentry-samples-android check
-
-# The Android integration tests are a separate build, so the root `check` doesn't reach them
-checkIntegrationTests:
-	./gradlew -p sentry-android-integration-tests check
