@@ -36,7 +36,7 @@ class NavScopesTest {
   fun `attach() - lets the first back stack update acquire the nav lease`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle())
+    navScopes.attach(NavRootInfo(fixture.lifecycle(), context = null))
 
     navScopes.applyFirstBackStackUpdate()
 
@@ -48,9 +48,9 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
     val lifecycle = fixture.lifecycle()
-    navScopes.attach(lifecycle)
+    navScopes.attach(NavRootInfo(lifecycle, context = null))
 
-    navScopes.attach(lifecycle)
+    navScopes.attach(NavRootInfo(lifecycle, context = null))
 
     assertThat(lifecycle.observerCount).isEqualTo(1)
   }
@@ -61,9 +61,9 @@ class NavScopesTest {
     val navScopes = fixture.navScopes()
     val first = TestLifecycleOwner()
     val second = TestLifecycleOwner()
-    navScopes.attach(first.lifecycle)
+    navScopes.attach(NavRootInfo(first.lifecycle, context = null))
 
-    navScopes.attach(second.lifecycle)
+    navScopes.attach(NavRootInfo(second.lifecycle, context = null))
 
     assertThat(first.lifecycle.observerCount).isEqualTo(1)
     assertThat(second.lifecycle.observerCount).isEqualTo(0)
@@ -75,7 +75,7 @@ class NavScopesTest {
     val navScopes = fixture.navScopes()
     val lifecycle = fixture.lifecycle(Lifecycle.State.DESTROYED)
 
-    navScopes.attach(lifecycle)
+    navScopes.attach(NavRootInfo(lifecycle, context = null))
     navScopes.applyFirstBackStackUpdate()
 
     assertThat(fixture.hasLease(navScopes)).isFalse()
@@ -86,12 +86,12 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
     val first = fixture.lifecycle(Lifecycle.State.RESUMED)
-    navScopes.attach(first)
+    navScopes.attach(NavRootInfo(first, context = null))
     navScopes.applyFirstBackStackUpdate()
     first.currentState = Lifecycle.State.DESTROYED
     val second = fixture.lifecycle(Lifecycle.State.RESUMED)
 
-    navScopes.attach(second)
+    navScopes.attach(NavRootInfo(second, context = null))
     navScopes.applyFirstBackStackUpdate()
 
     assertThat(second.observerCount).isEqualTo(1)
@@ -113,7 +113,7 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
     val lifecycle = fixture.lifecycle(Lifecycle.State.RESUMED)
-    navScopes.attach(lifecycle)
+    navScopes.attach(NavRootInfo(lifecycle, context = null))
     navScopes.applyFirstBackStackUpdate()
     navScopes.startNavTransaction("/Home")
     val started = fixture.startedTransaction("/Home")
@@ -129,7 +129,7 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
     val lifecycle = fixture.lifecycle(Lifecycle.State.RESUMED)
-    navScopes.attach(lifecycle)
+    navScopes.attach(NavRootInfo(lifecycle, context = null))
     navScopes.applyFirstBackStackUpdate()
     navScopes.startNavTransaction("/Home")
     val started = fixture.startedTransaction("/Home")
@@ -144,10 +144,10 @@ class NavScopesTest {
   fun `addBreadcrumb() - records breadcrumbs immediately without the nav lease`() {
     val fixture = Fixture.create()
     val leaseholder = fixture.navScopes()
-    leaseholder.attach(TestLifecycleOwner().lifecycle)
+    leaseholder.attach(NavRootInfo(TestLifecycleOwner().lifecycle, context = null))
     leaseholder.applyFirstBackStackUpdate()
     val other = fixture.navScopes()
-    other.attach(TestLifecycleOwner().lifecycle)
+    other.attach(NavRootInfo(TestLifecycleOwner().lifecycle, context = null))
     val breadcrumb = Breadcrumb()
     val hint = Hint()
 
@@ -197,7 +197,7 @@ class NavScopesTest {
   fun `dispose() - doesn't finish the nav transaction without a scope`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     navScopes.applyFirstBackStackUpdate()
     navScopes.startNavTransaction("/Home")
     val started = fixture.startedTransaction("/Home")
@@ -215,7 +215,7 @@ class NavScopesTest {
     navScopes.startNavTransaction("/Home")
 
     navScopes.dispose()
-    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     navScopes.applyFirstBackStackUpdate()
 
     assertThat(fixture.hasLease(navScopes)).isTrue()
@@ -226,7 +226,7 @@ class NavScopesTest {
   fun `startNavTransaction() - starts and binds a nav transaction with the nav lease`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     navScopes.applyFirstBackStackUpdate()
 
     val transaction = navScopes.startNavTransaction("/Home")
@@ -240,7 +240,7 @@ class NavScopesTest {
   fun `startNavTransaction() - returns null when the delegate declines with the nav lease`() {
     val fixture = Fixture.create(declinesTransactions = true)
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     navScopes.applyFirstBackStackUpdate()
 
     val transaction = navScopes.startNavTransaction("/Home")
@@ -252,7 +252,7 @@ class NavScopesTest {
   fun `startNavTransaction() - logs the route when another transaction blocks the start`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     navScopes.applyFirstBackStackUpdate()
     fixture.scope.transaction = mock<ITransaction>()
 
@@ -293,7 +293,7 @@ class NavScopesTest {
   fun `startNavTransaction() - starts no nav transaction after dispose`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle())
+    navScopes.attach(NavRootInfo(fixture.lifecycle(), context = null))
     navScopes.applyFirstBackStackUpdate()
     navScopes.dispose()
 
@@ -306,7 +306,7 @@ class NavScopesTest {
   fun `finishNavTransaction() - finishes the started nav transaction`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     navScopes.applyFirstBackStackUpdate()
     navScopes.startNavTransaction("/Home")
     val started = fixture.startedTransaction("/Home")
@@ -320,7 +320,7 @@ class NavScopesTest {
   fun `finishNavTransaction() - finishes the started nav transaction only once`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     navScopes.applyFirstBackStackUpdate()
     navScopes.startNavTransaction("/Home")
     val started = fixture.startedTransaction("/Home")
@@ -335,7 +335,7 @@ class NavScopesTest {
   fun `finishNavTransaction() - does nothing without a nav transaction`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     navScopes.applyFirstBackStackUpdate()
     val hostTransaction = mock<ITransaction>()
     fixture.scope.transaction = hostTransaction
@@ -350,7 +350,7 @@ class NavScopesTest {
   fun `a nav transaction starts and is bound after the previous one is finished`() {
     val fixture = Fixture.create()
     val navScopes = fixture.navScopes()
-    navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    navScopes.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     navScopes.applyFirstBackStackUpdate()
     navScopes.startNavTransaction("/Home")
     navScopes.finishNavTransaction()
@@ -454,11 +454,11 @@ class NavScopesTest {
   fun `a preloaded owner's deferred transaction starts when the owner resumes`() {
     val fixture = Fixture.create()
     val current = fixture.navScopes()
-    current.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    current.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     current.applyFirstBackStackUpdate()
     val preloaded = fixture.navScopes()
     val preloadedLifecycle = fixture.lifecycle(Lifecycle.State.STARTED)
-    preloaded.attach(preloadedLifecycle)
+    preloaded.attach(NavRootInfo(preloadedLifecycle, context = null))
     preloaded.applyFirstBackStackUpdate()
     preloaded.startNavTransaction("/PageB")
     check(!fixture.hasLease(preloaded))
@@ -476,7 +476,7 @@ class NavScopesTest {
     fixture.incoming.dispose()
     val started = fixture.startedTransaction("/Result")
     val nextIncoming = fixture.navScopes()
-    nextIncoming.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    nextIncoming.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     nextIncoming.applyFirstBackStackUpdate()
     check(fixture.scope.transaction == null)
 
@@ -493,7 +493,7 @@ class NavScopesTest {
     covered.startNavTransaction("/Result")
     fixture.incoming.dispose()
     val nextIncoming = fixture.navScopes()
-    nextIncoming.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    nextIncoming.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     nextIncoming.applyFirstBackStackUpdate()
 
     nextIncoming.dispose()
@@ -614,7 +614,7 @@ class NavScopesTest {
     check(fixture.startedTransactions.isEmpty())
     observerThrows = false
     val nextIncoming = fixture.navScopes()
-    nextIncoming.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
+    nextIncoming.attach(NavRootInfo(fixture.lifecycle(Lifecycle.State.RESUMED), context = null))
     nextIncoming.applyFirstBackStackUpdate()
     check(!fixture.hasLease(covered))
 
@@ -743,7 +743,7 @@ class NavScopesTest {
      */
     fun coveredNavScopes(startedRoute: String? = null): NavScopes {
       val covered = navScopes()
-      covered.attach(lifecycle(Lifecycle.State.RESUMED))
+      covered.attach(NavRootInfo(lifecycle(Lifecycle.State.RESUMED), context = null))
       covered.onBackStackUpdate()
       if (startedRoute != null) {
         covered.configureScope {
@@ -751,7 +751,7 @@ class NavScopesTest {
         }
       }
       incoming = navScopes()
-      incoming.attach(lifecycle(Lifecycle.State.RESUMED))
+      incoming.attach(NavRootInfo(lifecycle(Lifecycle.State.RESUMED), context = null))
       incoming.onBackStackUpdate()
       check(!hasLease(covered))
       return covered

@@ -17,8 +17,8 @@ Support for multiple `SentryNavEffect`s is restricted to the scenarios documente
 [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/#supported-setups).
 
 `NavLeaseCoordinator` implements the policy that underlies those scenarios. It assumes that, at any moment, the user is interacting with at
-most one registered `LifecycleOwner` in the host app, and that the `LifecycleOwner` being interacted with is the one that was most recently
-resumed.
+most one nav root in the host app (see `NavRootInfo` for a definition of "nav root"), and that the nav root being interacted with is the one
+that was most recently resumed.
 
 Concretely, a host app can safely use more than one `SentryNavEffect` only if:
 

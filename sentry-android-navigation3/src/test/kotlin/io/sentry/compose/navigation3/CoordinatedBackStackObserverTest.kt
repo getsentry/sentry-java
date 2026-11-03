@@ -15,9 +15,10 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import io.sentry.compose.navigation3.lifecycle.LeasedNavState
+import io.sentry.compose.navigation3.lifecycle.INavStatePublisher
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.lifecycle.NavRootInfo
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
@@ -360,7 +361,14 @@ class CoordinatedBackStackObserverTest {
     /** Registers another owner that takes the nav lease and then pauses, keeping the lease. */
     fun givenPausedLeaseholder() {
       val otherLifecycle = resumedLifecycle()
-      val other = checkNotNull(coordinator.register(otherLifecycle, scopes, NoOpLeasedNavState))
+      val other =
+        checkNotNull(
+          coordinator.register(
+            scopes,
+            NavRootInfo(otherLifecycle, context = null),
+            NoOpNavStatePublisher,
+          )
+        )
       other.onBackStackUpdate()
       otherLifecycle.currentState = Lifecycle.State.STARTED
       check(other.hasLease)
@@ -380,7 +388,7 @@ class CoordinatedBackStackObserverTest {
             },
           coordinator = coordinator,
         )
-        .apply { attach(lifecycle) }
+        .apply { attach(NavRootInfo(lifecycle, context = null)) }
 
     /**
      * Owners of the lifecycles created by [resumedLifecycle]. `LifecycleRegistry` holds its owner
@@ -398,7 +406,7 @@ class CoordinatedBackStackObserverTest {
   }
 
   /** Nav state for a competing owner that has nothing to publish. */
-  private object NoOpLeasedNavState : LeasedNavState {
+  private object NoOpNavStatePublisher : INavStatePublisher {
     override fun publishTo(scope: IScope) = Unit
 
     override fun unpublishFrom(scope: IScope) = Unit

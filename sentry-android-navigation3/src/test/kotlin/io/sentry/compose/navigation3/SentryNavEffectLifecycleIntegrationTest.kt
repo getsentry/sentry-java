@@ -28,10 +28,13 @@ import androidx.viewpager2.widget.ViewPager2
 import com.google.common.truth.Truth.assertThat
 import io.sentry.IScope
 import io.sentry.ISentryClient
+import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeType
 import io.sentry.Scopes
 import io.sentry.SentryOptions
+import io.sentry.TransactionContext
+import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
 import org.junit.After
@@ -58,6 +61,7 @@ import org.robolectric.annotation.Config
  */
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
+@Suppress("LargeClass")
 class SentryNavEffectLifecycleIntegrationTest {
 
   @After
@@ -369,6 +373,68 @@ class SentryNavEffectLifecycleIntegrationTest {
   }
 
   // ViewPager2 pages
+
+  @Test
+  @Config(sdk = [30])
+  fun `backgrounding a view pager activity above API 29 keeps the current page's nav data and transaction`() {
+    val fixture = Fixture.create()
+    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    activity.pause()
+    activity.stop()
+    fixture.idle()
+
+    assertThat(fixture.events).containsAtLeast("ViewPager:ON_PAUSE", "Home:view:ON_PAUSE").inOrder()
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Home")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  @Test
+  @Config(sdk = [29])
+  fun `backgrounding a view pager activity at API 29 keeps the current page's nav data and transaction`() {
+    val fixture = Fixture.create()
+    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    activity.pause()
+    activity.stop()
+    fixture.idle()
+
+    assertThat(fixture.events).containsAtLeast("ViewPager:ON_PAUSE", "Home:view:ON_PAUSE").inOrder()
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Home")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  /**
+   * Below API 29, `ComponentActivity` reports that it paused from `ReportFragment` rather than from
+   * `onActivityPrePaused`, which must still precede its Fragments pausing.
+   */
+  @Test
+  @Config(sdk = [28])
+  fun `backgrounding a view pager activity below API 29 keeps the current page's nav data and transaction`() {
+    val fixture = Fixture.create()
+    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    activity.pause()
+    activity.stop()
+    fixture.idle()
+
+    assertThat(fixture.events).containsAtLeast("ViewPager:ON_PAUSE", "Home:view:ON_PAUSE").inOrder()
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Home")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
   @Test
   fun `a preloaded view pager page does not displace the current page's nav data and transaction`() {
     val fixture = Fixture.create()
@@ -539,10 +605,48 @@ class SentryNavEffectLifecycleIntegrationTest {
     assertThat(homeTransaction.isFinished).isFalse()
   }
 
-  // Screens without an effect
+  // Nav roots without a SentryNavEffect
 
   @Test
-  fun `an activity without an effect keeps the outgoing activity's nav data and transaction on the scope`() {
+  fun `swiping to a view pager page without an effect clears the outgoing page's nav data and transaction`() {
+    val fixture = Fixture.create()
+    val activity = Robolectric.buildActivity(PlainPageViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    fixture.events.clear()
+
+    activity.get().viewPager.setCurrentItem(1, false)
+    fixture.idle()
+
+    assertThat(fixture.events)
+      .containsExactly("Home:view:ON_PAUSE", "Plain:view:ON_RESUME")
+      .inOrder()
+    assertThat(fixture.scope.screen).isNull()
+    assertThat(fixture.scope.navigationEntries()).isNull()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  @Test
+  fun `swiping back to a view pager page from one without an effect restores its nav data and transaction`() {
+    val fixture = Fixture.create()
+    val activity = Robolectric.buildActivity(PlainPageViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    activity.get().viewPager.setCurrentItem(1, false)
+    fixture.idle()
+
+    activity.get().viewPager.setCurrentItem(0, false)
+    fixture.idle()
+
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Home")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  @Test
+  fun `an activity without an effect clears a covered activity's nav data and unbinds its unfinished transaction`() {
     val fixture = Fixture.create()
     val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
     fixture.idle()
@@ -557,6 +661,188 @@ class SentryNavEffectLifecycleIntegrationTest {
     assertThat(fixture.events)
       .containsAtLeast("Home:ON_PAUSE", "Plain:ON_RESUME", "Home:ON_STOP")
       .inOrder()
+    assertThat(fixture.scope.screen).isNull()
+    assertThat(fixture.scope.navigationEntries()).isNull()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  @Test
+  fun `an activity without an effect clears the nav data and transaction of an activity it only pauses`() {
+    val fixture = Fixture.create()
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    home.pause()
+    Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+
+    assertThat(fixture.events).doesNotContain("Home:ON_STOP")
+    assertThat(fixture.scope.screen).isNull()
+    assertThat(fixture.scope.navigationEntries()).isNull()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  /**
+   * `ActivityLifecycleIntegration` binds an Activity's `ui.load` transaction when the Activity is
+   * created, and only if the scope's transaction slot is free.
+   */
+  @Test
+  fun `an activity without an effect binds its own ui load transaction over a covered activity's nav transaction`() {
+    val fixture = Fixture.create()
+    fixture.bindUiLoadTransactionWhenCreated(PlainActivity::class.java)
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    home.pause()
+    Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+
+    val uiLoadTransaction = fixture.uiLoadTransactions.single()
+    assertThat(uiLoadTransaction.operation).isEqualTo("ui.load")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(uiLoadTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  /**
+   * Below API 29, there's no `onActivityPreCreated`, so the lease is withdrawn from
+   * `onActivityCreated`, after `ActivityLifecycleIntegration` has found the scope's transaction
+   * slot taken. The covered Activity's nav data and transaction are still removed, but `ui.load`
+   * isn't bound.
+   */
+  @Test
+  @Config(sdk = [28])
+  fun `below API 29, an activity without an effect unbinds nav too late for ui load`() {
+    val fixture = Fixture.create()
+    fixture.bindUiLoadTransactionWhenCreated(PlainActivity::class.java)
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    home.pause()
+    Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+
+    val uiLoadTransaction = fixture.uiLoadTransactions.single()
+    assertThat(uiLoadTransaction.operation).isEqualTo("ui.load")
+    assertThat(fixture.scope.screen).isNull()
+    assertThat(fixture.scope.navigationEntries()).isNull()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  @Test
+  fun `going back to an activity covered by one without an effect restores its nav data and unfinished transaction`() {
+    val fixture = Fixture.create()
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    home.pause()
+    val plain = Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+    home.stop()
+    fixture.idle()
+
+    plain.pause()
+    home.restart()
+    home.resume()
+    fixture.idle()
+    plain.stop()
+    plain.destroy()
+    fixture.idle()
+
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Home")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  @Test
+  fun `navigating while covered by an activity without an effect publishes no nav data or transaction`() {
+    val fixture = Fixture.create()
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    home.pause()
+    Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+
+    fixture.backStack("Home") += "Profile"
+    fixture.idle()
+
+    assertThat(fixture.scope.breadcrumbs.map { it.data["to"] })
+      .containsExactly("/Home", "/Profile")
+      .inOrder()
+    assertThat(fixture.scope.screen).isNull()
+    assertThat(fixture.scope.navigationEntries()).isNull()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `going back to an activity that navigated while covered publishes the destination's nav data and transaction`() {
+    val fixture = Fixture.create()
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    home.pause()
+    val plain = Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+    fixture.backStack("Home") += "Profile"
+    fixture.idle()
+
+    plain.pause()
+    home.resume()
+    fixture.idle()
+
+    assertThat(homeTransaction.isFinished).isTrue()
+    assertThat(fixture.scope.screen).isEqualTo("/Profile")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Profile", "/Home").inOrder()
+    assertThat(fixture.scope.transaction?.name).isEqualTo("/Profile")
+    assertThat(fixture.scope.transaction?.isFinished).isFalse()
+  }
+
+  @Test
+  fun `an activity without an effect removes a covered fragment's nav data and transaction from the scope`() {
+    val fixture = Fixture.create()
+    val host = Robolectric.buildActivity(FragmentHostActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    host.pause()
+    Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+    host.stop()
+    fixture.idle()
+
+    assertThat(fixture.events).containsAtLeast("Home:view:ON_PAUSE", "Plain:ON_RESUME").inOrder()
+    assertThat(fixture.scope.screen).isNull()
+    assertThat(fixture.scope.navigationEntries()).isNull()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  @Test
+  fun `going back to a fragment covered by an activity without an effect restores its nav data and transaction`() {
+    val fixture = Fixture.create()
+    val host = Robolectric.buildActivity(FragmentHostActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    host.pause()
+    val plain = Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+    host.stop()
+    fixture.idle()
+
+    plain.pause()
+    host.restart()
+    host.resume()
+    fixture.idle()
+    plain.stop()
+    plain.destroy()
+    fixture.idle()
+
     assertThat(fixture.scope.screen).isEqualTo("/Home")
     assertThat(fixture.scope.navigationEntries()).containsExactly("/Home")
     assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
@@ -661,10 +947,13 @@ class SentryNavEffectLifecycleIntegrationTest {
     }
   }
 
+  /** A [NavEffectActivity] whose SentryNavEffect observes the "Home" back stack. */
   internal class HomeActivity : NavEffectActivity("Home")
 
+  /** A [NavEffectActivity] whose SentryNavEffect observes the "Checkout" back stack. */
   internal class CheckoutActivity : NavEffectActivity("Checkout")
 
+  /** An Activity whose content has no SentryNavEffect. */
   internal class PlainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -674,6 +963,7 @@ class SentryNavEffectLifecycleIntegrationTest {
     }
   }
 
+  /** An Activity with no SentryNavEffect of its own, hosting a [HomeFragment] that has one. */
   internal class FragmentHostActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -689,7 +979,13 @@ class SentryNavEffectLifecycleIntegrationTest {
     }
   }
 
-  internal class ViewPagerActivity : FragmentActivity() {
+  /**
+   * An Activity without a SentryNavEffect of its own whose ViewPager2 pages are a [HomeFragment]
+   * and, by default, a [CheckoutFragment], each with a SentryNavEffect.
+   */
+  internal open class ViewPagerActivity(
+    private val createSecondPage: () -> Fragment = ::CheckoutFragment
+  ) : FragmentActivity() {
 
     lateinit var viewPager: ViewPager2
 
@@ -701,19 +997,25 @@ class SentryNavEffectLifecycleIntegrationTest {
           // Preload the page next to the current one. FragmentStateAdapter caps a preloaded page
           // at STARTED and resumes only the current page.
           offscreenPageLimit = 1
-          adapter = PagesAdapter(this@ViewPagerActivity)
+          adapter = PagesAdapter(this@ViewPagerActivity, createSecondPage)
         }
       setContentView(viewPager)
     }
 
-    private class PagesAdapter(activity: FragmentActivity) : FragmentStateAdapter(activity) {
+    private class PagesAdapter(
+      activity: FragmentActivity,
+      private val createSecondPage: () -> Fragment,
+    ) : FragmentStateAdapter(activity) {
 
       override fun getItemCount(): Int = 2
 
       override fun createFragment(position: Int): Fragment =
-        if (position == 0) HomeFragment() else CheckoutFragment()
+        if (position == 0) HomeFragment() else createSecondPage()
     }
   }
+
+  /** A [ViewPagerActivity] whose second page has no SentryNavEffect. */
+  internal class PlainPageViewPagerActivity : ViewPagerActivity(::PlainFragment)
 
   internal open class NavEffectFragment(private val route: String) : Fragment() {
 
@@ -732,6 +1034,7 @@ class SentryNavEffectLifecycleIntegrationTest {
 
   internal class CheckoutFragment : NavEffectFragment("Checkout")
 
+  /** A Fragment whose content has no SentryNavEffect. */
   internal class PlainFragment : Fragment() {
 
     override fun onCreateView(
@@ -802,6 +1105,54 @@ class SentryNavEffectLifecycleIntegrationTest {
       events += "$name:$event"
     }
 
+    /** `ui.load` transactions started by [bindUiLoadTransactionWhenCreated], in start order. */
+    val uiLoadTransactions = mutableListOf<ITransaction>()
+
+    /**
+     * Mimics `ActivityLifecycleIntegration`, which the SDK registers at initialization (i.e.,
+     * before any effect's coordinator registers its own callbacks). In particular, when an instance
+     * of [activityClass] is created, starts a `ui.load` transaction and binds it to the scope if no
+     * transaction is bound.
+     */
+    fun bindUiLoadTransactionWhenCreated(activityClass: Class<out Activity>) {
+      val application: Application = ApplicationProvider.getApplicationContext()
+
+      application.registerActivityLifecycleCallbacks(
+        object : Application.ActivityLifecycleCallbacks {
+          override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+            if (!activityClass.isInstance(activity)) {
+              return
+            }
+            val transaction =
+              scopes.startTransaction(
+                TransactionContext(activityClass.simpleName, "ui.load"),
+                TransactionOptions(),
+              )
+            uiLoadTransactions += transaction
+            scopes.configureScope { scope ->
+              scope.withTransaction { current ->
+                if (current == null) {
+                  scope.transaction = transaction
+                }
+              }
+            }
+          }
+
+          override fun onActivityStarted(activity: Activity) = Unit
+
+          override fun onActivityResumed(activity: Activity) = Unit
+
+          override fun onActivityPaused(activity: Activity) = Unit
+
+          override fun onActivityStopped(activity: Activity) = Unit
+
+          override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+
+          override fun onActivityDestroyed(activity: Activity) = Unit
+        }
+      )
+    }
+
     /**
      * The host-app setup under test: one `SentryNavEffect` in an Activity's or Fragment's content.
      */
@@ -829,6 +1180,7 @@ class SentryNavEffectLifecycleIntegrationTest {
             PlainActivity::class.java,
             FragmentHostActivity::class.java,
             ViewPagerActivity::class.java,
+            PlainPageViewPagerActivity::class.java,
           )
           .forEach { activityClass: Class<out Activity> ->
             packageManager.addActivityIfNotPresent(

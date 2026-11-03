@@ -4,11 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
 import io.sentry.SentryOptions
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.lifecycle.NavRootInfo
 import org.jetbrains.annotations.ApiStatus
 
 /**
@@ -105,6 +107,7 @@ internal fun <T : Any> SentryNavEffect(
 ) {
   val currentBackStackEntryMapper = rememberUpdatedState(backStackEntryMapper)
   val lifecycle = LocalLifecycleOwner.current.lifecycle
+  val context = LocalContext.current
 
   val observer =
     remember(scopes, options, lifecycle, coordinator) {
@@ -116,9 +119,13 @@ internal fun <T : Any> SentryNavEffect(
       )
     }
 
-  // Register first so the initial prepared back stack update can acquire navigation ownership.
+  // Intentionally don't key on context. attach() only uses it to find where the nav root is
+  // displayed, which can't change without the lifecycle changing too, and that replaces the
+  // observer. The context's identity can change more often (e.g., if the host app provides a new
+  // ContextThemeWrapper on every recomposition), and re-attaching for those changes would
+  // needlessly finish the nav transaction.
   DisposableEffect(observer) {
-    observer.attach(lifecycle)
+    observer.attach(NavRootInfo(lifecycle, context))
     onDispose { observer.dispose() }
   }
 

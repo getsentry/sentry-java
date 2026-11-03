@@ -3,11 +3,13 @@ package io.sentry.compose.navigation3
 import android.app.Application
 import android.content.ComponentName
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -605,7 +607,7 @@ class SentryNavEffectTest {
     val backStack = mutableStateListOf("Home")
     val options = SentryNavOptions()
     composeRule.setContent {
-      CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+      WithoutHostActivity(owner) {
         SentryNavEffect(
           backStack = backStack,
           backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
@@ -638,11 +640,11 @@ class SentryNavEffectTest {
     val options = SentryNavOptions()
     val mapper = BackStackEntryMapper<String> { SentryBackStackEntry(it) }
     composeRule.setContent {
-      CompositionLocalProvider(LocalLifecycleOwner provides ownerA) {
+      WithoutHostActivity(ownerA) {
         SentryNavEffect(backStackA, mapper, options, fixture.scopes, fixture.coordinator)
       }
       if (showB.value) {
-        CompositionLocalProvider(LocalLifecycleOwner provides ownerB) {
+        WithoutHostActivity(ownerB) {
           SentryNavEffect(listOf("Picker"), mapper, options, fixture.scopes, fixture.coordinator)
         }
       }
@@ -692,11 +694,11 @@ class SentryNavEffectTest {
     val options = SentryNavOptions()
     val mapper = BackStackEntryMapper<String> { SentryBackStackEntry(it) }
     composeRule.setContent {
-      CompositionLocalProvider(LocalLifecycleOwner provides beneath) {
+      WithoutHostActivity(beneath) {
         SentryNavEffect(listOf("Products"), mapper, options, fixture.scopes, fixture.coordinator)
       }
       if (showTranslucent.value) {
-        CompositionLocalProvider(LocalLifecycleOwner provides translucent) {
+        WithoutHostActivity(translucent) {
           SentryNavEffect(listOf("Checkout"), mapper, options, fixture.scopes, fixture.coordinator)
         }
       }
@@ -734,7 +736,7 @@ class SentryNavEffectTest {
     val owner = NavTestLifecycle(Lifecycle.State.RESUMED)
     val options = SentryNavOptions()
     composeRule.setContent {
-      CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+      WithoutHostActivity(owner) {
         SentryNavEffect(
           backStack = listOf("Home"),
           backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
@@ -792,6 +794,20 @@ class SentryNavEffectTest {
       replacementOwner.resume()
       assertThat(fixture.scope.screen).isEqualTo("/Home")
     }
+  }
+
+  /**
+   * Provides [owner] to [content] without a host Activity. Useful for tests whose owners stand in
+   * for Activities. Otherwise, the compose rule's Activity, which stays resumed, would be treated
+   * as the owner's host. Pausing the owner would then redraw the lease.
+   */
+  @Composable
+  private fun WithoutHostActivity(owner: LifecycleOwner, content: @Composable () -> Unit) {
+    CompositionLocalProvider(
+      LocalLifecycleOwner provides owner,
+      LocalContext provides LocalContext.current.applicationContext,
+      content = content,
+    )
   }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
