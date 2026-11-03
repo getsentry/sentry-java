@@ -1,5 +1,6 @@
 package io.sentry.android.core;
 
+import java.net.IDN;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -54,7 +55,9 @@ final class WebViewTracePropagationScript {
    * against the page's {@code location.hostname}. Tolerates surrounding whitespace, a scheme, a
    * path, a port, a trailing dot, and a leading subdomain wildcard (e.g. {@code "
    * https://*.App.Example.com:8080/x "} becomes {@code "app.example.com"}). IPv6 literals are
-   * bracketed to match {@code location.hostname} ({@code "::1"} becomes {@code "[::1]"}).
+   * bracketed to match {@code location.hostname} ({@code "::1"} becomes {@code "[::1]"}), and
+   * internationalized hostnames are converted to punycode ({@code "münchen.de"} becomes {@code
+   * "xn--mnchen-3ya.de"}).
    */
   static @NotNull String normalizeHost(final @NotNull String host) {
     String hostAndPort = SCHEME.matcher(host.trim()).replaceFirst("");
@@ -82,7 +85,32 @@ final class WebViewTracePropagationScript {
     while (hostAndPort.startsWith("*.")) {
       hostAndPort = hostAndPort.substring(2);
     }
-    return hostAndPort.toLowerCase(Locale.ROOT);
+    return toAscii(hostAndPort.toLowerCase(Locale.ROOT));
+  }
+
+  /**
+   * Converts an internationalized hostname to the ASCII (punycode) form the page's {@code
+   * location.hostname} uses, e.g. {@code "münchen.de"} becomes {@code "xn--mnchen-3ya.de"}. Returns
+   * an empty string, so the entry is dropped, if the hostname cannot be converted.
+   */
+  private static @NotNull String toAscii(final @NotNull String host) {
+    if (isAscii(host)) {
+      return host;
+    }
+    try {
+      return IDN.toASCII(host, IDN.ALLOW_UNASSIGNED).toLowerCase(Locale.ROOT);
+    } catch (IllegalArgumentException e) {
+      return "";
+    }
+  }
+
+  private static boolean isAscii(final @NotNull String value) {
+    for (int i = 0; i < value.length(); i++) {
+      if (value.charAt(i) > 0x7f) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**

@@ -179,6 +179,29 @@ class WebViewTracePropagationScriptTest {
   }
 
   @Test
+  fun `converts internationalized allowedHosts entries to punycode`() {
+    assertThat(WebViewTracePropagationScript.normalizeHost("münchen.de"))
+      .isEqualTo("xn--mnchen-3ya.de")
+    assertThat(WebViewTracePropagationScript.normalizeHost("https://App.MÜNCHEN.de:8443/x"))
+      .isEqualTo("app.xn--mnchen-3ya.de")
+    // location.hostname is the punycode form, so the page matches the entry and its subdomains.
+    assertThat(runInjection(script(listOf("münchen.de")), "xn--mnchen-3ya.de").metas).hasSize(2)
+    assertThat(runInjection(script(listOf("münchen.de")), "app.xn--mnchen-3ya.de").metas).hasSize(2)
+    assertThat(WebViewTracePropagationScript.originRules(listOf("münchen.de:8443")))
+      .containsExactly("https://xn--mnchen-3ya.de:8443", "https://*.xn--mnchen-3ya.de:8443")
+  }
+
+  @Test
+  fun `drops internationalized allowedHosts entries that cannot be converted`() {
+    // A label longer than 63 characters is not a valid hostname.
+    val tooLong = "ü".repeat(64) + ".de"
+
+    assertThat(WebViewTracePropagationScript.normalizeHosts(listOf(tooLong, "example.com")))
+      .containsExactly("example.com")
+    assertThat(WebViewTracePropagationScript.originRules(listOf(tooLong))).isEmpty()
+  }
+
+  @Test
   fun `normalizes IPv6 allowedHosts entries to the bracketed hostname`() {
     for ((entry, hostname) in
       listOf(
