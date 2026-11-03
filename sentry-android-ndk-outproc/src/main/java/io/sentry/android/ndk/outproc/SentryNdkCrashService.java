@@ -117,6 +117,9 @@ public final class SentryNdkCrashService extends Service {
 
   static @Nullable ServiceConnection start(
       final @NotNull Context context, final @NotNull SentryAndroidOptions options) {
+    // fail before binding, the crash daemon can't attach without the native libraries
+    io.sentry.ndk.SentryNdk.loadNativeLibraries();
+
     final @Nullable String outboxPath = options.getOutboxPath();
     if (outboxPath == null) {
       options

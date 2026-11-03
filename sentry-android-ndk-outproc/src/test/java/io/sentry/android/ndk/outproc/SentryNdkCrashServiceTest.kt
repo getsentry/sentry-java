@@ -76,6 +76,21 @@ class SentryNdkCrashServiceTest {
   }
 
   @Test
+  fun `does not bind without the native libraries`() {
+    configure(true)
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
+      native
+        .`when`<Any> { io.sentry.ndk.SentryNdk.loadNativeLibraries() }
+        .thenThrow(UnsatisfiedLinkError())
+
+      assertFailsWith<UnsatisfiedLinkError> { SentryNdkCrashService.start(app, options) }
+
+      assertThat(shadowOf(app).boundServiceConnections).isEmpty()
+      assertThat(shadowOf(app).unboundServiceConnections).isEmpty()
+    }
+  }
+
+  @Test
   fun `close unbinds the service`() {
     configure(true)
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use {
