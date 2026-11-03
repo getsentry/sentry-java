@@ -1,0 +1,56 @@
+[
+  {
+    "id": "literal.string.basic",
+    "requirements": ["R2"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM users WHERE email = 'Zq9xK7@example.com'",
+    "expected": {
+      "text": "SELECT * FROM users WHERE email = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7@example.com"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "procedure.call.basic",
+    "requirements": ["R2", "R6", "R7"],
+    "dialect": "postgresql",
+    "input": "CALL get_user(?, 'Zq9xK7tenant')",
+    "expected": {
+      "text": "CALL get_user(?, ?)",
+      "summary": "CALL get_user",
+      "storedProcedure": "get_user"
+    },
+    "secrets": ["Zq9xK7tenant"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "dialect.conservative.backslash",
+    "requirements": ["R4", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = 'a\\' , 'Zq9xK7secret'",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7secret"],
+    "source": "sentry",
+    "note": "backslashEscapes is UNKNOWN: either reading of the backslash can leak, so the analyzer stops at it. The summary covers the scanned prefix."
+  },
+  {
+    "id": "size.limit.over",
+    "requirements": ["R6"],
+    "dialect": "postgresql",
+    "input": "SELECT name FROM users WHERE email = 'Zq9xK7@example.com'",
+    "maxQueryTextLength": 25,
+    "expected": {
+      "text": "SELECT name FROM users",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7@example.com"],
+    "source": "sentry",
+    "note": "Adding ' WHERE' would exceed 25 characters, so the text is cut after 'users' and scanning stops there (D5)."
+  }
+]
