@@ -13,11 +13,14 @@ import io.sentry.Scope
 import io.sentry.ScopeCallback
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanContext
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import io.sentry.compose.navigation3.lifecycle.LeasedNavState
+import io.sentry.compose.navigation3.lifecycle.INavStatePublisher
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.lifecycle.NavRootInfo
+import io.sentry.protocol.TransactionNameSource
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
@@ -135,7 +138,7 @@ class CoordinatedBackStackObserverTest {
     val pageA = fixture.getSut(pageALifecycle)
     val pageB = fixture.getSut(pageBLifecycle)
     // E.g., the Activity's ui.load transaction, still running while the pager's pages load.
-    val hostTransaction = mock<ITransaction>()
+    val hostTransaction = hostTransaction()
     fixture.scope.transaction = hostTransaction
     pageA.onBackStackChanged(listOf("PageA"))
     pageB.onBackStackChanged(listOf("PageB"))
@@ -149,18 +152,19 @@ class CoordinatedBackStackObserverTest {
   }
 
   @Test
-  fun `a page swiped to while a host transaction is bound starts no nav transaction when swiped to again`() {
+  fun `pages whose nav transactions a host transaction blocked start them when swiped to after it finishes`() {
     val fixture = Fixture()
     val pageALifecycle = fixture.resumedLifecycle()
     val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
     val pageA = fixture.getSut(pageALifecycle)
     val pageB = fixture.getSut(pageBLifecycle)
-    val hostTransaction = mock<ITransaction>()
+    val hostTransaction = hostTransaction()
     fixture.scope.transaction = hostTransaction
     pageA.onBackStackChanged(listOf("PageA"))
     pageB.onBackStackChanged(listOf("PageB"))
     pageBLifecycle.currentState = Lifecycle.State.RESUMED
     pageALifecycle.currentState = Lifecycle.State.STARTED
+    check(fixture.startedTransactions.isEmpty())
     whenever(hostTransaction.isFinished).thenReturn(true)
 
     // Swipe back to page A, then to page B again.
@@ -169,9 +173,12 @@ class CoordinatedBackStackObserverTest {
     pageBLifecycle.currentState = Lifecycle.State.RESUMED
     pageALifecycle.currentState = Lifecycle.State.STARTED
 
-    // As with page A, which navigated while the host transaction was bound, page B's destination
-    // gets no nav transaction: it couldn't start one when it first got the nav lease.
-    assertThat(fixture.startedTransactions).isEmpty()
+    // Neither page could start a nav transaction while the host transaction was bound, so each
+    // starts one when it's returned to.
+    assertThat(fixture.startedTransactions.map { it.name })
+      .containsExactly("/PageA", "/PageB")
+      .inOrder()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/PageB"))
     assertThat(fixture.scope.screen).isEqualTo("/PageB")
   }
 
@@ -220,7 +227,7 @@ class CoordinatedBackStackObserverTest {
   }
 
   @Test
-  fun `swiping back to a page whose nav transaction finished starts no nav transaction`() {
+  fun `swiping back to a page whose nav transaction finished starts a new nav transaction for it`() {
     val fixture = Fixture()
     val pageALifecycle = fixture.resumedLifecycle()
     val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
@@ -237,10 +244,117 @@ class CoordinatedBackStackObserverTest {
     pageBLifecycle.currentState = Lifecycle.State.STARTED
 
     assertThat(fixture.startedTransactions.map { it.name })
+      .containsExactly("/PageA", "/PageB", "/PageA")
+      .inOrder()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransactions.last())
+    assertThat(fixture.scope.screen).isEqualTo("/PageA")
+    assertThat(fixture.breadcrumbs.map { it.data["to"] })
+      .containsExactly("/PageA", "/PageB")
+      .inOrder()
+  }
+
+  @Test
+  fun `the new nav transaction started when swiping back to a page reflects the page's nav data`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle, arguments = { mapOf("page" to it) })
+    val pageB = fixture.getSut(pageBLifecycle)
+    pageA.onBackStackChanged(listOf("Home", "PageA"))
+    fixture.startedTransaction("/PageA").finish()
+    pageB.onBackStackChanged(listOf("PageB"))
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+
+    pageALifecycle.currentState = Lifecycle.State.RESUMED
+    pageBLifecycle.currentState = Lifecycle.State.STARTED
+
+    val restarted = fixture.startedTransactions.last()
+    assertThat(restarted.name).isEqualTo("/PageA")
+    assertThat(restarted.transactionNameSource).isEqualTo(TransactionNameSource.ROUTE)
+    assertThat(restarted.operation).isEqualTo("navigation")
+    assertThat(restarted.spanContext.origin).isEqualTo("auto.navigation.nav3")
+    assertThat(restarted.getData("arguments")).isEqualTo(mapOf("page" to "PageA"))
+    assertThat(restarted.contexts.app?.viewNames).containsExactly("/PageA")
+    assertThat(restarted.contexts[NAVIGATION_CONTEXT_KEY])
+      .isEqualTo(
+        mapOf(
+          "Back Stack" to
+            listOf(
+              mapOf("entry" to "/PageA", "entry_arguments" to mapOf("page" to "PageA")),
+              mapOf("entry" to "/Home", "entry_arguments" to mapOf("page" to "Home")),
+            )
+        )
+      )
+  }
+
+  @Test
+  fun `the new nav transaction started when swiping back to a page reflects its updated back stack`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle)
+    val pageB = fixture.getSut(pageBLifecycle)
+    val pageATop = "PageA"
+    pageA.onBackStackChanged(listOf("Home", pageATop))
+    fixture.startedTransaction("/PageA").finish()
+    pageB.onBackStackChanged(listOf("PageB"))
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+    // Changes the entries below the top while page A is offscreen.
+    pageA.onBackStackChanged(listOf("Settings", pageATop))
+
+    pageALifecycle.currentState = Lifecycle.State.RESUMED
+    pageBLifecycle.currentState = Lifecycle.State.STARTED
+
+    val restarted = fixture.startedTransactions.last()
+    assertThat(restarted.name).isEqualTo("/PageA")
+    assertThat(restarted.contexts[NAVIGATION_CONTEXT_KEY])
+      .isEqualTo(
+        mapOf("Back Stack" to listOf(mapOf("entry" to "/PageA"), mapOf("entry" to "/Settings")))
+      )
+  }
+
+  @Test
+  fun `swiping back to a page whose back stack became empty starts no nav transaction`() {
+    val fixture = Fixture()
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle)
+    val pageB = fixture.getSut(pageBLifecycle)
+    pageA.onBackStackChanged(listOf("PageA"))
+    pageB.onBackStackChanged(listOf("PageB"))
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+    pageA.onBackStackChanged(emptyList())
+
+    pageALifecycle.currentState = Lifecycle.State.RESUMED
+    pageBLifecycle.currentState = Lifecycle.State.STARTED
+
+    assertThat(fixture.startedTransactions.map { it.name })
       .containsExactly("/PageA", "/PageB")
       .inOrder()
     assertThat(fixture.scope.transaction).isNull()
-    assertThat(fixture.scope.screen).isEqualTo("/PageA")
+  }
+
+  @Test
+  fun `with nav transactions disabled, swiping back to a page starts no nav transaction`() {
+    val fixture = Fixture()
+    val options = SentryNavOptions { enableNavigationTransactions = false }
+    val pageALifecycle = fixture.resumedLifecycle()
+    val pageBLifecycle = fixture.resumedLifecycle().apply { currentState = Lifecycle.State.STARTED }
+    val pageA = fixture.getSut(pageALifecycle, options)
+    val pageB = fixture.getSut(pageBLifecycle, options)
+    pageA.onBackStackChanged(listOf("PageA"))
+    pageB.onBackStackChanged(listOf("PageB"))
+    pageBLifecycle.currentState = Lifecycle.State.RESUMED
+    pageALifecycle.currentState = Lifecycle.State.STARTED
+
+    pageALifecycle.currentState = Lifecycle.State.RESUMED
+    pageBLifecycle.currentState = Lifecycle.State.STARTED
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
   }
 
   @Test
@@ -360,7 +474,14 @@ class CoordinatedBackStackObserverTest {
     /** Registers another owner that takes the nav lease and then pauses, keeping the lease. */
     fun givenPausedLeaseholder() {
       val otherLifecycle = resumedLifecycle()
-      val other = checkNotNull(coordinator.register(otherLifecycle, scopes, NoOpLeasedNavState))
+      val other =
+        checkNotNull(
+          coordinator.register(
+            scopes,
+            NavRootInfo(otherLifecycle, activity = null),
+            NoOpNavStatePublisher,
+          )
+        )
       other.onBackStackUpdate()
       otherLifecycle.currentState = Lifecycle.State.STARTED
       check(other.hasLease)
@@ -380,7 +501,7 @@ class CoordinatedBackStackObserverTest {
             },
           coordinator = coordinator,
         )
-        .apply { attach(lifecycle) }
+        .apply { attach(NavRootInfo(lifecycle, activity = null)) }
 
     /**
      * Owners of the lifecycles created by [resumedLifecycle]. `LifecycleRegistry` holds its owner
@@ -398,11 +519,17 @@ class CoordinatedBackStackObserverTest {
   }
 
   /** Nav state for a competing owner that has nothing to publish. */
-  private object NoOpLeasedNavState : LeasedNavState {
+  private object NoOpNavStatePublisher : INavStatePublisher {
     override fun publishTo(scope: IScope) = Unit
+
+    override fun retryTransactionPublication(scope: IScope) = Unit
 
     override fun unpublishFrom(scope: IScope) = Unit
 
     override fun onUnregistered(scope: IScope?) = Unit
   }
 }
+
+/** A transaction the host app bound to the scope, as identified by its manual origin. */
+private fun hostTransaction(): ITransaction =
+  mock<ITransaction>().also { whenever(it.spanContext).thenReturn(SpanContext("host")) }

@@ -13,6 +13,15 @@
 - Quartz `SentryJobListener` can send a monitor config derived from the trigger with check-ins, so Sentry creates or updates the monitor from code. Set the `sentry-upsert-monitor-config` job or trigger data key to `"true"` to send the schedule ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
 - Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = true)` to send the schedule ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
 
+### Behavioral Changes
+
+- Nav3: Returning to an Activity or Fragment with its own `SentryNavEffect` within the app (e.g., closing the Activity that covered it, swiping back to its ViewPager2 page, or dismissing a dialog over it) now starts a new navigation transaction for the current destination if the previous one finished, so spans produced upon return can now be consistently captured ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+- Nav3: `ui.load` transactions are bound to `IScope` in preference to Nav3 transactions when transitioning between Activities, matching Nav2 behavior (API 29+) ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+
+### Fixes
+
+- Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+
 ## 8.63.0
 
 ### Features

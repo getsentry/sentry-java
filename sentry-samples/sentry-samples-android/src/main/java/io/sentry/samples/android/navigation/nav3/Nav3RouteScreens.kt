@@ -217,6 +217,7 @@ internal fun SentryControls(
         onClick = onCaptureException,
         modifier = Modifier.weight(1f),
       )
+      Nav3OpenPlainActivityButton(modifier = Modifier.weight(1f))
       Nav3SentryButton(
         label = "Crash App",
         onClick = onCrashApp,

@@ -45,6 +45,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import io.sentry.samples.android.R
 import io.sentry.samples.android.navigation.common.NavigationSampleConfig
+import io.sentry.samples.android.navigation.common.applyToCurrentOptions
 
 /**
  * Hosts Fragments that each own a Nav3 root (back stack, `SentryNavEffect`, and `NavDisplay`), to
@@ -52,7 +53,8 @@ import io.sentry.samples.android.navigation.common.NavigationSampleConfig
  *
  * - `replace` + back stack (Products → Checkout), optionally with a slow enter animation;
  * - a full-screen `DialogFragment` overlay whose host Fragment stays resumed;
- * - a `ViewPager2` of Fragments, where neighboring pages are preloaded at STARTED.
+ * - a `ViewPager2` with three Nav3 Fragments and one plain Fragment, where neighbors preload at
+ *   STARTED.
  */
 // FragmentActivity rather than AppCompatActivity: AppCompatActivity.setContentView doesn't install
 // the NavigationEventDispatcherOwner that NavDisplay needs on the view tree.
@@ -75,6 +77,9 @@ class Nav3FragmentsActivity : FragmentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    // Nav3Activity applies these options when the sample launches, but the system can restore
+    // this Activity in a new process without Nav3Activity, so apply them here as well.
+    configuration.applyToCurrentOptions()
     NavigationTransactionHistory.install()
     applyActivityUiLoadTransactionSetting(this, configuration.enableActivityUiLoadTransaction)
 
@@ -274,8 +279,8 @@ class Nav3CheckoutSheetFragment : DialogFragment() {
 }
 
 /**
- * A `ViewPager2` whose pages each own a Nav3 root. With `offscreenPageLimit = 1`, the neighbors of
- * the current page are created and capped at STARTED, while only the current page is RESUMED.
+ * A `ViewPager2` with three Nav3 roots and a plain page without a navigation effect. With
+ * `offscreenPageLimit = 1`, neighbors are capped at STARTED; only the current page is RESUMED.
  */
 class Nav3PagerFragment : Fragment() {
 
@@ -314,9 +319,11 @@ class Nav3PagerFragment : Fragment() {
     val viewPager = requireNotNull(pager)
     viewPager.adapter =
       object : FragmentStateAdapter(childFragmentManager, viewLifecycleOwner.lifecycle) {
-        override fun getItemCount(): Int = Nav3RootFragment.pageRoots.size
+        override fun getItemCount(): Int = PAGER_PAGE_COUNT
 
-        override fun createFragment(position: Int): Fragment = Nav3RootFragment.page(position)
+        override fun createFragment(position: Int): Fragment =
+          if (position == PAGER_PAGE_COUNT - 1) Nav3PlainFragment()
+          else Nav3RootFragment.page(position)
       }
     viewPager.registerOnPageChangeCallback(
       object : ViewPager2.OnPageChangeCallback() {
@@ -435,7 +442,7 @@ private fun PagerHeader(currentPage: Int, onSelectPage: (Int) -> Unit) {
       modifier = Modifier.testTag(nav3TestTag("multi_fragment_current_page")),
     )
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      Nav3RootFragment.pageRoots.indices.forEach { index ->
+      (0 until PAGER_PAGE_COUNT).forEach { index ->
         OutlinedButton(
           onClick = { onSelectPage(index) },
           modifier = Modifier.testTag(nav3TestTag("multi_fragment_page_$index")),
@@ -446,6 +453,8 @@ private fun PagerHeader(currentPage: Int, onSelectPage: (Int) -> Unit) {
     }
   }
 }
+
+private const val PAGER_PAGE_COUNT = 4
 
 private const val MATCH_PARENT = ViewGroup.LayoutParams.MATCH_PARENT
 private const val WRAP_CONTENT = ViewGroup.LayoutParams.WRAP_CONTENT

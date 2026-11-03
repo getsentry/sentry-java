@@ -1,5 +1,6 @@
 package io.sentry.compose.navigation3.lifecycle
 
+import android.app.Activity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.Event.ON_DESTROY
 import androidx.lifecycle.Lifecycle.Event.ON_PAUSE
@@ -10,301 +11,116 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import io.sentry.IScope
 import io.sentry.IScopes
+import io.sentry.SentryLevel
 
 /**
  * Manages a lease in order to determine which [NavScopes] instance can bind nav transactions and
  * publish nav data to a shared [IScope].
  *
- * `NavScopes` instances register as [candidates][Candidate] for lease ownership via [register].
- * Each candidate observes its owner's lifecycle until it's disposed.
+ * `NavScopes` instances register as [candidates][Candidate] for lease ownership via [register],
+ * each on behalf of its [nav root][NavRootInfo]. Each candidate observes its nav root's lifecycle
+ * until it's disposed.
  *
- * Note: "Owner" below refers to the `LifecycleOwner` whose lifecycle the candidate observes.
- *
- * **A fundamental tradeoff**
- *
- * During `LifecycleOwner` overlap, the nav transaction and scoped nav data can reflect
- * **_either_**:
- *
- * 1. the outgoing owner that's still visible, or
- * 2. the incoming owner that may crash before it becomes visible,
- *
- * but not both. This class opts for (2) so that the incoming destination populates crash context
- * and any work performed is associated with it† – the idea being that start-up logic is more likely
- * to cause a crash or produce interesting spans than an outgoing destination's steady state.
- *
- * † Associating work with the incoming transaction means spans produced by the outgoing owner may
- * appear as if they were produced by the incoming owner (or vice versa, were our policy reversed).
- *
- * **Lease handoff policy**
- *
- * The lease is acquired preemptively by an incoming owner's `NavScopes` instance when it applies
- * its first [back stack update][onBackStackUpdate].†
- *
- * A displaced owner remains eligible for lease restoration until it
- * [stops][Lifecycle.Event.ON_STOP]. It gets the lease back when it
- * [resumes][Lifecycle.Event.ON_RESUME], or sooner if the new owner leaves or pauses while the
- * displaced owner is still visible. If restored, the displaced owner's nav data and unfinished
- * transaction are reinstated.
- *
- * † There are some exceptions, e.g., the leaseholder is resumed and the incoming owner isn't (e.g.,
- * a preloaded ViewPager2 Fragment page next to the current one). Such an owner acquires the lease
- * when it resumes instead.
- *
- * The following diagram illustrates how handoff works:
- * ```
- *  Time
- *    │
- *    ▼
- *
- * NavScopes A + Lifecycle A     Shared state            NavScopes B + Lifecycle B
- * ─────────────────────────     ────────────            ─────────────────────────
- *
- * attach()                      Navigation lease: none
- *   │
- * Initial back stack update
- *   │
- *   ├── acquire lease ────────► Navigation lease: A
- *   ├── create & bind txA ────► Scope transaction: txA
- *   ├── publish nav data ─────► Published data: A
- *   │
- * ON_RESUME                    A is eligible for restoration
- *   │
- * ON_PAUSE
- *   │
- *   ├────────────────────────► Navigation lease: A (no other resumed owner)
- *   │                          A remains eligible for restoration
- *   │
- *   │                                                                attach()
- *   │                                                                   │
- *   │                          Navigation lease: A ◄────────────────────┤
- *   │                          Scope transaction: txA                   │
- *   │                          Published data: A                        │
- *   │                          B registered, awaiting initial back      │
- *   │                            stack update                           │
- *   │                                                                   │
- *   │                                                   Initial back stack update
- *   │                                                                   │
- *   │                          Suspend & unbind txA ◄───────────────────┤
- *   │                          Navigation lease: B                      │
- *   │                          Published data: B                        │
- *   │                          Scope transaction: txB                   │
- *   │                          (rollback point)                         │
- *   │                                                                   │
- *   │                                                              ON_RESUME
- *   │                                                                   │
- *   │                          B eligible for restoration ◄─────────────┤
- *   │                                                                   │
- * ON_STOP                                                               │
- *   │                                                                   │
- *   ├── retain txA; timers continue                                     │
- *   ├────────────────────────► A no longer eligible for restoration     │
- *   │                                                                   │
- * ON_DESTROY                                                            │
- *   │                                                                   │
- *   ├── finish retained txA if unfinished                               │
- *   └────────────────────────► A no longer tracked                      │
- *                                                                   ON_PAUSE
- *                                                                       │
- *                              Navigation lease: B (no other resumed  ◄─┤
- *                                owner)                                 │
- *                                                                       │
- *                                                                   ON_STOP
- *                                                                       │
- *                              Navigation lease: B (no other resumed  ◄─┤
- *                                owner); B keeps recording navigation   │
- *                              B no longer eligible for restoration     │
- *                                                                       │
- *                                                                 ON_DESTROY
- *                                                                       │
- *                              Finish txB if unfinished; ◄──────────────┤
- *                                 unbind if still bound                 │
- *                              Clear B's remaining screen/back stack    │
- *                              Retain recorded nav events               │
- *                              Navigation lease: none                   │
- *                                                                       ▼
- *
- * Alternative at rollback point: B disposes before A stops
- *                              Unbind txB ◄─────────────── dispose B ───┤
- *                              Navigation lease: A                      │
- *                              Republish A's staged data                │
- *                              Restore txA if unfinished and scope free │
- *                              Finish txB if unfinished                 │
- * ```
- *
- * **Nav transactions follow navigation, not the lease**
- *
- * A candidate gets a nav transaction for a destination it navigates to, never merely for acquiring
- * the lease. A destination reached without the lease gets its transaction when the lease is next
- * acquired, if it can start then; otherwise it gets none. On reacquiring the lease without having
- * navigated in the meantime, a candidate only gets its unfinished transaction back, if any.
- *
- * Hence the asymmetry for, e.g., ViewPager2 pages: the first time the user swipes to a preloaded
- * page, it gets the transaction for the destination it reached while offscreen, but swiping back to
- * a page whose transaction has finished starts none.
+ * See the package README for the lease policy this class enforces.
  *
  * **Exception policy**
  *
- * Methods in this class with an `IScope` parameter can throw arbitrary exceptions†, which propagate
- * to the caller. Each method updates its own bookkeeping before calling into the scope or a
- * candidate's [LeasedNavState], so the coordinator remains usable if the exception is caught.
- * Candidates call these methods from [configureScope][IScopes.configureScope] callbacks, whose
- * error handling catches the exceptions.
+ * Methods in this class with an `IScope` parameter can throw arbitrary exceptions, which propagate
+ * to the caller. For instance, `IScope` can throw arbitrary exceptions when scope mutators notify
+ * registered observers – including the host app – in an unguarded loop, or when starting a nav
+ * transaction triggers the host app's callbacks.
  *
- * † E.g., `IScope` can throw arbitrary exceptions when scope mutators notify registered observers –
- * including the host app – in an unguarded loop, or when starting a nav transaction triggers the
- * host app's callbacks.
+ * Each method updates its own bookkeeping so that the coordinator remains usable if the exception
+ * is caught by the caller.
  *
  * **Thread safety**
  *
- * This class is ***not*** thread-safe. All `NavScopes` instances using this coordinator must
- * confine their access to the same thread.
+ * This class is ***not*** thread-safe. All callers should confine their access to the same thread.
  */
 @Suppress("TooManyFunctions")
 internal class NavLeaseCoordinator {
 
+  /** A list of all possible leaseholders. */
   private val candidates = mutableListOf<Candidate>()
 
-  /** Candidate whose nav state was most recently published to the shared scope. */
-  private var publisher: Candidate? = null
-
+  /** The actual leaseholder. */
   private var leaseHolder: Candidate? = null
 
+  /** The last candidate to publish nav state, even if it no longer holds the lease. */
+  private var lastPublisher: Candidate? = null
+
   /**
-   * Counter that orders candidates by when this coordinator most recently observed them in resumed
-   * state.
+   * Counter that lets us order candidates by when this coordinator most recently observed them in
+   * resumed state.
    */
   private var resumeOrder: Long = 0
 
   /**
-   * Registers a candidate for the nav lease that observes [lifecycle] until it's
-   * [disposed][NavLeaseRegistration.dispose] or `lifecycle` is destroyed. Returns `null` if
-   * `lifecycle` is already [destroyed][Lifecycle.State.DESTROYED].
+   * Reports the host application's Activities to this coordinator so that it can detect whether a
+   * leaseholder is covered by a non-candidate root.
+   */
+  private val activityWatcher =
+    NavActivityWatcher(
+      onActivityCreatedOrResumed = ::onActivityCreatedOrResumed,
+      onActivityDestroyed = ::onAnyActivityDestroyed,
+    )
+
+  /**
+   * Registers a [nav root][rootInfo] as a lease candidate until disposal or lifecycle destruction.
+   *
+   * Returns `null` if the lifecycle is already destroyed.
    */
   fun register(
-    lifecycle: Lifecycle,
     scopes: IScopes,
-    navState: LeasedNavState,
+    rootInfo: NavRootInfo,
+    publisher: INavStatePublisher,
   ): NavLeaseRegistration? {
+    val lifecycle = rootInfo.lifecycle
     val lifecycleState = lifecycle.currentState
+
     if (lifecycleState == Lifecycle.State.DESTROYED) {
       return null
     }
 
-    val initialResumeOrder = if (lifecycleState == Lifecycle.State.RESUMED) ++resumeOrder else 0
-    val candidate = Candidate(lifecycle, scopes, navState, lifecycleState, initialResumeOrder)
-    candidates += candidate
+    rootInfo.activity?.application?.let { activityWatcher.watch(it) }
 
+    val initialResumeOrder = if (lifecycleState == Lifecycle.State.RESUMED) ++resumeOrder else 0
+    val candidate = Candidate(rootInfo, lifecycleState, initialResumeOrder, publisher, scopes)
+
+    // Only list the candidate once addObserver() succeeds, so a failure can't leak the host
+    // Activity.
     lifecycle.addObserver(candidate)
+    candidates += candidate
     return candidate
   }
 
   /**
-   * Records that [candidate] is about to apply a back-stack update and acquires the nav lease if
-   * the owner's lifecycle permits it.
-   *
-   * Later calls for the same [candidate] do nothing.
+   * Gives [candidate] one chance to acquire the lease on its first back-stack update, and no-ops
+   * otherwise.
    */
   private fun onBackStackUpdate(candidate: Candidate, scope: IScope) {
-    if (candidate.hasAppliedInitialBackStackUpdate) {
+    if (candidate.hasHandledFirstUpdate) {
       return
     }
 
-    candidate.hasAppliedInitialBackStackUpdate = true
+    candidate.hasHandledFirstUpdate = true
 
     val holder = leaseHolder
 
-    // An owner that isn't resumed doesn't take the lease from a resumed leaseholder, as it isn't
-    // the one the user is interacting with (e.g., a preloaded ViewPager2 page next to the current
-    // page). Instead, it acquires the lease when it resumes.
-    val wouldDisplaceResumedHolder =
-      holder != null &&
-        holder.state == Lifecycle.State.RESUMED &&
-        candidate.state != Lifecycle.State.RESUMED
+    // A nav root that isn't resumed while either the leaseholder or its own host Activity is
+    // resumed isn't the one the user is interacting with (e.g., a preloaded ViewPager2 page next to
+    // the current page, which may be a page without a SentryNavEffect and so never a leaseholder).
+    // Instead, it acquires the lease when it resumes.
+    val isBesideResumedContent =
+      candidate.state != Lifecycle.State.RESUMED &&
+        (holder?.state == Lifecycle.State.RESUMED || candidate.isHostActivityResumed)
 
-    if (candidate.canAcquireLeaseOnFirstUpdate && !wouldDisplaceResumedHolder) {
+    if (candidate.canAcquireLeaseOnFirstUpdate && !isBesideResumedContent) {
       transferLeaseTo(candidate, scope)
     }
   }
 
-  /**
-   * Records that [candidate] resumed.
-   *
-   * Restores the lease to `candidate` if it already applied a back stack update and [scope] is
-   * non-null.
-   */
-  private fun resumeCandidate(candidate: Candidate, scope: IScope?) {
-    // A null scope (e.g., the SDK is disabled) still records the lifecycle transition so that the
-    // candidate remains eligible for fallback once the scope becomes available.
-    candidate.resume(++resumeOrder)
-
-    if (scope != null && candidate.hasAppliedInitialBackStackUpdate) {
-      transferLeaseTo(candidate, scope)
-    }
-  }
-
-  /**
-   * Records that [candidate] paused.
-   *
-   * Hands the lease to another owner only if that owner is resumed (e.g., a Fragment whose dialog
-   * is being dismissed); otherwise keeps it.
-   */
-  private fun pauseCandidate(candidate: Candidate, scope: IScope?) {
-    candidate.pause()
-
-    // A paused leaseholder may still be the topmost visible owner (e.g., beneath a translucent
-    // window or picture-in-picture mode), and any other paused owner is beneath it. A displaced
-    // owner will acquire the lease again when it resumes.
-    if (leaseHolder === candidate) {
-      mostRecentlyResumedCandidate(excluding = candidate, resumedOnly = true)?.let { next ->
-        handOffLease(next, scope)
-      }
-    }
-  }
-
-  /**
-   * Records that [candidate] stopped.
-   *
-   * As with pausing, hands the lease to another owner only if that owner is resumed; otherwise the
-   * stopped owner keeps it. Keeping it lets a lone owner go on recording navigation that happens
-   * while it isn't resumed (e.g., while the app is in the background, or after it restarts but
-   * before it resumes), including starting nav transactions.
-   */
-  private fun stopCandidate(candidate: Candidate, scope: IScope?) {
-    candidate.stop()
-
-    // A paused owner doesn't get the lease. When the leaseholder stops before it, the app is
-    // typically going to the background (e.g., a translucent leaseholder stops before the owner
-    // beneath it), and that owner isn't what the user last saw. A paused owner that comes back to
-    // the foreground will acquire the lease when it resumes.
-    if (leaseHolder === candidate) {
-      mostRecentlyResumedCandidate(resumedOnly = true)?.let { next -> handOffLease(next, scope) }
-    }
-  }
-
-  /**
-   * The eligible candidate most recently observed to be in a resumed state, other than [excluding].
-   *
-   * If [resumedOnly] is set to `true`, only candidates that are resumed right now are considered;
-   * if `false`, started and paused candidates are also considered.
-   */
-  private fun mostRecentlyResumedCandidate(
-    excluding: Candidate? = null,
-    resumedOnly: Boolean = false,
-  ): Candidate? =
-    candidates
-      .filter {
-        it !== excluding &&
-          it.hasAppliedInitialBackStackUpdate &&
-          it.state.isAtLeast(Lifecycle.State.STARTED) &&
-          it.resumeOrder > 0 &&
-          (!resumedOnly || it.state == Lifecycle.State.RESUMED)
-      }
-      .maxByOrNull { it.resumeOrder }
-
-  /**
-   * Hands the current lease to [next]. Without a [scope], the lease is released instead, as [next]
-   * could not publish its staged data.
-   */
+  /** Hands the lease to [next], or releases it if [scope] is unavailable. */
   private fun handOffLease(next: Candidate?, scope: IScope?) {
     if (scope != null) {
       transferLeaseTo(next, scope)
@@ -319,38 +135,140 @@ internal class NavLeaseCoordinator {
       return
     }
 
-    val previousPublisher = publisher
+    val previous = lastPublisher
     leaseHolder = candidate
     if (candidate != null) {
-      // Record the candidate as the publisher before calling into the scope: it owns the scope's
-      // nav state from the moment it takes the lease. If unpublishing the previous owner's state
-      // then throws, the next handoff still unpublishes the candidate's state rather than never
-      // unpublishing it.
-      publisher = candidate
-      if (previousPublisher != null && previousPublisher !== candidate) {
-        previousPublisher.navState.unpublishFrom(scope)
+      // Record the candidate as the last publisher before calling into the scope: it owns the
+      // scope's nav state from the moment it takes the lease. If unpublishing the previous nav
+      // root's state then throws, the next handoff still unpublishes the candidate's state rather
+      // than never unpublishing it.
+      lastPublisher = candidate
+      if (previous != null && previous !== candidate) {
+        previous.publisher.unpublishFrom(scope)
       }
-      candidate.navState.publishTo(scope)
+      candidate.publisher.publishTo(scope)
     }
   }
 
   /**
-   * Stops tracking [candidate] (e.g., because it was destroyed).
+   * Releases the lease without handing it off and unpublishes its nav state from [scope]. The
+   * candidate retains staged state for a later return. Without a scope, state remains published.
    *
-   * Unpublishes `candidate`'s nav state from [scope] if it's the most recently published. If
-   * `candidate` holds the lease, hands it to the eligible candidate most recently observed resumed,
-   * even if that candidate is now only started or paused, or releases it if there's none.
+   * Logs [withdrawalReason].
+   */
+  private fun withdrawLease(scope: IScope?, withdrawalReason: String) {
+    val holder = leaseHolder ?: return
+
+    leaseHolder = null
+    scope
+      ?.options
+      ?.logger
+      ?.log(
+        SentryLevel.DEBUG,
+        "Withdrew the Nav3 lease from a nav root hosted by %s: %s.",
+        holder.hostActivity?.javaClass?.name,
+        withdrawalReason,
+      )
+    if (scope != null && lastPublisher === holder) {
+      // Clear the last publisher before calling into the scope (see the class's exception policy).
+      lastPublisher = null
+      holder.publisher.unpublishFrom(scope)
+    }
+  }
+
+  /**
+   * The eligible candidate most recently observed to be in a resumed state, other than [excluding].
+   *
+   * If [resumedOnly] is set to `true`, only candidates that are resumed right now are considered;
+   * if `false`, started and paused candidates are also included.
+   */
+  private fun mostRecentlyResumedCandidate(
+    excluding: Candidate? = null,
+    resumedOnly: Boolean = false,
+  ): Candidate? =
+    candidates
+      .filter {
+        it !== excluding &&
+          it.canReceiveLease &&
+          it.state.isAtLeast(Lifecycle.State.STARTED) &&
+          it.resumeOrder > 0 &&
+          (!resumedOnly || it.state == Lifecycle.State.RESUMED)
+      }
+      .maxByOrNull { it.resumeOrder }
+
+  /**
+   * Records that [candidate] resumed.
+   *
+   * Gives [candidate] the lease if it's back stack has an initial update and [scope] is available.
+   */
+  private fun resumeCandidate(candidate: Candidate, scope: IScope?) {
+    // A null scope (e.g., the SDK is disabled) still records the lifecycle transition so that the
+    // candidate remains eligible for fallback once the scope becomes available.
+    candidate.resume(++resumeOrder)
+
+    if (scope != null && candidate.canReceiveLease) {
+      transferLeaseTo(candidate, scope)
+    }
+  }
+
+  /**
+   * Records that [candidate] paused.
+   *
+   * If [candidate] holds the lease when it pauses, hands it to another resumed root. If none
+   * exists, withdraws it when the host Activity remains resumed; otherwise the paused root keeps
+   * the lease.
+   */
+  private fun pauseCandidate(candidate: Candidate, scope: IScope?) {
+    candidate.pause()
+
+    // A paused leaseholder may still be the topmost visible nav root (e.g., beneath a translucent
+    // window or picture-in-picture mode), and any other paused nav root is beneath it. A displaced
+    // nav root will acquire the lease again when it resumes.
+    if (leaseHolder === candidate) {
+      val next = mostRecentlyResumedCandidate(excluding = candidate, resumedOnly = true)
+      when {
+        next != null -> handOffLease(next, scope)
+        candidate.isHostActivityResumed ->
+          withdrawLease(
+            scope,
+            withdrawalReason = "the nav root paused while its host Activity stayed resumed",
+          )
+      }
+    }
+  }
+
+  /**
+   * Records that [candidate] stopped.
+   *
+   * If [candidate] holds the lease when it stops, hands it to another resumed root or keeps it so a
+   * lone root can record navigation while the app is backgrounded.
+   */
+  private fun stopCandidate(candidate: Candidate, scope: IScope?) {
+    candidate.stop()
+
+    // A paused nav root doesn't get the lease. When the leaseholder stops before it, the app is
+    // typically going to the background (e.g., a translucent leaseholder stops before the nav root
+    // beneath it), and that nav root isn't what the user last saw. A paused nav root that comes
+    // back to the foreground will acquire the lease when it resumes.
+    if (leaseHolder === candidate) {
+      mostRecentlyResumedCandidate(resumedOnly = true)?.let { next -> handOffLease(next, scope) }
+    }
+  }
+
+  /**
+   * Removes [candidate], unpublishes its state if needed, and hands off its lease to the latest
+   * eligible candidate. Without [scope], releases the lease without unpublishing.
    */
   private fun unregisterCandidate(candidate: Candidate, scope: IScope?) {
-    val wasPublisher = publisher === candidate
+    val wasLastPublisher = lastPublisher === candidate
     val wasLeaseHolder = leaseHolder === candidate
 
     // Remove candidate before any scope calls to ensure it's released even if cleanup or handoff
     // throws.
     candidates.remove(candidate)
 
-    if (wasPublisher) {
-      publisher = null
+    if (wasLastPublisher) {
+      lastPublisher = null
     }
     if (wasLeaseHolder) {
       leaseHolder = null
@@ -362,8 +280,8 @@ internal class NavLeaseCoordinator {
       return
     }
 
-    if (wasPublisher) {
-      candidate.navState.unpublishFrom(scope)
+    if (wasLastPublisher) {
+      candidate.publisher.unpublishFrom(scope)
     }
     if (wasLeaseHolder) {
       transferLeaseTo(mostRecentlyResumedCandidate(), scope)
@@ -371,44 +289,118 @@ internal class NavLeaseCoordinator {
   }
 
   /**
-   * A [LifecycleOwner] registered as a candidate for lease ownership. Relays its owner's lifecycle
-   * events to the coordinator until it's [disposed][dispose].
+   * Whether [activity] owns a candidate's nav root that
+   * [can receive the lease][Candidate.canReceiveLease].
+   *
+   * A returning Activity root takes the lease on resume and should not trigger withdrawal first.
+   */
+  private fun isActivityNavRoot(activity: Activity): Boolean = candidates.any {
+    it.canReceiveLease && it.isActivityNavRoot(activity)
+  }
+
+  /** Withdraws the lease when [activity] appears to cover a non-resumed nav root. */
+  private fun onActivityCreatedOrResumed(
+    activity: Activity,
+    event: NavActivityWatcher.ActivityEvent,
+  ) {
+    // Assume the created or resumed `activity` is covering the current leaseholder if i) the
+    // leaseholder itself isn't resumed, ii) `activity` isn't the leaseholder's host Activity, and
+    // iii) `activity` isn't itself a nav root (see [isActivityNavRoot]). (i) checks the
+    // leaseholder's own state rather than its host Activity's, as they differ for Fragment nav
+    // roots: a Fragment leaseholder that isn't resumed isn't what the user is interacting with,
+    // even if its host Activity is resumed.
+    val holder = leaseHolder ?: return
+    val hostActivity = holder.hostActivity ?: return
+    if (
+      hostActivity === activity ||
+        holder.state == Lifecycle.State.RESUMED ||
+        isActivityNavRoot(activity)
+    ) {
+      return
+    }
+
+    holder.withScopeOrNull { scope ->
+      withdrawLease(
+        scope,
+        withdrawalReason =
+          "${activity.javaClass.name} was ${event.description} while the nav root wasn't resumed",
+      )
+    }
+  }
+
+  /**
+   * After [activity] is destroyed, asks the leaseholder to retry publication if an Activity's
+   * `ui.load` blocked it. The publisher decides whether the blocker has left and retry is allowed.
+   */
+  private fun onAnyActivityDestroyed(activity: Activity) {
+    val holder = leaseHolder ?: return
+    if (holder.hostActivity === activity) {
+      return
+    }
+
+    holder.withScopeOrNull { scope ->
+      if (scope != null) {
+        holder.publisher.retryTransactionPublication(scope)
+      }
+    }
+  }
+
+  /**
+   * A [nav root][rootInfo] eligible to hold the lease managed by [NavLeaseCoordinator].
+   *
+   * [Disposed][dispose] upon the nav root's destruction.
    */
   private inner class Candidate(
-    private val lifecycle: Lifecycle,
-    private val scopes: IScopes,
-    val navState: LeasedNavState,
+    rootInfo: NavRootInfo,
     initialState: Lifecycle.State,
     initialResumeOrder: Long,
+    val publisher: INavStatePublisher,
+    private val scopes: IScopes,
   ) : NavLeaseRegistration, LifecycleEventObserver {
 
-    /** The candidate's lifecycle state, as last observed. */
-    var state: Lifecycle.State = initialState
-      private set
+    val hostActivity: Activity? = rootInfo.activity
 
-    /**
-     * Whether the candidate has been observed STOPPED since
-     * [registration][NavLeaseCoordinator.register].
-     */
-    private var wasStopped: Boolean = false
+    /** Whether the host Activity is resumed; false when its lifecycle is unavailable. */
+    val isHostActivityResumed: Boolean
+      get() = (hostActivity as? LifecycleOwner)?.lifecycle?.currentState == Lifecycle.State.RESUMED
 
-    /**
-     * See [NavLeaseCoordinator.resumeOrder]. Non-zero once the candidate has been observed RESUMED
-     * since [registration][NavLeaseCoordinator.register].
-     */
+    /** Most recent resume order; zero until this candidate first resumes. */
     var resumeOrder: Long = initialResumeOrder
       private set
 
-    var hasAppliedInitialBackStackUpdate: Boolean = false
+    /** The candidate's last observed lifecycle state. */
+    var state: Lifecycle.State = initialState
+      private set
+
+    /** Whether this candidate has handled its first back-stack update. */
+    var hasHandledFirstUpdate: Boolean = false
 
     /**
-     * Whether the candidate's lifecycle permits its first back stack update since
-     * [registration][NavLeaseCoordinator.register] to acquire the nav lease: it's resumed, or it
-     * has neither resumed nor stopped since registration (i.e., it's still coming up for the first
-     * time).
+     * Whether the first back-stack update may take the lease: the root is resumed or has not yet
+     * resumed or stopped since registration.
      */
     val canAcquireLeaseOnFirstUpdate: Boolean
       get() = state == Lifecycle.State.RESUMED || (resumeOrder == 0L && !wasStopped)
+
+    /**
+     * Whether this candidate can acquire the lease on a lifecycle change, i.e., when it resumes or
+     * as a fallback.
+     *
+     * False until its first back stack update is handled, as it has no nav state to publish before
+     * then.
+     */
+    val canReceiveLease: Boolean
+      get() = hasHandledFirstUpdate
+
+    override val hasLease: Boolean
+      get() = leaseHolder === this
+
+    private val lifecycle: Lifecycle = rootInfo.lifecycle
+
+    /** Whether this candidate has stopped since registration. */
+    private var wasStopped: Boolean = false
+
+    private var isDisposed = false
 
     fun start() {
       // Attaching to an already-resumed lifecycle replays ON_START before ON_RESUME, so only move
@@ -431,11 +423,6 @@ internal class NavLeaseCoordinator {
       state = Lifecycle.State.CREATED
       wasStopped = true
     }
-
-    private var isDisposed = false
-
-    override val hasLease: Boolean
-      get() = leaseHolder === this
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
       when (event) {
@@ -466,19 +453,16 @@ internal class NavLeaseCoordinator {
         try {
           unregisterCandidate(this, scope)
         } finally {
-          navState.onUnregistered(scope)
+          publisher.onUnregistered(scope)
         }
       }
     }
 
     /**
-     * Runs [block] with the real scope, or with `null` if [configureScope][IScopes.configureScope]
-     * skips its callback (e.g., the SDK is disabled), so coordinator bookkeeping still happens.
-     *
-     * A callback that ran but threw is not retried, as retrying could let its exception escape into
-     * the host app.
+     * Runs [block] with the scope, or with `null` if [IScopes.configureScope] skips its callback.
+     * Does not rerun a callback that throws.
      */
-    private fun withScopeOrNull(block: (IScope?) -> Unit) {
+    fun withScopeOrNull(block: (IScope?) -> Unit) {
       var callbackInvoked = false
       scopes.configureScope { scope ->
         callbackInvoked = true
@@ -489,6 +473,10 @@ internal class NavLeaseCoordinator {
         block(null)
       }
     }
+
+    /** Whether [activity] itself owns this nav root, rather than a Fragment it hosts. */
+    fun isActivityNavRoot(activity: Activity): Boolean =
+      hostActivity === activity && (activity as? LifecycleOwner)?.lifecycle === lifecycle
   }
 }
 
@@ -502,41 +490,31 @@ internal interface NavLeaseRegistration {
   /** Whether the candidate holds the nav lease. */
   val hasLease: Boolean
 
-  /**
-   * Announces that the candidate is about to apply a back stack update, so it can acquire the nav
-   * lease if it's eligible to. Does nothing once the candidate is unregistered.
-   */
+  /** Gives the candidate a chance to acquire the lease before its first back-stack update. */
   fun onBackStackUpdate()
 
   /**
-   * Stops observing the candidate's lifecycle and unregisters it: releases the lease, unpublishes
-   * the candidate's nav state, and then calls [LeasedNavState.onUnregistered], even if
-   * unregistering throws. Does nothing once the candidate is unregistered.
+   * Unregisters the candidate, releases its lease, and unpublishes its nav state. Calls
+   * [INavStatePublisher.onUnregistered] even if cleanup throws. Repeated calls do nothing.
    */
   fun dispose()
 }
 
-/**
- * The nav state a [NavLeaseCoordinator] candidate publishes to the shared [IScope] while it holds
- * the nav lease.
- *
- * Nav transactions and nav data each occupy a single, mutually-exclusive slot in the `IScope`, so
- * only one candidate's nav state can be published at a time. Unpublishing nav state removes it from
- * the scope but keeps it staged, so the candidate can publish it again if it regains the lease.
- */
-internal interface LeasedNavState {
+/** Publishes a [NavLeaseCoordinator.Candidate]'s nav state to the shared [IScope]. */
+internal interface INavStatePublisher {
 
-  /** Publishes staged nav state to [scope]. */
+  /** Publishes the candidate's staged nav state to [scope]. */
   fun publishTo(scope: IScope)
 
-  /** Removes published nav state from [scope], keeping it staged so it can be republished. */
+  /**
+   * Retries a nav transaction blocked by an Activity's `ui.load`, subject to
+   * [StagedNavTransaction.retryPublishIfBlocked]. Leaves other published nav state alone.
+   */
+  fun retryTransactionPublication(scope: IScope)
+
+  /** Removes published nav state from [scope], retaining it for a later lease acquisition. */
   fun unpublishFrom(scope: IScope)
 
-  /**
-   * Called when the lease candidate is unregistered, after its nav state has been unpublished.
-   *
-   * The provided [scope] is the scope the candidate was unregistered against, or `null` if there
-   * was none (e.g., the SDK is disabled).
-   */
+  /** Called after unregistering, with the affected [scope] or `null` if none was available. */
   fun onUnregistered(scope: IScope?)
 }
