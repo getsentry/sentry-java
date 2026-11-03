@@ -50,7 +50,7 @@
 - Decide whether foregrounding the app starts a new session on a monotonic clock instead of the wall clock, so that a device time change no longer starts a session that should have been resumed, or resumes one that should have ended. This affects session counts ([#6096](https://github.com/getsentry/sentry-java/pull/6096))
 - `SentryUserFeedbackForm` now extends `android.app.Dialog` instead of `android.app.AlertDialog` ([#6338](https://github.com/getsentry/sentry-java/pull/6338))
   - The form never used `AlertDialog` features. Code that calls `AlertDialog`-only methods on it, such as `setButton` or `setMessage`, no longer compiles.
-- `sentry-android` no longer includes `sentry-android-ndk`, and tombstone reporting is enabled by default, so native crashes on Android 11+ (API 30) are still reported. Add `io.sentry:sentry-android-ndk` yourself if you need sentry-native, for example on Android 10 and lower ([#6436](https://github.com/getsentry/sentry-java/pull/6436))
+- `sentry-android` no longer includes `sentry-android-ndk` as a default dependency. Instead, tombstone reporting is enabled by default, which provides more detailed native crashes on Android 11+ (API 30). If you're using sentry-android-ndk APIs, or need native crashes on Android 10 and lower, manually add the `io.sentry:sentry-android-ndk` dependency to your app. ([#6436](https://github.com/getsentry/sentry-java/pull/6436))
 
 ## 8.62.0
 
