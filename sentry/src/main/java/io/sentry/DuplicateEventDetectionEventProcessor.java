@@ -1,5 +1,6 @@
 package io.sentry;
 
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -11,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Deduplicates events containing throwable that has been already processed. */
-public final class DuplicateEventDetectionEventProcessor implements EventProcessor {
+public final class DuplicateEventDetectionEventProcessor implements SentryEventProcessor {
   private final @NotNull Map<Throwable, Object> capturedObjects =
       Collections.synchronizedMap(new WeakHashMap<>());
   private final @NotNull SentryOptions options;

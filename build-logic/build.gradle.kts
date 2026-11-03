@@ -2,17 +2,24 @@ plugins {
   `kotlin-dsl`
 }
 
-repositories {
-  gradlePluginPortal()
-}
-
 dependencies {
   implementation(libs.animalsniffer.gradle.plugin)
   implementation(libs.spotlessLib)
+  implementation(libs.asm)
+  compileOnly(libs.kotlin.gradle.plugin)
+  compileOnly(libs.android.gradle.plugin)
 }
 
 gradlePlugin {
   plugins {
+    register("sentryJdkTarget") {
+      id = "io.sentry.jdk-target"
+      implementationClass = "io.sentry.gradle.JdkTargetConvention"
+    }
+    register("sentryApiValidation") {
+      id = "io.sentry.api-validation"
+      implementationClass = "io.sentry.gradle.SentryApiValidationPlugin"
+    }
     register("sentryAnimalSniffer") {
       id = "io.sentry.animalsniffer"
       implementationClass = "io.sentry.gradle.SentryAnimalSnifferPlugin"
@@ -20,6 +27,10 @@ gradlePlugin {
     register("sentryAnimalSnifferAndroid") {
       id = "io.sentry.animalsniffer.android"
       implementationClass = "io.sentry.gradle.SentryAnimalSnifferAndroidPlugin"
+    }
+    register("sentrySpringBootMatrix") {
+      id = "io.sentry.spring-boot-matrix"
+      implementationClass = "io.sentry.gradle.SpringBootMatrixPlugin"
     }
   }
 }

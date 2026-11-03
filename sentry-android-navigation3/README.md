@@ -9,4 +9,4 @@ Because Nav3 back stacks can have arbitrary key types, host apps need to provide
 keys and the data Sentry should display for each (see `BackStackEntryMapper`).
 
 See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/) for additional details, including
-installation, configuration, and limitations.
+configuration, supported setups, and limitations.

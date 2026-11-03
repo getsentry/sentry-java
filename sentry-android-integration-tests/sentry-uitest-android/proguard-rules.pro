@@ -24,6 +24,7 @@
 
 -dontwarn com.google.errorprone.**
 -dontwarn com.sun.jna.**
+-dontwarn com.sun.net.httpserver.**
 -dontwarn edu.umd.cs.findbugs.**
 -dontwarn java.lang.instrument.**
 -dontwarn java.lang.management.**

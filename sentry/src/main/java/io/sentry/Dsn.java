@@ -87,7 +87,7 @@ final class Dsn {
 
       final String hostPort = hostAndPath.substring(0, firstSlash);
       final int portColon = portSeparatorIndex(hostPort);
-      final String host = portColon < 0 ? hostPort : hostPort.substring(0, portColon);
+      final String host = hostOf(hostPort, portColon);
       final int port = portColon < 0 ? -1 : parsePort(hostPort.substring(portColon + 1));
 
       final String rawPath = stripTrailingSlash(collapseSlashes(hostAndPath.substring(firstSlash)));
@@ -103,6 +103,38 @@ final class Dsn {
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException("Invalid DSN: " + e.getMessage(), e);
     }
+  }
+
+  /**
+   * Returns the host of the given DSN, parsed the same way as the constructor does, or {@code null}
+   * if no host can be found. Only the parts needed to find the host are checked, so a non-null
+   * result doesn't mean the DSN is valid. Doesn't create a {@link URI}, so it's cheap to call.
+   */
+  static @Nullable String parseHost(final @Nullable String dsn) {
+    if (dsn == null) {
+      return null;
+    }
+    final String dsnString = dsn.trim();
+    final int schemeEnd = dsnString.indexOf("://");
+    if (schemeEnd < 0) {
+      return null;
+    }
+    final int atIndex = dsnString.indexOf('@', schemeEnd + 3);
+    if (atIndex < 0) {
+      return null;
+    }
+    final String hostAndPath = stripQueryAndFragment(dsnString, atIndex + 1);
+    final int firstSlash = hostAndPath.indexOf('/');
+    if (firstSlash < 0) {
+      return null;
+    }
+    final String hostPort = hostAndPath.substring(0, firstSlash);
+    final String host = hostOf(hostPort, portSeparatorIndex(hostPort));
+    return host.isEmpty() ? null : host;
+  }
+
+  private static @NotNull String hostOf(final @NotNull String hostPort, final int portColon) {
+    return portColon < 0 ? hostPort : hostPort.substring(0, portColon);
   }
 
   private static int parsePort(final @NotNull String portString) {

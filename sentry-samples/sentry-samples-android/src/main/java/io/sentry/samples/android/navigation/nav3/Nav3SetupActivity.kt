@@ -35,6 +35,7 @@ class Nav3SetupActivity : AppCompatActivity() {
           onLaunch = {
             val previousOptions = currentNavigationSampleConfigSnapshot()
             configuration.applyToCurrentOptions()
+            NavigationTransactionHistory.startSession()
             startActivity(nav3LaunchIntent(configuration, previousOptions))
           },
         )

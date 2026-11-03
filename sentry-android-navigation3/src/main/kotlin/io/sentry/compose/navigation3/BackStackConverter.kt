@@ -395,7 +395,9 @@ internal data class NormalizedSentryBackStackEntry(
   val name: String,
   /** Sanitized [SentryBackStackEntry.arguments] (i.e., bounded in size and depth). */
   val arguments: Map<String, Any?> = emptyMap(),
-  /** The reason why the SDK dropped host-provided arguments. */
+  /**
+   * The reason why the SDK dropped host-provided arguments, or null if no arguments were dropped.
+   */
   val argumentDropReason: ArgumentDropReason? = null,
 ) {
 

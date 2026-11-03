@@ -1,9 +1,11 @@
 package io.sentry.spring;
 
 import com.jakewharton.nopen.annotation.Open;
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
+import io.sentry.ILogger;
+import io.sentry.ScopesAdapter;
 import io.sentry.SentryEvent;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.spring.tracing.TransactionNameProvider;
 import io.sentry.util.Objects;
 import javax.servlet.http.HttpServletRequest;
@@ -12,22 +14,33 @@ import org.jetbrains.annotations.Nullable;
 
 /** Attaches transaction name from the HTTP request to {@link SentryEvent}. */
 @Open
-public class SentryRequestHttpServletRequestProcessor implements EventProcessor {
+public class SentryRequestHttpServletRequestProcessor implements SentryEventProcessor {
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull HttpServletRequest request;
+  private final @NotNull ILogger logger;
 
   public SentryRequestHttpServletRequestProcessor(
       final @NotNull TransactionNameProvider transactionNameProvider,
       final @NotNull HttpServletRequest request) {
+    this(transactionNameProvider, request, ScopesAdapter.getInstance().getOptions().getLogger());
+  }
+
+  SentryRequestHttpServletRequestProcessor(
+      final @NotNull TransactionNameProvider transactionNameProvider,
+      final @NotNull HttpServletRequest request,
+      final @NotNull ILogger logger) {
     this.transactionNameProvider =
         Objects.requireNonNull(transactionNameProvider, "transactionNameProvider is required");
     this.request = Objects.requireNonNull(request, "request is required");
+    this.logger = Objects.requireNonNull(logger, "logger is required");
   }
 
   @Override
   public @NotNull SentryEvent process(final @NotNull SentryEvent event, final @NotNull Hint hint) {
     if (event.getTransaction() == null) {
-      event.setTransaction(transactionNameProvider.provideTransactionName(request));
+      event.setTransaction(
+          TransactionNameProviderUtils.provideTransactionName(
+              transactionNameProvider, request, logger));
     }
     return event;
   }

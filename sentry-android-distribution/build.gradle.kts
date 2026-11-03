@@ -5,6 +5,7 @@ plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.detekt)
+  id("io.sentry.api-validation")
 }
 
 android {
