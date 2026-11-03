@@ -38,6 +38,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
+import org.robolectric.shadows.ShadowSystemClock
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [31], shadows = [SentryShadowParcelFileDescriptor::class])
@@ -316,7 +317,30 @@ class SentryNdkCrashServiceTest {
     awaitWorker()
 
     assertThat(CrashDaemonShadow.sends).containsExactly(listOf(envelope.path, 2000L))
-    assertThat(marker().exists()).isFalse()
+    assertThat(marker().readText()).isEqualTo("2000")
+  }
+
+  @Test
+  @Config(instrumentedPackages = ["io.sentry.ndk"], shadows = [CrashDaemonShadow::class])
+  fun `writes the marker when the tombstone stays unavailable`() {
+    val service = Robolectric.setupService(SentryNdkCrashService::class.java)
+    val envelope = writeNativeEnvelope(timestamp = 1000)
+    addExitInfo(service, pid = 1, timestamp = 2000)
+    crashDaemon(envelope, CrashDaemon.SendResult.SENT)
+
+    val threads = Thread.getAllStackTraces().keys
+    configureDaemon(service, pid = 1, fd = 10, tombstoneEnabled = true)
+    val worker =
+      (Thread.getAllStackTraces().keys - threads).single { it.name == "SentryNdkCrashService" }
+    // pass the deadline once the worker polls for the tombstone
+    while (worker.isAlive && worker.state != Thread.State.TIMED_WAITING) {
+      Thread.yield()
+    }
+    ShadowSystemClock.advanceBy(30, TimeUnit.SECONDS)
+    worker.join(5000)
+
+    assertThat(CrashDaemonShadow.sends).containsExactly(listOf(envelope.path, 2000L))
+    assertThat(marker().readText()).isEqualTo("2000")
   }
 
   @Test

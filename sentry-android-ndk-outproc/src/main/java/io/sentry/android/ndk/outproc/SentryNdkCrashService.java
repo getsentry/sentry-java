@@ -575,7 +575,9 @@ public final class SentryNdkCrashService extends Service {
           } catch (IOException e) {
             options.getLogger().log(SentryLevel.DEBUG, e, "Failed to write the tombstone marker.");
           }
-        } else if (config.tombstoneEnabled) {
+        }
+        final @Nullable File mergedFile = mergedEnvelope != null ? mergedEnvelope.file : null;
+        if (mergedFile == null && config.tombstoneEnabled) {
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Sending NDK crash without tombstone enrichment.");
@@ -583,7 +585,7 @@ public final class SentryNdkCrashService extends Service {
 
         final CrashDaemon.SendResult result =
             daemon.sendEnvelope(
-                mergedEnvelope != null ? mergedEnvelope.file.getPath() : envelope.getPath(),
+                mergedFile != null ? mergedFile.getPath() : envelope.getPath(),
                 config.shutdownTimeoutMillis);
         if (result == CrashDaemon.SendResult.FAILED) {
           options.getLogger().log(SentryLevel.DEBUG, "Failed to send NDK crash envelope.");
@@ -628,13 +630,13 @@ public final class SentryNdkCrashService extends Service {
           }
         } catch (Exception e) {
           options.getLogger().log(SentryLevel.DEBUG, e, "Failed to merge NDK tombstone envelope.");
-          return null;
+          return new MergedEnvelope(null, exitInfo.getTimestamp());
         }
       }
 
       final long remainingMillis = deadlineMillis - SystemClock.uptimeMillis();
       if (remainingMillis <= 0) {
-        return null;
+        return exitInfo != null ? new MergedEnvelope(null, exitInfo.getTimestamp()) : null;
       }
       Thread.sleep(Math.min(POLL_INTERVAL_MILLIS, remainingMillis));
     }
@@ -791,10 +793,11 @@ public final class SentryNdkCrashService extends Service {
   }
 
   private static final class MergedEnvelope {
-    private final @NotNull File file;
+    // null when the matched tombstone did not merge, the native event still reports its crash
+    private final @Nullable File file;
     private final long tombstoneTimestamp;
 
-    private MergedEnvelope(final @NotNull File file, final long tombstoneTimestamp) {
+    private MergedEnvelope(final @Nullable File file, final long tombstoneTimestamp) {
       this.file = file;
       this.tombstoneTimestamp = tombstoneTimestamp;
     }
