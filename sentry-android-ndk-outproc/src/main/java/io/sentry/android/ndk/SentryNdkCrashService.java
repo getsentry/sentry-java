@@ -87,12 +87,15 @@ public final class SentryNdkCrashService extends Service {
           final @Nullable ParcelFileDescriptor notifyRead = data.readFileDescriptor();
           final @Nullable ParcelFileDescriptor readyWrite = data.readFileDescriptor();
           final @Nullable ParcelFileDescriptor messageRead = data.readFileDescriptor();
+          final @Nullable ParcelFileDescriptor shm =
+              data.readInt() == 1 ? data.readFileDescriptor() : null;
 
           final boolean configured =
               configureDaemon(
                   nativeDatabasePath,
                   nativeLibraryDir,
                   shmPath,
+                  shm,
                   appPid,
                   appTid,
                   tombstoneEnabled,
@@ -265,19 +268,40 @@ public final class SentryNdkCrashService extends Service {
       throws InterruptedException {
     final CountDownLatch latch = new CountDownLatch(1);
     final boolean[] configured = new boolean[] {false};
-    final boolean[] bound = new boolean[] {false};
+    // a foreground app raises the service process only to visible without BIND_IMPORTANT
+    final int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
 
     final ServiceConnection connection =
         new ServiceConnection() {
+          private boolean connected;
+
           @Override
           public void onServiceConnected(
               final @NotNull ComponentName name, final @NotNull IBinder service) {
+            if (connected) {
+              // a restarted service process has no daemon for this app
+              reattach(
+                  service,
+                  logger,
+                  nativeDatabasePath,
+                  nativeLibraryDir,
+                  appPid,
+                  appTid,
+                  tombstoneEnabled,
+                  debug,
+                  shutdownTimeoutMillis,
+                  includes,
+                  excludes);
+              return;
+            }
+            connected = true;
             configured[0] =
                 transactConfigure(
                     service,
                     nativeDatabasePath,
                     nativeLibraryDir,
                     shmPath,
+                    null,
                     appPid,
                     appTid,
                     tombstoneEnabled,
@@ -293,26 +317,23 @@ public final class SentryNdkCrashService extends Service {
 
           @Override
           public void onServiceDisconnected(final @NotNull ComponentName name) {
-            logger.log(SentryLevel.WARNING, "NDK crash service disconnected.");
+            logger.log(SentryLevel.ERROR, "NDK crash service disconnected.");
             latch.countDown();
           }
 
           @Override
           public void onBindingDied(final @NotNull ComponentName name) {
-            logger.log(SentryLevel.WARNING, "NDK crash service binding died.");
+            logger.log(SentryLevel.ERROR, "NDK crash service binding died.");
             latch.countDown();
+            // a dead binding does not reconnect, it must be bound again
+            if (configured[0]) {
+              context.unbindService(this);
+              bind(context, intent, flags, this);
+            }
           }
         };
 
-    // a foreground app raises the service process only to visible without BIND_IMPORTANT
-    final int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      // deliver callbacks on the binder thread, the caller blocks on the latch
-      bound[0] = context.bindService(intent, flags, Runnable::run, connection);
-    } else {
-      bound[0] = context.bindService(intent, connection, flags);
-    }
-    if (!bound[0]) {
+    if (!bind(context, intent, flags, connection)) {
       return null;
     }
     boolean ready = false;
@@ -327,11 +348,98 @@ public final class SentryNdkCrashService extends Service {
     }
   }
 
+  private static boolean bind(
+      final @NotNull Context context,
+      final @NotNull Intent intent,
+      final int flags,
+      final @NotNull ServiceConnection connection) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      // deliver callbacks on the binder thread, the caller blocks on the latch
+      return context.bindService(intent, flags, Runnable::run, connection);
+    }
+    return context.bindService(intent, connection, flags);
+  }
+
+  private static void reattach(
+      final @NotNull IBinder service,
+      final @NotNull ILogger logger,
+      final @NotNull String nativeDatabasePath,
+      final @Nullable String nativeLibraryDir,
+      final int appPid,
+      final long appTid,
+      final boolean tombstoneEnabled,
+      final boolean debug,
+      final long shutdownTimeoutMillis,
+      final @NotNull ArrayList<String> includes,
+      final @NotNull ArrayList<String> excludes) {
+    // the daemon removed the file's name once attached, so the new one gets the file itself
+    final int shmFd = io.sentry.ndk.SentryNdk.dupCrashShmFd();
+    if (shmFd < 0) {
+      logger.log(SentryLevel.ERROR, "NDK crash service restarted, but the app can't reattach.");
+      return;
+    }
+
+    final ParcelFileDescriptor shm = ParcelFileDescriptor.adoptFd(shmFd);
+    ParcelFileDescriptor notifyRead = null;
+    ParcelFileDescriptor notifyWrite = null;
+    ParcelFileDescriptor readyRead = null;
+    ParcelFileDescriptor readyWrite = null;
+    ParcelFileDescriptor messageWrite = null;
+    ParcelFileDescriptor messageRead = null;
+    try {
+      final ParcelFileDescriptor[] notifyPipe = ParcelFileDescriptor.createPipe();
+      final ParcelFileDescriptor[] readyPipe = ParcelFileDescriptor.createPipe();
+      notifyRead = notifyPipe[0];
+      notifyWrite = notifyPipe[1];
+      readyRead = readyPipe[0];
+      readyWrite = readyPipe[1];
+      final ParcelFileDescriptor[] messageSocket = ParcelFileDescriptor.createSocketPair();
+      messageWrite = messageSocket[0];
+      messageRead = messageSocket[1];
+
+      final boolean reattached =
+          transactConfigure(
+                  service,
+                  nativeDatabasePath,
+                  nativeLibraryDir,
+                  null,
+                  shm,
+                  appPid,
+                  appTid,
+                  tombstoneEnabled,
+                  debug,
+                  shutdownTimeoutMillis,
+                  includes,
+                  excludes,
+                  notifyRead,
+                  readyWrite,
+                  messageRead)
+              && io.sentry.ndk.SentryNdk.reattachCrashDaemon(
+                  notifyWrite.detachFd(), readyRead.detachFd(), messageWrite.detachFd());
+      if (reattached) {
+        logger.log(SentryLevel.WARNING, "NDK crash service restarted, reattached the app.");
+      } else {
+        logger.log(SentryLevel.ERROR, "NDK crash service restarted, failed to reattach the app.");
+      }
+    } catch (IOException | SecurityException e) {
+      logger.log(SentryLevel.ERROR, e, "Failed to reattach to the NDK crash service.");
+    } finally {
+      closeQuietly(shm);
+      closeQuietly(notifyRead);
+      closeQuietly(notifyWrite);
+      closeQuietly(readyRead);
+      closeQuietly(readyWrite);
+      closeQuietly(messageWrite);
+      closeQuietly(messageRead);
+    }
+  }
+
   private static boolean transactConfigure(
       final @NotNull IBinder service,
       final @NotNull String nativeDatabasePath,
       final @Nullable String nativeLibraryDir,
-      final @NotNull String shmPath,
+      final @Nullable String shmPath,
+      final @Nullable ParcelFileDescriptor shm,
       final int appPid,
       final long appTid,
       final boolean tombstoneEnabled,
@@ -359,6 +467,10 @@ public final class SentryNdkCrashService extends Service {
       data.writeFileDescriptor(notifyRead.getFileDescriptor());
       data.writeFileDescriptor(readyWrite.getFileDescriptor());
       data.writeFileDescriptor(messageRead.getFileDescriptor());
+      data.writeInt(shm != null ? 1 : 0);
+      if (shm != null) {
+        data.writeFileDescriptor(shm.getFileDescriptor());
+      }
       if (!service.transact(TRANSACTION_CONFIGURE, data, reply, 0)) {
         return false;
       }
@@ -377,6 +489,7 @@ public final class SentryNdkCrashService extends Service {
       final @Nullable String nativeDatabasePath,
       final @Nullable String nativeLibraryDir,
       final @Nullable String shmPath,
+      final @Nullable ParcelFileDescriptor shm,
       final int appPid,
       final long appTid,
       final boolean tombstoneEnabled,
@@ -388,7 +501,7 @@ public final class SentryNdkCrashService extends Service {
       final @Nullable ParcelFileDescriptor readyWrite,
       final @Nullable ParcelFileDescriptor messageRead) {
     if (nativeDatabasePath == null
-        || shmPath == null
+        || (shmPath == null && shm == null)
         || notifyRead == null
         || readyWrite == null
         || messageRead == null
@@ -400,6 +513,7 @@ public final class SentryNdkCrashService extends Service {
         new DaemonConfig(
             nativeLibraryDir,
             shmPath,
+            shm != null ? shm.detachFd() : -1,
             notifyRead.detachFd(),
             readyWrite.detachFd(),
             messageRead.detachFd(),
@@ -433,7 +547,8 @@ public final class SentryNdkCrashService extends Service {
                   config.notifyReadFd,
                   config.readyWriteFd,
                   config.messageReadFd,
-                  config.shmPath)) {
+                  config.shmPath,
+                  config.shmFd)) {
         if (daemon == null) {
           return;
         }
@@ -674,7 +789,8 @@ public final class SentryNdkCrashService extends Service {
 
   private static final class DaemonConfig {
     private final @Nullable String nativeLibraryDir;
-    private final @NotNull String shmPath;
+    private final @Nullable String shmPath;
+    private final int shmFd;
     private final int notifyReadFd;
     private final int readyWriteFd;
     private final int messageReadFd;
@@ -688,7 +804,8 @@ public final class SentryNdkCrashService extends Service {
 
     private DaemonConfig(
         final @Nullable String nativeLibraryDir,
-        final @NotNull String shmPath,
+        final @Nullable String shmPath,
+        final int shmFd,
         final int notifyReadFd,
         final int readyWriteFd,
         final int messageReadFd,
@@ -701,6 +818,7 @@ public final class SentryNdkCrashService extends Service {
         final boolean debug) {
       this.nativeLibraryDir = nativeLibraryDir;
       this.shmPath = shmPath;
+      this.shmFd = shmFd;
       this.notifyReadFd = notifyReadFd;
       this.readyWriteFd = readyWriteFd;
       this.messageReadFd = messageReadFd;

@@ -115,6 +115,55 @@ class SentryNdkCrashServiceTest {
   }
 
   @Test
+  fun `reattaches when the restarted service connects again`() {
+    val binder = configure(true)
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
+      native.`when`<Int> { io.sentry.ndk.SentryNdk.dupCrashShmFd() }.thenReturn(42)
+      native
+        .`when`<Boolean> { io.sentry.ndk.SentryNdk.reattachCrashDaemon(any(), any(), any()) }
+        .thenReturn(true)
+      val connection = SentryNdkCrashService.start(app, options)!!
+
+      connection.onServiceDisconnected(component)
+      connection.onServiceConnected(component, binder)
+
+      assertThat(binder.transactions).isEqualTo(2)
+      native.verify { io.sentry.ndk.SentryNdk.reattachCrashDaemon(any(), any(), any()) }
+    }
+  }
+
+  @Test
+  fun `does not reattach without a crash IPC`() {
+    val binder = configure(true)
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
+      native.`when`<Int> { io.sentry.ndk.SentryNdk.dupCrashShmFd() }.thenReturn(-1)
+      val connection = SentryNdkCrashService.start(app, options)!!
+
+      connection.onServiceConnected(component, binder)
+
+      assertThat(binder.transactions).isEqualTo(1)
+      native.verify(
+        { io.sentry.ndk.SentryNdk.reattachCrashDaemon(any(), any(), any()) },
+        never(),
+      )
+    }
+  }
+
+  @Test
+  fun `binds again when the binding died`() {
+    configure(true)
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use {
+      val connection = SentryNdkCrashService.start(app, options)!!
+
+      connection.onBindingDied(component)
+
+      assertThat(shadowOf(app).boundServiceConnections).containsExactly(connection)
+      // robolectric records each bind intent as started
+      assertThat(shadowOf(app).allStartedServices).hasSize(2)
+    }
+  }
+
+  @Test
   fun `deletes the shared memory files of exited processes`() {
     configure(true)
     val dir = File(options.cacheDirPath, ".sentry-native").apply { mkdirs() }
@@ -285,6 +334,7 @@ class SentryNdkCrashServiceTest {
         "db",
         null,
         "shm-$pid",
+        null,
         pid,
         0L,
         tombstoneEnabled,
@@ -329,17 +379,18 @@ class SentryNdkCrashServiceTest {
 
   private fun descriptor(fd: Int): ParcelFileDescriptor = mock { on { detachFd() } doReturn fd }
 
-  private fun configure(configured: Boolean) {
-    val binder =
-      object : Binder() {
+  private fun configure(configured: Boolean) =
+    object : Binder() {
+        var transactions = 0
+
         override fun onTransact(code: Int, data: Parcel, reply: Parcel?, flags: Int): Boolean {
+          transactions++
           reply?.writeNoException()
           reply?.writeInt(if (configured) 1 else 0)
           return true
         }
       }
-    shadowOf(app).setComponentNameAndServiceForBindService(component, binder)
-  }
+      .also { shadowOf(app).setComponentNameAndServiceForBindService(component, it) }
 }
 
 @Implements(io.sentry.ndk.SentryNdk::class)
@@ -357,9 +408,10 @@ class BlockingCrashDaemonShadow {
       notifyFd: Int,
       readyFd: Int,
       messageFd: Int,
-      shmPath: String,
+      shmPath: String?,
+      shmFd: Int,
     ): CrashDaemon? {
-      daemons.add(listOf(appPid, notifyFd, readyFd, messageFd, shmPath))
+      daemons.add(listOf(appPid, notifyFd, readyFd, messageFd, shmPath ?: shmFd))
       release.await(10, TimeUnit.SECONDS)
       return null
     }
@@ -384,7 +436,8 @@ class CrashDaemonShadow {
       notifyFd: Int,
       readyFd: Int,
       messageFd: Int,
-      shmPath: String,
+      shmPath: String?,
+      shmFd: Int,
     ): Long = 1L
 
     @Suppress("unused", "UNUSED_PARAMETER")
