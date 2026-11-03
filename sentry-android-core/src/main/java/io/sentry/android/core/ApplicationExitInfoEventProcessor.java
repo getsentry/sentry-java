@@ -198,6 +198,7 @@ public final class ApplicationExitInfoEventProcessor
     setRequest(event);
     setUser(event);
     setScopeTags(event);
+    setScopeEnvironment(event);
     setBreadcrumbs(event);
     setExtras(event);
     setContexts(event);
@@ -489,6 +490,16 @@ public final class ApplicationExitInfoEventProcessor
       event.setEnvironment(
           getLaunchOption(
               ENVIRONMENT_FILENAME, String.class, options.getEnvironment(), optionsSource));
+    }
+  }
+
+  private void setScopeEnvironment(final @NotNull SentryBaseEvent event) {
+    if (event.getEnvironment() == null) {
+      final @Nullable String scopeEnvironment =
+          readFromDisk(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String.class);
+      if (scopeEnvironment != null) {
+        event.setEnvironment(scopeEnvironment);
+      }
     }
   }
 

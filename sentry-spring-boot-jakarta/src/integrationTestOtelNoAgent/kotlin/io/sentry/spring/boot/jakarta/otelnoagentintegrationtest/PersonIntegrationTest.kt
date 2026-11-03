@@ -23,24 +23,32 @@ class PersonIntegrationTest : IntegrationTest() {
 
   @Test
   fun `failed request reports errors, nested spans with their flags, and logs`() {
-    val response = restTemplate.getForEntity("/person/1", String::class.java)
+    val response = restTemplate.getForEntity("/person/11", String::class.java)
     assertThat(response.statusCode.value()).isEqualTo(500)
     Sentry.flush(5000)
 
     val logged =
-      server.awaitEnvelope { it.event()?.message?.formatted == "Trying person with id=1" }.event()!!
+      server
+        .awaitEnvelope { it.event()?.message?.formatted == "Trying person with id=11" }
+        .event()!!
     assertThat(logged.hasFlag("inner-feature-flag", true)).isTrue()
 
     val thrown =
       server
         .awaitEnvelope {
-          it.event()?.exceptions?.any { e -> e.value == "Something went wrong [id=1]" } == true
+          it.event()?.exceptions?.any { e -> e.value == "Something went wrong [id=11]" } == true
         }
         .event()!!
     assertThat(thrown.hasFlag("inner-feature-flag", true)).isTrue()
 
     val transaction =
-      server.awaitEnvelope { it.transaction()?.transaction == "GET /person/{id}" }.transaction()!!
+      server
+        .awaitEnvelope {
+          it.transaction()?.let { t ->
+            t.transaction == "GET /person/{id}" && t.request?.url?.endsWith("/person/11") == true
+          } == true
+        }
+        .transaction()!!
     assertThat(transaction.hasOp("http.server")).isTrue()
     assertThat(
         transaction.hasSpanWithOp(

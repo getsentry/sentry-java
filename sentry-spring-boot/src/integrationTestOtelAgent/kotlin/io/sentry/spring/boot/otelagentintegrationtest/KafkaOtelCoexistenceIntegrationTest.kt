@@ -12,8 +12,8 @@ import org.springframework.kafka.test.EmbeddedKafkaBroker
  * With the agent active, OpenTelemetry traces Kafka instead of Sentry's own Spring Kafka
  * integration.
  *
- * Unlike the other tests, this one starts an app of its own, with Kafka and an in-JVM broker. The
- * shared app leaves them out, because it has to work on Spring Boot versions without Kafka support.
+ * Unlike the other tests, this one starts an app of its own, with Kafka and an in-JVM broker, so
+ * the shared app doesn't need a broker.
  */
 class KafkaOtelCoexistenceIntegrationTest : IntegrationTest() {
   override val app: AgentApp

@@ -14,6 +14,7 @@ import io.sentry.IScopes
 import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -104,9 +105,7 @@ class SentryOkHttpInterceptorTest {
         }
       scope = Scope(options)
       whenever(scopes.options).thenReturn(options)
-      doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
-        .whenever(scopes)
-        .configureScope(any())
+      stubConfigureScope()
 
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
 
@@ -151,6 +150,15 @@ class SentryOkHttpInterceptorTest {
           addInterceptor(interceptor)
         }
         .build()
+    }
+
+    private fun stubConfigureScope() {
+      doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
     }
   }
 

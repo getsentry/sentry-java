@@ -120,6 +120,6 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 ## What NOT to flag
 
 - Formatting and import order — Spotless owns it.
-- Contents of generated `.api` files, beyond confirming `apiDump` was run.
+- Contents of generated `.api` files, beyond confirming `updateKotlinAbi` was run.
 - Conventional commit / PR title format, and missing changelog entries — CI and Danger check both.
 - Speculative refactors or improvements unrelated to the diff.
