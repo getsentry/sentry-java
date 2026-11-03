@@ -304,6 +304,33 @@ class SentryNdkCrashServiceTest {
     assertThat(marker().exists()).isFalse()
   }
 
+  @Test
+  fun `closes the fds when it does not configure`() {
+    val service = Robolectric.setupService(SentryNdkCrashService::class.java)
+    val fds = listOf(descriptor(10), descriptor(11), descriptor(12), descriptor(13))
+
+    val configured =
+      service.configureDaemon(
+        "db",
+        null,
+        null,
+        fds[0],
+        -1,
+        0L,
+        false,
+        false,
+        2000L,
+        null,
+        null,
+        fds[1],
+        fds[2],
+        fds[3],
+      )
+
+    assertThat(configured).isFalse()
+    fds.forEach { Mockito.verify(it).close() }
+  }
+
   private fun addExitInfo(
     context: Context,
     pid: Int,

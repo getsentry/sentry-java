@@ -506,6 +506,10 @@ public final class SentryNdkCrashService extends Service {
         || readyWrite == null
         || messageRead == null
         || appPid < 0) {
+      closeQuietly(shm);
+      closeQuietly(notifyRead);
+      closeQuietly(readyWrite);
+      closeQuietly(messageRead);
       return false;
     }
 
