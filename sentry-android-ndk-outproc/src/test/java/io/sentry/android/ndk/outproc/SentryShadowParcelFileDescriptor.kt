@@ -1,4 +1,4 @@
-package io.sentry.android.ndk
+package io.sentry.android.ndk.outproc
 
 import android.os.ParcelFileDescriptor
 import java.io.File

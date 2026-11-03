@@ -1,4 +1,4 @@
-package io.sentry.android.ndk
+package io.sentry.android.ndk.outproc
 
 import android.app.ActivityManager
 import android.app.ApplicationExitInfo
@@ -79,10 +79,10 @@ class SentryNdkCrashServiceTest {
   fun `close unbinds the service`() {
     configure(true)
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use {
-      SentryNdk.init(app, options)
+      SentryNdkOutproc.init(app, options)
       val connection = shadowOf(app).boundServiceConnections.single()
 
-      SentryNdk.close()
+      SentryNdkOutproc.close()
 
       assertThat(shadowOf(app).boundServiceConnections).isEmpty()
       assertThat(shadowOf(app).unboundServiceConnections).containsExactly(connection)
@@ -97,7 +97,7 @@ class SentryNdkCrashServiceTest {
         .`when`<Any> { io.sentry.ndk.SentryNdk.init(any<NdkOptions>()) }
         .thenThrow(IllegalStateException())
 
-      assertFailsWith<IllegalStateException> { SentryNdk.init(app, options) }
+      assertFailsWith<IllegalStateException> { SentryNdkOutproc.init(app, options) }
 
       assertThat(shadowOf(app).boundServiceConnections).isEmpty()
       assertThat(shadowOf(app).unboundServiceConnections).hasSize(1)
@@ -108,7 +108,7 @@ class SentryNdkCrashServiceTest {
   fun `init fails when the service does not bind`() {
     shadowOf(app).declareComponentUnbindable(component)
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
-      assertFailsWith<IllegalStateException> { SentryNdk.init(app, options) }
+      assertFailsWith<IllegalStateException> { SentryNdkOutproc.init(app, options) }
 
       native.verify({ io.sentry.ndk.SentryNdk.init(any<NdkOptions>()) }, never())
     }

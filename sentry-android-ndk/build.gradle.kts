@@ -21,7 +21,6 @@ android {
 
     // for AGP 4.1
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
-    buildConfigField("String", "SENTRY_PACKAGE_NAME", "\"${project.name}\"")
   }
 
   buildTypes {
@@ -79,9 +78,4 @@ dependencies {
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.mockito.kotlin)
   testImplementation(projects.sentryTestSupport)
-}
-
-extensions.configure<com.android.build.gradle.BaseExtension> {
-  sourceSets.getByName("main").java.srcDir("src/inproc/java")
-  sourceSets.getByName("test").java.srcDir("src/inprocTest/java")
 }

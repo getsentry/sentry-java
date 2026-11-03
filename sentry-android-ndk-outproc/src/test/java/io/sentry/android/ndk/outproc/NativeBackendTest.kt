@@ -1,4 +1,4 @@
-package io.sentry.android.ndk
+package io.sentry.android.ndk.outproc
 
 import android.content.Context
 import android.content.ServiceConnection
@@ -49,13 +49,13 @@ class NativeBackendTest {
 
   @Test
   fun `fails without a context`() {
-    assertFailsWith<IllegalStateException> { SentryNdk.init(options()) }
+    assertFailsWith<IllegalStateException> { SentryNdkOutproc.init(options()) }
   }
 
   @Test
   @Config(sdk = [29])
   fun `fails below API 30`() {
-    assertFailsWith<IllegalStateException> { SentryNdk.init(mock<Context>(), options()) }
+    assertFailsWith<IllegalStateException> { SentryNdkOutproc.init(mock<Context>(), options()) }
   }
 
   private fun options() =
@@ -80,7 +80,7 @@ class NativeBackendTest {
           .`when`<ServiceConnection> { SentryNdkCrashService.start(context, options) }
           .thenReturn(mock<ServiceConnection>())
 
-        SentryNdk.init(context, options)
+        SentryNdkOutproc.init(context, options)
 
         service.verify { SentryNdkCrashService.start(context, options) }
         assertThat(captured).isNotNull()

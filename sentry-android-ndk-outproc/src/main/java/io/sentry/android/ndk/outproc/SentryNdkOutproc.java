@@ -1,13 +1,17 @@
-package io.sentry.android.ndk;
+package io.sentry.android.ndk.outproc;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.ServiceConnection;
 import android.os.Build;
+import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
+import io.sentry.android.ndk.DebugImagesLoader;
+import io.sentry.android.ndk.NdkScopeObserver;
 import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.ndk.NdkOptions;
+import io.sentry.protocol.SdkVersion;
 import io.sentry.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -16,7 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class SentryNdk {
+public final class SentryNdkOutproc {
+
+  private static final @NotNull String PACKAGE_NAME = "maven:io.sentry:sentry-android-ndk-outproc";
 
   private static final @NotNull CountDownLatch loadLibraryLatch = new CountDownLatch(1);
 
@@ -25,7 +31,7 @@ public final class SentryNdk {
 
   private static @Nullable ServiceConnection serviceConnection;
 
-  private SentryNdk() {}
+  private SentryNdkOutproc() {}
 
   static {
     new Thread(
@@ -66,7 +72,7 @@ public final class SentryNdk {
       throw new IllegalStateException("The NDK crash service needs a context and API 30+");
     }
 
-    SentryNdkUtil.addPackage(options.getSdkVersion());
+    addPackage(options.getSdkVersion());
     try {
       if (loadLibraryLatch.await(2000, TimeUnit.MILLISECONDS)) {
         final @NotNull NdkOptions ndkOptions =
@@ -146,6 +152,14 @@ public final class SentryNdk {
           "Thread interrupted while waiting for NDK libs to be loaded", e);
     } finally {
       unbindCrashService();
+    }
+  }
+
+  private static void addPackage(final @Nullable SdkVersion sdkVersion) {
+    SentryIntegrationPackageStorage.getInstance()
+        .addPackage(PACKAGE_NAME, BuildConfig.VERSION_NAME);
+    if (sdkVersion != null) {
+      sdkVersion.addPackage(PACKAGE_NAME, BuildConfig.VERSION_NAME);
     }
   }
 

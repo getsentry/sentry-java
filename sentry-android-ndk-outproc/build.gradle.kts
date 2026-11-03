@@ -10,7 +10,7 @@ plugins {
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
   compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
-  namespace = "io.sentry.android.ndk"
+  namespace = "io.sentry.android.ndk.outproc"
 
   defaultConfig {
     minSdk = libs.versions.minSdk.get().toInt()
@@ -21,12 +21,11 @@ android {
 
     // for AGP 4.1
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
-    buildConfigField("String", "SENTRY_PACKAGE_NAME", "\"${project.name}\"")
   }
 
   buildTypes {
-    getByName("debug") { consumerProguardFiles("../sentry-android-ndk/proguard-rules.pro") }
-    getByName("release") { consumerProguardFiles("../sentry-android-ndk/proguard-rules.pro") }
+    getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
+    getByName("release") { consumerProguardFiles("proguard-rules.pro") }
   }
 
   // AGP 9 only generates unit tests for the testBuildType. The debug variant is
@@ -70,6 +69,8 @@ android {
 dependencies {
   api(projects.sentry)
   api(projects.sentryAndroidCore)
+  // the outproc backend replaces the inproc one
+  api(projects.sentryAndroidNdk) { exclude(group = "io.sentry", module = "sentry-native-ndk") }
 
   compileOnly(libs.jetbrains.annotations)
 
@@ -81,22 +82,4 @@ dependencies {
   testImplementation(projects.sentryTestSupport)
   testImplementation(libs.google.truth)
   testImplementation(libs.roboelectric)
-}
-
-configurations
-  .matching {
-    it.name == "releaseApiElements" ||
-      it.name == "releaseRuntimeElements" ||
-      it.name == "releaseVariantReleaseApiPublication" ||
-      it.name == "releaseVariantReleaseRuntimePublication"
-  }
-  .configureEach {
-    outgoing.capability("${project.group}:${project.name}:${project.version}")
-    outgoing.capability("${project.group}:sentry-android-ndk:${project.version}")
-  }
-
-extensions.configure<com.android.build.gradle.BaseExtension> {
-  sourceSets.getByName("main").java.srcDir("../sentry-android-ndk/src/main/java")
-  sourceSets.getByName("test").java.srcDir("../sentry-android-ndk/src/test/java")
-  sourceSets.getByName("test").resources.srcDir("../sentry-android-ndk/src/test/resources")
 }

@@ -20,6 +20,9 @@ public final class NdkIntegration implements Integration, Closeable {
 
   public static final String SENTRY_NDK_CLASS_NAME = "io.sentry.android.ndk.SentryNdk";
 
+  public static final String SENTRY_NDK_OUTPROC_CLASS_NAME =
+      "io.sentry.android.ndk.outproc.SentryNdkOutproc";
+
   private final @Nullable Context context;
   private final @Nullable Class<?> sentryNdkClass;
 
