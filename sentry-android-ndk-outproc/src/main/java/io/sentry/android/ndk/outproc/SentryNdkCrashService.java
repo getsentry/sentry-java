@@ -560,7 +560,14 @@ public final class SentryNdkCrashService extends Service {
         final File envelope = new File(envelopePath);
         final @Nullable MergedEnvelope mergedEnvelope =
             config.tombstoneEnabled ? waitForMergedEnvelope(options, envelope, config) : null;
-        if (config.tombstoneEnabled && mergedEnvelope == null) {
+        if (mergedEnvelope != null) {
+          // native keeps the envelope for the next launch until it is sent
+          try {
+            writeLastTombstoneMarker(envelope, mergedEnvelope.tombstoneTimestamp);
+          } catch (IOException e) {
+            options.getLogger().log(SentryLevel.DEBUG, e, "Failed to write the tombstone marker.");
+          }
+        } else if (config.tombstoneEnabled) {
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Sending NDK crash without tombstone enrichment.");
@@ -572,11 +579,9 @@ public final class SentryNdkCrashService extends Service {
                 config.shutdownTimeoutMillis);
         if (result == CrashDaemon.SendResult.FAILED) {
           options.getLogger().log(SentryLevel.DEBUG, "Failed to send NDK crash envelope.");
-        } else if (mergedEnvelope != null) {
-          writeLastTombstoneMarker(envelope, mergedEnvelope.tombstoneTimestamp);
         }
       }
-    } catch (InterruptedException | IOException e) {
+    } catch (InterruptedException e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Error running NDK crash service.");
     }
   }
