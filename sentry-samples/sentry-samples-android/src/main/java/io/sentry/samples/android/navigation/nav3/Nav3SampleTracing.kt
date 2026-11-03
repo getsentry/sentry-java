@@ -6,6 +6,7 @@ import io.sentry.Hint
 import io.sentry.Sentry
 import io.sentry.SpanStatus
 import io.sentry.protocol.SentryTransaction
+import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -48,7 +49,8 @@ internal fun applyActivityUiLoadTransactionSetting(activity: Activity, enabled: 
 
 /** Drops ui.load transactions for sample Activities created with the ui.load toggle off. */
 private object SuppressedActivityUiLoadTransactions : EventProcessor {
-  val activityNames: MutableSet<String> = ConcurrentHashMap.newKeySet()
+  val activityNames: MutableSet<String> =
+    Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
   @Volatile private var installed = false
 
