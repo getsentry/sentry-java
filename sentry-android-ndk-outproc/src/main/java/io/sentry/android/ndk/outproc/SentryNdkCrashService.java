@@ -15,6 +15,7 @@ import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.SentryEnvelope;
@@ -608,7 +609,7 @@ public final class SentryNdkCrashService extends Service {
     }
 
     // the app exits once its tombstone is written, a later exit would not match
-    final long deadlineMillis = System.currentTimeMillis() + MATCH_TOLERANCE_MILLIS;
+    final long deadlineMillis = SystemClock.uptimeMillis() + MATCH_TOLERANCE_MILLIS;
     while (true) {
       final @Nullable ApplicationExitInfo exitInfo =
           findMatchingExitInfo(options, nativeTimestamp, config.appPid);
@@ -628,7 +629,7 @@ public final class SentryNdkCrashService extends Service {
         }
       }
 
-      final long remainingMillis = deadlineMillis - System.currentTimeMillis();
+      final long remainingMillis = deadlineMillis - SystemClock.uptimeMillis();
       if (remainingMillis <= 0) {
         return null;
       }
