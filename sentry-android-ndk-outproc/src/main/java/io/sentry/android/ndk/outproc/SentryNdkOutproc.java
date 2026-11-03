@@ -39,7 +39,7 @@ public final class SentryNdkOutproc {
               try {
                 //noinspection UnstableApiUsage
                 io.sentry.ndk.SentryNdk.loadNativeLibraries();
-              } catch (Throwable t) {
+              } catch (UnsatisfiedLinkError e) {
                 // ignored
                 // if loadLibrary() fails, the later init() will throw an exception anyway
               } finally {
