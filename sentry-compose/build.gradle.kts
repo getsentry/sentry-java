@@ -15,6 +15,7 @@ plugins {
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
   id("io.sentry.publish.multiplatform")
+  id("io.sentry.api-validation")
 }
 
 kotlin {

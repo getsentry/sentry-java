@@ -12,6 +12,7 @@ plugins {
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
   id("io.sentry.publish")
+  id("io.sentry.api-validation")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
@@ -33,6 +34,8 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.core)
   testImplementation(libs.msgpack)
+  testImplementation(libs.okhttp.mockwebserver)
+  testImplementation(libs.okhttp.tls)
   testImplementation(libs.okio)
   testImplementation(projects.sentryTestSupport)
 }

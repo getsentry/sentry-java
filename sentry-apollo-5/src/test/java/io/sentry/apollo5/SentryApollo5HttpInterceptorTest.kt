@@ -20,6 +20,7 @@ import io.sentry.IScopes
 import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryTraceHeader
@@ -88,6 +89,9 @@ abstract class SentryApollo5HttpInterceptorTest(
         doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
           .whenever(it)
           .configureScope(any())
+        doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+          .whenever(it)
+          .configureScope(anyOrNull<ScopeType>(), any())
       }
     private var httpInterceptor =
       SentryApollo5HttpInterceptor(scopes, captureFailedRequests = false)

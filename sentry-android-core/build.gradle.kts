@@ -11,6 +11,7 @@ plugins {
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
   id("io.sentry.publish")
+  id("io.sentry.api-validation")
 }
 
 android {
@@ -138,3 +139,5 @@ dependencies {
   testRuntimeOnly(libs.androidx.fragment.ktx)
   testRuntimeOnly(libs.timber)
 }
+
+sentryApiValidation { ignoredPackages.add("io.sentry.android.core.internal") }

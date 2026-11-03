@@ -734,21 +734,6 @@ internal fun ShareSheetRoute(
   }
 }
 
-@Composable
-internal fun FutureRoute(routeName: String, scenario: String) {
-  RouteScaffold(
-    routeSpec =
-      RouteSpecs.get(routeName)
-        .copy(
-          title = "$routeName: WIP",
-          description =
-            "Reserved for a future milestone when SentryNavEffect supports $scenario navigation " +
-              "state.",
-        ),
-    testTagPrefix = nav3RouteTag(routeName),
-  )
-}
-
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun Nav3ProductListItem(index: Int) {

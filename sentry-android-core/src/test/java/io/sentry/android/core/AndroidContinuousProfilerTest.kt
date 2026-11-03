@@ -278,6 +278,18 @@ class AndroidContinuousProfilerTest {
       }
       .testDoesNotStartWhenOffline(mocks)
 
+  @Test
+  fun `manual start cancels a pending stop`() =
+    fixture.getSut().testManualStartCancelsPendingStop(mocks)
+
+  @Test
+  fun `trace start cancels a pending stop`() =
+    fixture.getSut().testTraceStartCancelsPendingStop(mocks)
+
+  @Test
+  fun `manual profiler can be started again after a full start-stop cycle`() =
+    fixture.getSut().testCanBeStartedAgainAfterStopCycle(mocks)
+
   // -- Legacy-specific tests (AndroidContinuousProfiler only) --
 
   @Test

@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+### Features
+
+- Added `Environment` to the `Scope`, allowing you to overwrite the `Environment` set on the options ([#5772](https://github.com/getsentry/sentry-java/pull/5772))
+  - The scope `Environment` is also applied to the trace envelope header (DSC), logs, metrics and profiles, so all telemetry of a trace reports the same environment
+- Add an `attachTracingHeaders` flag to `SentryApolloInterceptor` to stop attaching `sentry-trace` and `baggage` headers to Apollo v2 requests ([#6414](https://github.com/getsentry/sentry-java/pull/6414))
+  - Apollo v2 has no request URL in the interceptor, so these headers are attached without checking `tracePropagationTargets`. Pass `attachTracingHeaders = false` to opt out.
+
+### Improvements
+
+- Speed up Session Replay and screenshot masking for large `maskViewClasses`/`unmaskViewClasses` lists by using constant-time class lookups ([#6410](https://github.com/getsentry/sentry-java/pull/6410))
+
+### Fixes
+
+- Keep UI profiling running when `startProfiler` is called before a requested stop takes effect at the end of the current chunk ([#6291](https://github.com/getsentry/sentry-java/pull/6291))
+  - Before, the start call was ignored and the profiler still stopped at the end of the chunk, even in `TRACE` mode while sampled spans were active. On API 34 and lower, every later profile also stopped after one chunk.
+- Refuse to send data to servers whose certificate was issued by one of the leaked eMudhra intermediates (CVE-2026-111943) ([#6336](https://github.com/getsentry/sentry-java/pull/6336))
+
+### Dependencies
+
+- Bump epitaph (Android tombstone parsing) from 0.1.1 to 0.2.0 ([#6402](https://github.com/getsentry/sentry-java/pull/6402))
+  - Reject malformed protobuf tags, oversized lengths, invalid varints, and invalid reader bounds instead of silently accepting partial/corrupt tombstone data.
+- Bump Native SDK from v0.17.4 to v0.17.5 ([#6409](https://github.com/getsentry/sentry-java/pull/6409))
+  - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0175)
+  - [diff](https://github.com/getsentry/sentry-native/compare/0.17.4...0.17.5)
+
+## 8.62.0
+
 ### Improvements
 
 - Support Navigation 3 integration for multi-Activity and multi-Fragment applications, where each Activity or Fragment has its own `SentryNavEffect` ([#6305](https://github.com/getsentry/sentry-java/pull/6305))
@@ -9,7 +36,9 @@
 
 ### Fixes
 
+- Fix a D8 crash (`NullPointerException: Cannot invoke "String.length()"`) when dexing the SDK with AGP 8.0 and older, a regression from 8.61.1 ([#6356](https://github.com/getsentry/sentry-java/pull/6356))
 - Always remove the first-draw listener after the first frame, even if no layout pass follows it ([#6152](https://github.com/getsentry/sentry-java/pull/6152))
+- Prevent Reactor pool maintenance tasks from retaining unbounded Sentry scope chains ([#6283](https://github.com/getsentry/sentry-java/pull/6283))
 
 ## 8.61.1
 

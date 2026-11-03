@@ -12,6 +12,7 @@ plugins {
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
   id("io.sentry.publish")
+  id("io.sentry.api-validation")
 }
 
 // Published code targets Java 17. Test code is not published and follows the toolchain.

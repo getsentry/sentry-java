@@ -12,6 +12,7 @@ plugins {
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
   id("io.sentry.publish")
+  id("io.sentry.api-validation")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
@@ -33,6 +34,7 @@ dependencies {
   // tests
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.log4j.api)
   testImplementation(libs.log4j.core)
@@ -56,6 +58,16 @@ tasks.withType<JavaCompile>().configureEach {
     check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
     option("NullAway:AnnotatedPackages", "io.sentry")
   }
+}
+
+// log4j's GraalVmProcessor warns (and fails the build under -Werror) without these options
+tasks.named<JavaCompile>("compileJava") {
+  options.compilerArgs.addAll(
+    listOf(
+      "-Alog4j.graalvm.groupId=${project.group}",
+      "-Alog4j.graalvm.artifactId=${project.name}",
+    )
+  )
 }
 
 tasks.jar {

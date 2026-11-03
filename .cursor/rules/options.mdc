@@ -112,4 +112,4 @@ When a feature has its own capture path (e.g. `captureLog`), the relevant classe
 4. `ManifestMetadataReader.java` — Android manifest support (if Android-relevant)
 5. `SentryAutoConfigurationTest.kt` — Spring Boot property binding tests (all three Spring Boot modules)
 6. Tests for all of the above (`SentryOptionsTest`, `ExternalOptionsTest`, `ManifestMetadataReaderTest`)
-7. Run `./gradlew apiDump` — the nested class and its methods appear in `sentry.api`
+7. Run `./gradlew updateKotlinAbi` — the nested class and its methods appear in `sentry.api`

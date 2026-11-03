@@ -5,6 +5,7 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spring-boot-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
@@ -13,6 +14,7 @@ plugins {
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
   id("io.sentry.publish")
+  id("io.sentry.api-validation")
 }
 
 // Published code targets Java 17. Test code is not published and follows the toolchain.
@@ -122,4 +124,32 @@ kotlin {
     // compiled against a newer version of Kotlin
     freeCompilerArgs.add("-Xskip-metadata-version-check")
   }
+}
+
+testing {
+  suites {
+    // Runs a plain Spring MVC app in an embedded Tomcat against MockSentryServer, the way a servlet
+    // container runs a WAR. Spring Boot isn't on its classpath, because Sentry behaves differently
+    // with it.
+    register<JvmTestSuite>("integrationTest") {
+      useJUnit()
+      dependencies {
+        implementation(platform(SpringBootPlugin.BOM_COORDINATES))
+        implementation(project())
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryTestSupport)
+        implementation(Config.Libs.springWeb)
+        implementation(libs.jackson.databind)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.tomcat.embed.core)
+      }
+    }
+  }
+}
+
+// The suites on each Spring Boot 4 version the CI matrix tests.
+springBootMatrix {
+  versions(line = 4)
+  test("integrationTest")
 }

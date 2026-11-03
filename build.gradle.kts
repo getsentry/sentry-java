@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.spotless) apply false
     alias(libs.plugins.detekt)
     `maven-publish`
-    alias(libs.plugins.binary.compatibility.validator)
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.jvm) apply false
@@ -23,10 +22,6 @@ plugins {
     alias(libs.plugins.sentry) apply false
 }
 
-check(JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_21)) {
-    "This build requires JDK 21 or newer, but runs on JDK ${JavaVersion.current()}."
-}
-
 buildscript {
     repositories {
         google()
@@ -39,52 +34,6 @@ buildscript {
 
         classpath(libs.commons.compress)
     }
-}
-
-apiValidation {
-    ignoredPackages.addAll(
-        setOf(
-            "io.sentry.android.core.internal"
-        )
-    )
-    ignoredProjects.addAll(
-        listOf(
-            "sentry-samples-android",
-            "sentry-samples-console",
-            "sentry-samples-console-opentelemetry-noagent",
-            "sentry-samples-jul",
-            "sentry-samples-log4j2",
-            "sentry-samples-logback",
-            "sentry-samples-openfeign",
-            "sentry-samples-servlet",
-            "sentry-samples-spring",
-            "sentry-samples-spring-jakarta",
-            "sentry-samples-spring-7",
-            "sentry-samples-spring-boot",
-            "sentry-samples-spring-boot-opentelemetry",
-            "sentry-samples-spring-boot-opentelemetry-noagent",
-            "sentry-samples-spring-boot-jakarta",
-            "sentry-samples-spring-boot-jakarta-log4j2",
-            "sentry-samples-spring-boot-jakarta-opentelemetry",
-            "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
-            "sentry-samples-spring-boot-webflux",
-            "sentry-samples-spring-boot-webflux-jakarta",
-            "sentry-samples-spring-boot-4",
-            "sentry-samples-spring-boot-4-log4j2",
-            "sentry-samples-spring-boot-4-opentelemetry",
-            "sentry-samples-spring-boot-4-opentelemetry-noagent",
-            "sentry-samples-spring-boot-4-otlp",
-            "sentry-samples-spring-boot-4-webflux",
-            "sentry-samples-ktor-client",
-            "sentry-uitest-android",
-            "sentry-uitest-android-critical",
-            "test-app-size",
-            "sentry-samples-netflix-dgs",
-            "sentry-samples-console-otlp",
-            "sentry-test-support",
-            "sentry-system-test-support"
-        )
-    )
 }
 
 allprojects {

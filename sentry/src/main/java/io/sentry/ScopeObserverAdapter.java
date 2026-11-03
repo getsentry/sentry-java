@@ -47,6 +47,9 @@ public abstract class ScopeObserverAdapter implements IScopeObserver {
   public void setLevel(@Nullable SentryLevel level) {}
 
   @Override
+  public void setEnvironment(@Nullable String environment) {}
+
+  @Override
   public void setContexts(@NotNull Contexts contexts) {}
 
   @Override

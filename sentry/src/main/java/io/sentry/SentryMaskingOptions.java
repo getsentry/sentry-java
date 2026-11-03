@@ -1,7 +1,8 @@
 package io.sentry;
 
+import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +33,7 @@ public abstract class SentryMaskingOptions {
    *
    * <p>Default is empty.
    */
-  protected Set<String> maskViewClasses = new CopyOnWriteArraySet<>();
+  protected Set<String> maskViewClasses = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   /**
    * Ignore all views with the specified class names from masking. The class name is the fully
@@ -44,7 +45,7 @@ public abstract class SentryMaskingOptions {
    *
    * <p>Default is empty.
    */
-  protected Set<String> unmaskViewClasses = new CopyOnWriteArraySet<>();
+  protected Set<String> unmaskViewClasses = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   /** The class name of the view container that masks all of its children. */
   protected @Nullable String maskViewContainerClass = null;
@@ -92,6 +93,10 @@ public abstract class SentryMaskingOptions {
   }
 
   public void addMaskViewClass(final @NotNull String className) {
+    // Hybrid SDKs may pass null despite the annotation, and the backing set rejects null keys
+    if (className == null) {
+      return;
+    }
     this.maskViewClasses.add(className);
     this.unmaskViewClasses.remove(className);
   }
@@ -102,6 +107,10 @@ public abstract class SentryMaskingOptions {
   }
 
   public void addUnmaskViewClass(final @NotNull String className) {
+    // Hybrid SDKs may pass null despite the annotation, and the backing set rejects null keys
+    if (className == null) {
+      return;
+    }
     this.unmaskViewClasses.add(className);
     this.maskViewClasses.remove(className);
   }

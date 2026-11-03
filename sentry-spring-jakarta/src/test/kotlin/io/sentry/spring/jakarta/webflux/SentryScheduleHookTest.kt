@@ -8,7 +8,9 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 class SentryScheduleHookTest {
   private val dsn = "http://key@localhost/proj"
@@ -54,5 +56,38 @@ class SentryScheduleHookTest {
         assertEquals(threadedScopes, Sentry.getCurrentScopes())
       }
       .get()
+  }
+
+  @Test
+  fun `known maintenance runnable class names are excluded`() {
+    val classNames =
+      listOf(
+        "reactor.kafka.receiver.internals.ConsumerEventLoop\$PollEvent",
+        "reactor.netty.internal.shaded.reactor.pool.SimpleDequePool\$\$Lambda\$42/0x00000001",
+        "reactor.netty.internal.shaded.reactor.pool.SimpleDequePool\$\$Lambda/0x00000001",
+        "reactor.netty.http.client.Http2Pool\$\$Lambda\$42/0x00000001",
+        "reactor.netty.http.client.Http2Pool\$\$Lambda/0x00000001",
+        "reactor.netty.resources.PooledConnectionProvider\$\$Lambda\$42/0x00000001",
+        "reactor.netty.resources.PooledConnectionProvider\$\$Lambda/0x00000001",
+      )
+
+    classNames.forEach { className ->
+      assertTrue(SentryScheduleHook.isExcluded(className), className)
+    }
+  }
+
+  @Test
+  fun `request carrying runnable class names are not excluded`() {
+    val classNames =
+      listOf(
+        "reactor.netty.http.client.Http2Pool\$Borrower",
+        "reactor.netty.internal.shaded.reactor.pool.SimpleDequePool\$QueueBorrowerMono",
+        "reactor.pool.SimpleDequePool\$\$Lambda\$42/0x00000001",
+        "com.example.RequestTask",
+      )
+
+    classNames.forEach { className ->
+      assertFalse(SentryScheduleHook.isExcluded(className), className)
+    }
   }
 }

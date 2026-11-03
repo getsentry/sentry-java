@@ -39,8 +39,25 @@ internal fun Nav3Route.routeSpec(): RouteSpec =
         routeName = Nav3Route.MultiFragment.routeName,
         title = "Multi-Fragment",
         description =
-          "Tests SentryNavEffect when each Fragment owns its own SentryNavEffect and NavDisplay: " +
-            "Fragment replace transitions, a dialog overlay, and a ViewPager2 of Fragments.",
+          "Replace a Products Fragment with a Checkout Fragment. Each Fragment owns its own " +
+            "SentryNavEffect and NavDisplay. Try a slow transition and press Back during it.",
+      )
+    Nav3Route.FragmentOverlay ->
+      RouteSpec(
+        routeName = Nav3Route.FragmentOverlay.routeName,
+        title = "Fragment: Overlay",
+        description =
+          "Open a full-screen Checkout DialogFragment over a Products Fragment. Both own a " +
+            "SentryNavEffect and NavDisplay, and Products stays resumed underneath. Back dismisses " +
+            "the dialog and reveals Products.",
+      )
+    Nav3Route.ViewPager2 ->
+      RouteSpec(
+        routeName = Nav3Route.ViewPager2.routeName,
+        title = "ViewPager2",
+        description =
+          "Each page is a Fragment with its own SentryNavEffect and NavDisplay. Neighboring " +
+            "pages are preloaded at STARTED. Back returns to the Products Fragment underneath.",
       )
     Nav3Route.DeepLink ->
       RouteSpec(
@@ -56,8 +73,6 @@ internal fun Nav3Route.routeSpec(): RouteSpec =
     is Nav3Route.Confirmation -> RouteSpecs.confirmation
     is Nav3Route.PromoDialog -> RouteSpecs.promoDialog
     is Nav3Route.ShareSheet -> RouteSpecs.shareSheet
-    Nav3Route.Multipane,
-    Nav3Route.Multistack,
     is Nav3Route.Performance -> RouteSpec(routeName = routeName, title = routeName)
   }
 
@@ -87,6 +102,8 @@ private fun Nav3Route.toSavedState(): Bundle =
       Nav3Route.Custom -> putString("type", "custom")
       Nav3Route.MultiActivity -> putString("type", "multi_activity")
       Nav3Route.MultiFragment -> putString("type", "multi_fragment")
+      Nav3Route.FragmentOverlay -> putString("type", "fragment_overlay")
+      Nav3Route.ViewPager2 -> putString("type", "view_pager2")
       Nav3Route.DeepLink -> putString("type", "deep_link")
       Nav3Route.ProductList -> putString("type", "product_list")
       is Nav3Route.ProductDetail -> {
@@ -111,8 +128,6 @@ private fun Nav3Route.toSavedState(): Bundle =
         putString("type", "share_sheet")
         putString("product_id", productId)
       }
-      Nav3Route.Multipane -> putString("type", "multipane")
-      Nav3Route.Multistack -> putString("type", "multistack")
       is Nav3Route.Performance -> {
         putString("type", "performance")
         putInt("index", index)
@@ -127,7 +142,12 @@ private fun Bundle.toNav3Route(): Nav3Route {
     "single_stack" -> Nav3Route.SingleStack
     "custom" -> Nav3Route.Custom
     "multi_activity" -> Nav3Route.MultiActivity
-    "multi_fragment" -> Nav3Route.MultiFragment
+    "multi_fragment",
+    "fragment_replace" -> Nav3Route.MultiFragment
+    "dialog_overlay",
+    "fragment_overlay" -> Nav3Route.FragmentOverlay
+    "view_pager_pages",
+    "view_pager2" -> Nav3Route.ViewPager2
     "deep_link" -> Nav3Route.DeepLink
     "product_list" -> Nav3Route.ProductList
     "product_detail" -> {
@@ -147,8 +167,6 @@ private fun Bundle.toNav3Route(): Nav3Route {
       Nav3Route.PromoDialog(promoId = getString("promo_id") ?: return Nav3Route.SingleStack)
     "share_sheet" ->
       Nav3Route.ShareSheet(productId = getString("product_id") ?: return Nav3Route.SingleStack)
-    "multipane" -> Nav3Route.Multipane
-    "multistack" -> Nav3Route.Multistack
     "performance" ->
       Nav3Route.Performance(
         index = getInt("index"),
@@ -167,12 +185,12 @@ internal fun SnapshotStateList<Nav3Route>.openScenario(scenario: Nav3Scenario) {
   when (scenario) {
     Nav3Scenario.LANDING -> resetTo(Nav3Route.Landing)
     Nav3Scenario.SINGLE_STACK -> resetTo(Nav3Route.SingleStack)
-    Nav3Scenario.CUSTOM -> resetTo(Nav3Route.Custom)
     Nav3Scenario.MULTI_ACTIVITY -> resetTo(Nav3Route.MultiActivity)
     Nav3Scenario.MULTI_FRAGMENT -> resetTo(Nav3Route.MultiFragment)
+    Nav3Scenario.FRAGMENT_OVERLAY -> resetTo(Nav3Route.FragmentOverlay)
+    Nav3Scenario.VIEW_PAGER2 -> resetTo(Nav3Route.ViewPager2)
     Nav3Scenario.DEEP_LINK -> resetTo(Nav3Route.DeepLink)
-    Nav3Scenario.MULTIPANE -> resetTo(Nav3Route.Multipane)
-    Nav3Scenario.MULTIPLE_STACKS -> resetTo(Nav3Route.Multistack)
+    Nav3Scenario.CUSTOM -> resetTo(Nav3Route.Custom)
     Nav3Scenario.PERFORMANCE -> resetTo(Nav3Route.Performance(index = 0, generation = 0))
   }
 }
@@ -241,6 +259,14 @@ internal sealed interface Nav3Route {
     override val routeName: String = "MultiFragment"
   }
 
+  data object FragmentOverlay : Nav3Route {
+    override val routeName: String = "FragmentOverlay"
+  }
+
+  data object ViewPager2 : Nav3Route {
+    override val routeName: String = "ViewPager2"
+  }
+
   data object DeepLink : Nav3Route {
     override val routeName: String = RouteNames.DEEP_LINK
   }
@@ -289,16 +315,6 @@ internal sealed interface Nav3Route {
     override val previewName: String = "ShareSheet($productId)"
   }
 
-  data object Multipane : Nav3Route {
-    override val routeName: String = "Multipane"
-    override val arguments: Map<String, Any?> = mapOf("scenario" to "multipane")
-  }
-
-  data object Multistack : Nav3Route {
-    override val routeName: String = "Multistack"
-    override val arguments: Map<String, Any?> = mapOf("scenario" to "multistack")
-  }
-
   data class Performance(val index: Int, val generation: Int) : Nav3Route {
     override val routeName: String = "Performance"
     override val arguments: Map<String, Any?> = mapOf("index" to index, "generation" to generation)
@@ -311,11 +327,11 @@ internal enum class Nav3Scenario(val label: String, val showTab: Boolean = true)
   LANDING(RouteNames.LANDING, showTab = false),
   SINGLE_STACK("Single Stack"),
   DEEP_LINK("Deep Link"),
-  CUSTOM("Custom"),
   MULTI_ACTIVITY("Multi-Activity"),
   MULTI_FRAGMENT("Multi-Fragment"),
-  MULTIPANE("Multipane"),
-  MULTIPLE_STACKS("Multistack"),
+  FRAGMENT_OVERLAY("Fragment: Overlay"),
+  VIEW_PAGER2("ViewPager2"),
+  CUSTOM("Custom"),
   PERFORMANCE("Performance"),
 }
 
@@ -324,11 +340,11 @@ internal val Nav3Scenario.initialRoute: Nav3Route
     when (this) {
       Nav3Scenario.LANDING -> Nav3Route.Landing
       Nav3Scenario.SINGLE_STACK -> Nav3Route.SingleStack
-      Nav3Scenario.CUSTOM -> Nav3Route.Custom
       Nav3Scenario.MULTI_ACTIVITY -> Nav3Route.MultiActivity
       Nav3Scenario.MULTI_FRAGMENT -> Nav3Route.MultiFragment
+      Nav3Scenario.FRAGMENT_OVERLAY -> Nav3Route.FragmentOverlay
+      Nav3Scenario.VIEW_PAGER2 -> Nav3Route.ViewPager2
       Nav3Scenario.DEEP_LINK -> Nav3Route.DeepLink
-      Nav3Scenario.MULTIPANE -> Nav3Route.Multipane
-      Nav3Scenario.MULTIPLE_STACKS -> Nav3Route.Multistack
+      Nav3Scenario.CUSTOM -> Nav3Route.Custom
       Nav3Scenario.PERFORMANCE -> Nav3Route.Performance(index = 0, generation = 0)
     }
