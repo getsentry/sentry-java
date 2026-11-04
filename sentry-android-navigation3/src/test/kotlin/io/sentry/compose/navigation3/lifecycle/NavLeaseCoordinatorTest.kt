@@ -260,6 +260,80 @@ class NavLeaseCoordinatorTest {
   }
 
   @Test
+  fun `an owner that isn't resumed doesn't acquire the nav lease on its first back stack update while its host activity is resumed`() {
+    val fixture = Fixture.create()
+    val host = fixture.lifecycleOwnerActivity(TestOwner(RESUMED).lifecycle)
+    val registration = fixture.register("owner", TestOwner(STARTED), host = host)
+
+    registration.onBackStackUpdate()
+
+    assertThat(registration.hasLease).isFalse()
+    assertThat(fixture.published).isEmpty()
+  }
+
+  @Test
+  fun `an owner kept from the nav lease by its resumed host activity acquires it when it resumes`() {
+    val fixture = Fixture.create()
+    val host = fixture.lifecycleOwnerActivity(TestOwner(RESUMED).lifecycle)
+    val owner = TestOwner(STARTED)
+    val registration = fixture.acquireLease("owner", owner, host = host)
+
+    owner.lifecycle.currentState = RESUMED
+
+    assertThat(registration.hasLease).isTrue()
+    assertThat(fixture.published).containsExactly("owner")
+  }
+
+  @Test
+  fun `an owner that isn't resumed doesn't take the nav lease from a paused leaseholder while its host activity is resumed`() {
+    val fixture = Fixture.create()
+    val host = fixture.lifecycleOwnerActivity(TestOwner(RESUMED).lifecycle)
+    val incumbentOwner = TestOwner(RESUMED)
+    val incumbent = fixture.acquireLease("incumbent", incumbentOwner)
+    incumbentOwner.lifecycle.currentState = STARTED
+
+    fixture.acquireLease("owner", TestOwner(STARTED), host = host)
+
+    assertThat(incumbent.hasLease).isTrue()
+    assertThat(fixture.published).containsExactly("incumbent")
+  }
+
+  @Test
+  fun `an owner that isn't resumed acquires the nav lease on its first back stack update while its host activity isn't resumed`() {
+    val fixture = Fixture.create()
+    val host = fixture.lifecycleOwnerActivity(TestOwner(STARTED).lifecycle)
+    val registration = fixture.register("owner", TestOwner(STARTED), host = host)
+
+    registration.onBackStackUpdate()
+
+    assertThat(registration.hasLease).isTrue()
+    assertThat(fixture.published).containsExactly("owner")
+  }
+
+  @Test
+  fun `an owner that isn't resumed acquires the nav lease on its first back stack update if its host activity isn't a lifecycle owner`() {
+    val fixture = Fixture.create()
+    val registration = fixture.register("owner", TestOwner(STARTED), host = fixture.hostActivity)
+
+    registration.onBackStackUpdate()
+
+    assertThat(registration.hasLease).isTrue()
+    assertThat(fixture.published).containsExactly("owner")
+  }
+
+  @Test
+  fun `a resumed owner acquires the nav lease on its first back stack update while its host activity is resumed`() {
+    val fixture = Fixture.create()
+    val host = fixture.lifecycleOwnerActivity(TestOwner(RESUMED).lifecycle)
+    val registration = fixture.register("owner", TestOwner(RESUMED), host = host)
+
+    registration.onBackStackUpdate()
+
+    assertThat(registration.hasLease).isTrue()
+    assertThat(fixture.published).containsExactly("owner")
+  }
+
+  @Test
   fun `acquiring the nav lease unpublishes the previous publisher's nav state before publishing its own`() {
     val fixture = Fixture.create()
     val calls = mutableListOf<String>()

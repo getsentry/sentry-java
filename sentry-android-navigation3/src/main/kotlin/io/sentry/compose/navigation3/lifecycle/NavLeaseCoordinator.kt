@@ -50,9 +50,10 @@ import io.sentry.IScopes
  * displaced nav root is still visible. If restored, the displaced nav root's nav data and
  * unfinished transaction are reinstated.
  *
- * † There are some exceptions, e.g., the leaseholder is resumed and the incoming nav root isn't
- * (e.g., a preloaded ViewPager2 Fragment page next to the current one). Such a nav root acquires
- * the lease when it resumes instead.
+ * † The exception is an incoming nav root that isn't resumed while the leaseholder or the incoming
+ * nav root's host Activity is, e.g., a preloaded ViewPager2 Fragment page next to the current one,
+ * whether or not the current page has a `SentryNavEffect`. The user isn't interacting with such a
+ * nav root yet, so it acquires the lease when it resumes instead.
  *
  * The following diagram illustrates how handoff works:
  * ```
@@ -311,15 +312,15 @@ internal class NavLeaseCoordinator {
 
     val holder = leaseHolder
 
-    // A nav root that isn't resumed doesn't take the lease from a resumed leaseholder, as it isn't
-    // the one the user is interacting with (e.g., a preloaded ViewPager2 page next to the current
-    // page). Instead, it acquires the lease when it resumes.
-    val wouldDisplaceResumedHolder =
-      holder != null &&
-        holder.state == Lifecycle.State.RESUMED &&
-        candidate.state != Lifecycle.State.RESUMED
+    // A nav root that isn't resumed while either the leaseholder or its own host Activity is
+    // resumed isn't the one the user is interacting with (e.g., a preloaded ViewPager2 page next to
+    // the current page, which may be a page without a SentryNavEffect and so never a leaseholder).
+    // Instead, it acquires the lease when it resumes.
+    val isBesideResumedContent =
+      candidate.state != Lifecycle.State.RESUMED &&
+        (holder?.state == Lifecycle.State.RESUMED || candidate.isHostActivityResumed)
 
-    if (candidate.canAcquireLeaseOnFirstUpdate && !wouldDisplaceResumedHolder) {
+    if (candidate.canAcquireLeaseOnFirstUpdate && !isBesideResumedContent) {
       transferLeaseTo(candidate, scope)
     }
   }

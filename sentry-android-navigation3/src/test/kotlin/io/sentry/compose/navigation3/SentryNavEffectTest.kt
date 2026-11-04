@@ -578,7 +578,7 @@ class SentryNavEffectTest {
     val owner = NavTestLifecycle()
     val options = SentryNavOptions()
     composeRule.setContent {
-      CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+      WithoutHostActivity(owner) {
         SentryNavEffect(
           backStack = listOf("Home"),
           backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
@@ -768,7 +768,7 @@ class SentryNavEffectTest {
     val owner = mutableStateOf(originalOwner)
     val options = SentryNavOptions()
     composeRule.setContent {
-      CompositionLocalProvider(LocalLifecycleOwner provides owner.value) {
+      WithoutHostActivity(owner.value) {
         SentryNavEffect(
           backStack = listOf("Home"),
           backStackEntryMapper = BackStackEntryMapper { SentryBackStackEntry(it) },
@@ -799,7 +799,8 @@ class SentryNavEffectTest {
   /**
    * Provides [owner] to [content] without a host Activity. Useful for tests whose owners stand in
    * for Activities. Otherwise, the compose rule's Activity, which stays resumed, would be treated
-   * as the owner's host. Pausing the owner would then redraw the lease.
+   * as the owner's host. Pausing the owner would then withdraw the lease, and an owner that isn't
+   * resumed yet couldn't acquire it on its first back stack update.
    */
   @Composable
   private fun WithoutHostActivity(owner: LifecycleOwner, content: @Composable () -> Unit) {

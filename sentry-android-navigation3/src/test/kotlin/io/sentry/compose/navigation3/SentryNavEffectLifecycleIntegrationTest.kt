@@ -646,6 +646,35 @@ class SentryNavEffectLifecycleIntegrationTest {
   }
 
   @Test
+  fun `a view pager page preloaded next to a current page without an effect publishes no nav data or transaction`() {
+    val fixture = Fixture.create()
+
+    Robolectric.buildActivity(PlainInitialPageViewPagerActivity::class.java).setup()
+    fixture.idle()
+
+    assertThat(fixture.events)
+      .containsAtLeast("Plain:view:ON_RESUME", "Home:composed(CREATED)", "Home:view:ON_START")
+    assertThat(fixture.events).doesNotContain("Home:view:ON_RESUME")
+    assertThat(fixture.scope.screen).isNull()
+    assertThat(fixture.scope.navigationEntries()).isNull()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `swiping from a view pager page without an effect to a preloaded page publishes its nav data and transaction`() {
+    val fixture = Fixture.create()
+    val activity = Robolectric.buildActivity(PlainInitialPageViewPagerActivity::class.java).setup()
+    fixture.idle()
+
+    activity.get().viewPager.setCurrentItem(0, false)
+    fixture.idle()
+
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Home")
+    assertThat(fixture.scope.transaction?.name).isEqualTo("/Home")
+  }
+
+  @Test
   fun `an activity without an effect clears a covered activity's nav data and unbinds its unfinished transaction`() {
     val fixture = Fixture.create()
     val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
@@ -981,10 +1010,12 @@ class SentryNavEffectLifecycleIntegrationTest {
 
   /**
    * An Activity without a SentryNavEffect of its own whose ViewPager2 pages are a [HomeFragment]
-   * and, by default, a [CheckoutFragment], each with a SentryNavEffect.
+   * and, by default, a [CheckoutFragment], each with a SentryNavEffect. The page at [initialPage]
+   * is current when the Activity is created.
    */
   internal open class ViewPagerActivity(
-    private val createSecondPage: () -> Fragment = ::CheckoutFragment
+    private val createSecondPage: () -> Fragment = ::CheckoutFragment,
+    private val initialPage: Int = 0,
   ) : FragmentActivity() {
 
     lateinit var viewPager: ViewPager2
@@ -998,6 +1029,7 @@ class SentryNavEffectLifecycleIntegrationTest {
           // at STARTED and resumes only the current page.
           offscreenPageLimit = 1
           adapter = PagesAdapter(this@ViewPagerActivity, createSecondPage)
+          setCurrentItem(initialPage, false)
         }
       setContentView(viewPager)
     }
@@ -1016,6 +1048,13 @@ class SentryNavEffectLifecycleIntegrationTest {
 
   /** A [ViewPagerActivity] whose second page has no SentryNavEffect. */
   internal class PlainPageViewPagerActivity : ViewPagerActivity(::PlainFragment)
+
+  /**
+   * Like [PlainPageViewPagerActivity], but its current page is initially the one without a
+   * SentryNavEffect, e.g., as after rotating the device on that page.
+   */
+  internal class PlainInitialPageViewPagerActivity :
+    ViewPagerActivity(::PlainFragment, initialPage = 1)
 
   internal open class NavEffectFragment(private val route: String) : Fragment() {
 
@@ -1181,6 +1220,7 @@ class SentryNavEffectLifecycleIntegrationTest {
             FragmentHostActivity::class.java,
             ViewPagerActivity::class.java,
             PlainPageViewPagerActivity::class.java,
+            PlainInitialPageViewPagerActivity::class.java,
           )
           .forEach { activityClass: Class<out Activity> ->
             packageManager.addActivityIfNotPresent(
