@@ -450,7 +450,7 @@ internal data class NormalizedSentryBackStackEntry(
 internal fun List<NormalizedSentryBackStackEntry>.serialize(): List<Map<String, Any?>> =
   map(NormalizedSentryBackStackEntry::serialize)
 
-/** Why host-provided arguments were unavailable in emitted navigation data. */
+/** Why host-provided arguments were unavailable in emitted nav state. */
 internal enum class ArgumentDropReason(
   val serializedValue: String,
   val exhaustsUpdateBudget: Boolean = false,
