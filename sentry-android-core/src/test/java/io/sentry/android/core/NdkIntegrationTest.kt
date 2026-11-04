@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import android.content.Context
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.SentryLevel
@@ -18,6 +19,8 @@ class NdkIntegrationTest {
     val logger = mock<ILogger>()
 
     fun getSut(clazz: Class<*>? = SentryNdk::class.java): NdkIntegration = NdkIntegration(clazz)
+
+    fun getSut(context: Context, clazz: Class<*>): NdkIntegration = NdkIntegration(context, clazz)
   }
 
   private val fixture = Fixture()
@@ -93,6 +96,20 @@ class NdkIntegrationTest {
 
     assertFalse(options.isEnableNdk)
     assertFalse(options.isEnableScopeSync)
+  }
+
+  @Test
+  fun `NdkIntegration falls back to init without context`() {
+    val integration = fixture.getSut(mock<Context>(), SentryNdk::class.java)
+
+    val options = getOptions()
+
+    integration.register(fixture.scopes, options)
+
+    verify(fixture.logger).log(eq(SentryLevel.WARNING), any<String>())
+    verify(fixture.logger, never()).log(eq(SentryLevel.ERROR), any<String>(), any())
+    assertTrue(options.isEnableNdk)
+    assertTrue(options.isEnableScopeSync)
   }
 
   @Test

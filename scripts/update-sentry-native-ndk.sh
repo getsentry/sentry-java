@@ -16,7 +16,7 @@ set-version)
 
     echo "Setting sentry-native-ndk version to '$version'"
 
-    PATTERN='(module = "io\.sentry:sentry-native-ndk", version = ")[0-9.]+(")'
+    PATTERN='(module = "io\.sentry:sentry-native-ndk(?:-outproc)?", version = ")[0-9.]+(")'
     perl -pi -e "s/$PATTERN/\${1}$version\${2}/" "$GRADLE_NDK_FILEPATH"
     ;;
 *)

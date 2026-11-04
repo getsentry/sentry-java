@@ -97,6 +97,7 @@ object Config {
         val androidLibs = setOf(
             "sentry-android-core",
             "sentry-android-ndk",
+            "sentry-android-ndk-outproc",
             "sentry-android-fragment",
             "sentry-android-navigation",
             "sentry-android-navigation3",

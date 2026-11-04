@@ -1,0 +1,85 @@
+import org.jetbrains.kotlin.config.KotlinCompilerVersion
+
+plugins {
+  id("com.android.library")
+  alias(libs.plugins.kotlin.android)
+  alias(libs.plugins.gradle.versions)
+  id("io.sentry.api-validation")
+}
+
+android {
+  compileSdk = libs.versions.compileSdk.get().toInt()
+  compileSdkMinor = libs.versions.compileSdkMinor.get().toInt()
+  namespace = "io.sentry.android.ndk.outproc"
+
+  defaultConfig {
+    minSdk = libs.versions.minSdk.get().toInt()
+
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    ndk { abiFilters.addAll(Config.Android.abiFilters) }
+
+    // for AGP 4.1
+    buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+  }
+
+  buildTypes {
+    getByName("debug") { consumerProguardFiles("proguard-rules.pro") }
+    getByName("release") { consumerProguardFiles("proguard-rules.pro") }
+  }
+
+  // AGP 9 only generates unit tests for the testBuildType. The debug variant is
+  // disabled, so unit tests must target release to run at all.
+  testBuildType = "release"
+
+  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
+
+  testOptions {
+    animationsDisabled = true
+    unitTests.apply {
+      isReturnDefaultValues = true
+      isIncludeAndroidResources = true
+    }
+  }
+
+  lint {
+    warningsAsErrors = true
+    checkDependencies = true
+
+    // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
+    checkReleaseBuilds = false
+  }
+
+  // needed because of Kotlin 1.4.x
+  configurations.all { resolutionStrategy.force(libs.jetbrains.annotations.get()) }
+
+  buildFeatures { buildConfig = true }
+
+  androidComponents.beforeVariants {
+    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+  }
+
+  // the default AGP version is too high, we keep this low for compatibility reasons
+  // see https://developer.android.com/build/releases/past-releases/ to find the AGP-NDK mapping
+  ndkVersion = "23.1.7779620"
+
+  @Suppress("UnstableApiUsage") packagingOptions { jniLibs { useLegacyPackaging = true } }
+}
+
+dependencies {
+  api(projects.sentry)
+  api(projects.sentryAndroidCore)
+  // the outproc backend replaces the inproc one
+  api(projects.sentryAndroidNdk) { exclude(group = "io.sentry", module = "sentry-native-ndk") }
+
+  compileOnly(libs.jetbrains.annotations)
+
+  implementation(libs.sentry.native.ndk.outproc)
+
+  testImplementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.mockito.kotlin)
+  testImplementation(projects.sentryTestSupport)
+  testImplementation(libs.google.truth)
+  testImplementation(libs.roboelectric)
+}

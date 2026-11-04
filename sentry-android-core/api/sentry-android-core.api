@@ -377,6 +377,7 @@ public final class io/sentry/android/core/NdkHandlerStrategy : java/lang/Enum {
 
 public final class io/sentry/android/core/NdkIntegration : io/sentry/Integration, java/io/Closeable {
 	public static final field SENTRY_NDK_CLASS_NAME Ljava/lang/String;
+	public static final field SENTRY_NDK_OUTPROC_CLASS_NAME Ljava/lang/String;
 	public fun <init> (Ljava/lang/Class;)V
 	public fun close ()V
 	public final fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
@@ -669,6 +670,7 @@ public class io/sentry/android/core/TombstoneIntegration$TombstonePolicy : io/se
 	public fun getLastReportedTimestamp ()Ljava/lang/Long;
 	public fun markReported (J)V
 	public fun matches (Landroid/app/ApplicationExitInfo;)Z
+	public static fun mergeNativeCrashes (Lio/sentry/SentryEvent;Lio/sentry/SentryEvent;)V
 	public fun shouldReportHistorical ()Z
 }
 
