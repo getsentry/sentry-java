@@ -159,19 +159,19 @@ internal fun Nav3RouteWorkEffect(
   if (RouteWorkOption.MANUAL_CHILD_SPAN in currentOptions.value) {
     // Keep this synchronous to verify that Nav3 route transactions are bound before destination
     // composition runs, not merely before destination effects are launched.
-    runManualNav3RouteActivationSpan(route.routeName)
+    runManualNav3RouteActivationSpan(route)
   }
 
   LaunchedEffect(route) {
     runNav3RouteWork(
-      routeName = route.routeName,
+      route = route,
       options = currentOptions.value,
     )
   }
 }
 
-internal suspend fun runNav3RouteWork(
-  routeName: String,
+private suspend fun runNav3RouteWork(
+  route: Nav3Route,
   options: Set<RouteWorkOption>,
 ) {
   RouteWorkOption.entries.forEach { option ->
@@ -179,7 +179,7 @@ internal suspend fun runNav3RouteWork(
       return@forEach
     }
 
-    tagNav3SampleAction(option.tagName, routeName)
+    tagNav3SampleAction(option.tagName, route)
     when (option) {
       RouteWorkOption.HTTP_REQUEST -> {
         try {
@@ -217,7 +217,7 @@ internal fun SentryControls(
         onClick = onCaptureException,
         modifier = Modifier.weight(1f),
       )
-      Nav3DiagnosticsButton(modifier = Modifier.weight(1f))
+      Nav3OpenPlainActivityButton(modifier = Modifier.weight(1f))
       Nav3SentryButton(
         label = "Crash App",
         onClick = onCrashApp,
@@ -252,20 +252,20 @@ internal fun crashSampleApp(navName: String): Nothing {
   throw RuntimeException("Fatal $navName sample crash app button")
 }
 
-internal fun runManualNav3RouteActivationSpan(routeName: String) {
+private fun runManualNav3RouteActivationSpan(route: Nav3Route) {
   val span =
     Sentry.getSpan()
       ?.startChild(
         "test.navigation.route_activation",
-        "Nav3 /$routeName route activation",
+        "Nav3 /${route.routeName} route activation",
       )
   span?.setData("sample.route_activation", true)
   span?.finish()
 }
 
-private fun tagNav3SampleAction(action: String, routeName: String) {
+private fun tagNav3SampleAction(action: String, route: Nav3Route) {
   Sentry.setTag("sample_action", "nav3_$action")
-  Sentry.setTag("sample_nav3_route", routeName)
+  Sentry.setTag("sample_nav3_route", route.routeName)
 }
 
 @Composable
