@@ -511,6 +511,16 @@ internal class NavLeaseCoordinator {
     val canAcquireLeaseOnFirstUpdate: Boolean
       get() = state == Lifecycle.State.RESUMED || (resumeOrder == 0L && !wasStopped)
 
+    /**
+     * Whether the candidate's [host Activity][hostActivity] is resumed right now. `false` if the
+     * host Activity is unknown or isn't a [LifecycleOwner], since its state can't be read then.
+     */
+    val isHostActivityResumed: Boolean
+      get() = (hostActivity as? LifecycleOwner)?.lifecycle?.currentState == Lifecycle.State.RESUMED
+
+    override val hasLease: Boolean
+      get() = leaseHolder === this
+
     fun start() {
       // Attaching to an already-resumed lifecycle replays ON_START before ON_RESUME, so only move
       // up from CREATED.
@@ -528,18 +538,12 @@ internal class NavLeaseCoordinator {
       state = Lifecycle.State.STARTED
     }
 
-    val isHostActivityResumed: Boolean
-      get() = (hostActivity as? LifecycleOwner)?.lifecycle?.currentState == Lifecycle.State.RESUMED
-
     fun stop() {
       state = Lifecycle.State.CREATED
       wasStopped = true
     }
 
     private var isDisposed = false
-
-    override val hasLease: Boolean
-      get() = leaseHolder === this
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
       when (event) {
