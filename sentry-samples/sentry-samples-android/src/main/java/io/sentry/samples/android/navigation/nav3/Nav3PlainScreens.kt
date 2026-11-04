@@ -152,13 +152,16 @@ private object PlainScreenScopeProbe {
 
   fun captureEvent(): String {
     val id = Sentry.captureMessage("Nav3 plain screen event")
-    return record("Event: https://sentry-sdks.sentry.io/issues/?project=5428559&query=$id")
+    return record("Event: ${sentryEventSearchUrl(dsn, id.toString()) ?: id}")
   }
 
-  private fun traceUrl(transaction: ISpan?): String =
-    transaction?.let {
-      "https://sentry-sdks.sentry.io/explore/traces/trace/${it.spanContext.traceId}/?project=5428559"
-    } ?: "No parent transaction"
+  private fun traceUrl(transaction: ISpan?): String {
+    val traceId = transaction?.spanContext?.traceId?.toString() ?: return "No parent transaction"
+    return sentryTraceUrl(dsn, traceId) ?: "Trace: $traceId"
+  }
+
+  private val dsn: String?
+    get() = Sentry.getCurrentScopes().options.dsn
 
   private fun record(message: String): String {
     Log.i("Nav3PlainScreen", "$message\n${snapshot()}")
