@@ -149,6 +149,27 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
   }
 
   @Test
+  fun `reports a JSON body closed before it ended as truncated, not invalid`() {
+    setUpSut()
+    val firstChunk = """{"items":[1,2,"""
+    EventStreamServer(
+        listOf(firstChunk, "3]}"),
+        closeStream = false,
+        contentType = "application/json",
+      )
+      .use { stream ->
+        sut.newCall(requestTo(stream.url)).execute().use { response ->
+          assertNotNull(response.body).source().readUtf8(firstChunk.length.toLong())
+        }
+
+        assertEquals(
+          listOf(NetworkBody.NetworkBodyWarning.JSON_TRUNCATED),
+          networkDetails().response?.body?.warnings,
+        )
+      }
+  }
+
+  @Test
   fun `captures a body of unknown length when the application closes it before the stream ends`() {
     setUpSut()
     EventStreamServer(listOf("data: event-0\n\n", "data: event-1\n\n"), closeStream = false).use {
@@ -450,6 +471,7 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
     private val closeStream: Boolean,
     private val statusCode: Int = 200,
     private val dropAfterEvents: Boolean = false,
+    private val contentType: String = "text/event-stream",
   ) : Closeable {
     private val server = ServerSocket(0, 8, InetAddress.getLoopbackAddress())
     private val connections = CopyOnWriteArrayList<Socket>()
@@ -483,7 +505,7 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
           val output = it.getOutputStream()
           val headers =
             "HTTP/1.1 $statusCode OK\r\n" +
-              "Content-Type: text/event-stream\r\n" +
+              "Content-Type: $contentType\r\n" +
               "Cache-Control: no-cache\r\n" +
               "Transfer-Encoding: chunked\r\n\r\n"
           output.write(headers.toByteArray())

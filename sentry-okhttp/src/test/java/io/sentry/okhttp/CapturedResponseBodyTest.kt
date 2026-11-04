@@ -101,6 +101,8 @@ class CapturedResponseBodyTest {
       override fun source(): BufferedSource = source.buffer()
     }
 
+  private val completeness = mutableListOf<Boolean>()
+
   private fun capture(
     source: Source,
     maxBytes: Long,
@@ -109,8 +111,9 @@ class CapturedResponseBodyTest {
   ): Pair<CapturedResponseBody, MutableList<ByteArray?>> {
     val captured = mutableListOf<ByteArray?>()
     val wrapper =
-      CapturedResponseBody(bodyOf(source, type, length), maxBytes) {
-        captured.add(it)
+      CapturedResponseBody(bodyOf(source, type, length), maxBytes) { bytes, isComplete ->
+        captured.add(bytes)
+        completeness.add(isComplete)
       }
     return wrapper to captured
   }
@@ -181,6 +184,7 @@ class CapturedResponseBodyTest {
 
     assertEquals(1, captured.size)
     assertEquals("first ", captured.single()?.decodeToString())
+    assertEquals(listOf(false), completeness, "the rest of the body never arrived")
   }
 
   @Test
@@ -242,7 +246,8 @@ class CapturedResponseBodyTest {
   fun `closes the delegate even when the capture callback throws`() {
     val source = ChunkedSource(listOf("payload".toByteArray()))
     val body = bodyOf(source)
-    val wrapper = CapturedResponseBody(body, 1024) { throw IllegalStateException("parse failed") }
+    val wrapper =
+      CapturedResponseBody(body, 1024) { _, _ -> throw IllegalStateException("parse failed") }
 
     assertFailsWith<IllegalStateException> { wrapper.close() }
     assertTrue(source.isClosed, "the delegate is closed even though the callback threw")
@@ -283,6 +288,39 @@ class CapturedResponseBodyTest {
   }
 
   @Test
+  fun `reports a body that ended as complete`() {
+    val (wrapper, _) = capture(ChunkedSource(listOf("done".toByteArray())), 1024)
+
+    wrapper.source().readByteArray()
+
+    assertEquals(listOf(true), completeness)
+  }
+
+  @Test
+  fun `reports a body of known length as complete once all of it was read`() {
+    // the application read exactly the declared length and closed, without ever seeing the end
+    val payload = "payload".toByteArray()
+    val (wrapper, _) = capture(ChunkedSource(listOf(payload)), 1024, length = payload.size.toLong())
+
+    wrapper.source().readByteArray(payload.size.toLong())
+    wrapper.close()
+
+    assertEquals(listOf(true), completeness)
+  }
+
+  @Test
+  fun `closes the source the application holds when the body is closed`() {
+    val (wrapper, _) =
+      capture(ChunkedSource(listOf("first ".toByteArray(), "second".toByteArray())), 1024)
+    val application = wrapper.source()
+    application.readUtf8(3)
+
+    wrapper.close()
+
+    assertFailsWith<IllegalStateException> { application.readUtf8(3) }
+  }
+
+  @Test
   fun `reports only once when the body ends and is then closed`() {
     val (wrapper, captured) = capture(ChunkedSource(listOf("done".toByteArray())), 1024)
 
@@ -305,7 +343,7 @@ class CapturedResponseBodyTest {
         override fun source(): BufferedSource = ChunkedSource(emptyList()).buffer()
       }
 
-    val wrapper = CapturedResponseBody(delegate, 16) {}
+    val wrapper = CapturedResponseBody(delegate, 16) { _, _ -> }
 
     assertEquals(type, wrapper.contentType())
     assertEquals(-1L, wrapper.contentLength())
@@ -314,8 +352,7 @@ class CapturedResponseBodyTest {
   @Test
   fun `propagates read failures to the application`() {
     val source = FailingSource(bytesBeforeFailure = 4)
-    val captured = mutableListOf<ByteArray?>()
-    val wrapper = CapturedResponseBody(bodyOf(source), 1024) { captured.add(it) }
+    val (wrapper, captured) = capture(source, 1024)
 
     assertFailsWith<IOException> { wrapper.source().readByteArray() }
     assertEquals(
@@ -323,6 +360,7 @@ class CapturedResponseBodyTest {
       captured.single()?.decodeToString(),
       "what arrived before the failure is reported, since nothing more can arrive",
     )
+    assertEquals(listOf(false), completeness, "a stream that broke is only a prefix of the body")
 
     wrapper.close()
     assertEquals(1, captured.size, "closing afterwards does not report a second time")

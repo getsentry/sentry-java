@@ -8293,6 +8293,7 @@ public final class io/sentry/util/network/NetworkBody$NetworkBodyWarning : java/
 
 public final class io/sentry/util/network/NetworkBodyParser {
 	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;ILio/sentry/ILogger;)Lio/sentry/util/network/NetworkBody;
+	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;IZLio/sentry/ILogger;)Lio/sentry/util/network/NetworkBody;
 }
 
 public final class io/sentry/util/network/NetworkDetailCaptureUtils {

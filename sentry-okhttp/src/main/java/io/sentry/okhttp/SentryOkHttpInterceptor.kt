@@ -353,7 +353,7 @@ public open class SentryOkHttpInterceptor(
 
     return newBuilder()
       .body(
-        CapturedResponseBody(responseBody, captureCap) { capturedBytes ->
+        CapturedResponseBody(responseBody, captureCap) { capturedBytes, isComplete ->
           // This runs on the thread consuming the body, inside its read or close, so a failure in
           // here must stay in here.
           try {
@@ -363,6 +363,7 @@ public open class SentryOkHttpInterceptor(
                 contentTypeString,
                 charset,
                 SentryReplayOptions.MAX_NETWORK_BODY_SIZE,
+                !isComplete,
                 logger,
               )
             }

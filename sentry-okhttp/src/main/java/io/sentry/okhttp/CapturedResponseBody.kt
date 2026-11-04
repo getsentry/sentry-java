@@ -18,22 +18,23 @@ import okio.buffer
  * @param onCaptured invoked at most once, as soon as the capture can no longer grow: the cap is
  *   reached, the stream ends, a read fails, or the body is closed. Runs synchronously on the thread
  *   that read or closed the body, so it must not block. A body abandoned without any of those never
- *   reaches it.
+ *   reaches it. `isComplete` is false when the bytes are only a prefix of the body.
  */
 internal class CapturedResponseBody(
   private val delegate: ResponseBody,
   private val maxBytes: Long,
-  private val onCaptured: (ByteArray) -> Unit,
+  private val onCaptured: (bytes: ByteArray, isComplete: Boolean) -> Unit,
 ) : ResponseBody() {
 
   private val captured = Buffer()
   private val capturedOut = captured.outputStream()
 
   private val reported = AtomicBoolean(false)
+  @Volatile private var bytesRead = 0L
+  @Volatile private var endOfStream = false
 
-  private val capturingSource: BufferedSource by lazy {
-    CapturingSource(delegate.source()).buffer()
-  }
+  private val capturingSourceLazy = lazy { CapturingSource(delegate.source()).buffer() }
+  private val capturingSource: BufferedSource by capturingSourceLazy
 
   override fun contentType(): MediaType? = delegate.contentType()
 
@@ -44,7 +45,16 @@ internal class CapturedResponseBody(
   override fun close() {
     // Closing the delegate notifies listeners, which may serialize the breadcrumb this capture
     // belongs to, so report first.
-    delegate.use { reportCaptured() }
+    delegate.use {
+      try {
+        reportCaptured()
+      } finally {
+        // the application may still hold the source, and must not read buffered bytes from it
+        if (capturingSourceLazy.isInitialized()) {
+          capturingSource.close()
+        }
+      }
+    }
   }
 
   private inner class CapturingSource(source: Source) : ForwardingSource(source) {
@@ -61,19 +71,27 @@ internal class CapturedResponseBody(
         }
 
       if (read > 0L) {
-        val capFull =
-          synchronized(captured) {
-            // the application may not have taken everything in the sink yet, hence the offset
-            val toTake = minOf(maxBytes - captured.size, sink.size - sinkBefore)
-            if (toTake > 0L) {
-              sink.copyTo(capturedOut, sinkBefore, toTake)
+        bytesRead += read
+        if (!reported.get()) {
+          val capFull =
+            synchronized(captured) {
+              // checked again under the lock, so nothing is copied into a drained capture
+              if (reported.get()) {
+                return@synchronized false
+              }
+              // the application may not have taken everything in the sink yet, hence the offset
+              val toTake = minOf(maxBytes - captured.size, sink.size - sinkBefore)
+              if (toTake > 0L) {
+                sink.copyTo(capturedOut, sinkBefore, toTake)
+              }
+              captured.size >= maxBytes
             }
-            captured.size >= maxBytes
+          if (capFull) {
+            reportCaptured()
           }
-        if (capFull) {
-          reportCaptured()
         }
       } else if (read == -1L) {
+        endOfStream = true
         reportCaptured()
       }
       return read
@@ -90,7 +108,9 @@ internal class CapturedResponseBody(
 
   private fun reportCaptured() {
     if (reported.compareAndSet(false, true)) {
-      onCaptured(synchronized(captured) { captured.clone().readByteArray() })
+      val length = delegate.contentLength()
+      val isComplete = endOfStream || (length >= 0L && bytesRead >= length)
+      onCaptured(synchronized(captured) { captured.readByteArray() }, isComplete)
     }
   }
 }
