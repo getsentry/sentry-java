@@ -151,6 +151,12 @@ import io.sentry.IScopes
  * - the leaseholder pauses while its host Activity stays resumed (e.g., a ViewPager2 swipe). (Note
  *   that an Activity pauses before its Fragments when the Activity is backgrounded or covered.)
  *
+ * The first signal can't tell whether the user actually sees the other Activity. A translucent or
+ * invisible Activity opened briefly over the leaseholder (e.g., by a billing, sign-in, or
+ * permission library) withdraws the lease too, so errors captured while it's open carry none of the
+ * leaseholder's nav data, even though the leaseholder may still be visible beneath it. The
+ * leaseholder's nav state is restored when it resumes.
+ *
  * Limitations: Leaseholders whose host Activity is unknown are never withdrawn. Fragments that
  * cover the leaseholder without pausing it (e.g., dialogs) go undetected.
  *
