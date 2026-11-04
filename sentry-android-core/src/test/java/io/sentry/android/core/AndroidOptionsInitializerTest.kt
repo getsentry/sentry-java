@@ -99,14 +99,12 @@ class AndroidOptionsInitializerTest {
       )
 
       val loadClass = LoadClass()
-      val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
 
       AndroidOptionsInitializer.installDefaultIntegrations(
         if (useRealContext) context else mockContext,
         sentryOptions,
         BuildInfoProvider(AndroidLogger()),
         loadClass,
-        activityFramesTracker,
         false,
         false,
         false,
@@ -118,7 +116,6 @@ class AndroidOptionsInitializerTest {
         sentryOptions,
         if (useRealContext) context else mockContext,
         loadClass,
-        activityFramesTracker,
         false,
       )
     }
@@ -138,7 +135,6 @@ class AndroidOptionsInitializerTest {
       sentryOptions.isDebug = true
       val buildInfo = createBuildInfo()
       val loadClass = createClassMock(classesToLoad)
-      val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
 
       AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
         sentryOptions,
@@ -152,7 +148,6 @@ class AndroidOptionsInitializerTest {
         sentryOptions,
         buildInfo,
         loadClass,
-        activityFramesTracker,
         isFragmentAvailable,
         isTimberAvailable,
         isReplayAvailable,
@@ -164,7 +159,6 @@ class AndroidOptionsInitializerTest {
         context,
         buildInfo,
         loadClass,
-        activityFramesTracker,
         isReplayAvailable,
       )
     }
@@ -802,104 +796,6 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
-  fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be unavailable`() {
-    fixture.initSut(
-      hasAppContext = true,
-      useRealContext = true,
-      configureOptions = { isEnableFramesTracking = true },
-    )
-
-    val activityLifeCycleIntegration =
-      fixture.sentryOptions.integrations.first { it is ActivityLifecycleIntegration }
-
-    assertFalse(
-      (activityLifeCycleIntegration as ActivityLifecycleIntegration)
-        .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
-    )
-  }
-
-  @Test
-  fun `When Activity Frames Tracking is enabled, the Activity Frames Tracker should be available if perfv2 is false`() {
-    fixture.initSut(
-      hasAppContext = true,
-      useRealContext = true,
-      configureOptions = {
-        isEnablePerformanceV2 = false
-        isEnableFramesTracking = true
-      },
-    )
-
-    val activityLifeCycleIntegration =
-      fixture.sentryOptions.integrations.first { it is ActivityLifecycleIntegration }
-
-    assertTrue(
-      (activityLifeCycleIntegration as ActivityLifecycleIntegration)
-        .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
-    )
-  }
-
-  @Test
-  fun `When Frames Tracking is disabled, the Activity Frames Tracker should not be available`() {
-    fixture.initSut(
-      hasAppContext = true,
-      useRealContext = true,
-      configureOptions = { isEnableFramesTracking = false },
-    )
-
-    val activityLifeCycleIntegration =
-      fixture.sentryOptions.integrations.first { it is ActivityLifecycleIntegration }
-
-    assertFalse(
-      (activityLifeCycleIntegration as ActivityLifecycleIntegration)
-        .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
-    )
-  }
-
-  @Test
-  fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be unavailable`() {
-    fixture.sentryOptions.isEnableFramesTracking = false
-    fixture.initSut(
-      hasAppContext = true,
-      useRealContext = true,
-      configureOptions = { isEnableFramesTracking = true },
-    )
-
-    val activityLifeCycleIntegration =
-      fixture.sentryOptions.integrations.first { it is ActivityLifecycleIntegration }
-
-    assertFalse(
-      (activityLifeCycleIntegration as ActivityLifecycleIntegration)
-        .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
-    )
-  }
-
-  @Test
-  fun `When Frames Tracking is initially disabled, but enabled via configureOptions it should be available if perfv2 is false`() {
-    fixture.sentryOptions.isEnableFramesTracking = false
-    fixture.initSut(
-      hasAppContext = true,
-      useRealContext = true,
-      configureOptions = {
-        isEnablePerformanceV2 = false
-        isEnableFramesTracking = true
-      },
-    )
-
-    val activityLifeCycleIntegration =
-      fixture.sentryOptions.integrations.first { it is ActivityLifecycleIntegration }
-
-    assertTrue(
-      (activityLifeCycleIntegration as ActivityLifecycleIntegration)
-        .activityFramesTracker
-        .isFrameMetricsAggregatorAvailable
-    )
-  }
-
-  @Test
   fun `AssetsModulesLoader is set to options`() {
     fixture.initSut()
 
@@ -967,6 +863,15 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
+  fun `SpanFrameMetricsCollector is set to options`() {
+    fixture.initSut()
+
+    assertTrue {
+      fixture.sentryOptions.performanceCollectors.any { it is SpanFrameMetricsCollector }
+    }
+  }
+
+  @Test
   fun `DefaultCompositePerformanceCollector is set to options`() {
     fixture.initSut()
 
@@ -1020,7 +925,6 @@ class AndroidOptionsInitializerTest {
       mockOptions,
       mock(),
       mock(),
-      mock(),
       false,
       false,
       false,
@@ -1048,14 +952,12 @@ class AndroidOptionsInitializerTest {
     val buildInfo = mock<BuildInfoProvider>()
     whenever(buildInfo.sdkInfoVersion).thenReturn(37)
     val loadClass = LoadClass()
-    val activityFramesTracker = ActivityFramesTracker(loadClass, options)
 
     AndroidOptionsInitializer.installDefaultIntegrations(
       fixture.context,
       options,
       buildInfo,
       loadClass,
-      activityFramesTracker,
       false,
       false,
       false,
@@ -1073,14 +975,12 @@ class AndroidOptionsInitializerTest {
     val buildInfo = mock<BuildInfoProvider>()
     whenever(buildInfo.sdkInfoVersion).thenReturn(36)
     val loadClass = LoadClass()
-    val activityFramesTracker = ActivityFramesTracker(loadClass, options)
 
     AndroidOptionsInitializer.installDefaultIntegrations(
       fixture.context,
       options,
       buildInfo,
       loadClass,
-      activityFramesTracker,
       false,
       false,
       false,

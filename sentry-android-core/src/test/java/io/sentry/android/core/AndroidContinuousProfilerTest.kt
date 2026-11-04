@@ -104,7 +104,6 @@ class AndroidContinuousProfilerTest {
     context = ApplicationProvider.getApplicationContext()
     val buildInfoProvider = BuildInfoProvider(fixture.mockLogger)
     val loadClass = LoadClass()
-    val activityFramesTracker = ActivityFramesTracker(loadClass, fixture.options)
     AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
       fixture.options,
       context,
@@ -117,7 +116,6 @@ class AndroidContinuousProfilerTest {
       fixture.options,
       buildInfoProvider,
       loadClass,
-      activityFramesTracker,
       false,
       false,
       false,
@@ -129,7 +127,6 @@ class AndroidContinuousProfilerTest {
       context,
       buildInfoProvider,
       loadClass,
-      activityFramesTracker,
       false,
     )
     // Profiler doesn't start if the folder doesn't exists.
