@@ -93,6 +93,57 @@ class SentryNavEffectLifecycleIntegrationTest {
       .inOrder()
   }
 
+  /**
+   * `ActivityLifecycleIntegration` binds an Activity's `ui.load` transaction when the Activity is
+   * created, and only if the scope's transaction slot is free. Withdrawing the outgoing Activity's
+   * lease before then frees the slot, so `ui.load` takes precedence over the incoming Activity's
+   * first nav transaction, as it does for the first Activity at app start.
+   */
+  @Test
+  fun `an incoming activity binds its own ui load transaction instead of its first nav transaction`() {
+    val fixture = Fixture.create()
+    fixture.bindUiLoadTransactionWhenCreated(CheckoutActivity::class.java)
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    home.pause()
+    Robolectric.buildActivity(CheckoutActivity::class.java).setup()
+    fixture.idle()
+
+    val uiLoadTransaction = fixture.uiLoadTransactions.single()
+    assertThat(uiLoadTransaction.operation).isEqualTo("ui.load")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(uiLoadTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
+    assertThat(fixture.scope.screen).isEqualTo("/Checkout")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Checkout")
+  }
+
+  /**
+   * Below API 29, there's no `onActivityPreCreated`, so the outgoing Activity's lease is withdrawn
+   * from `onActivityCreated`, after `ActivityLifecycleIntegration` has found the scope's
+   * transaction slot taken. `ui.load` stays unbound, and the incoming Activity binds its first nav
+   * transaction instead.
+   */
+  @Test
+  @Config(sdk = [28])
+  fun `below API 29, an incoming activity binds its first nav transaction instead of its ui load transaction`() {
+    val fixture = Fixture.create()
+    fixture.bindUiLoadTransactionWhenCreated(CheckoutActivity::class.java)
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+
+    home.pause()
+    Robolectric.buildActivity(CheckoutActivity::class.java).setup()
+    fixture.idle()
+
+    val uiLoadTransaction = fixture.uiLoadTransactions.single()
+    assertThat(fixture.scope.transaction).isNotSameInstanceAs(uiLoadTransaction)
+    assertThat(fixture.scope.transaction?.name).isEqualTo("/Checkout")
+    assertThat(fixture.scope.screen).isEqualTo("/Checkout")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Checkout")
+  }
+
   @Test
   fun `an incoming activity's nav data and transaction survive the outgoing activity stopping`() {
     val fixture = Fixture.create()

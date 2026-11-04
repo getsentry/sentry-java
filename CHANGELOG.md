@@ -5,6 +5,7 @@
 ### Fixes
 
 - Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Navigation 3 root ([#6457](https://github.com/getsentry/sentry-java/pull/6457))
+  - On API 29+, an Activity opened from a Navigation 3 root now gets its own `ui.load` transaction, as the first Activity does at app start. If the new Activity has a `SentryNavEffect`, `ui.load` replaces the navigation transaction for its first destination.
 - Fix missing Navigation 3 transactions for preloaded ViewPager2 pages and destinations reached while another Activity or Fragment owns navigation tracking ([#6400](https://github.com/getsentry/sentry-java/pull/6400))
 - Keep UI profiling running when `startProfiler` is called before a requested stop takes effect at the end of the current chunk ([#6291](https://github.com/getsentry/sentry-java/pull/6291))
   - Before, the start call was ignored and the profiler still stopped at the end of the chunk, even in `TRACE` mode while sampled spans were active. On API 34 and lower, every later profile also stopped after one chunk.
