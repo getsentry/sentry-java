@@ -14,6 +14,12 @@
 - Speed up Session Replay and screenshot masking for large `maskViewClasses`/`unmaskViewClasses` lists by using constant-time class lookups ([#6410](https://github.com/getsentry/sentry-java/pull/6410))
 - Skip ANR profiling while a debugger is connected ([#6389](https://github.com/getsentry/sentry-java/pull/6389))
 
+### Behavioral Changes
+
+- Idle spans, including those produced by `SentryTraced`, now let any idle parent transaction finish after the idle timeout (3s by default) with status `ok`, rather than waiting for the deadline (30s by default) and reporting `deadline_exceeded` ([#6396](https://github.com/getsentry/sentry-java/pull/6396))
+  - If you use `SentryTraced`, expect shorter durations and lower failure rates for affected `ui.load` and navigation transactions, plus changes to metrics measured over the transaction's lifetime, such as slow and frozen frames.
+  - Cold and warm app start, TTID, and TTFD remain unchanged.
+
 ### Fixes
 
 - Fix missing Navigation 3 transactions for preloaded ViewPager2 pages and destinations reached while another Activity or Fragment owns navigation tracking ([#6400](https://github.com/getsentry/sentry-java/pull/6400))
