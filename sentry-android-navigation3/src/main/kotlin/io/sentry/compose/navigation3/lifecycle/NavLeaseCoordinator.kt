@@ -343,7 +343,7 @@ internal class NavLeaseCoordinator {
    *
    * Hands the lease to another nav root if that nav root is resumed, e.g., a Fragment whose dialog
    * is being dismissed. Otherwise, withdraws the lease if [candidate] paused within its resumed
-   * host Activity, and keeps it if not. (See "Lease Withdrawal" in the class KDoc.)
+   * host Activity, and keeps it if not. (See "Lease withdrawal" in the class KDoc.)
    */
   private fun pauseCandidate(candidate: Candidate, scope: IScope?) {
     candidate.pause()
