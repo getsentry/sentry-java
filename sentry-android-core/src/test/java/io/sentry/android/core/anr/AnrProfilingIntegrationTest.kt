@@ -24,6 +24,8 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class AnrProfilingIntegrationTest {
@@ -55,6 +57,10 @@ class AnrProfilingIntegrationTest {
   fun cleanup() {
     AppState.getInstance().resetInstance()
   }
+
+  /** `SentryAndroidOptions` is final and has no ticker setter, so a spy supplies [ticker]. */
+  private fun withTestTicker(options: SentryAndroidOptions): SentryAndroidOptions =
+    spy(options).also { whenever(it.monotonicTicker).thenReturn(ticker) }
 
   @Test
   fun `onForeground starts monitoring thread`() {
@@ -179,8 +185,7 @@ class AnrProfilingIntegrationTest {
       }
 
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
-    integration.installTicker(ticker)
+    integration.register(mockScopes, withTestTicker(androidOptions))
     // Drive the state machine synchronously to avoid racing the background polling thread.
 
     ticker.advance(900, MILLISECONDS)
@@ -217,8 +222,7 @@ class AnrProfilingIntegrationTest {
       }
 
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
-    integration.installTicker(ticker)
+    integration.register(mockScopes, withTestTicker(androidOptions))
 
     ticker.advance(19_000, MILLISECONDS)
     integration.checkMainThread(mainThread)
@@ -244,8 +248,7 @@ class AnrProfilingIntegrationTest {
       }
 
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
-    integration.installTicker(ticker)
+    integration.register(mockScopes, withTestTicker(androidOptions))
     integration.onBackground()
 
     ticker.advance(19_000, MILLISECONDS)
@@ -259,8 +262,7 @@ class AnrProfilingIntegrationTest {
   @Test
   fun `does not report a stall when the ticker origin is far from zero`() {
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, options)
-    integration.installTicker(ticker)
+    integration.register(mockScopes, withTestTicker(options))
 
     integration.checkMainThread(Thread.currentThread())
 
@@ -323,8 +325,7 @@ class AnrProfilingIntegrationTest {
       }
 
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
-    integration.installTicker(ticker)
+    integration.register(mockScopes, withTestTicker(androidOptions))
     integration.onForeground()
 
     // Transition to suspicious

@@ -75,18 +75,6 @@ public class AnrProfilingIntegration
   private volatile @Nullable Handler mainHandler;
   private volatile @Nullable Thread mainThread;
 
-  /**
-   * Installs the ticker to measure main-thread stalls with. Also resets the last-execution reading,
-   * so a stall is never measured against a tick from a different ticker.
-   *
-   * <p>Package-private so a test can install a fake ticker after {@link #register}, which {@code
-   * SentryAndroidOptions} cannot supply.
-   */
-  void installTicker(final @NotNull MonotonicTicker ticker) {
-    this.ticker = ticker;
-    this.lastMainThreadExecutionNanos = ticker.tickNanos();
-  }
-
   @Override
   public void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     this.options =
@@ -94,7 +82,10 @@ public class AnrProfilingIntegration
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
     this.logger = options.getLogger();
-    installTicker(options.getMonotonicTicker());
+    final @NotNull MonotonicTicker ticker = options.getMonotonicTicker();
+    // A tick's origin is arbitrary, so the default of 0 would read as a stall of unknown length.
+    this.lastMainThreadExecutionNanos = ticker.tickNanos();
+    this.ticker = ticker;
     this.debugManager = this.options.getDebugManager();
 
     if (this.options.isAnrProfilingEnabled()) {
