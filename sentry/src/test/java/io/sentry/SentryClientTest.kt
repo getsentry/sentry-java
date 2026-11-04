@@ -2239,7 +2239,10 @@ class SentryClientTest {
     transaction.finish()
     sut.captureEvent(event, scope)
     assertNotNull(event.contexts.trace)
-    assertEquals(transaction.root.spanContext, event.contexts.trace)
+    assertThat(event.contexts.trace!!.traceId).isEqualTo(transaction.root.spanContext.traceId)
+    assertThat(event.contexts.trace!!.spanId).isEqualTo(transaction.root.spanContext.spanId)
+    assertThat(event.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+    assertThat(transaction.root.spanContext.status).isNull()
   }
 
   @Test
@@ -2252,7 +2255,10 @@ class SentryClientTest {
     val span = transaction.startChild("op")
     sut.captureEvent(event, scope)
     assertNotNull(event.contexts.trace)
-    assertEquals(span.spanContext, event.contexts.trace)
+    assertThat(event.contexts.trace!!.traceId).isEqualTo(span.spanContext.traceId)
+    assertThat(event.contexts.trace!!.spanId).isEqualTo(span.spanContext.spanId)
+    assertThat(event.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+    assertThat(span.spanContext.status).isNull()
   }
 
   @Test
@@ -3288,6 +3294,8 @@ class SentryClientTest {
 
     assertEquals(spanContext.traceId, sentryEvent.contexts.trace!!.traceId)
     assertEquals(spanContext.spanId, sentryEvent.contexts.trace!!.spanId)
+    assertThat(sentryEvent.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+    assertThat(spanContext.status).isNull()
     assertNotEquals(scopePropagationContext.traceId, sentryEvent.contexts.trace!!.traceId)
     assertNotEquals(scopePropagationContext.spanId, sentryEvent.contexts.trace!!.spanId)
   }

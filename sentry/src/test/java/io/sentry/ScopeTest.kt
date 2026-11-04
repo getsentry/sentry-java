@@ -849,13 +849,19 @@ class ScopeTest {
     val observer = mock<IScopeObserver>()
     val options = SentryOptions().apply { addScopeObserver(observer) }
     val scope = Scope(options)
+    val spanContext = SpanContext("ui.load")
 
     scope.transaction = mock {
       whenever(mock.name).thenReturn("main")
-      whenever(mock.spanContext).thenReturn(SpanContext("ui.load"))
+      whenever(mock.spanContext).thenReturn(spanContext)
     }
     verify(observer).setTransaction(eq("main"))
-    verify(observer).setTrace(argThat { operation == "ui.load" }, eq(scope))
+    verify(observer)
+      .setTrace(
+        argThat { operation == "ui.load" && status == SpanStatus.OK },
+        eq(scope),
+      )
+    assertThat(spanContext.status).isNull()
   }
 
   @Test

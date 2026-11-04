@@ -415,7 +415,7 @@ class ScopesTest {
 
     val hints = HintUtils.createWithTypeCheckHint({})
     sut.captureEvent(event, hints)
-    assertEquals(span.spanContext, event.contexts.trace)
+    assertTraceContextDefaultsToOk(span.spanContext, event.contexts.trace)
     verify(mockClient).captureEvent(eq(event), any(), eq(hints))
   }
 
@@ -431,7 +431,7 @@ class ScopesTest {
 
     val hints = HintUtils.createWithTypeCheckHint({})
     sut.captureEvent(event, hints)
-    assertEquals(span.spanContext, event.contexts.trace)
+    assertTraceContextDefaultsToOk(span.spanContext, event.contexts.trace)
     verify(mockClient).captureEvent(eq(event), any(), eq(hints))
   }
 
@@ -448,7 +448,7 @@ class ScopesTest {
 
     val hints = HintUtils.createWithTypeCheckHint({})
     sut.captureEvent(event, hints)
-    assertEquals(span.spanContext, event.contexts.trace)
+    assertTraceContextDefaultsToOk(span.spanContext, event.contexts.trace)
     verify(mockClient).captureEvent(eq(event), any(), eq(hints))
   }
 
@@ -729,7 +729,7 @@ class ScopesTest {
     verify(mockClient)
       .captureEvent(
         check {
-          assertEquals(span.spanContext, it.contexts.trace)
+          assertTraceContextDefaultsToOk(span.spanContext, it.contexts.trace)
           assertEquals("tx-name", it.transaction)
         },
         any(),
@@ -2153,7 +2153,7 @@ class ScopesTest {
 
     verify(mockClient)
       .captureEvent(
-        check { assertEquals(span.spanContext, it.contexts.trace) },
+        check { assertTraceContextDefaultsToOk(span.spanContext, it.contexts.trace) },
         anyOrNull(),
         anyOrNull(),
       )
@@ -4440,6 +4440,17 @@ class ScopesTest {
     val hash = StringUtils.calculateStringHash(dsnTest, mock())
     val fileHashFolder = File(file.absolutePath, hash!!)
     return fileHashFolder.absolutePath
+  }
+
+  private fun assertTraceContextDefaultsToOk(
+    expectedContext: SpanContext,
+    actualContext: SpanContext?,
+  ) {
+    assertThat(actualContext).isNotNull()
+    assertThat(actualContext!!.traceId).isEqualTo(expectedContext.traceId)
+    assertThat(actualContext.spanId).isEqualTo(expectedContext.spanId)
+    assertThat(actualContext.status).isEqualTo(SpanStatus.OK)
+    assertThat(expectedContext.status).isNull()
   }
 
   private fun equalTraceContext(expectedContext: TraceContext?): TraceContext? {

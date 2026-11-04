@@ -194,6 +194,16 @@ public class SpanContext implements JsonUnknown, JsonSerializable {
     return status;
   }
 
+  @NotNull
+  SpanContext withDefaultStatus() {
+    final @NotNull SpanContext traceContext = new SpanContext(this);
+    traceContext.setOrigin(getOrigin());
+    if (traceContext.getStatus() == null) {
+      traceContext.setStatus(SpanStatus.OK);
+    }
+    return traceContext;
+  }
+
   public @NotNull Map<String, String> getTags() {
     return tags;
   }
