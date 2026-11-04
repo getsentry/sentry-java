@@ -56,7 +56,7 @@ internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
  * 2. Pass the same [NavLeaseCoordinator] instance to all `NavScopes` whose effects must be
  *    coordinated (i.e., that target the same `IScope`).
  *
- * 3. Call [attach] with the effect's [nav root][NavRootInfo] before the first back stack update.
+ * 3. Call [attach] with the effect's [nav root][NavRoot] before the first back stack update.
  *
  * 4. Call [onBackStackUpdate] before applying each back stack update.
  *
@@ -86,15 +86,14 @@ internal class NavScopes(
   private val navStatePublisher = NavStatePublisher()
 
   /**
-   * Registers this [NavScopes] instance with the lifecycle of the effect's nav root, as described
-   * by [rootInfo]. No-ops if that lifecycle has already been attached or is
-   * [destroyed][Lifecycle.Event.ON_DESTROY].
+   * Registers this [NavScopes] instance with the lifecycle of the effect's nav [root]. No-ops if
+   * that lifecycle has already been attached or is [destroyed][Lifecycle.Event.ON_DESTROY].
    *
    * Attaching to a second, different lifecycle no-ops.
    */
-  fun attach(rootInfo: NavRootInfo) {
+  fun attach(root: NavRoot) {
     val currentLifecycle = attachedLifecycle
-    val incomingLifecycle = rootInfo.lifecycle
+    val incomingLifecycle = root.lifecycle
 
     if (currentLifecycle != null) {
       if (currentLifecycle !== incomingLifecycle) {
@@ -113,7 +112,7 @@ internal class NavScopes(
     }
 
     attachedLifecycle = incomingLifecycle
-    registration = coordinator.register(delegate, rootInfo, navStatePublisher)
+    registration = coordinator.register(delegate, root, navStatePublisher)
   }
 
   /**

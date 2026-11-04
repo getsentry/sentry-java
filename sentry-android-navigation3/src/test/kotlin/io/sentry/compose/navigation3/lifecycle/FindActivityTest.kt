@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.view.ContextThemeWrapper
-import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
@@ -16,54 +15,41 @@ import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [30])
-class NavRootInfoTest {
-
-  private val lifecycle = mock<Lifecycle>()
+class FindActivityTest {
 
   @Test
-  fun `activity - is the context when the context is an activity`() {
+  fun `findActivity() - returns the context when the context is an activity`() {
     val activity = Robolectric.buildActivity(Activity::class.java).get()
-    val root = NavRootInfo(lifecycle, context = activity)
 
-    val found = root.activity
+    val found = activity.findActivity()
 
     assertThat(found).isSameInstanceAs(activity)
   }
 
   @Test
-  fun `activity - is the wrapped activity when the context wraps an activity`() {
+  fun `findActivity() - returns the wrapped activity when the context wraps an activity`() {
     val activity = Robolectric.buildActivity(Activity::class.java).get()
-    val root = NavRootInfo(lifecycle, context = ContextWrapper(ContextThemeWrapper(activity, 0)))
+    val context = ContextWrapper(ContextThemeWrapper(activity, 0))
 
-    val found = root.activity
+    val found = context.findActivity()
 
     assertThat(found).isSameInstanceAs(activity)
   }
 
   @Test
-  fun `activity - is null when the context wraps no activity`() {
+  fun `findActivity() - returns null when the context wraps no activity`() {
     val context: Context = ApplicationProvider.getApplicationContext()
-    val root = NavRootInfo(lifecycle, context)
 
-    val found = root.activity
-
-    assertThat(found).isNull()
-  }
-
-  @Test
-  fun `activity - is null when the context isn't a context wrapper`() {
-    val root = NavRootInfo(lifecycle, context = mock<Context>())
-
-    val found = root.activity
+    val found = context.findActivity()
 
     assertThat(found).isNull()
   }
 
   @Test
-  fun `activity - is null when the context is null`() {
-    val root = NavRootInfo(lifecycle, context = null)
+  fun `findActivity() - returns null when the context isn't a context wrapper`() {
+    val context = mock<Context>()
 
-    val found = root.activity
+    val found = context.findActivity()
 
     assertThat(found).isNull()
   }

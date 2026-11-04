@@ -37,7 +37,7 @@ class NavLeaseCoordinatorTest {
     val registration =
       navLeaseCoordinator.register(
         fixture.scopes,
-        NavRootInfo(owner.lifecycle, context = null),
+        NavRoot(owner.lifecycle, activity = null),
         fixture.publisher("owner"),
       )
 
@@ -1281,7 +1281,7 @@ class NavLeaseCoordinatorTest {
       host: Activity? = null,
     ): NavLeaseRegistration {
       owners += owner
-      val root = NavRootInfo(owner.lifecycle, context = host)
+      val root = NavRoot(owner.lifecycle, activity = host)
       return checkNotNull(navLeaseCoordinator.register(scopes, root, publisher))
     }
 

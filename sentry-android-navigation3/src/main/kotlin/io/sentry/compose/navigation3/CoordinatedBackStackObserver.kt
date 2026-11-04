@@ -4,7 +4,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
-import io.sentry.compose.navigation3.lifecycle.NavRootInfo
+import io.sentry.compose.navigation3.lifecycle.NavRoot
 import io.sentry.compose.navigation3.lifecycle.NavScopes
 
 /**
@@ -35,8 +35,8 @@ internal class CoordinatedBackStackObserver<T : Any>(
   private val navScopes = NavScopes(scopes, coordinator)
   private val observer = BackStackObserver(navScopes, options, entryMapper)
 
-  fun attach(rootInfo: NavRootInfo) {
-    navScopes.attach(rootInfo)
+  fun attach(root: NavRoot) {
+    navScopes.attach(root)
   }
 
   fun onBackStackChanged(backStack: List<T>) {

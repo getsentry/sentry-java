@@ -478,7 +478,7 @@ class NavScopeTest {
     private fun resumedNavScopes(): NavScopes =
       NavScopes(scopes, coordinator).also {
         it.attach(
-          NavRootInfo(TestLifecycleOwner().also(lifecycleOwners::add).lifecycle, context = null)
+          NavRoot(TestLifecycleOwner().also(lifecycleOwners::add).lifecycle, activity = null)
         )
       }
 

@@ -10,7 +10,8 @@ import io.sentry.IScopes
 import io.sentry.ScopesAdapter
 import io.sentry.SentryOptions
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
-import io.sentry.compose.navigation3.lifecycle.NavRootInfo
+import io.sentry.compose.navigation3.lifecycle.NavRoot
+import io.sentry.compose.navigation3.lifecycle.findActivity
 import org.jetbrains.annotations.ApiStatus
 
 /**
@@ -119,13 +120,13 @@ internal fun <T : Any> SentryNavEffect(
       )
     }
 
-  // Intentionally don't key on context. attach() only uses it to find where the nav root is
-  // displayed, which can't change without the lifecycle changing too, and that replaces the
-  // observer. The context's identity can change more often (e.g., if the host app provides a new
+  // Intentionally don't key on context. It's only used to find the Activity that displays the nav
+  // root, which can't change without the lifecycle changing too, and that replaces the observer.
+  // The context's identity can change more often (e.g., if the host app provides a new
   // ContextThemeWrapper on every recomposition), and re-attaching for those changes would
   // needlessly finish the nav transaction.
   DisposableEffect(observer) {
-    observer.attach(NavRootInfo(lifecycle, context))
+    observer.attach(NavRoot(lifecycle, context.findActivity()))
     onDispose { observer.dispose() }
   }
 

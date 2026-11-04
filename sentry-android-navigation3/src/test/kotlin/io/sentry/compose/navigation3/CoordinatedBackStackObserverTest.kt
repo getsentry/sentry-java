@@ -18,7 +18,7 @@ import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.lifecycle.INavStatePublisher
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
-import io.sentry.compose.navigation3.lifecycle.NavRootInfo
+import io.sentry.compose.navigation3.lifecycle.NavRoot
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
@@ -365,7 +365,7 @@ class CoordinatedBackStackObserverTest {
         checkNotNull(
           coordinator.register(
             scopes,
-            NavRootInfo(otherLifecycle, context = null),
+            NavRoot(otherLifecycle, activity = null),
             NoOpNavStatePublisher,
           )
         )
@@ -388,7 +388,7 @@ class CoordinatedBackStackObserverTest {
             },
           coordinator = coordinator,
         )
-        .apply { attach(NavRootInfo(lifecycle, context = null)) }
+        .apply { attach(NavRoot(lifecycle, activity = null)) }
 
     /**
      * Owners of the lifecycles created by [resumedLifecycle]. `LifecycleRegistry` holds its owner

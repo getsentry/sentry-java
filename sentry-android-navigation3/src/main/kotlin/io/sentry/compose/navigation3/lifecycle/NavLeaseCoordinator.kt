@@ -20,7 +20,7 @@ import io.sentry.IScopes
  * publish nav data to a shared [IScope].
  *
  * `NavScopes` instances register as [candidates][Candidate] for lease ownership via [register],
- * each on behalf of its effect's [nav root][NavRootInfo]. Each candidate observes its nav root's
+ * each on behalf of its effect's [nav root][NavRoot]. Each candidate observes its nav root's
  * lifecycle until it's disposed.
  *
  * **A fundamental tradeoff**
@@ -218,25 +218,25 @@ internal class NavLeaseCoordinator {
   private var isWatchingActivities = false
 
   /**
-   * Registers a candidate for the nav lease on behalf of its [nav root][rootInfo]. The candidate
-   * observes the nav root's [lifecycle][NavRootInfo.lifecycle] until it's
-   * [disposed][NavLeaseRegistration.dispose] or that lifecycle is destroyed.
+   * Registers a candidate for the nav lease on behalf of its nav [root]. The candidate observes the
+   * nav root's [lifecycle][NavRoot.lifecycle] until it's [disposed][NavLeaseRegistration.dispose]
+   * or that lifecycle is destroyed.
    *
    * Returns `null` if the lifecycle is already [destroyed][Lifecycle.State.DESTROYED].
    */
   fun register(
     scopes: IScopes,
-    rootInfo: NavRootInfo,
+    root: NavRoot,
     publisher: INavStatePublisher,
   ): NavLeaseRegistration? {
-    val lifecycle = rootInfo.lifecycle
+    val lifecycle = root.lifecycle
     val lifecycleState = lifecycle.currentState
 
     if (lifecycleState == Lifecycle.State.DESTROYED) {
       return null
     }
 
-    val hostActivity = rootInfo.activity
+    val hostActivity = root.activity
     hostActivity?.application?.let { watchActivitiesOf(it) }
 
     val initialResumeOrder = if (lifecycleState == Lifecycle.State.RESUMED) ++resumeOrder else 0
