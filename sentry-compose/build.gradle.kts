@@ -27,7 +27,7 @@ kotlin {
   }
   jvm("desktop") {
     compilerOptions {
-      jvmTarget.set(JvmTarget.JVM_1_8)
+      jvmTarget.set(JvmTarget.JVM_11)
       apiVersion.set(KotlinVersion.KOTLIN_1_9)
       languageVersion.set(KotlinVersion.KOTLIN_1_9)
     }

@@ -11,7 +11,7 @@ plugins {
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 }
 
 fun relocatePackages(shadowJar: ShadowJar) {

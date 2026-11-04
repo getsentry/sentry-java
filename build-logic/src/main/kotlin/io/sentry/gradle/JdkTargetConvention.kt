@@ -20,18 +20,15 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 /** The JDK every module compiles and tests with, whatever JDK runs Gradle. */
 private val BUILD_JDK = JavaLanguageVersion.of(21)
 
-/** The level the JVM modules publish, so that Java 8 consumers can still use them. */
-private val PUBLISHED_JVM_JAVA_VERSION = JavaVersion.VERSION_1_8
-
-/** The level the Android modules publish, the default since AGP 9. */
-private val PUBLISHED_ANDROID_JAVA_VERSION = JavaVersion.VERSION_11
+/** The level the SDK publishes, the default since AGP 9. */
+private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_11
 
 /**
  * Holds every toolchain, bytecode level decision and compilation option of a module. It does the
  * following
  * - sample apps target the build JDK (21)
  * - unit test code will target the build JDK (21) (required for Mockito 5)
- * - published JVM modules main code pins the Java 1.8 release, for Java and for Kotlin
+ * - published JVM modules main code pins the Java 11 release, for Java and for Kotlin
  * - published modules Java code drops the MethodParameters attribute javac 21 adds, and their
  *   archives are checked for it
  * - published Android modules main code targets Java 11
@@ -74,7 +71,7 @@ class JdkTargetConvention : Plugin<Project> {
       // See https://issuetracker.google.com/issues/278800528
       project.plugins.withId("java-library") {
         project.tasks.named("compileJava", JavaCompile::class.java) {
-          options.release.set(PUBLISHED_JVM_JAVA_VERSION.majorVersion.toInt())
+          options.release.set(PUBLISHED_JAVA_VERSION.majorVersion.toInt())
         }
       }
       // -Xjdk-release is the Kotlin counterpart of release: without it Kotlin resolves against the
@@ -92,8 +89,8 @@ class JdkTargetConvention : Plugin<Project> {
     project.plugins.withId("com.android.library") {
       val android = project.extensions.getByType(BaseExtension::class.java)
       android.compileOptions {
-        sourceCompatibility = PUBLISHED_ANDROID_JAVA_VERSION
-        targetCompatibility = PUBLISHED_ANDROID_JAVA_VERSION
+        sourceCompatibility = PUBLISHED_JAVA_VERSION
+        targetCompatibility = PUBLISHED_JAVA_VERSION
       }
       android.defaultConfig { aarMetadata { minCompileSdk = project.minSdk() } }
     }

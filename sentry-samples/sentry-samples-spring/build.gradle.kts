@@ -13,10 +13,10 @@ plugins {
 // the Spring Boot 2.x matrix covers (2.4.13, Spring 5.3.13) fails on class files as new as the
 // toolchain's: "Unsupported class file major version 65". Only the app is scanned, so its test
 // code keeps following the toolchain.
-tasks.named<JavaCompile>("compileJava") { options.release.set(8) }
+tasks.named<JavaCompile>("compileJava") { options.release.set(11) }
 
 tasks.named<KotlinCompile>("compileKotlin") {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 }
 
 application { mainClass.set("io.sentry.samples.spring.Main") }
