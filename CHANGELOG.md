@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+### Behavioral Changes
+
+- Idle spans, including those produced by `SentryTraced`, now let any idle parent transaction finish after the idle timeout (3s by default) with status `ok`, rather than waiting for the deadline (30s by default) and reporting `deadline_exceeded` ([#6396](https://github.com/getsentry/sentry-java/pull/6396))
+  - If you use `SentryTraced`, expect shorter durations and lower failure rates for affected `ui.load` and navigation transactions, plus changes to metrics measured over the transaction's lifetime, such as slow and frozen frames.
+  - Cold and warm app start, TTID, and TTFD remain unchanged.
+
 ### Fixes
 
-- Idle spans (including those produced by `SentryTraced`) now let any idle parent transaction finish after the idle timeout rather than waiting for the deadline and reporting `DEADLINE_EXCEEDED` ([#6396](https://github.com/getsentry/sentry-java/pull/6396)).
 - Keep UI profiling running when `startProfiler` is called before a requested stop takes effect at the end of the current chunk ([#6291](https://github.com/getsentry/sentry-java/pull/6291))
   - Before, the start call was ignored and the profiler still stopped at the end of the chunk, even in `TRACE` mode while sampled spans were active. On API 34 and lower, every later profile also stopped after one chunk.
 
