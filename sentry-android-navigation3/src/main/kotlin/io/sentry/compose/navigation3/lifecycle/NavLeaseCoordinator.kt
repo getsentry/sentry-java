@@ -34,8 +34,6 @@ import io.sentry.IScopes
  *
  * † Associating work with the incoming transaction means spans produced by the outgoing owner may
  * appear as if they were produced by the incoming owner (or vice versa, were our policy reversed).
- * A possible solution would be to implement a parent span delivery system similar to
- * `LocalSentrySpan`, but that's a task for another day.
  *
  * **Lease handoff policy**
  *
@@ -132,6 +130,17 @@ import io.sentry.IScopes
  *                              Restore txA if unfinished and scope free │
  *                              Finish txB if unfinished                 │
  * ```
+ *
+ * **Nav transactions follow navigation, not the lease**
+ *
+ * A candidate gets a nav transaction for a destination it navigates to, never merely for acquiring
+ * the lease. A destination reached without the lease gets its transaction when the lease is next
+ * acquired, if it can start then; otherwise it gets none. On reacquiring the lease without having
+ * navigated in the meantime, a candidate only gets its unfinished transaction back, if any.
+ *
+ * Hence the asymmetry for, e.g., ViewPager2 pages: the first time the user swipes to a preloaded
+ * page, it gets the transaction for the destination it reached while offscreen, but swiping back to
+ * a page whose transaction has finished starts none.
  *
  * **Exception policy**
  *
