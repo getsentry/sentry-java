@@ -20,8 +20,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 /** The JDK every module compiles and tests with, whatever JDK runs Gradle. */
 private val BUILD_JDK = JavaLanguageVersion.of(21)
 
-/** The level the SDK publishes, so that Java 8 consumers can still use it. */
-private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_1_8
+/** The level the JVM modules publish, so that Java 8 consumers can still use them. */
+private val PUBLISHED_JVM_JAVA_VERSION = JavaVersion.VERSION_1_8
+
+/** The level the Android modules publish, the default since AGP 9. */
+private val PUBLISHED_ANDROID_JAVA_VERSION = JavaVersion.VERSION_11
 
 /**
  * Holds every toolchain, bytecode level decision and compilation option of a module. It does the
@@ -31,7 +34,7 @@ private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_1_8
  * - published JVM modules main code pins the Java 1.8 release, for Java and for Kotlin
  * - published modules Java code drops the MethodParameters attribute javac 21 adds, and their
  *   archives are checked for it
- * - published Android modules main code targets Java 1.8
+ * - published Android modules main code targets Java 11
  * - minSdk is set for Android libraries
  */
 class JdkTargetConvention : Plugin<Project> {
@@ -71,7 +74,7 @@ class JdkTargetConvention : Plugin<Project> {
       // See https://issuetracker.google.com/issues/278800528
       project.plugins.withId("java-library") {
         project.tasks.named("compileJava", JavaCompile::class.java) {
-          options.release.set(PUBLISHED_JAVA_VERSION.majorVersion.toInt())
+          options.release.set(PUBLISHED_JVM_JAVA_VERSION.majorVersion.toInt())
         }
       }
       // -Xjdk-release is the Kotlin counterpart of release: without it Kotlin resolves against the
@@ -89,8 +92,8 @@ class JdkTargetConvention : Plugin<Project> {
     project.plugins.withId("com.android.library") {
       val android = project.extensions.getByType(BaseExtension::class.java)
       android.compileOptions {
-        sourceCompatibility = PUBLISHED_JAVA_VERSION
-        targetCompatibility = PUBLISHED_JAVA_VERSION
+        sourceCompatibility = PUBLISHED_ANDROID_JAVA_VERSION
+        targetCompatibility = PUBLISHED_ANDROID_JAVA_VERSION
       }
       android.defaultConfig { aarMetadata { minCompileSdk = project.minSdk() } }
     }
@@ -110,8 +113,8 @@ class JdkTargetConvention : Plugin<Project> {
       .toInt()
 
   /**
-   * Mockito 5 and mockito-kotlin 6 are built for Java 11, so test code - which is never published -
-   * cannot share the Java 8 target of the main code. AGP has no per variant compileOptions, so this
+   * Test code - which is never published - targets the build JDK, as it does in the JVM modules,
+   * instead of the Java 11 target of the main code. AGP has no per variant compileOptions, so this
    * goes through the Kotlin compilations: their compile task providers are configured after AGP
    * wrote its own compileOptions, which an apply time configureEach would lose against.
    */
