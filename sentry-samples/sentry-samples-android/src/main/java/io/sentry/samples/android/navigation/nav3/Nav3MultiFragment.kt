@@ -76,9 +76,7 @@ class Nav3FragmentsActivity : FragmentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     NavigationTransactionHistory.install()
-    if (!configuration.enableActivityUiLoadTransaction) {
-      cancelCurrentActivityUiLoadTransaction()
-    }
+    applyActivityUiLoadTransactionSetting(this, configuration.enableActivityUiLoadTransaction)
 
     val controls =
       ComposeView(this).apply {
