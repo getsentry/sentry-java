@@ -12,6 +12,7 @@
 ### Improvements
 
 - Speed up Session Replay and screenshot masking for large `maskViewClasses`/`unmaskViewClasses` lists by using constant-time class lookups ([#6410](https://github.com/getsentry/sentry-java/pull/6410))
+- Skip ANR profiling while a debugger is connected ([#6389](https://github.com/getsentry/sentry-java/pull/6389))
 
 ### Fixes
 
