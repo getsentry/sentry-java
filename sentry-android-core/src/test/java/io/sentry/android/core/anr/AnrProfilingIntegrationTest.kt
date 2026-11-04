@@ -200,19 +200,17 @@ class AnrProfilingIntegrationTest {
   fun `debugger pauses are treated as idle`() {
     val mainThread = Thread.currentThread()
     SystemClock.setCurrentTimeMillis(1_000)
+    var debuggerConnected = true
 
     val androidOptions =
       SentryAndroidOptions().apply {
         cacheDirPath = tmpDir.root.absolutePath
         setLogger(mockLogger)
         anrProfilingSampleRate = 1.0
+        debugManager = { debuggerConnected }
       }
 
-    var debuggerConnected = true
-    val integration =
-      object : AnrProfilingIntegration() {
-        override fun isDebuggerConnected(): Boolean = debuggerConnected
-      }
+    val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
 
     SystemClock.setCurrentTimeMillis(20_000)

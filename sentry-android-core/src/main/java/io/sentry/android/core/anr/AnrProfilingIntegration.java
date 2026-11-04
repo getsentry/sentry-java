@@ -2,10 +2,10 @@ package io.sentry.android.core.anr;
 
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
-import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import io.sentry.IDebugManager;
 import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
@@ -55,6 +55,7 @@ public class AnrProfilingIntegration
   private volatile @Nullable AnrProfileManager profileManager;
   private volatile @NotNull ILogger logger = NoOpLogger.getInstance();
   private volatile @Nullable SentryAndroidOptions options;
+  private volatile @Nullable IDebugManager debugManager;
   private volatile @Nullable Thread thread = null;
   private volatile boolean sampled = false;
   private volatile boolean inForeground = false;
@@ -68,6 +69,7 @@ public class AnrProfilingIntegration
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
     this.logger = options.getLogger();
+    this.debugManager = this.options.getDebugManager();
 
     if (this.options.isAnrProfilingEnabled()) {
       if (this.options.getCacheDirPath() == null) {
@@ -212,7 +214,7 @@ public class AnrProfilingIntegration
 
   @ApiStatus.Internal
   protected void checkMainThread(final @NotNull Thread mainThread) throws IOException {
-    if (isDebuggerConnected()) {
+    if (debugManager != null && debugManager.isDebuggerConnected()) {
       // The main thread can sit at a breakpoint for a long time, which is not an ANR. Reset the
       // timestamp, so the paused time does not count against us after the debugger detaches.
       mainThreadState = MainThreadState.IDLE;
@@ -276,11 +278,6 @@ public class AnrProfilingIntegration
       }
       mainThreadState = MainThreadState.ANR_DETECTED;
     }
-  }
-
-  @ApiStatus.Internal
-  protected boolean isDebuggerConnected() {
-    return Debug.isDebuggerConnected();
   }
 
   @TestOnly

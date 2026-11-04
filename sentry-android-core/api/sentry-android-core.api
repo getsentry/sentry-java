@@ -65,6 +65,11 @@ public final class io/sentry/android/core/AndroidDateUtils {
 	public static fun getCurrentSentryDateTime ()Lio/sentry/SentryDate;
 }
 
+public final class io/sentry/android/core/AndroidDebugManager : io/sentry/IDebugManager {
+	public fun <init> ()V
+	public fun isDebuggerConnected ()Z
+}
+
 public final class io/sentry/android/core/AndroidFatalLogger : io/sentry/ILogger {
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V
@@ -736,7 +741,6 @@ public class io/sentry/android/core/anr/AnrProfilingIntegration : io/sentry/Inte
 	public fun close ()V
 	protected fun getProfileManager ()Lio/sentry/android/core/anr/AnrProfileManager;
 	protected fun getState ()Lio/sentry/android/core/anr/AnrProfilingIntegration$MainThreadState;
-	protected fun isDebuggerConnected ()Z
 	public fun onBackground ()V
 	public fun onForeground ()V
 	public fun register (Lio/sentry/IScopes;Lio/sentry/SentryOptions;)V
