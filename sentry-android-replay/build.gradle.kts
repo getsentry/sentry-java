@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
+  id("io.sentry.api-validation")
 }
 
 android {
@@ -85,7 +86,7 @@ dependencies {
   testImplementation(libs.awaitility.kotlin)
   testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(libs.androidx.compose.ui)
   testImplementation(libs.androidx.compose.foundation)
   testImplementation(libs.androidx.compose.foundation.layout)

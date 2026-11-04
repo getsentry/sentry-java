@@ -24,6 +24,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -149,23 +150,34 @@ class HttpConnectionTest {
   }
 
   @Test
-  fun `When SSLSocketFactory is given, set to connection`() {
+  fun `When SSLSocketFactory is given, set it to connection wrapped in a distrusted certificates check`() {
     val factory = mock<SSLSocketFactory>()
     fixture.sslSocketFactory = factory
     val transport = fixture.getSUT()
 
     transport.send(createEnvelope())
 
-    verify(fixture.connection).sslSocketFactory = eq(factory)
+    assertWraps(factory)
   }
 
   @Test
-  fun `When SSLSocketFactory is not given, do not set to connection`() {
+  fun `When SSLSocketFactory is not given, wrap the connection's own factory in a distrusted certificates check`() {
+    val factory = mock<SSLSocketFactory>()
+    whenever(fixture.connection.sslSocketFactory).thenReturn(factory)
     val transport = fixture.getSUT()
 
     transport.send(createEnvelope())
 
-    verify(fixture.connection, never()).sslSocketFactory = any()
+    assertWraps(factory)
+  }
+
+  private fun assertWraps(delegate: SSLSocketFactory) {
+    val captor = argumentCaptor<SSLSocketFactory>()
+    verify(fixture.connection).sslSocketFactory = captor.capture()
+    val wrapper = captor.firstValue
+    assertTrue(wrapper is DistrustedCertificatesSocketFactory)
+    wrapper.defaultCipherSuites
+    verify(delegate).defaultCipherSuites
   }
 
   @Test

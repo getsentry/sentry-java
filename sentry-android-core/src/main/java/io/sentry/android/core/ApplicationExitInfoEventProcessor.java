@@ -52,6 +52,7 @@ import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.NativeCrashExit;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.App;
 import io.sentry.protocol.Contexts;
 import io.sentry.protocol.DebugImage;
@@ -89,7 +90,8 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 @WorkerThread
-public final class ApplicationExitInfoEventProcessor implements BackfillingEventProcessor {
+public final class ApplicationExitInfoEventProcessor
+    implements BackfillingEventProcessor, SentryEventProcessor {
 
   private final @NotNull Context context;
 
@@ -196,6 +198,7 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
     setRequest(event);
     setUser(event);
     setScopeTags(event);
+    setScopeEnvironment(event);
     setBreadcrumbs(event);
     setExtras(event);
     setContexts(event);
@@ -487,6 +490,16 @@ public final class ApplicationExitInfoEventProcessor implements BackfillingEvent
       event.setEnvironment(
           getLaunchOption(
               ENVIRONMENT_FILENAME, String.class, options.getEnvironment(), optionsSource));
+    }
+  }
+
+  private void setScopeEnvironment(final @NotNull SentryBaseEvent event) {
+    if (event.getEnvironment() == null) {
+      final @Nullable String scopeEnvironment =
+          readFromDisk(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String.class);
+      if (scopeEnvironment != null) {
+        event.setEnvironment(scopeEnvironment);
+      }
     }
   }
 

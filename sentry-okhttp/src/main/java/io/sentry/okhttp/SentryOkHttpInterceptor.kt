@@ -2,6 +2,7 @@ package io.sentry.okhttp
 
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.Hint
 import io.sentry.HttpStatusCodeRange
 import io.sentry.ILogger
@@ -9,6 +10,7 @@ import io.sentry.IScopes
 import io.sentry.ISpan
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
 import io.sentry.SentryReplayOptions
 import io.sentry.SpanDataConvention
@@ -17,8 +19,10 @@ import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.OKHTTP_REQUEST
 import io.sentry.TypeCheckHint.OKHTTP_RESPONSE
 import io.sentry.TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS
+import io.sentry.clientreport.DiscardReason
 import io.sentry.okhttp.SentryOkHttpInterceptor.BeforeSpanCallback
 import io.sentry.transport.CurrentDateProvider
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import io.sentry.util.Platform
 import io.sentry.util.PropagationTargetsUtils
@@ -368,7 +372,26 @@ public open class SentryOkHttpInterceptor(
       return
     }
     if (beforeSpan != null) {
-      val result = beforeSpan.execute(span, request, response)
+      val wasSampled = span.isSampled == true
+      val result =
+        try {
+          beforeSpan.execute(span, request, response)
+        } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+          ExceptionUtils.rethrowIfFatal(e)
+          span.spanContext.sampled = false
+          if (wasSampled) {
+            scopes.options.clientReportRecorder.recordLostEvent(
+              DiscardReason.CALLBACK_ERROR,
+              DataCategory.Span,
+            )
+          }
+          scopes.options.logger.log(
+            SentryLevel.ERROR,
+            "The beforeSpan callback threw an exception in SentryOkHttpInterceptor. Dropping span.",
+            e,
+          )
+          null
+        }
       if (result == null) {
         // span is dropped
         span.spanContext.sampled = false

@@ -69,8 +69,8 @@ static {
 addIntegrationToSdkVersion("{IntegrationName}");
 ```
 
-7. If adding a JVM sample, add E2E (system) tests, following the structure we have in the existing JVM examples.
-   The test should then be added to `test/system-test-runner.py` and `.github/workflows/system-tests-backend.yml`.
+7. Samples have no tests. Add end-to-end coverage of what the sample shows to the module it uses,
+   against `MockSentryServer`, as described in the `e2e_tests` rule.
 
 `sentry-bom` and the root `build.gradle.kts` need no change — they iterate over subprojects.
 

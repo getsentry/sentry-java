@@ -22,6 +22,7 @@ import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.ERROR
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent
 import io.sentry.TypeCheckHint
 import io.sentry.android.replay.ReplayLifecycleState.CLOSED
 import io.sentry.android.replay.ReplayLifecycleState.PAUSED
@@ -39,6 +40,10 @@ import io.sentry.android.replay.util.ReplayExecutorService
 import io.sentry.android.replay.util.appContext
 import io.sentry.android.replay.util.sample
 import io.sentry.android.replay.util.submitSafely
+import io.sentry.cache.PersistingOptionsObserver
+import io.sentry.cache.PersistingOptionsObserver.DIST_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.ENVIRONMENT_FILENAME
+import io.sentry.cache.PersistingOptionsObserver.RELEASE_FILENAME
 import io.sentry.cache.PersistingScopeObserver.BREADCRUMBS_FILENAME
 import io.sentry.cache.PersistingScopeObserver.REPLAY_FILENAME
 import io.sentry.hints.Backfillable
@@ -54,6 +59,7 @@ import java.io.Closeable
 import java.io.File
 import java.util.Date
 import java.util.LinkedList
+import java.util.concurrent.CopyOnWriteArraySet
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
@@ -80,6 +86,11 @@ public class ReplayIntegration(
       SentryIntegrationPackageStorage.getInstance()
         .addPackage("maven:io.sentry:sentry-android-replay", BuildConfig.VERSION_NAME)
     }
+
+    // Replays recorded by this process. Their folders hold segment videos the transport may still
+    // read after the replay stopped, so the startup cleanup of previous replays must keep them.
+    // Shared across instances, because a second SDK init registers a new ReplayIntegration.
+    val replayIdsOfThisProcess = CopyOnWriteArraySet<String>()
   }
 
   // needed for the Java's call site
@@ -223,6 +234,7 @@ public class ReplayIntegration(
             options,
             scopes,
             dateProvider,
+            options.monotonicTicker,
             replayExecutor,
             persistingExecutor,
             replayCacheProvider,
@@ -232,6 +244,7 @@ public class ReplayIntegration(
             options,
             scopes,
             dateProvider,
+            options.monotonicTicker,
             replayExecutor,
             persistingExecutor,
             replayCacheProvider,
@@ -240,6 +253,9 @@ public class ReplayIntegration(
     recorder?.start()
     strategy.start()
     val replayId: SentryId? = strategy.currentReplayId
+    if (replayId != null && replayId != SentryId.EMPTY_ID) {
+      replayIdsOfThisProcess += replayId.toString()
+    }
     state.set(
       ReplayState(
         generation = current.generation + 1,
@@ -333,23 +349,17 @@ public class ReplayIntegration(
       return
     }
 
-    var activeStrategy: CaptureStrategy = strategy
+    // Convert before capturing, so the callback knows which strategy continues the replay.
+    val activeStrategy = strategy.convert()
     capture(strategy) { newTimestamp ->
-      enqueueOnMainThread {
-        val latest = state.get()
-        // The flush completes asynchronously; ignore it if this replay was stopped, restarted,
-        // or handed to another strategy in the meantime.
-        if (
-          latest.matches(expectedGeneration, expectedReplayId) &&
-            latest.captureStrategy === activeStrategy
-        ) {
-          activeStrategy.currentSegment++
-          activeStrategy.segmentTimestamp = newTimestamp
-          activeStrategy.isFlushed = true
-        }
-      }
+      // Runs on the replay executor, which the converted strategy shares. Advancing the segment
+      // here lands before any segment the converted strategy creates later (e.g. on stop), so the
+      // flushed segment id is not reused. A stale strategy (stopped or restarted replay) is not
+      // in the state anymore, so updating it has no effect.
+      activeStrategy.currentSegment++
+      activeStrategy.segmentTimestamp = newTimestamp
+      activeStrategy.isFlushed = true
     }
-    activeStrategy = strategy.convert()
     val replayId: SentryId? = activeStrategy.currentReplayId
     state.set(
       current.copy(
@@ -637,15 +647,13 @@ public class ReplayIntegration(
   }
 
   private fun cleanupReplays(unfinishedReplayId: String = "") {
-    // clean up old replays
+    // clean up old replays, but keep the replays of this process and the previous process's
+    // unfinished replay (its folder is cleaned up after its envelope is assembled)
+    val keptReplayIds = replayIdsOfThisProcess + listOfNotNull(unfinishedReplayId.ifBlank { null })
     options.cacheDirPath?.let { cacheDir ->
       File(cacheDir).listFiles()?.forEach { file ->
         val name = file.name
-        if (
-          name.startsWith("replay_") &&
-            !name.contains(replayId.toString()) &&
-            !(unfinishedReplayId.isNotBlank() && name.contains(unfinishedReplayId))
-        ) {
+        if (name.startsWith("replay_") && keptReplayIds.none { name.contains(it) }) {
           FileUtils.deleteRecursively(file)
         }
       }
@@ -653,10 +661,6 @@ public class ReplayIntegration(
   }
 
   private fun finalizePreviousReplay() {
-    // TODO: read persisted options/scope values form the
-    // TODO: previous run and set them directly to the ReplayEvent so they don't get overwritten in
-    // MainEventProcessor
-
     options.executorService.submitSafely(options, "ReplayIntegration.finalize_previous_replay") {
       val persistingScopeObserver = options.findPersistingScopeObserver()
       val previousReplayIdString =
@@ -666,7 +670,12 @@ public class ReplayIntegration(
             return@submitSafely
           }
       val previousReplayId = SentryId(previousReplayIdString)
-      if (previousReplayId == SentryId.EMPTY_ID) {
+      // when this task runs late, the persisted replay id can already be one this process recorded,
+      // which is not a previous replay to recover
+      if (
+        previousReplayId == SentryId.EMPTY_ID ||
+          previousReplayId.toString() in replayIdsOfThisProcess
+      ) {
         cleanupReplays()
         return@submitSafely
       }
@@ -701,6 +710,7 @@ public class ReplayIntegration(
         )
 
       if (segment is ReplaySegment.Created) {
+        segment.replay.applyRecordingMetadata(lastSegment.metadata, options)
         val hint = HintUtils.createWithTypeCheckHint(PreviousReplayHint())
         segment.capture(scopes, hint)
       }
@@ -779,5 +789,32 @@ public class ReplayIntegration(
       ret.setDaemon(true)
       return ret
     }
+  }
+}
+
+/**
+ * Replays from the previous run are sent with a [Backfillable] hint, so MainEventProcessor does not
+ * apply release, environment, dist or SDK from the current run. Use the values persisted with the
+ * replay when it started recording instead.
+ *
+ * Replays recorded by older SDK versions don't have them stored. For those, read release,
+ * environment and dist from the options persisted by the previous run: this runs on the SDK
+ * executor before Sentry.init persists the current options, so they still describe that run. The
+ * SDK falls back to the one MainEventProcessor applies to current-run segments rather than none.
+ */
+private fun SentryReplayEvent.applyRecordingMetadata(
+  metadata: RecordingMetadata?,
+  options: SentryOptions,
+) {
+  if (metadata != null) {
+    release = metadata.release
+    environment = metadata.environment
+    dist = metadata.dist
+    sdk = metadata.sdkVersion ?: options.sessionReplay.sdkVersion ?: options.sdkVersion
+  } else {
+    release = PersistingOptionsObserver.read(options, RELEASE_FILENAME, String::class.java)
+    environment = PersistingOptionsObserver.read(options, ENVIRONMENT_FILENAME, String::class.java)
+    dist = PersistingOptionsObserver.read(options, DIST_FILENAME, String::class.java)
+    sdk = options.sessionReplay.sdkVersion ?: options.sdkVersion
   }
 }

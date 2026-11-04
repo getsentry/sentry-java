@@ -36,8 +36,8 @@ public final class SentryKafkaProducerBeanPostProcessor
   @SuppressWarnings({"unchecked", "rawtypes"})
   public @NotNull Object postProcessAfterInitialization(
       final @NotNull Object bean, final @NotNull String beanName) throws BeansException {
-    if (bean instanceof ProducerFactory) {
-      final @NotNull ProducerFactory factory = (ProducerFactory) bean;
+    if (bean instanceof ProducerFactory<?, ?> factory) {
+
       final @NotNull SentryProducerPostProcessor pp = new SentryProducerPostProcessor<>();
       factory.addPostProcessor(pp);
       if (!factory.getPostProcessors().contains(pp)) {

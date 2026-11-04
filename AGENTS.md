@@ -9,7 +9,7 @@ rule file in `.cursor/rules/`:
 
 | Rule | Read it when working on |
 |---|---|
-| `api` | Public API surface, binary compatibility, `.api` files, `apiDump`, `IScope`/`IScopes`/`Sentry` static API, protocol classes |
+| `api` | Public API surface, binary compatibility, `.api` files, `updateKotlinAbi`, `IScope`/`IScopes`/`Sentry` static API, protocol classes |
 | `options` | `SentryOptions`, namespaced options, `ExternalOptions`, `sentry.properties`, `ManifestMetadataReader`, Spring Boot properties |
 | `scopes` | Scope management, forking, lifecycle, `ScopeType`, thread-local storage, scope bleeding, Hub → Scopes migration |
 | `deduplication` | Duplicate event detection, `DuplicateEventDetectionEventProcessor`, `enableDeduplication` |
@@ -20,7 +20,7 @@ rule file in `.cursor/rules/`:
 | `continuous_profiling_jvm` | `sentry-async-profiler`, `IContinuousProfiler`, `ProfileChunk`, JFR files, `ProfileLifecycle` |
 | `opentelemetry` | `sentry-opentelemetry-*`, agent vs agentless, span processing, sampling, context propagation |
 | `new_module` | Adding a new integration or sample module |
-| `e2e_tests` | System tests, sample applications, `system-test-runner.py`, mock Sentry server |
+| `e2e_tests` | End-to-end tests, `MockSentryServer`, integration test suites, the OpenTelemetry agent fixture |
 
 Rules can be combined — a tracing scope issue may need both `scopes` and `opentelemetry`.
 There is no rule for Android profiling yet; read the `sentry-android-core` profiling code
@@ -42,7 +42,7 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 
 ```bash
 # Format code and regenerate .api files (REQUIRED before committing)
-./gradlew spotlessApply apiDump
+./gradlew spotlessApply updateKotlinAbi
 
 # Run all tests and linter
 ./gradlew check
@@ -55,7 +55,7 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 ```
 
 To run tests, use the `test` skill rather than composing the Gradle invocation by hand — it
-resolves the per-module test task and the unit-test vs system-test split for you.
+resolves the per-module test task, including integration test suites, for you.
 
 ### Android-Specific Commands
 ```bash
@@ -74,7 +74,7 @@ resolves the per-module test task and the unit-test vs system-test split for you
 3. **Use todo tracking**: Work through todo items, marking them as complete as you go
 4. **High-level communication**: Give high-level explanations of changes made, not step-by-step descriptions
 5. **Simplicity first**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible.
-6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply apiDump`
+6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply updateKotlinAbi`
 7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
 
 ## Repository Skills
@@ -109,8 +109,7 @@ The repository is organized into multiple modules:
 - **Other**: `sentry-spotlight`, `sentry-kotlin-extensions`, `sentry-android-distribution`
 
 ### Utility Modules
-- **`sentry-test-support`** - Shared test utilities
-- **`sentry-system-test-support`** - System testing infrastructure
+- **`sentry-test-support`** - Shared test utilities, including `MockSentryServer` and envelope matchers
 - **`sentry-samples`** - Example applications
 - **`sentry-bom`** - Bill of Materials for dependency management
 
@@ -158,7 +157,7 @@ PR description why the broad catch is necessary.
 ### Testing Requirements
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
-- System tests validate end-to-end functionality with sample applications
+- End-to-end tests run in the module they test, against `MockSentryServer`. Samples have no tests
 - **Assertions**: For new unit tests, prefer [Google Truth](https://truth.dev/) (`com.google.common.truth.Truth.assertThat`) over `kotlin.test`/JUnit assertions for its readable, fluent API. Keep using `kotlin.test` for test structure (`@Test`, `assertFailsWith`). See `sentry/src/test/java/io/sentry/DsnTest.kt` for the style. Don't rewrite existing `kotlin.test` assertions solely to switch libraries.
 - Truth is wired into the `sentry` module. When adding Truth-based tests to another module, add `testImplementation(libs.google.truth)` to that module's `build.gradle.kts`.
 

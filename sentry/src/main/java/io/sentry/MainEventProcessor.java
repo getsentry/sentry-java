@@ -2,6 +2,7 @@ package io.sentry;
 
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Cached;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryException;
@@ -16,12 +17,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public final class MainEventProcessor implements EventProcessor {
+public final class MainEventProcessor implements SentryEventProcessor {
 
   private final @NotNull SentryOptions options;
   private final @NotNull SentryThreadFactory sentryThreadFactory;
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
-  private volatile @Nullable HostnameCache hostnameCache = null;
 
   public MainEventProcessor(final @NotNull SentryOptions options) {
     this.options = options;
@@ -160,16 +160,7 @@ public final class MainEventProcessor implements EventProcessor {
     }
 
     if (options.isAttachServerName() && event.getServerName() == null) {
-      ensureHostnameCache();
-      if (hostnameCache != null) {
-        event.setServerName(hostnameCache.getHostname());
-      }
-    }
-  }
-
-  private void ensureHostnameCache() {
-    if (hostnameCache == null) {
-      hostnameCache = HostnameCache.getInstance();
+      event.setServerName(options.getHostnameCache().getHostname());
     }
   }
 

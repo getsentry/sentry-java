@@ -1,5 +1,7 @@
 package io.sentry.spring.jakarta.tracing;
 
+import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
+
 import com.jakewharton.nopen.annotation.Open;
 import io.sentry.BaggageHeader;
 import io.sentry.CustomSamplingContext;
@@ -11,6 +13,7 @@ import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.spring.jakarta.TransactionNameProviderUtils;
 import io.sentry.util.Objects;
 import io.sentry.util.SpanUtils;
 import jakarta.servlet.FilterChain;
@@ -38,6 +41,8 @@ public class SentryTracingFilter extends OncePerRequestFilter {
 
   private static final String TRACE_ORIGIN = "auto.http.spring_jakarta.webmvc";
   private static final String TRANSACTION_ATTR = "sentry.transaction";
+  private static final @NotNull TransactionNameWithSource CALLBACK_ERROR_TRANSACTION_NAME =
+      new TransactionNameWithSource(DEFAULT_TRANSACTION_NAME, TransactionNameSource.CUSTOM);
 
   private final @NotNull TransactionNameProvider transactionNameProvider;
   private final @NotNull IScopes scopes;
@@ -146,7 +151,11 @@ public class SentryTracingFilter extends OncePerRequestFilter {
       if (shouldFinishTransaction(httpRequest) && transaction != null) {
         // after all filters run, templated path pattern is available in request attribute
         final @NotNull TransactionNameWithSource transactionNameWithSource =
-            transactionNameProvider.provideTransactionNameAndSource(httpRequest);
+            TransactionNameProviderUtils.provideTransactionNameAndSource(
+                transactionNameProvider,
+                httpRequest,
+                scopes.getOptions().getLogger(),
+                CALLBACK_ERROR_TRANSACTION_NAME);
         final @Nullable String transactionName = transactionNameWithSource.getTransactionName();
         final @NotNull TransactionNameSource transactionNameSource =
             transactionNameWithSource.getTransactionNameSource();

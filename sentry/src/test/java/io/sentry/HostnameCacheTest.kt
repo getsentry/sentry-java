@@ -2,7 +2,7 @@ package io.sentry
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.test.getProperty
-import io.sentry.test.injectForField
+import io.sentry.time.TestMonotonicTicker
 import java.net.InetAddress
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -16,7 +16,7 @@ class HostnameCacheTest {
   private fun getSut(): HostnameCache {
     val address = mock<InetAddress>()
     whenever(address.canonicalHostName).thenReturn("myhost")
-    return HostnameCache(TimeUnit.HOURS.toMillis(1)) { address }
+    return HostnameCache({ address }, TestMonotonicTicker())
   }
 
   @Test
@@ -26,12 +26,31 @@ class HostnameCacheTest {
   }
 
   @Test
+  fun `hostname is re-resolved only once the cache duration has elapsed`() {
+    val ticker = TestMonotonicTicker()
+    val address = mock<InetAddress>()
+    whenever(address.canonicalHostName).thenReturn("first", "second")
+    val cache = HostnameCache({ address }, ticker)
+
+    assertThat(cache.hostname).isEqualTo("first")
+
+    ticker.advance(4, TimeUnit.HOURS)
+    assertThat(cache.hostname).isEqualTo("first")
+
+    ticker.advance(1, TimeUnit.HOURS)
+    assertThat(cache.hostname).isEqualTo("second")
+  }
+
+  @Test
   fun `a refresh that cannot be queued does not stop later refreshes`() {
-    val cache = getSut()
-    // Reject the next submit the way an executor that could not start a thread would, and mark the
-    // cache stale so that reading the hostname attempts a refresh.
+    val ticker = TestMonotonicTicker()
+    val address = mock<InetAddress>()
+    whenever(address.canonicalHostName).thenReturn("myhost")
+    val cache = HostnameCache({ address }, ticker)
+    // Reject the next submit the way an executor that could not start a thread would, and let the
+    // cache go stale so that reading the hostname attempts a refresh.
     cache.getProperty<ThreadPoolExecutor>("executorService").shutdown()
-    cache.injectForField("expirationTimestamp", 0L)
+    ticker.advance(5, TimeUnit.HOURS)
 
     assertThat(cache.hostname).isEqualTo("myhost")
 

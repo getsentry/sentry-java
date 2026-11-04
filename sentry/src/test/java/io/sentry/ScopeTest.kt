@@ -1,6 +1,8 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryLevel.WARNING
+import io.sentry.clientreport.ClientReportTestHelper.Companion.assertClientReport
 import io.sentry.protocol.Request
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.User
@@ -290,6 +292,7 @@ class ScopeTest {
     scope.addBreadcrumb(Breadcrumb())
     scope.setTag("some", "tag")
     scope.screen = "MainActivity"
+    scope.environment = "staging"
     scope.setExtra("some", "extra")
     scope.setAttribute("some", "attribute")
     scope.setContexts("some", "context")
@@ -304,6 +307,7 @@ class ScopeTest {
     assertNull(scope.user)
     assertNull(scope.request)
     assertNull(scope.screen)
+    assertNull(scope.environment)
     assertEquals(0, scope.fingerprint.size)
     assertEquals(0, scope.breadcrumbs.size)
     assertEquals(0, scope.tags.size)
@@ -334,16 +338,44 @@ class ScopeTest {
   }
 
   @Test
-  fun `when adding breadcrumb, executeBreadcrumb will be executed and throw, but breadcrumb will be added`() {
-    val exception = Exception("test")
-
-    val options = SentryOptions().apply { setBeforeBreadcrumb { _, _ -> throw exception } }
+  fun `when beforeBreadcrumb throws, breadcrumb is dropped without notifying observers`() {
+    val observer = mock<IScopeObserver>()
+    val options =
+      SentryOptions().apply {
+        setBeforeBreadcrumb { _, _ -> throw Exception("test") }
+        addScopeObserver(observer)
+      }
 
     val scope = Scope(options)
-    val actual = Breadcrumb()
-    scope.addBreadcrumb(actual)
+    val breadcrumb = Breadcrumb()
+    scope.addBreadcrumb(breadcrumb)
 
-    assertEquals("test", actual.data["sentry:message"])
+    assertThat(scope.breadcrumbs).isEmpty()
+    assertThat(breadcrumb.data).doesNotContainKey("sentry:message")
+    verifyNoInteractions(observer)
+    assertClientReport(options.clientReportRecorder, emptyList())
+  }
+
+  @Test
+  fun `when beforeBreadcrumb throws, later breadcrumbs can still be added`() {
+    var invocationCount = 0
+    val options =
+      SentryOptions().apply {
+        setBeforeBreadcrumb { breadcrumb, _ ->
+          invocationCount++
+          if (invocationCount == 1) {
+            throw Exception("test")
+          }
+          breadcrumb
+        }
+      }
+
+    val scope = Scope(options)
+    scope.addBreadcrumb(Breadcrumb("dropped"))
+    scope.addBreadcrumb(Breadcrumb("kept"))
+
+    assertThat(invocationCount).isEqualTo(2)
+    assertThat(scope.breadcrumbs.single().message).isEqualTo("kept")
   }
 
   @Test
@@ -462,6 +494,21 @@ class ScopeTest {
       assertEquals("env", it.current.environment)
       assertEquals("123", it.current.distinctId)
     }
+  }
+
+  @Test
+  fun `Scope starts a new session with scope environment`() {
+    val options =
+      SentryOptions().apply {
+        release = "rel"
+        environment = "options-env"
+      }
+    val scope = Scope(options)
+    scope.environment = "scope-env"
+
+    val sessionPair = scope.startSession()
+
+    assertNotNull(sessionPair) { assertEquals("scope-env", it.current.environment) }
   }
 
   @Test
@@ -802,6 +849,47 @@ class ScopeTest {
 
     scope.level = WARNING
     verify(observer).setLevel(eq(WARNING))
+  }
+
+  @Test
+  fun `Scope clear level sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    scope.clear()
+
+    verify(observer).setLevel(null)
+  }
+
+  @Test
+  fun `Scope set environment sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    scope.environment = "staging"
+    verify(observer).setEnvironment(eq("staging"))
+  }
+
+  @Test
+  fun `Scope set environment null sync scopes`() {
+    val observer = mock<IScopeObserver>()
+    val options = SentryOptions().apply { addScopeObserver(observer) }
+    val scope = Scope(options)
+
+    scope.environment = null
+    verify(observer).setEnvironment(null)
+  }
+
+  @Test
+  fun `Scope clone copies environment`() {
+    val scope = Scope(SentryOptions())
+    scope.environment = "staging"
+
+    val clone = scope.clone()
+
+    assertEquals("staging", clone.environment)
   }
 
   @Test

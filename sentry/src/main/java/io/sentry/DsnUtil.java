@@ -9,6 +9,15 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class DsnUtil {
 
+  /**
+   * Returns the host of the given DSN, parsed the same way as the DSN the SDK sends envelopes to,
+   * or {@code null} if no host can be found. Unlike {@link SentryOptions#retrieveParsedDsn()}, this
+   * doesn't create a {@link URI}, so it's cheap enough to call on the main thread.
+   */
+  public static @Nullable String getHost(final @Nullable String dsn) {
+    return Dsn.parseHost(dsn);
+  }
+
   public static boolean urlContainsDsnHost(@Nullable SentryOptions options, @Nullable String url) {
     if (options == null) {
       return false;

@@ -39,6 +39,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import io.sentry.compose.navigation3.SentryBackStackEntry
@@ -75,9 +77,6 @@ class Nav3Activity : ComponentActivity() {
 
   private var routeWorkOptions by mutableStateOf(setOf(RouteWorkOption.MANUAL_CHILD_SPAN))
 
-  private var isTransactionHistoryActive = false
-  private val transactionHistory =
-    NavigationTransactionHistory(isActive = { isTransactionHistoryActive })
   private var showTransactionHistorySheet by mutableStateOf(false)
 
   private var showActivityUiLoadTransactionDelayMessage = false
@@ -93,20 +92,19 @@ class Nav3Activity : ComponentActivity() {
     configuration.applyToCurrentOptions()
     showActivityUiLoadTransactionDelayMessage = configuration.hasOnlyActivityUiLoadTransactions
 
-    if (!configuration.enableActivityUiLoadTransaction) {
-      // Cancel the already-started Activity transaction before Compose installs SentryNavEffect,
-      // otherwise the initial /Landing route transaction gets preempted by the lingering ui.load.
-      cancelCurrentActivityUiLoadTransaction()
-    }
+    // When the toggle is off, cancel the already-started Activity transaction before Compose
+    // installs SentryNavEffect, otherwise the lingering ui.load preempts the initial /Landing route
+    // transaction.
+    applyActivityUiLoadTransactionSetting(this, configuration.enableActivityUiLoadTransaction)
 
-    transactionHistory.install()
+    NavigationTransactionHistory.install()
 
     setContent {
       Nav3SampleTheme {
         Nav3SampleApp(
           performanceState = performanceState,
           configuration = configuration,
-          transactions = transactionHistory.transactions,
+          transactions = NavigationTransactionHistory.transactions,
           showActivityUiLoadTransactionDelayMessage = showActivityUiLoadTransactionDelayMessage,
           routeWorkOptions = routeWorkOptions,
           showTransactionHistorySheet = showTransactionHistorySheet,
@@ -124,13 +122,7 @@ class Nav3Activity : ComponentActivity() {
     }
   }
 
-  override fun onStart() {
-    super.onStart()
-    isTransactionHistoryActive = true
-  }
-
   override fun onStop() {
-    isTransactionHistoryActive = false
     performanceState.stopAutomaticWork()
     super.onStop()
   }
@@ -139,7 +131,6 @@ class Nav3Activity : ComponentActivity() {
     if (isFinishing) {
       previousConfig.applyToCurrentOptions()
     }
-    transactionHistory.uninstall()
     super.onDestroy()
   }
 
@@ -360,8 +351,20 @@ private fun Nav3SampleApp(
     }
   }
 
+  val openFragmentScenario: (Nav3FragmentMode) -> Unit = { mode ->
+    activity?.let { host ->
+      host.startActivity(
+        Intent(host, Nav3FragmentsActivity::class.java)
+          .putExtra(Nav3FragmentsActivity.EXTRA_MODE, mode.name)
+          .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+      )
+    }
+  }
+
   Scaffold(
-    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+    // Expose test tags as resource IDs so adb/uiautomator can target them.
+    modifier =
+      Modifier.fillMaxSize().safeDrawingPadding().semantics { testTagsAsResourceId = true },
     containerColor = MaterialTheme.colorScheme.background,
     topBar = {
       Nav3TopBar(
@@ -464,6 +467,35 @@ private fun Nav3SampleApp(
                 )
               }
             }
+            entry<Nav3Route.MultiActivity> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                MultiActivityRoute {
+                  activity?.startActivity(
+                    Intent(activity, Nav3ProductsActivity::class.java)
+                      .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+                  )
+                }
+              }
+            }
+            entry<Nav3Route.MultiFragment> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                FragmentScenarioRoute(route, Nav3FragmentMode.REPLACE, openFragmentScenario)
+              }
+            }
+            entry<Nav3Route.FragmentOverlay> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                FragmentScenarioRoute(route, Nav3FragmentMode.DIALOG, openFragmentScenario)
+              }
+            }
+            entry<Nav3Route.ViewPager2> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                FragmentScenarioRoute(route, Nav3FragmentMode.PAGER, openFragmentScenario)
+              }
+            }
             entry<Nav3Route.Landing> { route ->
               TracedNav3Route(route, selectedScenario) {
                 Nav3RouteWorkEffect(route, routeWorkOptions)
@@ -534,18 +566,6 @@ private fun Nav3SampleApp(
               }
             }
 
-            entry<Nav3Route.Multipane> { route ->
-              TracedNav3Route(route, selectedScenario) {
-                Nav3RouteWorkEffect(route, routeWorkOptions)
-                FutureRoute(routeName = "Multipane", scenario = "multipane")
-              }
-            }
-            entry<Nav3Route.Multistack> { route ->
-              TracedNav3Route(route, selectedScenario) {
-                Nav3RouteWorkEffect(route, routeWorkOptions)
-                FutureRoute(routeName = "Multiple Stacks", scenario = "multistack")
-              }
-            }
             entry<Nav3Route.Performance> { route ->
               TracedNav3Route(route, selectedScenario) {
                 Nav3RouteWorkEffect(route, routeWorkOptions)

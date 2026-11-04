@@ -93,7 +93,7 @@ public final class ManifestModulesLoader extends ModulesLoader {
     private final @NotNull String name;
     private final @NotNull String version;
 
-    public Module(final @NotNull String name, final @NotNull String version) {
+    Module(final @NotNull String name, final @NotNull String version) {
       this.name = name;
       this.version = version;
     }

@@ -108,8 +108,8 @@ public final class SentryBatchLoaderRegistry implements BatchLoaderRegistry {
 
     private @NotNull IScopes scopesFromContext(final @NotNull BatchLoaderEnvironment environment) {
       Object context = environment.getContext();
-      if (context instanceof GraphQLContext) {
-        GraphQLContext graphqlContext = (GraphQLContext) context;
+      if (context instanceof GraphQLContext graphqlContext) {
+
         return graphqlContext.getOrDefault(SENTRY_SCOPES_CONTEXT_KEY, NoOpScopes.getInstance());
       }
 

@@ -1,6 +1,11 @@
 package io.sentry.spring7.tracing;
 
+import static io.sentry.TransactionContext.DEFAULT_TRANSACTION_NAME;
+
+import io.sentry.ScopesAdapter;
+import io.sentry.SentryLevel;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.util.ExceptionUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -21,15 +26,21 @@ public final class CombinedTransactionNameProvider implements TransactionNamePro
   }
 
   @Override
-  public @Nullable String provideTransactionName(@NotNull HttpServletRequest request) {
-    for (TransactionNameProvider provider : providers) {
-      String transactionName = provider.provideTransactionName(request);
-      if (transactionName != null) {
-        return transactionName;
+  public @Nullable String provideTransactionName(final @NotNull HttpServletRequest request) {
+    boolean callbackFailed = false;
+    for (final TransactionNameProvider provider : providers) {
+      try {
+        final @Nullable String transactionName = provider.provideTransactionName(request);
+        if (transactionName != null) {
+          return transactionName;
+        }
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
+        logCallbackError(e);
+        callbackFailed = true;
       }
     }
-
-    return null;
+    return callbackFailed ? DEFAULT_TRANSACTION_NAME : null;
   }
 
   @Override
@@ -42,14 +53,32 @@ public final class CombinedTransactionNameProvider implements TransactionNamePro
   @Override
   public @NotNull TransactionNameWithSource provideTransactionNameAndSource(
       @NotNull HttpServletRequest request) {
-    for (TransactionNameProvider provider : providers) {
-      String transactionName = provider.provideTransactionName(request);
-      if (transactionName != null) {
-        final @NotNull TransactionNameSource source = provider.provideTransactionSource();
-        return new TransactionNameWithSource(transactionName, source);
+    boolean callbackFailed = false;
+    for (final TransactionNameProvider provider : providers) {
+      try {
+        final @Nullable String transactionName = provider.provideTransactionName(request);
+        if (transactionName != null) {
+          return new TransactionNameWithSource(
+              transactionName, provider.provideTransactionSource());
+        }
+      } catch (Throwable e) {
+        ExceptionUtils.rethrowIfFatal(e);
+        logCallbackError(e);
+        callbackFailed = true;
       }
     }
+    return callbackFailed
+        ? new TransactionNameWithSource(DEFAULT_TRANSACTION_NAME, TransactionNameSource.CUSTOM)
+        : new TransactionNameWithSource(null, TransactionNameSource.CUSTOM);
+  }
 
-    return new TransactionNameWithSource(null, TransactionNameSource.CUSTOM);
+  private static void logCallbackError(final @NotNull Throwable throwable) {
+    ScopesAdapter.getInstance()
+        .getOptions()
+        .getLogger()
+        .log(
+            SentryLevel.ERROR,
+            "The TransactionNameProvider callback threw an exception.",
+            throwable);
   }
 }
