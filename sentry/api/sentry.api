@@ -77,7 +77,7 @@ public final class io/sentry/Baggage {
 	public fun setUserId (Ljava/lang/String;)V
 	public fun setValuesFromSamplingDecision (Lio/sentry/TracesSamplingDecision;)V
 	public fun setValuesFromScope (Lio/sentry/IScope;Lio/sentry/SentryOptions;)V
-	public fun setValuesFromTransaction (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Lio/sentry/SentryOptions;Lio/sentry/TracesSamplingDecision;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
+	public fun setValuesFromTransaction (Lio/sentry/protocol/SentryId;Lio/sentry/protocol/SentryId;Lio/sentry/SentryOptions;Ljava/lang/String;Lio/sentry/TracesSamplingDecision;Ljava/lang/String;Lio/sentry/protocol/TransactionNameSource;)V
 	public fun toHeaderString (Ljava/lang/String;)Ljava/lang/String;
 	public fun toTraceContext ()Lio/sentry/TraceContext;
 }
@@ -288,6 +288,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun getBreadcrumbs ()Ljava/util/Queue;
 	public fun getClient ()Lio/sentry/ISentryClient;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public fun getExtras ()Ljava/util/Map;
@@ -323,6 +324,7 @@ public final class io/sentry/CombinedScopeView : io/sentry/IScope {
 	public fun setContexts (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setContexts (Ljava/lang/String;Ljava/util/Collection;)V
 	public fun setContexts (Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLastEventId (Lio/sentry/protocol/SentryId;)V
@@ -906,6 +908,10 @@ public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
 }
 
+public abstract interface class io/sentry/IDebugManager {
+	public abstract fun isDebuggerConnected ()Z
+}
+
 public abstract interface class io/sentry/IDistributionApi {
 	public abstract fun checkForUpdate ()Ljava/util/concurrent/Future;
 	public abstract fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
@@ -1003,6 +1009,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun getBreadcrumbs ()Ljava/util/Queue;
 	public abstract fun getClient ()Lio/sentry/ISentryClient;
 	public abstract fun getContexts ()Lio/sentry/protocol/Contexts;
+	public abstract fun getEnvironment ()Ljava/lang/String;
 	public abstract fun getEventProcessors ()Ljava/util/List;
 	public abstract fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public abstract fun getExtras ()Ljava/util/Map;
@@ -1038,6 +1045,7 @@ public abstract interface class io/sentry/IScope {
 	public abstract fun setContexts (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setContexts (Ljava/lang/String;Ljava/util/Collection;)V
 	public abstract fun setContexts (Ljava/lang/String;[Ljava/lang/Object;)V
+	public abstract fun setEnvironment (Ljava/lang/String;)V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setFingerprint (Ljava/util/List;)V
 	public abstract fun setLastEventId (Lio/sentry/protocol/SentryId;)V
@@ -1065,6 +1073,7 @@ public abstract interface class io/sentry/IScopeObserver {
 	public abstract fun removeTag (Ljava/lang/String;)V
 	public abstract fun setBreadcrumbs (Ljava/util/Collection;)V
 	public abstract fun setContexts (Lio/sentry/protocol/Contexts;)V
+	public abstract fun setEnvironment (Ljava/lang/String;)V
 	public abstract fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public abstract fun setExtras (Ljava/util/Map;)V
 	public abstract fun setFingerprint (Ljava/util/Collection;)V
@@ -1855,6 +1864,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun getBreadcrumbs ()Ljava/util/Queue;
 	public fun getClient ()Lio/sentry/ISentryClient;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public fun getExtras ()Ljava/util/Map;
@@ -1891,6 +1901,7 @@ public final class io/sentry/NoOpScope : io/sentry/IScope {
 	public fun setContexts (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setContexts (Ljava/lang/String;Ljava/util/Collection;)V
 	public fun setContexts (Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLastEventId (Lio/sentry/protocol/SentryId;)V
@@ -2242,6 +2253,7 @@ public final class io/sentry/ProfileChunk : io/sentry/JsonSerializable, io/sentr
 	public fun hashCode ()I
 	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
 	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
+	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setSampledProfile (Ljava/lang/String;)V
 	public fun setSentryProfile (Lio/sentry/protocol/profiling/SentryProfile;)V
 	public fun setUnknown (Ljava/util/Map;)V
@@ -2551,6 +2563,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun getBreadcrumbs ()Ljava/util/Queue;
 	public fun getClient ()Lio/sentry/ISentryClient;
 	public fun getContexts ()Lio/sentry/protocol/Contexts;
+	public fun getEnvironment ()Ljava/lang/String;
 	public fun getEventProcessors ()Ljava/util/List;
 	public fun getEventProcessorsWithOrder ()Ljava/util/List;
 	public fun getExtras ()Ljava/util/Map;
@@ -2586,6 +2599,7 @@ public final class io/sentry/Scope : io/sentry/IScope {
 	public fun setContexts (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setContexts (Ljava/lang/String;Ljava/util/Collection;)V
 	public fun setContexts (Ljava/lang/String;[Ljava/lang/Object;)V
+	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setFingerprint (Ljava/util/List;)V
 	public fun setLastEventId (Lio/sentry/protocol/SentryId;)V
@@ -2638,6 +2652,7 @@ public abstract class io/sentry/ScopeObserverAdapter : io/sentry/IScopeObserver 
 	public fun removeTag (Ljava/lang/String;)V
 	public fun setBreadcrumbs (Ljava/util/Collection;)V
 	public fun setContexts (Lio/sentry/protocol/Contexts;)V
+	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExtra (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setExtras (Ljava/util/Map;)V
 	public fun setFingerprint (Ljava/util/Collection;)V
@@ -3787,6 +3802,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getDataCollectionResolver ()Lio/sentry/DataCollectionResolver;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDeadlineTimeout ()J
+	public fun getDebugManager ()Lio/sentry/IDebugManager;
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
 	public fun getDefaultScopeType ()Lio/sentry/ScopeType;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
@@ -3942,6 +3958,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDeadlineTimeout (J)V
 	public fun setDebug (Z)V
+	public fun setDebugManager (Lio/sentry/IDebugManager;)V
 	public fun setDebugMetaLoader (Lio/sentry/internal/debugmeta/IDebugMetaLoader;)V
 	public fun setDefaultScopeType (Lio/sentry/ScopeType;)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
@@ -5040,6 +5057,7 @@ public final class io/sentry/cache/PersistingOptionsObserver : io/sentry/IOption
 public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObserverAdapter {
 	public static final field BREADCRUMBS_FILENAME Ljava/lang/String;
 	public static final field CONTEXTS_FILENAME Ljava/lang/String;
+	public static final field ENVIRONMENT_FILENAME Ljava/lang/String;
 	public static final field EXTRAS_FILENAME Ljava/lang/String;
 	public static final field FINGERPRINT_FILENAME Ljava/lang/String;
 	public static final field LEVEL_FILENAME Ljava/lang/String;
@@ -5056,6 +5074,7 @@ public final class io/sentry/cache/PersistingScopeObserver : io/sentry/ScopeObse
 	public fun resetCache ()V
 	public fun setBreadcrumbs (Ljava/util/Collection;)V
 	public fun setContexts (Lio/sentry/protocol/Contexts;)V
+	public fun setEnvironment (Ljava/lang/String;)V
 	public fun setExtras (Ljava/util/Map;)V
 	public fun setFingerprint (Ljava/util/Collection;)V
 	public fun setLevel (Lio/sentry/SentryLevel;)V
@@ -7762,6 +7781,10 @@ public final class io/sentry/transport/AsyncHttpTransport : io/sentry/transport/
 public final class io/sentry/transport/CurrentDateProvider : io/sentry/transport/ICurrentDateProvider {
 	public final fun getCurrentTimeMillis ()J
 	public static fun getInstance ()Lio/sentry/transport/ICurrentDateProvider;
+}
+
+public final class io/sentry/transport/DistrustedCertificates {
+	public static fun wrap (Ljavax/net/ssl/SSLSocketFactory;)Ljavax/net/ssl/SSLSocketFactory;
 }
 
 public abstract interface class io/sentry/transport/ICurrentDateProvider {

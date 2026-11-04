@@ -41,6 +41,26 @@ class SentryMaskingOptionsTest {
   }
 
   @Test
+  fun `addMaskViewClass ignores null`() {
+    val options = TestMaskingOptions()
+    SentryMaskingOptions::class
+      .java
+      .getMethod("addMaskViewClass", String::class.java)
+      .invoke(options, null)
+    assertTrue(options.maskViewClasses.isEmpty())
+  }
+
+  @Test
+  fun `addUnmaskViewClass ignores null`() {
+    val options = TestMaskingOptions()
+    SentryMaskingOptions::class
+      .java
+      .getMethod("addUnmaskViewClass", String::class.java)
+      .invoke(options, null)
+    assertTrue(options.unmaskViewClasses.isEmpty())
+  }
+
+  @Test
   fun `setMaskAllText true adds TextView to maskViewClasses`() {
     val options = TestMaskingOptions()
     options.setMaskAllText(true)

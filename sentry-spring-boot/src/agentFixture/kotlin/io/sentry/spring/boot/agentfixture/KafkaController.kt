@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.RestController
 
 const val KAFKA_TOPIC = "sentry-topic"
 
-// Kafka only works with Spring Boot 2.7 and later, so its beans belong to a profile rather than to
-// the app most tests share. See KafkaOtelCoexistenceIntegrationTest.
+// The beans belong to a profile, so only the app KafkaOtelCoexistenceIntegrationTest starts needs a
+// broker.
 
 @RestController
 @Profile("kafka")

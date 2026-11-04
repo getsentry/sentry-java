@@ -22,23 +22,27 @@ class PersonIntegrationTest : IntegrationTest() {
 
   @Test
   fun `failed request reports errors, spans with their flags, and logs`() {
-    val response = restTemplate.getForEntity("/person/1", String::class.java)
+    val response = restTemplate.getForEntity("/person/11", String::class.java)
     assertThat(response.statusCode.value()).isEqualTo(500)
 
     val logged =
-      server.awaitEnvelope { it.event()?.message?.formatted == "Trying person with id=1" }.event()!!
+      server
+        .awaitEnvelope { it.event()?.message?.formatted == "Trying person with id=11" }
+        .event()!!
     assertThat(logged.hasFlag("my-feature-flag", true)).isTrue()
 
     val thrown =
       server
         .awaitEnvelope {
-          it.event()?.exceptions?.any { e -> e.value == "Something went wrong [id=1]" } == true
+          it.event()?.exceptions?.any { e -> e.value == "Something went wrong [id=11]" } == true
         }
         .event()!!
     assertThat(thrown.hasFlag("my-feature-flag", true)).isTrue()
 
     val transactionEnvelope = server.awaitEnvelope {
-      it.transaction()?.transaction == "GET /person/{id}"
+      it.transaction()?.let { t ->
+        t.transaction == "GET /person/{id}" && t.request?.url?.endsWith("/person/11") == true
+      } == true
     }
     // Whichever initializes Sentry names the SDK, which shows that each mode takes its own path.
     assertThat(transactionEnvelope.header.sdkVersion!!.name)
