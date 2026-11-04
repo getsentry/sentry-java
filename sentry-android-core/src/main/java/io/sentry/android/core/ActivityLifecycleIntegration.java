@@ -406,7 +406,11 @@ public final class ActivityLifecycleIntegration
           }
         }
 
-        // lets bind to the scope so other integrations can pick it up
+        // lets bind to the scope so other integrations can pick it up.
+        // Binding happens in onActivityCreated, after every callback's onActivityPreCreated, so
+        // that sentry-android-navigation3's NavLeaseCoordinator can unbind a covered Activity's nav
+        // transaction first and leave the slot free for this one. Moving it earlier changes
+        // which transaction the incoming Activity gets.
         scopes.configureScope(
             scope -> {
               applyScope(scope, transaction);

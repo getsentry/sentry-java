@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DateUtils
 import io.sentry.FullyDisplayedReporter
 import io.sentry.IScope
@@ -887,6 +888,26 @@ class ActivityLifecycleIntegrationTest {
 
     val activity = mock<Activity>()
     sut.onActivityCreated(activity, fixture.bundle)
+  }
+
+  @Test
+  fun `binds the activity's transaction to the scope when the activity is created, not before`() {
+    val sut = fixture.getSut()
+    fixture.options.tracesSampleRate = 1.0
+    sut.register(fixture.scopes, fixture.options)
+    val scope = Scope(fixture.options)
+    whenever(fixture.scopes.configureScope(any())).thenAnswer {
+      it.getArgument<ScopeCallback>(0).run(scope)
+    }
+    val activity = mock<Activity>()
+
+    sut.onActivityPreCreated(activity, fixture.bundle)
+
+    assertThat(scope.transaction).isNull()
+
+    sut.onActivityCreated(activity, fixture.bundle)
+
+    assertThat(scope.transaction).isSameInstanceAs(fixture.transaction)
   }
 
   @Test
