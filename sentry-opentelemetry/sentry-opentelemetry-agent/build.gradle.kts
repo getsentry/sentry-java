@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
-  id("io.sentry.animalsniffer")
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.shadow)

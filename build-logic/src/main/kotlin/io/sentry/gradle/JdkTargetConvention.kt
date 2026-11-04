@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 /** The JDK every module compiles and tests with, whatever JDK runs Gradle. */
 private val BUILD_JDK = JavaLanguageVersion.of(21)
 
-/** The level the SDK publishes, the default since AGP 9. */
+/** The level the SDK publishes. */
 private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_11
 
 /**
@@ -75,7 +75,7 @@ class JdkTargetConvention : Plugin<Project> {
         }
       }
       // -Xjdk-release is the Kotlin counterpart of release: without it Kotlin resolves against the
-      // build JDK and happily compiles e.g. Files.readString() into Java 8 bytecode. The version
+      // build JDK and happily compiles e.g. Stream.toList() into Java 11 bytecode. The version
       // follows jvmTarget, which the modules that publish a higher level set themselves.
       project.plugins.withId("org.jetbrains.kotlin.jvm") {
         project.tasks.named("compileKotlin", KotlinJvmCompile::class.java) {

@@ -5,7 +5,6 @@ plugins {
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.buildconfig)
-  id("io.sentry.animalsniffer")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {

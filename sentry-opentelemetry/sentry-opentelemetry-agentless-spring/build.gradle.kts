@@ -2,7 +2,6 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.buildconfig)
-  id("io.sentry.animalsniffer")
 }
 
 dependencies {
