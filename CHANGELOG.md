@@ -53,6 +53,10 @@
   - The form never used `AlertDialog` features. Code that calls `AlertDialog`-only methods on it, such as `setButton` or `setMessage`, no longer compiles.
 - `sentry-android` no longer includes `sentry-android-ndk` as a default dependency. Instead, tombstone reporting is enabled by default, which provides more detailed native crashes on Android 11+ (API 30). If you're using sentry-android-ndk APIs, or need native crashes on Android 10 and lower, manually add the `io.sentry:sentry-android-ndk` dependency to your app. ([#6436](https://github.com/getsentry/sentry-java/pull/6436))
 
+### Fixes
+
+- Preserve independent Netty read timeout events when the exception singleton is reused ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
+
 ### Improvements
 
 - Promote check-in APIs from experimental to stable ([#6422](https://github.com/getsentry/sentry-java/pull/6422))
