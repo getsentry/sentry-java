@@ -123,7 +123,7 @@ The repository is organized into multiple modules:
 ## Development Guidelines
 
 ### Code Style
-- **Languages**: Java 8+ and Kotlin
+- **Languages**: Java 11+ and Kotlin
 - **Formatting**: Enforced via Spotless
 - **API Compatibility**: Binary compatibility is enforced. `.api` files are generated, never hand-edited
 
