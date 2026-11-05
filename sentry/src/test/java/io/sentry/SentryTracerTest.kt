@@ -930,6 +930,26 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `trace state uses the scope environment when set`() {
+    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    fixture.scopes.configureScope { it.environment = "scope-environment" }
+
+    val trace = transaction.traceContext()
+
+    assertNotNull(trace) { assertEquals("scope-environment", it.environment) }
+  }
+
+  @Test
+  fun `trace state uses the global scope environment when set`() {
+    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    fixture.scopes.configureScope(ScopeType.GLOBAL) { it.environment = "global-environment" }
+
+    val trace = transaction.traceContext()
+
+    assertNotNull(trace) { assertEquals("global-environment", it.environment) }
+  }
+
+  @Test
   fun `returns trace state without userId if not send pii`() {
     val transaction = fixture.getSut({ it.isTraceSampling = true })
     fixture.scopes.setUser(User().apply { id = "user-id" })
@@ -1160,9 +1180,11 @@ class SentryTracerTest {
     val span = transaction.startChild("op")
     span.finish()
 
-    await.untilFalse(transaction.isFinishTimerRunning)
-
-    verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    // finish() clears isFinishTimerRunning before it captures the transaction, so wait for the
+    // capture itself
+    await.untilAsserted {
+      verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
   }
 
   @Test
@@ -1221,18 +1243,20 @@ class SentryTracerTest {
     val span2 = transaction.startChild("op2") as Span
     span2.finish()
 
-    await.untilFalse(transaction.isFinishTimerRunning)
-
-    verify(fixture.scopes)
-      .captureTransaction(
-        check {
-          assertEquals(2, it.spans.size)
-          assertEquals(transaction.root.finishDate, span2.finishDate)
-        },
-        anyOrNull(),
-        anyOrNull(),
-        anyOrNull(),
-      )
+    // finish() clears isFinishTimerRunning before it captures the transaction, so wait for the
+    // capture itself
+    await.untilAsserted {
+      verify(fixture.scopes)
+        .captureTransaction(
+          check {
+            assertEquals(2, it.spans.size)
+            assertEquals(transaction.root.finishDate, span2.finishDate)
+          },
+          anyOrNull(),
+          anyOrNull(),
+          anyOrNull(),
+        )
+    }
   }
 
   @Test

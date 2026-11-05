@@ -6,6 +6,7 @@ import io.sentry.DataCategory
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryOptions
@@ -23,6 +24,7 @@ import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Compan
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
@@ -66,6 +68,9 @@ class BufferCaptureStrategyTest {
         doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
           .whenever(it)
           .configureScope(any())
+        doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+          .whenever(it)
+          .configureScope(anyOrNull<ScopeType>(), any())
       }
     var persistedSegment = LinkedHashMap<String, String?>()
     val replayCache =
@@ -108,6 +113,8 @@ class BufferCaptureStrategyTest {
         ?.discardedEvents
         .orEmpty()
 
+    val ticker = TestMonotonicTicker()
+
     fun getSut(
       dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
       replayCacheDir: File? = null,
@@ -117,6 +124,7 @@ class BufferCaptureStrategyTest {
         options,
         scopes,
         dateProvider,
+        ticker,
         mock {
           whenever(it.submit(any<Runnable>())).doAnswer { invocation ->
             (invocation.arguments[0] as Runnable).run()

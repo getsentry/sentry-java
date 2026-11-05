@@ -19,11 +19,10 @@ final class SentryOkHttpClientBeanPostProcessor implements BeanPostProcessor, Pr
   @Override
   public @NotNull Object postProcessAfterInitialization(
       final @NotNull Object bean, final @NotNull String beanName) throws BeansException {
-    if (!(bean instanceof OkHttpClient)) {
+    if (!(bean instanceof OkHttpClient client)) {
       return bean;
     }
 
-    final @NotNull OkHttpClient client = (OkHttpClient) bean;
     if (client.getClass() != OkHttpClient.class) {
       ScopesAdapter.getInstance()
           .getOptions()

@@ -43,6 +43,10 @@ public final class MonitorContexts extends ConcurrentHashMap<String, Object>
 
   // region json
 
+  // temp fix for JDK 21: ConcurrentHashMap.keySet() compiled against JDK 8+ returns KeySetView,
+  // which crashes on Android
+  // < 24.
+  @SuppressWarnings("JdkObsolete")
   @Override
   public void serialize(final @NotNull ObjectWriter writer, final @NotNull ILogger logger)
       throws IOException {

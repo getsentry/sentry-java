@@ -31,6 +31,7 @@ import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.Schedules;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringValueResolver;
@@ -64,9 +65,11 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
   }
 
   @Override
-  public Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
+  public @Nullable Object invoke(final @NotNull MethodInvocation invocation) throws Throwable {
+    final @Nullable Object target = invocation.getThis();
     final Method mostSpecificMethod =
-        AopUtils.getMostSpecificMethod(invocation.getMethod(), invocation.getThis().getClass());
+        AopUtils.getMostSpecificMethod(
+            invocation.getMethod(), target != null ? target.getClass() : null);
 
     @Nullable
     SentryCheckIn checkInAnnotation =
@@ -149,7 +152,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
   private @Nullable MonitorConfig monitorConfigFromScheduled(final @NotNull Method method) {
     try {
       final @NotNull Set<Scheduled> schedules =
-          AnnotatedElementUtils.findMergedRepeatableAnnotations(method, Scheduled.class);
+          AnnotatedElementUtils.getMergedRepeatableAnnotations(
+              method, Scheduled.class, Schedules.class);
       if (schedules.size() != 1) {
         return null;
       }
@@ -158,9 +162,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
       final @Nullable Object timeUnitAttribute =
           AnnotationUtils.getAnnotationAttributes(scheduled).get("timeUnit");
       final @NotNull TimeUnit timeUnit =
-          timeUnitAttribute instanceof TimeUnit
-              ? (TimeUnit) timeUnitAttribute
-              : TimeUnit.MILLISECONDS;
+          timeUnitAttribute instanceof TimeUnit unit ? unit : TimeUnit.MILLISECONDS;
       final @Nullable String cron = resolve(scheduled.cron());
       // Spring only reads the zone for a cron
       final @Nullable String zone =
@@ -171,7 +173,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
           periodMillis(scheduled.fixedRate(), scheduled.fixedRateString(), timeUnit),
           periodMillis(scheduled.fixedDelay(), scheduled.fixedDelayString(), timeUnit),
           LEGACY_CRON_PARSER);
-    } catch (Throwable e) {
+    } catch (RuntimeException e) {
       scopes
           .getOptions()
           .getLogger()

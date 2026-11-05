@@ -17,7 +17,7 @@ public final class OtelContextScopesStorage implements IScopesStorage {
 
   @Override
   public void init() {
-    /**
+    /*
      * We're currently overriding the storage mechanism to allow for cleanup of non closed OTel
      * scopes. These happen when using e.g. Sentry static API due to getCurrentScopes() invoking
      * Context.makeCurrent and then ignoring the returned lifecycle token (OTel Scope). After fixing

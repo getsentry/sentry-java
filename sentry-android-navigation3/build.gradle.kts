@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
+  id("io.sentry.api-validation")
 }
 
 android {
@@ -60,14 +61,17 @@ kotlin { explicitApi() }
 
 dependencies {
   implementation(projects.sentry)
+  implementation(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
 
   testImplementation(libs.androidx.compose.ui.test.junit4)
+  testImplementation(libs.androidx.fragment.ktx)
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.ext.junit)
+  testImplementation(libs.androidx.viewpager2)
   testImplementation(libs.google.truth)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.roboelectric)
 }

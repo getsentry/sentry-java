@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 public final class MonitorConfigUtils {
   private static final @NotNull String CRON_DISABLED = "-";
   private static final long MINUTE_MILLIS = TimeUnit.MINUTES.toMillis(1);
+  private static final long MIN_CHECKIN_MARGIN_WITH_SECONDS = 2;
   private static final @NotNull Map<String, String> CRON_MACROS;
   private static final @NotNull Pattern SIMPLE_DURATION =
       Pattern.compile("^([+-]?\\d+)([a-zA-Z]{0,2})$");
@@ -91,6 +92,13 @@ public final class MonitorConfigUtils {
         return null;
       }
       final @NotNull MonitorConfig config = new MonitorConfig(MonitorSchedule.crontab(crontab));
+      // Runs check in up to 59s after the minute Sentry expects, so a 1 minute margin is too tight
+      if (hasNonZeroSeconds(cron)) {
+        final @Nullable Long margin = config.getCheckinMargin();
+        if (margin == null || margin < MIN_CHECKIN_MARGIN_WITH_SECONDS) {
+          config.setCheckinMargin(MIN_CHECKIN_MARGIN_WITH_SECONDS);
+        }
+      }
       if (zone != null && !zone.isEmpty()) {
         final @Nullable String timezone = toTimezone(zone);
         if (timezone == null) {
@@ -121,6 +129,11 @@ public final class MonitorConfigUtils {
       return new MonitorConfig(MonitorSchedule.interval((int) value, unit));
     }
     return null;
+  }
+
+  private static boolean hasNonZeroSeconds(final @NotNull String cron) {
+    final @NotNull String seconds = cron.trim().split("\\s+", -1)[0];
+    return DIGITS.matcher(seconds).matches() && Integer.parseInt(seconds) > 0;
   }
 
   /**
@@ -210,6 +223,9 @@ public final class MonitorConfigUtils {
       }
       if (item.startsWith("*/")) {
         item = "1-7" + item.substring(1);
+      } else if (item.startsWith("7-7")) {
+        // Sunday only; 0-7 would be every day
+        item = "7" + item.substring(3);
       } else if (item.startsWith("7-")) {
         // Sunday starting a range is 0 in Spring
         item = "0" + item.substring(1);

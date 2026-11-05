@@ -50,6 +50,9 @@ import org.jetbrains.annotations.TestOnly;
  * <p>This class is also responsible for - determining the app start type (cold, warm) - determining
  * if the app was launched in foreground
  */
+// temp fix for JDK 21: Constructors call overridable methods; making them final would break the
+// public API.
+@SuppressWarnings("this-escape")
 @ApiStatus.Internal
 public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   public interface HeadlessAppStartListener {

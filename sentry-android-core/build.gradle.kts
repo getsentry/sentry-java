@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.api-validation")
 }
 
 android {
@@ -118,7 +119,7 @@ dependencies {
   testImplementation(libs.awaitility.kotlin)
   testImplementation(libs.google.truth)
   testImplementation(libs.mockito.kotlin)
-  testImplementation(libs.mockito.inline)
+  testImplementation(libs.mockito.core)
   testImplementation(projects.sentryTestSupport)
   testImplementation(projects.sentrySpotlight)
   testImplementation(projects.sentryAndroidFragment)
@@ -135,3 +136,5 @@ dependencies {
   testRuntimeOnly(libs.androidx.fragment.ktx)
   testRuntimeOnly(libs.timber)
 }
+
+sentryApiValidation { ignoredPackages.add("io.sentry.android.core.internal") }

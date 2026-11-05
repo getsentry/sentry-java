@@ -67,7 +67,7 @@ class SecondActivity : AppCompatActivity() {
       currentSpan?.startChild("updateRepos", javaClass.simpleName)
         ?: Sentry.startTransaction("updateRepos", "task")
 
-    GithubAPI.service
+    GitHubApi.service
       .listRepos(binding.editRepo.text.toString())
       .enqueue(
         object : Callback<List<Repo>> {

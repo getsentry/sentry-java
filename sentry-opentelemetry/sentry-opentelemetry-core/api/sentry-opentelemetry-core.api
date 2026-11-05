@@ -4,7 +4,7 @@ public final class io/sentry/opentelemetry/OpenTelemetryAttributesExtractor {
 	public fun extractUrl (Lio/opentelemetry/api/common/Attributes;Lio/sentry/SentryOptions;)Ljava/lang/String;
 }
 
-public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/EventProcessor {
+public final class io/sentry/opentelemetry/OpenTelemetryLinkErrorEventProcessor : io/sentry/internal/eventprocessor/SentryEventProcessor {
 	public fun <init> ()V
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;

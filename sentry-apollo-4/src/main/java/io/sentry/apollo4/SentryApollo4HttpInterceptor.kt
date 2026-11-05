@@ -8,6 +8,7 @@ import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
+import io.sentry.DataCategory
 import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.ISpan
@@ -21,6 +22,7 @@ import io.sentry.SpanDataConvention.HTTP_METHOD_KEY
 import io.sentry.SpanStatus
 import io.sentry.TypeCheckHint.APOLLO_REQUEST
 import io.sentry.TypeCheckHint.APOLLO_RESPONSE
+import io.sentry.clientreport.DiscardReason
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.Request
@@ -215,6 +217,7 @@ constructor(
         span.setData(SpanDataConvention.HTTP_RESPONSE_CONTENT_LENGTH_KEY, it)
       }
       if (beforeSpan != null) {
+        val wasSampled = span.isSampled == true
         try {
           val result = beforeSpan.execute(span, request, response)
           if (result == null) {
@@ -222,6 +225,13 @@ constructor(
             span.spanContext.sampled = false
           }
         } catch (e: Throwable) {
+          span.spanContext.sampled = false
+          if (wasSampled) {
+            scopes.options.clientReportRecorder.recordLostEvent(
+              DiscardReason.CALLBACK_ERROR,
+              DataCategory.Span,
+            )
+          }
           scopes.options.logger.log(
             SentryLevel.ERROR,
             "An error occurred while executing beforeSpan in ApolloInterceptor",

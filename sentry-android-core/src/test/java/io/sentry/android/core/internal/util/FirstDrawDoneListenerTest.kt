@@ -113,49 +113,14 @@ class FirstDrawDoneListenerTest {
   }
 
   @Test
-  fun `registerForNextDraw unregister itself after onDraw`() {
+  fun `registerForNextDraw unregisters itself after onDraw without a layout pass`() {
     val view = fixture.getSut()
     FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
     assertFalse(fixture.onDrawListeners.isEmpty())
 
-    // Does not remove OnDrawListener before onDraw, even if OnGlobalLayout is triggered
-    view.viewTreeObserver.dispatchOnGlobalLayout()
-    assertFalse(fixture.onDrawListeners.isEmpty())
-
-    // Removes OnDrawListener in the next OnGlobalLayout after onDraw
     view.viewTreeObserver.dispatchOnDraw()
-    view.viewTreeObserver.dispatchOnGlobalLayout()
-    assertTrue(fixture.onDrawListeners.isEmpty())
-  }
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
 
-  @Test
-  fun `OnGlobalLayoutListener is removed after cleanup`() {
-    val view = fixture.getSut()
-
-    // Initialize mOnGlobalLayoutListeners via a dummy add/remove
-    val dummyGlobalListener = ViewTreeObserver.OnGlobalLayoutListener {}
-    view.viewTreeObserver.addOnGlobalLayoutListener(dummyGlobalListener)
-    view.viewTreeObserver.removeOnGlobalLayoutListener(dummyGlobalListener)
-
-    // CopyOnWriteArray wraps an internal ArrayList called mData
-    val copyOnWriteArray: Any = view.viewTreeObserver.getProperty("mOnGlobalLayoutListeners")
-    val mDataField = copyOnWriteArray.javaClass.getDeclaredField("mData")
-    mDataField.isAccessible = true
-
-    @Suppress("UNCHECKED_CAST")
-    fun globalLayoutListeners(): ArrayList<*> = mDataField.get(copyOnWriteArray) as ArrayList<*>
-
-    assertTrue(globalLayoutListeners().isEmpty())
-
-    FirstDrawDoneListener.registerForNextDraw(view, {}, fixture.buildInfo)
-
-    // onDraw registers a cleanup OnGlobalLayoutListener
-    view.viewTreeObserver.dispatchOnDraw()
-    assertFalse(globalLayoutListeners().isEmpty())
-
-    // onGlobalLayout fires the cleanup, which removes both the draw and layout listeners
-    view.viewTreeObserver.dispatchOnGlobalLayout()
-    assertTrue(globalLayoutListeners().isEmpty())
     assertTrue(fixture.onDrawListeners.isEmpty())
   }
 

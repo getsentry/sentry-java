@@ -13,6 +13,7 @@ import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
 import io.sentry.android.replay.video.MuxerConfig
 import io.sentry.android.replay.video.SimpleVideoEncoder
+import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
 import io.sentry.util.AutoClosableReentrantLock
@@ -138,15 +139,16 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     bitRate: Int,
     videoFile: File = File(replayCacheDir, "$segmentId.mp4"),
   ): GeneratedVideo? {
-    if (videoFile.exists() && videoFile.length() > 0) {
-      videoFile.delete()
-    }
     // Work on a snapshot of frames to avoid races with writers
     val framesSnapshot =
       framesLock.acquire().use { if (frames.isEmpty()) mutableListOf() else frames.toMutableList() }
     if (framesSnapshot.isEmpty()) {
+      // keep an existing video intact, e.g. one from a flush whose envelope is still queued
       options.logger.log(DEBUG, "No captured frames, skipping generating a video segment")
       return null
+    }
+    if (videoFile.exists() && videoFile.length() > 0) {
+      videoFile.delete()
     }
 
     encoder =
@@ -321,6 +323,19 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
     internal const val SEGMENT_KEY_REPLAY_RECORDING = "replay.recording"
     internal const val SEGMENT_KEY_ID = "segment.id"
     internal const val SEGMENT_KEY_FLUSHED = "replay.flushed"
+    internal const val SEGMENT_KEY_SDK_NAME = "replay.sdk-name"
+    internal const val SEGMENT_KEY_SDK_VERSION = "replay.sdk-version"
+    internal const val SEGMENT_KEY_RELEASE = "replay.release"
+    internal const val SEGMENT_KEY_ENVIRONMENT = "replay.environment"
+    internal const val SEGMENT_KEY_DIST = "replay.dist"
+    private val RECORDING_METADATA_KEYS =
+      listOf(
+        SEGMENT_KEY_RELEASE,
+        SEGMENT_KEY_ENVIRONMENT,
+        SEGMENT_KEY_DIST,
+        SEGMENT_KEY_SDK_NAME,
+        SEGMENT_KEY_SDK_VERSION,
+      )
 
     /**
      * Deletes [replayCacheDir], but keeps the segment videos it holds. A captured segment's video
@@ -475,6 +490,24 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
         replayType = replayType,
         screenAtStart = lastSegment[SEGMENT_KEY_REPLAY_SCREEN_AT_START],
         events = events.sortedBy { it.timestamp },
+        metadata = recordingMetadata(lastSegment),
+      )
+    }
+
+    private fun recordingMetadata(lastSegment: Map<String, String>): RecordingMetadata? {
+      if (RECORDING_METADATA_KEYS.none { it in lastSegment }) {
+        // recorded by an older SDK version
+        return null
+      }
+      val sdkName = lastSegment[SEGMENT_KEY_SDK_NAME]
+      val sdkVersion = lastSegment[SEGMENT_KEY_SDK_VERSION]
+      return RecordingMetadata(
+        release = lastSegment[SEGMENT_KEY_RELEASE],
+        environment = lastSegment[SEGMENT_KEY_ENVIRONMENT],
+        dist = lastSegment[SEGMENT_KEY_DIST],
+        sdkVersion =
+          if (sdkName.isNullOrEmpty() || sdkVersion.isNullOrEmpty()) null
+          else SdkVersion(sdkName, sdkVersion),
       )
     }
   }
@@ -489,6 +522,19 @@ internal data class LastSegmentData(
   val replayType: ReplayType,
   val screenAtStart: String?,
   val events: List<RRWebEvent>,
+  /** Null for replays recorded by SDK versions that didn't persist it. */
+  val metadata: RecordingMetadata?,
+)
+
+/**
+ * Event metadata of the run that recorded a replay, persisted when recording starts so a replay
+ * sent on the next launch describes the run that recorded it.
+ */
+internal data class RecordingMetadata(
+  val release: String?,
+  val environment: String?,
+  val dist: String?,
+  val sdkVersion: SdkVersion?,
 )
 
 internal data class ReplayFrame(

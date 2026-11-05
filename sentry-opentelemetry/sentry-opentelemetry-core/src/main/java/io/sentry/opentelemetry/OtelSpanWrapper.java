@@ -15,6 +15,7 @@ import io.sentry.MeasurementUnit;
 import io.sentry.NoOpScopesLifecycleToken;
 import io.sentry.NoOpSpan;
 import io.sentry.ScopeBindingMode;
+import io.sentry.ScopeType;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
@@ -231,14 +232,20 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (baggage != null && baggage.isMutable()) {
         final AtomicReference<SentryId> replayIdAtomicReference = new AtomicReference<>();
+        final AtomicReference<String> environmentAtomicReference = new AtomicReference<>();
+        // the combined view resolves current -> isolation -> global, matching what event capture
+        // sees, so the DSC cannot disagree with the environment on the events of the same trace
         scopes.configureScope(
+            ScopeType.COMBINED,
             scope -> {
               replayIdAtomicReference.set(scope.getReplayId());
+              environmentAtomicReference.set(scope.getEnvironment());
             });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
             replayIdAtomicReference.get(),
             scopes.getOptions(),
+            environmentAtomicReference.get(),
             this.getSamplingDecision(),
             getTransactionName(),
             getTransactionNameSource());

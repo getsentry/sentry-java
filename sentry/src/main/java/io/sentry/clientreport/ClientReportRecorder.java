@@ -113,6 +113,12 @@ public final class ClientReportRecorder implements IClientReportRecorder {
           recordLostEventInternal(
               reason.getReason(), DataCategory.TraceMetricByte.getCategory(), metricBytes);
           executeOnDiscard(reason, itemCategory, count);
+        } else if (itemCategory.equals(DataCategory.Span)) {
+          // Batched span items (span streaming) aren't created by this SDK yet, but hybrid SDKs
+          // like sentry-dart send them through it via InternalSentrySdk.captureEnvelope.
+          final long count = itemCountFromHeader(envelopeItem);
+          recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), count);
+          executeOnDiscard(reason, itemCategory, count);
         } else {
           recordLostEventInternal(reason.getReason(), itemCategory.getCategory(), 1L);
           executeOnDiscard(reason, itemCategory, 1L);
@@ -156,9 +162,9 @@ public final class ClientReportRecorder implements IClientReportRecorder {
     storage.addCount(key, countToAdd);
   }
 
-  // The number of items batched into a log or metric envelope item is stored in its header, so we
-  // read it from there instead of deserializing the payload. Deserializing on the discard path is
-  // expensive and, under sustained rate limiting, caused a CPU busy-loop (JAVA-662).
+  // The number of items batched into a log, metric or span envelope item is stored in its header,
+  // so we read it from there instead of deserializing the payload. Deserializing on the discard
+  // path is expensive and, under sustained rate limiting, caused a CPU busy-loop (JAVA-662).
   private long itemCountFromHeader(final @NotNull SentryEnvelopeItem envelopeItem) {
     final @Nullable Integer itemCount = envelopeItem.getHeader().getItemCount();
     return itemCount != null ? itemCount : 1L;

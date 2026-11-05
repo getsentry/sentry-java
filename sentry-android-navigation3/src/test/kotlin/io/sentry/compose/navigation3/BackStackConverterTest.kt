@@ -3,6 +3,7 @@ package io.sentry.compose.navigation3
 import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.SentryLevel.WARNING
+import io.sentry.compose.navigation3.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
 import io.sentry.compose.navigation3.BackStackConverter.RetentionPolicy
 import io.sentry.compose.navigation3.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
 import java.util.AbstractCollection
@@ -161,8 +162,14 @@ class BackStackConverterTest {
     assertThat(routes)
       .containsExactly(
         NormalizedSentryBackStackEntry("/SettingsScreen", mapOf("section" to "privacy")),
-        NormalizedSentryBackStackEntry("/ProfileScreen"),
-        NormalizedSentryBackStackEntry("/HomeScreen"),
+        NormalizedSentryBackStackEntry(
+          "/ProfileScreen",
+          argumentDropReason = ArgumentDropReason.MAX_COUNT,
+        ),
+        NormalizedSentryBackStackEntry(
+          "/HomeScreen",
+          argumentDropReason = ArgumentDropReason.MAX_COUNT,
+        ),
       )
       .inOrder()
   }
@@ -191,8 +198,14 @@ class BackStackConverterTest {
 
     assertThat(routes)
       .containsExactly(
-        NormalizedSentryBackStackEntry("/HomeScreen"),
-        NormalizedSentryBackStackEntry("/ProfileScreen"),
+        NormalizedSentryBackStackEntry(
+          "/HomeScreen",
+          argumentDropReason = ArgumentDropReason.MAX_COUNT,
+        ),
+        NormalizedSentryBackStackEntry(
+          "/ProfileScreen",
+          argumentDropReason = ArgumentDropReason.MAX_COUNT,
+        ),
         NormalizedSentryBackStackEntry("/SettingsScreen", mapOf("section" to "privacy")),
       )
       .inOrder()
@@ -222,8 +235,14 @@ class BackStackConverterTest {
     assertThat(routes)
       .containsExactly(
         NormalizedSentryBackStackEntry("/ProductScreen", mapOf("productId" to "sku-1")),
-        NormalizedSentryBackStackEntry("/ProfileScreen"),
-        NormalizedSentryBackStackEntry("/ProductScreen"),
+        NormalizedSentryBackStackEntry(
+          "/ProfileScreen",
+          argumentDropReason = ArgumentDropReason.MAX_COUNT,
+        ),
+        NormalizedSentryBackStackEntry(
+          "/ProductScreen",
+          argumentDropReason = ArgumentDropReason.MAX_COUNT,
+        ),
       )
       .inOrder()
   }
@@ -251,8 +270,14 @@ class BackStackConverterTest {
 
     assertThat(routes)
       .containsExactly(
-        NormalizedSentryBackStackEntry("/ProductScreen"),
-        NormalizedSentryBackStackEntry("/ProfileScreen"),
+        NormalizedSentryBackStackEntry(
+          "/ProductScreen",
+          argumentDropReason = ArgumentDropReason.MAX_COUNT,
+        ),
+        NormalizedSentryBackStackEntry(
+          "/ProfileScreen",
+          argumentDropReason = ArgumentDropReason.MAX_COUNT,
+        ),
         NormalizedSentryBackStackEntry("/ProductScreen", mapOf("productId" to "sku-1")),
       )
       .inOrder()
@@ -313,7 +338,12 @@ class BackStackConverterTest {
     val sut = getSut(entryMapper = { error("boom") })
 
     assertThat(sut.convert(HomeScreen()))
-      .isEqualTo(NormalizedSentryBackStackEntry(UNKNOWN_ENTRY_NAME))
+      .isEqualTo(
+        NormalizedSentryBackStackEntry(
+          UNKNOWN_ENTRY_NAME,
+          argumentDropReason = ArgumentDropReason.MAPPING_FAILED,
+        )
+      )
     verify(logger)
       .log(
         eq(WARNING),
@@ -482,7 +512,10 @@ class BackStackConverterTest {
 
     val sut = getSut(entryMapper = { entry -> entryInfo(entry, mapOf("cyclic" to cyclic)) })
 
-    assertThat(sut.convert(HomeScreen()).arguments).isEmpty()
+    val entry = sut.convert(HomeScreen())
+
+    assertThat(entry.arguments).isEmpty()
+    assertThat(entry.argumentDropReason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
   }
 
   @Test
@@ -492,7 +525,10 @@ class BackStackConverterTest {
 
     val sut = getSut(entryMapper = { entry -> entryInfo(entry, mapOf("nested" to nested)) })
 
-    assertThat(sut.convert(ProfileScreen("123")).arguments).isEmpty()
+    val entry = sut.convert(ProfileScreen("123"))
+
+    assertThat(entry.arguments).isEmpty()
+    assertThat(entry.argumentDropReason).isEqualTo(ArgumentDropReason.INVALID_STRUCTURE)
   }
 
   @Test
@@ -500,7 +536,35 @@ class BackStackConverterTest {
     val sut =
       getSut(entryMapper = { entry -> entryInfo(entry, mapOf("values" to List(1_001) { it })) })
 
-    assertThat(sut.convert(HomeScreen()).arguments).isEmpty()
+    val entry = sut.convert(HomeScreen())
+
+    assertThat(entry.arguments).isEmpty()
+    assertThat(entry.argumentDropReason).isEqualTo(ArgumentDropReason.MAX_COUNT)
+  }
+
+  @Test
+  fun `convert drops arguments when character budget is exceeded`() {
+    val sut =
+      getSut(entryMapper = { entry -> entryInfo(entry, mapOf("value" to "x".repeat(4_097))) })
+
+    val entry = sut.convert(HomeScreen())
+
+    assertThat(entry.arguments).isEmpty()
+    assertThat(entry.argumentDropReason).isEqualTo(ArgumentDropReason.CHARACTER_LIMIT)
+  }
+
+  @Test
+  fun `convert reports sanitization failures`() {
+    class ThrowingValue {
+      override fun toString(): String = error("boom")
+    }
+
+    val sut = getSut(entryMapper = { entry -> entryInfo(entry, mapOf("value" to ThrowingValue())) })
+
+    val converted = sut.convert(HomeScreen())
+
+    assertThat(converted.arguments).isEmpty()
+    assertThat(converted.argumentDropReason).isEqualTo(ArgumentDropReason.SANITIZATION_FAILED)
   }
 
   @Test
@@ -555,9 +619,26 @@ class BackStackConverterTest {
 
     assertThat(routes.map(NormalizedSentryBackStackEntry::serialize))
       .containsExactly(
-        mapOf("entry" to "/SettingsScreen", "arguments" to mapOf("section" to "privacy")),
+        mapOf("entry" to "/SettingsScreen", "entry_arguments" to mapOf("section" to "privacy")),
         mapOf("entry" to "/ProfileScreen"),
       )
       .inOrder()
+  }
+
+  @Test
+  fun `serialize includes the reason arguments were dropped`() {
+    val entry =
+      NormalizedSentryBackStackEntry(
+        name = "/HomeScreen",
+        argumentDropReason = ArgumentDropReason.MAX_COUNT,
+      )
+
+    assertThat(entry.serialize())
+      .isEqualTo(
+        mapOf(
+          "entry" to "/HomeScreen",
+          "entry_arguments" to mapOf(ARGUMENT_DROP_REASON_KEY to "max_argument_count_exceeded"),
+        )
+      )
   }
 }

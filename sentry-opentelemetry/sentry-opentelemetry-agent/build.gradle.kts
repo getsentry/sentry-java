@@ -1,10 +1,18 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import io.sentry.gradle.ChildJvmTestArguments
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
   id("io.sentry.animalsniffer")
   id("io.sentry.javadoc")
+  alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.shadow)
+  id("io.sentry.api-validation")
+}
+
+tasks.named<KotlinCompile>("compileKotlin") {
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
 }
 
 fun relocatePackages(shadowJar: ShadowJar) {
@@ -76,6 +84,11 @@ dependencies {
   bootstrapLibs(projects.sentryOpentelemetry.sentryOpentelemetryBootstrap)
   javaagentLibs(projects.sentryOpentelemetry.sentryOpentelemetryAgentcustomization)
   upstreamAgent(libs.otel.javaagent)
+
+  testImplementation(projects.sentryTestSupport)
+  testImplementation(kotlin(Config.kotlinStdLib))
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(libs.google.truth)
 }
 
 fun isolateClasses(jars: Iterable<File>): CopySpec = copySpec {
@@ -197,6 +210,12 @@ tasks {
   }
 
   assemble { dependsOn(shadowJar) }
+
+  test {
+    jvmArgumentProviders.add(
+      objects.newInstance<ChildJvmTestArguments>().apply { agentJar.from(shadowJar) }
+    )
+  }
 }
 
 tasks.named("distZip").configure { this.dependsOn("jar") }

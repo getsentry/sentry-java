@@ -53,7 +53,7 @@ import io.sentry.android.replay.sentryReplayUnmask
 import io.sentry.compose.SentryTraced
 import io.sentry.compose.SentryUserFeedbackButton
 import io.sentry.compose.withSentryObservableEffect
-import io.sentry.samples.android.GithubAPI
+import io.sentry.samples.android.GitHubApi
 import io.sentry.samples.android.R as IR
 import io.sentry.samples.android.SharedState
 import kotlinx.coroutines.launch
@@ -160,7 +160,7 @@ fun Github(user: String = "getsentry", perPage: Int = 30) {
   LaunchedEffect(perPage) {
     result =
       try {
-        GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+        GitHubApi.service.listReposAsync(user.text, perPage).random().full_name
       } catch (e: Throwable) {
         "error"
       }
@@ -190,7 +190,7 @@ fun Github(user: String = "getsentry", perPage: Int = 30) {
           scope.launch {
             result =
               try {
-                GithubAPI.service.listReposAsync(user.text, perPage).random().full_name
+                GitHubApi.service.listReposAsync(user.text, perPage).random().full_name
               } catch (e: Throwable) {
                 "error"
               }

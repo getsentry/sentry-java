@@ -38,7 +38,7 @@ public final class SentryWebExceptionHandler implements WebExceptionHandler {
   public @NotNull Mono<Void> handle(
       final @NotNull ServerWebExchange serverWebExchange, final @NotNull Throwable ex) {
     final @Nullable IScopes requestScopes =
-        serverWebExchange.getAttributeOrDefault(SentryWebFilter.SENTRY_SCOPES_KEY, null);
+        serverWebExchange.getAttribute(SentryWebFilter.SENTRY_SCOPES_KEY);
     final @NotNull IScopes scopesToUse = requestScopes != null ? requestScopes : scopes;
 
     return SentryReactorUtils.withSentryScopes(

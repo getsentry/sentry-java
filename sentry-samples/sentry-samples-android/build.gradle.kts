@@ -129,14 +129,6 @@ android {
     }
   }
 
-  // Java 11 b/c androidx.room3 requires it.
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
-
-  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 }
-
   androidComponents.onVariants { variant ->
     variant.buildConfigFields?.put(
       "USE_SAGP",
@@ -187,6 +179,7 @@ dependencies {
   implementation(projects.sentryAndroid)
   implementation(projects.sentryAndroidFragment)
   implementation(projects.sentryAndroidNavigation)
+  implementation(projects.sentryAndroidNavigation3)
   implementation(projects.sentryAndroidSqlite)
   implementation(projects.sentryAndroidTimber)
   implementation(projects.sentryCompose)
@@ -212,7 +205,10 @@ dependencies {
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.navigation.fragment)
+  implementation(libs.androidx.navigation3.runtime)
+  implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.recyclerview)
+  implementation(libs.androidx.viewpager2)
   implementation(libs.androidx.browser)
   implementation(libs.androidx.room3.runtime)
   implementation(libs.bundles.androidx.room2)
@@ -235,6 +231,9 @@ dependencies {
 
   debugImplementation(projects.sentryAndroidDistribution)
   debugImplementation(libs.leakcanary)
+
+  testImplementation(libs.google.truth)
+  testImplementation(libs.kotlin.test.junit)
 }
 
 abstract class ToggleNativeLoggingTask : Exec() {

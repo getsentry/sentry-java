@@ -20,7 +20,7 @@ public final class SamplingContext {
 
   @Deprecated
   @SuppressWarnings("InlineMeSuggester")
-  /**
+  /*
    * @deprecated creating a SamplingContext is something only the SDK should do
    */
   public SamplingContext(

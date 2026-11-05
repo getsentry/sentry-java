@@ -68,6 +68,8 @@ class SentryCheckInAdviceTest {
 
   @Autowired lateinit var sampleServiceScheduled: SampleServiceScheduled
 
+  @Autowired lateinit var sampleServiceInheritedSchedule: SampleServiceInheritedSchedule
+
   @Autowired lateinit var scopes: IScopes
 
   val lifecycleToken = mock<ISentryLifecycleToken>()
@@ -372,6 +374,16 @@ class SentryCheckInAdviceTest {
   }
 
   @Test
+  fun `upsertMonitorConfig defaults to false`() {
+    assertNull(inProgressMonitorConfig { sampleServiceScheduled.upsertDefault() })
+  }
+
+  @Test
+  fun `@Scheduled on an overridden parent method sends no monitor config`() {
+    assertNull(inProgressMonitorConfig { sampleServiceInheritedSchedule.job() })
+  }
+
+  @Test
   fun `heartbeat with @Scheduled sends a single check-in without monitor config`() {
     val checkInCaptor = argumentCaptor<CheckIn>()
     whenever(scopes.captureCheckIn(checkInCaptor.capture())).thenReturn(SentryId())
@@ -405,6 +417,8 @@ class SentryCheckInAdviceTest {
     @Bean open fun sampleServiceSpringProperties() = SampleServiceSpringProperties()
 
     @Bean open fun sampleServiceScheduled() = SampleServiceScheduled()
+
+    @Bean open fun sampleServiceInheritedSchedule() = SampleServiceInheritedSchedule()
 
     @Bean
     open fun scopes(): IScopes {
@@ -458,57 +472,63 @@ class SentryCheckInAdviceTest {
 
   open class SampleServiceScheduled {
 
-    @SentryCheckIn("cron_zone")
+    @SentryCheckIn("cron_zone", upsertMonitorConfig = true)
     @Scheduled(cron = "0 15 10 * * MON-FRI", zone = "Europe/Vienna")
     open fun cronWithZone() {}
 
-    @SentryCheckIn("cron") @Scheduled(cron = "0 0 2 * * *") open fun cron() {}
+    @SentryCheckIn("cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "0 0 2 * * *")
+    open fun cron() {}
 
-    @SentryCheckIn("cron_properties")
+    @SentryCheckIn("cron_properties", upsertMonitorConfig = true)
     @Scheduled(cron = "\${my.cron.schedule}", zone = "\${my.cron.zone}")
     open fun cronFromProperties() {}
 
-    @SentryCheckIn("fixed_rate_hours")
+    @SentryCheckIn("fixed_rate_hours", upsertMonitorConfig = true)
     @Scheduled(fixedRate = 2, timeUnit = TimeUnit.HOURS)
     open fun fixedRateHours() {}
 
-    @SentryCheckIn("fixed_rate_iso")
+    @SentryCheckIn("fixed_rate_iso", upsertMonitorConfig = true)
     @Scheduled(fixedRateString = "PT10M")
     open fun fixedRateIso() {}
 
-    @SentryCheckIn("fixed_rate_simple")
+    @SentryCheckIn("fixed_rate_simple", upsertMonitorConfig = true)
     @Scheduled(fixedRateString = "5m")
     open fun fixedRateSimpleDuration() {}
 
-    @SentryCheckIn("fixed_delay") @Scheduled(fixedDelay = 300_000) open fun fixedDelay() {}
+    @SentryCheckIn("fixed_delay", upsertMonitorConfig = true)
+    @Scheduled(fixedDelay = 300_000)
+    open fun fixedDelay() {}
 
-    @SentryCheckIn("fixed_delay_iso")
+    @SentryCheckIn("fixed_delay_iso", upsertMonitorConfig = true)
     @Scheduled(fixedDelayString = "PT10M")
     open fun fixedDelayIso() {}
 
-    @SentryCheckIn("disabled_cron") @Scheduled(cron = "-") open fun disabledCron() {}
+    @SentryCheckIn("disabled_cron", upsertMonitorConfig = true)
+    @Scheduled(cron = "-")
+    open fun disabledCron() {}
 
-    @SentryCheckIn("cron_empty_zone")
+    @SentryCheckIn("cron_empty_zone", upsertMonitorConfig = true)
     @Scheduled(cron = "0 0 3 * * *", zone = "\${my.cron.empty.zone}")
     open fun cronWithEmptyZone() {}
 
-    @SentryCheckIn("cron_zone_defaults")
+    @SentryCheckIn("cron_zone_defaults", upsertMonitorConfig = true)
     @Scheduled(cron = "0 0 4 * * *", zone = "Europe/Vienna")
     open fun cronWithZoneAndDefaults() {}
 
-    @SentryCheckIn("schedules_container")
+    @SentryCheckIn("schedules_container", upsertMonitorConfig = true)
     @Schedules(Scheduled(cron = "0 0 1 * * *"), Scheduled(cron = "0 0 13 * * *"))
     open fun schedulesContainer() {}
 
-    @SentryCheckIn("unresolvable_cron")
+    @SentryCheckIn("unresolvable_cron", upsertMonitorConfig = true)
     @Scheduled(cron = "\${my.cron.missing}")
     open fun unresolvableCron() {}
 
-    @SentryCheckIn("derivation_throws")
+    @SentryCheckIn("derivation_throws", upsertMonitorConfig = true)
     @Scheduled(cron = "\${my.cron.exception.property}")
     open fun derivationThrows() = 1
 
-    @SentryCheckIn("multiple")
+    @SentryCheckIn("multiple", upsertMonitorConfig = true)
     @Scheduled(cron = "0 0 1 * * *")
     @Scheduled(cron = "0 0 13 * * *")
     open fun multipleSchedules() {}
@@ -517,9 +537,19 @@ class SentryCheckInAdviceTest {
     @Scheduled(cron = "0 0 1 * * *")
     open fun upsertDisabled() {}
 
-    @SentryCheckIn("heartbeat", heartbeat = true)
+    @SentryCheckIn("upsert_default") @Scheduled(cron = "0 0 1 * * *") open fun upsertDefault() {}
+
+    @SentryCheckIn("heartbeat", heartbeat = true, upsertMonitorConfig = true)
     @Scheduled(cron = "0 0 1 * * *")
     open fun heartbeat() {}
+  }
+
+  open class ScheduledParent {
+    @Scheduled(cron = "0 0 1 * * *") open fun job() {}
+  }
+
+  open class SampleServiceInheritedSchedule : ScheduledParent() {
+    @SentryCheckIn("inherited", upsertMonitorConfig = true) override fun job() {}
   }
 
   class MyPropertyPlaceholderConfigurer : PropertySourcesPlaceholderConfigurer() {

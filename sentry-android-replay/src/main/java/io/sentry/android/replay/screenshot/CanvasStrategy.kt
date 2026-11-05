@@ -58,6 +58,9 @@ internal class CanvasStrategy(
   private val lastCaptureSuccessful = AtomicBoolean(false)
   private val textIgnoringCanvas = TextIgnoringDelegateCanvas()
   private val isClosed = AtomicBoolean(false)
+  // Only accessed on the background handler, which runs the render task, the PixelCopy callback and
+  // the cleanup, so it needs no synchronization
+  private var pixelCopyInFlight = false
 
   private val surfaceTexture =
     SurfaceTexture(false).apply {
@@ -110,15 +113,19 @@ internal class CanvasStrategy(
         )
         return@Runnable
       }
+      pixelCopyInFlight = true
       PixelCopy.request(
         surface,
         screenshot!!,
         { result ->
+          pixelCopyInFlight = false
           if (isClosed.get()) {
             options.logger.log(
               SentryLevel.DEBUG,
               "CanvasStrategy is closed, ignoring capture result",
             )
+            // close() skipped the cleanup while this copy was still writing into the screenshot
+            releaseResources()
             return@request
           }
           if (result == PixelCopy.SUCCESS) {
@@ -138,6 +145,8 @@ internal class CanvasStrategy(
         executor.getBackgroundHandler(),
       )
     } catch (t: Throwable) {
+      // if the request itself threw, no callback will clear the flag
+      pixelCopyInFlight = false
       options.logger.log(SentryLevel.ERROR, "Canvas Strategy: picture render failed", t)
       lastCaptureSuccessful.set(false)
     }
@@ -174,12 +183,20 @@ internal class CanvasStrategy(
       .getBackgroundHandler()
       .postSafely(
         ReplayRunnable("CanvasStrategy.close") {
-          screenshot?.let { synchronized(it) { if (!it.isRecycled) it.recycle() } }
-          surface.release()
-          surfaceTexture.release()
+          // PixelCopy writes into the screenshot on the RenderThread; recycling it mid-copy aborts
+          // the process, so an in-flight copy releases the resources from its callback instead
+          if (!pixelCopyInFlight) {
+            releaseResources()
+          }
         }
       )
     unprocessedPictureRef.getAndSet(null)
+  }
+
+  private fun releaseResources() {
+    screenshot?.let { synchronized(it) { if (!it.isRecycled) it.recycle() } }
+    surface.release()
+    surfaceTexture.release()
   }
 
   override fun lastCaptureSuccessful(): Boolean = lastCaptureSuccessful.get()

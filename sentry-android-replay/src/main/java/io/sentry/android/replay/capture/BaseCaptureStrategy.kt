@@ -11,15 +11,21 @@ import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.SentryReplayEvent.ReplayType.BUFFER
 import io.sentry.SentryReplayEvent.ReplayType.SESSION
+import io.sentry.android.replay.RecordingMetadata
 import io.sentry.android.replay.ReplayCache
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_BIT_RATE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_DIST
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ENVIRONMENT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FLUSHED
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_FRAME_RATE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_HEIGHT
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_ID
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_RELEASE
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_ID
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_SCREEN_AT_START
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_REPLAY_TYPE
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_NAME
+import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_SDK_VERSION
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_TIMESTAMP
 import io.sentry.android.replay.ReplayCache.Companion.SEGMENT_KEY_WIDTH
 import io.sentry.android.replay.ScreenshotRecorderConfig
@@ -29,24 +35,30 @@ import io.sentry.android.replay.gestures.ReplayGestureConverter
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
+import io.sentry.time.Deadline
+import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
 import java.util.Date
 import java.util.Deque
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 @SuppressLint("UseRequiresApi")
 @TargetApi(26)
-internal abstract class BaseCaptureStrategy(
+internal abstract class BaseCaptureStrategy
+@Suppress("LongParameterList")
+constructor(
   private val options: SentryOptions,
   private val scopes: IScopes?,
-  private val dateProvider: ICurrentDateProvider,
+  // TODO [v9]: We should consider replacing this with AnchoredClock in V9.
+  dateProvider: ICurrentDateProvider,
+  private val ticker: MonotonicTicker,
   protected val replayExecutor: ScheduledExecutorService,
   protected val persistingExecutor: ScheduledExecutorService,
   private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
@@ -57,7 +69,7 @@ internal abstract class BaseCaptureStrategy(
     private const val MAX_CONTEXT_VALUES = 100
   }
 
-  private val gestureConverter = ReplayGestureConverter(dateProvider)
+  private val gestureConverter = ReplayGestureConverter(dateProvider, ticker)
 
   protected val isTerminating = AtomicBoolean(false)
   protected var cache: ReplayCache? = null
@@ -79,7 +91,19 @@ internal abstract class BaseCaptureStrategy(
         if (newValue == null) null else DateUtils.getTimestamp(newValue),
       )
     }
-  protected val replayStartTimestamp = AtomicLong()
+  /**
+   * When the recording reaches its `sessionDuration` cap, or `null` while nothing is being
+   * recorded. Only [SessionCaptureStrategy] enforces a cap; buffer mode records indefinitely.
+   */
+  @Volatile protected var replayDeadline: Deadline? = null
+  private var recordingMetadata: RecordingMetadata? by
+    persistableAtomicNullable(propertyName = "") { _, _, newValue ->
+      persistMetadataValue(SEGMENT_KEY_RELEASE, newValue?.release)
+      persistMetadataValue(SEGMENT_KEY_ENVIRONMENT, newValue?.environment)
+      persistMetadataValue(SEGMENT_KEY_DIST, newValue?.dist)
+      persistMetadataValue(SEGMENT_KEY_SDK_NAME, newValue?.sdkVersion?.name)
+      persistMetadataValue(SEGMENT_KEY_SDK_VERSION, newValue?.sdkVersion?.version)
+    }
   protected var screenAtStart by
     persistableAtomicNullable<String>(propertyName = SEGMENT_KEY_REPLAY_SCREEN_AT_START)
   override var currentReplayId: SentryId by
@@ -109,7 +133,20 @@ internal abstract class BaseCaptureStrategy(
     this.replayType = replayType ?: (if (this is SessionCaptureStrategy) SESSION else BUFFER)
 
     segmentTimestamp = DateUtils.getCurrentDateTime()
-    replayStartTimestamp.set(dateProvider.currentTimeMillis)
+    replayDeadline = Deadline.after(ticker, options.sessionReplay.sessionDuration, MILLISECONDS)
+    // the same values MainEventProcessor applies to current-run segments
+    recordingMetadata =
+      RecordingMetadata(
+        release = options.release,
+        environment = options.environment,
+        dist = options.dist,
+        sdkVersion = options.sessionReplay.sdkVersion ?: options.sdkVersion,
+      )
+  }
+
+  private fun persistMetadataValue(key: String, value: String?) {
+    // the segment file stores one key=value per line, so values with line breaks can't be stored
+    cache?.persistSegmentValues(key, value?.takeIf { '\n' !in it && '\r' !in it })
   }
 
   override fun resume() {
@@ -125,7 +162,7 @@ internal abstract class BaseCaptureStrategy(
     replayExecutor.submit(
       ReplayRunnable("$TAG.stop") {
         cache?.close()
-        replayStartTimestamp.set(0)
+        replayDeadline = null
         segmentTimestamp = null
         currentReplayId = SentryId.EMPTY_ID
       }

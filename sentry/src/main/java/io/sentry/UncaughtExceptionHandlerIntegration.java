@@ -47,6 +47,8 @@ public final class UncaughtExceptionHandlerIntegration
     this.threadAdapter = threadAdapter;
   }
 
+  // temp fix for JDK 21: Both integrations must share the same global scope instance.
+  @SuppressWarnings("ReferenceEquality")
   @Override
   public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     if (registered) {

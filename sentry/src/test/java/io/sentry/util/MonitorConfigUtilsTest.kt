@@ -1,9 +1,15 @@
 package io.sentry.util
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.IScopes
+import io.sentry.Sentry
+import io.sentry.SentryOptions
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
+import org.mockito.Mockito
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 class MonitorConfigUtilsTest {
 
@@ -16,6 +22,50 @@ class MonitorConfigUtilsTest {
     assertThat(config.schedule.value).isEqualTo("15 10 * * MON-FRI")
     assertThat(config.schedule.unit).isNull()
     assertThat(config.timezone).isNull()
+  }
+
+  @Test
+  fun `cron at second 0 keeps the default check-in margin`() {
+    val config = MonitorConfigUtils.fromSchedule("0 * * * * *", null, null)
+
+    assertThat(config!!.checkinMargin).isNull()
+  }
+
+  @Test
+  fun `cron with non-zero seconds gets a 2 minute check-in margin`() {
+    for (cron in listOf("1 * * * * *", "59 * * * * *", "30 15 10 * * *")) {
+      assertThat(MonitorConfigUtils.fromSchedule(cron, null, null)!!.checkinMargin).isEqualTo(2L)
+    }
+  }
+
+  @Test
+  fun `cron with non-zero seconds raises a smaller default check-in margin`() {
+    withDefaultCheckinMargin(1L) {
+      assertThat(MonitorConfigUtils.fromSchedule("59 * * * * *", null, null)!!.checkinMargin)
+        .isEqualTo(2L)
+    }
+  }
+
+  @Test
+  fun `cron with non-zero seconds keeps a larger default check-in margin`() {
+    withDefaultCheckinMargin(5L) {
+      assertThat(MonitorConfigUtils.fromSchedule("59 * * * * *", null, null)!!.checkinMargin)
+        .isEqualTo(5L)
+    }
+  }
+
+  private fun withDefaultCheckinMargin(margin: Long, block: () -> Unit) {
+    Mockito.mockStatic(Sentry::class.java).use { sentry ->
+      val scopes = mock<IScopes>()
+      sentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+      whenever(scopes.options)
+        .thenReturn(
+          SentryOptions().apply {
+            cron = SentryOptions.Cron().apply { defaultCheckinMargin = margin }
+          }
+        )
+      block()
+    }
   }
 
   @Test
@@ -291,6 +341,8 @@ class MonitorConfigUtilsTest {
         "0 0 9 ? * SUN/2" to "0 9 * * 7/2",
         "0 0 9 ? * SUN-TUE,fri-sun" to "0 9 * * 0-2,5-7",
         "0 0 9 ? * 7-2" to "0 9 * * 0-2",
+        "0 0 9 ? * SUN-SUN" to "0 9 * * 7",
+        "0 0 9 ? * 7-7/2" to "0 9 * * 7/2",
         "0 0 9 ? * 0,7" to "0 9 * * 0,7",
         "0 0 9 ? * FRIL" to "0 9 * * 5L",
         "0 0 9 ? * MON#2" to "0 9 * * 1#2",

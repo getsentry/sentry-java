@@ -243,7 +243,7 @@ public final class CombinedContextsView extends Contexts {
 
   @ApiStatus.Internal
   @Override
-  /** Not intended to be set on a scopes Context directly */
+  /* Not intended to be set on a scopes Context directly */
   public void setFeatureFlags(@NotNull FeatureFlags spring) {
     getDefaultContexts().setFeatureFlags(spring);
   }

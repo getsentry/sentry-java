@@ -1,9 +1,9 @@
 package io.sentry.servlet;
 
-import io.sentry.EventProcessor;
 import io.sentry.Hint;
 import io.sentry.SentryEvent;
 import io.sentry.SentryOptions;
+import io.sentry.internal.eventprocessor.SentryEventProcessor;
 import io.sentry.protocol.Request;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.Objects;
@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Attaches information about HTTP request to {@link SentryEvent}. */
-final class SentryRequestHttpServletRequestProcessor implements EventProcessor {
+final class SentryRequestHttpServletRequestProcessor implements SentryEventProcessor {
 
   private final @NotNull HttpServletRequest httpRequest;
   private final @NotNull SentryOptions options;
