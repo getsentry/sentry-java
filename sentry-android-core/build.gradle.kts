@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   id("io.sentry.api-validation")
+  id("io.sentry.robolectric-test-split")
 }
 
 android {
@@ -47,9 +48,6 @@ android {
     unitTests.apply {
       isReturnDefaultValues = true
       isIncludeAndroidResources = true
-      // Robolectric loads the android-all jar into each test JVM, which needs more heap
-      // than the default.
-      all { it.maxHeapSize = "2g" }
     }
   }
 

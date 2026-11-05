@@ -10,6 +10,7 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
   id("io.sentry.api-validation")
+  id("io.sentry.robolectric-test-split")
 }
 
 android {
