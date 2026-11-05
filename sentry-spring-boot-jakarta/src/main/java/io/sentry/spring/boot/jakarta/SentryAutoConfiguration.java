@@ -26,9 +26,11 @@ import io.sentry.spring.jakarta.SentryWebConfiguration;
 import io.sentry.spring.jakarta.SpringProfilesEventProcessor;
 import io.sentry.spring.jakarta.SpringSecuritySentryUserProvider;
 import io.sentry.spring.jakarta.cache.SentryCacheBeanPostProcessor;
+import io.sentry.spring.jakarta.checkin.SentryCheckInAdvice;
 import io.sentry.spring.jakarta.checkin.SentryCheckInAdviceConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryCheckInPointcutConfiguration;
 import io.sentry.spring.jakarta.checkin.SentryQuartzConfiguration;
+import io.sentry.spring.jakarta.checkin.SentryScheduledCheckInPointcut;
 import io.sentry.spring.jakarta.exception.SentryCaptureExceptionParameterPointcutConfiguration;
 import io.sentry.spring.jakarta.exception.SentryExceptionParameterAdviceConfiguration;
 import io.sentry.spring.jakarta.kafka.SentryKafkaConsumerBeanPostProcessor;
@@ -49,11 +51,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.aopalliance.aop.Advice;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.jetbrains.annotations.NotNull;
 import org.quartz.core.QuartzScheduler;
 import org.slf4j.MDC;
+import org.springframework.aop.Advisor;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -73,6 +80,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Role;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
@@ -309,6 +317,27 @@ public class SentryAutoConfiguration {
       @Import(SentryCheckInPointcutConfiguration.class)
       @Open
       static class SentryCheckInPointcutAutoConfiguration {}
+
+      @Configuration(proxyBeanMethods = false)
+      @ConditionalOnProperty(name = "sentry.monitor-scheduled-tasks", havingValue = "true")
+      @Open
+      static class SentryScheduledCheckInConfiguration {
+        @Bean
+        @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+        public @NotNull Advice sentryScheduledCheckInAdvice() {
+          return new SentryCheckInAdvice(ScopesAdapter.getInstance(), true);
+        }
+
+        @Bean
+        @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+        public @NotNull Advisor sentryScheduledCheckInAdvisor(
+            final @NotNull @Qualifier("sentryScheduledCheckInAdvice") Advice advice,
+            final @NotNull SentryProperties sentryProperties) {
+          return new DefaultPointcutAdvisor(
+              new SentryScheduledCheckInPointcut(sentryProperties.getExcludeScheduledTasks()),
+              advice);
+        }
+      }
     }
 
     /** Registers beans specific to Spring MVC. */
