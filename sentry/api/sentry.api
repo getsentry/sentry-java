@@ -908,6 +908,10 @@ public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
 }
 
+public abstract interface class io/sentry/IDebugManager {
+	public abstract fun isDebuggerConnected ()Z
+}
+
 public abstract interface class io/sentry/IDistributionApi {
 	public abstract fun checkForUpdate ()Ljava/util/concurrent/Future;
 	public abstract fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
@@ -3798,6 +3802,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getDataCollectionResolver ()Lio/sentry/DataCollectionResolver;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDeadlineTimeout ()J
+	public fun getDebugManager ()Lio/sentry/IDebugManager;
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
 	public fun getDefaultScopeType ()Lio/sentry/ScopeType;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
@@ -3953,6 +3958,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDeadlineTimeout (J)V
 	public fun setDebug (Z)V
+	public fun setDebugManager (Lio/sentry/IDebugManager;)V
 	public fun setDebugMetaLoader (Lio/sentry/internal/debugmeta/IDebugMetaLoader;)V
 	public fun setDefaultScopeType (Lio/sentry/ScopeType;)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
