@@ -529,6 +529,47 @@ class DefaultReplayBreadcrumbConverterTest {
   }
 
   @Test
+  fun `a response body captured after the breadcrumb was converted does not reach the replay`() {
+    // Accepted gap: a segment can be cut between the call returning and the app reading the body.
+    val options = SentryOptions.empty()
+    val converter = fixture.getSut(options)
+    val httpBreadcrumb =
+      Breadcrumb(Date(123L)).apply {
+        type = "http"
+        category = "http"
+        data["url"] = "https://example.com"
+        data[SpanDataConvention.HTTP_START_TIMESTAMP] = 1000L
+        data[SpanDataConvention.HTTP_END_TIMESTAMP] = 2000L
+      }
+    val networkRequestData = NetworkRequestData("GET")
+    networkRequestData.setResponseDetails(
+      ReplayNetworkRequestOrResponse(200, null, null, mapOf("Content-Type" to "application/json"))
+    )
+    // Simulates Scopes.addBreadcrumb, which hands the network details to the converter
+    options.beforeBreadcrumb?.execute(
+      httpBreadcrumb,
+      Hint().apply { set(SENTRY_REPLAY_NETWORK_DETAILS, networkRequestData) },
+    )
+
+    val rrwebEvent = converter.convert(httpBreadcrumb)
+    networkRequestData.setResponseDetails(
+      ReplayNetworkRequestOrResponse(
+        200,
+        21L,
+        NetworkBody("response body content"),
+        mapOf("Content-Type" to "application/json"),
+      )
+    )
+
+    check(rrwebEvent is RRWebSpanEvent)
+    assertEquals(200, rrwebEvent.data!!["statusCode"])
+    val responseData = rrwebEvent.data!!["response"] as Map<*, *>
+    assertEquals(mapOf("Content-Type" to "application/json"), responseData["headers"])
+    assertNull(responseData["body"])
+    assertNull(rrwebEvent.data!!["responseBodySize"])
+  }
+
+  @Test
   fun `does not convert network details data for non-http breadcrumbs`() {
     val navigationBreadcrumb =
       Breadcrumb(Date()).apply {
