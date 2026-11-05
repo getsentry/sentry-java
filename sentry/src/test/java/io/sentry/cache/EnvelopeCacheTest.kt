@@ -76,7 +76,10 @@ class EnvelopeCacheTest {
 
     assertEquals(0, nofFiles())
 
-    cache.store(SentryEnvelope.from(fixture.options.serializer, createSession(), null))
+    cache.storeEnvelope(
+      SentryEnvelope.from(fixture.options.serializer, createSession(), null),
+      Hint(),
+    )
 
     assertEquals(1, nofFiles())
 
@@ -91,7 +94,10 @@ class EnvelopeCacheTest {
     assertTrue(file.deleteRecursively())
     assertFalse(file.exists())
 
-    cache.store(SentryEnvelope.from(fixture.options.serializer, createSession(), null))
+    cache.storeEnvelope(
+      SentryEnvelope.from(fixture.options.serializer, createSession(), null),
+      Hint(),
+    )
 
     assertTrue(file.exists())
     assertEquals(1, file.list()?.size)
@@ -157,7 +163,7 @@ class EnvelopeCacheTest {
     assertTrue(currentFile.exists())
 
     HintUtils.setTypeCheckHint(hints, SessionEndHint())
-    cache.store(envelope, hints)
+    cache.storeEnvelope(envelope, hints)
     assertFalse(currentFile.exists())
 
     file.deleteRecursively()
@@ -394,7 +400,7 @@ class EnvelopeCacheTest {
     // since the first store call would set as readCrashedLastRun=true
     SentryCrashLastRunState.getInstance().reset()
 
-    cache.store(newEnvelope, hints)
+    cache.storeEnvelope(newEnvelope, hints)
     file.deleteRecursively()
 
     // passing empty string since readCrashedLastRun is already set
@@ -719,8 +725,8 @@ class EnvelopeCacheTest {
         null,
       )
 
-    cache.store(envelopeA, Hint())
-    cache.store(envelopeB, Hint())
+    cache.storeEnvelope(envelopeA, Hint())
+    cache.storeEnvelope(envelopeB, Hint())
 
     assertEquals(2, cache.directory.file.list()?.size)
   }
@@ -789,7 +795,7 @@ class EnvelopeCacheTest {
 
     // Second call should be idempotent: previous_session.json should be preserved
     // This simulates the race where both MovePreviousSession runnable and
-    // storeInternal (SessionStart) both call movePreviousSession
+    // storeEnvelope (SessionStart) both call movePreviousSession
     cache.movePreviousSession(currentSessionFile, previousSessionFile)
 
     // previous_session.json should still exist with original content

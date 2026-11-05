@@ -2,6 +2,7 @@ package io.sentry.android.core.cache
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.DateUtils
+import io.sentry.Hint
 import io.sentry.ISerializer
 import io.sentry.NoOpLogger
 import io.sentry.SentryEnvelope
@@ -90,7 +91,7 @@ class AndroidEnvelopeCacheTest {
   fun `when no uncaught hint exists, does not write startup crash file`() {
     val cache = fixture.getSut(tmpDir)
 
-    cache.store(fixture.envelope)
+    cache.storeEnvelope(fixture.envelope, Hint())
 
     assertFalse(fixture.startupCrashMarkerFile.exists())
   }
@@ -155,7 +156,7 @@ class AndroidEnvelopeCacheTest {
   fun `when no AnrV2 hint exists, does not write last anr report file`() {
     val cache = fixture.getSut(tmpDir)
 
-    cache.store(fixture.envelope)
+    cache.storeEnvelope(fixture.envelope, Hint())
 
     assertFalse(fixture.lastReportedAnrFile.exists())
   }
