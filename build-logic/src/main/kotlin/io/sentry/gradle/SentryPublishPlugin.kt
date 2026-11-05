@@ -53,6 +53,7 @@ private fun Project.configurePublishing(
 
   tasks.named("distZip").configure {
     dependsOn("publishToMavenLocal")
+    dependsOn("publishAllPublicationsTo${DIST_MAVEN_REPO.replaceFirstChar { it.uppercase() }}Repository")
     val file = distributionFile
     doLast {
       if (!file.exists()) {
@@ -78,8 +79,13 @@ private fun Project.configurePublishing(
     extensions.configure<JavaPluginExtension> { withJavadocJar() }
   }
 
-  // this is needed for sentry-unity to consume our artifacts locally as proper maven publication
   extensions.configure<PublishingExtension> {
+    // the dist zips craft publishes are assembled from this, see Publication.kt
+    repositories.maven {
+      name = DIST_MAVEN_REPO
+      url = distMavenDir.get().asFile.toURI()
+    }
+    // this is needed for sentry-unity to consume our artifacts locally as proper maven publication
     repositories.maven {
       name = "unityMaven"
       url = isolated.rootProject.projectDirectory.dir("build${sep}unityMaven").asFile.toURI()
