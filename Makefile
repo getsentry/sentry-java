@@ -1,4 +1,4 @@
-.PHONY: all clean compile javadocs dryRelease update checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update format checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check preMerge publish
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
@@ -24,6 +24,11 @@ dryRelease:
 # check for dependencies update
 update:
 	./gradlew dependencyUpdates -Drevision=release
+
+# Spotless formats the code. The root spotlessApply doesn't reach the separate builds.
+format:
+	./gradlew spotlessApply
+	./gradlew -p sentry-samples/sentry-samples-android spotlessApply
 
 # Spotless check's code
 checkFormat:
