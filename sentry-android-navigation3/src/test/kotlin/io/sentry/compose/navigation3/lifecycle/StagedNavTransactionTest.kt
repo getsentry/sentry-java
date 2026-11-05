@@ -28,8 +28,8 @@ class StagedNavTransactionTest {
   private val transactionOptions = TransactionOptions()
 
   private val finishedTransaction =
-    mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
-  private val hostTransaction = mock<ITransaction>()
+    mockTransaction().also { whenever(it.isFinished).thenReturn(true) }
+  private val hostTransaction = mockTransaction()
 
   @Test
   fun `start() - starts a nav transaction and binds it to a free scope`() {
@@ -511,7 +511,7 @@ class StagedNavTransactionTest {
               NoOpTransaction.getInstance()
             } else {
               val name = (it.arguments[0] as TransactionContext).name
-              mock<ITransaction>()
+              mockTransaction()
                 .also { transaction -> whenever(transaction.name).thenReturn(name) }
                 .also(startedTransactions::add)
             }

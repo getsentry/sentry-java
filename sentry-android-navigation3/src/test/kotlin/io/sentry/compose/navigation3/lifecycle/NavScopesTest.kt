@@ -254,7 +254,7 @@ class NavScopesTest {
     val navScopes = fixture.navScopes()
     navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
     navScopes.applyFirstBackStackUpdate()
-    fixture.scope.transaction = mock<ITransaction>()
+    fixture.scope.transaction = mockTransaction()
 
     navScopes.startNavTransaction("/Home")
 
@@ -337,7 +337,7 @@ class NavScopesTest {
     val navScopes = fixture.navScopes()
     navScopes.attach(fixture.lifecycle(Lifecycle.State.RESUMED))
     navScopes.applyFirstBackStackUpdate()
-    val hostTransaction = mock<ITransaction>()
+    val hostTransaction = mockTransaction()
     fixture.scope.transaction = hostTransaction
 
     navScopes.finishNavTransaction()
@@ -520,7 +520,7 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val covered = fixture.coveredNavScopes()
     covered.startNavTransaction("/Result")
-    val hostTransaction = mock<ITransaction>()
+    val hostTransaction = mockTransaction()
     fixture.scope.transaction = hostTransaction
 
     fixture.incoming.dispose()
@@ -534,7 +534,7 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val covered = fixture.coveredNavScopes()
     covered.startNavTransaction("/Result")
-    fixture.scope.transaction = mock<ITransaction>()
+    fixture.scope.transaction = mockTransaction()
 
     fixture.incoming.dispose()
 
@@ -546,8 +546,7 @@ class NavScopesTest {
     val fixture = Fixture.create()
     val covered = fixture.coveredNavScopes()
     covered.startNavTransaction("/Result")
-    fixture.scope.transaction =
-      mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+    fixture.scope.transaction = mockTransaction().also { whenever(it.isFinished).thenReturn(true) }
 
     fixture.incoming.dispose()
 
@@ -558,8 +557,7 @@ class NavScopesTest {
   fun `a deferred transaction requested while a finished transaction is bound starts in its place`() {
     val fixture = Fixture.create()
     val covered = fixture.coveredNavScopes()
-    fixture.scope.transaction =
-      mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
+    fixture.scope.transaction = mockTransaction().also { whenever(it.isFinished).thenReturn(true) }
     covered.startNavTransaction("/Result")
 
     fixture.incoming.dispose()
@@ -707,7 +705,7 @@ class NavScopesTest {
               NoOpTransaction.getInstance()
             } else {
               val name = (it.arguments[0] as TransactionContext).name
-              mock<ITransaction>()
+              mockTransaction()
                 .also { transaction -> whenever(transaction.name).thenReturn(name) }
                 .also(startedTransactions::add)
             }
