@@ -46,8 +46,8 @@ public final class SentryJobListener implements JobListener {
   public static final String SENTRY_SCOPE_LIFECYCLE_TOKEN_KEY = "sentry-scope-lifecycle";
 
   /**
-   * Job or trigger data key. The listener sends a monitor config from the trigger with check-ins by
-   * default; set this to {@code "false"} to manage the monitor's schedule in Sentry instead.
+   * Job or trigger data key. Set it to {@code "true"} to send the trigger's schedule with
+   * check-ins, so Sentry creates or updates the monitor.
    */
   public static final String SENTRY_UPSERT_MONITOR_CONFIG_KEY = "sentry-upsert-monitor-config";
 
@@ -116,10 +116,10 @@ public final class SentryJobListener implements JobListener {
   private boolean shouldUpsertMonitorConfig(final @NotNull JobExecutionContext context) {
     final @Nullable JobDataMap jobDataMap = context.getMergedJobDataMap();
     if (jobDataMap == null) {
-      return true;
+      return false;
     }
     final @Nullable Object o = jobDataMap.get(SENTRY_UPSERT_MONITOR_CONFIG_KEY);
-    return o == null || !"false".equalsIgnoreCase(o.toString().trim());
+    return o != null && "true".equalsIgnoreCase(o.toString().trim());
   }
 
   private @Nullable MonitorConfig monitorConfigFromTrigger(
