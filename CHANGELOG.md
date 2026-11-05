@@ -5,9 +5,8 @@
 ### Features
 
 - Connect Android traces with web content in a `WebView` using `SentryWebViewTracing.addTracePropagation(webView, "example.com")` ([#6395](https://github.com/getsentry/sentry-java/pull/6395))
-  - Before page scripts run, the current trace is written into pages from the allowed hosts as `sentry-trace` and `baggage` meta tags, so `@sentry/browser` running in the page continues the trace on pageload.
-  - Requires the `androidx.webkit:webkit` dependency in your app and an Android System WebView that supports document-start scripts; otherwise the call logs a warning and returns `false`.
-  - Only list hosts whose content you control. Call it on the main thread before loading a URL, and again to propagate a newer trace to a later page load.
+  - Requires the `androidx.webkit:webkit` dependency. Only list hosts whose content you control.
+  - Call it on the main thread before each page load you want connected.
 
 ## 8.63.0
 
