@@ -1,8 +1,3 @@
-// A standalone build that includes the SDK build, so it depends on the SDK through the same
-// io.sentry:* coordinates an app would, and Gradle substitutes the SDK's projects for them.
-// The SDK build doesn't include this one back, so its plugins and versions stay out of the SDK
-// build. Run it with `./gradlew -p sentry-samples/sentry-samples-android <task>`.
-
 pluginManagement {
   repositories {
     // Prefer local SAGP artifact if one exists; otherwise fall back to libs.versions.toml.
