@@ -2,8 +2,10 @@ package io.sentry.spring.jakarta.checkin
 
 import io.sentry.CheckIn
 import io.sentry.CheckInStatus
+import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ISentryLifecycleToken
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
 import kotlin.test.BeforeTest
@@ -18,13 +20,16 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.atLeast
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.reset
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.aop.Advisor
 import org.springframework.aop.Pointcut
+import org.springframework.aop.framework.ProxyFactory
 import org.springframework.aop.support.AopUtils
 import org.springframework.aop.support.DefaultPointcutAdvisor
 import org.springframework.beans.factory.annotation.Autowired
@@ -45,6 +50,8 @@ import reactor.core.publisher.Mono
 @TestPropertySource(properties = ["my.cron.schedule = 0 30 2 * * *"])
 class SentryScheduledCheckInTest {
   private val SLUG = "sentry-scheduled-check-in-test-jobs-sync-users"
+  private val COLLISION_WARNING =
+    "Monitor slug \"%s\" is used by both %s and %s, so their check-ins go to one monitor. Add @SentryCheckIn(\"your-slug\") to one of them."
 
   @Autowired lateinit var jobs: Jobs
 
@@ -185,6 +192,61 @@ class SentryScheduledCheckInTest {
     )
   }
 
+  @Test
+  fun `warns once when two methods derive the same slug`() {
+    val logger = mockLogger()
+    val advice = SentryCheckInAdvice(scopes, true)
+    val cleanupJob = proxy(CleanupJob(), advice)
+    val cleanup = proxy(Cleanup(), advice)
+
+    cleanupJob.run()
+    cleanup.jobRun()
+    cleanup.jobRun()
+    cleanupJob.run()
+
+    verify(logger, times(1))
+      .log(
+        eq(SentryLevel.WARNING),
+        eq(COLLISION_WARNING),
+        eq("sentry-scheduled-check-in-test-cleanup-job-run"),
+        eq("${CleanupJob::class.java.name}.run"),
+        eq("${Cleanup::class.java.name}.jobRun"),
+      )
+  }
+
+  @Test
+  fun `does not warn when derived slugs differ or the same method runs again`() {
+    val logger = mockLogger()
+    val advice = SentryCheckInAdvice(scopes, true)
+    val cleanupJob = proxy(CleanupJob(), advice)
+    val otherJobs = proxy(Jobs(), advice)
+
+    cleanupJob.run()
+    cleanupJob.run()
+    otherJobs.syncUsers()
+
+    verify(logger, never()).log(eq(SentryLevel.WARNING), eq(COLLISION_WARNING), any(), any(), any())
+  }
+
+  private fun mockLogger(): ILogger {
+    val logger = mock<ILogger>()
+    val options =
+      SentryOptions().apply {
+        isDebug = true
+        setLogger(logger)
+      }
+    whenever(scopes.options).thenReturn(options)
+    return logger
+  }
+
+  private fun <T : Any> proxy(target: T, advice: SentryCheckInAdvice): T {
+    val factory = ProxyFactory(target)
+    factory.isProxyTargetClass = true
+    factory.addAdvice(advice)
+    @Suppress("UNCHECKED_CAST")
+    return factory.proxy as T
+  }
+
   private fun capture(block: () -> Unit): List<CheckIn> {
     val captor = argumentCaptor<CheckIn>()
     block()
@@ -254,6 +316,14 @@ class SentryScheduledCheckInTest {
     open fun notScheduled() {}
 
     @Scheduled(cron = "0 0 2 * * *") open fun reactive(): Mono<Void> = Mono.empty()
+  }
+
+  open class CleanupJob {
+    @Scheduled(cron = "0 0 2 * * *") open fun run() {}
+  }
+
+  open class Cleanup {
+    @Scheduled(cron = "0 0 2 * * *") open fun jobRun() {}
   }
 
   open class ExcludedJobs {
