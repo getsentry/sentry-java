@@ -1,9 +1,3 @@
-// A standalone build that includes the SDK build, so the samples depend on the SDK through the same
-// io.sentry:* coordinates an app would, and Gradle substitutes the SDK's projects for them.
-// The SDK build doesn't include this one back, so the samples' plugins and versions stay out of
-// the SDK build. Run it with `./gradlew -p sentry-samples <task>`.
-// sentry-samples-android is a separate build of its own.
-
 pluginManagement {
   repositories {
     mavenCentral()
