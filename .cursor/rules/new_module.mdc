@@ -31,8 +31,9 @@ the release that first ships it. All of the following have to be merged **before
 
 2. Add the module to the include list in `settings.gradle.kts`
 
-If adding a sample, add it to the include list in `sentry-samples/settings.gradle.kts` instead. The
-samples are a separate Gradle build that includes the SDK build, so a sample depends on
+If adding a sample, add an `include("…")` line for it to `sentry-samples/settings.gradle.kts`
+instead, and apply `id("io.sentry.spotless")` and `id("io.sentry.jdk-target")` in its `plugins`
+block. The samples are a separate Gradle build that includes the SDK build, so a sample depends on
 `"io.sentry:sentry-{module-name}:$sentryVersion"` (with `val sentryVersion =
 libs.versions.sentry.get()`), and Gradle substitutes the SDK's project for it.
 

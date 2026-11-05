@@ -8,8 +8,3 @@ plugins {
   id("io.sentry.spotless") apply false
   id("io.sentry.jdk-target") apply false
 }
-
-subprojects {
-  apply(plugin = "io.sentry.spotless")
-  apply(plugin = "io.sentry.jdk-target")
-}
