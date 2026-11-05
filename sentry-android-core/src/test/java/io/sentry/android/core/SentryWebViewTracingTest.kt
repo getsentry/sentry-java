@@ -16,6 +16,7 @@ import io.sentry.util.LoadClass
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
@@ -33,7 +34,7 @@ class SentryWebViewTracingTest {
     var supported: Boolean = true,
     var installFailure: IllegalArgumentException? = null,
     var linkageError: LinkageError? = null,
-    var removeFailure: RuntimeException? = null,
+    var removeFailure: Throwable? = null,
     var onInstall: (() -> Unit)? = null,
   ) : WebViewScriptInstaller {
     var removeCount = 0
@@ -214,6 +215,19 @@ class SentryWebViewTracingTest {
   }
 
   @Test
+  fun `the removal posted by an off-thread call rethrows fatal errors`() {
+    initSentry()
+    assertThat(add()).isTrue()
+    val thread = Thread { add() }
+    thread.start()
+    thread.join()
+
+    installer.removeFailure = OutOfMemoryError()
+
+    assertFailsWith<OutOfMemoryError> { shadowOf(Looper.getMainLooper()).idle() }
+  }
+
+  @Test
   fun `the removal posted by an off-thread call does not remove a newer script`() {
     initSentry()
     val thread = Thread { add() }
@@ -350,6 +364,26 @@ class SentryWebViewTracingTest {
         verify(handler, times(1)).remove()
         assertThat(webView.getTag(R.id.sentry_webview_trace_propagation)).isNull()
       }
+    }
+  }
+
+  @Test
+  fun `androidx installer clears the handler even when its removal throws`() {
+    val handler = mock<ScriptHandler>()
+    whenever(handler.remove()).thenThrow(IllegalStateException("WebView destroyed"))
+    webView.setTag(R.id.sentry_webview_trace_propagation, handler)
+    mockStatic(WebViewFeature::class.java).use { webViewFeature ->
+      webViewFeature
+        .`when`<Boolean> { WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) }
+        .thenReturn(true)
+      val androidxInstaller = AndroidxWebViewScriptInstaller()
+
+      assertFailsWith<IllegalStateException> { androidxInstaller.removeInstalledScript(webView) }
+      assertThat(webView.getTag(R.id.sentry_webview_trace_propagation)).isNull()
+
+      // The next call has nothing left to remove.
+      androidxInstaller.removeInstalledScript(webView)
+      verify(handler, times(1)).remove()
     }
   }
 

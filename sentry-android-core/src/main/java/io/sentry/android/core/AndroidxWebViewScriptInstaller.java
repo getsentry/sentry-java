@@ -23,12 +23,13 @@ final class AndroidxWebViewScriptInstaller implements WebViewScriptInstaller {
   @Override
   public void removeInstalledScript(final @NotNull WebView webView) {
     final Object handler = webView.getTag(R.id.sentry_webview_trace_propagation);
+    // Cleared first, so a handler whose removal throws is not removed again on every later call.
+    webView.setTag(R.id.sentry_webview_trace_propagation, null);
     // A handler only exists if the feature was supported when it was installed.
     if (handler instanceof ScriptHandler
         && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
       ((ScriptHandler) handler).remove();
     }
-    webView.setTag(R.id.sentry_webview_trace_propagation, null);
   }
 
   @Override

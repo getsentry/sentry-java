@@ -12,6 +12,7 @@ import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LoadClass;
 import io.sentry.util.TracingUtils;
 import java.util.Arrays;
@@ -218,11 +219,17 @@ public final class SentryWebViewTracing {
               if (replacementsOf(webView) != replacementsSeen) {
                 return;
               }
-              // Runs outside of any app call, so nothing may escape: for example, the WebView may
-              // have been destroyed since, or androidx.webkit may be too old.
+              // Runs outside of any app call, so only fatal errors may escape: for example, the
+              // WebView may have been destroyed since.
               try {
                 installer.removeInstalledScript(webView);
+              } catch (LinkageError e) {
+                logger.log(
+                    SentryLevel.WARNING,
+                    "androidx.webkit is too old for WebView trace propagation, skipping.",
+                    e);
               } catch (Throwable e) {
+                ExceptionUtils.rethrowIfFatal(e);
                 logger.log(
                     SentryLevel.WARNING,
                     "Failed to remove the WebView trace propagation script.",
