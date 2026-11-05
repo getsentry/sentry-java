@@ -133,7 +133,7 @@ subprojects {
                     // the dist zips craft publishes are assembled from this, see Publication.kt
                     maven {
                         name = DIST_MAVEN_REPO
-                        url = distMavenDir().get().asFile.toURI()
+                        url = distMavenDir.get().asFile.toURI()
                     }
                     maven {
                         name = "unityMaven"
