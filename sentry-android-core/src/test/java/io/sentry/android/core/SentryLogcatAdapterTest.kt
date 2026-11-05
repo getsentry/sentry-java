@@ -11,6 +11,7 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.performance.AppStartMetrics
 import java.lang.RuntimeException
 import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -47,6 +48,12 @@ class SentryLogcatAdapterTest {
   }
 
   private val fixture = Fixture()
+
+  @BeforeTest
+  fun `set up`() {
+    // Another test class in the same JVM may have cached app info without the DSN metadata.
+    ContextUtils.resetInstance()
+  }
 
   @AfterTest
   fun `clean up`() {

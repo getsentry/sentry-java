@@ -32,5 +32,9 @@ gradlePlugin {
       id = "io.sentry.spring-boot-matrix"
       implementationClass = "io.sentry.gradle.SpringBootMatrixPlugin"
     }
+    register("sentryRobolectricTestSplit") {
+      id = "io.sentry.robolectric-test-split"
+      implementationClass = "io.sentry.gradle.RobolectricTestSplitPlugin"
+    }
   }
 }
