@@ -100,7 +100,8 @@ public final class AnrIntegration implements Integration, Closeable {
                 options.isAnrReportInDebug(),
                 error -> reportANR(scopes, options, error),
                 options.getLogger(),
-                context);
+                context,
+                options.getDebugManager());
         anrWatchDog.start();
 
         options.getLogger().log(SentryLevel.DEBUG, "AnrIntegration installed.");
