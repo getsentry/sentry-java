@@ -185,7 +185,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
   }
 
   static boolean isScheduled(final @NotNull Method method) {
-    return !AnnotatedElementUtils.findMergedRepeatableAnnotations(method, Scheduled.class)
+    return !AnnotatedElementUtils.getMergedRepeatableAnnotations(
+            method, Scheduled.class, Schedules.class)
         .isEmpty();
   }
 
