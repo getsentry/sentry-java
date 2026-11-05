@@ -7,7 +7,10 @@ registries:
     password: dummy # Required by dependabot
 updates:
   - package-ecosystem: "gradle"
-    directory: "/"
+    # The Android sample is a separate build that the root build doesn't include.
+    directories:
+      - "/"
+      - "/sentry-samples/sentry-samples-android"
     registries:
       - gradle-plugin-portal
     schedule:
