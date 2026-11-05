@@ -16,6 +16,9 @@ import org.gradle.kotlin.dsl.configure
 class SentryPublishPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.configurePublishing(DistributionContainer::configureForJvm)
+    // the BOMs are java-platform projects, so they do not depend on themselves
+    project.plugins.withId("java-library") { project.alignWithBom("api") }
+    project.plugins.withId("com.android.library") { project.alignWithBom("api") }
   }
 }
 
@@ -26,7 +29,19 @@ class SentryPublishPlugin : Plugin<Project> {
 class SentryMultiplatformPublishPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.configurePublishing(DistributionContainer::configureForMultiplatform)
+    project.plugins.withId("org.jetbrains.kotlin.multiplatform") {
+      project.alignWithBom("commonMainApi")
+    }
   }
+}
+
+/**
+ * With sentry-bom as a platform, Gradle resolves all SDK modules of a consumer to one version, the
+ * highest one present.
+ */
+private fun Project.alignWithBom(configuration: String) {
+  val bom = dependencies.project(mapOf("path" to ":sentry-bom"))
+  dependencies.add(configuration, dependencies.platform(bom))
 }
 
 private fun Project.configurePublishing(
