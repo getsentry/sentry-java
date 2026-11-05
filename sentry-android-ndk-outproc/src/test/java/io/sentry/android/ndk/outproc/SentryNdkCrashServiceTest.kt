@@ -180,20 +180,16 @@ class SentryNdkCrashServiceTest {
   }
 
   @Test
-  fun `deletes the shared memory files of exited processes`() {
+  fun `init fails without shared memory`() {
     configure(true)
-    val dir = File(options.cacheDirPath, ".sentry-native").apply { mkdirs() }
-    val running = File(dir, ".sentry-shm-service-1-a").apply { createNewFile() }
-    val exited = File(dir, ".sentry-shm-service-2-b").apply { createNewFile() }
-    val activityManager = app.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    shadowOf(activityManager)
-      .setProcesses(listOf(ActivityManager.RunningAppProcessInfo().apply { pid = 1 }))
-    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use {
-      SentryNdkCrashService.start(app, options)
-    }
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
+      native.`when`<Int> { io.sentry.ndk.SentryNdk.createCrashShm() }.thenReturn(-1)
 
-    assertThat(running.exists()).isTrue()
-    assertThat(exited.exists()).isFalse()
+      assertFailsWith<IllegalStateException> { SentryNdkOutproc.init(app, options) }
+
+      assertThat(shadowOf(app).boundServiceConnections).isEmpty()
+      native.verify({ io.sentry.ndk.SentryNdk.init(any<NdkOptions>()) }, never())
+    }
   }
 
   @Test
@@ -220,11 +216,11 @@ class SentryNdkCrashServiceTest {
     try {
       configureDaemon(service, pid = 1, fd = 10)
       assertThat(BlockingCrashDaemonShadow.daemons.poll(5, TimeUnit.SECONDS))
-        .isEqualTo(listOf(1, 10, 11, 12, "shm-1"))
+        .isEqualTo(listOf(1, 10, 11, 12, 13))
 
       configureDaemon(service, pid = 2, fd = 20)
       assertThat(BlockingCrashDaemonShadow.daemons.poll(5, TimeUnit.SECONDS))
-        .isEqualTo(listOf(2, 20, 21, 22, "shm-2"))
+        .isEqualTo(listOf(2, 20, 21, 22, 23))
     } finally {
       BlockingCrashDaemonShadow.release.countDown()
     }
@@ -352,7 +348,6 @@ class SentryNdkCrashServiceTest {
       service.configureDaemon(
         "db",
         null,
-        null,
         fds[0],
         -1,
         0L,
@@ -399,8 +394,7 @@ class SentryNdkCrashServiceTest {
       service.configureDaemon(
         "db",
         null,
-        "shm-$pid",
-        null,
+        descriptor(fd + 3),
         pid,
         0L,
         tombstoneEnabled,
@@ -474,10 +468,9 @@ class BlockingCrashDaemonShadow {
       notifyFd: Int,
       readyFd: Int,
       messageFd: Int,
-      shmPath: String?,
       shmFd: Int,
     ): CrashDaemon? {
-      daemons.add(listOf(appPid, notifyFd, readyFd, messageFd, shmPath ?: shmFd))
+      daemons.add(listOf(appPid, notifyFd, readyFd, messageFd, shmFd))
       release.await(10, TimeUnit.SECONDS)
       return null
     }
@@ -502,7 +495,6 @@ class CrashDaemonShadow {
       notifyFd: Int,
       readyFd: Int,
       messageFd: Int,
-      shmPath: String?,
       shmFd: Int,
     ): Long = 1L
 
