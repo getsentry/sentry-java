@@ -43,7 +43,7 @@ dependencies {
   testImplementation(libs.kotlinx.coroutines)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.core)
-  testImplementation(libs.okhttp.mockwebserver)
+  testImplementation(libs.okhttp.mockwebserver4)
 }
 
 tasks.withType<JavaCompile>().configureEach {
