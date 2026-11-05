@@ -28,7 +28,6 @@ android {
     }
   }
 
-  // The sample app is the root project of this build.
   targetProjectPath = ":"
   // Run the test in its own process so it measures the target app cold, not itself.
   experimentalProperties["android.experimental.self-instrumenting"] = true
