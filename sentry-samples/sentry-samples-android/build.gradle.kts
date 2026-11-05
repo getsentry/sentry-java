@@ -18,8 +18,7 @@ plugins {
   alias(libs.plugins.sqldelight)
 }
 
-// gradle.properties links to the SDK build's, so this is the SDK version.
-val sentryVersion = providers.gradleProperty("versionName").get()
+val sentryVersion = libs.versions.sentry.get()
 
 if (providers.gradleProperty("useSagp").isPresent) {
   apply(plugin = "io.sentry.android.gradle")

@@ -33,7 +33,7 @@ pluginManagement {
 }
 
 plugins {
-  id("com.gradle.develocity") version "4.5.0"
+  id("com.gradle.develocity") version "4.6.1"
   id("com.gradle.common-custom-user-data-gradle-plugin") version "2.8.0"
 }
 
@@ -50,7 +50,13 @@ dependencyResolutionManagement {
     mavenCentral()
     mavenLocal()
   }
-  versionCatalogs { create("libs") { from(files("../../gradle/libs.versions.toml")) } }
+  versionCatalogs {
+    create("libs") {
+      from(files("../../gradle/libs.versions.toml"))
+      // gradle.properties links to the SDK build's, so versionName is the SDK version.
+      version("sentry", providers.gradleProperty("versionName").get())
+    }
+  }
 }
 
 rootProject.name = "sentry-samples-android"
