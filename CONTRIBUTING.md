@@ -73,11 +73,7 @@ To format the changed code and make CI happy you can run:
 make format
 ```
 
-or
-
-```shell
-./gradlew spotlessApply
-```
+`./gradlew spotlessApply` alone formats only the SDK build, not the separate builds it doesn't include, such as the Android sample.
 
 # Binary compatibility validation
 
