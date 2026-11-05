@@ -146,6 +146,7 @@ public abstract interface annotation class io/sentry/spring/checkin/SentryCheckI
 public class io/sentry/spring/checkin/SentryCheckInAdvice : org/aopalliance/intercept/MethodInterceptor, org/springframework/context/EmbeddedValueResolverAware {
 	public fun <init> ()V
 	public fun <init> (Lio/sentry/IScopes;)V
+	public fun <init> (Lio/sentry/IScopes;Z)V
 	public fun invoke (Lorg/aopalliance/intercept/MethodInvocation;)Ljava/lang/Object;
 	public fun setEmbeddedValueResolver (Lorg/springframework/util/StringValueResolver;)V
 }
@@ -164,6 +165,11 @@ public class io/sentry/spring/checkin/SentryCheckInPointcutConfiguration {
 public class io/sentry/spring/checkin/SentryQuartzConfiguration {
 	public fun <init> ()V
 	public fun schedulerFactoryBeanCustomizer ()Lorg/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer;
+}
+
+public final class io/sentry/spring/checkin/SentryScheduledCheckInPointcut : org/springframework/aop/support/StaticMethodMatcherPointcut {
+	public fun <init> (Ljava/util/List;)V
+	public fun matches (Ljava/lang/reflect/Method;Ljava/lang/Class;)Z
 }
 
 public final class io/sentry/spring/checkin/SentrySchedulerFactoryBeanCustomizer : org/springframework/boot/autoconfigure/quartz/SchedulerFactoryBeanCustomizer {
