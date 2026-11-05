@@ -218,12 +218,14 @@ public final class SentryWebViewTracing {
               if (replacementsOf(webView) != replacementsSeen) {
                 return;
               }
+              // Runs outside of any app call, so nothing may escape: for example, the WebView may
+              // have been destroyed since, or androidx.webkit may be too old.
               try {
                 installer.removeInstalledScript(webView);
-              } catch (LinkageError e) {
+              } catch (Throwable e) {
                 logger.log(
                     SentryLevel.WARNING,
-                    "androidx.webkit is too old for WebView trace propagation, skipping.",
+                    "Failed to remove the WebView trace propagation script.",
                     e);
               }
             });

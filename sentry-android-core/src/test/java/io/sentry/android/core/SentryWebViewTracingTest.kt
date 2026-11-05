@@ -33,6 +33,7 @@ class SentryWebViewTracingTest {
     var supported: Boolean = true,
     var installFailure: IllegalArgumentException? = null,
     var linkageError: LinkageError? = null,
+    var removeFailure: RuntimeException? = null,
     var onInstall: (() -> Unit)? = null,
   ) : WebViewScriptInstaller {
     var removeCount = 0
@@ -42,6 +43,7 @@ class SentryWebViewTracingTest {
 
     override fun removeInstalledScript(webView: WebView) {
       linkageError?.let { throw it }
+      removeFailure?.let { throw it }
       removeCount++
     }
 
@@ -194,6 +196,21 @@ class SentryWebViewTracingTest {
     shadowOf(Looper.getMainLooper()).idle()
     assertThat(installer.removeCount).isEqualTo(2)
     assertThat(installer.installed).hasSize(1)
+  }
+
+  @Test
+  fun `the removal posted by an off-thread call does not crash when it fails`() {
+    initSentry()
+    assertThat(add()).isTrue()
+    val thread = Thread { add() }
+    thread.start()
+    thread.join()
+
+    // For example, the WebView was destroyed before the removal ran.
+    installer.removeFailure = IllegalStateException("WebView destroyed")
+    shadowOf(Looper.getMainLooper()).idle()
+
+    assertThat(installer.removeCount).isEqualTo(1)
   }
 
   @Test
