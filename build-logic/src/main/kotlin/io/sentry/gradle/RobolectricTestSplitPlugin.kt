@@ -1,6 +1,8 @@
 package io.sentry.gradle
 
-import com.android.build.api.dsl.LibraryExtension
+import com.android.build.api.variant.HostTest
+import com.android.build.api.variant.HostTestBuilder
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -31,25 +33,22 @@ import org.objectweb.asm.Type
 class RobolectricTestSplitPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.pluginManager.withPlugin("com.android.library") {
-      // testBuildType is only final once the module's android block has run.
-      project.afterEvaluate { split(project) }
+      project.extensions.getByType(LibraryAndroidComponentsExtension::class.java).onVariants {
+        variant ->
+        variant.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.let { split(project, variant.name, it) }
+      }
     }
   }
 
-  private fun split(project: Project) {
-    val android = project.extensions.getByType(LibraryExtension::class.java)
-    val variant = android.testBuildType!!.replaceFirstChar { it.uppercase() }
-    val robolectricTestsName = "test${variant}UnitTest"
+  private fun split(project: Project, variantName: String, unitTest: HostTest) {
+    unitTest.configureTestTask {
+      it.maxHeapSize = "2g"
+      it.maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+      it.doFirst(ExcludeJvmTestsUnlessFiltered)
+    }
 
-    project.tasks
-      .withType(Test::class.java)
-      .matching { it.name == robolectricTestsName }
-      .configureEach {
-        maxHeapSize = "2g"
-        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
-        doFirst(ExcludeJvmTestsUnlessFiltered)
-      }
-
+    val variant = variantName.replaceFirstChar { it.uppercase() }
+    val robolectricTestsName = "test${unitTest.name.replaceFirstChar { it.uppercase() }}"
     val jvmTests =
       project.tasks.register("test${variant}JvmUnitTest", Test::class.java) {
         description = "Runs the $variant unit tests that do not use Robolectric."
