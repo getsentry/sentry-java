@@ -35,8 +35,12 @@ public final class SentryScheduledCheckInPointcut extends StaticMethodMatcherPoi
   @Override
   public boolean matches(final @NotNull Method method, final @NotNull Class<?> targetClass) {
     final @NotNull Class<?> userClass = ClassUtils.getUserClass(targetClass);
-    // CGLIB can't intercept these
-    if (Modifier.isFinal(userClass.getModifiers()) || Modifier.isFinal(method.getModifiers())) {
+    // CGLIB can't intercept these, and Spring calls private and static methods on the target
+    final int modifiers = method.getModifiers();
+    if (Modifier.isFinal(userClass.getModifiers())
+        || Modifier.isFinal(modifiers)
+        || Modifier.isPrivate(modifiers)
+        || Modifier.isStatic(modifiers)) {
       return false;
     }
     final @NotNull Method specificMethod = AopUtils.getMostSpecificMethod(method, userClass);

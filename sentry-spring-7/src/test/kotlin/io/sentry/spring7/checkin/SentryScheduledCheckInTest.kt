@@ -8,6 +8,7 @@ import io.sentry.ISentryLifecycleToken
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
+import java.lang.reflect.Modifier
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -149,6 +150,18 @@ class SentryScheduledCheckInTest {
     verify(scopes, never()).captureCheckIn(any())
     assertFalse(AopUtils.isAopProxy(finalJobs))
     assertTrue(AopUtils.isAopProxy(jobs))
+  }
+
+  @Test
+  fun `private and static methods are not matched`() {
+    val pointcut = SentryScheduledCheckInPointcut(null)
+    val privateMethod = HiddenJobs::class.java.getDeclaredMethod("hidden")
+    val staticMethod = HiddenJobs::class.java.getDeclaredMethod("static")
+    assertTrue(Modifier.isPrivate(privateMethod.modifiers))
+    assertTrue(Modifier.isStatic(staticMethod.modifiers))
+    assertFalse(pointcut.matches(privateMethod, HiddenJobs::class.java))
+    assertFalse(pointcut.matches(staticMethod, HiddenJobs::class.java))
+    assertTrue(pointcut.matches(Jobs::class.java.getMethod("syncUsers"), Jobs::class.java))
   }
 
   @Test
@@ -324,6 +337,14 @@ class SentryScheduledCheckInTest {
 
   open class Cleanup {
     @Scheduled(cron = "0 0 2 * * *") open fun jobRun() {}
+  }
+
+  open class HiddenJobs {
+    @Scheduled(cron = "0 0 2 * * *") private fun hidden() {}
+
+    companion object {
+      @JvmStatic @Scheduled(cron = "0 0 2 * * *") fun static() {}
+    }
   }
 
   open class ExcludedJobs {
