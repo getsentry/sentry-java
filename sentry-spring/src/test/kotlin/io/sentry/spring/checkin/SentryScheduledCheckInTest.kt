@@ -52,6 +52,8 @@ class SentryScheduledCheckInTest {
 
   @Autowired lateinit var finalJobs: FinalJobs
 
+  @Autowired lateinit var overridingJobs: OverridingJobs
+
   @Autowired lateinit var scopes: IScopes
 
   @BeforeTest
@@ -105,11 +107,18 @@ class SentryScheduledCheckInTest {
   fun `@SentryCheckIn keeps its slug and is only checked in once`() {
     val checkIns = capture { jobs.explicit() }
     assertEquals(listOf("explicit", "explicit"), checkIns.map { it.monitorSlug })
+    assertNull(checkIns[0].monitorConfig)
   }
 
   @Test
   fun `methods without @Scheduled are not monitored`() {
     jobs.notScheduled()
+    verify(scopes, never()).captureCheckIn(any())
+  }
+
+  @Test
+  fun `overriding methods without @Scheduled are not monitored`() {
+    overridingJobs.run()
     verify(scopes, never()).captureCheckIn(any())
   }
 
@@ -194,6 +203,8 @@ class SentryScheduledCheckInTest {
 
     @Bean open fun finalJobs() = FinalJobs()
 
+    @Bean open fun overridingJobs() = OverridingJobs()
+
     @Bean open fun scopes(): IScopes = mock()
 
     @Bean
@@ -251,5 +262,13 @@ class SentryScheduledCheckInTest {
 
   class FinalJobs {
     @Scheduled(cron = "0 0 2 * * *") fun run() {}
+  }
+
+  open class ParentJobs {
+    @Scheduled(cron = "0 0 2 * * *") open fun run() {}
+  }
+
+  open class OverridingJobs : ParentJobs() {
+    override fun run() {}
   }
 }
