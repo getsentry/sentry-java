@@ -758,7 +758,6 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public static fun markAnrReported (Lio/sentry/SentryOptions;J)V
 	public static fun markMemoryLimiterReported (Lio/sentry/SentryOptions;J)V
 	public static fun markTombstoneReported (Lio/sentry/SentryOptions;J)V
-	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
 }
 

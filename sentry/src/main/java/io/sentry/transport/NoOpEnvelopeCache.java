@@ -16,10 +16,6 @@ public final class NoOpEnvelopeCache implements IEnvelopeCache {
     return instance;
   }
 
-  @SuppressWarnings("deprecation")
-  @Override
-  public void store(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {}
-
   @Override
   public boolean storeEnvelope(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
     return false;
