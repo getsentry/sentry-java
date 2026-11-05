@@ -35,6 +35,7 @@ import org.springframework.context.EmbeddedValueResolverAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.Schedules;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringValueResolver;
@@ -223,7 +224,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
   private @Nullable MonitorConfig monitorConfigFromScheduled(final @NotNull Method method) {
     try {
       final @NotNull Set<Scheduled> schedules =
-          AnnotatedElementUtils.findMergedRepeatableAnnotations(method, Scheduled.class);
+          AnnotatedElementUtils.getMergedRepeatableAnnotations(
+              method, Scheduled.class, Schedules.class);
       if (schedules.size() != 1) {
         return null;
       }
