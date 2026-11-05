@@ -4,8 +4,6 @@
 > SDK 9.0.0 will raise the minimum supported Java and Android versions:
 > - Java 8 support will be dropped. SDK 9.0.0 requires Java 11+. See [#6469](https://github.com/getsentry/sentry-java/issues/6469).
 > - The Android `minSdk` will be raised from 21 to 26. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
->
-> You can stay on 8.x, which continues to receive critical and security fixes. Share your feedback in the linked issues.
 
 ## 8.63.0
 
