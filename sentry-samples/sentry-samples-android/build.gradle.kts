@@ -210,6 +210,7 @@ dependencies {
   implementation(libs.androidx.recyclerview)
   implementation(libs.androidx.viewpager2)
   implementation(libs.androidx.browser)
+  implementation(libs.androidx.webkit)
   implementation(libs.androidx.room3.runtime)
   implementation(libs.bundles.androidx.room2)
   implementation(libs.bundles.androidx.sqlite.drivers)

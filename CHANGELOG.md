@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Connect Android traces with web content in a `WebView` using `SentryWebViewTracing.addTracePropagation(webView, "example.com")` ([#6395](https://github.com/getsentry/sentry-java/pull/6395))
+  - Requires the `androidx.webkit:webkit` dependency. Only list hosts whose content you control.
+  - Call it on the main thread before each page load you want connected.
+
 ## 8.63.0
 
 ### Features

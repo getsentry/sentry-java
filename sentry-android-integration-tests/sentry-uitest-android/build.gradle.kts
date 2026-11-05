@@ -103,6 +103,7 @@ dependencies {
   implementation(libs.androidx.constraintlayout)
   implementation(libs.androidx.core)
   implementation(libs.androidx.recyclerview)
+  implementation(libs.androidx.webkit)
   implementation(libs.androidx.test.espresso.idling.resource)
   implementation(libs.leakcanary)
 

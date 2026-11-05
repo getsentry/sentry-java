@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // The first synchronous script of the page. The document-start script injected by
+      // SentryWebViewTracing.addTracePropagation runs before it, so the tag is already here.
+      window.traceAtHeadStart = document.querySelector('meta[name="sentry-trace"]');
+    </script>
+    <script
+      src="https://browser.sentry-cdn.com/11.6.0/bundle.tracing.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      // browserTracingIntegration reads the injected sentry-trace and baggage meta tags on
+      // pageload and continues the trace. Guarded so the page still reports the trace back to
+      // the app when the CDN script can't load, for example offline.
+      if (window.Sentry && window.SentrySample) {
+        Sentry.init({
+          dsn: SentrySample.dsn(),
+          integrations: [Sentry.browserTracingIntegration()],
+          tracesSampleRate: 1.0,
+          release: 'webview-demo',
+          environment: 'dev',
+        });
+      }
+    </script>
+  </head>
+  <body style="font-family: sans-serif; padding: 16px">
+    <h3>WebView page</h3>
+    <p>Injected <code>sentry-trace</code>:</p>
+    <pre id="trace" style="white-space: pre-wrap; word-break: break-all">(none, not injected)</pre>
+    <script>
+      var trace = window.traceAtHeadStart ? window.traceAtHeadStart.content : '';
+      if (trace) {
+        document.getElementById('trace').textContent = trace;
+      }
+      if (window.SentrySample) {
+        SentrySample.onPageTrace(trace);
+      }
+    </script>
+  </body>
+</html>
