@@ -97,8 +97,8 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         AnnotationUtils.findAnnotation(mostSpecificMethod, SentryCheckIn.class);
     if (checkInAnnotation == null) {
       if (monitorScheduledTasks && isScheduled(mostSpecificMethod)) {
-        final @NotNull String taskName =
-            scheduledTaskName(invocation.getThis().getClass(), mostSpecificMethod);
+        final @NotNull Class<?> targetClass = invocation.getThis().getClass();
+        final @NotNull String taskName = scheduledTaskName(targetClass, mostSpecificMethod);
         final @Nullable MonitorConfig monitorConfig = monitorConfig(mostSpecificMethod);
         if (monitorConfig == null) {
           scopes
@@ -111,7 +111,7 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
           return invocation.proceed();
         }
         final @NotNull String monitorSlug = scheduledTaskSlug(taskName);
-        warnOnSlugCollision(monitorSlug, invocation.getThis().getClass(), mostSpecificMethod);
+        warnOnSlugCollision(monitorSlug, targetClass, mostSpecificMethod);
         return captureCheckIns(invocation, monitorSlug, false, monitorConfig);
       }
       return invocation.proceed();
