@@ -31,14 +31,13 @@ public @interface SentryCheckIn {
 
   /**
    * Whether to send the schedule and zone from the method's {@code @Scheduled} with check-ins, so
-   * Sentry creates or updates the monitor. Set to false to manage the monitor's schedule in Sentry
-   * instead.
+   * Sentry creates or updates the monitor.
    *
    * <p>Heartbeat check-ins never send a monitor config.
    *
-   * @return true to send a monitor config, true by default
+   * @return true to send a monitor config, false by default
    */
-  boolean upsertMonitorConfig() default true;
+  boolean upsertMonitorConfig() default false;
 
   /**
    * Monitor slug. If not set, no check-in will be sent.
