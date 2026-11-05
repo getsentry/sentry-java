@@ -1,5 +1,9 @@
-minVersion: 0.29.3
-changelogPolicy: auto
+minVersion: 3.9.0
+changelog:
+  policy: auto
+preReleaseCommand: bash scripts/bump-version.sh
+versioning:
+  policy: manual
 targets:
   - name: maven
     includeNames: /^sentry.*$/

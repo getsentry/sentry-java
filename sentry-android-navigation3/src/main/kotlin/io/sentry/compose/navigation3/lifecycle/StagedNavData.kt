@@ -4,17 +4,22 @@ import io.sentry.IScope
 import io.sentry.PropagationContext
 
 /**
- * Holds navigation state staged for publication.
+ * Holds nav data (i.e., the screen name and nav context) staged for publication to a shared
+ * [IScope].
  *
- * Only state that occupies a single slot in the shared [IScope] is staged. Nav events (i.e.,
- * breadcrumbs) only append to the scope, so they can't overwrite another instance's data and are
- * recorded immediately, irrespective of lease ownership.
+ * Only state that occupies a single slot in the shared `IScope` is staged. Nav events (i.e.,
+ * breadcrumbs) are excluded as they only append to the scope and are recorded immediately,
+ * irrespective of lease ownership.
  *
  * Propagation context isn't staged either, since an earlier propagation context mustn't overwrite
  * the scope's current one. Instead, a rotation requested without the lease, or implied by a nav
  * transaction that couldn't be started without it, is [deferred][deferPropagationContextRotation]
  * and performed once when the lease is acquired. As a result, any destination reached in the
  * meantime still gets a fresh trace.
+ *
+ * **Thread safety**
+ *
+ * This class is ***not*** thread-safe. Apply the thread safety policy from [NavScopes].
  */
 internal class StagedNavData {
 
@@ -57,8 +62,7 @@ internal class StagedNavData {
    * rotation.
    *
    * Only staged values are published, so values the host app or other integrations set (e.g., a
-   * screen name while screen tracking is off) survive. Values published by the previous leaseholder
-   * are cleared separately, via its [clearPublishedStateFrom].
+   * screen name while screen tracking is off) survive.
    */
   fun publishTo(realScope: IScope) {
     if (hasScreenUpdate) {

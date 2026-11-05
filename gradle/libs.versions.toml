@@ -72,7 +72,7 @@ errorprone = { id = "net.ltgt.errorprone", version = "5.1.1" }
 gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.8" }
-vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.30.0" }
+vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version = "0.37.0" }
 springboot3 = { id = "org.springframework.boot", version.ref = "springboot3" }
 springboot4 = { id = "org.springframework.boot", version.ref = "springboot4" }
 spring-dependency-management = { id = "io.spring.dependency-management", version = "1.1.7" }
@@ -132,7 +132,7 @@ async-profiler = { module = "tools.profiler:async-profiler", version.ref = "asyn
 async-profiler-jfr-converter = { module = "tools.profiler:jfr-converter", version.ref = "asyncProfiler" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
 caffeine-jcache = { module = "com.github.ben-manes.caffeine:jcache", version = "3.2.0" }
-coil-compose = { module = "io.coil-kt:coil-compose", version = "2.6.0" }
+coil-compose = { module = "io.coil-kt:coil-compose", version = "2.7.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.28.0"}
 context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.50.0" }
@@ -183,11 +183,11 @@ otel-semconv-incubating = { module = "io.opentelemetry.semconv:opentelemetry-sem
 p6spy = { module = "p6spy:p6spy", version = "3.9.1" }
 epitaph = { module = "com.abovevacant:epitaph", version = "0.2.0" }
 jcache = { module = "javax.cache:cache-api", version = "1.1.1" }
-quartz = { module = "org.quartz-scheduler:quartz", version = "2.3.0" }
+quartz = { module = "org.quartz-scheduler:quartz", version = "2.5.2" }
 reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.17.5" }
+sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.17.6" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -290,6 +290,7 @@ mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version = "6.4.
 mockito-core = { module = "org.mockito:mockito-core", version = "5.24.0" }
 msgpack = { module = "org.msgpack:msgpack-core", version = "0.9.8" }
 okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp" }
+okhttp-tls = { module = "com.squareup.okhttp3:okhttp-tls", version.ref = "okhttp" }
 # apollo-runtime 5.x pulls in okhttp 5.x; mockwebserver 4.x is incompatible with that classpath
 okhttp-mockwebserver5 = { module = "com.squareup.okhttp3:mockwebserver", version = "5.3.0" }
 okio = { module = "com.squareup.okio:okio", version = "1.13.0" }
