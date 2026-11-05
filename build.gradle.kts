@@ -99,6 +99,7 @@ subprojects {
 
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
+            this.dependsOn("publishAllPublicationsTo${DIST_MAVEN_REPO.replaceFirstChar { it.uppercase() }}Repository")
             val file = this.project.layout.buildDirectory.file("distributions${sep}${this.project.name}-${this.project.version}.zip").get().asFile
             this.doLast {
                 if (!file.exists()) throw IllegalStateException("Distribution file: ${file.absolutePath} does not exist")
@@ -129,6 +130,11 @@ subprojects {
             // this is needed for sentry-unity to consume our artifacts locally as proper maven publication
             configure<PublishingExtension> {
                 repositories {
+                    // the dist zips craft publishes are assembled from this, see Publication.kt
+                    maven {
+                        name = DIST_MAVEN_REPO
+                        url = distMavenDir().get().asFile.toURI()
+                    }
                     maven {
                         name = "unityMaven"
                         url = rootProject.layout.buildDirectory.file("unityMaven").get().asFile.toURI()
