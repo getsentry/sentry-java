@@ -1050,6 +1050,27 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `ignored errors for deduplication contains Netty read timeout by default`() {
+    assertThat(SentryOptions().ignoredErrorsForDeduplication)
+      .containsExactly(FilterString("io.netty.handler.timeout.ReadTimeoutException"))
+  }
+
+  @Test
+  fun `ignored errors for deduplication can be replaced and extended`() {
+    val options = SentryOptions()
+
+    options.setIgnoredErrorsForDeduplication(listOf("example.FirstException", ""))
+    options.addIgnoredErrorForDeduplication("example.SecondException")
+
+    assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly(
+        FilterString("example.FirstException"),
+        FilterString("example.SecondException"),
+      )
+      .inOrder()
+  }
+
+  @Test
   fun `merging options when ignoredErrors is not set preserves the previous value`() {
     val externalOptions = ExternalOptions()
     val options = SentryOptions()

@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import java.lang.RuntimeException
@@ -8,6 +9,8 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class DuplicateEventDetectionEventProcessorTest {
+  private class IgnoredForDeduplicationException(cause: Throwable? = null) : RuntimeException(cause)
+
   private class CircularCauseThrowable : RuntimeException() {
     private var nextCause: Throwable? = null
     private var causeReads = 0
@@ -55,6 +58,58 @@ class DuplicateEventDetectionEventProcessorTest {
 
     val result = processor.process(event, Hint())
     assertNull(result)
+  }
+
+  @Test
+  fun `does not add ignored exception to captured exceptions`() {
+    val options =
+      SentryOptions().apply {
+        setIgnoredErrorsForDeduplication(listOf(IgnoredForDeduplicationException::class.java.name))
+      }
+    val processor = DuplicateEventDetectionEventProcessor(options)
+    val event = SentryEvent(IgnoredForDeduplicationException())
+
+    assertThat(processor.process(event, Hint())).isNotNull()
+    options.setIgnoredErrorsForDeduplication(emptyList())
+    assertThat(processor.process(event, Hint())).isNotNull()
+    assertThat(processor.process(event, Hint())).isNull()
+  }
+
+  @Test
+  fun `does not check ignored exception against captured exceptions`() {
+    val options = SentryOptions().apply { setIgnoredErrorsForDeduplication(emptyList()) }
+    val processor = DuplicateEventDetectionEventProcessor(options)
+    val event = SentryEvent(IgnoredForDeduplicationException())
+    assertThat(processor.process(event, Hint())).isNotNull()
+
+    options.addIgnoredErrorForDeduplication(IgnoredForDeduplicationException::class.java.name)
+
+    assertThat(processor.process(event, Hint())).isNotNull()
+  }
+
+  @Test
+  fun `does not check ignored cause against captured exceptions`() {
+    val options = SentryOptions().apply { setIgnoredErrorsForDeduplication(emptyList()) }
+    val processor = DuplicateEventDetectionEventProcessor(options)
+    val cause = IgnoredForDeduplicationException()
+    assertThat(processor.process(SentryEvent(cause), Hint())).isNotNull()
+
+    options.addIgnoredErrorForDeduplication(IgnoredForDeduplicationException::class.java.name)
+
+    assertThat(processor.process(SentryEvent(RuntimeException(cause)), Hint())).isNotNull()
+  }
+
+  @Test
+  fun `ignored exception patterns are matched against the fully qualified class name`() {
+    val options =
+      SentryOptions().apply {
+        setIgnoredErrorsForDeduplication(listOf(".*IgnoredForDeduplicationException"))
+      }
+    val processor = DuplicateEventDetectionEventProcessor(options)
+    val event = SentryEvent(IgnoredForDeduplicationException())
+
+    assertThat(processor.process(event, Hint())).isNotNull()
+    assertThat(processor.process(event, Hint())).isNotNull()
   }
 
   @Test

@@ -3480,6 +3480,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
 	public fun addIgnoredCheckIn (Ljava/lang/String;)V
 	public fun addIgnoredError (Ljava/lang/String;)V
+	public fun addIgnoredErrorForDeduplication (Ljava/lang/String;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addIgnoredSpanOrigin (Ljava/lang/String;)V
 	public fun addIgnoredTransaction (Ljava/lang/String;)V
@@ -3537,6 +3538,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
+	public fun getIgnoredErrorsForDeduplication ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredSpanOrigins ()Ljava/util/List;
 	public fun getIgnoredTransactions ()Ljava/util/List;
@@ -3708,6 +3710,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
+	public fun setIgnoredErrorsForDeduplication (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setInitPriority (Lio/sentry/InitPriority;)V

@@ -78,6 +78,9 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private static final String DEFAULT_ENVIRONMENT = "production";
 
+  private static final String DEFAULT_IGNORED_ERROR_FOR_DEDUPLICATION =
+      "io.netty.handler.timeout.ReadTimeoutException";
+
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
    * means just adding data OR return null in case the event will be dropped and not sent.
@@ -386,6 +389,11 @@ public class SentryOptions implements RateLimiterConfig {
    * one framework active that captures errors, for example Logback and Spring Boot.
    */
   private boolean enableDeduplication = true;
+
+  /** Exception types that are excluded from event deduplication. */
+  private @Nullable List<FilterString> ignoredErrorsForDeduplication =
+      new ArrayList<>(
+          Collections.singletonList(new FilterString(DEFAULT_IGNORED_ERROR_FOR_DEDUPLICATION)));
 
   /**
    * Enables event size limiting with {@link EventSizeLimitingEventProcessor}. When enabled, events
@@ -1945,6 +1953,49 @@ public class SentryOptions implements RateLimiterConfig {
    */
   public void setEnableDeduplication(final boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
+  }
+
+  /**
+   * Returns the list of exception class names excluded from event deduplication.
+   *
+   * @return the list of exception class names excluded from event deduplication
+   */
+  public @Nullable List<FilterString> getIgnoredErrorsForDeduplication() {
+    return ignoredErrorsForDeduplication;
+  }
+
+  /**
+   * Sets the list of exception class names excluded from event deduplication. Entries may be exact
+   * class names or regular expressions.
+   *
+   * @param ignoredErrorsForDeduplication exception class names or regular expressions
+   */
+  public void setIgnoredErrorsForDeduplication(
+      final @Nullable List<String> ignoredErrorsForDeduplication) {
+    if (ignoredErrorsForDeduplication == null) {
+      this.ignoredErrorsForDeduplication = null;
+    } else {
+      final @NotNull List<FilterString> patterns = new ArrayList<>();
+      for (final String pattern : ignoredErrorsForDeduplication) {
+        if (pattern != null && !pattern.isEmpty()) {
+          patterns.add(new FilterString(pattern));
+        }
+      }
+      this.ignoredErrorsForDeduplication = patterns;
+    }
+  }
+
+  /**
+   * Adds an exception class name or regular expression to the list excluded from event
+   * deduplication.
+   *
+   * @param pattern the exception class name or regular expression
+   */
+  public void addIgnoredErrorForDeduplication(final @NotNull String pattern) {
+    if (ignoredErrorsForDeduplication == null) {
+      ignoredErrorsForDeduplication = new ArrayList<>();
+    }
+    ignoredErrorsForDeduplication.add(new FilterString(pattern));
   }
 
   /**

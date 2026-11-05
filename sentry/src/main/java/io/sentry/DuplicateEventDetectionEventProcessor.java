@@ -26,8 +26,9 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
     if (options.isEnableDeduplication()) {
       final Throwable throwable = event.getThrowable();
       if (throwable != null) {
-        if (capturedObjects.containsKey(throwable)
-            || containsAnyKey(capturedObjects, allCauses(throwable))) {
+        final boolean ignoredForDeduplication = isIgnoredForDeduplication(throwable);
+        if ((!ignoredForDeduplication && capturedObjects.containsKey(throwable))
+            || containsAnyKey(allCauses(throwable))) {
           options
               .getLogger()
               .log(
@@ -35,7 +36,7 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
                   "Duplicate Exception detected. Event %s will be discarded.",
                   event.getEventId());
           return null;
-        } else {
+        } else if (!ignoredForDeduplication) {
           capturedObjects.put(throwable, null);
         }
       }
@@ -45,10 +46,25 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
     return event;
   }
 
-  private static <T> boolean containsAnyKey(
-      final @NotNull Map<T, Object> map, final @NotNull List<T> list) {
-    for (T entry : list) {
-      if (map.containsKey(entry)) {
+  private boolean containsAnyKey(final @NotNull List<Throwable> throwables) {
+    for (final Throwable throwable : throwables) {
+      if (!isIgnoredForDeduplication(throwable) && capturedObjects.containsKey(throwable)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isIgnoredForDeduplication(final @NotNull Throwable throwable) {
+    final @Nullable List<FilterString> ignoredErrors = options.getIgnoredErrorsForDeduplication();
+    if (ignoredErrors == null || ignoredErrors.isEmpty()) {
+      return false;
+    }
+
+    final String exceptionClassName = throwable.getClass().getName();
+    for (final FilterString ignoredError : ignoredErrors) {
+      if (ignoredError.getFilterString().equals(exceptionClassName)
+          || ignoredError.matches(exceptionClassName)) {
         return true;
       }
     }
