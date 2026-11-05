@@ -2,7 +2,6 @@ package io.sentry.sqlite
 
 import io.sentry.IScopes
 import io.sentry.ISpan
-import io.sentry.Instrumenter
 import io.sentry.ScopesAdapter
 import io.sentry.SentryDate
 import io.sentry.SentryLongDate
@@ -50,7 +49,7 @@ internal class DriverSpans(private val scopes: IScopes, private val dbMetadata: 
     val startTimestamp = SentryLongDate(startTimestampNanos)
     val endTimestamp = SentryLongDate(startTimestampNanos + durationNanos)
 
-    parent.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY).apply {
+    parent.startChild("db.sql.query", sql, startTimestamp).apply {
       spanContext.origin = SQLITE_TRACE_ORIGIN
       throwable?.let { this.throwable = it }
 

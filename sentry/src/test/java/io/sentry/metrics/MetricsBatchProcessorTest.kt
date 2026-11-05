@@ -13,7 +13,9 @@ import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
 import io.sentry.test.DeferredExecutorService
+import io.sentry.test.getProperty
 import io.sentry.test.injectForField
+import io.sentry.transport.ReusableCountLatch
 import io.sentry.util.JsonSerializationUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,10 +32,18 @@ import org.mockito.kotlin.verifyNoInteractions
 
 class MetricsBatchProcessorTest {
   @Test
-  fun `flush without accepted items does not submit processor work`() {
+  fun `constructor does not submit processor work`() {
     val mockExecutor = mock<ISentryExecutorService>()
-    val processor = MetricsBatchProcessor(SentryOptions(), mock())
-    processor.injectForField("executorService", mockExecutor)
+
+    MetricsBatchProcessor(SentryOptions(), mock(), mockExecutor)
+
+    verifyNoInteractions(mockExecutor)
+  }
+
+  @Test
+  fun `empty flush does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = MetricsBatchProcessor(SentryOptions(), mock(), mockExecutor)
 
     processor.flush(0)
 
@@ -41,18 +51,66 @@ class MetricsBatchProcessorTest {
   }
 
   @Test
-  fun `close without accepted items does not submit processor work`() {
-    for (isRestarting in listOf(false, true)) {
-      val mockExecutor = mock<ISentryExecutorService>()
-      val processor = MetricsBatchProcessor(SentryOptions(), mock())
-      processor.injectForField("executorService", mockExecutor)
+  fun `close before first accepted item does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = MetricsBatchProcessor(SentryOptions(), mock(), mockExecutor)
 
-      processor.close(isRestarting)
+    processor.close(false)
 
-      verify(mockExecutor).close(any())
-      verify(mockExecutor, never()).schedule(any(), any())
-      verify(mockExecutor, never()).submit(any<Runnable>())
-    }
+    verify(mockExecutor).close(any())
+    verify(mockExecutor, never()).schedule(any(), any())
+    verify(mockExecutor, never()).submit(any<Runnable>())
+  }
+
+  @Test
+  fun `restart close before first accepted item does not submit processor work`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = MetricsBatchProcessor(SentryOptions(), mock(), mockExecutor)
+
+    processor.close(true)
+
+    verify(mockExecutor).close(any())
+    verify(mockExecutor, never()).schedule(any(), any())
+    verify(mockExecutor, never()).submit(any<Runnable>())
+  }
+
+  @Test
+  fun `item rejected during shutdown does not mark processor as used`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = MetricsBatchProcessor(SentryOptions(), mock(), mockExecutor)
+    processor.close(false)
+
+    processor.add(metricsEvent("rejected"))
+    processor.flush(0)
+
+    verify(mockExecutor, never()).schedule(any(), any())
+    verify(mockExecutor, never()).submit(any<Runnable>())
+  }
+
+  @Test
+  fun `item rejected due to queue capacity does not mark processor as used`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = MetricsBatchProcessor(SentryOptions(), mock(), mockExecutor)
+    val pendingCount = processor.getProperty<ReusableCountLatch>("pendingCount")
+    repeat(MetricsBatchProcessor.MAX_QUEUE_SIZE) { pendingCount.increment() }
+
+    processor.add(metricsEvent("rejected"))
+    processor.flush(0)
+
+    verifyNoInteractions(mockExecutor)
+  }
+
+  @Test
+  fun `flush and restart close submit processor work after first accepted item`() {
+    val mockExecutor = mock<ISentryExecutorService>()
+    val processor = MetricsBatchProcessor(SentryOptions(), mock(), mockExecutor)
+    processor.add(metricsEvent("accepted"))
+
+    processor.flush(0)
+    processor.close(true)
+
+    verify(mockExecutor, times(3)).schedule(any(), any())
+    verify(mockExecutor).submit(any<Runnable>())
   }
 
   @Test
@@ -75,6 +133,9 @@ class MetricsBatchProcessorTest {
       .containsExactly("first", "second")
       .inOrder()
   }
+
+  private fun metricsEvent(name: String) =
+    SentryMetricsEvent(SentryId(), SentryNanotimeDate(), name, "gauge", 1.0)
 
   @Test
   fun `drops metrics events after reaching MAX_QUEUE_SIZE limit`() {

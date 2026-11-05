@@ -7,6 +7,7 @@
             minimumEventLevel="WARN"
             minimumLevel="DEBUG"
             contextTags="userId"
+            logsEnabled="true"
     />
   </Appenders>
   <Loggers>

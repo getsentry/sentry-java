@@ -11,12 +11,11 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  id("io.sentry.animalsniffer")
   id("io.sentry.api-validation")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
-  compilerOptions.jvmTarget = JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = JvmTarget.JVM_11
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
@@ -48,7 +47,6 @@ dependencies {
   compileOnly(projects.sentryLogback)
   compileOnly(projects.sentryOkhttp)
   compileOnly(libs.okhttp)
-  compileOnly(projects.sentryApacheHttpClient5)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
   compileOnly(libs.reactor.core)
@@ -79,7 +77,6 @@ dependencies {
   testImplementation(projects.sentryLogback)
   testImplementation(projects.sentryOkhttp)
   testImplementation(projects.sentryQuartz)
-  testImplementation(projects.sentryApacheHttpClient5)
   testImplementation(projects.sentryKafka)
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))

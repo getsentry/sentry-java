@@ -16,7 +16,6 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryEnvelopeHeaderSerializationTest
 import io.sentry.protocol.SentryEnvelopeItemHeaderSerializationTest
 import io.sentry.protocol.SentryException
-import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryPackage
 import io.sentry.protocol.SentryRuntime
 import io.sentry.protocol.SentrySpan
@@ -91,8 +90,6 @@ class JsonUnknownSerializationTest(
       val spanContext = givenJsonUnknown(SpanContext("c2fb8fee2e2b49758bcb67cda0f713c7"))
       val traceContext = givenJsonUnknown(TraceContextSerializationTest.Fixture().getSut())
       val user = givenJsonUnknown(User())
-      val userFeedback =
-        givenJsonUnknown(UserFeedback(SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")))
       val geo = givenJsonUnknown(Geo())
 
       // Same instance for first and second param, so we cann access both JsonUnknown and
@@ -140,7 +137,6 @@ class JsonUnknownSerializationTest(
         arrayOf(spanContext, spanContext, SpanContext.Deserializer()::deserialize),
         arrayOf(traceContext, traceContext, TraceContext.Deserializer()::deserialize),
         arrayOf(user, user, User.Deserializer()::deserialize),
-        arrayOf(userFeedback, userFeedback, UserFeedback.Deserializer()::deserialize),
         arrayOf(geo, geo, Geo.Deserializer()::deserialize),
       )
     }

@@ -33,7 +33,7 @@ android {
   // disabled, so unit tests must target release to run at all.
   testBuildType = "release"
 
-  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8 }
+  kotlin { compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11 }
 
   testOptions {
     animationsDisabled = true

@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
 import io.sentry.protocol.DebugImage
@@ -91,6 +92,34 @@ class SentryAndroidOptionsTest {
     val sentryOptions = SentryAndroidOptions()
 
     assertTrue(sentryOptions.isEnableScopeSync)
+  }
+
+  @Test
+  fun `Timber log capture is disabled by default`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertFalse(sentryOptions.timberLogCaptureEnabled)
+  }
+
+  @Test
+  fun `Timber log capture can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.timberLogCaptureEnabled = true
+
+    assertTrue(sentryOptions.timberLogCaptureEnabled)
+  }
+
+  @Test
+  fun `Logcat log capture is disabled by default`() {
+    assertThat(SentryAndroidOptions().logcatLogCaptureEnabled).isFalse()
+  }
+
+  @Test
+  fun `Logcat log capture can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.logcatLogCaptureEnabled = true
+
+    assertThat(sentryOptions.logcatLogCaptureEnabled).isTrue()
   }
 
   @Test

@@ -63,15 +63,13 @@ When adding a new method that users can call (e.g. a new scope operation), these
 7. `NoOpScope` — no-op stub for `IScope`
 8. `NoOpScopes` — no-op stub for `IScopes`
 9. `ScopesAdapter` — delegates to `Sentry` static API
-10. `HubAdapter` — deprecated bridge from old `IHub` API
-11. `HubScopesWrapper` — wraps `IScopes` as `IHub`
 
 ### Serialization (if the data is sent to Sentry)
-12. Add serialization/deserialization in the relevant data class or create a new one implementing `JsonSerializable` and `JsonDeserializer`
+10. Add serialization/deserialization in the relevant data class or create a new one implementing `JsonSerializable` and `JsonDeserializer`
 
 ### Tests
-13. Write tests for all implementations, especially `Scope`, `Scopes`, `SentryTest`, and any new data classes
-14. No-op classes typically don't need separate tests unless they have non-trivial logic
+11. Write tests for all implementations, especially `Scope`, `Scopes`, `SentryTest`, and any new data classes
+12. No-op classes typically don't need separate tests unless they have non-trivial logic
 
 ## Protocol / Data Model Classes
 

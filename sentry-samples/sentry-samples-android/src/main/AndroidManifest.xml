@@ -182,9 +182,14 @@
       android:name="io.sentry.debug"
       android:value="${sentryDebug}" />
 
-    <!--    how to enable automatic Sentry Logs from Logcat and Timber-->
+    <!--    how to enable Sentry Logs capture from Timber-->
     <meta-data
-      android:name="io.sentry.logs.enabled"
+      android:name="io.sentry.timber.log-capture.enabled"
+      android:value="true" />
+
+    <!--    how to enable Sentry Logs capture from Logcat-->
+    <meta-data
+      android:name="io.sentry.logcat.log-capture.enabled"
       android:value="true" />
 
     <!--    how to disable verbose logging of the session replay feature-->

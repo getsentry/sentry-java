@@ -506,9 +506,6 @@ public class SentryOptions implements RateLimiterConfig {
   /** Enable or disable automatic breadcrumbs for User interactions */
   private boolean enableUserInteractionBreadcrumbs = true;
 
-  /** Which framework is responsible for instrumenting. */
-  private @NotNull Instrumenter instrumenter = Instrumenter.SENTRY;
-
   /** Contains a list of GestureTargetLocator instances used for user interaction tracking */
   private final @NotNull List<GestureTargetLocator> gestureTargetLocators = new ArrayList<>();
 
@@ -522,9 +519,8 @@ public class SentryOptions implements RateLimiterConfig {
 
   private @Nullable IDebugManager debugManager;
 
-  // TODO [MAJOR] this should default to false on the next major
   /** Whether OPTIONS requests should be traced. */
-  private boolean traceOptionsRequests = true;
+  private boolean traceOptionsRequests = false;
 
   /** Whether database transaction spans (BEGIN, COMMIT, ROLLBACK) should be traced. */
   private boolean enableDatabaseTransactionTracing = false;
@@ -588,7 +584,7 @@ public class SentryOptions implements RateLimiterConfig {
   private boolean enableScopePersistence = true;
 
   /** The monitor slugs for which captured check-ins should not be sent to Sentry. */
-  @ApiStatus.Experimental private @Nullable List<FilterString> ignoredCheckIns = null;
+  private @Nullable List<FilterString> ignoredCheckIns = null;
 
   /**
    * Strings or regex patterns that the origin of a new span/transaction will be tested against. If
@@ -624,7 +620,7 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private int profilingTracesHz = 101;
 
-  @ApiStatus.Experimental private @Nullable Cron cron = null;
+  private @Nullable Cron cron = null;
 
   private final @NotNull ExperimentalOptions experimental;
 
@@ -2636,32 +2632,6 @@ public class SentryOptions implements RateLimiterConfig {
   }
 
   /**
-   * Sets the instrumenter used for performance instrumentation.
-   *
-   * <p>If you set this to something other than {@link Instrumenter#SENTRY} Sentry will not create
-   * any transactions automatically nor will it create transactions if you call
-   * startTransaction(...), nor will it create child spans if you call startChild(...)
-   *
-   * @param instrumenter - the instrumenter to use
-   * @deprecated this should no longer be needed with our current OpenTelmetry integration. Use
-   *     {@link SentryOptions#setIgnoredSpanOrigins(List)} instead if you need fine grained control
-   *     over what integrations can create spans.
-   */
-  @Deprecated
-  public void setInstrumenter(final @NotNull Instrumenter instrumenter) {
-    this.instrumenter = instrumenter;
-  }
-
-  /**
-   * Returns the instrumenter used for performance instrumentation
-   *
-   * @return the configured instrumenter
-   */
-  public @NotNull Instrumenter getInstrumenter() {
-    return instrumenter;
-  }
-
-  /**
    * Returns a ClientReportRecorder or a NoOp if sending of client reports has been disabled.
    *
    * @return a client report recorder or NoOp
@@ -3037,7 +3007,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @return the list of monitor slugs
    */
-  @ApiStatus.Experimental
   public @Nullable List<FilterString> getIgnoredCheckIns() {
     return ignoredCheckIns;
   }
@@ -3048,7 +3017,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredCheckIn the monitor slug
    */
-  @ApiStatus.Experimental
   public void addIgnoredCheckIn(String ignoredCheckIn) {
     if (ignoredCheckIns == null) {
       ignoredCheckIns = new ArrayList<>();
@@ -3061,7 +3029,6 @@ public class SentryOptions implements RateLimiterConfig {
    *
    * @param ignoredCheckIns the list of monitor slugs for which check-ins should not be sent
    */
-  @ApiStatus.Experimental
   public void setIgnoredCheckIns(final @Nullable List<String> ignoredCheckIns) {
     if (ignoredCheckIns == null) {
       this.ignoredCheckIns = null;
@@ -3212,7 +3179,6 @@ public class SentryOptions implements RateLimiterConfig {
     this.backpressureMonitor = backpressureMonitor;
   }
 
-  @ApiStatus.Experimental
   public void setEnableBackpressureHandling(final boolean enableBackpressureHandling) {
     this.enableBackpressureHandling = enableBackpressureHandling;
   }
@@ -3244,7 +3210,6 @@ public class SentryOptions implements RateLimiterConfig {
     this.profilingTracesHz = profilingTracesHz;
   }
 
-  @ApiStatus.Experimental
   public boolean isEnableBackpressureHandling() {
     return enableBackpressureHandling;
   }
@@ -3304,7 +3269,6 @@ public class SentryOptions implements RateLimiterConfig {
     return cron;
   }
 
-  @ApiStatus.Experimental
   public void setCron(@Nullable Cron cron) {
     this.cron = cron;
   }
@@ -3865,14 +3829,6 @@ public class SentryOptions implements RateLimiterConfig {
       }
     }
 
-    if (options.isEnableLogs() != null) {
-      getLogs().setEnabled(options.isEnableLogs());
-    }
-
-    if (options.isEnableMetrics() != null) {
-      getMetrics().setEnabled(options.isEnableMetrics());
-    }
-
     if (options.getProfileSessionSampleRate() != null) {
       setProfileSessionSampleRate(options.getProfileSessionSampleRate());
     }
@@ -3974,12 +3930,10 @@ public class SentryOptions implements RateLimiterConfig {
     this.scopesStorageFactory = scopesStorageFactory;
   }
 
-  @ApiStatus.Experimental
   public @NotNull SentryOptions.Logs getLogs() {
     return logs;
   }
 
-  @ApiStatus.Experimental
   public void setLogs(@NotNull SentryOptions.Logs logs) {
     this.logs = logs;
   }
@@ -4123,9 +4077,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Logs {
 
-    /** Whether automatic logging integrations send Logs to Sentry. */
-    private boolean enable = false;
-
     /**
      * This function is called with an SDK specific log event object and can return a modified event
      * object or nothing to skip reporting the log item
@@ -4134,26 +4085,6 @@ public class SentryOptions implements RateLimiterConfig {
 
     private @NotNull ILoggerBatchProcessorFactory loggerBatchProcessorFactory =
         new DefaultLoggerBatchProcessorFactory();
-
-    /**
-     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
-     * calls are always captured when the SDK is enabled.
-     *
-     * @return true if automatic Logs should be enabled
-     */
-    public boolean isEnabled() {
-      return enable;
-    }
-
-    /**
-     * Whether automatic logging integrations send Logs to Sentry. Direct {@code Sentry.logger()}
-     * calls are always captured when the SDK is enabled.
-     *
-     * @param enableLogs true if automatic Logs should be enabled
-     */
-    public void setEnabled(boolean enableLogs) {
-      this.enable = enableLogs;
-    }
 
     /**
      * Returns the BeforeSendLog callback
@@ -4204,9 +4135,6 @@ public class SentryOptions implements RateLimiterConfig {
 
   public static final class Metrics {
 
-    /** The configured state for automatic Metrics integrations, which currently do not exist. */
-    private boolean enable = true;
-
     /**
      * This function is called with a metric key and tags and can return false to skip sending the
      * metric
@@ -4215,30 +4143,6 @@ public class SentryOptions implements RateLimiterConfig {
 
     private @NotNull IMetricsBatchProcessorFactory metricsBatchProcessorFactory =
         new DefaultMetricsBatchProcessorFactory();
-
-    /**
-     * Returns the configured state for automatic Metrics integrations.
-     *
-     * <p>This option currently has no effect because there are no automatic Metrics integrations.
-     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
-     *
-     * @return the configured value for automatic Metrics integrations
-     */
-    public boolean isEnabled() {
-      return enable;
-    }
-
-    /**
-     * Configures whether automatic Metrics integrations send Metrics to Sentry.
-     *
-     * <p>This option currently has no effect because there are no automatic Metrics integrations.
-     * Direct {@code Sentry.metrics()} calls are always captured when the SDK is enabled.
-     *
-     * @param enableMetrics whether automatic Metrics integrations should be enabled
-     */
-    public void setEnabled(final boolean enableMetrics) {
-      this.enable = enableMetrics;
-    }
 
     /**
      * Returns the BeforeSendMetric callback

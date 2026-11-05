@@ -58,7 +58,7 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 
 ## Java and Android specifics
 
-- The core `sentry` module is Java 8 and must not reference Android or JVM-only APIs. Reach optional
+- The core `sentry` module is Java 11 and must not reference Android or JVM-only APIs. Reach optional
   platform code through `Platform`, `LoadClass`, or a separate module.
 - Android code calling an API newer than `minSdk` must be guarded by
   `BuildInfoProvider.getSdkInfoVersion()`.

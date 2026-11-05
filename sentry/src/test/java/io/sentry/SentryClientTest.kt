@@ -156,11 +156,8 @@ class SentryClientTest {
   }
 
   @Test
-  fun `when Logs and Metrics options are disabled, batch processors are still created`() {
-    val sut = fixture.getSut {
-      it.logs.isEnabled = false
-      it.metrics.isEnabled = false
-    }
+  fun `when client is created, batch processors are created`() {
+    val sut = fixture.getSut()
 
     verify(fixture.loggerBatchProcessorFactory).create(fixture.sentryOptions, sut)
     verify(fixture.metricsBatchProcessorFactory).create(fixture.sentryOptions, sut)
@@ -194,7 +191,7 @@ class SentryClientTest {
 
   @Test
   fun `when client is closed with isRestarting false, transport waits`() {
-    val sut = fixture.getSut { options -> options.logs.isEnabled = true }
+    val sut = fixture.getSut()
     assertTrue(sut.isEnabled)
     sut.close(false)
     assertNotEquals(0, fixture.sentryOptions.shutdownTimeoutMillis)
@@ -208,7 +205,7 @@ class SentryClientTest {
 
   @Test
   fun `when client is closed with isRestarting true, transport does not wait`() {
-    val sut = fixture.getSut { options -> options.logs.isEnabled = true }
+    val sut = fixture.getSut()
     assertTrue(sut.isEnabled)
     sut.close(true)
     verify(fixture.transport).flush(eq(0))
@@ -312,7 +309,6 @@ class SentryClientTest {
   @Test
   fun `when beforeSend captures a log, the nested log is dropped`() {
     val scope = createScope()
-    fixture.sentryOptions.logs.isEnabled = true
     lateinit var sut: SentryClient
     fixture.sentryOptions.setBeforeSend { e, _ ->
       sut.captureLog(
@@ -333,7 +329,6 @@ class SentryClientTest {
   @Test
   fun `when beforeSendLog logs again, the nested log is dropped and does not recurse`() {
     val scope = createScope()
-    fixture.sentryOptions.logs.isEnabled = true
     var invocations = 0
     lateinit var sut: SentryClient
     fixture.sentryOptions.logs.setBeforeSend { l ->
@@ -1036,66 +1031,6 @@ class SentryClientTest {
     fixture.getSut().captureEvent(event, createScopeWithAttachments())
 
     verifyAttachmentsInEnvelope(event.eventId)
-  }
-
-  @Test
-  fun `when captureUserFeedback with empty id, envelope is not sent`() {
-    val sut = fixture.getSut()
-
-    sut.captureUserFeedback(UserFeedback(SentryId.EMPTY_ID))
-
-    verify(fixture.transport, never()).send(any(), anyOrNull())
-  }
-
-  @Test
-  fun `when captureUserFeedback, envelope is sent`() {
-    val sut = fixture.getSut()
-
-    sut.captureUserFeedback(userFeedback)
-
-    verify(fixture.transport)
-      .send(
-        check { actual ->
-          assertEquals(userFeedback.eventId, actual.header.eventId)
-          assertEquals(fixture.sentryOptions.sdkVersion, actual.header.sdkVersion)
-
-          assertEquals(1, actual.items.count())
-          val item = actual.items.first()
-          assertEquals(SentryItemType.UserFeedback, item.header.type)
-          assertEquals("application/json", item.header.contentType)
-
-          assertEnvelopeItemDataForUserFeedback(item)
-        }
-      )
-  }
-
-  private fun assertEnvelopeItemDataForUserFeedback(item: SentryEnvelopeItem) {
-    val stream = ByteArrayOutputStream()
-    val writer = stream.bufferedWriter(Charset.forName("UTF-8"))
-    fixture.sentryOptions.serializer.serialize(userFeedback, writer)
-    val expectedData = stream.toByteArray()
-    assertTrue(Arrays.equals(expectedData, item.data))
-  }
-
-  @Test
-  fun `when captureUserFeedback and connection throws, log exception`() {
-    val sut = fixture.getSut()
-
-    val exception = IOException("No connection")
-    whenever(fixture.transport.send(any())).thenThrow(exception)
-
-    val logger = mock<ILogger>()
-    fixture.sentryOptions.setLogger(logger)
-
-    sut.captureUserFeedback(userFeedback)
-
-    verify(logger)
-      .log(
-        SentryLevel.WARNING,
-        exception,
-        "Capturing user feedback %s failed.",
-        userFeedback.eventId,
-      )
   }
 
   @Test
@@ -2362,7 +2297,10 @@ class SentryClientTest {
     transaction.finish()
     sut.captureEvent(event, scope)
     assertNotNull(event.contexts.trace)
-    assertEquals(transaction.root.spanContext, event.contexts.trace)
+    assertThat(event.contexts.trace!!.traceId).isEqualTo(transaction.root.spanContext.traceId)
+    assertThat(event.contexts.trace!!.spanId).isEqualTo(transaction.root.spanContext.spanId)
+    assertThat(event.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+    assertThat(transaction.root.spanContext.status).isNull()
   }
 
   @Test
@@ -2375,7 +2313,10 @@ class SentryClientTest {
     val span = transaction.startChild("op")
     sut.captureEvent(event, scope)
     assertNotNull(event.contexts.trace)
-    assertEquals(span.spanContext, event.contexts.trace)
+    assertThat(event.contexts.trace!!.traceId).isEqualTo(span.spanContext.traceId)
+    assertThat(event.contexts.trace!!.spanId).isEqualTo(span.spanContext.spanId)
+    assertThat(event.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+    assertThat(span.spanContext.status).isNull()
   }
 
   @Test
@@ -3411,6 +3352,8 @@ class SentryClientTest {
 
     assertEquals(spanContext.traceId, sentryEvent.contexts.trace!!.traceId)
     assertEquals(spanContext.spanId, sentryEvent.contexts.trace!!.spanId)
+    assertThat(sentryEvent.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
+    assertThat(spanContext.status).isNull()
     assertNotEquals(scopePropagationContext.traceId, sentryEvent.contexts.trace!!.traceId)
     assertNotEquals(scopePropagationContext.spanId, sentryEvent.contexts.trace!!.spanId)
   }
@@ -4596,19 +4539,6 @@ class SentryClientTest {
   private fun createSession(release: String = "rel"): Session {
     return Session("dis", User(), "env", release)
   }
-
-  private val userFeedback: UserFeedback
-    get() {
-      val eventId = SentryId("c2fb8fee2e2b49758bcb67cda0f713c7")
-      val userFeedback = UserFeedback(eventId)
-      userFeedback.apply {
-        name = "John"
-        email = "john@me.com"
-        comments = "comment"
-      }
-
-      return userFeedback
-    }
 
   private val checkIn = CheckIn("some_slug", CheckInStatus.OK)
 

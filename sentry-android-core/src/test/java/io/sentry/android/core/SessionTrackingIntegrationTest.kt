@@ -23,7 +23,6 @@ import io.sentry.SentryMetricsEvents
 import io.sentry.SentryReplayEvent
 import io.sentry.Session
 import io.sentry.TraceContext
-import io.sentry.UserFeedback
 import io.sentry.protocol.Feedback
 import io.sentry.protocol.SentryId
 import io.sentry.protocol.SentryTransaction
@@ -153,10 +152,6 @@ class SessionTrackingIntegrationTest {
       scope: IScope?,
       hint: Hint?,
     ): SentryId {
-      TODO("Not yet implemented")
-    }
-
-    override fun captureUserFeedback(userFeedback: UserFeedback) {
       TODO("Not yet implemented")
     }
 

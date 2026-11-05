@@ -143,7 +143,6 @@ public final class JsonSerializer implements ISerializer {
     deserializersByClass.put(SpanStatus.class, new SpanStatus.Deserializer());
     deserializersByClass.put(User.class, new User.Deserializer());
     deserializersByClass.put(Geo.class, new Geo.Deserializer());
-    deserializersByClass.put(UserFeedback.class, new UserFeedback.Deserializer());
     deserializersByClass.put(ClientReport.class, new ClientReport.Deserializer());
     deserializersByClass.put(ViewHierarchyNode.class, new ViewHierarchyNode.Deserializer());
     deserializersByClass.put(ViewHierarchy.class, new ViewHierarchy.Deserializer());
@@ -208,10 +207,16 @@ public final class JsonSerializer implements ISerializer {
 
   @Override
   public <T> void serialize(@NotNull T entity, @NotNull Writer writer) throws IOException {
+    serialize(entity, writer, true);
+  }
+
+  @Override
+  public <T> void serialize(@NotNull T entity, @NotNull Writer writer, boolean enableLogging)
+      throws IOException {
     Objects.requireNonNull(entity, "The entity is required.");
     Objects.requireNonNull(writer, "The Writer object is required.");
 
-    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+    if (enableLogging && options.getLogger().isEnabled(SentryLevel.DEBUG)) {
       String serialized = serializeToString(entity, options.isEnablePrettySerializationOutput());
       options.getLogger().log(SentryLevel.DEBUG, "Serializing object: %s", serialized);
     }

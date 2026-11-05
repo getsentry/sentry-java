@@ -28,7 +28,7 @@ class SentryHandlerIntegrationTest {
   @Test
   fun `handler configured from logging properties sends events, breadcrumbs and logs`() {
     // The handler reads the DSN as external configuration, as an app's sentry.properties would
-    // set it. The module's test sentry.properties enables logs.
+    // set it.
     System.setProperty("sentry.dsn", server.dsn)
     javaClass.getResourceAsStream("/sentry-handler-integration-test.properties")!!.use {
       LogManager.getLogManager().readConfiguration(it)

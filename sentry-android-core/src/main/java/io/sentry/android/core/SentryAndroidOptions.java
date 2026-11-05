@@ -75,6 +75,12 @@ public final class SentryAndroidOptions extends SentryOptions {
   /** Enable or disable automatic breadcrumbs for Network Events Using NetworkCallback */
   private boolean enableNetworkEventBreadcrumbs = true;
 
+  /** Enable or disable automatic Sentry Logs capture from Timber. Default is disabled. */
+  private boolean timberLogCaptureEnabled = false;
+
+  /** Enable or disable automatic Sentry Logs capture from Logcat. Default is disabled. */
+  private boolean logcatLogCaptureEnabled = false;
+
   /**
    * Enables the Auto instrumentation for Activity lifecycle tracing.
    *
@@ -303,7 +309,7 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
 
-  private boolean enableTombstone = false;
+  private boolean enableTombstone = true;
 
   /**
    * The maximum time difference, in milliseconds, between a tombstone from {@link
@@ -457,7 +463,7 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   /**
    * Checks if Tombstone reporting (ApplicationExitInfo.REASON_CRASH_NATIVE) is enabled or disabled
-   * Default is disabled
+   * Default is enabled
    *
    * @return true if enabled or false otherwise
    */
@@ -503,6 +509,22 @@ public final class SentryAndroidOptions extends SentryOptions {
 
   public void setEnableNetworkEventBreadcrumbs(boolean enableNetworkEventBreadcrumbs) {
     this.enableNetworkEventBreadcrumbs = enableNetworkEventBreadcrumbs;
+  }
+
+  public boolean getTimberLogCaptureEnabled() {
+    return timberLogCaptureEnabled;
+  }
+
+  public void setTimberLogCaptureEnabled(boolean timberLogCaptureEnabled) {
+    this.timberLogCaptureEnabled = timberLogCaptureEnabled;
+  }
+
+  public boolean getLogcatLogCaptureEnabled() {
+    return logcatLogCaptureEnabled;
+  }
+
+  public void setLogcatLogCaptureEnabled(boolean logcatLogCaptureEnabled) {
+    this.logcatLogCaptureEnabled = logcatLogCaptureEnabled;
   }
 
   /**

@@ -328,7 +328,7 @@ public final class Scope implements IScope {
       for (final IScopeObserver observer : options.getScopeObservers()) {
         if (transaction != null) {
           observer.setTransaction(transaction.getName());
-          observer.setTrace(transaction.getSpanContext(), this);
+          observer.setTrace(transaction.getSpanContext().withDefaultStatus(), this);
         } else {
           observer.setTransaction(null);
           observer.setTrace(null, this);
@@ -1283,7 +1283,7 @@ public final class Scope implements IScope {
         if (event.getContexts().getTrace() == null && spanWeakRef != null) {
           final ISpan span = spanWeakRef.get();
           if (span != null) {
-            event.getContexts().setTrace(span.getSpanContext());
+            event.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
           }
         }
         final String transactionName = pair.getSecond();

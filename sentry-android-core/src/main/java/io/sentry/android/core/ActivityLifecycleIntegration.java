@@ -17,7 +17,6 @@ import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
-import io.sentry.Instrumenter;
 import io.sentry.Integration;
 import io.sentry.NoOpTransaction;
 import io.sentry.PropagationContext;
@@ -366,29 +365,19 @@ public final class ActivityLifecycleIntegration
                     getAppStartOp(coldStart),
                     getAppStartDesc(coldStart),
                     appStartTime,
-                    Instrumenter.SENTRY,
                     spanOptions);
 
             finishAppStartSpan();
           }
         }
         final @NotNull ISpan ttidSpan =
-            transaction.startChild(
-                TTID_OP,
-                getTtidDesc(activityName),
-                ttidStartTime,
-                Instrumenter.SENTRY,
-                spanOptions);
+            transaction.startChild(TTID_OP, getTtidDesc(activityName), ttidStartTime, spanOptions);
         ttidSpanMap.put(activity, ttidSpan);
 
         if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
           final @NotNull ISpan ttfdSpan =
               transaction.startChild(
-                  TTFD_OP,
-                  getTtfdDesc(activityName),
-                  ttidStartTime,
-                  Instrumenter.SENTRY,
-                  spanOptions);
+                  TTFD_OP, getTtfdDesc(activityName), ttidStartTime, spanOptions);
           try {
             ttfdSpanMap.put(activity, ttfdSpan);
             ttfdAutoCloseFuture =
@@ -1130,7 +1119,6 @@ public final class ActivityLifecycleIntegration
             APP_START_EXTENDED_OP,
             APP_START_EXTENDED_DESC,
             AndroidDateUtils.getCurrentSentryDateTime(),
-            Instrumenter.SENTRY,
             spanOptions);
 
     return new AppStartExtension.ExtendedAppStart(transaction, extendedSpan);

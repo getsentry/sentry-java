@@ -20,14 +20,19 @@ abstract class SentryAnimalSnifferExtension {
   }
 }
 
-class SentryAnimalSnifferPlugin : Plugin<Project> {
+/**
+ * Checks the main code of the JVM modules that Android apps also use against the Android API 21
+ * signature. The JVM API needs no signature: javac's release flag and Kotlin's -Xjdk-release
+ * already limit main code to the published Java version, see JdkTargetConvention.
+ */
+class SentryAnimalSnifferAndroidPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.pluginManager.apply("ru.vyarus.animalsniffer")
 
     val extension =
       project.extensions.create("sentryAnimalSniffer", SentryAnimalSnifferExtension::class.java)
 
-    project.addSignatureDependency("java8-signature")
+    project.addSignatureDependency("gummy-bears-api21")
 
     project.tasks.named("animalsnifferMain", AnimalSniffer::class.java).configure {
       ignoreClasses = ignoreClasses + extension.ignoredClasses.get()
@@ -35,14 +40,6 @@ class SentryAnimalSnifferPlugin : Plugin<Project> {
     }
 
     project.tasks.named("check").configure { dependsOn("animalsnifferMain") }
-  }
-}
-
-class SentryAnimalSnifferAndroidPlugin : Plugin<Project> {
-  override fun apply(project: Project) {
-    project.pluginManager.apply(SentryAnimalSnifferPlugin::class.java)
-
-    project.addSignatureDependency("gummy-bears-api21")
   }
 }
 

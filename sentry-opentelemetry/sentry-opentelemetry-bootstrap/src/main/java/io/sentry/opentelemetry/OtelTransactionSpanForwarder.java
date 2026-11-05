@@ -7,7 +7,6 @@ import io.sentry.Hint;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
-import io.sentry.Instrumenter;
 import io.sentry.MeasurementUnit;
 import io.sentry.SentryDate;
 import io.sentry.SentryTraceHeader;
@@ -57,18 +56,8 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter) {
-    return rootSpan.startChild(operation, description, timestamp, instrumenter);
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter,
       @NotNull SpanOptions spanOptions) {
-    return rootSpan.startChild(operation, description, timestamp, instrumenter, spanOptions);
+    return rootSpan.startChild(operation, description, timestamp, spanOptions);
   }
 
   @Override
@@ -224,7 +213,7 @@ public final class OtelTransactionSpanForwarder implements ITransaction {
   @Override
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
-    return rootSpan.startChild(operation, description, timestamp, Instrumenter.SENTRY);
+    return rootSpan.startChild(operation, description, timestamp);
   }
 
   @Override
