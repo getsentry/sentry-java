@@ -66,6 +66,10 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
   private final @NotNull Map<Method, CachedMonitorConfig> monitorConfigs =
       new ConcurrentHashMap<>();
 
+  private final @NotNull Map<String, String> derivedSlugOwners = new ConcurrentHashMap<>();
+
+  private final @NotNull Set<String> collidingSlugs = ConcurrentHashMap.newKeySet();
+
   public SentryCheckInAdvice() {
     this(ScopesAdapter.getInstance());
   }
@@ -106,7 +110,9 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
                   taskName);
           return invocation.proceed();
         }
-        return captureCheckIns(invocation, scheduledTaskSlug(taskName), false, monitorConfig);
+        final @NotNull String monitorSlug = scheduledTaskSlug(taskName);
+        warnOnSlugCollision(monitorSlug, invocation.getThis().getClass(), mostSpecificMethod);
+        return captureCheckIns(invocation, monitorSlug, false, monitorConfig);
       }
       return invocation.proceed();
     }
@@ -184,6 +190,26 @@ public class SentryCheckInAdvice implements MethodInterceptor, EmbeddedValueReso
         checkIn.setDuration(DateUtils.nanosToSeconds(stopwatch.elapsedNanos()));
         scopes.captureCheckIn(checkIn);
       }
+    }
+  }
+
+  private void warnOnSlugCollision(
+      final @NotNull String monitorSlug,
+      final @NotNull Class<?> targetClass,
+      final @NotNull Method method) {
+    final @NotNull String identity =
+        ClassUtils.getUserClass(targetClass).getName() + "." + method.getName();
+    final @Nullable String owner = derivedSlugOwners.putIfAbsent(monitorSlug, identity);
+    if (owner != null && !owner.equals(identity) && collidingSlugs.add(monitorSlug)) {
+      scopes
+          .getOptions()
+          .getLogger()
+          .log(
+              SentryLevel.WARNING,
+              "Monitor slug \"%s\" is used by both %s and %s, so their check-ins go to one monitor. Add @SentryCheckIn(\"your-slug\") to one of them.",
+              monitorSlug,
+              owner,
+              identity);
     }
   }
 
