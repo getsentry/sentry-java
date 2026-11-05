@@ -44,15 +44,6 @@ develocity {
   }
 }
 
-// Gradle reads gradle.properties only for the build it belongs to, so read the SDK version from the
-// SDK build's file.
-val sentryVersion: String =
-  providers
-    .fileContents(layout.settingsDirectory.file("../gradle.properties"))
-    .asText
-    .map { java.util.Properties().apply { load(it.reader()) }.getProperty("versionName") }
-    .get()
-
 dependencyResolutionManagement {
   repositories {
     google()
@@ -62,7 +53,8 @@ dependencyResolutionManagement {
   versionCatalogs {
     create("libs") {
       from(files("../gradle/libs.versions.toml"))
-      version("sentry", sentryVersion)
+      // gradle.properties links to the SDK build's, so versionName is the SDK version.
+      version("sentry", providers.gradleProperty("versionName").get())
     }
   }
 }
