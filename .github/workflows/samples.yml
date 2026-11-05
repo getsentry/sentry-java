@@ -46,16 +46,3 @@ jobs:
           name: test-results-${{ matrix.name }}
           path: |
             **/build/reports/*
-
-      - name: Test Report
-        uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16
-        if: always()
-        with:
-          name: JUnit ${{ matrix.name }}
-          list-suites: 'failed'
-          list-tests: 'failed'
-          path: |
-            **/build/test-results/**/*.xml
-          reporter: java-junit
-          output-to: step-summary
-          fail-on-error: false
