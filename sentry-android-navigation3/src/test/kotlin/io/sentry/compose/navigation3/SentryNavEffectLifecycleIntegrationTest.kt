@@ -27,11 +27,19 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.google.common.truth.Truth.assertThat
 import io.sentry.IScope
+import io.sentry.IScopes
 import io.sentry.ISentryClient
+import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeType
 import io.sentry.Scopes
-import io.sentry.SentryOptions
+import io.sentry.TransactionContext
+import io.sentry.TransactionOptions
+import io.sentry.android.core.ActivityFramesTracker
+import io.sentry.android.core.ActivityLifecycleIntegration
+import io.sentry.android.core.BuildInfoProvider
+import io.sentry.android.core.SentryAndroidOptions
+import io.sentry.android.core.performance.AppStartMetrics
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
 import org.junit.After
@@ -41,6 +49,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.Config
 
 /**
@@ -62,6 +71,7 @@ class SentryNavEffectLifecycleIntegrationTest {
 
   @After
   fun tearDown() {
+    Fixture.current?.close()
     Fixture.current = null
   }
 
@@ -87,6 +97,63 @@ class SentryNavEffectLifecycleIntegrationTest {
     assertThat(fixture.scope.breadcrumbs.map { it.data["to"] })
       .containsExactly("/Home", "/Checkout")
       .inOrder()
+  }
+
+  /**
+   * On API 29+, core's `onActivityPreCreated` callback can run while the previous Activity's Nav3
+   * transaction is still bound to the scope. Our Nav3 implementation releases it in its own
+   * `onActivityPreCreated` callback. Android runs all of those callbacks before
+   * `onActivityCreated`, when core binds the incoming Activity's `ui.load` transaction, so it takes
+   * the freed slot.
+   */
+  @Test
+  fun `an incoming activity binds its own ui load transaction instead of its first nav transaction`() {
+    val fixture = Fixture.create()
+    fixture.installActivityLifecycleIntegration(CheckoutActivity::class.java)
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    home.pause()
+    Robolectric.buildActivity(CheckoutActivity::class.java).setup()
+    fixture.idle()
+
+    val uiLoadTransaction = fixture.uiLoadTransactions.single()
+    assertThat(uiLoadTransaction.operation).isEqualTo("ui.load")
+    assertThat(fixture.scope.transaction).isSameInstanceAs(uiLoadTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
+    assertThat(fixture.scope.screen).isEqualTo("/Checkout")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Checkout")
+  }
+
+  /**
+   * Below API 29, there's no `onActivityPreCreated`, so the outgoing Activity's lease is withdrawn
+   * from `onActivityCreated` if `ActivityLifecycleIntegration` finds that the scope's transaction
+   * slot is taken. `ActivityLifecycleIntegration` doesn't try again, so its `ui.load` transaction
+   * remains unbound. The incoming Activity's first nav transaction takes the freed slot instead (a
+   * known limitation – see `NavLeaseCoordinator`).
+   */
+  @Test
+  @Config(sdk = [28])
+  fun `below API 29, first nav transaction binds when incoming ui load cannot`() {
+    val fixture = Fixture.create()
+    fixture.installActivityLifecycleIntegration(CheckoutActivity::class.java)
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    home.pause()
+    Robolectric.buildActivity(CheckoutActivity::class.java).setup()
+    fixture.idle()
+
+    val uiLoadTransaction = fixture.uiLoadTransactions.single()
+    assertThat(uiLoadTransaction.isFinished).isFalse()
+    val checkoutTransaction = requireNotNull(fixture.scope.transaction)
+    assertThat(checkoutTransaction.name).isEqualTo("/Checkout")
+    assertThat(checkoutTransaction.operation).isEqualTo("navigation")
+    assertThat(homeTransaction.isFinished).isFalse()
+    assertThat(fixture.scope.screen).isEqualTo("/Checkout")
+    assertThat(fixture.scope.navigationEntries()).containsExactly("/Checkout")
   }
 
   @Test
@@ -213,6 +280,85 @@ class SentryNavEffectLifecycleIntegrationTest {
     assertThat(fixture.scope.breadcrumbs.map { it.data["to"] })
       .containsExactly("/Home", "/Checkout")
       .inOrder()
+  }
+
+  /**
+   * Known limitation: until the closing Activity is destroyed, its unfinished `ui.load` transaction
+   * keeps the scope's transaction slot, so the Activity returned to has no nav transaction bound
+   * yet, and spans produced on return attach to the closing Activity's `ui.load` instead.
+   */
+  @Test
+  fun `going back keeps the covering activity's unfinished ui load bound until it's destroyed`() {
+    val fixture = Fixture.create()
+    fixture.returnToHomeWhileCheckoutUiLoadIsUnfinished()
+    val uiLoadTransaction = fixture.uiLoadTransactions.single()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(uiLoadTransaction)
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+  }
+
+  @Test
+  fun `going back during the covering activity's ui load starts a nav transaction once it's destroyed`() {
+    val fixture = Fixture.create()
+    val (_, checkout) = fixture.returnToHomeWhileCheckoutUiLoadIsUnfinished()
+
+    checkout.stop()
+    checkout.destroy()
+    fixture.idle()
+
+    val restarted = requireNotNull(fixture.scope.transaction)
+    assertThat(restarted.name).isEqualTo("/Home")
+    assertThat(restarted.operation).isEqualTo("navigation")
+    assertThat(fixture.uiLoadTransactions.single().isFinished).isTrue()
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+  }
+
+  /**
+   * Below API 29, the covering Activity's `ui.load` transaction only binds if the scope's
+   * transaction slot is free when the Activity is created (see `NavLeaseCoordinator`), e.g.,
+   * because Home's nav transaction has already finished.
+   */
+  @Test
+  @Config(sdk = [28])
+  fun `below API 29, going back during the covering activity's ui load starts a nav transaction once it's destroyed`() {
+    val fixture = Fixture.create()
+    fixture.installActivityLifecycleIntegration(CheckoutActivity::class.java)
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    requireNotNull(fixture.scope.transaction).finish()
+    home.pause()
+    val checkout = Robolectric.buildActivity(CheckoutActivity::class.java).setup()
+    fixture.idle()
+    home.stop()
+    checkout.pause()
+    home.restart()
+    home.resume()
+    fixture.idle()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.uiLoadTransactions.single())
+
+    checkout.stop()
+    checkout.destroy()
+    fixture.idle()
+
+    val restarted = requireNotNull(fixture.scope.transaction)
+    assertThat(restarted.name).isEqualTo("/Home")
+    assertThat(restarted.operation).isEqualTo("navigation")
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+  }
+
+  @Test
+  fun `going back during the covering activity's ui load rebinds the unfinished nav transaction once it's destroyed`() {
+    val fixture = Fixture.create()
+    val (_, checkout) =
+      fixture.returnToHomeWhileCheckoutUiLoadIsUnfinished(finishHomeTransaction = false)
+    val homeTransaction = fixture.homeTransaction
+
+    checkout.stop()
+    checkout.destroy()
+    fixture.idle()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
   }
 
   // Activity recreation
@@ -867,6 +1013,59 @@ class SentryNavEffectLifecycleIntegrationTest {
     assertThat(homeTransaction.isFinished).isFalse()
   }
 
+  /**
+   * `ActivityLifecycleIntegration` binds an Activity's `ui.load` transaction when the Activity is
+   * created, and only if the scope's transaction slot is free.
+   */
+  @Test
+  fun `an activity without an effect binds its own ui load transaction over a covered activity's nav transaction`() {
+    val fixture = Fixture.create()
+    fixture.installActivityLifecycleIntegration(PlainActivity::class.java)
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    home.pause()
+    Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+
+    val uiLoadTransaction = fixture.uiLoadTransactions.single()
+    assertThat(uiLoadTransaction.operation).isEqualTo("ui.load")
+    assertThat(fixture.scope.screen).isEqualTo(PlainActivity::class.java.canonicalName)
+    assertThat(fixture.scope.navigationEntries()).isNull()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(uiLoadTransaction)
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  /**
+   * Below API 29, there's no `onActivityPreCreated`, so the lease is withdrawn from
+   * `onActivityCreated`, after `ActivityLifecycleIntegration` has found the scope's transaction
+   * slot taken. `ActivityLifecycleIntegration` doesn't try again, so its `ui.load` transaction
+   * stays unbound (a known limitation – see `NavLeaseCoordinator`). The covered Activity's nav data
+   * and transaction are still removed, so they aren't attributed to the Activity. The screen
+   * `ActivityLifecycleIntegration` set for the Activity is left in place, as it isn't the covered
+   * Activity's.
+   */
+  @Test
+  @Config(sdk = [28])
+  fun `below API 29, activity without an effect leaves no transaction bound`() {
+    val fixture = Fixture.create()
+    fixture.installActivityLifecycleIntegration(PlainActivity::class.java)
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+
+    home.pause()
+    Robolectric.buildActivity(PlainActivity::class.java).setup()
+    fixture.idle()
+
+    assertThat(fixture.uiLoadTransactions.single().isFinished).isFalse()
+    assertThat(fixture.scope.screen).isEqualTo(PlainActivity::class.java.canonicalName)
+    assertThat(fixture.scope.navigationEntries()).isNull()
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(homeTransaction.isFinished).isFalse()
+  }
+
   @Test
   fun `going back to an activity covered by one without an effect restores its nav data and unfinished transaction`() {
     val fixture = Fixture.create()
@@ -1242,7 +1441,7 @@ class SentryNavEffectLifecycleIntegrationTest {
   private class Fixture private constructor(tracesSampleRate: Double) {
 
     val options =
-      SentryOptions().apply {
+      SentryAndroidOptions().apply {
         dsn = "http://key@localhost/1"
         defaultScopeType = ScopeType.CURRENT
         setTracesSampleRate(tracesSampleRate)
@@ -1283,6 +1482,74 @@ class SentryNavEffectLifecycleIntegrationTest {
       events += "$name:$event"
     }
 
+    /** `ui.load` transactions started by [installActivityLifecycleIntegration], in start order. */
+    val uiLoadTransactions = mutableListOf<ITransaction>()
+
+    /** Home's nav transaction, as set up by [returnToHomeWhileCheckoutUiLoadIsUnfinished]. */
+    lateinit var homeTransaction: ITransaction
+
+    /**
+     * Opens Checkout over Home, binding Checkout's `ui.load` transaction, then returns to Home
+     * while that `ui.load` transaction is unfinished: Checkout is paused and Home resumed, but
+     * Checkout isn't stopped or destroyed yet. Finishes Home's nav transaction while Checkout
+     * covers it unless [finishHomeTransaction] is `false`.
+     *
+     * API 29+ only: below API 29, Checkout's `ui.load` transaction can't bind while Home's nav
+     * transaction holds the scope's transaction slot.
+     */
+    fun returnToHomeWhileCheckoutUiLoadIsUnfinished(
+      finishHomeTransaction: Boolean = true
+    ): Pair<ActivityController<HomeActivity>, ActivityController<CheckoutActivity>> {
+      installActivityLifecycleIntegration(CheckoutActivity::class.java)
+      val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+      idle()
+      homeTransaction = requireNotNull(scope.transaction)
+      home.pause()
+      val checkout = Robolectric.buildActivity(CheckoutActivity::class.java).setup()
+      idle()
+      home.stop()
+      idle()
+      if (finishHomeTransaction) {
+        homeTransaction.finish()
+      }
+
+      checkout.pause()
+      home.restart()
+      home.resume()
+      idle()
+      return home to checkout
+    }
+
+    private var activityLifecycleIntegration: ActivityLifecycleIntegration? = null
+
+    /**
+     * Installs a real [ActivityLifecycleIntegration] that traces only instances of
+     * [tracedActivityClass], so that each such Activity gets a `ui.load` transaction that competes
+     * with nav transactions for the scope's transaction slot as it does in an app.
+     *
+     * Call it before building any Activity: the SDK registers the integration at initialization, so
+     * its callbacks run before those the coordinator registers when the first effect attaches.
+     *
+     * Limiting it to [tracedActivityClass] keeps the other Activities' nav transactions bindable,
+     * as the tests expect.
+     */
+    fun installActivityLifecycleIntegration(tracedActivityClass: Class<out Activity>) {
+      val application: Application = ApplicationProvider.getApplicationContext()
+      val integration =
+        ActivityLifecycleIntegration(
+          TracedActivityApplication(application, tracedActivityClass),
+          BuildInfoProvider(options.logger),
+          mock<ActivityFramesTracker>(),
+        )
+      integration.register(UiLoadRecordingScopes(scopes, uiLoadTransactions), options)
+      activityLifecycleIntegration = integration
+    }
+
+    fun close() {
+      activityLifecycleIntegration?.close()
+      AppStartMetrics.getInstance().clear()
+    }
+
     /**
      * The host-app setup under test: one `SentryNavEffect` in an Activity's or Fragment's content.
      */
@@ -1321,6 +1588,123 @@ class SentryNavEffectLifecycleIntegrationTest {
         return Fixture(tracesSampleRate).also { current = it }
       }
     }
+  }
+
+  /**
+   * Stands in for [application] when [ActivityLifecycleIntegration] registers its callbacks, and
+   * relays the application's Activity lifecycle callbacks to it only for instances of
+   * [tracedActivityClass].
+   */
+  private class TracedActivityApplication(
+    private val application: Application,
+    private val tracedActivityClass: Class<out Activity>,
+  ) : Application() {
+
+    private val relays = mutableMapOf<ActivityLifecycleCallbacks, ActivityLifecycleCallbacks>()
+
+    override fun registerActivityLifecycleCallbacks(callback: ActivityLifecycleCallbacks) {
+      val relay = TracedActivityCallbacks(callback, tracedActivityClass)
+      relays[callback] = relay
+      application.registerActivityLifecycleCallbacks(relay)
+    }
+
+    override fun unregisterActivityLifecycleCallbacks(callback: ActivityLifecycleCallbacks) {
+      relays.remove(callback)?.let { application.unregisterActivityLifecycleCallbacks(it) }
+    }
+  }
+
+  /** Relays each callback to [delegate] only for instances of [tracedActivityClass]. */
+  @Suppress("TooManyFunctions")
+  private class TracedActivityCallbacks(
+    private val delegate: Application.ActivityLifecycleCallbacks,
+    private val tracedActivityClass: Class<out Activity>,
+  ) : Application.ActivityLifecycleCallbacks {
+
+    private inline fun relay(activity: Activity, block: () -> Unit) {
+      if (tracedActivityClass.isInstance(activity)) {
+        block()
+      }
+    }
+
+    override fun onActivityPreCreated(activity: Activity, savedInstanceState: Bundle?) =
+      relay(activity) { delegate.onActivityPreCreated(activity, savedInstanceState) }
+
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) =
+      relay(activity) { delegate.onActivityCreated(activity, savedInstanceState) }
+
+    override fun onActivityPostCreated(activity: Activity, savedInstanceState: Bundle?) =
+      relay(activity) { delegate.onActivityPostCreated(activity, savedInstanceState) }
+
+    override fun onActivityPreStarted(activity: Activity) =
+      relay(activity) { delegate.onActivityPreStarted(activity) }
+
+    override fun onActivityStarted(activity: Activity) =
+      relay(activity) { delegate.onActivityStarted(activity) }
+
+    override fun onActivityPostStarted(activity: Activity) =
+      relay(activity) { delegate.onActivityPostStarted(activity) }
+
+    override fun onActivityPreResumed(activity: Activity) =
+      relay(activity) { delegate.onActivityPreResumed(activity) }
+
+    override fun onActivityResumed(activity: Activity) =
+      relay(activity) { delegate.onActivityResumed(activity) }
+
+    override fun onActivityPostResumed(activity: Activity) =
+      relay(activity) { delegate.onActivityPostResumed(activity) }
+
+    override fun onActivityPrePaused(activity: Activity) =
+      relay(activity) { delegate.onActivityPrePaused(activity) }
+
+    override fun onActivityPaused(activity: Activity) =
+      relay(activity) { delegate.onActivityPaused(activity) }
+
+    override fun onActivityPostPaused(activity: Activity) =
+      relay(activity) { delegate.onActivityPostPaused(activity) }
+
+    override fun onActivityPreStopped(activity: Activity) =
+      relay(activity) { delegate.onActivityPreStopped(activity) }
+
+    override fun onActivityStopped(activity: Activity) =
+      relay(activity) { delegate.onActivityStopped(activity) }
+
+    override fun onActivityPostStopped(activity: Activity) =
+      relay(activity) { delegate.onActivityPostStopped(activity) }
+
+    override fun onActivityPreSaveInstanceState(activity: Activity, outState: Bundle) =
+      relay(activity) { delegate.onActivityPreSaveInstanceState(activity, outState) }
+
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) =
+      relay(activity) { delegate.onActivitySaveInstanceState(activity, outState) }
+
+    override fun onActivityPostSaveInstanceState(activity: Activity, outState: Bundle) =
+      relay(activity) { delegate.onActivityPostSaveInstanceState(activity, outState) }
+
+    override fun onActivityPreDestroyed(activity: Activity) =
+      relay(activity) { delegate.onActivityPreDestroyed(activity) }
+
+    override fun onActivityDestroyed(activity: Activity) =
+      relay(activity) { delegate.onActivityDestroyed(activity) }
+
+    override fun onActivityPostDestroyed(activity: Activity) =
+      relay(activity) { delegate.onActivityPostDestroyed(activity) }
+  }
+
+  /** Records each `ui.load` transaction started through [delegate] in [uiLoadTransactions]. */
+  private class UiLoadRecordingScopes(
+    private val delegate: IScopes,
+    private val uiLoadTransactions: MutableList<ITransaction>,
+  ) : IScopes by delegate {
+
+    override fun startTransaction(
+      transactionContext: TransactionContext,
+      transactionOptions: TransactionOptions,
+    ): ITransaction =
+      delegate.startTransaction(transactionContext, transactionOptions).also {
+        if (transactionContext.operation == "ui.load") {
+          uiLoadTransactions += it
+        }
+      }
   }
 
   private companion object {

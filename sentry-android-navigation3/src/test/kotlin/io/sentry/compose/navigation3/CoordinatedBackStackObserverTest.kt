@@ -522,6 +522,8 @@ class CoordinatedBackStackObserverTest {
   private object NoOpNavStatePublisher : INavStatePublisher {
     override fun publishTo(scope: IScope) = Unit
 
+    override fun retryTransactionPublication(scope: IScope) = Unit
+
     override fun unpublishFrom(scope: IScope) = Unit
 
     override fun onUnregistered(scope: IScope?) = Unit

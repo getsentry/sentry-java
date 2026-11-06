@@ -57,9 +57,14 @@ internal class NavLeaseCoordinator {
 
   /**
    * Reports the host application's Activities to this coordinator so that it can detect whether a
-   * leaseholder is covered by a non-candidate root.
+   * leaseholder is covered by a non-candidate root, and retry a nav transaction blocked by a closed
+   * Activity's `ui.load` transaction.
    */
-  private val activityWatcher = NavActivityWatcher(onActivityResumed = ::onAnyActivityResumed)
+  private val activityWatcher =
+    NavActivityWatcher(
+      onActivityCreatedOrResumed = ::onActivityCreatedOrResumed,
+      onActivityDestroyed = ::onAnyActivityDestroyed,
+    )
 
   /**
    * Registers a [nav root][rootInfo] as a lease candidate until disposal or lifecycle destruction.
@@ -295,14 +300,17 @@ internal class NavLeaseCoordinator {
     it.canReceiveLease && it.isActivityNavRoot(activity)
   }
 
-  /** Withdraws the lease when the resumed [activity] appears to cover a non-resumed nav root. */
-  private fun onAnyActivityResumed(activity: Activity) {
-    // Assume the resumed `activity` is covering the current leaseholder if i) the leaseholder
-    // itself isn't resumed, ii) `activity` isn't the leaseholder's host Activity, and iii)
-    // `activity` isn't itself a nav root (see [isActivityNavRoot]). (i) checks the leaseholder's
-    // own state rather than its host Activity's, as they differ for Fragment nav roots: a Fragment
-    // leaseholder that isn't resumed isn't what the user is interacting with, even if its host
-    // Activity is resumed.
+  /** Withdraws the lease when [activity] appears to cover a non-resumed nav root. */
+  private fun onActivityCreatedOrResumed(
+    activity: Activity,
+    event: NavActivityWatcher.ActivityEvent,
+  ) {
+    // Assume the created or resumed `activity` is covering the current leaseholder if i) the
+    // leaseholder itself isn't resumed, ii) `activity` isn't the leaseholder's host Activity, and
+    // iii) `activity` isn't itself a nav root (see [isActivityNavRoot]). (i) checks the
+    // leaseholder's own state rather than its host Activity's, as they differ for Fragment nav
+    // roots: a Fragment leaseholder that isn't resumed isn't what the user is interacting with,
+    // even if its host Activity is resumed.
     val holder = leaseHolder ?: return
     val hostActivity = holder.hostActivity ?: return
     if (
@@ -317,8 +325,25 @@ internal class NavLeaseCoordinator {
       withdrawLease(
         scope,
         withdrawalReason =
-          "${activity.javaClass.name} was resumed while the nav root wasn't resumed",
+          "${activity.javaClass.name} was ${event.description} while the nav root wasn't resumed",
       )
+    }
+  }
+
+  /**
+   * After [activity] is destroyed, asks the leaseholder to retry publication if an Activity's
+   * `ui.load` blocked it. The publisher decides whether the blocker has left and retry is allowed.
+   */
+  private fun onAnyActivityDestroyed(activity: Activity) {
+    val holder = leaseHolder ?: return
+    if (holder.hostActivity === activity) {
+      return
+    }
+
+    holder.withScopeOrNull { scope ->
+      if (scope != null) {
+        holder.publisher.retryTransactionPublication(scope)
+      }
     }
   }
 
@@ -482,6 +507,12 @@ internal interface INavStatePublisher {
 
   /** Publishes the candidate's staged nav state to [scope]. */
   fun publishTo(scope: IScope)
+
+  /**
+   * Retries a nav transaction blocked by an Activity's `ui.load`, subject to
+   * [StagedNavTransaction.retryPublishIfBlocked]. Leaves other published nav state alone.
+   */
+  fun retryTransactionPublication(scope: IScope)
 
   /** Removes published nav state from [scope], retaining it for a later lease acquisition. */
   fun unpublishFrom(scope: IScope)

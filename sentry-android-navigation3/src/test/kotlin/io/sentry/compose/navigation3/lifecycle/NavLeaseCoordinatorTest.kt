@@ -744,6 +744,62 @@ class NavLeaseCoordinatorTest {
   // region lease withdrawal when another Activity covers the leaseholder
 
   @Test
+  fun `another activity being pre-created while the leaseholder is paused withdraws the nav lease`() {
+    val fixture = Fixture.create()
+    val owner = TestOwner(RESUMED)
+    val registration = fixture.acquireLease("owner", owner, host = fixture.hostActivity)
+    owner.lifecycle.currentState = STARTED
+
+    fixture.activityCallbacks.onActivityPreCreated(fixture.coveringActivity, null)
+
+    assertThat(registration.hasLease).isFalse()
+    assertThat(fixture.unpublished).containsExactly("owner")
+  }
+
+  @Test
+  fun `another activity being created while the leaseholder is paused withdraws the lease and unpublishes nav state`() {
+    val fixture = Fixture.create()
+    val owner = TestOwner(RESUMED)
+    val registration = fixture.acquireLease("owner", owner, host = fixture.hostActivity)
+    owner.lifecycle.currentState = STARTED
+
+    fixture.activityCallbacks.onActivityCreated(fixture.coveringActivity, null)
+
+    assertThat(registration.hasLease).isFalse()
+    assertThat(fixture.unpublished).containsExactly("owner")
+  }
+
+  @Test
+  fun `another activity being created while the leaseholder is resumed keeps the nav lease`() {
+    val fixture = Fixture.create()
+    val registration =
+      fixture.acquireLease("owner", TestOwner(RESUMED), host = fixture.hostActivity)
+
+    fixture.activityCallbacks.onActivityCreated(fixture.coveringActivity, null)
+
+    assertThat(registration.hasLease).isTrue()
+    assertThat(fixture.unpublished).isEmpty()
+  }
+
+  @Test
+  fun `another activity being created while the leaseholder is paused logs the withdrawal`() {
+    val fixture = Fixture.create()
+    val owner = TestOwner(RESUMED)
+    fixture.acquireLease("owner", owner, host = fixture.hostActivity)
+    owner.lifecycle.currentState = STARTED
+
+    fixture.activityCallbacks.onActivityCreated(fixture.coveringActivity, null)
+
+    verify(fixture.logger)
+      .log(
+        SentryLevel.DEBUG,
+        "Withdrew the Nav3 lease from a nav root hosted by %s: %s.",
+        fixture.hostActivity.javaClass.name,
+        "${fixture.coveringActivity.javaClass.name} was created while the nav root wasn't resumed",
+      )
+  }
+
+  @Test
   fun `another activity resuming while the leaseholder is paused withdraws the nav lease`() {
     val fixture = Fixture.create()
     val owner = TestOwner(RESUMED)
@@ -1020,6 +1076,66 @@ class NavLeaseCoordinatorTest {
 
     assertThat(covering.hasLease).isTrue()
     assertThat(unpublishAttempts).isEqualTo(1)
+  }
+
+  // endregion
+
+  // region retrying nav transaction publication when an Activity is destroyed
+
+  @Test
+  fun `another activity being post-destroyed retries the leaseholder's transaction publication`() {
+    val fixture = Fixture.create()
+    fixture.acquireLease("owner", TestOwner(RESUMED), host = fixture.hostActivity)
+
+    fixture.activityCallbacks.onActivityPostDestroyed(fixture.coveringActivity)
+
+    assertThat(fixture.retried).containsExactly("owner")
+  }
+
+  /** Unit tests run against a stubbed `Build.VERSION.SDK_INT` of 0, i.e., below API 29. */
+  @Test
+  fun `below API 29, another activity being destroyed retries the leaseholder's transaction publication`() {
+    val fixture = Fixture.create()
+    fixture.acquireLease("owner", TestOwner(RESUMED), host = fixture.hostActivity)
+
+    fixture.activityCallbacks.onActivityDestroyed(fixture.coveringActivity)
+
+    assertThat(fixture.retried).containsExactly("owner")
+  }
+
+  @Test
+  fun `the leaseholder's host activity being destroyed doesn't retry its transaction publication`() {
+    val fixture = Fixture.create()
+    fixture.acquireLease("owner", TestOwner(RESUMED), host = fixture.hostActivity)
+
+    fixture.activityCallbacks.onActivityPostDestroyed(fixture.hostActivity)
+
+    assertThat(fixture.retried).isEmpty()
+  }
+
+  @Test
+  fun `an activity being destroyed without a leaseholder retries no transaction publication`() {
+    val fixture = Fixture.create()
+    val owner = TestOwner(RESUMED)
+    fixture.acquireLease("owner", owner, host = fixture.hostActivity)
+    owner.lifecycle.currentState = STARTED
+    fixture.activityCallbacks.onActivityCreated(fixture.coveringActivity, null)
+
+    fixture.activityCallbacks.onActivityPostDestroyed(fixture.coveringActivity)
+
+    assertThat(fixture.retried).isEmpty()
+  }
+
+  @Test
+  fun `an activity being destroyed without a scope retries no transaction publication`() {
+    val fixture = Fixture.create()
+    fixture.acquireLease("owner", TestOwner(RESUMED), host = fixture.hostActivity)
+
+    fixture.withoutScope {
+      fixture.activityCallbacks.onActivityPostDestroyed(fixture.coveringActivity)
+    }
+
+    assertThat(fixture.retried).isEmpty()
   }
 
   // endregion
@@ -1399,6 +1515,9 @@ class NavLeaseCoordinatorTest {
     /** Names of the nav states unpublished, in the order they were unpublished. */
     val unpublished = mutableListOf<String>()
 
+    /** Names of the nav states asked to retry publishing their nav transactions, in order. */
+    val retried = mutableListOf<String>()
+
     /** Names of the nav states notified of unregistration, with the scope they were given. */
     val unregistered = mutableListOf<Pair<String, IScope?>>()
 
@@ -1410,14 +1529,22 @@ class NavLeaseCoordinatorTest {
 
     /**
      * Publisher named [name] that, by default, records its publication in [published], its
-     * unpublishing in [unpublished], and its unregistration in [unregistered].
+     * transaction publication retries in [retried], its unpublishing in [unpublished], and its
+     * unregistration in [unregistered].
      */
     fun publisher(
       name: String,
       onPublishTo: (IScope) -> Unit = { published += name },
+      onRetryTransactionPublication: (IScope) -> Unit = { retried += name },
       onUnpublishFrom: (IScope) -> Unit = { unpublished += name },
       onUnregistered: (IScope?) -> Unit = { unregistered += name to it },
-    ): INavStatePublisher = FakeNavStatePublisher(onPublishTo, onUnpublishFrom, onUnregistered)
+    ): INavStatePublisher =
+      FakeNavStatePublisher(
+        onPublishTo,
+        onRetryTransactionPublication,
+        onUnpublishFrom,
+        onUnregistered,
+      )
 
     /** The application of [hostActivity] and [coveringActivity]. */
     val application = mock<Application>()
@@ -1498,10 +1625,13 @@ class NavLeaseCoordinatorTest {
 
   private class FakeNavStatePublisher(
     private val onPublishTo: (IScope) -> Unit,
+    private val onRetryTransactionPublication: (IScope) -> Unit,
     private val onUnpublishFrom: (IScope) -> Unit,
     private val onUnregistered: (IScope?) -> Unit,
   ) : INavStatePublisher {
     override fun publishTo(scope: IScope) = onPublishTo(scope)
+
+    override fun retryTransactionPublication(scope: IScope) = onRetryTransactionPublication(scope)
 
     override fun unpublishFrom(scope: IScope) = onUnpublishFrom(scope)
 
