@@ -7,13 +7,9 @@ By default the envelopes sent to relay are caught by a mock server which allows 
 
 Simply run `./gradlew connectedCheck` to run all ui tests of all modules (requires a connected device, either physical or an emulator).
 
-# SauceLabs
-To run on saucelabs execute following commands (need also `SAUCE_USERNAME` and `SAUCE_ACCESS_KEY` environment variables):
-For End 2 End:
-```
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
-saucectl run -c .sauce/sentry-uitest-android-end2end.yml
-```
+# CI
+CI runs these tests on a GitHub Actions emulator in the AGP matrix workflow (`.github/workflows/agp-matrix.yml`).
+The emulator must not be an ATD image: PixelCopy returns no data there, and the replay tests need it.
 
 # Troubleshooting
 

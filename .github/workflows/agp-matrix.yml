@@ -24,6 +24,8 @@ jobs:
     env:
       VERSION_AGP: ${{ matrix.agp }}
       APPLY_SENTRY_INTEGRATIONS: ${{ matrix.integrations }}
+      # Upload replay snapshots from one cell only. Forks don't have access to the upload secret.
+      UPLOAD_REPLAY_SNAPSHOTS: ${{ matrix.agp == '9.4.0' && matrix.integrations && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
 
     steps:
       - name: Checkout Repo
@@ -51,20 +53,21 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-api-30-x86_64-aosp_atd
+          key: avd-api-35-x86_64-google_apis
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2
         with:
-          api-level: 30
-          target: aosp_atd
-          channel: canary # Necessary for ATDs
+          api-level: 35
+          # Not an ATD image: PixelCopy returns no data on ATDs, which the replay tests need
+          target: google_apis
+          channel: canary
           arch: x86_64
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
@@ -76,16 +79,31 @@ jobs:
       - name: Run instrumentation tests
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2
         with:
-          api-level: 30
-          target: aosp_atd
-          channel: canary # Necessary for ATDs
+          api-level: 35
+          # Not an ATD image: PixelCopy returns no data on ATDs, which the replay tests need
+          target: google_apis
+          channel: canary
           arch: x86_64
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory 4096 -no-snapshot-save -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
-          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -Denvironment=github --daemon
+          script: |
+            ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest --daemon
+            ./scripts/pull-replay-snapshots.sh replay-snapshots
+
+      - name: Install Sentry CLI
+        if: ${{ !cancelled() && env.UPLOAD_REPLAY_SNAPSHOTS == 'true' }}
+        uses: getsentry/action-setup-cli@70d7e587b84c2e78cf4d37cd33d7b74fb3729c1b # v1
+
+      - name: Upload Replay Snapshots to Sentry
+        if: ${{ !cancelled() && env.UPLOAD_REPLAY_SNAPSHOTS == 'true' && hashFiles('replay-snapshots/*.png') != '' }}
+        run: sentry-cli snapshots upload ./replay-snapshots --app-id sentry-android-replay
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: sentry-sdks
+          SENTRY_PROJECT: sentry-android
 
       - name: Upload test results
         if: always()
@@ -96,6 +114,7 @@ jobs:
             **/build/reports/*
             **/build/outputs/*/connected/*
             **/build/outputs/mapping/release/*
+            replay-snapshots/
 
       - name: Test Report
         uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16

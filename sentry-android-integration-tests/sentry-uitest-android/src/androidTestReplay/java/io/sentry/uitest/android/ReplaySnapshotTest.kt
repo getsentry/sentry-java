@@ -12,17 +12,12 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertTrue
-import org.hamcrest.CoreMatchers.`is`
-import org.junit.Assume.assumeThat
 import org.junit.Before
 
 class ReplaySnapshotTest : BaseUiTest() {
 
   @Before
   fun setup() {
-    // GH Actions emulators don't support capturing screenshots for replay
-    @Suppress("KotlinConstantConditions")
-    assumeThat(BuildConfig.ENVIRONMENT != "github", `is`(true))
     // crash on swallowed Compose masking errors (e.g. broken obfuscated internals) so regressions
     // fail this on-device test instead of silently under-masking (see SentryReplayDebug)
     System.setProperty("io.sentry.replay.compose.fail-fast", "true")
@@ -33,7 +28,8 @@ class ReplaySnapshotTest : BaseUiTest() {
     val snapshotsDir =
       File(
           Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-          "sauce_labs_custom_screenshots",
+          // pulled and uploaded by scripts/pull-replay-snapshots.sh in CI
+          "sentry_replay_snapshots",
         )
         .apply {
           deleteRecursively()
