@@ -16,6 +16,7 @@
 ### Behavioral Changes
 
 - Nav3: Returning to an Activity or Fragment with its own `SentryNavEffect` within the app (e.g., closing the Activity that covered it, swiping back to its ViewPager2 page, or dismissing a dialog over it) now starts a new navigation transaction for the current destination if the previous one finished, so spans produced upon return can now be consistently captured ([#6482](https://github.com/getsentry/sentry-java/pull/6482))
+- Nav3: `ui.load` transactions are bound to `IScope` in preference to Nav3 transactions when transitioning between Activities, matching Nav2 behavior (API 29+) ([#6484](https://github.com/getsentry/sentry-java/pull/6484))
 
 ### Fixes
 

@@ -153,8 +153,8 @@ leaving the transaction unbound but running until the leaseholder resumes.
 
 Non-candidate roots never register, so the coordinator infers their presence from either of two signals:
 
-- another Activity resumes while the leaseholder isn't resumed, unless the resumed Activity is
-  itself a nav root, which takes the lease when it resumes; or
+- another Activity is created or resumed while the leaseholder isn't resumed, unless the resumed
+  Activity is itself a nav root, which takes the lease when it resumes; or
 
 - the leaseholder pauses while its host Activity stays resumed (e.g., a ViewPager2 swipe). (Note
   that an Activity pauses before its Fragments do when the Activity is backgrounded or covered.)
@@ -163,10 +163,19 @@ Non-candidate roots never register, so the coordinator infers their presence fro
 (e.g., dialogs) go undetected. These two signals are deliberately the only ones: other surfaces that cover a leaseholder without pausing it
 (e.g., bottom sheets or Compose dialogs) aren't detected, and shouldn't be by adding signals here.
 
-**Limitation (before the covering Activity resumes)**: The lease is withdrawn only once the covering Activity resumes. Until then (i.e.,
-during its `onCreate` and `onStart`), errors and spans the covering Activity produces are still attributed to the leaseholder. For the same
-reason, the covering Activity's `ui.load` transaction isn't bound to the scope: `ActivityLifecycleIntegration` tries to bind it when the
-Activity is created, while the leaseholder's nav transaction still holds the scope's transaction slot.
+**Limitation (below API 29)**: An Activity created over the leaseholder doesn't get its `ui.load` transaction bound to the scope. There's no
+`onActivityPreCreated` below API 29, so the lease is withdrawn only after `ActivityLifecycleIntegration` has tried to bind the Activity's
+`ui.load` transaction and found the leaseholder's nav transaction in the scope's transaction slot. The integration doesn't try again, so its
+`ui.load` transaction stays unbound, as it did before withdrawal existed. Withdrawal still keeps the Activity's errors and spans from being
+attributed to the leaseholder: spans the Activity produces attach to no transaction until one is bound (e.g., the nav transaction for the
+first destination of the Activity's own `SentryNavEffect`, if it has one). Closing this gap would take a change to
+`ActivityLifecycleIntegration` that affects every app, so it's deliberately left open.
+
+As a result, an Activity with its own `SentryNavEffect` gets a different transaction bound for its spans depending on the API level. On
+API 29+, its `ui.load` transaction is bound, and its first destination's nav transaction isn't started because the slot is taken. Below
+API 29, when the leaseholder's nav transaction held the slot as the Activity was created, its first destination's nav transaction is bound
+instead. Either way, `ActivityLifecycleIntegration` still sends the `ui.load` transaction, including its TTID and TTFD spans. Only the
+parent of auto-instrumented spans (e.g., HTTP or database spans) differs.
 
 ### Returning to a nav root
 
@@ -185,6 +194,24 @@ Either way, the transaction is bound only if the scope's transaction slot is fre
 happen when the candidate publishes (`INavStatePublisher.publishTo`) its nav state, so the coordinator needn't tell a return from a first
 acquisition: on its first back stack update, a candidate has no destination to start a transaction for yet.
 
+When the user returns by closing an Activity, that Activity's `ui.load` transaction may still be running and hold the slot. It normally
+leaves the slot when the closed Activity is destroyed, which happens after the nav root has resumed. If the Activity is destroyed within
+`UI_LOAD_RETRY_WINDOW_NANOS` of the blocked attempt, binding the nav root's transaction is retried once (see `onAnyActivityDestroyed`).
+Otherwise, the nav root goes without a bound nav transaction until its next navigation or return.
+
+Only the current leaseholder is asked to retry when an Activity is destroyed. Its publisher checks whether the blocked `ui.load` has left
+the slot and whether the retry window is still open. A leaseholder that loses or withdraws its lease forgets the blocked publication.
+
+The retry has three gaps:
+
+- A `ui.action` transaction started by the gesture that caused the return (e.g., a ViewPager2 swipe or an in-app back button) can block the
+  nav transaction. Only Activity `ui.load` transactions trigger this retry.
+- Spans produced between the nav root's resume and the closed Activity's destruction may attach to the closed Activity's `ui.load`.
+- An Activity left without being destroyed (e.g., when another Activity is reordered to the front) triggers no retry.
+
+Unbinding a finishing Activity's `ui.load` when it pauses would close the last two gaps, but would change `ActivityLifecycleIntegration`
+for every app. Giving navigation priority over `ui.action` is an SDK-wide scope-slot policy decision shared with other integrations.
+
 A nav root that's destroyed and recreated after losing the lease (e.g., on a configuration change) isn't returned to: it registers anew and
 gets a transaction on its first back stack update. See [#6454](https://github.com/getsentry/sentry-java/issues/6454).
 
@@ -194,7 +221,8 @@ existing Activity comes back to the foreground.
 
 ### Android ordering assumptions
 
-`NavLeaseCoordinator` relies on the following sequences, which Android doesn't document but AOSP and androidx have historically upheld:
+Besides the callback ordering `NavActivityWatcher` relies on, `NavLeaseCoordinator` relies on the following sequences, which Android doesn't
+document but AOSP and androidx have historically upheld:
 
 - An Activity's `onActivityResumed` callbacks run before its `Lifecycle` dispatches
   `ON_RESUME` (see `isActivityNavRoot`).
@@ -202,6 +230,9 @@ existing Activity comes back to the foreground.
 - An Activity's `Lifecycle` dispatches `ON_PAUSE` before its Fragments'
   lifecycles do. androidx's `ReportFragment` and `FragmentActivity` ensure this, not the
   platform.
+
+- A visible Activity that finishes is destroyed once the Activity that replaces it reports idle,
+  or when the system's idle timeout fires (see `UI_LOAD_RETRY_WINDOW_NANOS`).
 
 Going forward, if an order changes, nav data may be attributed to the wrong nav root, or a nav transaction may go unbound, but nothing would
 throw.
