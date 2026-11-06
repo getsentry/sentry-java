@@ -48,7 +48,10 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
 
   private boolean containsAnyKey(final @NotNull List<Throwable> throwables) {
     for (final Throwable throwable : throwables) {
-      if (!isIgnoredForDeduplication(throwable) && capturedObjects.containsKey(throwable)) {
+      if (isIgnoredForDeduplication(throwable)) {
+        return false;
+      }
+      if (capturedObjects.containsKey(throwable)) {
         return true;
       }
     }
