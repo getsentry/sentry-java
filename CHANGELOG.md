@@ -19,7 +19,7 @@
 
 ### Fixes
 
-- Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+- Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
 
 ## 8.63.0
 
