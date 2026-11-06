@@ -78,6 +78,13 @@ abstract class SentryApollo5BuilderExtensionsClientErrorsTest(
   ]
 }"""
 
+    val responseBodyEmptyErrors =
+      """{
+  "data": {},
+  "errors": [
+  ]
+}"""
+
     fun getSut(
       captureFailedRequests: Boolean = DEFAULT_CAPTURE_FAILED_REQUESTS,
       failedRequestTargets: List<String> = listOf(DEFAULT_PROPAGATION_TARGETS),
@@ -548,6 +555,14 @@ abstract class SentryApollo5BuilderExtensionsClientErrorsTest(
 
     // HttpInterceptor does not throw for >= 400
     verify(fixture.scopes).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `does not capture errors if errors array is empty`() {
+    val sut = fixture.getSut(responseBody = fixture.responseBodyEmptyErrors)
+    executeQuery(sut)
+
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
   }
 
   @Test

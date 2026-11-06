@@ -59,7 +59,10 @@ constructor(
     }
   }
 
-  private val regex: Regex by lazy { "(?i)\"errors\"\\s*:\\s*\\[".toRegex() }
+  // matches a non-empty `errors` array, e.g. `"errors": [{...}]`, but not `"errors": []`
+  private val nonEmptyErrorsRegex: Regex by lazy {
+    "(?i)\"errors\"\\s*:\\s*\\[\\s*[^\\]\\s]".toRegex()
+  }
 
   override suspend fun intercept(request: HttpRequest, chain: HttpInterceptorChain): HttpResponse {
     val activeSpan = if (Platform.isAndroid()) scopes.transaction else scopes.span
@@ -358,8 +361,8 @@ constructor(
           return
         }
 
-      // if there response body does not have the errors field, do not raise an issue
-      if (body.isEmpty() || !regex.containsMatchIn(body)) {
+      // if the response body does not have a non-empty errors field, do not raise an issue
+      if (body.isEmpty() || !nonEmptyErrorsRegex.containsMatchIn(body)) {
         return
       }
 
