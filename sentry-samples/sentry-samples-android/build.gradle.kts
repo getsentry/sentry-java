@@ -48,8 +48,8 @@ android {
 
   defaultConfig {
     applicationId = "io.sentry.samples.android"
-    // androidx.sqlite 2.6+ require minSdk 23; the Sentry SDK still supports 21.
-    minSdk = 23
+    // androidx.sqlite 2.8+ requires minSdk 24; the Sentry SDK still supports 21.
+    minSdk = 24
     targetSdk = libs.versions.targetSdk.get().toInt()
     versionCode = 2
     versionName = project.version.toString()
