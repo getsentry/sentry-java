@@ -20,6 +20,7 @@ import java.util.concurrent.FutureTask
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -54,6 +55,7 @@ class AndroidProfilerTest {
     private val mockDsn = "http://key@localhost/proj"
     val mockLogger = mock<ILogger>()
     var lastScheduledRunnable: Runnable? = null
+    var lastScheduledDelayMillis: Long? = null
     val mockExecutorService =
       object : ISentryExecutorService {
         override fun submit(runnable: Runnable): Future<*> {
@@ -75,6 +77,7 @@ class AndroidProfilerTest {
 
         override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
           lastScheduledRunnable = runnable
+          lastScheduledDelayMillis = delayMillis
           return FutureTask {}
         }
 
@@ -145,6 +148,7 @@ class AndroidProfilerTest {
   @AfterTest
   fun clear() {
     context.cacheDir.deleteRecursively()
+    AndroidProfiler.setProfilingTimeoutMillis(0)
   }
 
   @Test
@@ -230,6 +234,17 @@ class AndroidProfilerTest {
     // First transaction finishes: timed out data is returned
     val endData = profiler.endAndCollect(false, null)
     assertNull(endData)
+  }
+
+  @Test
+  fun `profiling timeout can be overridden and reset`() {
+    AndroidProfiler.setProfilingTimeoutMillis(2_000)
+    fixture.getSut().start()
+    assertEquals(2_000L, fixture.lastScheduledDelayMillis)
+
+    AndroidProfiler.setProfilingTimeoutMillis(0)
+    fixture.getSut().start()
+    assertEquals(30_000L, fixture.lastScheduledDelayMillis)
   }
 
   @Test

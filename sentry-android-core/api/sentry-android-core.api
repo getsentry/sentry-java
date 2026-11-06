@@ -123,6 +123,7 @@ public class io/sentry/android/core/AndroidProfiler {
 	public fun <init> (Ljava/lang/String;ILio/sentry/android/core/internal/util/SentryFrameMetricsCollector;Lio/sentry/util/LazyEvaluator$Evaluator;Lio/sentry/ILogger;)V
 	public fun close ()V
 	public fun endAndCollect (ZLjava/util/List;)Lio/sentry/android/core/AndroidProfiler$ProfileEndData;
+	public static fun setProfilingTimeoutMillis (J)V
 	public fun start ()Lio/sentry/android/core/AndroidProfiler$ProfileStartData;
 }
 

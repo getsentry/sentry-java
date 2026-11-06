@@ -3,17 +3,15 @@ package io.sentry.uitest.android
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.launchActivity
 import androidx.test.espresso.Espresso
-import androidx.test.espresso.IdlingPolicies
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import io.sentry.NoOpLogger
 import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.AndroidLogger
-import io.sentry.android.core.BuildInfoProvider
+import io.sentry.android.core.AndroidProfiler
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeProfile
 import io.sentry.assertEnvelopeTransaction
@@ -21,16 +19,21 @@ import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
 import java.io.File
 import java.util.concurrent.TimeUnit
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import org.junit.Assume
 import org.junit.Assume.assumeNotNull
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EnvelopeTests : BaseUiTest() {
+  @AfterTest
+  fun resetProfilingTimeout() {
+    AndroidProfiler.setProfilingTimeoutMillis(0)
+  }
+
   @Test
   fun checkEnvelopeCaptureMessage() {
     initSentry(true)
@@ -198,14 +201,8 @@ class EnvelopeTests : BaseUiTest() {
 
   @Test
   fun checkTimedOutProfile() {
-    Assume.assumeFalse(
-      "Sometimes traceFile does not exist for profiles on emulators and it fails." +
-        " Although, Android Runtime is the one that manages the file, so something" +
-        " must be wrong with Debug.startMethodTracing",
-      BuildInfoProvider(NoOpLogger.getInstance()).isEmulator ?: true,
-    )
-    // We increase the IdlingResources timeout to exceed the profiling timeout
-    IdlingPolicies.setIdlingResourceTimeout(1, TimeUnit.MINUTES)
+    // Shorten the profiling timeout so the test doesn't wait the default 30 seconds
+    AndroidProfiler.setProfilingTimeoutMillis(2_000)
     initSentry(true) { options: SentryAndroidOptions ->
       options.tracesSampleRate = 1.0
       options.profilesSampleRate = 1.0
@@ -213,11 +210,11 @@ class EnvelopeTests : BaseUiTest() {
     relayIdlingResource.increment()
     val transaction = Sentry.startTransaction("timedOutProfile", "testTimeout")
     Thread {
-        Thread.sleep(35_000)
+        Thread.sleep(5_000)
         transaction.finish()
       }
       .start()
-    // We call transaction.finish() after 35 seconds, and check profile times out after 30 seconds
+    // We call transaction.finish() after 5 seconds, and check profile times out after 2 seconds
 
     relay.assert {
       findEnvelope {
