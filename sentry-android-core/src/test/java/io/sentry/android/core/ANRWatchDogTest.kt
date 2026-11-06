@@ -4,10 +4,11 @@ import android.app.ActivityManager
 import android.app.ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING
 import android.app.ActivityManager.ProcessErrorStateInfo.NO_ERROR
 import android.content.Context
-import io.sentry.transport.ICurrentDateProvider
+import io.sentry.time.TestMonotonicTicker
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -20,12 +21,12 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 class ANRWatchDogTest {
-  private var currentTimeMs = 0L
-  private val timeProvider = ICurrentDateProvider { currentTimeMs }
+  private lateinit var ticker: TestMonotonicTicker
 
   @Before
   fun `setup`() {
-    currentTimeMs = 12341234
+    // an arbitrary, non-zero origin: no caller may assume a tick counts from zero
+    ticker = TestMonotonicTicker(MILLISECONDS.toNanos(12341234))
   }
 
   @Test
@@ -44,7 +45,7 @@ class ANRWatchDogTest {
 
     val sut =
       ANRWatchDog(
-        timeProvider,
+        ticker,
         interval,
         1L,
         true,
@@ -63,7 +64,7 @@ class ANRWatchDogTest {
       ) // Wait until worker posts the job for the "UI thread"
       var waitCount = 0
       do {
-        currentTimeMs += 100L
+        ticker.advance(100, MILLISECONDS)
         Thread.sleep(100) // Let worker realize this is ANR
       } while (anr == null && waitCount++ < 100)
 
@@ -91,7 +92,7 @@ class ANRWatchDogTest {
 
     val sut =
       ANRWatchDog(
-        timeProvider,
+        ticker,
         interval,
         1L,
         true,
@@ -107,7 +108,7 @@ class ANRWatchDogTest {
 
       var waitCount = 0
       do {
-        currentTimeMs += 100L
+        ticker.advance(100, MILLISECONDS)
         Thread.sleep(100) // Let worker realize his runner always runs
       } while (!invoked && waitCount++ < 100)
 
@@ -143,7 +144,7 @@ class ANRWatchDogTest {
 
     val sut =
       ANRWatchDog(
-        timeProvider,
+        ticker,
         interval,
         1L,
         true,
@@ -162,7 +163,7 @@ class ANRWatchDogTest {
       ) // Wait until worker posts the job for the "UI thread"
       var waitCount = 0
       do {
-        currentTimeMs += 100L
+        ticker.advance(100, MILLISECONDS)
         Thread.sleep(100) // Let worker realize this is ANR
       } while (anr == null && waitCount++ < 100)
 
@@ -199,7 +200,7 @@ class ANRWatchDogTest {
 
     val sut =
       ANRWatchDog(
-        timeProvider,
+        ticker,
         interval,
         1L,
         true,
@@ -218,10 +219,45 @@ class ANRWatchDogTest {
       ) // Wait until worker posts the job for the "UI thread"
       var waitCount = 0
       do {
-        currentTimeMs += 100L
+        ticker.advance(100, MILLISECONDS)
         Thread.sleep(100L) // Let worker realize this is ANR
       } while (anr == null && waitCount++ < 100)
       assertNull(anr) // callback never ran
+    } finally {
+      sut.interrupt()
+      es.shutdown()
+    }
+  }
+
+  @Test
+  fun `measures the ANR threshold on the ticker, not on wall time`() {
+    var anr: ApplicationNotResponding? = null
+    val handler = mock<MainLooperHandler>()
+    val latch = CountDownLatch(1)
+    whenever(handler.post(any())).then { latch.countDown() }
+    whenever(handler.thread).thenReturn(mock<Thread>())
+
+    // context is a mock, so ActivityManager is absent and any passed deadline reports an ANR
+    val sut =
+      ANRWatchDog(
+        ticker,
+        10L,
+        1L,
+        true,
+        { a -> anr = a },
+        mock(),
+        handler,
+        mock(),
+        AndroidDebugManager(),
+      )
+    val es = Executors.newSingleThreadExecutor()
+    try {
+      es.submit { sut.run() }
+
+      assertTrue(latch.await(10L, TimeUnit.SECONDS)) // wait until the watchdog is polling
+      Thread.sleep(200) // hundreds of polls of wall time while the ticker stands still
+
+      assertNull(anr)
     } finally {
       sut.interrupt()
       es.shutdown()

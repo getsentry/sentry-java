@@ -1,7 +1,7 @@
 package io.sentry.android.core.anr
 
-import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.SentryIntegrationPackageStorage
@@ -9,6 +9,9 @@ import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.test.getProperty
+import io.sentry.time.TestMonotonicTicker
+import java.util.concurrent.TimeUnit.HOURS
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -21,6 +24,8 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
 class AnrProfilingIntegrationTest {
@@ -30,9 +35,13 @@ class AnrProfilingIntegrationTest {
   private lateinit var mockScopes: IScopes
   private lateinit var mockLogger: ILogger
   private lateinit var options: SentryAndroidOptions
+  private lateinit var ticker: TestMonotonicTicker
 
   @BeforeTest
   fun setup() {
+    // A tick origin far from zero, as on any device that has been up a while. Starting at zero
+    // would let a reading taken against a different origin pass unnoticed.
+    ticker = TestMonotonicTicker(HOURS.toNanos(30))
     mockScopes = mock()
     mockLogger = mock()
     options =
@@ -48,6 +57,10 @@ class AnrProfilingIntegrationTest {
   fun cleanup() {
     AppState.getInstance().resetInstance()
   }
+
+  /** `SentryAndroidOptions` is final and has no ticker setter, so a spy supplies [ticker]. */
+  private fun withTestTicker(options: SentryAndroidOptions): SentryAndroidOptions =
+    spy(options).also { whenever(it.monotonicTicker).thenReturn(ticker) }
 
   @Test
   fun `onForeground starts monitoring thread`() {
@@ -163,7 +176,6 @@ class AnrProfilingIntegrationTest {
   @Test
   fun `properly walks through state transitions and collects stack traces`() {
     val mainThread = Thread.currentThread()
-    SystemClock.setCurrentTimeMillis(1_00)
 
     val androidOptions =
       SentryAndroidOptions().apply {
@@ -173,19 +185,19 @@ class AnrProfilingIntegrationTest {
       }
 
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
+    integration.register(mockScopes, withTestTicker(androidOptions))
     // Drive the state machine synchronously to avoid racing the background polling thread.
 
-    SystemClock.setCurrentTimeMillis(1_000)
+    ticker.advance(900, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
     assertTrue(integration.profileManager.load().stacks.isEmpty())
 
-    SystemClock.setCurrentTimeMillis(3_000)
+    ticker.advance(2_000, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.SUSPICIOUS, integration.state)
 
-    SystemClock.setCurrentTimeMillis(6_000)
+    ticker.advance(3_000, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.ANR_DETECTED, integration.state)
     assertEquals(2, integration.profileManager.load().stacks.size)
@@ -199,7 +211,6 @@ class AnrProfilingIntegrationTest {
   @Test
   fun `debugger pauses are treated as idle`() {
     val mainThread = Thread.currentThread()
-    SystemClock.setCurrentTimeMillis(1_000)
     var debuggerConnected = true
 
     val androidOptions =
@@ -211,16 +222,16 @@ class AnrProfilingIntegrationTest {
       }
 
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
+    integration.register(mockScopes, withTestTicker(androidOptions))
 
-    SystemClock.setCurrentTimeMillis(20_000)
+    ticker.advance(19_000, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
     assertEquals(0, integration.numCollectedStacks.get())
 
     // the time spent paused must not count towards an ANR once the debugger detaches
     debuggerConnected = false
-    SystemClock.setCurrentTimeMillis(20_100)
+    ticker.advance(100, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
   }
@@ -228,7 +239,6 @@ class AnrProfilingIntegrationTest {
   @Test
   fun `background foreground transitions don't trigger an ANR`() {
     val mainThread = Thread.currentThread()
-    SystemClock.setCurrentTimeMillis(1_000)
 
     val androidOptions =
       SentryAndroidOptions().apply {
@@ -238,15 +248,26 @@ class AnrProfilingIntegrationTest {
       }
 
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
+    integration.register(mockScopes, withTestTicker(androidOptions))
     integration.onBackground()
 
-    SystemClock.setCurrentTimeMillis(20_000)
+    ticker.advance(19_000, MILLISECONDS)
     integration.onForeground()
 
     Thread.sleep(100)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.IDLE, integration.state)
+  }
+
+  @Test
+  fun `does not report a stall when the ticker origin is far from zero`() {
+    val integration = AnrProfilingIntegration()
+    integration.register(mockScopes, withTestTicker(options))
+
+    integration.checkMainThread(Thread.currentThread())
+
+    assertThat(integration.state).isEqualTo(AnrProfilingIntegration.MainThreadState.IDLE)
+    assertThat(integration.profileManager.load().stacks).isEmpty()
   }
 
   @Test
@@ -295,7 +316,6 @@ class AnrProfilingIntegrationTest {
   @Test
   fun `does not collect stacks when sample rate is zero`() {
     val mainThread = Thread.currentThread()
-    SystemClock.setCurrentTimeMillis(1_00)
 
     val androidOptions =
       SentryAndroidOptions().apply {
@@ -305,16 +325,16 @@ class AnrProfilingIntegrationTest {
       }
 
     val integration = AnrProfilingIntegration()
-    integration.register(mockScopes, androidOptions)
+    integration.register(mockScopes, withTestTicker(androidOptions))
     integration.onForeground()
 
     // Transition to suspicious
-    SystemClock.setCurrentTimeMillis(3_000)
+    ticker.advance(2_900, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.SUSPICIOUS, integration.state)
 
     // Transition to ANR
-    SystemClock.setCurrentTimeMillis(6_000)
+    ticker.advance(3_000, MILLISECONDS)
     integration.checkMainThread(mainThread)
     assertEquals(AnrProfilingIntegration.MainThreadState.ANR_DETECTED, integration.state)
 
