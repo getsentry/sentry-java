@@ -110,7 +110,7 @@ public final class SentryWebFilter implements WebFilter {
   }
 
   private boolean isIgnored(final @NotNull IScopes scopes) {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN);
   }
 
   private boolean shouldTraceRequest(

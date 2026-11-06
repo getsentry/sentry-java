@@ -148,7 +148,7 @@ constructor(
   }
 
   private fun isIgnored(): Boolean =
-    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
+    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN)
 
   private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> =
     headers.filterNot {

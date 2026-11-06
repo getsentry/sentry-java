@@ -426,7 +426,8 @@ public final class SentryTracer implements ITransaction {
       return NoOpSpan.getInstance();
     }
 
-    if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), spanOptions.getOrigin())) {
+    if (SpanUtils.isIgnored(
+        scopes.getOptions().getIgnoredSpanOriginFilters(), spanOptions.getOrigin())) {
       return NoOpSpan.getInstance();
     }
 

@@ -128,7 +128,7 @@ public final class SentryClient implements ISentryClient {
         return SentryId.EMPTY_ID;
       }
 
-      if (ErrorUtils.isIgnored(options.getIgnoredErrors(), event)) {
+      if (ErrorUtils.isIgnored(options.getIgnoredErrorFilters(), event)) {
         options
             .getLogger()
             .log(
@@ -1006,7 +1006,8 @@ public final class SentryClient implements ISentryClient {
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
-    if (TracingUtils.isIgnored(options.getIgnoredTransactions(), transaction.getTransaction())) {
+    if (TracingUtils.isIgnored(
+        options.getIgnoredTransactionFilters(), transaction.getTransaction())) {
       options
           .getLogger()
           .log(
@@ -1165,7 +1166,7 @@ public final class SentryClient implements ISentryClient {
       checkIn.setRelease(options.getRelease());
     }
 
-    if (CheckInUtils.isIgnored(options.getIgnoredCheckIns(), checkIn.getMonitorSlug())) {
+    if (CheckInUtils.isIgnored(options.getIgnoredCheckInFilters(), checkIn.getMonitorSlug())) {
       options
           .getLogger()
           .log(

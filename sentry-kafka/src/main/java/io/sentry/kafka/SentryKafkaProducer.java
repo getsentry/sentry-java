@@ -209,7 +209,7 @@ public final class SentryKafkaProducer {
     }
 
     private boolean isIgnored() {
-      return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), traceOrigin);
+      return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), traceOrigin);
     }
 
     private void maybeInjectHeaders(final @NotNull Headers headers, final @Nullable ISpan span) {

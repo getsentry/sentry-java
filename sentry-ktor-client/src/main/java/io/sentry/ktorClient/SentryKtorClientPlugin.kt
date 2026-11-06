@@ -125,7 +125,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
 
       if (
         !SpanUtils.isIgnored(
-          effectiveScopes.options.getIgnoredSpanOrigins(),
+          effectiveScopes.options.getIgnoredSpanOriginFilters(),
           TRACE_ORIGIN,
         )
       ) {
