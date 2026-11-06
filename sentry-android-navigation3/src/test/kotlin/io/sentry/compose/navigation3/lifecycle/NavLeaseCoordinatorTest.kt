@@ -32,7 +32,11 @@ class NavLeaseCoordinatorTest {
     val owner = TestOwner(DESTROYED)
 
     val registration =
-      navLeaseCoordinator.register(owner.lifecycle, fixture.scopes, fixture.navState("owner"))
+      navLeaseCoordinator.register(
+        fixture.scopes,
+        NavRootInfo(owner.lifecycle, activity = null),
+        fixture.publisher("owner"),
+      )
 
     assertThat(registration).isNull()
     assertThat(owner.lifecycle.observerCount).isEqualTo(0)
@@ -221,8 +225,8 @@ class NavLeaseCoordinatorTest {
     fixture.acquireLease(
       "previous",
       TestOwner(RESUMED),
-      navState =
-        fixture.navState(
+      publisher =
+        fixture.publisher(
           "previous",
           onPublishTo = { calls += "publish previous" },
           onUnpublishFrom = { calls += "unpublish previous" },
@@ -232,7 +236,7 @@ class NavLeaseCoordinatorTest {
       fixture.register(
         "incoming",
         TestOwner(RESUMED),
-        fixture.navState(
+        fixture.publisher(
           "incoming",
           onPublishTo = { calls += "publish incoming" },
           onUnpublishFrom = { calls += "unpublish incoming" },
@@ -288,7 +292,7 @@ class NavLeaseCoordinatorTest {
     fixture.acquireLease(
       "first",
       TestOwner(RESUMED),
-      navState = fixture.navState("first", onUnpublishFrom = { throw failure }),
+      publisher = fixture.publisher("first", onUnpublishFrom = { throw failure }),
     )
     val second = fixture.register("second", TestOwner(RESUMED))
 
@@ -718,7 +722,7 @@ class NavLeaseCoordinatorTest {
       fixture.acquireLease(
         "owner",
         owner,
-        navState = fixture.navState("owner", onUnpublishFrom = { throw failure }),
+        publisher = fixture.publisher("owner", onUnpublishFrom = { throw failure }),
       )
 
     val thrown = assertThrows(IllegalStateException::class.java) { registration.dispose() }
@@ -755,8 +759,8 @@ class NavLeaseCoordinatorTest {
       fixture.acquireLease(
         "owner",
         TestOwner(RESUMED),
-        navState =
-          fixture.navState(
+        publisher =
+          fixture.publisher(
             "owner",
             onUnpublishFrom = { calls += "unpublish" },
             onUnregistered = { calls += "unregistered" },
@@ -796,7 +800,7 @@ class NavLeaseCoordinatorTest {
       fixture.acquireLease(
         "owner",
         TestOwner(RESUMED),
-        navState = fixture.navState("owner", onUnpublishFrom = { throw failure }),
+        publisher = fixture.publisher("owner", onUnpublishFrom = { throw failure }),
       )
 
     val thrown = assertThrows(IllegalStateException::class.java) { registration.dispose() }
@@ -889,24 +893,28 @@ class NavLeaseCoordinatorTest {
     private val owners = mutableListOf<LifecycleOwner>()
 
     /**
-     * Nav state named [name] that, by default, records its publication in [published], its
+     * Publisher named [name] that, by default, records its publication in [published], its
      * unpublishing in [unpublished], and its unregistration in [unregistered].
      */
-    fun navState(
+    fun publisher(
       name: String,
       onPublishTo: (IScope) -> Unit = { published += name },
       onUnpublishFrom: (IScope) -> Unit = { unpublished += name },
       onUnregistered: (IScope?) -> Unit = { unregistered += name to it },
-    ): LeasedNavState = FakeLeasedNavState(onPublishTo, onUnpublishFrom, onUnregistered)
+    ): INavStatePublisher = FakeNavStatePublisher(onPublishTo, onUnpublishFrom, onUnregistered)
 
-    /** Registers a candidate for [owner]'s lifecycle with the nav state named [name]. */
+    /**
+     * Registers a candidate with the publisher named [name] for a nav root whose lifecycle is
+     * [owner]'s.
+     */
     fun register(
       name: String,
       owner: TestOwner,
-      navState: LeasedNavState = navState(name),
+      publisher: INavStatePublisher = publisher(name),
     ): NavLeaseRegistration {
       owners += owner
-      return checkNotNull(navLeaseCoordinator.register(owner.lifecycle, scopes, navState))
+      val rootInfo = NavRootInfo(owner.lifecycle, activity = null)
+      return checkNotNull(navLeaseCoordinator.register(scopes, rootInfo, publisher))
     }
 
     /**
@@ -916,8 +924,8 @@ class NavLeaseCoordinatorTest {
     fun acquireLease(
       name: String,
       owner: TestOwner,
-      navState: LeasedNavState = navState(name),
-    ): NavLeaseRegistration = register(name, owner, navState).also { it.onBackStackUpdate() }
+      publisher: INavStatePublisher = publisher(name),
+    ): NavLeaseRegistration = register(name, owner, publisher).also { it.onBackStackUpdate() }
 
     /** Runs [block] while `configureScope` skips its callbacks, e.g., as if the SDK is disabled. */
     fun withoutScope(block: () -> Unit) {
@@ -934,11 +942,11 @@ class NavLeaseCoordinatorTest {
     }
   }
 
-  private class FakeLeasedNavState(
+  private class FakeNavStatePublisher(
     private val onPublishTo: (IScope) -> Unit,
     private val onUnpublishFrom: (IScope) -> Unit,
     private val onUnregistered: (IScope?) -> Unit,
-  ) : LeasedNavState {
+  ) : INavStatePublisher {
     override fun publishTo(scope: IScope) = onPublishTo(scope)
 
     override fun unpublishFrom(scope: IScope) = onUnpublishFrom(scope)
