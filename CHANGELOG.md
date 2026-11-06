@@ -49,6 +49,10 @@
   - [changelog](https://github.com/square/okhttp/blob/master/CHANGELOG.md)
   - [diff](https://github.com/square/okhttp/compare/parent-4.9.2...parent-5.5.1)
 
+### Behavioral Changes
+
+- Nav3: Returning to an Activity or Fragment with its own `SentryNavEffect` within the app (e.g., closing the Activity that covered it, swiping back to its ViewPager2 page, or dismissing a dialog over it) now starts a new navigation transaction for the current destination if the previous one finished, so spans produced upon return can now be consistently captured ([#XXXX](https://github.com/getsentry/sentry-java/pull/XXXX))
+
 ## 8.63.0
 
 ### Features
