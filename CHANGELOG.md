@@ -60,7 +60,7 @@
 
 ### Fixes
 
-- Preserve independent Netty read timeout events when the exception singleton is reused ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
+- Preserve independent Netty read and write timeout events when exception singletons are reused ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
 
 ### Improvements
 

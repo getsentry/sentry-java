@@ -1056,9 +1056,13 @@ class SentryOptionsTest {
   }
 
   @Test
-  fun `ignored errors for deduplication contains Netty read timeout by default`() {
+  fun `ignored errors for deduplication contains Netty timeout exceptions by default`() {
     assertThat(SentryOptions().ignoredErrorsForDeduplication)
-      .containsExactly("io.netty.handler.timeout.ReadTimeoutException")
+      .containsExactly(
+        "io.netty.handler.timeout.ReadTimeoutException",
+        "io.netty.handler.timeout.WriteTimeoutException",
+      )
+      .inOrder()
   }
 
   @Test
@@ -1105,7 +1109,11 @@ class SentryOptionsTest {
     options.merge(ExternalOptions())
 
     assertThat(options.ignoredErrorsForDeduplication)
-      .containsExactly("io.netty.handler.timeout.ReadTimeoutException")
+      .containsExactly(
+        "io.netty.handler.timeout.ReadTimeoutException",
+        "io.netty.handler.timeout.WriteTimeoutException",
+      )
+      .inOrder()
   }
 
   @Test

@@ -40,6 +40,7 @@ import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,8 +79,10 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private static final String DEFAULT_ENVIRONMENT = "production";
 
-  private static final String DEFAULT_IGNORED_ERROR_FOR_DEDUPLICATION =
+  private static final String DEFAULT_IGNORED_READ_ERROR_FOR_DEDUPLICATION =
       "io.netty.handler.timeout.ReadTimeoutException";
+  private static final String DEFAULT_IGNORED_WRITE_ERROR_FOR_DEDUPLICATION =
+      "io.netty.handler.timeout.WriteTimeoutException";
 
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
@@ -393,7 +396,9 @@ public class SentryOptions implements RateLimiterConfig {
   /** Exception types that are excluded from event deduplication. */
   private @Nullable List<FilterString> ignoredErrorsForDeduplication =
       new ArrayList<>(
-          Collections.singletonList(new FilterString(DEFAULT_IGNORED_ERROR_FOR_DEDUPLICATION)));
+          Arrays.asList(
+              new FilterString(DEFAULT_IGNORED_READ_ERROR_FOR_DEDUPLICATION),
+              new FilterString(DEFAULT_IGNORED_WRITE_ERROR_FOR_DEDUPLICATION)));
 
   /**
    * Enables event size limiting with {@link EventSizeLimitingEventProcessor}. When enabled, events
