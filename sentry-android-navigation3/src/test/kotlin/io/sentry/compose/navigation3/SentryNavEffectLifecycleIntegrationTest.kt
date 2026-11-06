@@ -185,6 +185,36 @@ class SentryNavEffectLifecycleIntegrationTest {
     assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
   }
 
+  @Test
+  fun `going back to an activity whose nav transaction finished while covered starts a new nav transaction for it`() {
+    val fixture = Fixture.create()
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    home.pause()
+    val checkout = Robolectric.buildActivity(CheckoutActivity::class.java).setup()
+    fixture.idle()
+    home.stop()
+    fixture.idle()
+    homeTransaction.finish()
+
+    checkout.pause()
+    home.restart()
+    home.resume()
+    fixture.idle()
+    checkout.stop()
+    checkout.destroy()
+    fixture.idle()
+
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+    assertThat(fixture.scope.transaction?.name).isEqualTo("/Home")
+    assertThat(fixture.scope.transaction).isNotSameInstanceAs(homeTransaction)
+    assertThat(fixture.scope.transaction?.isFinished).isFalse()
+    assertThat(fixture.scope.breadcrumbs.map { it.data["to"] })
+      .containsExactly("/Home", "/Checkout")
+      .inOrder()
+  }
+
   // Activity recreation
   @Test
   fun `a recreated activity publishes its own nav data and transaction over the destroyed instance's`() {
@@ -440,7 +470,7 @@ class SentryNavEffectLifecycleIntegrationTest {
   }
 
   @Test
-  fun `switching back to a view pager page whose nav transaction finished starts no nav transaction`() {
+  fun `switching back to a view pager page whose nav transaction finished starts a new nav transaction for the page`() {
     val fixture = Fixture.create()
     val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
     fixture.idle()
@@ -452,8 +482,52 @@ class SentryNavEffectLifecycleIntegrationTest {
     activity.get().viewPager.setCurrentItem(0, false)
     fixture.idle()
 
-    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.transaction?.name).isEqualTo("/Home")
+    assertThat(fixture.scope.transaction).isNotSameInstanceAs(homeTransaction)
+    assertThat(fixture.scope.transaction?.isFinished).isFalse()
     assertThat(fixture.scope.screen).isEqualTo("/Home")
+    assertThat(fixture.scope.breadcrumbs.map { it.data["to"] })
+      .containsExactly("/Home", "/Checkout")
+      .inOrder()
+  }
+
+  /**
+   * A transaction that isn't sampled is still started and bound, so a return while it's running
+   * binds it again rather than sampling a new one, just as for a sampled transaction.
+   */
+  @Test
+  fun `switching back to a view pager page restores its unfinished unsampled nav transaction`() {
+    val fixture = Fixture.create(tracesSampleRate = 0.0)
+    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    check(homeTransaction.isSampled == false)
+    activity.get().viewPager.setCurrentItem(1, false)
+    fixture.idle()
+
+    activity.get().viewPager.setCurrentItem(0, false)
+    fixture.idle()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
+  }
+
+  @Test
+  fun `switching back to a view pager page whose unsampled nav transaction finished samples a new one`() {
+    val fixture = Fixture.create(tracesSampleRate = 0.0)
+    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    activity.get().viewPager.setCurrentItem(1, false)
+    fixture.idle()
+    homeTransaction.finish()
+
+    activity.get().viewPager.setCurrentItem(0, false)
+    fixture.idle()
+
+    val restarted = requireNotNull(fixture.scope.transaction)
+    assertThat(restarted).isNotSameInstanceAs(homeTransaction)
+    assertThat(restarted.name).isEqualTo("/Home")
+    assertThat(restarted.isSampled).isFalse()
   }
 
   // Dialogs
@@ -537,6 +611,30 @@ class SentryNavEffectLifecycleIntegrationTest {
     assertThat(pickerTransaction.isFinished).isTrue()
     assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
     assertThat(homeTransaction.isFinished).isFalse()
+  }
+
+  @Test
+  fun `dismissing a dialog fragment starts a new nav transaction for the still-resumed activity if its own finished`() {
+    val fixture = Fixture.create()
+    val home = Robolectric.buildActivity(HomeActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    val dialog = PickerDialogFragment()
+    dialog.show(home.get().supportFragmentManager, "picker")
+    fixture.idle()
+    val pickerTransaction = requireNotNull(fixture.scope.transaction)
+    homeTransaction.finish()
+
+    dialog.dismiss()
+    fixture.idle()
+
+    assertThat(pickerTransaction.isFinished).isTrue()
+    assertThat(fixture.scope.transaction?.name).isEqualTo("/Home")
+    assertThat(fixture.scope.transaction).isNotSameInstanceAs(homeTransaction)
+    assertThat(fixture.scope.transaction?.isFinished).isFalse()
+    assertThat(fixture.scope.breadcrumbs.map { it.data["to"] })
+      .containsExactly("/Home", "/Picker")
+      .inOrder()
   }
 
   // Screens without an effect
@@ -758,13 +856,13 @@ class SentryNavEffectLifecycleIntegrationTest {
     }
   }
 
-  private class Fixture private constructor() {
+  private class Fixture private constructor(tracesSampleRate: Double) {
 
     val options =
       SentryOptions().apply {
         dsn = "http://key@localhost/1"
         defaultScopeType = ScopeType.CURRENT
-        setTracesSampleRate(1.0)
+        setTracesSampleRate(tracesSampleRate)
         isEnableScreenTracking = true
         idleTimeout = null
         deadlineTimeout = 0
@@ -820,7 +918,7 @@ class SentryNavEffectLifecycleIntegrationTest {
 
       fun require(): Fixture = checkNotNull(current) { "Fixture.create() was not called" }
 
-      fun create(): Fixture {
+      fun create(tracesSampleRate: Double = 1.0): Fixture {
         val application: Application = ApplicationProvider.getApplicationContext()
         val packageManager = shadowOf(application.packageManager)
         listOf(
@@ -835,7 +933,7 @@ class SentryNavEffectLifecycleIntegrationTest {
               ComponentName(application.packageName, activityClass.name)
             )
           }
-        return Fixture().also { current = it }
+        return Fixture(tracesSampleRate).also { current = it }
       }
     }
   }

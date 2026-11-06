@@ -5,22 +5,17 @@ import io.sentry.Hint
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel.INFO
 import io.sentry.SentryOptions
-import io.sentry.TransactionContext
-import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.BackStackConverter.RetentionPolicy
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasNewTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackHasSameTop
 import io.sentry.compose.navigation3.PreparedChange.BackStackIsEmpty
 import io.sentry.compose.navigation3.lifecycle.INavScope
 import io.sentry.compose.navigation3.lifecycle.INavScopes
-import io.sentry.compose.navigation3.lifecycle.INavTransaction
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
-import io.sentry.protocol.App
-import io.sentry.protocol.TransactionNameSource
+import io.sentry.compose.navigation3.lifecycle.NAVIGATION_OP
+import io.sentry.compose.navigation3.lifecycle.NavTransactionRequest
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
 import java.lang.ref.WeakReference
-
-private const val NAVIGATION_OP: String = "navigation"
 
 /**
  * Observes the back stack managed by a single [SentryNavEffect] and records Sentry state as the
@@ -57,10 +52,9 @@ internal class BackStackObserver<T : Any>(
 
   private val backStackConverter = BackStackConverter(entryMapper, scopes.options.logger)
 
-  private val navTransactions = NavTransactions(scopes)
   private val navBreadcrumbs = NavBreadcrumbs(scopes)
   private val navScreen = NavScreen()
-  private val navContext = NavContext(scopes, options)
+  private val navContext = NavContext(options)
 
   // Safe because the host back stack retains the current top entry strongly between updates.
   private var previousTop: WeakReference<T>? = null
@@ -192,16 +186,10 @@ internal class BackStackObserver<T : Any>(
       navBreadcrumbs.emit(fromEntry = previousTop, toEntry = currentBackStack.topEntryNormalized)
     }
 
-    navTransactions.stop(scope)
+    scope.finishNavTransaction()
 
     if (areNavigationTransactionsEnabled) {
-      navTransactions
-        .start(
-          scope,
-          currentTop.name,
-          currentTop.argumentsWithMetadata(),
-        )
-        ?.let { transaction -> navContext.updateTransaction(transaction, scope, currentBackStack) }
+      scope.startNavTransaction(navTransactionRequestFor(currentBackStack))
     } else {
       scope.rotatePropagationContext()
     }
@@ -211,6 +199,13 @@ internal class BackStackObserver<T : Any>(
 
   private fun handleSameTop(scope: INavScope, backStack: BackStackData<T>) {
     navContext.update(scope, backStack.capturedEntriesNormalized)
+
+    // Keeps the nav context of transactions started later for the same destination (e.g., when the
+    // user returns to the nav root) in step with the back stack.
+    if (areNavigationTransactionsEnabled) {
+      scope.updateNavTransactionRequest(navTransactionRequestFor(backStack))
+    }
+
     storePreviousTop(backStack)
   }
 
@@ -228,8 +223,20 @@ internal class BackStackObserver<T : Any>(
     previousTopNormalized = null
   }
 
+  private fun navTransactionRequestFor(backStack: BackStackData<T>): NavTransactionRequest {
+    val top = backStack.topEntryNormalized
+
+    return NavTransactionRequest.forDestination(
+      name = top.name,
+      arguments = top.argumentsWithMetadata(),
+      contexts = navContext.forTransaction(backStack.capturedEntriesNormalized),
+      viewNames = if (scopes.options.isEnableScreenTracking) listOf(top.name) else null,
+      options = scopes.options,
+    )
+  }
+
   private fun tearDown(scope: INavScope) {
-    navTransactions.stop(scope)
+    scope.finishNavTransaction()
     navContext.clear(scope)
     navScreen.clear(scope)
     clearPreviousTop()
@@ -274,58 +281,8 @@ private data class BackStackData<T>(
   val capturedEntriesNormalized: List<NormalizedSentryBackStackEntry>,
 )
 
-/** A helper class for managing nav transactions. */
-private class NavTransactions(private val scopes: INavScopes) {
-
-  private companion object {
-    private const val TRANSACTION_ORIGIN = "auto.navigation.nav3"
-  }
-
-  /**
-   * Starts an idle navigation transaction, or no-ops if another transaction is already active.
-   *
-   * [Stop][stop] the current navigation transaction first. See [INavScope.startNavTransaction].
-   */
-  fun start(
-    scope: INavScope,
-    name: String,
-    arguments: Map<String, Any?>,
-  ): INavTransaction? {
-    val transactionOptions =
-      TransactionOptions().also {
-        it.isWaitForChildren = true
-        it.idleTimeout = scopes.options.idleTimeout
-        val deadlineTimeoutMillis = scopes.options.deadlineTimeout
-        it.deadlineTimeout = if (deadlineTimeoutMillis <= 0) null else deadlineTimeoutMillis
-        it.isTrimEnd = true
-        it.origin = TRANSACTION_ORIGIN
-      }
-
-    val transaction =
-      scope.startNavTransaction(
-        TransactionContext(name, TransactionNameSource.ROUTE, NAVIGATION_OP),
-        transactionOptions,
-      ) ?: return null
-
-    if (arguments.isNotEmpty()) {
-      transaction.setData("arguments", arguments)
-    }
-
-    return transaction
-  }
-
-  /**
-   * Finishes and unsets the active navigation transaction, if one exists.
-   *
-   * See [INavScope.finishNavTransaction].
-   */
-  fun stop(scope: INavScope) {
-    scope.finishNavTransaction()
-  }
-}
-
 /** A helper class for updating [nav context][NAVIGATION_CONTEXT_KEY]. */
-private class NavContext(private val scopes: INavScopes, private val options: SentryNavOptions) {
+private class NavContext(private val options: SentryNavOptions) {
 
   private companion object {
     private const val BACKSTACK_KEY = "Back Stack"
@@ -345,33 +302,21 @@ private class NavContext(private val scopes: INavScopes, private val options: Se
   }
 
   /**
-   * Updates the transaction with the provided navigation info.
+   * The nav context to set on the nav transaction for a destination whose back stack is
+   * [capturedEntries], if any.
    *
    * Needed because transactions inherit base scope context on a per-key basis unless transactions
-   * have their own values for those keys. In our case, we need to keep fresh back stack and route
-   * values in the base context for purposes of crash reporting. But those values will often advance
-   * past what's relevant to a given transaction. This method prevents misassociation by binding
-   * proper values to the transaction context instead.
+   * have their own values for those keys. In our case, we need to keep fresh back stack values in
+   * the base context for purposes of crash reporting. But those values will often advance past
+   * what's relevant to a given transaction. Setting the destination's own back stack on its
+   * transaction prevents misassociation.
    */
-  fun <T : Any> updateTransaction(
-    transaction: INavTransaction,
-    scope: INavScope,
-    backStack: BackStackData<T>,
-  ) {
-    if (scopes.options.isEnableScreenTracking) {
-      val appContext = scope.app ?: App()
-
-      appContext.viewNames = listOf(backStack.topEntryNormalized.name)
-      transaction.setApp(appContext)
+  fun forTransaction(capturedEntries: List<NormalizedSentryBackStackEntry>): Map<String, Any> =
+    if (options.captureBackStack && capturedEntries.isNotEmpty()) {
+      mapOf(NAVIGATION_CONTEXT_KEY to capturedEntries.toBackStackMap())
+    } else {
+      emptyMap()
     }
-
-    if (options.captureBackStack && backStack.capturedEntriesNormalized.isNotEmpty()) {
-      transaction.setContext(
-        NAVIGATION_CONTEXT_KEY,
-        backStack.capturedEntriesNormalized.toBackStackMap(),
-      )
-    }
-  }
 
   /** Builds the `{"backstack": [...]}` map bound under [NAVIGATION_CONTEXT_KEY]. */
   private fun List<NormalizedSentryBackStackEntry>.toBackStackMap(): Map<String, Any?> =
