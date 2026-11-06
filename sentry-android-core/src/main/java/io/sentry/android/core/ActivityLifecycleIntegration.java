@@ -459,6 +459,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @VisibleForTesting
+  @SuppressWarnings("ReferenceEquality")
   void clearScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
         scopeTransaction -> {

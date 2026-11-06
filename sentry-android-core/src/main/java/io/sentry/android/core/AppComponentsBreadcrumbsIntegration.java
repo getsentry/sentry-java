@@ -169,6 +169,7 @@ public final class AppComponentsBreadcrumbsIntegration
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void executeInBackground(final @NotNull Runnable runnable) {
     if (options != null) {
       try {

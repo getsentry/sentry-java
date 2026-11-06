@@ -124,6 +124,7 @@ public final class SystemEventsBreadcrumbsIntegration
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void registerReceiver(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
 
@@ -196,7 +197,10 @@ public final class SystemEventsBreadcrumbsIntegration
     }
   }
 
-  @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
+  @SuppressWarnings({
+    "Convert2MethodRef",
+    "FutureReturnValueIgnored"
+  }) // older AGP versions do not support method references
   private void scheduleUnregisterReceiver() {
     if (options == null) {
       return;

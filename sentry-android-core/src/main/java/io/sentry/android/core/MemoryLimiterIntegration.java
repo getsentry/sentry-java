@@ -107,6 +107,7 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     androidOptions =
         Objects.requireNonNull(
