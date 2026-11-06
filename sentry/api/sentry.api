@@ -8311,6 +8311,7 @@ public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
 public final class io/sentry/util/sql/SqlDialect {
 	public static final field CONSERVATIVE Lio/sentry/util/sql/SqlDialect;
 	public static fun fromDbSystem (Ljava/lang/String;)Lio/sentry/util/sql/SqlDialect;
+	public fun getAlternativeQuoting ()Lio/sentry/util/sql/SqlDialect$Support;
 	public fun getBackslashEscapes ()Lio/sentry/util/sql/SqlDialect$Support;
 	public fun getBracketIdentifiers ()Lio/sentry/util/sql/SqlDialect$Support;
 	public fun getDashDashCommentNeedsWhitespace ()Lio/sentry/util/sql/SqlDialect$Support;

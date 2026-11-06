@@ -33,7 +33,8 @@ public final class SqlDialect {
           /* hashComments= */ Support.UNKNOWN,
           /* doubleSlashComments= */ Support.UNKNOWN,
           /* dashDashCommentNeedsWhitespace= */ Support.UNKNOWN,
-          /* nestedBlockComments= */ Support.UNKNOWN);
+          /* nestedBlockComments= */ Support.UNKNOWN,
+          /* alternativeQuoting= */ Support.UNKNOWN);
 
   // Sources for every rule: docs/plans/sanitize-sql-queries/README.md, "Dialect table".
 
@@ -46,7 +47,8 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.NO,
-          Support.YES);
+          Support.YES,
+          Support.NO);
 
   private static final @NotNull SqlDialect MYSQL =
       new SqlDialect(
@@ -57,12 +59,14 @@ public final class SqlDialect {
           Support.YES,
           Support.NO,
           Support.YES,
-          Support.UNKNOWN); // "under some conditions, nested comments might be permitted"
+          Support.UNKNOWN, // "under some conditions, nested comments might be permitted"
+          Support.NO);
 
   private static final @NotNull SqlDialect SQLITE =
       new SqlDialect(
           Support.UNKNOWN, // unresolved double-quoted identifiers fall back to string literals
           Support.YES,
+          Support.NO,
           Support.NO,
           Support.NO,
           Support.NO,
@@ -79,7 +83,8 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.NO,
-          Support.YES);
+          Support.YES,
+          Support.NO);
 
   private static final @NotNull SqlDialect ORACLE =
       new SqlDialect(
@@ -90,7 +95,8 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.NO,
-          Support.UNKNOWN); // nesting is undocumented
+          Support.UNKNOWN, // nesting is undocumented
+          Support.YES);
 
   private static final @NotNull SqlDialect H2 =
       new SqlDialect(
@@ -101,7 +107,8 @@ public final class SqlDialect {
           Support.NO,
           Support.YES,
           Support.NO,
-          Support.YES);
+          Support.YES,
+          Support.NO);
 
   private static final @NotNull SqlDialect HSQLDB =
       new SqlDialect(
@@ -112,7 +119,8 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.NO,
-          Support.UNKNOWN); // nesting is undocumented
+          Support.UNKNOWN, // nesting is undocumented
+          Support.NO);
 
   private static final @NotNull SqlDialect DERBY =
       new SqlDialect(
@@ -123,7 +131,8 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.NO,
-          Support.YES);
+          Support.YES,
+          Support.NO);
 
   private final @NotNull Support doubleQuotedIdentifiers;
   private final @NotNull Support bracketIdentifiers;
@@ -133,6 +142,7 @@ public final class SqlDialect {
   private final @NotNull Support doubleSlashComments;
   private final @NotNull Support dashDashCommentNeedsWhitespace;
   private final @NotNull Support nestedBlockComments;
+  private final @NotNull Support alternativeQuoting;
 
   private SqlDialect(
       final @NotNull Support doubleQuotedIdentifiers,
@@ -142,7 +152,8 @@ public final class SqlDialect {
       final @NotNull Support hashComments,
       final @NotNull Support doubleSlashComments,
       final @NotNull Support dashDashCommentNeedsWhitespace,
-      final @NotNull Support nestedBlockComments) {
+      final @NotNull Support nestedBlockComments,
+      final @NotNull Support alternativeQuoting) {
     this.doubleQuotedIdentifiers = doubleQuotedIdentifiers;
     this.bracketIdentifiers = bracketIdentifiers;
     this.backslashEscapes = backslashEscapes;
@@ -151,6 +162,7 @@ public final class SqlDialect {
     this.doubleSlashComments = doubleSlashComments;
     this.dashDashCommentNeedsWhitespace = dashDashCommentNeedsWhitespace;
     this.nestedBlockComments = nestedBlockComments;
+    this.alternativeQuoting = alternativeQuoting;
   }
 
   /**
@@ -191,7 +203,8 @@ public final class SqlDialect {
   }
 
   /**
-   * Whether {@code [...]} delimits an identifier. {@code UNKNOWN}: brackets are plain punctuation.
+   * Whether {@code [...]} delimits an identifier. {@code UNKNOWN}: brackets are plain punctuation,
+   * but analysis stops at a {@code [} if a quote character occurs before the next {@code ]}.
    */
   public @NotNull Support getBracketIdentifiers() {
     return bracketIdentifiers;
@@ -207,7 +220,7 @@ public final class SqlDialect {
 
   /**
    * Whether {@code $$...$$} and {@code $tag$...$tag$} delimit string literals. {@code UNKNOWN}:
-   * treated as string literals.
+   * analysis stops at a {@code $$} or {@code $tag$} that does not continue an identifier.
    */
   public @NotNull Support getDollarQuotedStrings() {
     return dollarQuotedStrings;
@@ -243,5 +256,14 @@ public final class SqlDialect {
    */
   public @NotNull Support getNestedBlockComments() {
     return nestedBlockComments;
+  }
+
+  /**
+   * Whether {@code q'<delimiter>...<delimiter>'} and {@code nq'...'} delimit string literals, in
+   * which a single quote does not end the literal. {@code UNKNOWN}: analysis stops at {@code q'} or
+   * {@code nq'}, in either case.
+   */
+  public @NotNull Support getAlternativeQuoting() {
+    return alternativeQuoting;
   }
 }

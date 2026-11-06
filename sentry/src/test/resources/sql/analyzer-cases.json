@@ -52,5 +52,2108 @@
     "secrets": ["Zq9xK7@example.com"],
     "source": "sentry",
     "note": "Adding ' WHERE' would exceed 25 characters, so the text is cut after 'users' and scanning stops there (D5)."
+  },
+  {
+    "id": "literal.string.doubled_quote",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM users WHERE name = 'O''Zq9xK7a'",
+    "expected": {
+      "text": "SELECT * FROM users WHERE name = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7a"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.string.empty",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM users WHERE name = ''",
+    "expected": {
+      "text": "SELECT * FROM users WHERE name = ?",
+      "summary": "SELECT users"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.string.multiline",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM notes WHERE body = 'line one\nZq9xK7b line two'",
+    "expected": {
+      "text": "SELECT * FROM notes WHERE body = ?",
+      "summary": "SELECT notes"
+    },
+    "secrets": ["Zq9xK7b"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.string.backslash.sqlite",
+    "requirements": ["R2", "R8"],
+    "dialect": "sqlite",
+    "input": "SELECT * FROM files WHERE path = 'C:\\' AND owner = 'Zq9xK7c'",
+    "expected": {
+      "text": "SELECT * FROM files WHERE path = ? AND owner = ?",
+      "summary": "SELECT files"
+    },
+    "secrets": ["Zq9xK7c"],
+    "source": "sentry",
+    "note": "backslashEscapes is NO: the backslash is an ordinary character and the first literal ends at the next quote."
+  },
+  {
+    "id": "literal.string.backslash.postgresql",
+    "requirements": ["R4", "R8"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM files WHERE path = 'C:\\' AND owner = 'Zq9xK7d'",
+    "expected": {
+      "text": "SELECT * FROM files WHERE path = ?",
+      "summary": "SELECT files"
+    },
+    "secrets": ["Zq9xK7d"],
+    "source": "sentry",
+    "note": "backslashEscapes is UNKNOWN (standard_conforming_strings): stop at the backslash."
+  },
+  {
+    "id": "literal.string.backslash.mysql",
+    "requirements": ["R4", "R8"],
+    "dialect": "mysql",
+    "input": "SELECT * FROM users WHERE name = 'it\\'s Zq9xK7e'",
+    "expected": {
+      "text": "SELECT * FROM users WHERE name = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7e"],
+    "source": "sentry",
+    "note": "backslashEscapes is UNKNOWN (NO_BACKSLASH_ESCAPES): stop at the backslash."
+  },
+  {
+    "id": "literal.number.integers",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT 12, -12, +12 FROM t",
+    "expected": {
+      "text": "SELECT ?, ?, ? FROM t",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.number.decimal_exponent",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT 12.34, .5, -0.5, 1e10, 1.5E-3, -2E+9 FROM t",
+    "expected": {
+      "text": "SELECT ?, ?, ?, ?, ?, ? FROM t",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.number.signed_in_expression",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a FROM t WHERE b = 99+100 AND c=x-1 AND d = x - 1 AND e>=-5",
+    "expected": {
+      "text": "SELECT a FROM t WHERE b = ?? AND c=x? AND d = x - ? AND e>=?",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": "Signed numbers convention: a sign directly before a digit belongs to the number."
+  },
+  {
+    "id": "literal.number.in_identifier",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT c3po, r2d2 FROM covid19 WHERE n1h1 = 1234",
+    "expected": {
+      "text": "SELECT c3po, r2d2 FROM covid19 WHERE n1h1 = ?",
+      "summary": "SELECT covid19"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.hex",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = 0xDEADBEEF AND b = 0Xbeef AND c = X'4A6F' AND d = x'4a'",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = ? AND b = ? AND c = ? AND d = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["DEADBEEF"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.binary",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = B'1011' AND b = 0b1011",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = ? AND b = ?",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.national.sqlserver",
+    "requirements": ["R2"],
+    "dialect": "sqlserver",
+    "input": "SELECT * FROM [Users] WHERE [Name] = N'Zq9xK7f'",
+    "expected": {
+      "text": "SELECT * FROM [Users] WHERE [Name] = ?",
+      "summary": "SELECT [Users]"
+    },
+    "secrets": ["Zq9xK7f"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.escape_string.postgresql",
+    "requirements": ["R2"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM users WHERE name = E'Zq9xK7g'",
+    "expected": {
+      "text": "SELECT * FROM users WHERE name = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7g"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.escape_string.backslash.postgresql",
+    "requirements": ["R4", "R8"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM users WHERE nick = E'it\\'s' AND key = 'Zq9xK7h'",
+    "expected": {
+      "text": "SELECT * FROM users WHERE nick = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7h"],
+    "source": "sentry",
+    "note": "E-strings follow backslashEscapes, which is UNKNOWN for postgresql, so the analyzer stops at the backslash."
+  },
+  {
+    "id": "literal.charset_introducer.mysql",
+    "requirements": ["R2"],
+    "dialect": "mysql",
+    "input": "SELECT * FROM users WHERE name = _utf8mb4'Zq9xK7i'",
+    "expected": {
+      "text": "SELECT * FROM users WHERE name = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7i"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.unicode_escape.postgresql",
+    "requirements": ["R2"],
+    "dialect": "postgresql",
+    "input": "SELECT U&'Zq9xK7j' FROM t",
+    "expected": {
+      "text": "SELECT ? FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7j"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.dollar.postgresql",
+    "requirements": ["R2", "R8"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM t WHERE body = $$it's Zq9xK7k$$",
+    "expected": {
+      "text": "SELECT * FROM t WHERE body = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7k"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.dollar_tag.postgresql",
+    "requirements": ["R2", "R8"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM t WHERE body = $fn$ it's $$ Zq9xK7l $fn$ AND id = 1",
+    "expected": {
+      "text": "SELECT * FROM t WHERE body = ? AND id = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7l"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.dollar.mysql",
+    "requirements": ["R2", "R8"],
+    "dialect": "mysql",
+    "input": "SELECT $$a FROM t WHERE b = 'x$$' AND c = 'Zq9xK7m'",
+    "expected": {
+      "text": "SELECT $$a FROM t WHERE b = ? AND c = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7m"],
+    "source": "sentry",
+    "note": "dollarQuotedStrings is NO: $$a is an identifier, and reading it as a dollar quote would leak the last literal."
+  },
+  {
+    "id": "literal.dollar.conservative",
+    "requirements": ["R4", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE body = $$Zq9xK7n$$",
+    "expected": {
+      "text": "SELECT * FROM t WHERE body = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7n"],
+    "source": "sentry",
+    "note": "dollarQuotedStrings is UNKNOWN: stop at $$."
+  },
+  {
+    "id": "literal.q_quote.oracle",
+    "requirements": ["R2", "R8"],
+    "dialect": "oracle",
+    "input": "SELECT * FROM users WHERE nick = q'[it's me]' AND key = 'Zq9xK7o'",
+    "expected": {
+      "text": "SELECT * FROM users WHERE nick = ? AND key = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7o"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.q_quote.delimiters.oracle",
+    "requirements": ["R2", "R8"],
+    "dialect": "oracle",
+    "input": "SELECT * FROM users WHERE a = Q'{it's Zq9xK7p}' AND b = nq'!Zq9xK7q!'",
+    "expected": {
+      "text": "SELECT * FROM users WHERE a = ? AND b = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7p", "Zq9xK7q"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.q_quote.conservative",
+    "requirements": ["R4", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM users WHERE nick = q'[it's me]' AND key = 'Zq9xK7r'",
+    "expected": {
+      "text": "SELECT * FROM users WHERE nick = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7r"],
+    "source": "sentry",
+    "note": "alternativeQuoting is UNKNOWN (D13): stop at q'."
+  },
+  {
+    "id": "literal.q_quote.postgresql",
+    "requirements": ["R2", "R8"],
+    "dialect": "postgresql",
+    "input": "SELECT q'Zq9xK7s' FROM t",
+    "expected": {
+      "text": "SELECT q? FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7s"],
+    "source": "sentry",
+    "note": "alternativeQuoting is NO: q is an identifier followed by an ordinary literal."
+  },
+  {
+    "id": "literal.keyword_before_quote",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT CASE WHEN a = 1 THEN 'x' ELSE'Zq9xK7t' END FROM t",
+    "expected": {
+      "text": "SELECT CASE WHEN a = ? THEN ? ELSE? END FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7t"],
+    "source": "sentry",
+    "note": "A keyword directly before a quote is not a literal prefix."
+  },
+  {
+    "id": "literal.boolean_null_kept",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = TRUE AND b = false AND c IS NULL AND d IS NOT NULL",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = TRUE AND b = false AND c IS NULL AND d IS NOT NULL",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "literal.in_list.collapse",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a IN (1, 2, 3) AND b IN ('Zq9xK7u', 'x') AND c IN(?, ?) AND d IN (x, 'y')",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a IN (?) AND b IN (?) AND c IN(?) AND d IN (x, ?)",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7u"],
+    "source": "sentry",
+    "note": "Lists collapse only when every item is a literal or ? marker."
+  },
+  {
+    "id": "literal.values.multi_row_kept",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "INSERT INTO t (a, b) VALUES (1, 'Zq9xK7w'), (2, 'x')",
+    "expected": {
+      "text": "INSERT INTO t (a, b) VALUES (?, ?), (?, ?)",
+      "summary": "INSERT t"
+    },
+    "secrets": ["Zq9xK7w"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.line",
+    "requirements": ["R3"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a -- Zq9xK7aa\nFROM t",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7aa"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.block",
+    "requirements": ["R3"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a /* Zq9xK7ab */ FROM t",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ab"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.block.no_space",
+    "requirements": ["R3"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a/*Zq9xK7ac*/FROM t",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ac"],
+    "source": "sentry",
+    "note": "A removed comment leaves one space."
+  },
+  {
+    "id": "comment.leading",
+    "requirements": ["R3"],
+    "dialect": "CONSERVATIVE",
+    "input": "/* Zq9xK7ad */ SELECT a FROM t",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ad"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.end_without_newline",
+    "requirements": ["R3"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a FROM t -- Zq9xK7ae",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ae"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.nested.postgresql",
+    "requirements": ["R3", "R8"],
+    "dialect": "postgresql",
+    "input": "SELECT a /* outer /* Zq9xK7af */ still Zq9xK7ag */ FROM t",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7af", "Zq9xK7ag"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.nested.sqlite",
+    "requirements": ["R3", "R8"],
+    "dialect": "sqlite",
+    "input": "SELECT a /* outer /* Zq9xK7ah */ FROM t",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ah"],
+    "source": "sentry",
+    "note": "nestedBlockComments is NO: the comment ends at the first */."
+  },
+  {
+    "id": "comment.nested.mysql",
+    "requirements": ["R3", "R4", "R8"],
+    "dialect": "mysql",
+    "input": "SELECT a /* outer /* Zq9xK7ai */ FROM t WHERE b = 'Zq9xK7aj'",
+    "expected": {
+      "text": "SELECT a ?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7ai", "Zq9xK7aj"],
+    "source": "sentry",
+    "note": "nestedBlockComments is UNKNOWN: stop at the inner /*. The comment is replaced by ?."
+  },
+  {
+    "id": "comment.hash.mysql",
+    "requirements": ["R3", "R8"],
+    "dialect": "mysql",
+    "input": "SELECT a FROM t # Zq9xK7ak\nWHERE b = 1",
+    "expected": {
+      "text": "SELECT a FROM t WHERE b = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ak"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.hash.mariadb",
+    "requirements": ["R3", "R8"],
+    "dialect": "mariadb",
+    "input": "SELECT a FROM t #Zq9xK7al",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7al"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.hash.postgresql",
+    "requirements": ["R8"],
+    "dialect": "postgresql",
+    "input": "SELECT a # b FROM t",
+    "expected": {
+      "text": "SELECT a # b FROM t",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": "hashComments is NO: # is an operator."
+  },
+  {
+    "id": "comment.hash.sqlserver_temp_table",
+    "requirements": ["R6", "R8"],
+    "dialect": "sqlserver",
+    "input": "SELECT * FROM #orders WHERE id = 1",
+    "expected": {
+      "text": "SELECT * FROM #orders WHERE id = ?",
+      "summary": "SELECT #orders"
+    },
+    "source": "sentry",
+    "note": "hashComments is NO: #orders is a temporary table."
+  },
+  {
+    "id": "comment.hash.conservative",
+    "requirements": ["R4", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM #orders WHERE id = 'Zq9xK7am'",
+    "expected": {
+      "text": "SELECT * FROM ?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7am"],
+    "source": "sentry",
+    "note": "hashComments is UNKNOWN: stop at #."
+  },
+  {
+    "id": "comment.mysql_executable",
+    "requirements": ["R3"],
+    "dialect": "mysql",
+    "input": "SELECT /*!50001 SQL_NO_CACHE Zq9xK7an */ a FROM t",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7an"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.optimizer_hint",
+    "requirements": ["R3"],
+    "dialect": "oracle",
+    "input": "SELECT /*+ INDEX(t idx_Zq9xK7ao) */ a FROM t",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ao"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.markers_inside_string",
+    "requirements": ["R2", "R3"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT '-- Zq9xK7ap', '/* x */', '#y' FROM t",
+    "expected": {
+      "text": "SELECT ?, ?, ? FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ap"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.quote_inside",
+    "requirements": ["R3"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a /* it's */ FROM t -- don't\nWHERE b = 'Zq9xK7aq'",
+    "expected": {
+      "text": "SELECT a FROM t WHERE b = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7aq"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.dash_dash.mysql",
+    "requirements": ["R8"],
+    "dialect": "mysql",
+    "input": "SELECT 1--1 FROM t",
+    "expected": {
+      "text": "SELECT ?-? FROM t",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": "dashDashCommentNeedsWhitespace is YES: 1--1 is 1 - -1."
+  },
+  {
+    "id": "comment.dash_dash.postgresql",
+    "requirements": ["R3", "R8"],
+    "dialect": "postgresql",
+    "input": "SELECT 1--1\nFROM t",
+    "expected": {
+      "text": "SELECT ? FROM t",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": "dashDashCommentNeedsWhitespace is NO: --1 is a comment."
+  },
+  {
+    "id": "comment.dash_dash.conservative",
+    "requirements": ["R4", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT 1--1 FROM t WHERE a = 'Zq9xK7ar'",
+    "expected": {
+      "text": "SELECT ??",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7ar"],
+    "source": "sentry",
+    "note": "dashDashCommentNeedsWhitespace is UNKNOWN: stop at --1. The ? replaces the construct in place."
+  },
+  {
+    "id": "comment.double_slash.h2",
+    "requirements": ["R3", "R8"],
+    "dialect": "h2",
+    "input": "SELECT a // Zq9xK7at\nFROM t",
+    "expected": {
+      "text": "SELECT a FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7at"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "comment.double_slash.postgresql",
+    "requirements": ["R8"],
+    "dialect": "postgresql",
+    "input": "SELECT 8 // 2 FROM t",
+    "expected": {
+      "text": "SELECT ? // ? FROM t",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": "doubleSlashComments is NO: / is an operator."
+  },
+  {
+    "id": "comment.double_slash.conservative",
+    "requirements": ["R4", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a // Zq9xK7au\nFROM t",
+    "expected": {
+      "text": "SELECT a ?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7au"],
+    "source": "sentry",
+    "note": "doubleSlashComments is UNKNOWN: stop at //."
+  },
+  {
+    "id": "param.question",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = ? AND b = ?",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = ? AND b = ?",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "param.numbered",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = ?1 AND b = ?2",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = ?1 AND b = ?2",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "param.named_colon",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = :email AND b = :id",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = :email AND b = :id",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "param.named_at.sqlserver",
+    "requirements": ["R2"],
+    "dialect": "sqlserver",
+    "input": "SELECT * FROM t WHERE a = @email AND b = @p1",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = @email AND b = @p1",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "param.dollar_positional.postgresql",
+    "requirements": ["R2"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM t WHERE a = $1 AND b = $2",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = $1 AND b = $2",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "param.dollar_named.sqlite",
+    "requirements": ["R2"],
+    "dialect": "sqlite",
+    "input": "SELECT * FROM t WHERE a = $email",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = $email",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "param.dollar_positional.conservative",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = $1",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = $1",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": "$1 is not a dollar quote, so it does not stop."
+  },
+  {
+    "id": "param.cast_not_marker.postgresql",
+    "requirements": ["R2"],
+    "dialect": "postgresql",
+    "input": "SELECT a::text FROM t WHERE b = '5'::int",
+    "expected": {
+      "text": "SELECT a::text FROM t WHERE b = ?::int",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "jdbc.call",
+    "requirements": ["R2", "R6", "R7"],
+    "dialect": "CONSERVATIVE",
+    "input": "{call get_user(?)}",
+    "expected": {
+      "text": "{call get_user(?)}",
+      "summary": "call get_user",
+      "storedProcedure": "get_user"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "jdbc.call_return",
+    "requirements": ["R2", "R6", "R7"],
+    "dialect": "CONSERVATIVE",
+    "input": "{? = call calc_total(?, 'Zq9xK7av')}",
+    "expected": {
+      "text": "{? = call calc_total(?, ?)}",
+      "summary": "call calc_total",
+      "storedProcedure": "calc_total"
+    },
+    "secrets": ["Zq9xK7av"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "jdbc.temporal",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE created > {ts '2024-01-02 03:04:05'} AND day = {d '2024-01-02'}",
+    "expected": {
+      "text": "SELECT * FROM t WHERE created > {ts ?} AND day = {d ?}",
+      "summary": "SELECT t"
+    },
+    "secrets": ["2024-01-02"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "jdbc.fn",
+    "requirements": ["R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT {fn UCASE(name)}, {fn CONCAT('Zq9xK7aw', name)} FROM t",
+    "expected": {
+      "text": "SELECT {fn UCASE(name)}, {fn CONCAT(?, name)} FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7aw"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "room.select",
+    "requirements": ["R1", "R2"],
+    "dialect": "sqlite",
+    "input": "SELECT * FROM `users` WHERE `id` = ? LIMIT 1",
+    "expected": {
+      "text": "SELECT * FROM `users` WHERE `id` = ? LIMIT ?",
+      "summary": "SELECT `users`"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "room.insert_or_replace",
+    "requirements": ["R1", "R6"],
+    "dialect": "sqlite",
+    "input": "INSERT OR REPLACE INTO `users` (`id`,`name`) VALUES (?,?)",
+    "expected": {
+      "text": "INSERT OR REPLACE INTO `users` (`id`,`name`) VALUES (?,?)",
+      "summary": "INSERT `users`"
+    },
+    "source": "sentry",
+    "note": "OR REPLACE is SQLite's conflict clause, not a separate operation; keeping it would multiply operation names across Room's conflict strategies (R6). SQLite's REPLACE INTO alias still summarizes as REPLACE, as written."
+  },
+  {
+    "id": "room.update_or_abort",
+    "requirements": ["R1", "R6"],
+    "dialect": "sqlite",
+    "input": "UPDATE OR ABORT `users` SET `id` = ?,`name` = ? WHERE `id` = ?",
+    "expected": {
+      "text": "UPDATE OR ABORT `users` SET `id` = ?,`name` = ? WHERE `id` = ?",
+      "summary": "UPDATE `users`"
+    },
+    "source": "sentry",
+    "note": "OR ABORT is SQLite's conflict clause, not a target. OTel Java (by reading SqlSanitizer.jflex, Update.handleIdentifier) would summarize UPDATE OR."
+  },
+  {
+    "id": "room.delete",
+    "requirements": ["R1", "R6"],
+    "dialect": "sqlite",
+    "input": "DELETE FROM `users` WHERE `id` = ?",
+    "expected": {
+      "text": "DELETE FROM `users` WHERE `id` = ?",
+      "summary": "DELETE `users`"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "prepared.mixed_constant",
+    "requirements": ["R1", "R2"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM orders WHERE user_id = ? AND status = 'Zq9xK7ax' AND total > 100",
+    "expected": {
+      "text": "SELECT * FROM orders WHERE user_id = ? AND status = ? AND total > ?",
+      "summary": "SELECT orders"
+    },
+    "secrets": ["Zq9xK7ax"],
+    "source": "sentry",
+    "note": "Prepared-statement text is sanitized too (D11)."
+  },
+  {
+    "id": "prepared.in_memory",
+    "requirements": ["R1", "R8"],
+    "dialect": "in-memory",
+    "input": "SELECT * FROM [cache] WHERE key = ? AND tag = 'Zq9xK7ay'",
+    "expected": {
+      "text": "SELECT * FROM [cache] WHERE key = ? AND tag = ?",
+      "summary": "SELECT [cache]"
+    },
+    "secrets": ["Zq9xK7ay"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.create_user.oracle",
+    "requirements": ["R2", "R6"],
+    "dialect": "oracle",
+    "input": "CREATE USER Zq9xK7bb IDENTIFIED BY Zq9xK7ba",
+    "expected": {
+      "text": "CREATE USER ? IDENTIFIED BY ?",
+      "summary": "CREATE USER"
+    },
+    "secrets": ["Zq9xK7ba", "Zq9xK7bb"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.alter_user_replace.oracle",
+    "requirements": ["R2", "R6"],
+    "dialect": "oracle",
+    "input": "ALTER USER Zq9xK7bc IDENTIFIED BY Zq9xK7bd REPLACE Zq9xK7be",
+    "expected": {
+      "text": "ALTER USER ? IDENTIFIED BY ? REPLACE ?",
+      "summary": "ALTER USER"
+    },
+    "secrets": ["Zq9xK7bc", "Zq9xK7bd", "Zq9xK7be"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.create_user.mysql",
+    "requirements": ["R2", "R6"],
+    "dialect": "mysql",
+    "input": "CREATE USER 'Zq9xK7bf'@'localhost' IDENTIFIED BY 'Zq9xK7bg'",
+    "expected": {
+      "text": "CREATE USER ?@? IDENTIFIED BY ?",
+      "summary": "CREATE USER"
+    },
+    "secrets": ["Zq9xK7bf", "Zq9xK7bg"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.create_user.postgresql",
+    "requirements": ["R2", "R6"],
+    "dialect": "postgresql",
+    "input": "CREATE USER Zq9xK7bh WITH PASSWORD 'Zq9xK7bi'",
+    "expected": {
+      "text": "CREATE USER ? WITH PASSWORD ?",
+      "summary": "CREATE USER"
+    },
+    "secrets": ["Zq9xK7bh", "Zq9xK7bi"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.unquoted_password",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "ALTER USER Zq9xK7bj PASSWORD Zq9xK7bk",
+    "expected": {
+      "text": "ALTER USER ? PASSWORD ?",
+      "summary": "ALTER USER"
+    },
+    "secrets": ["Zq9xK7bj", "Zq9xK7bk"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.create_login.sqlserver",
+    "requirements": ["R2", "R6"],
+    "dialect": "sqlserver",
+    "input": "CREATE LOGIN [CONTOSO\\Zq9xK7bl] FROM WINDOWS",
+    "expected": {
+      "text": "CREATE LOGIN [?] FROM WINDOWS",
+      "summary": "CREATE LOGIN"
+    },
+    "secrets": ["Zq9xK7bl", "CONTOSO"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.create_login_password.sqlserver",
+    "requirements": ["R2", "R6"],
+    "dialect": "sqlserver",
+    "input": "CREATE LOGIN Zq9xK7bm WITH PASSWORD = 'Zq9xK7bn'",
+    "expected": {
+      "text": "CREATE LOGIN ? WITH PASSWORD = ?",
+      "summary": "CREATE LOGIN"
+    },
+    "secrets": ["Zq9xK7bm", "Zq9xK7bn"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.drop_user_if_exists.postgresql",
+    "requirements": ["R2", "R6"],
+    "dialect": "postgresql",
+    "input": "DROP USER IF EXISTS \"Zq9xK7bo\"",
+    "expected": {
+      "text": "DROP USER IF EXISTS \"?\"",
+      "summary": "DROP USER"
+    },
+    "secrets": ["Zq9xK7bo"],
+    "source": "sentry",
+    "note": "A quoted principal name keeps its quotes."
+  },
+  {
+    "id": "credentials.grant_grantees",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "GRANT SELECT, INSERT ON orders TO Zq9xK7bp, Zq9xK7bq",
+    "expected": {
+      "text": "GRANT SELECT, INSERT ON orders TO ?, ?",
+      "summary": "GRANT"
+    },
+    "secrets": ["Zq9xK7bp", "Zq9xK7bq"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.revoke_grantee",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "REVOKE SELECT ON orders FROM Zq9xK7br",
+    "expected": {
+      "text": "REVOKE SELECT ON orders FROM ?",
+      "summary": "REVOKE"
+    },
+    "secrets": ["Zq9xK7br"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.grant_identified_by.mysql",
+    "requirements": ["R2", "R6"],
+    "dialect": "mysql",
+    "input": "GRANT ALL PRIVILEGES ON db.* TO 'Zq9xK7bs'@'%' IDENTIFIED BY 'Zq9xK7bt'",
+    "expected": {
+      "text": "GRANT ALL PRIVILEGES ON db.* TO ?@? IDENTIFIED BY ?",
+      "summary": "GRANT"
+    },
+    "secrets": ["Zq9xK7bs", "Zq9xK7bt"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.connect_not_allowlisted",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "CONNECT Zq9xK7bu PASSWORD Zq9xK7bv",
+    "expected": {
+      "text": "?"
+    },
+    "secrets": ["Zq9xK7bu", "Zq9xK7bv"],
+    "source": "sentry",
+    "note": "CONNECT is not on the D12 allowlist."
+  },
+  {
+    "id": "credentials.password_column",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT password FROM users WHERE id = 1",
+    "expected": {
+      "text": "SELECT password FROM users WHERE id = ?",
+      "summary": "SELECT users"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.password_column_ddl",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "CREATE TABLE users (password VARCHAR(255))",
+    "expected": {
+      "text": "CREATE TABLE users (password VARCHAR(?))",
+      "summary": "CREATE TABLE users"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.password_object_grant",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "GRANT SELECT ON password TO Zq9xK7bw",
+    "expected": {
+      "text": "GRANT SELECT ON password TO ?",
+      "summary": "GRANT"
+    },
+    "secrets": ["Zq9xK7bw"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.password_update",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "UPDATE users SET password = 'Zq9xK7bx' WHERE id = 1",
+    "expected": {
+      "text": "UPDATE users SET password = ? WHERE id = ?",
+      "summary": "UPDATE users"
+    },
+    "secrets": ["Zq9xK7bx"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "credentials.create_role_kept",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "CREATE ROLE reporting",
+    "expected": {
+      "text": "CREATE ROLE reporting",
+      "summary": "CREATE ROLE"
+    },
+    "source": "sentry",
+    "note": "Role names are not principal names and are kept in the text."
+  },
+  {
+    "id": "shape.select.lowercase",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "select id from users where id = 1",
+    "expected": {
+      "text": "select id from users where id = ?",
+      "summary": "select users"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.insert",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "INSERT INTO users (id, name) VALUES (1, 'Zq9xK7ca')",
+    "expected": {
+      "text": "INSERT INTO users (id, name) VALUES (?, ?)",
+      "summary": "INSERT users"
+    },
+    "secrets": ["Zq9xK7ca"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.update",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "UPDATE users SET name = 'Zq9xK7cb' WHERE id = 1",
+    "expected": {
+      "text": "UPDATE users SET name = ? WHERE id = ?",
+      "summary": "UPDATE users"
+    },
+    "secrets": ["Zq9xK7cb"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.delete",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "DELETE FROM users WHERE id IN (1, 2, 3)",
+    "expected": {
+      "text": "DELETE FROM users WHERE id IN (?)",
+      "summary": "DELETE users"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.merge",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "MERGE INTO users USING staging ON users.id = staging.id WHEN MATCHED THEN UPDATE SET name = staging.name",
+    "expected": {
+      "text": "MERGE INTO users USING staging ON users.id = staging.id WHEN MATCHED THEN UPDATE SET name = staging.name",
+      "summary": "MERGE users"
+    },
+    "source": "sentry",
+    "note": "USING and the WHEN branches add nothing to the summary."
+  },
+  {
+    "id": "shape.upsert",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "UPSERT INTO users (id, name) VALUES (1, 'Zq9xK7cc')",
+    "expected": {
+      "text": "UPSERT INTO users (id, name) VALUES (?, ?)",
+      "summary": "UPSERT users"
+    },
+    "secrets": ["Zq9xK7cc"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.insert_on_conflict.postgresql",
+    "requirements": ["R2", "R6"],
+    "dialect": "postgresql",
+    "input": "INSERT INTO users (id, name) VALUES (1, 'Zq9xK7cd') ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name",
+    "expected": {
+      "text": "INSERT INTO users (id, name) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name",
+      "summary": "INSERT users"
+    },
+    "secrets": ["Zq9xK7cd"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.replace.mysql",
+    "requirements": ["R2", "R6"],
+    "dialect": "mysql",
+    "input": "REPLACE INTO users VALUES (1, 'Zq9xK7ce')",
+    "expected": {
+      "text": "REPLACE INTO users VALUES (?, ?)",
+      "summary": "REPLACE users"
+    },
+    "secrets": ["Zq9xK7ce"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.create_table",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "CREATE TABLE orders (id INT PRIMARY KEY, status VARCHAR(20) DEFAULT 'Zq9xK7cf')",
+    "expected": {
+      "text": "CREATE TABLE orders (id INT PRIMARY KEY, status VARCHAR(?) DEFAULT ?)",
+      "summary": "CREATE TABLE orders"
+    },
+    "secrets": ["Zq9xK7cf"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.alter_table",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "ALTER TABLE orders ADD COLUMN note TEXT",
+    "expected": {
+      "text": "ALTER TABLE orders ADD COLUMN note TEXT",
+      "summary": "ALTER TABLE orders"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.drop_table_if_exists",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "DROP TABLE IF EXISTS orders",
+    "expected": {
+      "text": "DROP TABLE IF EXISTS orders",
+      "summary": "DROP TABLE orders"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.create_index",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "CREATE INDEX idx_orders_status ON orders (status)",
+    "expected": {
+      "text": "CREATE INDEX idx_orders_status ON orders (status)",
+      "summary": "CREATE INDEX idx_orders_status"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.drop_index",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "DROP INDEX idx_orders_status",
+    "expected": {
+      "text": "DROP INDEX idx_orders_status",
+      "summary": "DROP INDEX idx_orders_status"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.create_view",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "CREATE VIEW open_orders AS SELECT * FROM orders WHERE status = 'open'",
+    "expected": {
+      "text": "CREATE VIEW open_orders AS SELECT * FROM orders WHERE status = ?",
+      "summary": "CREATE VIEW open_orders SELECT orders"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.drop_view",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "DROP VIEW open_orders",
+    "expected": {
+      "text": "DROP VIEW open_orders",
+      "summary": "DROP VIEW open_orders"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.call",
+    "requirements": ["R2", "R6", "R7"],
+    "dialect": "CONSERVATIVE",
+    "input": "CALL update_stats(1, 'Zq9xK7cg')",
+    "expected": {
+      "text": "CALL update_stats(?, ?)",
+      "summary": "CALL update_stats",
+      "storedProcedure": "update_stats"
+    },
+    "secrets": ["Zq9xK7cg"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.exec.sqlserver",
+    "requirements": ["R2", "R6", "R7"],
+    "dialect": "sqlserver",
+    "input": "EXEC dbo.cleanup @days = 30",
+    "expected": {
+      "text": "EXEC dbo.cleanup @days = ?",
+      "summary": "EXEC dbo.cleanup",
+      "storedProcedure": "dbo.cleanup"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.execute.lowercase",
+    "requirements": ["R2", "R6", "R7"],
+    "dialect": "CONSERVATIVE",
+    "input": "execute sp_refresh 'Zq9xK7ch'",
+    "expected": {
+      "text": "execute sp_refresh ?",
+      "summary": "execute sp_refresh",
+      "storedProcedure": "sp_refresh"
+    },
+    "secrets": ["Zq9xK7ch"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.with_cte",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "WITH recent AS (SELECT * FROM orders WHERE created > '2024-01-01') SELECT * FROM recent JOIN users ON users.id = recent.user_id",
+    "expected": {
+      "text": "WITH recent AS (SELECT * FROM orders WHERE created > ?) SELECT * FROM recent JOIN users ON users.id = recent.user_id",
+      "summary": "SELECT orders SELECT users"
+    },
+    "source": "sentry",
+    "note": "CTE names are filtered from the summary."
+  },
+  {
+    "id": "shape.subquery_in",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE total > 100)",
+    "expected": {
+      "text": "SELECT * FROM users WHERE id IN (SELECT user_id FROM orders WHERE total > ?)",
+      "summary": "SELECT users SELECT orders"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.derived_table",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM (SELECT * FROM orders) o",
+    "expected": {
+      "text": "SELECT * FROM (SELECT * FROM orders) o",
+      "summary": "SELECT SELECT orders"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.join",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT u.name, o.total FROM users u JOIN orders o ON o.user_id = u.id LEFT JOIN payments p ON p.order_id = o.id",
+    "expected": {
+      "text": "SELECT u.name, o.total FROM users u JOIN orders o ON o.user_id = u.id LEFT JOIN payments p ON p.order_id = o.id",
+      "summary": "SELECT users orders payments"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.implicit_join",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM users u, orders o WHERE o.user_id = u.id",
+    "expected": {
+      "text": "SELECT * FROM users u, orders o WHERE o.user_id = u.id",
+      "summary": "SELECT users orders"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.union",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT id FROM users UNION ALL SELECT id FROM admins",
+    "expected": {
+      "text": "SELECT id FROM users UNION ALL SELECT id FROM admins",
+      "summary": "SELECT users SELECT admins"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.parenthesized_union",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "(SELECT id FROM users) UNION (SELECT id FROM admins)",
+    "expected": {
+      "text": "(SELECT id FROM users) UNION (SELECT id FROM admins)",
+      "summary": "SELECT users SELECT admins"
+    },
+    "source": "sentry",
+    "note": "A leading ( does not hide the allowlisted keyword (D12)."
+  },
+  {
+    "id": "shape.multi_statement",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "INSERT INTO a VALUES (1); UPDATE b SET x = 2",
+    "expected": {
+      "text": "INSERT INTO a VALUES (?); UPDATE b SET x = ?",
+      "summary": "INSERT a; UPDATE b"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.hql.lowercase",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "from User u where u.email = :email",
+    "expected": {
+      "text": "from User u where u.email = :email",
+      "summary": "select User"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.hql.uppercase",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "FROM Order WHERE total > 100",
+    "expected": {
+      "text": "FROM Order WHERE total > ?",
+      "summary": "SELECT Order"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.explain",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "EXPLAIN SELECT * FROM users WHERE id = 1",
+    "expected": {
+      "text": "EXPLAIN SELECT * FROM users WHERE id = ?",
+      "summary": "EXPLAIN SELECT users"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.begin_transaction",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "BEGIN TRANSACTION",
+    "expected": {
+      "text": "BEGIN TRANSACTION",
+      "summary": "BEGIN TRANSACTION"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.commit",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "COMMIT",
+    "expected": {
+      "text": "COMMIT",
+      "summary": "COMMIT"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.rollback",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "ROLLBACK",
+    "expected": {
+      "text": "ROLLBACK",
+      "summary": "ROLLBACK"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.savepoint.sqlite",
+    "requirements": ["R6"],
+    "dialect": "sqlite",
+    "input": "SAVEPOINT sp_1",
+    "expected": {
+      "text": "SAVEPOINT sp_1",
+      "summary": "SAVEPOINT"
+    },
+    "source": "sentry",
+    "note": "Savepoint names are not part of the summary."
+  },
+  {
+    "id": "shape.pragma.sqlite",
+    "requirements": ["R6"],
+    "dialect": "sqlite",
+    "input": "PRAGMA foreign_keys = ON",
+    "expected": {
+      "text": "PRAGMA foreign_keys = ON",
+      "summary": "PRAGMA foreign_keys"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.pragma_value.sqlite",
+    "requirements": ["R2", "R6"],
+    "dialect": "sqlite",
+    "input": "PRAGMA user_version = 3",
+    "expected": {
+      "text": "PRAGMA user_version = ?",
+      "summary": "PRAGMA user_version"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.empty_statements",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": ";; SELECT * FROM t;;",
+    "expected": {
+      "text": ";; SELECT * FROM t;;",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "shape.semicolon_only",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": ";",
+    "expected": {
+      "text": ";"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "dialect.double_quotes.postgresql",
+    "requirements": ["R6", "R8"],
+    "dialect": "postgresql",
+    "input": "SELECT \"first name\" FROM \"Users\" WHERE \"id\" = 1",
+    "expected": {
+      "text": "SELECT \"first name\" FROM \"Users\" WHERE \"id\" = ?",
+      "summary": "SELECT \"Users\""
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "dialect.double_quotes.hsqldb",
+    "requirements": ["R2", "R8"],
+    "dialect": "hsqldb",
+    "input": "SELECT \"Name\" FROM \"PUBLIC\".\"Users\" WHERE \"Id\" = 'Zq9xK7da'",
+    "expected": {
+      "text": "SELECT \"Name\" FROM \"PUBLIC\".\"Users\" WHERE \"Id\" = ?",
+      "summary": "SELECT \"PUBLIC\".\"Users\""
+    },
+    "secrets": ["Zq9xK7da"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "dialect.double_quotes.derby",
+    "requirements": ["R2", "R8"],
+    "dialect": "derby",
+    "input": "INSERT INTO \"Users\" (\"Name\") VALUES ('Zq9xK7db')",
+    "expected": {
+      "text": "INSERT INTO \"Users\" (\"Name\") VALUES (?)",
+      "summary": "INSERT \"Users\""
+    },
+    "secrets": ["Zq9xK7db"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "dialect.double_quotes.mysql",
+    "requirements": ["R2", "R8"],
+    "dialect": "mysql",
+    "input": "SELECT * FROM users WHERE name = \"Zq9xK7dc\"",
+    "expected": {
+      "text": "SELECT * FROM users WHERE name = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7dc"],
+    "source": "sentry",
+    "note": "doubleQuotedIdentifiers is UNKNOWN (ANSI_QUOTES): \"...\" is treated as a literal."
+  },
+  {
+    "id": "dialect.double_quotes.unknown_target",
+    "requirements": ["R6", "R8"],
+    "dialect": "mysql",
+    "input": "SELECT * FROM \"Users\"",
+    "expected": {
+      "text": "SELECT * FROM ?",
+      "summary": "SELECT \"Users\""
+    },
+    "source": "sentry",
+    "note": "Quoted summary targets are kept as written regardless of the double-quote rule."
+  },
+  {
+    "id": "dialect.double_quotes.backslash.mysql",
+    "requirements": ["R4", "R8"],
+    "dialect": "mysql",
+    "input": "SELECT * FROM t WHERE a = \"x\\\" AND b = 'Zq9xK7dd'",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7dd"],
+    "source": "sentry",
+    "note": "A double-quoted literal follows backslashEscapes too."
+  },
+  {
+    "id": "dialect.brackets.sqlserver",
+    "requirements": ["R6", "R8"],
+    "dialect": "sqlserver",
+    "input": "SELECT [first name] FROM [dbo].[Users] WHERE [id] = 1",
+    "expected": {
+      "text": "SELECT [first name] FROM [dbo].[Users] WHERE [id] = ?",
+      "summary": "SELECT [dbo].[Users]"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "dialect.brackets.quote_inside.sqlserver",
+    "requirements": ["R2", "R8"],
+    "dialect": "sqlserver",
+    "input": "SELECT [O'Brien] FROM [Users] WHERE [Note] = N'Zq9xK7de'",
+    "expected": {
+      "text": "SELECT [O'Brien] FROM [Users] WHERE [Note] = ?",
+      "summary": "SELECT [Users]"
+    },
+    "secrets": ["Zq9xK7de"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "dialect.brackets.sqlite",
+    "requirements": ["R6", "R8"],
+    "dialect": "sqlite",
+    "input": "SELECT [name] FROM [users] WHERE [id] = 1",
+    "expected": {
+      "text": "SELECT [name] FROM [users] WHERE [id] = ?",
+      "summary": "SELECT [users]"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "dialect.brackets.postgresql",
+    "requirements": ["R2", "R8"],
+    "dialect": "postgresql",
+    "input": "SELECT tags[1] FROM t WHERE tags[2] = 'Zq9xK7df'",
+    "expected": {
+      "text": "SELECT tags[?] FROM t WHERE tags[?] = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7df"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "dialect.brackets.h2",
+    "requirements": ["R8"],
+    "dialect": "h2",
+    "input": "SELECT [name] FROM t WHERE a = 1",
+    "expected": {
+      "text": "SELECT [name] FROM t WHERE a = ?",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": "bracketIdentifiers is UNKNOWN: brackets are punctuation, and without a quote inside nothing stops."
+  },
+  {
+    "id": "dialect.brackets.quote_inside.conservative",
+    "requirements": ["R4", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT [O'Brien] FROM t WHERE a = 'Zq9xK7dk'",
+    "expected": {
+      "text": "SELECT ?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7dk"],
+    "source": "sentry",
+    "note": "bracketIdentifiers is UNKNOWN and a quote occurs before ]: stop at [."
+  },
+  {
+    "id": "dialect.brackets.number.conservative",
+    "requirements": ["R2", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a[1] FROM t",
+    "expected": {
+      "text": "SELECT a[?] FROM t",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "bracket.array_literal.postgresql",
+    "requirements": ["R2"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM t WHERE tags = ARRAY['Zq9xK7dg', 'x']",
+    "expected": {
+      "text": "SELECT * FROM t WHERE tags = ARRAY[?, ?]",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7dg"],
+    "source": "sentry",
+    "note": "Array elements are not collapsed like IN lists."
+  },
+  {
+    "id": "bracket.subscript_string.postgresql",
+    "requirements": ["R2"],
+    "dialect": "postgresql",
+    "input": "SELECT data['Zq9xK7dh'] FROM t",
+    "expected": {
+      "text": "SELECT data[?] FROM t",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7dh"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "bracket.array_literal.conservative",
+    "requirements": ["R4", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE tags = ARRAY['Zq9xK7di']",
+    "expected": {
+      "text": "SELECT * FROM t WHERE tags = ARRAY?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7di"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "bracket.subscript_string.conservative",
+    "requirements": ["R4", "R8"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT data['Zq9xK7dj'] FROM t",
+    "expected": {
+      "text": "SELECT data?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7dj"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.unterminated.single_quote",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM users WHERE name = 'Zq9xK7ea",
+    "expected": {
+      "text": "SELECT * FROM users WHERE name = ?",
+      "summary": "SELECT users"
+    },
+    "secrets": ["Zq9xK7ea"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.unterminated.double_quote.postgresql",
+    "requirements": ["R4"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM \"Zq9xK7eb",
+    "expected": {
+      "text": "SELECT * FROM ?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7eb"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.unterminated.backtick.mysql",
+    "requirements": ["R4"],
+    "dialect": "mysql",
+    "input": "SELECT * FROM `Zq9xK7ec",
+    "expected": {
+      "text": "SELECT * FROM ?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7ec"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.unterminated.bracket.sqlserver",
+    "requirements": ["R4"],
+    "dialect": "sqlserver",
+    "input": "SELECT * FROM [Orders WHERE name = 'Zq9xK7ed'",
+    "expected": {
+      "text": "SELECT * FROM ?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7ed"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.unterminated.block_comment",
+    "requirements": ["R3", "R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a FROM t /* Zq9xK7ee",
+    "expected": {
+      "text": "SELECT a FROM t ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ee"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.unterminated.dollar_tag.postgresql",
+    "requirements": ["R4"],
+    "dialect": "postgresql",
+    "input": "SELECT * FROM t WHERE a = $x$Zq9xK7ef",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ef"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.unbalanced.open_paren",
+    "requirements": ["R2", "R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a IN (1, 'Zq9xK7eg'",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a IN (?, ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7eg"],
+    "source": "sentry",
+    "note": "Without a closing parenthesis there is no list to collapse."
+  },
+  {
+    "id": "malformed.unbalanced.close_paren",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a FROM t WHERE (b = 1))",
+    "expected": {
+      "text": "SELECT a FROM t WHERE (b = ?))",
+      "summary": "SELECT t"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.empty",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "",
+    "expected": {
+      "text": ""
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.whitespace_only",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "  \n\t ",
+    "expected": {
+      "text": ""
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.control_char",
+    "requirements": ["R4", "R5"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a\u0000b FROM t WHERE c = 'Zq9xK7eh'",
+    "expected": {
+      "text": "SELECT a?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7eh"],
+    "source": "sentry",
+    "note": "Unknown character inside a recognized statement (D12)."
+  },
+  {
+    "id": "malformed.control_char_in_literal",
+    "requirements": ["R2", "R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = 'x\u0001Zq9xK7ei'",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ei"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "malformed.lone_surrogate",
+    "requirements": ["R4", "R5"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a\ud800 FROM t",
+    "expected": {
+      "text": "SELECT a?",
+      "summary": "SELECT"
+    },
+    "source": "sentry",
+    "note": "Unknown character inside a recognized statement (D12)."
+  },
+  {
+    "id": "malformed.lone_surrogate_in_literal",
+    "requirements": ["R2", "R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t WHERE a = '\udc00Zq9xK7ej'",
+    "expected": {
+      "text": "SELECT * FROM t WHERE a = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7ej"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "unrecognized.sentence",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "Please email Zq9xK7ek@example.com about the report",
+    "expected": {
+      "text": "?"
+    },
+    "secrets": ["Zq9xK7ek"],
+    "source": "sentry",
+    "note": "Not on the D12 allowlist."
+  },
+  {
+    "id": "unrecognized.command",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "AUTH Zq9xK7el",
+    "expected": {
+      "text": "?"
+    },
+    "secrets": ["Zq9xK7el"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "unrecognized.keyword_typo",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELEC * FROM users",
+    "expected": {
+      "text": "?"
+    },
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "unrecognized.after_semicolon",
+    "requirements": ["R4", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM t; AUTH Zq9xK7em",
+    "expected": {
+      "text": "SELECT * FROM t; ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7em"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "unrecognized.backslash_outside_literal",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a \\ Zq9xK7en FROM t",
+    "expected": {
+      "text": "SELECT a ?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7en"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "unrecognized.symbol",
+    "requirements": ["R4"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT 😀, Zq9xK7eo FROM t",
+    "expected": {
+      "text": "SELECT ?",
+      "summary": "SELECT"
+    },
+    "secrets": ["Zq9xK7eo"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "unrecognized.unicode_identifier_kept",
+    "requirements": ["R2", "R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT ąś FROM źćļ WHERE x = 'ɣZq9xK7ep'",
+    "expected": {
+      "text": "SELECT ąś FROM źćļ WHERE x = ?",
+      "summary": "SELECT źćļ"
+    },
+    "secrets": ["Zq9xK7ep"],
+    "source": "sentry",
+    "note": "Unicode letters are identifier characters (D12)."
+  },
+  {
+    "id": "size.limit.exact",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a FROM t WHERE b = 'Zq9xK7fa'",
+    "maxQueryTextLength": 27,
+    "expected": {
+      "text": "SELECT a FROM t WHERE b = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7fa"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "size.limit.under",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a FROM t WHERE b = 'Zq9xK7fa'",
+    "maxQueryTextLength": 28,
+    "expected": {
+      "text": "SELECT a FROM t WHERE b = ?",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7fa"],
+    "source": "sentry",
+    "note": ""
+  },
+  {
+    "id": "size.limit.one_over",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT a FROM t WHERE b = 'Zq9xK7fa'",
+    "maxQueryTextLength": 26,
+    "expected": {
+      "text": "SELECT a FROM t WHERE b =",
+      "summary": "SELECT t"
+    },
+    "secrets": ["Zq9xK7fa"],
+    "source": "sentry",
+    "note": "The final ? no longer fits; the text is cut before it."
+  },
+  {
+    "id": "size.limit.first_token",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT 1",
+    "maxQueryTextLength": 4,
+    "expected": {
+      "text": ""
+    },
+    "source": "sentry",
+    "note": "The first token already exceeds the limit (Length limit convention)."
+  },
+  {
+    "id": "size.summary.over_255",
+    "requirements": ["R6"],
+    "dialect": "CONSERVATIVE",
+    "input": "SELECT * FROM table_with_a_long_name_00, table_with_a_long_name_01, table_with_a_long_name_02, table_with_a_long_name_03, table_with_a_long_name_04, table_with_a_long_name_05, table_with_a_long_name_06, table_with_a_long_name_07, table_with_a_long_name_08, table_with_a_long_name_09, table_with_a_long_name_10, table_with_a_long_name_11 WHERE x = 'Zq9xK7fb'",
+    "expected": {
+      "text": "SELECT * FROM table_with_a_long_name_00, table_with_a_long_name_01, table_with_a_long_name_02, table_with_a_long_name_03, table_with_a_long_name_04, table_with_a_long_name_05, table_with_a_long_name_06, table_with_a_long_name_07, table_with_a_long_name_08, table_with_a_long_name_09, table_with_a_long_name_10, table_with_a_long_name_11 WHERE x = ?",
+      "summary": "SELECT table_with_a_long_name_00 table_with_a_long_name_01 table_with_a_long_name_02 table_with_a_long_name_03 table_with_a_long_name_04 table_with_a_long_name_05 table_with_a_long_name_06 table_with_a_long_name_07 table_with_a_long_name_08"
+    },
+    "secrets": ["Zq9xK7fb"],
+    "source": "sentry",
+    "note": "Summary entries that would exceed 255 characters are dropped whole (240 characters kept)."
   }
 ]
