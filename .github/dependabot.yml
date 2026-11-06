@@ -11,6 +11,7 @@ updates:
     directories:
       - "/"
       - "/sentry-samples/sentry-samples-android"
+      - "/sentry-android-integration-tests"
     registries:
       - gradle-plugin-portal
     schedule:

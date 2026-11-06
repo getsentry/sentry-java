@@ -5,13 +5,13 @@ By default the envelopes sent to relay are caught by a mock server which allows 
 
 # How to use
 
-Simply run `./gradlew connectedCheck` to run all ui tests of all modules (requires a connected device, either physical or an emulator).
+Simply run `./gradlew -p sentry-android-integration-tests connectedCheck` to run all ui tests of all modules (requires a connected device, either physical or an emulator).
 
 # SauceLabs
 To run on saucelabs execute following commands (need also `SAUCE_USERNAME` and `SAUCE_ACCESS_KEY` environment variables):
 For End 2 End:
 ```
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
+./gradlew -p sentry-android-integration-tests :sentry-uitest-android:assembleRelease :sentry-uitest-android:assembleAndroidTest
 saucectl run -c .sauce/sentry-uitest-android-end2end.yml
 ```
 

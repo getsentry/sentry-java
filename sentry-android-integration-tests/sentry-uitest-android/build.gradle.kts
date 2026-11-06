@@ -9,7 +9,11 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -46,7 +50,7 @@ android {
 
   signingConfigs {
     getByName("debug") {
-      storeFile = rootProject.file("debug.keystore")
+      storeFile = file("../../debug.keystore")
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -90,10 +94,10 @@ dependencies {
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
 
   if (applySentryIntegrations) {
-    implementation(projects.sentryAndroid)
-    implementation(projects.sentryCompose)
+    implementation("io.sentry:sentry-android:$sentryVersion")
+    implementation("io.sentry:sentry-compose:$sentryVersion")
   } else {
-    implementation(projects.sentryAndroidCore)
+    implementation("io.sentry:sentry-android-core:$sentryVersion")
   }
   implementation(libs.androidx.appcompat)
   implementation(libs.androidx.activity.compose)
@@ -112,7 +116,7 @@ dependencies {
   errorprone(libs.nullaway)
 
   androidTestUtil(libs.androidx.test.orchestrator)
-  androidTestImplementation(projects.sentryTestSupport)
+  androidTestImplementation("io.sentry:sentry-test-support:$sentryVersion")
   androidTestImplementation(libs.androidx.test.core.ktx)
   androidTestImplementation(libs.androidx.test.espresso.core)
   androidTestImplementation(libs.androidx.test.ext.junit)
@@ -130,6 +134,12 @@ tasks.withType<JavaCompile>().configureEach {
     option("NullAway:AnnotatedPackages", "io.sentry")
     option("NullAway:UnannotatedSubPackages", "io.sentry.uitest.android.databinding")
   }
+}
+
+detekt {
+  buildUponDefaultConfig = true
+  allRules = true
+  config.setFrom(file("../../detekt.yml"))
 }
 
 tasks.withType<Detekt>().configureEach {

@@ -2,15 +2,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
   repositories {
-    // Prefer local SAGP artifact if one exists; otherwise fall back to libs.versions.toml.
-    if (providers.gradleProperty("useSagp").isPresent) {
-      mavenLocal {
-        content {
-          includeGroup("io.sentry")
-          includeGroup("io.sentry.android.gradle")
-        }
-      }
-    }
     mavenCentral()
     gradlePluginPortal()
     google()
@@ -139,8 +130,5 @@ include(
     "sentry-samples:sentry-samples-spring-boot-4-otlp",
     "sentry-samples:sentry-samples-spring-boot-4-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
-    "sentry-android-integration-tests:sentry-uitest-android-critical",
-    "sentry-android-integration-tests:sentry-uitest-android",
-    "sentry-android-integration-tests:test-app-size",
     "sentry-samples:sentry-samples-openfeign"
 )
