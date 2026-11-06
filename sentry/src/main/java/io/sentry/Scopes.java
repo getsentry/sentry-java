@@ -885,7 +885,7 @@ public final class Scopes implements IScopes {
               "Instance is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
     } else if (SpanUtils.isIgnored(
-        getOptions().getIgnoredSpanOrigins(), transactionContext.getOrigin())) {
+        getOptions().getIgnoredSpanOriginFilters(), transactionContext.getOrigin())) {
       getOptions()
           .getLogger()
           .log(

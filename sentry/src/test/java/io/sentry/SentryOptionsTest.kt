@@ -626,13 +626,13 @@ class SentryOptionsTest {
     assertFalse(options.isEnabled)
     assertFalse(options.isEnablePrettySerializationOutput)
     assertFalse(options.isSendModules)
-    assertEquals(listOf(FilterString("slug1"), FilterString("slug-B")), options.ignoredCheckIns)
+    assertEquals(listOf("slug1", "slug-B"), options.ignoredCheckIns)
     assertEquals(
-      listOf(FilterString("transactionName1"), FilterString("transaction-name-B")),
+      listOf("transactionName1", "transaction-name-B"),
       options.ignoredTransactions,
     )
     assertEquals(
-      listOf(FilterString("Some error"), FilterString("Another .*")),
+      listOf("Some error", "Another .*"),
       options.ignoredErrors,
     )
     assertFalse(options.isEnableBackpressureHandling)
@@ -1050,12 +1050,44 @@ class SentryOptionsTest {
   }
 
   @Test
+  fun `ignored filter getters return the strings that were set`() {
+    val options = SentryOptions()
+    options.ignoredErrors = listOf("error", "")
+    options.ignoredTransactions = listOf("transaction.*")
+    options.ignoredCheckIns = listOf("slug")
+    options.ignoredSpanOrigins = listOf("auto.http.*")
+    options.addIgnoredSpanOrigin("manual")
+
+    assertEquals(listOf("error"), options.ignoredErrors)
+    assertEquals(listOf("transaction.*"), options.ignoredTransactions)
+    assertEquals(listOf("slug"), options.ignoredCheckIns)
+    assertEquals(listOf("auto.http.*", "manual"), options.ignoredSpanOrigins)
+
+    assertEquals(listOf(FilterString("error")), options.ignoredErrorFilters)
+    assertEquals(listOf(FilterString("transaction.*")), options.ignoredTransactionFilters)
+    assertEquals(listOf(FilterString("slug")), options.ignoredCheckInFilters)
+    assertEquals(
+      listOf(FilterString("auto.http.*"), FilterString("manual")),
+      options.ignoredSpanOriginFilters,
+    )
+  }
+
+  @Test
+  fun `ignored filter getters return null when unset`() {
+    val options = SentryOptions()
+    assertNull(options.ignoredErrors)
+    assertNull(options.ignoredTransactions)
+    assertNull(options.ignoredCheckIns)
+    assertNull(options.ignoredSpanOrigins)
+  }
+
+  @Test
   fun `merging options when ignoredErrors is not set preserves the previous value`() {
     val externalOptions = ExternalOptions()
     val options = SentryOptions()
     options.setIgnoredErrors(listOf("error1", "error2"))
     options.merge(externalOptions)
-    assertEquals(listOf(FilterString("error1"), FilterString("error2")), options.ignoredErrors)
+    assertEquals(listOf("error1", "error2"), options.ignoredErrors)
   }
 
   @Test
@@ -1065,7 +1097,7 @@ class SentryOptionsTest {
     options.setIgnoredTransactions(listOf("transaction1", "transaction2"))
     options.merge(externalOptions)
     assertEquals(
-      listOf(FilterString("transaction1"), FilterString("transaction2")),
+      listOf("transaction1", "transaction2"),
       options.ignoredTransactions,
     )
   }
@@ -1077,7 +1109,7 @@ class SentryOptionsTest {
     options.setIgnoredCheckIns(listOf("checkin1", "checkin2"))
     options.merge(externalOptions)
     assertEquals(
-      listOf(FilterString("checkin1"), FilterString("checkin2")),
+      listOf("checkin1", "checkin2"),
       options.ignoredCheckIns,
     )
   }

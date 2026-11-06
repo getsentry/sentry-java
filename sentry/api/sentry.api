@@ -3551,10 +3551,14 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getGestureTargetLocators ()Ljava/util/List;
 	public fun getHostnameCache ()Lio/sentry/HostnameCache;
 	public fun getIdleTimeout ()Ljava/lang/Long;
+	public fun getIgnoredCheckInFilters ()Ljava/util/List;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
+	public fun getIgnoredErrorFilters ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
+	public fun getIgnoredSpanOriginFilters ()Ljava/util/List;
 	public fun getIgnoredSpanOrigins ()Ljava/util/List;
+	public fun getIgnoredTransactionFilters ()Ljava/util/List;
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;

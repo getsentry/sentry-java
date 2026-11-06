@@ -152,7 +152,7 @@ constructor(
   }
 
   private fun isIgnored(): Boolean =
-    SpanUtils.isIgnored(scopes.getOptions().ignoredSpanOrigins, TRACE_ORIGIN)
+    SpanUtils.isIgnored(scopes.getOptions().ignoredSpanOriginFilters, TRACE_ORIGIN)
 
   private fun startChild(
     request: HttpRequest,

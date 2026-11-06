@@ -4,7 +4,6 @@ import com.acme.MainBootClass
 import io.opentelemetry.api.OpenTelemetry
 import io.sentry.Breadcrumb
 import io.sentry.EventProcessor
-import io.sentry.FilterString
 import io.sentry.Hint
 import io.sentry.IContinuousProfiler
 import io.sentry.IProfileConverter
@@ -279,12 +278,9 @@ class SentryAutoConfigurationTest {
           .containsOnly("localhost", "^(http|https)://api\\..*\$")
         assertThat(options.isEnabled).isEqualTo(false)
         assertThat(options.isSendModules).isEqualTo(false)
-        assertThat(options.ignoredCheckIns)
-          .containsOnly(FilterString("slug1"), FilterString("slugB"))
-        assertThat(options.ignoredErrors)
-          .containsOnly(FilterString("Some error"), FilterString("Another .*"))
-        assertThat(options.ignoredTransactions)
-          .containsOnly(FilterString("transactionName1"), FilterString("transactionNameB"))
+        assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
+        assertThat(options.ignoredErrors).containsOnly("Some error", "Another .*")
+        assertThat(options.ignoredTransactions).containsOnly("transactionName1", "transactionNameB")
         assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
         assertThat(options.isEnableDatabaseTransactionTracing).isEqualTo(true)
         assertThat(options.isEnableCacheTracing).isEqualTo(true)

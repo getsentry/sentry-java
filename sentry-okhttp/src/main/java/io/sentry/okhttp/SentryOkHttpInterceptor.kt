@@ -234,7 +234,7 @@ public open class SentryOkHttpInterceptor(
   }
 
   private fun isIgnored(): Boolean =
-    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
+    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN)
 
   private fun sendBreadcrumb(
     request: Request,

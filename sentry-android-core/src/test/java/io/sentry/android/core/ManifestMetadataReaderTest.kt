@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.core.os.bundleOf
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import io.sentry.FilterString
 import io.sentry.HttpBodyType
 import io.sentry.ILogger
 import io.sentry.KeyValueCollectionBehavior
@@ -2083,7 +2082,7 @@ class ManifestMetadataReaderTest {
 
     // Assert
     assertEquals(
-      listOf(FilterString("Some error"), FilterString("Another .*")),
+      listOf("Some error", "Another .*"),
       fixture.options.ignoredErrors,
     )
   }

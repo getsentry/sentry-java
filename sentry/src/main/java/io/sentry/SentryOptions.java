@@ -2032,11 +2032,23 @@ public class SentryOptions implements RateLimiterConfig {
    * `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine if
    * an event shall be sent to Sentry or ignored.
    *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
    * @return the list of strings/regex patterns that `event.message`, `event.formatted`, and
    *     `{event.throwable.class.name}: {event.throwable.message}` are checked against to determine
    *     if an event shall be sent to Sentry or ignored
    */
-  public @Nullable List<FilterString> getIgnoredErrors() {
+  public @Nullable List<String> getIgnoredErrors() {
+    return toFilterStrings(ignoredErrors);
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredErrors()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredErrorFilters() {
     return ignoredErrors;
   }
 
@@ -2959,9 +2971,21 @@ public class SentryOptions implements RateLimiterConfig {
    * Returns the list of strings/regex patterns the origin of a new span/transaction will be tested
    * against to determine whether the span/transaction shall be created.
    *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
    * @return the list of strings or regex patterns
    */
-  public @Nullable List<FilterString> getIgnoredSpanOrigins() {
+  public @Nullable List<String> getIgnoredSpanOrigins() {
+    return toFilterStrings(ignoredSpanOrigins);
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredSpanOrigins()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredSpanOriginFilters() {
     return ignoredSpanOrigins;
   }
 
@@ -3002,9 +3026,21 @@ public class SentryOptions implements RateLimiterConfig {
   /**
    * Returns the list of monitor slugs for which captured check-ins should not be sent to Sentry.
    *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
    * @return the list of monitor slugs
    */
-  public @Nullable List<FilterString> getIgnoredCheckIns() {
+  public @Nullable List<String> getIgnoredCheckIns() {
+    return toFilterStrings(ignoredCheckIns);
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredCheckIns()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredCheckInFilters() {
     return ignoredCheckIns;
   }
 
@@ -3045,10 +3081,34 @@ public class SentryOptions implements RateLimiterConfig {
    * Returns the list of strings/regex patterns that captured transaction names are checked against
    * to determine if a transaction shall be sent to Sentry or ignored.
    *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
    * @return the list of strings/regex patterns
    */
-  public @Nullable List<FilterString> getIgnoredTransactions() {
+  public @Nullable List<String> getIgnoredTransactions() {
+    return toFilterStrings(ignoredTransactions);
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredTransactions()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredTransactionFilters() {
     return ignoredTransactions;
+  }
+
+  private static @Nullable List<String> toFilterStrings(
+      final @Nullable List<FilterString> filters) {
+    if (filters == null) {
+      return null;
+    }
+    final @NotNull List<String> strings = new ArrayList<>(filters.size());
+    for (final @NotNull FilterString filter : filters) {
+      strings.add(filter.getFilterString());
+    }
+    return strings;
   }
 
   /**
