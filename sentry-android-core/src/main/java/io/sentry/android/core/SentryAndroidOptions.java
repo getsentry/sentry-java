@@ -867,8 +867,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * @return true if standalone app start tracing is enabled. See {@link
-   *     #setEnableStandaloneAppStartTracing(boolean)} for more details.
+   * Returns true if standalone app start tracing is enabled. See {@link
+   * #setEnableStandaloneAppStartTracing(boolean)} for more details.
    */
   @ApiStatus.Experimental
   public boolean isEnableStandaloneAppStartTracing() {

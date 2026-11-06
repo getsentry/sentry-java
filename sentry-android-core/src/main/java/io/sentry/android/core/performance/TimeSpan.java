@@ -36,6 +36,8 @@ public class TimeSpan implements Comparable<TimeSpan> {
   }
 
   /**
+   * Starts the time span at the given uptime.
+   *
    * @param uptimeMs the uptime in ms, provided by {@link SystemClock#uptimeMillis()}
    */
   public void setStartedAt(final long uptimeMs) {
@@ -52,6 +54,8 @@ public class TimeSpan implements Comparable<TimeSpan> {
   }
 
   /**
+   * Stops the time span at the given uptime.
+   *
    * @param uptimeMs the uptime in ms, provided by {@link SystemClock#uptimeMillis()}
    */
   public void setStoppedAt(final long uptimeMs) {
@@ -75,23 +79,17 @@ public class TimeSpan implements Comparable<TimeSpan> {
     return stopUptimeMs == 0;
   }
 
-  /**
-   * @return the start timestamp of this measurement, as uptime, in ms
-   */
+  /** Returns the start timestamp of this measurement, as uptime, in ms. */
   public long getStartUptimeMs() {
     return startUptimeMs;
   }
 
-  /**
-   * @return the start timestamp of this measurement, unix time, in ms
-   */
+  /** Returns the start timestamp of this measurement, unix time, in ms. */
   public long getStartTimestampMs() {
     return startUnixTimeMs;
   }
 
-  /**
-   * @return the start timestamp of this measurement, unix time
-   */
+  /** Returns the start timestamp of this measurement, unix time. */
   public @Nullable SentryDate getStartTimestamp() {
     if (hasStarted()) {
       return new SentryLongDate(DateUtils.millisToNanos(getStartTimestampMs()));
@@ -99,17 +97,15 @@ public class TimeSpan implements Comparable<TimeSpan> {
     return null;
   }
 
-  /**
-   * @return the start timestamp of this measurement, unix time, in seconds
-   */
+  /** Returns the start timestamp of this measurement, unix time, in seconds. */
   public double getStartTimestampSecs() {
     return DateUtils.millisToSeconds(startUnixTimeMs);
   }
 
   /**
-   * @return the projected stop timestamp of this measurement, based on the start timestamp and the
-   *     duration. If the time span was not started 0 is returned, if the time span was not stopped
-   *     the start timestamp is returned.
+   * Returns the projected stop timestamp of this measurement, based on the start timestamp and the
+   * duration. If the time span was not started 0 is returned, if the time span was not stopped the
+   * start timestamp is returned.
    */
   public long getProjectedStopTimestampMs() {
     if (hasStarted()) {
@@ -119,7 +115,8 @@ public class TimeSpan implements Comparable<TimeSpan> {
   }
 
   /**
-   * @return the projected stop timestamp
+   * Returns the projected stop timestamp of this measurement, unix time, in seconds.
+   *
    * @see #getProjectedStopTimestampMs()
    */
   public double getProjectedStopTimestampSecs() {
@@ -127,7 +124,8 @@ public class TimeSpan implements Comparable<TimeSpan> {
   }
 
   /**
-   * @return the projected stop timestamp
+   * Returns the projected stop timestamp of this measurement, or null if it was not stopped.
+   *
    * @see #getProjectedStopTimestampMs()
    */
   public @Nullable SentryDate getProjectedStopTimestamp() {
@@ -137,9 +135,7 @@ public class TimeSpan implements Comparable<TimeSpan> {
     return null;
   }
 
-  /**
-   * @return the duration of this measurement, in ms, or 0 if no end time is set
-   */
+  /** Returns the duration of this measurement, in ms, or 0 if no end time is set. */
   public long getDurationMs() {
     if (hasStopped()) {
       return stopUptimeMs - startUptimeMs;
