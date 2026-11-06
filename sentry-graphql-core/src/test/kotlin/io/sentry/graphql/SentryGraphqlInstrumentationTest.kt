@@ -39,7 +39,7 @@ class SentryGraphqlInstrumentationTest {
   }
 
   @Test
-  fun `ignores error by classification specification type`() {
+  fun `captures error by classification specification type when filtering is disabled`() {
     captureError(
       error(
         CustomErrorClassification(
@@ -50,6 +50,35 @@ class SentryGraphqlInstrumentationTest {
       ignoredErrorTypes = listOf("ExtendedValidationError"),
     )
 
+    verify(exceptionReporter).captureThrowable(any(), any(), any())
+  }
+
+  @Test
+  fun `does not inspect classification specification when filtering is disabled`() {
+    val classification = mock<ErrorClassification>()
+    whenever(classification.toString()).thenReturn("SOME_ERROR")
+
+    captureError(
+      error(classification),
+      ignoredErrorTypes = listOf("SPECIFICATION_ERROR"),
+    )
+
+    verify(classification, never()).toSpecification(any())
+  }
+
+  @Test
+  fun `ignores error by classification specification type when filtering is enabled`() {
+    captureError(
+      error(
+        CustomErrorClassification(
+          "graphql.validation.interpolation.ResourceBundleMessageInterpolator\$ValidationErrorType@1",
+          mapOf("type" to "ExtendedValidationError"),
+        )
+      ),
+      ignoredErrorTypes = listOf("ExtendedValidationError"),
+      enableSpecificationErrorTypeFiltering = true,
+    )
+
     verify(exceptionReporter, never()).captureThrowable(any(), any(), any())
   }
 
@@ -58,6 +87,7 @@ class SentryGraphqlInstrumentationTest {
     captureError(
       error(CustomErrorClassification("SOME_ERROR", "SPECIFICATION_ERROR")),
       ignoredErrorTypes = listOf("SPECIFICATION_ERROR"),
+      enableSpecificationErrorTypeFiltering = true,
     )
 
     verify(exceptionReporter, never()).captureThrowable(any(), any(), any())
@@ -65,28 +95,40 @@ class SentryGraphqlInstrumentationTest {
 
   @Test
   fun `captures error when classification specification has no type`() {
-    captureError(error(CustomErrorClassification("SOME_ERROR", mapOf("constraint" to "@Size"))))
+    captureError(
+      error(CustomErrorClassification("SOME_ERROR", mapOf("constraint" to "@Size"))),
+      enableSpecificationErrorTypeFiltering = true,
+    )
 
     verify(exceptionReporter).captureThrowable(any(), any(), any())
   }
 
   @Test
   fun `captures error when classification specification is null`() {
-    captureError(error(CustomErrorClassification("SOME_ERROR", null)))
+    captureError(
+      error(CustomErrorClassification("SOME_ERROR", null)),
+      enableSpecificationErrorTypeFiltering = true,
+    )
 
     verify(exceptionReporter).captureThrowable(any(), any(), any())
   }
 
   @Test
   fun `captures error when classification specification type is unexpected`() {
-    captureError(error(CustomErrorClassification("SOME_ERROR", mapOf("type" to 42))))
+    captureError(
+      error(CustomErrorClassification("SOME_ERROR", mapOf("type" to 42))),
+      enableSpecificationErrorTypeFiltering = true,
+    )
 
     verify(exceptionReporter).captureThrowable(any(), any(), any())
   }
 
   @Test
   fun `captures error when classification specification throws`() {
-    captureError(error(ThrowingErrorClassification))
+    captureError(
+      error(ThrowingErrorClassification),
+      enableSpecificationErrorTypeFiltering = true,
+    )
 
     verify(exceptionReporter).captureThrowable(any(), any(), any())
   }
@@ -107,18 +149,24 @@ class SentryGraphqlInstrumentationTest {
     captureError(
       error(CustomErrorClassification("SOME_ERROR", mapOf("type" to "SPECIFICATION_ERROR"))),
       ignoredErrorTypes = listOf("OTHER_ERROR"),
+      enableSpecificationErrorTypeFiltering = true,
     )
 
     verify(exceptionReporter).captureThrowable(any(), any(), any())
   }
 
-  private fun captureError(error: GraphQLError, ignoredErrorTypes: List<String> = emptyList()) {
+  private fun captureError(
+    error: GraphQLError,
+    ignoredErrorTypes: List<String> = emptyList(),
+    enableSpecificationErrorTypeFiltering: Boolean = false,
+  ) {
     val instrumentation =
       SentryGraphqlInstrumentation(
         null,
         NoOpSubscriptionHandler.getInstance(),
         exceptionReporter,
         ignoredErrorTypes,
+        enableSpecificationErrorTypeFiltering,
         "manual.test",
       )
     val result = ExecutionResultImpl.newExecutionResult().addError(error).build()

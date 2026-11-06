@@ -55,6 +55,7 @@ public final class SentryGraphqlInstrumentation {
   private final @NotNull SentrySubscriptionHandler subscriptionHandler;
   private final @NotNull ExceptionReporter exceptionReporter;
   private final @NotNull List<String> ignoredErrorTypes;
+  private final boolean enableSpecificationErrorTypeFiltering;
   private final @NotNull String traceOrigin;
 
   /**
@@ -75,8 +76,35 @@ public final class SentryGraphqlInstrumentation {
     this(
         beforeSpan,
         subscriptionHandler,
+        captureRequestBodyForNonSubscriptions,
+        ignoredErrorTypes,
+        false,
+        traceOrigin);
+  }
+
+  /**
+   * @param beforeSpan callback when a span is created
+   * @param subscriptionHandler can report subscription errors
+   * @param captureRequestBodyForNonSubscriptions false if request bodies should not be captured by
+   *     this integration for query and mutation operations
+   * @param ignoredErrorTypes list of error types that should not be captured and sent to Sentry
+   * @param enableSpecificationErrorTypeFiltering whether ignored error types should also be matched
+   *     against {@link ErrorClassification#toSpecification(GraphQLError)}
+   * @param traceOrigin origin used for spans created by this integration
+   */
+  public SentryGraphqlInstrumentation(
+      final @Nullable BeforeSpanCallback beforeSpan,
+      final @NotNull SentrySubscriptionHandler subscriptionHandler,
+      final boolean captureRequestBodyForNonSubscriptions,
+      final @NotNull List<String> ignoredErrorTypes,
+      final boolean enableSpecificationErrorTypeFiltering,
+      final @NotNull String traceOrigin) {
+    this(
+        beforeSpan,
+        subscriptionHandler,
         new ExceptionReporter(captureRequestBodyForNonSubscriptions),
         ignoredErrorTypes,
+        enableSpecificationErrorTypeFiltering,
         traceOrigin);
   }
 
@@ -87,10 +115,22 @@ public final class SentryGraphqlInstrumentation {
       final @NotNull ExceptionReporter exceptionReporter,
       final @NotNull List<String> ignoredErrorTypes,
       final @NotNull String traceOrigin) {
+    this(beforeSpan, subscriptionHandler, exceptionReporter, ignoredErrorTypes, false, traceOrigin);
+  }
+
+  @TestOnly
+  public SentryGraphqlInstrumentation(
+      final @Nullable BeforeSpanCallback beforeSpan,
+      final @NotNull SentrySubscriptionHandler subscriptionHandler,
+      final @NotNull ExceptionReporter exceptionReporter,
+      final @NotNull List<String> ignoredErrorTypes,
+      final boolean enableSpecificationErrorTypeFiltering,
+      final @NotNull String traceOrigin) {
     this.beforeSpan = beforeSpan;
     this.subscriptionHandler = subscriptionHandler;
     this.exceptionReporter = exceptionReporter;
     this.ignoredErrorTypes = ignoredErrorTypes;
+    this.enableSpecificationErrorTypeFiltering = enableSpecificationErrorTypeFiltering;
     this.traceOrigin = traceOrigin;
   }
 
@@ -165,6 +205,9 @@ public final class SentryGraphqlInstrumentation {
     if (errorType != null) {
       if (isIgnored(errorType.toString())) {
         return true;
+      }
+      if (!enableSpecificationErrorTypeFiltering) {
+        return false;
       }
       try {
         final @Nullable Object specification = errorType.toSpecification(error);

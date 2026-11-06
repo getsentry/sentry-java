@@ -59,6 +59,8 @@ public class io/sentry/spring/boot/SentryProperties$Clients {
 public class io/sentry/spring/boot/SentryProperties$Graphql {
 	public fun <init> ()V
 	public fun getIgnoredErrorTypes ()Ljava/util/List;
+	public fun isEnableSpecificationErrorTypeFiltering ()Z
+	public fun setEnableSpecificationErrorTypeFiltering (Z)V
 	public fun setIgnoredErrorTypes (Ljava/util/List;)V
 }
 

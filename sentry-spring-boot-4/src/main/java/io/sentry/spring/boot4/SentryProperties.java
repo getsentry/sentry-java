@@ -242,6 +242,9 @@ public class SentryProperties extends SentryOptions {
     /** List of error types the Sentry Graphql integration should ignore. */
     private @NotNull List<String> ignoredErrorTypes = new ArrayList<>();
 
+    /** Whether ignored error types should be matched against classification specifications. */
+    private boolean enableSpecificationErrorTypeFiltering = false;
+
     @NotNull
     public List<String> getIgnoredErrorTypes() {
       return ignoredErrorTypes;
@@ -249,6 +252,15 @@ public class SentryProperties extends SentryOptions {
 
     public void setIgnoredErrorTypes(final @NotNull List<String> ignoredErrorTypes) {
       this.ignoredErrorTypes = ignoredErrorTypes;
+    }
+
+    public boolean isEnableSpecificationErrorTypeFiltering() {
+      return enableSpecificationErrorTypeFiltering;
+    }
+
+    public void setEnableSpecificationErrorTypeFiltering(
+        final boolean enableSpecificationErrorTypeFiltering) {
+      this.enableSpecificationErrorTypeFiltering = enableSpecificationErrorTypeFiltering;
     }
   }
 

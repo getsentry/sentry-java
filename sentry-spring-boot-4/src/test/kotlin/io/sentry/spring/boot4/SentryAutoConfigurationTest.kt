@@ -204,6 +204,33 @@ class SentryAutoConfigurationTest {
   }
 
   @Test
+  fun `GraphQL specification error type filtering is disabled by default`() {
+    dsnEnabledRunner.run {
+      assertThat(
+          it.getBean(SentryProperties::class.java).graphql.isEnableSpecificationErrorTypeFiltering
+        )
+        .isFalse()
+    }
+  }
+
+  @Test
+  fun `GraphQL specification error type filtering property is applied`() {
+    listOf(false, true).forEach { enabled ->
+      dsnEnabledRunner
+        .withPropertyValues("sentry.graphql.enable-specification-error-type-filtering=$enabled")
+        .run {
+          assertThat(
+              it
+                .getBean(SentryProperties::class.java)
+                .graphql
+                .isEnableSpecificationErrorTypeFiltering
+            )
+            .isEqualTo(enabled)
+        }
+    }
+  }
+
+  @Test
   fun `properties are applied to SentryOptions`() {
     contextRunner
       .withPropertyValues(

@@ -249,6 +249,7 @@
 
 ### Fixes
 
+- Add opt-in support for matching GraphQL ignored error types against classification specifications via `sentry.graphql.enable-specification-error-type-filtering` ([#6092](https://github.com/getsentry/sentry-java/pull/6092))
 - Update `SentryTraced` so that it now honors `options.setIgnoredSpanOrigins` ([#6058](https://github.com/getsentry/sentry-java/pull/6058))
 - `SentryTraced` now checks for its owning transaction dynamically rather than once per app process. The latter caused `SentryTraced` spans to be dropped process-wide once the original transaction finished ([#6057](https://github.com/getsentry/sentry-java/pull/6057))
 - Fix typos in Spring GraphQL integration names (`GrahQL` to `GraphQL`) ([#6061](https://github.com/getsentry/sentry-java/pull/6061))
