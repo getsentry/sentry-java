@@ -56,8 +56,8 @@ internal fun Nav3Route.routeSpec(): RouteSpec =
         routeName = Nav3Route.ViewPager2.routeName,
         title = "ViewPager2",
         description =
-          "Each page is a Fragment with its own SentryNavEffect and NavDisplay. Neighboring " +
-            "pages are preloaded at STARTED. Back returns to the Products Fragment underneath.",
+          "Pages 0–2 each have a SentryNavEffect and NavDisplay. Page 3 has no navigation " +
+            "integration. Neighbors are preloaded at STARTED. Back returns to Products.",
       )
     Nav3Route.DeepLink ->
       RouteSpec(
