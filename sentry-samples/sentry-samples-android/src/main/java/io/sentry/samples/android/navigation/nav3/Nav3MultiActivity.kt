@@ -59,6 +59,7 @@ import io.sentry.compose.navigation3.SentryNavEffect
 import io.sentry.compose.navigation3.SentryNavOptions
 import io.sentry.samples.android.navigation.common.NavigationSampleConfig
 import io.sentry.samples.android.navigation.common.RouteWorkOption
+import io.sentry.samples.android.navigation.common.applyToCurrentOptions
 import io.sentry.samples.android.navigation.common.hasOnlyActivityUiLoadTransactions
 import io.sentry.samples.android.navigation.common.showRouteWorkDialog
 import kotlinx.coroutines.delay
@@ -88,6 +89,9 @@ class Nav3ProductsActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val configuration = (intent.extras ?: Bundle()).nav3SampleConfiguration()
+    // Nav3Activity applies these options when the sample launches, but the system can restore
+    // this Activity in a new process without Nav3Activity, so apply them here as well.
+    configuration.applyToCurrentOptions()
     NavigationTransactionHistory.install()
     applyActivityUiLoadTransactionSetting(this, configuration.enableActivityUiLoadTransaction)
     setContent {
@@ -166,6 +170,9 @@ open class Nav3CheckoutActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val configuration = (intent.extras ?: Bundle()).nav3SampleConfiguration()
+    // Nav3Activity applies these options when the sample launches, but the system can restore
+    // this Activity in a new process without Nav3Activity, so apply them here as well.
+    configuration.applyToCurrentOptions()
     val productId = intent.getStringExtra(EXTRA_PRODUCT_ID) ?: "42"
     val returnsResult = intent.getBooleanExtra(EXTRA_RETURN_RESULT, false)
     // Only crash on the first launch, not when the system restores this Activity.
