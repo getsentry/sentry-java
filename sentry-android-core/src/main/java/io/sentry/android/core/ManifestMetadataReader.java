@@ -188,6 +188,9 @@ final class ManifestMetadataReader {
 
   static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
 
+  static final String IGNORED_ERRORS_FOR_DEDUPLICATION =
+      "io.sentry.ignored-errors-for-deduplication";
+
   static final String IN_APP_INCLUDES = "io.sentry.in-app-includes";
 
   static final String IN_APP_EXCLUDES = "io.sentry.in-app-excludes";
@@ -735,6 +738,12 @@ final class ManifestMetadataReader {
         }
 
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
+
+        final @Nullable List<String> ignoredErrorsForDeduplication =
+            readList(metadata, logger, IGNORED_ERRORS_FOR_DEDUPLICATION);
+        if (ignoredErrorsForDeduplication != null) {
+          options.setIgnoredErrorsForDeduplication(ignoredErrorsForDeduplication);
+        }
 
         final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
         if (includes != null && !includes.isEmpty()) {

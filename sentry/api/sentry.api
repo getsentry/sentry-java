@@ -564,6 +564,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
+	public fun getIgnoredErrorsForDeduplication ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
@@ -621,6 +622,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
+	public fun setIgnoredErrorsForDeduplication (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setOrgId (Ljava/lang/String;)V

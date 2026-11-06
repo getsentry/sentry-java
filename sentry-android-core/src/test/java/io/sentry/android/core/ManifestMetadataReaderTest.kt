@@ -2114,6 +2114,45 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads ignored errors for deduplication if found`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.IGNORED_ERRORS_FOR_DEDUPLICATION to
+          "example.FirstException,example.SecondException"
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.ignoredErrorsForDeduplication)
+      .containsExactly(
+        FilterString("example.FirstException"),
+        FilterString("example.SecondException"),
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `applyMetadata preserves default ignored errors for deduplication if missing`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.ignoredErrorsForDeduplication)
+      .containsExactly(FilterString("io.netty.handler.timeout.ReadTimeoutException"))
+  }
+
+  @Test
+  fun `applyMetadata empty ignored errors for deduplication removes the default`() {
+    val bundle = bundleOf(ManifestMetadataReader.IGNORED_ERRORS_FOR_DEDUPLICATION to "")
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.ignoredErrorsForDeduplication).isEmpty()
+  }
+
+  @Test
   fun `applyMetadata reads inAppIncludes to options and sets the value if found`() {
     // Arrange
     val bundle =

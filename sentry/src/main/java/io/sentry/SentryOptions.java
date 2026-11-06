@@ -3809,6 +3809,11 @@ public class SentryOptions implements RateLimiterConfig {
       final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());
       setIgnoredErrors(ignoredExceptions);
     }
+    if (options.getIgnoredErrorsForDeduplication() != null) {
+      final List<String> ignoredErrorsForDeduplication =
+          new ArrayList<>(options.getIgnoredErrorsForDeduplication());
+      setIgnoredErrorsForDeduplication(ignoredErrorsForDeduplication);
+    }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());
     }

@@ -229,6 +229,7 @@ class SentryAutoConfigurationTest {
         "sentry.send-modules=false",
         "sentry.ignored-checkins=slug1,slugB",
         "sentry.ignored-errors=Some error,Another .*",
+        "sentry.ignored-errors-for-deduplication=example.FirstException,example.SecondException",
         "sentry.ignored-transactions=transactionName1,transactionNameB",
         "sentry.enable-backpressure-handling=false",
         "sentry.enable-database-transaction-tracing=true",
@@ -286,6 +287,11 @@ class SentryAutoConfigurationTest {
           .containsOnly(FilterString("slug1"), FilterString("slugB"))
         assertThat(options.ignoredErrors)
           .containsOnly(FilterString("Some error"), FilterString("Another .*"))
+        assertThat(options.ignoredErrorsForDeduplication)
+          .containsOnly(
+            FilterString("example.FirstException"),
+            FilterString("example.SecondException"),
+          )
         assertThat(options.ignoredTransactions)
           .containsOnly(FilterString("transactionName1"), FilterString("transactionNameB"))
         assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
@@ -360,6 +366,19 @@ class SentryAutoConfigurationTest {
       .run {
         val options = it.getBean(SentryProperties::class.java)
         assertThat(options.tracePropagationTargets).isNotNull().isEmpty()
+      }
+  }
+
+  @Test
+  fun `empty ignored errors for deduplication removes the default`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.ignored-errors-for-deduplication=",
+      )
+      .run {
+        val options = it.getBean(SentryProperties::class.java)
+        assertThat(options.ignoredErrorsForDeduplication).isEmpty()
       }
   }
 

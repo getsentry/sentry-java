@@ -571,6 +571,8 @@ class SentryOptionsTest {
     externalOptions.ignoredCheckIns = listOf("slug1", "slug-B")
     externalOptions.ignoredTransactions = listOf("transactionName1", "transaction-name-B")
     externalOptions.ignoredErrors = listOf("Some error", "Another .*")
+    externalOptions.ignoredErrorsForDeduplication =
+      listOf("example.FirstException", "example.SecondException")
     externalOptions.isEnableBackpressureHandling = false
     externalOptions.isEnableDatabaseTransactionTracing = true
     externalOptions.isEnableCacheTracing = true
@@ -634,6 +636,10 @@ class SentryOptionsTest {
     assertEquals(
       listOf(FilterString("Some error"), FilterString("Another .*")),
       options.ignoredErrors,
+    )
+    assertEquals(
+      listOf(FilterString("example.FirstException"), FilterString("example.SecondException")),
+      options.ignoredErrorsForDeduplication,
     )
     assertFalse(options.isEnableBackpressureHandling)
     assertTrue(options.isEnableDatabaseTransactionTracing)
@@ -1068,6 +1074,44 @@ class SentryOptionsTest {
         FilterString("example.SecondException"),
       )
       .inOrder()
+  }
+
+  @Test
+  fun `merging options without ignored errors for deduplication preserves the default`() {
+    val options = SentryOptions()
+
+    options.merge(ExternalOptions())
+
+    assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly(FilterString("io.netty.handler.timeout.ReadTimeoutException"))
+  }
+
+  @Test
+  fun `merging ignored errors for deduplication replaces the default`() {
+    val options = SentryOptions()
+    val externalOptions =
+      ExternalOptions().apply {
+        ignoredErrorsForDeduplication = listOf("example.FirstException", "example.SecondException")
+      }
+
+    options.merge(externalOptions)
+
+    assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly(
+        FilterString("example.FirstException"),
+        FilterString("example.SecondException"),
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `merging empty ignored errors for deduplication removes the default`() {
+    val options = SentryOptions()
+    val externalOptions = ExternalOptions().apply { ignoredErrorsForDeduplication = listOf("") }
+
+    options.merge(externalOptions)
+
+    assertThat(options.ignoredErrorsForDeduplication).isEmpty()
   }
 
   @Test
