@@ -71,10 +71,10 @@ public class SpanFrameMetricsCollector
   // assume 60fps until we get a value reported by the system
   private long lastKnownFrameDurationNanos = 16_666_666L;
 
-  // One wall-clock reading paired with one tick, both taken at construction, used to place
-  // wall-stamped span dates on the frame timeline. See toNanoTime.
-  private final long wallAnchorNanos;
-  private final long tickAnchorNanos;
+  // The frame timeline minus the wall clock, read once at construction. Reading it again later
+  // would pick up every wall-clock step and every suspend since (System.nanoTime() stops in
+  // suspend, the wall clock does not), and shift wall-stamped spans away from their frames.
+  private final long frameTimelineOffsetNanos;
 
   public SpanFrameMetricsCollector(
       final @NotNull SentryAndroidOptions options,
@@ -98,8 +98,7 @@ public class SpanFrameMetricsCollector
 
     enabled = options.isEnablePerformanceV2() && options.isEnableFramesTracking();
 
-    this.wallAnchorNanos = epochClock.now().epochNanos();
-    this.tickAnchorNanos = frameTicker.tickNanos();
+    this.frameTimelineOffsetNanos = frameTicker.tickNanos() - epochClock.now().epochNanos();
   }
 
   @Override
@@ -345,15 +344,9 @@ public class SpanFrameMetricsCollector
       return date.diff(EMPTY_NANO_TIME);
     }
 
-    // e.g. SentryLongDate is unix time based - upscaled to nanos, so it has to be projected onto
-    // the frame timeline. That projection needs the offset between the two clocks, and the offset
-    // is only a constant while nothing disturbs either of them: a wall-clock step moves one, and
-    // time spent suspended moves the other, since System.nanoTime() stops in suspend and the wall
-    // clock does not. Reading the offset here, whenever a span happens to finish, would therefore
-    // charge the span for every step and every suspend since it started - an app start span can
-    // be projected hours away from the frames it actually overlapped. Hold the offset from
-    // construction instead, so a span lands where it did when the SDK started.
-    return tickAnchorNanos + (date.nanoTimestamp() - wallAnchorNanos);
+    // e.g. SentryLongDate is unix time based - upscaled to nanos, we need to project it onto the
+    // frame timeline
+    return date.nanoTimestamp() + frameTimelineOffsetNanos;
   }
 
   private static class Frame implements Comparable<Frame> {
