@@ -91,8 +91,9 @@ final class SentryFrameMetrics {
   }
 
   /**
+   * Returns the difference between two frame metrics (this minus other).
+   *
    * @param other the other frame metrics to compare to, usually the older one
-   * @return the difference between two frame metrics (this minus other)
    */
   @NotNull
   public SentryFrameMetrics diffTo(final @NotNull SentryFrameMetrics other) {
@@ -105,8 +106,8 @@ final class SentryFrameMetrics {
   }
 
   /**
-   * @return true if the frame metrics contain valid data, meaning all values are greater or equal
-   *     to 0
+   * Returns true if the frame metrics contain valid data, meaning all values are greater or equal
+   * to 0.
    */
   public boolean containsValidData() {
     return slowFrameCount >= 0

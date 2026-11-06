@@ -120,16 +120,16 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * @return the app start span Uses Process.getStartUptimeMillis() as start timestamp, which
-   *     requires API level 24+
+   * Returns the app start span. It uses Process.getStartUptimeMillis() as start timestamp, which
+   * requires API level 24+.
    */
   public @NotNull TimeSpan getAppStartTimeSpan() {
     return appStartSpan;
   }
 
   /**
-   * @return the app start span Uses Process.getStartUptimeMillis() as start timestamp, which
-   *     requires API level 24+
+   * Returns the app start span. It uses Process.getStartUptimeMillis() as start timestamp, which
+   * requires API level 24+.
    */
   public @NotNull TimeSpan createProcessInitSpan() {
     // AppStartSpan and CLASS_LOADED_UPTIME_MS can be modified at any time.
@@ -144,11 +144,12 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * @return the SDK init time span. Uses ContentProvider/Sdk init time as start timestamp. It's the
-   *     app start fallback below API 24, where the process start time isn't available.
-   *     <p>Data is filled by either {@link io.sentry.android.core.SentryPerformanceProvider} with a
-   *     fallback to {@link io.sentry.android.core.SentryAndroid}. At least the start timestamp
-   *     should always be set.
+   * Returns the SDK init time span. Uses ContentProvider/Sdk init time as start timestamp. It's the
+   * app start fallback below API 24, where the process start time isn't available.
+   *
+   * <p>Data is filled by either {@link io.sentry.android.core.SentryPerformanceProvider} with a
+   * fallback to {@link io.sentry.android.core.SentryAndroid}. At least the start timestamp should
+   * always be set.
    */
   public @NotNull TimeSpan getSdkInitTimeSpan() {
     return sdkInitTimeSpan;
@@ -338,8 +339,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   }
 
   /**
-   * @return the app start time span if it was started, falls back to the sdk init time span
-   *     otherwise
+   * Returns the app start time span if it was started, falls back to the sdk init time span
+   * otherwise.
    */
   public @NotNull TimeSpan getAppStartTimeSpanWithFallback() {
     // If the app start type was never determined or app wasn't launched in foreground,
@@ -464,8 +465,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * Called by instrumentation
    *
    * @param application The application object where onCreate was called on
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static void onApplicationCreate(final @NotNull Application application) {
     final long now = SystemClock.uptimeMillis();
 
@@ -480,8 +481,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * Called by instrumentation
    *
    * @param application The application object where onCreate was called on
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static void onApplicationPostCreate(final @NotNull Application application) {
     final long now = SystemClock.uptimeMillis();
 
@@ -751,8 +752,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * Called by instrumentation
    *
    * @param contentProvider The content provider where onCreate was called on
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static void onContentProviderCreate(final @NotNull ContentProvider contentProvider) {
     final long now = SystemClock.uptimeMillis();
 
@@ -765,8 +766,8 @@ public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
    * Called by instrumentation
    *
    * @param contentProvider The content provider where onCreate was called on
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static void onContentProviderPostCreate(final @NotNull ContentProvider contentProvider) {
     final long now = SystemClock.uptimeMillis();
 
