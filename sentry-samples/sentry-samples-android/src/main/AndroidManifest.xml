@@ -142,6 +142,11 @@
       android:theme="@style/AppTheme.Main.Translucent" />
 
     <activity
+      android:name=".navigation.nav3.Nav3PlainActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
       android:name=".navigation.nav3.Nav3FragmentsActivity"
       android:exported="false"
       android:screenOrientation="portrait"
