@@ -39,6 +39,7 @@ import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
+import kotlin.coroutines.cancellation.CancellationException
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
 
@@ -90,6 +91,8 @@ constructor(
     } catch (e: Throwable) {
       // https://github.com/apollographql/apollo-kotlin/issues/4711 will change error handling in v4
       when (e) {
+        is CancellationException -> span?.status = SpanStatus.CANCELLED
+
         is ApolloHttpException -> {
           statusCode = e.statusCode
           span?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)

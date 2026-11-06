@@ -118,6 +118,10 @@
 
 - Promote continuous profiler start and stop APIs from experimental to stable ([#6426](https://github.com/getsentry/sentry-java/pull/6426))
 
+### Fixes
+
+- Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
+
 ## 8.62.0
 
 ### Improvements

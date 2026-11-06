@@ -38,6 +38,7 @@ import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
 
@@ -93,6 +94,8 @@ constructor(
       // client errors don't throw anymore in v5, but we should still be able to detect all of them
       // by looking at the status code and/or errors in the response body
       when (e) {
+        is CancellationException -> span?.status = SpanStatus.CANCELLED
+
         is ApolloHttpException -> {
           statusCode = e.statusCode
           span?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
