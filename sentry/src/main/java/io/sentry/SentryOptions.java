@@ -517,6 +517,8 @@ public class SentryOptions implements RateLimiterConfig {
 
   private @NotNull IThreadChecker threadChecker = NoOpThreadChecker.getInstance();
 
+  private @Nullable IDebugManager debugManager;
+
   /** Whether OPTIONS requests should be traced. */
   private boolean traceOptionsRequests = false;
 
@@ -2720,6 +2722,16 @@ public class SentryOptions implements RateLimiterConfig {
 
   public void setThreadChecker(final @NotNull IThreadChecker threadChecker) {
     this.threadChecker = threadChecker;
+  }
+
+  @ApiStatus.Internal
+  public @Nullable IDebugManager getDebugManager() {
+    return debugManager;
+  }
+
+  @ApiStatus.Internal
+  public void setDebugManager(final @Nullable IDebugManager debugManager) {
+    this.debugManager = debugManager;
   }
 
   /**

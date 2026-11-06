@@ -32,6 +32,7 @@ Extract the module name and optional test class filter from the argument.
 | Signal | Test Type |
 |--------|-----------|
 | Path contains `/src/integrationTest*/` or `/src/agentFixture/` | Integration test suite |
+| Module name only, and the user asks for integration or end-to-end tests | Integration test suite: each `src/integrationTest*/` directory of the module |
 | Path contains `sentry-samples/`, or module name starts with `sentry-samples-` | None: samples have no tests |
 | Everything else | Unit test |
 

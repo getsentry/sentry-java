@@ -1,6 +1,10 @@
 <p align="center">
   <a href="https://sentry.io" target="_blank" align="center">
-    <img src="https://sentry-brand.storage.googleapis.com/sentry-logo-black.png" width="280">
+    <picture>
+      <source srcset="https://sentry-brand.storage.googleapis.com/sentry-logo-white.png" media="(prefers-color-scheme: dark)" />
+      <source srcset="https://sentry-brand.storage.googleapis.com/sentry-wordmark-dark-280x84.png" media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)" />
+      <img src="https://sentry-brand.storage.googleapis.com/sentry-wordmark-dark-280x84.png" alt="Sentry" width="280">
+    </picture>
   </a>
   <br />
 </p>
@@ -77,7 +81,7 @@ or
 
 # Binary compatibility validation
 
-To prevent breaking ABI changes and exposing things we should not, we make use of https://github.com/Kotlin/binary-compatibility-validator. If your change intended to introduce a new public method/property or modify the existing one you can overwrite the API declarations to make CI happy as follows (overwrites them from scratch):
+To prevent breaking ABI changes and exposing things we should not, we make use of https://kotlinlang.org/docs/gradle-binary-compatibility-validation.html. If your change intended to introduce a new public method/property or modify the existing one you can overwrite the API declarations to make CI happy as follows (overwrites them from scratch):
 
 ```shell
 make api
@@ -86,7 +90,7 @@ make api
 or 
 
 ```shell
-./gradlew apiDump
+./gradlew updateKotlinAbi
 ```
 
 However, if your change did not intend to modify the public API, consider changing the method/property visibility or removing the change altogether.

@@ -133,4 +133,4 @@ When a feature has its own capture path (e.g. `captureLog`), the relevant classe
 5. Spring properties — use the owning integration namespace and test all three Spring Boot modules
 6. Test defaults and every supported configuration layer
 7. Verify automatic-source opt-ins default to `false` and do not gate events or breadcrumbs
-8. Run `./gradlew spotlessApply apiDump`
+8. Run `./gradlew spotlessApply updateKotlinAbi`

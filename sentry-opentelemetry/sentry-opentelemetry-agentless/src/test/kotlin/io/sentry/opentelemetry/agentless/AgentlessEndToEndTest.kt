@@ -41,7 +41,7 @@ class AgentlessEndToEndTest {
   }
 
   @Test
-  fun `Sentry set up by OpenTelemetry reports events, a profiled transaction and metrics`() {
+  fun `Sentry set up by OpenTelemetry reports events, a profiled transaction, OpenTelemetry spans and metrics`() {
     // The customizer's Sentry.init reads these as external configuration.
     System.setProperty("sentry.dsn", server.dsn)
     System.setProperty("sentry.traces-sample-rate", "1.0")
@@ -107,6 +107,11 @@ class AgentlessEndToEndTest {
     Thread.sleep(100)
     span.finish()
     transaction.finish()
+    // A span started through the OpenTelemetry API only reaches Sentry if the customizer wired
+    // Sentry's span processor into the SDK.
+    val otelSpan =
+      GlobalOpenTelemetry.getTracer("agentless-test").spanBuilder("otel span").startSpan()
+    otelSpan.end()
     Sentry.flush(5000)
     // Sentry exports OpenTelemetry spans in batches every 5 seconds.
     openTelemetry.sdkTracerProvider.forceFlush().join(5, TimeUnit.SECONDS)
@@ -138,6 +143,10 @@ class AgentlessEndToEndTest {
     val sent =
       server.awaitEnvelope { it.transaction()?.transaction == "transaction name" }.transaction()!!
     assertThat(sent.spans.map { it.op }).contains("child")
+    val otelTransaction =
+      server.awaitEnvelope { it.transaction()?.transaction == "otel span" }.transaction()!!
+    assertThat(otelTransaction.contexts.trace!!.traceId.toString())
+      .isEqualTo(otelSpan.spanContext.traceId)
     val profilerId = sent.contexts.profile?.profilerId
     assertThat(profilerId).isNotNull()
     server.awaitEnvelope(timeoutMillis = 30_000) { it.profileChunk()?.profilerId == profilerId }

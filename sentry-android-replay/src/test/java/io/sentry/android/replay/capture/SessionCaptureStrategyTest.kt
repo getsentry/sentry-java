@@ -7,6 +7,7 @@ import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.SentryOptions
 import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
@@ -45,7 +46,6 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.test.Test
-import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -86,6 +86,9 @@ class SessionCaptureStrategyTest {
         doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
           .whenever(it)
           .configureScope(any())
+        doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+          .whenever(it)
+          .configureScope(anyOrNull<ScopeType>(), any())
       }
     var persistedSegment = LinkedHashMap<String, String?>()
     val replayCache =
@@ -692,8 +695,8 @@ class SessionCaptureStrategyTest {
           assertEquals(true, optionsEvent[0].optionsPayload["maskAllText"])
           assertEquals(false, optionsEvent[0].optionsPayload["maskAllImages"])
           assertEquals("high", optionsEvent[0].optionsPayload["quality"])
-          assertContentEquals(
-            listOf(
+          assertThat(optionsEvent[0].optionsPayload["maskedViewClasses"] as Collection<*>)
+            .containsExactly(
               "android.widget.TextView",
               "android.webkit.WebView",
               "android.widget.VideoView",
@@ -702,13 +705,9 @@ class SessionCaptureStrategyTest {
               "com.google.android.exoplayer2.ui.PlayerView",
               "com.google.android.exoplayer2.ui.StyledPlayerView",
               "my.custom.View",
-            ),
-            optionsEvent[0].optionsPayload["maskedViewClasses"] as Collection<*>,
-          )
-          assertContentEquals(
-            listOf("android.widget.ImageView"),
-            optionsEvent[0].optionsPayload["unmaskedViewClasses"] as Collection<*>,
-          )
+            )
+          assertThat(optionsEvent[0].optionsPayload["unmaskedViewClasses"] as Collection<*>)
+            .containsExactly("android.widget.ImageView")
         },
       )
   }

@@ -810,6 +810,13 @@ class AndroidOptionsInitializerTest {
   }
 
   @Test
+  fun `AndroidDebugManager is set to options`() {
+    fixture.initSut()
+
+    assertTrue { fixture.sentryOptions.debugManager is AndroidDebugManager }
+  }
+
+  @Test
   fun `AndroidSocketTagger is set to options`() {
     fixture.initSut()
 

@@ -250,6 +250,9 @@ final class AndroidOptionsInitializer {
     if (options.getThreadChecker() instanceof NoOpThreadChecker) {
       options.setThreadChecker(AndroidThreadChecker.getInstance());
     }
+    if (options.getDebugManager() == null) {
+      options.setDebugManager(new AndroidDebugManager());
+    }
     if (options.getSocketTagger() instanceof NoOpSocketTagger) {
       options.setSocketTagger(AndroidSocketTagger.getInstance());
     }
