@@ -26,6 +26,7 @@ import io.sentry.android.core.AppState
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.android.core.ContextUtils
 import io.sentry.android.core.SystemEventsBreadcrumbsIntegration
+import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.time.TestMonotonicTicker
 import java.util.concurrent.TimeUnit.MINUTES
@@ -279,31 +280,34 @@ class AndroidConnectionStatusProviderTest {
 
   @Test
   @Config(sdk = [Build.VERSION_CODES.S])
-  fun `Adding an observer does not wait for the telephony listener registration`() {
+  fun `Adding an observer does not wait for the callbacks to be registered`() {
     val telephonyManager = mock<TelephonyManager>()
     whenever(contextMock.getSystemService(eq(Context.TELEPHONY_SERVICE)))
       .thenReturn(telephonyManager)
     whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.S)
-    contextUtilsStaticMock
-      .`when`<Boolean> { ContextUtils.isForegroundImportance() }
-      .thenReturn(false)
+    val executor = DeferredExecutorService()
+    options.executorService = executor
     val provider = AndroidConnectionStatusProvider(contextMock, options, buildInfo, ticker)
-    contextUtilsStaticMock
-      .`when`<Boolean> { ContextUtils.isForegroundImportance() }
-      .thenReturn(true)
 
-    var observerAdded = false
-    doAnswer {
-        val other = thread { provider.addConnectionStatusObserver {} }
-        other.join(5000)
-        observerAdded = !other.isAlive
-      }
+    // Both registrations are binder calls, so another thread adding an observer while either of
+    // them is running must not wait for it.
+    val observersAdded = mutableListOf<Boolean>()
+    val addObserverFromOtherThread = {
+      val other = thread { provider.addConnectionStatusObserver {} }
+      other.join(5000)
+      observersAdded.add(!other.isAlive)
+    }
+    doAnswer { addObserverFromOtherThread() }
+      .whenever(connectivityManager)
+      .registerDefaultNetworkCallback(any())
+    doAnswer { addObserverFromOtherThread() }
       .whenever(telephonyManager)
       .registerTelephonyCallback(any(), any())
 
-    provider.addConnectionStatusObserver {}
+    executor.runAll()
 
-    assertTrue(observerAdded)
+    assertEquals(listOf(true, true), observersAdded)
+    options.executorService = ImmediateExecutorService()
     provider.close()
   }
 

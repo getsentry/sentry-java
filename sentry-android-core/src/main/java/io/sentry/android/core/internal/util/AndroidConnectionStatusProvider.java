@@ -48,7 +48,8 @@ public final class AndroidConnectionStatusProvider
   private final @NotNull CellularNetworkTechnologyProvider cellularNetworkTechnologyProvider;
   private final @Nullable Handler handler;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-  // Guards the callback (un)registration IPC so lock is never held across it. Taken before lock.
+  // Guards registering and unregistering the callbacks, so `lock` is never held across those binder
+  // calls. When both are held the order is registrationLock, then `lock`.
   private final @NotNull AutoClosableReentrantLock registrationLock =
       new AutoClosableReentrantLock();
   private volatile @Nullable NetworkCallback networkCallback;
@@ -460,7 +461,8 @@ public final class AndroidConnectionStatusProvider
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       connectionStatusObservers.add(observer);
     }
-    ensureNetworkCallbackRegistered();
+    //noinspection Convert2MethodRef
+    submitSafe(() -> ensureNetworkCallbackRegistered());
 
     // Network callback is already registered during initialization
     return networkCallback != null;
