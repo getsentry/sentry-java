@@ -72,8 +72,9 @@ class SentryLog4j2AppenderAutoConfigurationTest {
 
   private val originalLogManagerFactory = LogManager.getFactory()
 
-  private val loggerContext: LoggerContext
-    get() = LogManager.getContext(false) as LoggerContext
+  // Log4j2 holds LoggerContexts weakly, so a GC during context startup would replace this one
+  // (and drop appenders added by a test) unless the test keeps it reachable.
+  private lateinit var loggerContext: LoggerContext
 
   private val configuration
     get() = loggerContext.configuration
@@ -85,6 +86,7 @@ class SentryLog4j2AppenderAutoConfigurationTest {
   fun `reset Log4j2 context`() {
     useLog4j2Core()
     resetLog4j2Context()
+    loggerContext = LogManager.getContext(false) as LoggerContext
   }
 
   @AfterTest
