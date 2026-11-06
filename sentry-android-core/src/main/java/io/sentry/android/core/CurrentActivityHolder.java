@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class CurrentActivityHolder {
+public final class CurrentActivityHolder {
 
   private static final @NotNull CurrentActivityHolder instance = new CurrentActivityHolder();
 

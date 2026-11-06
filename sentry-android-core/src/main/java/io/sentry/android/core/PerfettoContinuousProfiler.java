@@ -73,7 +73,7 @@ import org.jetbrains.annotations.VisibleForTesting;
  */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
-public class PerfettoContinuousProfiler
+public final class PerfettoContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 60000;
 
@@ -568,7 +568,7 @@ public class PerfettoContinuousProfiler
    * every 100ms and returned as a list on {@code stop()}.
    */
   @VisibleForTesting
-  static class ChunkMeasurementCollector {
+  static final class ChunkMeasurementCollector {
     private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
     private @Nullable String frameMetricsListenerId = null;
     private @Nullable CompositePerformanceCollector performanceCollector = null;

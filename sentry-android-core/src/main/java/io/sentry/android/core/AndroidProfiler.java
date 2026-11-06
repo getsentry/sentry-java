@@ -32,8 +32,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class AndroidProfiler {
-  public static class ProfileStartData {
+public final class AndroidProfiler {
+  public static final class ProfileStartData {
     public final long startNanos;
     public final long startCpuMillis;
     public final @NotNull Date startTimestamp;
@@ -46,7 +46,7 @@ public class AndroidProfiler {
     }
   }
 
-  public static class ProfileEndData {
+  public static final class ProfileEndData {
     public final long endNanos;
     public final long endCpuMillis;
     public final @NotNull File traceFile;
@@ -97,7 +97,7 @@ public class AndroidProfiler {
       timeoutExecutorServiceSupplier;
   private final @NotNull ILogger logger;
   private volatile boolean isRunning = false;
-  protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   public AndroidProfiler(
       final @NotNull String tracesFilesDirPath,

@@ -4,7 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class ClassUtil {
+public final class ClassUtil {
 
   public static @Nullable String getClassName(final @Nullable Object object) {
     if (object == null) {

@@ -35,7 +35,7 @@ import org.jetbrains.annotations.TestOnly;
  * <p>Enable via {@link SentryAndroidOptions#setAnrProfilingSampleRate(Double)} or the {@code
  * io.sentry.anr.profiling.sample-rate} manifest metadata.
  */
-public class AnrProfilingIntegration
+public final class AnrProfilingIntegration
     implements Integration, Closeable, AppState.AppStateListener, Runnable {
 
   public static final long POLLING_INTERVAL_MS = 66;
@@ -213,7 +213,7 @@ public class AnrProfilingIntegration
   }
 
   @ApiStatus.Internal
-  protected void checkMainThread(final @NotNull Thread mainThread) throws IOException {
+  void checkMainThread(final @NotNull Thread mainThread) throws IOException {
     if (debugManager != null && debugManager.isDebuggerConnected()) {
       // The main thread can sit at a breakpoint for a long time, which is not an ANR. Reset the
       // timestamp, so the paused time does not count against us after the debugger detaches.
@@ -282,13 +282,13 @@ public class AnrProfilingIntegration
 
   @TestOnly
   @NotNull
-  protected MainThreadState getState() {
+  MainThreadState getState() {
     return mainThreadState;
   }
 
   @TestOnly
   @NotNull
-  protected AnrProfileManager getProfileManager() {
+  AnrProfileManager getProfileManager() {
     try (final @NotNull ISentryLifecycleToken ignored = profileManagerLock.acquire()) {
       if (profileManager == null) {
         final @NotNull SentryOptions opts =

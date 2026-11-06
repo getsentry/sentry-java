@@ -24,7 +24,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public class ScreenshotUtils {
+public final class ScreenshotUtils {
 
   private static final long CAPTURE_TIMEOUT_MS = 1000;
 

@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class SpanFrameMetricsCollector
+public final class SpanFrameMetricsCollector
     implements IPerformanceContinuousCollector,
         SentryFrameMetricsCollector.FrameMetricsCollectorListener {
 
@@ -35,7 +35,7 @@ public class SpanFrameMetricsCollector
   private static final SentryNanotimeDate EMPTY_NANO_TIME = new SentryNanotimeDate(0, 0);
 
   private final boolean enabled;
-  protected final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private final @NotNull SentryFrameMetricsCollector frameMetricsCollector;
 
   private volatile @Nullable String listenerId;

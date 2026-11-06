@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
-public class PerfettoProfiler {
+public final class PerfettoProfiler {
 
   // Bundle keys matching ProfilingManager constants
   private static final String KEY_DURATION_MS = "KEY_DURATION_MS";
