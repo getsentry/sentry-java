@@ -48,6 +48,9 @@ public final class AndroidConnectionStatusProvider
   private final @NotNull CellularNetworkTechnologyProvider cellularNetworkTechnologyProvider;
   private final @Nullable Handler handler;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  // Guards the callback (un)registration IPC so lock is never held across it. Taken before lock.
+  private final @NotNull AutoClosableReentrantLock registrationLock =
+      new AutoClosableReentrantLock();
   private volatile @Nullable NetworkCallback networkCallback;
 
   private static final @NotNull AutoClosableReentrantLock connectivityManagerLock =
@@ -200,7 +203,7 @@ public final class AndroidConnectionStatusProvider
       return; // Already registered
     }
 
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+    try (final @NotNull ISentryLifecycleToken ignored = registrationLock.acquire()) {
       if (networkCallback != null) {
         return;
       }
@@ -472,11 +475,7 @@ public final class AndroidConnectionStatusProvider
   }
 
   private void unregisterNetworkCallback(final boolean clearObservers) {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      if (clearObservers) {
-        connectionStatusObservers.clear();
-      }
-
+    try (final @NotNull ISentryLifecycleToken ignored = registrationLock.acquire()) {
       final @Nullable NetworkCallback callbackRef = networkCallback;
       networkCallback = null;
 
@@ -484,10 +483,16 @@ public final class AndroidConnectionStatusProvider
         unregisterNetworkCallback(context, options.getLogger(), callbackRef);
       }
       cellularNetworkTechnologyProvider.unregister();
-      // Clear cached state
-      cachedNetworkCapabilities = null;
-      currentNetwork = null;
-      cacheFreshUntil = Deadline.passed(ticker);
+
+      try (final @NotNull ISentryLifecycleToken ignored2 = lock.acquire()) {
+        if (clearObservers) {
+          connectionStatusObservers.clear();
+        }
+        // Clear cached state
+        cachedNetworkCapabilities = null;
+        currentNetwork = null;
+        cacheFreshUntil = Deadline.passed(ticker);
+      }
     }
     options.getLogger().log(SentryLevel.DEBUG, "Network callback unregistered");
   }
