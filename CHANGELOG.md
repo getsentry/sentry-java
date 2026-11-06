@@ -58,6 +58,10 @@
   - App starts are measured from process start on Android 7.0+ (API 24), and slow and frozen frames are measured per span
   - `ActivityFramesTracker` is removed, and the `ActivityLifecycleIntegration` constructor no longer takes it
 
+### Fixes
+
+- Preserve independent Netty read and write timeout events when exception singletons are reused ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
+
 ### Improvements
 
 - Promote check-in APIs from experimental to stable ([#6422](https://github.com/getsentry/sentry-java/pull/6422))
