@@ -7,10 +7,12 @@ plugins {
   id("io.sentry.jdk-target")
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 application { mainClass.set("io.sentry.samples.jul.Main") }
 
 dependencies {
-  implementation(projects.sentryJul)
+  implementation("io.sentry:sentry-jul:$sentryVersion")
   implementation(libs.slf4j.jdk14)
 }
 

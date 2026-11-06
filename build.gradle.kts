@@ -17,7 +17,6 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.errorprone) apply false
     alias(libs.plugins.gradle.versions) apply false
-    alias(libs.plugins.spring.dependency.management) apply false
     id("io.sentry.javadoc.aggregate")
     alias(libs.plugins.android.application) apply false
 }
@@ -51,9 +50,7 @@ allprojects {
 tasks.register("buildForCodeQL") {
     subprojects
         .filter {
-            !it.displayName.contains("sample") &&
-                !it.displayName.contains("integration-tests") &&
-                !it.displayName.contains("bom") &&
+            !it.displayName.contains("bom") &&
                 it.name != "sentry-opentelemetry"
         }
         .forEach { proj ->

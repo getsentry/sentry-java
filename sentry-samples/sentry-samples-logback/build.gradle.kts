@@ -7,10 +7,12 @@ plugins {
   id("io.sentry.jdk-target")
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 application { mainClass.set("io.sentry.samples.logback.Main") }
 
 dependencies {
-  implementation(projects.sentryLogback)
+  implementation("io.sentry:sentry-logback:$sentryVersion")
   implementation(libs.logback.classic)
 }
 
