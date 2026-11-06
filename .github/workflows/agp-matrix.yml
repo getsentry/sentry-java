@@ -53,13 +53,13 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-api-35-x86_64-google_apis
+          key: avd-api-30-x86_64-google_apis
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2
         with:
-          api-level: 35
+          api-level: 30
           # Not an ATD image: PixelCopy returns no data on ATDs, which the replay tests need
           target: google_apis
           channel: canary
@@ -79,7 +79,7 @@ jobs:
       - name: Run instrumentation tests
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2
         with:
-          api-level: 35
+          api-level: 30
           # Not an ATD image: PixelCopy returns no data on ATDs, which the replay tests need
           target: google_apis
           channel: canary
