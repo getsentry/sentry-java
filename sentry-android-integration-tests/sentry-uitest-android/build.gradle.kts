@@ -124,7 +124,7 @@ dependencies {
   androidTestImplementation(libs.awaitility3.kotlin)
   androidTestImplementation(libs.kotlin.test.junit)
   androidTestImplementation(libs.leakcanary.instrumentation)
-  androidTestImplementation(libs.okhttp.mockwebserver)
+  androidTestImplementation(libs.okhttp.mockwebserver4)
 }
 
 tasks.withType<JavaCompile>().configureEach {

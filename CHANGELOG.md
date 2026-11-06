@@ -13,6 +13,17 @@
 - Quartz `SentryJobListener` can send a monitor config derived from the trigger with check-ins, so Sentry creates or updates the monitor from code. Set the `sentry-upsert-monitor-config` job or trigger data key to `"true"` to send the schedule ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
 - Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = true)` to send the schedule ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
 
+### Fixes
+
+- Stop marking an OkHttp call span as failed when a connection attempt to one of the host's addresses fails but OkHttp connects on another ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
+
+### Dependencies
+
+- Bump OkHttp from 4.9.2 to 5.5.1 ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
+  - `sentry-okhttp` and the Spring Boot integrations keep OkHttp as a `compileOnly` dependency, so your app keeps the OkHttp version it declares. OkHttp 4 is still supported.
+  - [changelog](https://github.com/square/okhttp/blob/master/CHANGELOG.md)
+  - [diff](https://github.com/square/okhttp/compare/parent-4.9.2...parent-5.5.1)
+
 ## 8.63.0
 
 ### Features
