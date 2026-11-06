@@ -39,7 +39,7 @@ import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class SentryUserFeedbackForm extends AlertDialog {
+public final class SentryUserFeedbackForm extends AlertDialog {
 
   private boolean isCancelable = false;
   private @Nullable SentryId currentReplayId;
@@ -654,7 +654,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     super.show();
   }
 
-  public static class Builder {
+  public static final class Builder {
 
     @Nullable OptionsConfiguration configuration;
     @Nullable SentryFeedbackOptions.OptionsConfigurator configurator;

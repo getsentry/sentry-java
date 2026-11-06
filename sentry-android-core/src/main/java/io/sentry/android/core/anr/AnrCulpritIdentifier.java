@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class AnrCulpritIdentifier {
+public final class AnrCulpritIdentifier {
 
   // common Java and Android packages who are less relevant for being the actual culprit
   private static final List<String> systemAndFrameworkPackages = new ArrayList<>(11);

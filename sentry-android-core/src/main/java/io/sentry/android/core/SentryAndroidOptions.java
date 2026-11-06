@@ -1031,7 +1031,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     return AndroidMonotonicTicker.getInstance();
   }
 
-  static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
+  static final class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
     @Override
     public void showForm(
         final @Nullable SentryId associatedEventId,

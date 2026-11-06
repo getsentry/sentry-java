@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 /** A simple time-based debouncing mechanism */
 @ApiStatus.Internal
-public class Debouncer {
+public final class Debouncer {
 
   private final long waitTimeMs;
   private final @NotNull ICurrentDateProvider timeProvider;
