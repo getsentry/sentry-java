@@ -2,18 +2,21 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
   repositories {
-    // Prefer local SAGP artifact if one exists; otherwise fall back to libs.versions.toml.
-    if (providers.gradleProperty("useSagp").isPresent) {
-      mavenLocal {
-        content {
-          includeGroup("io.sentry")
-          includeGroup("io.sentry.android.gradle")
-        }
-      }
-    }
     mavenCentral()
     gradlePluginPortal()
     google()
+  }
+
+  // Every build in a composite must use the same AGP, so each build's settings applies the AGP
+  // matrix job's override.
+  System.getenv("VERSION_AGP")?.let { agpVersion ->
+    resolutionStrategy {
+      eachPlugin {
+        if (requested.id.id.startsWith("com.android")) {
+          useVersion(agpVersion)
+        }
+      }
+    }
   }
 }
 
@@ -100,7 +103,6 @@ include(
     "sentry-reactor",
     "sentry-async-profiler",
     "sentry-ktor-client",
-    "sentry-samples:sentry-samples-android",
     "sentry-samples:sentry-samples-console",
     "sentry-samples:sentry-samples-console-otlp",
     "sentry-samples:sentry-samples-console-opentelemetry-noagent",
@@ -128,9 +130,5 @@ include(
     "sentry-samples:sentry-samples-spring-boot-4-otlp",
     "sentry-samples:sentry-samples-spring-boot-4-webflux",
     "sentry-samples:sentry-samples-netflix-dgs",
-    "sentry-android-integration-tests:sentry-uitest-android-critical",
-    "sentry-android-integration-tests:sentry-uitest-android-macrobenchmark",
-    "sentry-android-integration-tests:sentry-uitest-android",
-    "sentry-android-integration-tests:test-app-size",
     "sentry-samples:sentry-samples-openfeign"
 )

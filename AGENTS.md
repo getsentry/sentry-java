@@ -41,8 +41,8 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 ## Essential Commands
 
 ```bash
-# Format code and regenerate .api files (REQUIRED before committing)
-./gradlew spotlessApply updateKotlinAbi
+# Format code in every build and regenerate .api files (REQUIRED before committing)
+make format api
 
 # Run all tests and linter
 ./gradlew check
@@ -59,11 +59,14 @@ resolves the per-module test task, including integration test suites, for you.
 
 ### Android-Specific Commands
 ```bash
-# Assemble Android test APKs
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
+# Assemble Android test APKs, in a separate Gradle build that includes this one
+./gradlew -p sentry-android-integration-tests :sentry-uitest-android:assembleRelease :sentry-uitest-android:assembleAndroidTest
 
 # Run critical UI tests
 ./scripts/test-ui-critical.sh
+
+# Build the Android sample, a separate Gradle build that includes this one
+./gradlew -p sentry-samples/sentry-samples-android assembleDebug
 ```
 
 ## Development Workflow Rules
@@ -74,7 +77,7 @@ resolves the per-module test task, including integration test suites, for you.
 3. **Use todo tracking**: Work through todo items, marking them as complete as you go
 4. **High-level communication**: Give high-level explanations of changes made, not step-by-step descriptions
 5. **Simplicity first**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible.
-6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply updateKotlinAbi`
+6. **Format and regenerate**: Once done, format code and regenerate .api files: `make format api`
 7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
 
 ## Repository Skills
@@ -110,7 +113,7 @@ The repository is organized into multiple modules:
 
 ### Utility Modules
 - **`sentry-test-support`** - Shared test utilities, including `MockSentryServer` and envelope matchers
-- **`sentry-samples`** - Example applications
+- **`sentry-samples`** - Example applications. `sentry-samples-android` is a separate Gradle build that includes this one, so root tasks such as `check` and `spotlessApply` don't reach it
 - **`sentry-bom`** - Bill of Materials for dependency management
 
 ### Key Architectural Patterns

@@ -1,4 +1,5 @@
 import io.gitlab.arturbosch.detekt.Detekt
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
 plugins {
   id("com.android.application")
@@ -7,6 +8,8 @@ plugins {
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -37,20 +40,18 @@ android {
   buildFeatures { compose = true }
   composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
   androidComponents.beforeVariants {
-    it.enable = !Config.Android.shouldSkipDebugVariant(it.buildType)
+    it.enable = it.buildType != "debug"
   }
 }
 
 dependencies {
-  implementation(
-    kotlin(Config.kotlinStdLib, org.jetbrains.kotlin.config.KotlinCompilerVersion.VERSION)
-  )
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.foundation)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.constraintlayout)
   implementation(libs.androidx.core)
-  implementation(projects.sentryAndroidCore)
+  implementation("io.sentry:sentry-android-core:$sentryVersion")
 }
 
 tasks.withType<Detekt>().configureEach {

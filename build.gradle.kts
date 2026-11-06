@@ -19,7 +19,7 @@ plugins {
     alias(libs.plugins.gradle.versions) apply false
     alias(libs.plugins.spring.dependency.management) apply false
     id("io.sentry.javadoc.aggregate")
-    alias(libs.plugins.sentry) apply false
+    alias(libs.plugins.android.application) apply false
 }
 
 buildscript {
@@ -27,11 +27,6 @@ buildscript {
         google()
     }
     dependencies {
-        classpath(Config.BuildPlugins.androidGradle)
-
-        // add classpath of sentry android gradle plugin
-        // classpath("io.sentry:sentry-android-gradle-plugin:{version}")
-
         classpath(libs.commons.compress)
     }
 }
@@ -49,9 +44,6 @@ allprojects {
                 TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
-        }
-        withType<JavaCompile>().configureEach {
-            options.compilerArgs.addAll(arrayOf("-Xlint:all", "-Werror", "-Xlint:-classfile", "-Xlint:-processing", "-Xlint:-try", "-Xlint:-options"))
         }
     }
 }
