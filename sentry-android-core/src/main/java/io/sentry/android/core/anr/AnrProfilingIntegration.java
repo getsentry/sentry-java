@@ -49,7 +49,6 @@ public class AnrProfilingIntegration
 
   private volatile @Nullable MonotonicTicker ticker;
 
-  @SuppressWarnings("UnnecessaryLambda")
   private final @NotNull Runnable updater =
       () -> {
         final @Nullable MonotonicTicker currentTicker = ticker;
