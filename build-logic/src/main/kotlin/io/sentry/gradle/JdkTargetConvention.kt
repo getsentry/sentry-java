@@ -13,8 +13,10 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
+import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 /** The JDK every module compiles and tests with, whatever JDK runs Gradle. */
@@ -33,6 +35,7 @@ private val PUBLISHED_JAVA_VERSION = JavaVersion.VERSION_11
  *   archives are checked for it
  * - published Android modules main code targets Java 11
  * - minSdk is set for Android libraries
+ * - Kotlin module names stay the project name
  */
 class JdkTargetConvention : Plugin<Project> {
   override fun apply(project: Project) {
@@ -97,6 +100,36 @@ class JdkTargetConvention : Plugin<Project> {
 
     listOf("com.android.library", "com.android.application").forEach { pluginId ->
       project.plugins.withId(pluginId) { project.targetBuildJdkForUnitTests() }
+    }
+
+    project.keepKotlinModuleNameWithoutGroup()
+  }
+
+  /**
+   * KGP 2.4 prefixes the Kotlin module name with the group, e.g. `io.sentry:sentry-okhttp`. R8 copies
+   * that name into the names of the `.kotlin_module` entries it writes under `META-INF`, and app
+   * bundles reject the colon, so the module name stays the project name, as before KGP 2.4.
+   */
+  private fun Project.keepKotlinModuleNameWithoutGroup() {
+    val moduleName = name
+    plugins.withId("org.jetbrains.kotlin.jvm") {
+      extensions.getByType(KotlinJvmProjectExtension::class.java).compilerOptions.moduleName.set(
+        moduleName
+      )
+    }
+    plugins.withId("org.jetbrains.kotlin.android") {
+      extensions.getByType(KotlinAndroidProjectExtension::class.java).compilerOptions.moduleName.set(
+        moduleName
+      )
+    }
+    plugins.withId("org.jetbrains.kotlin.multiplatform") {
+      val targets = extensions.getByType(KotlinMultiplatformExtension::class.java).targets
+      targets.withType(KotlinJvmTarget::class.java).configureEach {
+        compilerOptions.moduleName.set(moduleName)
+      }
+      targets.withType(KotlinAndroidTarget::class.java).configureEach {
+        compilerOptions.moduleName.set(moduleName)
+      }
     }
   }
 
