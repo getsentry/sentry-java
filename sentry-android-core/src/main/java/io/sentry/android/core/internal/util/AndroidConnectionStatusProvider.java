@@ -311,14 +311,14 @@ public final class AndroidConnectionStatusProvider
             private boolean isSignificantChange(@Nullable NetworkCapabilities newCapabilities) {
               final NetworkCapabilities oldCapabilities = cachedNetworkCapabilities;
 
-              // Always significant if transitioning between null and non-null
-              if ((oldCapabilities == null) != (newCapabilities == null)) {
-                return true;
-              }
-
               // If both null, no change
               if (oldCapabilities == null && newCapabilities == null) {
                 return false;
+              }
+
+              // Always significant if transitioning between null and non-null
+              if (oldCapabilities == null || newCapabilities == null) {
+                return true;
               }
 
               // Check significant capability changes

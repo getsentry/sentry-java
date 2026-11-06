@@ -792,7 +792,7 @@ class AndroidConnectionStatusProviderTest {
     connectionStatusProvider.onBackground()
 
     assertFalse(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
       }
     )

@@ -66,8 +66,8 @@ public final class SystemEventsBreadcrumbsIntegration
   private final @NotNull String[] actions;
   private volatile boolean isClosed = false;
   private volatile boolean isStopped = false;
-  private volatile IntentFilter filter = null;
-  private volatile HandlerThread handlerThread = null;
+  private volatile @Nullable IntentFilter filter = null;
+  private volatile @Nullable HandlerThread handlerThread = null;
   private final @NotNull AtomicBoolean isReceiverRegistered = new AtomicBoolean(false);
   private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
   // Track previous battery state to avoid duplicate breadcrumbs when values haven't changed
@@ -152,12 +152,6 @@ public final class SystemEventsBreadcrumbsIntegration
                       filter.addAction(item);
                     }
                   }
-                  if (customHandler == null && handlerThread == null) {
-                    handlerThread =
-                        new HandlerThread(
-                            "SystemEventsReceiver", Process.THREAD_PRIORITY_BACKGROUND);
-                    handlerThread.start();
-                  }
                   try {
                     // registerReceiver can throw SecurityException but it's not documented in the
                     // official docs
@@ -167,6 +161,12 @@ public final class SystemEventsBreadcrumbsIntegration
                     if (customHandler != null) {
                       handler = customHandler;
                     } else {
+                      if (handlerThread == null) {
+                        handlerThread =
+                            new HandlerThread(
+                                "SystemEventsReceiver", Process.THREAD_PRIORITY_BACKGROUND);
+                        handlerThread.start();
+                      }
                       handler = new Handler(handlerThread.getLooper());
                     }
                     ContextUtils.registerReceiver(context, options, receiver, filter, handler);
@@ -198,6 +198,7 @@ public final class SystemEventsBreadcrumbsIntegration
 
   @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
   private void scheduleUnregisterReceiver() {
+    final @Nullable SentryAndroidOptions options = this.options;
     if (options == null) {
       return;
     }

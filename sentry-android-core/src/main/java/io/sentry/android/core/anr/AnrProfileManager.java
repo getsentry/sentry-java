@@ -61,7 +61,7 @@ public class AnrProfileManager implements AutoCloseable {
               queueFile,
               new ObjectQueue.Converter<AnrStackTrace>() {
                 @Override
-                public AnrStackTrace from(final byte[] source) throws IOException {
+                public @Nullable AnrStackTrace from(final byte[] source) throws IOException {
                   // no need to close the streams since they are backed by byte arrays and don't
                   // hold any resources
                   final @NotNull ByteArrayInputStream bis = new ByteArrayInputStream(source);

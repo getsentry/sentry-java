@@ -178,7 +178,7 @@ public class ThreadDumpParser {
     markThreads();
   }
 
-  private SentryThread parseThread(final @NotNull Lines lines) {
+  private @Nullable SentryThread parseThread(final @NotNull Lines lines) {
     final SentryThread sentryThread = new SentryThread();
 
     final Matcher beginManagedThreadRe = BEGIN_MANAGED_THREAD_RE.matcher("");
