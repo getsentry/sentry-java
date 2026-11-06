@@ -18,9 +18,7 @@ import shark.ReferencePattern
 class ReplayTest : BaseUiTest() {
   @Before
   fun setup() {
-    // we can't run on GH actions emulator, because they don't allow capturing screenshots properly
-    @Suppress("KotlinConstantConditions")
-    assumeThat(BuildConfig.ENVIRONMENT != "github", `is`(true))
+    assumeThat(isReplayAvailable(), `is`(true))
     // crash on swallowed Compose masking errors (e.g. broken obfuscated internals) so regressions
     // fail this on-device test instead of silently under-masking (see SentryReplayDebug)
     System.setProperty("io.sentry.replay.compose.fail-fast", "true")

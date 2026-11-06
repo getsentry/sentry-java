@@ -30,7 +30,6 @@ android {
     // This doesn't work on some devices with Android 11+. Clearing package data resets permissions.
     // Check the readme for more info.
     testInstrumentationRunnerArguments["clearPackageData"] = "true"
-    buildConfigField("String", "ENVIRONMENT", "\"${System.getProperty("environment", "")}\"")
   }
 
   testOptions { execution = "ANDROIDX_TEST_ORCHESTRATOR" }
@@ -40,7 +39,6 @@ android {
     // Note that the viewBinding.enabled property is now deprecated.
     viewBinding = true
     compose = true
-    buildConfig = true
   }
 
   composeOptions { kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get() }
