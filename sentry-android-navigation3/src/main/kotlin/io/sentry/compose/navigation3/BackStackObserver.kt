@@ -33,8 +33,8 @@ private const val NAVIGATION_OP: String = "navigation"
  *
  * **Entry identity determines whether the top has changed**
  *
- * Referential equality (===), not structural equality, is used to determine whether the top of the
- * incoming back stack has changed. That approach:
+ * Referential equality (===) is used to determine whether the top of the incoming back stack has
+ * changed. That approach:
  *
  * - matches the typical Nav3 SnapshotStateList, where an entry instance has a stable identity for
  *   its lifetime in the stack;
@@ -206,21 +206,21 @@ internal class BackStackObserver<T : Any>(
       scope.rotatePropagationContext()
     }
 
-    storeAsPreviousTop(currentBackStack.topEntry, currentBackStack.topEntryNormalized)
+    storePreviousTop(currentBackStack)
   }
 
   private fun handleSameTop(scope: INavScope, backStack: BackStackData<T>) {
     navContext.update(scope, backStack.capturedEntriesNormalized)
-    storeAsPreviousTop(backStack.topEntry, backStack.topEntryNormalized)
+    storePreviousTop(backStack)
   }
 
   private fun handleEmptyBackStack(scope: INavScope) {
     tearDown(scope)
   }
 
-  private fun storeAsPreviousTop(topEntry: T, topEntryNormalized: NormalizedSentryBackStackEntry) {
-    previousTop = WeakReference(topEntry)
-    previousTopNormalized = topEntryNormalized
+  private fun storePreviousTop(backStack: BackStackData<T>) {
+    previousTop = WeakReference(backStack.topEntry)
+    previousTopNormalized = backStack.topEntryNormalized
   }
 
   private fun clearPreviousTop() {
