@@ -1,7 +1,6 @@
 package io.sentry;
 
 import io.sentry.time.Deadline;
-import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
@@ -28,19 +27,10 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
   private final boolean hasNoCollectors;
 
   private final @NotNull SentryOptions options;
-  private final @NotNull MonotonicTicker ticker;
   private final @NotNull AtomicBoolean isStarted = new AtomicBoolean(false);
 
   public DefaultCompositePerformanceCollector(final @NotNull SentryOptions options) {
-    this(
-        Objects.requireNonNull(options, "The options object is required."),
-        options.getMonotonicTicker());
-  }
-
-  DefaultCompositePerformanceCollector(
-      final @NotNull SentryOptions options, final @NotNull MonotonicTicker ticker) {
     this.options = Objects.requireNonNull(options, "The options object is required.");
-    this.ticker = Objects.requireNonNull(ticker, "The ticker is required.");
     this.snapshotCollectors = new ArrayList<>();
     this.continuousCollectors = new ArrayList<>();
 
@@ -231,7 +221,10 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
       // On a ticker rather than the date provider: this is how long we have been collecting, and
       // a device time change must not end a collection early or keep a finished one going.
       this.collectUntil =
-          Deadline.after(ticker, TRANSACTION_COLLECTION_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+          Deadline.after(
+              options.getMonotonicTicker(),
+              TRANSACTION_COLLECTION_TIMEOUT_MILLIS,
+              TimeUnit.MILLISECONDS);
     }
 
     /**

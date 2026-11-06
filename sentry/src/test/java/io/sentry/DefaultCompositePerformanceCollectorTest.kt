@@ -3,6 +3,7 @@ package io.sentry
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.test.injectForField
+import io.sentry.time.MonotonicTicker
 import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.thread.ThreadChecker
 import java.util.Timer
@@ -34,8 +35,11 @@ class DefaultCompositePerformanceCollectorTest {
     lateinit var transaction2: ITransaction
     val id1 = "id1"
     val scopes: IScopes = mock()
-    val options = SentryOptions()
     val ticker = TestMonotonicTicker()
+    val options =
+      object : SentryOptions() {
+        override fun getMonotonicTicker(): MonotonicTicker = ticker
+      }
     var mockTimer: Timer? = null
 
     val mockCpuCollector: IPerformanceSnapshotCollector =
@@ -67,7 +71,7 @@ class DefaultCompositePerformanceCollectorTest {
       optionsConfiguration.configure(options)
       transaction1 = SentryTracer(TransactionContext("", ""), scopes)
       transaction2 = SentryTracer(TransactionContext("", ""), scopes)
-      val collector = DefaultCompositePerformanceCollector(options, ticker)
+      val collector = DefaultCompositePerformanceCollector(options)
       val timer: Timer = collector.getProperty("timer") ?: Timer(true)
       mockTimer = spy(timer)
       collector.injectForField("timer", mockTimer)
