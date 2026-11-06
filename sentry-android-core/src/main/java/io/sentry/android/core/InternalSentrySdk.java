@@ -409,6 +409,7 @@ public final class InternalSentrySdk {
     spans.add(spanMap);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static void deleteCurrentSessionFile(
       final @NotNull SentryOptions options, boolean isSync) {
     if (!isSync) {

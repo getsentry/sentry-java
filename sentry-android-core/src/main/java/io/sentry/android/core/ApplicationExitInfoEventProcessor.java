@@ -243,6 +243,7 @@ public final class ApplicationExitInfoEventProcessor
     return true;
   }
 
+  @SuppressWarnings("JavaUtilDate")
   private void setReplayId(
       final @NotNull SentryEvent event, final @NotNull OptionsSource optionsSource) {
     @Nullable String persistedReplayId = readFromDisk(options, REPLAY_FILENAME, String.class);
@@ -933,6 +934,7 @@ public final class ApplicationExitInfoEventProcessor
           sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
     }
 
+    @SuppressWarnings("JavaUtilDate")
     private void applyAnrProfile(
         @NotNull SentryEvent event,
         @NotNull Backfillable hint,

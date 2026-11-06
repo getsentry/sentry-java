@@ -30,6 +30,7 @@ public abstract class EnvelopeFileObserverIntegration implements Integration, Cl
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     Objects.requireNonNull(scopes, "Scopes are required");
     Objects.requireNonNull(options, "SentryOptions is required");

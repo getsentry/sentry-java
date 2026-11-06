@@ -83,6 +83,7 @@ final class LifecycleWatcher implements AppState.AppStateListener {
    * <p>TODO [MAJOR]: let a session remember the tick it started on, so this can use a {@link
    * Deadline} too. That tick must not be serialized.
    */
+  @SuppressWarnings("JavaUtilDate")
   private boolean isSessionOnScopeStale() {
     final long nowMillis = TimeUnit.NANOSECONDS.toMillis(epochClock.now().epochNanos());
     // No session, or one that never recorded a start, leaves nothing to resume.

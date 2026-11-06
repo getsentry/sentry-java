@@ -29,6 +29,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -115,7 +116,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     }
 
     try (final @NotNull Reader reader =
-            new BufferedReader(new InputStreamReader(new FileInputStream(configFile)))) {
+            new BufferedReader(
+                new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8))) {
       final @Nullable SentryAppStartProfilingOptions profilingOptions =
           deserializeProfilingConfig(reader);
 

@@ -48,8 +48,7 @@ public final class SentryAndroid {
   private static final String FRAGMENT_CLASS_NAME =
       "androidx.fragment.app.FragmentManager$FragmentLifecycleCallbacks";
 
-  protected static final @NotNull AutoClosableReentrantLock staticLock =
-      new AutoClosableReentrantLock();
+  static final @NotNull AutoClosableReentrantLock staticLock = new AutoClosableReentrantLock();
 
   private SentryAndroid() {}
 

@@ -44,7 +44,11 @@ public class AnrProfilingIntegration
   static final int MAX_NUM_STACKS = (int) (10_000 / POLLING_INTERVAL_MS);
 
   private final AtomicBoolean enabled = new AtomicBoolean(true);
+
+  // A field rather than a method reference, as removeCallbacks only removes the posted instance.
+  @SuppressWarnings("UnnecessaryLambda")
   private final Runnable updater = () -> lastMainThreadExecutionTime = SystemClock.uptimeMillis();
+
   private final @NotNull AutoClosableReentrantLock lifecycleLock = new AutoClosableReentrantLock();
   private final @NotNull AutoClosableReentrantLock profileManagerLock =
       new AutoClosableReentrantLock();
@@ -87,6 +91,7 @@ public class AnrProfilingIntegration
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void close() throws IOException {
     enabled.set(false);
     AppState.getInstance().removeAppStateListener(this);

@@ -521,6 +521,7 @@ public final class ContextUtils {
           }
         }
       } catch (Throwable e) {
+        // Split APK info is optional, the app context is still complete without it.
       }
     }
   }

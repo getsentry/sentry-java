@@ -276,7 +276,7 @@ public final class AndroidConnectionStatusProvider
               if (!network.equals(currentNetwork)) {
                 return;
               }
-              updateCacheAndNotifyObservers(network, networkCapabilities);
+              updateCacheAndNotifyObservers(networkCapabilities);
 
               try (final @NotNull ISentryLifecycleToken ignored = childCallbacksLock.acquire()) {
                 for (final @NotNull NetworkCallback cb : childCallbacks) {
@@ -286,7 +286,7 @@ public final class AndroidConnectionStatusProvider
             }
 
             private void updateCacheAndNotifyObservers(
-                @Nullable Network network, @Nullable NetworkCapabilities networkCapabilities) {
+                @Nullable NetworkCapabilities networkCapabilities) {
               // Check if this change is meaningful before notifying observers
               final boolean shouldUpdate = isSignificantChange(networkCapabilities);
 
@@ -847,6 +847,7 @@ public final class AndroidConnectionStatusProvider
     return childCallbacks;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void submitSafe(@NotNull Runnable r) {
     try {
       options.getExecutorService().submit(r);
