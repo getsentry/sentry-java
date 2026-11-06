@@ -88,6 +88,20 @@ class DuplicateEventDetectionEventProcessorTest {
   }
 
   @Test
+  fun `ignored top-level exception bypasses cause deduplication`() {
+    val options =
+      SentryOptions().apply {
+        setIgnoredErrorsForDeduplication(listOf(IgnoredForDeduplicationException::class.java.name))
+      }
+    val processor = DuplicateEventDetectionEventProcessor(options)
+    val cause = RuntimeException()
+    assertThat(processor.process(SentryEvent(cause), Hint())).isNotNull()
+
+    val ignoredWrapper = IgnoredForDeduplicationException(cause)
+    assertThat(processor.process(SentryEvent(ignoredWrapper), Hint())).isNotNull()
+  }
+
+  @Test
   fun `does not check ignored cause against captured exceptions`() {
     val options = SentryOptions().apply { setIgnoredErrorsForDeduplication(emptyList()) }
     val processor = DuplicateEventDetectionEventProcessor(options)

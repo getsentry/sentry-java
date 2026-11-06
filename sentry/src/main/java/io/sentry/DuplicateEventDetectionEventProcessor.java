@@ -26,9 +26,10 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
     if (options.isEnableDeduplication()) {
       final Throwable throwable = event.getThrowable();
       if (throwable != null) {
-        final boolean ignoredForDeduplication = isIgnoredForDeduplication(throwable);
-        if ((!ignoredForDeduplication && capturedObjects.containsKey(throwable))
-            || containsAnyKey(allCauses(throwable))) {
+        if (isIgnoredForDeduplication(throwable)) {
+          return event;
+        }
+        if (capturedObjects.containsKey(throwable) || containsAnyKey(allCauses(throwable))) {
           options
               .getLogger()
               .log(
@@ -36,9 +37,8 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
                   "Duplicate Exception detected. Event %s will be discarded.",
                   event.getEventId());
           return null;
-        } else if (!ignoredForDeduplication) {
-          capturedObjects.put(throwable, null);
         }
+        capturedObjects.put(throwable, null);
       }
     } else {
       options.getLogger().log(SentryLevel.DEBUG, "Event deduplication is disabled.");
