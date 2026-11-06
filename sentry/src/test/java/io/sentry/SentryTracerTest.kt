@@ -91,6 +91,79 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `transaction options copy snapshots all values`() {
+    val startTimestamp = SentryLongDate(1234)
+    val customSamplingContext = CustomSamplingContext()
+    val finishedCallback = mock<TransactionFinishedCallback>()
+    val spanFactory = mock<ISpanFactory>()
+    val original =
+      TransactionOptions().apply {
+        this.startTimestamp = startTimestamp
+        scopeBindingMode = ScopeBindingMode.ON
+        isTrimStart = true
+        isTrimEnd = true
+        isIdle = true
+        origin = "origin"
+        this.customSamplingContext = customSamplingContext
+        isAppStartTransaction = true
+        isWaitForChildren = true
+        idleTimeout = 1000
+        deadlineTimeout = 2000
+        transactionFinishedCallback = finishedCallback
+        setSpanFactory(spanFactory)
+      }
+
+    val copy = TransactionOptions(original)
+
+    assertThat(copy.startTimestamp).isSameInstanceAs(startTimestamp)
+    assertThat(copy.scopeBindingMode).isEqualTo(ScopeBindingMode.ON)
+    assertThat(copy.isTrimStart).isTrue()
+    assertThat(copy.isTrimEnd).isTrue()
+    assertThat(copy.isIdle).isTrue()
+    assertThat(copy.origin).isEqualTo("origin")
+    assertThat(copy.customSamplingContext).isSameInstanceAs(customSamplingContext)
+    assertThat(copy.isAppStartTransaction).isTrue()
+    assertThat(copy.isWaitForChildren).isTrue()
+    assertThat(copy.idleTimeout).isEqualTo(1000)
+    assertThat(copy.deadlineTimeout).isEqualTo(2000)
+    assertThat(copy.transactionFinishedCallback).isSameInstanceAs(finishedCallback)
+    assertThat(copy.spanFactory).isSameInstanceAs(spanFactory)
+  }
+
+  @Test
+  fun `modifying transaction options does not affect running transaction`() {
+    val originalCallback = mock<TransactionFinishedCallback>()
+    val replacementCallback = mock<TransactionFinishedCallback>()
+    val transactionOptions =
+      TransactionOptions().apply {
+        isWaitForChildren = true
+        transactionFinishedCallback = originalCallback
+      }
+    val transaction =
+      SentryTracer(
+        TransactionContext("name", "op", TracesSamplingDecision(true)),
+        fixture.scopes,
+        transactionOptions,
+        null,
+      )
+    val child = transaction.startChild("child")
+
+    transactionOptions.isWaitForChildren = false
+    transactionOptions.transactionFinishedCallback = replacementCallback
+    transaction.finish()
+
+    assertThat(transaction.isFinished).isFalse()
+    verify(originalCallback, never()).execute(any())
+    verify(replacementCallback, never()).execute(any())
+
+    child.finish()
+
+    assertThat(transaction.isFinished).isTrue()
+    verify(originalCallback).execute(transaction)
+    verify(replacementCallback, never()).execute(any())
+  }
+
+  @Test
   fun `root span has thread name and thread id in the data`() {
     val tracer = fixture.getSut()
     assertTrue(tracer.root.data.containsKey(SpanDataConvention.THREAD_NAME))

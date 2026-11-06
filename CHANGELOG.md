@@ -70,6 +70,10 @@
 
 - Promote the metrics capture API from experimental to stable ([#6425](https://github.com/getsentry/sentry-java/pull/6425))
 
+### Fixes
+
+- Prevent changes to reused tracing options from affecting spans and transactions after creation ([#6417](https://github.com/getsentry/sentry-java/pull/6417))
+
 ## 8.62.0
 
 ### Improvements

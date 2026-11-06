@@ -4371,6 +4371,7 @@ public final class io/sentry/SpanId$Deserializer : io/sentry/JsonDeserializer {
 public class io/sentry/SpanOptions {
 	protected field origin Ljava/lang/String;
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/SpanOptions;)V
 	public fun getOrigin ()Ljava/lang/String;
 	public fun getScopeBindingMode ()Lio/sentry/ScopeBindingMode;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
