@@ -390,6 +390,34 @@ limitations under the License.
 
 ---
 
+## Android Open Source Project — AndroidX MavenUploadHelper (Apache 2.0)
+
+**Source:** https://github.com/androidx/androidx/blob/c799cba927a71f01ea6b421a8f83c181682633fb/buildSrc/private/src/main/kotlin/androidx/build/MavenUploadHelper.kt#L524-L549<br>
+**License:** Apache License 2.0<br>
+**Copyright:** Copyright 2018 The Android Open Source Project
+
+### Scope
+
+The Sentry Java SDK build includes an adapted version of the AndroidX build's POM rewriting, which adds `<type>aar</type>` to dependencies on Android libraries in published POMs. The code resides in the build logic at `build-logic/src/main/kotlin/io/sentry/gradle/AarTypes.kt` and is not part of the published artifacts.
+
+```
+Copyright 2018 The Android Open Source Project
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
 ## OpenTelemetry (Apache 2.0)
 
 **Source:** https://github.com/open-telemetry/opentelemetry-java (Commit: 0aacc55d1e3f5cc6dbb4f8fa26bcb657b01a7bc9)<br>

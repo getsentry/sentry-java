@@ -1,3 +1,5 @@
+package io.sentry.gradle
+
 import org.gradle.api.Project
 import org.gradle.api.distribution.DistributionContainer
 import org.gradle.api.file.CopySpec

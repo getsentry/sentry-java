@@ -13,6 +13,8 @@ plugins {
   alias(libs.plugins.ksp)
   alias(libs.plugins.sentry) apply false
   alias(libs.plugins.sqldelight)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 if (providers.gradleProperty("useSagp").isPresent) {
