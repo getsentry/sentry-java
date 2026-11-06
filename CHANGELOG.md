@@ -4,6 +4,7 @@
 
 ### Breaking Changes
 
+- Android: `AnrV2Integration`, `AnrProfilingIntegration`, `SentryUserFeedbackForm` and its `Builder`, `WindowContentChangedCallback` and the internal `sentry-android-core` classes are now `final`, and `ActivityLifecycleCallbacksAdapter` is now `abstract` ([#6494](https://github.com/getsentry/sentry-java/pull/6494))
 - `SentryOptions.getIgnoredErrors()`, `getIgnoredTransactions()`, `getIgnoredCheckIns()` and `getIgnoredSpanOrigins()` now return `List<String>` instead of `List<FilterString>`, matching their setters ([#6489](https://github.com/getsentry/sentry-java/pull/6489))
 - The SDK is now compiled for Java 11 instead of Java 8. JVM applications need Java 11 or newer ([#6459](https://github.com/getsentry/sentry-java/pull/6459))
 - Default trace context status to `ok` when an active span has no explicit status ([#6418](https://github.com/getsentry/sentry-java/pull/6418))
