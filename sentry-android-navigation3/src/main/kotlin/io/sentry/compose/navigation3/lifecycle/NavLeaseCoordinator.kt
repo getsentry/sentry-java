@@ -300,8 +300,7 @@ internal class NavLeaseCoordinator {
     // Assume the resumed `activity` is covering the current leaseholder if i) the leaseholder
     // itself isn't resumed, ii) `activity` isn't the leaseholder's host Activity, and iii)
     // `activity` isn't itself a nav root (see [isActivityNavRoot]). (i) checks the leaseholder's
-    // own
-    // state rather than its host Activity's, as they differ for Fragment nav roots: a Fragment
+    // own state rather than its host Activity's, as they differ for Fragment nav roots: a Fragment
     // leaseholder that isn't resumed isn't what the user is interacting with, even if its host
     // Activity is resumed.
     val holder = leaseHolder ?: return
