@@ -288,10 +288,7 @@ class SentryAutoConfigurationTest {
         assertThat(options.ignoredErrors)
           .containsOnly(FilterString("Some error"), FilterString("Another .*"))
         assertThat(options.ignoredErrorsForDeduplication)
-          .containsOnly(
-            FilterString("example.FirstException"),
-            FilterString("example.SecondException"),
-          )
+          .containsOnly("example.FirstException", "example.SecondException")
         assertThat(options.ignoredTransactions)
           .containsOnly(FilterString("transactionName1"), FilterString("transactionNameB"))
         assertThat(options.isEnableBackpressureHandling).isEqualTo(false)

@@ -3539,6 +3539,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getHostnameCache ()Lio/sentry/HostnameCache;
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
+	public fun getIgnoredErrorFiltersForDeduplication ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
 	public fun getIgnoredErrorsForDeduplication ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;

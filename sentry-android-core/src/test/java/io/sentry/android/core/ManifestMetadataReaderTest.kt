@@ -2125,10 +2125,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     assertThat(fixture.options.ignoredErrorsForDeduplication)
-      .containsExactly(
-        FilterString("example.FirstException"),
-        FilterString("example.SecondException"),
-      )
+      .containsExactly("example.FirstException", "example.SecondException")
       .inOrder()
   }
 
@@ -2139,7 +2136,7 @@ class ManifestMetadataReaderTest {
     ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
 
     assertThat(fixture.options.ignoredErrorsForDeduplication)
-      .containsExactly(FilterString("io.netty.handler.timeout.ReadTimeoutException"))
+      .containsExactly("io.netty.handler.timeout.ReadTimeoutException")
   }
 
   @Test

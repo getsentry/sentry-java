@@ -638,7 +638,7 @@ class SentryOptionsTest {
       options.ignoredErrors,
     )
     assertEquals(
-      listOf(FilterString("example.FirstException"), FilterString("example.SecondException")),
+      listOf("example.FirstException", "example.SecondException"),
       options.ignoredErrorsForDeduplication,
     )
     assertFalse(options.isEnableBackpressureHandling)
@@ -1058,7 +1058,7 @@ class SentryOptionsTest {
   @Test
   fun `ignored errors for deduplication contains Netty read timeout by default`() {
     assertThat(SentryOptions().ignoredErrorsForDeduplication)
-      .containsExactly(FilterString("io.netty.handler.timeout.ReadTimeoutException"))
+      .containsExactly("io.netty.handler.timeout.ReadTimeoutException")
   }
 
   @Test
@@ -1069,11 +1069,33 @@ class SentryOptionsTest {
     options.addIgnoredErrorForDeduplication("example.SecondException")
 
     assertThat(options.ignoredErrorsForDeduplication)
+      .containsExactly("example.FirstException", "example.SecondException")
+      .inOrder()
+    assertThat(options.ignoredErrorFiltersForDeduplication)
       .containsExactly(
         FilterString("example.FirstException"),
         FilterString("example.SecondException"),
       )
       .inOrder()
+  }
+
+  @Test
+  fun `ignored errors for deduplication getter returns a copy`() {
+    val options = SentryOptions()
+    options.setIgnoredErrorsForDeduplication(listOf("example.FirstException"))
+
+    options.ignoredErrorsForDeduplication!!.clear()
+
+    assertThat(options.ignoredErrorsForDeduplication).containsExactly("example.FirstException")
+  }
+
+  @Test
+  fun `ignored errors for deduplication getters return null when unset`() {
+    val options = SentryOptions()
+    options.setIgnoredErrorsForDeduplication(null)
+
+    assertThat(options.ignoredErrorsForDeduplication).isNull()
+    assertThat(options.ignoredErrorFiltersForDeduplication).isNull()
   }
 
   @Test
@@ -1083,7 +1105,7 @@ class SentryOptionsTest {
     options.merge(ExternalOptions())
 
     assertThat(options.ignoredErrorsForDeduplication)
-      .containsExactly(FilterString("io.netty.handler.timeout.ReadTimeoutException"))
+      .containsExactly("io.netty.handler.timeout.ReadTimeoutException")
   }
 
   @Test
@@ -1097,10 +1119,7 @@ class SentryOptionsTest {
     options.merge(externalOptions)
 
     assertThat(options.ignoredErrorsForDeduplication)
-      .containsExactly(
-        FilterString("example.FirstException"),
-        FilterString("example.SecondException"),
-      )
+      .containsExactly("example.FirstException", "example.SecondException")
       .inOrder()
   }
 

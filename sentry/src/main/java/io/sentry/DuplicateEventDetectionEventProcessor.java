@@ -56,7 +56,8 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
   }
 
   private boolean isIgnoredForDeduplication(final @NotNull Throwable throwable) {
-    final @Nullable List<FilterString> ignoredErrors = options.getIgnoredErrorsForDeduplication();
+    final @Nullable List<FilterString> ignoredErrors =
+        options.getIgnoredErrorFiltersForDeduplication();
     if (ignoredErrors == null || ignoredErrors.isEmpty()) {
       return false;
     }

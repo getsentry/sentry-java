@@ -1958,9 +1958,28 @@ public class SentryOptions implements RateLimiterConfig {
   /**
    * Returns the list of exception class names excluded from event deduplication.
    *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
    * @return the list of exception class names excluded from event deduplication
    */
-  public @Nullable List<FilterString> getIgnoredErrorsForDeduplication() {
+  public @Nullable List<String> getIgnoredErrorsForDeduplication() {
+    if (ignoredErrorsForDeduplication == null) {
+      return null;
+    }
+    final @NotNull List<String> strings = new ArrayList<>(ignoredErrorsForDeduplication.size());
+    for (final @NotNull FilterString filter : ignoredErrorsForDeduplication) {
+      strings.add(filter.getFilterString());
+    }
+    return strings;
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredErrorsForDeduplication()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredErrorFiltersForDeduplication() {
     return ignoredErrorsForDeduplication;
   }
 
