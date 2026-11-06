@@ -24,6 +24,8 @@
 - Session Replay: Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response, when network details are enabled for the URL ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
 - Session Replay: `SentryOkHttpInterceptor` now captures network request and response details only while Session Replay is recording or buffering ([#6486](https://github.com/getsentry/sentry-java/pull/6486))
 - Stop marking an OkHttp call span as failed when a connection attempt to one of the host's addresses fails but OkHttp connects on another ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
+- Stop blocking the main thread while the frame metrics thread starts when the first activity transaction begins ([#6500](https://github.com/getsentry/sentry-java/pull/6500))
+  - On a busy device during cold start this could stall the launcher activity's `onCreate` for hundreds of milliseconds.
 
 ### Dependencies
 
