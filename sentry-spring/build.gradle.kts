@@ -5,11 +5,16 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spring-boot-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
+  id("io.sentry.api-validation")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
@@ -94,4 +99,32 @@ tasks.jar {
       "Implementation-Version" to project.version,
     )
   }
+}
+
+testing {
+  suites {
+    // Runs a plain Spring MVC app in an embedded Tomcat against MockSentryServer, the way a servlet
+    // container runs a WAR. Spring Boot isn't on its classpath, because Sentry behaves differently
+    // with it.
+    register<JvmTestSuite>("integrationTest") {
+      useJUnit()
+      dependencies {
+        implementation(platform(libs.springboot2.bom))
+        implementation(project())
+        implementation(projects.sentryAsyncProfiler)
+        implementation(projects.sentryTestSupport)
+        implementation(Config.Libs.springWeb)
+        implementation(libs.jackson.databind)
+        implementation(libs.kotlin.test.junit)
+        implementation(libs.google.truth)
+        implementation(libs.tomcat.embed.core)
+      }
+    }
+  }
+}
+
+// The suites on each Spring Boot 2 version the CI matrix tests.
+springBootMatrix {
+  versions(line = 2)
+  test("integrationTest")
 }

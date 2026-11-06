@@ -1,0 +1,9 @@
+public final class io/sentry/opentelemetry/agent/AgentlessMarker {
+	public fun <init> ()V
+}
+
+public final class io/sentry/opentelemetry/agentless/BuildConfig {
+	public static final field SENTRY_OPENTELEMETRY_AGENTLESS_SDK_NAME Ljava/lang/String;
+	public static final field VERSION_NAME Ljava/lang/String;
+}
+

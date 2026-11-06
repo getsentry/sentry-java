@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.opentelemetry.agent.fixture.HelloServer
 import io.sentry.test.ChildJvmApp
 import io.sentry.test.MockSentryServer
+import io.sentry.test.requiredTestProperty
 import io.sentry.test.transaction
 import java.io.File
 import java.net.URL
@@ -32,7 +33,7 @@ class AgentSmokeTest {
           mainClass = HelloServer::class.java.name,
           classpath =
             File(HelloServer::class.java.protectionDomain.codeSource.location.toURI()).path,
-          jvmArgs = listOf("-javaagent:${System.getProperty("sentry.test.agentJar")}"),
+          jvmArgs = listOf("-javaagent:${requiredTestProperty("sentry.test.agentJar")}"),
           env =
             mapOf(
               "SENTRY_DSN" to server.dsn,

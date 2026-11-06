@@ -18,7 +18,7 @@ pluginManagement {
 }
 
 plugins {
-    id("com.gradle.develocity") version "4.5.0"
+    id("com.gradle.develocity") version "4.6.1"
     id("com.gradle.common-custom-user-data-gradle-plugin") version "2.8.0"
 }
 
@@ -59,7 +59,6 @@ include(
     "sentry-apollo-3",
     "sentry-apollo-4",
     "sentry-apollo-5",
-    "sentry-system-test-support",
     "sentry-test-support",
     "sentry-log4j2",
     "sentry-logback",

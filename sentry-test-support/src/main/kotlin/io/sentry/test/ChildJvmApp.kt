@@ -11,11 +11,12 @@ import kotlin.concurrent.thread
 
 /**
  * An app running in a child JVM, for apps that must not share the test's JVM, such as one with the
- * OpenTelemetry agent attached.
+ * OpenTelemetry agent attached or one whose exit is under test.
  *
- * The app writes the port it listens on to the file named by the `PORTFILE` environment variable,
- * which Spring Boot's `WebServerPortFileWriter` reads too. The app's output goes to the test's
- * standard output as it arrives, so Gradle's test report shows it with the test that was running.
+ * A server app writes the port it listens on to the file named by the `PORTFILE` environment
+ * variable, which Spring Boot's `WebServerPortFileWriter` reads too. The app's output goes to the
+ * test's standard output as it arrives, so Gradle's test report shows it with the test that was
+ * running.
  */
 class ChildJvmApp private constructor(private val process: Process, private val workDir: File) :
   Closeable {
@@ -25,16 +26,28 @@ class ChildJvmApp private constructor(private val process: Process, private val 
   fun awaitPort(timeoutSeconds: Long = 60): Int {
     val deadline =
       Deadline.after(JavaMonotonicTicker.getInstance(), timeoutSeconds, TimeUnit.SECONDS)
+    var previous: Int? = null
     while (true) {
-      // The app may not have finished writing the file yet, in which case it doesn't parse.
+      // The app may not have finished writing the file yet, and a partly written port such as "54"
+      // of "54321" still parses. Neither Spring Boot nor the fixtures write it atomically, so only
+      // a value that two reads agree on counts.
       val port = portFile.takeIf { it.exists() }?.readText()?.trim()?.toIntOrNull()
-      if (port != null) {
+      if (port != null && port == previous) {
         return port
       }
+      previous = port
       check(process.isAlive) { "App exited with ${process.exitValue()}" }
       check(!deadline.hasPassed()) { "App did not start within ${timeoutSeconds}s" }
       Thread.sleep(100)
     }
+  }
+
+  /** Waits for the app to exit on its own and returns its exit code. */
+  fun awaitExit(timeoutSeconds: Long = 30): Int {
+    check(process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+      "App did not exit within ${timeoutSeconds}s"
+    }
+    return process.exitValue()
   }
 
   override fun close() {
@@ -73,3 +86,9 @@ class ChildJvmApp private constructor(private val process: Process, private val 
     }
   }
 }
+
+/** Returns a system property that the Gradle test task sets, failing clearly when it isn't set. */
+fun requiredTestProperty(name: String): String =
+  requireNotNull(System.getProperty(name)) {
+    "System property $name is not set. Run the test through its Gradle task, which sets it."
+  }
