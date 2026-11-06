@@ -349,7 +349,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (listenerId != null) {
       listenerMap.remove(listenerId);
     }
-    Window window = currentWindow != null ? currentWindow.get() : null;
+    // read the volatile field once: onActivityStopped may null it concurrently
+    final @Nullable WeakReference<Window> windowRef = currentWindow;
+    final @Nullable Window window = windowRef != null ? windowRef.get() : null;
     if (window != null && listenerMap.isEmpty()) {
       stopTrackingWindow(window);
     }
@@ -383,7 +385,9 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @SuppressLint("NewApi")
   private void trackCurrentWindow() {
-    @Nullable Window window = currentWindow != null ? currentWindow.get() : null;
+    // read the volatile field once: onActivityStopped may null it concurrently
+    final @Nullable WeakReference<Window> windowRef = currentWindow;
+    final @Nullable Window window = windowRef != null ? windowRef.get() : null;
     if (window == null || !isAvailable) {
       return;
     }
