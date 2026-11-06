@@ -154,6 +154,10 @@ internal class NavScopes(
       stagedNavTransaction.publishTo(scope)
     }
 
+    override fun retryTransactionPublication(scope: IScope) {
+      stagedNavTransaction.retryPublishIfBlocked(scope)
+    }
+
     override fun unpublishFrom(scope: IScope) {
       stagedNavTransaction.unpublishFrom(scope)
       stagedNavData.clearPublishedStateFrom(scope)
@@ -228,7 +232,9 @@ internal class NavScopes(
     override fun startNavTransaction(request: NavTransactionRequest) {
       stagedNavTransaction.stage(request)
       if (hasLease) {
-        stagedNavTransaction.publishTo(delegate)
+        // Don't retry b/c ui.load retry is only for returns to a nav root, not for navigation
+        // within it.
+        stagedNavTransaction.publishTo(delegate, canRetry = false)
       } else {
         stagedNavData.deferPropagationContextRotation()
       }
