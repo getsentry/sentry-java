@@ -15,6 +15,7 @@
 
 ### Fixes
 
+- Session Replay: Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response, when network details are enabled for the URL ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
 - Stop marking an OkHttp call span as failed when a connection attempt to one of the host's addresses fails but OkHttp connects on another ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
 
 ### Dependencies
