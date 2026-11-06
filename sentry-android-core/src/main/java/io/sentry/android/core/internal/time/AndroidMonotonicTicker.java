@@ -16,14 +16,7 @@ public final class AndroidMonotonicTicker implements MonotonicTicker {
 
   private static final AndroidMonotonicTicker instance = new AndroidMonotonicTicker();
 
-  /**
-   * Prefer {@link io.sentry.SentryOptions#getMonotonicTicker()} over this: on Android it already
-   * returns this ticker, and it keeps the call site compiling on the JVM too.
-   *
-   * <p>Call this directly only where there is no options object to ask — the {@code
-   * SentryAndroidOptions} override that supplies it, or a test that means this implementation
-   * specifically.
-   */
+  /** Prefer {@link io.sentry.SentryOptions#getMonotonicTicker()}; on Android it returns this. */
   public static @NotNull MonotonicTicker getInstance() {
     return instance;
   }
