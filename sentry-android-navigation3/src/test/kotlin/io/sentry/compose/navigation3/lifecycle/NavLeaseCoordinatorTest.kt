@@ -1125,6 +1125,40 @@ class NavLeaseCoordinatorTest {
     assertThat(fixture.published).containsExactly("other", "owner", "other").inOrder()
   }
 
+  @Test
+  fun `pausing the leaseholder while its host activity is paused keeps the nav lease from a resumed owner in that activity`() {
+    val fixture = Fixture.create()
+    val hostOwner = TestOwner(RESUMED)
+    val host = fixture.lifecycleOwnerActivity(hostOwner.lifecycle)
+    val other = fixture.acquireLease("other", TestOwner(RESUMED), host = host)
+    val owner = TestOwner(RESUMED)
+    val registration = fixture.acquireLease("owner", owner, host = host)
+    hostOwner.lifecycle.currentState = STARTED
+
+    owner.lifecycle.currentState = STARTED
+
+    assertThat(registration.hasLease).isTrue()
+    assertThat(other.hasLease).isFalse()
+    assertThat(fixture.published).containsExactly("other", "owner").inOrder()
+  }
+
+  @Test
+  fun `pausing the leaseholder while its host activity is paused hands the nav lease to a resumed owner in another activity`() {
+    val fixture = Fixture.create()
+    val otherHost = fixture.lifecycleOwnerActivity(TestOwner(RESUMED).lifecycle)
+    val other = fixture.acquireLease("other", TestOwner(RESUMED), host = otherHost)
+    val hostOwner = TestOwner(RESUMED)
+    val host = fixture.lifecycleOwnerActivity(hostOwner.lifecycle)
+    val owner = TestOwner(RESUMED)
+    fixture.acquireLease("owner", owner, host = host)
+    hostOwner.lifecycle.currentState = STARTED
+
+    owner.lifecycle.currentState = STARTED
+
+    assertThat(other.hasLease).isTrue()
+    assertThat(fixture.published).containsExactly("other", "owner", "other").inOrder()
+  }
+
   // endregion
 
   // region unregistering

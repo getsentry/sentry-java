@@ -176,15 +176,18 @@ internal class NavLeaseCoordinator {
    * The eligible candidate most recently observed to be in a resumed state, other than [excluding].
    *
    * If [resumedOnly] is set to `true`, only candidates that are resumed right now are considered;
-   * if `false`, started and paused candidates are also included.
+   * if `false`, started and paused candidates are also included. Candidates hosted by
+   * [excludingHostedBy] are skipped.
    */
   private fun mostRecentlyResumedCandidate(
     excluding: Candidate? = null,
     resumedOnly: Boolean = false,
+    excludingHostedBy: Activity? = null,
   ): Candidate? =
     candidates
       .filter {
         it !== excluding &&
+          (excludingHostedBy == null || it.hostActivity !== excludingHostedBy) &&
           it.canReceiveLease &&
           it.state.isAtLeast(Lifecycle.State.STARTED) &&
           it.resumeOrder > 0 &&
@@ -212,8 +215,9 @@ internal class NavLeaseCoordinator {
    * Records that [candidate] paused.
    *
    * If [candidate] holds the lease when it pauses, hands it to another resumed nav root (e.g., a
-   * Fragment whose dialog is being dismissed). If none exists, withdraws it when the host Activity
-   * remains resumed; otherwise the paused nav root keeps the lease.
+   * Fragment whose dialog is being dismissed), unless that nav root shares [candidate]'s pausing
+   * host Activity. If none exists, withdraws it when the host Activity remains resumed; otherwise
+   * the paused nav root keeps the lease.
    */
   private fun pauseCandidate(candidate: Candidate, scope: IScope?) {
     candidate.pause()
@@ -222,7 +226,15 @@ internal class NavLeaseCoordinator {
     // window or picture-in-picture mode), and any other paused nav root is beneath it. A displaced
     // nav root will acquire the lease again when it resumes.
     if (leaseHolder === candidate) {
-      val next = mostRecentlyResumedCandidate(excluding = candidate, resumedOnly = true)
+      // An Activity pauses before its Fragments, so when the host Activity is pausing, its other
+      // nav roots are still resumed but about to pause too. Handing them the lease would publish
+      // their nav state, and start a nav transaction, just as the app is backgrounded or covered.
+      val next =
+        mostRecentlyResumedCandidate(
+          excluding = candidate,
+          resumedOnly = true,
+          excludingHostedBy = candidate.hostActivity.takeIf { candidate.isHostActivityPaused },
+        )
       when {
         next != null -> handOffLease(next, scope)
         candidate.isHostActivityResumed ->
@@ -339,7 +351,14 @@ internal class NavLeaseCoordinator {
 
     /** Whether the host Activity is resumed; false when its lifecycle is unavailable. */
     val isHostActivityResumed: Boolean
-      get() = (hostActivity as? LifecycleOwner)?.lifecycle?.currentState == Lifecycle.State.RESUMED
+      get() = hostActivityState == Lifecycle.State.RESUMED
+
+    /** Whether the host Activity isn't resumed; false when its lifecycle is unavailable. */
+    val isHostActivityPaused: Boolean
+      get() = hostActivityState.let { it != null && it != Lifecycle.State.RESUMED }
+
+    private val hostActivityState: Lifecycle.State?
+      get() = (hostActivity as? LifecycleOwner)?.lifecycle?.currentState
 
     /** Most recent resume order; zero until this candidate first resumes. */
     var resumeOrder: Long = initialResumeOrder
