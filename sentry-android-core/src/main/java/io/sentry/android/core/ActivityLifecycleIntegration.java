@@ -549,6 +549,9 @@ public final class ActivityLifecycleIntegration
     }
   }
 
+  // TODO [MAJOR]: replace AndroidDateUtils.getCurrentSentryDateTime() with
+  // options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   @Override
   public void onActivityPreCreated(
       final @NotNull Activity activity, final @Nullable Bundle savedInstanceState) {
@@ -604,6 +607,9 @@ public final class ActivityLifecycleIntegration
     }
   }
 
+  // TODO [MAJOR]: replace AndroidDateUtils.getCurrentSentryDateTime() with
+  // options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   @Override
   public void onActivityPreStarted(final @NotNull Activity activity) {
     final ActivityLifecycleSpanHelper helper = activitySpanHelpers.get(activity);
@@ -672,6 +678,9 @@ public final class ActivityLifecycleIntegration
     // empty override, required to avoid a api-level breaking super.onActivityPostResumed() calls
   }
 
+  // TODO [MAJOR]: replace AndroidDateUtils.getCurrentSentryDateTime() with
+  // options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   @Override
   public void onActivityPrePaused(@NotNull Activity activity) {
     // only executed if API >= 29 otherwise it happens on onActivityPaused
@@ -1094,6 +1103,9 @@ public final class ActivityLifecycleIntegration
    * Standalone-only: this is only registered as a listener when standalone app start tracing is
    * enabled.
    */
+  // TODO [MAJOR]: replace AndroidDateUtils.getCurrentSentryDateTime() with
+  // options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   private @Nullable AppStartExtension.ExtendedAppStart onExtendAppStartRequested() {
     if (scopes == null
         || options == null

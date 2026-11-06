@@ -117,6 +117,8 @@ public class AndroidProfiler {
   }
 
   @SuppressLint("NewApi")
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public @Nullable ProfileStartData start() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       // intervalUs is 0 only if there was a problem in the init
