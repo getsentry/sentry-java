@@ -105,6 +105,30 @@ jobs:
           fi
           echo "version=$("$SDK/cmdline-tools/latest/bin/sdkmanager" --version 2>/dev/null | grep -Eo '^[0-9][0-9.]*' | head -1)" >> "$GITHUB_OUTPUT"
 
+      # Snapshots only load on the emulator version that created them. The canary channel
+      # moves often, so a cached snapshot from an older emulator is silently rejected and the
+      # emulator cold boots. Tests then run while the system is still busy with first-boot work.
+      # Install the emulator up front (the runner reuses it) and key the AVD cache on its version.
+      - name: Install emulator
+        id: emulator
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          case "${{ matrix.channel }}" in
+            stable) CHANNEL=0 ;;
+            beta) CHANNEL=1 ;;
+            dev) CHANNEL=2 ;;
+            canary) CHANNEL=3 ;;
+            *) echo "Unknown channel: ${{ matrix.channel }}"; exit 1 ;;
+          esac
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --install emulator --channel="$CHANNEL" > /dev/null
+          VERSION=$("$SDK/emulator/emulator" -version 2>/dev/null | grep -Eo 'version [0-9][0-9.]*' | head -1 | cut -d' ' -f2)
+          if [ -z "$VERSION" ]; then
+            echo "Could not determine emulator version"
+            exit 1
+          fi
+          echo "Emulator version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: AVD cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: avd-cache
@@ -112,9 +136,9 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          # Keyed on memory and the cmdline-tools version so incompatible snapshots
-          # and AVDs created by the old, broken avdmanager are invalidated automatically.
-          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}-memory${{ matrix.memory }}-tools${{ steps.cmdline-tools.outputs.version }}
+          # Keyed on memory, the cmdline-tools version and the emulator version so incompatible
+          # snapshots and AVDs created by the old, broken avdmanager are invalidated automatically.
+          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}-memory${{ matrix.memory }}-tools${{ steps.cmdline-tools.outputs.version }}-emulator${{ steps.emulator.outputs.version }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -143,6 +167,9 @@ jobs:
 
       - name: Run tests
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2.38.0
+        env:
+          # Default is 15s. A busy emulator can need longer to start the Maestro driver.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: 120000
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
@@ -155,7 +182,7 @@ jobs:
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
-            mkdir "${{env.BASE_PATH}}/maestro-logs/" || true; adb emu screenrecord start --time-limit 360 "${{env.BASE_PATH}}/maestro-logs/recording.webm" || true; maestro test "${{env.BASE_PATH}}/maestro" --test-output-dir="${{env.BASE_PATH}}/maestro-logs/test-output" || MAESTRO_EXIT_CODE=$?; adb emu screenrecord stop || true; adb logcat -d > "${{env.BASE_PATH}}/maestro-logs/logcat.txt" || true; exit ${MAESTRO_EXIT_CODE:-0}
+            mkdir "${{env.BASE_PATH}}/maestro-logs/" || true; adb emu screenrecord start --time-limit 360 "${{env.BASE_PATH}}/maestro-logs/recording.webm" || true; maestro test "${{env.BASE_PATH}}/maestro" --test-output-dir="${{env.BASE_PATH}}/maestro-logs/test-output" --debug-output="${{env.BASE_PATH}}/maestro-logs/debug-output" --flatten-debug-output || MAESTRO_EXIT_CODE=$?; adb emu screenrecord stop || true; adb logcat -d > "${{env.BASE_PATH}}/maestro-logs/logcat.txt" || true; exit ${MAESTRO_EXIT_CODE:-0}
 
       - name: Upload Maestro test results
         if: ${{ always() }}
