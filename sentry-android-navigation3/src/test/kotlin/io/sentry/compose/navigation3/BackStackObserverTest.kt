@@ -63,6 +63,9 @@ class BackStackObserverTest {
     val breadcrumbHints = mutableListOf<Hint>()
     val startedTransactions = mutableListOf<SentryTracer>()
 
+    /** The [NavScopes] passed to the observer created by [getSut]. */
+    lateinit var navScopes: NavScopes
+
     init {
       whenever(scopes.options).thenReturn(scope.options)
       whenever(scopes.getSpan()).thenAnswer { scope.span }
@@ -95,9 +98,10 @@ class BackStackObserverTest {
       entryMapper: BackStackEntryMapper<Any> = defaultEntryMapper,
     ): BackStackObserver<Any> {
       scope.options.isEnableScreenTracking = config.enableScreenTracking
+      navScopes = leaseholderNavScopes()
 
       return BackStackObserver(
-        scopes = leaseholderNavScopes(),
+        scopes = navScopes,
         options =
           SentryNavOptions {
             enableNavigationBreadcrumbs = config.enableNavigationBreadcrumbs
