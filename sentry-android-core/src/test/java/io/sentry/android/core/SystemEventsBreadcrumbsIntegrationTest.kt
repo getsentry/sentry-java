@@ -387,7 +387,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertTrue(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
       }
     )
@@ -401,7 +401,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertFalse(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
       }
     )
@@ -414,7 +414,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.register(fixture.scopes, fixture.options)
 
     assertTrue(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
       }
     )
@@ -422,7 +422,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     sut.close()
 
     assertFalse(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
       }
     )
@@ -447,7 +447,7 @@ class SystemEventsBreadcrumbsIntegrationTest {
     shadowOf(Looper.getMainLooper()).idle()
 
     assertFalse(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
       }
     )

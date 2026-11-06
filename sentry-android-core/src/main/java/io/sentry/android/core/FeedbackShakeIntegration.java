@@ -274,6 +274,7 @@ public final class FeedbackShakeIntegration
           final @Nullable WeakReference<Activity> ref = currentActivityRef;
           final Activity active = ref != null ? ref.get() : null;
           final Boolean inBackground = AppState.getInstance().isInBackground();
+          final @Nullable SentryAndroidOptions options = this.options;
           if (active == null
               || options == null
               || !enabled

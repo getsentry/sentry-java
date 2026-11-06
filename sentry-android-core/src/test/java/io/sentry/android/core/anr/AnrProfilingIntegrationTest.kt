@@ -94,7 +94,7 @@ class AnrProfilingIntegrationTest {
     val thread = integration.getProperty<Thread?>("thread")
     assertNotNull(thread)
 
-    assertTrue(AppState.getInstance().lifecycleObserver.listeners.isNotEmpty())
+    assertTrue(AppState.getInstance().lifecycleObserver!!.listeners.isNotEmpty())
 
     integration.close()
     thread.join(2000)
@@ -102,7 +102,7 @@ class AnrProfilingIntegrationTest {
     assertTrue(!thread.isAlive)
     val enabled = integration.getProperty<java.util.concurrent.atomic.AtomicBoolean>("enabled")
     assertTrue(!enabled.get())
-    assertTrue(AppState.getInstance().lifecycleObserver.listeners.isEmpty())
+    assertTrue(AppState.getInstance().lifecycleObserver!!.listeners.isEmpty())
   }
 
   @Test
@@ -334,7 +334,7 @@ class AnrProfilingIntegrationTest {
     val integration = AnrProfilingIntegration()
     integration.register(mockScopes, androidOptions)
 
-    assertFalse(AppState.getInstance().lifecycleObserver.listeners.isEmpty())
+    assertFalse(AppState.getInstance().lifecycleObserver!!.listeners.isEmpty())
     assertTrue(SentryIntegrationPackageStorage.getInstance().integrations.contains("AnrProfiling"))
 
     integration.close()
