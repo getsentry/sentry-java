@@ -54,6 +54,10 @@ tasks {
     environment["SENTRY_TEST_PROPERTY"] = "\"some-value\""
     environment["SENTRY_TEST_MAP_KEY1"] = "\"value1\""
     environment["SENTRY_TEST_MAP_KEY2"] = "value2"
+    // Replays a SqlQueryAnalyzerFuzzTest failure: -Dsentry.sql.fuzz.seed=<seed from the message>
+    providers.systemProperty("sentry.sql.fuzz.seed").orNull?.let {
+      systemProperty("sentry.sql.fuzz.seed", it)
+    }
   }
 }
 
