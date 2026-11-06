@@ -15,15 +15,11 @@ jobs:
     name: Build Job ubuntu-latest
     runs-on: ubuntu-latest
 
-    env:
-      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-
     steps:
       - name: Checkout Repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          submodules: 'recursive'
 
       - name: Setup Java Version
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
@@ -31,17 +27,8 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
-      - name: Cache buildSrc
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: buildSrc/build
-          key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
-
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Run Tests and Lint
         run: make preMerge

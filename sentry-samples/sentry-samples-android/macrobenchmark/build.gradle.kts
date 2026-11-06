@@ -1,5 +1,7 @@
 plugins {
   id("com.android.test")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
   alias(libs.plugins.kotlin.android)
 }
 
@@ -26,7 +28,7 @@ android {
     }
   }
 
-  targetProjectPath = ":sentry-samples:sentry-samples-android"
+  targetProjectPath = ":"
   // Run the test in its own process so it measures the target app cold, not itself.
   experimentalProperties["android.experimental.self-instrumenting"] = true
 }

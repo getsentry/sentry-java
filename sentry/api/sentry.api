@@ -908,6 +908,10 @@ public abstract interface class io/sentry/IContinuousProfiler {
 	public abstract fun stopProfiler (Lio/sentry/ProfileLifecycle;)V
 }
 
+public abstract interface class io/sentry/IDebugManager {
+	public abstract fun isDebuggerConnected ()Z
+}
+
 public abstract interface class io/sentry/IDistributionApi {
 	public abstract fun checkForUpdate ()Ljava/util/concurrent/Future;
 	public abstract fun checkForUpdateBlocking ()Lio/sentry/UpdateStatus;
@@ -3798,6 +3802,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getDataCollectionResolver ()Lio/sentry/DataCollectionResolver;
 	public fun getDateProvider ()Lio/sentry/SentryDateProvider;
 	public fun getDeadlineTimeout ()J
+	public fun getDebugManager ()Lio/sentry/IDebugManager;
 	public fun getDebugMetaLoader ()Lio/sentry/internal/debugmeta/IDebugMetaLoader;
 	public fun getDefaultScopeType ()Lio/sentry/ScopeType;
 	public fun getDiagnosticLevel ()Lio/sentry/SentryLevel;
@@ -3953,6 +3958,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setDateProvider (Lio/sentry/SentryDateProvider;)V
 	public fun setDeadlineTimeout (J)V
 	public fun setDebug (Z)V
+	public fun setDebugManager (Lio/sentry/IDebugManager;)V
 	public fun setDebugMetaLoader (Lio/sentry/internal/debugmeta/IDebugMetaLoader;)V
 	public fun setDefaultScopeType (Lio/sentry/ScopeType;)V
 	public fun setDiagnosticLevel (Lio/sentry/SentryLevel;)V
@@ -8142,6 +8148,12 @@ public final class io/sentry/util/MapObjectWriter : io/sentry/ObjectWriter {
 	public fun value (Z)Lio/sentry/util/MapObjectWriter;
 }
 
+public final class io/sentry/util/MonitorConfigUtils {
+	public static fun fromSchedule (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)Lio/sentry/MonitorConfig;
+	public static fun fromSpringScheduled (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Z)Lio/sentry/MonitorConfig;
+	public static fun parsePeriodMillis (Ljava/lang/String;Ljava/util/concurrent/TimeUnit;)Ljava/lang/Long;
+}
+
 public final class io/sentry/util/Objects {
 	public static fun equals (Ljava/lang/Object;Ljava/lang/Object;)Z
 	public static fun hash ([Ljava/lang/Object;)I
@@ -8310,11 +8322,12 @@ public final class io/sentry/util/network/NetworkBody$NetworkBodyWarning : java/
 
 public final class io/sentry/util/network/NetworkBodyParser {
 	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;ILio/sentry/ILogger;)Lio/sentry/util/network/NetworkBody;
+	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;IZLio/sentry/ILogger;)Lio/sentry/util/network/NetworkBody;
 }
 
 public final class io/sentry/util/network/NetworkDetailCaptureUtils {
 	public static fun createRequest (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
-	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
 	public static fun initializeForUrl (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Lio/sentry/util/network/NetworkRequestData;
 }
 
@@ -8335,15 +8348,17 @@ public final class io/sentry/util/network/NetworkRequestData {
 	public fun getResponseBodySize ()Ljava/lang/Long;
 	public fun getStatusCode ()Ljava/lang/Integer;
 	public fun setRequestDetails (Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
-	public fun setResponseDetails (ILio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
+	public fun setResponseDetails (Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/Long;Lio/sentry/util/network/NetworkBody;Ljava/util/Map;)V
 	public fun <init> (Ljava/lang/Long;Lio/sentry/util/network/NetworkBody;Ljava/util/Map;)V
 	public fun getBody ()Lio/sentry/util/network/NetworkBody;
 	public fun getHeaders ()Ljava/util/Map;
 	public fun getSize ()Ljava/lang/Long;
+	public fun getStatusCode ()Ljava/lang/Integer;
 	public fun toString ()Ljava/lang/String;
 }
 

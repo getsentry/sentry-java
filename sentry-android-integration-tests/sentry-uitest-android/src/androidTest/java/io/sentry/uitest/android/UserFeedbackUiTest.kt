@@ -464,8 +464,7 @@ class UserFeedbackUiTest : BaseUiTest() {
 
   @Test
   fun userFeedbackSendEnvelope() {
-    // GH actions emulator don't allow capturing screenshots properly
-    val enableReplay = BuildConfig.ENVIRONMENT != "github"
+    val enableReplay = isReplayAvailable()
     initSentry(true) {
       // When sending the feedback we want to wait for relay to receive it.
       // We can't simply increment the idling resource,

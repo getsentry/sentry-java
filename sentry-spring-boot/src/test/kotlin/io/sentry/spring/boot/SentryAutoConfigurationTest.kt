@@ -20,6 +20,7 @@ import io.sentry.NoOpTransportFactory
 import io.sentry.ProfileLifecycle
 import io.sentry.SamplingContext
 import io.sentry.Sentry
+import io.sentry.SentryEnvelope
 import io.sentry.SentryEvent
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryLevel
@@ -50,6 +51,7 @@ import io.sentry.transport.ITransportGate
 import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import java.io.File
 import java.lang.RuntimeException
+import java.util.concurrent.TimeUnit
 import javax.servlet.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -58,9 +60,12 @@ import kotlin.test.assertTrue
 import org.aspectj.lang.ProceedingJoinPoint
 import org.assertj.core.api.Assertions.assertThat
 import org.mockito.internal.util.MockUtil.isMock
+import org.mockito.kotlin.after
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.timeout
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.quartz.JobExecutionContext
@@ -71,6 +76,7 @@ import org.quartz.core.QuartzScheduler
 import org.slf4j.MDC
 import org.springframework.aop.support.NameMatchMethodPointcut
 import org.springframework.boot.autoconfigure.AutoConfigurations
+import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration
 import org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration
 import org.springframework.boot.autoconfigure.quartz.SchedulerFactoryBeanCustomizer
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
@@ -85,6 +91,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.Ordered
 import org.springframework.core.annotation.Order
+import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.scheduling.quartz.SchedulerFactoryBean
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.client.RestTemplate
@@ -1127,6 +1135,44 @@ class SentryAutoConfigurationTest {
   }
 
   @Test
+  fun `does not monitor @Scheduled methods by default`() {
+    contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
+      assertThat(it).doesNotHaveBean("sentryScheduledCheckInAdvisor")
+    }
+  }
+
+  @Test
+  fun `monitors @Scheduled methods when monitor-scheduled-tasks is enabled`() {
+    baseContextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.monitor-scheduled-tasks=true",
+        "sentry.exclude-scheduled-tasks[0]=SentryAutoConfigurationTest.ScheduledJobs.excluded",
+      )
+      .withConfiguration(AutoConfigurations.of(AopAutoConfiguration::class.java))
+      .withUserConfiguration(
+        MockTransportConfiguration::class.java,
+        ScheduledJobsConfiguration::class.java,
+      )
+      .run {
+        assertThat(it).hasBean("sentryScheduledCheckInAdvisor")
+        val transport = it.getBean(ITransport::class.java)
+        val captor = argumentCaptor<SentryEnvelope>()
+        verify(transport, timeout(5000).times(2)).send(any(), anyOrNull())
+        verify(transport, after(500).times(2)).send(captor.capture(), anyOrNull())
+        val payloads =
+          captor.allValues.map { envelope -> String(envelope.items.first().data, Charsets.UTF_8) }
+        assertThat(payloads).allMatch { payload ->
+          payload.contains(
+            "\"monitor_slug\":\"sentry-auto-configuration-test-scheduled-jobs-sync\""
+          )
+        }
+        assertThat(payloads[0]).contains("\"value\":1,\"unit\":\"hour\"")
+        assertThat(payloads[1]).contains("\"status\":\"ok\"")
+      }
+  }
+
+  @Test
   fun `Sentry quartz job listener is added`() {
     contextRunner
       .withPropertyValues(
@@ -1239,6 +1285,18 @@ class SentryAutoConfigurationTest {
     }
 
     @Bean open fun sentryTransport() = transport
+  }
+
+  @Configuration(proxyBeanMethods = false)
+  @EnableScheduling
+  open class ScheduledJobsConfiguration {
+    @Bean open fun scheduledJobs() = ScheduledJobs()
+  }
+
+  open class ScheduledJobs {
+    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.HOURS) open fun sync() {}
+
+    @Scheduled(fixedRate = 1, timeUnit = TimeUnit.HOURS) open fun excluded() {}
   }
 
   @Configuration(proxyBeanMethods = false)
