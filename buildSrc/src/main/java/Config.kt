@@ -2,7 +2,7 @@
 object Config {
     val AGP = System.getenv("VERSION_AGP") ?: "9.4.0"
     val kotlinStdLib = "stdlib-jdk8"
-    val kotlinStdLibVersionAndroid = "1.9.24"
+    val kotlinStdLibVersionAndroid = "2.0.21"
     val kotlinTestJunit = "test-junit"
 
     object BuildPlugins {

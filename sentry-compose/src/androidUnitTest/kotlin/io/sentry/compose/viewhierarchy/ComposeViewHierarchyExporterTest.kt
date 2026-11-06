@@ -1,5 +1,8 @@
 @file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE") // to access internal vals
 
+// LayoutNode locals are typed explicitly: under these suppressions K2 infers their type as an error
+// type, and the test then fails with NoClassDefFoundError: error/NonExistentClass.
+
 package io.sentry.compose.viewhierarchy
 
 import androidx.compose.runtime.collection.mutableVectorOf
@@ -26,10 +29,10 @@ class ComposeViewHierarchyExporterTest {
   fun testComposeViewHierarchyExport() {
     val rootVhNode = ViewHierarchyNode()
 
-    val childA = mockLayoutNode(true, "childA", 10, 20)
-    val childB = mockLayoutNode(true, null, 10, 20)
-    val childC = mockLayoutNode(false, null, 10, 20)
-    val parent = mockLayoutNode(true, "root", 30, 40, listOf(childA, childB, childC))
+    val childA: LayoutNode = mockLayoutNode(true, "childA", 10, 20)
+    val childB: LayoutNode = mockLayoutNode(true, null, 10, 20)
+    val childC: LayoutNode = mockLayoutNode(false, null, 10, 20)
+    val parent: LayoutNode = mockLayoutNode(true, "root", 30, 40, listOf(childA, childB, childC))
 
     val node = mock<Owner>()
     whenever(node.root).thenReturn(parent)

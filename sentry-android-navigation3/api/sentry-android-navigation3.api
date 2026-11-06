@@ -27,7 +27,6 @@ public final class io/sentry/compose/navigation3/SentryNavEffectKt {
 
 public final class io/sentry/compose/navigation3/SentryNavOptions {
 	public static final field $stable I
-	public synthetic fun <init> (ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCaptureBackStack ()Z
 	public final fun getEnableNavigationBreadcrumbs ()Z
