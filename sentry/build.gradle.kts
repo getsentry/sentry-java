@@ -58,6 +58,10 @@ tasks {
     providers.systemProperty("sentry.sql.fuzz.seed").orNull?.let {
       systemProperty("sentry.sql.fuzz.seed", it)
     }
+    // Enables SqlQueryAnalyzerBenchmark, which is skipped otherwise: -Dsentry.sql.benchmark
+    providers.systemProperty("sentry.sql.benchmark").orNull?.let {
+      systemProperty("sentry.sql.benchmark", it)
+    }
   }
 }
 
