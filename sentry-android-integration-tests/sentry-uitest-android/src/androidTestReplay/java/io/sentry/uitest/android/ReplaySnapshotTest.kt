@@ -28,7 +28,7 @@ class ReplaySnapshotTest : BaseUiTest() {
     val snapshotsDir =
       File(
           Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-          // pulled and uploaded by scripts/pull-replay-snapshots.sh in CI
+          // pulled and uploaded by scripts/test-ui-android.sh in CI
           "sentry_replay_snapshots",
         )
         .apply {

@@ -89,9 +89,7 @@ jobs:
           disable-spellchecker: true
           emulator-options: -memory 4096 -no-snapshot-save -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
-          script: |
-            ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest --daemon
-            ./scripts/pull-replay-snapshots.sh replay-snapshots
+          script: ./scripts/test-ui-android.sh replay-snapshots
 
       - name: Install Sentry CLI
         if: ${{ !cancelled() && env.UPLOAD_REPLAY_SNAPSHOTS == 'true' }}
