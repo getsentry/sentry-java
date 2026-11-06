@@ -39,11 +39,79 @@ jobs:
           high_risk_code: ${{ needs.files-changed.outputs.high_risk_code_files }}
         with:
           script: |
-            const highRiskFiles = process.env.high_risk_code;
-            const fileList = highRiskFiles.split(',').map(file => `- [ ] ${file}`).join('\n');
-            github.rest.issues.createComment({
+            const highRiskFiles = process.env.high_risk_code
+              .split(',')
+              .map(file => file.trim())
+              .filter(Boolean);
+
+            const marker = '🚨 Detected changes in high risk code 🚨';
+            const intro = `### ${marker} \n High-risk code has higher potential to break the SDK and may be hard to test. To prevent severe bugs, apply the rollout process for releasing such changes and be extra careful when changing and reviewing these files:`;
+
+            const buildBody = (files, checkedFiles = new Set()) => {
+              const fileList = files
+                .map(file => `- [${checkedFiles.has(file) ? 'x' : ' '}] ${file}`)
+                .join('\n');
+              return `${intro}\n${fileList}`;
+            };
+
+            const parseCheckedFiles = (commentBody = '') => {
+              const checked = new Set();
+              for (const match of commentBody.matchAll(/^[ \t]*- \[x\] (.+)$/gim)) {
+                checked.add(match[1].trim());
+              }
+              return checked;
+            };
+
+            const parseListedFiles = (commentBody = '') => {
+              const listed = [];
+              for (const match of commentBody.matchAll(/^[ \t]*- \[[ xX]\] (.+)$/gim)) {
+                listed.push(match[1].trim());
+              }
+              return listed;
+            };
+
+            const sameFileSet = (a, b) => {
+              if (a.length !== b.length) return false;
+              const left = [...a].sort().join('\n');
+              const right = [...b].sort().join('\n');
+              return left === right;
+            };
+
+            // Get existing comments (paginate so older comments are not missed)
+            const comments = await github.paginate(github.rest.issues.listComments, {
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `### 🚨 Detected changes in high risk code 🚨 \n High-risk code has higher potential to break the SDK and may be hard to test. To prevent severe bugs, apply the rollout process for releasing such changes and be extra careful when changing and reviewing these files:\n ${fileList}`
-            })
+              per_page: 100
+            });
+
+            const existingComment = comments.find(comment =>
+              comment.body?.includes(marker)
+            );
+
+            // Keep one warning comment. Only rewrite when the file set changes,
+            // and preserve reviewer checkbox state for files that remain.
+            if (existingComment) {
+              const previousFiles = parseListedFiles(existingComment.body);
+              if (sameFileSet(previousFiles, highRiskFiles)) {
+                return;
+              }
+
+              const body = buildBody(
+                highRiskFiles,
+                parseCheckedFiles(existingComment.body)
+              );
+              await github.rest.issues.updateComment({
+                comment_id: existingComment.id,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: buildBody(highRiskFiles)
+              });
+            }
