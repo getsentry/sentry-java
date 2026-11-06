@@ -83,17 +83,30 @@ class SentryFrameMetricsCollectorTest {
     fun getSut(
       context: Context,
       buildInfoProvider: BuildInfoProvider = buildInfo,
+      prepare: Boolean = true,
     ): SentryFrameMetricsCollector {
       whenever(activity.window).thenReturn(window)
       whenever(activity2.window).thenReturn(window2)
       addOnFrameMetricsAvailableListenerCounter = 0
       removeOnFrameMetricsAvailableListenerCounter = 0
-      return SentryFrameMetricsCollector(
-        context,
-        options,
-        buildInfoProvider,
-        windowFrameMetricsManager,
-      )
+      val collector =
+        SentryFrameMetricsCollector(context, options, buildInfoProvider, windowFrameMetricsManager)
+      if (prepare) {
+        collector.prepare()
+        if (collector.getProperty<Boolean>("handlerThreadStarted")) {
+          awaitHandler(collector)
+        }
+      }
+      return collector
+    }
+
+    // the handler is created asynchronously on the HandlerThread once its looper is prepared
+    fun awaitHandler(collector: SentryFrameMetricsCollector) {
+      val deadline = System.currentTimeMillis() + 5_000
+      while (collector.getProperty<Handler?>("handler") == null) {
+        check(System.currentTimeMillis() < deadline) { "frame metrics handler was never created" }
+        Thread.sleep(1)
+      }
     }
   }
 
@@ -142,12 +155,37 @@ class SentryFrameMetricsCollectorTest {
 
   @Test
   fun `handler thread is started lazily on first startCollection`() {
-    val collector = fixture.getSut(context)
-    // not started during construction (would block the main thread on getLooper at SDK init)
-    assertNull(collector.getProperty<Handler?>("handler"))
+    val collector = fixture.getSut(context, prepare = false)
+    assertFalse(collector.getProperty<Boolean>("handlerThreadStarted"))
 
     collector.startCollection(mock())
-    assertNotNull(collector.getProperty<Handler?>("handler"))
+    assertTrue(collector.getProperty<Boolean>("handlerThreadStarted"))
+    fixture.awaitHandler(collector)
+  }
+
+  @Test
+  fun `prepare starts the handler thread before startCollection`() {
+    val collector = fixture.getSut(context, prepare = false)
+
+    collector.prepare()
+    assertTrue(collector.getProperty<Boolean>("handlerThreadStarted"))
+    fixture.awaitHandler(collector)
+  }
+
+  @Test
+  fun `listener is attached once the handler is ready if collection started before it`() {
+    val collector = fixture.getSut(context, prepare = false)
+    // pretend the HandlerThread is started but its looper isn't prepared yet
+    collector.injectForField("handlerThreadStarted", true)
+
+    collector.startCollection(mock())
+    collector.onActivityStarted(fixture.activity)
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(0, fixture.addOnFrameMetricsAvailableListenerCounter)
+
+    collector.onHandlerReady(Handler(Looper.getMainLooper()))
+    Shadows.shadowOf(Looper.getMainLooper()).idle()
+    assertEquals(1, fixture.addOnFrameMetricsAvailableListenerCounter)
   }
 
   @Test

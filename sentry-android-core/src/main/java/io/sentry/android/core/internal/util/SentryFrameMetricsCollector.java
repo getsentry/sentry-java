@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
 public final class SentryFrameMetricsCollector implements Application.ActivityLifecycleCallbacks {
@@ -48,8 +49,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   private final @NotNull ILogger logger;
   private volatile @Nullable Handler handler;
+  private volatile boolean handlerThreadStarted = false;
   private final @NotNull AutoClosableReentrantLock handlerLock = new AutoClosableReentrantLock();
-  private @Nullable WeakReference<Window> currentWindow;
+  // volatile: read from the HandlerThread in onHandlerReady while set on the main thread
+  private volatile @Nullable WeakReference<Window> currentWindow;
   private final @NotNull Map<String, FrameMetricsCollectorListener> listenerMap =
       new ConcurrentHashMap<>();
   private boolean isAvailable = false;
@@ -116,8 +119,8 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     }
     isAvailable = true;
 
-    // The frame metrics HandlerThread is started lazily on the first startCollection() call.
-    // Starting it here would block the main thread on HandlerThread.getLooper() during SDK init.
+    // The frame metrics HandlerThread is started by prepare() or the first startCollection() call,
+    // and never waited on: see ensureHandlerThreadStarted().
 
     // We have to register the lifecycle callback, even if no profile is started, otherwise when we
     // start a profile, we wouldn't have the current activity and couldn't get the frameMetrics.
@@ -294,24 +297,49 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   /**
-   * Lazily starts the background HandlerThread used to receive frame metrics. Deferred out of the
-   * constructor because {@link HandlerThread#getLooper()} blocks the caller (the main thread during
-   * SDK init) until the thread is ready, and the handler is only needed once collection starts.
+   * Starts the background HandlerThread ahead of the first {@link #startCollection} call, so its
+   * looper is ready by the time the first frame is drawn. Does not block.
+   */
+  public void prepare() {
+    if (isAvailable) {
+      ensureHandlerThreadStarted();
+    }
+  }
+
+  /**
+   * Starts the background HandlerThread used to receive frame metrics without waiting for it: the
+   * handler is created on the new thread in {@link HandlerThread#onLooperPrepared()}. Calling
+   * {@link HandlerThread#getLooper()} here would block the caller (the main thread) until the new
+   * thread is scheduled, which takes hundreds of ms on a busy device.
    */
   private void ensureHandlerThreadStarted() {
-    if (handler != null) {
+    if (handlerThreadStarted) {
       return;
     }
     try (final @NotNull ISentryLifecycleToken ignored = handlerLock.acquire()) {
-      if (handler == null) {
-        final HandlerThread handlerThread =
-            new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector");
-        handlerThread.setUncaughtExceptionHandler(
-            (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
-        handlerThread.start();
-        handler = new Handler(handlerThread.getLooper());
+      if (handlerThreadStarted) {
+        return;
       }
+      handlerThreadStarted = true;
+      final HandlerThread handlerThread =
+          new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector") {
+            @Override
+            protected void onLooperPrepared() {
+              onHandlerReady(new Handler(getLooper()));
+            }
+          };
+      handlerThread.setUncaughtExceptionHandler(
+          (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
+      handlerThread.start();
     }
+  }
+
+  @VisibleForTesting
+  void onHandlerReady(final @NotNull Handler handler) {
+    this.handler = handler;
+    // startCollection() or an activity start may have happened before the handler existed, in
+    // which case trackCurrentWindow() skipped attaching the listener
+    trackCurrentWindow();
   }
 
   public void stopCollection(final @Nullable String listenerId) {

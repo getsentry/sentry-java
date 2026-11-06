@@ -27,7 +27,10 @@ class SpanFrameMetricsCollectorTest {
     var timeNanos = 0L
     var lastKnownChoreographerFrameTimeNanos = 0L
 
-    fun getSut(enabled: Boolean = true): SpanFrameMetricsCollector {
+    fun getSut(
+      enabled: Boolean = true,
+      tracesSampleRate: Double? = 1.0,
+    ): SpanFrameMetricsCollector {
       whenever(frameMetricsCollector.startCollection(any()))
         .thenReturn(UUID.randomUUID().toString())
       whenever(frameMetricsCollector.getLastKnownFrameStartTimeNanos()).thenAnswer {
@@ -37,6 +40,7 @@ class SpanFrameMetricsCollectorTest {
       options.isEnableFramesTracking = enabled
       options.isEnablePerformanceV2 = enabled
       options.dateProvider = SentryAndroidDateProvider()
+      options.tracesSampleRate = tracesSampleRate
 
       return SpanFrameMetricsCollector(options, frameMetricsCollector)
     }
@@ -88,6 +92,24 @@ class SpanFrameMetricsCollectorTest {
   fun `When AndroidSlowFrozenFrameCollector is initialized, it doesn't register any listener`() {
     fixture.getSut()
     verify(fixture.frameMetricsCollector, never()).startCollection(any())
+  }
+
+  @Test
+  fun `When enabled and tracing is enabled, it prepares the frame metrics collector`() {
+    fixture.getSut()
+    verify(fixture.frameMetricsCollector).prepare()
+  }
+
+  @Test
+  fun `When tracing is disabled, it doesn't prepare the frame metrics collector`() {
+    fixture.getSut(tracesSampleRate = null)
+    verify(fixture.frameMetricsCollector, never()).prepare()
+  }
+
+  @Test
+  fun `When disabled, it doesn't prepare the frame metrics collector`() {
+    fixture.getSut(enabled = false)
+    verify(fixture.frameMetricsCollector, never()).prepare()
   }
 
   @Test
