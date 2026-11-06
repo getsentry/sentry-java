@@ -4,6 +4,8 @@ plugins {
   id("io.sentry.jdk-target")
 }
 
+val sentryVersion = libs.versions.sentry.get()
+
 group = "io.sentry.sample.servlet"
 
 version = "0.0.1-SNAPSHOT"
@@ -16,7 +18,5 @@ dependencies {
   implementation("io.sentry:sentry-servlet:$sentryVersion")
   implementation("javax.servlet:javax.servlet-api:4.0.1")
 }
-
-val sentryVersion = libs.versions.sentry.get()
 
 tasks.withType<Test>().configureEach { useJUnitPlatform() }
