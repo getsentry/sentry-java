@@ -70,6 +70,10 @@
 
 - Promote the metrics capture API from experimental to stable ([#6425](https://github.com/getsentry/sentry-java/pull/6425))
 
+### Features
+
+- Add policy-controlled URL query parameters and fragments to Ktor HTTP client spans ([#6433](https://github.com/getsentry/sentry-java/pull/6433))
+
 ## 8.62.0
 
 ### Improvements
