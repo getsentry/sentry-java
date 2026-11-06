@@ -129,30 +129,35 @@ The repository is organized into multiple modules:
 
 ### Exception Handling
 
-**Never introduce a new `catch (Throwable)`.** Catch the narrowest type the guarded code can
-actually throw. The repository still contains many pre-existing broad catches; they are legacy,
-not a precedent to follow.
+The following section applies only in cases where the spec (sentry-docs) do not define an exception
+handling strategy.
 
-A broad catch swallows `OutOfMemoryError`, `StackOverflowError`, `ThreadDeath` and `LinkageError` —
-conditions the JVM/ART cannot recover from and that leave the process in an undefined state — and
-it hides real bugs in our own code behind a log line.
+Inside the SDK, **never add a broad catch** (`Throwable`, `Error`, `Exception`,
+`RuntimeException`). Catch the narrowest type the guarded code can actually throw. The many
+existing broad catches are legacy, not precedent: they hide real bugs in our own code and make it
+appear that Sentry is broken.
 
-"The SDK must never crash the host application" is not a reason to catch `Throwable`. That goal is
-served by `io.sentry.util.ExceptionUtils.rethrowIfFatal`, which lets the non-recoverable throwables
-through while leaving everything else for the caller to log or ignore:
+A broad catch is allowed only at a boundary where we can't know what the other side throws. Two
+examples:
 
-```java
-try {
-  doSomethingRisky();
-} catch (Throwable t) {
-  ExceptionUtils.rethrowIfFatal(t);
-  options.getLogger().log(SentryLevel.ERROR, "Failed to do something risky", t);
-}
-```
+- public API entry points like `captureException`
+- Android framework calls that cross into another process (`ContentResolver`, system services)
+- user callbacks like `beforeSendLogs` defined in the spec (sentry-docs)
 
-Apply that pattern only where a broad catch is genuinely unavoidable — an entry point that runs
-arbitrary user code or third-party callbacks. Everywhere else, name the exception types. Say in the
-PR description why the broad catch is necessary.
+At a boundary follow the spec (sentry-docs) otherwise if no spec is defined for this case:
+
+- Call `ExceptionUtils.rethrowIfFatal(t)` first so `OutOfMemoryError`, `StackOverflowError`, etc.
+  are never swallowed. It also rethrows `LinkageError`, so code probing an optional `compileOnly`
+  dependency must catch the specific subclass (`NoClassDefFoundError`, ...) before it.
+- A code comment is required saying why the catch is broad and what happens on failure (event
+  dropped, feature disabled, ...).
+- If wrapping user code with a broad catch, documentation is **required** explaining how the user
+  is expected to discover that the code they wrote isn't working. Both in the Javadoc and in sentry-docs.
+- Logging is not handling: `options.getLogger()` is silent unless `debug` is enabled, so a failure
+  that is only logged is invisible in production.
+
+Instrumentation that wraps user code is not a boundary for the user's own exceptions: let them
+propagate unchanged.
 
 ### Concurrency
 
