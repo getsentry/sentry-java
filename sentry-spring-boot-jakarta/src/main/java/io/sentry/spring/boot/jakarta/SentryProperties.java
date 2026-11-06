@@ -50,6 +50,15 @@ public class SentryProperties extends SentryOptions {
   /** Clients integration properties. */
   private @NotNull Clients clients = new Clients();
 
+  /** Monitor every {@code @Scheduled} method with Sentry Crons. */
+  private boolean monitorScheduledTasks = false;
+
+  /**
+   * {@code @Scheduled} methods not to monitor when {@code monitorScheduledTasks} is on, as {@code
+   * ClassName.methodName} or a regex matching it.
+   */
+  private @NotNull List<String> excludeScheduledTasks = new ArrayList<>();
+
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
   }
@@ -133,6 +142,22 @@ public class SentryProperties extends SentryOptions {
 
   public void setClients(@NotNull Clients clients) {
     this.clients = clients;
+  }
+
+  public boolean isMonitorScheduledTasks() {
+    return monitorScheduledTasks;
+  }
+
+  public void setMonitorScheduledTasks(boolean monitorScheduledTasks) {
+    this.monitorScheduledTasks = monitorScheduledTasks;
+  }
+
+  public @NotNull List<String> getExcludeScheduledTasks() {
+    return excludeScheduledTasks;
+  }
+
+  public void setExcludeScheduledTasks(@NotNull List<String> excludeScheduledTasks) {
+    this.excludeScheduledTasks = excludeScheduledTasks;
   }
 
   @Open

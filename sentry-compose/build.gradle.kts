@@ -8,10 +8,14 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   id("com.android.library")
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.detekt)
+  id("io.sentry.detekt")
   alias(libs.plugins.dokka)
   alias(libs.plugins.dokka.javadoc)
   `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish.multiplatform")
+  id("io.sentry.api-validation")
 }
 
 kotlin {

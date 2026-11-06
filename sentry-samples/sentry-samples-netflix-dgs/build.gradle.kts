@@ -7,6 +7,8 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 application { mainClass.set("io.sentry.samples.netflix.dgs.NetlixDgsApplication") }

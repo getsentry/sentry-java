@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.kafka.test.context.EmbeddedKafka
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -14,11 +15,14 @@ import org.springframework.test.context.junit4.SpringRunner
 /**
  * Drives [IntegrationTestApplication] over HTTP and asserts what reaches [server].
  *
- * Subclasses share one application context and one server, so the app starts once per suite.
- * Envelopes that arrive late can outlive [server]'s reset, so tests match on values only they
- * produce.
+ * Subclasses share one application context, one server and one Kafka broker, so each starts once
+ * per suite. Envelopes that arrive late can outlive [server]'s reset, so tests match on values only
+ * they produce.
  */
 @RunWith(SpringRunner::class)
+// An in-JVM broker, so no Docker is needed. As part of the context, it starts before the app's
+// Kafka listener connects and stops after it.
+@EmbeddedKafka(topics = [KAFKA_TOPIC], bootstrapServersProperty = "spring.kafka.bootstrap-servers")
 @SpringBootTest(
   classes = [IntegrationTestApplication::class],
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
@@ -27,14 +31,14 @@ import org.springframework.test.context.junit4.SpringRunner
       "sentry.traces-sample-rate=1.0",
       "sentry.clients.ok-http-enabled=true",
       "sentry.enable-cache-tracing=true",
+      "sentry.enable-queue-tracing=true",
       "sentry.logs.enabled=true",
       "sentry.profile-session-sample-rate=1.0",
       "sentry.profile-lifecycle=TRACE",
       "sentry.profiling-traces-dir-path=\${java.io.tmpdir}/sentry-integration-test/profiling-traces",
-      // A database per context, because KafkaIntegrationTest runs a second one that would
-      // otherwise find the first one's tables.
-      "spring.datasource.url=jdbc:p6spy:hsqldb:mem:\${random.uuid}",
+      "spring.datasource.url=jdbc:p6spy:hsqldb:mem:testdb",
       "spring.datasource.driver-class-name=com.p6spy.engine.spy.P6SpyDriver",
+      "spring.kafka.consumer.auto-offset-reset=earliest",
     ],
 )
 abstract class IntegrationTest {

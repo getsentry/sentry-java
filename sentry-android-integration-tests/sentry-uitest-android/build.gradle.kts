@@ -7,7 +7,9 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.detekt)
+  id("io.sentry.detekt")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
 
 android {
@@ -122,7 +124,7 @@ dependencies {
   androidTestImplementation(libs.awaitility3.kotlin)
   androidTestImplementation(libs.kotlin.test.junit)
   androidTestImplementation(libs.leakcanary.instrumentation)
-  androidTestImplementation(libs.okhttp.mockwebserver)
+  androidTestImplementation(libs.okhttp.mockwebserver4)
 }
 
 tasks.withType<JavaCompile>().configureEach {

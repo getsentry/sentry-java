@@ -1,8 +1,8 @@
 package io.sentry.gradle
 
 import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
-import com.android.build.gradle.BaseExtension
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -87,7 +87,7 @@ class JdkTargetConvention : Plugin<Project> {
     }
 
     project.plugins.withId("com.android.library") {
-      val android = project.extensions.getByType(BaseExtension::class.java)
+      val android = project.extensions.getByType(LibraryExtension::class.java)
       android.compileOptions {
         sourceCompatibility = PUBLISHED_JAVA_VERSION
         targetCompatibility = PUBLISHED_JAVA_VERSION
