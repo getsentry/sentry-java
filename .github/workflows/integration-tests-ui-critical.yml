@@ -121,9 +121,9 @@ jobs:
             *) echo "Unknown channel: ${{ matrix.channel }}"; exit 1 ;;
           esac
           yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --install emulator --channel="$CHANNEL" > /dev/null
-          VERSION=$("$SDK/emulator/emulator" -version 2>/dev/null | grep -Eo 'version [0-9][0-9.]*' | head -1 | cut -d' ' -f2)
+          VERSION=$(grep -E '^Pkg\.Revision=' "$SDK/emulator/source.properties" | cut -d= -f2)
           if [ -z "$VERSION" ]; then
-            echo "Could not determine emulator version"
+            echo "Could not read the emulator version from $SDK/emulator/source.properties"
             exit 1
           fi
           echo "Emulator version: $VERSION"
