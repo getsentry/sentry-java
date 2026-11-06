@@ -67,6 +67,7 @@ public class TombstoneIntegration implements Integration, Closeable {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options =
         Objects.requireNonNull(

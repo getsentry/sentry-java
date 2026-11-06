@@ -20,9 +20,12 @@ package io.sentry.android.core.internal.threaddump;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 public final class Lines {
-  private final @NotNull ArrayList<? extends Line> mList;
+  private final @NotNull List<? extends Line> mList;
   private final int mMin;
   private final int mMax;
 
@@ -41,7 +44,9 @@ public final class Lines {
 
   /** Read the whole file into a Lines object. */
   public static Lines readLines(final @NotNull File file) throws IOException {
-    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+    try (BufferedReader reader =
+        new BufferedReader(
+            new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
       return Lines.readLines(reader);
     }
   }
@@ -61,7 +66,7 @@ public final class Lines {
   }
 
   /** Construct with a list of lines. */
-  public Lines(final @NotNull ArrayList<? extends Line> list) {
+  public Lines(final @NotNull List<? extends Line> list) {
     this.mList = list;
     mMin = 0;
     mMax = mList.size();

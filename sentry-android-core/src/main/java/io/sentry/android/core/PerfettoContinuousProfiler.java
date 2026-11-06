@@ -527,12 +527,14 @@ public class PerfettoContinuousProfiler
     }
   }
 
+  @Override
   public void reevaluateSampling() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       shouldSample = true;
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void sendChunk(
       final @NotNull ProfileChunk.Builder builder,
       final @NotNull IScopes scopes,

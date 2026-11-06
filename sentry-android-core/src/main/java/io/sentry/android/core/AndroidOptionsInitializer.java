@@ -502,7 +502,7 @@ final class AndroidOptionsInitializer {
       options.setReplayController(replay);
     }
     if (isDistributionAvailable) {
-      final DistributionIntegration distribution = new DistributionIntegration((context));
+      final DistributionIntegration distribution = new DistributionIntegration(context);
       options.setDistributionController(distribution);
       options.addIntegration(distribution);
     }

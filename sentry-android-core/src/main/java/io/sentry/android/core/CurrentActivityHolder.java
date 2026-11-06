@@ -26,6 +26,7 @@ public class CurrentActivityHolder {
     return null;
   }
 
+  @SuppressWarnings("ReferenceEquality")
   public void setActivity(final @NotNull Activity activity) {
     if (currentActivity != null && currentActivity.get() == activity) {
       return;
@@ -38,6 +39,7 @@ public class CurrentActivityHolder {
     currentActivity = null;
   }
 
+  @SuppressWarnings("ReferenceEquality")
   public void clearActivity(final @NotNull Activity activity) {
     if (currentActivity != null && currentActivity.get() != activity) {
       return;

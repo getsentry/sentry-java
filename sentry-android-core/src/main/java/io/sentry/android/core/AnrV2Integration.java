@@ -38,6 +38,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -64,6 +65,7 @@ public class AnrV2Integration implements Integration, Closeable {
 
   @SuppressLint("NewApi") // we do the check in the AnrIntegrationFactory
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options =
         Objects.requireNonNull(
@@ -210,7 +212,8 @@ public class AnrV2Integration implements Integration, Closeable {
       }
 
       try (final BufferedReader reader =
-          new BufferedReader(new InputStreamReader(new ByteArrayInputStream(dump)))) {
+          new BufferedReader(
+              new InputStreamReader(new ByteArrayInputStream(dump), StandardCharsets.UTF_8))) {
         final Lines lines = Lines.readLines(reader);
 
         final ThreadDumpParser threadDumpParser = new ThreadDumpParser(options, isBackground);

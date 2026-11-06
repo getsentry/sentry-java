@@ -23,6 +23,7 @@ public final class AndroidMetricsBatchProcessor extends MetricsBatchProcessor
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void onBackground() {
     if (!hasAcceptedItem) {
       return;

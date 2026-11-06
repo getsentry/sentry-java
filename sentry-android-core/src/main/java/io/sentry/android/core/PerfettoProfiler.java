@@ -123,6 +123,7 @@ public class PerfettoProfiler {
    * error) once the OS delivers the result. The listener may be called synchronously if the result
    * has already arrived, or asynchronously on an OS-managed thread otherwise.
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void endAndCollect(final @NotNull Consumer<@Nullable File> listener) {
     if (!started) {
       logger.log(SentryLevel.WARNING, "PerfettoProfiler was never started");

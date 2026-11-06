@@ -176,6 +176,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
 
     @Override
+    @SuppressWarnings("ReferenceEquality")
     public void onActivityResumed(final @NotNull Activity activity) {
       if (activity == activityRef.get() && shakeDetector != null) {
         shakeDetector.start(activity, shakeListener(activityRef));
@@ -183,6 +184,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
 
     @Override
+    @SuppressWarnings("ReferenceEquality")
     public void onActivityPaused(final @NotNull Activity activity) {
       if (activity == activityRef.get() && shakeDetector != null) {
         shakeDetector.stop();
@@ -190,6 +192,7 @@ public class SentryUserFeedbackForm extends AlertDialog {
     }
 
     @Override
+    @SuppressWarnings("ReferenceEquality")
     public void onActivityDestroyed(final @NotNull Activity activity) {
       if (activity == activityRef.get()) {
         stopShakeDetection();
