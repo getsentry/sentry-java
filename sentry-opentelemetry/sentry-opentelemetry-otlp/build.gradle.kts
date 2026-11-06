@@ -3,15 +3,15 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   `java-library`
-  id("io.sentry.animalsniffer")
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.api-validation")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 }
 
 dependencies {

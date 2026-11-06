@@ -9,10 +9,11 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer.android")
+  id("io.sentry.api-validation")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 }
 
 dependencies {
@@ -30,6 +31,8 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.core)
   testImplementation(libs.msgpack)
+  testImplementation(libs.okhttp.mockwebserver)
+  testImplementation(libs.okhttp.tls)
   testImplementation(libs.okio)
   testImplementation(projects.sentryTestSupport)
 }

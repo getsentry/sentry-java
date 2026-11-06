@@ -58,7 +58,7 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 
 ## Java and Android specifics
 
-- The core `sentry` module is Java 8 and must not reference Android or JVM-only APIs. Reach optional
+- The core `sentry` module is Java 11 and must not reference Android or JVM-only APIs. Reach optional
   platform code through `Platform`, `LoadClass`, or a separate module.
 - Android code calling an API newer than `minSdk` must be guarded by
   `BuildInfoProvider.getSdkInfoVersion()`.
@@ -120,6 +120,6 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 ## What NOT to flag
 
 - Formatting and import order — Spotless owns it.
-- Contents of generated `.api` files, beyond confirming `apiDump` was run.
+- Contents of generated `.api` files, beyond confirming `updateKotlinAbi` was run.
 - Conventional commit / PR title format, and missing changelog entries — CI and Danger check both.
 - Speculative refactors or improvements unrelated to the diff.

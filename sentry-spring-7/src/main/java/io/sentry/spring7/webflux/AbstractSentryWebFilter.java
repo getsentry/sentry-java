@@ -66,7 +66,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   }
 
   private boolean isIgnored(final @NotNull IScopes scopes, final @NotNull String origin) {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), origin);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), origin);
   }
 
   protected void doFinally(

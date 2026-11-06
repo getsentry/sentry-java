@@ -5,7 +5,6 @@ import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_SCRE
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_TYPE_DATA;
 import static io.sentry.android.core.ActivityLifecycleIntegration.APP_START_WARM;
 import static io.sentry.android.core.ActivityLifecycleIntegration.STANDALONE_APP_START_OP;
-import static io.sentry.android.core.ActivityLifecycleIntegration.UI_LOAD_OP;
 
 import io.sentry.Hint;
 import io.sentry.ISentryLifecycleToken;
@@ -48,16 +47,11 @@ final class PerformanceAndroidEventProcessor implements SentryEventProcessor {
 
   private boolean sentStartMeasurement = false;
 
-  private final @NotNull ActivityFramesTracker activityFramesTracker;
   private final @NotNull SentryAndroidOptions options;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
-  PerformanceAndroidEventProcessor(
-      final @NotNull SentryAndroidOptions options,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+  PerformanceAndroidEventProcessor(final @NotNull SentryAndroidOptions options) {
     this.options = Objects.requireNonNull(options, "SentryAndroidOptions is required");
-    this.activityFramesTracker =
-        Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
   }
 
   /**
@@ -107,7 +101,7 @@ final class PerformanceAndroidEventProcessor implements SentryEventProcessor {
           final @NotNull TimeSpan appStartTimeSpan =
               isHeadlessStandaloneAppStartTxn
                   ? appStartMetrics.getAppStartTimeSpanForHeadless()
-                  : appStartMetrics.getAppStartTimeSpanWithFallback(options);
+                  : appStartMetrics.getAppStartTimeSpanWithFallback();
           final long naturalDurationMs = appStartTimeSpan.getDurationMs();
 
           final long appStartUpDurationMs;
@@ -172,22 +166,6 @@ final class PerformanceAndroidEventProcessor implements SentryEventProcessor {
       }
 
       setContributingFlags(transaction);
-
-      final SentryId eventId = transaction.getEventId();
-      final SpanContext spanContext = transaction.getContexts().getTrace();
-
-      // only add slow/frozen frames to transactions created by ActivityLifecycleIntegration
-      // which have the operation UI_LOAD_OP. If a user-defined (or hybrid SDK) transaction
-      // users it, we'll also add the metrics if available
-      if (eventId != null
-          && spanContext != null
-          && spanContext.getOperation().contentEquals(UI_LOAD_OP)) {
-        final Map<String, @NotNull MeasurementValue> framesMetrics =
-            activityFramesTracker.takeMetrics(eventId);
-        if (framesMetrics != null) {
-          transaction.getMeasurements().putAll(framesMetrics);
-        }
-      }
 
       return transaction;
     }

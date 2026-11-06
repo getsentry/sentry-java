@@ -25,30 +25,16 @@ group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-fun springBoot2SupportsGraphql(): Boolean {
-  val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
-  val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
-  val major = parts.getOrElse(0) { 0 }
-  val minor = parts.getOrElse(1) { 0 }
-  return major > 2 || (major == 2 && minor >= 7)
-}
-
-val includeGraphql = !project.hasProperty("excludeGraphql") && springBoot2SupportsGraphql()
-
 dependencies {
   implementation(platform(libs.springboot2.bom))
   implementation(libs.springboot.starter.actuator)
-  if (includeGraphql) {
-    implementation(libs.springboot.starter.graphql)
-  }
+  implementation(libs.springboot.starter.graphql)
   implementation(libs.springboot.starter.webflux)
   implementation(Config.Libs.kotlinReflect)
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   implementation(projects.sentrySpringBootStarter)
   implementation(projects.sentryLogback)
-  if (includeGraphql) {
-    implementation(projects.sentryGraphql)
-  }
+  implementation(projects.sentryGraphql)
   implementation(projects.sentryAsyncProfiler)
 }
 
@@ -73,15 +59,6 @@ tasks.jar {
 }
 
 tasks.startScripts { dependsOn(tasks.shadowJar) }
-
-configure<SourceSetContainer> {
-  main {
-    if (!includeGraphql) {
-      java.exclude("**/graphql/**")
-      resources.exclude("graphql/**")
-    }
-  }
-}
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {

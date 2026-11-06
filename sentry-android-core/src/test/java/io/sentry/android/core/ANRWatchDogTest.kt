@@ -43,7 +43,17 @@ class ANRWatchDogTest {
     val interval = 10L
 
     val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, mock())
+      ANRWatchDog(
+        timeProvider,
+        interval,
+        1L,
+        true,
+        { a -> anr = a },
+        mock(),
+        handler,
+        mock(),
+        AndroidDebugManager(),
+      )
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }
@@ -80,7 +90,17 @@ class ANRWatchDogTest {
     val interval = 10L
 
     val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, mock())
+      ANRWatchDog(
+        timeProvider,
+        interval,
+        1L,
+        true,
+        { a -> anr = a },
+        mock(),
+        handler,
+        mock(),
+        AndroidDebugManager(),
+      )
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }
@@ -122,7 +142,17 @@ class ANRWatchDogTest {
     whenever(am.processesInErrorState).thenReturn(anrs)
 
     val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, context)
+      ANRWatchDog(
+        timeProvider,
+        interval,
+        1L,
+        true,
+        { a -> anr = a },
+        mock(),
+        handler,
+        context,
+        AndroidDebugManager(),
+      )
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }
@@ -168,7 +198,17 @@ class ANRWatchDogTest {
     whenever(am.processesInErrorState).thenReturn(anrs)
 
     val sut =
-      ANRWatchDog(timeProvider, interval, 1L, true, { a -> anr = a }, mock(), handler, context)
+      ANRWatchDog(
+        timeProvider,
+        interval,
+        1L,
+        true,
+        { a -> anr = a },
+        mock(),
+        handler,
+        context,
+        AndroidDebugManager(),
+      )
     val es = Executors.newSingleThreadExecutor()
     try {
       es.submit { sut.run() }

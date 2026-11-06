@@ -126,7 +126,7 @@ public class SentrySpanClientHttpRequestInterceptor implements ClientHttpRequest
   }
 
   private boolean isIgnored() {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), traceOrigin);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), traceOrigin);
   }
 
   private void addBreadcrumb(

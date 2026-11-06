@@ -67,6 +67,7 @@ class TraceContextSerializationTest {
         release = "1.0.17"
         tracesSampleRate = sRate
       },
+      null,
       TracesSamplingDecision(sRate > 0.5, sRate),
       "name",
       TransactionNameSource.ROUTE,

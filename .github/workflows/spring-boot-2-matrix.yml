@@ -15,23 +15,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  spring-boot-2-matrix:
-    timeout-minutes: 45
+  versions:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        springboot-version: [ '2.4.13', '2.5.15', '2.6.15', '2.7.0', '2.7.18' ]
-
-    name: Spring Boot ${{ matrix.springboot-version }}
-    env:
-      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+    name: Spring Boot 2.x versions
+    outputs:
+      versions: ${{ steps.versions.outputs.versions }}
 
     steps:
       - name: Checkout Repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: 'recursive'
+          sparse-checkout: gradle
+
+      - name: Read Spring Boot 2.x versions
+        id: versions
+        run: echo "versions=$(jq -c .boot2 gradle/spring-boot-versions.json)" >> "$GITHUB_OUTPUT"
+
+  spring-boot-2-matrix:
+    needs: versions
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        springboot-version: ${{ fromJSON(needs.versions.outputs.versions) }}
+
+    name: Spring Boot ${{ matrix.springboot-version }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Java
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
@@ -39,33 +52,16 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      # Workaround for https://github.com/gradle/actions/issues/21 to use config cache
-      - name: Cache buildSrc
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: buildSrc/build
-          key: build-logic-${{ hashFiles('buildSrc/src/**', 'buildSrc/build.gradle.kts','buildSrc/settings.gradle.kts') }}
-
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-
-      - name: Update Spring Boot 2.x version
-        run: |
-          springboot_version="${{ matrix.springboot-version }}"
-          perl -0pi -e 'BEGIN { $v = shift } s/^springboot2[[:space:]]*=[[:space:]]*"\K[^"]*/$v/m or die "::error::springboot2 version entry not found in gradle/libs.versions.toml\n"' "$springboot_version" gradle/libs.versions.toml
-          echo "Updated Spring Boot 2.x version to $springboot_version"
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Test integration suites
+        # Project paths, unlike a bare task name, keep Gradle from configuring every project.
         run: |
-          ./gradlew \
-            :sentry-spring:integrationTest \
-            :sentry-spring-boot:integrationTest \
-            :sentry-spring-boot:integrationTestWebflux \
-            :sentry-spring-boot:integrationTestOtelNoAgent \
-            :sentry-spring-boot:integrationTestOtelAgent \
-            :sentry-spring-boot:integrationTestOtelAgentWithoutAutoInit
+          task="allIntegrationTestsBoot${SPRINGBOOT_VERSION//./_}"
+          ./gradlew ":sentry-spring:$task" ":sentry-spring-boot:$task"
+        env:
+          SPRINGBOOT_VERSION: ${{ matrix.springboot-version }}
 
       - name: Upload test results
         if: always()

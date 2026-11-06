@@ -1,6 +1,7 @@
 package io.sentry
 
 import com.github.javafaker.Faker
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Baggage.MAX_BAGGAGE_LIST_MEMBER_COUNT
 import io.sentry.Baggage.MAX_BAGGAGE_STRING_LENGTH
 import io.sentry.protocol.SentryId
@@ -738,6 +739,80 @@ class BaggageTest {
   }
 
   @Test
+  fun `setValuesFromScope prefers the scope environment over the options environment`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/456"
+        environment = "options-env"
+      }
+    val scope = Scope(options).apply { environment = "scope-env" }
+    val baggage = Baggage(logger)
+
+    baggage.setValuesFromScope(scope, options)
+
+    assertThat(baggage.environment).isEqualTo("scope-env")
+  }
+
+  @Test
+  fun `setValuesFromScope uses the options environment when the scope has none`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/456"
+        environment = "options-env"
+      }
+    val scope = Scope(options)
+    val baggage = Baggage(logger)
+
+    baggage.setValuesFromScope(scope, options)
+
+    assertThat(baggage.environment).isEqualTo("options-env")
+  }
+
+  @Test
+  fun `setValuesFromTransaction prefers the scope environment over the options environment`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/456"
+        environment = "options-env"
+      }
+    val baggage = Baggage(logger)
+
+    baggage.setValuesFromTransaction(
+      SentryId(),
+      SentryId(),
+      options,
+      "scope-env",
+      TracesSamplingDecision(true, 1.0),
+      "test-transaction",
+      TransactionNameSource.CUSTOM,
+    )
+
+    assertThat(baggage.environment).isEqualTo("scope-env")
+  }
+
+  @Test
+  fun `setValuesFromTransaction uses the options environment when the scope has none`() {
+    val options =
+      SentryOptions().apply {
+        dsn = "https://key@sentry.io/456"
+        environment = "options-env"
+      }
+    val baggage = Baggage(logger)
+
+    baggage.setValuesFromTransaction(
+      SentryId(),
+      SentryId(),
+      options,
+      null,
+      TracesSamplingDecision(true, 1.0),
+      "test-transaction",
+      TransactionNameSource.CUSTOM,
+    )
+
+    assertThat(baggage.environment).isEqualTo("options-env")
+  }
+
+  @Test
   fun `setValuesFromScope falls back to DSN org id when explicit orgId is empty`() {
     val options =
       SentryOptions().apply {
@@ -780,6 +855,7 @@ class BaggageTest {
       SentryId(),
       SentryId(),
       options,
+      null,
       TracesSamplingDecision(true, 1.0),
       "test-transaction",
       TransactionNameSource.CUSTOM,
