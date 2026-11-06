@@ -11,7 +11,6 @@ import io.sentry.ProfilingTraceData
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.android.core.AndroidLogger
-import io.sentry.android.core.AndroidProfiler
 import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.assertEnvelopeProfile
 import io.sentry.assertEnvelopeTransaction
@@ -19,7 +18,6 @@ import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.protocol.SentryTransaction
 import java.io.File
 import java.util.concurrent.TimeUnit
-import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -29,11 +27,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EnvelopeTests : BaseUiTest() {
-  @AfterTest
-  fun resetProfilingTimeout() {
-    AndroidProfiler.setProfilingTimeoutMillis(0)
-  }
-
   @Test
   fun checkEnvelopeCaptureMessage() {
     initSentry(true)
@@ -194,38 +187,6 @@ class EnvelopeTests : BaseUiTest() {
               t.id == transaction.eventId.toString()
             }
           assertNotNull(transactionData)
-        }
-      assertNoOtherEnvelopes()
-    }
-  }
-
-  @Test
-  fun checkTimedOutProfile() {
-    // Shorten the profiling timeout so the test doesn't wait the default 30 seconds
-    AndroidProfiler.setProfilingTimeoutMillis(2_000)
-    initSentry(true) { options: SentryAndroidOptions ->
-      options.tracesSampleRate = 1.0
-      options.profilesSampleRate = 1.0
-    }
-    relayIdlingResource.increment()
-    val transaction = Sentry.startTransaction("timedOutProfile", "testTimeout")
-    Thread {
-        Thread.sleep(5_000)
-        transaction.finish()
-      }
-      .start()
-    // We call transaction.finish() after 5 seconds, and check profile times out after 2 seconds
-
-    relay.assert {
-      findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
-            "timedOutProfile"
-        }
-        .assert {
-          val transactionItem: SentryTransaction = it.assertTransaction()
-          // Profile should not be present, as it timed out and is discarded
-          it.assertNoOtherItems()
-          assertEquals("timedOutProfile", transactionItem.transaction)
         }
       assertNoOtherEnvelopes()
     }

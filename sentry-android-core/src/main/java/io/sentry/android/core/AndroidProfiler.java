@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 @ApiStatus.Internal
 public class AndroidProfiler {
@@ -79,10 +78,7 @@ public class AndroidProfiler {
    */
   private static final int BUFFER_SIZE_BYTES = 3_000_000;
 
-  private static final long PROFILING_TIMEOUT_MILLIS = 30_000;
-
-  private static volatile long profilingTimeoutMillis = PROFILING_TIMEOUT_MILLIS;
-
+  private static final int PROFILING_TIMEOUT_MILLIS = 30_000;
   private long profileStartNanos = 0;
   private final @NotNull File traceFilesDir;
   private final int intervalUs;
@@ -196,7 +192,7 @@ public class AndroidProfiler {
           scheduledFinish =
               timeoutExecutorServiceSupplier
                   .evaluate()
-                  .schedule(() -> endAndCollect(true, null), profilingTimeoutMillis);
+                  .schedule(() -> endAndCollect(true, null), PROFILING_TIMEOUT_MILLIS);
         }
       } catch (RejectedExecutionException e) {
         logger.log(
@@ -286,15 +282,6 @@ public class AndroidProfiler {
       return new ProfileEndData(
           transactionEndNanos, transactionEndCpuMillis, isTimeout, traceFile, measurementsMap);
     }
-  }
-
-  /**
-   * Overrides the profiling timeout for profiles started after this call. Pass a value <= 0 to
-   * restore the default of 30 seconds.
-   */
-  @TestOnly
-  public static void setProfilingTimeoutMillis(final long timeoutMillis) {
-    profilingTimeoutMillis = timeoutMillis > 0 ? timeoutMillis : PROFILING_TIMEOUT_MILLIS;
   }
 
   public void close() {
