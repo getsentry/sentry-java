@@ -7,7 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public class AndroidMemoryCollector implements IPerformanceSnapshotCollector {
+public final class AndroidMemoryCollector implements IPerformanceSnapshotCollector {
 
   @Override
   public void setup() {}

@@ -7,7 +7,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public class AnrProfile {
+public final class AnrProfile {
   public final List<AnrStackTrace> stacks;
 
   public final long startTimeMs;

@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class AnrProfileManager implements AutoCloseable {
+public final class AnrProfileManager implements AutoCloseable {
 
   private static final int MAX_NUM_STACKTRACES =
       (int) ((THRESHOLD_ANR_MS / POLLING_INTERVAL_MS) * 2);

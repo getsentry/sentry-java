@@ -49,7 +49,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class TombstoneIntegration implements Integration, Closeable {
+public final class TombstoneIntegration implements Integration, Closeable {
   private final @NotNull Context context;
   private final @NotNull ICurrentDateProvider dateProvider;
   private @Nullable SentryAndroidOptions options;
@@ -114,7 +114,7 @@ public class TombstoneIntegration implements Integration, Closeable {
   }
 
   @ApiStatus.Internal
-  public static class TombstonePolicy implements ApplicationExitInfoPolicy {
+  public static final class TombstonePolicy implements ApplicationExitInfoPolicy {
 
     private final @NotNull SentryAndroidOptions options;
     private final @NotNull NativeEventCollector nativeEventCollector;

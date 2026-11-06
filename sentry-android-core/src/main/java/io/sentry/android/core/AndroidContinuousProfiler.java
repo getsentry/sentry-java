@@ -45,7 +45,7 @@ import org.jetbrains.annotations.VisibleForTesting;
  * implementation using {@code ProfilingManager}, available on API 35+.
  */
 @ApiStatus.Internal
-public class AndroidContinuousProfiler
+public final class AndroidContinuousProfiler
     implements IContinuousProfiler, RateLimiter.IRateLimitObserver {
   private static final long MAX_CHUNK_DURATION_MILLIS = 60000;
 
