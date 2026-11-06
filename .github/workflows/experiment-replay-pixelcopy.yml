@@ -1,0 +1,71 @@
+# EXPERIMENT (do not merge): does PixelCopy return real frames on GH Actions emulators?
+name: 'Experiment: Replay PixelCopy on GH emulators'
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pixelcopy:
+    name: API ${{ matrix.api-level }} ${{ matrix.target }} gpu=${{ matrix.gpu }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Config used by PR #5639
+          - api-level: 35
+            target: google_apis
+            gpu: auto
+          # Same image, software GPU, to isolate the -gpu flag
+          - api-level: 35
+            target: google_apis
+            gpu: swiftshader_indirect
+          # Config used by agp-matrix.yml
+          - api-level: 30
+            target: aosp_atd
+            gpu: swiftshader_indirect
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: 'Set up Java: 21'
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run ReplaySnapshotTest
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          channel: canary
+          arch: x86_64
+          disable-animations: true
+          disable-spellchecker: true
+          disk-size: 4096M
+          emulator-options: -memory 4096 -no-window -gpu ${{ matrix.gpu }} -noaudio -no-boot-anim -camera-back none -no-snapshot-save
+          script: ./scripts/experiment-replay-pixelcopy.sh replay-experiment
+
+      - name: Upload frames and logcat
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: pixelcopy-api${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.gpu }}
+          path: |
+            replay-experiment/
+            **/build/outputs/androidTest-results/**/*.xml
