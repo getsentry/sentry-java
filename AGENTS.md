@@ -202,6 +202,29 @@ Two more rules that catch most of the rest:
 
 Prefer `AutoClosableReentrantLock` over `synchronized`, matching the rest of the codebase.
 
+### Measuring Time
+
+**New code that reads a clock uses `io.sentry.time`**, not `System.currentTimeMillis()`,
+`System.nanoTime()`, `SystemClock`, `DateUtils.getCurrentDateTime()`, a `SentryDateProvider`, or an
+`ICurrentDateProvider`. Those are legacy, not a precedent to follow.
+
+Pick the type by what the number is for:
+
+| You need | Use |
+|---|---|
+| An instant that leaves the process (event, breadcrumb, session) | `EpochClock` → `Timestamp`. Never subtract two of them |
+| How long something took | `Stopwatch` |
+| Whether a window has elapsed (TTL, backoff, timeout) | `Deadline` |
+| Several instants compared with each other (spans of a transaction) | `AnchoredClock` |
+| A raw tick, when none of the above fits | `MonotonicTicker` |
+
+Get the clock from `options.getEpochClock()` or `options.getMonotonicTicker()`, not a
+`getInstance()`: on Android the ticker keeps counting through device suspend, and `System.nanoTime()`
+does not. Take it as a constructor parameter; tests use `TestMonotonicTicker` instead of sleeping.
+
+If none of these fits, propose a new type, and the clock bug it makes impossible, before writing
+call sites against it. Don't inline raw tick arithmetic as a stopgap.
+
 ### Testing Requirements
 - Write comprehensive unit tests for new features
 - Android modules require both unit tests and instrumented tests where applicable
