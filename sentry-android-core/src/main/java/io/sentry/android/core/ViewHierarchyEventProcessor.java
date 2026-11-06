@@ -125,7 +125,7 @@ public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
     return event;
   }
 
-  public static byte[] snapshotViewHierarchyAsData(
+  public static @Nullable byte[] snapshotViewHierarchyAsData(
       @Nullable Activity activity,
       @NotNull IThreadChecker threadChecker,
       @NotNull ISerializer serializer,

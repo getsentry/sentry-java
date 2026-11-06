@@ -25,7 +25,7 @@ import org.jetbrains.annotations.TestOnly;
 public final class AppState implements Closeable {
   private static @NotNull AppState instance = new AppState();
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
-  private volatile LifecycleObserver lifecycleObserver;
+  private volatile @Nullable LifecycleObserver lifecycleObserver;
   private MainLooperHandler handler = new MainLooperHandler();
 
   private AppState() {}
@@ -49,7 +49,7 @@ public final class AppState implements Closeable {
 
   @ApiStatus.Internal
   @TestOnly
-  public LifecycleObserver getLifecycleObserver() {
+  public @Nullable LifecycleObserver getLifecycleObserver() {
     return lifecycleObserver;
   }
 

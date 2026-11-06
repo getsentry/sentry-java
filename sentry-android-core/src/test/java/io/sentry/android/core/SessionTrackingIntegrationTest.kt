@@ -118,7 +118,7 @@ class SessionTrackingIntegrationTest {
 
   private fun setupLifecycle(): LifecycleRegistry {
     val lifecycle = LifecycleRegistry(ProcessLifecycleOwner.get())
-    lifecycle.addObserver(AppState.getInstance().lifecycleObserver)
+    lifecycle.addObserver(AppState.getInstance().lifecycleObserver!!)
     return lifecycle
   }
 
