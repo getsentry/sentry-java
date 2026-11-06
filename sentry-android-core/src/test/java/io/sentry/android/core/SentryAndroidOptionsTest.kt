@@ -173,19 +173,6 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
-  fun `performance v2 is enabled by default`() {
-    val sentryOptions = SentryAndroidOptions()
-    assertTrue(sentryOptions.isEnablePerformanceV2)
-  }
-
-  @Test
-  fun `performance v2 can be disabled`() {
-    val sentryOptions = SentryAndroidOptions()
-    sentryOptions.isEnablePerformanceV2 = false
-    assertFalse(sentryOptions.isEnablePerformanceV2)
-  }
-
-  @Test
   fun `standalone app start tracing is disabled by default`() {
     val sentryOptions = SentryAndroidOptions()
     assertFalse(sentryOptions.isEnableStandaloneAppStartTracing)

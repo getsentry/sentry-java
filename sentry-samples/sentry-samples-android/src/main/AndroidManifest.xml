@@ -316,10 +316,6 @@
     <!--    <meta-data android:name="io.sentry.enabled" android:value="false" /> -->
 
     <meta-data
-      android:name="io.sentry.performance-v2.enable"
-      android:value="true" />
-
-    <meta-data
       android:name="io.sentry.standalone-app-start-tracing.enable"
       android:value="true" />
 

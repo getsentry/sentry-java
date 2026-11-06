@@ -303,8 +303,6 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private boolean attachRawTombstone = false;
 
-  private boolean enablePerformanceV2 = true;
-
   private boolean enableStandaloneAppStartTracing = false;
 
   private @Nullable SentryFrameMetricsCollector frameMetricsCollector;
@@ -866,26 +864,6 @@ public final class SentryAndroidOptions extends SentryOptions {
   public void setReportHistoricalMemoryLimiterExits(
       final boolean reportHistoricalMemoryLimiterExits) {
     this.reportHistoricalMemoryLimiterExits = reportHistoricalMemoryLimiterExits;
-  }
-
-  /**
-   * @return true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
-   *     more details.
-   */
-  public boolean isEnablePerformanceV2() {
-    return enablePerformanceV2;
-  }
-
-  /**
-   * Enables or disables the Performance V2 SDK features.
-   *
-   * <p>With this change - Cold app start spans will provide more accurate timings - Cold app start
-   * spans will be enriched with detailed ContentProvider, Application and Activity startup times
-   *
-   * @param enablePerformanceV2 true if enabled or false otherwise
-   */
-  public void setEnablePerformanceV2(final boolean enablePerformanceV2) {
-    this.enablePerformanceV2 = enablePerformanceV2;
   }
 
   /**

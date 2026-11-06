@@ -143,8 +143,6 @@ final class ManifestMetadataReader {
 
   static final String SEND_MODULES = "io.sentry.send-modules";
 
-  static final String ENABLE_PERFORMANCE_V2 = "io.sentry.performance-v2.enable";
-
   static final String ENABLE_STANDALONE_APP_START_TRACING =
       "io.sentry.standalone-app-start-tracing.enable";
 
@@ -577,9 +575,6 @@ final class ManifestMetadataReader {
             readBool(metadata, logger, ENABLE_ROOT_CHECK, options.isEnableRootCheck()));
 
         options.setSendModules(readBool(metadata, logger, SEND_MODULES, options.isSendModules()));
-
-        options.setEnablePerformanceV2(
-            readBool(metadata, logger, ENABLE_PERFORMANCE_V2, options.isEnablePerformanceV2()));
 
         options.setEnableStandaloneAppStartTracing(
             readBool(

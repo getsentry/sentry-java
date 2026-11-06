@@ -1801,31 +1801,6 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads performance-v2 flag to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.ENABLE_PERFORMANCE_V2 to false)
-    val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertFalse(fixture.options.isEnablePerformanceV2)
-  }
-
-  @Test
-  fun `applyMetadata reads performance-v2 flag to options and keeps default if not found`() {
-    // Arrange
-    val context = fixture.getContext()
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.isEnablePerformanceV2)
-  }
-
-  @Test
   fun `applyMetadata reads standalone app start tracing flag to options`() {
     val bundle = bundleOf(ManifestMetadataReader.ENABLE_STANDALONE_APP_START_TRACING to true)
     val context = fixture.getContext(metaData = bundle)
