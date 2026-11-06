@@ -37,6 +37,7 @@ import okio.GzipSink
 import okio.buffer
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -59,6 +60,7 @@ class SentryOkHttpInterceptorUnknownContentLengthTest {
     options =
       SentryOptions().apply {
         dsn = "https://key@sentry.io/proj"
+        setReplayController(mock { on { isRecording } doReturn true })
         sessionReplay.setNetworkDetailAllowUrls(listOf(".*"))
         sessionReplay.setNetworkCaptureBodies(captureBodies)
       }

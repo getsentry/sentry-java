@@ -117,13 +117,19 @@ public open class SentryOkHttpInterceptor(
     var response: Response? = null
     var code: Int? = null
 
+    // Network details only end up in a replay, so capturing them while no replay is recording or
+    // buffering is wasted work.
     val networkDetailData =
-      NetworkDetailCaptureUtils.initializeForUrl(
-        request.url.toString(),
-        request.method,
-        scopes.options.sessionReplay.networkDetailAllowUrls,
-        scopes.options.sessionReplay.networkDetailDenyUrls,
-      )
+      if (scopes.options.replayController.isRecording) {
+        NetworkDetailCaptureUtils.initializeForUrl(
+          request.url.toString(),
+          request.method,
+          scopes.options.sessionReplay.networkDetailAllowUrls,
+          scopes.options.sessionReplay.networkDetailDenyUrls,
+        )
+      } else {
+        null
+      }
 
     try {
       val requestBuilder = request.newBuilder()
