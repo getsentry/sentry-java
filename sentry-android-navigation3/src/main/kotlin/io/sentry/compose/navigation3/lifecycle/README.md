@@ -56,8 +56,9 @@ A displaced nav root remains eligible for lease restoration until it stops (`ON_
 root's nav data is reinstated, and so is its nav transaction if unfinished. Otherwise, the nav root gets a new nav transaction (see
 [below](#returning-to-a-nav-root)).
 
-> † The exception is an incoming nav root that isn't resumed while the leaseholder is, e.g., a
-preloaded ViewPager2 Fragment page next to the current one. The user isn't interacting with such a
+> † The exception is an incoming nav root that isn't resumed while the leaseholder or the incoming
+nav root's host Activity is, e.g., a preloaded ViewPager2 Fragment page next to the current one,
+whether or not the current page has a `SentryNavEffect`. The user isn't interacting with such a
 nav root yet, so it acquires the lease when it resumes instead.
 
 The following diagram illustrates how handoff works:
@@ -144,6 +145,29 @@ Alternative at rollback point: B disposes before A stops
                              Finish txB if unfinished                 │
 ```
 
+### Non-candidate roots and lease withdrawal
+
+An Activity or Fragment without a `SentryNavEffect` (aka, a "non-candidate root") can't acquire the lease. When one replaces the
+leaseholder, the coordinator "withdraws" the lease instead, i.e., it unpublishes the leaseholder's nav state without handing off the lease,
+leaving the transaction unbound but running until the leaseholder resumes.
+
+Non-candidate roots never register, so the coordinator infers their presence from either of two signals:
+
+- another Activity resumes while the leaseholder isn't resumed, unless the resumed Activity is
+  itself a nav root, which takes the lease when it resumes; or
+
+- the leaseholder pauses while its host Activity stays resumed (e.g., a ViewPager2 swipe). (Note
+  that an Activity pauses before its Fragments do when the Activity is backgrounded or covered.)
+
+**Limitations**: Leaseholders whose host Activity is unknown are never withdrawn. Fragments that cover the leaseholder without pausing it
+(e.g., dialogs) go undetected. These two signals are deliberately the only ones: other surfaces that cover a leaseholder without pausing it
+(e.g., bottom sheets or Compose dialogs) aren't detected, and shouldn't be by adding signals here.
+
+**Limitation (before the covering Activity resumes)**: The lease is withdrawn only once the covering Activity resumes. Until then (i.e.,
+during its `onCreate` and `onStart`), errors and spans the covering Activity produces are still attributed to the leaseholder. For the same
+reason, the covering Activity's `ui.load` transaction isn't bound to the scope: `ActivityLifecycleIntegration` tries to bind it when the
+Activity is created, while the leaseholder's nav transaction still holds the scope's transaction slot.
+
 ### Returning to a nav root
 
 A nav root is "returned to" when its candidate acquires the lease at any time other than on its first back stack update, e.g., when the
@@ -167,3 +191,17 @@ gets a transaction on its first back stack update. See [#6454](https://github.co
 Bringing the app back to the foreground isn't a return either: the leaseholder keeps the lease while the app is in the background (see
 `stopCandidate`), so it starts no new nav transaction when it resumes. This matches the rest of the SDK, which starts no transaction when an
 existing Activity comes back to the foreground.
+
+### Android ordering assumptions
+
+`NavLeaseCoordinator` relies on the following sequences, which Android doesn't document but AOSP and androidx have historically upheld:
+
+- An Activity's `onActivityResumed` callbacks run before its `Lifecycle` dispatches
+  `ON_RESUME` (see `isActivityNavRoot`).
+
+- An Activity's `Lifecycle` dispatches `ON_PAUSE` before its Fragments'
+  lifecycles do. androidx's `ReportFragment` and `FragmentActivity` ensure this, not the
+  platform.
+
+Going forward, if an order changes, nav data may be attributed to the wrong nav root, or a nav transaction may go unbound, but nothing would
+throw.

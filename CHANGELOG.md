@@ -17,6 +17,10 @@
 
 - Nav3: Returning to an Activity or Fragment with its own `SentryNavEffect` within the app (e.g., closing the Activity that covered it, swiping back to its ViewPager2 page, or dismissing a dialog over it) now starts a new navigation transaction for the current destination if the previous one finished, so spans produced upon return can now be consistently captured ([#6482](https://github.com/getsentry/sentry-java/pull/6482))
 
+### Fixes
+
+- Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
+
 ## 8.63.0
 
 ### Features

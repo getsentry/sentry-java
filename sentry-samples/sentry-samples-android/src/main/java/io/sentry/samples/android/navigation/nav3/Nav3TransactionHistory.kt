@@ -187,6 +187,22 @@ private fun sentryTransactionUrl(
     "&timestamp=${timestampSeconds.toLong()}"
 }
 
+/** The URL of trace [traceId] in the project [dsn] reports to, or `null` if `dsn` names none. */
+internal fun sentryTraceUrl(dsn: String?, traceId: String): String? {
+  val projectId = dsn?.projectIdFromDsn() ?: return null
+  return "https://$SENTRY_SAMPLE_ORG_SLUG.sentry.io/explore/traces/trace/$traceId/" +
+    "?project=$projectId"
+}
+
+/**
+ * The URL of an issue search for event [eventId] in the project [dsn] reports to, or `null` if
+ * `dsn` names none.
+ */
+internal fun sentryEventSearchUrl(dsn: String?, eventId: String): String? {
+  val projectId = dsn?.projectIdFromDsn() ?: return null
+  return "https://$SENTRY_SAMPLE_ORG_SLUG.sentry.io/issues/?project=$projectId&query=$eventId"
+}
+
 private fun String.projectIdFromDsn(): String? =
   substringBefore('?').substringBefore('#').trimEnd('/').substringAfterLast('/').takeIf { projectId
     ->
