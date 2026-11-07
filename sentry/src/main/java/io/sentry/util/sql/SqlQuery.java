@@ -4,7 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Result of {@link SqlQueryAnalyzer#analyze(String, SqlDialect)}. */
+/** Result of {@link SqlQueryAnalyzer#analyze(String, SqlDialect, int)}. */
 @ApiStatus.Internal
 public final class SqlQuery {
 
