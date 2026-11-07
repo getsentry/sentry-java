@@ -51,6 +51,11 @@ class SqlQueryAnalyzerCasesTest(
 
     private val REQUIREMENTS = (1..11).map { "R$it" }.toSet()
     private val SOURCE = Regex("sentry|otel-java:\\w+#.+|otel-dotnet:[^#]+#.+")
+    /**
+     * `attribution` holds the license header for the adapted upstream cases, since JSON has no
+     * comments (plan 01, step 8).
+     */
+    private val TOP_LEVEL_KEYS = setOf("attribution", "cases")
     private val REQUIRED_KEYS =
       setOf("id", "requirements", "dialect", "input", "expected", "source")
 
@@ -66,23 +71,42 @@ class SqlQueryAnalyzerCasesTest(
           "$RESOURCE not found"
         }
       val cases = mutableListOf<Case>()
+      val seen = mutableSetOf<String>()
       JsonObjectReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { reader ->
-        reader.beginArray()
+        reader.beginObject()
         while (reader.hasNext()) {
-          val index = cases.size
-          val case =
-            try {
-              readCase(reader)
-            } catch (e: Exception) {
-              throw IllegalStateException("$RESOURCE: case #$index is invalid: ${e.message}", e)
-            }
-          check(cases.none { it.id == case.id }) { "$RESOURCE: duplicate id '${case.id}'" }
-          cases += case
+          val key = reader.nextName()
+          check(seen.add(key)) { "$RESOURCE: duplicate top-level key '$key'" }
+          when (key) {
+            "attribution" ->
+              check(readStrings(reader, key).isNotEmpty()) {
+                "$RESOURCE: 'attribution' must not be empty"
+              }
+            "cases" -> readCases(reader, cases)
+            else -> error("$RESOURCE: unknown top-level key '$key'")
+          }
         }
-        reader.endArray()
+        reader.endObject()
       }
+      check(seen == TOP_LEVEL_KEYS) { "$RESOURCE misses ${TOP_LEVEL_KEYS - seen}" }
       check(cases.isNotEmpty()) { "$RESOURCE has no cases" }
       return cases
+    }
+
+    private fun readCases(reader: JsonObjectReader, cases: MutableList<Case>) {
+      reader.beginArray()
+      while (reader.hasNext()) {
+        val index = cases.size
+        val case =
+          try {
+            readCase(reader)
+          } catch (e: Exception) {
+            throw IllegalStateException("$RESOURCE: case #$index is invalid: ${e.message}", e)
+          }
+        check(cases.none { it.id == case.id }) { "$RESOURCE: duplicate id '${case.id}'" }
+        cases += case
+      }
+      reader.endArray()
     }
 
     private fun readCase(reader: JsonObjectReader): Case {

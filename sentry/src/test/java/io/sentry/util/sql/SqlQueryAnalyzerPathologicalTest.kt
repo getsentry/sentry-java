@@ -1,3 +1,9 @@
+// Inputs adapted from OpenTelemetry Java Instrumentation (SqlQueryAnalyzerTest) and
+// OpenTelemetry .NET Contrib (SqlProcessorTests).
+// Copyright The OpenTelemetry Authors.
+// Licensed under the Apache License, Version 2.0.
+// https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/2acd9a5f1153e725a3b80e9b90ad55b385576fe8/instrumentation-api-incubator/src/test/java/io/opentelemetry/instrumentation/api/incubator/semconv/db/SqlQueryAnalyzerTest.java
+// https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/4e3aba9ddf89f9accac004f44f32ebde335dd115/test/OpenTelemetry.Contrib.Shared.Tests/SqlProcessorTests.cs
 package io.sentry.util.sql
 
 import com.google.common.truth.Truth.assertWithMessage
