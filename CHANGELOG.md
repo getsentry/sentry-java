@@ -13,6 +13,13 @@
 - Quartz `SentryJobListener` can send a monitor config derived from the trigger with check-ins, so Sentry creates or updates the monitor from code. Set the `sentry-upsert-monitor-config` job or trigger data key to `"true"` to send the schedule ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
 - Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = true)` to send the schedule ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
 
+### Improvements
+
+- Nav3: Add `BackStackEntryMapper.serialName()`, a ready-made mapper that names back stack entries after their kotlinx.serialization serial names ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+  - Pass it to `SentryNavEffect` instead of writing your own mapper: `SentryNavEffect(backStack, BackStackEntryMapper.serialName())`
+  - Names are the key class's fully qualified name, or its `@SerialName` value if it has one, so they survive R8 minification
+  - Keys that aren't `@Serializable` are recorded as `/unknown`
+
 ### Behavioral Changes
 
 - Gradle builds now resolve all Sentry SDK modules to the same version, the highest one present, because every module depends on `sentry-bom` as a platform ([#6466](https://github.com/getsentry/sentry-java/pull/6466))
