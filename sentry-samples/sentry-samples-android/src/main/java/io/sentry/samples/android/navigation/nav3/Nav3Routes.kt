@@ -69,6 +69,13 @@ internal fun Nav3Route.routeSpec(): RouteSpec =
           "Simulates opening a deep link that builds a synthetic backstack before landing on a " +
             "detail destination.",
       )
+    Nav3Route.Nested ->
+      RouteSpec(
+        routeName = Nav3Route.Nested.routeName,
+        title = "Nested NavDisplay",
+        description =
+          "A NavDisplay inside this route, with its own back stack. Only the outer NavDisplay should record: in Manual mode, the inner one has no SentryNavEffect; with auto-instrumentation, both are instrumented and the inner one stays dormant.",
+      )
     Nav3Route.ProductList -> RouteSpecs.productList
     is Nav3Route.ProductDetail -> RouteSpecs.productDetail
     is Nav3Route.Checkout -> RouteSpecs.checkout
@@ -107,6 +114,7 @@ private fun Nav3Route.toSavedState(): Bundle =
       Nav3Route.FragmentOverlay -> putString("type", "fragment_overlay")
       Nav3Route.ViewPager2 -> putString("type", "view_pager2")
       Nav3Route.DeepLink -> putString("type", "deep_link")
+      Nav3Route.Nested -> putString("type", "nested")
       Nav3Route.ProductList -> putString("type", "product_list")
       is Nav3Route.ProductDetail -> {
         putString("type", "product_detail")
@@ -151,6 +159,7 @@ private fun Bundle.toNav3Route(): Nav3Route {
     "view_pager_pages",
     "view_pager2" -> Nav3Route.ViewPager2
     "deep_link" -> Nav3Route.DeepLink
+    "nested" -> Nav3Route.Nested
     "product_list" -> Nav3Route.ProductList
     "product_detail" -> {
       val productId = getString("product_id") ?: return Nav3Route.SingleStack
@@ -192,6 +201,7 @@ internal fun SnapshotStateList<Nav3Route>.openScenario(scenario: Nav3Scenario) {
     Nav3Scenario.FRAGMENT_OVERLAY -> resetTo(Nav3Route.FragmentOverlay)
     Nav3Scenario.VIEW_PAGER2 -> resetTo(Nav3Route.ViewPager2)
     Nav3Scenario.DEEP_LINK -> resetTo(Nav3Route.DeepLink)
+    Nav3Scenario.NESTED -> resetTo(Nav3Route.Nested)
     Nav3Scenario.CUSTOM -> resetTo(Nav3Route.Custom)
     Nav3Scenario.PERFORMANCE -> resetTo(Nav3Route.Performance(index = 0, generation = 0))
   }
@@ -305,6 +315,13 @@ internal sealed interface Nav3Route {
   }
 
   @Serializable
+  @SerialName("Nested")
+  data object Nested : Nav3Route {
+    override val routeName: String
+      get() = "Nested"
+  }
+
+  @Serializable
   @SerialName(RouteNames.PRODUCT_LIST)
   data object ProductList : Nav3Route {
     override val routeName: String
@@ -411,6 +428,7 @@ internal enum class Nav3Scenario(val label: String, val showTab: Boolean = true)
   MULTI_FRAGMENT("Multi-Fragment"),
   FRAGMENT_OVERLAY("Fragment: Overlay"),
   VIEW_PAGER2("ViewPager2"),
+  NESTED("Nested"),
   CUSTOM("Custom"),
   PERFORMANCE("Performance"),
 }
@@ -425,6 +443,7 @@ internal val Nav3Scenario.initialRoute: Nav3Route
       Nav3Scenario.FRAGMENT_OVERLAY -> Nav3Route.FragmentOverlay
       Nav3Scenario.VIEW_PAGER2 -> Nav3Route.ViewPager2
       Nav3Scenario.DEEP_LINK -> Nav3Route.DeepLink
+      Nav3Scenario.NESTED -> Nav3Route.Nested
       Nav3Scenario.CUSTOM -> Nav3Route.Custom
       Nav3Scenario.PERFORMANCE -> Nav3Route.Performance(index = 0, generation = 0)
     }

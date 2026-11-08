@@ -502,6 +502,12 @@ private fun Nav3SampleApp(
                 FragmentScenarioRoute(route, Nav3FragmentMode.PAGER, openFragmentScenario)
               }
             }
+            entry<Nav3Route.Nested> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                NestedNavDisplayRoute()
+              }
+            }
             entry<Nav3Route.Landing> { route ->
               TracedNav3Route(route, selectedScenario) {
                 Nav3RouteWorkEffect(route, routeWorkOptions)
