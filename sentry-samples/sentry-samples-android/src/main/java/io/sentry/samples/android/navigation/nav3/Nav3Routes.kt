@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.navigation3.runtime.EntryProviderScope
 import io.sentry.samples.android.navigation.common.NavArgs
 import io.sentry.samples.android.navigation.common.RouteNames
 import io.sentry.samples.android.navigation.common.RouteSpec
@@ -97,6 +98,17 @@ internal fun Nav3Route.routeSpec(): RouteSpec =
         description =
           "Opens an Activity with setups that auto-instrumentation doesn't handle on its own: NavDisplay(entries), NavDisplays side by side in a pager, and NavDisplays in both an Activity and its Fragment.",
       )
+    Nav3Route.RouteKeys ->
+      RouteSpec(
+        routeName = Nav3Route.RouteKeys.routeName,
+        title = "Route Key Naming",
+        description =
+          "Pushes keys that BackStackEntryMapper.serialName(), which auto-instrumentation uses, names differently from the sample's own mapper. Compare the recorded names in Manual and Auto-instrumentation modes, ideally in a minified release build.",
+      )
+    Nav3Route.KeyDefaultSerialName,
+    Nav3Route.KeyNotSerializable,
+    is Nav3Route.KeyGeneric<*>,
+    PrivateObjectRouteKey -> RouteSpec(routeName = routeName, title = routeName)
     Nav3Route.ProductList -> RouteSpecs.productList
     is Nav3Route.ProductDetail -> RouteSpecs.productDetail
     is Nav3Route.Checkout -> RouteSpecs.checkout
@@ -135,6 +147,11 @@ private fun Nav3Route.toSavedState(): Bundle =
       Nav3Route.FragmentOverlay -> putString("type", "fragment_overlay")
       Nav3Route.ViewPager2 -> putString("type", "view_pager2")
       Nav3Route.DeepLink -> putString("type", "deep_link")
+      Nav3Route.KeyDefaultSerialName -> putString("type", "key_default_serial_name")
+      Nav3Route.KeyNotSerializable -> putString("type", "key_not_serializable")
+      is Nav3Route.KeyGeneric<*> -> putString("type", "key_generic")
+      PrivateObjectRouteKey -> putString("type", "key_private_object")
+      Nav3Route.RouteKeys -> putString("type", "route_keys")
       Nav3Route.Uncovered -> putString("type", "uncovered")
       Nav3Route.Nav2Host -> putString("type", "nav2_host")
       Nav3Route.Overlays -> putString("type", "overlays")
@@ -183,6 +200,11 @@ private fun Bundle.toNav3Route(): Nav3Route {
     "view_pager_pages",
     "view_pager2" -> Nav3Route.ViewPager2
     "deep_link" -> Nav3Route.DeepLink
+    "key_default_serial_name" -> Nav3Route.KeyDefaultSerialName
+    "key_not_serializable" -> Nav3Route.KeyNotSerializable
+    "key_generic" -> Nav3Route.KeyGeneric(value = 1)
+    "key_private_object" -> PrivateObjectRouteKey
+    "route_keys" -> Nav3Route.RouteKeys
     "uncovered" -> Nav3Route.Uncovered
     "nav2_host" -> Nav3Route.Nav2Host
     "overlays" -> Nav3Route.Overlays
@@ -228,6 +250,7 @@ internal fun SnapshotStateList<Nav3Route>.openScenario(scenario: Nav3Scenario) {
     Nav3Scenario.FRAGMENT_OVERLAY -> resetTo(Nav3Route.FragmentOverlay)
     Nav3Scenario.VIEW_PAGER2 -> resetTo(Nav3Route.ViewPager2)
     Nav3Scenario.DEEP_LINK -> resetTo(Nav3Route.DeepLink)
+    Nav3Scenario.ROUTE_KEYS -> resetTo(Nav3Route.RouteKeys)
     Nav3Scenario.UNCOVERED -> resetTo(Nav3Route.Uncovered)
     Nav3Scenario.NAV2_HOST -> resetTo(Nav3Route.Nav2Host)
     Nav3Scenario.OVERLAYS -> resetTo(Nav3Route.Overlays)
@@ -373,6 +396,37 @@ internal sealed interface Nav3Route {
   }
 
   @Serializable
+  @SerialName("RouteKeys")
+  data object RouteKeys : Nav3Route {
+    override val routeName: String
+      get() = "RouteKeys"
+  }
+
+  /** No `@SerialName`: auto-instrumentation records its fully qualified class name. */
+  @Serializable
+  data object KeyDefaultSerialName : Nav3Route {
+    override val routeName: String
+      get() = "KeyDefaultSerialName"
+  }
+
+  /** Not `@Serializable`: auto-instrumentation records it as /unknown. */
+  data object KeyNotSerializable : Nav3Route {
+    override val routeName: String
+      get() = "KeyNotSerializable"
+  }
+
+  /**
+   * Generic: kotlinx.serialization can't look up its serializer without type arguments, so
+   * auto-instrumentation records it as /unknown.
+   */
+  @Serializable
+  @SerialName("KeyGeneric")
+  data class KeyGeneric<T : Any>(val value: T) : Nav3Route {
+    override val routeName: String
+      get() = "KeyGeneric"
+  }
+
+  @Serializable
   @SerialName(RouteNames.PRODUCT_LIST)
   data object ProductList : Nav3Route {
     override val routeName: String
@@ -483,6 +537,7 @@ internal enum class Nav3Scenario(val label: String, val showTab: Boolean = true)
   OVERLAYS("Overlays"),
   NAV2_HOST("Nav3 in Nav2"),
   UNCOVERED("Not Covered"),
+  ROUTE_KEYS("Route Keys"),
   CUSTOM("Custom"),
   PERFORMANCE("Performance"),
 }
@@ -497,6 +552,7 @@ internal val Nav3Scenario.initialRoute: Nav3Route
       Nav3Scenario.FRAGMENT_OVERLAY -> Nav3Route.FragmentOverlay
       Nav3Scenario.VIEW_PAGER2 -> Nav3Route.ViewPager2
       Nav3Scenario.DEEP_LINK -> Nav3Route.DeepLink
+      Nav3Scenario.ROUTE_KEYS -> Nav3Route.RouteKeys
       Nav3Scenario.UNCOVERED -> Nav3Route.Uncovered
       Nav3Scenario.NAV2_HOST -> Nav3Route.Nav2Host
       Nav3Scenario.OVERLAYS -> Nav3Route.Overlays
@@ -504,3 +560,46 @@ internal val Nav3Scenario.initialRoute: Nav3Route
       Nav3Scenario.CUSTOM -> Nav3Route.Custom
       Nav3Scenario.PERFORMANCE -> Nav3Route.Performance(index = 0, generation = 0)
     }
+
+/**
+ * A private `@Serializable` object, whose serializer the SDK looks up through the members the
+ * serialization plugin generates. Auto-instrumentation records its fully qualified class name.
+ */
+@Serializable
+private data object PrivateObjectRouteKey : Nav3Route {
+  override val routeName: String
+    get() = "PrivateObjectRouteKey"
+}
+
+/** The keys [Nav3Route.RouteKeys] pushes, with the names each mapper should record. */
+internal val routeKeyExamples: List<RouteKeyExample> =
+  listOf(
+    RouteKeyExample(
+      key = Nav3Route.KeyDefaultSerialName,
+      autoName = "/io.sentry.samples.android.navigation.nav3.Nav3Route.KeyDefaultSerialName",
+    ),
+    RouteKeyExample(key = Nav3Route.KeyNotSerializable, autoName = "/unknown"),
+    RouteKeyExample(key = Nav3Route.KeyGeneric(value = 1), autoName = "/unknown"),
+    RouteKeyExample(
+      key = PrivateObjectRouteKey,
+      autoName = "/io.sentry.samples.android.navigation.nav3.PrivateObjectRouteKey",
+    ),
+  )
+
+internal class RouteKeyExample(val key: Nav3Route, val autoName: String) {
+  val manualName: String
+    get() = "/${key.routeName}"
+}
+
+/**
+ * Adds an entry for each of [routeKeyExamples]' key types, showing [content]. Lives in this file
+ * because [PrivateObjectRouteKey] is private to it.
+ */
+internal fun EntryProviderScope<Nav3Route>.routeKeyEntries(
+  content: @Composable (Nav3Route) -> Unit
+) {
+  entry<Nav3Route.KeyDefaultSerialName> { route -> content(route) }
+  entry<Nav3Route.KeyNotSerializable> { route -> content(route) }
+  entry<Nav3Route.KeyGeneric<*>> { route -> content(route) }
+  entry<PrivateObjectRouteKey> { route -> content(route) }
+}

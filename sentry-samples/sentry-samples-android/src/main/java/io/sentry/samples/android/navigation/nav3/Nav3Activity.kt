@@ -552,6 +552,15 @@ private fun Nav3SampleApp(
                 UncoveredRoute(onOpen = openUncovered)
               }
             }
+            entry<Nav3Route.RouteKeys> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                RouteKeysRoute(backStack)
+              }
+            }
+            routeKeyEntries { route ->
+              TracedNav3Route(route, selectedScenario) { RouteKeyScreen(route, backStack) }
+            }
             entry<Nav3Route.Landing> { route ->
               TracedNav3Route(route, selectedScenario) {
                 Nav3RouteWorkEffect(route, routeWorkOptions)
