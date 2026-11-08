@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
+  alias(libs.plugins.kotlin.serialization)
   id("io.sentry.detekt")
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
@@ -67,6 +68,7 @@ dependencies {
   implementation(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
+  compileOnly(libs.kotlinx.serialization.core)
 
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.fragment.ktx)
@@ -74,6 +76,7 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.viewpager2)
   testImplementation(libs.google.truth)
+  testImplementation(libs.kotlinx.serialization.core)
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.roboelectric)

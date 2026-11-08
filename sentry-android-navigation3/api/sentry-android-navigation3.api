@@ -1,5 +1,10 @@
 public abstract interface class io/sentry/compose/navigation3/BackStackEntryMapper {
+	public static final field Companion Lio/sentry/compose/navigation3/BackStackEntryMapper$Companion;
 	public abstract fun map (Ljava/lang/Object;)Lio/sentry/compose/navigation3/SentryBackStackEntry;
+}
+
+public final class io/sentry/compose/navigation3/BackStackEntryMapper$Companion {
+	public final fun serialName ()Lio/sentry/compose/navigation3/BackStackEntryMapper;
 }
 
 public final class io/sentry/compose/navigation3/BuildConfig {

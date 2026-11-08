@@ -54,7 +54,9 @@ public class SentryBackStackEntry(
 /**
  * Maps a back stack entry to a displayable name and optional diagnostic arguments.
  *
- * To be implemented by the host app.
+ * Use [BackStackEntryMapper.serialName] to name `@Serializable` entries after their serial names,
+ * or implement this interface to choose your own names and arguments. A custom mapper can delegate
+ * the entries it doesn't handle to [BackStackEntryMapper.serialName].
  *
  * **Privacy / PII**
  *
@@ -72,7 +74,8 @@ public class SentryBackStackEntry(
  * runtime class-name preservation. E.g., `Home`, `DetailScreen`, etc.
  *
  * In particular, avoid `::class.simpleName`, as R8 obfuscates class names and may associate them
- * with different symbols across builds.
+ * with different symbols across builds. For `@Serializable` entries, prefer serial names, which
+ * survive minification (see [BackStackEntryMapper.serialName]).
  *
  * **Names fall back to "/unknown"**
  *
@@ -115,10 +118,11 @@ public class SentryBackStackEntry(
  *
  * **Using kotlinx.serialization**
  *
- * If your back stack contains `@Serializable` entry types, consider giving each entry an explicit
- * `@SerialName` and using its `descriptor.serialName`. For performance reasons, don't serialize
- * back stack keys in their entirety as `arguments` if they might be large, deeply nested, or
- * contain PII or other sensitive information.
+ * If your back stack contains `@Serializable` entry types, [BackStackEntryMapper.serialName] names
+ * them after their `descriptor.serialName`. To add arguments for some entries, write a custom
+ * mapper that handles those entries and delegates the rest. For performance reasons, don't
+ * serialize back stack keys in their entirety as `arguments` if they might be large, deeply nested,
+ * or contain PII or other sensitive information.
  *
  * For instance:
  * ```kotlin
@@ -134,21 +138,52 @@ public class SentryBackStackEntry(
  *
  * val backStackItemMapper = BackStackEntryMapper<NavKey> { entry ->
  *   when (entry) {
- *     is Home -> SentryBackStackEntry(Home.serializer().descriptor.serialName)
  *     is ProductDetail -> SentryBackStackEntry(
  *       name = ProductDetail.serializer().descriptor.serialName,
  *       // Select a subset of diagnostic arguments when serialization is unsafe
  *       // or non-performant.
  *       arguments = mapOf("product_id" to entry.productId)
  *     )
- *     ...
+ *     // Home and any other entries are named after their serial names.
+ *     else -> BackStackEntryMapper.serialName().map(entry)
  *   }
  * }
  * ```
  */
 @ApiStatus.Experimental
-public fun interface BackStackEntryMapper<T : Any> {
+public fun interface BackStackEntryMapper<in T : Any> {
+
   public fun map(backStackEntry: T): SentryBackStackEntry?
+
+  public companion object {
+
+    /**
+     * Returns a mapper that names each back stack entry after its kotlinx.serialization serial
+     * name, without arguments.
+     *
+     * The name is the entry class's `descriptor.serialName`, passed through unchanged: the class's
+     * fully qualified name (e.g. `com.example.Route.Detail`), or its `@SerialName` value if it has
+     * one. Serial names are compile-time constants, so they survive R8 minification. Use
+     * `@SerialName` to choose shorter names.
+     *
+     * The mapper returns `null`, so Sentry records the entry as "/unknown", when:
+     * - kotlinx.serialization is not on the app's runtime classpath;
+     * - the entry's class isn't annotated with `@Serializable`, including plain strings, enums, and
+     *   other built-in types; or
+     * - kotlinx.serialization can't look up the class's serializer without type arguments (e.g.
+     *   generic classes).
+     *
+     * The first entry of each class that can't be named logs a warning, visible when the SDK's
+     * `debug` option is enabled.
+     *
+     * Classes that share a custom serializer (`@Serializable(with = ...)`) share its serial name.
+     *
+     * kotlinx.serialization is an optional dependency of this library. Apps that use
+     * `@Serializable` already include it.
+     */
+    @ApiStatus.Experimental
+    public fun serialName(): BackStackEntryMapper<Any> = SerialNameBackStackEntryMapper.instance
+  }
 }
 
 /**

@@ -1,4 +1,4 @@
-.PHONY: all clean compile javadocs dryRelease update format checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical check preMerge publish
+.PHONY: all clean compile javadocs dryRelease update format checkFormat api assembleUiTestRelease assembleUiTestCriticalRelease runUiTestCritical runNav3SerialNameR8Check check preMerge publish
 
 all: stop clean javadocs compile
 assembleUiTests: assembleUiTestRelease
@@ -54,6 +54,10 @@ assembleUiTestCriticalRelease:
 # Run Maestro tests for the uitest-android-critical module
 runUiTestCritical:
 	./scripts/test-ui-critical.sh
+
+# Build and run the R8 check for BackStackEntryMapper.serialName() on a booted emulator
+runNav3SerialNameR8Check:
+	./scripts/test-nav3-serialname-r8.sh
 
 # Run tests and lint
 check:
