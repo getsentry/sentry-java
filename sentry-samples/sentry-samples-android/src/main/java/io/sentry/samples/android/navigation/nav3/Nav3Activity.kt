@@ -366,6 +366,14 @@ private fun Nav3SampleApp(
     }
   }
 
+  val openNav3InNav2: () -> Unit = {
+    activity?.let { host ->
+      host.startActivity(
+        Intent(host, Nav3InNav2Activity::class.java).putNav3SentryNavEffectMode(effectMode)
+      )
+    }
+  }
+
   Scaffold(
     // Expose test tags as resource IDs so adb/uiautomator can target them.
     modifier =
@@ -506,6 +514,18 @@ private fun Nav3SampleApp(
               TracedNav3Route(route, selectedScenario) {
                 Nav3RouteWorkEffect(route, routeWorkOptions)
                 NestedNavDisplayRoute()
+              }
+            }
+            entry<Nav3Route.Overlays> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                OverlaysRoute()
+              }
+            }
+            entry<Nav3Route.Nav2Host> { route ->
+              TracedNav3Route(route, selectedScenario) {
+                Nav3RouteWorkEffect(route, routeWorkOptions)
+                Nav2HostRoute(onOpen = openNav3InNav2)
               }
             }
             entry<Nav3Route.Landing> { route ->

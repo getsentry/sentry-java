@@ -76,6 +76,20 @@ internal fun Nav3Route.routeSpec(): RouteSpec =
         description =
           "A NavDisplay inside this route, with its own back stack. Only the outer NavDisplay should record: in Manual mode, the inner one has no SentryNavEffect; with auto-instrumentation, both are instrumented and the inner one stays dormant.",
       )
+    Nav3Route.Overlays ->
+      RouteSpec(
+        routeName = Nav3Route.Overlays.routeName,
+        title = "NavDisplay in Overlays",
+        description =
+          "Opens a NavDisplay inside a Compose dialog and inside a bottom sheet. Both have their own window, but should belong to this Activity's nav root: only the Activity's NavDisplay should record.",
+      )
+    Nav3Route.Nav2Host ->
+      RouteSpec(
+        routeName = Nav3Route.Nav2Host.routeName,
+        title = "Nav3 in a Nav2 Destination",
+        description =
+          "Opens an Activity whose Navigation 2 NavHost has a destination containing a NavDisplay. That destination's lifecycle owner pauses during Nav2 transitions, which shouldn't affect what the NavDisplay records. With the plugin's Compose option, Nav2 records its destinations too.",
+      )
     Nav3Route.ProductList -> RouteSpecs.productList
     is Nav3Route.ProductDetail -> RouteSpecs.productDetail
     is Nav3Route.Checkout -> RouteSpecs.checkout
@@ -114,6 +128,8 @@ private fun Nav3Route.toSavedState(): Bundle =
       Nav3Route.FragmentOverlay -> putString("type", "fragment_overlay")
       Nav3Route.ViewPager2 -> putString("type", "view_pager2")
       Nav3Route.DeepLink -> putString("type", "deep_link")
+      Nav3Route.Nav2Host -> putString("type", "nav2_host")
+      Nav3Route.Overlays -> putString("type", "overlays")
       Nav3Route.Nested -> putString("type", "nested")
       Nav3Route.ProductList -> putString("type", "product_list")
       is Nav3Route.ProductDetail -> {
@@ -159,6 +175,8 @@ private fun Bundle.toNav3Route(): Nav3Route {
     "view_pager_pages",
     "view_pager2" -> Nav3Route.ViewPager2
     "deep_link" -> Nav3Route.DeepLink
+    "nav2_host" -> Nav3Route.Nav2Host
+    "overlays" -> Nav3Route.Overlays
     "nested" -> Nav3Route.Nested
     "product_list" -> Nav3Route.ProductList
     "product_detail" -> {
@@ -201,6 +219,8 @@ internal fun SnapshotStateList<Nav3Route>.openScenario(scenario: Nav3Scenario) {
     Nav3Scenario.FRAGMENT_OVERLAY -> resetTo(Nav3Route.FragmentOverlay)
     Nav3Scenario.VIEW_PAGER2 -> resetTo(Nav3Route.ViewPager2)
     Nav3Scenario.DEEP_LINK -> resetTo(Nav3Route.DeepLink)
+    Nav3Scenario.NAV2_HOST -> resetTo(Nav3Route.Nav2Host)
+    Nav3Scenario.OVERLAYS -> resetTo(Nav3Route.Overlays)
     Nav3Scenario.NESTED -> resetTo(Nav3Route.Nested)
     Nav3Scenario.CUSTOM -> resetTo(Nav3Route.Custom)
     Nav3Scenario.PERFORMANCE -> resetTo(Nav3Route.Performance(index = 0, generation = 0))
@@ -322,6 +342,20 @@ internal sealed interface Nav3Route {
   }
 
   @Serializable
+  @SerialName("Overlays")
+  data object Overlays : Nav3Route {
+    override val routeName: String
+      get() = "Overlays"
+  }
+
+  @Serializable
+  @SerialName("Nav2Host")
+  data object Nav2Host : Nav3Route {
+    override val routeName: String
+      get() = "Nav2Host"
+  }
+
+  @Serializable
   @SerialName(RouteNames.PRODUCT_LIST)
   data object ProductList : Nav3Route {
     override val routeName: String
@@ -429,6 +463,8 @@ internal enum class Nav3Scenario(val label: String, val showTab: Boolean = true)
   FRAGMENT_OVERLAY("Fragment: Overlay"),
   VIEW_PAGER2("ViewPager2"),
   NESTED("Nested"),
+  OVERLAYS("Overlays"),
+  NAV2_HOST("Nav3 in Nav2"),
   CUSTOM("Custom"),
   PERFORMANCE("Performance"),
 }
@@ -443,6 +479,8 @@ internal val Nav3Scenario.initialRoute: Nav3Route
       Nav3Scenario.FRAGMENT_OVERLAY -> Nav3Route.FragmentOverlay
       Nav3Scenario.VIEW_PAGER2 -> Nav3Route.ViewPager2
       Nav3Scenario.DEEP_LINK -> Nav3Route.DeepLink
+      Nav3Scenario.NAV2_HOST -> Nav3Route.Nav2Host
+      Nav3Scenario.OVERLAYS -> Nav3Route.Overlays
       Nav3Scenario.NESTED -> Nav3Route.Nested
       Nav3Scenario.CUSTOM -> Nav3Route.Custom
       Nav3Scenario.PERFORMANCE -> Nav3Route.Performance(index = 0, generation = 0)
