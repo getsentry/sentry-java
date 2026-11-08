@@ -68,10 +68,15 @@ dependencies {
   implementation(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
+  // Only SentryNavAutoInstrumentation uses these. It's called from navigation3-ui's NavDisplay, so
+  // apps that reach it always have them.
+  compileOnly(libs.androidx.compose.ui)
+  compileOnly(libs.androidx.navigation3.runtime)
   compileOnly(libs.kotlinx.serialization.core)
 
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.fragment.ktx)
+  testImplementation(libs.androidx.navigation3.runtime)
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.viewpager2)

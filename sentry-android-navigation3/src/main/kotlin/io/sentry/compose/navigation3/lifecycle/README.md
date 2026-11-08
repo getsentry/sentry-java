@@ -37,3 +37,8 @@ Concretely, a host app can safely use more than one `SentryNavEffect` only if:
 provides its own `LocalLifecycleOwner` to the entries and scenes it renders. That owner drops to STARTED state during transitions and while
 overlays are shown. An effect called inside a `NavDisplay` would therefore (wrongly) gain and lose the nav lease `NavLeaseCoordinator`
 manages as navigation animates, rather than as its Activity or Fragment comes and goes.
+
+Auto-instrumented effects (see `SentryNavAutoInstrumentation`) run inside `NavDisplay`, including nested ones, so they can't follow rule 2.
+Instead, they register with the lifecycle of the Activity or Fragment that hosts the composition (the View tree's `LifecycleOwner`), which
+is what a correctly placed manual effect sees as its `LocalLifecycleOwner`. `NavEffectGate` then keeps at most one of them per Activity or
+Fragment, so rule 3 holds too.

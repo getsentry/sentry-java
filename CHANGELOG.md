@@ -19,6 +19,9 @@
   - Pass it to `SentryNavEffect` instead of writing your own mapper: `SentryNavEffect(backStack, BackStackEntryMapper.serialName())`
   - Names are the key class's fully qualified name, or its `@SerialName` value if it has one, so they survive R8 minification
   - Keys that aren't `@Serializable` are recorded as `/unknown`
+- Nav3: Support auto-instrumentation by the Sentry Android Gradle Plugin, which records Nav3 navigation without calling `SentryNavEffect` ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+  - Opt in with `tracingInstrumentation { navigation3 { enabled = true } }` in a Sentry Android Gradle Plugin version that supports it
+  - When several `NavDisplay`s are on screen, only one records: your own `SentryNavEffect` takes priority, then the outermost auto-instrumented `NavDisplay` in each Activity or Fragment
 
 ### Behavioral Changes
 
