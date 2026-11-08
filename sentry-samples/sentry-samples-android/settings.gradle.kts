@@ -16,12 +16,18 @@ pluginManagement {
 
   // Every build in a composite must use the same AGP, so each build's settings applies the AGP
   // matrix job's override.
-  System.getenv("VERSION_AGP")?.let { agpVersion ->
-    resolutionStrategy {
-      eachPlugin {
-        if (requested.id.id.startsWith("com.android")) {
-          useVersion(agpVersion)
-        }
+  val agpVersion = System.getenv("VERSION_AGP")
+  // With -PuseSagp, -PsagpVersion picks the Sentry Android Gradle Plugin version, e.g. one
+  // published
+  // to Maven Local that's newer than libs.versions.toml's.
+  val sagpVersion = providers.gradleProperty("sagpVersion").orNull
+  resolutionStrategy {
+    eachPlugin {
+      if (agpVersion != null && requested.id.id.startsWith("com.android")) {
+        useVersion(agpVersion)
+      }
+      if (sagpVersion != null && requested.id.id == "io.sentry.android.gradle") {
+        useVersion(sagpVersion)
       }
     }
   }

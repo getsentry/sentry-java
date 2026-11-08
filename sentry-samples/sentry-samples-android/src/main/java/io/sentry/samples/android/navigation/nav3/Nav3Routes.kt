@@ -11,6 +11,8 @@ import io.sentry.samples.android.navigation.common.RouteNames
 import io.sentry.samples.android.navigation.common.RouteSpec
 import io.sentry.samples.android.navigation.common.RouteSpecs
 import io.sentry.samples.android.navigation.common.displayRoute
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 internal fun Nav3Route.displayRoute(): String = routeSpec().displayRoute(arguments)
 
@@ -228,6 +230,13 @@ internal fun SnapshotStateList<Nav3Route>.replacePerformanceTop(generation: Int)
   set(lastIndex, Nav3Route.Performance(index = lastIndex, generation = generation))
 }
 
+/**
+ * Back stack keys of the Nav3 sample.
+ *
+ * Each key is `@Serializable` with a `@SerialName` equal to its [routeName], so
+ * `BackStackEntryMapper.serialName()`, which auto-instrumentation uses, names routes the same way
+ * as the sample's own mapper. Properties are getters so they aren't serialized.
+ */
 internal sealed interface Nav3Route {
   val routeName: String
   val arguments: Map<String, Any?>
@@ -239,87 +248,158 @@ internal sealed interface Nav3Route {
   val performanceSeed: Int
     get() = hashCode()
 
+  @Serializable
+  @SerialName(RouteNames.LANDING)
   data object Landing : Nav3Route {
-    override val routeName: String = RouteNames.LANDING
+    override val routeName: String
+      get() = RouteNames.LANDING
   }
 
+  @Serializable
+  @SerialName(RouteNames.HOME)
   data object SingleStack : Nav3Route {
-    override val routeName: String = RouteNames.HOME
+    override val routeName: String
+      get() = RouteNames.HOME
   }
 
+  @Serializable
+  @SerialName("Custom")
   data object Custom : Nav3Route {
-    override val routeName: String = "Custom"
+    override val routeName: String
+      get() = "Custom"
   }
 
+  @Serializable
+  @SerialName("MultiActivity")
   data object MultiActivity : Nav3Route {
-    override val routeName: String = "MultiActivity"
+    override val routeName: String
+      get() = "MultiActivity"
   }
 
+  @Serializable
+  @SerialName("MultiFragment")
   data object MultiFragment : Nav3Route {
-    override val routeName: String = "MultiFragment"
+    override val routeName: String
+      get() = "MultiFragment"
   }
 
+  @Serializable
+  @SerialName("FragmentOverlay")
   data object FragmentOverlay : Nav3Route {
-    override val routeName: String = "FragmentOverlay"
+    override val routeName: String
+      get() = "FragmentOverlay"
   }
 
+  @Serializable
+  @SerialName("ViewPager2")
   data object ViewPager2 : Nav3Route {
-    override val routeName: String = "ViewPager2"
+    override val routeName: String
+      get() = "ViewPager2"
   }
 
+  @Serializable
+  @SerialName(RouteNames.DEEP_LINK)
   data object DeepLink : Nav3Route {
-    override val routeName: String = RouteNames.DEEP_LINK
+    override val routeName: String
+      get() = RouteNames.DEEP_LINK
   }
 
+  @Serializable
+  @SerialName(RouteNames.PRODUCT_LIST)
   data object ProductList : Nav3Route {
-    override val routeName: String = RouteNames.PRODUCT_LIST
+    override val routeName: String
+      get() = RouteNames.PRODUCT_LIST
   }
 
+  @Serializable
+  @SerialName(RouteNames.PRODUCT_DETAIL)
   data class ProductDetail(
     val productId: String,
     val source: String,
     val campaign: String? = null,
   ) : Nav3Route {
-    override val routeName: String = RouteNames.PRODUCT_DETAIL
-    override val arguments: Map<String, Any?> =
-      mapOf(
-          NavArgs.PRODUCT_ID to productId,
-          NavArgs.SOURCE to source,
-          NavArgs.CAMPAIGN to campaign,
-        )
-        .filterValues { it != null }
-    override val previewName: String = "ProductDetail($productId)"
+    override val routeName: String
+      get() = RouteNames.PRODUCT_DETAIL
+
+    override val arguments: Map<String, Any?>
+      get() =
+        mapOf(
+            NavArgs.PRODUCT_ID to productId,
+            NavArgs.SOURCE to source,
+            NavArgs.CAMPAIGN to campaign,
+          )
+          .filterValues { it != null }
+
+    override val previewName: String
+      get() = "ProductDetail($productId)"
   }
 
+  @Serializable
+  @SerialName(RouteNames.CHECKOUT)
   data class Checkout(val productId: String) : Nav3Route {
-    override val routeName: String = RouteNames.CHECKOUT
-    override val arguments: Map<String, Any?> = mapOf(NavArgs.PRODUCT_ID to productId)
-    override val previewName: String = "Checkout($productId)"
+    override val routeName: String
+      get() = RouteNames.CHECKOUT
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf(NavArgs.PRODUCT_ID to productId)
+
+    override val previewName: String
+      get() = "Checkout($productId)"
   }
 
+  @Serializable
+  @SerialName(RouteNames.CONFIRMATION)
   data class Confirmation(val orderId: String) : Nav3Route {
-    override val routeName: String = RouteNames.CONFIRMATION
-    override val arguments: Map<String, Any?> = mapOf(NavArgs.ORDER_ID to orderId)
-    override val previewName: String = "Confirmation($orderId)"
+    override val routeName: String
+      get() = RouteNames.CONFIRMATION
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf(NavArgs.ORDER_ID to orderId)
+
+    override val previewName: String
+      get() = "Confirmation($orderId)"
   }
 
+  @Serializable
+  @SerialName(RouteNames.PROMO_DIALOG)
   data class PromoDialog(val promoId: String) : Nav3Route {
-    override val routeName: String = RouteNames.PROMO_DIALOG
-    override val arguments: Map<String, Any?> = mapOf(NavArgs.PROMO_ID to promoId)
-    override val previewName: String = "PromoDialog($promoId)"
+    override val routeName: String
+      get() = RouteNames.PROMO_DIALOG
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf(NavArgs.PROMO_ID to promoId)
+
+    override val previewName: String
+      get() = "PromoDialog($promoId)"
   }
 
+  @Serializable
+  @SerialName(RouteNames.SHARE_SHEET)
   data class ShareSheet(val productId: String) : Nav3Route {
-    override val routeName: String = RouteNames.SHARE_SHEET
-    override val arguments: Map<String, Any?> = mapOf(NavArgs.PRODUCT_ID to productId)
-    override val previewName: String = "ShareSheet($productId)"
+    override val routeName: String
+      get() = RouteNames.SHARE_SHEET
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf(NavArgs.PRODUCT_ID to productId)
+
+    override val previewName: String
+      get() = "ShareSheet($productId)"
   }
 
+  @Serializable
+  @SerialName("Performance")
   data class Performance(val index: Int, val generation: Int) : Nav3Route {
-    override val routeName: String = "Performance"
-    override val arguments: Map<String, Any?> = mapOf("index" to index, "generation" to generation)
-    override val previewName: String = "Performance($index:$generation)"
-    override val performanceSeed: Int = 31 * index + generation
+    override val routeName: String
+      get() = "Performance"
+
+    override val arguments: Map<String, Any?>
+      get() = mapOf("index" to index, "generation" to generation)
+
+    override val previewName: String
+      get() = "Performance($index:$generation)"
+
+    override val performanceSeed: Int
+      get() = 31 * index + generation
   }
 }
 

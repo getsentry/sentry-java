@@ -70,6 +70,7 @@ internal fun NavigationSetupScreen(
   showBackStackControls: Boolean = false,
   onConfigurationChanged: (NavigationSampleConfig) -> Unit,
   onLaunch: () -> Unit,
+  additionalSections: @Composable () -> Unit = {},
 ) {
   Column(
     modifier =
@@ -155,6 +156,8 @@ internal fun NavigationSetupScreen(
       }
     }
 
+    additionalSections()
+
     Button(onClick = onLaunch, modifier = Modifier.fillMaxWidth()) {
       Text("Launch $navName Sample", fontSize = 18.sp)
     }
@@ -162,7 +165,7 @@ internal fun NavigationSetupScreen(
 }
 
 @Composable
-private fun NavigationSetupSection(title: String, content: @Composable () -> Unit) {
+internal fun NavigationSetupSection(title: String, content: @Composable () -> Unit) {
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
     Text(
       text = title,
@@ -182,7 +185,7 @@ private fun NavigationSetupSection(title: String, content: @Composable () -> Uni
 }
 
 @Composable
-private fun NavigationSetupCheckboxRow(
+internal fun NavigationSetupCheckboxRow(
   label: String,
   checked: Boolean,
   helpText: String? = null,

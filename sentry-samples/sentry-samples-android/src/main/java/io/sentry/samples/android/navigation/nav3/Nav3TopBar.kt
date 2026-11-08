@@ -33,6 +33,7 @@ import io.sentry.compose.SentryModifier.sentryTag
 @Composable
 internal fun Nav3TopBar(
   backStack: List<Nav3Route>,
+  recordingSummary: String,
   selectedScenario: Nav3Scenario,
   maxCapturedBackStackEntries: Int,
   onTransactionHistoryClick: () -> Unit,
@@ -101,6 +102,13 @@ internal fun Nav3TopBar(
           style = MaterialTheme.typography.bodySmall,
           modifier =
             Modifier.horizontalScroll(rememberScrollState()).testTag(nav3TestTag("current_route")),
+          maxLines = 1,
+        )
+        Text(
+          text = recordingSummary,
+          style = MaterialTheme.typography.bodySmall,
+          modifier =
+            Modifier.horizontalScroll(rememberScrollState()).testTag(nav3TestTag("recording")),
           maxLines = 1,
         )
         Text(

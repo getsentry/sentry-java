@@ -4,6 +4,7 @@ import com.android.build.api.variant.impl.VariantImpl
 import io.sentry.android.gradle.extensions.InstrumentationFeature
 import io.sentry.android.gradle.extensions.SentryPluginExtension
 import org.apache.tools.ant.taskdefs.condition.Os
+import org.gradle.api.provider.Property
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
@@ -13,12 +14,43 @@ plugins {
   id("io.sentry.jdk-target")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
+  alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.ksp)
   alias(libs.plugins.sentry) apply false
   alias(libs.plugins.sqldelight)
 }
 
 val sentryVersion = libs.versions.sentry.get()
+
+// Navigation 3 auto-instrumentation, for the Nav3 sample's "Recording" modes. Needs -PuseSagp with
+// a
+// plugin version that has tracingInstrumentation.navigation3. See
+// src/main/java/io/sentry/samples/android/navigation/README.md.
+val useSagpNavigation3 =
+  providers.gradleProperty("useSagp").isPresent &&
+    providers.gradleProperty("sagpNavigation3").isPresent
+
+/**
+ * Turns on `tracingInstrumentation.navigation3`. Looked up reflectively so this script still
+ * compiles against plugin versions that predate the option.
+ */
+fun SentryPluginExtension.enableNavigation3AutoInstrumentation() {
+  val navigation3 =
+    try {
+      tracingInstrumentation.javaClass.getMethod("getNavigation3").invoke(tracingInstrumentation)
+    } catch (e: NoSuchMethodException) {
+      throw GradleException(
+        "-PsagpNavigation3 needs a Sentry Android Gradle Plugin version with " +
+          "tracingInstrumentation.navigation3. Publish one to Maven Local and pass " +
+          "-PsagpVersion=<version>.",
+        e,
+      )
+    }
+  @Suppress("UNCHECKED_CAST")
+  val enabled =
+    navigation3.javaClass.getMethod("getEnabled").invoke(navigation3) as Property<Boolean>
+  enabled.set(true)
+}
 
 if (providers.gradleProperty("useSagp").isPresent) {
   apply(plugin = "io.sentry.android.gradle")
@@ -42,6 +74,12 @@ plugins.withId("io.sentry.android.gradle") {
       )
       logcat.enabled.set(false)
       appStart.enabled.set(false)
+    }
+    if (useSagpNavigation3) {
+      enableNavigation3AutoInstrumentation()
+      // The plugin's transform cache key doesn't include the resolved SDK version, so a cached
+      // navigation3-ui transform from a build where the SDK didn't qualify would skip the rewrite.
+      tracingInstrumentation.forceInstrumentDependencies.set(true)
     }
   }
 }
@@ -146,6 +184,15 @@ android {
       },
     )
 
+    variant.buildConfigFields?.put(
+      "SAGP_NAVIGATION3",
+      BuildConfigField(
+        type = "boolean",
+        value = useSagpNavigation3.toString(),
+        comment = "Whether the build requested the plugin's Navigation 3 auto-instrumentation",
+      ),
+    )
+
     val taskName = "toggle${variant.name.capitalized()}NativeLogging"
     val toggleNativeLoggingTask =
       project.tasks.register<ToggleNativeLoggingTask>(taskName) {
@@ -222,6 +269,7 @@ dependencies {
   implementation(libs.camerax.view)
   implementation(libs.coil.compose)
   implementation(libs.kotlinx.coroutines.android)
+  implementation(libs.kotlinx.serialization.core)
   implementation(libs.lottie.compose)
   implementation(libs.retrofit)
   implementation(libs.retrofit.gson)

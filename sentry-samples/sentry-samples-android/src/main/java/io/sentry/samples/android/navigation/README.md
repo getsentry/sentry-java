@@ -30,3 +30,41 @@ The sample also supports automatic recompositions and navigation for sustained s
 
 Open Nav3 from the integrations screen, select the `Performance` tab, and use the presets or performance controls to run a scenario with the
 desired stack depth, workload, integration mode, and argument shape.
+
+## Nav3 Auto-Instrumentation
+
+The Nav3 setup screen's **Recording** section chooses how the sample records navigation:
+
+- **Manual**: the sample calls `SentryNavEffect` before each `NavDisplay` (the default).
+- **Auto-instrumentation**: the sample doesn't call `SentryNavEffect`. The Sentry Android Gradle Plugin's Navigation 3
+  auto-instrumentation records instead, naming routes with `BackStackEntryMapper.serialName()` and default options, so the setup screen's
+  navigation toggles don't apply.
+- **Manual + auto**: both. Only the manual effect should record, once per navigation.
+- **Manual after NavDisplay**: `SentryNavEffect` is called after its `NavDisplay`. This placement is unsupported; with auto-instrumentation,
+  the first screen is recorded twice.
+
+The setup screen and the Nav3 top bar show whether the build is auto-instrumented. The SDK logs which effects become active or dormant at
+DEBUG level ("auto SentryNavEffect is now active", ...).
+
+Every mode except Manual needs a build with auto-instrumentation:
+
+1. Publish a plugin version that has `tracingInstrumentation.navigation3` to Maven Local, with a version that isn't on Maven Central (a
+   locally published copy of a released version may lose to the released one):
+
+   ```bash
+   # in sentry-android-gradle-plugin
+   ./gradlew -p plugin-build publishToMavenLocal -Pversion=6.27.0-nav3
+   ```
+
+2. Build the sample with the plugin, the option, and an SDK version that's at least the plugin's minimum for auto-instrumentation
+   (`SentryVersions.VERSION_NAVIGATION3`). `-PversionName` also sets the version of the SDK modules the sample builds from source:
+
+   ```bash
+   ./gradlew -p sentry-samples/sentry-samples-android installDebug \
+     -PuseSagp -PsagpNavigation3 -PsagpVersion=6.27.0-nav3 -PversionName=8.64.0
+   ```
+
+   With `--info`, the build logs `Instrumented 1 rememberDecoratedNavEntries call(s) in NavDisplay.`
+
+`-PsagpNavigation3` also sets `forceInstrumentDependencies`, because the plugin's transform cache doesn't account for the SDK version: a
+cached `navigation3-ui` transform from a build where the SDK didn't qualify would otherwise skip the rewrite.

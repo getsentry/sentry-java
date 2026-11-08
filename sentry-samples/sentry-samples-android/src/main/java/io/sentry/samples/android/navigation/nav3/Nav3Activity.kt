@@ -89,6 +89,7 @@ class Nav3Activity : ComponentActivity() {
       intent.previousNav3SampleConfigSnapshot(currentNavigationSampleConfigSnapshot())
 
     val configuration = intent.nav3SampleConfig()
+    val effectMode = intent.nav3SentryNavEffectMode()
     configuration.applyToCurrentOptions()
     showActivityUiLoadTransactionDelayMessage = configuration.hasOnlyActivityUiLoadTransactions
 
@@ -104,6 +105,7 @@ class Nav3Activity : ComponentActivity() {
         Nav3SampleApp(
           performanceState = performanceState,
           configuration = configuration,
+          effectMode = effectMode,
           transactions = NavigationTransactionHistory.transactions,
           showActivityUiLoadTransactionDelayMessage = showActivityUiLoadTransactionDelayMessage,
           routeWorkOptions = routeWorkOptions,
@@ -162,6 +164,7 @@ class Nav3Activity : ComponentActivity() {
 private fun Nav3SampleApp(
   performanceState: Nav3PerformanceState,
   configuration: NavigationSampleConfig,
+  effectMode: Nav3SentryNavEffectMode,
   transactions: List<NavigationTransactionTrace>,
   showActivityUiLoadTransactionDelayMessage: Boolean,
   routeWorkOptions: Set<RouteWorkOption>,
@@ -288,13 +291,15 @@ private fun Nav3SampleApp(
       controller = customTransactionController,
     )
 
-    SentryNavEffect(
-      backStack = sentryBackStack,
-      backStackEntryMapper = backStackEntryMapper,
-      options = sentryNavOptions,
-    )
+    if (effectMode.callsSentryNavEffectBeforeNavDisplay) {
+      SentryNavEffect(
+        backStack = sentryBackStack,
+        backStackEntryMapper = backStackEntryMapper,
+        options = sentryNavOptions,
+      )
+    }
 
-    if (isPerformanceScenario) {
+    if (isPerformanceScenario && effectMode.callsSentryNavEffectBeforeNavDisplay) {
       DisposableEffect(sentryBackStack.toList(), sentryNavOptions) {
         performanceState.recordSentryNavEffect(
           processedCall = true,
@@ -369,6 +374,7 @@ private fun Nav3SampleApp(
     topBar = {
       Nav3TopBar(
         backStack = backStack,
+        recordingSummary = Nav3AutoInstrumentationStatus.summary(effectMode),
         selectedScenario = selectedScenario,
         maxCapturedBackStackEntries = maxCapturedBackStackEntries,
         onTransactionHistoryClick = onShowTransactionHistorySheet,
@@ -582,6 +588,16 @@ private fun Nav3SampleApp(
             }
           },
       )
+
+      // Unsupported placement, kept to reproduce its known limitation (see
+      // Nav3SentryNavEffectMode.MANUAL_AFTER_NAV_DISPLAY).
+      if (effectMode.callsSentryNavEffectAfterNavDisplay) {
+        SentryNavEffect(
+          backStack = sentryBackStack,
+          backStackEntryMapper = backStackEntryMapper,
+          options = sentryNavOptions,
+        )
+      }
     }
   }
 
