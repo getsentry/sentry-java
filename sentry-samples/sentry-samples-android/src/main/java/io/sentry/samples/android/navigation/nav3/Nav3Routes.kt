@@ -90,6 +90,13 @@ internal fun Nav3Route.routeSpec(): RouteSpec =
         description =
           "Opens an Activity whose Navigation 2 NavHost has a destination containing a NavDisplay. That destination's lifecycle owner pauses during Nav2 transitions, which shouldn't affect what the NavDisplay records. With the plugin's Compose option, Nav2 records its destinations too.",
       )
+    Nav3Route.Uncovered ->
+      RouteSpec(
+        routeName = Nav3Route.Uncovered.routeName,
+        title = "Setups Auto-Instrumentation Doesn't Cover",
+        description =
+          "Opens an Activity with setups that auto-instrumentation doesn't handle on its own: NavDisplay(entries), NavDisplays side by side in a pager, and NavDisplays in both an Activity and its Fragment.",
+      )
     Nav3Route.ProductList -> RouteSpecs.productList
     is Nav3Route.ProductDetail -> RouteSpecs.productDetail
     is Nav3Route.Checkout -> RouteSpecs.checkout
@@ -128,6 +135,7 @@ private fun Nav3Route.toSavedState(): Bundle =
       Nav3Route.FragmentOverlay -> putString("type", "fragment_overlay")
       Nav3Route.ViewPager2 -> putString("type", "view_pager2")
       Nav3Route.DeepLink -> putString("type", "deep_link")
+      Nav3Route.Uncovered -> putString("type", "uncovered")
       Nav3Route.Nav2Host -> putString("type", "nav2_host")
       Nav3Route.Overlays -> putString("type", "overlays")
       Nav3Route.Nested -> putString("type", "nested")
@@ -175,6 +183,7 @@ private fun Bundle.toNav3Route(): Nav3Route {
     "view_pager_pages",
     "view_pager2" -> Nav3Route.ViewPager2
     "deep_link" -> Nav3Route.DeepLink
+    "uncovered" -> Nav3Route.Uncovered
     "nav2_host" -> Nav3Route.Nav2Host
     "overlays" -> Nav3Route.Overlays
     "nested" -> Nav3Route.Nested
@@ -219,6 +228,7 @@ internal fun SnapshotStateList<Nav3Route>.openScenario(scenario: Nav3Scenario) {
     Nav3Scenario.FRAGMENT_OVERLAY -> resetTo(Nav3Route.FragmentOverlay)
     Nav3Scenario.VIEW_PAGER2 -> resetTo(Nav3Route.ViewPager2)
     Nav3Scenario.DEEP_LINK -> resetTo(Nav3Route.DeepLink)
+    Nav3Scenario.UNCOVERED -> resetTo(Nav3Route.Uncovered)
     Nav3Scenario.NAV2_HOST -> resetTo(Nav3Route.Nav2Host)
     Nav3Scenario.OVERLAYS -> resetTo(Nav3Route.Overlays)
     Nav3Scenario.NESTED -> resetTo(Nav3Route.Nested)
@@ -356,6 +366,13 @@ internal sealed interface Nav3Route {
   }
 
   @Serializable
+  @SerialName("Uncovered")
+  data object Uncovered : Nav3Route {
+    override val routeName: String
+      get() = "Uncovered"
+  }
+
+  @Serializable
   @SerialName(RouteNames.PRODUCT_LIST)
   data object ProductList : Nav3Route {
     override val routeName: String
@@ -465,6 +482,7 @@ internal enum class Nav3Scenario(val label: String, val showTab: Boolean = true)
   NESTED("Nested"),
   OVERLAYS("Overlays"),
   NAV2_HOST("Nav3 in Nav2"),
+  UNCOVERED("Not Covered"),
   CUSTOM("Custom"),
   PERFORMANCE("Performance"),
 }
@@ -479,6 +497,7 @@ internal val Nav3Scenario.initialRoute: Nav3Route
       Nav3Scenario.FRAGMENT_OVERLAY -> Nav3Route.FragmentOverlay
       Nav3Scenario.VIEW_PAGER2 -> Nav3Route.ViewPager2
       Nav3Scenario.DEEP_LINK -> Nav3Route.DeepLink
+      Nav3Scenario.UNCOVERED -> Nav3Route.Uncovered
       Nav3Scenario.NAV2_HOST -> Nav3Route.Nav2Host
       Nav3Scenario.OVERLAYS -> Nav3Route.Overlays
       Nav3Scenario.NESTED -> Nav3Route.Nested

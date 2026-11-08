@@ -125,6 +125,12 @@
       android:theme="@style/AppTheme.Main" />
 
     <activity
+      android:name=".navigation.nav3.Nav3UncoveredActivity"
+      android:exported="false"
+      android:screenOrientation="portrait"
+      android:theme="@style/AppTheme.Main" />
+
+    <activity
       android:name=".navigation.nav3.Nav3InNav2Activity"
       android:exported="false"
       android:screenOrientation="portrait"
