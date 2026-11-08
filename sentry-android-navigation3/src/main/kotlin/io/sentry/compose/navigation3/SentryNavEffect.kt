@@ -9,9 +9,13 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.sentry.IScopes
 import io.sentry.ScopesAdapter
 import io.sentry.SentryOptions
-import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
-import io.sentry.compose.navigation3.lifecycle.NavRootInfo
-import io.sentry.compose.navigation3.lifecycle.findActivity
+import io.sentry.compose.navigation3.internal.backstack.BackStackKey
+import io.sentry.compose.navigation3.internal.backstack.CoordinatedBackStackObserver
+import io.sentry.compose.navigation3.internal.backstack.ForwardingBackStackEntryMapper
+import io.sentry.compose.navigation3.internal.backstack.defaultNavLeaseCoordinator
+import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.internal.lifecycle.NavRootInfo
+import io.sentry.compose.navigation3.internal.lifecycle.findActivity
 import org.jetbrains.annotations.ApiStatus
 
 /**
@@ -29,9 +33,7 @@ import org.jetbrains.annotations.ApiStatus
  *    // destination are attributed to the appropriate nav transaction.
  *    SentryNavEffect(
  *      backStack = navBackStack,
- *      backStackEntryMapper = { entry ->
- *        SentryBackStackEntry(entry.toName(), entry.extractArguments())
- *      },
+ *      backStackEntryMapper = BackStackEntryMapper.SerialName,
  *      options = SentryNavOptions(),
  *    )
  *
@@ -140,39 +142,5 @@ internal fun <T : Any> SentryNavEffect(
   DisposableEffect(observer, BackStackKey(copy)) {
     observer.onBackStackChanged(backStack = copy)
     onDispose {}
-  }
-}
-
-/**
- * A key for distinguishing back stacks over time.
- *
- * Lets `*Effect`s restart when either the identity of a stack entry changes or the stack's entries
- * are reordered.
- */
-internal class BackStackKey<T : Any>(private val backStack: List<T>) {
-
-  override fun equals(other: Any?): Boolean {
-    // Use of identity rather than structural equality frees us from entries' equals() and
-    // hashCode() implementations, which are provided by the host app and may be incomplete,
-    // expensive, or incorrect for our purposes.
-    if (this === other) {
-      return true
-    }
-    if (other !is BackStackKey<*>) {
-      return false
-    }
-    if (backStack.size != other.backStack.size) {
-      return false
-    }
-
-    return backStack.indices.all { index -> backStack[index] === other.backStack[index] }
-  }
-
-  override fun hashCode(): Int {
-    var result = backStack.size
-    for (entry in backStack) {
-      result = 31 * result + System.identityHashCode(entry)
-    }
-    return result
   }
 }

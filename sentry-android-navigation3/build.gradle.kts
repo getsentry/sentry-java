@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
+  alias(libs.plugins.kotlin.serialization)
   id("io.sentry.detekt")
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
@@ -14,6 +15,8 @@ plugins {
   id("io.sentry.api-validation")
   id("io.sentry.robolectric")
 }
+
+val kotlinxSerializationFloor = nav3Libs.versions.kotlinxSerializationFloor.get()
 
 android {
   compileSdk = libs.versions.compileSdk.get().toInt()
@@ -23,6 +26,11 @@ android {
     minSdk = libs.versions.minSdk.get().toInt()
 
     buildConfigField("String", "VERSION_NAME", "\"${project.version}\"")
+    buildConfigField(
+      "String",
+      "MIN_KOTLINX_SERIALIZATION_VERSION",
+      "\"${kotlinxSerializationFloor}\"",
+    )
   }
 
   buildTypes {
@@ -72,12 +80,22 @@ android {
 
 kotlin { explicitApi() }
 
+// Unit tests run against the kotlinx.serialization floor by default. CI also runs them against the
+// latest version (-Pnav3TestKotlinxVersion=<version>), as apps may ship a newer
+// kotlinx.serialization dependency than sentry-android-navigation3 compiles against.
+val testKotlinxVersion =
+  providers.gradleProperty("nav3TestKotlinxVersion").orNull ?: kotlinxSerializationFloor
+
 dependencies {
   implementation(projects.sentry)
-  implementation(libs.androidx.lifecycle.runtime.compose)
 
   compileOnly(libs.androidx.compose.runtime)
   compileOnly(libs.androidx.compose.ui)
+  compileOnly(libs.androidx.lifecycle.runtime.compose)
+  // All Nav3 apps depend on kotlinx.serialization via navigation3-runtime.
+  compileOnly(nav3Libs.kotlinx.serialization.core) {
+    version { require(kotlinxSerializationFloor) }
+  }
 
   testImplementation(projects.sentryAndroidCore)
   testImplementation(projects.sentryTestSupport)
@@ -87,6 +105,11 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.viewpager2)
   testImplementation(libs.google.truth)
+  testImplementation(libs.kotlin.test.junit)
+  testImplementation(nav3Libs.kotlinx.serialization.core) {
+    // Avoid using whatever version test deps happen to pull in transitively.
+    version { strictly(testKotlinxVersion) }
+  }
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.roboelectric)

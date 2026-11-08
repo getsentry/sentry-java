@@ -19,11 +19,13 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
+import io.sentry.DataCollection
 import io.sentry.Hint
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ISentryClient
 import io.sentry.ITransaction
+import io.sentry.KeyValueCollectionBehavior
 import io.sentry.PropagationContext
 import io.sentry.Scope
 import io.sentry.ScopeCallback
@@ -33,7 +35,15 @@ import io.sentry.SentryOptions
 import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.internal.lifecycle.NavLeaseCoordinator
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -74,6 +84,32 @@ class SentryNavEffectTest {
   private data class HomeRoute(val id: String = "home")
 
   private data class ProfileRoute(val userId: String)
+
+  @Serializable @SerialName("SerializableHome") private data object SerializableHomeRoute
+
+  @Serializable private data class SerializableProfileRoute(val userId: String)
+
+  @Serializable
+  @SerialName("Checkout")
+  private data class CheckoutRoute(val cartId: String, val authToken: String)
+
+  @Serializable @SerialName("Cart") private data class CartRoute(val cartId: String)
+
+  @Serializable
+  @SerialName("Account")
+  private data class AccountRoute(val accountId: String, val email: String)
+
+  @Serializable(with = BrokenRouteSerializer::class) private class BrokenRoute
+
+  /** Names [BrokenRoute] "Broken", but throws when encoding it. */
+  private object BrokenRouteSerializer : KSerializer<BrokenRoute> {
+    override val descriptor: SerialDescriptor =
+      PrimitiveSerialDescriptor("Broken", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: BrokenRoute): Unit = error("can't encode")
+
+    override fun deserialize(decoder: Decoder): BrokenRoute = BrokenRoute()
+  }
 
   private class Fixture {
     val options =
@@ -351,6 +387,149 @@ class SentryNavEffectTest {
     composeRule.waitForIdle()
 
     assertThat(observedTransactionNames).containsExactly("/HomeRoute", "/ProfileRoute").inOrder()
+  }
+
+  @Test
+  fun `SerialName records serial names, and unknown names for entries that aren't @Serializable`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(SerializableHomeRoute)
+
+    composeRule.setContent {
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = BackStackEntryMapper.SerialName,
+        options = SentryNavOptions(),
+        scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
+      )
+    }
+    composeRule.waitForIdle()
+
+    composeRule.runOnIdle {
+      backStack.add(SerializableProfileRoute("123"))
+      backStack.add(ProfileRoute("456"))
+    }
+    composeRule.waitForIdle()
+
+    val profileName = "/io.sentry.compose.navigation3.SentryNavEffectTest.SerializableProfileRoute"
+    assertThat(fixture.breadcrumbs.first().data["to"]).isEqualTo("/SerializableHome")
+    assertThat(fixture.transactions.first().name).isEqualTo("/SerializableHome")
+    assertThat(fixture.scope.screen).isEqualTo("/unknown")
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(
+        listOf(
+          mapOf("entry" to "/unknown"),
+          mapOf("entry" to profileName),
+          mapOf("entry" to "/SerializableHome"),
+        ),
+      )
+  }
+
+  @Test
+  fun `SerialNameAndProperties records serial names with properties as arguments, filtering sensitive values`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(CheckoutRoute(cartId = "c-1", authToken = "secret"))
+
+    composeRule.setContent {
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = BackStackEntryMapper.SerialNameAndProperties,
+        options = SentryNavOptions(),
+        scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
+      )
+    }
+    composeRule.waitForIdle()
+
+    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/Checkout")
+    assertThat(fixture.breadcrumbs.single().data["to_arguments"])
+      .isEqualTo(mapOf("cartId" to "c-1", "authToken" to "[Filtered]"))
+    assertThat(fixture.transactions.single().getData("arguments"))
+      .isEqualTo(mapOf("cartId" to "c-1", "authToken" to "[Filtered]"))
+  }
+
+  @Test
+  fun `SerialNameAndProperties records PII properties without sendDefaultPii and with all data collection off`() {
+    val fixture = Fixture()
+    fixture.options.isSendDefaultPii = false
+    fixture.options.dataCollection = dataCollectionOff()
+    val backStack = mutableStateListOf<Any>(AccountRoute(accountId = "a-1", email = "a@b.c"))
+
+    composeRule.setContent {
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = BackStackEntryMapper.SerialNameAndProperties,
+        options = SentryNavOptions(),
+        scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
+      )
+    }
+    composeRule.waitForIdle()
+
+    val arguments = mapOf("accountId" to "a-1", "email" to "a@b.c")
+    assertThat(fixture.breadcrumbs.single().data["to_arguments"]).isEqualTo(arguments)
+    assertThat(fixture.transactions.single().getData("arguments")).isEqualTo(arguments)
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(listOf(mapOf("entry" to "/Account", "entry_arguments" to arguments)))
+  }
+
+  @Test
+  fun `a mapper that wraps SerialNameAndProperties records the properties it doesn't remove`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(AccountRoute(accountId = "a-1", email = "a@b.c"))
+    val mapper =
+      BackStackEntryMapper<Any> { entry ->
+        BackStackEntryMapper.SerialNameAndProperties.map(entry)?.let { mapped ->
+          SentryBackStackEntry(mapped.name, mapped.arguments?.filterKeys { it != "email" })
+        }
+      }
+
+    composeRule.setContent {
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = mapper,
+        options = SentryNavOptions(),
+        scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
+      )
+    }
+    composeRule.waitForIdle()
+
+    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/Account")
+    assertThat(fixture.breadcrumbs.single().data["to_arguments"])
+      .isEqualTo(mapOf("accountId" to "a-1"))
+    assertThat(fixture.transactions.single().getData("arguments"))
+      .isEqualTo(mapOf("accountId" to "a-1"))
+  }
+
+  @Test
+  fun `SerialNameAndProperties drops only an unencodable route's properties, recording why`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(CartRoute(cartId = "c-1"), BrokenRoute())
+
+    composeRule.setContent {
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = BackStackEntryMapper.SerialNameAndProperties,
+        options = SentryNavOptions(),
+        scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
+      )
+    }
+    composeRule.waitForIdle()
+
+    val dropped = mapOf("dropped_by_sentry" to "encoding_failed")
+    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/Broken")
+    assertThat(fixture.breadcrumbs.single().data["to_arguments"]).isEqualTo(dropped)
+    assertThat(fixture.transactions.single().name).isEqualTo("/Broken")
+    assertThat(fixture.transactions.single().getData("arguments")).isEqualTo(dropped)
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(
+        listOf(
+          mapOf("entry" to "/Broken", "entry_arguments" to dropped),
+          mapOf("entry" to "/Cart", "entry_arguments" to mapOf("cartId" to "c-1")),
+        ),
+      )
   }
 
   @Test
@@ -810,6 +989,21 @@ class SentryNavEffectTest {
       content = content,
     )
   }
+
+  /** Turns off every data collection option. */
+  private fun dataCollectionOff(): DataCollection =
+    DataCollection().apply {
+      userInfo = false
+      cookies = KeyValueCollectionBehavior.off()
+      urlQueryParams = KeyValueCollectionBehavior.off()
+      httpBodies = emptySet()
+      databaseQueryData = false
+      filePaths = false
+      httpHeaders.request = KeyValueCollectionBehavior.off()
+      httpHeaders.response = KeyValueCollectionBehavior.off()
+      graphql.document = false
+      graphql.variables = false
+    }
 
   private fun IScope.navigationBackStack(): List<Map<String, Any?>>? {
     val navigationContext = contexts[NAVIGATION_CONTEXT_KEY] as? Map<*, *> ?: return null

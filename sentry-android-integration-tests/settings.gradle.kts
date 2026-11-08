@@ -51,6 +51,7 @@ dependencyResolutionManagement {
       // gradle.properties links to the SDK build's, so versionName is the SDK version.
       version("sentry", providers.gradleProperty("versionName").get())
     }
+    create("nav3Libs") { from(files("../gradle/nav3.versions.toml")) }
   }
 }
 
@@ -66,3 +67,4 @@ include("sentry-uitest-android")
 include("sentry-uitest-android-critical")
 include("sentry-uitest-android-macrobenchmark")
 include("test-app-size")
+include("nav3-backstack-entry-mapper-r8-check")

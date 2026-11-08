@@ -1,11 +1,18 @@
 public abstract interface class io/sentry/compose/navigation3/BackStackEntryMapper {
+	public static final field Companion Lio/sentry/compose/navigation3/BackStackEntryMapper$Companion;
 	public abstract fun map (Ljava/lang/Object;)Lio/sentry/compose/navigation3/SentryBackStackEntry;
+}
+
+public final class io/sentry/compose/navigation3/BackStackEntryMapper$Companion {
+	public final fun getSerialName ()Lio/sentry/compose/navigation3/BackStackEntryMapper;
+	public final fun getSerialNameAndProperties ()Lio/sentry/compose/navigation3/BackStackEntryMapper;
 }
 
 public final class io/sentry/compose/navigation3/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
 	public static final field LIBRARY_PACKAGE_NAME Ljava/lang/String;
+	public static final field MIN_KOTLINX_SERIALIZATION_VERSION Ljava/lang/String;
 	public static final field VERSION_NAME Ljava/lang/String;
 	public fun <init> ()V
 }
