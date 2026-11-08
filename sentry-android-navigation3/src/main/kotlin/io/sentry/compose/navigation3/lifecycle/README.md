@@ -5,6 +5,11 @@ during Activity or Fragment transitions) don't clobber one another's screen name
 
 See the `NavLeaseCoordinator` KDoc for the lease policy that decides which effect may write to the scope.
 
+Before effects compete for the lease, `NavEffectGate` decides which of them may observe their back stack at all: at most one per back stack
+and, for effects installed by auto-instrumentation, at most one per Activity or Fragment, with the host app's own effects taking priority.
+That keeps the lease policy's assumption of one effect per Activity or Fragment true when auto-instrumentation instruments nested
+`NavDisplay`s or a `NavDisplay` the host app also observes. See the `NavEffectGate` KDoc for its rules.
+
 ## Encapsulation policy
 
 This package is meant to encapsulate knowledge about the possibility of multiple `SentryNavEffect`s and the shared mutable state issues it
