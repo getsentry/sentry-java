@@ -34,6 +34,8 @@ import io.sentry.SentryTracer
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -137,6 +139,46 @@ class SentryNavEffectTest {
     assertThat(fixture.scope.screen).isEqualTo("/HomeRoute")
     assertThat(fixture.scope.navigationBackStack())
       .isEqualTo(listOf(mapOf("entry" to "/HomeRoute")))
+  }
+
+  @Serializable @SerialName("SerializableHome") private data object SerializableHomeRoute
+
+  @Serializable private data class SerializableProfileRoute(val userId: String)
+
+  @Test
+  fun `serialName mapper names entries after their serial names`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(SerializableHomeRoute)
+
+    composeRule.setContent {
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = BackStackEntryMapper.serialName(),
+        options = SentryNavOptions(),
+        scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
+      )
+    }
+    composeRule.waitForIdle()
+
+    composeRule.runOnIdle {
+      backStack.add(SerializableProfileRoute("123"))
+      backStack.add(ProfileRoute("456"))
+    }
+    composeRule.waitForIdle()
+
+    val profileName = "/io.sentry.compose.navigation3.SentryNavEffectTest.SerializableProfileRoute"
+    assertThat(fixture.breadcrumbs.first().data["to"]).isEqualTo("/SerializableHome")
+    assertThat(fixture.transactions.first().name).isEqualTo("/SerializableHome")
+    assertThat(fixture.scope.screen).isEqualTo("/unknown")
+    assertThat(fixture.scope.navigationBackStack())
+      .isEqualTo(
+        listOf(
+          mapOf("entry" to "/unknown"),
+          mapOf("entry" to profileName),
+          mapOf("entry" to "/SerializableHome"),
+        )
+      )
   }
 
   @Test

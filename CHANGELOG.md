@@ -46,6 +46,13 @@
   - To enable it, add the `sentry-android-ndk-outproc` dependency and exclude `sentry-native-ndk`. Requires Android 11 (API level 30) or later.
   - See the [NDK docs](https://docs.sentry.io/platforms/android/configuration/using-ndk/#out-of-process-crash-handling) for details.
 
+### Improvements
+
+- Nav3: Add `BackStackEntryMapper.serialName()`, a ready-made mapper that names back stack entries after their kotlinx.serialization serial names ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+  - Pass it to `SentryNavEffect` instead of writing your own mapper: `SentryNavEffect(backStack, BackStackEntryMapper.serialName())`
+  - Names are the key class's fully qualified name, or its `@SerialName` value if it has one, so they survive R8 minification
+  - Keys that aren't `@Serializable` are recorded as `/unknown`
+
 ### Behavioral Changes
 
 - Gradle builds now resolve all Sentry SDK modules to the same version, the highest one present, because every module depends on `sentry-bom` as a platform ([#6466](https://github.com/getsentry/sentry-java/pull/6466))

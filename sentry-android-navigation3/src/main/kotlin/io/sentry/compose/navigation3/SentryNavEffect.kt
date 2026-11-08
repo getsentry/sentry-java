@@ -29,9 +29,7 @@ import org.jetbrains.annotations.ApiStatus
  *    // destination are attributed to the appropriate nav transaction.
  *    SentryNavEffect(
  *      backStack = navBackStack,
- *      backStackEntryMapper = { entry ->
- *        SentryBackStackEntry(entry.toName(), entry.extractArguments())
- *      },
+ *      backStackEntryMapper = BackStackEntryMapper.serialName(),
  *      options = SentryNavOptions(),
  *    )
  *
@@ -78,7 +76,9 @@ import org.jetbrains.annotations.ApiStatus
  *
  * @param backStack The navigation backstack to observe.
  * @param backStackEntryMapper Maps each entry of the [backStack] to a name and optional arguments
- *   for display in Sentry. See the [BackStackEntryMapper] KDoc for best practices.
+ *   for display in Sentry. Pass [BackStackEntryMapper.serialName] to name `@Serializable` entries
+ *   after their serial names, or implement your own (e.g., to choose names or add arguments). See
+ *   the [BackStackEntryMapper] KDoc for best practices.
  * @param options The kinds of navigation info this effect should record.
  */
 @ApiStatus.Experimental
