@@ -361,7 +361,12 @@ private fun Nav3SampleApp(
       host.startActivity(
         Intent(host, Nav3FragmentsActivity::class.java)
           .putExtra(Nav3FragmentsActivity.EXTRA_MODE, mode.name)
-          .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+          .putExtras(
+            Bundle().apply {
+              putNav3SampleConfiguration(configuration)
+              putNav3SentryNavEffectMode(effectMode)
+            }
+          )
       )
     }
   }
@@ -487,7 +492,12 @@ private fun Nav3SampleApp(
                 MultiActivityRoute {
                   activity?.startActivity(
                     Intent(activity, Nav3ProductsActivity::class.java)
-                      .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+                      .putExtras(
+                        Bundle().apply {
+                          putNav3SampleConfiguration(configuration)
+                          putNav3SentryNavEffectMode(effectMode)
+                        }
+                      )
                   )
                 }
               }

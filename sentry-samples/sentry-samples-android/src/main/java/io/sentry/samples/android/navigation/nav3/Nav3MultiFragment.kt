@@ -73,6 +73,9 @@ class Nav3FragmentsActivity : FragmentActivity() {
   internal val configuration: NavigationSampleConfig
     get() = (intent.extras ?: Bundle()).nav3SampleConfiguration()
 
+  internal val effectMode: Nav3SentryNavEffectMode
+    get() = (intent.extras ?: Bundle()).nav3SentryNavEffectMode()
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     NavigationTransactionHistory.install()
@@ -382,6 +385,7 @@ private fun Fragment.nav3RootComposeView(
             initialRoute = initialRoute,
             scenario = activity.mode.scenario,
             configuration = configuration,
+            effectMode = activity.effectMode,
             onFinish = onFinish,
             onCheckout = onCheckout,
           )

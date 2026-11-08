@@ -74,6 +74,8 @@ class Nav3ProductsActivity : ComponentActivity() {
 
   private var backStack: SnapshotStateList<Nav3Route>? = null
 
+  private var effectMode = Nav3SentryNavEffectMode.MANUAL
+
   /** An order ID returned before [backStack] exists (e.g., after Activity recreation). */
   private var pendingOrderId: String? = null
 
@@ -88,6 +90,7 @@ class Nav3ProductsActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val configuration = (intent.extras ?: Bundle()).nav3SampleConfiguration()
+    effectMode = (intent.extras ?: Bundle()).nav3SentryNavEffectMode()
     NavigationTransactionHistory.install()
     applyActivityUiLoadTransactionSetting(this, configuration.enableActivityUiLoadTransaction)
     setContent {
@@ -106,6 +109,7 @@ class Nav3ProductsActivity : ComponentActivity() {
           initialRoute = Nav3Route.ProductList,
           scenario = Nav3Scenario.MULTI_ACTIVITY,
           configuration = configuration,
+          effectMode = effectMode,
           onFinish = { finish() },
           backStack = stack,
           onCheckout = { productId -> startActivity(checkoutIntent(productId, configuration)) },
@@ -154,7 +158,12 @@ class Nav3ProductsActivity : ComponentActivity() {
   private fun checkoutIntent(productId: String, configuration: NavigationSampleConfig): Intent =
     Intent(this, Nav3CheckoutActivity::class.java)
       .putExtra(EXTRA_PRODUCT_ID, productId)
-      .putExtras(Bundle().apply { putNav3SampleConfiguration(configuration) })
+      .putExtras(
+        Bundle().apply {
+          putNav3SampleConfiguration(configuration)
+          putNav3SentryNavEffectMode(effectMode)
+        }
+      )
 }
 
 /** Owns the checkout back stack independently of the Products Activity. */
@@ -163,9 +172,12 @@ open class Nav3CheckoutActivity : ComponentActivity() {
   /** Whether to show checkout as a sheet, leaving the Activity underneath partly visible. */
   protected open val showAsSheet: Boolean = false
 
+  private var effectMode = Nav3SentryNavEffectMode.MANUAL
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     val configuration = (intent.extras ?: Bundle()).nav3SampleConfiguration()
+    effectMode = (intent.extras ?: Bundle()).nav3SentryNavEffectMode()
     val productId = intent.getStringExtra(EXTRA_PRODUCT_ID) ?: "42"
     val returnsResult = intent.getBooleanExtra(EXTRA_RETURN_RESULT, false)
     // Only crash on the first launch, not when the system restores this Activity.
@@ -199,6 +211,7 @@ open class Nav3CheckoutActivity : ComponentActivity() {
       initialRoute = Nav3Route.Checkout(productId),
       scenario = Nav3Scenario.MULTI_ACTIVITY,
       configuration = configuration,
+      effectMode = effectMode,
       onFinish = { finish() },
       onCompleteOrder =
         if (returnsResult) {
@@ -278,6 +291,7 @@ internal fun MultiRootNavDisplay(
   scenario: Nav3Scenario,
   configuration: NavigationSampleConfig,
   onFinish: () -> Unit,
+  effectMode: Nav3SentryNavEffectMode = Nav3SentryNavEffectMode.MANUAL,
   backStack: SnapshotStateList<Nav3Route> = rememberSaveableNav3BackStack(initialRoute),
   onCheckout: ((String) -> Unit)? = null,
   productDetailActions: List<ProductDetailAction> = emptyList(),
@@ -297,14 +311,20 @@ internal fun MultiRootNavDisplay(
         maxCapturedBackStackEntries = configuration.maxCapturedBackStackEntries
       }
     }
-  // Keep this before the NavDisplay below: TracedNav3Route's resume tagging relies on it.
-  SentryNavEffect(
-    backStack = backStack,
-    backStackEntryMapper = { route ->
-      SentryBackStackEntry(name = route.routeName, arguments = route.arguments)
-    },
-    options = options,
-  )
+  val backStackEntryMapper =
+    remember<(Nav3Route) -> SentryBackStackEntry> {
+      { route -> SentryBackStackEntry(name = route.routeName, arguments = route.arguments) }
+    }
+  // Keep this before the NavDisplay below: TracedNav3Route's resume tagging relies on it. With
+  // auto-instrumentation, the NavDisplay's own effect also observes the host's lifecycle before the
+  // NavDisplay's scenes and entries do.
+  if (effectMode.callsSentryNavEffectBeforeNavDisplay) {
+    SentryNavEffect(
+      backStack = backStack,
+      backStackEntryMapper = backStackEntryMapper,
+      options = options,
+    )
+  }
   val onBack: () -> Unit = {
     if (backStack.size > 1) {
       backStack.removeLastOrNull()
@@ -344,6 +364,10 @@ internal fun MultiRootNavDisplay(
           }
         }
         Text("Current route: ${backStack.last().displayRoute()}")
+        Text(
+          Nav3AutoInstrumentationStatus.summary(effectMode),
+          style = MaterialTheme.typography.bodySmall,
+        )
       }
     },
     bottomBar = {
@@ -478,6 +502,16 @@ internal fun MultiRootNavDisplay(
         clipboard.setPrimaryClip(ClipData.newPlainText("Sentry transaction URL", url))
         Toast.makeText(activity, "Copied transaction URL to clipboard.", Toast.LENGTH_SHORT).show()
       },
+    )
+  }
+
+  // Unsupported placement, kept to reproduce its known limitation (see
+  // Nav3SentryNavEffectMode.MANUAL_AFTER_NAV_DISPLAY).
+  if (effectMode.callsSentryNavEffectAfterNavDisplay) {
+    SentryNavEffect(
+      backStack = backStack,
+      backStackEntryMapper = backStackEntryMapper,
+      options = options,
     )
   }
 }
