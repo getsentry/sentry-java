@@ -58,6 +58,10 @@
   - App starts are measured from process start on Android 7.0+ (API 24), and slow and frozen frames are measured per span
   - `ActivityFramesTracker` is removed, and the `ActivityLifecycleIntegration` constructor no longer takes it
 
+### Fixes
+
+- Do not capture failed Apollo 3, 4, and 5 requests when the GraphQL `errors` array is empty ([#6285](https://github.com/getsentry/sentry-java/pull/6285))
+
 ### Improvements
 
 - Promote check-in APIs from experimental to stable ([#6422](https://github.com/getsentry/sentry-java/pull/6422))
@@ -122,10 +126,6 @@
 ### Features
 
 - Add policy-controlled URL query parameters and fragments to Ktor HTTP client spans ([#6433](https://github.com/getsentry/sentry-java/pull/6433))
-
-### Fixes
-
-- Do not capture failed Apollo 3, 4, and 5 requests when the GraphQL `errors` array is empty ([#6285](https://github.com/getsentry/sentry-java/pull/6285))
 
 ## 8.62.0
 
