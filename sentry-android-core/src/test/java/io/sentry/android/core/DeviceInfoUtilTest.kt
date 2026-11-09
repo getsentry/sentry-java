@@ -1,6 +1,7 @@
 package io.sentry.android.core
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.BatteryManager
@@ -8,9 +9,15 @@ import android.os.Build
 import android.os.LocaleList
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.android.core.internal.util.CpuInfoUtils
 import java.util.Locale
 import java.util.TimeZone
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -25,6 +32,8 @@ import org.robolectric.annotation.Config
 class DeviceInfoUtilTest {
   private lateinit var context: Context
 
+  private val executor = Executors.newCachedThreadPool()
+
   @Suppress("deprecation")
   @BeforeTest
   fun `set up`() {
@@ -36,6 +45,11 @@ class DeviceInfoUtilTest {
     )
   }
 
+  @AfterTest
+  fun `tear down`() {
+    executor.shutdownNow()
+  }
+
   @Test
   fun `same options reuse device info util`() {
     val options = SentryAndroidOptions()
@@ -44,6 +58,47 @@ class DeviceInfoUtilTest {
     val second = DeviceInfoUtil.getInstance(context, options)
 
     assertSame(first, second)
+  }
+
+  @Test
+  fun `concurrent callers for the same options share one device info util`() {
+    val options = SentryAndroidOptions()
+    val stallingContext = StallingContext(context)
+    try {
+      val first =
+        executor.submit<DeviceInfoUtil> { DeviceInfoUtil.getInstance(stallingContext, options) }
+      assertThat(stallingContext.creationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+
+      var second: DeviceInfoUtil? = null
+      val secondCaller = Thread { second = DeviceInfoUtil.getInstance(stallingContext, options) }
+      secondCaller.start()
+      awaitWaiting(secondCaller)
+      stallingContext.releaseCreation.countDown()
+
+      val firstResult = first.get(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+      secondCaller.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS))
+
+      assertThat(second).isSameInstanceAs(firstResult)
+      assertThat(stallingContext.creationCount.get()).isEqualTo(1)
+    } finally {
+      stallingContext.releaseCreation.countDown()
+    }
+  }
+
+  @Test
+  fun `traces sampler of the same options is available while device info util creation is in progress`() {
+    val options = SentryAndroidOptions()
+    val stallingContext = StallingContext(context)
+    try {
+      executor.submit { DeviceInfoUtil.getInstance(stallingContext, options) }
+      assertThat(stallingContext.creationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue()
+
+      val tracesSampler = executor.submit<Any> { options.internalTracesSampler }
+
+      assertThat(tracesSampler.get(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isNotNull()
+    } finally {
+      stallingContext.releaseCreation.countDown()
+    }
   }
 
   @Test
@@ -202,5 +257,41 @@ class DeviceInfoUtilTest {
     val options = SentryAndroidOptions().apply { isEnableRootCheck = false }
     val deviceInfoUtil = DeviceInfoUtil.getInstance(context, options)
     assertNull(deviceInfoUtil.operatingSystem.isRooted)
+  }
+
+  private fun awaitWaiting(thread: Thread) {
+    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS)
+    while (thread.state != Thread.State.WAITING) {
+      check(System.nanoTime() < deadline) { "Thread did not start waiting, state: ${thread.state}" }
+      Thread.yield()
+    }
+  }
+
+  /**
+   * Stalls [DeviceInfoUtil] creation while it queries the activity service, until [releaseCreation]
+   * is counted down.
+   */
+  private class StallingContext(base: Context) : ContextWrapper(base) {
+    val creationStarted = CountDownLatch(1)
+    val releaseCreation = CountDownLatch(1)
+    val creationCount = AtomicInteger()
+
+    override fun getApplicationContext(): Context = this
+
+    override fun getSystemService(name: String): Any? {
+      if (name == Context.ACTIVITY_SERVICE) {
+        creationCount.incrementAndGet()
+        creationStarted.countDown()
+        releaseCreation.await(STALL_LIMIT_SECONDS, TimeUnit.SECONDS)
+      }
+      return super.getSystemService(name)
+    }
+  }
+
+  private companion object {
+    const val TIMEOUT_SECONDS = 5L
+
+    // Longer than TIMEOUT_SECONDS, so a caller blocked behind the stall times out before it ends.
+    const val STALL_LIMIT_SECONDS = 30L
   }
 }

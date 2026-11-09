@@ -21,6 +21,7 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryId;
 import io.sentry.time.MonotonicTicker;
+import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.SampleRateUtils;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -148,6 +149,14 @@ public final class SentryAndroidOptions extends SentryOptions {
   private volatile @Nullable DeviceInfoUtil deviceInfoUtil;
 
   /**
+   * Guards creating {@link #deviceInfoUtil}. Creating it reads files and queries system services,
+   * which can take long, so it doesn't use the shared {@link SentryOptions} lock: other callers of
+   * that lock, such as the first transaction started on the main thread, would wait for it.
+   */
+  private final @NotNull AutoClosableReentrantLock deviceInfoUtilLock =
+      new AutoClosableReentrantLock();
+
+  /**
    * Controls how many seconds to wait for sending events in case there were Startup Crashes in the
    * previous run. Sentry SDKs normally send events from a background queue, but in the case of
    * Startup Crashes, it blocks the execution of the {@link Sentry#init()} function for the amount
@@ -209,7 +218,7 @@ public final class SentryAndroidOptions extends SentryOptions {
   @NotNull
   DeviceInfoUtil getOrCreateDeviceInfoUtil(final @NotNull Context context) {
     if (deviceInfoUtil == null) {
-      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
+      try (final @NotNull ISentryLifecycleToken ignored = deviceInfoUtilLock.acquire()) {
         if (deviceInfoUtil == null) {
           deviceInfoUtil = new DeviceInfoUtil(ContextUtils.getApplicationContext(context), this);
         }
