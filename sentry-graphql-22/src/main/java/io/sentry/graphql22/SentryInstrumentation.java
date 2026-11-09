@@ -80,8 +80,32 @@ public final class SentryInstrumentation
     this(
         beforeSpan,
         subscriptionHandler,
+        captureRequestBodyForNonSubscriptions,
+        ignoredErrorTypes,
+        false);
+  }
+
+  /**
+   * @param beforeSpan callback when a span is created
+   * @param subscriptionHandler can report subscription errors
+   * @param captureRequestBodyForNonSubscriptions false if request bodies should not be captured by
+   *     this integration for query and mutation operations
+   * @param ignoredErrorTypes list of error types that should not be captured and sent to Sentry
+   * @param enableSpecificationErrorTypeFiltering whether ignored error types should also be matched
+   *     against {@link graphql.ErrorClassification#toSpecification(graphql.GraphQLError)}
+   */
+  public SentryInstrumentation(
+      final @Nullable SentryGraphqlInstrumentation.BeforeSpanCallback beforeSpan,
+      final @NotNull SentrySubscriptionHandler subscriptionHandler,
+      final boolean captureRequestBodyForNonSubscriptions,
+      final @NotNull List<String> ignoredErrorTypes,
+      final boolean enableSpecificationErrorTypeFiltering) {
+    this(
+        beforeSpan,
+        subscriptionHandler,
         new ExceptionReporter(captureRequestBodyForNonSubscriptions),
-        ignoredErrorTypes);
+        ignoredErrorTypes,
+        enableSpecificationErrorTypeFiltering);
   }
 
   @TestOnly
@@ -90,9 +114,24 @@ public final class SentryInstrumentation
       final @NotNull SentrySubscriptionHandler subscriptionHandler,
       final @NotNull ExceptionReporter exceptionReporter,
       final @NotNull List<String> ignoredErrorTypes) {
+    this(beforeSpan, subscriptionHandler, exceptionReporter, ignoredErrorTypes, false);
+  }
+
+  @TestOnly
+  public SentryInstrumentation(
+      final @Nullable SentryGraphqlInstrumentation.BeforeSpanCallback beforeSpan,
+      final @NotNull SentrySubscriptionHandler subscriptionHandler,
+      final @NotNull ExceptionReporter exceptionReporter,
+      final @NotNull List<String> ignoredErrorTypes,
+      final boolean enableSpecificationErrorTypeFiltering) {
     this.instrumentation =
         new SentryGraphqlInstrumentation(
-            beforeSpan, subscriptionHandler, exceptionReporter, ignoredErrorTypes, TRACE_ORIGIN);
+            beforeSpan,
+            subscriptionHandler,
+            exceptionReporter,
+            ignoredErrorTypes,
+            enableSpecificationErrorTypeFiltering,
+            TRACE_ORIGIN);
     SentryIntegrationPackageStorage.getInstance().addIntegration("GraphQL-v22");
   }
 
