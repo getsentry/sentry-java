@@ -127,6 +127,20 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   }
 
   @Test
+  fun `removeConnectionStatusObserver does not wait for a stalled telephony callback registration`() {
+    val fixture = Fixture.create(sdkVersion = Build.VERSION_CODES.S)
+    val stall = fixture.stallTelephonyCallbackRegistration()
+    val connectionStatusProvider = fixture.createProvider()
+    stall.awaitEntered()
+    val observer = mock<IConnectionStatusObserver>()
+    connectionStatusProvider.addConnectionStatusObserver(observer)
+
+    fixture.onCallerThread { connectionStatusProvider.removeConnectionStatusObserver(observer) }
+
+    assertThat(connectionStatusProvider.statusObservers).isEmpty()
+  }
+
+  @Test
   fun `getConnectionStatus refreshes a stale cache without waiting for a stalled telephony callback registration`() {
     val fixture = Fixture.create(sdkVersion = Build.VERSION_CODES.S)
     val stall = fixture.stallTelephonyCallbackRegistration()
@@ -247,6 +261,25 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     refresh.get(TIMEOUT_SECONDS, SECONDS)
 
     assertThat(connectionStatusProvider.cachedNetworkCapabilities).isNull()
+  }
+
+  @Test
+  fun `a network that becomes available while a stale-cache refresh queries the network capabilities stays the current network`() {
+    val fixture = Fixture.create()
+    val connectionStatusProvider = fixture.createRegisteredProvider()
+    val networkCallback = fixture.captureNetworkCallback()
+    val observer = mock<IConnectionStatusObserver>()
+    connectionStatusProvider.addConnectionStatusObserver(observer)
+    val stall = fixture.stallNetworkCapabilitiesQuery()
+    val refresh = fixture.startOnCallerThread { connectionStatusProvider.connectionStatus }
+    stall.awaitEntered()
+
+    fixture.onCallerThread { networkCallback.onAvailable(fixture.network) }
+    stall.release()
+    refresh.get(TIMEOUT_SECONDS, SECONDS)
+    networkCallback.onLost(fixture.network)
+
+    verify(observer).onConnectionStatusChanged(ConnectionStatus.DISCONNECTED)
   }
 
   // Observers changing the observers during a notification

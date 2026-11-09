@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,19 +57,16 @@ public final class AndroidConnectionStatusProvider
   private final @Nullable Handler handler;
 
   /**
-   * Guards the connection cache: {@link #cachedNetworkCapabilities}, {@link #currentNetwork},
-   * {@link #cacheFreshUntil} and {@link #cacheVersion}. Any thread that refreshes a stale cache
-   * takes it, including the main thread when it captures an event, so it is only held while those
-   * fields are written, never across a system service call, a log statement or an observer
-   * notification.
+   * What the provider currently knows about the default network. Replaced as a whole, never
+   * modified, so readers on any thread, including the main thread when it captures an event, see a
+   * consistent value without taking a lock.
    */
-  private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  private final @NotNull AtomicReference<ConnectionSnapshot> snapshot;
 
   /**
    * Serializes registering and unregistering the network and telephony callbacks. These are
-   * synchronous calls into system services that can take a long time, so this lock is separate from
-   * {@link #lock}. It is only taken on the SDK executor. While holding it, {@link #lock} may be
-   * acquired briefly, never the other way round.
+   * synchronous calls into system services that can take a long time, so the lock is only taken on
+   * the SDK executor, and nothing that callers wait for is done while it is held.
    */
   private final @NotNull AutoClosableReentrantLock registrationLock =
       new AutoClosableReentrantLock();
@@ -93,18 +91,10 @@ public final class AndroidConnectionStatusProvider
     NetworkCapabilities.TRANSPORT_BLUETOOTH
   };
 
-  private static final int[] capabilities = new int[2];
-
-  private volatile @Nullable NetworkCapabilities cachedNetworkCapabilities;
-  private volatile @Nullable Network currentNetwork;
-  private volatile @NotNull Deadline cacheFreshUntil;
-
   /**
-   * Incremented, under {@link #lock}, on every write to the cache. A refresh that queries the
-   * active network outside the lock compares versions before storing its result, so that it does
-   * not overwrite a newer value written in the meantime, for example by a network callback.
+   * The capabilities whose change affects the connection status, which depends on the API level.
    */
-  private long cacheVersion;
+  private final int[] capabilityIds;
 
   private static final long CACHE_TTL_MINUTES = 2;
   private final @NotNull AtomicBoolean isConnected = new AtomicBoolean(false);
@@ -128,16 +118,19 @@ public final class AndroidConnectionStatusProvider
     this.options = options;
     this.buildInfoProvider = buildInfoProvider;
     this.ticker = ticker;
-    this.cacheFreshUntil = Deadline.passed(ticker);
+    this.snapshot = new AtomicReference<>(ConnectionSnapshot.unknown(ticker));
     this.handler = handler;
     this.connectionStatusObservers = new CopyOnWriteArrayList<>();
     this.cellularNetworkTechnologyProvider =
         new CellularNetworkTechnologyProvider(this.context, options.getLogger(), buildInfoProvider);
 
-    capabilities[0] = NetworkCapabilities.NET_CAPABILITY_INTERNET;
-    if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M) {
-      capabilities[1] = NetworkCapabilities.NET_CAPABILITY_VALIDATED;
-    }
+    this.capabilityIds =
+        buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M
+            ? new int[] {
+              NetworkCapabilities.NET_CAPABILITY_INTERNET,
+              NetworkCapabilities.NET_CAPABILITY_VALIDATED
+            }
+            : new int[] {NetworkCapabilities.NET_CAPABILITY_INTERNET};
 
     // Register network callback immediately for caching
     //noinspection Convert2MethodRef
@@ -180,10 +173,14 @@ public final class AndroidConnectionStatusProvider
     return false;
   }
 
-  /** Get connection status from cached NetworkCapabilities or fallback to legacy method. */
-  private @NotNull ConnectionStatus getConnectionStatusFromCache() {
-    if (cachedNetworkCapabilities != null) {
-      return isNetworkEffectivelyConnected(cachedNetworkCapabilities)
+  /**
+   * The connection status of a snapshot, or of the legacy {@link ConnectivityManager} query when
+   * the snapshot has no capabilities.
+   */
+  private @NotNull ConnectionStatus statusOf(final @NotNull ConnectionSnapshot snapshot) {
+    final @Nullable NetworkCapabilities capabilities = snapshot.capabilities;
+    if (capabilities != null) {
+      return isNetworkEffectivelyConnected(capabilities)
           ? ConnectionStatus.CONNECTED
           : ConnectionStatus.DISCONNECTED;
     }
@@ -198,9 +195,12 @@ public final class AndroidConnectionStatusProvider
     return ConnectionStatus.UNKNOWN;
   }
 
-  /** Get connection type from cached NetworkCapabilities or fallback to legacy method. */
-  private @Nullable String getConnectionTypeFromCache() {
-    final NetworkCapabilities capabilities = cachedNetworkCapabilities;
+  /**
+   * The connection type of a snapshot, or of the legacy {@link ConnectivityManager} query when the
+   * snapshot has no capabilities.
+   */
+  private @Nullable String typeOf(final @NotNull ConnectionSnapshot snapshot) {
+    final @Nullable NetworkCapabilities capabilities = snapshot.capabilities;
     if (capabilities != null) {
       return getConnectionType(capabilities);
     }
@@ -212,14 +212,11 @@ public final class AndroidConnectionStatusProvider
   /**
    * The connection type and, for cellular connections, the generation of the network technology.
    *
-   * <p>Both are derived from one cache read, so they always describe the same network instead of
-   * straddling a connectivity change.
+   * <p>The type is derived from a single snapshot, so it can't mix two networks across a
+   * connectivity change.
    */
   public @NotNull NetworkConnection getConnection() {
-    if (!isCacheValid()) {
-      updateCache(null);
-    }
-    final @Nullable String connectionType = getConnectionTypeFromCache();
+    final @Nullable String connectionType = typeOf(freshSnapshot());
     if (!"cellular".equals(connectionType)) {
       return new NetworkConnection(connectionType, null);
     }
@@ -246,7 +243,10 @@ public final class AndroidConnectionStatusProvider
           new NetworkCallback() {
             @Override
             public void onAvailable(final @NotNull Network network) {
-              currentNetwork = network;
+              @NotNull ConnectionSnapshot current;
+              do {
+                current = snapshot.get();
+              } while (!snapshot.compareAndSet(current, current.withNetwork(network)));
 
               // have to only dispatch this on first registration + when the connection got
               // re-established
@@ -270,7 +270,7 @@ public final class AndroidConnectionStatusProvider
 
             @Override
             public void onLost(final @NotNull Network network) {
-              if (!network.equals(currentNetwork)) {
+              if (!network.equals(snapshot.get().network)) {
                 return;
               }
               clearCacheAndNotifyObservers();
@@ -282,13 +282,7 @@ public final class AndroidConnectionStatusProvider
 
             private void clearCacheAndNotifyObservers() {
               isConnected.set(false);
-              // Clear cached capabilities and network reference atomically
-              try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-                cachedNetworkCapabilities = null;
-                currentNetwork = null;
-                cacheFreshUntil = Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
-                cacheVersion++;
-              }
+              snapshot.set(ConnectionSnapshot.lost(ticker));
 
               options
                   .getLogger()
@@ -304,30 +298,38 @@ public final class AndroidConnectionStatusProvider
             @Override
             public void onCapabilitiesChanged(
                 @NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
-              if (!network.equals(currentNetwork)) {
+              if (!network.equals(snapshot.get().network)) {
                 return;
               }
-              updateCacheAndNotifyObservers(network, networkCapabilities);
+              updateCacheAndNotifyObservers(networkCapabilities);
 
               for (final @NotNull NetworkCallback cb : childCallbacks) {
                 cb.onCapabilitiesChanged(network, networkCapabilities);
               }
             }
 
+            /**
+             * Stores the capabilities and notifies observers, but only if they differ from the
+             * stored ones in a way that changes the connection status or type.
+             */
             private void updateCacheAndNotifyObservers(
-                @Nullable Network network, @Nullable NetworkCapabilities networkCapabilities) {
-              // Check if this change is meaningful before notifying observers
-              final boolean shouldUpdate = isSignificantChange(networkCapabilities);
-
-              // Only notify observers if something meaningful changed
-              if (shouldUpdate) {
-                updateCache(networkCapabilities);
-
-                final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
-                for (final @NotNull IConnectionStatusObserver observer :
-                    connectionStatusObservers) {
-                  observer.onConnectionStatusChanged(status);
+                final @NotNull NetworkCapabilities networkCapabilities) {
+              @NotNull ConnectionSnapshot current;
+              @NotNull ConnectionSnapshot updated;
+              do {
+                current = snapshot.get();
+                if (!isSignificantChange(current.capabilities, networkCapabilities)) {
+                  return;
                 }
+                updated =
+                    current.withCapabilities(
+                        networkCapabilities,
+                        Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES));
+              } while (!snapshot.compareAndSet(current, updated));
+
+              final @NotNull ConnectionStatus status = statusOf(updated);
+              for (final @NotNull IConnectionStatusObserver observer : connectionStatusObservers) {
+                observer.onConnectionStatusChanged(status);
               }
             }
 
@@ -335,17 +337,12 @@ public final class AndroidConnectionStatusProvider
              * Check if NetworkCapabilities change is significant for our observers. Only notify for
              * changes that affect connectivity status or connection type.
              */
-            private boolean isSignificantChange(@Nullable NetworkCapabilities newCapabilities) {
-              final NetworkCapabilities oldCapabilities = cachedNetworkCapabilities;
-
-              // Always significant if transitioning between null and non-null
-              if ((oldCapabilities == null) != (newCapabilities == null)) {
+            private boolean isSignificantChange(
+                final @Nullable NetworkCapabilities oldCapabilities,
+                final @NotNull NetworkCapabilities newCapabilities) {
+              // Always significant when capabilities first become available
+              if (oldCapabilities == null) {
                 return true;
-              }
-
-              // If both null, no change
-              if (oldCapabilities == null && newCapabilities == null) {
-                return false;
               }
 
               // Check significant capability changes
@@ -365,9 +362,8 @@ public final class AndroidConnectionStatusProvider
             private boolean hasSignificantCapabilityChanges(
                 @NotNull NetworkCapabilities old, @NotNull NetworkCapabilities new_) {
               // Check capabilities we care about for connectivity determination
-              for (int capability : capabilities) {
-                if (capability != 0
-                    && old.hasCapability(capability) != new_.hasCapability(capability)) {
+              for (int capabilityId : capabilityIds) {
+                if (old.hasCapability(capabilityId) != new_.hasCapability(capabilityId)) {
                   return true;
                 }
               }
@@ -406,45 +402,35 @@ public final class AndroidConnectionStatusProvider
     }
   }
 
+  /** The current snapshot, refreshed first if it is stale. */
+  private @NotNull ConnectionSnapshot freshSnapshot() {
+    final @NotNull ConnectionSnapshot current = snapshot.get();
+    return current.isFresh() ? current : refresh(current);
+  }
+
   /**
-   * Stores network capabilities in the cache and marks it fresh.
+   * Queries the active network and stores its capabilities, unless the snapshot changed during the
+   * query.
    *
-   * @param networkCapabilities the capabilities to store, or {@code null} to query the active
-   *     network. The query runs without holding {@link #lock}, and its result is discarded if the
-   *     cache was written in the meantime, because that write is at least as recent.
+   * @param before the snapshot the refresh replaces
+   * @return the stored snapshot, or, if another thread such as a network callback replaced {@code
+   *     before} during the query, that newer snapshot, which may still be stale
    */
-  private void updateCache(final @Nullable NetworkCapabilities networkCapabilities) {
-    if (networkCapabilities != null) {
-      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-        cachedNetworkCapabilities = networkCapabilities;
-        cacheFreshUntil = Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
-        cacheVersion++;
-      }
-    } else {
-      final long versionBeforeQuery;
-      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-        versionBeforeQuery = cacheVersion;
-      }
-      final @Nullable NetworkCapabilities activeNetworkCapabilities =
-          queryActiveNetworkCapabilities();
-      try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-        if (cacheVersion != versionBeforeQuery) {
-          return;
-        }
-        cachedNetworkCapabilities = activeNetworkCapabilities;
-        cacheFreshUntil = Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
-        cacheVersion++;
-      }
+  private @NotNull ConnectionSnapshot refresh(final @NotNull ConnectionSnapshot before) {
+    final @NotNull ConnectionSnapshot refreshed =
+        before.withCapabilities(
+            queryActiveNetworkCapabilities(),
+            Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES));
+    if (!snapshot.compareAndSet(before, refreshed)) {
+      return snapshot.get();
     }
 
     options
         .getLogger()
         .log(
             SentryLevel.DEBUG,
-            "Cache updated - Status: "
-                + getConnectionStatusFromCache()
-                + ", Type: "
-                + getConnectionTypeFromCache());
+            "Cache updated - Status: " + statusOf(refreshed) + ", Type: " + typeOf(refreshed));
+    return refreshed;
   }
 
   /**
@@ -482,24 +468,14 @@ public final class AndroidConnectionStatusProvider
     }
   }
 
-  private boolean isCacheValid() {
-    return !cacheFreshUntil.hasPassed();
-  }
-
   @Override
   public @NotNull ConnectionStatus getConnectionStatus() {
-    if (!isCacheValid()) {
-      updateCache(null);
-    }
-    return getConnectionStatusFromCache();
+    return statusOf(freshSnapshot());
   }
 
   @Override
   public @Nullable String getConnectionType() {
-    if (!isCacheValid()) {
-      updateCache(null);
-    }
-    return getConnectionTypeFromCache();
+    return typeOf(freshSnapshot());
   }
 
   /**
@@ -539,13 +515,7 @@ public final class AndroidConnectionStatusProvider
         unregisterNetworkCallback(context, options.getLogger(), callbackRef);
       }
       cellularNetworkTechnologyProvider.unregister();
-      // Clear cached state
-      try (final @NotNull ISentryLifecycleToken ignoredCache = lock.acquire()) {
-        cachedNetworkCapabilities = null;
-        currentNetwork = null;
-        cacheFreshUntil = Deadline.passed(ticker);
-        cacheVersion++;
-      }
+      snapshot.set(ConnectionSnapshot.unknown(ticker));
     }
     options.getLogger().log(SentryLevel.DEBUG, "Network callback unregistered");
   }
@@ -583,9 +553,7 @@ public final class AndroidConnectionStatusProvider
 
           // proactively update cache and notify observers on foreground to ensure connectivity
           // state is not stale
-          updateCache(null);
-
-          final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
+          final @NotNull ConnectionStatus status = statusOf(refresh(snapshot.get()));
           if (status == ConnectionStatus.DISCONNECTED) {
             // onLost is not called retroactively when we registerNetworkCallback (as opposed to
             // onAvailable), so we have to do it manually for the DISCONNECTED case
@@ -600,7 +568,8 @@ public final class AndroidConnectionStatusProvider
           }
 
           // this will ONLY do the necessary parts like registerNetworkCallback and onAvailable, but
-          // it won't updateCache and notify observes because we just did it above and the cached
+          // it won't refresh the cache and notify observers because we just did it above and the
+          // cached
           // capabilities will be the same
           ensureNetworkCallbackRegistered();
         });
@@ -635,7 +604,7 @@ public final class AndroidConnectionStatusProvider
   @TestOnly
   @Nullable
   public NetworkCapabilities getCachedNetworkCapabilities() {
-    return cachedNetworkCapabilities;
+    return snapshot.get().capabilities;
   }
 
   /**
@@ -909,6 +878,66 @@ public final class AndroidConnectionStatusProvider
   @NotNull
   public static List<NetworkCallback> getChildCallbacks() {
     return childCallbacks;
+  }
+
+  /**
+   * An immutable view of the default network: which network it is, its capabilities, and until when
+   * they can be used without querying the {@link ConnectivityManager} again.
+   *
+   * <p>Each change replaces the whole snapshot, so a reader that reads it once gets values that
+   * belong together, and a refresh can detect with a compare-and-set that a network callback
+   * replaced it during the query.
+   */
+  private static final class ConnectionSnapshot {
+    /** The default network reported by the network callback, or {@code null} if none is known. */
+    final @Nullable Network network;
+
+    /**
+     * The capabilities of the default network, or {@code null} if they are unknown or there is no
+     * default network. Readers then fall back to the legacy {@link ConnectivityManager} query.
+     */
+    final @Nullable NetworkCapabilities capabilities;
+
+    final @NotNull Deadline freshUntil;
+
+    private ConnectionSnapshot(
+        final @Nullable Network network,
+        final @Nullable NetworkCapabilities capabilities,
+        final @NotNull Deadline freshUntil) {
+      this.network = network;
+      this.capabilities = capabilities;
+      this.freshUntil = freshUntil;
+    }
+
+    /** Nothing is known, so the next read queries the active network. */
+    static @NotNull ConnectionSnapshot unknown(final @NotNull MonotonicTicker ticker) {
+      return new ConnectionSnapshot(null, null, Deadline.passed(ticker));
+    }
+
+    /**
+     * The network callback reported that the default network is gone. The snapshot is not refreshed
+     * until the cache time-to-live has elapsed, but it has no capabilities, so reading the status
+     * or type still falls back to the legacy {@link ConnectivityManager} query on every read.
+     */
+    static @NotNull ConnectionSnapshot lost(final @NotNull MonotonicTicker ticker) {
+      return new ConnectionSnapshot(
+          null, null, Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES));
+    }
+
+    boolean isFresh() {
+      return !freshUntil.hasPassed();
+    }
+
+    @NotNull
+    ConnectionSnapshot withNetwork(final @NotNull Network network) {
+      return new ConnectionSnapshot(network, capabilities, freshUntil);
+    }
+
+    @NotNull
+    ConnectionSnapshot withCapabilities(
+        final @Nullable NetworkCapabilities capabilities, final @NotNull Deadline freshUntil) {
+      return new ConnectionSnapshot(network, capabilities, freshUntil);
+    }
   }
 
   private void submitSafe(@NotNull Runnable r) {
