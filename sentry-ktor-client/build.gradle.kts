@@ -44,6 +44,38 @@ dependencies {
   testImplementation(libs.okhttp.mockwebserver)
 }
 
+testing {
+  suites {
+    register<JvmTestSuite>("testKtor300") {
+      useJUnit()
+      sources {
+        java.setSrcDirs(listOf("src/test/java"))
+        resources.setSrcDirs(listOf("src/test/resources"))
+      }
+    }
+  }
+}
+
+configurations.named("testKtor300Implementation") {
+  extendsFrom(configurations.testImplementation.get())
+}
+
+listOf("testKtor300CompileClasspath", "testKtor300RuntimeClasspath").forEach {
+  configurations.named(it) {
+    resolutionStrategy.eachDependency {
+      if (requested.group == "io.ktor") {
+        useVersion("3.0.0")
+      }
+    }
+  }
+}
+
+kotlin.target.compilations.named("testKtor300") {
+  associateWith(kotlin.target.compilations.getByName("main"))
+}
+
+tasks.check { dependsOn(testing.suites.named("testKtor300")) }
+
 buildConfig {
   useJavaOutput()
   packageName("io.sentry.ktorClient")
