@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import io.sentry.DateUtils;
 import io.sentry.IPerformanceContinuousCollector;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
@@ -12,6 +11,10 @@ import io.sentry.SentryNanotimeDate;
 import io.sentry.SpanDataConvention;
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector;
 import io.sentry.protocol.MeasurementValue;
+import io.sentry.time.EpochClock;
+import io.sentry.time.JavaMonotonicTicker;
+import io.sentry.time.MonotonicTicker;
+import io.sentry.time.SystemEpochClock;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.Iterator;
 import java.util.SortedSet;
@@ -68,12 +71,34 @@ public class SpanFrameMetricsCollector
   // assume 60fps until we get a value reported by the system
   private long lastKnownFrameDurationNanos = 16_666_666L;
 
+  // The frame timeline minus the wall clock, read once at construction. Reading it again later
+  // would pick up every wall-clock step and every suspend since (System.nanoTime() stops in
+  // suspend, the wall clock does not), and shift wall-stamped spans away from their frames.
+  private final long frameTimelineOffsetNanos;
+
   public SpanFrameMetricsCollector(
       final @NotNull SentryAndroidOptions options,
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
+    // Deliberately not options.getMonotonicTicker(), which is elapsedRealtimeNanos on Android:
+    // frames are stamped by Choreographer on System.nanoTime(), and the two bases drift apart by
+    // however long the device spends suspended.
+    this(
+        options,
+        frameMetricsCollector,
+        SystemEpochClock.getInstance(),
+        JavaMonotonicTicker.getInstance());
+  }
+
+  SpanFrameMetricsCollector(
+      final @NotNull SentryAndroidOptions options,
+      final @NotNull SentryFrameMetricsCollector frameMetricsCollector,
+      final @NotNull EpochClock epochClock,
+      final @NotNull MonotonicTicker frameTicker) {
     this.frameMetricsCollector = frameMetricsCollector;
 
     enabled = options.isEnablePerformanceV2() && options.isEnableFramesTracking();
+
+    this.frameTimelineOffsetNanos = frameTicker.tickNanos() - epochClock.now().epochNanos();
   }
 
   @Override
@@ -312,18 +337,16 @@ public class SpanFrameMetricsCollector
    * @param date the input date
    * @return a non-unix timestamp in nano precision, similar to {@link System#nanoTime()}.
    */
-  private static long toNanoTime(final @NotNull SentryDate date) {
+  private long toNanoTime(final @NotNull SentryDate date) {
     // SentryNanotimeDate nanotime is based on System.nanotime(), like EMPTY_NANO_TIME,
     // thus diff will simply return the System.nanotime() value of date
     if (date instanceof SentryNanotimeDate) {
       return date.diff(EMPTY_NANO_TIME);
     }
 
-    // e.g. SentryLongDate is unix time based - upscaled to nanos,
-    // we need to project it back to System.nanotime() format
-    long nowUnixInNanos = DateUtils.millisToNanos(System.currentTimeMillis());
-    long shiftInNanos = nowUnixInNanos - date.nanoTimestamp();
-    return System.nanoTime() - shiftInNanos;
+    // e.g. SentryLongDate is unix time based - upscaled to nanos, we need to project it onto the
+    // frame timeline
+    return date.nanoTimestamp() + frameTimelineOffsetNanos;
   }
 
   private static class Frame implements Comparable<Frame> {
