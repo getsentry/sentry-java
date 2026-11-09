@@ -19,6 +19,7 @@ import android.os.Handler
 import android.os.Looper
 import android.telephony.TelephonyManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
 import io.sentry.SentryOptions
@@ -377,6 +378,23 @@ class AndroidConnectionStatusProviderTest {
 
     connectionStatusProvider.removeConnectionStatusObserver(observer)
     assertTrue(connectionStatusProvider.statusObservers.isEmpty())
+  }
+
+  @Test
+  fun `addConnectionStatusObserver adds the observer and returns true when the network callback cannot be registered`() {
+    whenever(
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+      )
+      .thenReturn(PERMISSION_DENIED)
+    val provider = AndroidConnectionStatusProvider(contextMock, options, buildInfo, ticker)
+    val observer = IConnectionStatusProvider.IConnectionStatusObserver {}
+
+    val added = provider.addConnectionStatusObserver(observer)
+
+    assertThat(added).isTrue()
+    assertThat(provider.statusObservers).containsExactly(observer)
+    assertThat(provider.networkCallback).isNull()
+    provider.close()
   }
 
   @Test
