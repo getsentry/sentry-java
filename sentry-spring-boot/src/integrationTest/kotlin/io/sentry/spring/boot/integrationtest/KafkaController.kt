@@ -1,6 +1,5 @@
 package io.sentry.spring.boot.integrationtest
 
-import org.springframework.context.annotation.Profile
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Component
@@ -11,11 +10,7 @@ import org.springframework.web.bind.annotation.RestController
 
 const val KAFKA_TOPIC = "sentry-topic"
 
-// Kafka only works with Spring Boot 2.7 and later, so its beans and broker belong to a profile
-// rather than to every test's context. See KafkaIntegrationTest.
-
 @RestController
-@Profile("kafka")
 @RequestMapping("/kafka")
 open class KafkaController(private val kafkaTemplate: KafkaTemplate<String, String>) {
   @GetMapping("/produce")
@@ -26,7 +21,6 @@ open class KafkaController(private val kafkaTemplate: KafkaTemplate<String, Stri
 }
 
 @Component
-@Profile("kafka")
 open class KafkaConsumer {
   /** Does nothing with the message; Sentry traces the listener invocation. */
   @KafkaListener(topics = [KAFKA_TOPIC], groupId = "sentry-integration-test")

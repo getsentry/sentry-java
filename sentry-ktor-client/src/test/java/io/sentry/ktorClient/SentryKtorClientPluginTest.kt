@@ -21,6 +21,7 @@ import io.sentry.IScopes
 import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.Sentry
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
@@ -99,6 +100,9 @@ class SentryKtorClientPluginTest {
       doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
         .whenever(scopes)
         .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
 
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
 
@@ -556,13 +560,47 @@ class SentryKtorClientPluginTest {
   }
 
   @Test
-  fun `span description excludes query parameters and fragment`(): Unit = runBlocking {
+  fun `span description excludes query parameters and fragment while span data includes them`():
+    Unit = runBlocking {
     val sut = fixture.getSut()
     sut.get(fixture.server.url("/hello?token=secret&page=1#results").toString())
 
     val httpClientSpan = fixture.sentryTracer.children.first()
-    assertEquals("GET ${fixture.server.url("/hello")}", httpClientSpan.description)
-    assertNull(httpClientSpan.data[SpanDataConvention.HTTP_QUERY_KEY])
+    assertThat(httpClientSpan.description).isEqualTo("GET ${fixture.server.url("/hello")}")
+    assertThat(httpClientSpan.data[SpanDataConvention.HTTP_QUERY_KEY])
+      .isEqualTo("token=secret&page=1")
+    assertThat(httpClientSpan.data[SpanDataConvention.HTTP_FRAGMENT_KEY]).isEqualTo("results")
+  }
+
+  @Test
+  fun `data collection filters span query parameters`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.urlQueryParams = KeyValueCollectionBehavior.denyList("token")
+          }
+      )
+    sut.get(fixture.server.url("/hello?name=value&token=secret").toString())
+
+    val httpClientSpan = fixture.sentryTracer.children.first()
+    assertThat(httpClientSpan.data[SpanDataConvention.HTTP_QUERY_KEY])
+      .isEqualTo("name=value&token=[Filtered]")
+  }
+
+  @Test
+  fun `data collection can disable span query parameters`(): Unit = runBlocking {
+    val sut =
+      fixture.getSut(
+        optionsConfiguration =
+          Sentry.OptionsConfiguration {
+            it.dataCollection.urlQueryParams = KeyValueCollectionBehavior.off()
+          }
+      )
+    sut.get(fixture.server.url("/hello?name=value").toString())
+
+    val httpClientSpan = fixture.sentryTracer.children.first()
+    assertThat(httpClientSpan.data).doesNotContainKey(SpanDataConvention.HTTP_QUERY_KEY)
   }
 
   @Test

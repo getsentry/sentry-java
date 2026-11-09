@@ -9,7 +9,6 @@ publish: clean dryRelease
 clean:
 	./gradlew clean --no-configuration-cache
 	rm -rf distributions
-	rm -rf .venv
 
 # build and run tests
 compile:
@@ -32,7 +31,7 @@ checkFormat:
 
 # Binary compatibility validator
 api:
-	./gradlew apiDump
+	./gradlew updateKotlinAbi
 
 # Assemble release and Android test apk of the uitest-android module
 assembleUiTestRelease:

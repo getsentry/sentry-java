@@ -11,7 +11,6 @@ plugins {
     alias(libs.plugins.spotless) apply false
     alias(libs.plugins.detekt)
     `maven-publish`
-    alias(libs.plugins.binary.compatibility.validator)
     alias(libs.plugins.vanniktech.maven.publish) apply false
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -41,51 +40,6 @@ buildscript {
 
         classpath(libs.commons.compress)
     }
-}
-
-apiValidation {
-    ignoredPackages.addAll(
-        setOf(
-            "io.sentry.android.core.internal"
-        )
-    )
-    ignoredProjects.addAll(
-        listOf(
-            "sentry-samples-android",
-            "sentry-samples-console",
-            "sentry-samples-console-opentelemetry-noagent",
-            "sentry-samples-jul",
-            "sentry-samples-log4j2",
-            "sentry-samples-logback",
-            "sentry-samples-openfeign",
-            "sentry-samples-servlet",
-            "sentry-samples-spring",
-            "sentry-samples-spring-jakarta",
-            "sentry-samples-spring-7",
-            "sentry-samples-spring-boot",
-            "sentry-samples-spring-boot-opentelemetry",
-            "sentry-samples-spring-boot-opentelemetry-noagent",
-            "sentry-samples-spring-boot-jakarta",
-            "sentry-samples-spring-boot-jakarta-log4j2",
-            "sentry-samples-spring-boot-jakarta-opentelemetry",
-            "sentry-samples-spring-boot-jakarta-opentelemetry-noagent",
-            "sentry-samples-spring-boot-webflux",
-            "sentry-samples-spring-boot-webflux-jakarta",
-            "sentry-samples-spring-boot-4",
-            "sentry-samples-spring-boot-4-log4j2",
-            "sentry-samples-spring-boot-4-opentelemetry",
-            "sentry-samples-spring-boot-4-opentelemetry-noagent",
-            "sentry-samples-spring-boot-4-otlp",
-            "sentry-samples-spring-boot-4-webflux",
-            "sentry-samples-ktor-client",
-            "sentry-uitest-android",
-            "sentry-uitest-android-critical",
-            "test-app-size",
-            "sentry-samples-netflix-dgs",
-            "sentry-samples-console-otlp",
-            "sentry-test-support"
-        )
-    )
 }
 
 allprojects {
@@ -145,6 +99,7 @@ subprojects {
 
         tasks.named("distZip").configure {
             this.dependsOn("publishToMavenLocal")
+            this.dependsOn("publishAllPublicationsTo${DIST_MAVEN_REPO.replaceFirstChar { it.uppercase() }}Repository")
             val file = this.project.layout.buildDirectory.file("distributions${sep}${this.project.name}-${this.project.version}.zip").get().asFile
             this.doLast {
                 if (!file.exists()) throw IllegalStateException("Distribution file: ${file.absolutePath} does not exist")
@@ -175,6 +130,11 @@ subprojects {
             // this is needed for sentry-unity to consume our artifacts locally as proper maven publication
             configure<PublishingExtension> {
                 repositories {
+                    // the dist zips craft publishes are assembled from this, see Publication.kt
+                    maven {
+                        name = DIST_MAVEN_REPO
+                        url = distMavenDir.get().asFile.toURI()
+                    }
                     maven {
                         name = "unityMaven"
                         url = rootProject.layout.buildDirectory.file("unityMaven").get().asFile.toURI()

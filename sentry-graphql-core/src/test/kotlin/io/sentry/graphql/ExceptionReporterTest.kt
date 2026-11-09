@@ -18,6 +18,7 @@ import io.sentry.IScopes
 import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.SentryOptions
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Request
@@ -28,6 +29,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -91,6 +93,9 @@ class ExceptionReporterTest {
       doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
         .whenever(scopes)
         .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
 
       return exceptionReporter
     }

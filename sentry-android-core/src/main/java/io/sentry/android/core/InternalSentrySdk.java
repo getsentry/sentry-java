@@ -116,7 +116,7 @@ public final class InternalSentrySdk {
       app.setAppName(ContextUtils.getApplicationName(context));
 
       final @NotNull TimeSpan appStartTimeSpan =
-          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+          AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
       if (appStartTimeSpan.hasStarted()) {
         app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
       }

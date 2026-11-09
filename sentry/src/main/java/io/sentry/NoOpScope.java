@@ -43,6 +43,14 @@ public final class NoOpScope implements IScope {
   public void setLevel(@Nullable SentryLevel level) {}
 
   @Override
+  public @Nullable String getEnvironment() {
+    return null;
+  }
+
+  @Override
+  public void setEnvironment(@Nullable String environment) {}
+
+  @Override
   public @Nullable String getTransactionName() {
     return null;
   }

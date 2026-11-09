@@ -12,6 +12,7 @@ plugins {
   alias(libs.plugins.dokka)
   alias(libs.plugins.dokka.javadoc)
   `maven-publish` // necessary for publishMavenLocal task to publish correct artifacts
+  id("io.sentry.api-validation")
 }
 
 kotlin {
@@ -19,7 +20,7 @@ kotlin {
 
   androidTarget {
     compilerOptions {
-      jvmTarget.set(JvmTarget.JVM_1_8)
+      jvmTarget.set(JvmTarget.JVM_11)
       apiVersion.set(KotlinVersion.KOTLIN_1_9)
       languageVersion.set(KotlinVersion.KOTLIN_1_9)
     }
@@ -27,7 +28,7 @@ kotlin {
   }
   jvm("desktop") {
     compilerOptions {
-      jvmTarget.set(JvmTarget.JVM_1_8)
+      jvmTarget.set(JvmTarget.JVM_11)
       apiVersion.set(KotlinVersion.KOTLIN_1_9)
       languageVersion.set(KotlinVersion.KOTLIN_1_9)
     }
@@ -126,7 +127,7 @@ detekt { source.setFrom("src/androidMain/kotlin", "src/androidUnitTest/kotlin") 
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.
-  jvmTarget = JavaVersion.VERSION_1_8.toString()
+  jvmTarget = JavaVersion.VERSION_11.toString()
 }
 
 tasks.withType<DokkaTask>().configureEach {

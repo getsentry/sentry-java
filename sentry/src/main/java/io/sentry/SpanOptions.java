@@ -48,8 +48,11 @@ public class SpanOptions {
   private boolean trimEnd = false;
 
   /**
-   * true if the span is considered idle and should be automatically finished when it's parent gets
-   * finished.
+   * `true` if the span is idle, in which case its transaction finishes it when the transaction
+   * finishes, with the transaction's status and end time.
+   *
+   * <p>Note: An unfinished idle span doesn't keep a transaction that waits for its children from
+   * finishing, but non-idle spans created under it do.
    */
   private boolean isIdle = false;
 

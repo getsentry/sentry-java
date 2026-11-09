@@ -25,18 +25,6 @@ group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-fun springBoot2SupportsOptionalIntegrations(): Boolean {
-  val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
-  val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
-  val major = parts.getOrElse(0) { 0 }
-  val minor = parts.getOrElse(1) { 0 }
-  return major > 2 || (major == 2 && minor >= 7)
-}
-
-val includeGraphql =
-  !project.hasProperty("excludeGraphql") && springBoot2SupportsOptionalIntegrations()
-val includeKafka = !project.hasProperty("excludeKafka") && springBoot2SupportsOptionalIntegrations()
-
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
@@ -48,9 +36,7 @@ dependencies {
   implementation(libs.springboot.starter)
   implementation(libs.springboot.starter.actuator)
   implementation(libs.springboot.starter.aop)
-  if (includeGraphql) {
-    implementation(libs.springboot.starter.graphql)
-  }
+  implementation(libs.springboot.starter.graphql)
   implementation(libs.springboot.starter.jdbc)
   implementation(libs.springboot.starter.quartz)
   implementation(libs.springboot.starter.security)
@@ -62,17 +48,13 @@ dependencies {
   implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
   implementation(projects.sentrySpringBootStarter)
   implementation(projects.sentryLogback)
-  if (includeGraphql) {
-    implementation(projects.sentryGraphql)
-  }
+  implementation(projects.sentryGraphql)
   implementation(projects.sentryQuartz)
   implementation(projects.sentryAsyncProfiler)
   implementation(libs.otel)
 
-  if (includeKafka) {
-    implementation(libs.spring.kafka2)
-    implementation(projects.sentryKafka)
-  }
+  implementation(libs.spring.kafka2)
+  implementation(projects.sentryKafka)
 
   // database query tracing
   implementation(projects.sentryJdbc)
@@ -100,19 +82,6 @@ tasks.jar {
 }
 
 tasks.startScripts { dependsOn(tasks.shadowJar) }
-
-configure<SourceSetContainer> {
-  main {
-    if (!includeGraphql) {
-      java.exclude("**/graphql/**")
-      resources.exclude("graphql/**")
-    }
-    if (!includeKafka) {
-      java.exclude("**/queues/kafka/**")
-      resources.exclude("application-kafka.properties")
-    }
-  }
-}
 
 tasks.register<JavaExec>("bootRunWithAgent").configure {
   group = "application"

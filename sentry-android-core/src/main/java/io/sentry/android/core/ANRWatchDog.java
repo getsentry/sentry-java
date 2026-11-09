@@ -29,14 +29,15 @@ import static android.app.ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING;
 
 import android.app.ActivityManager;
 import android.content.Context;
-import android.os.Debug;
 import android.os.SystemClock;
+import io.sentry.IDebugManager;
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
 import io.sentry.transport.ICurrentDateProvider;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /** A watchdog timer thread that detects when the UI thread has frozen. */
@@ -58,6 +59,7 @@ final class ANRWatchDog extends Thread {
   private final AtomicBoolean reported = new AtomicBoolean(false);
 
   private final @NotNull Context context;
+  private final @Nullable IDebugManager debugManager;
 
   @SuppressWarnings("UnnecessaryLambda")
   private final Runnable ticker;
@@ -67,7 +69,8 @@ final class ANRWatchDog extends Thread {
       boolean reportInDebug,
       @NotNull ANRListener listener,
       @NotNull ILogger logger,
-      final @NotNull Context context) {
+      final @NotNull Context context,
+      final @Nullable IDebugManager debugManager) {
     // avoid method refs on Android due to some issues with older AGP setups
     // noinspection Convert2MethodRef
     this(
@@ -78,7 +81,8 @@ final class ANRWatchDog extends Thread {
         listener,
         logger,
         new MainLooperHandler(),
-        context);
+        context,
+        debugManager);
   }
 
   @TestOnly
@@ -90,7 +94,8 @@ final class ANRWatchDog extends Thread {
       @NotNull ANRListener listener,
       @NotNull ILogger logger,
       @NotNull MainLooperHandler uiHandler,
-      final @NotNull Context context) {
+      final @NotNull Context context,
+      final @Nullable IDebugManager debugManager) {
 
     super("|ANR-WatchDog|");
 
@@ -102,6 +107,7 @@ final class ANRWatchDog extends Thread {
     this.logger = logger;
     this.uiHandler = uiHandler;
     this.context = context;
+    this.debugManager = debugManager;
     this.ticker =
         () -> {
           lastKnownActiveUiTimestampMs = timeProvider.getCurrentTimeMillis();
@@ -145,7 +151,7 @@ final class ANRWatchDog extends Thread {
 
       // If the main thread has not handled ticker, it is blocked. ANR.
       if (unresponsiveDurationMs > timeoutIntervalMillis) {
-        if (!reportInDebug && (Debug.isDebuggerConnected() || Debug.waitingForDebugger())) {
+        if (!reportInDebug && debugManager != null && debugManager.isDebuggerConnected()) {
           logger.log(
               SentryLevel.DEBUG,
               "An ANR was detected but ignored because the debugger is connected.");

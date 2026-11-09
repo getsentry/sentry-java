@@ -58,48 +58,6 @@ class AutomaticSpansTest : BaseUiTest() {
     initSentry(true) { options: SentryAndroidOptions ->
       options.tracesSampleRate = 1.0
       options.isEnableTimeToFullDisplayTracing = true
-      options.isEnablePerformanceV2 = false
-    }
-
-    IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)
-    val sampleScenario = launchActivity<ProfilingSampleActivity>()
-    swipeList(3)
-    Sentry.reportFullyDisplayed()
-    sampleScenario.moveToState(Lifecycle.State.DESTROYED)
-    IdlingRegistry.getInstance().unregister(ProfilingSampleActivity.scrollingIdlingResource)
-    relayIdlingResource.increment()
-
-    relay.assert {
-      findEnvelope {
-          assertEnvelopeTransaction(it.items.toList(), AndroidLogger()).transaction ==
-            "ProfilingSampleActivity"
-        }
-        .assert {
-          val transactionItem: SentryTransaction = it.assertTransaction()
-          it.assertNoOtherItems()
-          val measurements = transactionItem.measurements
-          val frozenFrames = measurements[MeasurementValue.KEY_FRAMES_FROZEN]?.value?.toInt() ?: 0
-          val slowFrames = measurements[MeasurementValue.KEY_FRAMES_SLOW]?.value?.toInt() ?: 0
-          val totalFrames = measurements[MeasurementValue.KEY_FRAMES_TOTAL]?.value?.toInt() ?: 0
-          assertEquals("ProfilingSampleActivity", transactionItem.transaction)
-          // AGP matrix tests have no frames
-          Assume.assumeTrue(totalFrames > 0)
-          assertNotEquals(totalFrames, 0)
-          assertTrue(
-            totalFrames > slowFrames + frozenFrames,
-            "Expected total frames ($totalFrames) to be higher than the sum of slow ($slowFrames) and frozen ($frozenFrames) frames.",
-          )
-        }
-      assertNoOtherEnvelopes()
-    }
-  }
-
-  @Test
-  fun checkAppStartFramesMeasurementsPerfV2() {
-    initSentry(true) { options: SentryAndroidOptions ->
-      options.tracesSampleRate = 1.0
-      options.isEnableTimeToFullDisplayTracing = true
-      options.isEnablePerformanceV2 = true
     }
 
     IdlingRegistry.getInstance().register(ProfilingSampleActivity.scrollingIdlingResource)

@@ -1,110 +1,56 @@
 import org.gradle.api.Project
 import org.gradle.api.distribution.DistributionContainer
 import org.gradle.api.file.CopySpec
-import java.io.File
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 
-private object Consts {
-    val taskRegex = Regex("(.*)DistZip")
-}
+/**
+ * Name of the per-project Maven repository the dist zips are assembled from.
+ * `distZip` depends on `publishAllPublicationsToDistMavenRepository`.
+ */
+const val DIST_MAVEN_REPO = "distMaven"
+
+val Project.distMavenDir: Provider<Directory> get() = layout.buildDirectory.dir(DIST_MAVEN_REPO)
 
 private fun Project.versionName(): String =
     providers.gradleProperty("versionName").get()
 
 // configure distZip tasks for multiplatform
 fun DistributionContainer.configureForMultiplatform(project: Project) {
-    val sep = File.separator
-    val version = project.versionName()
-    val name = project.name
-
-    this.maybeCreate("android").contents {
-        from("build${sep}publications${sep}androidRelease") {
-            renameModule(name, "android", version = version)
-        }
-        from("build${sep}outputs${sep}aar") {
-            include("*-release*")
-            rename {
-                it.replace("-release", "-android-release")
-            }
-        }
-        from("build${sep}libs") {
-            include("*android*")
-            include("*androidRelease-javadoc*")
-            rename {
-                it.replace("androidRelease-javadoc", "android")
-            }
-        }
-    }
-    this.getByName("main").contents {
-        from("build${sep}publications${sep}kotlinMultiplatform") {
-            renameModule(name, version = version)
-        }
-        from("build${sep}kotlinToolingMetadata")
-        from("build${sep}libs") {
-            include("*compose-kotlin*")
-            include("*compose-metadata*")
-            rename {
-                it.replace("-kotlin", "")
-                    .replace("-metadata", "")
-                    .replace("Multiplatform-javadoc", "")
-            }
-        }
-    }
-    this.maybeCreate("desktop").contents {
-        // kotlin multiplatform modules
-        from("build${sep}publications${sep}desktop") {
-            renameModule(name, "desktop", version = version)
-        }
-        from("build${sep}libs") {
-            include("*desktop*")
-            include("*desktop-javadoc*")
-            rename {
-                it.replace("desktop-javadoc", "desktop")
-            }
-        }
-    }
+    getByName("main").contents { fromDistMaven(project, project.name) }
+    maybeCreate("android").contents { fromDistMaven(project, "${project.name}-android") }
+    maybeCreate("desktop").contents { fromDistMaven(project, "${project.name}-desktop") }
 
     // make other distZip tasks run together with the main distZip
-    val platformDists = project.tasks.filter { task ->
-        task.name.matches(Consts.taskRegex)
-    }.toTypedArray()
+    val platformDists = project.tasks.filter { it.name.matches(Regex("(.*)DistZip")) }.toTypedArray()
     project.tasks.getByName("distZip").finalizedBy(*platformDists)
 }
 
 fun DistributionContainer.configureForJvm(project: Project) {
-    val sep = File.separator
-    val version = project.versionName()
-    val name = project.name
-
-    this.getByName("main").contents {
-        // non android modules
-        from("build${sep}libs")
-        from("build${sep}publications${sep}maven") {
-            renameModule(name, version = version)
-        }
-        // android modules
-        from("build${sep}outputs${sep}aar") {
-            include("*-release*")
-        }
-        from("build${sep}publications${sep}release") {
-            renameModule(name, version = version)
-        }
-        from("build${sep}intermediates${sep}java_doc_jar${sep}release") {
-            include("*javadoc*")
-            rename { it.replace("release", "$name-$version") }
-        }
-        from("build${sep}intermediates${sep}source_jar${sep}release") {
-            include("*sources*")
-            rename { it.replace("release", "$name-$version") }
-        }
-    }
+    getByName("main").contents { fromDistMaven(project, project.name) }
 }
 
-private fun CopySpec.renameModule(projectName: String, renameTo: String = "", version: String) {
-    var target = ""
-    if (renameTo.isNotEmpty()) {
-        target = "-$renameTo"
-    }
-    rename {
-        it.replace("module.json", "$projectName$target-$version.module")
+/**
+ * Copies one publication out of the project's Maven repository layout. Maven guarantees file names
+ * there (`<artifactId>-<version>[-<classifier>].<ext>`) independently of how the publish plugin
+ * names its tasks or intermediate outputs, which is exactly what craft expects. Only the few
+ * craft-specific names below need renaming.
+ */
+private fun CopySpec.fromDistMaven(project: Project, artifactId: String) {
+    val version = project.versionName()
+    val groupPath = project.group.toString().replace('.', '/')
+    from(project.distMavenDir.map { it.dir("$groupPath/$artifactId/$version") }) {
+        exclude("*.md5", "*.sha1", "*.sha256", "*.sha512", "*.asc")
+        rename {
+            when (it) {
+                // craft reads the POM from a fixed name
+                "$artifactId-$version.pom" -> "pom-default.xml"
+                // craft's android config maps <dir>-<version> to <dir>-release.aar
+                "$artifactId-$version.aar" -> "$artifactId-release.aar"
+                // kept for parity with the old layout
+                "$artifactId-$version-kotlin-tooling-metadata.json" -> "kotlin-tooling-metadata.json"
+                else -> it
+            }
+        }
     }
 }

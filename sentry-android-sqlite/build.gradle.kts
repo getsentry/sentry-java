@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.detekt)
+  id("io.sentry.api-validation")
 }
 
 android {
@@ -31,7 +32,7 @@ android {
   testBuildType = "release"
 
   kotlin {
-    compilerOptions.jvmTarget = JvmTarget.JVM_1_8
+    compilerOptions.jvmTarget = JvmTarget.JVM_11
     compilerOptions.languageVersion = KotlinVersion.KOTLIN_1_9
     compilerOptions.apiVersion = KotlinVersion.KOTLIN_1_9
   }
@@ -84,5 +85,5 @@ dependencies {
 
 tasks.withType<Detekt>().configureEach {
   // Target version of the generated JVM bytecode. It is used for type resolution.
-  jvmTarget = JavaVersion.VERSION_1_8.toString()
+  jvmTarget = JavaVersion.VERSION_11.toString()
 }

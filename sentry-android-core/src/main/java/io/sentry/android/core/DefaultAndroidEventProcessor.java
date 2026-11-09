@@ -352,7 +352,7 @@ final class DefaultAndroidEventProcessor implements SentryEventProcessor {
   private void setAppExtras(final @NotNull App app, final @NotNull Hint hint) {
     app.setAppName(ContextUtils.getApplicationName(context));
     final @NotNull TimeSpan appStartTimeSpan =
-        AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+        AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
     if (appStartTimeSpan.hasStarted()) {
       app.setAppStartTime(DateUtils.toUtilDate(appStartTimeSpan.getStartTimestamp()));
     }
