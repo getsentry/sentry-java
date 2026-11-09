@@ -27,14 +27,12 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
- * Tracks the application lifecycle to drive session tracking and {@code app.lifecycle} breadcrumbs.
+ * Tracks the application lifecycle to drive session tracking and adds the following breadcrumbs:
  *
- * <p>On Android 17 (API 37) and above it additionally subscribes to {@link
- * ActivityManager#registerAnrWarningListener}, which the system invokes while an ANR timeout is
- * still running — before the app is actually declared unresponsive. Each warning becomes an {@code
- * app.anr} breadcrumb carrying the ANR type, the system description, and how much of the timeout
- * budget has already been consumed. Because the breadcrumb is attached to the scope, a crash or
- * error captured afterwards shows that the main thread was already stalling.
+ * <ul>
+ *   <li>{@code app.lifecycle}: the app moved to the foreground or background
+ *   <li>{@code app.anr}: the system reported an ANR warning (Android 17+)
+ * </ul>
  */
 public final class AppLifecycleIntegration implements Integration, Closeable {
 
@@ -213,8 +211,6 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
         return;
       }
       try {
-        // Runnable::run keeps the callback on the binder thread that delivers it. Hopping to the
-        // main thread would be useless here, because an impending ANR means it is already stalled.
         activityManager.registerAnrWarningListener(Runnable::run, consumer);
       } catch (RuntimeException e) {
         options
@@ -228,8 +224,6 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     options.getLogger().log(SentryLevel.DEBUG, "ANR warning listener installed.");
   }
 
-  /** Runs on the executor service, or inline when the executor rejected the task. */
-  // Only gets past the null check when registration succeeded, which implies API 37 or above.
   @SuppressLint("NewApi")
   private void unregisterAnrWarningListener(final @NotNull SentryAndroidOptions options) {
     final @Nullable Consumer<AnrWarningResult> consumerRef;
@@ -246,6 +240,11 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
     final @Nullable ActivityManager activityManager =
         (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
     if (activityManager == null) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.INFO,
+              "ActivityManager is not available, ANR warning listener not unregistered.");
       return;
     }
     try {
