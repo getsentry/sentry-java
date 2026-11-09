@@ -95,7 +95,7 @@ apollo4-kotlin = { module = "com.apollographql.apollo:apollo-runtime", version =
 # sentry-apollo-5 compiles against 5.0.0 (supported floor) and tests against the latest 5.x
 apollo5-kotlin = { module = "com.apollographql.apollo:apollo-runtime", version = "5.0.0" }
 apollo5-kotlin-latest = { module = "com.apollographql.apollo:apollo-runtime", version = "5.1.0" }
-androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.3.0" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.7.1" }
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.9.1" }
 androidx-activity = { module = "androidx.activity:activity", version = "1.8.2" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.9.3" }
