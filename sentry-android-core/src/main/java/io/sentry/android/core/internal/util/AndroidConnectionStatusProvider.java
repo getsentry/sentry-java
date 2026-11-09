@@ -73,6 +73,13 @@ public final class AndroidConnectionStatusProvider
 
   private volatile @Nullable NetworkCallback networkCallback;
 
+  /**
+   * Set by {@link #close()} on the calling thread, before the unregistration it schedules runs.
+   * Registration and foreground refreshes queued on the SDK executor after that unregistration
+   * check it, so they don't register the callbacks again on a closed provider.
+   */
+  private volatile boolean closed;
+
   private static final @NotNull AutoClosableReentrantLock connectivityManagerLock =
       new AutoClosableReentrantLock();
   private static volatile @Nullable ConnectivityManager connectivityManager;
@@ -225,6 +232,10 @@ public final class AndroidConnectionStatusProvider
   }
 
   private void ensureNetworkCallbackRegistered() {
+    if (closed) {
+      return;
+    }
+
     if (!ContextUtils.isForegroundImportance()) {
       return;
     }
@@ -235,7 +246,9 @@ public final class AndroidConnectionStatusProvider
 
     final boolean registered;
     try (final @NotNull ISentryLifecycleToken ignored = registrationLock.acquire()) {
-      if (networkCallback != null) {
+      // Checked again under the lock in case close() ran in the meantime: its unregistration takes
+      // this lock too, so either it sees the registration and undoes it, or this sees the flag.
+      if (closed || networkCallback != null) {
         return;
       }
 
@@ -491,6 +504,8 @@ public final class AndroidConnectionStatusProvider
   @Override
   public boolean addConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
     connectionStatusObservers.add(observer);
+    // The executor drops tasks when its queue is full, which would skip this registration. That is
+    // unlikely, and onForeground() registers the callback again the next time the app is shown.
     //noinspection Convert2MethodRef
     submitSafe(() -> ensureNetworkCallbackRegistered());
     return true;
@@ -523,6 +538,7 @@ public final class AndroidConnectionStatusProvider
   /** Clean up resources - should be called when the provider is no longer needed */
   @Override
   public void close() {
+    closed = true;
     submitSafe(
         () -> {
           unregisterNetworkCallback(/* clearObservers= */ true);
@@ -536,7 +552,7 @@ public final class AndroidConnectionStatusProvider
 
   /**
    * Refreshes the cache, notifies observers and registers the network callback, unless it is
-   * already registered.
+   * already registered or the provider is closed.
    *
    * <p>Whether the callback is registered is checked on the SDK executor, which also runs
    * registration and unregistration in submission order. Checking on the calling thread instead
@@ -547,7 +563,7 @@ public final class AndroidConnectionStatusProvider
   public void onForeground() {
     submitSafe(
         () -> {
-          if (networkCallback != null) {
+          if (closed || networkCallback != null) {
             return;
           }
 
