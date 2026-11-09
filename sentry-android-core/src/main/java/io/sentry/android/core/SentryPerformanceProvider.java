@@ -258,12 +258,8 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     final @NotNull TimeSpan sdkInitTimeSpan = appStartMetrics.getSdkInitTimeSpan();
     sdkInitTimeSpan.setStartedAt(sdkInitMillis);
 
-    // performance v2: Uses Process.getStartUptimeMillis()
-    // requires API level 24+
-    if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
-      final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
-      appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
-    }
+    final @NotNull TimeSpan appStartTimespan = appStartMetrics.getAppStartTimeSpan();
+    appStartTimespan.setStartedAt(Process.getStartUptimeMillis());
 
     if (context instanceof Application) {
       app = (Application) context;

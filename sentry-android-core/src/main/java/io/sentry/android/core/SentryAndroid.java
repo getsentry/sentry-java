@@ -154,11 +154,9 @@ public final class SentryAndroid {
             // if SentryPerformanceProvider was disabled or removed,
             // we set the app start / sdk init time here instead
             final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-            if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
-              final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
-              if (appStartTimeSpan.hasNotStarted()) {
-                appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
-              }
+            final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
+            if (appStartTimeSpan.hasNotStarted()) {
+              appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
             }
             if (context.getApplicationContext() instanceof Application) {
               appStartMetrics.registerLifecycleCallbacks(

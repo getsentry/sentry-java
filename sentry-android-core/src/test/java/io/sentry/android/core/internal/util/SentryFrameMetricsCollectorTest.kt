@@ -118,15 +118,6 @@ class SentryFrameMetricsCollectorTest {
   }
 
   @Test
-  fun `collector works only on api 24+`() {
-    val buildInfo =
-      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M) }
-    val collector = fixture.getSut(context, buildInfo)
-    val id = collector.startCollection(mock())
-    assertNull(id)
-  }
-
-  @Test
   fun `collector works only if context is instance of Application`() {
     val collector = fixture.getSut(mock())
     val id = collector.startCollection(mock())
@@ -611,9 +602,7 @@ class SentryFrameMetricsCollectorTest {
 
   @Test
   fun `getFramesDelay returns -1 when not available`() {
-    val buildInfo =
-      mock<BuildInfoProvider> { whenever(it.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M) }
-    val collector = fixture.getSut(context, buildInfo)
+    val collector = fixture.getSut(mock())
 
     val result = collector.getFramesDelay(0, TimeUnit.SECONDS.toNanos(1))
     assertEquals(-1.0, result.delaySeconds)

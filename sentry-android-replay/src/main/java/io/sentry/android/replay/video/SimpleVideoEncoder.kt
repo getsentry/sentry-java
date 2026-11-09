@@ -349,8 +349,6 @@ internal fun shouldUseSoftwareCanvas(): Boolean =
     Build.HARDWARE.contains("goldfish", ignoreCase = true) ||
     Build.HARDWARE.contains("ranchu", ignoreCase = true)
 
-@SuppressLint("UseRequiresApi")
-@TargetApi(24)
 internal data class MuxerConfig(
   val file: File,
   var recordingWidth: Int,
