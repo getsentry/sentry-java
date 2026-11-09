@@ -46,7 +46,9 @@ public final class io/sentry/graphql/SentryGraphqlInstrumentation {
 	public static final field SENTRY_EXCEPTIONS_CONTEXT_KEY Ljava/lang/String;
 	public static final field SENTRY_SCOPES_CONTEXT_KEY Ljava/lang/String;
 	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Lio/sentry/graphql/ExceptionReporter;Ljava/util/List;Ljava/lang/String;)V
+	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;Lio/sentry/graphql/ExceptionReporter;Ljava/util/List;ZLjava/lang/String;)V
 	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;ZLjava/util/List;Ljava/lang/String;)V
+	public fun <init> (Lio/sentry/graphql/SentryGraphqlInstrumentation$BeforeSpanCallback;Lio/sentry/graphql/SentrySubscriptionHandler;ZLjava/util/List;ZLjava/lang/String;)V
 	public fun beginExecuteOperation (Lgraphql/execution/instrumentation/parameters/InstrumentationExecuteOperationParameters;)V
 	public fun beginExecution (Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;Lio/sentry/graphql/SentryGraphqlInstrumentation$TracingState;)V
 	public fun createState ()Lgraphql/execution/instrumentation/InstrumentationState;

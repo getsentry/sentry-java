@@ -245,11 +245,9 @@ public open class SentryOkHttpEventListener(
     }
     val okHttpEvent: SentryOkHttpEvent = eventMap[call] ?: return
     okHttpEvent.setProtocol(protocol?.name)
-    okHttpEvent.setError(ioe.message)
-    okHttpEvent.onEventFinish(CONNECT_EVENT) {
-      it.throwable = ioe
-      it.status = SpanStatus.INTERNAL_ERROR
-    }
+    // A failed route doesn't fail the call: OkHttp moves on to the next route, and OkHttp 5 races
+    // routes for Happy Eyeballs. If no route connects, callFailed() reports the error.
+    okHttpEvent.onEventFinish(CONNECT_EVENT)
   }
 
   override fun connectionAcquired(call: Call, connection: Connection) {

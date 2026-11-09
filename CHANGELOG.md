@@ -1,5 +1,10 @@
 # Changelog
 
+> [!WARNING]
+> SDK 9.0.0 will raise the minimum supported Java and Android versions:
+> - Java 8 support will be dropped. SDK 9.0.0 requires Java 11+. See [#6469](https://github.com/getsentry/sentry-java/issues/6469).
+> - The Android `minSdk` will be raised from 21 to 26. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
+
 ## Unreleased
 
 ### Features
@@ -7,6 +12,29 @@
 - Connect Android traces with web content in a `WebView` using `SentryWebViewTracing.addTracePropagation(webView, "example.com")` ([#6395](https://github.com/getsentry/sentry-java/pull/6395))
   - Requires the `androidx.webkit:webkit` dependency. Only list hosts whose content you control.
   - Call it on the main thread before each page load you want connected.
+- Monitor every Spring `@Scheduled` method with Sentry Crons by setting `sentry.monitor-scheduled-tasks=true`, without adding `@SentryCheckIn` to each method. Sentry creates each monitor from the method's `@Scheduled` schedule. Exclude methods with `sentry.exclude-scheduled-tasks` ([#6275](https://github.com/getsentry/sentry-java/pull/6275), [#6276](https://github.com/getsentry/sentry-java/pull/6276), [#6277](https://github.com/getsentry/sentry-java/pull/6277))
+- Quartz `SentryJobListener` can send a monitor config derived from the trigger with check-ins, so Sentry creates or updates the monitor from code. Set the `sentry-upsert-monitor-config` job or trigger data key to `"true"` to send the schedule ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
+- Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = true)` to send the schedule ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
+
+### Behavioral Changes
+
+- Gradle builds now resolve all Sentry SDK modules to the same version, the highest one present, because every module depends on `sentry-bom` as a platform ([#6466](https://github.com/getsentry/sentry-java/pull/6466))
+  - Before, a build could mix module versions, for example a newer `sentry-android-core` with an older `sentry-android-fragment`, which failed at runtime. Maven builds resolve as before.
+  - `sentry-bom` now also includes `sentry-android-distribution`.
+
+### Fixes
+
+- Add opt-in support for matching GraphQL ignored error types against classification specifications via `sentry.graphql.enable-specification-error-type-filtering` ([#6092](https://github.com/getsentry/sentry-java/pull/6092))
+- Session Replay: Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response, when network details are enabled for the URL ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
+- Session Replay: `SentryOkHttpInterceptor` now captures network request and response details only while Session Replay is recording or buffering ([#6486](https://github.com/getsentry/sentry-java/pull/6486))
+- Stop marking an OkHttp call span as failed when a connection attempt to one of the host's addresses fails but OkHttp connects on another ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
+
+### Dependencies
+
+- Bump OkHttp from 4.9.2 to 5.5.1 ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
+  - `sentry-okhttp` and the Spring Boot integrations keep OkHttp as a `compileOnly` dependency, so your app keeps the OkHttp version it declares. OkHttp 4 is still supported.
+  - [changelog](https://github.com/square/okhttp/blob/master/CHANGELOG.md)
+  - [diff](https://github.com/square/okhttp/compare/parent-4.9.2...parent-5.5.1)
 
 ## 8.63.0
 
@@ -44,6 +72,10 @@
 - Bump Native SDK from v0.17.4 to v0.17.6 ([#6409](https://github.com/getsentry/sentry-java/pull/6409), [#6460](https://github.com/getsentry/sentry-java/pull/6460))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0176)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.17.4...0.17.6)
+
+### Internal
+
+- Measure ANR detection and ANR profiling durations on the internal `MonotonicTicker` ([#6041](https://github.com/getsentry/sentry-java/pull/6041))
 
 ## 8.62.0
 
