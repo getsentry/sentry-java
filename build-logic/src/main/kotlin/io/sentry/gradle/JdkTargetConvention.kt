@@ -10,6 +10,7 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
@@ -110,7 +111,18 @@ class JdkTargetConvention : Plugin<Project> {
     }
 
     listOf("com.android.library", "com.android.application").forEach { pluginId ->
-      project.plugins.withId(pluginId) { project.targetBuildJdkForUnitTests() }
+      project.plugins.withId(pluginId) {
+        project.targetBuildJdkForUnitTests()
+        // Robolectric's SDK 37 sandbox (the default, as targetSdk is 37) reflectively writes
+        // FileDescriptor fields in ApplicationSharedMemory; without this, setup fails with
+        // "Failed to interact with raw FileDescriptor internals".
+        project.tasks.withType(Test::class.java).configureEach {
+          jvmArgs(
+            "--add-opens=java.base/java.io=ALL-UNNAMED",
+            "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
+          )
+        }
+      }
     }
   }
 
