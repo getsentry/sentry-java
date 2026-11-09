@@ -35,10 +35,10 @@ dependencyManagement {
 dependencies {
   implementation("org.springframework:spring-webmvc")
   implementation("org.springframework:spring-aop")
-  implementation("org.aspectj:aspectjweaver")
+  implementation(libs.aspectjweaver)
   implementation("org.springframework.security:spring-security-web")
   implementation("org.springframework.security:spring-security-config")
-  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(libs.kotlin.reflect)
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation("io.sentry:sentry-spring-7:$sentryVersion")
   implementation("io.sentry:sentry-logback:$sentryVersion")

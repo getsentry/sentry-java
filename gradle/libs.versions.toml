@@ -131,6 +131,7 @@ androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.r
 androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteRc" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.4.0" }
 androidx-browser = { module = "androidx.browser:browser", version = "1.10.0" }
+aspectjweaver = { module = "org.aspectj:aspectjweaver" }
 async-profiler = { module = "tools.profiler:async-profiler", version.ref = "asyncProfiler" }
 async-profiler-jfr-converter = { module = "tools.profiler:jfr-converter", version.ref = "asyncProfiler" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
@@ -148,6 +149,7 @@ jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jac
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }

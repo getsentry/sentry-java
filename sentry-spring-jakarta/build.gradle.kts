@@ -37,7 +37,7 @@ dependencies {
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
   compileOnly(Config.Libs.springSecurityWeb)
-  compileOnly(Config.Libs.aspectj)
+  compileOnly(libs.aspectjweaver)
   compileOnly(libs.context.propagation)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
