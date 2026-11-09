@@ -58,6 +58,10 @@
   - App starts are measured from process start on Android 7.0+ (API 24), and slow and frozen frames are measured per span
   - `ActivityFramesTracker` is removed, and the `ActivityLifecycleIntegration` constructor no longer takes it
 
+### Fixes
+
+- Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
+
 ### Improvements
 
 - Promote check-in APIs from experimental to stable ([#6422](https://github.com/getsentry/sentry-java/pull/6422))
@@ -122,10 +126,6 @@
 ### Features
 
 - Add policy-controlled URL query parameters and fragments to Ktor HTTP client spans ([#6433](https://github.com/getsentry/sentry-java/pull/6433))
-
-### Fixes
-
-- Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
 
 ## 8.62.0
 
