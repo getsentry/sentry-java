@@ -78,7 +78,7 @@ public class SentryBackStackEntry(
  *
  * If [map] throws, returns `null`, or returns a blank [name][SentryBackStackEntry.name], Sentry
  * records the destination as "/unknown". Doing so signals that name extraction needs to be fixed
- * while avoiding misleading gaps in navigation data.
+ * while avoiding misleading gaps in nav state.
  *
  * For instance, if a user navigates from `/home -> /detail -> /settings`, but the mapper for
  * `/detail` throws, the back stack record will be `/home -> /unknown -> /settings` rather than

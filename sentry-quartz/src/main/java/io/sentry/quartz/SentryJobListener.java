@@ -12,7 +12,6 @@ import io.sentry.protocol.SentryId;
 import io.sentry.util.LifecycleHelper;
 import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quartz.JobDataMap;
@@ -20,7 +19,6 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobListener;
 
-@ApiStatus.Experimental
 public final class SentryJobListener implements JobListener {
 
   static {

@@ -5,15 +5,16 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spring-boot-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  id("io.sentry.animalsniffer")
+  id("io.sentry.api-validation")
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
-  compilerOptions.jvmTarget = JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = JvmTarget.JVM_11
   compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 }
@@ -116,4 +117,10 @@ testing {
       }
     }
   }
+}
+
+// The suites on each Spring Boot 2 version the CI matrix tests.
+springBootMatrix {
+  versions(line = 2)
+  test("integrationTest")
 }

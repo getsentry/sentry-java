@@ -930,6 +930,26 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `trace state uses the scope environment when set`() {
+    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    fixture.scopes.configureScope { it.environment = "scope-environment" }
+
+    val trace = transaction.traceContext()
+
+    assertNotNull(trace) { assertEquals("scope-environment", it.environment) }
+  }
+
+  @Test
+  fun `trace state uses the global scope environment when set`() {
+    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    fixture.scopes.configureScope(ScopeType.GLOBAL) { it.environment = "global-environment" }
+
+    val trace = transaction.traceContext()
+
+    assertNotNull(trace) { assertEquals("global-environment", it.environment) }
+  }
+
+  @Test
   fun `returns trace state without userId if not send pii`() {
     val transaction = fixture.getSut({ it.isTraceSampling = true })
     fixture.scopes.setUser(User().apply { id = "user-id" })
@@ -1202,6 +1222,54 @@ class SentryTracerTest {
     span.finish()
 
     assertNull(transaction.idleTimeoutFuture)
+  }
+
+  @Test
+  fun `when idle transaction has only an unfinished idle span, finishes the transaction and the idle span after the idle timeout`() {
+    val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50)
+
+    val idleSpan = transaction.startChild("ui.load", null, SpanOptions().apply { isIdle = true })
+
+    await.untilAsserted {
+      verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+    assertThat(transaction.status).isEqualTo(SpanStatus.OK)
+    assertThat(idleSpan.isFinished).isTrue()
+    assertThat(idleSpan.status).isEqualTo(SpanStatus.OK)
+  }
+
+  @Test
+  fun `when idle transaction has an idle span with a finished child, finishes the transaction after the idle timeout`() {
+    val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50)
+    val idleSpan = transaction.startChild("ui.load", null, SpanOptions().apply { isIdle = true })
+
+    idleSpan.startChild("ui.render").finish()
+
+    await.untilAsserted {
+      verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+    assertThat(transaction.status).isEqualTo(SpanStatus.OK)
+  }
+
+  @Test
+  fun `when idle transaction has an unfinished span under an idle span, does not finish the transaction until that span finishes`() {
+    val transaction = fixture.getSut(waitForChildren = true, idleTimeout = 50)
+    val idleSpan = transaction.startChild("ui.load", null, SpanOptions().apply { isIdle = true })
+    val spanUnderIdleSpan = idleSpan.startChild("ui.render")
+
+    transaction.startChild("op").finish()
+    Thread.sleep(200)
+
+    assertThat(transaction.isFinished).isFalse()
+    verify(fixture.scopes, never())
+      .captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+
+    spanUnderIdleSpan.finish()
+
+    await.untilAsserted {
+      verify(fixture.scopes).captureTransaction(anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull())
+    }
+    assertThat(transaction.status).isEqualTo(SpanStatus.OK)
   }
 
   @Test

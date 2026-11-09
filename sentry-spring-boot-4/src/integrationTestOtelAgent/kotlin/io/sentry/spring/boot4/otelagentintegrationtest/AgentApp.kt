@@ -2,6 +2,7 @@ package io.sentry.spring.boot4.otelagentintegrationtest
 
 import io.sentry.test.ChildJvmApp
 import io.sentry.test.MockSentryServer
+import io.sentry.test.requiredTestProperty
 import org.springframework.boot.restclient.RestTemplateBuilder
 import org.springframework.boot.resttestclient.TestRestTemplate
 import org.springframework.kafka.test.EmbeddedKafkaKraftBroker
@@ -15,7 +16,7 @@ import org.springframework.kafka.test.EmbeddedKafkaKraftBroker
  * Spring Boot starter.
  */
 object AgentApp {
-  val autoInit = System.getProperty("sentry.test.agentAutoInit").toBoolean()
+  val autoInit = requiredTestProperty("sentry.test.agentAutoInit").toBoolean()
 
   val server = MockSentryServer()
 
@@ -25,8 +26,8 @@ object AgentApp {
   private val app =
     ChildJvmApp.start(
       mainClass = "io.sentry.spring.boot4.agentfixture.AgentFixtureApplicationKt",
-      classpath = System.getProperty("sentry.test.appClasspath"),
-      jvmArgs = listOf("-javaagent:${System.getProperty("sentry.test.agentJar")}"),
+      classpath = requiredTestProperty("sentry.test.appClasspath"),
+      jvmArgs = listOf("-javaagent:${requiredTestProperty("sentry.test.agentJar")}"),
       // Environment variables, because the agent doesn't read Spring Boot's properties.
       env =
         mapOf(

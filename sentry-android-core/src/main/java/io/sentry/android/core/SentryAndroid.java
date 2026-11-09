@@ -122,8 +122,6 @@ public final class SentryAndroid {
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
             final io.sentry.util.LoadClass loadClass = new io.sentry.util.LoadClass();
-            final ActivityFramesTracker activityFramesTracker =
-                new ActivityFramesTracker(loadClass, options);
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 options, context, logger, buildInfoProvider);
@@ -136,7 +134,6 @@ public final class SentryAndroid {
                 options,
                 buildInfoProvider,
                 loadClass,
-                activityFramesTracker,
                 isFragmentAvailable,
                 isTimberAvailable,
                 isReplayAvailable,
@@ -157,8 +154,7 @@ public final class SentryAndroid {
             // if SentryPerformanceProvider was disabled or removed,
             // we set the app start / sdk init time here instead
             final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
-            if (options.isEnablePerformanceV2()
-                && buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
+            if (buildInfoProvider.getSdkInfoVersion() >= android.os.Build.VERSION_CODES.N) {
               final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
               if (appStartTimeSpan.hasNotStarted()) {
                 appStartTimeSpan.setStartedAt(Process.getStartUptimeMillis());
@@ -174,12 +170,7 @@ public final class SentryAndroid {
             }
 
             AndroidOptionsInitializer.initializeIntegrationsAndProcessors(
-                options,
-                context,
-                buildInfoProvider,
-                loadClass,
-                activityFramesTracker,
-                isReplayAvailable);
+                options, context, buildInfoProvider, loadClass, isReplayAvailable);
 
             deduplicateIntegrations(options, isFragmentAvailable, isTimberAvailable);
           },

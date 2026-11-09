@@ -73,7 +73,7 @@ public class SpanFrameMetricsCollector
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
     this.frameMetricsCollector = frameMetricsCollector;
 
-    enabled = options.isEnablePerformanceV2() && options.isEnableFramesTracking();
+    enabled = options.isEnableFramesTracking();
   }
 
   @Override

@@ -198,6 +198,7 @@ public final class ApplicationExitInfoEventProcessor
     setRequest(event);
     setUser(event);
     setScopeTags(event);
+    setScopeEnvironment(event);
     setBreadcrumbs(event);
     setExtras(event);
     setContexts(event);
@@ -492,6 +493,16 @@ public final class ApplicationExitInfoEventProcessor
     }
   }
 
+  private void setScopeEnvironment(final @NotNull SentryBaseEvent event) {
+    if (event.getEnvironment() == null) {
+      final @Nullable String scopeEnvironment =
+          readFromDisk(options, PersistingScopeObserver.ENVIRONMENT_FILENAME, String.class);
+      if (scopeEnvironment != null) {
+        event.setEnvironment(scopeEnvironment);
+      }
+    }
+  }
+
   private void setDebugMeta(
       final @NotNull SentryBaseEvent event, final @NotNull OptionsSource optionsSource) {
     DebugMeta debugMeta = event.getDebugMeta();
@@ -521,16 +532,13 @@ public final class ApplicationExitInfoEventProcessor
       event.setDist(getLaunchOption(DIST_FILENAME, String.class, options.getDist(), optionsSource));
     }
     // if there's no user-set dist, fall back to versionCode from the release string
+    // (package@versionName+versionCode). Releases without a versionCode leave dist empty.
     if (event.getDist() == null) {
       final String release = event.getRelease();
       if (release != null) {
-        try {
-          final String versionCode = release.substring(release.indexOf('+') + 1);
-          event.setDist(versionCode);
-        } catch (Throwable e) {
-          options
-              .getLogger()
-              .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
+        final int versionCodeSeparator = release.indexOf('+');
+        if (versionCodeSeparator != -1) {
+          event.setDist(release.substring(versionCodeSeparator + 1));
         }
       }
     }

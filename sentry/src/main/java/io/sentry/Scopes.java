@@ -849,7 +849,7 @@ public final class Scopes implements IScopes {
               "Instance is disabled and this 'captureTransaction' call is a no-op.");
     } else {
       try {
-        sentryId = getClient().captureProfileChunk(profilingContinuousData, getScope());
+        sentryId = getClient().captureProfileChunk(profilingContinuousData, getCombinedScopeView());
       } catch (Throwable e) {
         getOptions()
             .getLogger()
@@ -885,7 +885,7 @@ public final class Scopes implements IScopes {
               "Instance is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
     } else if (SpanUtils.isIgnored(
-        getOptions().getIgnoredSpanOrigins(), transactionContext.getOrigin())) {
+        getOptions().getIgnoredSpanOriginFilters(), transactionContext.getOrigin())) {
       getOptions()
           .getLogger()
           .log(

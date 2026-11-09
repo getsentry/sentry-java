@@ -124,7 +124,6 @@ class AndroidTransactionProfilerTest {
     context = ApplicationProvider.getApplicationContext()
     val buildInfoProvider = BuildInfoProvider(fixture.mockLogger)
     val loadClass = LoadClass()
-    val activityFramesTracker = ActivityFramesTracker(loadClass, fixture.options)
     AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
       fixture.options,
       context,
@@ -137,7 +136,6 @@ class AndroidTransactionProfilerTest {
       fixture.options,
       buildInfoProvider,
       loadClass,
-      activityFramesTracker,
       false,
       false,
       false,
@@ -149,7 +147,6 @@ class AndroidTransactionProfilerTest {
       context,
       buildInfoProvider,
       loadClass,
-      activityFramesTracker,
       false,
     )
     // Profiler doesn't start if the folder doesn't exists.

@@ -129,7 +129,7 @@ public final class SentryKafkaRecordInterceptor<K, V> implements RecordIntercept
   }
 
   private boolean isIgnored() {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN);
   }
 
   private @Nullable ConsumerRecord<K, V> delegateIntercept(

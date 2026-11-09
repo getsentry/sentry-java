@@ -30,7 +30,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import okio.BufferedSource
-import okio.Okio
+import okio.buffer
+import okio.source
 import org.junit.Assert
 import org.junit.Assert.assertArrayEquals
 import org.junit.Before
@@ -432,7 +433,7 @@ class QueueFileTest {
     queueFile.remove()
     queueFile.close()
 
-    val source: BufferedSource = Okio.buffer(Okio.source(file))
+    val source: BufferedSource = file.source().buffer()
     source.skip(headerLength.toLong())
     source.skip(Element.HEADER_LENGTH.toLong())
     assertEquals(source.readByteString(4).hex(), "00000000")
@@ -445,7 +446,7 @@ class QueueFileTest {
     queueFile.remove()
     queueFile.close()
 
-    val source: BufferedSource = Okio.buffer(Okio.source(file))
+    val source: BufferedSource = file.source().buffer()
     source.skip(headerLength.toLong())
     source.skip(Element.HEADER_LENGTH.toLong())
     assertEquals(source.readByteString(4).hex(), "04030201")

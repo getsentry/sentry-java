@@ -67,7 +67,8 @@ public final class OtelSpanFactory implements ISpanFactory {
       final @NotNull SpanOptions spanOptions,
       final @NotNull SpanContext spanContext,
       final @Nullable ISpan parentSpan) {
-    if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), spanOptions.getOrigin())) {
+    if (SpanUtils.isIgnored(
+        scopes.getOptions().getIgnoredSpanOriginFilters(), spanOptions.getOrigin())) {
       return NoOpSpan.getInstance();
     }
 

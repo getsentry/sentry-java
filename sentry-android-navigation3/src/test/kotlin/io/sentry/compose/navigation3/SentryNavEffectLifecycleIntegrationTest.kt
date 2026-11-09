@@ -407,17 +407,53 @@ class SentryNavEffectLifecycleIntegrationTest {
   }
 
   @Test
-  fun `switching to a preloaded view pager page publishes a new propagation context instead of a nav transaction`() {
+  fun `switching to a preloaded view pager page starts its nav transaction with a new propagation context`() {
     val fixture = Fixture.create()
     val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
     fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
     val propagationContext = fixture.scope.propagationContext
 
     activity.get().viewPager.setCurrentItem(1, false)
     fixture.idle()
 
-    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.transaction?.name).isEqualTo("/Checkout")
+    assertThat(fixture.scope.transaction).isNotSameInstanceAs(homeTransaction)
     assertThat(fixture.scope.propagationContext).isNotSameInstanceAs(propagationContext)
+  }
+
+  @Test
+  fun `switching back to a view pager page restores its unfinished nav transaction`() {
+    val fixture = Fixture.create()
+    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    activity.get().viewPager.setCurrentItem(1, false)
+    fixture.idle()
+    check(!homeTransaction.isFinished)
+
+    activity.get().viewPager.setCurrentItem(0, false)
+    fixture.idle()
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
+  }
+
+  @Test
+  fun `switching back to a view pager page whose nav transaction finished starts no nav transaction`() {
+    val fixture = Fixture.create()
+    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
+    fixture.idle()
+    val homeTransaction = requireNotNull(fixture.scope.transaction)
+    activity.get().viewPager.setCurrentItem(1, false)
+    fixture.idle()
+    homeTransaction.finish()
+
+    activity.get().viewPager.setCurrentItem(0, false)
+    fixture.idle()
+
+    assertThat(fixture.scope.transaction).isNull()
+    assertThat(fixture.scope.screen).isEqualTo("/Home")
   }
 
   // Dialogs
