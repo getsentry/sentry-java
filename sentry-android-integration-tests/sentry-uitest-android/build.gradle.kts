@@ -73,6 +73,10 @@ android {
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
+
+    // This module is the one lint picks to check the build root's Gradle wrapper, and this check
+    // compares it with the latest Gradle release online, so every new release would fail the build.
+    disable += "AndroidGradlePluginVersion"
   }
 
   androidComponents.beforeVariants {
