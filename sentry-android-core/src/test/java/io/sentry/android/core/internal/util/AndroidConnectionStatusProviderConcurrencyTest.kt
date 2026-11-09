@@ -42,10 +42,12 @@ import org.mockito.MockedStatic
 import org.mockito.Mockito.CALLS_REAL_METHODS
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -451,6 +453,127 @@ class AndroidConnectionStatusProviderConcurrencyTest {
 
     assertThat(connectionStatusProvider.networkCallback).isNotNull()
     verify(fixture.connectivityManager, times(2)).registerDefaultNetworkCallback(any())
+  }
+
+  @Test
+  fun `adding an observer while a background unregistration is queued registers the network callback again`() {
+    val executor = DeferredExecutorService()
+    val fixture = Fixture.create(executorService = executor)
+    val connectionStatusProvider = fixture.createProvider()
+    executor.runAll()
+
+    connectionStatusProvider.onBackground()
+    connectionStatusProvider.addConnectionStatusObserver(mock())
+    executor.runAll()
+
+    assertThat(connectionStatusProvider.networkCallback).isNotNull()
+    verify(fixture.connectivityManager, times(2)).registerDefaultNetworkCallback(any())
+  }
+
+  // Registrations queued around close
+
+  @Test
+  fun `closing after the network callback registration ran unregisters the network callback`() {
+    val executor = DeferredExecutorService()
+    val fixture = Fixture.create(executorService = executor)
+    val connectionStatusProvider = fixture.createProvider()
+    executor.runAll()
+
+    connectionStatusProvider.close()
+    executor.runAll()
+
+    assertThat(connectionStatusProvider.networkCallback).isNull()
+    verify(fixture.connectivityManager).unregisterNetworkCallback(any<NetworkCallback>())
+  }
+
+  @Test
+  fun `closing while the network callback registration is running unregisters the network callback`() {
+    val fixture = Fixture.create()
+    val stall = fixture.stallNetworkCallbackRegistration()
+    val connectionStatusProvider = fixture.createProvider()
+    stall.awaitEntered()
+
+    connectionStatusProvider.close()
+    stall.release()
+    fixture.awaitExecutorIdle()
+
+    assertThat(connectionStatusProvider.networkCallback).isNull()
+    verify(fixture.connectivityManager).unregisterNetworkCallback(any<NetworkCallback>())
+  }
+
+  @Test
+  fun `closing while the initial network callback registration is queued does not register the network callback`() {
+    val executor = DeferredExecutorService()
+    val fixture = Fixture.create(executorService = executor)
+    val connectionStatusProvider = fixture.createProvider()
+
+    connectionStatusProvider.close()
+    executor.runAll()
+
+    assertThat(connectionStatusProvider.networkCallback).isNull()
+    verify(fixture.connectivityManager, never()).registerDefaultNetworkCallback(any())
+  }
+
+  @Test
+  fun `adding an observer after close does not register the network callback again`() {
+    val executor = DeferredExecutorService()
+    val fixture = Fixture.create(executorService = executor)
+    val connectionStatusProvider = fixture.createProvider()
+    executor.runAll()
+
+    connectionStatusProvider.close()
+    connectionStatusProvider.addConnectionStatusObserver(mock())
+    executor.runAll()
+
+    assertThat(connectionStatusProvider.networkCallback).isNull()
+    verify(fixture.connectivityManager, times(1)).registerDefaultNetworkCallback(any())
+  }
+
+  @Test
+  fun `adding an observer after close does not register the telephony callback again`() {
+    val executor = DeferredExecutorService()
+    val fixture = Fixture.create(sdkVersion = Build.VERSION_CODES.S, executorService = executor)
+    val connectionStatusProvider = fixture.createProvider()
+    executor.runAll()
+
+    connectionStatusProvider.close()
+    connectionStatusProvider.addConnectionStatusObserver(mock())
+    executor.runAll()
+
+    verify(fixture.telephonyManager, times(1)).registerTelephonyCallback(any(), any())
+  }
+
+  @Test
+  fun `foregrounding after close does not register the network callback again`() {
+    val executor = DeferredExecutorService()
+    val fixture = Fixture.create(executorService = executor)
+    val connectionStatusProvider = fixture.createProvider()
+    executor.runAll()
+
+    connectionStatusProvider.close()
+    connectionStatusProvider.onForeground()
+    executor.runAll()
+
+    assertThat(connectionStatusProvider.networkCallback).isNull()
+    verify(fixture.connectivityManager, times(1)).registerDefaultNetworkCallback(any())
+  }
+
+  @Test
+  fun `foregrounding after close does not notify child network callbacks of a lost network`() {
+    val executor = DeferredExecutorService()
+    val fixture = Fixture.create(executorService = executor)
+    val connectionStatusProvider = fixture.createProvider()
+    executor.runAll()
+    connectionStatusProvider.close()
+    executor.runAll()
+    val childNetworkCallback = mock<NetworkCallback>()
+    fixture.addChildNetworkCallback(childNetworkCallback)
+    whenever(fixture.connectivityManager.activeNetwork).thenReturn(null)
+
+    connectionStatusProvider.onForeground()
+    executor.runAll()
+
+    verify(childNetworkCallback, never()).onLost(anyOrNull())
   }
 
   /** Blocks a mocked system service call until released, or until a timeout elapses. */
