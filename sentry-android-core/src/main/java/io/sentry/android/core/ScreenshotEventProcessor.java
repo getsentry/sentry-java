@@ -83,7 +83,7 @@ public final class ScreenshotEventProcessor implements SentryEventProcessor {
     if (!isReplayAvailable && !options.getScreenshot().getMaskViewClasses().isEmpty()) {
       if (!isReplayModuleAbsenceLogged.getAndSet(true)) {
         options
-            .getLogger()
+            .getFatalLogger()
             .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
       }
       return event;
