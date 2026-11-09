@@ -9,9 +9,12 @@ import kotlin.test.assertTrue
 class SentryScreenshotOptionsTest {
 
   @Test
-  fun `maskViewClasses is empty by default`() {
+  fun `masks all text and images by default`() {
     val options = SentryScreenshotOptions()
-    assertTrue(options.maskViewClasses.isEmpty())
+    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.TEXT_VIEW_CLASS_NAME))
+    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.IMAGE_VIEW_CLASS_NAME))
+    assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.WEB_VIEW_CLASS_NAME))
+    assertEquals(8, options.maskViewClasses.size)
   }
 
   @Test
@@ -23,6 +26,8 @@ class SentryScreenshotOptionsTest {
   @Test
   fun `setMaskAllText true only adds TextView`() {
     val options = SentryScreenshotOptions()
+    options.setMaskAllText(false)
+    options.setMaskAllImages(false)
     options.setMaskAllText(true)
 
     assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.TEXT_VIEW_CLASS_NAME))
@@ -35,6 +40,7 @@ class SentryScreenshotOptionsTest {
   @Test
   fun `setMaskAllImages true adds ImageView and sensitive view classes`() {
     val options = SentryScreenshotOptions()
+    options.setMaskAllImages(false)
     options.setMaskAllImages(true)
 
     assertTrue(options.maskViewClasses.contains(SentryMaskingOptions.IMAGE_VIEW_CLASS_NAME))
@@ -68,7 +74,7 @@ class SentryScreenshotOptionsTest {
     options.setMaskAllImages(true)
 
     // CopyOnWriteArraySet should prevent duplicates
-    assertEquals(7, options.maskViewClasses.size)
+    assertEquals(8, options.maskViewClasses.size)
   }
 
   @Test
@@ -108,6 +114,6 @@ class SentryScreenshotOptionsTest {
 
     options.setMaskAllImages(false)
 
-    assertTrue(options.maskViewClasses.isEmpty())
+    assertEquals(setOf(SentryMaskingOptions.TEXT_VIEW_CLASS_NAME), options.maskViewClasses)
   }
 }
