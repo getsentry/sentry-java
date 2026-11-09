@@ -20,10 +20,16 @@ import java.util.zip.GZIPInputStream
  * Envelopes travel through the real HTTP transport, so serialization, compression and the DSN are
  * covered too. It binds a free port so that test tasks running in parallel don't clash, and it
  * works for an app in a child process as well as in the test's own JVM.
+ *
+ * [beforeEachCheck] runs before each look at the received envelopes while waiting, for example to
+ * flush spans that a batching processor would otherwise hold for seconds.
  */
-class MockSentryServer : Closeable {
+class MockSentryServer(private val beforeEachCheck: () -> Unit = {}) : Closeable {
   private val serializer = JsonSerializer(SentryOptions.empty())
   private val received = CopyOnWriteArrayList<SentryEnvelope>()
+  // Rethrown while waiting, so an envelope the server can't read fails the test with its cause
+  // rather than looking like an envelope that never arrived.
+  private val receiveErrors = CopyOnWriteArrayList<Exception>()
   private val server =
     HttpServer.create(InetSocketAddress(InetAddress.getByName(HOST), 0), 0).apply {
       createContext("/api/") { exchange -> receive(exchange) }
@@ -43,6 +49,8 @@ class MockSentryServer : Closeable {
     val deadline =
       Deadline.after(JavaMonotonicTicker.getInstance(), timeoutMillis, TimeUnit.MILLISECONDS)
     while (true) {
+      beforeEachCheck()
+      throwReceiveError()
       received.firstOrNull(predicate)?.let {
         return it
       }
@@ -64,6 +72,8 @@ class MockSentryServer : Closeable {
   fun assertNoEnvelope(millis: Long = 2_000, predicate: (SentryEnvelope) -> Boolean) {
     val deadline = Deadline.after(JavaMonotonicTicker.getInstance(), millis, TimeUnit.MILLISECONDS)
     while (true) {
+      beforeEachCheck()
+      throwReceiveError()
       if (received.any(predicate)) {
         throw AssertionError("Received an envelope that should not have been sent")
       }
@@ -76,6 +86,7 @@ class MockSentryServer : Closeable {
 
   fun reset() {
     received.clear()
+    receiveErrors.clear()
   }
 
   override fun close() {
@@ -90,11 +101,21 @@ class MockSentryServer : Closeable {
         } else {
           exchange.requestBody
         }
-      serializer.deserializeEnvelope(body)?.let { received.add(it) }
+      val envelope =
+        serializer.deserializeEnvelope(body)
+          ?: throw IllegalStateException("Received a body that is not an envelope")
+      received.add(envelope)
       exchange.sendResponseHeaders(200, -1)
+    } catch (e: Exception) {
+      receiveErrors.add(e)
+      exchange.sendResponseHeaders(500, -1)
     } finally {
       exchange.close()
     }
+  }
+
+  private fun throwReceiveError() {
+    receiveErrors.firstOrNull()?.let { throw AssertionError("Could not read an envelope", it) }
   }
 
   private companion object {

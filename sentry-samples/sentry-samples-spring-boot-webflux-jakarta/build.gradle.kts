@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -6,8 +6,11 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
-  id("io.sentry.systemtest")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 group = "io.sentry.sample.spring-boot-webflux-jakarta"
 
@@ -23,13 +26,13 @@ dependencyManagement {
 extra["kotlin-coroutines.version"] = "1.9.0"
 
 dependencies {
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-  implementation(projects.sentrySpringBootStarterJakarta)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryJdbc)
-  implementation(projects.sentryGraphql22)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
+  implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-jdbc:$sentryVersion")
+  implementation("io.sentry:sentry-graphql-22:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
   implementation(libs.context.propagation)
   implementation(libs.springboot3.starter.actuator)
   implementation(libs.springboot3.starter.graphql)
@@ -38,40 +41,10 @@ dependencies {
   // cache tracing
   implementation(libs.springboot3.starter.cache)
   implementation(libs.caffeine)
-
-  testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.apollo3.kotlin)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.slf4j2.api)
-  testImplementation(libs.springboot3.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
-  testImplementation("ch.qos.logback:logback-classic:1.5.16")
-  testImplementation("ch.qos.logback:logback-core:1.5.16")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
   }
-}
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter { includeTestsMatching("io.sentry.systemtest*") }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }

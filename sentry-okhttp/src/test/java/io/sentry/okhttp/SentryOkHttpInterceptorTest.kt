@@ -14,6 +14,7 @@ import io.sentry.IScopes
 import io.sentry.KeyValueCollectionBehavior
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
@@ -56,6 +57,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
@@ -89,10 +91,12 @@ class SentryOkHttpInterceptorTest {
       sendDefaultPii: Boolean = false,
       eventListener: EventListener? = null,
       additionalInterceptors: List<Interceptor> = emptyList(),
+      isReplayRecording: Boolean = true,
       optionsConfiguration: Sentry.OptionsConfiguration<SentryOptions>? = null,
     ): OkHttpClient {
       options =
         SentryOptions().also {
+          it.setReplayController(mock { on { isRecording } doReturn isReplayRecording })
           optionsConfiguration?.configure(it)
           it.dsn = "https://key@sentry.io/proj"
           if (includeMockServerInTracePropagationTargets) {
@@ -104,9 +108,7 @@ class SentryOkHttpInterceptorTest {
         }
       scope = Scope(options)
       whenever(scopes.options).thenReturn(options)
-      doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
-        .whenever(scopes)
-        .configureScope(any())
+      stubConfigureScope()
 
       sentryTracer = SentryTracer(TransactionContext("name", "op"), scopes)
 
@@ -151,6 +153,15 @@ class SentryOkHttpInterceptorTest {
           addInterceptor(interceptor)
         }
         .build()
+    }
+
+    private fun stubConfigureScope() {
+      doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(any())
+      doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+        .whenever(scopes)
+        .configureScope(anyOrNull<ScopeType>(), any())
     }
   }
 
@@ -371,6 +382,27 @@ class SentryOkHttpInterceptorTest {
     assertEquals("request-body", networkDetails.request?.body?.body)
     assertEquals("application/json", networkDetails.request?.headers?.get("Accept"))
     assertNotNull(networkDetails.response)
+  }
+
+  @Test
+  fun `does not capture Session Replay network details when replay is not recording`() {
+    val sut =
+      fixture.getSut(
+        isReplayRecording = false,
+        optionsConfiguration = { it.sessionReplay.setNetworkDetailAllowUrls(listOf(".*")) },
+      )
+
+    sut.newCall(postRequest()).execute().close()
+
+    val hint = argumentCaptor<Hint>()
+    verify(fixture.scopes).addBreadcrumb(any(), hint.capture())
+    assertThat(
+        hint.firstValue.getAs(
+          TypeCheckHint.SENTRY_REPLAY_NETWORK_DETAILS,
+          NetworkRequestData::class.java,
+        )
+      )
+      .isNull()
   }
 
   @SuppressWarnings("SwallowedException")

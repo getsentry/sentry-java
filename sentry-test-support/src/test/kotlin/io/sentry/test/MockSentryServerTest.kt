@@ -3,6 +3,8 @@ package io.sentry.test
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Sentry
 import io.sentry.SentryItemType
+import java.net.HttpURLConnection
+import java.net.URI
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -33,6 +35,18 @@ class MockSentryServerTest {
   }
 
   @Test
+  fun `beforeEachCheck runs while waiting`() {
+    var checks = 0
+    MockSentryServer { checks++ }
+      .use { server ->
+        assertFailsWith<AssertionError> { server.awaitEnvelope(timeoutMillis = 200) { true } }
+        server.assertNoEnvelope(millis = 200) { true }
+      }
+
+    assertThat(checks).isGreaterThan(2)
+  }
+
+  @Test
   fun `assertNoEnvelope passes when nothing matches`() {
     initForTest { it.dsn = server.dsn }
 
@@ -51,5 +65,18 @@ class MockSentryServerTest {
     assertFailsWith<AssertionError> {
       server.assertNoEnvelope(millis = 5000) { it.header.eventId == eventId }
     }
+  }
+
+  @Test
+  fun `awaitEnvelope fails with the cause when a body is not an envelope`() {
+    val url = URI(server.dsn.replace("key@", "")).resolve("/api/0/envelope/").toURL()
+    val connection = url.openConnection() as HttpURLConnection
+    connection.requestMethod = "POST"
+    connection.doOutput = true
+    connection.outputStream.use { it.write("not an envelope".toByteArray()) }
+    assertThat(connection.responseCode).isEqualTo(500)
+
+    val error = assertFailsWith<AssertionError> { server.awaitEnvelope { true } }
+    assertThat(error).hasCauseThat().isNotNull()
   }
 }

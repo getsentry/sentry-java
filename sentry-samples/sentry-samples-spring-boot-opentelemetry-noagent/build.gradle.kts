@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import io.sentry.gradle.MergeSpringMetadataAction
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -7,8 +8,11 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
-  id("io.sentry.systemtest")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 // Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version
 // the Spring Boot 2.x matrix covers (2.4.13, Spring 5.3.13) fails on class files as new as the
@@ -26,18 +30,6 @@ group = "io.sentry.sample.spring-boot"
 
 version = "0.0.1-SNAPSHOT"
 
-fun springBoot2SupportsOptionalIntegrations(): Boolean {
-  val version = libs.versions.springboot2.get().removeSuffix(".RELEASE")
-  val parts = version.split(".").map { it.toIntOrNull() ?: 0 }
-  val major = parts.getOrElse(0) { 0 }
-  val minor = parts.getOrElse(1) { 0 }
-  return major > 2 || (major == 2 && minor >= 7)
-}
-
-val includeGraphql =
-  !project.hasProperty("excludeGraphql") && springBoot2SupportsOptionalIntegrations()
-val includeKafka = !project.hasProperty("excludeKafka") && springBoot2SupportsOptionalIntegrations()
-
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
@@ -50,47 +42,29 @@ dependencies {
   implementation(libs.springboot.starter)
   implementation(libs.springboot.starter.actuator)
   implementation(libs.springboot.starter.aop)
-  if (includeGraphql) {
-    implementation(libs.springboot.starter.graphql)
-  }
+  implementation(libs.springboot.starter.graphql)
   implementation(libs.springboot.starter.jdbc)
   implementation(libs.springboot.starter.quartz)
   implementation(libs.springboot.starter.security)
   implementation(libs.springboot.starter.web)
   implementation(libs.springboot.starter.webflux)
   implementation(libs.springboot.starter.websocket)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-  implementation(projects.sentrySpringBootStarter)
-  implementation(projects.sentryLogback)
-  if (includeGraphql) {
-    implementation(projects.sentryGraphql)
-  }
-  implementation(projects.sentryQuartz)
-  implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("org.aspectj:aspectjweaver")
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
+  implementation("io.sentry:sentry-spring-boot-starter:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-graphql:$sentryVersion")
+  implementation("io.sentry:sentry-quartz:$sentryVersion")
+  implementation("io.sentry:sentry-opentelemetry-agentless-spring:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
 
-  if (includeKafka) {
-    implementation(libs.spring.kafka2)
-    implementation(projects.sentryKafka)
-  }
+  implementation(libs.spring.kafka2)
+  implementation("io.sentry:sentry-kafka:$sentryVersion")
 
   // database query tracing
-  implementation(projects.sentryJdbc)
+  implementation("io.sentry:sentry-jdbc:$sentryVersion")
   runtimeOnly(libs.hsqldb)
-
-  testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.apollo3.kotlin)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.slf4j2.api)
-  testImplementation(libs.springboot.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
-  testImplementation("ch.qos.logback:logback-classic:1.5.16")
-  testImplementation("ch.qos.logback:logback-core:1.5.16")
-  testImplementation("org.apache.httpcomponents:httpclient")
 }
 
 val runtimeClasspath = configurations.named("runtimeClasspath")
@@ -114,43 +88,3 @@ tasks.jar {
 }
 
 tasks.startScripts { dependsOn(tasks.shadowJar) }
-
-configure<SourceSetContainer> {
-  main {
-    if (!includeGraphql) {
-      java.exclude("**/graphql/**")
-      resources.exclude("graphql/**")
-    }
-    if (!includeKafka) {
-      java.exclude("**/queues/kafka/**")
-      resources.exclude("application-kafka.properties")
-    }
-  }
-}
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter {
-    includeTestsMatching("io.sentry.systemtest*")
-    if (!includeGraphql) {
-      excludeTestsMatching("io.sentry.systemtest.Graphql*")
-    }
-    if (!includeKafka) {
-      excludeTestsMatching("io.sentry.systemtest.Kafka*")
-    }
-  }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
-}

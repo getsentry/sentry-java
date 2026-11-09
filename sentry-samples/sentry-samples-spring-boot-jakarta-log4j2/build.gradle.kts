@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -6,8 +6,11 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
-  id("io.sentry.systemtest")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 group = "io.sentry.sample.spring-boot-jakarta-log4j2"
 
@@ -39,11 +42,11 @@ dependencies {
   implementation(libs.springboot3.starter.web)
   implementation(libs.springboot3.starter.webflux)
   implementation(libs.springboot3.starter.websocket)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-  implementation(projects.sentrySpringBootStarterJakarta)
-  implementation(projects.sentryLog4j2)
+  implementation("org.aspectj:aspectjweaver")
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
+  implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
+  implementation("io.sentry:sentry-log4j2:$sentryVersion")
   implementation("org.springframework.boot:spring-boot-starter-log4j2")
   modules {
     module("org.springframework.boot:spring-boot-starter-logging") {
@@ -53,10 +56,10 @@ dependencies {
       )
     }
   }
-  implementation(projects.sentryGraphql22)
-  implementation(projects.sentryQuartz)
-  implementation(projects.sentryAsyncProfiler)
-  implementation(projects.sentryOpenfeature)
+  implementation("io.sentry:sentry-graphql-22:$sentryVersion")
+  implementation("io.sentry:sentry-quartz:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
+  implementation("io.sentry:sentry-openfeature:$sentryVersion")
 
   // cache tracing
   implementation(libs.springboot3.starter.cache)
@@ -64,40 +67,12 @@ dependencies {
 
   // kafka
   implementation(libs.spring.kafka3)
-  implementation(projects.sentryKafka)
+  implementation("io.sentry:sentry-kafka:$sentryVersion")
 
   // OpenFeature SDK
   implementation(libs.openfeature)
 
   // database query tracing
-  implementation(projects.sentryJdbc)
+  implementation("io.sentry:sentry-jdbc:$sentryVersion")
   runtimeOnly(libs.hsqldb)
-
-  testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(projects.sentry)
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.slf4j2.api)
-  testImplementation(libs.springboot3.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
-}
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter { includeTestsMatching("io.sentry.systemtest*") }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }

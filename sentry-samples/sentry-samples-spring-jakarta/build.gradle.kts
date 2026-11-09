@@ -7,8 +7,11 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
-  id("io.sentry.systemtest")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 application { mainClass.set("io.sentry.samples.spring.jakarta.Main") }
 
@@ -19,9 +22,6 @@ group = "io.sentry.sample.spring-jakarta"
 
 version = "0.0.1-SNAPSHOT"
 
-// Apollo 4.x requires coroutines 1.9.0+, override Spring Boot's managed version
-extra["kotlin-coroutines.version"] = "1.9.0"
-
 dependencyManagement {
   imports {
     mavenBom("org.springframework.boot:spring-boot-dependencies:${libs.versions.springboot3.get()}")
@@ -31,16 +31,16 @@ dependencyManagement {
 }
 
 dependencies {
-  implementation(Config.Libs.springWeb)
-  implementation(Config.Libs.springAop)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.springSecurityWeb)
-  implementation(Config.Libs.springSecurityConfig)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib))
-  implementation(projects.sentrySpringJakarta)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("org.springframework:spring-webmvc")
+  implementation("org.springframework:spring-aop")
+  implementation("org.aspectj:aspectjweaver")
+  implementation("org.springframework.security:spring-security-web")
+  implementation("org.springframework.security:spring-security-config")
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8"))
+  implementation("io.sentry:sentry-spring-jakarta:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
   implementation(libs.jackson.databind)
   implementation(libs.logback.classic)
   implementation(libs.servlet.jakarta.api)
@@ -48,35 +48,10 @@ dependencies {
 
   implementation(libs.tomcat.catalina.jakarta)
   implementation(libs.tomcat.embed.jasper.jakarta)
-
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.springboot3.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
   kotlin {
     compilerOptions.freeCompilerArgs = listOf("-Xjsr305=strict")
   }
-}
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter { includeTestsMatching("io.sentry.systemtest*") }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }

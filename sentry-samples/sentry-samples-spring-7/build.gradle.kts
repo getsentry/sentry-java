@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.plugin.SpringBootPlugin
 
@@ -10,8 +10,11 @@ plugins {
   alias(libs.plugins.kotlin.spring)
   id("war")
   alias(libs.plugins.gretty)
-  id("io.sentry.systemtest")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 application { mainClass.set("io.sentry.samples.spring7.Main") }
 
@@ -30,16 +33,16 @@ dependencyManagement {
 }
 
 dependencies {
-  implementation(Config.Libs.springWeb)
-  implementation(Config.Libs.springAop)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.springSecurityWeb)
-  implementation(Config.Libs.springSecurityConfig)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-  implementation(projects.sentrySpring7)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("org.springframework:spring-webmvc")
+  implementation("org.springframework:spring-aop")
+  implementation("org.aspectj:aspectjweaver")
+  implementation("org.springframework.security:spring-security-web")
+  implementation("org.springframework.security:spring-security-config")
+  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
+  implementation("io.sentry:sentry-spring-7:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
   implementation(libs.jackson.databind)
   implementation(libs.logback.classic)
   implementation(libs.servlet.jakarta.api)
@@ -47,12 +50,6 @@ dependencies {
 
   implementation(libs.tomcat.catalina.jakarta)
   implementation(libs.tomcat.embed.jasper.jakarta)
-
-  testImplementation(projects.sentrySystemTestSupport)
-  testImplementation(libs.kotlin.test.junit)
-  testImplementation(libs.springboot4.starter.test) {
-    exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-  }
 }
 
 tasks.withType<KotlinCompile>().configureEach {
@@ -64,23 +61,4 @@ tasks.withType<KotlinCompile>().configureEach {
     compilerOptions.languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
     compilerOptions.apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
   }
-}
-
-tasks.register<Test>("systemTest").configure {
-  group = "verification"
-  description = "Runs the System tests"
-
-  val test = project.extensions.getByType<SourceSetContainer>()["test"]
-  testClassesDirs = test.output.classesDirs
-  classpath = test.runtimeClasspath
-
-  maxParallelForks = 1
-
-  filter { includeTestsMatching("io.sentry.systemtest*") }
-}
-
-tasks.named("test").configure {
-  require(this is Test)
-
-  filter { excludeTestsMatching("io.sentry.systemtest.*") }
 }

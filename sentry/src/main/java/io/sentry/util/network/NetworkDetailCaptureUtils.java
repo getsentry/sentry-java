@@ -59,6 +59,7 @@ public final class NetworkDetailCaptureUtils {
 
     return createRequestOrResponseInternal(
         httpObject,
+        null,
         bodySize,
         networkCaptureBodies,
         bodyExtractor,
@@ -68,6 +69,7 @@ public final class NetworkDetailCaptureUtils {
 
   public static <T> @NotNull ReplayNetworkRequestOrResponse createResponse(
       @NotNull final T httpObject,
+      @Nullable final Integer statusCode,
       @Nullable final Long bodySize,
       final boolean networkCaptureBodies,
       @NotNull final NetworkBodyExtractor<T> bodyExtractor,
@@ -76,6 +78,7 @@ public final class NetworkDetailCaptureUtils {
 
     return createRequestOrResponseInternal(
         httpObject,
+        statusCode,
         bodySize,
         networkCaptureBodies,
         bodyExtractor,
@@ -150,6 +153,7 @@ public final class NetworkDetailCaptureUtils {
 
   private static <T> @NotNull ReplayNetworkRequestOrResponse createRequestOrResponseInternal(
       @NotNull final T httpObject,
+      @Nullable final Integer statusCode,
       @Nullable final Long bodySize,
       final boolean networkCaptureBodies,
       @NotNull final NetworkBodyExtractor<T> bodyExtractor,
@@ -171,6 +175,6 @@ public final class NetworkDetailCaptureUtils {
     Map<String, String> headers =
         getCaptureHeaders(headerExtractor.extract(httpObject), allowedHeaders);
 
-    return new ReplayNetworkRequestOrResponse(effectiveBodySize, body, headers);
+    return new ReplayNetworkRequestOrResponse(statusCode, effectiveBodySize, body, headers);
   }
 }
