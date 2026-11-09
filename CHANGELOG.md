@@ -119,6 +119,10 @@
 
 - Promote continuous profiler start and stop APIs from experimental to stable ([#6426](https://github.com/getsentry/sentry-java/pull/6426))
 
+### Features
+
+- Add policy-controlled URL query parameters and fragments to Ktor HTTP client spans ([#6433](https://github.com/getsentry/sentry-java/pull/6433))
+
 ## 8.62.0
 
 ### Improvements

@@ -118,6 +118,7 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
       val urlDetails = UrlUtils.parse(rawUrl, effectiveScopes.options.dataCollectionResolver)
       val spanDescription = "${request.method.value.toString()} ${urlDetails.urlOrFallback}"
       val span: ISpan? = parentSpan?.startChild(spanOp, spanDescription)
+      urlDetails.applyToSpan(span)
       if (span != null) {
         span.spanContext.origin = TRACE_ORIGIN
         request.attributes.put(requestSpanKey, span)
