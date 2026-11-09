@@ -920,8 +920,9 @@ public final class AndroidConnectionStatusProvider
     }
 
     /**
-     * The network callback reported that the default network is gone. Reading this does not query
-     * the active network until the cache time-to-live has elapsed.
+     * The network callback reported that the default network is gone. The snapshot is not refreshed
+     * until the cache time-to-live has elapsed, but it has no capabilities, so reading the status
+     * or type still falls back to the legacy {@link ConnectivityManager} query on every read.
      */
     static @NotNull ConnectionSnapshot lost(final @NotNull MonotonicTicker ticker) {
       return new ConnectionSnapshot(
