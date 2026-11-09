@@ -26,7 +26,7 @@ dependencyManagement {
 extra["kotlin-coroutines.version"] = "1.9.0"
 
 dependencies {
-  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(libs.kotlin.reflect)
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
   implementation("io.sentry:sentry-logback:$sentryVersion")

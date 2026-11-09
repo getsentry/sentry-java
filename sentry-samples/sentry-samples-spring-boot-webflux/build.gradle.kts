@@ -35,7 +35,7 @@ dependencies {
   implementation(libs.springboot.starter.actuator)
   implementation(libs.springboot.starter.graphql)
   implementation(libs.springboot.starter.webflux)
-  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(libs.kotlin.reflect)
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation("io.sentry:sentry-spring-boot-starter:$sentryVersion")
   implementation("io.sentry:sentry-logback:$sentryVersion")

@@ -44,7 +44,7 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.core)
   testImplementation(libs.okhttp.mockwebserver)
-  testImplementation("org.jetbrains.kotlin:kotlin-reflect:2.0.0")
+  testImplementation(libs.kotlin.reflect)
 }
 
 tasks.withType<JavaCompile>().configureEach {

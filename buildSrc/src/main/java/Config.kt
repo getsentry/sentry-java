@@ -20,9 +20,7 @@ object Config {
         val springSecurityWeb = "org.springframework.security:spring-security-web"
         val springSecurityConfig = "org.springframework.security:spring-security-config"
         val springAop = "org.springframework:spring-aop"
-        val aspectj = "org.aspectj:aspectjweaver"
 
-        val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
         val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
     }
 
