@@ -22,6 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.BuildInfoProvider
@@ -416,6 +417,30 @@ class AndroidConnectionStatusProviderTest {
     assertTrue(callsAfter > callsBefore, "An empty cache must be populated before it is read")
 
     provider.close()
+  }
+
+  @Test
+  fun `a stale-cache refresh without network capabilities does not query the connectivity manager for its debug log when debug logging is off`() {
+    options.isDebug = false
+    whenever(networkInfo.isConnected).thenReturn(true)
+    whenever(connectivityManager.activeNetwork).thenReturn(null)
+    clearInvocations(connectivityManager)
+
+    val status = connectionStatusProvider.connectionStatus
+
+    assertThat(status).isEqualTo(IConnectionStatusProvider.ConnectionStatus.CONNECTED)
+    // Only the returned status queries; the debug log message is not built.
+    verify(connectivityManager, times(1)).activeNetworkInfo
+  }
+
+  @Test
+  fun `a stale-cache refresh logs the refreshed connection status and type when debug logging is on`() {
+    options.isDebug = true
+    whenever(networkInfo.isConnected).thenReturn(true)
+
+    connectionStatusProvider.connectionStatus
+
+    verify(logger).log(eq(SentryLevel.DEBUG), eq("Cache updated - Status: CONNECTED, Type: wifi"))
   }
 
   @Test

@@ -25,7 +25,6 @@ import io.sentry.android.core.AppState
 import io.sentry.android.core.BuildInfoProvider
 import io.sentry.android.core.ContextUtils
 import io.sentry.test.DeferredExecutorService
-import io.sentry.test.ImmediateExecutorService
 import io.sentry.time.TestMonotonicTicker
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
@@ -99,6 +98,18 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   }
 
   @Test
+  fun `getConnectionType refreshes a stale cache without waiting for a stalled network callback registration`() {
+    val fixture = Fixture.create()
+    val stall = fixture.stallNetworkCallbackRegistration()
+    val connectionStatusProvider = fixture.createProvider()
+    stall.awaitEntered()
+
+    val type = fixture.onCallerThread { connectionStatusProvider.connectionType }
+
+    assertThat(type).isEqualTo("wifi")
+  }
+
+  @Test
   fun `getConnection refreshes a stale cache without waiting for a stalled network callback registration`() {
     val fixture = Fixture.create()
     val stall = fixture.stallNetworkCallbackRegistration()
@@ -131,11 +142,14 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   @Test
   fun `removeConnectionStatusObserver does not wait for a stalled telephony callback registration`() {
     val fixture = Fixture.create(sdkVersion = Build.VERSION_CODES.S)
-    val stall = fixture.stallTelephonyCallbackRegistration()
-    val connectionStatusProvider = fixture.createProvider()
-    stall.awaitEntered()
+    val connectionStatusProvider = fixture.createRegisteredProvider()
     val observer = mock<IConnectionStatusObserver>()
     connectionStatusProvider.addConnectionStatusObserver(observer)
+    connectionStatusProvider.onBackground()
+    fixture.awaitExecutorIdle()
+    val stall = fixture.stallTelephonyCallbackRegistration()
+    connectionStatusProvider.onForeground()
+    stall.awaitEntered()
 
     fixture.onCallerThread { connectionStatusProvider.removeConnectionStatusObserver(observer) }
 
@@ -284,7 +298,27 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     verify(observer).onConnectionStatusChanged(ConnectionStatus.DISCONNECTED)
   }
 
-  // Observers changing the observers during a notification
+  // Observers being notified
+
+  @Test
+  fun `addConnectionStatusObserver does not wait for an observer that is being notified`() {
+    val fixture = Fixture.create()
+    val connectionStatusProvider = fixture.createRegisteredProvider()
+    val networkCallback = fixture.captureNetworkCallback()
+    networkCallback.onAvailable(fixture.network)
+    val stall = fixture.newStall()
+    connectionStatusProvider.addConnectionStatusObserver { stall.block(Unit) }
+    fixture.startOnCallerThread { networkCallback.onLost(fixture.network) }
+    stall.awaitEntered()
+    val observer = mock<IConnectionStatusObserver>()
+
+    val added = fixture.onCallerThread {
+      connectionStatusProvider.addConnectionStatusObserver(observer)
+    }
+
+    assertThat(added).isTrue()
+    assertThat(connectionStatusProvider.statusObservers).contains(observer)
+  }
 
   @Test
   fun `an observer that removes itself during a notification does not keep the other observers from being notified`() {
@@ -520,8 +554,9 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     val fixture = Fixture.create(executorService = executor)
     val connectionStatusProvider = fixture.createProvider()
     executor.runAll()
-
     connectionStatusProvider.close()
+    executor.runAll()
+
     connectionStatusProvider.addConnectionStatusObserver(mock())
     executor.runAll()
 
@@ -535,8 +570,9 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     val fixture = Fixture.create(sdkVersion = Build.VERSION_CODES.S, executorService = executor)
     val connectionStatusProvider = fixture.createProvider()
     executor.runAll()
-
     connectionStatusProvider.close()
+    executor.runAll()
+
     connectionStatusProvider.addConnectionStatusObserver(mock())
     executor.runAll()
 
@@ -549,8 +585,9 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     val fixture = Fixture.create(executorService = executor)
     val connectionStatusProvider = fixture.createProvider()
     executor.runAll()
-
     connectionStatusProvider.close()
+    executor.runAll()
+
     connectionStatusProvider.onForeground()
     executor.runAll()
 
@@ -779,32 +816,11 @@ class AndroidConnectionStatusProviderConcurrencyTest {
       fun create(
         sdkVersion: Int = Build.VERSION_CODES.N,
         executorService: ISentryExecutorService = SingleThreadExecutorService(),
-      ): Fixture {
-        resetStaticState()
-        return Fixture(sdkVersion, executorService).also { created += it }
-      }
+      ): Fixture = Fixture(sdkVersion, executorService).also { created += it }
 
       fun closeAll() {
         created.forEach { it.close() }
         created.clear()
-      }
-
-      /**
-       * Clears the cached ConnectivityManager and the child network callbacks, which are static and
-       * may have been left behind by other suites, by closing a provider that registers nothing.
-       */
-      private fun resetStaticState() {
-        val resetOptions = SentryOptions().apply { executorService = ImmediateExecutorService() }
-        val foregroundImportance =
-          mockStatic(ContextUtils::class.java, CALLS_REAL_METHODS).also {
-            it.`when`<Boolean> { ContextUtils.isForegroundImportance() }.thenReturn(false)
-          }
-        try {
-          AndroidConnectionStatusProvider(mock(), resetOptions, mock(), TestMonotonicTicker())
-            .close()
-        } finally {
-          foregroundImportance.close()
-        }
       }
 
       private fun capabilities(transport: Int): NetworkCapabilities {

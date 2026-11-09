@@ -9,6 +9,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
 import android.os.Handler;
+import android.telephony.TelephonyManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import io.sentry.IConnectionStatusProvider;
@@ -33,9 +34,51 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
 
 /**
- * Note: ConnectivityManager sometimes throws SecurityExceptions on Android 11. Hence all relevant
- * calls are guarded with try/catch. see https://issuetracker.google.com/issues/175055271 for more
- * details
+ * Primary source of network connectivity info for the Android SDK. Reports the status and type of
+ * the app's <a
+ * href="https://developer.android.com/develop/connectivity/network-ops/reading-network-state#listening-events">default
+ * network</a>, plus cellular network generation when available.
+ *
+ * <p>Clients can either:
+ *
+ * <ul>
+ *   <li>register callbacks to be notified of network updates as they occur (see {@link
+ *       #addNetworkCallback} and {@link #addConnectionStatusObserver}), or
+ *   <li>request network info synchronously (see, e.g., {@link #getConnection}).
+ * </ul>
+ *
+ * Note: Synchronous reads may make system calls on the calling thread if they're not backed by
+ * cached data or if their cached data has gone stale.
+ *
+ * <p><b>Exception policy</b>
+ *
+ * <p>The provider sources its network info from {@link ConnectivityManager}, which sometimes throws
+ * SecurityExceptions on Android 11. Hence all relevant calls are guarded with try/catch. See <a
+ * href="https://issuetracker.google.com/issues/175055271">here</a> for more details.
+ *
+ * <p><b>Threading policy</b>
+ *
+ * <p>Public methods may be called from any thread. Client registrations are added and removed
+ * synchronously using thread-safe lists; they do <i>not</i> wait for this provider's own callbacks
+ * to be registered with {@link ConnectivityManager} or {@link TelephonyManager}. Registration and
+ * unregistration of those system callbacks run asynchronously on the {@link
+ * SentryOptions#getExecutorService() SDK executor}.
+ *
+ * <p>The main thread queries this provider during {@code SentryAndroid.init} and whenever an event
+ * is captured. To avoid blocking the main thread, be sure to:
+ *
+ * <ul>
+ *   <li>Never lock the connection cache. Instead, replace the whole {@link ConnectionSnapshot} via
+ *       a compare-and-set operation, and read it once per operation.
+ *   <li>Never hold a lock while notifying observers or child network callbacks. Both run SDK code
+ *       that could invoke user callbacks such as {@code beforeBreadcrumb}, and those callbacks can
+ *       block or deadlock.
+ *   <li>Only acquire {@link #registrationLock} on the SDK executor. It's held across network
+ *       callback registration, which can be long-lasting.
+ *   <li>Check from the SDK executor whether the callbacks are registered, not from the calling
+ *       thread. The executor runs tasks in submission order, so it's guaranteed to see the latest
+ *       registration state.
+ * </ul>
  */
 @ApiStatus.Internal
 public final class AndroidConnectionStatusProvider
@@ -47,47 +90,41 @@ public final class AndroidConnectionStatusProvider
   private final @NotNull MonotonicTicker ticker;
 
   /**
-   * Copy-on-write, so that observers can be added and removed from any thread without waiting on a
-   * lock, including from inside a notification. Each notification goes to the observers present
-   * when it started.
+   * Registered client observers. Provider notifies them about the network's {@link
+   * ConnectionStatus}.
+   *
+   * <p>Used by SDK integrations, including Session Replay and integrations that send cached
+   * envelopes.
    */
-  private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers;
+  private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers =
+      new CopyOnWriteArrayList<>();
 
   private final @NotNull CellularNetworkTechnologyProvider cellularNetworkTechnologyProvider;
   private final @Nullable Handler handler;
 
   /**
-   * What the provider currently knows about the default network. Replaced as a whole, never
-   * modified, so readers on any thread, including the main thread when it captures an event, see a
-   * consistent value without taking a lock.
-   */
-  private final @NotNull AtomicReference<ConnectionSnapshot> snapshot;
-
-  /**
-   * Serializes registering and unregistering the network and telephony callbacks. These are
-   * synchronous calls into system services that can take a long time, so the lock is only taken on
-   * the SDK executor, and nothing that callers wait for is done while it is held.
+   * Serializes registration and unregistration of the callbacks this provider's passes to {@link
+   * ConnectivityManager} and {@link TelephonyManager}.
+   *
+   * <p>Note: The callbacks registered with ConnectivityManager and TelephonyManager, which are
+   * guarded by this lock, are distinct from the {@link #connectionStatusObservers} and {@link
+   * #childCallbacks} registered by this provider's own clients. (The latter are made thread-safe
+   * via {@link CopyOnWriteArrayList}s.)
    */
   private final @NotNull AutoClosableReentrantLock registrationLock =
       new AutoClosableReentrantLock();
 
   private volatile @Nullable NetworkCallback networkCallback;
 
-  /**
-   * Set by {@link #close()} on the calling thread, before the unregistration it schedules runs.
-   * Registration and foreground refreshes queued on the SDK executor after that unregistration
-   * check it, so they don't register the callbacks again on a closed provider.
-   */
-  private volatile boolean closed;
-
   private static final @NotNull AutoClosableReentrantLock connectivityManagerLock =
       new AutoClosableReentrantLock();
   private static volatile @Nullable ConnectivityManager connectivityManager;
 
   /**
-   * Copy-on-write, so that callbacks are dispatched from a snapshot without holding a lock. The
-   * callbacks run SDK code such as adding breadcrumbs, which in turn runs user callbacks, while
-   * other threads, including the main thread, add and remove callbacks.
+   * Registered client callbacks. Provider invokes them to forward network connectivity events
+   * emitted by {@link ConnectivityManager}.
+   *
+   * <p>Used by SDK integrations, including network breadcrumbs.
    */
   private static final @NotNull List<NetworkCallback> childCallbacks = new CopyOnWriteArrayList<>();
 
@@ -99,12 +136,43 @@ public final class AndroidConnectionStatusProvider
   };
 
   /**
-   * The capabilities whose change affects the connection status, which depends on the API level.
+   * IDs of {@link NetworkCapabilities} whose status can affect whether a network is considered
+   * connected.
+   *
+   * <p>The relevant capabilities vary by Android API level.
    */
-  private final int[] statusCapabilities;
+  private final int[] capabilityIds;
 
   private static final long CACHE_TTL_MINUTES = 2;
-  private final @NotNull AtomicBoolean isConnected = new AtomicBoolean(false);
+
+  /**
+   * Flag for ensuring {@link #childCallbacks child callbacks} don't get more than one {@link
+   * NetworkCallback#onAvailable} invocation per connection.
+   *
+   * <p>Reset when the network is lost or unavailable.
+   */
+  private final @NotNull AtomicBoolean onAvailableForwarded = new AtomicBoolean(false);
+
+  /**
+   * Cache of the latest network connection info.
+   *
+   * <p><b>Threading policy</b>
+   *
+   * <p>This container and the snapshots it wraps are shared across threads. Updates publish a new
+   * snapshot via the atomic reference. Synchronous requests for network info are expected to use
+   * compare-and-set to discard the system's response if another update replaces the snapshot while
+   * the synchronous request runs.
+   */
+  private final @NotNull AtomicReference<ConnectionSnapshot> snapshot;
+
+  /**
+   * True if this provider has been {@link #close closed}, and therefore must permanently stop
+   * monitoring network connectivity.
+   *
+   * <p>If true, further callback registration and foreground refreshes are skipped. Existing
+   * observers and callbacks may be awaiting cleanup, as cleanup runs asynchronously.
+   */
+  private volatile boolean closed;
 
   public AndroidConnectionStatusProvider(
       @NotNull Context context,
@@ -127,11 +195,10 @@ public final class AndroidConnectionStatusProvider
     this.ticker = ticker;
     this.snapshot = new AtomicReference<>(ConnectionSnapshot.unknown(ticker));
     this.handler = handler;
-    this.connectionStatusObservers = new CopyOnWriteArrayList<>();
     this.cellularNetworkTechnologyProvider =
         new CellularNetworkTechnologyProvider(this.context, options.getLogger(), buildInfoProvider);
 
-    this.statusCapabilities =
+    this.capabilityIds =
         buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.M
             ? new int[] {
               NetworkCapabilities.NET_CAPABILITY_INTERNET,
@@ -181,8 +248,8 @@ public final class AndroidConnectionStatusProvider
   }
 
   /**
-   * The connection status of a snapshot, or of the legacy {@link ConnectivityManager} query when
-   * the snapshot has no capabilities.
+   * Returns the connection status of a snapshot, or of the legacy {@link ConnectivityManager} query
+   * if the snapshot has no {@link ConnectionSnapshot#capabilities capabilities}.
    */
   private @NotNull ConnectionStatus statusOf(final @NotNull ConnectionSnapshot snapshot) {
     final @Nullable NetworkCapabilities capabilities = snapshot.capabilities;
@@ -203,8 +270,10 @@ public final class AndroidConnectionStatusProvider
   }
 
   /**
-   * The connection type of a snapshot, or of the legacy {@link ConnectivityManager} query when the
-   * snapshot has no capabilities.
+   * Returns the {@link #getConnectionType(NetworkCapabilities) connection type} of a snapshot, or
+   * of the {@link #getConnectionType(Context, ILogger, BuildInfoProvider) legacy
+   * ConnectivityManager query} if the snapshot has no {@link ConnectionSnapshot#capabilities
+   * capabilities}.
    */
   private @Nullable String typeOf(final @NotNull ConnectionSnapshot snapshot) {
     final @Nullable NetworkCapabilities capabilities = snapshot.capabilities;
@@ -218,9 +287,6 @@ public final class AndroidConnectionStatusProvider
 
   /**
    * The connection type and, for cellular connections, the generation of the network technology.
-   *
-   * <p>The type is derived from a single snapshot, so it can't mix two networks across a
-   * connectivity change.
    */
   public @NotNull NetworkConnection getConnection() {
     final @Nullable String connectionType = typeOf(freshSnapshot());
@@ -246,8 +312,8 @@ public final class AndroidConnectionStatusProvider
 
     final boolean registered;
     try (final @NotNull ISentryLifecycleToken ignored = registrationLock.acquire()) {
-      // Checked again under the lock in case close() ran in the meantime: its unregistration takes
-      // this lock too, so either it sees the registration and undoes it, or this sees the flag.
+      // Registration and unregistration share this lock. Rechecking the closed flag here ensures
+      // that closing the provider prevents registration and cleans up the registered callbacks.
       if (closed || networkCallback != null) {
         return;
       }
@@ -261,10 +327,9 @@ public final class AndroidConnectionStatusProvider
                 current = snapshot.get();
               } while (!snapshot.compareAndSet(current, current.withNetwork(network)));
 
-              // have to only dispatch this on first registration + when the connection got
-              // re-established
-              // otherwise it would've been dispatched on every foreground
-              if (!isConnected.getAndSet(true)) {
+              // Only forward the call on first registration + when the connection is
+              // re-established – not on every foreground.
+              if (!onAvailableForwarded.getAndSet(true)) {
                 for (final @NotNull NetworkCallback cb : childCallbacks) {
                   cb.onAvailable(network);
                 }
@@ -294,7 +359,7 @@ public final class AndroidConnectionStatusProvider
             }
 
             private void clearCacheAndNotifyObservers() {
-              isConnected.set(false);
+              onAvailableForwarded.set(false);
               snapshot.set(ConnectionSnapshot.lost(ticker));
 
               options
@@ -322,8 +387,10 @@ public final class AndroidConnectionStatusProvider
             }
 
             /**
-             * Stores the capabilities and notifies observers, but only if they differ from the
-             * stored ones in a way that changes the connection status or type.
+             * Caches the capabilities and notifies observers.
+             *
+             * <p>No-ops unless the incoming {@code networkCapabilities} differ from the stored ones
+             * in a way relevant to the connection status or type.
              */
             private void updateCacheAndNotifyObservers(
                 final @NotNull NetworkCapabilities networkCapabilities) {
@@ -352,15 +419,10 @@ public final class AndroidConnectionStatusProvider
              */
             private boolean isSignificantChange(
                 final @Nullable NetworkCapabilities oldCapabilities,
-                final @Nullable NetworkCapabilities newCapabilities) {
-              // Always significant if transitioning between null and non-null
-              if ((oldCapabilities == null) != (newCapabilities == null)) {
+                final @NotNull NetworkCapabilities newCapabilities) {
+              // Always significant when capabilities first become available
+              if (oldCapabilities == null) {
                 return true;
-              }
-
-              // If both null, no change
-              if (oldCapabilities == null && newCapabilities == null) {
-                return false;
               }
 
               // Check significant capability changes
@@ -380,8 +442,8 @@ public final class AndroidConnectionStatusProvider
             private boolean hasSignificantCapabilityChanges(
                 @NotNull NetworkCapabilities old, @NotNull NetworkCapabilities new_) {
               // Check capabilities we care about for connectivity determination
-              for (int capability : statusCapabilities) {
-                if (old.hasCapability(capability) != new_.hasCapability(capability)) {
+              for (int capabilityId : capabilityIds) {
+                if (old.hasCapability(capabilityId) != new_.hasCapability(capabilityId)) {
                   return true;
                 }
               }
@@ -420,19 +482,19 @@ public final class AndroidConnectionStatusProvider
     }
   }
 
-  /** The current snapshot, refreshed first if it is stale. */
+  /** The current snapshot, refreshed first if it's stale. */
   private @NotNull ConnectionSnapshot freshSnapshot() {
     final @NotNull ConnectionSnapshot current = snapshot.get();
     return current.isFresh() ? current : refresh(current);
   }
 
   /**
-   * Queries the active network and stores its capabilities, unless the snapshot changed during the
-   * query.
+   * Queries the active network and stores its {@link NetworkCapabilities capabilities}, unless the
+   * snapshot changed during the query.
    *
-   * @param before the snapshot the refresh replaces
+   * @param before the snapshot the refresh request replaces
    * @return the stored snapshot, or, if another thread such as a network callback replaced {@code
-   *     before} during the query, that newer snapshot, which may still be stale
+   *     before} during the query, that newer snapshot
    */
   private @NotNull ConnectionSnapshot refresh(final @NotNull ConnectionSnapshot before) {
     final @NotNull ConnectionSnapshot refreshed =
@@ -443,19 +505,23 @@ public final class AndroidConnectionStatusProvider
       return snapshot.get();
     }
 
-    options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "Cache updated - Status: " + statusOf(refreshed) + ", Type: " + typeOf(refreshed));
+    // Without capabilities, statusOf and typeOf query the ConnectivityManager, so we only build the
+    // message if it'll be logged.
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Cache updated - Status: " + statusOf(refreshed) + ", Type: " + typeOf(refreshed));
+    }
     return refreshed;
   }
 
   /**
    * Queries the capabilities of the active network from the {@link ConnectivityManager}.
    *
-   * @return the capabilities, or {@code null} if they can't be read: without permission, below API
-   *     23, without an active network, or when the query fails
+   * @return the capabilities, or {@code null} if they can't be read (i.e., below API 23, without
+   *     permission, without an active network, or when the query fails)
    */
   @SuppressLint({"NewApi", "MissingPermission"})
   private @Nullable NetworkCapabilities queryActiveNetworkCapabilities() {
@@ -497,11 +563,12 @@ public final class AndroidConnectionStatusProvider
   }
 
   /**
-   * Adds an observer and makes sure the network callback is registered.
+   * Adds an observer synchronously and makes sure the network callback is registered
+   * asynchronously.
    *
    * <p>The observer is added immediately. Registering the network callback calls into system
-   * services that can be slow, so it is scheduled on the SDK executor instead of making the caller,
-   * often the main thread during {@code Sentry.init}, wait for it.
+   * services that can be slow, so it's scheduled on the SDK executor instead of making the caller
+   * wait for it. (The caller is often the main thread during {@code Sentry.init}.)
    *
    * @return always {@code true}, because the observer is added even if registering the network
    *     callback is still pending or fails
@@ -509,7 +576,7 @@ public final class AndroidConnectionStatusProvider
   @Override
   public boolean addConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
     connectionStatusObservers.add(observer);
-    // The executor drops tasks when its queue is full, which would skip this registration. That is
+    // The executor drops tasks when its queue is full, which would skip this registration. That's
     // unlikely, and onForeground() registers the callback again the next time the app is shown.
     //noinspection Convert2MethodRef
     submitSafe(() -> ensureNetworkCallbackRegistered());
@@ -544,6 +611,7 @@ public final class AndroidConnectionStatusProvider
   @Override
   public void close() {
     closed = true;
+
     submitSafe(
         () -> {
           unregisterNetworkCallback(/* clearObservers= */ true);
@@ -556,18 +624,16 @@ public final class AndroidConnectionStatusProvider
   }
 
   /**
-   * Refreshes the cache, notifies observers and registers the network callback, unless it is
-   * already registered or the provider is closed.
-   *
-   * <p>Whether the callback is registered is checked on the SDK executor, which also runs
-   * registration and unregistration in submission order. Checking on the calling thread instead
-   * would skip this work when the app returns to the foreground before the unregistration queued by
-   * {@link #onBackground()} has run, leaving the callback unregistered while in the foreground.
+   * Schedules a task to refresh the cache, notify observers and register the network callback. The
+   * task does nothing if the callback is already registered or the provider is closed.
    */
   @Override
   public void onForeground() {
     submitSafe(
         () -> {
+          // Check on the executor so any earlier background unregistration runs before we decide
+          // whether registration is needed. Checking before submission could leave the callback
+          // unregistered after a quick return to the foreground.
           if (closed || networkCallback != null) {
             return;
           }
@@ -578,7 +644,7 @@ public final class AndroidConnectionStatusProvider
           if (status == ConnectionStatus.DISCONNECTED) {
             // onLost is not called retroactively when we registerNetworkCallback (as opposed to
             // onAvailable), so we have to do it manually for the DISCONNECTED case
-            isConnected.set(false);
+            onAvailableForwarded.set(false);
             for (final @NotNull NetworkCallback cb : childCallbacks) {
               //noinspection DataFlowIssue
               cb.onLost(null);
@@ -590,25 +656,22 @@ public final class AndroidConnectionStatusProvider
 
           // this will ONLY do the necessary parts like registerNetworkCallback and onAvailable, but
           // it won't refresh the cache and notify observers because we just did it above and the
-          // cached
-          // capabilities will be the same
+          // cached capabilities will be the same
           ensureNetworkCallbackRegistered();
         });
   }
 
   /**
-   * Unregisters the network callback and the cellular technology listener, if the network callback
-   * is registered.
-   *
-   * <p>Whether the callback is registered is checked on the SDK executor, which also runs
-   * registration and unregistration in submission order. Checking on the calling thread instead
-   * would skip unregistering when the app goes to the background while a registration is queued or
-   * running, leaving the callbacks registered in the background.
+   * Schedules unregistration of the network callback and the cellular technology listener, if
+   * registered.
    */
   @Override
   public void onBackground() {
     submitSafe(
         () -> {
+          // Check on the executor so any earlier registration finishes before we decide whether
+          // to unregister. Checking before submission could miss a pending registration and leave
+          // the callbacks registered in the background.
           if (networkCallback == null) {
             return;
           }
@@ -617,8 +680,8 @@ public final class AndroidConnectionStatusProvider
   }
 
   /**
-   * Get the cached NetworkCapabilities for advanced use cases. Returns null if cache is stale or no
-   * capabilities are available.
+   * Get the cached NetworkCapabilities for advanced use cases. Returns whatever the current
+   * snapshot holds, even if it is stale, or null if it has no capabilities.
    *
    * @return cached NetworkCapabilities or null
    */
@@ -902,24 +965,27 @@ public final class AndroidConnectionStatusProvider
   }
 
   /**
-   * An immutable view of the default network: which network it is, its capabilities, and until when
-   * they can be used without querying the {@link ConnectivityManager} again.
+   * An atomically publishable snapshot of cached network connection info, obtained from {@link
+   * ConnectivityManager}.
    *
-   * <p>Each change replaces the whole snapshot, so a reader that reads it once gets values that
-   * belong together, and a refresh can detect with a compare-and-set that a network callback
-   * replaced it during the query.
+   * <p>Note: This class's {@link #network} and {@link #capabilities} fields are updated
+   * independently and can describe different networks during handover (e.g., from cellular to
+   * Wi-Fi). That behavior predates this class and - for now – isn't problematic, as no caller
+   * requires the two fields to describe the same network. (Current readers use {@code network} to
+   * filter callbacks and {@code capabilities} to derive connection info.)
    */
   private static final class ConnectionSnapshot {
-    /** The default network reported by the network callback, or {@code null} if none is known. */
-    final @Nullable Network network;
+
+    /** Info about the network of interest, or {@code null} if nothing is known. */
+    private final @Nullable Network network;
 
     /**
-     * The capabilities of the default network, or {@code null} if they are unknown or there is no
-     * default network. Readers then fall back to the legacy {@link ConnectivityManager} query.
+     * The capabilities of the network. {@code null} if they're unknown or there's no known network.
      */
-    final @Nullable NetworkCapabilities capabilities;
+    private final @Nullable NetworkCapabilities capabilities;
 
-    final @NotNull Deadline freshUntil;
+    /** When this snapshot becomes stale and {@link ConnectivityManager} should be requeried. */
+    private final @NotNull Deadline freshUntil;
 
     private ConnectionSnapshot(
         final @Nullable Network network,
@@ -930,30 +996,29 @@ public final class AndroidConnectionStatusProvider
       this.freshUntil = freshUntil;
     }
 
-    /** Nothing is known, so the next read queries the active network. */
+    /** Returns {@code true} if this snapshot has yet to go stale. */
+    boolean isFresh() {
+      return !freshUntil.hasPassed();
+    }
+
+    /** Indicates that nothing is known about the network. */
     static @NotNull ConnectionSnapshot unknown(final @NotNull MonotonicTicker ticker) {
       return new ConnectionSnapshot(null, null, Deadline.passed(ticker));
     }
 
-    /**
-     * The network callback reported that the default network is gone. The snapshot is not refreshed
-     * until the cache time-to-live has elapsed, but it has no capabilities, so reading the status
-     * or type still falls back to the legacy {@link ConnectivityManager} query on every read.
-     */
+    /** Indicates that the network has been lost. */
     static @NotNull ConnectionSnapshot lost(final @NotNull MonotonicTicker ticker) {
       return new ConnectionSnapshot(
           null, null, Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES));
     }
 
-    boolean isFresh() {
-      return !freshUntil.hasPassed();
-    }
-
+    /** Returns a copy of this snapshot with the provided {@code network}. */
     @NotNull
     ConnectionSnapshot withNetwork(final @NotNull Network network) {
       return new ConnectionSnapshot(network, capabilities, freshUntil);
     }
 
+    /** Returns a copy of this snapshot with the provided {@code capabilities} and deadline. */
     @NotNull
     ConnectionSnapshot withCapabilities(
         final @Nullable NetworkCapabilities capabilities, final @NotNull Deadline freshUntil) {
