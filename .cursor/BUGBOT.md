@@ -13,15 +13,26 @@ rule file in [`.cursor/rules/`](rules) for the area the diff touches (`api`, `op
 - While we don't want to crash or hang the host application, we also don't want to leave the host
   application in a bad or unrecoverable state. Therefore catch the narrowest type the guarded code
   can throw.
-- Existing broad catches like `catch (Throwable)` are legacy, not precedent. Where a broad catch is
-  genuinely unavoidable (an entry point running user code or third-party callbacks), it must call
-  `ExceptionUtils.rethrowIfFatal(t)` first and a code comment must say why the broad catch is
-  needed.
+- Flag any new broad catch (`Throwable`, `Error`, `Exception`, `RuntimeException`) outside a
+  boundary where we can't know what the other side throws, e.g. public API entry points like
+  `captureException`, or Android framework calls that cross into another process
+  (`ContentResolver`, system services). Existing broad catches are legacy, not precedent. See the
+  Exception Handling section in `AGENTS.md`.
+- A broad catch at a boundary must call `ExceptionUtils.rethrowIfFatal(t)` first and requires a
+  code comment saying why the catch is broad and what happens on failure (event dropped, feature
+  disabled, ...).
+- A broad catch that wraps user code requires documentation, both in code and in sentry-docs,
+  explaining how the user is expected to discover that the code they wrote isn't working.
+  sentry-docs is a separate repository, so ask the author to link the docs PR.
 - Code probing for an optional `compileOnly` dependency must catch the specific `LinkageError`
-  subclass (`NoClassDefFoundError`, `NoSuchMethodError`, ...) only.
+  subclass (`NoClassDefFoundError`, `NoSuchMethodError`, ...). Flag a probe guarded only by a broad
+  catch with `rethrowIfFatal`: it rethrows every `LinkageError`, crashing the host app when the
+  dependency is missing.
+- Logging is not handling: `options.getLogger()` is silent unless `debug` is enabled. When a catch
+  only logs, ask the author what the customer sees when it fires.
 - The SDK must never `captureException`/`captureMessage` for its own failures or for exceptions
-  thrown inside user callbacks (`beforeSend`, `beforeBreadcrumb`, `tracesSampler`, ...). Log via
-  `options.getLogger()` instead — capturing here loops. See
+  thrown inside user callbacks (`beforeSend`, `beforeBreadcrumb`, `tracesSampler`, ...) — capturing
+  here loops. See
   [Never capture your own exceptions](https://develop.sentry.dev/sdk/getting-started/principles/#never-capture-your-own-exceptions).
 - Flag `System.out`/`System.err`, `printStackTrace()`, and `android.util.Log` in SDK source; use
   `options.getLogger().log(...)`.

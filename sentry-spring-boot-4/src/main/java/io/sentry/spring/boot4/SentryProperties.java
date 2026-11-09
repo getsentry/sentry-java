@@ -50,6 +50,15 @@ public class SentryProperties extends SentryOptions {
   /** Clients integration properties. */
   private @NotNull Clients clients = new Clients();
 
+  /** Monitor every {@code @Scheduled} method with Sentry Crons. */
+  private boolean monitorScheduledTasks = false;
+
+  /**
+   * {@code @Scheduled} methods not to monitor when {@code monitorScheduledTasks} is on, as {@code
+   * ClassName.methodName} or a regex matching it.
+   */
+  private @NotNull List<String> excludeScheduledTasks = new ArrayList<>();
+
   public boolean isUseGitCommitIdAsRelease() {
     return useGitCommitIdAsRelease;
   }
@@ -135,6 +144,22 @@ public class SentryProperties extends SentryOptions {
     this.clients = clients;
   }
 
+  public boolean isMonitorScheduledTasks() {
+    return monitorScheduledTasks;
+  }
+
+  public void setMonitorScheduledTasks(boolean monitorScheduledTasks) {
+    this.monitorScheduledTasks = monitorScheduledTasks;
+  }
+
+  public @NotNull List<String> getExcludeScheduledTasks() {
+    return excludeScheduledTasks;
+  }
+
+  public void setExcludeScheduledTasks(@NotNull List<String> excludeScheduledTasks) {
+    this.excludeScheduledTasks = excludeScheduledTasks;
+  }
+
   @Open
   public static class Logging {
     /** Enable/Disable logging auto-configuration. */
@@ -217,6 +242,9 @@ public class SentryProperties extends SentryOptions {
     /** List of error types the Sentry Graphql integration should ignore. */
     private @NotNull List<String> ignoredErrorTypes = new ArrayList<>();
 
+    /** Whether ignored error types should be matched against classification specifications. */
+    private boolean enableSpecificationErrorTypeFiltering = false;
+
     @NotNull
     public List<String> getIgnoredErrorTypes() {
       return ignoredErrorTypes;
@@ -224,6 +252,15 @@ public class SentryProperties extends SentryOptions {
 
     public void setIgnoredErrorTypes(final @NotNull List<String> ignoredErrorTypes) {
       this.ignoredErrorTypes = ignoredErrorTypes;
+    }
+
+    public boolean isEnableSpecificationErrorTypeFiltering() {
+      return enableSpecificationErrorTypeFiltering;
+    }
+
+    public void setEnableSpecificationErrorTypeFiltering(
+        final boolean enableSpecificationErrorTypeFiltering) {
+      this.enableSpecificationErrorTypeFiltering = enableSpecificationErrorTypeFiltering;
     }
   }
 

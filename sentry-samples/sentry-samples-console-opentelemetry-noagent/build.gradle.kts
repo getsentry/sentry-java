@@ -3,13 +3,17 @@ plugins {
   application
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.shadow)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 application { mainClass.set("io.sentry.samples.console.Main") }
 
 dependencies {
-  implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentless)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("io.sentry:sentry-opentelemetry-agentless:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
 }
 
 // Configure the Shadow JAR (executable JAR with all dependencies)

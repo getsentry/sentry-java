@@ -1,5 +1,6 @@
 package io.sentry.okhttp
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.IScopes
 import io.sentry.SentryOptions
@@ -9,6 +10,7 @@ import io.sentry.SpanDataConvention
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.mockServerRequestTimeoutMillis
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,7 +28,6 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.spy
@@ -281,7 +282,7 @@ class SentryOkHttpEventListenerTest {
   fun `call span status is not overridden if not null`() {
     val mockListener = mock<EventListener>()
     lateinit var call: Call
-    whenever(mockListener.connectStart(any(), anyOrNull(), anyOrNull())).then {
+    whenever(mockListener.requestHeadersStart(any())).then {
       val okHttpEvent = SentryOkHttpEventListener.eventMap[call]
       val callSpan = okHttpEvent?.callSpan
       assertNotNull(callSpan)
@@ -298,6 +299,48 @@ class SentryOkHttpEventListenerTest {
     assertNotNull(callSpan)
     response.close()
     assertEquals(SpanStatus.UNKNOWN, callSpan.status)
+  }
+
+  @Test
+  fun `a failed route does not fail the call when the next route connects`() {
+    val sut = fixture.getSut()
+    val listener = fixture.sentryOkHttpEventListener
+    val call = sut.newCall(getRequest())
+    val response = mock<Response>()
+    whenever(response.code).thenReturn(200)
+    whenever(response.protocol).thenReturn(Protocol.HTTP_1_1)
+
+    listener.callStart(call)
+    listener.connectStart(call, mock(), mock())
+    listener.connectFailed(call, mock(), mock(), null, IOException("Connection refused"))
+    listener.connectStart(call, mock(), mock())
+    listener.connectEnd(call, mock(), mock(), Protocol.HTTP_1_1)
+    listener.responseHeadersStart(call)
+    listener.responseHeadersEnd(call, response)
+    val callSpan = SentryOkHttpEventListener.eventMap[call]!!.callSpan!!
+    listener.callEnd(call)
+
+    assertThat(callSpan.status).isEqualTo(SpanStatus.OK)
+    assertThat(callSpan.throwable).isNull()
+    assertThat(callSpan.getData("error_message")).isNull()
+  }
+
+  @Test
+  fun `a call that fails to connect on every route is marked as failed`() {
+    val sut = fixture.getSut()
+    val listener = fixture.sentryOkHttpEventListener
+    val call = sut.newCall(getRequest())
+    val error = IOException("Connection refused")
+
+    listener.callStart(call)
+    listener.connectStart(call, mock(), mock())
+    listener.connectFailed(call, mock(), mock(), null, error)
+    val callSpan = SentryOkHttpEventListener.eventMap[call]!!.callSpan!!
+    listener.callFailed(call, error)
+
+    assertThat(callSpan.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+    assertThat(callSpan.throwable).isSameInstanceAs(error)
+    assertThat(callSpan.getData("error_message")).isEqualTo("Connection refused")
   }
 
   private fun verifyDelegation(
