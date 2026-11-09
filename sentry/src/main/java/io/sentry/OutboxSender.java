@@ -26,6 +26,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -121,11 +123,50 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
         CollectionUtils.size(envelope.getItems()));
     int currentItem = 0;
 
+    int parentCount = 0;
+    boolean transactionParent = false;
+    for (final SentryEnvelopeItem item : envelope.getItems()) {
+      if (item.getHeader() != null
+          && (SentryItemType.Event.equals(item.getHeader().getType())
+              || SentryItemType.Transaction.equals(item.getHeader().getType()))) {
+        parentCount++;
+        transactionParent = SentryItemType.Transaction.equals(item.getHeader().getType());
+      }
+    }
+
+    final List<Attachment> attachments = new ArrayList<>();
+    if (parentCount == 1) {
+      // Collect before dispatch so attachments may precede or follow their parent. Multiple parents
+      // are ambiguous and retain the legacy per-item path.
+      for (final SentryEnvelopeItem item : envelope.getItems()) {
+        final SentryEnvelopeItemHeader header = item.getHeader();
+        if (header != null
+            && SentryItemType.Attachment.equals(header.getType())
+            && header.getFileName() != null) {
+          attachments.add(
+              new Attachment(
+                  () -> item.getData(),
+                  header.getFileName(),
+                  header.getContentType(),
+                  header.getAttachmentType(),
+                  transactionParent));
+        }
+      }
+    }
+    // Hint.clear() leaves attachments intact, so restore this snapshot after each grouped capture.
+    final List<Attachment> originalAttachments = hint.getAttachments();
+
     for (final SentryEnvelopeItem item : envelope.getItems()) {
       currentItem++;
 
       if (item.getHeader() == null) {
         logger.log(SentryLevel.ERROR, "Item %d has no header", currentItem);
+        continue;
+      }
+      if (parentCount == 1
+          && SentryItemType.Attachment.equals(item.getHeader().getType())
+          && item.getHeader().getFileName() != null) {
+        // Even an invalid or filtered parent owns these attachments. Never send them on their own.
         continue;
       }
       if (SentryItemType.Event.equals(item.getHeader().getType())) {
@@ -144,7 +185,14 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
               logUnexpectedEventId(envelope, event.getEventId(), currentItem);
               continue;
             }
-            scopes.captureEvent(event, hint);
+            try {
+              hint.addAttachments(attachments);
+              scopes.captureEvent(event, hint);
+            } finally {
+              if (!attachments.isEmpty()) {
+                hint.replaceAttachments(originalAttachments);
+              }
+            }
             logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {
@@ -181,7 +229,14 @@ public final class OutboxSender extends DirectoryProcessor implements IEnvelopeS
                   .getTrace()
                   .setSamplingDecision(extractSamplingDecision(traceContext));
             }
-            scopes.captureTransaction(transaction, traceContext, hint);
+            try {
+              hint.addAttachments(attachments);
+              scopes.captureTransaction(transaction, traceContext, hint);
+            } finally {
+              if (!attachments.isEmpty()) {
+                hint.replaceAttachments(originalAttachments);
+              }
+            }
             logItemCaptured(currentItem);
 
             if (!waitFlush(hint)) {
