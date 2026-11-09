@@ -50,6 +50,28 @@ public final class SentryWebViewTracing {
   private SentryWebViewTracing() {}
 
   /**
+   * Same as {@link #addTracePropagation(WebView, List)}, using the plain host entries of {@link
+   * io.sentry.SentryOptions#getTracePropagationTargets()} as the allowed hosts. Regex entries,
+   * entries with a path and hosts without a dot are skipped, so the default {@code .*} connects no
+   * page: set the targets to hosts whose content you control. An entry with a scheme only matches
+   * that exact host.
+   *
+   * @param webView the WebView to connect
+   * @return true if the trace propagation script was installed
+   */
+  @MainThread
+  public static boolean addTracePropagation(final @NotNull WebView webView) {
+    final @NotNull IScopes scopes = Sentry.getCurrentScopes();
+    return addTracePropagation(
+        webView,
+        WebViewTracePropagationScript.hostsFromTracePropagationTargets(
+            scopes.getOptions().getTracePropagationTargets()),
+        scopes,
+        new LoadClass(),
+        true);
+  }
+
+  /**
    * Same as {@link #addTracePropagation(WebView, List)}.
    *
    * @param webView the WebView to connect
@@ -96,6 +118,15 @@ public final class SentryWebViewTracing {
       final @NotNull List<String> allowedHosts,
       final @NotNull IScopes scopes,
       final @NotNull LoadClass loadClass) {
+    return addTracePropagation(webView, allowedHosts, scopes, loadClass, false);
+  }
+
+  private static boolean addTracePropagation(
+      final @NotNull WebView webView,
+      final @NotNull List<String> allowedHosts,
+      final @NotNull IScopes scopes,
+      final @NotNull LoadClass loadClass,
+      final boolean fromTracePropagationTargets) {
     // Registered on use rather than on success, like the other SDKs, so adoption counts apps that
     // wired the feature up even when this call cannot install.
     addIntegrationToSdkVersion(INTEGRATION_NAME);
@@ -109,7 +140,12 @@ public final class SentryWebViewTracing {
               "WebView trace propagation requires the androidx.webkit dependency, skipping.");
       return false;
     }
-    return install(webView, allowedHosts, scopes, new AndroidxWebViewScriptInstaller());
+    return install(
+        webView,
+        allowedHosts,
+        scopes,
+        new AndroidxWebViewScriptInstaller(),
+        fromTracePropagationTargets);
   }
 
   static boolean install(
@@ -117,6 +153,15 @@ public final class SentryWebViewTracing {
       final @NotNull List<String> allowedHosts,
       final @NotNull IScopes scopes,
       final @NotNull WebViewScriptInstaller installer) {
+    return install(webView, allowedHosts, scopes, installer, false);
+  }
+
+  private static boolean install(
+      final @NotNull WebView webView,
+      final @NotNull List<String> allowedHosts,
+      final @NotNull IScopes scopes,
+      final @NotNull WebViewScriptInstaller installer,
+      final boolean fromTracePropagationTargets) {
     final @NotNull ILogger logger = scopes.getOptions().getLogger();
 
     // WebView methods throw when called off the WebView's thread; fail like any other misuse.
@@ -129,7 +174,8 @@ public final class SentryWebViewTracing {
     }
 
     try {
-      return replaceScript(webView, allowedHosts, scopes, installer, logger);
+      return replaceScript(
+          webView, allowedHosts, scopes, installer, logger, fromTracePropagationTargets);
     } catch (LinkageError e) {
       // androidx.webkit is compileOnly, so the version in the app's apk may be older than the one
       // we compiled against and lack the APIs used here.
@@ -150,7 +196,8 @@ public final class SentryWebViewTracing {
       final @NotNull List<String> allowedHosts,
       final @NotNull IScopes scopes,
       final @NotNull WebViewScriptInstaller installer,
-      final @NotNull ILogger logger) {
+      final @NotNull ILogger logger,
+      final boolean fromTracePropagationTargets) {
     // Remove Sentry's previous script first, so a failed re-add never leaves a stale trace behind.
     installer.removeInstalledScript(webView);
 
@@ -158,7 +205,9 @@ public final class SentryWebViewTracing {
     if (hosts.isEmpty()) {
       logger.log(
           SentryLevel.WARNING,
-          "No valid allowedHosts provided, skipping WebView trace propagation.");
+          fromTracePropagationTargets
+              ? "tracePropagationTargets has no plain host entry (regexes and entries with a path are not used), skipping WebView trace propagation."
+              : "No valid allowedHosts provided, skipping WebView trace propagation.");
       return false;
     }
 
@@ -188,7 +237,9 @@ public final class SentryWebViewTracing {
 
     try {
       if (!installer.installScript(
-          webView, script, WebViewTracePropagationScript.originRules(allowedHosts))) {
+          webView,
+          script,
+          WebViewTracePropagationScript.originRules(allowedHosts, fromTracePropagationTargets))) {
         logger.log(
             SentryLevel.WARNING,
             "The WebView does not support document-start scripts, skipping WebView trace propagation.");

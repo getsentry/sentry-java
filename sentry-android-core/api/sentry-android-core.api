@@ -629,6 +629,7 @@ public abstract interface class io/sentry/android/core/SentryUserFeedbackForm$Op
 }
 
 public final class io/sentry/android/core/SentryWebViewTracing {
+	public static fun addTracePropagation (Landroid/webkit/WebView;)Z
 	public static fun addTracePropagation (Landroid/webkit/WebView;Ljava/util/List;)Z
 	public static fun addTracePropagation (Landroid/webkit/WebView;[Ljava/lang/String;)Z
 }

@@ -30,7 +30,35 @@ final class WebViewTracePropagationScript {
   private static final @NotNull Pattern PORT = Pattern.compile(":\\d+$");
   private static final @NotNull Pattern IPV4 = Pattern.compile("^\\d{1,3}(\\.\\d{1,3}){3}$");
 
+  /** A target that names a host: optional scheme, host, optional port, nothing else. */
+  private static final @NotNull Pattern PLAIN_HOST_TARGET =
+      Pattern.compile(
+          "^([a-z][a-z0-9+.-]*://)?(\\*\\.)?[\\p{L}\\p{N}][\\p{L}\\p{N}.-]*(:\\d+)?/?$",
+          Pattern.CASE_INSENSITIVE);
+
   private WebViewTracePropagationScript() {}
+
+  /**
+   * Returns the entries of {@code tracePropagationTargets} that name a plain host. Targets are
+   * matched as substrings or regexes against a full URL, which cannot be turned into the origin
+   * rules that gate the script, so regexes (including the default {@code .*}) and entries with a
+   * path are skipped rather than widened. So are hosts without a dot other than {@code localhost}:
+   * a loose substring like {@code com} would otherwise allow every site under that domain.
+   */
+  static @NotNull List<String> hostsFromTracePropagationTargets(
+      final @NotNull Collection<String> targets) {
+    final @NotNull List<String> hosts = new ArrayList<>();
+    for (final @Nullable String target : targets) {
+      if (target == null || !PLAIN_HOST_TARGET.matcher(target.trim()).matches()) {
+        continue;
+      }
+      final @NotNull String host = normalizeHost(target);
+      if (host.contains(".") || "localhost".equals(host)) {
+        hosts.add(target);
+      }
+    }
+    return hosts;
+  }
 
   /**
    * Normalizes each entry with {@link #normalizeHost(String)}, dropping blank entries and
@@ -119,6 +147,17 @@ final class WebViewTracePropagationScript {
    * port 443, so a non-default port given in an entry is kept and limits the rule to that port.
    */
   static @NotNull Set<String> originRules(final @NotNull Collection<String> allowedHosts) {
+    return originRules(allowedHosts, false);
+  }
+
+  /**
+   * Same as {@link #originRules(Collection)}. With {@code fromTracePropagationTargets}, an entry
+   * with a scheme and no subdomain wildcard only matches that exact host, as it does for HTTP
+   * propagation. The native origin rules are what enforce this: the script itself also accepts
+   * subdomains, but it never runs on them.
+   */
+  static @NotNull Set<String> originRules(
+      final @NotNull Collection<String> allowedHosts, final boolean fromTracePropagationTargets) {
     final @NotNull Set<String> rules = new LinkedHashSet<>();
     for (final @Nullable String entry : allowedHosts) {
       if (entry == null) {
@@ -131,11 +170,17 @@ final class WebViewTracePropagationScript {
       final @Nullable String port = port(entry);
       final @NotNull String portSuffix = port == null || "443".equals(port) ? "" : ":" + port;
       rules.add("https://" + host + portSuffix);
-      if (!isIpLiteral(host)) {
+      if (!isIpLiteral(host) && !(fromTracePropagationTargets && isExactHostTarget(entry))) {
         rules.add("https://*." + host + portSuffix);
       }
     }
     return rules;
+  }
+
+  private static boolean isExactHostTarget(final @NotNull String entry) {
+    final @NotNull String trimmed = entry.trim();
+    final @NotNull String withoutScheme = SCHEME.matcher(trimmed).replaceFirst("");
+    return !withoutScheme.equals(trimmed) && !withoutScheme.startsWith("*.");
   }
 
   /** Returns the port of an {@code allowedHosts} entry, or null if it has none. */

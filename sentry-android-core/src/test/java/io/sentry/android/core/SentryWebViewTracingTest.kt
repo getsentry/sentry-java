@@ -20,6 +20,7 @@ import kotlin.test.assertFailsWith
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
@@ -365,6 +366,44 @@ class SentryWebViewTracingTest {
         assertThat(webView.getTag(R.id.sentry_webview_trace_propagation)).isNull()
       }
     }
+  }
+
+  @Test
+  fun `without hosts uses the plain host entries of tracePropagationTargets`() {
+    Sentry.init {
+      it.dsn = "https://key@sentry.io/123"
+      it.setTracePropagationTargets(
+        listOf("example.com", "https://api.other.org/", ".*\\.other\\.com")
+      )
+    }
+    val origins = argumentCaptor<Set<String>>()
+    mockStatic(WebViewCompat::class.java).use { webViewCompat ->
+      mockStatic(WebViewFeature::class.java).use { webViewFeature ->
+        webViewFeature
+          .`when`<Boolean> {
+            WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
+          }
+          .thenReturn(true)
+        webViewCompat
+          .`when`<ScriptHandler> {
+            WebViewCompat.addDocumentStartJavaScript(eq(webView), any(), origins.capture())
+          }
+          .thenReturn(mock<ScriptHandler>())
+
+        assertThat(SentryWebViewTracing.addTracePropagation(webView)).isTrue()
+      }
+    }
+
+    assertThat(origins.firstValue)
+      .containsExactly("https://example.com", "https://*.example.com", "https://api.other.org")
+  }
+
+  @Test
+  fun `without hosts connects no page with the default tracePropagationTargets`() {
+    initSentry()
+
+    assertThat(SentryWebViewTracing.addTracePropagation(webView)).isFalse()
+    assertThat(webView.getTag(R.id.sentry_webview_trace_propagation)).isNull()
   }
 
   @Test

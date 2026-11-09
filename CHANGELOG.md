@@ -12,6 +12,7 @@
 - Connect Android traces with web content in a `WebView` using `SentryWebViewTracing.addTracePropagation(webView, "example.com")` ([#6395](https://github.com/getsentry/sentry-java/pull/6395))
   - Requires the `androidx.webkit:webkit` dependency. Only list hosts whose content you control.
   - Call it on the main thread before each page load you want connected.
+  - Call `addTracePropagation(webView)` without hosts to use the plain host entries of `tracePropagationTargets`. Regexes, including the default `.*`, are not used.
   - See the [WebView docs](https://docs.sentry.io/platforms/android/configuration/webview/) for details.
 - Monitor every Spring `@Scheduled` method with Sentry Crons by setting `sentry.monitor-scheduled-tasks=true`, without adding `@SentryCheckIn` to each method. Sentry creates each monitor from the method's `@Scheduled` schedule. Exclude methods with `sentry.exclude-scheduled-tasks` ([#6275](https://github.com/getsentry/sentry-java/pull/6275), [#6276](https://github.com/getsentry/sentry-java/pull/6276), [#6277](https://github.com/getsentry/sentry-java/pull/6277))
 - Quartz `SentryJobListener` can send a monitor config derived from the trigger with check-ins, so Sentry creates or updates the monitor from code. Set the `sentry-upsert-monitor-config` job or trigger data key to `"true"` to send the schedule ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
