@@ -178,6 +178,7 @@ class SentryAndroidTest {
   fun `set up`() {
     Sentry.close()
     AppStartMetrics.getInstance().clear()
+    ContextUtils.resetInstance()
     context = ApplicationProvider.getApplicationContext()
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
     fixture.shadowActivityManager = Shadow.extract(activityManager)
