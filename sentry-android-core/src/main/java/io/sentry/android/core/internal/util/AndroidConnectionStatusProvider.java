@@ -24,6 +24,7 @@ import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
@@ -44,6 +45,8 @@ public final class AndroidConnectionStatusProvider
   private final @NotNull SentryOptions options;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private final @NotNull MonotonicTicker ticker;
+  // The cache lock is also held during network and telephony IPC. A separate snapshot list keeps
+  // observer access independent of those calls and permits observer changes during notification.
   private final @NotNull List<IConnectionStatusObserver> connectionStatusObservers;
   private final @NotNull CellularNetworkTechnologyProvider cellularNetworkTechnologyProvider;
   private final @Nullable Handler handler;
@@ -94,7 +97,7 @@ public final class AndroidConnectionStatusProvider
     this.ticker = ticker;
     this.cacheFreshUntil = Deadline.passed(ticker);
     this.handler = handler;
-    this.connectionStatusObservers = new ArrayList<>();
+    this.connectionStatusObservers = new CopyOnWriteArrayList<>();
     this.cellularNetworkTechnologyProvider =
         new CellularNetworkTechnologyProvider(this.context, options.getLogger(), buildInfoProvider);
 
@@ -256,17 +259,16 @@ public final class AndroidConnectionStatusProvider
                 cachedNetworkCapabilities = null;
                 currentNetwork = null;
                 cacheFreshUntil = Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
+              }
 
-                options
-                    .getLogger()
-                    .log(SentryLevel.DEBUG, "Cache cleared - network lost/unavailable");
+              options
+                  .getLogger()
+                  .log(SentryLevel.DEBUG, "Cache cleared - network lost/unavailable");
 
-                // Notify all observers with DISCONNECTED status directly
-                // No need to query ConnectivityManager - we know the network is gone
-                for (final @NotNull IConnectionStatusObserver observer :
-                    connectionStatusObservers) {
-                  observer.onConnectionStatusChanged(ConnectionStatus.DISCONNECTED);
-                }
+              // Notify all observers with DISCONNECTED status directly
+              // No need to query ConnectivityManager - we know the network is gone
+              for (final @NotNull IConnectionStatusObserver observer : connectionStatusObservers) {
+                observer.onConnectionStatusChanged(ConnectionStatus.DISCONNECTED);
               }
             }
 
@@ -295,11 +297,9 @@ public final class AndroidConnectionStatusProvider
                 updateCache(networkCapabilities);
 
                 final @NotNull ConnectionStatus status = getConnectionStatusFromCache();
-                try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-                  for (final @NotNull IConnectionStatusObserver observer :
-                      connectionStatusObservers) {
-                    observer.onConnectionStatusChanged(status);
-                  }
+                for (final @NotNull IConnectionStatusObserver observer :
+                    connectionStatusObservers) {
+                  observer.onConnectionStatusChanged(status);
                 }
               }
             }
@@ -452,23 +452,26 @@ public final class AndroidConnectionStatusProvider
     return getConnectionTypeFromCache();
   }
 
+  /**
+   * Adds an observer immediately and schedules network monitoring on the SDK executor so that the
+   * caller does not wait for network or telephony registration.
+   *
+   * @return whether a network callback is currently registered; the observer is retained even if
+   *     registration is pending or fails
+   */
   @Override
   public boolean addConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      connectionStatusObservers.add(observer);
-    }
-    ensureNetworkCallbackRegistered();
+    connectionStatusObservers.add(observer);
+    //noinspection Convert2MethodRef
+    submitSafe(() -> ensureNetworkCallbackRegistered());
 
-    // Network callback is already registered during initialization
     return networkCallback != null;
   }
 
   @Override
   public void removeConnectionStatusObserver(final @NotNull IConnectionStatusObserver observer) {
-    try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-      connectionStatusObservers.remove(observer);
-      // Keep the callback registered for caching even if no observers
-    }
+    connectionStatusObservers.remove(observer);
+    // Keep the callback registered for caching even if no observers
   }
 
   private void unregisterNetworkCallback(final boolean clearObservers) {
@@ -532,10 +535,8 @@ public final class AndroidConnectionStatusProvider
               }
             }
           }
-          try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
-            for (final @NotNull IConnectionStatusObserver observer : connectionStatusObservers) {
-              observer.onConnectionStatusChanged(status);
-            }
+          for (final @NotNull IConnectionStatusObserver observer : connectionStatusObservers) {
+            observer.onConnectionStatusChanged(status);
           }
 
           // this will ONLY do the necessary parts like registerNetworkCallback and onAvailable, but
