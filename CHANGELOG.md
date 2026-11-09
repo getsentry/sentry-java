@@ -59,6 +59,10 @@
   - `ActivityFramesTracker` is removed, and the `ActivityLifecycleIntegration` constructor no longer takes it
 - Screenshots attached to errors and user feedback now mask all text and images by default. Turn it off with `options.screenshot.setMaskAllText(false)` and `setMaskAllImages(false)`, or the `io.sentry.screenshot.mask-all-text` and `io.sentry.screenshot.mask-all-images` manifest options. Masking needs `sentry-android-replay`, so apps that depend on `sentry-android-core` alone get no screenshot until they add it or turn masking off ([#6437](https://github.com/getsentry/sentry-java/pull/6437))
 
+### Fixes
+
+- Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
+
 ### Improvements
 
 - Promote check-in APIs from experimental to stable ([#6422](https://github.com/getsentry/sentry-java/pull/6422))
