@@ -1,18 +1,8 @@
 
 object Config {
-    val AGP = System.getenv("VERSION_AGP") ?: "9.4.0"
     val kotlinStdLib = "stdlib-jdk8"
     val kotlinStdLibVersionAndroid = "1.9.24"
     val kotlinTestJunit = "test-junit"
-
-    object BuildPlugins {
-        val androidGradle = "com.android.tools.build:gradle:$AGP"
-
-        // The R8 bundled with AGP 9.0 and 9.2 crashes on androidx.core at minSdk 24, so builds that
-        // override AGP (the AGP matrix) run the R8 that ships with the default AGP instead.
-        val r8: String?
-            get() = if (System.getenv("VERSION_AGP") != null) "com.android.tools:r8:9.4.14" else null
-    }
 
     object Android {
         val abiFilters = listOf("x86", "armeabi-v7a", "x86_64", "arm64-v8a")
@@ -30,20 +20,13 @@ object Config {
         val springSecurityWeb = "org.springframework.security:spring-security-web"
         val springSecurityConfig = "org.springframework.security:spring-security-config"
         val springAop = "org.springframework:spring-aop"
-        val aspectj = "org.aspectj:aspectjweaver"
 
-        val kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect"
         val kotlinStdLib = "org.jetbrains.kotlin:kotlin-stdlib"
     }
 
     object AnnotationProcessors {
         val springBootAutoConfigure = "org.springframework.boot:spring-boot-autoconfigure-processor"
         val springBootConfiguration = "org.springframework.boot:spring-boot-configuration-processor"
-    }
-
-    object QualityPlugins {
-        // this can be removed when we upgrade to Gradle 8, which allows us to use a getter for the plugin ID
-        val detektPlugin = "io.gitlab.arturbosch.detekt"
     }
 
     object Sentry {
@@ -96,23 +79,5 @@ object Config {
         val group = "io.sentry"
         val description = "SDK for sentry.io"
         val versionNameProp = "versionName"
-    }
-
-    object BuildScript {
-        val androidLibs = setOf(
-            "sentry-android-core",
-            "sentry-android-ndk",
-            "sentry-android-fragment",
-            "sentry-android-navigation",
-            "sentry-android-navigation3",
-            "sentry-android-timber",
-            "sentry-compose-android",
-            "sentry-android-sqlite",
-            "sentry-android-replay"
-        )
-
-        val androidXLibs = listOf(
-            "androidx.core:core"
-        )
     }
 }
