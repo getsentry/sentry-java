@@ -4,6 +4,9 @@ import android.app.ActivityManager
 import android.app.ApplicationExitInfo
 import android.content.ComponentName
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Binder
 import android.os.Parcel
 import android.os.ParcelFileDescriptor
@@ -15,10 +18,12 @@ import io.sentry.android.core.SentryAndroidOptions
 import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.ndk.NdkOptions
 import io.sentry.ndk.SentryNdk.CrashDaemon
+import io.sentry.test.DeferredExecutorService
 import java.io.File
 import java.io.InputStream
 import java.util.Date
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import java.util.zip.GZIPInputStream
@@ -66,13 +71,48 @@ class SentryNdkCrashServiceTest {
   }
 
   @Test
-  fun `unbinds when the service does not configure`() {
+  fun `stays bound when the service does not configure`() {
     configure(false)
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use {
-      assertThat(SentryNdkCrashService.start(app, options)).isNull()
+      val connection = SentryNdkCrashService.start(app, options)
 
-      assertThat(shadowOf(app).boundServiceConnections).isEmpty()
-      assertThat(shadowOf(app).unboundServiceConnections).hasSize(1)
+      assertThat(connection).isNotNull()
+      assertThat(shadowOf(app).boundServiceConnections).containsExactly(connection)
+      assertThat(shadowOf(app).unboundServiceConnections).isEmpty()
+    }
+  }
+
+  @Test
+  fun `starts before the service connects`() {
+    val context = UnconnectedContext()
+    options.executorService = DeferredExecutorService()
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
+      val connection = SentryNdkCrashService.start(context, options)
+
+      assertThat(connection).isNotNull()
+      assertThat(context.connections).containsExactly(connection)
+      native.verify { io.sentry.ndk.SentryNdk.initCrashDaemon(any(), any(), any(), any()) }
+    }
+  }
+
+  @Test
+  fun `reattaches a service that connects after the timeout`() {
+    val binder = configure(true)
+    val context = UnconnectedContext()
+    val executor = DeferredExecutorService()
+    options.executorService = executor
+    Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
+      native.`when`<Int> { io.sentry.ndk.SentryNdk.dupCrashShmFd() }.thenReturn(42)
+      native
+        .`when`<Boolean> { io.sentry.ndk.SentryNdk.reattachCrashDaemon(any(), any(), any()) }
+        .thenReturn(true)
+      val connection = SentryNdkCrashService.start(context, options)!!
+
+      executor.runAll()
+      connection.onServiceConnected(component, binder)
+
+      assertThat(binder.transactions).isEqualTo(1)
+      native.verify { io.sentry.ndk.SentryNdk.reattachCrashDaemon(any(), any(), any()) }
     }
   }
 
@@ -438,6 +478,21 @@ class SentryNdkCrashServiceTest {
   private fun marker(): File = File(app.cacheDir, AndroidEnvelopeCache.LAST_TOMBSTONE_REPORT)
 
   private fun descriptor(fd: Int): ParcelFileDescriptor = mock { on { detachFd() } doReturn fd }
+
+  // binds without connecting, as a service process that is still starting
+  private inner class UnconnectedContext : ContextWrapper(app) {
+    val connections = mutableListOf<ServiceConnection>()
+
+    override fun bindService(
+      service: Intent,
+      flags: Int,
+      executor: Executor,
+      conn: ServiceConnection,
+    ): Boolean {
+      connections += conn
+      return true
+    }
+  }
 
   private fun configure(configured: Boolean) =
     object : Binder() {
