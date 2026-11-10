@@ -20,10 +20,8 @@ package io.sentry.android.core.internal.threaddump;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
@@ -44,9 +42,7 @@ public final class Lines {
 
   /** Read the whole file into a Lines object. */
   public static Lines readLines(final @NotNull File file) throws IOException {
-    try (BufferedReader reader =
-        new BufferedReader(
-            new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
       return Lines.readLines(reader);
     }
   }

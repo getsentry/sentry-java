@@ -38,7 +38,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -212,8 +211,7 @@ public class AnrV2Integration implements Integration, Closeable {
       }
 
       try (final BufferedReader reader =
-          new BufferedReader(
-              new InputStreamReader(new ByteArrayInputStream(dump), StandardCharsets.UTF_8))) {
+          new BufferedReader(new InputStreamReader(new ByteArrayInputStream(dump)))) {
         final Lines lines = Lines.readLines(reader);
 
         final ThreadDumpParser threadDumpParser = new ThreadDumpParser(options, isBackground);
