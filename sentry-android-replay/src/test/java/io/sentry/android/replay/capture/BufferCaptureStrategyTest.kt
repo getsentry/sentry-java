@@ -2,7 +2,9 @@ package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
 import android.view.MotionEvent
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DataCategory
+import io.sentry.Hint
 import io.sentry.IScopes
 import io.sentry.Scope
 import io.sentry.ScopeCallback
@@ -10,6 +12,7 @@ import io.sentry.ScopeType
 import io.sentry.SentryEnvelope
 import io.sentry.SentryEnvelopeHeader
 import io.sentry.SentryOptions
+import io.sentry.SentryReplayEvent
 import io.sentry.SentryReplayEvent.ReplayType
 import io.sentry.android.replay.DefaultReplayBreadcrumbConverter
 import io.sentry.android.replay.GeneratedVideo
@@ -24,11 +27,14 @@ import io.sentry.android.replay.capture.BufferCaptureStrategyTest.Fixture.Compan
 import io.sentry.clientreport.DiscardReason
 import io.sentry.clientreport.DiscardedEvent
 import io.sentry.protocol.SentryId
+import io.sentry.rrweb.RRWebEvent
+import io.sentry.rrweb.RRWebInteractionEvent
+import io.sentry.rrweb.RRWebInteractionEvent.InteractionType
 import io.sentry.time.TestMonotonicTicker
-import io.sentry.transport.CurrentDateProvider
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
 import java.io.File
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -40,6 +46,7 @@ import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -113,10 +120,49 @@ class BufferCaptureStrategyTest {
         ?.discardedEvents
         .orEmpty()
 
+    var now = System.currentTimeMillis()
     val ticker = TestMonotonicTicker()
 
+    /** Time passing: the wall clock and the ticker move together. */
+    fun elapse(millis: Long) {
+      now += millis
+      ticker.advance(millis, MILLISECONDS)
+    }
+
+    /** The device clock being changed: only the wall clock moves. */
+    fun jumpWallClock(millis: Long) {
+      now += millis
+    }
+
+    /**
+     * Makes [replayCache] keep the frame timestamps added to the returned list, so segments start
+     * at the first frame and last as long as requested.
+     */
+    fun storeFrames(): MutableList<Long> {
+      val frames = mutableListOf<Long>()
+      whenever(replayCache.firstFrameTimestamp()).thenAnswer { frames.firstOrNull() }
+      whenever(replayCache.rotate(anyLong())).thenAnswer { invocation ->
+        frames.removeAll { it < invocation.getArgument<Long>(0) }
+        null
+      }
+      whenever(
+          replayCache.createVideoOf(
+            anyLong(),
+            anyLong(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            anyInt(),
+            any(),
+          )
+        )
+        .thenAnswer { GeneratedVideo(File("${it.arguments[2]}.mp4"), 1, it.arguments[0] as Long) }
+      return frames
+    }
+
     fun getSut(
-      dateProvider: ICurrentDateProvider = CurrentDateProvider.getInstance(),
+      dateProvider: ICurrentDateProvider = ICurrentDateProvider { now },
       replayCacheDir: File? = null,
     ): BufferCaptureStrategy {
       replayCacheDir?.let { whenever(replayCache.replayCacheDir).thenReturn(it) }
@@ -464,5 +510,119 @@ class BufferCaptureStrategyTest {
       "The replayId must be set first, so when we clean up stale replays" +
         "the current replay cache folder is not being deleted.",
     )
+  }
+
+  /** The recording payload of every captured segment, in capture order, with its segment id. */
+  private fun capturedSegments(count: Int): List<Pair<SentryReplayEvent, List<RRWebEvent>>> {
+    val events = argumentCaptor<SentryReplayEvent>()
+    val hints = argumentCaptor<Hint>()
+    verify(fixture.scopes, times(count)).captureReplay(events.capture(), hints.capture())
+    return events.allValues.zip(hints.allValues.map { it.replayRecording!!.payload!! })
+  }
+
+  @Test
+  fun `a backward wall-clock jump buffers the frames before it as a segment of their own`() {
+    val frames = fixture.storeFrames()
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val segmentStart = fixture.now
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    fixture.elapse(3_000)
+    fixture.jumpWallClock(-120_000)
+    val newTimelineStart = fixture.now
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    fixture.elapse(2_000)
+
+    strategy.captureReplay(false) {}
+
+    val segments = capturedSegments(count = 2).map { it.first }
+    assertThat(segments.map { it.segmentId }).containsExactly(0, 1).inOrder()
+    assertThat(segments.map { it.replayStartTimestamp!!.time })
+      .containsExactly(segmentStart, newTimelineStart)
+      .inOrder()
+    assertThat(segments.map { it.timestamp!!.time - it.replayStartTimestamp!!.time })
+      .containsExactly(3_000L, 2_000L)
+      .inOrder()
+  }
+
+  @Test
+  fun `the segment buffered at a forward wall-clock jump ages by the time that passed`() {
+    val frames = fixture.storeFrames()
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    fixture.elapse(3_000)
+    fixture.jumpWallClock(120_000)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    assertThat(strategy.currentSegment).isEqualTo(1)
+
+    fixture.elapse(fixture.options.sessionReplay.errorReplayDuration)
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    assertThat(strategy.currentSegment).isEqualTo(1)
+
+    fixture.elapse(1)
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    assertThat(strategy.currentSegment).isEqualTo(0)
+  }
+
+  @Test
+  fun `touch events stay with the timeline they were stamped on`() {
+    val frames = fixture.storeFrames()
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val segmentStart = fixture.now
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    fixture.elapse(1_000)
+    strategy.onTouchEvent(fixture.mockedMotionEvent(MotionEvent.ACTION_DOWN))
+    fixture.elapse(2_000)
+    fixture.jumpWallClock(-120_000)
+    val newTimelineStart = fixture.now
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    fixture.elapse(1_000)
+    strategy.onTouchEvent(fixture.mockedMotionEvent(MotionEvent.ACTION_UP))
+    fixture.elapse(1_000)
+
+    strategy.captureReplay(false) {}
+
+    val touches =
+      capturedSegments(count = 2).map { (_, payload) ->
+        payload.filterIsInstance<RRWebInteractionEvent>().map { it.interactionType to it.timestamp }
+      }
+    assertThat(touches[0]).containsExactly(InteractionType.TouchStart to segmentStart + 1_000)
+    assertThat(touches[1]).containsExactly(InteractionType.TouchEnd to newTimelineStart + 1_000)
+  }
+
+  @Test
+  fun `convert continues the buffer's timeline`() {
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val segmentStart = fixture.now
+    fixture.elapse(1_000)
+    // not seen by any frame yet, so the converted strategy must still notice it
+    fixture.jumpWallClock(10_000)
+
+    val converted = strategy.convert()
+
+    assertThat(converted.segmentTimestamp!!.time).isEqualTo(segmentStart + 1_000)
+    converted.onScreenshotRecorded(mock<Bitmap>()) { assertThat(it).isEqualTo(fixture.now) }
+    assertThat(converted.segmentTimestamp!!.time).isEqualTo(fixture.now)
+  }
+
+  @Test
+  fun `follows a forward wall-clock jump longer than the session duration`() {
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    fixture.elapse(1_000)
+    fixture.jumpWallClock(fixture.options.sessionReplay.sessionDuration * 2)
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { assertThat(it).isEqualTo(fixture.now) }
+
+    verify(fixture.options.replayController, never()).stop()
   }
 }
