@@ -261,7 +261,12 @@ constructor(
         val oldTimeline = clock.timeline
         val oldTimelineEnd = oldTimeline.nowMillis()
         val newTimeline = clock.restart()
-        val oldEvents = generateSequence { currentEvents.pollFirst() }.toCollection(ArrayDeque())
+        val oldEvents = ArrayDeque<RRWebEvent>()
+        var event = currentEvents.pollFirst()
+        while (event != null) {
+          oldEvents.add(event)
+          event = currentEvents.pollFirst()
+        }
         val jump = TimelineJump(oldTimeline, oldTimelineEnd, newTimeline, oldEvents)
         StampedFrame(jump.newTimelineStart, jump)
       }

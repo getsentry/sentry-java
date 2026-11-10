@@ -71,7 +71,7 @@ constructor(
   }
 
   override fun pause() {
-    createCurrentSegment("pause", ::buffer)
+    createCurrentSegment("pause") { segment, timeline -> buffer(segment, timeline) }
     super.pause()
   }
 
@@ -192,7 +192,7 @@ constructor(
   }
 
   override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
-    createCurrentSegment("configuration_changed", ::buffer)
+    createCurrentSegment("configuration_changed") { segment, timeline -> buffer(segment, timeline) }
     super.onConfigurationChanged(recorderConfig)
   }
 
@@ -315,7 +315,7 @@ constructor(
       )
       return
     }
-    val request = SegmentRequest(::wholeBuffer)
+    val request = SegmentRequest { wholeBuffer(it) }
     val replayId = currentReplayId
 
     replayExecutor.submit(
