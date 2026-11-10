@@ -48,8 +48,11 @@ testing {
   suites {
     register<JvmTestSuite>("testKtor300") {
       useJUnit()
+      dependencies {
+        implementation(enforcedPlatform("io.ktor:ktor-bom:3.0.0"))
+      }
       sources {
-        java.setSrcDirs(listOf("src/test/java"))
+        java.setSrcDirs(sourceSets.test.get().java.srcDirs)
         resources.setSrcDirs(listOf("src/test/resources"))
       }
     }
@@ -58,16 +61,6 @@ testing {
 
 configurations.named("testKtor300Implementation") {
   extendsFrom(configurations.testImplementation.get())
-}
-
-listOf("testKtor300CompileClasspath", "testKtor300RuntimeClasspath").forEach {
-  configurations.named(it) {
-    resolutionStrategy.eachDependency {
-      if (requested.group == "io.ktor") {
-        useVersion("3.0.0")
-      }
-    }
-  }
 }
 
 kotlin.target.compilations.named("testKtor300") {
