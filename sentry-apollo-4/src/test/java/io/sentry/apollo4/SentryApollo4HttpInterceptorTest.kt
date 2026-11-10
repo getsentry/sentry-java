@@ -4,6 +4,7 @@ import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.ApolloResponse
 import com.apollographql.apollo.api.Operation
+import com.apollographql.apollo.api.http.HttpMethod
 import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
 import com.apollographql.apollo.exception.ApolloException
@@ -14,6 +15,7 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory
+import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ITransaction
@@ -51,12 +53,16 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import okio.Buffer
+import okio.ForwardingSource
+import okio.buffer
 import org.junit.Before
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -287,6 +293,83 @@ abstract class SentryApollo4HttpInterceptorTest(
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=op"))
     assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
+  }
+
+  @Test
+  fun `does not read response body if failed request target does not match`(): Unit = runBlocking {
+    val bodyRead =
+      interceptWithContentType(
+        contentType = null,
+        url = "https://excluded.example/graphql",
+      )
+
+    assertThat(bodyRead).isFalse()
+  }
+
+  @Test
+  fun `does not read multipart mixed response body`(): Unit = runBlocking {
+    val bodyRead = interceptWithContentType("Multipart/Mixed; boundary=graphql")
+
+    assertThat(bodyRead).isFalse()
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `does not read event stream response body`(): Unit = runBlocking {
+    val bodyRead = interceptWithContentType(" text/event-stream ; charset=utf-8")
+
+    assertThat(bodyRead).isFalse()
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `reads json response body for failed request detection`(): Unit = runBlocking {
+    val bodyRead = interceptWithContentType("application/json; charset=utf-8")
+
+    assertThat(bodyRead).isTrue()
+    verify(fixture.scopes).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `reads response body without content type for failed request detection`(): Unit =
+    runBlocking {
+      val bodyRead = interceptWithContentType(null)
+
+      assertThat(bodyRead).isTrue()
+      verify(fixture.scopes).captureEvent(any(), any<Hint>())
+    }
+
+  /** Runs the interceptor against a GraphQL error body and returns whether the body was read. */
+  private suspend fun interceptWithContentType(
+    contentType: String?,
+    url: String = "https://target.example/graphql",
+  ): Boolean {
+    var bodyRead = false
+    val body =
+      object : ForwardingSource(Buffer().writeUtf8("{\"errors\":[{\"message\":\"error\"}]}")) {
+          override fun read(sink: Buffer, byteCount: Long): Long {
+            bodyRead = true
+            return super.read(sink, byteCount)
+          }
+        }
+        .buffer()
+    val request = HttpRequest.Builder(HttpMethod.Post, url).build()
+    val responseBuilder = HttpResponse.Builder(200).body(body)
+    contentType?.let { responseBuilder.addHeader("content-type", it) }
+    val response = responseBuilder.build()
+    val chain =
+      object : HttpInterceptorChain {
+        override suspend fun proceed(request: HttpRequest): HttpResponse = response
+      }
+    val interceptor =
+      SentryApollo4HttpInterceptor(
+        fixture.scopes,
+        captureFailedRequests = true,
+        failedRequestTargets = listOf("target.example"),
+      )
+
+    interceptor.intercept(request, chain)
+    return bodyRead
   }
 
   @Test

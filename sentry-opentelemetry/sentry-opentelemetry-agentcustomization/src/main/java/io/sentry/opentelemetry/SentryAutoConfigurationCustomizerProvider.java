@@ -5,11 +5,13 @@ import io.opentelemetry.sdk.autoconfigure.spi.AutoConfigurationCustomizerProvide
 import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
 import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessorBuilder;
 import io.sentry.InitPriority;
 import io.sentry.Sentry;
 import io.sentry.SentryOptions;
 import io.sentry.internal.ManifestVersionReader;
 import io.sentry.protocol.SdkVersion;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -106,7 +108,16 @@ public final class SentryAutoConfigurationCustomizerProvider
     return tracerProvider
         .setSampler(new SentrySampler())
         .addSpanProcessor(new OtelSentrySpanProcessor())
-        .addSpanProcessor(BatchSpanProcessor.builder(new SentrySpanExporter()).build());
+        .addSpanProcessor(createBatchSpanProcessor(config));
+  }
+
+  private BatchSpanProcessor createBatchSpanProcessor(ConfigProperties config) {
+    final BatchSpanProcessorBuilder builder = BatchSpanProcessor.builder(new SentrySpanExporter());
+    final @Nullable Duration scheduleDelay = config.getDuration("otel.bsp.schedule.delay");
+    if (scheduleDelay != null) {
+      builder.setScheduleDelay(scheduleDelay);
+    }
+    return builder.build();
   }
 
   private Map<String, String> getDefaultProperties() {

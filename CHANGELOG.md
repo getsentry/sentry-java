@@ -3,7 +3,7 @@
 > [!WARNING]
 > SDK 9.0.0 will raise the minimum supported Java and Android versions:
 > - Java 8 support will be dropped. SDK 9.0.0 requires Java 11+. See [#6469](https://github.com/getsentry/sentry-java/issues/6469).
-> - The Android `minSdk` will be raised from 21 to 26. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
+> - The Android `minSdk` will be raised from 21 to 24. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
 
 ## Unreleased
 
@@ -17,6 +17,7 @@
 - Monitor every Spring `@Scheduled` method with Sentry Crons by setting `sentry.monitor-scheduled-tasks=true`, without adding `@SentryCheckIn` to each method. Sentry creates each monitor from the method's `@Scheduled` schedule. Exclude methods with `sentry.exclude-scheduled-tasks` ([#6275](https://github.com/getsentry/sentry-java/pull/6275), [#6276](https://github.com/getsentry/sentry-java/pull/6276), [#6277](https://github.com/getsentry/sentry-java/pull/6277))
 - Quartz `SentryJobListener` can send a monitor config derived from the trigger with check-ins, so Sentry creates or updates the monitor from code. Set the `sentry-upsert-monitor-config` job or trigger data key to `"true"` to send the schedule ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
 - Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = true)` to send the schedule ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
+- Sentry OpenTelemetry integrations now honor `OTEL_BSP_SCHEDULE_DELAY` (`otel.bsp.schedule.delay`) for how often spans are sent to Sentry, instead of always waiting 5 seconds ([#6388](https://github.com/getsentry/sentry-java/pull/6388))
 
 ### Behavioral Changes
 
@@ -30,6 +31,9 @@
 - Session Replay: Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response, when network details are enabled for the URL ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
 - Session Replay: `SentryOkHttpInterceptor` now captures network request and response details only while Session Replay is recording or buffering ([#6486](https://github.com/getsentry/sentry-java/pull/6486))
 - Stop marking an OkHttp call span as failed when a connection attempt to one of the host's addresses fails but OkHttp connects on another ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
+- Stop blocking the main thread while the frame metrics thread starts when the first activity transaction begins ([#6500](https://github.com/getsentry/sentry-java/pull/6500))
+  - On a busy device during cold start this could stall the launcher activity's `onCreate` for hundreds of milliseconds.
+- Do not inspect the response body of streaming Apollo 3 and 4 responses (`multipart/mixed`, `text/event-stream`) for failed requests, which blocked `@defer` and `@stream` ([#6432](https://github.com/getsentry/sentry-java/pull/6432))
 
 ### Dependencies
 
@@ -66,6 +70,7 @@
 - Refuse to send data to servers whose certificate was issued by one of the leaked eMudhra intermediates (CVE-2026-111943) ([#6336](https://github.com/getsentry/sentry-java/pull/6336))
 - Stop sending the whole release as `dist` on ANR and app-exit events when the release has no `+versionCode` ([#6450](https://github.com/getsentry/sentry-java/pull/6450))
   - Relay rejected these values (e.g. `invalid character '@'`). `dist` is now left empty unless `options.dist` is set or the release contains a version code.
+- Accept profiling traces directories whose path contains a `.` on the JVM, and keep profiling disabled after its first start rejects the options instead of starting on the next one ([#6334](https://github.com/getsentry/sentry-java/pull/6334))
 
 ### Dependencies
 

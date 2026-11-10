@@ -45,6 +45,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import io.sentry.samples.android.R
 import io.sentry.samples.android.navigation.common.NavigationSampleConfig
+import io.sentry.samples.android.navigation.common.applyToCurrentOptions
 
 /**
  * Hosts Fragments that each own a Nav3 root (back stack, `SentryNavEffect`, and `NavDisplay`), to
@@ -75,6 +76,9 @@ class Nav3FragmentsActivity : FragmentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    // Nav3Activity applies these options when the sample launches, but the system can restore
+    // this Activity in a new process without Nav3Activity, so apply them here as well.
+    configuration.applyToCurrentOptions()
     NavigationTransactionHistory.install()
     applyActivityUiLoadTransactionSetting(this, configuration.enableActivityUiLoadTransaction)
 

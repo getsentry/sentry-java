@@ -14,7 +14,7 @@ detekt = "1.23.8"
 dokka = "2.0.0"
 espresso = "3.7.0"
 feign = "11.6"
-gummyBears = "0.12.0"
+gummyBears = "0.16.0"
 java8Signature = "1.0"
 jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
@@ -95,7 +95,7 @@ apollo4-kotlin = { module = "com.apollographql.apollo:apollo-runtime", version =
 # sentry-apollo-5 compiles against 5.0.0 (supported floor) and tests against the latest 5.x
 apollo5-kotlin = { module = "com.apollographql.apollo:apollo-runtime", version = "5.0.0" }
 apollo5-kotlin-latest = { module = "com.apollographql.apollo:apollo-runtime", version = "5.1.0" }
-androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.3.0" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version = "1.7.1" }
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.9.1" }
 androidx-activity = { module = "androidx.activity:activity", version = "1.8.2" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version = "1.9.3" }
@@ -108,9 +108,9 @@ androidx-compose-material-icons-extended = { module = "androidx.compose.material
 androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidxCompose" }
 # Note: don't change without testing forwards compatibility
 androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.10.2" }
-androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.2.1" }
+androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.2.2" }
 androidx-core = { module = "androidx.core:core", version = "1.3.2" }
-androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.7.0" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.19.1" }
 androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version = "1.3.5" }
 androidx-lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-common-java8", version.ref = "androidxLifecycle" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" }
