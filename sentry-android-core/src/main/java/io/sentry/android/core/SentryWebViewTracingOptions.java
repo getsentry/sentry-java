@@ -1,13 +1,14 @@
 package io.sentry.android.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 /** Options for connecting the app's trace with web content in a {@code WebView}. */
 public final class SentryWebViewTracingOptions {
 
-  private @NotNull List<String> allowedHosts = new ArrayList<>();
+  private @NotNull List<String> allowedHosts = Collections.emptyList();
 
   /**
    * Returns the hosts {@link SentryWebViewTracing#addTracePropagation(android.webkit.WebView)}
