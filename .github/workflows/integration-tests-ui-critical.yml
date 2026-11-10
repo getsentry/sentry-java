@@ -168,8 +168,8 @@ jobs:
       - name: Run tests
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2.38.0
         env:
-          # Default is 15s. A busy emulator can need longer to start the Maestro driver.
-          MAESTRO_DRIVER_STARTUP_TIMEOUT: 120000
+          # Default is 15s. In case of an emulator cold-boot due to cache invalidation this isn't always enough.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: 60000
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
