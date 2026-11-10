@@ -125,7 +125,7 @@ constructor(
     replayExecutor.submit(
       ReplayRunnable("$TAG.add_frame") {
         // first, so the old timeline is encoded and rotated without this frame
-        frame.jump?.let { closeTimeline(it, currentConfig) }
+        frame.jump?.let { followJump(it, currentConfig) }
         cache?.store(frameTimestamp)
 
         val currentSegmentTimestamp = segmentTimestamp
@@ -182,29 +182,32 @@ constructor(
   /**
    * Captures the segment up to where the old timeline ended, and starts the next on the new one.
    */
-  private fun closeTimeline(jump: TimelineJump, currentConfig: ScreenshotRecorderConfig?) {
-    val currentSegmentTimestamp = segmentTimestamp ?: return
-    if (!isTerminating.get() && currentConfig != null) {
-      val segment =
-        createSegmentInternal(
-          jump.oldTimelineEnd - currentSegmentTimestamp.time,
-          currentSegmentTimestamp,
-          currentReplayId,
-          currentSegment,
-          currentConfig.recordingHeight,
-          currentConfig.recordingWidth,
-          currentConfig.frameRate,
-          currentConfig.bitRate,
-          events = jump.oldEvents,
-        )
-      if (segment is ReplaySegment.Created) {
-        segment.capture(scopes)
-        currentSegment++
+  private fun followJump(jump: TimelineJump, currentConfig: ScreenshotRecorderConfig?) {
+    val currentSegmentTimestamp = segmentTimestamp
+    if (currentSegmentTimestamp != null) {
+      if (!isTerminating.get() && currentConfig != null) {
+        val segment =
+          createSegmentInternal(
+            jump.oldTimelineEnd - currentSegmentTimestamp.time,
+            currentSegmentTimestamp,
+            currentReplayId,
+            currentSegment,
+            currentConfig.recordingHeight,
+            currentConfig.recordingWidth,
+            currentConfig.frameRate,
+            currentConfig.bitRate,
+            events = jump.oldEvents,
+          )
+        if (segment is ReplaySegment.Created) {
+          segment.capture(scopes)
+          currentSegment++
+        }
       }
+      segmentTimestamp = DateUtils.getDateTime(jump.newTimelineStart)
     }
     // frames left from the old timeline would be encoded into the new one's segments
     cache?.rotate(until = jump.oldTimelineEnd)
-    segmentTimestamp = DateUtils.getDateTime(jump.newTimelineStart)
+    executorTimeline = jump.newTimeline
   }
 
   override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
@@ -234,13 +237,14 @@ constructor(
       return
     }
 
-    val requestedAt = clock.nowMillis()
+    val request = SegmentRequest { it.nowMillis() }
     val replayId = currentReplayId
     replayExecutor.submit(
       ReplayRunnable("$TAG.$taskName") {
         // Keep the request time so executor delays do not extend the segment, but read the mutable
         // timeline here so a queued natural boundary cannot make it stale.
         val currentSegmentTimestamp = segmentTimestamp ?: return@ReplayRunnable
+        val requestedAt = request.resolve().first
         val segment =
           createSegmentInternal(
             requestedAt - currentSegmentTimestamp.time,

@@ -34,6 +34,8 @@ import io.sentry.time.TestMonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
 import io.sentry.transport.RateLimiter
 import java.io.File
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit.DAYS
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -136,9 +138,9 @@ class BufferCaptureStrategyTest {
 
     /**
      * Makes [replayCache] keep the frame timestamps added to the returned list, so segments start
-     * at the first frame and last as long as requested.
+     * at the first frame and last as long as requested. Their videos are written to [videoDir].
      */
-    fun storeFrames(): MutableList<Long> {
+    fun storeFrames(videoDir: File? = null): MutableList<Long> {
       val frames = mutableListOf<Long>()
       whenever(replayCache.firstFrameTimestamp()).thenAnswer { frames.firstOrNull() }
       whenever(replayCache.rotate(anyLong())).thenAnswer { invocation ->
@@ -157,13 +159,42 @@ class BufferCaptureStrategyTest {
             any(),
           )
         )
-        .thenAnswer { GeneratedVideo(File("${it.arguments[2]}.mp4"), 1, it.arguments[0] as Long) }
+        .thenAnswer {
+          val video = File(videoDir, "${it.arguments[2]}.mp4")
+          videoDir?.let { video.writeText("video") }
+          GeneratedVideo(video, 1, it.arguments[0] as Long)
+        }
       return frames
+    }
+
+    private val queuedTasks = ArrayDeque<Runnable>()
+
+    /** Holds submitted tasks until [runQueuedTasks], like a busy replay executor. */
+    val queuedExecutor =
+      mock<ScheduledExecutorService> {
+        doAnswer {
+            queuedTasks += it.arguments[0] as Runnable
+            null
+          }
+          .whenever(mock)
+          .submit(any<Runnable>())
+      }
+
+    fun runQueuedTasks() {
+      while (queuedTasks.isNotEmpty()) {
+        queuedTasks.removeFirst().run()
+      }
     }
 
     fun getSut(
       dateProvider: ICurrentDateProvider = ICurrentDateProvider { now },
       replayCacheDir: File? = null,
+      replayExecutor: ScheduledExecutorService = mock {
+        whenever(it.submit(any<Runnable>())).doAnswer { invocation ->
+          (invocation.arguments[0] as Runnable).run()
+          null
+        }
+      },
     ): BufferCaptureStrategy {
       replayCacheDir?.let { whenever(replayCache.replayCacheDir).thenReturn(it) }
       return BufferCaptureStrategy(
@@ -171,12 +202,7 @@ class BufferCaptureStrategyTest {
         scopes,
         dateProvider,
         ticker,
-        mock {
-          whenever(it.submit(any<Runnable>())).doAnswer { invocation ->
-            (invocation.arguments[0] as Runnable).run()
-            null
-          }
-        },
+        replayExecutor,
         mock {
           whenever(it.submit(any<Runnable>())).doAnswer { invocation ->
             (invocation.arguments[0] as Runnable).run()
@@ -624,5 +650,74 @@ class BufferCaptureStrategyTest {
     strategy.onScreenshotRecorded(mock<Bitmap>()) { assertThat(it).isEqualTo(fixture.now) }
 
     verify(fixture.options.replayController, never()).stop()
+  }
+
+  @Test
+  fun `a forward wall-clock jump longer than the session duration drops what was buffered before it`() {
+    val videoDir = tmpDir.newFolder()
+    val frames = fixture.storeFrames(videoDir)
+    val strategy = fixture.getSut()
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    fixture.elapse(2_000)
+    strategy.onConfigurationChanged(fixture.recorderConfig.copy(recordingWidth = 720))
+    assertThat(strategy.currentSegment).isEqualTo(1)
+    fixture.elapse(1_000)
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    strategy.onTouchEvent(fixture.mockedMotionEvent(MotionEvent.ACTION_DOWN))
+    fixture.elapse(1_000)
+    fixture.jumpWallClock(fixture.options.sessionReplay.sessionDuration * 2)
+    val newTimelineStart = fixture.now
+
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+
+    assertThat(strategy.currentSegment).isEqualTo(0)
+    assertThat(File(videoDir, "0.mp4").exists()).isFalse()
+    assertThat(frames).containsExactly(newTimelineStart)
+    verify(fixture.options.replayController, never()).stop()
+
+    fixture.elapse(2_000)
+    strategy.captureReplay(false) {}
+
+    val (segment, payload) = capturedSegments(count = 1).single()
+    assertThat(segment.segmentId).isEqualTo(0)
+    assertThat(segment.replayStartTimestamp!!.time).isEqualTo(newTimelineStart)
+    assertThat(payload.filterIsInstance<RRWebInteractionEvent>()).isEmpty()
+  }
+
+  @Test
+  fun `a segment request made before the jump's frame task ran reads the buffer again in its task`() {
+    val frames = fixture.storeFrames()
+    val strategy = fixture.getSut(replayExecutor = fixture.queuedExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    val segmentStart = fixture.now
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    fixture.runQueuedTasks()
+    fixture.elapse(3_000)
+    fixture.jumpWallClock(DAYS.toMillis(1))
+    val newTimelineStart = fixture.now
+    strategy.onScreenshotRecorded(mock<Bitmap>()) { frames += it }
+    fixture.elapse(2_000)
+
+    // the frame from before the jump is still the first one in the cache here
+    strategy.captureReplay(false) {}
+    fixture.runQueuedTasks()
+
+    verify(fixture.replayCache)
+      .createVideoOf(eq(2_000L), eq(newTimelineStart), eq(0), any(), any(), any(), any(), any())
+    // not a video of the one frame after the jump, stretched over the day before it
+    verify(fixture.replayCache, never())
+      .createVideoOf(
+        anyLong(),
+        eq(segmentStart),
+        anyInt(),
+        anyInt(),
+        anyInt(),
+        anyInt(),
+        anyInt(),
+        any(),
+      )
   }
 }

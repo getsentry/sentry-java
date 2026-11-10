@@ -144,10 +144,14 @@ class SessionCaptureStrategyTest {
 
     private val queuedTasks = ArrayDeque<Runnable>()
 
+    /** Runs once in the next submit, before its task is queued, like another thread getting in. */
+    var beforeNextSubmit: (() -> Unit)? = null
+
     /** Holds submitted tasks until [runQueuedTasks], like a busy replay executor. */
     val queuedExecutor =
       mock<ScheduledExecutorService> {
         doAnswer {
+            beforeNextSubmit?.also { beforeNextSubmit = null }?.invoke()
             queuedTasks += it.arguments[0] as Runnable
             null
           }
@@ -1143,21 +1147,47 @@ class SessionCaptureStrategyTest {
   }
 
   @Test
-  fun `resume starts on the wall clock after it jumped while paused`() {
+  fun `the first frame after resume follows a wall-clock jump while paused`() {
     val strategy = fixture.getSut()
     strategy.start()
     strategy.onConfigurationChanged(fixture.recorderConfig)
+    val segmentStart = fixture.now
     fixture.elapse(2_000)
     strategy.pause()
     fixture.elapse(10_000)
     fixture.jumpWallClock(-120_000)
 
     strategy.resume()
+    val resumedAt = strategy.segmentTimestamp!!.time
     fixture.elapse(1_000)
     strategy.onScreenshotRecorded(mock<Bitmap>()) { assertThat(it).isEqualTo(fixture.now) }
 
-    assertThat(strategy.segmentTimestamp!!.time).isEqualTo(fixture.now - 1_000)
-    // only the paused segment, the jump needs no segment of its own
-    verify(fixture.scopes, times(1)).captureReplay(any(), any())
+    assertThat(resumedAt).isEqualTo(segmentStart + 12_000)
+    // closes what the old timeline recorded since resuming, which is nothing in a real cache
+    verify(fixture.replayCache).encodedVideoOf(1_000, resumedAt, 1)
+    assertThat(strategy.segmentTimestamp!!.time).isEqualTo(fixture.now)
+  }
+
+  @Test
+  fun `a segment request queued behind a wall-clock jump it read the clock before uses the new timeline`() {
+    val strategy = fixture.getSut(replayExecutor = fixture.queuedExecutor)
+    strategy.start()
+    strategy.onConfigurationChanged(fixture.recorderConfig)
+    fixture.runQueuedTasks()
+    val segmentStart = fixture.now
+    fixture.elapse(3_000)
+    fixture.jumpWallClock(-120_000)
+    val newTimelineStart = fixture.now
+    // the flush reads the clock on the old timeline, then a frame follows the jump and queues its
+    // task first
+    fixture.beforeNextSubmit = { strategy.recordFrame() }
+
+    strategy.flush {}
+    fixture.elapse(500)
+    fixture.runQueuedTasks()
+
+    verify(fixture.replayCache).encodedVideoOf(3_000, segmentStart, 0)
+    // not the 2 minutes from the new timeline's start to the request time on the old one
+    verify(fixture.replayCache).encodedVideoOf(500, newTimelineStart, 1)
   }
 }
