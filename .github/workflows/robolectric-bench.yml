@@ -1,7 +1,7 @@
-# Temporary benchmark for #6544. Not for merge.
+# Temporary benchmark for #6544 and #6545. Not for merge.
 # Runs only the core and replay Robolectric tests, so no other Gradle task competes for the CPU.
 # "base" uses the test sources of main (f80997a995), "pr" uses the ones from #6544.
-# Each job runs both, in turns, on the same runner.
+# Each job compares cold and warm android-all jars on the same runner.
 name: Robolectric benchmark
 
 on:
@@ -11,11 +11,12 @@ on:
 
 jobs:
   bench:
-    name: bench paired ${{ matrix.rep }}
+    name: cache ${{ matrix.variant }} ${{ matrix.rep }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        variant: [pr, base]
         rep: [1, 2]
 
     steps:
@@ -36,22 +37,31 @@ jobs:
       - name: CPU
         run: lscpu | grep -E "Model name|^CPU\(s\)"
 
-      # Both variants run on the same runner, in turns, so runner hardware does not affect the
-      # comparison. Round 0 is a warm-up: it downloads the android-all jars and warms the daemon.
-      - name: Paired runs
+      - name: Use the test sources of main
+        if: matrix.variant == 'base'
+        run: git checkout f80997a995 -- sentry-android-core/src/test sentry-android-replay/src/test
+
+      # Cold and warm runs of the same variant on the same runner. A cold run first deletes the
+      # android-all jars that Robolectric downloaded into ~/.m2. Round 0 is a warm-up.
+      - name: Paired cold and warm runs
         run: |
+          JARS=~/.m2/repository/org/robolectric
+          ./gradlew :sentry-android-core:compileReleaseUnitTestSources :sentry-android-replay:compileReleaseUnitTestSources -q
           run() {
-            if [ "$1" = base ]; then
-              git checkout f80997a995 -- sentry-android-core/src/test sentry-android-replay/src/test
-            else
-              git checkout HEAD -- sentry-android-core/src/test sentry-android-replay/src/test
-            fi
-            ./gradlew :sentry-android-core:compileReleaseUnitTestSources :sentry-android-replay:compileReleaseUnitTestSources -q
+            if [ "$1" = cold ]; then rm -rf $JARS; fi
             ./gradlew :sentry-android-core:cleanTestReleaseUnitTest :sentry-android-replay:cleanTestReleaseUnitTest \
               :sentry-android-core:testReleaseUnitTest :sentry-android-replay:testReleaseUnitTest --no-build-cache -q
-            python3 .github/workflows/robolectric-bench.py "$1" "$2"
+            python3 .github/workflows/robolectric-bench.py ${{ matrix.variant }} "$1-$2"
+            echo "BENCH-JARS $1-$2 $(du -sm $JARS | cut -f1) MB"
           }
-          run base r0; run pr r0
-          run base r1; run pr r1
-          run pr r2; run base r2
-          run base r3; run pr r3
+          run cold r0
+          run cold r1; run warm r1
+          run warm r2; run cold r2
+          run cold r3; run warm r3
+
+      - name: Raw download speed of the same jars
+        run: |
+          for jar in $(find ~/.m2/repository/org/robolectric -name '*.jar'); do
+            url="https://repo1.maven.org/maven2/${jar#$HOME/.m2/repository/}"
+            curl -s -o /dev/null -w "BENCH-CURL %{size_download} bytes %{time_total}s %{speed_download} B/s $(basename $jar)\n" "$url"
+          done
