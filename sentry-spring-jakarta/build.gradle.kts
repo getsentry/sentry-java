@@ -5,11 +5,16 @@ import org.springframework.boot.gradle.plugin.SpringBootPlugin
 plugins {
   `java-library`
   id("io.sentry.javadoc")
+  id("io.sentry.spring-boot-matrix")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   alias(libs.plugins.springboot3) apply false
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
+  id("io.sentry.api-validation")
 }
 
 // Published code targets Java 17. Test code is not published and follows the toolchain.
@@ -32,7 +37,7 @@ dependencies {
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
   compileOnly(Config.Libs.springSecurityWeb)
-  compileOnly(Config.Libs.aspectj)
+  compileOnly(libs.aspectjweaver)
   compileOnly(libs.context.propagation)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)
@@ -128,4 +133,10 @@ testing {
       }
     }
   }
+}
+
+// The suites on each Spring Boot 3 version the CI matrix tests.
+springBootMatrix {
+  versions(line = 3)
+  test("integrationTest")
 }

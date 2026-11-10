@@ -26,12 +26,16 @@ class ChildJvmApp private constructor(private val process: Process, private val 
   fun awaitPort(timeoutSeconds: Long = 60): Int {
     val deadline =
       Deadline.after(JavaMonotonicTicker.getInstance(), timeoutSeconds, TimeUnit.SECONDS)
+    var previous: Int? = null
     while (true) {
-      // The app may not have finished writing the file yet, in which case it doesn't parse.
+      // The app may not have finished writing the file yet, and a partly written port such as "54"
+      // of "54321" still parses. Neither Spring Boot nor the fixtures write it atomically, so only
+      // a value that two reads agree on counts.
       val port = portFile.takeIf { it.exists() }?.readText()?.trim()?.toIntOrNull()
-      if (port != null) {
+      if (port != null && port == previous) {
         return port
       }
+      previous = port
       check(process.isAlive) { "App exited with ${process.exitValue()}" }
       check(!deadline.hasPassed()) { "App did not start within ${timeoutSeconds}s" }
       Thread.sleep(100)
@@ -82,3 +86,9 @@ class ChildJvmApp private constructor(private val process: Process, private val 
     }
   }
 }
+
+/** Returns a system property that the Gradle test task sets, failing clearly when it isn't set. */
+fun requiredTestProperty(name: String): String =
+  requireNotNull(System.getProperty(name)) {
+    "System property $name is not set. Run the test through its Gradle task, which sets it."
+  }

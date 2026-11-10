@@ -39,6 +39,7 @@ import io.sentry.util.SpanUtils
 import io.sentry.util.TracingUtils
 import io.sentry.util.UrlUtils
 import io.sentry.vendor.Base64
+import kotlin.coroutines.cancellation.CancellationException
 import okio.Buffer
 import org.jetbrains.annotations.ApiStatus
 
@@ -90,6 +91,8 @@ constructor(
     } catch (e: Throwable) {
       // https://github.com/apollographql/apollo-kotlin/issues/4711 will change error handling in v4
       when (e) {
+        is CancellationException -> span?.status = SpanStatus.CANCELLED
+
         is ApolloHttpException -> {
           statusCode = e.statusCode
           span?.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode)
@@ -148,7 +151,7 @@ constructor(
   }
 
   private fun isIgnored(): Boolean =
-    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
+    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN)
 
   private fun removeSentryInternalHeaders(headers: List<HttpHeader>): List<HttpHeader> =
     headers.filterNot {
@@ -281,6 +284,13 @@ constructor(
   private fun getHeader(key: String, headers: List<HttpHeader>): String? =
     headers.firstOrNull { it.name.equals(key, true) }?.value
 
+  private fun isStreamingResponse(response: HttpResponse): Boolean {
+    val contentType = getHeader("Content-Type", response.headers) ?: return false
+    // strip parameters such as boundary or charset, e.g. "multipart/mixed; boundary=xyz"
+    val mediaType = contentType.substringBefore(';').trim()
+    return STREAMING_MEDIA_TYPES.any { it.equals(mediaType, ignoreCase = true) }
+  }
+
   private fun getRequestHeaders(headers: List<HttpHeader>): MutableMap<String, String>? {
     if (scopes.options.dataCollectionResolver.isDataCollectionConfigured) {
       val requestHeaders = mutableMapOf<String, String>()
@@ -347,6 +357,25 @@ constructor(
     // wrap everything up in a try catch block so every exception is swallowed and degraded
     // gracefully
     try {
+      // not possible to get a parameterized url, but we remove at least the
+      // query string and the fragment.
+      // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query
+      // url will be: https://api.github.com/users/getsentry/repos/
+      // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
+      // but that's not possible
+      val urlDetails = UrlUtils.parse(request.url, scopes.options.dataCollectionResolver)
+
+      // return before reading the response body if it's not a target match
+      if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {
+        return
+      }
+
+      // streaming responses (e.g. multipart incremental delivery, server-sent events) may never
+      // reach EOF or be unbounded, so peeking at them would block or buffer indefinitely
+      if (isStreamingResponse(response)) {
+        return
+      }
+
       // we pay the price to read the response in the memory to check if there's any errors
       // GraphQL does not throw status code 400+ for every type of error
       val body =
@@ -360,19 +389,6 @@ constructor(
 
       // if there response body does not have the errors field, do not raise an issue
       if (body.isEmpty() || !regex.containsMatchIn(body)) {
-        return
-      }
-
-      // not possible to get a parameterized url, but we remove at least the
-      // query string and the fragment.
-      // url example: https://api.github.com/users/getsentry/repos/#fragment?query=query
-      // url will be: https://api.github.com/users/getsentry/repos/
-      // ideally we'd like a parameterized url: https://api.github.com/users/{user}/repos/
-      // but that's not possible
-      val urlDetails = UrlUtils.parse(request.url, scopes.options.dataCollectionResolver)
-
-      // return if its not a target match
-      if (!PropagationTargetsUtils.contain(failedRequestTargets, urlDetails.urlOrFallback)) {
         return
       }
 
@@ -470,6 +486,8 @@ constructor(
     const val SENTRY_APOLLO_3_VARIABLES = "SENTRY-APOLLO-3-VARIABLES"
     const val SENTRY_APOLLO_3_OPERATION_TYPE = "SENTRY-APOLLO-3-OPERATION-TYPE"
     const val DEFAULT_CAPTURE_FAILED_REQUESTS = true
+
+    private val STREAMING_MEDIA_TYPES = setOf("multipart/mixed", "text/event-stream")
 
     init {
       SentryIntegrationPackageStorage.getInstance()

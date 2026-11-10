@@ -415,7 +415,7 @@ class ScopesTest {
 
     val hints = HintUtils.createWithTypeCheckHint({})
     sut.captureEvent(event, hints)
-    assertEquals(span.spanContext, event.contexts.trace)
+    assertTraceContextDefaultsToOk(span.spanContext, event.contexts.trace)
     verify(mockClient).captureEvent(eq(event), any(), eq(hints))
   }
 
@@ -431,7 +431,7 @@ class ScopesTest {
 
     val hints = HintUtils.createWithTypeCheckHint({})
     sut.captureEvent(event, hints)
-    assertEquals(span.spanContext, event.contexts.trace)
+    assertTraceContextDefaultsToOk(span.spanContext, event.contexts.trace)
     verify(mockClient).captureEvent(eq(event), any(), eq(hints))
   }
 
@@ -448,7 +448,7 @@ class ScopesTest {
 
     val hints = HintUtils.createWithTypeCheckHint({})
     sut.captureEvent(event, hints)
-    assertEquals(span.spanContext, event.contexts.trace)
+    assertTraceContextDefaultsToOk(span.spanContext, event.contexts.trace)
     verify(mockClient).captureEvent(eq(event), any(), eq(hints))
   }
 
@@ -729,7 +729,7 @@ class ScopesTest {
     verify(mockClient)
       .captureEvent(
         check {
-          assertEquals(span.spanContext, it.contexts.trace)
+          assertTraceContextDefaultsToOk(span.spanContext, it.contexts.trace)
           assertEquals("tx-name", it.transaction)
         },
         any(),
@@ -1053,39 +1053,6 @@ class ScopesTest {
     scopes.configureScope { it.setTransaction(tx) }
 
     assertEquals("test", scope?.transactionName)
-  }
-
-  @Test
-  fun `when startTransaction is called with different instrumenter, no-op is returned`() {
-    val scopes = generateScopes()
-
-    val transactionContext =
-      TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
-    val transactionOptions = TransactionOptions()
-    val tx = scopes.startTransaction(transactionContext, transactionOptions)
-
-    assertTrue(tx is NoOpTransaction)
-  }
-
-  @Test
-  fun `when startTransaction is called with different instrumenter, no-op is returned 2`() {
-    val scopes = generateScopes() { it.instrumenter = Instrumenter.OTEL }
-
-    val tx = scopes.startTransaction("test", "op")
-
-    assertTrue(tx is NoOpTransaction)
-  }
-
-  @Test
-  fun `when startTransaction is called with configured instrumenter, it works`() {
-    val scopes = generateScopes() { it.instrumenter = Instrumenter.OTEL }
-
-    val transactionContext =
-      TransactionContext("test", "op").also { it.instrumenter = Instrumenter.OTEL }
-    val transactionOptions = TransactionOptions()
-    val tx = scopes.startTransaction(transactionContext, transactionOptions)
-
-    assertFalse(tx is NoOpTransaction)
   }
 
   // endregion
@@ -2186,7 +2153,7 @@ class ScopesTest {
 
     verify(mockClient)
       .captureEvent(
-        check { assertEquals(span.spanContext, it.contexts.trace) },
+        check { assertTraceContextDefaultsToOk(span.spanContext, it.contexts.trace) },
         anyOrNull(),
         anyOrNull(),
       )
@@ -2811,6 +2778,20 @@ class ScopesTest {
   }
 
   @Test
+  fun `log environment attribute uses the scope environment`() {
+    val (sut, mockClient) = getEnabledScopes { it.environment = "testenv" }
+    sut.configureScope(ScopeType.GLOBAL) { it.environment = "scope-env" }
+
+    sut.logger().log(SentryLogLevel.WARN, "log message")
+
+    verify(mockClient)
+      .captureLog(
+        check { assertEquals("scope-env", it.attributes?.get("sentry.environment")?.value) },
+        anyOrNull(),
+      )
+  }
+
+  @Test
   fun `creating log with timestamp works`() {
     val (sut, mockClient) = getEnabledScopes()
 
@@ -3418,6 +3399,21 @@ class ScopesTest {
           assertEquals(3.4, it.value)
           assertEquals("distribution", it.type)
         },
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `metric environment attribute uses the scope environment`() {
+    val (sut, mockClient) = getEnabledScopes { it.environment = "testenv" }
+    sut.configureScope(ScopeType.GLOBAL) { it.environment = "scope-env" }
+
+    sut.metrics().count("metric name")
+
+    verify(mockClient)
+      .captureMetric(
+        check { assertEquals("scope-env", it.attributes?.get("sentry.environment")?.value) },
         anyOrNull(),
         anyOrNull(),
       )
@@ -4473,6 +4469,17 @@ class ScopesTest {
     val hash = StringUtils.calculateStringHash(dsnTest, mock())
     val fileHashFolder = File(file.absolutePath, hash!!)
     return fileHashFolder.absolutePath
+  }
+
+  private fun assertTraceContextDefaultsToOk(
+    expectedContext: SpanContext,
+    actualContext: SpanContext?,
+  ) {
+    assertThat(actualContext).isNotNull()
+    assertThat(actualContext!!.traceId).isEqualTo(expectedContext.traceId)
+    assertThat(actualContext.spanId).isEqualTo(expectedContext.spanId)
+    assertThat(actualContext.status).isEqualTo(SpanStatus.OK)
+    assertThat(expectedContext.status).isNull()
   }
 
   private fun equalTraceContext(expectedContext: TraceContext?): TraceContext? {

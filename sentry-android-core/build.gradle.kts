@@ -1,6 +1,6 @@
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 
 plugins {
   id("com.android.library")
@@ -8,6 +8,10 @@ plugins {
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
+  id("io.sentry.api-validation")
 }
 
 android {
@@ -39,7 +43,7 @@ android {
   // disabled, so unit tests must target release to run at all.
   testBuildType = "release"
 
-  kotlin { compilerOptions.jvmTarget = JVM_1_8 }
+  kotlin { compilerOptions.jvmTarget = JVM_11 }
 
   testOptions {
     animationsDisabled = true
@@ -135,3 +139,5 @@ dependencies {
   testImplementation(libs.androidx.compose.material3)
   testRuntimeOnly(libs.androidx.fragment.ktx)
 }
+
+sentryApiValidation { ignoredPackages.add("io.sentry.android.core.internal") }

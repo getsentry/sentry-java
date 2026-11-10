@@ -21,7 +21,6 @@ import io.sentry.DefaultSpanFactory;
 import io.sentry.IScopes;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
-import io.sentry.Instrumenter;
 import io.sentry.ScopeType;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryDate;
@@ -222,7 +221,6 @@ public final class SentrySpanExporter implements SpanExporter {
                 parentSentrySpan.getSpanContext().getSpanId(),
                 new SpanId(spanId));
     spanContext.setDescription(spanInfo.getDescription());
-    spanContext.setInstrumenter(Instrumenter.SENTRY);
     if (sentrySpanMaybe != null) {
       spanContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());
       spanOptions.setOrigin(sentrySpanMaybe.getSpanContext().getOrigin());
@@ -339,7 +337,6 @@ public final class SentrySpanExporter implements SpanExporter {
         transactionName == null ? DEFAULT_TRANSACTION_NAME : transactionName);
     transactionContext.setTransactionNameSource(transactionNameSource);
     transactionContext.setOperation(spanInfo.getOp());
-    transactionContext.setInstrumenter(Instrumenter.SENTRY);
     transactionContext.setProfilerId(profilerId);
     if (sentrySpanMaybe != null) {
       transactionContext.setSamplingDecision(sentrySpanMaybe.getSamplingDecision());

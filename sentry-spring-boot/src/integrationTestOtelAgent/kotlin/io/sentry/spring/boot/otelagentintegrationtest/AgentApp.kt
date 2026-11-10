@@ -2,6 +2,7 @@ package io.sentry.spring.boot.otelagentintegrationtest
 
 import io.sentry.test.ChildJvmApp
 import io.sentry.test.MockSentryServer
+import io.sentry.test.requiredTestProperty
 import java.io.Closeable
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.client.RestTemplateBuilder
@@ -19,8 +20,8 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
   private val app =
     ChildJvmApp.start(
       mainClass = "io.sentry.spring.boot.agentfixture.AgentFixtureApplicationKt",
-      classpath = System.getProperty("sentry.test.appClasspath"),
-      jvmArgs = listOf("-javaagent:${System.getProperty("sentry.test.agentJar")}"),
+      classpath = requiredTestProperty("sentry.test.appClasspath"),
+      jvmArgs = listOf("-javaagent:${requiredTestProperty("sentry.test.agentJar")}"),
       // Environment variables, because the agent doesn't read Spring Boot's properties.
       env =
         mapOf(
@@ -33,6 +34,8 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
           "SENTRY_PROFILE_LIFECYCLE" to "TRACE",
           "SENTRY_PROFILING_TRACES_DIR_PATH" to
             "${System.getProperty("java.io.tmpdir")}/sentry-integration-test/profiling-traces",
+          // Tests wait for Sentry's span batches, which are 5 seconds apart by default.
+          "OTEL_BSP_SCHEDULE_DELAY" to "100ms",
           "OTEL_TRACES_EXPORTER" to "none",
           "OTEL_METRICS_EXPORTER" to "none",
           "OTEL_LOGS_EXPORTER" to "none",
@@ -58,7 +61,7 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
   }
 
   companion object {
-    val autoInit = System.getProperty("sentry.test.agentAutoInit").toBoolean()
+    val autoInit = requiredTestProperty("sentry.test.agentAutoInit").toBoolean()
 
     /**
      * The app most test classes share. It takes seconds to start, so each test JVM starts it once

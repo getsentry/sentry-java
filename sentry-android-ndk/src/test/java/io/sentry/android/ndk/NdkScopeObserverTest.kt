@@ -184,4 +184,15 @@ class NdkScopeObserverTest {
 
     verify(fixture.nativeScope).clearAttachments()
   }
+
+  @Test
+  fun `set environments forwards call to native scope`() {
+    val sut = fixture.getSut()
+
+    sut.setEnvironment(null)
+    verify(fixture.nativeScope).setEnvironment(eq(null))
+
+    sut.setEnvironment("production")
+    verify(fixture.nativeScope).setEnvironment(eq("production"))
+  }
 }

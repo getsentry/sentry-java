@@ -2,6 +2,9 @@ plugins {
   id("com.android.library")
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
 }
 
 android {
@@ -28,6 +31,5 @@ android {
 
 dependencies {
   api(projects.sentryAndroidCore)
-  api(projects.sentryAndroidNdk)
   api(projects.sentryAndroidReplay)
 }

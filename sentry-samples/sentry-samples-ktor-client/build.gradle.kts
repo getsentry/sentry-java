@@ -2,25 +2,29 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   application
   alias(libs.plugins.gradle.versions)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 application { mainClass.set("io.sentry.samples.ktorClient.Main") }
 
 configure<JavaPluginExtension> {
-  sourceCompatibility = JavaVersion.VERSION_1_8
-  targetCompatibility = JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_11
+  targetCompatibility = JavaVersion.VERSION_11
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 }
 
 dependencies {
   implementation(libs.ktor.client.core)
   implementation(libs.ktor.client.java)
   implementation(libs.kotlinx.coroutines)
-  implementation(projects.sentry)
-  implementation(projects.sentryKtorClient)
+  implementation("io.sentry:sentry:$sentryVersion")
+  implementation("io.sentry:sentry-ktor-client:$sentryVersion")
 }
 
 tasks.test { useJUnitPlatform() }

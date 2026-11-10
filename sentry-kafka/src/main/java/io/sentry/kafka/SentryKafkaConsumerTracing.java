@@ -131,7 +131,7 @@ public final class SentryKafkaConsumerTracing {
   }
 
   private boolean isIgnored() {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN);
   }
 
   private <K, V> @Nullable ITransaction startTransaction(

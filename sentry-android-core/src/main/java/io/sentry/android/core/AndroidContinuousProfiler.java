@@ -4,7 +4,6 @@ import static io.sentry.DataCategory.All;
 import static io.sentry.IConnectionStatusProvider.ConnectionStatus.DISCONNECTED;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import android.os.Build;
 import io.sentry.CompositePerformanceCollector;
 import io.sentry.DataCategory;
 import io.sentry.IContinuousProfiler;
@@ -131,6 +130,8 @@ public class AndroidContinuousProfiler
         logger.log(SentryLevel.DEBUG, "Profiler was not started due to sampling decision.");
         return;
       }
+      // A stop only takes effect when the current chunk ends, so a start before then cancels it.
+      shouldStop = false;
       switch (profileLifecycle) {
         case TRACE:
           // rootSpanCounter should never be negative, unless the user changed profile lifecycle
@@ -173,10 +174,6 @@ public class AndroidContinuousProfiler
 
   private void start() {
     initScopes();
-
-    // Debug.startMethodTracingSampling() is only available since Lollipop, but Android Profiler
-    // causes crashes on api 21 -> https://github.com/getsentry/sentry-java/issues/3392
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) return;
 
     // Let's initialize trace folder and profiling interval
     init();
@@ -276,12 +273,6 @@ public class AndroidContinuousProfiler
         // ids
         profilerId = SentryId.EMPTY_ID;
         chunkId = SentryId.EMPTY_ID;
-        return;
-      }
-
-      // onTransactionStart() is only available since Lollipop_MR1
-      // and SystemClock.elapsedRealtimeNanos() since Jelly Bean
-      if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.LOLLIPOP_MR1) {
         return;
       }
 

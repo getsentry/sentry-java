@@ -65,7 +65,6 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.check
 import org.mockito.kotlin.clearInvocations
-import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -84,7 +83,6 @@ class ActivityLifecycleIntegrationTest {
     val scopes = mock<Scopes>()
     val options = SentryAndroidOptions().apply { dsn = "https://key@sentry.io/proj" }
     val bundle = mock<Bundle>()
-    val activityFramesTracker = mock<ActivityFramesTracker>()
     val transactionFinishedCallback = mock<TransactionFinishedCallback>()
     lateinit var shadowActivityManager: ShadowActivityManager
 
@@ -129,7 +127,7 @@ class ActivityLifecycleIntegrationTest {
       val processes = mutableListOf(process)
       shadowActivityManager.setProcesses(processes)
 
-      return ActivityLifecycleIntegration(application, buildInfo, activityFramesTracker)
+      return ActivityLifecycleIntegration(application, buildInfo)
     }
 
     fun createView(): View {
@@ -178,16 +176,6 @@ class ActivityLifecycleIntegrationTest {
     sut.close()
 
     verify(fixture.application).unregisterActivityLifecycleCallbacks(any())
-  }
-
-  @Test
-  fun `When ActivityLifecycleIntegration is closed, it should close the ActivityFramesTracker`() {
-    val sut = fixture.getSut()
-    sut.register(fixture.scopes, fixture.options)
-
-    sut.close()
-
-    verify(fixture.activityFramesTracker).stop()
   }
 
   @Test
@@ -704,33 +692,6 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  @Config(sdk = [Build.VERSION_CODES.M])
-  fun `onHeadlessAppStart creates standalone App Start transaction on API 23`() {
-    val sut = fixture.getSut {
-      it.tracesSampleRate = 1.0
-      it.isEnableStandaloneAppStartTracing = true
-    }
-    sut.register(fixture.scopes, fixture.options)
-    prepareHeadlessSdkInitAppStart()
-
-    driveHeadlessAppStart()
-
-    assertEquals(1, fixture.capturedContexts.size)
-    val context = fixture.capturedContexts.single()
-    val options = fixture.capturedOptions.single()
-    val transaction = fixture.createdTransactions.single()
-    assertEquals(ActivityLifecycleIntegration.STANDALONE_APP_START_OP, context.operation)
-    assertEquals("App Start", context.name)
-    assertEquals(DateUtils.millisToNanos(100), options.startTimestamp!!.nanoTimestamp())
-    assertEquals(
-      transaction.spanContext.traceId,
-      AppStartMetrics.getInstance().getAppStartTraceId(),
-    )
-    assertTrue(transaction.isFinished)
-    assertEquals(SpanStatus.OK, transaction.status)
-  }
-
-  @Test
   fun `onHeadlessAppStart creates standalone App Start transaction when appStartType is WARM`() {
     val sut = fixture.getSut {
       it.tracesSampleRate = 1.0
@@ -835,18 +796,6 @@ class ActivityLifecycleIntegrationTest {
           )
         },
       )
-  }
-
-  @Test
-  fun `Activity gets added to ActivityFramesTracker during transaction creation`() {
-    val sut = fixture.getSut()
-    fixture.options.tracesSampleRate = 1.0
-    sut.register(fixture.scopes, fixture.options)
-
-    val activity = mock<Activity>()
-    sut.onActivityStarted(activity)
-
-    verify(fixture.activityFramesTracker).addActivity(eq(activity))
   }
 
   @Test
@@ -2302,19 +2251,6 @@ class ActivityLifecycleIntegrationTest {
     // once for the screen, and once for the tracing propagation context
     verify(fixture.scopes, times(2)).configureScope(any())
     assertNotSame(propagationContextAfterNewTrace, scope.propagationContext)
-  }
-
-  @Test
-  fun `when transaction is finished, sets frame metrics`() {
-    val sut = fixture.getSut()
-    fixture.options.tracesSampleRate = 1.0
-    sut.register(fixture.scopes, fixture.options)
-
-    val activity = mock<Activity>()
-    sut.onActivityCreated(activity, fixture.bundle)
-
-    fixture.transaction.forceFinish(OK, false, null)
-    verify(fixture.activityFramesTracker).setMetrics(activity, fixture.transaction.eventId)
   }
 
   @Test

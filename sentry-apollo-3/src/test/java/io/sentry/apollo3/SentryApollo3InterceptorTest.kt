@@ -1,6 +1,7 @@
 package io.sentry.apollo3
 
 import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo3.api.http.HttpMethod
 import com.apollographql.apollo3.api.http.HttpRequest
 import com.apollographql.apollo3.api.http.HttpResponse
 import com.apollographql.apollo3.exception.ApolloException
@@ -11,11 +12,13 @@ import com.google.common.truth.Truth.assertThat
 import io.sentry.BaggageHeader
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory
+import io.sentry.Hint
 import io.sentry.ILogger
 import io.sentry.IScopes
 import io.sentry.ITransaction
 import io.sentry.Scope
 import io.sentry.ScopeCallback
+import io.sentry.ScopeType
 import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.DEFAULT_PROPAGATION_TARGETS
@@ -35,8 +38,10 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.util.Apollo3PlatformTestManipulator
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -45,12 +50,16 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
+import okio.Buffer
+import okio.ForwardingSource
+import okio.buffer
 import org.junit.Before
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.check
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
@@ -71,6 +80,9 @@ class SentryApollo3InterceptorTest {
         doAnswer { (it.arguments[0] as ScopeCallback).run(scope) }
           .whenever(it)
           .configureScope(any())
+        doAnswer { (it.arguments[1] as ScopeCallback).run(scope) }
+          .whenever(it)
+          .configureScope(anyOrNull<ScopeType>(), any())
       }
     private var httpInterceptor =
       SentryApollo3HttpInterceptor(scopes, captureFailedRequests = false)
@@ -211,6 +223,25 @@ class SentryApollo3InterceptorTest {
   }
 
   @Test
+  fun `sets span status to cancelled and rethrows CancellationException`(): Unit = runBlocking {
+    val tx =
+      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(tx)
+    val cancellation = CancellationException("cancelled")
+    val chain =
+      object : HttpInterceptorChain {
+        override suspend fun proceed(request: HttpRequest): HttpResponse = throw cancellation
+      }
+    val request = HttpRequest.Builder(HttpMethod.Post, "https://example.com/graphql").build()
+    val interceptor = SentryApollo3HttpInterceptor(fixture.scopes, captureFailedRequests = false)
+
+    val thrown = assertFailsWith<CancellationException> { interceptor.intercept(request, chain) }
+
+    assertThat(thrown).isSameInstanceAs(cancellation)
+    assertThat(tx.children.single().status).isEqualTo(SpanStatus.CANCELLED)
+  }
+
+  @Test
   fun `does not add sentry trace header to the request if host is disallowed`() {
     fixture.options.setTracePropagationTargets(listOf("some-host-that-does-not-exist"))
     executeQuery(isSpanActive = false)
@@ -269,6 +300,83 @@ class SentryApollo3InterceptorTest {
     assertTrue(baggageHeaderValues[0].contains("sentry-public_key=key"))
     assertTrue(baggageHeaderValues[0].contains("sentry-transaction=op"))
     assertTrue(baggageHeaderValues[0].contains("sentry-trace_id"))
+  }
+
+  @Test
+  fun `does not read response body if failed request target does not match`(): Unit = runBlocking {
+    val bodyRead =
+      interceptWithContentType(
+        contentType = null,
+        url = "https://excluded.example/graphql",
+      )
+
+    assertThat(bodyRead).isFalse()
+  }
+
+  @Test
+  fun `does not read multipart mixed response body`(): Unit = runBlocking {
+    val bodyRead = interceptWithContentType("Multipart/Mixed; boundary=graphql")
+
+    assertThat(bodyRead).isFalse()
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `does not read event stream response body`(): Unit = runBlocking {
+    val bodyRead = interceptWithContentType(" text/event-stream ; charset=utf-8")
+
+    assertThat(bodyRead).isFalse()
+    verify(fixture.scopes, never()).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `reads json response body for failed request detection`(): Unit = runBlocking {
+    val bodyRead = interceptWithContentType("application/json; charset=utf-8")
+
+    assertThat(bodyRead).isTrue()
+    verify(fixture.scopes).captureEvent(any(), any<Hint>())
+  }
+
+  @Test
+  fun `reads response body without content type for failed request detection`(): Unit =
+    runBlocking {
+      val bodyRead = interceptWithContentType(null)
+
+      assertThat(bodyRead).isTrue()
+      verify(fixture.scopes).captureEvent(any(), any<Hint>())
+    }
+
+  /** Runs the interceptor against a GraphQL error body and returns whether the body was read. */
+  private suspend fun interceptWithContentType(
+    contentType: String?,
+    url: String = "https://target.example/graphql",
+  ): Boolean {
+    var bodyRead = false
+    val body =
+      object : ForwardingSource(Buffer().writeUtf8("{\"errors\":[{\"message\":\"error\"}]}")) {
+          override fun read(sink: Buffer, byteCount: Long): Long {
+            bodyRead = true
+            return super.read(sink, byteCount)
+          }
+        }
+        .buffer()
+    val request = HttpRequest.Builder(HttpMethod.Post, url).build()
+    val responseBuilder = HttpResponse.Builder(200).body(body)
+    contentType?.let { responseBuilder.addHeader("content-type", it) }
+    val response = responseBuilder.build()
+    val chain =
+      object : HttpInterceptorChain {
+        override suspend fun proceed(request: HttpRequest): HttpResponse = response
+      }
+    val interceptor =
+      SentryApollo3HttpInterceptor(
+        fixture.scopes,
+        captureFailedRequests = true,
+        failedRequestTargets = listOf("target.example"),
+      )
+
+    interceptor.intercept(request, chain)
+    return bodyRead
   }
 
   @Test

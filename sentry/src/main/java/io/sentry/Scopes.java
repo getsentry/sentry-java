@@ -849,7 +849,7 @@ public final class Scopes implements IScopes {
               "Instance is disabled and this 'captureTransaction' call is a no-op.");
     } else {
       try {
-        sentryId = getClient().captureProfileChunk(profilingContinuousData, getScope());
+        sentryId = getClient().captureProfileChunk(profilingContinuousData, getCombinedScopeView());
       } catch (Throwable e) {
         getOptions()
             .getLogger()
@@ -885,7 +885,7 @@ public final class Scopes implements IScopes {
               "Instance is disabled and this 'startTransaction' returns a no-op.");
       transaction = NoOpTransaction.getInstance();
     } else if (SpanUtils.isIgnored(
-        getOptions().getIgnoredSpanOrigins(), transactionContext.getOrigin())) {
+        getOptions().getIgnoredSpanOriginFilters(), transactionContext.getOrigin())) {
       getOptions()
           .getLogger()
           .log(
@@ -894,15 +894,6 @@ public final class Scopes implements IScopes {
               transactionContext.getOrigin());
       transaction = NoOpTransaction.getInstance();
 
-    } else if (!getOptions().getInstrumenter().equals(transactionContext.getInstrumenter())) {
-      getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.DEBUG,
-              "Returning no-op for instrumenter %s as the SDK has been configured to use instrumenter %s",
-              transactionContext.getInstrumenter(),
-              getOptions().getInstrumenter());
-      transaction = NoOpTransaction.getInstance();
     } else if (!getOptions().isTracingEnabled()) {
       getOptions()
           .getLogger()

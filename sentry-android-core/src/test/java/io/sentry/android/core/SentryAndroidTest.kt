@@ -178,6 +178,7 @@ class SentryAndroidTest {
   fun `set up`() {
     Sentry.close()
     AppStartMetrics.getInstance().clear()
+    ContextUtils.resetInstance()
     context = ApplicationProvider.getApplicationContext()
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
     fixture.shadowActivityManager = Shadow.extract(activityManager)
@@ -573,7 +574,6 @@ class SentryAndroidTest {
 
     fixture.initSut(context = mock<Application>()) { options ->
       options.dsn = "https://key@sentry.io/123"
-      options.isEnablePerformanceV2 = true
     }
     assertEquals(42, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
     assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStarted())
@@ -588,7 +588,6 @@ class SentryAndroidTest {
     SentryShadowProcess.setStartUptimeMillis(42)
     fixture.initSut(context = mock<Application>()) { options ->
       options.dsn = "https://key@sentry.io/123"
-      options.isEnablePerformanceV2 = true
     }
 
     assertEquals(99, AppStartMetrics.getInstance().sdkInitTimeSpan.startUptimeMs)

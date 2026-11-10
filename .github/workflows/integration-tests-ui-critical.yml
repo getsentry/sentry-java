@@ -22,23 +22,18 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
 
-    env:
-      GRADLE_ENCRYPTION_KEY: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Java 17
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
-        with:
-          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       - name: Build debug APK
         run: make assembleUiTestCriticalRelease
@@ -110,6 +105,30 @@ jobs:
           fi
           echo "version=$("$SDK/cmdline-tools/latest/bin/sdkmanager" --version 2>/dev/null | grep -Eo '^[0-9][0-9.]*' | head -1)" >> "$GITHUB_OUTPUT"
 
+      # Snapshots only load on the emulator version that created them. The canary channel
+      # moves often, so a cached snapshot from an older emulator is silently rejected and the
+      # emulator cold boots. Tests then run while the system is still busy with first-boot work.
+      # Install the emulator up front (the runner reuses it) and key the AVD cache on its version.
+      - name: Install emulator
+        id: emulator
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          case "${{ matrix.channel }}" in
+            stable) CHANNEL=0 ;;
+            beta) CHANNEL=1 ;;
+            dev) CHANNEL=2 ;;
+            canary) CHANNEL=3 ;;
+            *) echo "Unknown channel: ${{ matrix.channel }}"; exit 1 ;;
+          esac
+          yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --install emulator --channel="$CHANNEL" > /dev/null
+          VERSION=$(grep -E '^Pkg\.Revision=' "$SDK/emulator/source.properties" | cut -d= -f2)
+          if [ -z "$VERSION" ]; then
+            echo "Could not read the emulator version from $SDK/emulator/source.properties"
+            exit 1
+          fi
+          echo "Emulator version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: AVD cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: avd-cache
@@ -117,9 +136,9 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          # Keyed on memory and the cmdline-tools version so incompatible snapshots
-          # and AVDs created by the old, broken avdmanager are invalidated automatically.
-          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}-memory${{ matrix.memory }}-tools${{ steps.cmdline-tools.outputs.version }}
+          # Keyed on memory, the cmdline-tools version and the emulator version so incompatible
+          # snapshots and AVDs created by the old, broken avdmanager are invalidated automatically.
+          key: avd-api-${{ matrix.api-level }}-${{ matrix.arch }}-${{ matrix.target }}-memory${{ matrix.memory }}-tools${{ steps.cmdline-tools.outputs.version }}-emulator${{ steps.emulator.outputs.version }}
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -148,6 +167,9 @@ jobs:
 
       - name: Run tests
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2.38.0
+        env:
+          # Default is 15s. In case of an emulator cold-boot due to cache invalidation this isn't always enough.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: 60000
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
@@ -160,7 +182,7 @@ jobs:
           script: |
             adb uninstall io.sentry.uitest.android.critical || echo "Already uninstalled (or not found)"
             adb install -r -d "${{env.APK_NAME}}"
-            mkdir "${{env.BASE_PATH}}/maestro-logs/" || true; adb emu screenrecord start --time-limit 360 "${{env.BASE_PATH}}/maestro-logs/recording.webm" || true; maestro test "${{env.BASE_PATH}}/maestro" --test-output-dir="${{env.BASE_PATH}}/maestro-logs/test-output" || MAESTRO_EXIT_CODE=$?; adb emu screenrecord stop || true; adb logcat -d > "${{env.BASE_PATH}}/maestro-logs/logcat.txt" || true; exit ${MAESTRO_EXIT_CODE:-0}
+            mkdir "${{env.BASE_PATH}}/maestro-logs/" || true; adb emu screenrecord start --time-limit 360 "${{env.BASE_PATH}}/maestro-logs/recording.webm" || true; maestro test "${{env.BASE_PATH}}/maestro" --test-output-dir="${{env.BASE_PATH}}/maestro-logs/test-output" --debug-output="${{env.BASE_PATH}}/maestro-logs/debug-output" --flatten-debug-output || MAESTRO_EXIT_CODE=$?; adb emu screenrecord stop || true; adb logcat -d > "${{env.BASE_PATH}}/maestro-logs/logcat.txt" || true; exit ${MAESTRO_EXIT_CODE:-0}
 
       - name: Upload Maestro test results
         if: ${{ always() }}

@@ -4,7 +4,6 @@ import android.database.CrossProcessCursor
 import android.database.SQLException
 import io.sentry.IScopes
 import io.sentry.ISpan
-import io.sentry.Instrumenter
 import io.sentry.ScopesAdapter
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.SentryStackTraceFactory
@@ -46,12 +45,12 @@ internal class OpenHelperSpans(
       if (result is CrossProcessCursor) {
         return SentryCrossProcessCursor(result, this, sql) as T
       }
-      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
+      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp)
       span?.spanContext?.origin = TRACE_ORIGIN
       span?.status = SpanStatus.OK
       result
     } catch (e: Throwable) {
-      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp, Instrumenter.SENTRY)
+      span = scopes.span?.startChild("db.sql.query", sql, startTimestamp)
       span?.spanContext?.origin = TRACE_ORIGIN
       span?.status = SpanStatus.INTERNAL_ERROR
       span?.throwable = e

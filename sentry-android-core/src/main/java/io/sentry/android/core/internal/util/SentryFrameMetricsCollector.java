@@ -12,7 +12,6 @@ import android.os.Looper;
 import android.view.Choreographer;
 import android.view.FrameMetrics;
 import android.view.Window;
-import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
@@ -35,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 @ApiStatus.Internal
 public final class SentryFrameMetricsCollector implements Application.ActivityLifecycleCallbacks {
@@ -48,8 +48,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   private final @NotNull ILogger logger;
   private volatile @Nullable Handler handler;
+  private volatile boolean handlerThreadStarted = false;
   private final @NotNull AutoClosableReentrantLock handlerLock = new AutoClosableReentrantLock();
-  private @Nullable WeakReference<Window> currentWindow;
+  // volatile: read from the HandlerThread in onHandlerReady while set on the main thread
+  private volatile @Nullable WeakReference<Window> currentWindow;
   private final @NotNull Map<String, FrameMetricsCollectorListener> listenerMap =
       new ConcurrentHashMap<>();
   private boolean isAvailable = false;
@@ -65,7 +67,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private final @NotNull ConcurrentSkipListSet<DelayedFrame> delayedFrames =
       new ConcurrentSkipListSet<>();
 
-  @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -73,7 +74,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, options, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull ILogger logger,
@@ -81,7 +81,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, logger, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
+  @SuppressLint("DiscouragedPrivateApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -110,14 +110,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (!(appContext instanceof Application)) {
       return;
     }
-    // FrameMetrics api is only available since sdk version N
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
-      return;
-    }
     isAvailable = true;
 
-    // The frame metrics HandlerThread is started lazily on the first startCollection() call.
-    // Starting it here would block the main thread on HandlerThread.getLooper() during SDK init.
+    // The frame metrics HandlerThread is started by prepare() or the first startCollection() call,
+    // and never waited on: see ensureHandlerThreadStarted().
 
     // We have to register the lifecycle callback, even if no profile is started, otherwise when we
     // start a profile, we wouldn't have the current activity and couldn't get the frameMetrics.
@@ -240,7 +236,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
    * Return time spent on the main thread (cpu) for frame creation. It doesn't consider time spent
    * on the render thread (gpu).
    */
-  @RequiresApi(api = Build.VERSION_CODES.N)
   private long getFrameCpuDuration(final @NotNull FrameMetrics frameMetrics) {
     // Inspired by JankStats
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt;l=74-79;drc=1de6215c6bd9e887e3d94556e9ac55cfb7b8c797
@@ -294,24 +289,49 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   }
 
   /**
-   * Lazily starts the background HandlerThread used to receive frame metrics. Deferred out of the
-   * constructor because {@link HandlerThread#getLooper()} blocks the caller (the main thread during
-   * SDK init) until the thread is ready, and the handler is only needed once collection starts.
+   * Starts the background HandlerThread ahead of the first {@link #startCollection} call, so its
+   * looper is ready by the time the first frame is drawn. Does not block.
+   */
+  public void prepare() {
+    if (isAvailable) {
+      ensureHandlerThreadStarted();
+    }
+  }
+
+  /**
+   * Starts the background HandlerThread used to receive frame metrics without waiting for it: the
+   * handler is created on the new thread in {@link HandlerThread#onLooperPrepared()}. Calling
+   * {@link HandlerThread#getLooper()} here would block the caller (the main thread) until the new
+   * thread is scheduled, which takes hundreds of ms on a busy device.
    */
   private void ensureHandlerThreadStarted() {
-    if (handler != null) {
+    if (handlerThreadStarted) {
       return;
     }
     try (final @NotNull ISentryLifecycleToken ignored = handlerLock.acquire()) {
-      if (handler == null) {
-        final HandlerThread handlerThread =
-            new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector");
-        handlerThread.setUncaughtExceptionHandler(
-            (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
-        handlerThread.start();
-        handler = new Handler(handlerThread.getLooper());
+      if (handlerThreadStarted) {
+        return;
       }
+      handlerThreadStarted = true;
+      final HandlerThread handlerThread =
+          new HandlerThread("io.sentry.android.core.internal.util.SentryFrameMetricsCollector") {
+            @Override
+            protected void onLooperPrepared() {
+              onHandlerReady(new Handler(getLooper()));
+            }
+          };
+      handlerThread.setUncaughtExceptionHandler(
+          (thread, e) -> logger.log(SentryLevel.ERROR, "Error during frames measurements.", e));
+      handlerThread.start();
     }
+  }
+
+  @VisibleForTesting
+  void onHandlerReady(final @NotNull Handler handler) {
+    this.handler = handler;
+    // startCollection() or an activity start may have happened before the handler existed, in
+    // which case trackCurrentWindow() skipped attaching the listener
+    trackCurrentWindow();
   }
 
   public void stopCollection(final @Nullable String listenerId) {
@@ -321,13 +341,14 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     if (listenerId != null) {
       listenerMap.remove(listenerId);
     }
-    Window window = currentWindow != null ? currentWindow.get() : null;
+    // read the volatile field once: onActivityStopped may null it concurrently
+    final @Nullable WeakReference<Window> windowRef = currentWindow;
+    final @Nullable Window window = windowRef != null ? windowRef.get() : null;
     if (window != null && listenerMap.isEmpty()) {
       stopTrackingWindow(window);
     }
   }
 
-  @SuppressLint("NewApi")
   private void stopTrackingWindow(final @NotNull Window window) {
     new Handler(Looper.getMainLooper())
         .post(
@@ -353,9 +374,10 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     trackCurrentWindow();
   }
 
-  @SuppressLint("NewApi")
   private void trackCurrentWindow() {
-    @Nullable Window window = currentWindow != null ? currentWindow.get() : null;
+    // read the volatile field once: onActivityStopped may null it concurrently
+    final @Nullable WeakReference<Window> windowRef = currentWindow;
+    final @Nullable Window window = windowRef != null ? windowRef.get() : null;
     if (window == null || !isAvailable) {
       return;
     }
@@ -512,7 +534,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @ApiStatus.Internal
   public interface WindowFrameMetricsManager {
-    @RequiresApi(api = Build.VERSION_CODES.N)
     default void addOnFrameMetricsAvailableListener(
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener,
@@ -523,7 +544,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       window.addOnFrameMetricsAvailableListener(frameMetricsAvailableListener, handler);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     default void removeOnFrameMetricsAvailableListener(
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener) {

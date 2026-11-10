@@ -175,7 +175,7 @@ public final class SentryFeignClient implements Client {
   }
 
   private boolean isIgnored() {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN);
   }
 
   private void addBreadcrumb(final @NotNull Request request, final @Nullable Response response) {

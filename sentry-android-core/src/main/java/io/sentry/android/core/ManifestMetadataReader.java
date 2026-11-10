@@ -141,8 +141,6 @@ final class ManifestMetadataReader {
 
   static final String SEND_MODULES = "io.sentry.send-modules";
 
-  static final String ENABLE_PERFORMANCE_V2 = "io.sentry.performance-v2.enable";
-
   static final String ENABLE_STANDALONE_APP_START_TRACING =
       "io.sentry.standalone-app-start-tracing.enable";
 
@@ -573,9 +571,6 @@ final class ManifestMetadataReader {
 
         options.setSendModules(readBool(metadata, logger, SEND_MODULES, options.isSendModules()));
 
-        options.setEnablePerformanceV2(
-            readBool(metadata, logger, ENABLE_PERFORMANCE_V2, options.isEnablePerformanceV2()));
-
         options.setEnableStandaloneAppStartTracing(
             readBool(
                 metadata,
@@ -801,13 +796,12 @@ final class ManifestMetadataReader {
           options.setSpotlightConnectionUrl(spotlightUrl);
         }
 
-        // Screenshot masking options (default to false for backwards compatibility)
         options
             .getScreenshot()
-            .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, false));
+            .setMaskAllText(readBool(metadata, logger, SCREENSHOT_MASK_ALL_TEXT, true));
         options
             .getScreenshot()
-            .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, false));
+            .setMaskAllImages(readBool(metadata, logger, SCREENSHOT_MASK_ALL_IMAGES, true));
 
         if (options.getAnrProfilingSampleRate() == null) {
           final double anrProfilingSampleRate =

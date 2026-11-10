@@ -64,9 +64,18 @@ it. Gradle runs the two in parallel.
 
 ## Running them
 
-- The `spring-boot-{2,3,4}-matrix.yml` workflows run the suites against each supported Spring Boot
-  version, by setting the version in `gradle/libs.versions.toml`. The suites aren't part of
-  `check`, so a new suite only runs on CI once it's added to its matrix.
+- The `springBootMatrix` block in each Spring module's build file runs its suites on every version
+  of its Spring Boot line in `gradle/spring-boot-versions.json`, with a task per suite and version,
+  e.g. `integrationTestWebfluxBoot3_2_12`. The suites and the SDK compile once, against the
+  catalog's version; only the runtime classpath changes. `allIntegrationTestsBoot3_2_12` runs one
+  version's suites, `allIntegrationTestsBoot3` every version's.
+- The `spring-boot-{2,3,4}-matrix.yml` workflows read the same file and run each version in its own
+  job, e.g. `./gradlew :sentry-spring-jakarta:allIntegrationTestsBoot3_2_12
+  :sentry-spring-boot-jakarta:allIntegrationTestsBoot3_2_12`. The suites aren't part of `check`, so
+  a new suite only runs on CI once it's added to its module's `springBootMatrix` block, and a new
+  module once it's added to its workflow.
+- Suite code may only use APIs that exist in the oldest version of its line. Compiled against a
+  newer one, a missing API fails at runtime with `NoSuchMethodError` or `NoClassDefFoundError`.
 
 ## Gotchas
 
@@ -74,8 +83,9 @@ it. Gradle runs the two in parallel.
   customizes, and that the OpenTelemetry starter instruments, so it adds or replaces trace headers
   on the requests a test sends. Build one outside the context.
 - Sentry exports OpenTelemetry spans in batches every 5 seconds. In-process, flush the tracer
-  provider from the server's hook. With the agent this isn't possible, so each test waits for a
-  batch and negative checks wait at least 6 seconds.
+  provider from the server's hook. With the agent this isn't possible, so set
+  `OTEL_BSP_SCHEDULE_DELAY` on the app to shorten the batch delay, and make negative checks wait
+  well past it.
 - Sentry is global, so a second live Spring context in an OpenTelemetry suite takes it over. Keep
   one live context per JVM (`@DirtiesContext` when a test needs its own).
 - The async profiler rejects a traces path with a `.` anywhere in its absolute form. Put the path

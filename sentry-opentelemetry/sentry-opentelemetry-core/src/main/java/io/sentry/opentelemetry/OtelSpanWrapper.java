@@ -10,11 +10,11 @@ import io.sentry.BaggageHeader;
 import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
-import io.sentry.Instrumenter;
 import io.sentry.MeasurementUnit;
 import io.sentry.NoOpScopesLifecycleToken;
 import io.sentry.NoOpSpan;
 import io.sentry.ScopeBindingMode;
+import io.sentry.ScopeType;
 import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryTraceHeader;
@@ -144,7 +144,7 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
   @Override
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @Nullable SentryDate timestamp) {
-    return startChild(operation, description, timestamp, Instrumenter.SENTRY);
+    return startChild(operation, description, timestamp, new SpanOptions());
   }
 
   @Override
@@ -152,35 +152,12 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
       @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter) {
-    final @NotNull SpanContext spanContext =
-        context.copyForChild(operation, getSpanContext().getSpanId(), null);
-    spanContext.setDescription(description);
-    spanContext.setInstrumenter(instrumenter);
-
-    final @NotNull SpanOptions spanOptions = new SpanOptions();
-    spanOptions.setStartTimestamp(timestamp);
-
-    return startChild(spanContext, spanOptions);
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter,
       @NotNull SpanOptions spanOptions) {
     if (timestamp != null) {
       spanOptions.setStartTimestamp(timestamp);
     }
 
-    final @NotNull SpanContext spanContext =
-        context.copyForChild(operation, getSpanContext().getSpanId(), null);
-    spanContext.setDescription(description);
-    spanContext.setInstrumenter(instrumenter);
-
-    return startChild(spanContext, spanOptions);
+    return startChild(operation, description, spanOptions);
   }
 
   @Override
@@ -229,14 +206,20 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       if (baggage != null && baggage.isMutable()) {
         final AtomicReference<SentryId> replayIdAtomicReference = new AtomicReference<>();
+        final AtomicReference<String> environmentAtomicReference = new AtomicReference<>();
+        // the combined view resolves current -> isolation -> global, matching what event capture
+        // sees, so the DSC cannot disagree with the environment on the events of the same trace
         scopes.configureScope(
+            ScopeType.COMBINED,
             scope -> {
               replayIdAtomicReference.set(scope.getReplayId());
+              environmentAtomicReference.set(scope.getEnvironment());
             });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
             replayIdAtomicReference.get(),
             scopes.getOptions(),
+            environmentAtomicReference.get(),
             this.getSamplingDecision(),
             getTransactionName(),
             getTransactionNameSource());

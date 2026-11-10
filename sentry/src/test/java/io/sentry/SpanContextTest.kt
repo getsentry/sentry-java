@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -19,6 +20,30 @@ class SpanContextTest {
     val trace = SpanContext("op")
     assertNotNull(trace.data[SpanDataConvention.THREAD_ID])
     assertNotNull(trace.data[SpanDataConvention.THREAD_NAME])
+  }
+
+  @Test
+  fun `withDefaultStatus returns a copy with the default status without modifying the original`() {
+    val spanContext = SpanContext("op").apply { origin = "auto.test" }
+
+    val traceContext = spanContext.withDefaultStatus()
+
+    assertThat(traceContext).isNotSameInstanceAs(spanContext)
+    assertThat(traceContext.traceId).isEqualTo(spanContext.traceId)
+    assertThat(traceContext.spanId).isEqualTo(spanContext.spanId)
+    assertThat(traceContext.origin).isEqualTo(spanContext.origin)
+    assertThat(traceContext.status).isEqualTo(SpanStatus.OK)
+    assertThat(spanContext.status).isNull()
+  }
+
+  @Test
+  fun `withDefaultStatus preserves an explicitly set status`() {
+    val spanContext = SpanContext("op").apply { status = SpanStatus.INTERNAL_ERROR }
+
+    val traceContext = spanContext.withDefaultStatus()
+
+    assertThat(traceContext).isNotSameInstanceAs(spanContext)
+    assertThat(traceContext.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
   }
 
   @Test

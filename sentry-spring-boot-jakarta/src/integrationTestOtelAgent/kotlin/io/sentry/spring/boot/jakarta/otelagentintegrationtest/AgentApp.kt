@@ -2,6 +2,7 @@ package io.sentry.spring.boot.jakarta.otelagentintegrationtest
 
 import io.sentry.test.ChildJvmApp
 import io.sentry.test.MockSentryServer
+import io.sentry.test.requiredTestProperty
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.kafka.test.EmbeddedKafkaKraftBroker
@@ -15,7 +16,7 @@ import org.springframework.kafka.test.EmbeddedKafkaKraftBroker
  * Spring Boot starter.
  */
 object AgentApp {
-  val autoInit = System.getProperty("sentry.test.agentAutoInit").toBoolean()
+  val autoInit = requiredTestProperty("sentry.test.agentAutoInit").toBoolean()
 
   val server = MockSentryServer()
 
@@ -25,8 +26,8 @@ object AgentApp {
   private val app =
     ChildJvmApp.start(
       mainClass = "io.sentry.spring.boot.jakarta.agentfixture.AgentFixtureApplicationKt",
-      classpath = System.getProperty("sentry.test.appClasspath"),
-      jvmArgs = listOf("-javaagent:${System.getProperty("sentry.test.agentJar")}"),
+      classpath = requiredTestProperty("sentry.test.appClasspath"),
+      jvmArgs = listOf("-javaagent:${requiredTestProperty("sentry.test.agentJar")}"),
       // Environment variables, because the agent doesn't read Spring Boot's properties.
       env =
         mapOf(
@@ -40,6 +41,8 @@ object AgentApp {
           "SENTRY_PROFILE_LIFECYCLE" to "TRACE",
           "SENTRY_PROFILING_TRACES_DIR_PATH" to
             "${System.getProperty("java.io.tmpdir")}/sentry-integration-test/profiling-traces",
+          // Tests wait for Sentry's span batches, which are 5 seconds apart by default.
+          "OTEL_BSP_SCHEDULE_DELAY" to "100ms",
           "OTEL_TRACES_EXPORTER" to "none",
           "OTEL_METRICS_EXPORTER" to "none",
           "OTEL_LOGS_EXPORTER" to "none",

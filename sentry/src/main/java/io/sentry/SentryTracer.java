@@ -50,7 +50,6 @@ public final class SentryTracer implements ITransaction {
   private final @NotNull AtomicBoolean isDeadlineTimerRunning = new AtomicBoolean(false);
 
   private @NotNull TransactionNameSource transactionNameSource;
-  private final @NotNull Instrumenter instrumenter;
   private final @NotNull Contexts contexts = new Contexts();
   private final @Nullable CompositePerformanceCollector compositePerformanceCollector;
   private final @NotNull TransactionOptions transactionOptions;
@@ -77,7 +76,6 @@ public final class SentryTracer implements ITransaction {
     this.root = new Span(context, this, scopes, transactionOptions);
 
     this.name = context.getName();
-    this.instrumenter = context.getInstrumenter();
     this.scopes = scopes;
     // Let's collect performance data (cpu, ram, frames) only when the transaction is sampled
     this.compositePerformanceCollector =
@@ -394,34 +392,9 @@ public final class SentryTracer implements ITransaction {
       final @NotNull String operation,
       final @Nullable String description,
       final @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter) {
-    final @NotNull SpanContext spanContext =
-        getSpanContext().copyForChild(operation, parentSpanId, null);
-    spanContext.setDescription(description);
-    spanContext.setInstrumenter(instrumenter);
-
-    final @NotNull SpanOptions spanOptions = new SpanOptions();
-    spanOptions.setStartTimestamp(timestamp);
-
-    return createChild(spanContext, spanOptions);
-  }
-
-  @NotNull
-  ISpan startChild(
-      final @NotNull SpanId parentSpanId,
-      final @NotNull String operation,
-      final @Nullable String description,
-      final @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter,
       final @NotNull SpanOptions spanOptions) {
-    final @NotNull SpanContext spanContext =
-        getSpanContext().copyForChild(operation, parentSpanId, null);
-    spanContext.setDescription(description);
-    spanContext.setInstrumenter(instrumenter);
-
     spanOptions.setStartTimestamp(timestamp);
-
-    return createChild(spanContext, spanOptions);
+    return createChild(parentSpanId, operation, description, spanOptions);
   }
 
   /**
@@ -442,7 +415,6 @@ public final class SentryTracer implements ITransaction {
     final @NotNull SpanContext spanContext =
         getSpanContext().copyForChild(operation, parentSpanId, null);
     spanContext.setDescription(description);
-    spanContext.setInstrumenter(Instrumenter.SENTRY);
 
     return createChild(spanContext, options);
   }
@@ -454,11 +426,8 @@ public final class SentryTracer implements ITransaction {
       return NoOpSpan.getInstance();
     }
 
-    if (!this.instrumenter.equals(spanContext.getInstrumenter())) {
-      return NoOpSpan.getInstance();
-    }
-
-    if (SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), spanOptions.getOrigin())) {
+    if (SpanUtils.isIgnored(
+        scopes.getOptions().getIgnoredSpanOriginFilters(), spanOptions.getOrigin())) {
       return NoOpSpan.getInstance();
     }
 
@@ -469,7 +438,13 @@ public final class SentryTracer implements ITransaction {
     if (children.size() < scopes.getOptions().getMaxSpans()) {
       Objects.requireNonNull(parentSpanId, "parentSpanId is required");
       Objects.requireNonNull(operation, "operation is required");
-      cancelIdleTimer();
+
+      // When this transaction finishes, we want its idle spans to finish as well. We don't let idle
+      // spans cancel the idle timer b/c it would keep the transaction alive until its deadline.
+      if (!spanOptions.isIdle()) {
+        cancelIdleTimer();
+      }
+
       final Span span =
           new Span(
               this,
@@ -624,76 +599,37 @@ public final class SentryTracer implements ITransaction {
 
   @Override
   public @NotNull ISpan startChild(
-      @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter) {
-    return startChild(operation, description, timestamp, instrumenter, new SpanOptions());
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
-      final @NotNull String operation,
-      @Nullable String description,
-      @Nullable SentryDate timestamp,
-      @NotNull Instrumenter instrumenter,
-      @NotNull SpanOptions spanOptions) {
-    return createChild(operation, description, timestamp, instrumenter, spanOptions);
-  }
-
-  @Override
-  public @NotNull ISpan startChild(
       final @NotNull String operation,
       @Nullable String description,
       @Nullable SentryDate timestamp) {
-    return createChild(operation, description, timestamp, Instrumenter.SENTRY, new SpanOptions());
+    return startChild(operation, description, timestamp, new SpanOptions());
+  }
+
+  @Override
+  public @NotNull ISpan startChild(
+      final @NotNull String operation,
+      @Nullable String description,
+      @Nullable SentryDate timestamp,
+      @NotNull SpanOptions spanOptions) {
+    return root.startChild(operation, description, timestamp, spanOptions);
   }
 
   @Override
   public @NotNull ISpan startChild(
       final @NotNull String operation, final @Nullable String description) {
-    return startChild(operation, description, null, Instrumenter.SENTRY, new SpanOptions());
+    return root.startChild(operation, description);
   }
 
   @Override
   public @NotNull ISpan startChild(
       @NotNull String operation, @Nullable String description, @NotNull SpanOptions spanOptions) {
-    return createChild(operation, description, null, Instrumenter.SENTRY, spanOptions);
+    return root.startChild(operation, description, spanOptions);
   }
 
   @Override
   public @NotNull ISpan startChild(
       @NotNull SpanContext spanContext, @NotNull SpanOptions spanOptions) {
     return createChild(spanContext, spanOptions);
-  }
-
-  private @NotNull ISpan createChild(
-      final @NotNull String operation,
-      final @Nullable String description,
-      @Nullable SentryDate timestamp,
-      final @NotNull Instrumenter instrumenter,
-      final @NotNull SpanOptions spanOptions) {
-    if (root.isFinished()) {
-      return NoOpSpan.getInstance();
-    }
-
-    if (!this.instrumenter.equals(instrumenter)) {
-      return NoOpSpan.getInstance();
-    }
-
-    if (children.size() < scopes.getOptions().getMaxSpans()) {
-      return root.startChild(operation, description, timestamp, instrumenter, spanOptions);
-    } else {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "Span operation: %s, description: %s dropped due to limit reached. Returning NoOpSpan.",
-              operation,
-              description);
-      return NoOpSpan.getInstance();
-    }
   }
 
   @Override
@@ -732,14 +668,20 @@ public final class SentryTracer implements ITransaction {
     try (final @NotNull ISentryLifecycleToken ignored = tracerLock.acquire()) {
       if (baggage.isMutable()) {
         final AtomicReference<SentryId> replayId = new AtomicReference<>();
+        final AtomicReference<String> environment = new AtomicReference<>();
+        // the combined view resolves current -> isolation -> global, matching what event capture
+        // sees, so the DSC cannot disagree with the environment on the events of the same trace
         scopes.configureScope(
+            ScopeType.COMBINED,
             scope -> {
               replayId.set(scope.getReplayId());
+              environment.set(scope.getEnvironment());
             });
         baggage.setValuesFromTransaction(
             getSpanContext().getTraceId(),
             replayId.get(),
             scopes.getOptions(),
+            environment.get(),
             this.getSamplingDecision(),
             getName(),
             getTransactionNameSource());
@@ -758,10 +700,20 @@ public final class SentryTracer implements ITransaction {
     return null;
   }
 
+  /**
+   * Returns true if no child span should keep this transaction from finishing.
+   *
+   * <p>Ignores idle spans. Including them would mean an idle transaction would never restart its
+   * idle timer once it had an unfinished idle span, causing the transaction to always live until
+   * its deadline.
+   */
   private boolean hasAllChildrenFinished() {
     @NotNull final ListIterator<Span> iterator = this.children.listIterator();
     while (iterator.hasNext()) {
       @NotNull final Span span = iterator.next();
+      if (span.getOptions().isIdle()) {
+        continue;
+      }
       // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
       // date
       if (!span.isFinished() && span.getFinishDate() == null) {

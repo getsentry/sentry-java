@@ -17,7 +17,6 @@ import io.sentry.IScopes;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.ISpan;
 import io.sentry.ITransaction;
-import io.sentry.Instrumenter;
 import io.sentry.Integration;
 import io.sentry.NoOpTransaction;
 import io.sentry.PropagationContext;
@@ -43,7 +42,6 @@ import io.sentry.util.Objects;
 import io.sentry.util.TracingUtils;
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -105,21 +103,16 @@ public final class ActivityLifecycleIntegration
   private final @NotNull WeakHashMap<Activity, ITransaction> activitiesWithOngoingTransactions =
       new WeakHashMap<>();
 
-  private final @NotNull ActivityFramesTracker activityFramesTracker;
   private final @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
   private boolean fullyDisplayedCalled = false;
   private final @NotNull AutoClosableReentrantLock fullyDisplayedLock =
       new AutoClosableReentrantLock();
 
   public ActivityLifecycleIntegration(
-      final @NotNull Application application,
-      final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull ActivityFramesTracker activityFramesTracker) {
+      final @NotNull Application application, final @NotNull BuildInfoProvider buildInfoProvider) {
     this.application = Objects.requireNonNull(application, "Application is required");
     this.buildInfoProvider =
         Objects.requireNonNull(buildInfoProvider, "BuildInfoProvider is required");
-    this.activityFramesTracker =
-        Objects.requireNonNull(activityFramesTracker, "ActivityFramesTracker is required");
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.Q) {
       isAllActivityCallbacksAvailable = true;
@@ -166,8 +159,6 @@ public final class ActivityLifecycleIntegration
     if (options != null) {
       options.getLogger().log(SentryLevel.DEBUG, "ActivityLifecycleIntegration removed.");
     }
-
-    activityFramesTracker.stop();
   }
 
   private @NotNull String getActivityName(final @NotNull Activity activity) {
@@ -185,7 +176,6 @@ public final class ActivityLifecycleIntegration
   }
 
   private void startTracing(final @NotNull Activity activity) {
-    WeakReference<Activity> weakActivity = new WeakReference<>(activity);
     if (scopes != null && !isRunningTransactionOrTrace(activity)) {
       if (!performanceEnabled) {
         activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
@@ -201,7 +191,7 @@ public final class ActivityLifecycleIntegration
         final @Nullable SentryDate appStartTime;
         final @Nullable Boolean coldStart;
         final @NotNull TimeSpan appStartTimeSpan =
-            AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback(options);
+            AppStartMetrics.getInstance().getAppStartTimeSpanWithFallback();
 
         // we only track app start for processes that will show an Activity (full launch).
         // Here we check the process importance which will tell us that.
@@ -228,23 +218,6 @@ public final class ActivityLifecycleIntegration
           transactionOptions.setTrimEnd(true);
         }
         transactionOptions.setWaitForChildren(true);
-        transactionOptions.setTransactionFinishedCallback(
-            (finishingTransaction) -> {
-              @Nullable Activity unwrappedActivity = weakActivity.get();
-              if (unwrappedActivity != null) {
-                activityFramesTracker.setMetrics(
-                    unwrappedActivity, finishingTransaction.getEventId());
-              } else {
-                if (options != null) {
-                  options
-                      .getLogger()
-                      .log(
-                          SentryLevel.WARNING,
-                          "Unable to track activity frames as the Activity %s has been destroyed.",
-                          activityName);
-                }
-              }
-            });
 
         // This will be the start timestamp of the transaction, as well as the ttid/ttfd spans
         final @NotNull SentryDate ttidStartTime;
@@ -366,29 +339,19 @@ public final class ActivityLifecycleIntegration
                     getAppStartOp(coldStart),
                     getAppStartDesc(coldStart),
                     appStartTime,
-                    Instrumenter.SENTRY,
                     spanOptions);
 
             finishAppStartSpan();
           }
         }
         final @NotNull ISpan ttidSpan =
-            transaction.startChild(
-                TTID_OP,
-                getTtidDesc(activityName),
-                ttidStartTime,
-                Instrumenter.SENTRY,
-                spanOptions);
+            transaction.startChild(TTID_OP, getTtidDesc(activityName), ttidStartTime, spanOptions);
         ttidSpanMap.put(activity, ttidSpan);
 
         if (timeToFullDisplaySpanEnabled && fullyDisplayedReporter != null && options != null) {
           final @NotNull ISpan ttfdSpan =
               transaction.startChild(
-                  TTFD_OP,
-                  getTtfdDesc(activityName),
-                  ttidStartTime,
-                  Instrumenter.SENTRY,
-                  spanOptions);
+                  TTFD_OP, getTtfdDesc(activityName), ttidStartTime, spanOptions);
           try {
             ttfdSpanMap.put(activity, ttfdSpan);
             ttfdAutoCloseFuture =
@@ -621,15 +584,6 @@ public final class ActivityLifecycleIntegration
       if (!isAllActivityCallbacksAvailable) {
         onActivityPostCreated(activity, null);
         onActivityPreStarted(activity);
-      }
-      if (performanceEnabled) {
-        // The docs on the screen rendering performance tracing
-        // (https://firebase.google.com/docs/perf-mon/screen-traces?platform=android#definition),
-        // state that the tracing starts for every Activity class when the app calls
-        // .onActivityStarted.
-        // Adding an Activity in onActivityCreated leads to Window.FEATURE_NO_TITLE not
-        // working. Moving this to onActivityStarted fixes the problem.
-        activityFramesTracker.addActivity(activity);
       }
     }
   }
@@ -908,12 +862,6 @@ public final class ActivityLifecycleIntegration
   }
 
   @TestOnly
-  @NotNull
-  ActivityFramesTracker getActivityFramesTracker() {
-    return activityFramesTracker;
-  }
-
-  @TestOnly
   @Nullable
   ISpan getAppStartSpan() {
     return appStartSpan;
@@ -981,7 +929,7 @@ public final class ActivityLifecycleIntegration
         endDate != null
             ? endDate
             : AppStartMetrics.getInstance()
-                .getAppStartTimeSpanWithFallback(options)
+                .getAppStartTimeSpanWithFallback()
                 .getProjectedStopTimestamp();
     if (performanceEnabled && appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
@@ -1130,7 +1078,6 @@ public final class ActivityLifecycleIntegration
             APP_START_EXTENDED_OP,
             APP_START_EXTENDED_DESC,
             AndroidDateUtils.getCurrentSentryDateTime(),
-            Instrumenter.SENTRY,
             spanOptions);
 
     return new AppStartExtension.ExtendedAppStart(transaction, extendedSpan);
