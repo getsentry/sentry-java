@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.FutureTask
+import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.TimeoutException
 import kotlin.test.AfterTest
@@ -286,6 +287,25 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     networkCallback.onLost(fixture.network)
 
     verify(observer).onConnectionStatusChanged(ConnectionStatus.DISCONNECTED)
+  }
+
+  @Test
+  fun `an in-flight refresh of a stale cache keeps its query result when another network becomes available`() {
+    val fixture = Fixture.create()
+    val connectionStatusProvider = fixture.createRegisteredProvider()
+    val networkCallback = fixture.captureNetworkCallback()
+    networkCallback.onAvailable(fixture.network)
+    networkCallback.onCapabilitiesChanged(fixture.network, fixture.wifiCapabilities)
+    fixture.ticker.advance(CACHE_EXPIRY_MINUTES, MINUTES)
+    val stall = fixture.stallNetworkCapabilitiesQuery(result = fixture.cellularCapabilities)
+    val refresh = fixture.startOnCallerThread { connectionStatusProvider.connectionType }
+    stall.awaitEntered()
+
+    fixture.onCallerThread { networkCallback.onAvailable(fixture.otherNetwork) }
+    stall.release()
+    val type = refresh.get(TIMEOUT_SECONDS, SECONDS)
+
+    assertThat(type).isEqualTo("cellular")
   }
 
   @Test
@@ -717,8 +737,10 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     val buildInfo = mock<BuildInfoProvider>()
     val logger = mock<ILogger>()
     val network = mock<Network>()
+    val otherNetwork = mock<Network>()
     val wifiCapabilities = capabilities(TRANSPORT_WIFI)
     val cellularCapabilities = capabilities(TRANSPORT_CELLULAR)
+    val ticker = TestMonotonicTicker()
     private val stalls = mutableListOf<Stall>()
     private val callerThreads = mutableListOf<Thread>()
 
@@ -752,7 +774,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     }
 
     fun createProvider(): AndroidConnectionStatusProvider =
-      AndroidConnectionStatusProvider(context, options, buildInfo, TestMonotonicTicker()).also {
+      AndroidConnectionStatusProvider(context, options, buildInfo, ticker).also {
         connectionStatusProvider = it
       }
 
@@ -807,10 +829,10 @@ class AndroidConnectionStatusProviderConcurrencyTest {
           .unregisterTelephonyCallback(any<TelephonyCallback>())
       }
 
-    fun stallNetworkCapabilitiesQuery(): Stall =
+    fun stallNetworkCapabilitiesQuery(result: NetworkCapabilities = wifiCapabilities): Stall =
       newStall().also { stall ->
         whenever(connectivityManager.getNetworkCapabilities(any())).thenAnswer {
-          stall.block(wifiCapabilities)
+          stall.block(result)
         }
       }
 
@@ -876,6 +898,9 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   private companion object {
     /** Bounds every wait, so a regression fails the test instead of hanging the build. */
     const val TIMEOUT_SECONDS = 5L
+
+    /** Longer than the provider's 2-minute cache TTL, so advancing by it makes the cache stale. */
+    const val CACHE_EXPIRY_MINUTES = 3L
 
     /**
      * Bounds a stalled call, which the test releases itself. Much longer than [TIMEOUT_SECONDS], so

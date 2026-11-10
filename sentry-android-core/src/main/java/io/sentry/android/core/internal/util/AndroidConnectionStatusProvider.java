@@ -159,9 +159,9 @@ public final class AndroidConnectionStatusProvider
    * <p><b>Threading policy</b>
    *
    * <p>This container and the snapshots it wraps are shared across threads. Updates publish a new
-   * snapshot via the atomic reference. Synchronous requests for network info are expected to use
-   * compare-and-set to discard the system's response if another update replaces the snapshot while
-   * the synchronous request runs.
+   * snapshot via the atomic reference. Synchronous requests for network info store the system's
+   * response with compare-and-set, and discard it only if another update publishes a fresh snapshot
+   * while the request runs.
    */
   private final @NotNull AtomicReference<ConnectionSnapshot> snapshot;
 
@@ -489,20 +489,31 @@ public final class AndroidConnectionStatusProvider
   }
 
   /**
-   * Queries the active network and stores its {@link NetworkCapabilities capabilities}, unless the
-   * snapshot changed during the query.
+   * Queries the active network and stores its {@link NetworkCapabilities capabilities}.
+   *
+   * <p>If another thread, such as a network callback, replaces the snapshot during the query, the
+   * result is still stored as long as the newer snapshot is stale, keeping that snapshot's network.
+   * For example, {@code onAvailable} only swaps in the network during a network handover. A fresh
+   * newer snapshot has more recent capabilities, or records a lost network, so it's kept instead.
    *
    * @param before the snapshot the refresh request replaces
-   * @return the stored snapshot, or, if another thread such as a network callback replaced {@code
-   *     before} during the query, that newer snapshot
+   * @return the stored snapshot, or the fresh snapshot another thread stored during the query
    */
   private @NotNull ConnectionSnapshot refresh(final @NotNull ConnectionSnapshot before) {
-    final @NotNull ConnectionSnapshot refreshed =
-        before.withCapabilities(
-            queryActiveNetworkCapabilities(),
-            Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES));
-    if (!snapshot.compareAndSet(before, refreshed)) {
-      return snapshot.get();
+    final @Nullable NetworkCapabilities capabilities = queryActiveNetworkCapabilities();
+    final @NotNull Deadline freshUntil =
+        Deadline.after(ticker, CACHE_TTL_MINUTES, TimeUnit.MINUTES);
+    @NotNull ConnectionSnapshot current = before;
+    @NotNull ConnectionSnapshot refreshed;
+    while (true) {
+      refreshed = current.withCapabilities(capabilities, freshUntil);
+      if (snapshot.compareAndSet(current, refreshed)) {
+        break;
+      }
+      current = snapshot.get();
+      if (current.isFresh()) {
+        return current;
+      }
     }
 
     // Without capabilities, statusOf and typeOf query the ConnectivityManager, so we only build the
