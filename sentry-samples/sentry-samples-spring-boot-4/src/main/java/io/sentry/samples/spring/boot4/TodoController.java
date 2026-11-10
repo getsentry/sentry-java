@@ -19,6 +19,7 @@ import reactor.core.scheduler.Schedulers;
 import tools.jackson.databind.ObjectMapper;
 
 @RestController
+@SuppressWarnings("removal")
 public class TodoController {
   private final RestTemplate restTemplate;
   private final WebClient webClient;
