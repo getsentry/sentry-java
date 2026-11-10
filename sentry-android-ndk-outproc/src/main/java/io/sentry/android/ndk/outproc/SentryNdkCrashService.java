@@ -15,7 +15,6 @@ import android.os.Parcel;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.RemoteException;
-import android.os.SystemClock;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
 import io.sentry.SentryEnvelope;
@@ -29,6 +28,7 @@ import io.sentry.android.core.TombstoneIntegration;
 import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.tombstone.TombstoneParser;
 import io.sentry.ndk.SentryNdk.CrashDaemon;
+import io.sentry.time.Deadline;
 import io.sentry.util.FileUtils;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
@@ -571,7 +571,8 @@ public final class SentryNdkCrashService extends Service {
     }
 
     // the app exits once its tombstone is written, a later exit would not match
-    final long deadlineMillis = SystemClock.uptimeMillis() + MATCH_TOLERANCE_MILLIS;
+    final @NotNull Deadline deadline =
+        Deadline.after(options.getMonotonicTicker(), MATCH_TOLERANCE_MILLIS, TimeUnit.MILLISECONDS);
     while (true) {
       final @Nullable ApplicationExitInfo exitInfo =
           findMatchingExitInfo(options, nativeTimestamp, config.appPid);
@@ -591,7 +592,7 @@ public final class SentryNdkCrashService extends Service {
         }
       }
 
-      final long remainingMillis = deadlineMillis - SystemClock.uptimeMillis();
+      final long remainingMillis = deadline.remaining(TimeUnit.MILLISECONDS);
       if (remainingMillis <= 0) {
         return exitInfo != null ? new MergedEnvelope(null, exitInfo.getTimestamp()) : null;
       }
