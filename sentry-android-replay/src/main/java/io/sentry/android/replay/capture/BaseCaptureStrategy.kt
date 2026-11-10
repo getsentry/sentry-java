@@ -35,10 +35,14 @@ import io.sentry.android.replay.gestures.ReplayGestureConverter
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
 import io.sentry.rrweb.RRWebEvent
+import io.sentry.time.AnchoredClock
 import io.sentry.time.Deadline
 import io.sentry.time.MonotonicTicker
+import io.sentry.time.Timestamp
 import io.sentry.transport.ICurrentDateProvider
+import io.sentry.util.AutoClosableReentrantLock
 import java.io.File
+import java.util.ArrayDeque
 import java.util.Date
 import java.util.Deque
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -56,12 +60,14 @@ internal abstract class BaseCaptureStrategy
 constructor(
   private val options: SentryOptions,
   private val scopes: IScopes?,
-  // TODO [v9]: We should consider replacing this with AnchoredClock in V9.
+  // TODO [v9]: Remove ICurrentDateProvider and anchor on options.epochClock (JAVA-827).
   dateProvider: ICurrentDateProvider,
   private val ticker: MonotonicTicker,
   protected val replayExecutor: ScheduledExecutorService,
   protected val persistingExecutor: ScheduledExecutorService,
   private val replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
+  /** The timeline of the recording this strategy takes over, if it continues one. */
+  continuedTimeline: AnchoredClock? = null,
 ) : CaptureStrategy {
   internal companion object {
     private const val TAG = "CaptureStrategy"
@@ -69,7 +75,23 @@ constructor(
     private const val MAX_CONTEXT_VALUES = 100
   }
 
-  private val gestureConverter = ReplayGestureConverter(dateProvider, ticker)
+  protected val clock =
+    ReplayClock(
+      { Timestamp.ofEpochNanos(DateUtils.millisToNanos(dateProvider.currentTimeMillis)) },
+      ticker,
+      continuedTimeline,
+    )
+
+  /**
+   * Makes moving onto a new timeline atomic: checking the wall clock, restarting the clock and
+   * draining [currentEvents] for the segment that closes the old timeline happen together. Touch
+   * events are stamped and added under it too. So two frames can't both follow one jump, and every
+   * touch event stamped on the old timeline is drained while every one stamped on the new one
+   * stays.
+   */
+  private val timelineLock = AutoClosableReentrantLock()
+
+  private val gestureConverter = ReplayGestureConverter({ clock.nowMillis() }, ticker)
 
   protected val isTerminating = AtomicBoolean(false)
   protected var cache: ReplayCache? = null
@@ -132,7 +154,7 @@ constructor(
     this.currentSegment = segmentId
     this.replayType = replayType ?: (if (this is SessionCaptureStrategy) SESSION else BUFFER)
 
-    segmentTimestamp = DateUtils.getCurrentDateTime()
+    segmentTimestamp = DateUtils.getDateTime(clock.nowMillis())
     replayDeadline = Deadline.after(ticker, options.sessionReplay.sessionDuration, MILLISECONDS)
     // the same values MainEventProcessor applies to current-run segments
     recordingMetadata =
@@ -150,7 +172,8 @@ constructor(
   }
 
   override fun resume() {
-    val resumedAt = DateUtils.getCurrentDateTime()
+    // a new segment starts here anyway, so a wall-clock jump while paused needs no segment closed
+    val resumedAt = DateUtils.getDateTime(timelineLock.acquire().use { clock.restart() })
     // Keep the timeline update behind queued frames and pause/flush segment creation.
     replayExecutor.submit(ReplayRunnable("$TAG.resume") { segmentTimestamp = resumedAt })
   }
@@ -216,11 +239,35 @@ constructor(
     this.recorderConfig = recorderConfig
   }
 
+  /**
+   * Stamps a frame captured now. If the wall clock jumped since the previous frame, the recording
+   * first moves onto a new timeline anchored on it, unless the jump is forward by more than
+   * [maxForwardJumpMillis].
+   */
+  protected fun stampFrame(maxForwardJumpMillis: Long = Long.MAX_VALUE): StampedFrame =
+    timelineLock.acquire().use {
+      val jumpMillis = clock.wallClockJumpMillis()
+      if (jumpMillis == 0L || jumpMillis > maxForwardJumpMillis) {
+        StampedFrame(clock.nowMillis(), jumpedTooFar = jumpMillis > maxForwardJumpMillis)
+      } else {
+        val oldTimeline = clock.timeline
+        val oldTimelineEnd = oldTimeline.nowMillis()
+        val newTimelineStart = clock.restart()
+        val oldEvents = generateSequence { currentEvents.pollFirst() }.toCollection(ArrayDeque())
+        StampedFrame(
+          newTimelineStart,
+          TimelineJump(oldTimeline, oldTimelineEnd, newTimelineStart, oldEvents),
+        )
+      }
+    }
+
   override fun onTouchEvent(event: MotionEvent) {
     recorderConfig?.let { config ->
-      val rrwebEvents = gestureConverter.convert(event, config)
-      if (rrwebEvents != null) {
-        currentEvents += rrwebEvents
+      timelineLock.acquire().use {
+        val rrwebEvents = gestureConverter.convert(event, config)
+        if (rrwebEvents != null) {
+          currentEvents += rrwebEvents
+        }
       }
     }
   }
@@ -244,6 +291,25 @@ constructor(
       }
     }
   }
+
+  protected class StampedFrame(
+    val timestamp: Long,
+    /** Set when the recording moved onto a new timeline at this frame. */
+    val jump: TimelineJump? = null,
+    /** The wall clock jumped forward too far to follow, so the frame stayed on the old timeline. */
+    val jumpedTooFar: Boolean = false,
+  )
+
+  /**
+   * Where the old timeline ended and the new one starts, and the touch events stamped on the old
+   * one, which belong to the segment that closes it.
+   */
+  protected class TimelineJump(
+    val oldTimeline: AnchoredClock,
+    val oldTimelineEnd: Long,
+    val newTimelineStart: Long,
+    val oldEvents: Deque<RRWebEvent>,
+  )
 
   private inline fun <T> persistableAtomicNullable(
     initialValue: T? = null,
