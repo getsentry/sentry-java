@@ -26,6 +26,9 @@
 - Session Replay: Send Ktor client network request start and end times in milliseconds, so the requests line up with the replay ([#6619](https://github.com/getsentry/sentry-java/pull/6619))
 - Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
+- Session Replay no longer drops or freezes video when the device clock changes mid-recording ([#6542](https://github.com/getsentry/sentry-java/pull/6542))
+  - The replay shows the change once, as a gap or an overlap, and breadcrumbs and errors stay aligned with the video.
+  - A forward change longer than the session duration (1h) ends a session recording, as reaching that duration does.
 
 ### Dependencies
 
