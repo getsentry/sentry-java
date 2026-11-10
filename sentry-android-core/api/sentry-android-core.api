@@ -759,8 +759,10 @@ public final class io/sentry/android/core/anr/AnrProfilingIntegration : io/sentr
 
 public final class io/sentry/android/core/anr/AnrStackTrace : java/lang/Comparable {
 	public final field stack [Ljava/lang/StackTraceElement;
+	public final field state Ljava/lang/Thread$State;
 	public final field timestampMs J
 	public fun <init> (J[Ljava/lang/StackTraceElement;)V
+	public fun <init> (J[Ljava/lang/StackTraceElement;Ljava/lang/Thread$State;)V
 	public fun compareTo (Lio/sentry/android/core/anr/AnrStackTrace;)I
 	public synthetic fun compareTo (Ljava/lang/Object;)I
 	public static fun deserialize (Ljava/io/DataInputStream;)Lio/sentry/android/core/anr/AnrStackTrace;
