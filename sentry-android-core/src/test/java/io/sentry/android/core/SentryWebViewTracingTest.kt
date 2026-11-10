@@ -9,6 +9,7 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.google.common.truth.Truth.assertThat
 import io.sentry.IScopes
+import io.sentry.OptionsContainer
 import io.sentry.Sentry
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TransactionOptions
@@ -369,12 +370,10 @@ class SentryWebViewTracingTest {
   }
 
   @Test
-  fun `without hosts uses the plain host entries of tracePropagationTargets`() {
-    Sentry.init {
+  fun `without hosts uses the allowed hosts from the options`() {
+    Sentry.init(OptionsContainer.create(SentryAndroidOptions::class.java)) {
       it.dsn = "https://key@sentry.io/123"
-      it.setTracePropagationTargets(
-        listOf("example.com", "https://api.other.org/", ".*\\.other\\.com")
-      )
+      it.webViewTracing.allowedHosts = listOf("example.com")
     }
     val origins = argumentCaptor<Set<String>>()
     mockStatic(WebViewCompat::class.java).use { webViewCompat ->
@@ -394,13 +393,15 @@ class SentryWebViewTracingTest {
       }
     }
 
-    assertThat(origins.firstValue)
-      .containsExactly("https://example.com", "https://*.example.com", "https://api.other.org")
+    assertThat(origins.firstValue).containsExactly("https://example.com", "https://*.example.com")
   }
 
   @Test
-  fun `without hosts connects no page with the default tracePropagationTargets`() {
-    initSentry()
+  fun `without hosts connects no page when the options have none`() {
+    Sentry.init(OptionsContainer.create(SentryAndroidOptions::class.java)) {
+      it.dsn = "https://key@sentry.io/123"
+      it.setTracePropagationTargets(listOf("example.com"))
+    }
 
     assertThat(SentryWebViewTracing.addTracePropagation(webView)).isFalse()
     assertThat(webView.getTag(R.id.sentry_webview_trace_propagation)).isNull()

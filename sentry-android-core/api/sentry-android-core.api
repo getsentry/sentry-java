@@ -441,6 +441,7 @@ public final class io/sentry/android/core/SentryAndroidOptions : io/sentry/Sentr
 	public fun getScreenshot ()Lio/sentry/android/core/SentryScreenshotOptions;
 	public fun getStartupCrashDurationThresholdMillis ()J
 	public fun getTombstoneMergeTimeThresholdMillis ()J
+	public fun getWebViewTracing ()Lio/sentry/android/core/SentryWebViewTracingOptions;
 	public fun isAnrEnabled ()Z
 	public fun isAnrProfilingEnabled ()Z
 	public fun isAnrReportInDebug ()Z
@@ -632,6 +633,12 @@ public final class io/sentry/android/core/SentryWebViewTracing {
 	public static fun addTracePropagation (Landroid/webkit/WebView;)Z
 	public static fun addTracePropagation (Landroid/webkit/WebView;Ljava/util/List;)Z
 	public static fun addTracePropagation (Landroid/webkit/WebView;[Ljava/lang/String;)Z
+}
+
+public final class io/sentry/android/core/SentryWebViewTracingOptions {
+	public fun <init> ()V
+	public fun getAllowedHosts ()Ljava/util/List;
+	public fun setAllowedHosts (Ljava/util/List;)V
 }
 
 public class io/sentry/android/core/SpanFrameMetricsCollector : io/sentry/IPerformanceContinuousCollector, io/sentry/android/core/internal/util/SentryFrameMetricsCollector$FrameMetricsCollectorListener {

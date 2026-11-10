@@ -365,46 +365,4 @@ class WebViewTracePropagationScriptTest {
         "abc\u0000;window.__pwned=1;",
       )
   }
-
-  @Test
-  fun `only plain hosts are taken from tracePropagationTargets`() {
-    val plain =
-      listOf(
-        "example.com",
-        "*.example.org",
-        "https://api.example.net",
-        "https://example.io:8443/",
-        "münchen.de",
-        "localhost",
-      )
-    val skipped =
-      listOf(
-        ".*",
-        "https://api\\.example\\.com/.*",
-        ".*\\.example\\.com",
-        "example.com/api",
-        "https://example.com/.*",
-        "^example\\.com$",
-        "com",
-        "com.",
-        "",
-      )
-
-    assertThat(WebViewTracePropagationScript.hostsFromTracePropagationTargets(plain + skipped))
-      .containsExactlyElementsIn(plain)
-  }
-
-  @Test
-  fun `a tracePropagationTargets entry with a scheme only matches that exact host`() {
-    fun rules(entry: String) = WebViewTracePropagationScript.originRules(listOf(entry), true)
-
-    assertThat(rules("https://api.example.com/")).containsExactly("https://api.example.com")
-    assertThat(rules("api.example.com"))
-      .containsExactly("https://api.example.com", "https://*.api.example.com")
-    assertThat(rules("https://*.example.com"))
-      .containsExactly("https://example.com", "https://*.example.com")
-    // Explicit allowedHosts keep matching subdomains.
-    assertThat(WebViewTracePropagationScript.originRules(listOf("https://api.example.com/")))
-      .containsExactly("https://api.example.com", "https://*.api.example.com")
-  }
 }
