@@ -255,6 +255,18 @@ class SentryAndroidOptionsTest {
     assertEquals(10000L, sentryOptions.tombstoneMergeTimeThresholdMillis)
   }
 
+  @Test
+  fun `webView tracing allowed hosts are empty by default and copied when set`() {
+    val sentryOptions = SentryAndroidOptions()
+    assertTrue(sentryOptions.webViewTracing.allowedHosts.isEmpty())
+
+    val hosts = mutableListOf("example.com")
+    sentryOptions.webViewTracing.allowedHosts = hosts
+    hosts.add("other.com")
+
+    assertEquals(listOf("example.com"), sentryOptions.webViewTracing.allowedHosts)
+  }
+
   private class CustomDebugImagesLoader : IDebugImagesLoader {
     override fun loadDebugImages(): List<DebugImage>? = null
 

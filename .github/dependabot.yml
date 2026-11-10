@@ -19,6 +19,7 @@ updates:
       interval: "daily"
     ignore:
       - dependency-name: "org.springframework.boot*"
+      - dependency-name: "io.opentelemetry*"
     commit-message:
       prefix: "chore(deps)"
   - package-ecosystem: "github-actions"
