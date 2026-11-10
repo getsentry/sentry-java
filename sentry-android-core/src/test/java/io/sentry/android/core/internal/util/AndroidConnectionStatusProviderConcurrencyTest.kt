@@ -16,6 +16,7 @@ import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
 import io.sentry.IConnectionStatusProvider.IConnectionStatusObserver
 import io.sentry.ILogger
@@ -86,7 +87,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   }
 
   @Test
-  fun `getConnectionStatus refreshes a stale cache without waiting for a stalled network callback registration`() {
+  fun `getConnectionStatus refreshes an empty cache without waiting for a stalled network callback registration`() {
     val fixture = Fixture.create()
     val stall = fixture.stallNetworkCallbackRegistration()
     val connectionStatusProvider = fixture.createProvider()
@@ -98,7 +99,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   }
 
   @Test
-  fun `getConnectionType refreshes a stale cache without waiting for a stalled network callback registration`() {
+  fun `getConnectionType refreshes an empty cache without waiting for a stalled network callback registration`() {
     val fixture = Fixture.create()
     val stall = fixture.stallNetworkCallbackRegistration()
     val connectionStatusProvider = fixture.createProvider()
@@ -110,7 +111,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   }
 
   @Test
-  fun `getConnection refreshes a stale cache without waiting for a stalled network callback registration`() {
+  fun `getConnection refreshes an empty cache without waiting for a stalled network callback registration`() {
     val fixture = Fixture.create()
     val stall = fixture.stallNetworkCallbackRegistration()
     val connectionStatusProvider = fixture.createProvider()
@@ -157,7 +158,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   }
 
   @Test
-  fun `getConnectionStatus refreshes a stale cache without waiting for a stalled telephony callback registration`() {
+  fun `getConnectionStatus refreshes an empty cache without waiting for a stalled telephony callback registration`() {
     val fixture = Fixture.create(sdkVersion = Build.VERSION_CODES.S)
     val stall = fixture.stallTelephonyCallbackRegistration()
     val connectionStatusProvider = fixture.createProvider()
@@ -188,7 +189,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   }
 
   @Test
-  fun `getConnectionStatus refreshes a stale cache without waiting for a stalled network callback unregistration`() {
+  fun `getConnectionStatus refreshes an empty cache without waiting for a stalled network callback unregistration`() {
     val fixture = Fixture.create()
     val connectionStatusProvider = fixture.createRegisteredProvider()
     val stall = fixture.stallNetworkCallbackUnregistration()
@@ -218,7 +219,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   }
 
   @Test
-  fun `getConnectionStatus refreshes a stale cache without waiting for a stalled telephony callback unregistration`() {
+  fun `getConnectionStatus refreshes an empty cache without waiting for a stalled telephony callback unregistration`() {
     val fixture = Fixture.create(sdkVersion = Build.VERSION_CODES.S)
     val connectionStatusProvider = fixture.createRegisteredProvider()
     val stall = fixture.stallTelephonyCallbackUnregistration()
@@ -230,40 +231,29 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     assertThat(status).isEqualTo(ConnectionStatus.CONNECTED)
   }
 
-  // A stale-cache refresh racing a network callback
+  // An in-flight cache refresh racing a network callback
 
   @Test
-  fun `a stale-cache refresh stores the queried capabilities of the active network`() {
-    val fixture = Fixture.create()
-    val connectionStatusProvider = fixture.createRegisteredProvider()
-
-    connectionStatusProvider.connectionStatus
-
-    assertThat(connectionStatusProvider.cachedNetworkCapabilities)
-      .isSameInstanceAs(fixture.wifiCapabilities)
-  }
-
-  @Test
-  fun `capabilities changed while a stale-cache refresh queries the network capabilities are kept`() {
+  fun `a network capabilities change survives an in-flight cache refresh`() {
     val fixture = Fixture.create()
     val connectionStatusProvider = fixture.createRegisteredProvider()
     val networkCallback = fixture.captureNetworkCallback()
     networkCallback.onAvailable(fixture.network)
     val stall = fixture.stallNetworkCapabilitiesQuery()
-    val refresh = fixture.startOnCallerThread { connectionStatusProvider.connectionStatus }
+    val refresh = fixture.startOnCallerThread { connectionStatusProvider.connectionType }
     stall.awaitEntered()
 
     fixture.onCallerThread {
       networkCallback.onCapabilitiesChanged(fixture.network, fixture.cellularCapabilities)
     }
     stall.release()
-    refresh.get(TIMEOUT_SECONDS, SECONDS)
+    val type = refresh.get(TIMEOUT_SECONDS, SECONDS)
 
-    assertThat(connectionStatusProvider.connectionType).isEqualTo("cellular")
+    assertThat(type).isEqualTo("cellular")
   }
 
   @Test
-  fun `a network lost while a stale-cache refresh queries the network capabilities keeps the cache cleared`() {
+  fun `a network loss survives an in-flight cache refresh`() {
     val fixture = Fixture.create()
     val connectionStatusProvider = fixture.createRegisteredProvider()
     val networkCallback = fixture.captureNetworkCallback()
@@ -280,7 +270,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
   }
 
   @Test
-  fun `a network that becomes available while a stale-cache refresh queries the network capabilities stays the current network`() {
+  fun `a network that becomes available during an in-flight cache refresh stays the current network`() {
     val fixture = Fixture.create()
     val connectionStatusProvider = fixture.createRegisteredProvider()
     val networkCallback = fixture.captureNetworkCallback()
@@ -298,6 +288,26 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     verify(observer).onConnectionStatusChanged(ConnectionStatus.DISCONNECTED)
   }
 
+  @Test
+  fun `getConnectionType reads a fresh cache without waiting for another caller's in-flight cache refresh`() {
+    val fixture = Fixture.create()
+    val connectionStatusProvider = fixture.createRegisteredProvider()
+    val networkCallback = fixture.captureNetworkCallback()
+    networkCallback.onAvailable(fixture.network)
+    val stall = fixture.stallNetworkCapabilitiesQuery()
+    val refresh = fixture.startOnCallerThread { connectionStatusProvider.connectionType }
+    stall.awaitEntered()
+    fixture.onCallerThread {
+      networkCallback.onCapabilitiesChanged(fixture.network, fixture.cellularCapabilities)
+    }
+
+    val type = fixture.onCallerThread { connectionStatusProvider.connectionType }
+    stall.release()
+    refresh.get(TIMEOUT_SECONDS, SECONDS)
+
+    assertThat(type).isEqualTo("cellular")
+  }
+
   // Observers being notified
 
   @Test
@@ -308,20 +318,42 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     networkCallback.onAvailable(fixture.network)
     val stall = fixture.newStall()
     connectionStatusProvider.addConnectionStatusObserver { stall.block(Unit) }
-    fixture.startOnCallerThread { networkCallback.onLost(fixture.network) }
+    val notification = fixture.startOnCallerThread { networkCallback.onLost(fixture.network) }
     stall.awaitEntered()
     val observer = mock<IConnectionStatusObserver>()
 
     val added = fixture.onCallerThread {
       connectionStatusProvider.addConnectionStatusObserver(observer)
     }
+    stall.release()
+    notification.get(TIMEOUT_SECONDS, SECONDS)
 
     assertThat(added).isTrue()
     assertThat(connectionStatusProvider.statusObservers).contains(observer)
   }
 
   @Test
-  fun `an observer that removes itself during a notification does not keep the other observers from being notified`() {
+  fun `removeConnectionStatusObserver does not wait for an observer that is being notified`() {
+    val fixture = Fixture.create()
+    val connectionStatusProvider = fixture.createRegisteredProvider()
+    val networkCallback = fixture.captureNetworkCallback()
+    networkCallback.onAvailable(fixture.network)
+    val stall = fixture.newStall()
+    connectionStatusProvider.addConnectionStatusObserver { stall.block(Unit) }
+    val observer = mock<IConnectionStatusObserver>()
+    connectionStatusProvider.addConnectionStatusObserver(observer)
+    val notification = fixture.startOnCallerThread { networkCallback.onLost(fixture.network) }
+    stall.awaitEntered()
+
+    fixture.onCallerThread { connectionStatusProvider.removeConnectionStatusObserver(observer) }
+    stall.release()
+    notification.get(TIMEOUT_SECONDS, SECONDS)
+
+    assertThat(connectionStatusProvider.statusObservers).doesNotContain(observer)
+  }
+
+  @Test
+  fun `an observer removing itself during a notification does not stop delivery to the other observers`() {
     val fixture = Fixture.create()
     val connectionStatusProvider = fixture.createRegisteredProvider()
     val networkCallback = fixture.captureNetworkCallback()
@@ -382,7 +414,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
         }
       }
     )
-    fixture.startOnCallerThread { networkCallback.onAvailable(fixture.network) }
+    val notification = fixture.startOnCallerThread { networkCallback.onAvailable(fixture.network) }
     stall.awaitEntered()
     val childNetworkCallback = mock<NetworkCallback>()
 
@@ -394,6 +426,8 @@ class AndroidConnectionStatusProviderConcurrencyTest {
         childNetworkCallback,
       )
     }
+    stall.release()
+    notification.get(TIMEOUT_SECONDS, SECONDS)
 
     assertThat(added).isTrue()
     assertThat(AndroidConnectionStatusProvider.getChildCallbacks()).contains(childNetworkCallback)
@@ -414,19 +448,21 @@ class AndroidConnectionStatusProviderConcurrencyTest {
     )
     val childNetworkCallback = mock<NetworkCallback>()
     fixture.addChildNetworkCallback(childNetworkCallback)
-    fixture.startOnCallerThread { networkCallback.onAvailable(fixture.network) }
+    val notification = fixture.startOnCallerThread { networkCallback.onAvailable(fixture.network) }
     stall.awaitEntered()
 
     fixture.onCallerThread {
       AndroidConnectionStatusProvider.removeNetworkCallback(childNetworkCallback)
     }
+    stall.release()
+    notification.get(TIMEOUT_SECONDS, SECONDS)
 
     assertThat(AndroidConnectionStatusProvider.getChildCallbacks())
       .doesNotContain(childNetworkCallback)
   }
 
   @Test
-  fun `a child network callback that removes itself during a notification does not keep the other child network callbacks from being notified`() {
+  fun `a child network callback removing itself during a notification does not stop delivery to the other child network callbacks`() {
     val fixture = Fixture.create()
     fixture.createRegisteredProvider()
     val networkCallback = fixture.captureNetworkCallback()
@@ -801,6 +837,7 @@ class AndroidConnectionStatusProviderConcurrencyTest {
       // A caller that is still running after close() would cache this test's connectivity
       // manager in the static field that close() resets, and leak it into the next test.
       callerThreads.forEach { it.join(SECONDS.toMillis(TIMEOUT_SECONDS)) }
+      val hungCallerThreads = callerThreads.count { it.isAlive }
       connectionStatusProvider?.close()
       when (executorService) {
         is SingleThreadExecutorService -> executorService.shutdown()
@@ -808,6 +845,9 @@ class AndroidConnectionStatusProviderConcurrencyTest {
       }
       contextUtils.close()
       AppState.getInstance().unregisterLifecycleObserver()
+      assertWithMessage("Caller threads still running after their stalls were released")
+        .that(hungCallerThreads)
+        .isEqualTo(0)
     }
 
     companion object {

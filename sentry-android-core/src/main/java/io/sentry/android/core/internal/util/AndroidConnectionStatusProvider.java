@@ -169,7 +169,7 @@ public final class AndroidConnectionStatusProvider
    * True if this provider has been {@link #close closed}, and therefore must permanently stop
    * monitoring network connectivity.
    *
-   * <p>If true, further callback registration and foreground refreshes are skipped. Existing
+   * <p>When true, further callback registration and foreground refreshes are skipped. Existing
    * observers and callbacks may be awaiting cleanup, as cleanup runs asynchronously.
    */
   private volatile boolean closed;

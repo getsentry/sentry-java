@@ -429,7 +429,8 @@ class AndroidConnectionStatusProviderTest {
     val status = connectionStatusProvider.connectionStatus
 
     assertThat(status).isEqualTo(IConnectionStatusProvider.ConnectionStatus.CONNECTED)
-    // Only the returned status queries; the debug log message is not built.
+    // Only the refresh and the returned status query; the debug log message is not built.
+    verify(connectivityManager, times(1)).activeNetwork
     verify(connectivityManager, times(1)).activeNetworkInfo
   }
 
