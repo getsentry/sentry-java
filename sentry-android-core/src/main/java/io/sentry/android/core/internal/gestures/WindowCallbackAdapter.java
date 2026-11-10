@@ -1,6 +1,5 @@
 package io.sentry.android.core.internal.gestures;
 
-import android.annotation.SuppressLint;
 import android.view.ActionMode;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -115,7 +114,6 @@ public class WindowCallbackAdapter implements Window.Callback {
     return delegate.onSearchRequested();
   }
 
-  @SuppressLint("NewApi")
   @Override
   public boolean onSearchRequested(SearchEvent searchEvent) {
     return delegate.onSearchRequested(searchEvent);
@@ -127,7 +125,6 @@ public class WindowCallbackAdapter implements Window.Callback {
     return delegate.onWindowStartingActionMode(callback);
   }
 
-  @SuppressLint("NewApi")
   @Nullable
   @Override
   public ActionMode onWindowStartingActionMode(ActionMode.Callback callback, int i) {

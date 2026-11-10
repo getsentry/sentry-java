@@ -72,7 +72,6 @@ internal class CanvasStrategy(
     IntegrationUtils.addIntegrationToSdkVersion("ReplayCanvasStrategy")
   }
 
-  @SuppressLint("NewApi")
   private val pictureRenderTask = Runnable {
     if (isClosed.get()) {
       options.logger.log(
@@ -152,7 +151,6 @@ internal class CanvasStrategy(
     }
   }
 
-  @SuppressLint("NewApi")
   override fun capture(root: View) {
     if (isClosed.get()) {
       return

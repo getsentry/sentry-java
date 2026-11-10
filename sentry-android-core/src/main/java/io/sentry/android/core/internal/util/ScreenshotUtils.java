@@ -40,7 +40,6 @@ public class ScreenshotUtils {
   }
 
   // Used by Hybrid SDKs
-  @SuppressLint("NewApi")
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IThreadChecker threadChecker,
