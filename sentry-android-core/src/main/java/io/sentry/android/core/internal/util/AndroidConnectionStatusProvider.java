@@ -304,7 +304,7 @@ public final class AndroidConnectionStatusProvider
               }
             }
 
-            /**
+            /*
              * Check if NetworkCapabilities change is significant for our observers. Only notify for
              * changes that affect connectivity status or connection type.
              */
@@ -334,7 +334,7 @@ public final class AndroidConnectionStatusProvider
               return false;
             }
 
-            /** Check if capabilities that affect connectivity status changed. */
+            /* Check if capabilities that affect connectivity status changed. */
             private boolean hasSignificantCapabilityChanges(
                 @NotNull NetworkCapabilities old, @NotNull NetworkCapabilities new_) {
               // Check capabilities we care about for connectivity determination
@@ -348,7 +348,7 @@ public final class AndroidConnectionStatusProvider
               return false;
             }
 
-            /** Check if transport types that affect connection type changed. */
+            /* Check if transport types that affect connection type changed. */
             private boolean hasSignificantTransportChanges(
                 @NotNull NetworkCapabilities old, @NotNull NetworkCapabilities new_) {
               // Check transports we care about for connection type determination

@@ -27,8 +27,8 @@ public class Debouncer {
   }
 
   /**
-   * @return true if the execution should be debounced due to maxExecutions executions being made
-   *     within waitTimeMs, otherwise false.
+   * Returns true if the execution should be debounced due to maxExecutions executions being made
+   * within waitTimeMs, otherwise false.
    */
   public boolean checkForDebounce() {
     final long now = timeProvider.getCurrentTimeMillis();

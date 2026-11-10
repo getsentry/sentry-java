@@ -51,7 +51,7 @@ import org.jetbrains.annotations.Nullable;
 public final class InternalSentrySdk {
 
   /**
-   * @return a copy of the current scopes's topmost scope, or null in case the scopes is disabled
+   * Returns a copy of the current scopes's topmost scope, or null in case the scopes is disabled.
    */
   @Nullable
   public static IScope getCurrentScope() {

@@ -89,8 +89,9 @@ public class AnrCulpritIdentifier {
   }
 
   /**
+   * Returns the most common occurring stacktrace identified as the culprit.
+   *
    * @param stacks a list of stack traces to analyze
-   * @return the most common occurring stacktrace identified as the culprit
    */
   @Nullable
   public static AggregatedStackTrace identify(final @NotNull List<AnrStackTrace> stacks) {
