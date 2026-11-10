@@ -38,7 +38,7 @@ import org.jetbrains.annotations.TestOnly;
 @ApiStatus.Internal
 public final class ContextUtils {
 
-  static class SideLoadedInfo {
+  static final class SideLoadedInfo {
     private final boolean isSideLoaded;
     private final @Nullable String installerStore;
 
@@ -65,7 +65,7 @@ public final class ContextUtils {
     }
   }
 
-  static class SplitApksInfo {
+  static final class SplitApksInfo {
     // https://github.com/google/bundletool/blob/master/src/main/java/com/android/tools/build/bundletool/model/AndroidManifest.java#L257-L263
     static final String SPLITS_REQUIRED = "com.android.vending.splits.required";
 

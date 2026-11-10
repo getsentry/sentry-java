@@ -19,6 +19,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.jakewharton.nopen.annotation.Open;
 import io.sentry.Attachment;
 import io.sentry.Hint;
 import io.sentry.IScopes;
@@ -39,6 +40,8 @@ import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+// Open until the deprecated SentryUserFeedbackDialog, which extends it, is removed.
+@Open
 public class SentryUserFeedbackForm extends AlertDialog {
 
   private boolean isCancelable = false;
@@ -657,6 +660,8 @@ public class SentryUserFeedbackForm extends AlertDialog {
     super.show();
   }
 
+  // Open until the deprecated SentryUserFeedbackDialog.Builder, which extends it, is removed.
+  @Open
   public static class Builder {
 
     @Nullable OptionsConfiguration configuration;

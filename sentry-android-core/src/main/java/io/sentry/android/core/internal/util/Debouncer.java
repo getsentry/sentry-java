@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 /** A simple time-based debouncing mechanism */
 @ApiStatus.Internal
-public class Debouncer {
+public final class Debouncer {
 
   private final long waitTimeMs;
   private final @NotNull ICurrentDateProvider timeProvider;
@@ -27,8 +27,8 @@ public class Debouncer {
   }
 
   /**
-   * @return true if the execution should be debounced due to maxExecutions executions being made
-   *     within waitTimeMs, otherwise false.
+   * Returns true if the execution should be debounced due to maxExecutions executions being made
+   * within waitTimeMs, otherwise false.
    */
   public boolean checkForDebounce() {
     final long now = timeProvider.getCurrentTimeMillis();

@@ -192,7 +192,7 @@ public final class NetworkBreadcrumbsIntegration implements Integration, Closeab
     }
   }
 
-  static class NetworkBreadcrumbConnectionDetail {
+  static final class NetworkBreadcrumbConnectionDetail {
     final int downBandwidth, upBandwidth, signalStrength;
     private long timestampNanos;
     final boolean isVpn;
