@@ -16,7 +16,8 @@
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
 
   <!--  if your minSdkVersion < 16, this would make usable on minSdkVersion >= 14-->
-  <uses-sdk tools:overrideLibrary="io.sentry.android" />
+  <!-- androidx.sqlite 2.8+ declares minSdk 24; the sample keeps 23 -->
+  <uses-sdk tools:overrideLibrary="io.sentry.android,androidx.sqlite.async,androidx.sqlite.driver.bundled,androidx.sqlite.db.framework,androidx.sqlite.db" />
 
   <uses-feature
     android:name="android.hardware.camera"
@@ -96,6 +97,11 @@
     <activity
       android:name=".CustomTabsActivity"
       android:exported="false" />
+
+    <activity
+      android:name=".WebViewActivity"
+      android:exported="false"
+      android:theme="@style/AppTheme.Main" />
 
     <activity
       android:name=".compose.ComposeActivity"

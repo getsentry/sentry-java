@@ -321,6 +321,10 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   private final @NotNull SentryScreenshotOptions screenshot = new SentryScreenshotOptions();
 
+  /** Options for connecting the app's trace with web content in a {@code WebView}. */
+  private final @NotNull SentryWebViewTracingOptions webViewTracing =
+      new SentryWebViewTracingOptions();
+
   /**
    * Sample rate for capturing main-thread stack profiles when a foreground ANR is detected. {@code
    * null} disables ANR profiling (default). Values must be between {@code 0.0} and {@code 1.0}.
@@ -948,6 +952,15 @@ public final class SentryAndroidOptions extends SentryOptions {
    */
   public @NotNull SentryScreenshotOptions getScreenshot() {
     return screenshot;
+  }
+
+  /**
+   * Returns the options for connecting the app's trace with web content in a {@code WebView}.
+   *
+   * @return the WebView tracing options
+   */
+  public @NotNull SentryWebViewTracingOptions getWebViewTracing() {
+    return webViewTracing;
   }
 
   /**

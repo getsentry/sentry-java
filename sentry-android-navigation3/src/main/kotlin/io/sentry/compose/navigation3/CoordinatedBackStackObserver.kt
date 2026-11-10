@@ -22,7 +22,8 @@ import io.sentry.compose.navigation3.lifecycle.NavScopes
  * **Thread safety**
  *
  * This class is ***not*** thread-safe. Invocations should be confined to the same thread as the
- * [LifecycleEventObserver] callbacks implemented by [NavScopes].
+ * [LifecycleEventObserver] callbacks through which the [NavLeaseCoordinator] observes the attached
+ * lifecycle.
  */
 internal class CoordinatedBackStackObserver<T : Any>(
   scopes: IScopes,

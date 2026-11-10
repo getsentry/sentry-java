@@ -1,4 +1,4 @@
-# sentry-uitest-android-macrobenchmark
+# macrobenchmark
 
 Jetpack Macrobenchmark for cold-start of `sentry-samples-android`, used to evaluate SDK-init
 performance changes on a real device in a **stable, reproducible** way. Not run in CI.
@@ -28,7 +28,7 @@ unlocked-clock device after ~14 iterations, inflating the tail of longer runs.
 Connect a device, then:
 
 ```bash
-./gradlew :sentry-android-integration-tests:sentry-uitest-android-macrobenchmark:connectedBenchmarkAndroidTest
+./gradlew -p sentry-samples/sentry-samples-android :macrobenchmark:connectedBenchmarkAndroidTest
 ```
 
 Results print to the console and are written to

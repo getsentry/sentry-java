@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -6,7 +6,11 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 group = "io.sentry.sample.spring-boot-webflux-jakarta"
 
@@ -22,13 +26,13 @@ dependencyManagement {
 extra["kotlin-coroutines.version"] = "1.9.0"
 
 dependencies {
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-  implementation(projects.sentrySpringBootStarterJakarta)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryJdbc)
-  implementation(projects.sentryGraphql22)
-  implementation(projects.sentryAsyncProfiler)
+  implementation(libs.kotlin.reflect)
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
+  implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-jdbc:$sentryVersion")
+  implementation("io.sentry:sentry-graphql-22:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
   implementation(libs.context.propagation)
   implementation(libs.springboot3.starter.actuator)
   implementation(libs.springboot3.starter.graphql)

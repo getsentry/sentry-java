@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.springframework.boot.gradle.tasks.run.BootRun
 
@@ -7,7 +7,11 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 group = "io.sentry.sample.spring-boot-jakarta"
 
@@ -39,26 +43,26 @@ dependencies {
   implementation(libs.springboot3.starter.web)
   implementation(libs.springboot3.starter.webflux)
   implementation(libs.springboot3.starter.websocket)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-  implementation(projects.sentrySpringBootStarterJakarta)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryGraphql22)
-  implementation(projects.sentryQuartz)
+  implementation(libs.aspectjweaver)
+  implementation(libs.kotlin.reflect)
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
+  implementation("io.sentry:sentry-spring-boot-starter-jakarta:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-graphql-22:$sentryVersion")
+  implementation("io.sentry:sentry-quartz:$sentryVersion")
   implementation(libs.otel)
-  implementation(projects.sentryAsyncProfiler)
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
 
   // kafka
   implementation(libs.spring.kafka3)
-  implementation(projects.sentryKafka)
+  implementation("io.sentry:sentry-kafka:$sentryVersion")
 
   // cache tracing
   implementation(libs.springboot3.starter.cache)
   implementation(libs.caffeine)
 
   // database query tracing
-  implementation(projects.sentryJdbc)
+  implementation("io.sentry:sentry-jdbc:$sentryVersion")
   runtimeOnly(libs.hsqldb)
 }
 
@@ -69,9 +73,8 @@ tasks.register<BootRun>("bootRunWithAgent").configure {
   mainClass = mainBootRunTask.mainClass
   classpath = mainBootRunTask.classpath
 
-  val versionName = project.properties["versionName"] as String
   val agentJarPath =
-    "$rootDir/sentry-opentelemetry/sentry-opentelemetry-agent/build/libs/sentry-opentelemetry-agent-$versionName.jar"
+    "$rootDir/../sentry-opentelemetry/sentry-opentelemetry-agent/build/libs/sentry-opentelemetry-agent-$sentryVersion.jar"
 
   val dsn =
     System.getenv("SENTRY_DSN")
