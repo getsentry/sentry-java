@@ -24,14 +24,12 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public class ScreenshotUtils {
+public final class ScreenshotUtils {
 
   private static final long CAPTURE_TIMEOUT_MS = 1000;
 
   // Used by Hybrid SDKs
-  /**
-   * @noinspection unused
-   */
+  @SuppressWarnings("unused")
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull ILogger logger,
@@ -58,8 +56,8 @@ public class ScreenshotUtils {
    * same way {@link io.sentry.android.core.ScreenshotEventProcessor} does for native errors.
    *
    * @see #captureMaskedScreenshot(Activity, SentryAndroidOptions, BuildInfoProvider, boolean)
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static @Nullable byte[] takeMaskedScreenshot(
       final @NotNull Activity activity,
       final @NotNull SentryAndroidOptions options,

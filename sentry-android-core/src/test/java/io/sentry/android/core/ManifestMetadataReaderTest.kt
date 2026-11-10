@@ -1212,6 +1212,32 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
+  fun `applyMetadata reads webView tracing allowed hosts to options`() {
+    // Arrange
+    val bundle =
+      bundleOf(ManifestMetadataReader.WEBVIEW_TRACING_ALLOWED_HOSTS to "example.com,other.com")
+    val context = fixture.getContext(metaData = bundle)
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertEquals(listOf("example.com", "other.com"), fixture.options.webViewTracing.allowedHosts)
+  }
+
+  @Test
+  fun `applyMetadata keeps webView tracing allowed hosts empty by default`() {
+    // Arrange
+    val context = fixture.getContext()
+
+    // Act
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    // Assert
+    assertTrue(fixture.options.webViewTracing.allowedHosts.isEmpty())
+  }
+
+  @Test
   fun `applyMetadata reads null tracePropagationTargets and sets empty list`() {
     // Arrange
     val bundle = bundleOf(ManifestMetadataReader.TRACE_PROPAGATION_TARGETS to null)

@@ -30,7 +30,7 @@ dependencies {
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
   compileOnly(Config.Libs.springSecurityWeb)
-  compileOnly(Config.Libs.aspectj)
+  compileOnly(libs.aspectjweaver)
   compileOnly(Config.Libs.springWebflux)
   compileOnly(projects.sentryGraphql)
   compileOnly(projects.sentryKafka)
