@@ -977,13 +977,16 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishAppStartSpan(final @Nullable SentryDate endDate) {
+    if (!performanceEnabled || options == null) {
+      return;
+    }
     final @Nullable SentryDate appStartEndTime =
         endDate != null
             ? endDate
             : AppStartMetrics.getInstance()
                 .getAppStartTimeSpanWithFallback(options)
                 .getProjectedStopTimestamp();
-    if (performanceEnabled && appStartEndTime != null) {
+    if (appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
       if (appStartTransaction != null && !appStartTransaction.isFinished()) {
         appStartTransaction.finish(SpanStatus.OK, appStartEndTime);
