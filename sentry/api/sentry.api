@@ -988,7 +988,9 @@ public abstract interface class io/sentry/IReplayApi {
 	public abstract fun enableDebugMaskingOverlay ()V
 	public abstract fun flush ()V
 	public abstract fun pause ()V
+	public abstract fun pauseTouchTracking ()V
 	public abstract fun resume ()V
+	public abstract fun resumeTouchTracking ()V
 	public abstract fun start ()V
 	public abstract fun startBuffering ()V
 	public abstract fun stop ()V
@@ -1842,9 +1844,11 @@ public final class io/sentry/NoOpReplayController : io/sentry/ReplayController {
 	public fun onAppForegrounded (Z)V
 	public fun onAppSessionEnded ()V
 	public fun pause ()V
+	public fun pauseTouchTracking ()V
 	public fun registerSegmentName (Ljava/lang/String;)V
 	public fun registerTraceId (Lio/sentry/protocol/SentryId;)V
 	public fun resume ()V
+	public fun resumeTouchTracking ()V
 	public fun setBreadcrumbConverter (Lio/sentry/ReplayBreadcrumbConverter;)V
 	public fun start ()V
 	public fun startBuffering ()V

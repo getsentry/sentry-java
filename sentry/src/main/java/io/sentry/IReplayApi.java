@@ -33,6 +33,23 @@ public interface IReplayApi {
   void resume();
 
   /**
+   * Stops recording touch events until {@link #resumeTouchTracking()} is called. Screenshots are
+   * still recorded. This can be used on sensitive screens, such as a custom PIN pad, where the
+   * screen is masked but the touch positions could reveal the input.
+   *
+   * <p>Touch tracking stays paused for all replays in the same process, also if the replay is
+   * stopped and started again. {@link #resume()} does not resume touch tracking. Has effect
+   * immediately, also before a replay is started.
+   */
+  void pauseTouchTracking();
+
+  /**
+   * Resumes touch tracking paused with {@link #pauseTouchTracking()}. Touch events are recorded
+   * again only while the replay is not paused with {@link #pause()}.
+   */
+  void resumeTouchTracking();
+
+  /**
    * Immediately sends the current replay data to Sentry in either session or buffer mode. A
    * buffering replay continues in session mode after the buffer is sent. If replay is not
    * recording, starts a new replay session.

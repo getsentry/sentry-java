@@ -32,6 +32,12 @@ public final class NoOpReplayController implements ReplayController {
   public void resume() {}
 
   @Override
+  public void pauseTouchTracking() {}
+
+  @Override
+  public void resumeTouchTracking() {}
+
+  @Override
   public void flush() {}
 
   @Override
