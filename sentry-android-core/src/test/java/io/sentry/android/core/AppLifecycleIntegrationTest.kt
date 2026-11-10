@@ -21,6 +21,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -347,6 +348,44 @@ class AppLifecycleIntegrationTest {
 
     verify(activityManager, never()).registerAnrWarningListener(any(), any())
     verify(activityManager, never()).unregisterAnrWarningListener(any())
+  }
+
+  @Test
+  @Config(sdk = [37])
+  fun `close does not wait for a running registration, which then unregisters the listener`() {
+    val activityManager = mock<ActivityManager>()
+    val sut = getSutWithActivityManager(activityManager)
+    var closeReturned = false
+    whenever(activityManager.registerAnrWarningListener(any(), any())).then {
+      val closingThread = Thread { sut.close() }
+      closingThread.start()
+      closingThread.join(5_000)
+      closeReturned = !closingThread.isAlive
+      null
+    }
+
+    sut.register(fixture.scopes, fixture.options)
+
+    assertTrue(closeReturned)
+    val consumer = argumentCaptor<Consumer<AnrWarningResult>>()
+    verify(activityManager).registerAnrWarningListener(any(), consumer.capture())
+    verify(activityManager).unregisterAnrWarningListener(consumer.firstValue)
+  }
+
+  @Test
+  @Config(sdk = [37])
+  fun `ANR warning listener is registered when the Context has no application context`() {
+    val activityManager = mock<ActivityManager>()
+    val context = mock<Context>()
+    whenever(context.getSystemService(Context.ACTIVITY_SERVICE)).thenReturn(activityManager)
+    val buildInfoProvider = mock<BuildInfoProvider>()
+    whenever(buildInfoProvider.sdkInfoVersion).thenReturn(37)
+    fixture.options.executorService = ImmediateExecutorService()
+    val sut = AppLifecycleIntegration(context, buildInfoProvider)
+
+    sut.register(fixture.scopes, fixture.options)
+
+    verify(activityManager).registerAnrWarningListener(any(), any())
   }
 
   @Test

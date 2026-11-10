@@ -16,6 +16,7 @@ import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -59,7 +60,7 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
 
   public AppLifecycleIntegration(
       final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
-    this.context = context.getApplicationContext();
+    this.context = ContextUtils.getApplicationContext(context);
     this.buildInfoProvider = buildInfoProvider;
   }
 
@@ -210,15 +211,31 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
       if (isClosed || anrWarningConsumer != null) {
         return;
       }
-      try {
-        activityManager.registerAnrWarningListener(Runnable::run, consumer);
-      } catch (RuntimeException e) {
-        options
-            .getLogger()
-            .log(SentryLevel.WARNING, "Failed to register the ANR warning listener.", e);
-        return;
+    }
+
+    // The binder call runs without the lock, so that close() never waits for the system.
+    try {
+      activityManager.registerAnrWarningListener(Runnable::run, consumer);
+    } catch (RuntimeException e) {
+      // Broad catch, because a call into the system server can throw any RuntimeException. On
+      // failure the listener is not installed, so no app.anr breadcrumbs are recorded.
+      ExceptionUtils.rethrowIfFatal(e);
+      options
+          .getLogger()
+          .log(SentryLevel.WARNING, "Failed to register the ANR warning listener.", e);
+      return;
+    }
+
+    final boolean closedDuringRegistration;
+    try (final ISentryLifecycleToken ignored = lock.acquire()) {
+      closedDuringRegistration = isClosed;
+      if (!closedDuringRegistration) {
+        anrWarningConsumer = consumer;
       }
-      anrWarningConsumer = consumer;
+    }
+    if (closedDuringRegistration) {
+      unregisterAnrWarningListener(activityManager, consumer, options);
+      return;
     }
 
     options.getLogger().log(SentryLevel.DEBUG, "ANR warning listener installed.");
@@ -247,9 +264,20 @@ public final class AppLifecycleIntegration implements Integration, Closeable {
               "ActivityManager is not available, ANR warning listener not unregistered.");
       return;
     }
+    unregisterAnrWarningListener(activityManager, consumerRef, options);
+  }
+
+  @SuppressLint("NewApi")
+  private static void unregisterAnrWarningListener(
+      final @NotNull ActivityManager activityManager,
+      final @NotNull Consumer<AnrWarningResult> consumer,
+      final @NotNull SentryAndroidOptions options) {
     try {
-      activityManager.unregisterAnrWarningListener(consumerRef);
+      activityManager.unregisterAnrWarningListener(consumer);
     } catch (RuntimeException e) {
+      // Broad catch, because a call into the system server can throw any RuntimeException. On
+      // failure the listener stays registered until the process ends.
+      ExceptionUtils.rethrowIfFatal(e);
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Failed to unregister the ANR warning listener.", e);
