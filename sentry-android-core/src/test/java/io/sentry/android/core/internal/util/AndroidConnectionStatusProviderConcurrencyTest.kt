@@ -61,7 +61,7 @@ import org.robolectric.annotation.Config
  * that must not wait for them run on a separate caller thread with a bounded wait.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.S])
+@Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class AndroidConnectionStatusProviderConcurrencyTest {
 
   @AfterTest
