@@ -9,6 +9,7 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.google.common.truth.Truth.assertThat
 import io.sentry.IScopes
+import io.sentry.OptionsContainer
 import io.sentry.Sentry
 import io.sentry.SentryIntegrationPackageStorage
 import io.sentry.TransactionOptions
@@ -20,6 +21,7 @@ import kotlin.test.assertFailsWith
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
@@ -365,6 +367,44 @@ class SentryWebViewTracingTest {
         assertThat(webView.getTag(R.id.sentry_webview_trace_propagation)).isNull()
       }
     }
+  }
+
+  @Test
+  fun `without hosts uses the allowed hosts from the options`() {
+    Sentry.init(OptionsContainer.create(SentryAndroidOptions::class.java)) {
+      it.dsn = "https://key@sentry.io/123"
+      it.webViewTracing.allowedHosts = listOf("example.com")
+    }
+    val origins = argumentCaptor<Set<String>>()
+    mockStatic(WebViewCompat::class.java).use { webViewCompat ->
+      mockStatic(WebViewFeature::class.java).use { webViewFeature ->
+        webViewFeature
+          .`when`<Boolean> {
+            WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
+          }
+          .thenReturn(true)
+        webViewCompat
+          .`when`<ScriptHandler> {
+            WebViewCompat.addDocumentStartJavaScript(eq(webView), any(), origins.capture())
+          }
+          .thenReturn(mock<ScriptHandler>())
+
+        assertThat(SentryWebViewTracing.addTracePropagation(webView)).isTrue()
+      }
+    }
+
+    assertThat(origins.firstValue).containsExactly("https://example.com", "https://*.example.com")
+  }
+
+  @Test
+  fun `without hosts connects no page when the options have none`() {
+    Sentry.init(OptionsContainer.create(SentryAndroidOptions::class.java)) {
+      it.dsn = "https://key@sentry.io/123"
+      it.setTracePropagationTargets(listOf("example.com"))
+    }
+
+    assertThat(SentryWebViewTracing.addTracePropagation(webView)).isFalse()
+    assertThat(webView.getTag(R.id.sentry_webview_trace_propagation)).isNull()
   }
 
   @Test

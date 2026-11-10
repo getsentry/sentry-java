@@ -12,6 +12,7 @@ import io.sentry.ILogger;
 import io.sentry.IScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import io.sentry.SentryOptions;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LoadClass;
 import io.sentry.util.TracingUtils;
@@ -48,6 +49,25 @@ public final class SentryWebViewTracing {
       Collections.synchronizedMap(new WeakHashMap<>());
 
   private SentryWebViewTracing() {}
+
+  /**
+   * Same as {@link #addTracePropagation(WebView, List)}, using the hosts set in {@link
+   * SentryWebViewTracingOptions#setAllowedHosts(List)}. If none are set, no page is connected and
+   * this returns false.
+   *
+   * @param webView the WebView to connect
+   * @return true if the trace propagation script was installed
+   */
+  @MainThread
+  public static boolean addTracePropagation(final @NotNull WebView webView) {
+    final @NotNull IScopes scopes = Sentry.getCurrentScopes();
+    final @NotNull SentryOptions options = scopes.getOptions();
+    final @NotNull List<String> allowedHosts =
+        options instanceof SentryAndroidOptions
+            ? ((SentryAndroidOptions) options).getWebViewTracing().getAllowedHosts()
+            : Collections.<String>emptyList();
+    return addTracePropagation(webView, allowedHosts, scopes, new LoadClass());
+  }
 
   /**
    * Same as {@link #addTracePropagation(WebView, List)}.
