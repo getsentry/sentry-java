@@ -111,9 +111,9 @@ class SentryNdkCrashServiceTest {
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
       native
         .`when`<Any> { io.sentry.ndk.SentryNdk.init(any<NdkOptions>()) }
-        .thenThrow(IllegalStateException())
+        .thenThrow(UnsatisfiedLinkError())
 
-      assertFailsWith<IllegalStateException> { SentryNdkOutproc.init(app, options) }
+      assertFailsWith<UnsatisfiedLinkError> { SentryNdkOutproc.init(app, options) }
 
       assertThat(shadowOf(app).boundServiceConnections).isEmpty()
       assertThat(shadowOf(app).unboundServiceConnections).hasSize(1)

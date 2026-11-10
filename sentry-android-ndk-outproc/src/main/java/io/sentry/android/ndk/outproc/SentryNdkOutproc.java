@@ -115,12 +115,15 @@ public final class SentryNdkOutproc {
         serviceContext = context;
         serviceConnection = connection;
 
+        boolean initialized = false;
         try {
           //noinspection UnstableApiUsage
           io.sentry.ndk.SentryNdk.init(ndkOptions);
-        } catch (IllegalStateException e) {
-          unbindCrashService();
-          throw e;
+          initialized = true;
+        } finally {
+          if (!initialized) {
+            unbindCrashService();
+          }
         }
 
         // only add scope sync observer if the scope sync is enabled.
