@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import static io.sentry.Sentry.APP_START_PROFILING_CONFIG_FILE_NAME;
 
-import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ProviderInfo;
@@ -250,7 +249,6 @@ public final class SentryPerformanceProvider extends EmptySecureContentProvider 
     appStartProfiler.start();
   }
 
-  @SuppressLint("NewApi")
   private void onAppLaunched(
       final @Nullable Context context, final @NotNull AppStartMetrics appStartMetrics) {
 

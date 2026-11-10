@@ -369,7 +369,7 @@ public final class AndroidConnectionStatusProvider
     }
   }
 
-  @SuppressLint({"NewApi", "MissingPermission"})
+  @SuppressLint("MissingPermission")
   private void updateCache(@Nullable NetworkCapabilities networkCapabilities) {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       try {
@@ -599,7 +599,7 @@ public final class AndroidConnectionStatusProvider
    * @param buildInfoProvider the BuildInfoProvider provider
    * @return the connection type wifi, ethernet, cellular or null
    */
-  @SuppressLint({"ObsoleteSdkInt", "MissingPermission", "NewApi"})
+  @SuppressLint("MissingPermission")
   public static @Nullable String getConnectionType(
       final @NotNull Context context,
       final @NotNull ILogger logger,
@@ -751,7 +751,6 @@ public final class AndroidConnectionStatusProvider
     return true;
   }
 
-  @SuppressLint("NewApi")
   static void unregisterNetworkCallback(
       final @NotNull Context context,
       final @NotNull ILogger logger,

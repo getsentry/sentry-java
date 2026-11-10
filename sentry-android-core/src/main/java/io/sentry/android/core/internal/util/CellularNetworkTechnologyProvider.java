@@ -142,7 +142,7 @@ public final class CellularNetworkTechnologyProvider {
     }
   }
 
-  @SuppressLint({"MissingPermission", "InlinedApi", "NewApi"})
+  @SuppressLint({"MissingPermission", "InlinedApi"})
   private @Nullable String getDataNetworkTechnology() {
     // The SDK doesn't declare these permissions, so the technology is only available to apps that
     // already request one of them. READ_BASIC_PHONE_STATE only exists from API 31 on, where the

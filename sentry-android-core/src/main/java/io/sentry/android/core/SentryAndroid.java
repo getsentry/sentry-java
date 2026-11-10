@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.os.Process;
@@ -91,7 +90,6 @@ public final class SentryAndroid {
    * @param logger your custom logger that implements ILogger
    * @param configuration Sentry.OptionsConfiguration configuration handler
    */
-  @SuppressLint("NewApi")
   public static void init(
       @NotNull final Context context,
       @NotNull ILogger logger,

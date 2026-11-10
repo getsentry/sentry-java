@@ -218,7 +218,6 @@ public final class ContextUtils {
    *
    * @return the Application's ApplicationInfo if possible, or throws
    */
-  @SuppressLint("NewApi")
   @Nullable
   @SuppressWarnings("deprecation")
   static ApplicationInfo getApplicationInfo(

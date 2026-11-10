@@ -2,7 +2,6 @@ package io.sentry.android.core;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import io.sentry.DateUtils;
@@ -175,7 +174,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
     }
   }
 
-  @SuppressLint("NewApi")
   private boolean onFirstStart() {
     // init() didn't create profiler, should never happen
     if (profiler == null) {
@@ -221,7 +219,6 @@ final class AndroidTransactionProfiler implements ITransactionProfiler {
         options);
   }
 
-  @SuppressLint("NewApi")
   private @Nullable ProfilingTraceData onTransactionFinish(
       final @NotNull String transactionName,
       final @NotNull String transactionId,

@@ -64,7 +64,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private final @NotNull ConcurrentSkipListSet<DelayedFrame> delayedFrames =
       new ConcurrentSkipListSet<>();
 
-  @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -72,7 +71,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, options, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull ILogger logger,
@@ -80,7 +78,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, logger, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
+  @SuppressLint("DiscouragedPrivateApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -321,7 +319,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     }
   }
 
-  @SuppressLint("NewApi")
   private void stopTrackingWindow(final @NotNull Window window) {
     new Handler(Looper.getMainLooper())
         .post(
@@ -347,7 +344,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     trackCurrentWindow();
   }
 
-  @SuppressLint("NewApi")
   private void trackCurrentWindow() {
     @Nullable Window window = currentWindow != null ? currentWindow.get() : null;
     if (window == null || !isAvailable) {
