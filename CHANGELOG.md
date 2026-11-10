@@ -9,7 +9,7 @@
 
 ### Breaking Changes
 
-- Android: `AnrV2Integration`, `AnrProfilingIntegration`, `SentryUserFeedbackForm` and its `Builder`, `WindowContentChangedCallback` and the internal `sentry-android-core` classes are now `final`, and `ActivityLifecycleCallbacksAdapter` is now `abstract` ([#6494](https://github.com/getsentry/sentry-java/pull/6494))
+- Android: `AnrV2Integration`, `AnrProfilingIntegration`, `WindowContentChangedCallback`, the deprecated `SentryUserFeedbackButton` and `SentryUserFeedbackDialog.Builder`, and the internal `sentry-android-core` classes are now `final`, and `ActivityLifecycleCallbacksAdapter` is now `abstract` ([#6494](https://github.com/getsentry/sentry-java/pull/6494))
 
 ### Features
 
