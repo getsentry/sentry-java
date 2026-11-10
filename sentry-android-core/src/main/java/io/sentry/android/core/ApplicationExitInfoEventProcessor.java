@@ -48,7 +48,6 @@ import io.sentry.android.core.anr.StackTraceConverter;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
-import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.hints.AbnormalExit;
 import io.sentry.hints.Backfillable;
 import io.sentry.hints.NativeCrashExit;
@@ -64,7 +63,6 @@ import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryId;
-import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
@@ -100,6 +98,7 @@ public final class ApplicationExitInfoEventProcessor
   private final @NotNull BuildInfoProvider buildInfoProvider;
 
   private final @NotNull SentryExceptionFactory sentryExceptionFactory;
+  private final @NotNull AnrCulpritEventHelper culpritEventHelper;
 
   private final @Nullable PersistingScopeObserver persistingScopeObserver;
 
@@ -121,6 +120,7 @@ public final class ApplicationExitInfoEventProcessor
         new SentryStackTraceFactory(this.options);
 
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
+    culpritEventHelper = new AnrCulpritEventHelper(sentryExceptionFactory);
   }
 
   private @Nullable HintEnricher findEnricher(final @NotNull Object hint) {
@@ -859,7 +859,7 @@ public final class ApplicationExitInfoEventProcessor
         return;
       }
 
-      if (options.isEnableAnrFingerprinting() && hasOnlySystemFrames(event)) {
+      if (options.isEnableAnrFingerprinting() && AnrCulpritEventHelper.hasOnlySystemFrames(event)) {
         // If the stacktrace only contains system frames, we want to statically group these events
         // to avoid ANR noise due to {{ default }} stacktrace grouping
         event.setFingerprints(
@@ -1002,28 +1002,17 @@ public final class ApplicationExitInfoEventProcessor
       // Capture profile chunk
       final @Nullable SentryId profilerId =
           captureAnrProfile(anrTimestamp, anrProfile, optionsSource);
-      final @NotNull StackTraceElement[] stack = culprit.getStack();
+      final Mechanism mechanism = new Mechanism();
+      mechanism.setType("ANR");
+      final @Nullable List<SentryException> sentryExceptions =
+          culpritEventHelper.createExceptions(culprit, mechanism);
 
-      if (stack.length > 0) {
-        final StackTraceElement stackTraceElement = stack[0];
-        final String message =
-            stackTraceElement.getClassName() + "." + stackTraceElement.getMethodName();
-        final ApplicationNotResponding exception = new ApplicationNotResponding(message);
-        exception.setStackTrace(stack);
-
-        final Mechanism mechanism = new Mechanism();
-        mechanism.setType("ANR");
-        final ExceptionMechanismException error =
-            new ExceptionMechanismException(mechanism, exception, null, false);
-
-        final @NotNull List<SentryException> sentryException =
-            sentryExceptionFactory.getSentryExceptions(error);
-
+      if (sentryExceptions != null) {
         // Replace the original ANR exception with the profile-derived one,
         // as we assume the profiling culprit identification is more valuable
         // the event threads are kept as-is, so the original main thread stacktrace is still
         // available
-        event.setExceptions(sentryException);
+        event.setExceptions(sentryExceptions);
 
         if (profilerId != null) {
           event.getContexts().setProfile(new ProfileContext(profilerId));
@@ -1055,32 +1044,6 @@ public final class ApplicationExitInfoEventProcessor
       } else {
         return chunk.getProfilerId();
       }
-    }
-
-    private boolean hasOnlySystemFrames(@NotNull SentryEvent event) {
-      final List<SentryException> exceptions = event.getExceptions();
-      if (exceptions == null || exceptions.isEmpty()) {
-        return false;
-      }
-
-      for (final SentryException exception : exceptions) {
-        final SentryStackTrace stacktrace = exception.getStacktrace();
-        if (stacktrace != null) {
-          final List<SentryStackFrame> frames = stacktrace.getFrames();
-          if (frames != null && !frames.isEmpty()) {
-            for (final SentryStackFrame frame : frames) {
-              if (frame.isInApp() != null && frame.isInApp()) {
-                return false;
-              }
-              final String module = frame.getModule();
-              if (module != null && !AnrCulpritIdentifier.isSystemFrame(module)) {
-                return false;
-              }
-            }
-          }
-        }
-      }
-      return true;
     }
 
     /**
