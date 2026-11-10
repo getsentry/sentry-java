@@ -444,11 +444,15 @@ public final class AndroidConnectionStatusProvider
       return snapshot.get();
     }
 
-    options
-        .getLogger()
-        .log(
-            SentryLevel.DEBUG,
-            "Cache updated - Status: " + statusOf(refreshed) + ", Type: " + typeOf(refreshed));
+    // Without capabilities, statusOf and typeOf query the ConnectivityManager, so we only build the
+    // message if it'll be logged.
+    if (options.getLogger().isEnabled(SentryLevel.DEBUG)) {
+      options
+          .getLogger()
+          .log(
+              SentryLevel.DEBUG,
+              "Cache updated - Status: " + statusOf(refreshed) + ", Type: " + typeOf(refreshed));
+    }
     return refreshed;
   }
 
