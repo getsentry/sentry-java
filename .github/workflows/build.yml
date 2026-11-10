@@ -30,6 +30,24 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
+      # Robolectric downloads one android-all-instrumented jar (100-200 MB) per SDK level at test
+      # runtime into ~/.m2, which setup-gradle does not cache. The key changes only when the
+      # Robolectric version or the set of SDK levels used by tests changes.
+      - name: Compute Robolectric cache key
+        id: robolectric-key
+        run: |
+          key=$( (grep '^roboelectric' gradle/libs.versions.toml; git grep -hoE 'sdk *= *\[[^]]*\]|^sdk=.*' -- '*/src/test/*') | sort -u | sha256sum | cut -c1-16)
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Robolectric android-all jars
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ steps.robolectric-key.outputs.key }}
+          # ponytail: a partial hit keeps old jars around, so the entry grows a bit across
+          # Robolectric upgrades. Drop restore-keys if the cache size matters.
+          restore-keys: robolectric-
+
       - name: Run Tests and Lint
         run: make preMerge
 
