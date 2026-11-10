@@ -29,6 +29,7 @@ import io.sentry.android.core.cache.AndroidEnvelopeCache;
 import io.sentry.android.core.internal.tombstone.TombstoneParser;
 import io.sentry.ndk.SentryNdk.CrashDaemon;
 import io.sentry.time.Deadline;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.FileUtils;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
@@ -441,6 +442,8 @@ public final class SentryNdkCrashService extends Service {
       reply.readException();
       return reply.readInt() == 1;
     } catch (RemoteException | RuntimeException ignored) {
+      // readException() rethrows whatever the service process threw, the NDK integration then
+      // doesn't start
       return false;
     } finally {
       data.recycle();
@@ -587,6 +590,9 @@ public final class SentryNdkCrashService extends Service {
             return mergedEnvelope;
           }
         } catch (Exception e) {
+          // the tombstone comes from the system and parsing it can throw anything, the crash is
+          // then sent without it
+          ExceptionUtils.rethrowIfFatal(e);
           options.getLogger().log(SentryLevel.DEBUG, e, "Failed to merge NDK tombstone envelope.");
           return new MergedEnvelope(null, exitInfo.getTimestamp());
         }
@@ -684,6 +690,8 @@ public final class SentryNdkCrashService extends Service {
         }
       }
     } catch (Exception e) {
+      // getEvent() throws Exception, the crash is then sent without tombstone enrichment
+      ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(SentryLevel.DEBUG, e, "Failed to read NDK envelope.");
     }
     return null;
