@@ -44,6 +44,8 @@ jobs:
         with:
           path: ~/.m2/repository/org/robolectric
           key: robolectric-${{ steps.robolectric-key.outputs.key }}
+          # A partial hit keeps old jars around, so the entry grows a bit across Robolectric
+          # upgrades. Drop restore-keys if the cache size matters.
           restore-keys: robolectric-
 
       - name: Run Tests and Lint
