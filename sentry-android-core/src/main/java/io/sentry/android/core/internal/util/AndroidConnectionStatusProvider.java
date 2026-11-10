@@ -1035,6 +1035,60 @@ public final class AndroidConnectionStatusProvider
         final @Nullable NetworkCapabilities capabilities, final @NotNull Deadline freshUntil) {
       return new ConnectionSnapshot(network, capabilities, freshUntil);
     }
+
+    /**
+     * For debugging. Summarizes the capabilities this provider reads instead of printing them in
+     * full because {@link NetworkCapabilities#toString()} can include the Wi-Fi SSID on API 29+.
+     */
+    @SuppressLint("InlinedApi")
+    @Override
+    public @NotNull String toString() {
+      final @NotNull StringBuilder sb = new StringBuilder("ConnectionSnapshot{network=");
+      sb.append(network).append(", capabilities=");
+
+      if (capabilities == null) {
+        sb.append("none");
+      } else {
+        sb.append("[transports=");
+        boolean anyTransport = false;
+
+        for (final int transport : transports) {
+          if (capabilities.hasTransport(transport)) {
+            sb.append(anyTransport ? "|" : "").append(transportName(transport));
+            anyTransport = true;
+          }
+        }
+
+        if (!anyTransport) {
+          sb.append("none");
+        }
+        sb.append(", internet=")
+            .append(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET))
+            .append(", validated=")
+            .append(capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
+            .append(']');
+      }
+
+      final long remainingMs = freshUntil.remaining(TimeUnit.MILLISECONDS);
+      sb.append(", ").append(remainingMs > 0 ? "fresh for " + remainingMs + "ms" : "stale");
+
+      return sb.append('}').toString();
+    }
+
+    private static @NotNull String transportName(final int transport) {
+      switch (transport) {
+        case NetworkCapabilities.TRANSPORT_WIFI:
+          return "wifi";
+        case NetworkCapabilities.TRANSPORT_CELLULAR:
+          return "cellular";
+        case NetworkCapabilities.TRANSPORT_ETHERNET:
+          return "ethernet";
+        case NetworkCapabilities.TRANSPORT_BLUETOOTH:
+          return "bluetooth";
+        default:
+          return String.valueOf(transport);
+      }
+    }
   }
 
   private void submitSafe(@NotNull Runnable r) {
