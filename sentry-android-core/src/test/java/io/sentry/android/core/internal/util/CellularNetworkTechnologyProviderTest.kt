@@ -336,14 +336,6 @@ class CellularNetworkTechnologyProviderTest {
   }
 
   @Test
-  fun `below Android 7 the technology is not read because getDataNetworkType is unavailable`() {
-    val provider = fixture.getSut(sdkVersion = Build.VERSION_CODES.M, hasPermission = true)
-
-    assertThat(provider.cellularNetworkTechnology).isNull()
-    verify(fixture.telephonyManager, never()).dataNetworkType
-  }
-
-  @Test
   fun `below Android 12 registering does nothing`() {
     val provider = fixture.getSut(sdkVersion = Build.VERSION_CODES.R)
 

@@ -128,7 +128,7 @@ public final class SentryClient implements ISentryClient {
         return SentryId.EMPTY_ID;
       }
 
-      if (ErrorUtils.isIgnored(options.getIgnoredErrors(), event)) {
+      if (ErrorUtils.isIgnored(options.getIgnoredErrorFilters(), event)) {
         options
             .getLogger()
             .log(
@@ -769,47 +769,6 @@ public final class SentryClient implements ISentryClient {
     return feedbackEvent;
   }
 
-  @Deprecated
-  @Override
-  public void captureUserFeedback(final @NotNull UserFeedback userFeedback) {
-    Objects.requireNonNull(userFeedback, "SentryEvent is required.");
-
-    if (SentryId.EMPTY_ID.equals(userFeedback.getEventId())) {
-      options.getLogger().log(SentryLevel.WARNING, "Capturing userFeedback without a Sentry Id.");
-      return;
-    }
-    options
-        .getLogger()
-        .log(SentryLevel.DEBUG, "Capturing userFeedback: %s", userFeedback.getEventId());
-
-    try {
-      final @NotNull SentryEnvelope envelope = buildEnvelope(userFeedback);
-      sendEnvelope(envelope, null);
-    } catch (IOException e) {
-      options
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              e,
-              "Capturing user feedback %s failed.",
-              userFeedback.getEventId());
-    }
-  }
-
-  @Deprecated
-  private @NotNull SentryEnvelope buildEnvelope(final @NotNull UserFeedback userFeedback) {
-    final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
-
-    final SentryEnvelopeItem userFeedbackItem =
-        SentryEnvelopeItem.fromUserFeedback(options.getSerializer(), userFeedback);
-    envelopeItems.add(userFeedbackItem);
-
-    final SentryEnvelopeHeader envelopeHeader =
-        new SentryEnvelopeHeader(userFeedback.getEventId(), options.getSdkVersion());
-
-    return new SentryEnvelope(envelopeHeader, envelopeItems);
-  }
-
   private @NotNull SentryEnvelope buildEnvelope(
       final @NotNull CheckIn checkIn, final @Nullable TraceContext traceContext) {
     final List<SentryEnvelopeItem> envelopeItems = new ArrayList<>();
@@ -1047,7 +1006,8 @@ public final class SentryClient implements ISentryClient {
         .getLogger()
         .log(SentryLevel.DEBUG, "Capturing transaction: %s", transaction.getEventId());
 
-    if (TracingUtils.isIgnored(options.getIgnoredTransactions(), transaction.getTransaction())) {
+    if (TracingUtils.isIgnored(
+        options.getIgnoredTransactionFilters(), transaction.getTransaction())) {
       options
           .getLogger()
           .log(
@@ -1206,7 +1166,7 @@ public final class SentryClient implements ISentryClient {
       checkIn.setRelease(options.getRelease());
     }
 
-    if (CheckInUtils.isIgnored(options.getIgnoredCheckIns(), checkIn.getMonitorSlug())) {
+    if (CheckInUtils.isIgnored(options.getIgnoredCheckInFilters(), checkIn.getMonitorSlug())) {
       options
           .getLogger()
           .log(
@@ -1360,7 +1320,6 @@ public final class SentryClient implements ISentryClient {
     return traceContext;
   }
 
-  @ApiStatus.Experimental
   @Override
   public void captureLog(@Nullable SentryLogEvent logEvent, @Nullable IScope scope) {
     // Drop silently to prevent recursion; a log here can re-enter through a logging integration.
@@ -1405,7 +1364,6 @@ public final class SentryClient implements ISentryClient {
     }
   }
 
-  @ApiStatus.Experimental
   @Override
   public void captureMetric(
       @Nullable SentryMetricsEvent metricsEvent,
@@ -1497,7 +1455,7 @@ public final class SentryClient implements ISentryClient {
               .getContexts()
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
-          event.getContexts().setTrace(span.getSpanContext());
+          event.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
         }
       }
 
@@ -1545,7 +1503,7 @@ public final class SentryClient implements ISentryClient {
             .getContexts()
             .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
       } else {
-        event.getContexts().setTrace(span.getSpanContext());
+        event.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
       }
     }
 
@@ -1566,7 +1524,7 @@ public final class SentryClient implements ISentryClient {
               .getContexts()
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
-          checkIn.getContexts().setTrace(span.getSpanContext());
+          checkIn.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
         }
       }
     }
@@ -1610,7 +1568,7 @@ public final class SentryClient implements ISentryClient {
               .getContexts()
               .setTrace(TransactionContext.fromPropagationContext(scope.getPropagationContext()));
         } else {
-          replayEvent.getContexts().setTrace(span.getSpanContext());
+          replayEvent.getContexts().setTrace(span.getSpanContext().withDefaultStatus());
         }
       }
     }

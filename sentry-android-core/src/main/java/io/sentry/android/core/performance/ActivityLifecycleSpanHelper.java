@@ -3,7 +3,6 @@ package io.sentry.android.core.performance;
 import android.os.Looper;
 import android.os.SystemClock;
 import io.sentry.ISpan;
-import io.sentry.Instrumenter;
 import io.sentry.SentryDate;
 import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
@@ -111,8 +110,7 @@ public class ActivityLifecycleSpanHelper {
       final @NotNull String description,
       final @NotNull SentryDate startTimestamp) {
     final @NotNull ISpan span =
-        parentSpan.startChild(
-            APP_METRICS_ACTIVITIES_OP, description, startTimestamp, Instrumenter.SENTRY);
+        parentSpan.startChild(APP_METRICS_ACTIVITIES_OP, description, startTimestamp);
     setDefaultStartSpanData(span);
     return span;
   }

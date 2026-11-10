@@ -2,6 +2,7 @@ package io.sentry.android.core
 
 import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.Breadcrumb
 import io.sentry.Sentry
 import io.sentry.SentryLevel
@@ -13,8 +14,8 @@ import java.lang.RuntimeException
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import org.junit.runner.RunWith
+import org.robolectric.shadows.ShadowLog
 
 @RunWith(AndroidJUnit4::class)
 class SentryLogcatAdapterTest {
@@ -26,16 +27,21 @@ class SentryLogcatAdapterTest {
     val breadcrumbs = mutableListOf<Breadcrumb>()
     val logs = mutableListOf<SentryLogEvent>()
 
-    fun initSut(options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null) {
-      val metadata =
-        Bundle().apply { putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123") }
+    fun initSut(
+      logcatLogCaptureEnabled: Boolean? = true,
+      metadata: Bundle = Bundle(),
+      options: Sentry.OptionsConfiguration<SentryAndroidOptions>? = null,
+    ) {
+      metadata.putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
       val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
       initForTest(mockContext) {
         it.beforeBreadcrumb = SentryOptions.BeforeBreadcrumbCallback { breadcrumb, _ ->
           breadcrumbs.add(breadcrumb)
           breadcrumb
         }
-        it.logs.isEnabled = true
+        if (logcatLogCaptureEnabled != null) {
+          it.logcatLogCaptureEnabled = logcatLogCaptureEnabled
+        }
         it.logs.beforeSend =
           SentryOptions.Logs.BeforeSendLogCallback { logEvent ->
             logs.add(logEvent)
@@ -55,6 +61,38 @@ class SentryLogcatAdapterTest {
     Sentry.close()
     fixture.breadcrumbs.clear()
     fixture.logs.clear()
+    ShadowLog.clear()
+  }
+
+  @Test
+  fun `Logcat log capture is disabled by default while breadcrumbs and Android Log remain enabled`() {
+    fixture.initSut(logcatLogCaptureEnabled = null)
+
+    SentryLogcatAdapter.d(tag, commonMsg)
+
+    assertThat(fixture.logs).isEmpty()
+    assertThat(fixture.breadcrumbs).hasSize(1)
+    assertThat(ShadowLog.getLogs().any { it.tag == tag && it.msg == commonMsg }).isTrue()
+  }
+
+  @Test
+  fun `Logcat log capture can be enabled through Android options`() {
+    fixture.initSut(logcatLogCaptureEnabled = true)
+
+    SentryLogcatAdapter.d(tag, commonMsg)
+
+    assertThat(fixture.logs).hasSize(1)
+  }
+
+  @Test
+  fun `Logcat log capture can be enabled through manifest metadata`() {
+    val metadata =
+      Bundle().apply { putBoolean(ManifestMetadataReader.LOGCAT_LOG_CAPTURE_ENABLED, true) }
+    fixture.initSut(logcatLogCaptureEnabled = null, metadata = metadata)
+
+    SentryLogcatAdapter.d(tag, commonMsg)
+
+    assertThat(fixture.logs).hasSize(1)
   }
 
   @Test
@@ -164,26 +202,6 @@ class SentryLogcatAdapterTest {
     fixture.logs
       .first()
       .assert("$commonMsg wtf exception\n${throwable.message}", SentryLogLevel.FATAL)
-  }
-
-  @Test
-  fun `do not send logs if logs is disabled`() {
-    fixture.initSut { it.logs.isEnabled = false }
-
-    SentryLogcatAdapter.v(tag, "$commonMsg verbose")
-    SentryLogcatAdapter.i(tag, "$commonMsg info")
-    SentryLogcatAdapter.d(tag, "$commonMsg debug")
-    SentryLogcatAdapter.w(tag, "$commonMsg warning")
-    SentryLogcatAdapter.e(tag, "$commonMsg error")
-    SentryLogcatAdapter.wtf(tag, "$commonMsg wtf")
-    SentryLogcatAdapter.e(tag, "$commonMsg error exception", throwable)
-    SentryLogcatAdapter.v(tag, "$commonMsg verbose exception", throwable)
-    SentryLogcatAdapter.i(tag, "$commonMsg info exception", throwable)
-    SentryLogcatAdapter.d(tag, "$commonMsg debug exception", throwable)
-    SentryLogcatAdapter.w(tag, "$commonMsg warning exception", throwable)
-    SentryLogcatAdapter.wtf(tag, "$commonMsg wtf exception", throwable)
-
-    assertTrue(fixture.logs.isEmpty())
   }
 
   @Test

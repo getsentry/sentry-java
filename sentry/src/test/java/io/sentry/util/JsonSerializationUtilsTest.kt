@@ -1,6 +1,7 @@
 package io.sentry.util
 
 import io.sentry.ILogger
+import io.sentry.ISerializer
 import io.sentry.JsonSerializable
 import io.sentry.JsonSerializer
 import io.sentry.ObjectWriter
@@ -18,7 +19,9 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 
 class JsonSerializationUtilsTest {
 
@@ -115,6 +118,16 @@ class JsonSerializationUtilsTest {
       "byteSizeOf should match actual byte array length for UTF-8",
     )
     assertTrue(byteSize > 0, "byteSize should be positive")
+  }
+
+  @Test
+  fun `byteSizeOf disables serialization logging`() {
+    val mockSerializer: ISerializer = mock()
+    val serializable: JsonSerializable = mock()
+
+    JsonSerializationUtils.byteSizeOf(mockSerializer, logger, serializable)
+
+    verify(mockSerializer).serialize(eq(serializable), any(), eq(false))
   }
 
   @Test

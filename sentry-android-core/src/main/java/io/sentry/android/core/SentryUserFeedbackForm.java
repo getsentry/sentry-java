@@ -1,8 +1,8 @@
 package io.sentry.android.core;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Application;
+import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -10,9 +10,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.Window;
-import android.view.WindowManager;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
@@ -39,7 +39,7 @@ import java.lang.ref.WeakReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class SentryUserFeedbackForm extends AlertDialog {
+public class SentryUserFeedbackForm extends Dialog {
 
   private boolean isCancelable = false;
   private @Nullable SentryId currentReplayId;
@@ -60,7 +60,10 @@ public class SentryUserFeedbackForm extends AlertDialog {
       final @Nullable SentryId associatedEventId,
       final @Nullable OptionsConfiguration configuration,
       final @Nullable SentryFeedbackOptions.OptionsConfigurator configurator) {
-    super(context, themeResId);
+    super(context, resolveTheme(context, themeResId));
+    // The form draws its own title. AlertDialog requested this for us; without it, themes that
+    // don't set windowNoTitle, like Theme.Material.Dialog, add an empty system title bar.
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
     this.associatedEventId = associatedEventId;
     final @NotNull SentryOptions options = Sentry.getCurrentScopes().getOptions();
     @NotNull
@@ -211,6 +214,19 @@ public class SentryUserFeedbackForm extends AlertDialog {
         final @NotNull Activity activity, final @NotNull Bundle outState) {}
   }
 
+  /**
+   * {@link Dialog} falls back to {@link android.R.attr#dialogTheme} for {@code 0}, but the form has
+   * always defaulted to {@link android.R.attr#alertDialogTheme}, as {@code AlertDialog} does.
+   */
+  static int resolveTheme(final @NotNull Context context, final int themeResId) {
+    if (themeResId != 0) {
+      return themeResId;
+    }
+    final @NotNull TypedValue outValue = new TypedValue();
+    context.getTheme().resolveAttribute(android.R.attr.alertDialogTheme, outValue, true);
+    return outValue.resourceId;
+  }
+
   @Override
   public void setCancelable(boolean cancelable) {
     super.setCancelable(cancelable);
@@ -222,10 +238,6 @@ public class SentryUserFeedbackForm extends AlertDialog {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.sentry_dialog_user_feedback);
-    final @Nullable Window window = getWindow();
-    if (window != null) {
-      window.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
-    }
     setCancelable(isCancelable);
 
     final @NotNull SentryFeedbackOptions feedbackOptions = resolvedFeedbackOptions;

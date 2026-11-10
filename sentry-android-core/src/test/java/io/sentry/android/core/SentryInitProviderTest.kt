@@ -150,13 +150,11 @@ class SentryInitProviderTest {
     AndroidOptionsInitializer.loadDefaultAndMetadataOptions(sentryOptions, mockContext)
 
     val loadClass = LoadClass()
-    val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
     AndroidOptionsInitializer.installDefaultIntegrations(
       mockContext,
       sentryOptions,
       BuildInfoProvider(AndroidLogger()),
       loadClass,
-      activityFramesTracker,
       false,
       false,
       false,
@@ -167,7 +165,6 @@ class SentryInitProviderTest {
       sentryOptions,
       mockContext,
       loadClass,
-      activityFramesTracker,
       false,
     )
 

@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.quartz.CronTrigger;
@@ -33,7 +32,6 @@ import org.quartz.SchedulerException;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 
-@ApiStatus.Experimental
 public final class SentryJobListener implements JobListener {
 
   static {

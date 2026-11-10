@@ -7,6 +7,15 @@ import org.apache.tools.ant.taskdefs.condition.Os
 import org.gradle.internal.extensions.stdlib.capitalized
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
+buildscript {
+  repositories { google() }
+  dependencies {
+    // Replaces the R8 bundled with AGP when the AGP matrix job overrides AGP. See r8 in
+    // libs.versions.toml.
+    if (System.getenv("VERSION_AGP") != null) classpath(libs.android.r8)
+  }
+}
+
 plugins {
   alias(libs.plugins.android.application)
   id("io.sentry.spotless")
@@ -53,8 +62,7 @@ android {
 
   defaultConfig {
     applicationId = "io.sentry.samples.android"
-    // androidx.sqlite 2.6+ require minSdk 23; the Sentry SDK still supports 21.
-    minSdk = 23
+    minSdk = libs.versions.minSdk.get().toInt()
     targetSdk = libs.versions.targetSdk.get().toInt()
     versionCode = 2
     versionName = sentryVersion
@@ -181,6 +189,7 @@ dependencies {
 
   implementation("io.sentry:sentry-android:$sentryVersion")
   implementation("io.sentry:sentry-android-fragment:$sentryVersion")
+  implementation("io.sentry:sentry-android-ndk:$sentryVersion")
   implementation("io.sentry:sentry-android-navigation:$sentryVersion")
   implementation("io.sentry:sentry-android-navigation3:$sentryVersion")
   implementation("io.sentry:sentry-android-sqlite:$sentryVersion")

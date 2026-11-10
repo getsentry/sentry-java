@@ -62,7 +62,6 @@ public class AnrV2Integration implements Integration, Closeable {
     this.dateProvider = dateProvider;
   }
 
-  @SuppressLint("NewApi") // we do the check in the AnrIntegrationFactory
   @Override
   public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options =

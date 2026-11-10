@@ -9,15 +9,51 @@ import io.sentry.SentryLogLevel
 import io.sentry.SentryOptions
 import io.sentry.android.timber.BuildConfig.VERSION_NAME
 import io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion
+import io.sentry.util.LazyEvaluator.Evaluator
 import java.io.Closeable
 import timber.log.Timber
 
 /** Sentry integration for Timber. */
-public class SentryTimberIntegration(
-  public val minEventLevel: SentryLevel = SentryLevel.ERROR,
-  public val minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
-  public val minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+public class SentryTimberIntegration
+private constructor(
+  public val minEventLevel: SentryLevel,
+  public val minBreadcrumbLevel: SentryLevel,
+  public val minLogsLevel: SentryLogLevel,
+  private val logsEnabledProvider: Evaluator<Boolean>,
 ) : Integration, Closeable {
+  public constructor(
+    minEventLevel: SentryLevel = SentryLevel.ERROR,
+    minBreadcrumbLevel: SentryLevel = SentryLevel.INFO,
+    minLogsLevel: SentryLogLevel = SentryLogLevel.INFO,
+    logsEnabled: Boolean,
+  ) : this(
+    minEventLevel,
+    minBreadcrumbLevel,
+    minLogsLevel,
+    Evaluator { logsEnabled },
+  )
+
+  public constructor(
+    logsEnabled: Boolean
+  ) : this(
+    SentryLevel.ERROR,
+    SentryLevel.INFO,
+    SentryLogLevel.INFO,
+    logsEnabled,
+  )
+
+  internal constructor(
+    logsEnabledProvider: Evaluator<Boolean>
+  ) : this(
+    SentryLevel.ERROR,
+    SentryLevel.INFO,
+    SentryLogLevel.INFO,
+    logsEnabledProvider,
+  )
+
+  public val logsEnabled: Boolean
+    get() = logsEnabledProvider.evaluate()
+
   private lateinit var tree: SentryTimberTree
   private lateinit var logger: ILogger
 
@@ -31,7 +67,14 @@ public class SentryTimberIntegration(
   override fun register(scopes: IScopes, options: SentryOptions) {
     logger = options.logger
 
-    tree = SentryTimberTree(scopes, minEventLevel, minBreadcrumbLevel, minLogsLevel)
+    tree =
+      SentryTimberTree(
+        scopes,
+        minEventLevel,
+        minBreadcrumbLevel,
+        minLogsLevel,
+        logsEnabledProvider.evaluate(),
+      )
     Timber.plant(tree)
 
     logger.log(SentryLevel.DEBUG, "SentryTimberIntegration installed.")

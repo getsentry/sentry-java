@@ -40,7 +40,6 @@ public class ScreenshotUtils {
   }
 
   // Used by Hybrid SDKs
-  @SuppressLint("NewApi")
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IThreadChecker threadChecker,
@@ -87,7 +86,7 @@ public class ScreenshotUtils {
     final boolean isMaskingConfigured = !options.getScreenshot().getMaskViewClasses().isEmpty();
     if (isMaskingConfigured && !isReplayAvailable) {
       options
-          .getLogger()
+          .getFatalLogger()
           .log(SentryLevel.WARNING, "Screenshot masking requires sentry-android-replay module");
       return null;
     }

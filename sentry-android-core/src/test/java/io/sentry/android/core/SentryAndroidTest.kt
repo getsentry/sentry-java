@@ -23,6 +23,7 @@ import io.sentry.SentryEnvelope
 import io.sentry.SentryLevel
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.FATAL
+import io.sentry.SentryLogEvent
 import io.sentry.SentryOptions
 import io.sentry.SentryOptions.BeforeSendCallback
 import io.sentry.Session
@@ -84,6 +85,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
+import timber.log.Timber
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.N], shadows = [SentryShadowProcess::class])
@@ -176,6 +178,7 @@ class SentryAndroidTest {
   fun `set up`() {
     Sentry.close()
     AppStartMetrics.getInstance().clear()
+    ContextUtils.resetInstance()
     context = ApplicationProvider.getApplicationContext()
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager?
     fixture.shadowActivityManager = Shadow.extract(activityManager)
@@ -239,12 +242,58 @@ class SentryAndroidTest {
   }
 
   @Test
+  fun `auto-installed Timber integration uses log capture option set in configuration callback`() {
+    val logs = mutableListOf<SentryLogEvent>()
+    fixture.initSut { options ->
+      options.timberLogCaptureEnabled = true
+      options.logs.beforeSend =
+        SentryOptions.Logs.BeforeSendLogCallback { log ->
+          logs.add(log)
+          log
+        }
+    }
+
+    Timber.i("message")
+
+    assertEquals(1, logs.size)
+  }
+
+  @Test
+  fun `auto-installed Timber integration uses configuration callback override of manifest option`() {
+    val metadata =
+      Bundle().apply {
+        putString(ManifestMetadataReader.DSN, "https://key@sentry.io/123")
+        putBoolean(ManifestMetadataReader.TIMBER_LOG_CAPTURE_ENABLED, true)
+      }
+    val mockContext = ContextUtilsTestHelper.mockMetaData(metaData = metadata)
+    val logs = mutableListOf<SentryLogEvent>()
+
+    initForTest(mockContext) { options ->
+      options.timberLogCaptureEnabled = false
+      options.logs.beforeSend =
+        SentryOptions.Logs.BeforeSendLogCallback { log ->
+          logs.add(log)
+          log
+        }
+    }
+    Timber.i("message")
+
+    assertTrue(logs.isEmpty())
+  }
+
+  @Test
   fun `deduplicates fragment, timber and system events integrations`() {
     var refOptions: SentryAndroidOptions? = null
     fixture.initSut(autoInit = true) {
       it.addIntegration(FragmentLifecycleIntegration(ApplicationProvider.getApplicationContext()))
 
-      it.addIntegration(SentryTimberIntegration(minEventLevel = FATAL, minBreadcrumbLevel = DEBUG))
+      it.addIntegration(
+        SentryTimberIntegration(
+          minEventLevel = FATAL,
+          minBreadcrumbLevel = DEBUG,
+          logsEnabled = false,
+        )
+      )
 
       it.addIntegration(
         SystemEventsBreadcrumbsIntegration(
@@ -353,7 +402,7 @@ class SentryAndroidTest {
   fun `init starts session replay if app is in foreground`() {
     initSentryWithForegroundImportance(true) { _ ->
       Shadows.shadowOf(Looper.getMainLooper()).idle()
-      assertTrue(Sentry.getCurrentHub().options.replayController.isRecording())
+      assertTrue(Sentry.getCurrentScopes().options.replayController.isRecording())
     }
   }
 
@@ -362,7 +411,7 @@ class SentryAndroidTest {
   fun `init does not start session replay if the app is in background`() {
     initSentryWithForegroundImportance(false) { _ ->
       Shadows.shadowOf(Looper.getMainLooper()).idle()
-      assertFalse(Sentry.getCurrentHub().options.replayController.isRecording())
+      assertFalse(Sentry.getCurrentScopes().options.replayController.isRecording())
     }
   }
 
@@ -525,7 +574,6 @@ class SentryAndroidTest {
 
     fixture.initSut(context = mock<Application>()) { options ->
       options.dsn = "https://key@sentry.io/123"
-      options.isEnablePerformanceV2 = true
     }
     assertEquals(42, AppStartMetrics.getInstance().appStartTimeSpan.startUptimeMs)
     assertTrue(AppStartMetrics.getInstance().sdkInitTimeSpan.hasStarted())
@@ -540,7 +588,6 @@ class SentryAndroidTest {
     SentryShadowProcess.setStartUptimeMillis(42)
     fixture.initSut(context = mock<Application>()) { options ->
       options.dsn = "https://key@sentry.io/123"
-      options.isEnablePerformanceV2 = true
     }
 
     assertEquals(99, AppStartMetrics.getInstance().sdkInitTimeSpan.startUptimeMs)

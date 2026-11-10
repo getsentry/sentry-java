@@ -2,11 +2,9 @@ package io.sentry.spring.boot.jakarta
 
 import com.acme.MainBootClass
 import io.opentelemetry.api.OpenTelemetry
-import io.sentry.AsyncHttpTransportFactory
 import io.sentry.Breadcrumb
 import io.sentry.DataCategory
 import io.sentry.EventProcessor
-import io.sentry.FilterString
 import io.sentry.Hint
 import io.sentry.IContinuousProfiler
 import io.sentry.IProfileConverter
@@ -48,7 +46,6 @@ import io.sentry.spring.jakarta.tracing.SpringServletTransactionNameProvider
 import io.sentry.spring.jakarta.tracing.TransactionNameProvider
 import io.sentry.transport.ITransport
 import io.sentry.transport.ITransportGate
-import io.sentry.transport.apache.ApacheHttpClientTransportFactory
 import jakarta.servlet.Filter
 import java.io.File
 import java.lang.RuntimeException
@@ -281,7 +278,7 @@ class SentryAutoConfigurationTest {
         "sentry.cron.default-timezone=America/New_York",
         "sentry.cron.default-failure-issue-threshold=40",
         "sentry.cron.default-recovery-threshold=50",
-        "sentry.logs.enabled=true",
+        "sentry.logging.logs-enabled=true",
         "sentry.profile-session-sample-rate=1.0",
         "sentry.profiling-traces-dir-path=tmp/sentry/profiling-traces",
         "sentry.profile-lifecycle=TRACE",
@@ -321,12 +318,9 @@ class SentryAutoConfigurationTest {
           .containsOnly("localhost", "^(http|https)://api\\..*\$")
         assertThat(options.isEnabled).isEqualTo(false)
         assertThat(options.isSendModules).isEqualTo(false)
-        assertThat(options.ignoredCheckIns)
-          .containsOnly(FilterString("slug1"), FilterString("slugB"))
-        assertThat(options.ignoredErrors)
-          .containsOnly(FilterString("Some error"), FilterString("Another .*"))
-        assertThat(options.ignoredTransactions)
-          .containsOnly(FilterString("transactionName1"), FilterString("transactionNameB"))
+        assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
+        assertThat(options.ignoredErrors).containsOnly("Some error", "Another .*")
+        assertThat(options.ignoredTransactions).containsOnly("transactionName1", "transactionNameB")
         assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
         assertThat(options.isEnableDatabaseTransactionTracing).isEqualTo(true)
         assertThat(options.isForceInit).isEqualTo(true)
@@ -340,7 +334,7 @@ class SentryAutoConfigurationTest {
         assertThat(options.cron!!.defaultTimezone).isEqualTo("America/New_York")
         assertThat(options.cron!!.defaultFailureIssueThreshold).isEqualTo(40L)
         assertThat(options.cron!!.defaultRecoveryThreshold).isEqualTo(50L)
-        assertThat(options.logs.isEnabled).isEqualTo(true)
+        assertThat(options.logging.logsEnabled).isTrue()
         assertThat(options.profileSessionSampleRate).isEqualTo(1.0)
         assertThat(options.profilingTracesDirPath)
           .startsWith(File("tmp/sentry/profiling-traces").absolutePath)
@@ -868,37 +862,6 @@ class SentryAutoConfigurationTest {
       .run {
         assertThat(it.getBean(SentryOptions::class.java).tracesSampler)
           .isInstanceOf(CustomTracesSamplerCallback::class.java)
-      }
-  }
-
-  @Test
-  fun `when sentry-apache-http-client-5 is on the classpath, creates apache transport factory`() {
-    baseContextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
-      assertThat(it.getBean(SentryOptions::class.java).transportFactory)
-        .isInstanceOf(ApacheHttpClientTransportFactory::class.java)
-    }
-  }
-
-  @Test
-  fun `when sentry-apache-http-client-5 is not on the classpath, does not create apache transport factory`() {
-    baseContextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
-      .withClassLoader(FilteredClassLoader(ApacheHttpClientTransportFactory::class.java))
-      .run {
-        assertThat(it.getBean(SentryOptions::class.java).transportFactory)
-          .isInstanceOf(AsyncHttpTransportFactory::class.java)
-      }
-  }
-
-  @Test
-  fun `when sentry-apache-http-client-5 is on the classpath and custom transport factory bean is set, does not create apache transport factory`() {
-    baseContextRunner
-      .withPropertyValues("sentry.dsn=http://key@localhost/proj")
-      .withUserConfiguration(MockTransportConfiguration::class.java)
-      .run {
-        assertThat(it.getBean(SentryOptions::class.java).transportFactory)
-          .isNotInstanceOf(ApacheHttpClientTransportFactory::class.java)
-          .isNotInstanceOf(NoOpTransportFactory::class.java)
       }
   }
 

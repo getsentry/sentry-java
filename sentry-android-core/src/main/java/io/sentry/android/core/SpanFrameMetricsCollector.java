@@ -73,7 +73,7 @@ public class SpanFrameMetricsCollector
       final @NotNull SentryFrameMetricsCollector frameMetricsCollector) {
     this.frameMetricsCollector = frameMetricsCollector;
 
-    enabled = options.isEnablePerformanceV2() && options.isEnableFramesTracking();
+    enabled = options.isEnableFramesTracking();
     if (enabled && options.isTracingEnabled()) {
       // Start the frame metrics thread now, so it's ready before the first activity's first frame.
       frameMetricsCollector.prepare();

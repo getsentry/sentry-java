@@ -37,11 +37,6 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   private final @NotNull SentryRequestResolver sentryRequestResolver;
   public static final String SENTRY_SCOPES_KEY = "sentry-scopes";
 
-  /**
-   * @deprecated please use {@link AbstractSentryWebFilter#SENTRY_SCOPES_KEY} instead.
-   */
-  @Deprecated public static final String SENTRY_HUB_KEY = SENTRY_SCOPES_KEY;
-
   private static final String TRANSACTION_OP = "http.server";
 
   public AbstractSentryWebFilter(final @NotNull IScopes scopes) {
@@ -71,7 +66,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
   }
 
   private boolean isIgnored(final @NotNull IScopes scopes, final @NotNull String origin) {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), origin);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), origin);
   }
 
   protected void doFinally(

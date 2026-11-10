@@ -44,10 +44,6 @@ final class NoOpSentryClient implements ISentryClient {
     return SentryId.EMPTY_ID;
   }
 
-  @Deprecated
-  @Override
-  public void captureUserFeedback(@NotNull UserFeedback userFeedback) {}
-
   @Override
   public void captureSession(@NotNull Session session, @Nullable Hint hint) {}
 

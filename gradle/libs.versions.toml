@@ -15,7 +15,6 @@ dokka = "2.0.0"
 espresso = "3.7.0"
 feign = "11.6"
 gummyBears = "0.16.0"
-java8Signature = "1.0"
 jackson = "2.18.3"
 jetbrainsCompose = "1.6.11"
 kotlin = "2.3.21"
@@ -42,6 +41,9 @@ room3 = "3.0.0-rc01"
 sagp = "6.13.0"
 # The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
 agp = "9.4.0"
+# The R8 bundled with AGP 9.0 and 9.2 crashes on androidx.core at minSdk 24, so builds that override
+# AGP (the AGP matrix) put the R8 that ships with the default AGP on their buildscript classpath.
+r8 = "9.4.14"
 sqlite = "2.6.2"
 sqliteRc = "2.8.0-alpha03" # Required by Room3 3.0.0-rc*
 slf4j = "1.7.30"
@@ -58,7 +60,7 @@ vanniktechMavenPublish = "0.37.0"
 targetSdk = "37"
 compileSdk = "37"
 compileSdkMinor = "2"
-minSdk = "21"
+minSdk = "24"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -138,6 +140,7 @@ caffeine = { module = "com.github.ben-manes.caffeine:caffeine" }
 caffeine-jcache = { module = "com.github.ben-manes.caffeine:jcache", version = "3.3.1" }
 coil-compose = { module = "io.coil-kt:coil-compose", version = "2.7.0" }
 commons-compress = {module = "org.apache.commons:commons-compress", version = "1.28.0"}
+android-r8 = { module = "com.android.tools:r8", version.ref = "r8" }
 context-propagation = { module = "io.micrometer:context-propagation", version = "1.1.0" }
 errorprone-core = { module = "com.google.errorprone:error_prone_core", version = "2.50.0" }
 feign-core = { module = "io.github.openfeign:feign-core", version.ref = "feign" }
@@ -257,7 +260,6 @@ timber = { module = "com.jakewharton.timber:timber", version = "4.7.1" }
 
 # Animalsniffer signature
 gummy-bears-api21 = { module = "com.toasttab.android:gummy-bears-api-21", version.ref = "gummyBears" }
-java8-signature = { module = "org.codehaus.mojo.signature:java18", version.ref = "java8Signature" }
 
 # tomcat libraries
 tomcat-catalina = { module = "org.apache.tomcat:tomcat-catalina", version = "9.0.108" }

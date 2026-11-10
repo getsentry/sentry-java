@@ -775,10 +775,7 @@ fun UserFeedbackScreen() {
           horizontalArrangement = Arrangement.Center,
         ) {
           Icon(
-            painter =
-              painterResource(
-                id = io.sentry.compose.R.drawable.sentry_user_feedback_compose_button_logo_24
-              ),
+            painter = painterResource(id = R.drawable.sentry_user_feedback_button_logo_24),
             contentDescription = null,
           )
           Spacer(Modifier.padding(horizontal = 4.dp))

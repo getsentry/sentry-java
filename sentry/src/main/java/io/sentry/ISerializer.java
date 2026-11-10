@@ -24,6 +24,20 @@ public interface ISerializer {
   <T> void serialize(@NotNull T entity, @NotNull Writer writer) throws IOException;
 
   /**
+   * Serializes an entity to a writer with optional logging control.
+   *
+   * @param entity the entity to serialize
+   * @param writer the writer to serialize to
+   * @param enableLogging whether serializer logging is enabled, if supported
+   * @param <T> the type of entity
+   * @throws IOException if serialization fails
+   */
+  default <T> void serialize(@NotNull T entity, @NotNull Writer writer, boolean enableLogging)
+      throws IOException {
+    serialize(entity, writer);
+  }
+
+  /**
    * Serializes an envelope
    *
    * @param envelope an envelope

@@ -38,7 +38,6 @@ class SpanFrameMetricsCollectorTest {
       }
       options.frameMetricsCollector = frameMetricsCollector
       options.isEnableFramesTracking = enabled
-      options.isEnablePerformanceV2 = enabled
       options.dateProvider = SentryAndroidDateProvider()
       options.tracesSampleRate = tracesSampleRate
 

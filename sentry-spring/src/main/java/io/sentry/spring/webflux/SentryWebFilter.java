@@ -37,11 +37,6 @@ import reactor.core.publisher.Mono;
 public final class SentryWebFilter implements WebFilter {
   public static final String SENTRY_SCOPES_KEY = "sentry-scopes";
 
-  /**
-   * @deprecated please use {@link SentryWebFilter#SENTRY_SCOPES_KEY} instead.
-   */
-  @Deprecated public static final String SENTRY_HUB_KEY = SENTRY_SCOPES_KEY;
-
   private static final String TRANSACTION_OP = "http.server";
   private static final String TRACE_ORIGIN = "auto.spring.webflux";
 
@@ -115,7 +110,7 @@ public final class SentryWebFilter implements WebFilter {
   }
 
   private boolean isIgnored(final @NotNull IScopes scopes) {
-    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN);
+    return SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN);
   }
 
   private boolean shouldTraceRequest(

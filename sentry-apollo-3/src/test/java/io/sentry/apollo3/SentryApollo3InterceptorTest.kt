@@ -38,8 +38,10 @@ import io.sentry.protocol.SdkVersion
 import io.sentry.protocol.SentryTransaction
 import io.sentry.util.Apollo3PlatformTestManipulator
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -218,6 +220,25 @@ class SentryApollo3InterceptorTest {
         anyOrNull(),
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun `sets span status to cancelled and rethrows CancellationException`(): Unit = runBlocking {
+    val tx =
+      SentryTracer(TransactionContext("op", "desc", TracesSamplingDecision(true)), fixture.scopes)
+    whenever(fixture.scopes.span).thenReturn(tx)
+    val cancellation = CancellationException("cancelled")
+    val chain =
+      object : HttpInterceptorChain {
+        override suspend fun proceed(request: HttpRequest): HttpResponse = throw cancellation
+      }
+    val request = HttpRequest.Builder(HttpMethod.Post, "https://example.com/graphql").build()
+    val interceptor = SentryApollo3HttpInterceptor(fixture.scopes, captureFailedRequests = false)
+
+    val thrown = assertFailsWith<CancellationException> { interceptor.intercept(request, chain) }
+
+    assertThat(thrown).isSameInstanceAs(cancellation)
+    assertThat(tx.children.single().status).isEqualTo(SpanStatus.CANCELLED)
   }
 
   @Test

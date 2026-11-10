@@ -12,7 +12,6 @@ import android.os.Looper;
 import android.view.Choreographer;
 import android.view.FrameMetrics;
 import android.view.Window;
-import androidx.annotation.RequiresApi;
 import io.sentry.ILogger;
 import io.sentry.ISentryLifecycleToken;
 import io.sentry.SentryLevel;
@@ -68,7 +67,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   private final @NotNull ConcurrentSkipListSet<DelayedFrame> delayedFrames =
       new ConcurrentSkipListSet<>();
 
-  @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -76,7 +74,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, options, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressLint("NewApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull ILogger logger,
@@ -84,7 +81,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     this(context, logger, buildInfoProvider, new WindowFrameMetricsManager() {});
   }
 
-  @SuppressLint({"NewApi", "DiscouragedPrivateApi"})
+  @SuppressLint("DiscouragedPrivateApi")
   public SentryFrameMetricsCollector(
       final @NotNull Context context,
       final @NotNull SentryOptions options,
@@ -111,10 +108,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
     // registerActivityLifecycleCallbacks is only available if Context is an AppContext
     if (!(appContext instanceof Application)) {
-      return;
-    }
-    // FrameMetrics api is only available since sdk version N
-    if (buildInfoProvider.getSdkInfoVersion() < Build.VERSION_CODES.N) {
       return;
     }
     isAvailable = true;
@@ -243,7 +236,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
    * Return time spent on the main thread (cpu) for frame creation. It doesn't consider time spent
    * on the render thread (gpu).
    */
-  @RequiresApi(api = Build.VERSION_CODES.N)
   private long getFrameCpuDuration(final @NotNull FrameMetrics frameMetrics) {
     // Inspired by JankStats
     // https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:metrics/metrics-performance/src/main/java/androidx/metrics/performance/JankStatsApi24Impl.kt;l=74-79;drc=1de6215c6bd9e887e3d94556e9ac55cfb7b8c797
@@ -357,7 +349,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     }
   }
 
-  @SuppressLint("NewApi")
   private void stopTrackingWindow(final @NotNull Window window) {
     new Handler(Looper.getMainLooper())
         .post(
@@ -383,7 +374,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
     trackCurrentWindow();
   }
 
-  @SuppressLint("NewApi")
   private void trackCurrentWindow() {
     // read the volatile field once: onActivityStopped may null it concurrently
     final @Nullable WeakReference<Window> windowRef = currentWindow;
@@ -544,7 +534,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
 
   @ApiStatus.Internal
   public interface WindowFrameMetricsManager {
-    @RequiresApi(api = Build.VERSION_CODES.N)
     default void addOnFrameMetricsAvailableListener(
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener,
@@ -555,7 +544,6 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
       window.addOnFrameMetricsAvailableListener(frameMetricsAvailableListener, handler);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     default void removeOnFrameMetricsAvailableListener(
         final @NotNull Window window,
         final @Nullable Window.OnFrameMetricsAvailableListener frameMetricsAvailableListener) {

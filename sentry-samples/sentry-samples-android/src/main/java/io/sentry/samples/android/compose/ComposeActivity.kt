@@ -49,9 +49,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import coil.compose.AsyncImage
+import io.sentry.Sentry
 import io.sentry.android.replay.sentryReplayUnmask
 import io.sentry.compose.SentryTraced
-import io.sentry.compose.SentryUserFeedbackButton
 import io.sentry.compose.withSentryObservableEffect
 import io.sentry.samples.android.GitHubApi
 import io.sentry.samples.android.R as IR
@@ -110,9 +110,16 @@ fun Landing(navigateGithub: () -> Unit, navigateGithubWithArgs: () -> Unit) {
         }
       }
       SentryTraced(tag = "button_dialog") {
-        SentryUserFeedbackButton(modifier = Modifier.padding(top = 32.dp)) { options ->
-          options.formTitle = "Report a Bug???"
-          options.messageLabel = "Please provide details about the bug you encountered."
+        Button(
+          onClick = {
+            Sentry.feedback().show { options ->
+              options.formTitle = "Report a Bug???"
+              options.messageLabel = "Please provide details about the bug you encountered."
+            }
+          },
+          modifier = Modifier.padding(top = 32.dp),
+        ) {
+          Text("Report a Bug")
         }
       }
       if (showDialog) {

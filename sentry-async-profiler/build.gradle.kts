@@ -8,7 +8,6 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
-  id("io.sentry.animalsniffer")
   id("io.sentry.spotless")
   id("io.sentry.jdk-target")
   id("io.sentry.publish")
@@ -16,7 +15,7 @@ plugins {
 }
 
 tasks.named<KotlinCompile>("compileKotlin") {
-  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8
+  compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
 }
 
 kotlin { explicitApi() }

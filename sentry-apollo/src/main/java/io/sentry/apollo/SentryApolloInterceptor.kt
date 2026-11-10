@@ -164,7 +164,7 @@ class SentryApolloInterceptor(
   }
 
   private fun isIgnored(): Boolean =
-    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOrigins(), TRACE_ORIGIN)
+    SpanUtils.isIgnored(scopes.getOptions().getIgnoredSpanOriginFilters(), TRACE_ORIGIN)
 
   private fun startChild(request: InterceptorRequest, activeSpan: ISpan): ISpan {
     val operation = request.operation.name().name()

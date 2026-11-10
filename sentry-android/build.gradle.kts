@@ -31,6 +31,5 @@ android {
 
 dependencies {
   api(projects.sentryAndroidCore)
-  api(projects.sentryAndroidNdk)
   api(projects.sentryAndroidReplay)
 }

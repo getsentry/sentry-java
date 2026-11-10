@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.ITransactionProfiler
 import io.sentry.NoOpTransactionProfiler
 import io.sentry.protocol.DebugImage
@@ -94,6 +95,34 @@ class SentryAndroidOptionsTest {
   }
 
   @Test
+  fun `Timber log capture is disabled by default`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertFalse(sentryOptions.timberLogCaptureEnabled)
+  }
+
+  @Test
+  fun `Timber log capture can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.timberLogCaptureEnabled = true
+
+    assertTrue(sentryOptions.timberLogCaptureEnabled)
+  }
+
+  @Test
+  fun `Logcat log capture is disabled by default`() {
+    assertThat(SentryAndroidOptions().logcatLogCaptureEnabled).isFalse()
+  }
+
+  @Test
+  fun `Logcat log capture can be enabled`() {
+    val sentryOptions = SentryAndroidOptions()
+    sentryOptions.logcatLogCaptureEnabled = true
+
+    assertThat(sentryOptions.logcatLogCaptureEnabled).isTrue()
+  }
+
+  @Test
   fun `attach screenshots disabled by default for Android`() {
     val sentryOptions = SentryAndroidOptions()
 
@@ -141,19 +170,6 @@ class SentryAndroidOptionsTest {
     options.isEnableScopeSync = false
 
     assertFalse(options.isEnableScopeSync)
-  }
-
-  @Test
-  fun `performance v2 is enabled by default`() {
-    val sentryOptions = SentryAndroidOptions()
-    assertTrue(sentryOptions.isEnablePerformanceV2)
-  }
-
-  @Test
-  fun `performance v2 can be disabled`() {
-    val sentryOptions = SentryAndroidOptions()
-    sentryOptions.isEnablePerformanceV2 = false
-    assertFalse(sentryOptions.isEnablePerformanceV2)
   }
 
   @Test
