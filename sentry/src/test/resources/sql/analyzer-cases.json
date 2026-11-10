@@ -329,6 +329,45 @@
       "note": "dollarQuotedStrings is UNKNOWN: stop at $$."
     },
     {
+      "id": "literal.dollar_tag.conservative",
+      "requirements": ["R4", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT * FROM t WHERE body = $t$Zq9xK7h2c$t$",
+      "expected": {
+        "text": "SELECT * FROM t WHERE body = ?",
+        "summary": "SELECT t"
+      },
+      "secrets": ["Zq9xK7h2c"],
+      "source": "sentry",
+      "note": "taggedDollarQuotes is UNKNOWN: stop at $t$."
+    },
+    {
+      "id": "literal.dollar.h2",
+      "requirements": ["R2", "R8"],
+      "dialect": "h2",
+      "input": "SELECT * FROM t WHERE body = $$it's Zq9xK7h2a$$",
+      "expected": {
+        "text": "SELECT * FROM t WHERE body = ?",
+        "summary": "SELECT t"
+      },
+      "secrets": ["Zq9xK7h2a"],
+      "source": "sentry",
+      "note": "dollarQuotedStrings is YES: H2 reads $$...$$ as a string."
+    },
+    {
+      "id": "literal.dollar_tag.h2",
+      "requirements": ["R2", "R8"],
+      "dialect": "h2",
+      "input": "SELECT * FROM t WHERE a = $t$ AND b = 'p $t$' AND c = 'Zq9xK7h2b'",
+      "expected": {
+        "text": "SELECT * FROM t WHERE a = $t$ AND b = ? AND c = ?",
+        "summary": "SELECT t"
+      },
+      "secrets": ["Zq9xK7h2b"],
+      "source": "sentry",
+      "note": "taggedDollarQuotes is NO: H2 reads only untagged $$ quotes, so $t$ is a parameter marker and both literals are redacted. Reading $t$ as a tagged quote would close it inside 'p $t$' and expose the last literal."
+    },
+    {
       "id": "literal.q_quote.oracle",
       "requirements": ["R2", "R8"],
       "dialect": "oracle",
@@ -1677,10 +1716,22 @@
       "input": "SELECT * FROM \"Users\"",
       "expected": {
         "text": "SELECT * FROM ?",
-        "summary": "SELECT \"Users\""
+        "summary": "SELECT \"?\""
       },
       "source": "sentry",
-      "note": "Quoted summary targets are kept as written regardless of the double-quote rule."
+      "note": "doubleQuotedIdentifiers is UNKNOWN: \"Users\" may be a string literal, so the text redacts it and the summary target becomes \"?\" (R6)."
+    },
+    {
+      "id": "dialect.double_quotes.unknown_procedure",
+      "requirements": ["R6", "R7", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "CALL \"get_user\"(?)",
+      "expected": {
+        "text": "CALL ?(?)",
+        "summary": "CALL \"?\""
+      },
+      "source": "sentry",
+      "note": "doubleQuotedIdentifiers is UNKNOWN: the summary target becomes \"?\" (D15), and a redacted name gives no stored procedure."
     },
     {
       "id": "dialect.double_quotes.backslash.mysql",
@@ -2372,10 +2423,10 @@
       "input": "SELECT * FROM \"TABLE\"",
       "expected": {
         "text": "SELECT * FROM ?",
-        "summary": "SELECT \"TABLE\""
+        "summary": "SELECT \"?\""
       },
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[18]",
-      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written."
+      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
     },
     {
       "id": "otel_java.sanitize_sql.019",
@@ -2703,10 +2754,10 @@
       "input": "SELECT x, y, z FROM \"schema table\"",
       "expected": {
         "text": "SELECT x, y, z FROM ?",
-        "summary": "SELECT \"schema table\""
+        "summary": "SELECT \"?\""
       },
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[4]",
-      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written."
+      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
     },
     {
       "id": "otel_java.simplify_sql.005",
@@ -2715,10 +2766,10 @@
       "input": "SELECT x, y, z FROM \"schema\".\"table\"",
       "expected": {
         "text": "SELECT x, y, z FROM ?.?",
-        "summary": "SELECT \"schema\".\"table\""
+        "summary": "SELECT \"?\".\"?\""
       },
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[5]",
-      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written. OTel Java keeps dotted double-quoted names as identifiers in every dialect."
+      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6). OTel Java keeps dotted double-quoted names as identifiers in every dialect."
     },
     {
       "id": "otel_java.simplify_sql.006",
@@ -3232,10 +3283,10 @@
       "input": "insert into \"db table\" where lalala",
       "expected": {
         "text": "insert into ? where lalala",
-        "summary": "insert \"db table\""
+        "summary": "insert \"?\""
       },
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[48]",
-      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written."
+      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
     },
     {
       "id": "otel_java.simplify_sql.049",
@@ -3280,10 +3331,10 @@
       "input": "delete from \"my table\" where something something",
       "expected": {
         "text": "delete from ? where something something",
-        "summary": "delete \"my table\""
+        "summary": "delete \"?\""
       },
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[52]",
-      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written."
+      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
     },
     {
       "id": "otel_java.simplify_sql.053",
@@ -3364,10 +3415,10 @@
       "input": "update \"my table\" set answer=42",
       "expected": {
         "text": "update ? set answer=?",
-        "summary": "update \"my table\""
+        "summary": "update \"?\""
       },
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[59]",
-      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written."
+      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
     },
     {
       "id": "otel_java.simplify_sql.060",
@@ -3463,10 +3514,10 @@
       "input": "merge into \"my table\"",
       "expected": {
         "text": "merge into ?",
-        "summary": "merge \"my table\""
+        "summary": "merge \"?\""
       },
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[67]",
-      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written."
+      "note": "doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
     },
     {
       "id": "otel_java.simplify_sql.068",
@@ -6547,10 +6598,10 @@
       "input": "SELECT * FROM \"SELECT\" WHERE \"FROM\" = ?",
       "expected": {
         "text": "SELECT * FROM ? WHERE ? = ?",
-        "summary": "SELECT \"SELECT\""
+        "summary": "SELECT \"?\""
       },
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[1]",
-      "note": "Upstream asserts only the summary. doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written."
+      "note": "Upstream asserts only the summary. doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
     },
     {
       "id": "otel_java.identifiers_and_table_references.002",
@@ -6583,10 +6634,10 @@
       "input": "SELECT * FROM \"table.name\"",
       "expected": {
         "text": "SELECT * FROM ?",
-        "summary": "SELECT \"table.name\""
+        "summary": "SELECT \"?\""
       },
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[4]",
-      "note": "Upstream asserts only the summary. doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written."
+      "note": "Upstream asserts only the summary. doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
     },
     {
       "id": "otel_java.identifiers_and_table_references.005",
@@ -6595,10 +6646,10 @@
       "input": "SELECT * FROM \"schema\".`table` JOIN [other] ON \"schema\".`table`.id = [other].id",
       "expected": {
         "text": "SELECT * FROM ?.`table` JOIN [other] ON ?.`table`.id = [other].id",
-        "summary": "SELECT \"schema\".`table` [other]"
+        "summary": "SELECT \"?\".`table` [other]"
       },
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#identifiersAndTableReferences[5]",
-      "note": "Upstream asserts only the summary. sqlite accepts all three quoting styles: bracketIdentifiers YES, doubleQuotedIdentifiers UNKNOWN. doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text; the summary keeps quoted targets as written."
+      "note": "Upstream asserts only the summary. sqlite accepts all three quoting styles: bracketIdentifiers YES, doubleQuotedIdentifiers UNKNOWN. doubleQuotedIdentifiers is UNKNOWN: \"...\" is treated as a literal in the text, so a quoted summary target becomes \"?\" (R6)."
     },
     {
       "id": "otel_java.identifiers_and_table_references.006",

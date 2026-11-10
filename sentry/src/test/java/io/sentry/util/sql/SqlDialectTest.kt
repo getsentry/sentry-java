@@ -25,24 +25,25 @@ class SqlDialectTest {
       dialect.dashDashCommentNeedsWhitespace,
       dialect.nestedBlockComments,
       dialect.alternativeQuoting,
+      dialect.taggedDollarQuotes,
     )
 
-  private val conservative = List(9) { UNKNOWN }
+  private val conservative = List(10) { UNKNOWN }
 
   @Test
   fun `known systems map to their documented rules`() {
     val expected =
       mapOf(
-        "postgresql" to listOf(YES, NO, UNKNOWN, YES, NO, NO, NO, YES, NO),
-        "mysql" to listOf(UNKNOWN, NO, UNKNOWN, NO, YES, NO, YES, UNKNOWN, NO),
-        "mariadb" to listOf(UNKNOWN, NO, UNKNOWN, NO, YES, NO, YES, UNKNOWN, NO),
-        "sqlite" to listOf(UNKNOWN, YES, NO, NO, NO, NO, NO, NO, NO),
-        "in-memory" to listOf(UNKNOWN, YES, NO, NO, NO, NO, NO, NO, NO),
-        "sqlserver" to listOf(UNKNOWN, YES, NO, NO, NO, NO, NO, YES, NO),
-        "oracle" to listOf(YES, NO, NO, NO, NO, NO, NO, UNKNOWN, YES),
-        "h2" to listOf(YES, UNKNOWN, NO, YES, NO, YES, NO, YES, NO),
-        "hsqldb" to listOf(YES, NO, NO, NO, NO, NO, NO, UNKNOWN, NO),
-        "derby" to listOf(YES, NO, NO, NO, NO, NO, NO, YES, NO),
+        "postgresql" to listOf(YES, NO, UNKNOWN, YES, NO, NO, NO, YES, NO, YES),
+        "mysql" to listOf(UNKNOWN, NO, UNKNOWN, NO, YES, NO, YES, UNKNOWN, NO, NO),
+        "mariadb" to listOf(UNKNOWN, NO, UNKNOWN, NO, YES, NO, YES, UNKNOWN, NO, NO),
+        "sqlite" to listOf(UNKNOWN, YES, NO, NO, NO, NO, NO, NO, NO, NO),
+        "in-memory" to listOf(UNKNOWN, YES, NO, NO, NO, NO, NO, NO, NO, NO),
+        "sqlserver" to listOf(UNKNOWN, YES, NO, NO, NO, NO, NO, YES, NO, NO),
+        "oracle" to listOf(YES, NO, NO, NO, NO, NO, NO, UNKNOWN, YES, NO),
+        "h2" to listOf(YES, UNKNOWN, NO, YES, NO, YES, NO, YES, NO, NO),
+        "hsqldb" to listOf(YES, NO, NO, NO, NO, NO, NO, UNKNOWN, NO, NO),
+        "derby" to listOf(YES, NO, NO, NO, NO, NO, NO, YES, NO, NO),
       )
 
     expected.forEach { (system, rules) ->

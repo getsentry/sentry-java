@@ -8320,6 +8320,7 @@ public final class io/sentry/util/sql/SqlDialect {
 	public fun getDoubleSlashComments ()Lio/sentry/util/sql/SqlDialect$Support;
 	public fun getHashComments ()Lio/sentry/util/sql/SqlDialect$Support;
 	public fun getNestedBlockComments ()Lio/sentry/util/sql/SqlDialect$Support;
+	public fun getTaggedDollarQuotes ()Lio/sentry/util/sql/SqlDialect$Support;
 }
 
 public final class io/sentry/util/sql/SqlDialect$Support : java/lang/Enum {

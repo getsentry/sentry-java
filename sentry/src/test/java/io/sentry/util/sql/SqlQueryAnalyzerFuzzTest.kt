@@ -193,9 +193,12 @@ private class TokenInputGenerator(private val random: Random, private val dialec
   }
 
   private fun dollarQuoted(terminated: Boolean): String {
-    val delimiter = if (random.nextBoolean()) "$$" else "\$t$"
-    if (dialect.dollarQuotedStrings == Support.NO) {
-      // `$` is an identifier character here: the content is plain code.
+    val tagged = random.nextBoolean()
+    val delimiter = if (tagged) "\$t$" else "$$"
+    val rule = if (tagged) dialect.taggedDollarQuotes else dialect.dollarQuotedStrings
+    if (rule == Support.NO) {
+      // Not a quote here (`$` continues an identifier, or `$t$` is a parameter marker): the
+      // content is plain code.
       return delimiter + " " + content(IDENTIFIER_WORDS, canary = false) + " " + delimiter
     }
     return delimiter +

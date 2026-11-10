@@ -34,7 +34,8 @@ public final class SqlDialect {
           /* doubleSlashComments= */ Support.UNKNOWN,
           /* dashDashCommentNeedsWhitespace= */ Support.UNKNOWN,
           /* nestedBlockComments= */ Support.UNKNOWN,
-          /* alternativeQuoting= */ Support.UNKNOWN);
+          /* alternativeQuoting= */ Support.UNKNOWN,
+          /* taggedDollarQuotes= */ Support.UNKNOWN);
 
   // Sources for every rule: docs/plans/sanitize-sql-queries/README.md, "Dialect table".
 
@@ -48,7 +49,8 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.YES,
-          Support.NO);
+          Support.NO,
+          Support.YES);
 
   private static final @NotNull SqlDialect MYSQL =
       new SqlDialect(
@@ -60,12 +62,14 @@ public final class SqlDialect {
           Support.NO,
           Support.YES,
           Support.UNKNOWN, // "under some conditions, nested comments might be permitted"
+          Support.NO,
           Support.NO);
 
   private static final @NotNull SqlDialect SQLITE =
       new SqlDialect(
           Support.UNKNOWN, // unresolved double-quoted identifiers fall back to string literals
           Support.YES,
+          Support.NO,
           Support.NO,
           Support.NO,
           Support.NO,
@@ -84,6 +88,7 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.YES,
+          Support.NO,
           Support.NO);
 
   private static final @NotNull SqlDialect ORACLE =
@@ -96,7 +101,8 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.UNKNOWN, // nesting is undocumented
-          Support.YES);
+          Support.YES,
+          Support.NO);
 
   private static final @NotNull SqlDialect H2 =
       new SqlDialect(
@@ -108,7 +114,8 @@ public final class SqlDialect {
           Support.YES,
           Support.NO,
           Support.YES,
-          Support.NO);
+          Support.NO,
+          Support.NO); // $$ only: the tokenizer reads no tags, in any mode
 
   private static final @NotNull SqlDialect HSQLDB =
       new SqlDialect(
@@ -120,6 +127,7 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.UNKNOWN, // nesting is undocumented
+          Support.NO,
           Support.NO);
 
   private static final @NotNull SqlDialect DERBY =
@@ -132,6 +140,7 @@ public final class SqlDialect {
           Support.NO,
           Support.NO,
           Support.YES,
+          Support.NO,
           Support.NO);
 
   private final @NotNull Support doubleQuotedIdentifiers;
@@ -143,6 +152,7 @@ public final class SqlDialect {
   private final @NotNull Support dashDashCommentNeedsWhitespace;
   private final @NotNull Support nestedBlockComments;
   private final @NotNull Support alternativeQuoting;
+  private final @NotNull Support taggedDollarQuotes;
 
   private SqlDialect(
       final @NotNull Support doubleQuotedIdentifiers,
@@ -153,7 +163,8 @@ public final class SqlDialect {
       final @NotNull Support doubleSlashComments,
       final @NotNull Support dashDashCommentNeedsWhitespace,
       final @NotNull Support nestedBlockComments,
-      final @NotNull Support alternativeQuoting) {
+      final @NotNull Support alternativeQuoting,
+      final @NotNull Support taggedDollarQuotes) {
     this.doubleQuotedIdentifiers = doubleQuotedIdentifiers;
     this.bracketIdentifiers = bracketIdentifiers;
     this.backslashEscapes = backslashEscapes;
@@ -163,6 +174,7 @@ public final class SqlDialect {
     this.dashDashCommentNeedsWhitespace = dashDashCommentNeedsWhitespace;
     this.nestedBlockComments = nestedBlockComments;
     this.alternativeQuoting = alternativeQuoting;
+    this.taggedDollarQuotes = taggedDollarQuotes;
   }
 
   /**
@@ -219,8 +231,9 @@ public final class SqlDialect {
   }
 
   /**
-   * Whether {@code $$...$$} and {@code $tag$...$tag$} delimit string literals. {@code UNKNOWN}:
-   * analysis stops at a {@code $$} or {@code $tag$} that does not continue an identifier.
+   * Whether {@code $$...$$} delimits a string literal. Tagged dollar quotes are a separate rule,
+   * see {@link #getTaggedDollarQuotes()}. {@code UNKNOWN}: analysis stops at a {@code $$} that does
+   * not continue an identifier.
    */
   public @NotNull Support getDollarQuotedStrings() {
     return dollarQuotedStrings;
@@ -265,5 +278,15 @@ public final class SqlDialect {
    */
   public @NotNull Support getAlternativeQuoting() {
     return alternativeQuoting;
+  }
+
+  /**
+   * Whether {@code $tag$...$tag$} delimits a string literal. A system can support {@code $$...$$}
+   * without tags (H2), and reading a tag where the database does not can end the quote inside a
+   * real string literal and expose the rest of the statement. {@code UNKNOWN}: analysis stops at a
+   * {@code $tag$} that does not continue an identifier.
+   */
+  public @NotNull Support getTaggedDollarQuotes() {
+    return taggedDollarQuotes;
   }
 }
