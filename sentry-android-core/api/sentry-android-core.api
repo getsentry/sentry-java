@@ -147,6 +147,12 @@ public final class io/sentry/android/core/AndroidSocketTagger : io/sentry/ISocke
 	public fun untagSockets ()V
 }
 
+public final class io/sentry/android/core/AnrCulpritEventHelper {
+	public fun <init> (Lio/sentry/SentryExceptionFactory;)V
+	public fun createExceptions (Lio/sentry/android/core/anr/AggregatedStackTrace;Lio/sentry/protocol/Mechanism;)Ljava/util/List;
+	public static fun hasOnlySystemFrames (Lio/sentry/SentryEvent;)Z
+}
+
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V
