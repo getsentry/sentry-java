@@ -247,7 +247,6 @@ public final class DeviceInfoUtil {
     }
   }
 
-  @SuppressWarnings("NewApi")
   @NotNull
   private TimeZone getTimeZone() {
     // Only use the costly Calendar API on Android 13+ (API Level 33+) when the locale contains a

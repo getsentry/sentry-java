@@ -95,18 +95,6 @@ class NetworkBreadcrumbsIntegrationTest {
   }
 
   @Test
-  fun `It doesn't register callback if not on Android N+`() {
-    val buildInfo = mock<BuildInfoProvider>()
-    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.M)
-    val sut = fixture.getSut(buildInfo = buildInfo)
-
-    sut.register(fixture.scopes, fixture.options)
-
-    assertTrue(AndroidConnectionStatusProvider.getChildCallbacks().isEmpty())
-    assertNull(sut.networkCallback)
-  }
-
-  @Test
   fun `When NetworkBreadcrumbsIntegration is closed, it should unregister the callback`() {
     val sut = fixture.getSut()
 

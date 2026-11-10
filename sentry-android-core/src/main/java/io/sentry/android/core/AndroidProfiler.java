@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import android.annotation.SuppressLint;
 import android.os.Debug;
 import android.os.Process;
 import android.os.SystemClock;
@@ -116,7 +115,6 @@ public class AndroidProfiler {
         Objects.requireNonNull(frameMetricsCollector, "SentryFrameMetricsCollector is required");
   }
 
-  @SuppressLint("NewApi")
   public @Nullable ProfileStartData start() {
     try (final @NotNull ISentryLifecycleToken ignored = lock.acquire()) {
       // intervalUs is 0 only if there was a problem in the init
@@ -225,7 +223,6 @@ public class AndroidProfiler {
     }
   }
 
-  @SuppressLint("NewApi")
   public @Nullable ProfileEndData endAndCollect(
       final boolean isTimeout,
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
@@ -299,7 +296,6 @@ public class AndroidProfiler {
     }
   }
 
-  @SuppressLint("NewApi")
   private void putPerformanceCollectionDataInMeasurements(
       final @Nullable List<PerformanceCollectionData> performanceCollectionData) {
 
