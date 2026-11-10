@@ -20,6 +20,7 @@ import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.clientreport.DiscardReason.RATELIMIT_BACKOFF
 import io.sentry.protocol.SentryId
+import io.sentry.time.AnchoredClock
 import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
 import java.io.File
@@ -62,7 +63,7 @@ constructor(
   ) {
   // TODO: capture envelopes for buffered segments instead, but don't send them until buffer is
   // triggered
-  private val bufferedSegments = mutableListOf<ReplaySegment.Created>()
+  private val bufferedSegments = mutableListOf<BufferedSegment>()
 
   internal companion object {
     private const val TAG = "BufferCaptureStrategy"
@@ -70,13 +71,7 @@ constructor(
   }
 
   override fun pause() {
-    createCurrentSegment("pause") { segment ->
-      if (segment is ReplaySegment.Created) {
-        bufferedSegments += segment
-
-        currentSegment++
-      }
-    }
+    createCurrentSegment("pause") { segment, timeline -> buffer(segment, timeline) }
     super.pause()
   }
 
@@ -114,7 +109,7 @@ constructor(
       return
     }
 
-    createCurrentSegment("capture_replay") { segment ->
+    createCurrentSegment("capture_replay") { segment, _ ->
       bufferedSegments.capture()
 
       if (segment is ReplaySegment.Created) {
@@ -135,27 +130,69 @@ constructor(
   ) {
     // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
     // reflecting the exact time of when it was captured
-    val frameTimestamp = dateProvider.currentTimeMillis
+    val currentConfig = recorderConfig
+    val frame = stampFrame()
+    // a later frame may move the clock onto a new timeline before this task runs
+    val bufferLimit = frame.timestamp - options.sessionReplay.errorReplayDuration
     replayExecutor.submit(
       ReplayRunnable("$TAG.add_frame") {
-        cache?.store(frameTimestamp)
+        // first, so the old timeline is encoded and rotated without this frame
+        frame.jump?.let { followJump(it, currentConfig) }
+        cache?.store(frame.timestamp)
 
-        val now = dateProvider.currentTimeMillis
-        val bufferLimit = now - options.sessionReplay.errorReplayDuration
         screenAtStart = cache?.rotate(bufferLimit)
-        bufferedSegments.rotate(bufferLimit)
+        bufferedSegments.rotate()
       }
     )
   }
 
-  override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
-    createCurrentSegment("configuration_changed") { segment ->
-      if (segment is ReplaySegment.Created) {
-        bufferedSegments += segment
-
-        currentSegment++
-      }
+  /**
+   * Moves the buffer onto the new timeline. What was recorded before the jump stays buffered, as a
+   * segment of its own, unless the clock jumped forward by more than the session duration.
+   */
+  private fun followJump(jump: TimelineJump, currentConfig: ScreenshotRecorderConfig?) {
+    if (jump.newTimelineStart - jump.oldTimelineEnd > options.sessionReplay.sessionDuration) {
+      // an error soon after would send one replay spanning the jump, hours or years long; session
+      // mode stops at the same jump instead
+      bufferedSegments.discardWhere { true }
+    } else {
+      bufferOldTimeline(jump, currentConfig)
     }
+    // frames left from the old timeline would be encoded into the new one's segments
+    cache?.rotate(until = jump.oldTimelineEnd)
+    // last, so a segment request can't see the new timeline before the cache is on it
+    executorTimeline = jump.newTimeline
+  }
+
+  /** Buffers the frames up to where the old timeline ended as a segment of their own. */
+  private fun bufferOldTimeline(jump: TimelineJump, currentConfig: ScreenshotRecorderConfig?) {
+    val firstFrameTimestamp = cache?.firstFrameTimestamp()
+    if (!isTerminating.get() && currentConfig != null && firstFrameTimestamp != null) {
+      val segment =
+        createSegmentInternal(
+          jump.oldTimelineEnd - firstFrameTimestamp,
+          DateUtils.getDateTime(firstFrameTimestamp),
+          currentReplayId,
+          currentSegment,
+          currentConfig.recordingHeight,
+          currentConfig.recordingWidth,
+          currentConfig.frameRate,
+          currentConfig.bitRate,
+          events = jump.oldEvents,
+        )
+      buffer(segment, jump.oldTimeline)
+    }
+  }
+
+  private fun buffer(segment: ReplaySegment, timeline: AnchoredClock) {
+    if (segment is ReplaySegment.Created) {
+      bufferedSegments += BufferedSegment(segment, timeline)
+      currentSegment++
+    }
+  }
+
+  override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
+    createCurrentSegment("configuration_changed") { segment, timeline -> buffer(segment, timeline) }
     super.onConfigurationChanged(recorderConfig)
   }
 
@@ -175,7 +212,7 @@ constructor(
       return this
     }
     // we hand over replayExecutor and persistingExecutor to the new strategy to preserve order of
-    // execution
+    // execution, and the timeline, which the segments about to be flushed are on
     val captureStrategy =
       SessionCaptureStrategy(
         options,
@@ -184,6 +221,7 @@ constructor(
         ticker,
         replayExecutor,
         persistingExecutor,
+        continuedTimeline = clock.timeline,
       )
     captureStrategy.recorderConfig = recorderConfig
     captureStrategy.start(
@@ -196,7 +234,7 @@ constructor(
 
   override fun onTouchEvent(event: MotionEvent) {
     super.onTouchEvent(event)
-    val bufferLimit = dateProvider.currentTimeMillis - options.sessionReplay.errorReplayDuration
+    val bufferLimit = clock.nowMillis() - options.sessionReplay.errorReplayDuration
     rotateEvents(currentEvents, bufferLimit)
   }
 
@@ -218,10 +256,10 @@ constructor(
     }
   }
 
-  private fun MutableList<ReplaySegment.Created>.capture() {
+  private fun MutableList<BufferedSegment>.capture() {
     var bufferedSegment = removeFirstOrNull()
     while (bufferedSegment != null) {
-      bufferedSegment.capture(scopes)
+      bufferedSegment.segment.capture(scopes)
       bufferedSegment = removeFirstOrNull()
       // a short delay between processing envelopes to avoid bursting our server and hitting
       // another rate limit https://develop.sentry.dev/sdk/features/#additional-capabilities
@@ -230,15 +268,18 @@ constructor(
     }
   }
 
-  private fun MutableList<ReplaySegment.Created>.rotate(bufferLimit: Long) {
+  private fun MutableList<BufferedSegment>.rotate() =
+    // it can be that the buffered segment is half-way older than the buffer limit, but
+    // we only drop it if its end timestamp is older
+    discardWhere { it.endedMoreThan(options.sessionReplay.errorReplayDuration) }
+
+  private fun MutableList<BufferedSegment>.discardWhere(predicate: (BufferedSegment) -> Boolean) {
     // TODO: can be a single while-loop
     var removed = false
     removeAll {
-      // it can be that the buffered segment is half-way older than the buffer limit, but
-      // we only drop it if its end timestamp is older
-      if (it.replay.timestamp.time < bufferLimit) {
+      if (predicate(it)) {
         currentSegment--
-        deleteFile(it.replay.videoFile)
+        deleteFile(it.segment.replay.videoFile)
         removed = true
         return@removeAll true
       }
@@ -246,11 +287,26 @@ constructor(
     }
     if (removed) {
       // shift segmentIds after rotating buffered segments
-      forEachIndexed { index, segment -> segment.setSegmentId(index) }
+      forEachIndexed { index, buffered -> buffered.segment.setSegmentId(index) }
     }
   }
 
-  private fun createCurrentSegment(taskName: String, onSegmentCreated: (ReplaySegment) -> Unit) {
+  /**
+   * A segment held for the next error, with the timeline it was stamped on, so it ages by the time
+   * that passed even after the recording moved onto another timeline.
+   */
+  private class BufferedSegment(
+    val segment: ReplaySegment.Created,
+    private val timeline: AnchoredClock,
+  ) {
+    fun endedMoreThan(millis: Long): Boolean =
+      timeline.nowMillis() - segment.replay.timestamp.time > millis
+  }
+
+  private fun createCurrentSegment(
+    taskName: String,
+    onSegmentCreated: (segment: ReplaySegment, timeline: AnchoredClock) -> Unit,
+  ) {
     val currentConfig = recorderConfig
     if (currentConfig == null) {
       options.logger.log(
@@ -259,18 +315,13 @@ constructor(
       )
       return
     }
-    val errorReplayDuration = options.sessionReplay.errorReplayDuration
-    val now = dateProvider.currentTimeMillis
-    val currentSegmentTimestamp =
-      cache?.firstFrameTimestamp()?.let {
-        // in buffer mode we have to set the timestamp of the first frame as the actual start
-        DateUtils.getDateTime(it)
-      } ?: DateUtils.getDateTime(now - errorReplayDuration)
-    val duration = now - currentSegmentTimestamp.time
+    val request = SegmentRequest { wholeBuffer(it) }
     val replayId = currentReplayId
 
     replayExecutor.submit(
       ReplayRunnable("$TAG.$taskName") {
+        val (window, timeline) = request.resolve()
+        val (currentSegmentTimestamp, duration) = window
         val segment =
           createSegmentInternal(
             duration,
@@ -282,8 +333,19 @@ constructor(
             currentConfig.frameRate,
             currentConfig.bitRate,
           )
-        onSegmentCreated(segment)
+        onSegmentCreated(segment, timeline)
       }
     )
+  }
+
+  /** The start and duration of a segment of the whole buffer, up to now on [timeline]. */
+  private fun wholeBuffer(timeline: AnchoredClock): Pair<Date, Long> {
+    val now = timeline.nowMillis()
+    val start =
+      cache?.firstFrameTimestamp()?.let {
+        // in buffer mode we have to set the timestamp of the first frame as the actual start
+        DateUtils.getDateTime(it)
+      } ?: DateUtils.getDateTime(now - options.sessionReplay.errorReplayDuration)
+    return start to now - start.time
   }
 }

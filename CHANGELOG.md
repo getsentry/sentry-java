@@ -39,6 +39,9 @@
 - Stop blocking the main thread while the frame metrics thread starts when the first activity transaction begins ([#6500](https://github.com/getsentry/sentry-java/pull/6500))
   - On a busy device during cold start this could stall the launcher activity's `onCreate` for hundreds of milliseconds.
 - Do not inspect the response body of streaming Apollo 3 and 4 responses (`multipart/mixed`, `text/event-stream`) for failed requests, which blocked `@defer` and `@stream` ([#6432](https://github.com/getsentry/sentry-java/pull/6432))
+- Session Replay no longer drops or freezes video when the device clock changes mid-recording ([#6542](https://github.com/getsentry/sentry-java/pull/6542))
+  - The replay shows the change once, as a gap or an overlap, and breadcrumbs and errors stay aligned with the video.
+  - A forward change longer than the session duration (1h) ends a full-session recording, as reaching that duration does. When recording only for errors, what was recorded before such a change is dropped, so the replay of a later error starts after it.
 
 ### Dependencies
 

@@ -1,6 +1,7 @@
 package io.sentry.android.replay.capture
 
 import android.graphics.Bitmap
+import io.sentry.DateUtils
 import io.sentry.IScopes
 import io.sentry.SentryLevel.DEBUG
 import io.sentry.SentryLevel.INFO
@@ -11,6 +12,7 @@ import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.android.replay.capture.CaptureStrategy.ReplaySegment
 import io.sentry.android.replay.util.ReplayRunnable
 import io.sentry.protocol.SentryId
+import io.sentry.time.AnchoredClock
 import io.sentry.time.MonotonicTicker
 import io.sentry.transport.ICurrentDateProvider
 import java.util.Date
@@ -33,11 +35,12 @@ internal class SessionCaptureStrategy
 constructor(
   private val options: SentryOptions,
   private val scopes: IScopes?,
-  private val dateProvider: ICurrentDateProvider,
+  dateProvider: ICurrentDateProvider,
   ticker: MonotonicTicker,
   executor: ScheduledExecutorService,
   persistingExecutor: ScheduledExecutorService,
   replayCacheProvider: ((replayId: SentryId) -> ReplayCache)? = null,
+  continuedTimeline: AnchoredClock? = null,
 ) :
   BaseCaptureStrategy(
     options,
@@ -47,6 +50,7 @@ constructor(
     executor,
     persistingExecutor,
     replayCacheProvider,
+    continuedTimeline,
   ) {
   internal companion object {
     private const val TAG = "SessionCaptureStrategy"
@@ -114,10 +118,14 @@ constructor(
     // have to do it before submitting, otherwise if the queue is busy, the timestamp won't be
     // reflecting the exact time of when it was captured
     val currentConfig = recorderConfig
-    val frameTimestamp = dateProvider.currentTimeMillis
-    val deadlineExceeded = replayDeadline?.hasPassed() == true
+    val frame = stampFrame(maxForwardJumpMillis = options.sessionReplay.sessionDuration)
+    val frameTimestamp = frame.timestamp
+    // a recording can't span a forward jump longer than its cap, so one ends it like the cap does
+    val deadlineExceeded = replayDeadline?.hasPassed() == true || frame.jumpedTooFar
     replayExecutor.submit(
       ReplayRunnable("$TAG.add_frame") {
+        // first, so the old timeline is encoded and rotated without this frame
+        frame.jump?.let { followJump(it, currentConfig) }
         cache?.store(frameTimestamp)
 
         val currentSegmentTimestamp = segmentTimestamp
@@ -171,6 +179,37 @@ constructor(
     )
   }
 
+  /**
+   * Captures the segment up to where the old timeline ended, and starts the next on the new one.
+   */
+  private fun followJump(jump: TimelineJump, currentConfig: ScreenshotRecorderConfig?) {
+    val currentSegmentTimestamp = segmentTimestamp
+    if (currentSegmentTimestamp != null) {
+      if (!isTerminating.get() && currentConfig != null) {
+        val segment =
+          createSegmentInternal(
+            jump.oldTimelineEnd - currentSegmentTimestamp.time,
+            currentSegmentTimestamp,
+            currentReplayId,
+            currentSegment,
+            currentConfig.recordingHeight,
+            currentConfig.recordingWidth,
+            currentConfig.frameRate,
+            currentConfig.bitRate,
+            events = jump.oldEvents,
+          )
+        if (segment is ReplaySegment.Created) {
+          segment.capture(scopes)
+          currentSegment++
+        }
+      }
+      segmentTimestamp = DateUtils.getDateTime(jump.newTimelineStart)
+    }
+    // frames left from the old timeline would be encoded into the new one's segments
+    cache?.rotate(until = jump.oldTimelineEnd)
+    executorTimeline = jump.newTimeline
+  }
+
   override fun onConfigurationChanged(recorderConfig: ScreenshotRecorderConfig) {
     createCurrentSegment("onConfigurationChanged") { segment ->
       if (segment is ReplaySegment.Created) {
@@ -198,13 +237,14 @@ constructor(
       return
     }
 
-    val requestedAt = dateProvider.currentTimeMillis
+    val request = SegmentRequest { it.nowMillis() }
     val replayId = currentReplayId
     replayExecutor.submit(
       ReplayRunnable("$TAG.$taskName") {
         // Keep the request time so executor delays do not extend the segment, but read the mutable
         // timeline here so a queued natural boundary cannot make it stale.
         val currentSegmentTimestamp = segmentTimestamp ?: return@ReplayRunnable
+        val requestedAt = request.resolve().first
         val segment =
           createSegmentInternal(
             requestedAt - currentSegmentTimestamp.time,
