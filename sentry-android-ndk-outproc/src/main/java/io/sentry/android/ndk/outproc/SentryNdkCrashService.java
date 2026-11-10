@@ -17,6 +17,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import io.sentry.DateUtils;
 import io.sentry.ILogger;
+import io.sentry.ISentryExecutorService;
 import io.sentry.SentryEnvelope;
 import io.sentry.SentryEnvelopeItem;
 import io.sentry.SentryEvent;
@@ -42,8 +43,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,6 +60,7 @@ public final class SentryNdkCrashService extends Service {
   private static final @NotNull String MERGED_SUFFIX = ".merged";
   private static final long POLL_INTERVAL_MILLIS = 250;
   private static final long MATCH_TOLERANCE_MILLIS = 30000;
+  private static final long CONNECT_TIMEOUT_MILLIS = 10000;
 
   private final @NotNull IBinder binder =
       new Binder() {
@@ -150,6 +153,7 @@ public final class SentryNdkCrashService extends Service {
     ParcelFileDescriptor readyWrite = null;
     ParcelFileDescriptor messageWrite = null;
     ParcelFileDescriptor messageRead = null;
+    @Nullable ServiceEnds ends = null;
     try {
       final ParcelFileDescriptor[] notifyPipe = ParcelFileDescriptor.createPipe();
       final ParcelFileDescriptor[] readyPipe = ParcelFileDescriptor.createPipe();
@@ -160,6 +164,10 @@ public final class SentryNdkCrashService extends Service {
       final ParcelFileDescriptor[] messageSocket = ParcelFileDescriptor.createSocketPair();
       messageWrite = messageSocket[0];
       messageRead = messageSocket[1];
+      ends = new ServiceEnds(shm.dup(), notifyRead, readyWrite, messageRead);
+      notifyRead = null;
+      readyWrite = null;
+      messageRead = null;
 
       final Intent intent = new Intent(context, SentryNdkCrashService.class);
       final @Nullable ServiceConnection connection =
@@ -167,9 +175,9 @@ public final class SentryNdkCrashService extends Service {
               context,
               intent,
               options.getLogger(),
+              options.getExecutorService(),
               nativeDatabaseDir.getPath(),
               context.getApplicationInfo().nativeLibraryDir,
-              shm,
               Process.myPid(),
               Process.myTid(),
               options.isTombstoneEnabled() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
@@ -177,25 +185,24 @@ public final class SentryNdkCrashService extends Service {
               options.getShutdownTimeoutMillis(),
               new ArrayList<>(options.getInAppIncludes()),
               new ArrayList<>(options.getInAppExcludes()),
-              notifyRead,
-              readyWrite,
-              messageRead);
+              ends);
+      ends = null;
       if (connection == null) {
-        options.getLogger().log(SentryLevel.DEBUG, "NDK crash service did not configure.");
+        options.getLogger().log(SentryLevel.DEBUG, "NDK crash service did not bind.");
         return null;
       }
 
+      // the daemon attaches once the service connects
       io.sentry.ndk.SentryNdk.initCrashDaemon(
           shm.detachFd(), notifyWrite.detachFd(), readyRead.detachFd(), messageWrite.detachFd());
       return connection;
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      options.getLogger().log(SentryLevel.DEBUG, e, "Failed to start NDK crash service.");
-      return null;
     } catch (IOException | SecurityException e) {
       options.getLogger().log(SentryLevel.DEBUG, e, "Failed to start NDK crash service.");
       return null;
     } finally {
+      if (ends != null) {
+        ends.close();
+      }
       closeQuietly(shm);
       closeQuietly(notifyRead);
       closeQuietly(notifyWrite);
@@ -225,9 +232,9 @@ public final class SentryNdkCrashService extends Service {
       final @NotNull Context context,
       final @NotNull Intent intent,
       final @NotNull ILogger logger,
+      final @NotNull ISentryExecutorService executorService,
       final @NotNull String nativeDatabasePath,
       final @Nullable String nativeLibraryDir,
-      final @NotNull ParcelFileDescriptor shm,
       final int appPid,
       final long appTid,
       final boolean tombstoneEnabled,
@@ -235,24 +242,19 @@ public final class SentryNdkCrashService extends Service {
       final long shutdownTimeoutMillis,
       final @NotNull ArrayList<String> includes,
       final @NotNull ArrayList<String> excludes,
-      final @NotNull ParcelFileDescriptor notifyRead,
-      final @NotNull ParcelFileDescriptor readyWrite,
-      final @NotNull ParcelFileDescriptor messageRead)
-      throws InterruptedException {
-    final CountDownLatch latch = new CountDownLatch(1);
-    final boolean[] configured = new boolean[] {false};
+      final @NotNull ServiceEnds ends) {
     // a foreground app raises the service process only to visible without BIND_IMPORTANT
     final int flags = Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT;
 
     final ServiceConnection connection =
         new ServiceConnection() {
-          private boolean connected;
+          private volatile boolean configured;
 
           @Override
           public void onServiceConnected(
               final @NotNull ComponentName name, final @NotNull IBinder service) {
-            if (connected) {
-              // a restarted service process has no daemon for this app
+            if (!ends.take()) {
+              // a restarted or late service process has no daemon for this app
               reattach(
                   service,
                   logger,
@@ -267,13 +269,12 @@ public final class SentryNdkCrashService extends Service {
                   excludes);
               return;
             }
-            connected = true;
-            configured[0] =
+            configured =
                 transactConfigure(
                     service,
                     nativeDatabasePath,
                     nativeLibraryDir,
-                    shm,
+                    ends.shm,
                     appPid,
                     appTid,
                     tombstoneEnabled,
@@ -281,43 +282,57 @@ public final class SentryNdkCrashService extends Service {
                     shutdownTimeoutMillis,
                     includes,
                     excludes,
-                    notifyRead,
-                    readyWrite,
-                    messageRead);
-            latch.countDown();
+                    ends.notifyRead,
+                    ends.readyWrite,
+                    ends.messageRead);
+            ends.close();
+            if (!configured) {
+              logger.log(SentryLevel.ERROR, "NDK crash service did not configure.");
+            }
           }
 
           @Override
           public void onServiceDisconnected(final @NotNull ComponentName name) {
             logger.log(SentryLevel.ERROR, "NDK crash service disconnected.");
-            latch.countDown();
           }
 
           @Override
           public void onBindingDied(final @NotNull ComponentName name) {
             logger.log(SentryLevel.ERROR, "NDK crash service binding died.");
-            latch.countDown();
             // a dead binding does not reconnect, it must be bound again
-            if (configured[0]) {
+            if (configured) {
               context.unbindService(this);
               bind(context, intent, flags, this);
             }
           }
         };
 
-    if (!bind(context, intent, flags, connection)) {
-      return null;
-    }
-    boolean ready = false;
+    boolean bound = false;
     try {
-      ready = latch.await(10000, TimeUnit.MILLISECONDS) && configured[0];
-      // stay bound, so the service process keeps the app's importance and is not frozen
-      return ready ? connection : null;
+      bound = bind(context, intent, flags, connection);
     } finally {
-      if (!ready) {
-        context.unbindService(connection);
+      if (!bound) {
+        ends.close();
       }
     }
+    if (!bound) {
+      return null;
+    }
+    try {
+      executorService.schedule(
+          () -> {
+            if (ends.take()) {
+              // without a reader, native sends and the crash handler fail at once
+              ends.close();
+              logger.log(SentryLevel.ERROR, "NDK crash service did not connect in time.");
+            }
+          },
+          CONNECT_TIMEOUT_MILLIS);
+    } catch (RejectedExecutionException e) {
+      logger.log(SentryLevel.DEBUG, e, "Failed to schedule the NDK crash service timeout.");
+    }
+    // stay bound, so the service process keeps the app's importance and is not frozen
+    return connection;
   }
 
   private static boolean bind(
@@ -326,7 +341,7 @@ public final class SentryNdkCrashService extends Service {
       final int flags,
       final @NotNull ServiceConnection connection) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      // deliver callbacks on the binder thread, the caller blocks on the latch
+      // deliver callbacks on the binder thread instead of the main thread
       return context.bindService(intent, flags, Runnable::run, connection);
     }
     return context.bindService(intent, connection, flags);
@@ -808,6 +823,37 @@ public final class SentryNdkCrashService extends Service {
       this.inAppExcludes = inAppExcludes;
       this.tombstoneEnabled = tombstoneEnabled;
       this.debug = debug;
+    }
+  }
+
+  // the service's ends of the crash IPC, handed over on the first connection or closed
+  private static final class ServiceEnds {
+    private final @NotNull AtomicBoolean taken = new AtomicBoolean();
+    private final @NotNull ParcelFileDescriptor shm;
+    private final @NotNull ParcelFileDescriptor notifyRead;
+    private final @NotNull ParcelFileDescriptor readyWrite;
+    private final @NotNull ParcelFileDescriptor messageRead;
+
+    private ServiceEnds(
+        final @NotNull ParcelFileDescriptor shm,
+        final @NotNull ParcelFileDescriptor notifyRead,
+        final @NotNull ParcelFileDescriptor readyWrite,
+        final @NotNull ParcelFileDescriptor messageRead) {
+      this.shm = shm;
+      this.notifyRead = notifyRead;
+      this.readyWrite = readyWrite;
+      this.messageRead = messageRead;
+    }
+
+    private boolean take() {
+      return taken.compareAndSet(false, true);
+    }
+
+    private void close() {
+      closeQuietly(shm);
+      closeQuietly(notifyRead);
+      closeQuietly(readyWrite);
+      closeQuietly(messageRead);
     }
   }
 }
