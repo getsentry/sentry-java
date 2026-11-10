@@ -1,0 +1,54 @@
+# Temporary benchmark for #6544. Not for merge.
+# Runs only the core and replay Robolectric tests, so no other Gradle task competes for the CPU.
+# "base" uses the test sources of main (f80997a995), "pr" uses the ones from #6544.
+name: Robolectric benchmark
+
+on:
+  push:
+    branches:
+      - romtsn/robolectric-bench
+
+jobs:
+  bench:
+    name: bench ${{ matrix.variant }} ${{ matrix.rep }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [base, pr]
+        rep: [1, 2, 3]
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java Version
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Use the test sources of main
+        if: matrix.variant == 'base'
+        run: git checkout f80997a995 -- sentry-android-core/src/test sentry-android-replay/src/test
+
+      - name: Compile
+        run: ./gradlew :sentry-android-core:compileReleaseUnitTestSources :sentry-android-replay:compileReleaseUnitTestSources
+
+      # The runner starts with an empty ~/.m2, so the first run downloads the android-all jars.
+      - name: Tests, cold jars
+        run: |
+          ./gradlew :sentry-android-core:cleanTestReleaseUnitTest :sentry-android-replay:cleanTestReleaseUnitTest \
+            :sentry-android-core:testReleaseUnitTest :sentry-android-replay:testReleaseUnitTest --no-build-cache
+          python3 .github/workflows/robolectric-bench.py ${{ matrix.variant }} cold
+
+      - name: Tests, warm jars
+        run: |
+          ./gradlew :sentry-android-core:cleanTestReleaseUnitTest :sentry-android-replay:cleanTestReleaseUnitTest \
+            :sentry-android-core:testReleaseUnitTest :sentry-android-replay:testReleaseUnitTest --no-build-cache
+          python3 .github/workflows/robolectric-bench.py ${{ matrix.variant }} warm
