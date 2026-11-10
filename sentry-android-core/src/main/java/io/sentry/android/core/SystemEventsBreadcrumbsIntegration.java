@@ -66,7 +66,6 @@ public final class SystemEventsBreadcrumbsIntegration
   private final @NotNull String[] actions;
   private volatile boolean isClosed = false;
   private volatile boolean isStopped = false;
-  private volatile @Nullable IntentFilter filter = null;
   private volatile @Nullable HandlerThread handlerThread = null;
   private final @NotNull AtomicBoolean isReceiverRegistered = new AtomicBoolean(false);
   private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
@@ -146,11 +145,9 @@ public final class SystemEventsBreadcrumbsIntegration
                   }
 
                   receiver = new SystemEventsBroadcastReceiver(scopes, options);
-                  if (filter == null) {
-                    filter = new IntentFilter();
-                    for (String item : actions) {
-                      filter.addAction(item);
-                    }
+                  final @NotNull IntentFilter filter = new IntentFilter();
+                  for (String item : actions) {
+                    filter.addAction(item);
                   }
                   try {
                     // registerReceiver can throw SecurityException but it's not documented in the
@@ -234,7 +231,6 @@ public final class SystemEventsBreadcrumbsIntegration
   public void close() throws IOException {
     try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
       isClosed = true;
-      filter = null;
       if (handlerThread != null) {
         handlerThread.quit();
       }
