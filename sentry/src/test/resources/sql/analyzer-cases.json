@@ -2224,6 +2224,7 @@
         "text": "SELECT * FROM TABLE WHERE FIELD=?",
         "summary": "SELECT TABLE"
       },
+      "secrets": ["1234"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[1]",
       "note": ""
     },
@@ -2236,6 +2237,7 @@
         "text": "SELECT * FROM TABLE WHERE FIELD = ?",
         "summary": "SELECT TABLE"
       },
+      "secrets": ["1234"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[2]",
       "note": ""
     },
@@ -2248,6 +2250,7 @@
         "text": "SELECT * FROM TABLE WHERE FIELD>=?",
         "summary": "SELECT TABLE"
       },
+      "secrets": ["1234"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[3]",
       "note": ""
     },
@@ -2260,6 +2263,7 @@
         "text": "SELECT * FROM TABLE WHERE FIELD<?",
         "summary": "SELECT TABLE"
       },
+      "secrets": ["1234"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[4]",
       "note": ""
     },
@@ -2272,6 +2276,7 @@
         "text": "SELECT * FROM TABLE WHERE FIELD <?",
         "summary": "SELECT TABLE"
       },
+      "secrets": ["1234"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[5]",
       "note": ""
     },
@@ -2400,6 +2405,7 @@
         "text": "SELECT ?",
         "summary": "SELECT"
       },
+      "secrets": ["0af764"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[16]",
       "note": ""
     },
@@ -2497,6 +2503,7 @@
         "text": "SELECT ???",
         "summary": "SELECT"
       },
+      "secrets": ["6789"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[24]",
       "note": "Signed numbers convention: each sign directly before a digit starts a new number. OTel Java gives SELECT ?."
     },
@@ -2584,6 +2591,7 @@
         "text": "SELECT * FROM TABLE WHERE FIELD = ?",
         "summary": "SELECT TABLE"
       },
+      "secrets": ["\"$$$$\""],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[31]",
       "note": ""
     },
@@ -2647,6 +2655,7 @@
         "text": "SELECT * FROM TABLE WHERE FIELD = ?",
         "summary": "SELECT TABLE"
       },
+      "secrets": ["\"''\""],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[36]",
       "note": "Dollar quotes stop CONSERVATIVE; postgresql has dollarQuotedStrings YES."
     },
@@ -2708,6 +2717,7 @@
         "text": "from TABLE WHERE FIELD=?",
         "summary": "select TABLE"
       },
+      "secrets": ["1234"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSql[41]",
       "note": ""
     },
@@ -3357,6 +3367,7 @@
         "text": "delete from ?",
         "summary": "delete"
       },
+      "secrets": ["12345678"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[54]",
       "note": ""
     },
@@ -3971,6 +3982,7 @@
         "text": "REPLACE INTO users VALUES (?, ?)",
         "summary": "REPLACE users"
       },
+      "secrets": ["name"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[109]",
       "note": ""
     },
@@ -4103,8 +4115,9 @@
         "text": "GRANT SELECT ON users TO ?",
         "summary": "GRANT"
       },
+      "secrets": ["some_"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[123]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name). some_user is not declared as a secret: its fragment 'user' also occurs in the kept text."
+      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name). some_user is not declared as a secret: its fragment 'user' also occurs in the kept text. Declared instead: some_."
     },
     {
       "id": "otel_java.simplify_sql.124",
@@ -4115,6 +4128,7 @@
         "text": "GRANT ALL PRIVILEGES ON database.* TO ?@?",
         "summary": "GRANT"
       },
+      "secrets": ["user", "host"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[124]",
       "note": ""
     },
@@ -4127,8 +4141,9 @@
         "text": "REVOKE SELECT ON users FROM ?",
         "summary": "REVOKE"
       },
+      "secrets": ["some_"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[125]",
-      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name). some_user is not declared as a secret: its fragment 'user' also occurs in the kept text."
+      "note": "Principal names convention: the user or grantee name becomes ? and the summary is the operation only (OTel Java keeps the name). some_user is not declared as a secret: its fragment 'user' also occurs in the kept text. Declared instead: some_."
     },
     {
       "id": "otel_java.simplify_sql.126",
@@ -4139,6 +4154,7 @@
         "text": "REVOKE ALL PRIVILEGES ON database.* FROM ?@?",
         "summary": "REVOKE"
       },
+      "secrets": ["user", "host"],
       "source": "otel-java:SqlQueryAnalyzerTest#simplifySql[126]",
       "note": ""
     },
@@ -4699,8 +4715,9 @@
         "text": "UPDATE users SET password = ?",
         "summary": "UPDATE users"
       },
+      "secrets": ["ord1"],
       "source": "otel-java:SqlQueryAnalyzerTest#sanitizeSensitive[23]",
-      "note": "Password1 is not declared as a secret: its fragment 'assw' also occurs in the kept text."
+      "note": "Password1 is not declared as a secret: its fragment 'assw' also occurs in the kept text. Declared instead: ord1."
     },
     {
       "id": "otel_java.sanitize_grant_object_named_password.001",
@@ -6012,6 +6029,7 @@
         "text": "SELECT COALESCE((SELECT name FROM t1 WHERE id = ?), ?) FROM dual",
         "summary": "SELECT SELECT t1 dual"
       },
+      "secrets": ["default"],
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#subqueriesInClausePositions[9]",
       "note": "Upstream asserts only the summary."
     },
@@ -6276,6 +6294,7 @@
         "text": "SELECT CASE WHEN status = ? THEN ? ELSE ? END FROM users",
         "summary": "SELECT users"
       },
+      "secrets": ["Active", "Inactive"],
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[4]",
       "note": "Upstream asserts only the summary."
     },
@@ -6288,6 +6307,7 @@
         "text": "SELECT CASE WHEN price > (SELECT AVG(price) FROM products) THEN ? ELSE ? END FROM products",
         "summary": "SELECT SELECT products products"
       },
+      "secrets": ["High"],
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#expressions[5]",
       "note": "Upstream asserts only the summary."
     },
@@ -6780,6 +6800,7 @@
         "text": "SELECT * FROM users WHERE name = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["unterminated"],
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#lexicalEdgeCases[2]",
       "note": "Upstream asserts only the summary. Dollar quotes stop CONSERVATIVE; postgresql has dollarQuotedStrings YES."
     },
@@ -6912,6 +6933,7 @@
         "text": "SELECT * FROM sales MODEL DIMENSION BY (product) MEASURES (amount) RULES (amount[?] = amount[?] + amount[?])",
         "summary": "SELECT sales"
       },
+      "secrets": ["Total"],
       "source": "otel-java:SqlQuerySummaryEdgeCasesTest#vendorSpecificSyntax[8]",
       "note": "Upstream asserts only the summary. A quote inside [...] stops CONSERVATIVE; MODEL is Oracle syntax and oracle has bracketIdentifiers NO."
     },
@@ -6948,6 +6970,7 @@
         "text": "SELECT ?, ?, ?, ?, ?",
         "summary": "SELECT"
       },
+      "secrets": ["12.34"],
       "source": "otel-dotnet:SqlProcessorTestCases.json#numeric_literal_with_decimal_point",
       "note": ""
     },
@@ -6960,6 +6983,7 @@
         "text": "SELECT ?, ?, ?",
         "summary": "SELECT"
       },
+      "secrets": ["12.34e56"],
       "source": "otel-dotnet:SqlProcessorTestCases.json#numeric_literal_exponential",
       "note": ""
     },
@@ -6972,6 +6996,7 @@
         "text": "SELECT ?, ?, ?",
         "summary": "SELECT"
       },
+      "secrets": ["12.34e-56"],
       "source": "otel-dotnet:SqlProcessorTestCases.json#numeric_literal_negative_exponential",
       "note": ""
     },
@@ -7048,6 +7073,7 @@
         "text": "SELECT c3po, r2d2 FROM covid19 WHERE n1h1=?",
         "summary": "SELECT covid19"
       },
+      "secrets": ["1234"],
       "source": "otel-dotnet:SqlProcessorTestCases.json#numbers_in_identifiers",
       "note": ""
     },
@@ -7243,6 +7269,7 @@
         "text": "SELECT * FROM table WHERE id = ?",
         "summary": "SELECT table"
       },
+      "secrets": ["comment"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_SingleLineCommentWithCarriageReturnLineFeed_PreservesLineBreak",
       "note": "Whitespace is collapsed and trimmed (OTel .NET keeps it)."
     },
@@ -8187,8 +8214,9 @@
         "text": "SELECT * FROM users WHERE nickname = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["secret"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[1]",
-      "note": "E-strings follow backslashEscapes, which is UNKNOWN for postgresql: the analyzer stops at the backslash and the ? replaces the literal in place. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text."
+      "note": "E-strings follow backslashEscapes, which is UNKNOWN for postgresql: the analyzer stops at the backslash and the ? replaces the literal in place. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text. Declared instead: secret."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.02",
@@ -8199,8 +8227,9 @@
         "text": "SELECT * FROM users WHERE nickname = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["secret"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[2]",
-      "note": "E-strings follow backslashEscapes, which is UNKNOWN for postgresql: the analyzer stops at the backslash and the ? replaces the literal in place. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text."
+      "note": "E-strings follow backslashEscapes, which is UNKNOWN for postgresql: the analyzer stops at the backslash and the ? replaces the literal in place. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text. Declared instead: secret."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.03",
@@ -8211,8 +8240,9 @@
         "text": "SELECT * FROM users WHERE nickname = ? AND api_key = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["secret", "it's me"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[3]",
-      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text."
+      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text. Declared instead: secret, it's me."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.04",
@@ -8223,8 +8253,9 @@
         "text": "SELECT * FROM users WHERE nickname = ? AND api_key = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["secret", "it's me"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[4]",
-      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text."
+      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text. Declared instead: secret, it's me."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.05",
@@ -8235,8 +8266,9 @@
         "text": "SELECT * FROM users WHERE nickname = ? AND api_key = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["secret", "it's me"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[5]",
-      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text."
+      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text. Declared instead: secret, it's me."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.06",
@@ -8247,8 +8279,9 @@
         "text": "SELECT * FROM users WHERE nickname = ? AND api_key = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["secret", "it's me"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[6]",
-      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text."
+      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text. Declared instead: secret, it's me."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.07",
@@ -8259,8 +8292,9 @@
         "text": "SELECT * FROM users WHERE nickname = ? AND api_key = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["secret", "it's me"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[7]",
-      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text."
+      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text. Declared instead: secret, it's me."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.08",
@@ -8271,8 +8305,9 @@
         "text": "SELECT * FROM users WHERE nickname = ? AND api_key = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["secret", "it's me"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[8]",
-      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text."
+      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text. Declared instead: secret, it's me."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.09",
@@ -8283,8 +8318,9 @@
         "text": "SELECT * FROM users WHERE nickname = ?",
         "summary": "SELECT users"
       },
+      "secrets": ["secret", "it's me"],
       "source": "otel-dotnet:SqlProcessorTests.cs#GetSanitizedSql_DialectSpecificLiteralOrComment_SanitizesFollowingLiteral[9]",
-      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. The q-quote never closes, so the ? replaces it in place (OTel .NET gives q?). secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text."
+      "note": "Alternative quoting stops CONSERVATIVE; oracle has alternativeQuoting YES. The q-quote never closes, so the ? replaces it in place (OTel .NET gives q?). secret-name is not declared as a secret: its fragment 'name' also occurs in the kept text. Declared instead: secret, it's me."
     },
     {
       "id": "otel_dotnet.dialect_literal_or_comment.10",
