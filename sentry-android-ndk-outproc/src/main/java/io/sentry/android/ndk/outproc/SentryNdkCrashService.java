@@ -170,7 +170,7 @@ public final class SentryNdkCrashService extends Service {
               context.getApplicationInfo().nativeLibraryDir,
               shm,
               Process.myPid(),
-              System.nanoTime(),
+              Process.myTid(),
               options.isTombstoneEnabled() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
               options.isDebug(),
               options.getShutdownTimeoutMillis(),
