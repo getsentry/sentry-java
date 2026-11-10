@@ -7,6 +7,10 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+- Android: `AnrV2Integration`, `AnrProfilingIntegration`, `WindowContentChangedCallback`, the deprecated `SentryUserFeedbackButton` and `SentryUserFeedbackDialog.Builder`, and the internal `sentry-android-core` classes are now `final`, and `ActivityLifecycleCallbacksAdapter` is now `abstract` ([#6494](https://github.com/getsentry/sentry-java/pull/6494))
+
 ### Features
 
 - Connect Android traces with web content in a `WebView` using `SentryWebViewTracing.addTracePropagation(webView, "example.com")` ([#6395](https://github.com/getsentry/sentry-java/pull/6395))

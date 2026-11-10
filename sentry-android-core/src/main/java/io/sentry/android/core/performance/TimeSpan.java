@@ -17,7 +17,7 @@ import org.jetbrains.annotations.TestOnly;
  * the time span.
  */
 @ApiStatus.Internal
-public class TimeSpan implements Comparable<TimeSpan> {
+public final class TimeSpan implements Comparable<TimeSpan> {
 
   private @Nullable String description;
   private long startUnixTimeMs;

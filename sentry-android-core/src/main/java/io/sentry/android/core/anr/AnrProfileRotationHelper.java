@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * concurrent access to the same QueueFile.
  */
 @ApiStatus.Internal
-public class AnrProfileRotationHelper {
+public final class AnrProfileRotationHelper {
 
   private static final String RECORDING_FILE_NAME = "anr_profile";
   private static final String OLD_FILE_NAME = "anr_profile_old";

@@ -54,7 +54,7 @@ import org.jetbrains.annotations.TestOnly;
 // public API.
 @SuppressWarnings("this-escape")
 @ApiStatus.Internal
-public class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
+public final class AppStartMetrics extends ActivityLifecycleCallbacksAdapter {
   public interface HeadlessAppStartListener {
     void onHeadlessAppStart();
   }
