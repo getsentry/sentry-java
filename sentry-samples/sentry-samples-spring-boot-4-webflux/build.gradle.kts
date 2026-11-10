@@ -17,7 +17,7 @@ group = "io.sentry.sample.spring-boot-4-webflux"
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
-  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(libs.kotlin.reflect)
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation("io.sentry:sentry-spring-boot-4-starter:$sentryVersion")
   implementation("io.sentry:sentry-logback:$sentryVersion")

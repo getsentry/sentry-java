@@ -53,8 +53,8 @@ dependencies {
 
   implementation(libs.spring.kafka2)
   implementation("io.sentry:sentry-kafka:$sentryVersion")
-  implementation("org.aspectj:aspectjweaver")
-  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(libs.aspectjweaver)
+  implementation(libs.kotlin.reflect)
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation("io.sentry:sentry-spring-boot-starter:$sentryVersion")
   implementation("io.sentry:sentry-logback:$sentryVersion")

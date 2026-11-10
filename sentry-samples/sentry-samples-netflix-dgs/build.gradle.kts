@@ -27,7 +27,7 @@ java.targetCompatibility = JavaVersion.VERSION_1_8
 dependencies {
   implementation(platform(libs.springboot2.bom))
   implementation(libs.springboot.starter.web)
-  implementation("org.jetbrains.kotlin:kotlin-reflect")
+  implementation(libs.kotlin.reflect)
   implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
   implementation("io.sentry:sentry-spring-boot-starter:$sentryVersion")
   implementation("io.sentry:sentry-graphql:$sentryVersion")

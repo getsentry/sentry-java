@@ -9,6 +9,11 @@ public final class JavaMonotonicTicker implements MonotonicTicker {
 
   private static final JavaMonotonicTicker instance = new JavaMonotonicTicker();
 
+  /**
+   * Prefer {@link io.sentry.SentryOptions#getMonotonicTicker()}, which picks the platform's ticker.
+   * On Android this one stops counting during device suspend, so intervals spanning a deep sleep
+   * come out short.
+   */
   public static @NotNull MonotonicTicker getInstance() {
     return instance;
   }

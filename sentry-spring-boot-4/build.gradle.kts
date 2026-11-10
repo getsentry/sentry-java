@@ -88,7 +88,7 @@ dependencies {
   testImplementation(projects.sentryReactor)
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(Config.Libs.kotlinReflect)
+  testImplementation(libs.kotlin.reflect)
   testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
   testImplementation(libs.context.propagation)
   testImplementation(libs.kotlin.test.junit)
