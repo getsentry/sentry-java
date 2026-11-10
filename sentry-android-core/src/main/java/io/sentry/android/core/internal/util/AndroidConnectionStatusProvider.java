@@ -104,7 +104,14 @@ public final class AndroidConnectionStatusProvider
   private final int[] capabilityIds;
 
   private static final long CACHE_TTL_MINUTES = 2;
-  private final @NotNull AtomicBoolean isConnected = new AtomicBoolean(false);
+
+  /**
+   * Flag for ensuring {@link #childCallbacks child callbacks} don't get more than one {@link
+   * NetworkCallback#onAvailable} invocation per connection.
+   *
+   * <p>Reset when the network is lost or unavailable.
+   */
+  private final @NotNull AtomicBoolean onAvailableForwarded = new AtomicBoolean(false);
 
   public AndroidConnectionStatusProvider(
       @NotNull Context context,
@@ -261,10 +268,9 @@ public final class AndroidConnectionStatusProvider
                 current = snapshot.get();
               } while (!snapshot.compareAndSet(current, current.withNetwork(network)));
 
-              // have to only dispatch this on first registration + when the connection got
-              // re-established
-              // otherwise it would've been dispatched on every foreground
-              if (!isConnected.getAndSet(true)) {
+              // Only forward the call on first registration + when the connection is
+              // re-established – not on every foreground.
+              if (!onAvailableForwarded.getAndSet(true)) {
                 for (final @NotNull NetworkCallback cb : childCallbacks) {
                   cb.onAvailable(network);
                 }
@@ -294,7 +300,7 @@ public final class AndroidConnectionStatusProvider
             }
 
             private void clearCacheAndNotifyObservers() {
-              isConnected.set(false);
+              onAvailableForwarded.set(false);
               snapshot.set(ConnectionSnapshot.lost(ticker));
 
               options
@@ -573,7 +579,7 @@ public final class AndroidConnectionStatusProvider
           if (status == ConnectionStatus.DISCONNECTED) {
             // onLost is not called retroactively when we registerNetworkCallback (as opposed to
             // onAvailable), so we have to do it manually for the DISCONNECTED case
-            isConnected.set(false);
+            onAvailableForwarded.set(false);
             for (final @NotNull NetworkCallback cb : childCallbacks) {
               //noinspection DataFlowIssue
               cb.onLost(null);
