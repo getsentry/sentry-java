@@ -37,11 +37,11 @@ internal class ReplayClock(
 
   fun nowMillis(): Long = timeline.nowMillis()
 
-  /** Anchors a new timeline on the wall clock and returns its start. */
-  fun restart(): Long {
+  /** Anchors a new timeline on the wall clock and returns it. */
+  fun restart(): AnchoredClock {
     val next = AnchoredClock.create(epochClock, ticker)
     timeline = next
-    return next.startTime().epochMillis
+    return next
   }
 
   /**

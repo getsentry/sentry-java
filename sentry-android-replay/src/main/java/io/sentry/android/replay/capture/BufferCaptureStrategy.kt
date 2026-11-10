@@ -137,7 +137,7 @@ constructor(
     replayExecutor.submit(
       ReplayRunnable("$TAG.add_frame") {
         // first, so the old timeline is encoded and rotated without this frame
-        frame.jump?.let { bufferTimeline(it, currentConfig) }
+        frame.jump?.let { followJump(it, currentConfig) }
         cache?.store(frame.timestamp)
 
         screenAtStart = cache?.rotate(bufferLimit)
@@ -146,8 +146,26 @@ constructor(
     )
   }
 
+  /**
+   * Moves the buffer onto the new timeline. What was recorded before the jump stays buffered, as a
+   * segment of its own, unless the clock jumped forward by more than the session duration.
+   */
+  private fun followJump(jump: TimelineJump, currentConfig: ScreenshotRecorderConfig?) {
+    if (jump.newTimelineStart - jump.oldTimelineEnd > options.sessionReplay.sessionDuration) {
+      // an error soon after would send one replay spanning the jump, hours or years long; session
+      // mode stops at the same jump instead
+      bufferedSegments.discardWhere { true }
+    } else {
+      bufferOldTimeline(jump, currentConfig)
+    }
+    // frames left from the old timeline would be encoded into the new one's segments
+    cache?.rotate(until = jump.oldTimelineEnd)
+    // last, so a segment request can't see the new timeline before the cache is on it
+    executorTimeline = jump.newTimeline
+  }
+
   /** Buffers the frames up to where the old timeline ended as a segment of their own. */
-  private fun bufferTimeline(jump: TimelineJump, currentConfig: ScreenshotRecorderConfig?) {
+  private fun bufferOldTimeline(jump: TimelineJump, currentConfig: ScreenshotRecorderConfig?) {
     val firstFrameTimestamp = cache?.firstFrameTimestamp()
     if (!isTerminating.get() && currentConfig != null && firstFrameTimestamp != null) {
       val segment =
@@ -164,8 +182,6 @@ constructor(
         )
       buffer(segment, jump.oldTimeline)
     }
-    // frames left from the old timeline would be encoded into the new one's segments
-    cache?.rotate(until = jump.oldTimelineEnd)
   }
 
   private fun buffer(segment: ReplaySegment, timeline: AnchoredClock) {
@@ -252,13 +268,16 @@ constructor(
     }
   }
 
-  private fun MutableList<BufferedSegment>.rotate() {
+  private fun MutableList<BufferedSegment>.rotate() =
+    // it can be that the buffered segment is half-way older than the buffer limit, but
+    // we only drop it if its end timestamp is older
+    discardWhere { it.endedMoreThan(options.sessionReplay.errorReplayDuration) }
+
+  private fun MutableList<BufferedSegment>.discardWhere(predicate: (BufferedSegment) -> Boolean) {
     // TODO: can be a single while-loop
     var removed = false
     removeAll {
-      // it can be that the buffered segment is half-way older than the buffer limit, but
-      // we only drop it if its end timestamp is older
-      if (it.endedMoreThan(options.sessionReplay.errorReplayDuration)) {
+      if (predicate(it)) {
         currentSegment--
         deleteFile(it.segment.replay.videoFile)
         removed = true
@@ -296,19 +315,13 @@ constructor(
       )
       return
     }
-    val errorReplayDuration = options.sessionReplay.errorReplayDuration
-    val timeline = clock.timeline
-    val now = timeline.nowMillis()
-    val currentSegmentTimestamp =
-      cache?.firstFrameTimestamp()?.let {
-        // in buffer mode we have to set the timestamp of the first frame as the actual start
-        DateUtils.getDateTime(it)
-      } ?: DateUtils.getDateTime(now - errorReplayDuration)
-    val duration = now - currentSegmentTimestamp.time
+    val request = SegmentRequest(::wholeBuffer)
     val replayId = currentReplayId
 
     replayExecutor.submit(
       ReplayRunnable("$TAG.$taskName") {
+        val (window, timeline) = request.resolve()
+        val (currentSegmentTimestamp, duration) = window
         val segment =
           createSegmentInternal(
             duration,
@@ -323,5 +336,16 @@ constructor(
         onSegmentCreated(segment, timeline)
       }
     )
+  }
+
+  /** The start and duration of a segment of the whole buffer, up to now on [timeline]. */
+  private fun wholeBuffer(timeline: AnchoredClock): Pair<Date, Long> {
+    val now = timeline.nowMillis()
+    val start =
+      cache?.firstFrameTimestamp()?.let {
+        // in buffer mode we have to set the timestamp of the first frame as the actual start
+        DateUtils.getDateTime(it)
+      } ?: DateUtils.getDateTime(now - options.sessionReplay.errorReplayDuration)
+    return start to now - start.time
   }
 }

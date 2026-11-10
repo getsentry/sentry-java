@@ -75,7 +75,7 @@ class ReplayClockTest {
     elapse(3_000)
     wallMillis -= 120_000
 
-    val newStart = clock.restart()
+    val newStart = clock.restart().startTime().epochMillis
 
     assertThat(newStart).isEqualTo(wallMillis)
     assertThat(clock.wallClockJumpMillis()).isEqualTo(0)

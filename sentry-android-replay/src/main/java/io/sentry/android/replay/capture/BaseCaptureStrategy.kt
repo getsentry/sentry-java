@@ -91,6 +91,13 @@ constructor(
    */
   private val timelineLock = AutoClosableReentrantLock()
 
+  /**
+   * The timeline the work queued on [replayExecutor] is on: the frames it stored and the segment it
+   * is building. Only [stampFrame] restarts the clock, and that frame's task moves this onto the
+   * new timeline, so the two differ only while such a task is queued.
+   */
+  @Volatile protected var executorTimeline: AnchoredClock = clock.timeline
+
   private val gestureConverter = ReplayGestureConverter({ clock.nowMillis() }, ticker)
 
   protected val isTerminating = AtomicBoolean(false)
@@ -172,8 +179,9 @@ constructor(
   }
 
   override fun resume() {
-    // a new segment starts here anyway, so a wall-clock jump while paused needs no segment closed
-    val resumedAt = DateUtils.getDateTime(timelineLock.acquire().use { clock.restart() })
+    // not re-anchored here: that would make every segment request until the task below runs look
+    // like it raced a jump. The first frame after a jump while paused follows it like any other.
+    val resumedAt = DateUtils.getDateTime(clock.nowMillis())
     // Keep the timeline update behind queued frames and pause/flush segment creation.
     replayExecutor.submit(ReplayRunnable("$TAG.resume") { segmentTimestamp = resumedAt })
   }
@@ -252,12 +260,10 @@ constructor(
       } else {
         val oldTimeline = clock.timeline
         val oldTimelineEnd = oldTimeline.nowMillis()
-        val newTimelineStart = clock.restart()
+        val newTimeline = clock.restart()
         val oldEvents = generateSequence { currentEvents.pollFirst() }.toCollection(ArrayDeque())
-        StampedFrame(
-          newTimelineStart,
-          TimelineJump(oldTimeline, oldTimelineEnd, newTimelineStart, oldEvents),
-        )
+        val jump = TimelineJump(oldTimeline, oldTimelineEnd, newTimeline, oldEvents)
+        StampedFrame(jump.newTimelineStart, jump)
       }
     }
 
@@ -307,9 +313,30 @@ constructor(
   protected class TimelineJump(
     val oldTimeline: AnchoredClock,
     val oldTimelineEnd: Long,
-    val newTimelineStart: Long,
+    val newTimeline: AnchoredClock,
     val oldEvents: Deque<RRWebEvent>,
-  )
+  ) {
+    val newTimelineStart: Long = newTimeline.startTime().epochMillis
+  }
+
+  /**
+   * The times a segment request reads when it is made, so a busy executor doesn't stretch the
+   * segment. If a frame moved the recording onto a new timeline in between, what the request read
+   * and the frames its task finds are on different timelines, so the task reads again with [read]
+   * on the timeline the queued work is on.
+   */
+  protected inner class SegmentRequest<T : Any>(private val read: (AnchoredClock) -> T) {
+    // null while the task of a frame that followed a jump is still queued: the clock is on the new
+    // timeline already, the frames are not
+    private val timeline = clock.timeline.takeIf { it === executorTimeline }
+    private val requested = timeline?.let(read)
+
+    /** Called from the request's task: the times to use, and the timeline they are on. */
+    fun resolve(): Pair<T, AnchoredClock> {
+      val current = executorTimeline
+      return (requested?.takeIf { timeline === current } ?: read(current)) to current
+    }
+  }
 
   private inline fun <T> persistableAtomicNullable(
     initialValue: T? = null,
