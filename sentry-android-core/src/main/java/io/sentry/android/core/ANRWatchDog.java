@@ -64,7 +64,6 @@ final class ANRWatchDog extends Thread {
   private final @NotNull Context context;
   private final @Nullable IDebugManager debugManager;
 
-  @SuppressWarnings("UnnecessaryLambda")
   private final Runnable ticker;
 
   static @NotNull ANRWatchDog create(

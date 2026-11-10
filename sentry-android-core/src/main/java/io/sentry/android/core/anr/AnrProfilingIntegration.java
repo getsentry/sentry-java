@@ -50,7 +50,6 @@ public class AnrProfilingIntegration
   private volatile @Nullable MonotonicTicker ticker;
 
   // A field rather than a method reference, as removeCallbacks only removes the posted instance.
-  @SuppressWarnings("UnnecessaryLambda")
   private final @NotNull Runnable updater =
       () -> {
         final @Nullable MonotonicTicker currentTicker = ticker;
