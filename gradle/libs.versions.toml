@@ -111,7 +111,7 @@ androidx-compose-ui-replay = { module = "androidx.compose.ui:ui", version = "1.1
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version = "2.2.2" }
 androidx-core = { module = "androidx.core:core", version = "1.3.2" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.19.1" }
-androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version = "1.3.5" }
+androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version = "1.9.1" }
 androidx-lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-common-java8", version.ref = "androidxLifecycle" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version = "2.8.3" }
