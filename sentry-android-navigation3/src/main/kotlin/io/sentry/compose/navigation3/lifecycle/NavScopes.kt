@@ -24,8 +24,8 @@ internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
  * Needed because all `SentryNavEffect`s mutate a single [IScope] instance by default and will
  * clobber or interleave one another's updates unless properly managed:
  * ```
- * LifecycleOwner (e.g., Activity or Fragment)
- *       ↓ owns
+ * Nav root (Activity or Fragment)
+ *       ↓ owns / calls
  *  SentryNavEffect
  *       ↓
  *   CoordinatedBackStackObserver (wrapper)
@@ -56,7 +56,7 @@ internal const val NAVIGATION_CONTEXT_KEY: String = "Navigation"
  * 2. Pass the same [NavLeaseCoordinator] instance to all `NavScopes` whose effects must be
  *    coordinated (i.e., that target the same `IScope`).
  *
- * 3. Call [attach] with the lifecycle that manages the effect before the first back stack update.
+ * 3. Call [attach] with the effect's [nav root][NavRootInfo] before the first back stack update.
  *
  * 4. Call [onBackStackUpdate] before applying each back stack update.
  *
@@ -86,16 +86,18 @@ internal class NavScopes(
   private val navStatePublisher = NavStatePublisher()
 
   /**
-   * Registers this [NavScopes] instance with [lifecycle]. No-ops if `lifecycle` has already been
-   * attached or is [destroyed][Lifecycle.Event.ON_DESTROY].
+   * Registers this [NavScopes] instance with the lifecycle of the effect's nav root, described by
+   * [rootInfo].
    *
-   * Attaching to a second, different lifecycle no-ops.
+   * No-ops if the caller tries to attach more than once or if the nav root has already been
+   * destroyed.
    */
-  fun attach(lifecycle: Lifecycle) {
+  fun attach(rootInfo: NavRootInfo) {
     val currentLifecycle = attachedLifecycle
+    val incomingLifecycle = rootInfo.lifecycle
 
     if (currentLifecycle != null) {
-      if (currentLifecycle !== lifecycle) {
+      if (currentLifecycle !== incomingLifecycle) {
         delegate.options.logger.log(
           SentryLevel.WARNING,
           "NavScopes is already attached to a different lifecycle; ignoring the new lifecycle.",
@@ -106,12 +108,12 @@ internal class NavScopes(
       return
     }
 
-    if (lifecycle.currentState == Lifecycle.State.DESTROYED) {
+    if (incomingLifecycle.currentState == Lifecycle.State.DESTROYED) {
       return
     }
 
-    attachedLifecycle = lifecycle
-    registration = coordinator.register(lifecycle, delegate, navStatePublisher)
+    attachedLifecycle = incomingLifecycle
+    registration = coordinator.register(delegate, rootInfo, navStatePublisher)
   }
 
   /**
@@ -147,7 +149,7 @@ internal class NavScopes(
    * Publishes this instance's [stagedNavTransaction] and [stagedNavData] to the shared [IScope]
    * while it holds the nav lease, as directed by the [coordinator].
    */
-  private inner class NavStatePublisher : LeasedNavState {
+  private inner class NavStatePublisher : INavStatePublisher {
 
     override fun publishTo(scope: IScope) {
       // Publishing the data first ensures a staged transaction is sampled against the rotated

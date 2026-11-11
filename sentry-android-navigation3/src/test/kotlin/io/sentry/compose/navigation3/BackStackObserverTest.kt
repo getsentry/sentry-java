@@ -21,6 +21,7 @@ import io.sentry.TransactionOptions
 import io.sentry.compose.navigation3.ArgumentDropReason.Companion.ARGUMENT_DROP_REASON_KEY
 import io.sentry.compose.navigation3.lifecycle.NAVIGATION_CONTEXT_KEY
 import io.sentry.compose.navigation3.lifecycle.NavLeaseCoordinator
+import io.sentry.compose.navigation3.lifecycle.NavRootInfo
 import io.sentry.compose.navigation3.lifecycle.NavScopes
 import io.sentry.protocol.App
 import io.sentry.protocol.TransactionNameSource
@@ -119,7 +120,7 @@ class BackStackObserverTest {
             LifecycleRegistry.createUnsafe(this).apply { currentState = Lifecycle.State.RESUMED }
         }
       return NavScopes(scopes, NavLeaseCoordinator()).apply {
-        attach(owner.lifecycle)
+        attach(NavRootInfo(owner.lifecycle, activity = null))
         // The sole resumed owner's first update acquires the lease, which it then keeps.
         onBackStackUpdate()
       }

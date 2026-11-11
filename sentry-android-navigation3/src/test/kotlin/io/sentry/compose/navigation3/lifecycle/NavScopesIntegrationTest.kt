@@ -24,11 +24,11 @@ class NavScopesIntegrationTest {
     val fixture = Fixture.create()
     val incumbentOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
     val incumbent = fixture.navScopes()
-    incumbent.attach(incumbentOwner.lifecycle)
+    incumbent.attach(NavRootInfo(incumbentOwner.lifecycle, activity = null))
     incumbent.onBackStackUpdate()
     val incomingOwner = TestLifecycleOwner(Lifecycle.State.STARTED)
     val incoming = fixture.navScopes()
-    incoming.attach(incomingOwner.lifecycle)
+    incoming.attach(NavRootInfo(incomingOwner.lifecycle, activity = null))
     incoming.onBackStackUpdate()
     val contextBeforeResume = fixture.scope.propagationContext
     val contextsAtSampling = mutableListOf<PropagationContext>()
