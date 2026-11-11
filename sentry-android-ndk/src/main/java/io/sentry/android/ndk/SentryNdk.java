@@ -24,9 +24,9 @@ public final class SentryNdk {
               try {
                 //noinspection UnstableApiUsage
                 io.sentry.ndk.SentryNdk.loadNativeLibraries();
-              } catch (Throwable t) {
-                // ignored
-                // if loadLibrary() fails, the later init() will throw an exception anyway
+              } catch (LinkageError ignored) {
+                // e.g. UnsatisfiedLinkError. The later init() throws too, which disables the NDK
+                // integration.
               } finally {
                 loadLibraryLatch.countDown();
               }

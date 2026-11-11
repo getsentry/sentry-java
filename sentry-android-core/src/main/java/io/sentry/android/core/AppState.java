@@ -112,7 +112,8 @@ public final class AppState implements Closeable {
           SentryLevel.WARNING,
           "androidx.lifecycle is not available, some features might not be properly working,"
               + "e.g. Session Tracking, Network and System Events breadcrumbs, etc.");
-    } catch (Throwable e) {
+    } catch (LinkageError e) {
+      // androidx.lifecycle has an incompatible version
       logger.log(SentryLevel.ERROR, "AppState could not register lifecycle observer", e);
     }
   }
@@ -124,7 +125,7 @@ public final class AppState implements Closeable {
       if (observerRef != null) {
         ProcessLifecycleOwner.get().getLifecycle().addObserver(observerRef);
       }
-    } catch (Throwable e) {
+    } catch (LinkageError e) {
       // This is to handle a potential 'AbstractMethodError' gracefully. The error is triggered in
       // connection with conflicting dependencies of the androidx.lifecycle.
       // //See the issue here: https://github.com/getsentry/sentry-java/pull/2228

@@ -737,8 +737,8 @@ public class SentryOptions implements RateLimiterConfig {
       try {
         final Class<?> clazz = Class.forName("io.sentry.spotlight.SpotlightIntegration");
         integrations.add((Integration) clazz.getConstructor().newInstance());
-      } catch (Throwable ignored) {
-        // SpotlightIntegration not available
+      } catch (ReflectiveOperationException | LinkageError ignored) {
+        // sentry-spotlight is missing or has an incompatible version
       }
     }
   }
