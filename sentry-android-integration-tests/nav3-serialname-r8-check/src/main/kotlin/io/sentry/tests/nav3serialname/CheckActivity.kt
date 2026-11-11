@@ -6,9 +6,18 @@ import android.util.Log
 import android.widget.ScrollView
 import android.widget.TextView
 import io.sentry.compose.navigation3.BackStackEntryMapper
+import io.sentry.compose.navigation3.SentryBackStackEntry
 
-/** A back stack key and the name [BackStackEntryMapper.serialName] should produce for it. */
-class Expectation(val label: String, val key: Any, val expected: String?)
+/**
+ * A back stack key, the name [BackStackEntryMapper.serialName] should produce for it, and the
+ * arguments [BackStackEntryMapper.serialNameWithArguments] should record for it.
+ */
+class Expectation(
+  val label: String,
+  val key: Any,
+  val expected: String?,
+  val expectedArguments: Map<String, Any?>? = null,
+)
 
 data class NotSerializable(val id: String)
 
@@ -17,15 +26,17 @@ enum class UnannotatedEnum {
 }
 
 /**
- * Maps every [Expectation] with [BackStackEntryMapper.serialName] and reports the results. An
- * exception crashes the app, which the runner script reports as a failure.
+ * Maps every [Expectation] with [BackStackEntryMapper.serialName] and
+ * [BackStackEntryMapper.serialNameWithArguments], and reports the results. An exception crashes the
+ * app, which the runner script reports as a failure.
  */
 class CheckActivity : Activity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    val mapper = BackStackEntryMapper.serialName()
+    val nameMapper = BackStackEntryMapper.serialName()
+    val argumentsMapper = BackStackEntryMapper.serialNameWithArguments()
     val expectations =
       listOf(
         Expectation("string", "home", null),
@@ -36,13 +47,19 @@ class CheckActivity : Activity() {
     val lines = mutableListOf<String>()
     var failures = 0
     for (expectation in expectations) {
-      val actual = mapper.map(expectation.key)?.name
-      val passed = actual == expectation.expected
+      val named = nameMapper.map(expectation.key)
+      val withArguments = argumentsMapper.map(expectation.key)
+      val passed =
+        named?.name == expectation.expected &&
+          named?.arguments == null &&
+          withArguments?.name == expectation.expected &&
+          withArguments?.arguments == expectation.expectedArguments
       if (!passed) failures++
       lines +=
         "${if (passed) "PASS" else "FAIL"} ${expectation.label} " +
           "(runtime class ${expectation.key.javaClass.name}): " +
-          "expected=${expectation.expected} actual=$actual"
+          "expected=${expectation.expected} actual=${named?.name}" +
+          describeArguments(expectation, named?.arguments, withArguments)
     }
     for (check in flavorMinificationChecks()) {
       if (!check.passed) failures++
@@ -56,6 +73,26 @@ class CheckActivity : Activity() {
         addView(TextView(context).apply { text = lines.joinToString(separator = "\n") })
       }
     )
+  }
+
+  private fun describeArguments(
+    expectation: Expectation,
+    nameMapperArguments: Map<String, Any?>?,
+    withArguments: SentryBackStackEntry?,
+  ): String {
+    val parts = mutableListOf<String>()
+    if (nameMapperArguments != null) {
+      parts += "serialName() arguments=$nameMapperArguments"
+    }
+    if (withArguments?.name != expectation.expected) {
+      parts += "withArguments name=${withArguments?.name}"
+    }
+    if (expectation.expectedArguments != null || withArguments?.arguments != null) {
+      parts +=
+        "expectedArguments=${expectation.expectedArguments} " +
+          "actualArguments=${withArguments?.arguments}"
+    }
+    return if (parts.isEmpty()) "" else " " + parts.joinToString(separator = " ")
   }
 
   private companion object {

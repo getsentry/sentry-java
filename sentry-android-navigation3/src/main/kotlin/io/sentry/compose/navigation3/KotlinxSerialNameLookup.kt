@@ -1,21 +1,39 @@
 package io.sentry.compose.navigation3
 
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.serializerOrNull
 
 /**
  * The entry point for this library's kotlinx.serialization code, a `compileOnly` dependency. Don't
  * touch it unless the library is known to be on the runtime classpath (see
- * [SerialNameBackStackEntryMapper]).
- *
- * Lookups use reflection and aren't cached here; [SerialNameBackStackEntryMapper] caches the result
- * per class.
+ * [SerialNameBackStackEntryMapper]). [KotlinxArgumentsEncoder] is only reached through here.
  */
 internal object KotlinxSerialNameLookup : SerialNameLookup {
 
+  // Serializer lookups use reflection, and arguments are encoded on every navigation, so cache
+  // serializers per class, including failed lookups. Route types are bounded, so the cache is too.
+  private val serializers = ConcurrentHashMap<Class<*>, CachedSerializer>()
+
   override fun serialNameOrNull(type: Class<*>): String? =
-    lookUpSerializer(type)?.descriptor?.serialName
+    cachedSerializerOrNull(type)?.descriptor?.serialName
+
+  // Encoding failures mean no arguments; the caller logs them once per class.
+  @Suppress("SwallowedException")
+  override fun argumentsOrNull(backStackEntry: Any): Map<String, Any?>? {
+    val serializer = cachedSerializerOrNull(backStackEntry.javaClass) ?: return null
+    return try {
+      @Suppress("UNCHECKED_CAST")
+      KotlinxArgumentsEncoder.encode(serializer as KSerializer<Any>, backStackEntry)
+    } catch (e: SerializationException) {
+      null
+    }
+  }
+
+  private fun cachedSerializerOrNull(type: Class<*>): KSerializer<*>? =
+    serializers.getOrPut(type) { CachedSerializer(lookUpSerializer(type)) }.serializer
 
   // The private-object fallback replaces the exception with a result.
   @Suppress("SwallowedException")
@@ -51,4 +69,7 @@ internal object KotlinxSerialNameLookup : SerialNameLookup {
     } catch (e: ReflectiveOperationException) {
       null
     }
+
+  /** Wraps a nullable serializer, since [ConcurrentHashMap] doesn't accept `null` values. */
+  private class CachedSerializer(val serializer: KSerializer<*>?)
 }

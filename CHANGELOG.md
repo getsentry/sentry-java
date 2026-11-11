@@ -52,6 +52,9 @@
   - Pass it to `SentryNavEffect` instead of writing your own mapper: `SentryNavEffect(backStack, BackStackEntryMapper.serialName())`
   - Names are the key class's fully qualified name, or its `@SerialName` value if it has one, so they survive R8 minification
   - Keys that aren't `@Serializable` are recorded as `/unknown`
+- Nav3: Add `BackStackEntryMapper.serialNameWithArguments()`, which names entries like `serialName()` and also records each entry's properties as arguments ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+  - It sends the full content of your back stack keys, which may include personal data. Only use it if your keys are safe to send to Sentry
+  - Values whose property names match Sentry's sensitive denylist (e.g. `token`, `password`, `session`) are replaced with `[Filtered]`
 
 ### Behavioral Changes
 

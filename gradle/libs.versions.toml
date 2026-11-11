@@ -158,7 +158,9 @@ kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
-# Minimum version required by androidx.navigation3:navigation3-runtime
+# Pinned to the lowest kotlinx-serialization-core version every Nav3 app is guaranteed to have (i.e., min version required by
+# androidx.navigation3:navigation3-runtime), so that we never call an API a host app doesn't have access to. Newer versions are verified
+# at runtime by the nav3-serialname-r8-check integration app.
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version = "1.7.3" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClient" }
 ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktorClient" }

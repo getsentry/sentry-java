@@ -24,9 +24,11 @@ class SerialNameBackStackEntryMapperTest {
   private class Fixture {
     val logger = mock<ILogger>()
     val lookupCalls = mutableListOf<Class<*>>()
+    val argumentCalls = mutableListOf<Any>()
     val names = mapOf<Class<*>, String>(Home::class.java to "Home", Detail::class.java to "Detail")
+    var arguments: (Any) -> Map<String, Any?>? = { emptyMap() }
 
-    fun getSut(isSerializationAvailable: Boolean = true) =
+    fun getSut(isSerializationAvailable: Boolean = true, includeArguments: Boolean = false) =
       SerialNameBackStackEntryMapper(
         lookup =
           if (isSerializationAvailable) {
@@ -35,10 +37,16 @@ class SerialNameBackStackEntryMapperTest {
                 lookupCalls += type
                 return names[type]
               }
+
+              override fun argumentsOrNull(backStackEntry: Any): Map<String, Any?>? {
+                argumentCalls += backStackEntry
+                return arguments(backStackEntry)
+              }
             }
           } else {
             null
           },
+        includeArguments = includeArguments,
         logger = { logger },
       )
   }
@@ -158,5 +166,91 @@ class SerialNameBackStackEntryMapperTest {
 
     assertThat(sut.map(Detail("1"))).isEqualTo(SentryBackStackEntry("Detail", mapOf("id" to "1")))
     assertThat(sut.map(Home)).isEqualTo(SentryBackStackEntry("Home"))
+  }
+
+  @Test
+  fun `doesn't encode arguments unless asked to`() {
+    val sut = fixture.getSut()
+
+    sut.map(Detail("1"))
+
+    assertThat(fixture.argumentCalls).isEmpty()
+  }
+
+  @Test
+  fun `records encoded arguments when asked to`() {
+    fixture.arguments = { mapOf("id" to (it as Detail).id) }
+    val sut = fixture.getSut(includeArguments = true)
+
+    assertThat(sut.map(Detail("1"))).isEqualTo(SentryBackStackEntry("Detail", mapOf("id" to "1")))
+    assertThat(sut.map(Detail("2"))).isEqualTo(SentryBackStackEntry("Detail", mapOf("id" to "2")))
+  }
+
+  @Test
+  fun `filters sensitive values at every level of nesting`() {
+    fixture.arguments = {
+      mapOf(
+        "id" to "1",
+        "authToken" to "secret",
+        "nested" to mapOf("Password" to "secret", "query" to "shoes"),
+        "items" to listOf(mapOf("sessionId" to "secret", "sku" to "A1")),
+        "apiKeys" to listOf("secret"),
+      )
+    }
+    val sut = fixture.getSut(includeArguments = true)
+
+    assertThat(sut.map(Detail("1"))?.arguments)
+      .isEqualTo(
+        mapOf(
+          "id" to "1",
+          "authToken" to "[Filtered]",
+          "nested" to mapOf("Password" to "[Filtered]", "query" to "shoes"),
+          "items" to listOf(mapOf("sessionId" to "[Filtered]", "sku" to "A1")),
+          "apiKeys" to "[Filtered]",
+        )
+      )
+  }
+
+  @Test
+  fun `records no arguments for entries without properties`() {
+    fixture.arguments = { emptyMap() }
+    val sut = fixture.getSut(includeArguments = true)
+
+    val mapped = sut.map(Home)
+
+    assertThat(mapped).isEqualTo(SentryBackStackEntry("Home"))
+    assertThat(mapped?.arguments).isNull()
+  }
+
+  @Test
+  fun `keeps the name and logs once per class when arguments can't be encoded`() {
+    fixture.arguments = { null }
+    val sut = fixture.getSut(includeArguments = true)
+
+    repeat(3) {
+      assertThat(sut.map(Detail("$it"))).isEqualTo(SentryBackStackEntry("Detail"))
+    }
+
+    verify(fixture.logger, times(1))
+      .log(eq(SentryLevel.WARNING), any<String>(), eq(Detail::class.java.name))
+  }
+
+  @Test
+  fun `doesn't encode arguments for entries it can't name`() {
+    val sut = fixture.getSut(includeArguments = true)
+
+    assertThat(sut.map(NotSerializable("1"))).isNull()
+    assertThat(fixture.argumentCalls).isEmpty()
+  }
+
+  @Test
+  fun `serialNameWithArguments returns a shared mapper backed by kotlinx serialization`() {
+    val sut = BackStackEntryMapper.serialNameWithArguments()
+
+    assertThat(sut).isSameInstanceAs(BackStackEntryMapper.serialNameWithArguments())
+    assertThat(sut).isNotSameInstanceAs(BackStackEntryMapper.serialName())
+    assertThat(sut.map(Home)).isEqualTo(SentryBackStackEntry("Home"))
+    assertThat(sut.map(Detail("1"))).isEqualTo(SentryBackStackEntry("Detail", mapOf("id" to "1")))
+    assertThat(sut.map(NotSerializable("1"))).isNull()
   }
 }

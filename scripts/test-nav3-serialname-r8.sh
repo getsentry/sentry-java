@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Checks BackStackEntryMapper.serialName() in R8-minified builds on a booted emulator or device.
+# Checks BackStackEntryMapper.serialName() and serialNameWithArguments() in R8-minified builds on a
+# booted emulator or device.
 # See sentry-android-integration-tests/nav3-serialname-r8-check/README.md.
 #
 # Usage:

@@ -23,6 +23,11 @@ val mapper = BackStackEntryMapper<NavKey> { key ->
 }
 ```
 
+To record every property of your keys as arguments instead, pass `BackStackEntryMapper.serialNameWithArguments()`. It sends the full
+content of your keys, which may include personal data, so only use it if your keys are safe to send to Sentry. Values whose property names
+match Sentry's sensitive denylist (e.g. `token`, `password`, `session`) are replaced with `"[Filtered]"`. To send only some properties,
+use a custom mapper like the one above.
+
 If you call `NavDisplay(entries, ...)` or `NavDisplay(sceneState, ...)`, pass `SentryNavEffect` the back stack your entries are built
 from, not the entries themselves. `NavEntry` doesn't expose its key, so a list of entries can't be named:
 

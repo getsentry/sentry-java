@@ -55,8 +55,9 @@ public class SentryBackStackEntry(
  * Maps a back stack entry to a displayable name and optional diagnostic arguments.
  *
  * Use [BackStackEntryMapper.serialName] to name `@Serializable` entries after their serial names,
- * or implement this interface to choose your own names and arguments. A custom mapper can delegate
- * the entries it doesn't handle to [BackStackEntryMapper.serialName].
+ * [BackStackEntryMapper.serialNameWithArguments] to also record their properties as arguments, or
+ * implement this interface to choose your own names and arguments. A custom mapper can delegate the
+ * entries it doesn't handle to [BackStackEntryMapper.serialName].
  *
  * **Privacy / PII**
  *
@@ -183,6 +184,44 @@ public fun interface BackStackEntryMapper<in T : Any> {
      */
     @ApiStatus.Experimental
     public fun serialName(): BackStackEntryMapper<Any> = SerialNameBackStackEntryMapper.instance
+
+    /**
+     * Returns a mapper that names entries like [serialName] and also records each entry's
+     * properties as arguments, encoded with kotlinx.serialization.
+     *
+     * **Privacy**
+     *
+     * This records the full content of your back stack keys, which may include user IDs, emails,
+     * search queries, or other personal data. Only use it if your keys are safe to send to Sentry.
+     * Values whose property names match Sentry's built-in sensitive denylist (e.g. `token`,
+     * `password`, `session`, `key`; matched case-insensitively as substrings) are replaced with
+     * `"[Filtered]"` at every level of nesting. To send only some properties, use a custom mapper.
+     *
+     * A future SDK data collection option for navigation arguments may further restrict what this
+     * mapper sends.
+     *
+     * **Encoding**
+     * - Classes and objects become maps from property name to value. Objects without properties
+     *   record no arguments.
+     * - Lists and sets become lists; maps become maps with string keys.
+     * - Enums are recorded by serial name; value classes by their underlying value.
+     * - Polymorphic properties become `{"type": <serial name>, "value": <value>}`.
+     * - A key whose serializer doesn't encode to a structure (e.g. a custom serializer that encodes
+     *   to a string) is recorded as `{"value": <value>}`.
+     * - Properties marked `@Transient` are omitted.
+     *
+     * Properties with contextual or open polymorphic serializers can't be encoded, because no
+     * serializers module is available. Entries with such properties are named, but recorded without
+     * arguments, and the first entry of each such class logs a warning, visible when the SDK's
+     * `debug` option is enabled.
+     *
+     * Arguments are subject to the same size and depth limits as those returned by custom mappers.
+     * Entries that can't be named are recorded as "/unknown" without arguments, as with
+     * [serialName].
+     */
+    @ApiStatus.Experimental
+    public fun serialNameWithArguments(): BackStackEntryMapper<Any> =
+      SerialNameBackStackEntryMapper.withArgumentsInstance
   }
 }
 

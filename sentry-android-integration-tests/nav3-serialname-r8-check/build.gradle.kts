@@ -1,4 +1,5 @@
-// Checks BackStackEntryMapper.serialName() in R8-minified release builds. See README.md.
+// Checks BackStackEntryMapper.serialName() and serialNameWithArguments() in R8-minified release
+// builds. See README.md.
 plugins {
   id("com.android.application")
   alias(libs.plugins.kotlin.android)

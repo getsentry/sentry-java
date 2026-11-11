@@ -181,6 +181,33 @@ class SentryNavEffectTest {
       )
   }
 
+  @Serializable
+  @SerialName("Checkout")
+  private data class CheckoutRoute(val cartId: String, val authToken: String)
+
+  @Test
+  fun `serialNameWithArguments mapper records filtered arguments`() {
+    val fixture = Fixture()
+    val backStack = mutableStateListOf<Any>(CheckoutRoute(cartId = "c-1", authToken = "secret"))
+
+    composeRule.setContent {
+      SentryNavEffect(
+        backStack = backStack,
+        backStackEntryMapper = BackStackEntryMapper.serialNameWithArguments(),
+        options = SentryNavOptions(),
+        scopes = fixture.scopes,
+        coordinator = fixture.coordinator,
+      )
+    }
+    composeRule.waitForIdle()
+
+    assertThat(fixture.breadcrumbs.single().data["to"]).isEqualTo("/Checkout")
+    assertThat(fixture.breadcrumbs.single().data["to_arguments"])
+      .isEqualTo(mapOf("cartId" to "c-1", "authToken" to "[Filtered]"))
+    assertThat(fixture.transactions.single().getData("arguments"))
+      .isEqualTo(mapOf("cartId" to "c-1", "authToken" to "[Filtered]"))
+  }
+
   @Test
   fun `pushing a new top entry emits Sentry data for that entry and a new back stack copy`() {
     val fixture = Fixture()

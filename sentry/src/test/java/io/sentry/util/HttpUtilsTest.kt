@@ -113,4 +113,13 @@ class HttpUtilsTest {
         "[Filtered]",
       )
   }
+
+  @Test
+  fun `sensitive data key matches denylist terms partially and case-insensitively`() {
+    assertThat(HttpUtils.containsSensitiveDataKey("authToken")).isTrue()
+    assertThat(HttpUtils.containsSensitiveDataKey("X-API-KEY")).isTrue()
+    assertThat(HttpUtils.containsSensitiveDataKey("SessionId")).isTrue()
+    assertThat(HttpUtils.containsSensitiveDataKey("productId")).isFalse()
+    assertThat(HttpUtils.containsSensitiveDataKey("query")).isFalse()
+  }
 }

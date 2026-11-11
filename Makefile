@@ -55,7 +55,7 @@ assembleUiTestCriticalRelease:
 runUiTestCritical:
 	./scripts/test-ui-critical.sh
 
-# Build and run the R8 check for BackStackEntryMapper.serialName() on a booted emulator
+# Build and run the R8 check for BackStackEntryMapper.serialName() and serialNameWithArguments() on a booted emulator
 runNav3SerialNameR8Check:
 	./scripts/test-nav3-serialname-r8.sh
 
