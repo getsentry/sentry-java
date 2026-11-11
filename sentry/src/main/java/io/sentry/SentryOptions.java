@@ -598,6 +598,8 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private @Nullable List<FilterString> ignoredTransactions = null;
 
+  private @Nullable List<HttpStatusCodeRange> ignoredServerHttpStatusCodesForTracing = null;
+
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
 
@@ -3147,6 +3149,34 @@ public class SentryOptions implements RateLimiterConfig {
     }
   }
 
+  /**
+   * Returns the HTTP status codes and inclusive ranges for which incoming server transactions are
+   * not sent to Sentry. An empty list disables this filter.
+   *
+   * @return the configured HTTP status code ranges, or {@code null} if unset
+   */
+  public @Nullable List<HttpStatusCodeRange> getIgnoredServerHttpStatusCodesForTracing() {
+    return ignoredServerHttpStatusCodesForTracing;
+  }
+
+  /**
+   * Sets the HTTP status codes and inclusive ranges for which incoming server transactions are not
+   * sent to Sentry. For example, configure {@code new HttpStatusCodeRange(404)} for one status or
+   * {@code new HttpStatusCodeRange(500, 599)} for an inclusive range. External configuration
+   * accepts comma-separated codes and ranges such as {@code 404,410,500-599}. An empty list
+   * disables this filter.
+   *
+   * @param ignoredServerHttpStatusCodesForTracing the HTTP status code ranges, or {@code null} to
+   *     leave the option unset
+   */
+  public void setIgnoredServerHttpStatusCodesForTracing(
+      final @Nullable List<HttpStatusCodeRange> ignoredServerHttpStatusCodesForTracing) {
+    this.ignoredServerHttpStatusCodesForTracing =
+        ignoredServerHttpStatusCodesForTracing == null
+            ? null
+            : new ArrayList<>(ignoredServerHttpStatusCodesForTracing);
+  }
+
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
   @ApiStatus.Internal
   public @NotNull SentryDateProvider getDateProvider() {
@@ -3822,6 +3852,10 @@ public class SentryOptions implements RateLimiterConfig {
     if (options.getIgnoredTransactions() != null) {
       final List<String> ignoredTransactions = new ArrayList<>(options.getIgnoredTransactions());
       setIgnoredTransactions(ignoredTransactions);
+    }
+    if (options.getIgnoredServerHttpStatusCodesForTracing() != null) {
+      setIgnoredServerHttpStatusCodesForTracing(
+          options.getIgnoredServerHttpStatusCodesForTracing());
     }
     if (options.getIgnoredErrors() != null) {
       final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());

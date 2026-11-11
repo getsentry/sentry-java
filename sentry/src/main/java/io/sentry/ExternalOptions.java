@@ -50,6 +50,7 @@ public final class ExternalOptions {
 
   private @Nullable List<String> ignoredCheckIns;
   private @Nullable List<String> ignoredTransactions;
+  private @Nullable List<HttpStatusCodeRange> ignoredServerHttpStatusCodesForTracing;
 
   private @Nullable Boolean sendModules;
   private @Nullable Boolean sendDefaultPii;
@@ -160,6 +161,8 @@ public final class ExternalOptions {
 
     options.setIgnoredCheckIns(propertiesProvider.getListOrNull("ignored-checkins"));
     options.setIgnoredTransactions(propertiesProvider.getListOrNull("ignored-transactions"));
+    options.setIgnoredServerHttpStatusCodesForTracing(
+        parseIgnoredServerHttpStatusCodesForTracing(propertiesProvider, logger));
 
     options.setEnableBackpressureHandling(
         propertiesProvider.getBooleanProperty("enable-backpressure-handling"));
@@ -241,6 +244,31 @@ public final class ExternalOptions {
     }
 
     return options;
+  }
+
+  private static @Nullable List<HttpStatusCodeRange> parseIgnoredServerHttpStatusCodesForTracing(
+      final @NotNull PropertiesProvider propertiesProvider, final @NotNull ILogger logger) {
+    final String value =
+        propertiesProvider.getProperty("ignored-server-http-status-codes-for-tracing");
+    if (value == null) {
+      return null;
+    }
+    if (value.trim().isEmpty()) {
+      return new ArrayList<>();
+    }
+
+    final List<HttpStatusCodeRange> ranges = new ArrayList<>();
+    for (final String token : value.split(",", -1)) {
+      try {
+        ranges.add(HttpStatusCodeRange.valueOf(token));
+      } catch (IllegalArgumentException e) {
+        logger.log(
+            SentryLevel.WARNING,
+            "Ignoring invalid HTTP status code range in ignored-server-http-status-codes-for-tracing: %s",
+            token);
+      }
+    }
+    return ranges.isEmpty() ? null : ranges;
   }
 
   private static @Nullable DataCollection parseDataCollection(
@@ -620,6 +648,15 @@ public final class ExternalOptions {
 
   public @Nullable List<String> getIgnoredTransactions() {
     return ignoredTransactions;
+  }
+
+  public void setIgnoredServerHttpStatusCodesForTracing(
+      final @Nullable List<HttpStatusCodeRange> ignoredServerHttpStatusCodesForTracing) {
+    this.ignoredServerHttpStatusCodesForTracing = ignoredServerHttpStatusCodesForTracing;
+  }
+
+  public @Nullable List<HttpStatusCodeRange> getIgnoredServerHttpStatusCodesForTracing() {
+    return ignoredServerHttpStatusCodesForTracing;
   }
 
   public void setEnableBackpressureHandling(final @Nullable Boolean enableBackpressureHandling) {
