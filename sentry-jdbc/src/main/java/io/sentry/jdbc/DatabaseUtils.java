@@ -81,11 +81,17 @@ public final class DatabaseUtils {
       return parseAsUri(dbSystem, urlString);
     }
     if ("sqlserver".equalsIgnoreCase(dbSystem)) {
-      String dbProperty = ";databasename=";
-      final int index = urlString.indexOf(dbProperty);
-      if (index >= 0) {
-        final @NotNull String dbNameAndMaybeMore = urlString.substring(index + dbProperty.length());
-        return new DatabaseDetails(dbSystem, StringUtils.substringBefore(dbNameAndMaybeMore, ";"));
+      try {
+        String dbProperty = ";databasename=";
+        final int index = urlString.indexOf(dbProperty);
+        if (index >= 0) {
+          final @NotNull String dbNameAndMaybeMore =
+              urlString.substring(index + dbProperty.length());
+          return new DatabaseDetails(
+              dbSystem, StringUtils.substringBefore(dbNameAndMaybeMore, ";"));
+        }
+      } catch (Throwable t) {
+        // ignore
       }
     }
     if ("oracle".equalsIgnoreCase(dbSystem)) {

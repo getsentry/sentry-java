@@ -78,9 +78,13 @@ public final class SpanUtils {
     }
 
     for (final FilterString ignoredOrigin : ignoredOrigins) {
-      if (ignoredOrigin.matches(origin)) {
-        ignoredSpanDecisionsCache.put(origin, true);
-        return true;
+      try {
+        if (ignoredOrigin.matches(origin)) {
+          ignoredSpanDecisionsCache.put(origin, true);
+          return true;
+        }
+      } catch (Throwable t) {
+        // ignore invalid regex
       }
     }
 

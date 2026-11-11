@@ -187,8 +187,13 @@ public final class TracingUtils {
     }
 
     for (final FilterString ignoredTransaction : ignoredTransactions) {
-      if (ignoredTransaction.matches(transactionName)) {
-        return true;
+
+      try {
+        if (ignoredTransaction.matches(transactionName)) {
+          return true;
+        }
+      } catch (Throwable t) {
+        // ignore invalid regex
       }
     }
 
