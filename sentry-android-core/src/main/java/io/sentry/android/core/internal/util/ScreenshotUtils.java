@@ -38,7 +38,10 @@ public final class ScreenshotUtils {
   }
 
   // Used by Hybrid SDKs
-  @SuppressLint("NewApi")
+  // Lint infers a UI-thread constraint from the View calls in captureScreenshot, which clashes with
+  // Bitmap.compress's @WorkerThread. captureScreenshot is safe from any thread, as it posts the
+  // view draw to the UI thread when it isn't already on it.
+  @SuppressLint({"NewApi", "ThreadConstraint"})
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IThreadChecker threadChecker,
