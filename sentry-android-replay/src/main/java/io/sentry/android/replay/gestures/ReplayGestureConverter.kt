@@ -9,6 +9,7 @@ import io.sentry.rrweb.RRWebInteractionMoveEvent
 import io.sentry.rrweb.RRWebInteractionMoveEvent.Position
 import io.sentry.time.Deadline
 import io.sentry.time.MonotonicTicker
+import io.sentry.time.Stopwatch
 import io.sentry.transport.ICurrentDateProvider
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
@@ -24,7 +25,9 @@ internal class ReplayGestureConverter(
   }
 
   private val currentPositions = LinkedHashMap<Int, ArrayList<Position>>(10)
-  private var touchMoveBaseline = 0L
+
+  /** Started with the first position in [currentPositions], or `null` while none is batched. */
+  private var moveBatch: Stopwatch? = null
 
   /** When the next move event may be captured, or `null` before the first one. */
   private var moveDebounce: Deadline? = null
@@ -42,6 +45,9 @@ internal class ReplayGestureConverter(
         }
         moveDebounce = Deadline.after(ticker, TOUCH_MOVE_DEBOUNCE_THRESHOLD, MILLISECONDS)
 
+        // read once, so all pointers of this event share one offset
+        val totalOffset = moveBatch?.elapsed(MILLISECONDS) ?: 0L
+
         currentPositions.keys.forEach { pId ->
           val pIndex = event.findPointerIndex(pId)
 
@@ -51,8 +57,8 @@ internal class ReplayGestureConverter(
           }
 
           // idk why but rrweb does it like dis
-          if (touchMoveBaseline == 0L) {
-            touchMoveBaseline = now
+          if (moveBatch == null) {
+            moveBatch = Stopwatch.started(ticker)
           }
 
           currentPositions[pId]!! +=
@@ -60,12 +66,12 @@ internal class ReplayGestureConverter(
               x = event.getX(pIndex) * recorderConfig.scaleFactorX
               y = event.getY(pIndex) * recorderConfig.scaleFactorY
               id = 0 // html node id, but we don't have it, so hardcode to 0 to align with FE
-              timeOffset = now - touchMoveBaseline
+              timeOffset = totalOffset
             }
         }
 
-        val totalOffset = now - touchMoveBaseline
-        return if (totalOffset > CAPTURE_MOVE_EVENT_THRESHOLD) {
+        // with nothing batched there is nothing to wait for
+        return if (moveBatch == null || totalOffset > CAPTURE_MOVE_EVENT_THRESHOLD) {
           val moveEvents = ArrayList<RRWebInteractionMoveEvent>(currentPositions.size)
           for ((pointerId, positions) in currentPositions) {
             if (positions.isNotEmpty()) {
@@ -81,7 +87,7 @@ internal class ReplayGestureConverter(
               currentPositions[pointerId]!!.clear()
             }
           }
-          touchMoveBaseline = 0L
+          moveBatch = null
           moveEvents
         } else {
           null

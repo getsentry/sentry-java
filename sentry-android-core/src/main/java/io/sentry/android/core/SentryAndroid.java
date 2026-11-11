@@ -52,8 +52,7 @@ public final class SentryAndroid {
   // the process of SentryNdkCrashService in sentry-android-ndk-outproc
   private static final String NDK_CRASH_SERVICE_PROCESS_SUFFIX = ".sentry_ndk_crash";
 
-  protected static final @NotNull AutoClosableReentrantLock staticLock =
-      new AutoClosableReentrantLock();
+  static final @NotNull AutoClosableReentrantLock staticLock = new AutoClosableReentrantLock();
 
   private SentryAndroid() {}
 

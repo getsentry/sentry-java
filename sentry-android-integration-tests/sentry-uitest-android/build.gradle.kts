@@ -77,6 +77,10 @@ android {
     // This module is the one lint picks to check the build root's Gradle wrapper, and this check
     // compares it with the latest Gradle release online, so every new release would fail the build.
     disable += "AndroidGradlePluginVersion"
+
+    // Lint 9.5 can't load the custom checks bundled with older androidx.lifecycle releases and
+    // reports that it skips them. They only cover lifecycle APIs this module doesn't call.
+    disable += "ObsoleteLintCustomCheck"
   }
 
   androidComponents.beforeVariants {

@@ -851,8 +851,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * @return true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
-   *     more details.
+   * Returns true if performance-v2 is enabled. See {@link #setEnablePerformanceV2(boolean)} for
+   * more details.
    */
   public boolean isEnablePerformanceV2() {
     return enablePerformanceV2;
@@ -871,8 +871,8 @@ public final class SentryAndroidOptions extends SentryOptions {
   }
 
   /**
-   * @return true if standalone app start tracing is enabled. See {@link
-   *     #setEnableStandaloneAppStartTracing(boolean)} for more details.
+   * Returns true if standalone app start tracing is enabled. See {@link
+   * #setEnableStandaloneAppStartTracing(boolean)} for more details.
    */
   @ApiStatus.Experimental
   public boolean isEnableStandaloneAppStartTracing() {
@@ -1031,7 +1031,7 @@ public final class SentryAndroidOptions extends SentryOptions {
     return AndroidMonotonicTicker.getInstance();
   }
 
-  static class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
+  static final class AndroidUserFeedbackFormHandler implements SentryFeedbackOptions.IFormHandler {
     @Override
     public void showForm(
         final @Nullable SentryId associatedEventId,

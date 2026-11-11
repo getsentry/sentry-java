@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ThreadDumpParser {
+public final class ThreadDumpParser {
   private static final Pattern BEGIN_MANAGED_THREAD_RE =
       Pattern.compile("\"(.*)\" (.*) ?prio=(\\d+)\\s+tid=(\\d+)\\s*(.*)");
 
@@ -178,7 +178,7 @@ public class ThreadDumpParser {
     markThreads();
   }
 
-  private SentryThread parseThread(final @NotNull Lines lines) {
+  private @Nullable SentryThread parseThread(final @NotNull Lines lines) {
     final SentryThread sentryThread = new SentryThread();
 
     final Matcher beginManagedThreadRe = BEGIN_MANAGED_THREAD_RE.matcher("");
