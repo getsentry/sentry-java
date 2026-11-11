@@ -335,6 +335,7 @@ public final class AndroidContinuousProfiler
     }
   }
 
+  @Override
   public void reevaluateSampling() {
     shouldSample = true;
   }
@@ -373,6 +374,7 @@ public final class AndroidContinuousProfiler
     return ProfileRecordingState.UNKNOWN;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void sendChunks(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
     try {
       options

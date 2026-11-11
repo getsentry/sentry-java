@@ -103,6 +103,7 @@ public final class AnrProfilingIntegration
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void close() throws IOException {
     enabled.set(false);
     AppState.getInstance().removeAppStateListener(this);

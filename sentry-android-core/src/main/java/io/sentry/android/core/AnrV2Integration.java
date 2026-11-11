@@ -64,6 +64,7 @@ public final class AnrV2Integration implements Integration, Closeable {
 
   @SuppressLint("NewApi") // we do the check in the AnrIntegrationFactory
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options =
         Objects.requireNonNull(

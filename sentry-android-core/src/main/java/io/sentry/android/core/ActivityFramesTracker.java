@@ -40,7 +40,7 @@ public final class ActivityFramesTracker {
       new WeakHashMap<>();
 
   private final @NotNull MainLooperHandler handler;
-  protected @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
+  @NotNull AutoClosableReentrantLock lock = new AutoClosableReentrantLock();
 
   private final @NotNull LazyEvaluator<Boolean> androidXAvailable;
 

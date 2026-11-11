@@ -78,6 +78,7 @@ public final class FeedbackShakeIntegration
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public synchronized void enableOnShake() {
     final @Nullable SentryAndroidOptions options = this.options;
     if (enabled || options == null) {
@@ -154,6 +155,7 @@ public final class FeedbackShakeIntegration
     }
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private boolean removeDialog(final @NotNull Dialog dialog) {
     boolean removed = false;
     for (final @NotNull VisibleDialog visibleDialog : visibleDialogs) {
@@ -169,6 +171,7 @@ public final class FeedbackShakeIntegration
     return removed;
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private boolean hasDialogOn(final @NotNull Activity activity) {
     for (final @NotNull VisibleDialog visibleDialog : visibleDialogs) {
       if (visibleDialog.dialogRef.get() != null && visibleDialog.activityRef.get() == activity) {
@@ -226,6 +229,7 @@ public final class FeedbackShakeIntegration
   }
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public void onActivityPaused(final @NotNull Activity activity) {
     // Only stop if this is the activity we're tracking. When transitioning between
     // activities, B.onResume may fire before A.onPause — stopping unconditionally

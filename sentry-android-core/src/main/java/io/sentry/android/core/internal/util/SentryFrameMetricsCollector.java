@@ -272,6 +272,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
   public void onActivityPaused(@NotNull Activity activity) {}
 
   @Override
+  @SuppressWarnings("ReferenceEquality")
   public void onActivityStopped(@NotNull Activity activity) {
     stopTrackingWindow(activity.getWindow());
     if (currentWindow != null && currentWindow.get() == activity.getWindow()) {
@@ -375,6 +376,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
             });
   }
 
+  @SuppressWarnings("ReferenceEquality")
   private void setCurrentWindow(final @NotNull Window window) {
     if (currentWindow != null && currentWindow.get() == window) {
       return;
@@ -425,6 +427,7 @@ public final class SentryFrameMetricsCollector implements Application.ActivityLi
           return choreographerFrameStartTime;
         }
       } catch (IllegalAccessException ignored) {
+        // The frame start time is unknown then, same as when the field is missing.
       }
     }
     return -1;

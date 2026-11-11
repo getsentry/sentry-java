@@ -386,7 +386,7 @@ public final class AndroidConnectionStatusProvider
               }
             }
 
-            /**
+            /*
              * Caches the capabilities and notifies observers.
              *
              * <p>No-ops unless the incoming {@code networkCapabilities} differ from the stored ones
@@ -1091,6 +1091,7 @@ public final class AndroidConnectionStatusProvider
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void submitSafe(@NotNull Runnable r) {
     try {
       options.getExecutorService().submit(r);
