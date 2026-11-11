@@ -83,12 +83,7 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
               ) {
                 targetTag = tag
               } else if (
-                targetType == UiElement.Type.SCROLLABLE &&
-                  ("androidx.compose.foundation.ScrollingLayoutElement" == type ||
-                    "androidx.compose.foundation.ScrollingContainerElement" == type ||
-                    // Compose foundation 1.10+: lazy layouts and pagers use ScrollableAreaElement
-                    // in place of ScrollingContainerElement
-                    "androidx.compose.foundation.ScrollableAreaElement" == type)
+                targetType == UiElement.Type.SCROLLABLE && type in SCROLLABLE_ELEMENT_TYPES
               ) {
                 return UiElement(null, null, null, tag, ORIGIN)
               }
@@ -133,5 +128,14 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
 
   public companion object {
     private const val ORIGIN = "jetpack_compose"
+
+    private val SCROLLABLE_ELEMENT_TYPES =
+      setOf(
+        "androidx.compose.foundation.ScrollingLayoutElement",
+        "androidx.compose.foundation.ScrollingContainerElement",
+        // Compose foundation 1.10+: lazy layouts and pagers use ScrollableAreaElement
+        // in place of ScrollingContainerElement
+        "androidx.compose.foundation.ScrollableAreaElement",
+      )
   }
 }
