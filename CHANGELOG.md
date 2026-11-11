@@ -35,7 +35,7 @@
 ### Fixes
 
 - Capture scroll breadcrumbs for `LazyColumn`, `LazyRow`, lazy grids, and `Pager` on Jetpack Compose foundation 1.10+ ([#6548](https://github.com/getsentry/sentry-java/pull/6548))
-- Prevent the main thread from potentially hanging during app start if Android is slow to register the SDK's network or telephony listeners. `Sentry.init`, Session Replay, and capturing events no longer wait for that registration ([#6537](https://github.com/getsentry/sentry-java/pull/6537))
+- Prevent the main thread from potentially hanging during app start or when returning to the foreground if Android is slow to register the SDK's network or telephony listeners. `Sentry.init`, Session Replay, and capturing events no longer wait for that registration ([#6537](https://github.com/getsentry/sentry-java/pull/6537))
 - Add opt-in support for matching GraphQL ignored error types against classification specifications via `sentry.graphql.enable-specification-error-type-filtering` ([#6092](https://github.com/getsentry/sentry-java/pull/6092))
 - Session Replay: Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response, when network details are enabled for the URL ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
 - Session Replay: `SentryOkHttpInterceptor` now captures network request and response details only while Session Replay is recording or buffering ([#6486](https://github.com/getsentry/sentry-java/pull/6486))
@@ -44,13 +44,6 @@
   - On a busy device during cold start this could stall the launcher activity's `onCreate` for hundreds of milliseconds.
 - Do not inspect the response body of streaming Apollo 3 and 4 responses (`multipart/mixed`, `text/event-stream`) for failed requests, which blocked `@defer` and `@stream` ([#6432](https://github.com/getsentry/sentry-java/pull/6432))
 - Session Replay: Measure how long touch moves are batched on a monotonic clock, so a device time change during a swipe no longer drops its positions, delays them, or stretches their timing ([#6538](https://github.com/getsentry/sentry-java/pull/6538))
-
-### Dependencies
-
-- Bump OkHttp from 4.9.2 to 5.5.1 ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
-  - `sentry-okhttp` and the Spring Boot integrations keep OkHttp as a `compileOnly` dependency, so your app keeps the OkHttp version it declares. OkHttp 4 is still supported.
-  - [changelog](https://github.com/square/okhttp/blob/master/CHANGELOG.md)
-  - [diff](https://github.com/square/okhttp/compare/parent-4.9.2...parent-5.5.1)
 
 ## 8.63.0
 
@@ -94,6 +87,10 @@
 
 - Measure ANR detection and ANR profiling durations on the internal `MonotonicTicker` ([#6041](https://github.com/getsentry/sentry-java/pull/6041))
 
+### Known Issues
+
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
+
 ## 8.62.0
 
 ### Improvements
@@ -106,6 +103,10 @@
 - Fix a D8 crash (`NullPointerException: Cannot invoke "String.length()"`) when dexing the SDK with AGP 8.0 and older, a regression from 8.61.1 ([#6356](https://github.com/getsentry/sentry-java/pull/6356))
 - Always remove the first-draw listener after the first frame, even if no layout pass follows it ([#6152](https://github.com/getsentry/sentry-java/pull/6152))
 - Prevent Reactor pool maintenance tasks from retaining unbounded Sentry scope chains ([#6283](https://github.com/getsentry/sentry-java/pull/6283))
+
+### Known Issues
+
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
 
 ## 8.61.1
 
@@ -133,6 +134,10 @@
 - Bump Native SDK from v0.17.3 to v0.17.4 ([#6278](https://github.com/getsentry/sentry-java/pull/6278))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0174)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.17.3...0.17.4)
+
+### Known Issues
+
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
 
 ## 8.61.0
 
@@ -164,6 +169,10 @@
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0173)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.17.2...0.17.3)
 
+### Known Issues
+
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
+
 ## 8.60.0
 
 ### Features
@@ -178,6 +187,10 @@
 - Bump Native SDK from v0.17.1 to v0.17.2 ([#6230](https://github.com/getsentry/sentry-java/pull/6230))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0172)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.17.1...0.17.2)
+
+### Known Issues
+
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
 
 ## 8.59.0
 
