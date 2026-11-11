@@ -1432,9 +1432,7 @@ class SentryClientTest {
 
   @Test
   fun `custom HTTP status range replaces default and accepts OTel long value`() {
-    fixture.sentryOptions.setTraceIgnoreStatusCodes(
-      listOf(HttpStatusCodeRange(500, 599))
-    )
+    fixture.sentryOptions.setTraceIgnoreStatusCodes(listOf(HttpStatusCodeRange(500, 599)))
     val sut = fixture.getSut()
 
     val ignoredEventId =

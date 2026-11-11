@@ -89,7 +89,7 @@
   already have propagated a sampled trace to downstream services, which can still report their
   segments. Local child spans are discarded with the ignored transaction. Continuous profile
   chunks are reported independently. External OTLP export does not pass through `SentryClient` and
-  is not filtered by this option.
+  is not filtered by this option ([#6567](https://github.com/getsentry/sentry-java/pull/6567))
 - Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
 - Remove the deprecated `Instrumenter` enum, option, span context property, and `startChild` overloads ([#6252](https://github.com/getsentry/sentry-java/pull/6252))
 - Remove deprecated OpenTelemetry integration classes and the legacy `SentrySpanStorage` ([#6243](https://github.com/getsentry/sentry-java/pull/6243))

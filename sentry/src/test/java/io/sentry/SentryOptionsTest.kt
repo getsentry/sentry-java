@@ -1116,8 +1116,7 @@ class SentryOptionsTest {
     options.traceIgnoreStatusCodes = emptyList()
     assertThat(options.traceIgnoreStatusCodes).isEmpty()
 
-    options.traceIgnoreStatusCodes =
-      listOf(HttpStatusCodeRange(404), HttpStatusCodeRange(500, 599))
+    options.traceIgnoreStatusCodes = listOf(HttpStatusCodeRange(404), HttpStatusCodeRange(500, 599))
     assertThat(options.traceIgnoreStatusCodes).hasSize(2)
     assertThat(options.traceIgnoreStatusCodes!![0].isInRange(404)).isTrue()
     assertThat(options.traceIgnoreStatusCodes!![1].isInRange(599)).isTrue()
