@@ -598,7 +598,8 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private @Nullable List<FilterString> ignoredTransactions = null;
 
-  private @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes = null;
+  private @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes =
+      new ArrayList<>(Collections.singletonList(new HttpStatusCodeRange(404)));
 
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
@@ -3151,9 +3152,10 @@ public class SentryOptions implements RateLimiterConfig {
 
   /**
    * Returns the HTTP status codes and inclusive ranges for which incoming server transactions are
-   * not sent to Sentry. An empty list disables this filter.
+   * not sent to Sentry. Defaults to a single range containing 404. An empty list disables this
+   * filter.
    *
-   * @return the configured HTTP status code ranges, or {@code null} if unset
+   * @return the configured HTTP status code ranges, or {@code null} if explicitly set to null
    */
   public @Nullable List<HttpStatusCodeRange> getTraceIgnoreStatusCodes() {
     return traceIgnoreStatusCodes;
@@ -3163,16 +3165,18 @@ public class SentryOptions implements RateLimiterConfig {
    * Sets the HTTP status codes and inclusive ranges for which incoming server transactions are not
    * sent to Sentry. For example, configure {@code new HttpStatusCodeRange(404)} for one status or
    * {@code new HttpStatusCodeRange(500, 599)} for an inclusive range. External configuration
-   * accepts comma-separated codes and ranges such as {@code 404,410,500-599}. An empty list
-   * disables this filter.
+   * accepts comma-separated codes and ranges such as {@code 404,410,500-599}. An empty list or
+   * {@code null} disables this filter.
    *
-   * @param traceIgnoreStatusCodes the HTTP status code ranges, or {@code null} to leave the option
-   *     unset
+   * @param traceIgnoreStatusCodes the HTTP status code ranges, or {@code null} to
+   *     disable the filter
    */
   public void setTraceIgnoreStatusCodes(
       final @Nullable List<HttpStatusCodeRange> traceIgnoreStatusCodes) {
     this.traceIgnoreStatusCodes =
-        traceIgnoreStatusCodes == null ? null : new ArrayList<>(traceIgnoreStatusCodes);
+        traceIgnoreStatusCodes == null
+            ? null
+            : new ArrayList<>(traceIgnoreStatusCodes);
   }
 
   /** Returns the current {@link SentryDateProvider} that is used to retrieve the current date. */
@@ -3852,7 +3856,8 @@ public class SentryOptions implements RateLimiterConfig {
       setIgnoredTransactions(ignoredTransactions);
     }
     if (options.getTraceIgnoreStatusCodes() != null) {
-      setTraceIgnoreStatusCodes(options.getTraceIgnoreStatusCodes());
+      setTraceIgnoreStatusCodes(
+          options.getTraceIgnoreStatusCodes());
     }
     if (options.getIgnoredErrors() != null) {
       final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());
