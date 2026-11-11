@@ -52,12 +52,6 @@ class NativeBackendTest {
     assertFailsWith<IllegalStateException> { SentryNdkOutproc.init(options()) }
   }
 
-  @Test
-  @Config(sdk = [29])
-  fun `fails below API 30`() {
-    assertFailsWith<IllegalStateException> { SentryNdkOutproc.init(mock<Context>(), options()) }
-  }
-
   private fun options() =
     SentryAndroidOptions().apply {
       dsn = "https://key@sentry.io/proj"

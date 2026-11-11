@@ -16,6 +16,3 @@ configurations.configureEach {
 ```
 
 Otherwise, the build fails because it contains both native backends.
-
-The crash service needs API 30+. On older versions, native crash reporting is
-disabled.

@@ -20,6 +20,9 @@ import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.FileUtils;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -291,13 +294,26 @@ public final class SentryAndroid {
     }
   }
 
-  // the crash service only runs on API 30+
   @SuppressLint("NewApi")
   private static boolean isNdkCrashServiceProcess() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-      return false;
-    }
-    final @Nullable String processName = Application.getProcessName();
+    final @Nullable String processName =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+            ? Application.getProcessName()
+            : readProcessName();
     return processName != null && processName.endsWith(NDK_CRASH_SERVICE_PROCESS_SUFFIX);
+  }
+
+  // argv[0] of an app process is its process name
+  private static @Nullable String readProcessName() {
+    try {
+      final @Nullable String cmdline = FileUtils.readText(new File("/proc/self/cmdline"));
+      if (cmdline == null) {
+        return null;
+      }
+      final int end = cmdline.indexOf('\0');
+      return end >= 0 ? cmdline.substring(0, end) : cmdline;
+    } catch (IOException e) {
+      return null;
+    }
   }
 }
