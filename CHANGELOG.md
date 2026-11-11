@@ -89,7 +89,7 @@
 
 ### Known Issues
 
-- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. We recommend upgrading to [8.64.0](https://github.com/getsentry/sentry-java/releases/tag/8.64.0) or newer instead.
 
 ## 8.62.0
 
@@ -106,7 +106,7 @@
 
 ### Known Issues
 
-- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. We recommend upgrading to [8.64.0](https://github.com/getsentry/sentry-java/releases/tag/8.64.0) or newer instead.
 
 ## 8.61.1
 
@@ -137,7 +137,7 @@
 
 ### Known Issues
 
-- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. We recommend upgrading to [8.64.0](https://github.com/getsentry/sentry-java/releases/tag/8.64.0) or newer instead.
 
 ## 8.61.0
 
@@ -171,7 +171,7 @@
 
 ### Known Issues
 
-- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. We recommend upgrading to [8.64.0](https://github.com/getsentry/sentry-java/releases/tag/8.64.0) or newer instead.
 
 ## 8.60.0
 
@@ -190,7 +190,7 @@
 
 ### Known Issues
 
-- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. Fixed by [#6537](https://github.com/getsentry/sentry-java/pull/6537).
+- On Android, the main thread may hang or trigger an ANR if the system is slow to register network or telephony callbacks during SDK initialization or when the app returns to the foreground. We recommend upgrading to [8.64.0](https://github.com/getsentry/sentry-java/releases/tag/8.64.0) or newer instead.
 
 ## 8.59.0
 
