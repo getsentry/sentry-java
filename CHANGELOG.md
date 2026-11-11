@@ -96,6 +96,9 @@
 ### Fixes
 
 - Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
+- Stop swallowing fatal errors such as `OutOfMemoryError` in the SDK code that loads native libraries and optional dependencies ([#6562](https://github.com/getsentry/sentry-java/pull/6562))
+  - The offline cache no longer deletes its queue file when it runs out of memory while reading it.
+  - The Ktor client integration no longer swallows coroutine cancellation while reading the response body of a failed request.
 - Preserve independent Netty read and write timeout events when exception singletons are reused. These exceptions now bypass event deduplication by default, so applications with multiple capture integrations may report the same timeout more than once. Use `SentryOptions.setIgnoredErrorsForDeduplication(...)` or `ignored-errors-for-deduplication` to customize or clear the default exclusions. ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
 - Prevent changes to reused tracing options from affecting spans and transactions after creation ([#6417](https://github.com/getsentry/sentry-java/pull/6417))
 - Session Replay: Send Ktor client network request start and end times in milliseconds, so the requests line up with the replay ([#6619](https://github.com/getsentry/sentry-java/pull/6619))
