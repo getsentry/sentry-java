@@ -13,3 +13,5 @@ internal open class CombinedClickableElement : Modifier.Element
 internal open class ScrollingLayoutElement : Modifier.Element
 
 internal open class ScrollingContainerElement : Modifier.Element
+
+internal open class ScrollableAreaElement : Modifier.Element
