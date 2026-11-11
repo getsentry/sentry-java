@@ -21,6 +21,18 @@ import org.springframework.http.HttpHeaders
 class PersonIntegrationTest : IntegrationTest() {
 
   @Test
+  fun `default not found response does not send a transaction`() {
+    val path = "/missing-default-ignored-status"
+
+    val response = restTemplate.getForEntity(path, String::class.java)
+
+    assertThat(response.statusCode.value()).isEqualTo(404)
+    server.assertNoEnvelope(millis = 1_000) {
+      it.transaction()?.request?.url?.endsWith(path) == true
+    }
+  }
+
+  @Test
   fun `failed request reports errors, spans with their flags, and logs`() {
     val response = restTemplate.getForEntity("/person/11", String::class.java)
     assertThat(response.statusCode.value()).isEqualTo(500)

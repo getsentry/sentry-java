@@ -103,7 +103,7 @@ class PersonIntegrationTest : IntegrationTest() {
   }
 
   @Test
-  fun `configured not found response does not send a transaction`() {
+  fun `default not found response does not send a transaction`() {
     val path = "/missing-ignored-status"
 
     val response = restTemplate.getForEntity(path, String::class.java)
