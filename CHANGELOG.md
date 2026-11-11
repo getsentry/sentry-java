@@ -67,6 +67,39 @@
 
 ### Features
 
+- Drop incoming server transactions whose root HTTP response status matches `ignoredServerHttpStatusCodesForTracing`. Configure individual statuses such as `404`, inclusive ranges such as `400-499` or `500-599`, or combine them.
+
+  Java:
+
+  ```java
+  import io.sentry.HttpStatusCodeRange;
+  import java.util.Arrays;
+
+  options.setIgnoredServerHttpStatusCodesForTracing(
+      Arrays.asList(new HttpStatusCodeRange(404), new HttpStatusCodeRange(500, 599)));
+  ```
+
+  `sentry.properties`:
+
+  ```properties
+  ignored-server-http-status-codes-for-tracing=404,500-599
+  ```
+
+  Spring Boot `application.properties`:
+
+  ```properties
+  sentry.ignored-server-http-status-codes-for-tracing=404,500-599
+  ```
+
+  Spring Boot `application.yml`:
+
+  ```yaml
+  sentry:
+    ignored-server-http-status-codes-for-tracing:
+      - "404"
+      - "500-599"
+  ```
+
 - Monitor every Spring `@Scheduled` method with Sentry Crons by setting `sentry.monitor-scheduled-tasks=true`, without adding `@SentryCheckIn` to each method. Sentry creates each monitor from the method's `@Scheduled` schedule. Exclude methods with `sentry.exclude-scheduled-tasks` ([#6275](https://github.com/getsentry/sentry-java/pull/6275), [#6276](https://github.com/getsentry/sentry-java/pull/6276), [#6277](https://github.com/getsentry/sentry-java/pull/6277))
 - Quartz `SentryJobListener` can send a monitor config derived from the trigger with check-ins, so Sentry creates or updates the monitor from code. Set the `sentry-upsert-monitor-config` job or trigger data key to `"true"` to send the schedule ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
 - Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = true)` to send the schedule ([#6215](https://github.com/getsentry/sentry-java/pull/6215))

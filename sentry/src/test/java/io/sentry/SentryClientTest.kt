@@ -89,6 +89,7 @@ class SentryClientTest {
     var loggerBatchProcessorFactory = mock<ILoggerBatchProcessorFactory>()
     var metricsBatchProcessor = mock<IMetricsBatchProcessor>()
     var metricsBatchProcessorFactory = mock<IMetricsBatchProcessorFactory>()
+    val logger = mock<ILogger>()
     val maxAttachmentSize: Long = (5 * 1024 * 1024).toLong()
     val scopes = mock<IScopes>()
     val sentryTracer: SentryTracer
@@ -102,7 +103,7 @@ class SentryClientTest {
         isDebug = true
         setDiagnosticLevel(SentryLevel.DEBUG)
         setSerializer(JsonSerializer(this))
-        setLogger(mock())
+        setLogger(this@Fixture.logger)
         maxAttachmentSize = this@Fixture.maxAttachmentSize
         setTransportFactory(factory)
         logs.setLoggerBatchProcessorFactory(loggerBatchProcessorFactory)
@@ -1381,6 +1382,161 @@ class SentryClientTest {
     )
 
     assertEquals(SentryId.EMPTY_ID, eventId)
+  }
+
+  @Test
+  fun `server transaction with ignored HTTP status is dropped before callbacks`() {
+    fixture.sentryOptions.setIgnoredServerHttpStatusCodesForTracing(
+      listOf(HttpStatusCodeRange(404))
+    )
+    val processor = mock<EventProcessor>()
+    val beforeSend = mock<SentryOptions.BeforeSendTransactionCallback>()
+    val replayController = mock<ReplayController>()
+    fixture.sentryOptions.addEventProcessor(processor)
+    fixture.sentryOptions.beforeSendTransaction = beforeSend
+    fixture.sentryOptions.setReplayController(replayController)
+    val transaction = createServerTransaction(404)
+
+    val eventId =
+      fixture
+        .getSut()
+        .captureTransaction(
+          transaction,
+          fixture.sentryTracer.traceContext(),
+          null,
+          null,
+          fixture.profilingTraceData,
+        )
+
+    assertThat(eventId).isEqualTo(SentryId.EMPTY_ID)
+    assertThat(fixture.profilingTraceFile.exists()).isFalse()
+    verify(processor, never()).process(any<SentryTransaction>(), anyOrNull())
+    verify(beforeSend, never()).execute(any(), anyOrNull())
+    verifyNoInteractions(replayController)
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+    assertClientReport(
+      fixture.sentryOptions.clientReportRecorder,
+      listOf(
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Transaction.category, 1),
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Span.category, 2),
+        DiscardedEvent(DiscardReason.EVENT_PROCESSOR.reason, DataCategory.Profile.category, 1),
+      ),
+    )
+  }
+
+  @Test
+  fun `server transaction with ignored HTTP status range accepts OTel long value`() {
+    fixture.sentryOptions.setIgnoredServerHttpStatusCodesForTracing(
+      listOf(HttpStatusCodeRange(500, 599))
+    )
+
+    val eventId =
+      fixture
+        .getSut()
+        .captureTransaction(createServerTransaction(503L), fixture.sentryTracer.traceContext())
+
+    assertThat(eventId).isEqualTo(SentryId.EMPTY_ID)
+    verify(fixture.transport, never()).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `HTTP status filter is disabled for an empty configuration`() {
+    fixture.sentryOptions.setIgnoredServerHttpStatusCodesForTracing(emptyList())
+
+    fixture
+      .getSut()
+      .captureTransaction(createServerTransaction(404), fixture.sentryTracer.traceContext())
+
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `HTTP status filter only applies to server transactions`() {
+    fixture.sentryOptions.setIgnoredServerHttpStatusCodesForTracing(
+      listOf(HttpStatusCodeRange(404))
+    )
+    val clientTransaction = createServerTransaction(404)
+    clientTransaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY] = "client"
+    val missingKindTransaction = createServerTransaction(404)
+    missingKindTransaction.contexts.trace!!.data.remove(SpanDataConvention.SENTRY_KIND_KEY)
+    val sut = fixture.getSut()
+
+    sut.captureTransaction(clientTransaction, fixture.sentryTracer.traceContext())
+    sut.captureTransaction(missingKindTransaction, fixture.sentryTracer.traceContext())
+
+    verify(fixture.transport, times(2)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `HTTP status filter ignores missing and invalid root status values`() {
+    fixture.sentryOptions.setIgnoredServerHttpStatusCodesForTracing(
+      listOf(HttpStatusCodeRange(404))
+    )
+    val invalidStatusValues = listOf("404", 404.0, 404.5f, 99, 600, Long.MAX_VALUE)
+    val sut = fixture.getSut()
+
+    invalidStatusValues.forEach { statusCode ->
+      sut.captureTransaction(
+        createServerTransaction(statusCode),
+        fixture.sentryTracer.traceContext(),
+      )
+    }
+    val missingStatusTransaction = createServerTransaction(200)
+    missingStatusTransaction.contexts.trace!!.data.remove(SpanDataConvention.HTTP_STATUS_CODE_KEY)
+    sut.captureTransaction(missingStatusTransaction, fixture.sentryTracer.traceContext())
+
+    verify(fixture.transport, times(invalidStatusValues.size + 1)).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `HTTP status filter does not read child span attributes`() {
+    fixture.sentryOptions.setIgnoredServerHttpStatusCodesForTracing(
+      listOf(HttpStatusCodeRange(404))
+    )
+    val tracer =
+      SentryTracer(
+        TransactionContext("child-status-transaction", "op", TracesSamplingDecision(true)),
+        fixture.scopes,
+      )
+    tracer.startChild("child").apply {
+      setData(SpanDataConvention.SENTRY_KIND_KEY, "server")
+      setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, 404)
+      finish()
+    }
+    val transaction = SentryTransaction(tracer)
+
+    fixture.getSut().captureTransaction(transaction, tracer.traceContext())
+
+    verify(fixture.transport).send(any(), anyOrNull())
+  }
+
+  @Test
+  fun `profiling trace deletion failure for ignored transaction is logged`() {
+    fixture.sentryOptions.setIgnoredServerHttpStatusCodesForTracing(
+      listOf(HttpStatusCodeRange(404))
+    )
+    val traceFile = mock<File>()
+    whenever(traceFile.delete()).thenReturn(false)
+    whenever(traceFile.path).thenReturn("undeletable.trace")
+    val profilingTraceData = ProfilingTraceData(traceFile, fixture.sentryTracer)
+
+    fixture
+      .getSut()
+      .captureTransaction(
+        createServerTransaction(404),
+        fixture.sentryTracer.traceContext(),
+        null,
+        null,
+        profilingTraceData,
+      )
+
+    verify(traceFile).delete()
+    verify(fixture.logger)
+      .log(
+        SentryLevel.WARNING,
+        "Failed to delete profiling trace file %s for an ignored transaction",
+        "undeletable.trace",
+      )
   }
 
   @Test
@@ -4533,6 +4689,13 @@ class SentryClientTest {
       transaction = "eventTransaction"
       level = SentryLevel.DEBUG
       user = User().apply { id = "eventId" }
+    }
+  }
+
+  private fun createServerTransaction(statusCode: Any): SentryTransaction {
+    return SentryTransaction(fixture.sentryTracer).apply {
+      contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY] = "server"
+      contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY] = statusCode
     }
   }
 
