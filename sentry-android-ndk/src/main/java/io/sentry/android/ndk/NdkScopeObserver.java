@@ -48,7 +48,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
                   user.getId(), user.getEmail(), user.getIpAddress(), user.getUsername());
             }
           });
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setUser has an error.");
     }
   }
@@ -87,7 +87,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
             nativeScope.addBreadcrumb(
                 level, crumb.getMessage(), crumb.getCategory(), crumb.getType(), timestamp, data);
           });
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addBreadcrumb has an error.");
     }
   }
@@ -96,7 +96,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   public void setTag(final @NotNull String key, final @NotNull String value) {
     try {
       options.getExecutorService().submit(() -> nativeScope.setTag(key, value));
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTag(%s) has an error.", key);
     }
   }
@@ -105,7 +105,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   public void removeTag(final @NotNull String key) {
     try {
       options.getExecutorService().submit(() -> nativeScope.removeTag(key));
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync removeTag(%s) has an error.", key);
     }
   }
@@ -114,7 +114,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   public void setExtra(final @NotNull String key, final @NotNull String value) {
     try {
       options.getExecutorService().submit(() -> nativeScope.setExtra(key, value));
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setExtra(%s) has an error.", key);
     }
   }
@@ -123,7 +123,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   public void removeExtra(final @NotNull String key) {
     try {
       options.getExecutorService().submit(() -> nativeScope.removeExtra(key));
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options
           .getLogger()
           .log(SentryLevel.ERROR, e, "Scope sync removeExtra(%s) has an error.", key);
@@ -142,7 +142,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
           .submit(() ->
               nativeScope.setTrace(
                   spanContext.getTraceId().toString(), spanContext.getSpanId().toString()));
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync setTrace failed.");
     }
   }
@@ -153,7 +153,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
     if (pathname != null) {
       try {
         options.getExecutorService().submit(() -> nativeScope.addAttachment(pathname));
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addAttachment has an error.");
       }
       return;
@@ -164,7 +164,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
       final String filename = attachment.getFilename();
       try {
         options.getExecutorService().submit(() -> nativeScope.addAttachmentBytes(bytes, filename));
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         options.getLogger().log(SentryLevel.ERROR, e, "Scope sync addAttachment has an error.");
       }
       return;
@@ -179,7 +179,7 @@ public final class NdkScopeObserver extends ScopeObserverAdapter {
   public void clearAttachments() {
     try {
       options.getExecutorService().submit(() -> nativeScope.clearAttachments());
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, e, "Scope sync clearAttachments has an error.");
     }
   }

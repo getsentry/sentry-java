@@ -4,6 +4,7 @@ import static io.sentry.util.ClassLoaderUtils.classLoaderOrDefault;
 
 import io.sentry.ILogger;
 import io.sentry.SentryLevel;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -57,7 +58,7 @@ public final class ManifestModulesLoader extends ModulesLoader {
           modules.add(module);
         }
       }
-    } catch (Throwable e) {
+    } catch (IOException e) {
       logger.log(SentryLevel.ERROR, "Unable to detect modules via manifest files.", e);
     }
 

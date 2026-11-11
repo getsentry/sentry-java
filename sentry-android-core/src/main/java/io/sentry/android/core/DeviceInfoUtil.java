@@ -457,7 +457,7 @@ public final class DeviceInfoUtil {
   private String getDeviceId() {
     try {
       return Installation.id(context);
-    } catch (Throwable e) {
+    } catch (RuntimeException e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
     }
     return null;

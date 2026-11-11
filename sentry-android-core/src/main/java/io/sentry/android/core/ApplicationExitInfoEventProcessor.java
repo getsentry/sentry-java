@@ -234,7 +234,7 @@ public final class ApplicationExitInfoEventProcessor
                 event.getEventId());
         return false;
       }
-    } catch (Throwable e) {
+    } catch (NumberFormatException e) {
       options.getLogger().log(SentryLevel.ERROR, "Error parsing replay sample rate.", e);
       return false;
     }
@@ -468,7 +468,7 @@ public final class ApplicationExitInfoEventProcessor
         app.setAppVersion(versionName);
         app.setAppBuild(versionCode);
         event.getContexts().setApp(app);
-      } catch (Throwable e) {
+      } catch (IndexOutOfBoundsException e) {
         options
             .getLogger()
             .log(SentryLevel.WARNING, "Failed to parse release from scope cache: %s", release);
@@ -699,7 +699,7 @@ public final class ApplicationExitInfoEventProcessor
   private @Nullable String getDeviceId() {
     try {
       return Installation.id(context);
-    } catch (Throwable e) {
+    } catch (RuntimeException e) {
       options.getLogger().log(SentryLevel.ERROR, "Error getting installationId.", e);
     }
     return null;

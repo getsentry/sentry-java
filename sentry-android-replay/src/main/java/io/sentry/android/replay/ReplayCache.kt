@@ -246,7 +246,7 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
       if (!file.delete()) {
         options.logger.log(ERROR, "Failed to delete replay frame: %s", file.absolutePath)
       }
-    } catch (e: Throwable) {
+    } catch (e: SecurityException) {
       options.logger.log(ERROR, e, "Failed to delete replay frame: %s", file.absolutePath)
     }
   }
@@ -397,13 +397,13 @@ public class ReplayCache(private val options: SentryOptions, private val replayI
       val segmentTimestamp =
         try {
           DateUtils.getDateTime(lastSegment[SEGMENT_KEY_TIMESTAMP].orEmpty())
-        } catch (e: Throwable) {
+        } catch (_: IllegalArgumentException) {
           null
         }
       val replayType =
         try {
           ReplayType.valueOf(lastSegment[SEGMENT_KEY_REPLAY_TYPE].orEmpty())
-        } catch (e: Throwable) {
+        } catch (_: IllegalArgumentException) {
           null
         }
       if (

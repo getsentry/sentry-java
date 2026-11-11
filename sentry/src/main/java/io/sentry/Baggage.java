@@ -145,7 +145,10 @@ public final class Baggage {
             if (!DSCKeys.SAMPLE_RAND.equalsIgnoreCase(key)) {
               shouldFreeze = true;
             }
-          } catch (Throwable e) {
+          } catch (UnsupportedEncodingException
+              | IllegalArgumentException
+              | IndexOutOfBoundsException e) {
+            // e.g. an entry without "=", or an invalid percent-encoding
             logger.log(
                 SentryLevel.ERROR, e, "Unable to decode baggage key value pair %s", keyValueString);
           }
@@ -308,7 +311,7 @@ public final class Baggage {
               sb.append(encodedKeyValue);
               separator = ",";
             }
-          } catch (Throwable e) {
+          } catch (UnsupportedEncodingException e) {
             logger.log(
                 SentryLevel.ERROR,
                 e,
