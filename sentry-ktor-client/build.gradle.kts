@@ -53,7 +53,7 @@ testing {
       }
       sources {
         java.setSrcDirs(sourceSets.test.get().java.srcDirs)
-        resources.setSrcDirs(listOf("src/test/resources"))
+        resources.setSrcDirs(sourceSets.test.get().resources.srcDirs)
       }
     }
   }
