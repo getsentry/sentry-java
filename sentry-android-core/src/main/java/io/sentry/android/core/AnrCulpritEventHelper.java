@@ -25,8 +25,7 @@ public final class AnrCulpritEventHelper {
   }
 
   /**
-   * Creates the exceptions for the culprit stack. The message is the class and method of the top
-   * frame.
+   * The exception message is the class and method of the top frame of the culprit stack.
    *
    * @return the exceptions, or {@code null} if the culprit stack is empty
    */
