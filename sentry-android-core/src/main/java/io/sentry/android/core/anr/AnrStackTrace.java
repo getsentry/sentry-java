@@ -34,9 +34,32 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
     return Long.compare(timestampMs, o.timestampMs);
   }
 
+  /**
+   * Writes this sample in format version 2. All numbers are big-endian, and strings use the
+   * modified UTF-8 of {@link DataOutputStream#writeUTF(String)}.
+   *
+   * <pre>
+   * short   version (2)
+   * long    timestampMs
+   * boolean isStateNull
+   * UTF     state name, or "" if isStateNull
+   * int     number of frames
+   * for each frame:
+   *   UTF     className
+   *   UTF     methodName
+   *   boolean isFileNameNull
+   *   UTF     fileName, or "" if isFileNameNull
+   *   int     lineNumber
+   * </pre>
+   *
+   * <p>Version 1 is the same without the two state fields. {@link #deserialize(DataInputStream)}
+   * reads both versions.
+   */
   public void serialize(final @NotNull DataOutputStream dos) throws IOException {
     dos.writeShort(2); // version
     dos.writeLong(timestampMs);
+    // Write null as a special marker to preserve null vs empty string distinction
+    dos.writeBoolean(state == null);
     dos.writeUTF(state == null ? "" : state.name());
     dos.writeInt(stack.length);
     for (final @NotNull StackTraceElement element : stack) {
@@ -54,53 +77,47 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
   public static AnrStackTrace deserialize(final @NotNull DataInputStream dis) throws IOException {
     try {
       final short version = dis.readShort();
-      if (version != 1 && version != 2) {
+      if (version == 1 || version == 2) {
+        final long timestampMs = dis.readLong();
+        @Nullable Thread.State state = null;
+        if (version == 2) {
+          // Read the null marker to restore null vs empty string distinction
+          final boolean isStateNull = dis.readBoolean();
+          final @NotNull String stateName = dis.readUTF();
+          if (!isStateNull) {
+            try {
+              state = Thread.State.valueOf(stateName);
+            } catch (IllegalArgumentException e) {
+              // written by a runtime with a state this one does not know
+            }
+          }
+        }
+        final int stackLength = dis.readInt();
+        if (stackLength < 0 || stackLength > MAX_STACK_LENGTH) {
+          return null;
+        }
+        final @NotNull StackTraceElement[] stack = new StackTraceElement[stackLength];
+
+        for (int i = 0; i < stackLength; i++) {
+          final @NotNull String className = dis.readUTF();
+          final @NotNull String methodName = dis.readUTF();
+          // Read the null marker to restore null vs empty string distinction
+          final boolean isFileNameNull = dis.readBoolean();
+          final @NotNull String fileNameStr = dis.readUTF();
+          final @Nullable String fileName = isFileNameNull ? null : fileNameStr;
+          final int lineNumber = dis.readInt();
+          final StackTraceElement element =
+              new StackTraceElement(className, methodName, fileName, lineNumber);
+          stack[i] = element;
+        }
+
+        return new AnrStackTrace(timestampMs, stack, state);
+      } else {
         // unsupported future version
         return null;
       }
-      final long timestampMs = dis.readLong();
-      final @Nullable Thread.State state = version == 2 ? readState(dis) : null;
-      final @Nullable StackTraceElement[] stack = readStack(dis);
-      if (stack == null) {
-        return null;
-      }
-      return new AnrStackTrace(timestampMs, stack, state);
     } catch (EOFException e) {
       return null;
     }
-  }
-
-  private static @Nullable Thread.State readState(final @NotNull DataInputStream dis)
-      throws IOException {
-    final @NotNull String name = dis.readUTF();
-    if (name.isEmpty()) {
-      return null;
-    }
-    try {
-      return Thread.State.valueOf(name);
-    } catch (IllegalArgumentException e) {
-      // written by a runtime with a state this one does not know
-      return null;
-    }
-  }
-
-  private static @Nullable StackTraceElement[] readStack(final @NotNull DataInputStream dis)
-      throws IOException {
-    final int stackLength = dis.readInt();
-    if (stackLength < 0 || stackLength > MAX_STACK_LENGTH) {
-      return null;
-    }
-    final @NotNull StackTraceElement[] stack = new StackTraceElement[stackLength];
-    for (int i = 0; i < stackLength; i++) {
-      final @NotNull String className = dis.readUTF();
-      final @NotNull String methodName = dis.readUTF();
-      // Read the null marker to restore null vs empty string distinction
-      final boolean isFileNameNull = dis.readBoolean();
-      final @NotNull String fileNameStr = dis.readUTF();
-      final @Nullable String fileName = isFileNameNull ? null : fileNameStr;
-      final int lineNumber = dis.readInt();
-      stack[i] = new StackTraceElement(className, methodName, fileName, lineNumber);
-    }
-    return stack;
   }
 }

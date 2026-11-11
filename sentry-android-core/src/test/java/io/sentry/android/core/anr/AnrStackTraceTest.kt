@@ -179,6 +179,7 @@ class AnrStackTraceTest {
     val dos = DataOutputStream(bytes)
     dos.writeShort(2)
     dos.writeLong(1234567890L)
+    dos.writeBoolean(false)
     dos.writeUTF("NOT_A_STATE")
     dos.writeInt(0)
     dos.flush()
