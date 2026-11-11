@@ -3,7 +3,6 @@ package io.sentry.android.ndk.outproc;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.ServiceConnection;
-import android.os.Build;
 import io.sentry.SentryIntegrationPackageStorage;
 import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
@@ -68,8 +67,8 @@ public final class SentryNdkOutproc {
   public static void init(
       @Nullable final Context context, @NotNull final SentryAndroidOptions options) {
     // no fork/exec fallback, the native crash daemon only runs in the crash service
-    if (context == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-      throw new IllegalStateException("The NDK crash service needs a context and API 30+");
+    if (context == null) {
+      throw new IllegalStateException("The NDK crash service needs a context");
     }
 
     addPackage(options.getSdkVersion());

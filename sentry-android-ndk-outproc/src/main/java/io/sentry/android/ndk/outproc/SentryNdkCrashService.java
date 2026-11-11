@@ -140,7 +140,7 @@ public final class SentryNdkCrashService extends Service {
       return null;
     }
 
-    final int shmFd = io.sentry.ndk.SentryNdk.createCrashShm();
+    final int shmFd = io.sentry.ndk.SentryNdk.createCrashShm(nativeDatabaseDir.getPath());
     if (shmFd < 0) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to create NDK crash shared memory.");
       return null;

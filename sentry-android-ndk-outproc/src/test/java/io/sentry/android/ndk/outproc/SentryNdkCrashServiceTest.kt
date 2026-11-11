@@ -223,7 +223,7 @@ class SentryNdkCrashServiceTest {
   fun `init fails without shared memory`() {
     configure(true)
     Mockito.mockStatic(io.sentry.ndk.SentryNdk::class.java).use { native ->
-      native.`when`<Int> { io.sentry.ndk.SentryNdk.createCrashShm() }.thenReturn(-1)
+      native.`when`<Int> { io.sentry.ndk.SentryNdk.createCrashShm(any<String>()) }.thenReturn(-1)
 
       assertFailsWith<IllegalStateException> { SentryNdkOutproc.init(app, options) }
 
