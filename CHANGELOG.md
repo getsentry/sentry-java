@@ -28,6 +28,7 @@
 - Gradle builds now resolve all Sentry SDK modules to the same version, the highest one present, because every module depends on `sentry-bom` as a platform ([#6466](https://github.com/getsentry/sentry-java/pull/6466))
   - Before, a build could mix module versions, for example a newer `sentry-android-core` with an older `sentry-android-fragment`, which failed at runtime. Maven builds resolve as before.
   - `sentry-bom` now also includes `sentry-android-distribution`.
+- Deprecate `DateUtils.getCurrentDateTime()` in favor of `options.getDateProvider().now()`, which is configurable and resolves finer than a millisecond ([#6043](https://github.com/getsentry/sentry-java/pull/6043))
 
 ### Fixes
 
@@ -40,6 +41,10 @@
   - On a busy device during cold start this could stall the launcher activity's `onCreate` for hundreds of milliseconds.
 - Do not inspect the response body of streaming Apollo 3 and 4 responses (`multipart/mixed`, `text/event-stream`) for failed requests, which blocked `@defer` and `@stream` ([#6432](https://github.com/getsentry/sentry-java/pull/6432))
 - Session Replay: Measure how long touch moves are batched on a monotonic clock, so a device time change during a swipe no longer drops its positions, delays them, or stretches their timing ([#6538](https://github.com/getsentry/sentry-java/pull/6538))
+
+### Internal
+
+- Deprecate `ICurrentDateProvider.getCurrentTimeMillis()`, `CurrentDateProvider.getInstance()` and `AndroidDateUtils.getCurrentSentryDateTime()` in favor of `MonotonicTicker` and `SentryDateProvider` ([#6043](https://github.com/getsentry/sentry-java/pull/6043))
 
 ### Dependencies
 

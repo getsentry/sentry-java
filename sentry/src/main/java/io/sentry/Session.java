@@ -112,6 +112,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
     this.abnormalMechanism = abnormalMechanism;
   }
 
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public Session(
       @Nullable String distinctId,
       final @Nullable User user,
@@ -221,6 +223,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
    *
    * @return whether the session was updated, i.e. false if it had already reached a terminal state
    */
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   @ApiStatus.Internal
   public boolean recordNonTerminatingUnhandledError() {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
@@ -242,6 +246,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
   }
 
   /** Ends a session and update its values */
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public void end() {
     end(DateUtils.getCurrentDateTime());
   }
@@ -251,6 +257,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
    *
    * @param timestamp the timestamp or null
    */
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public void end(final @Nullable Date timestamp) {
     try (final @NotNull ISentryLifecycleToken ignored = sessionLock.acquire()) {
       init = null;
@@ -301,6 +309,8 @@ public final class Session implements JsonUnknown, JsonSerializable {
    * @param abnormalMechanism the mechanism which caused the session to be abnormal
    * @return if the session has been updated
    */
+  // TODO [MAJOR]: replace DateUtils.getCurrentDateTime() with options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public boolean update(
       final @Nullable State status,
       final @Nullable String userAgent,

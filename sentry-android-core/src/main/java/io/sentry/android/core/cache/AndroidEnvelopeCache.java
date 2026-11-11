@@ -67,6 +67,9 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return storeInternalAndroid(envelope, hint);
   }
 
+  // TODO [MAJOR]: this reading must stay paired with AppStartMetrics.getStartUptimeMs(),
+  // which is SystemClock.uptimeMillis(), so MonotonicTicker is not a drop-in replacement
+  @SuppressWarnings("deprecation")
   private boolean storeInternalAndroid(@NotNull SentryEnvelope envelope, @NotNull Hint hint) {
     final boolean didStore = super.storeEnvelope(envelope, hint);
 

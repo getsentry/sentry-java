@@ -412,6 +412,9 @@ final class AndroidOptionsInitializer {
     }
   }
 
+  // TODO [MAJOR]: replace CurrentDateProvider (wall clock) with SentryDateProvider or
+  // MonotonicTicker
+  @SuppressWarnings("deprecation")
   static void installDefaultIntegrations(
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,

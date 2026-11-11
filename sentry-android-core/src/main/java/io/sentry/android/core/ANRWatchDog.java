@@ -123,6 +123,7 @@ final class ANRWatchDog extends Thread {
     }
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public void run() {
     // right when the watchdog gets started, let's assume there's no ANR

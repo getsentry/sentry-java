@@ -89,6 +89,9 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private @Nullable SentryAndroidOptions androidOptions;
 
+  // TODO [MAJOR]: replace CurrentDateProvider (wall clock) with SentryDateProvider; the epoch
+  // comparison it feeds must stay wall time
+  @SuppressWarnings("deprecation")
   public MemoryLimiterIntegration(
       final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
     // Use CurrentDateProvider instead of AndroidCurrentDateProvider as ApplicationExitInfo uses

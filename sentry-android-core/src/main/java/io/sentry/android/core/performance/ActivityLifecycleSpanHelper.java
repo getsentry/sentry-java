@@ -69,6 +69,9 @@ public final class ActivityLifecycleSpanHelper {
     return onStartStartTimestamp;
   }
 
+  // TODO [MAJOR]: replace AndroidDateUtils.getCurrentSentryDateTime() with
+  // options.getDateProvider().now()
+  @SuppressWarnings("deprecation")
   public void saveSpanToAppStartMetrics() {
     if (onCreateSpan == null || onStartSpan == null) {
       return;
