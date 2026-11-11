@@ -85,7 +85,10 @@ public class ComposeGestureTargetLocator(private val logger: ILogger) : GestureT
               } else if (
                 targetType == UiElement.Type.SCROLLABLE &&
                   ("androidx.compose.foundation.ScrollingLayoutElement" == type ||
-                    "androidx.compose.foundation.ScrollingContainerElement" == type)
+                    "androidx.compose.foundation.ScrollingContainerElement" == type ||
+                    // Compose foundation 1.10+: lazy layouts and pagers use ScrollableAreaElement
+                    // in place of ScrollingContainerElement
+                    "androidx.compose.foundation.ScrollableAreaElement" == type)
               ) {
                 return UiElement(null, null, null, tag, ORIGIN)
               }
