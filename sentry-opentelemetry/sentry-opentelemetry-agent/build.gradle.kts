@@ -108,7 +108,9 @@ fun isolateClasses(jars: Iterable<File>): CopySpec = copySpec {
   }
 }
 
-// Don't publish non-shadowed jar (shadowJar is in shadowRuntimeElements)
+// Only the agent, the shadow jar in shadowRuntimeElements, is published. The plain jar in
+// runtimeElements holds just AgentMarker. A project dependency on this module resolves to it, so
+// the Spring Boot modules' unit tests get AgentMarker on their classpath without the agent.
 with(components["java"] as AdhocComponentWithVariants) {
   configurations.forEach {
     withVariantsFromConfiguration(configurations["apiElements"]) { skip() }

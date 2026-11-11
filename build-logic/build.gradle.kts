@@ -46,5 +46,9 @@ gradlePlugin {
       id = "io.sentry.spring-boot-matrix"
       implementationClass = "io.sentry.gradle.SpringBootMatrixPlugin"
     }
+    register("sentryOtelAgentTests") {
+      id = "io.sentry.otel-agent-tests"
+      implementationClass = "io.sentry.gradle.OtelAgentTestsPlugin"
+    }
   }
 }
