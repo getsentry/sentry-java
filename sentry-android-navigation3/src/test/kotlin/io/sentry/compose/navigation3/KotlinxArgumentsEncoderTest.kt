@@ -1,6 +1,7 @@
 package io.sentry.compose.navigation3
 
 import com.google.common.truth.Truth.assertThat
+import io.sentry.compose.navigation3.serialization.KotlinxSerialNameLookup
 import kotlin.jvm.JvmInline
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer

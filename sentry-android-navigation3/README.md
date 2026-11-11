@@ -5,14 +5,23 @@
 Use `SentryNavEffect` alongside your `NavDisplay` to record navigation transactions, breadcrumbs, screen names, and back stack context as
 users move around your app. Configure the data you want captured via `SentryNavOptions`.
 
-Because Nav3 back stacks can have arbitrary key types, `SentryNavEffect` uses a `BackStackEntryMapper` to decide the name and arguments
-Sentry displays for each back stack key. Define your own mapper, or pass `BackStackEntryMapper.serialName()` to name `@Serializable` keys
-after their kotlinx.serialization serial names, without arguments. A serial name is the key class's fully qualified name (e.g.
-`/com.example.Route.Detail`), or its `@SerialName` value if it has one; use `@SerialName` for shorter names. Keys that aren't
-`@Serializable` are recorded as `/unknown`.
+`SentryNavEffect` uses a `BackStackEntryMapper` to turn each Nav3 back stack key into a screen name and arguments. Choose one of these
+approaches:
 
-Provide your own `BackStackEntryMapper` to choose different names or to add arguments. It can delegate the keys it doesn't handle to
-`BackStackEntryMapper.serialName()`:
+| Mapper                                           | What Sentry records                           |
+|--------------------------------------------------|-----------------------------------------------|
+| `BackStackEntryMapper.serialName()`              | The serialization name; no arguments          |
+| `BackStackEntryMapper.serialNameWithArguments()` | The serialization name and every key property |
+| A custom `BackStackEntryMapper`                  | The names and arguments you choose            |
+
+For the two built-in mappers, an `@Serializable` key's name is its fully qualified class name (for example,
+`/com.example.Route.Detail`) or its `@SerialName` value. Use `@SerialName` for shorter names. A key that isn't `@Serializable` is
+recorded as `/unknown`.
+
+`serialNameWithArguments()` sends the full content of each key, which may include personal data. Use it only for keys that are safe to
+send to Sentry. Values whose property names match the sensitive denylist, such as `token`, `password`, or `session`, become
+`"[Filtered]"`. To send only selected properties or choose different names, use a custom mapper and delegate other keys to
+`serialName()`:
 
 ```kotlin
 val mapper = BackStackEntryMapper<NavKey> { key ->
@@ -23,13 +32,8 @@ val mapper = BackStackEntryMapper<NavKey> { key ->
 }
 ```
 
-To record every property of your keys as arguments instead, pass `BackStackEntryMapper.serialNameWithArguments()`. It sends the full
-content of your keys, which may include personal data, so only use it if your keys are safe to send to Sentry. Values whose property names
-match Sentry's sensitive denylist (e.g. `token`, `password`, `session`) are replaced with `"[Filtered]"`. To send only some properties,
-use a custom mapper like the one above.
-
 If you call `NavDisplay(entries, ...)` or `NavDisplay(sceneState, ...)`, pass `SentryNavEffect` the back stack your entries are built
-from, not the entries themselves. `NavEntry` doesn't expose its key, so a list of entries can't be named:
+from, not the entries themselves:
 
 ```kotlin
 val backStack = rememberNavBackStack(Home)
@@ -38,6 +42,9 @@ SentryNavEffect(backStack, BackStackEntryMapper.serialName())
 val entries = rememberDecoratedNavEntries(backStack, decorators, entryProvider)
 NavDisplay(entries = entries, ...)
 ```
+
+Otherwise, all of your destinations will be recorded as `/unknown`. (`NavEntry` doesn't expose its key, so names can't be derived from a
+list of entries.)
 
 See the [Navigation for Android docs](https://docs.sentry.io/platforms/android/integrations/navigation/) for additional details, including
 configuration, supported setups, and limitations.

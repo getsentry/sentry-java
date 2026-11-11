@@ -58,7 +58,7 @@ dependencies {
   // Defaults to the minimum version sentry-android-navigation3 supports, whose R8 rules are the
   // most limited. Override with -Pnav3CheckKotlinxVersion=<version>.
   val kotlinxVersionOverride = providers.gradleProperty("nav3CheckKotlinxVersion").orNull
-  "withSerializationImplementation"(libs.kotlinx.serialization.core) {
+  "withSerializationImplementation"(libs.kotlinx.serialization.core.nav3) {
     kotlinxVersionOverride?.let { version { strictly(it) } }
   }
 }

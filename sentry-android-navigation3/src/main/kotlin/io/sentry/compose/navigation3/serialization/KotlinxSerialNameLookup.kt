@@ -1,4 +1,4 @@
-package io.sentry.compose.navigation3
+package io.sentry.compose.navigation3.serialization
 
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.serialization.KSerializer

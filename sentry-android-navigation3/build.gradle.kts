@@ -74,7 +74,7 @@ dependencies {
 
   compileOnly(libs.androidx.compose.runtime)
   compileOnly(libs.androidx.compose.ui)
-  compileOnly(libs.kotlinx.serialization.core)
+  compileOnly(libs.kotlinx.serialization.core.nav3)
 
   testImplementation(projects.sentryAndroidCore)
   testImplementation(projects.sentryTestSupport)
@@ -84,7 +84,7 @@ dependencies {
   testImplementation(libs.androidx.test.ext.junit)
   testImplementation(libs.androidx.viewpager2)
   testImplementation(libs.google.truth)
-  testImplementation(libs.kotlinx.serialization.core)
+  testImplementation(libs.kotlinx.serialization.core.nav3)
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.roboelectric)

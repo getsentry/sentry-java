@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalSerializationApi::class)
 
-package io.sentry.compose.navigation3
+package io.sentry.compose.navigation3.serialization
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
@@ -14,7 +14,7 @@ import kotlinx.serialization.modules.SerializersModule
 
 /**
  * Encodes a `@Serializable` back stack key into plain maps, lists and scalars, suitable as
- * [SentryBackStackEntry.arguments].
+ * [io.sentry.compose.navigation3.SentryBackStackEntry.arguments].
  *
  * kotlinx-serialization-core has no output format of its own, and Nav3 apps don't necessarily
  * include kotlinx-serialization-json, so this is a minimal tree encoder:

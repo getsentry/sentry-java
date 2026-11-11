@@ -158,10 +158,10 @@ kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
-# Pinned to the lowest kotlinx-serialization-core version every Nav3 app is guaranteed to have (i.e., min version required by
-# androidx.navigation3:navigation3-runtime), so that we never call an API a host app doesn't have access to. Newer versions are verified
-# at runtime by the nav3-serialname-r8-check integration app.
-kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version = "1.7.3" }
+# sentry-android-navigation3's compileOnly floor: the lowest version every Nav3 app is guaranteed to have (the minimum the oldest
+# supported navigation3-runtime requires), so we never compile against an API an app lacks. nav3-serialname-r8-check also uses it and
+# checks newer versions. Pinned on purpose: Dependabot ignores this coordinate (.github/dependabot.yml).
+kotlinx-serialization-core-nav3 = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version = "1.7.3" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClient" }
 ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktorClient" }
 launchdarkly-android = { module = "com.launchdarkly:launchdarkly-android-client-sdk", version = "5.9.2" }

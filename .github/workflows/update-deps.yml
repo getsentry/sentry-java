@@ -23,3 +23,12 @@ jobs:
           path: scripts/update-sentry-native-ndk.sh
           name: Native SDK
           ssh-key: ${{ secrets.CI_DEPLOY_KEY }}
+
+  nav3-kotlinx-serialization:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: getsentry/github-workflows/updater@959162c159b866489d3fabe93327f48f9b8cb7ee # v3
+        with:
+          path: scripts/update-nav3-kotlinx-serialization.sh
+          name: Nav3 kotlinx.serialization (R8 check latest)
+          ssh-key: ${{ secrets.CI_DEPLOY_KEY }}

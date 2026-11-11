@@ -3,6 +3,10 @@
 # booted emulator or device.
 # See sentry-android-integration-tests/nav3-serialname-r8-check/README.md.
 #
+# The withSerialization flavor is built against the kotlinx.serialization compile floor (the pinned
+# libs version) and each version in NAV3_EXTRA_KOTLINX_VERSIONS (default: defaultLatestKotlinx
+# below); withoutSerialization is built without kotlinx. Each is built in R8 full and compat mode.
+#
 # Usage:
 #   test-nav3-serialname-r8.sh             Build all APKs, then run them.
 #   test-nav3-serialname-r8.sh build DIR   Build all APKs into DIR.
@@ -14,17 +18,39 @@ moduleDir="sentry-android-integration-tests/nav3-serialname-r8-check"
 appId="io.sentry.tests.nav3serialname"
 tag="NAV3_R8_CHECK"
 
+# Newer kotlinx.serialization versions to also build the withSerialization flavor against, on top of
+# the compile floor (the pinned libs version). Apps may ship a newer kotlinx than we compile against,
+# and the arguments encoder uses experimental API, so the check runs the floor plus these. Override
+# with NAV3_EXTRA_KOTLINX_VERSIONS="1.9.0 1.12.0" (empty string to test the floor only).
+#
+# The latest kotlinx.serialization release. Bumped by a daily PR from
+# scripts/update-nav3-kotlinx-serialization.sh (.github/workflows/update-deps.yml); keep it on one line.
+defaultLatestKotlinx="1.12.0"
+extraKotlinxVersions=(${NAV3_EXTRA_KOTLINX_VERSIONS-$defaultLatestKotlinx})
+
+copyApk() {
+  local flavor="$1" dest="$2"
+  cp "${moduleDir}/build/outputs/apk/${flavor}/release/nav3-serialname-r8-check-${flavor}-release.apk" \
+    "$dest"
+}
+
 build() {
   local outDir="$1"
   mkdir -p "$outDir"
   for mode in full compat; do
     local fullMode=true
     [[ "$mode" == "compat" ]] && fullMode=false
-    echo "Building R8 $mode mode APKs..."
+    echo "Building R8 $mode mode APKs (kotlinx floor)..."
     ./gradlew -p sentry-android-integration-tests ":${module}:assembleRelease" "-Pandroid.enableR8.fullMode=${fullMode}"
-    for flavor in withSerialization withoutSerialization; do
-      cp "${moduleDir}/build/outputs/apk/${flavor}/release/nav3-serialname-r8-check-${flavor}-release.apk" \
-        "${outDir}/${mode}-${flavor}.apk"
+    copyApk withSerialization "${outDir}/${mode}-withSerialization.apk"
+    copyApk withoutSerialization "${outDir}/${mode}-withoutSerialization.apk"
+
+    # Apps may ship a newer kotlinx than our compile floor, so rebuild withSerialization against each.
+    for version in ${extraKotlinxVersions[@]+"${extraKotlinxVersions[@]}"}; do
+      echo "Building R8 $mode mode withSerialization APK (kotlinx ${version})..."
+      ./gradlew -p sentry-android-integration-tests ":${module}:assembleWithSerializationRelease" \
+        "-Pandroid.enableR8.fullMode=${fullMode}" "-Pnav3CheckKotlinxVersion=${version}"
+      copyApk withSerialization "${outDir}/${mode}-withSerialization-kotlinx-${version}.apk"
     done
   done
 }

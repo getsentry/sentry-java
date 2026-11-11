@@ -2,7 +2,8 @@ name: Nav3 serialName R8 Check
 
 # Checks BackStackEntryMapper.serialName() and serialNameWithArguments() from
 # sentry-android-navigation3 in R8-minified builds
-# (full and compat mode, with and without kotlinx.serialization) on an emulator.
+# (full and compat mode, without kotlinx.serialization, and with it at the compile floor and newer
+# versions) on an emulator.
 # See sentry-android-integration-tests/nav3-serialname-r8-check/README.md.
 
 on:

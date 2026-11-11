@@ -1,6 +1,7 @@
 package io.sentry.compose.navigation3
 
 import androidx.compose.runtime.snapshots.Snapshot
+import io.sentry.compose.navigation3.serialization.SerialNameBackStackEntryMapper
 import org.jetbrains.annotations.ApiStatus
 
 /** Info about a given back stack entry, suitable for display in Sentry. */
@@ -159,55 +160,116 @@ public fun interface BackStackEntryMapper<in T : Any> {
   public companion object {
 
     /**
-     * Returns a mapper that names each back stack entry after its kotlinx.serialization serial
-     * name, without arguments.
+     * A convenience method for generating entry names for apps that use kotlinx.serialization.
      *
-     * The name is the entry class's `descriptor.serialName`, passed through unchanged: the class's
-     * fully qualified name (e.g. `com.example.Route.Detail`), or its `@SerialName` value if it has
-     * one. Serial names are compile-time constants, so they survive R8 minification. Use
-     * `@SerialName` to choose shorter names.
+     * Returns a [BackStackEntryMapper] that names each back stack entry after the entry's
+     * `descriptor.serialName`, viz.:
      *
-     * The mapper returns `null`, so Sentry records the entry as "/unknown", when:
-     * - kotlinx.serialization is not on the app's runtime classpath;
-     * - the entry's class isn't annotated with `@Serializable`, including plain strings, enums, and
-     *   other built-in types; or
-     * - kotlinx.serialization can't look up the class's serializer without type arguments (e.g.
-     *   generic classes).
+     * - the entry's `@SerialName` if it has one; or else
+     * - the entry's fully qualified class name (e.g., "com.example.Home").
+     *
+     * Returns `null` for an entry if any of the following is true (note that Sentry displays `null`
+     * as "/unknown"):
+     *
+     * - kotlinx.serialization is not on the app's runtime classpath. (kotlinx.serialization is an
+     *   optional dependency of this library; if your app doesn't use it, define your own
+     *   [BackStackEntryMapper].)
+     *
+     * - The entry class isn't annotated with `@Serializable`. (This applies even to types
+     *   kotlinx.serialization can serialize without the annotation, such as `String`, `List`, or
+     *   unannotated enums.)
+     *
+     * - The entry class is generic (e.g., `SettingsScreen<T>`), even if it's `@Serializable`.
+     *   (Generic serializers need type arguments, which can't be recovered from the entry at
+     *   runtime.)
      *
      * The first entry of each class that can't be named logs a warning, visible when the SDK's
      * `debug` option is enabled.
      *
-     * Classes that share a custom serializer (`@Serializable(with = ...)`) share its serial name.
-     *
-     * kotlinx.serialization is an optional dependency of this library. Apps that use
-     * `@Serializable` already include it.
+     * Entries share a name whenever they share a serial name, e.g., constants of the same enum, or
+     * classes that use the same custom serializer (`@Serializable(with = ...)`). To tell them apart
+     * give them distinct `SerialName`s or define a custom [BackStackEntryMapper].
      */
     @ApiStatus.Experimental
     public fun serialName(): BackStackEntryMapper<Any> = SerialNameBackStackEntryMapper.instance
 
     /**
-     * Returns a mapper that names entries like [serialName] and also records each entry's
-     * properties as arguments, encoded with kotlinx.serialization.
+     * Like [serialName], but also records the properties of each back stack as arguments.
      *
      * **Privacy**
      *
-     * This records the full content of your back stack keys, which may include user IDs, emails,
-     * search queries, or other personal data. Only use it if your keys are safe to send to Sentry.
-     * Values whose property names match Sentry's built-in sensitive denylist (e.g. `token`,
-     * `password`, `session`, `key`; matched case-insensitively as substrings) are replaced with
-     * `"[Filtered]"` at every level of nesting. To send only some properties, use a custom mapper.
+     * This method records the full content of your back stack keys, which may include user IDs,
+     * emails, search queries, or other personal data. Only use it if every key in your back stack
+     * is safe to send to Sentry; otherwise, [send only names][serialName], or use a custom
+     * [BackStackEntryMapper].
      *
-     * A future SDK data collection option for navigation arguments may further restrict what this
-     * mapper sends.
+     * Values of properties whose names contain a term from Sentry's sensitive denylist (e.g.,
+     * `auth`, `token`, `password`, `key`) are replaced with `"[Filtered]"` at every level of
+     * nesting. Matching is case-insensitive and by substring, so names like `author` are also
+     * filtered. Treat the denylist as a safety net, and not as a fully-fledged scrubber.
+     *
+     * For instance, given:
+     * ```kotlin
+     * @Serializable
+     * enum class Source {
+     *   @SerialName("search") SEARCH,
+     *   @SerialName("deep_link") DEEP_LINK,
+     * }
+     *
+     * @Serializable
+     * @SerialName("ProductDetail")
+     * data class ProductDetail(
+     *   val productId: String,
+     *   val source: Source,
+     *   val userEmail: String,
+     *   val authToken: String,
+     * ) : NavKey
+     * ```
+     *
+     * Navigating to `ProductDetail("sku-1234", Source.DEEP_LINK, "jane@example.com", "abc123")`
+     * records:
+     * ```json
+     * {
+     *   "to": "/ProductDetail",
+     *   "to_arguments": {
+     *     "productId": "sku-1234",
+     *     "source": "deep_link",
+     *     "userEmail": "jane@example.com",
+     *     "authToken": "[Filtered]"
+     *   }
+     * }
+     * ```
+     *
+     * Note that `userEmail` is sent, because it doesn't match the denylist. To send only select
+     * properties, use a custom mapper:
+     * ```kotlin
+     * val mapper = BackStackEntryMapper<NavKey> { entry ->
+     *   when (entry) {
+     *     is ProductDetail -> SentryBackStackEntry(
+     *       name = ProductDetail.serializer().descriptor.serialName,
+     *       arguments = mapOf(
+     *         "productId" to entry.productId, "source" to entry.source
+     *       ),
+     *     )
+     *     else -> BackStackEntryMapper.serialNameWithArguments().map(entry)
+     *   }
+     * }
+     * ```
      *
      * **Encoding**
+     *
      * - Classes and objects become maps from property name to value. Objects without properties
      *   record no arguments.
+     *
      * - Lists and sets become lists; maps become maps with string keys.
+     *
      * - Enums are recorded by serial name; value classes by their underlying value.
+     *
      * - Polymorphic properties become `{"type": <serial name>, "value": <value>}`.
+     *
      * - A key whose serializer doesn't encode to a structure (e.g. a custom serializer that encodes
      *   to a string) is recorded as `{"value": <value>}`.
+     *
      * - Properties marked `@Transient` are omitted.
      *
      * Properties with contextual or open polymorphic serializers can't be encoded, because no

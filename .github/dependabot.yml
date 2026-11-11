@@ -19,6 +19,9 @@ updates:
       - dependency-name: "io.opentelemetry*"
       # DGS 5+ needs Spring Boot 3; the sample is on Spring Boot 2.
       - dependency-name: "com.netflix.graphql.dgs*"
+      # Deliberately pinned to sentry-android-navigation3's compile floor (kotlinx-serialization-core-nav3).
+      # The latest version the nav3 R8 check tests is bumped by scripts/update-nav3-kotlinx-serialization.sh.
+      - dependency-name: "org.jetbrains.kotlinx:kotlinx-serialization-core"
     commit-message:
       prefix: "chore(deps)"
   - package-ecosystem: "github-actions"

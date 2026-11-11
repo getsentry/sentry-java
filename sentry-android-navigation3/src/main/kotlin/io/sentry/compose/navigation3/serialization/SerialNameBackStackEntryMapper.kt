@@ -1,9 +1,11 @@
-package io.sentry.compose.navigation3
+package io.sentry.compose.navigation3.serialization
 
 import io.sentry.ILogger
 import io.sentry.ScopesAdapter
 import io.sentry.SentryLevel.WARNING
+import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.NormalizedSentryBackStackEntry.Companion.UNKNOWN_ENTRY_NAME
+import io.sentry.compose.navigation3.SentryBackStackEntry
 import io.sentry.util.HttpUtils
 import io.sentry.util.LoadClass
 import java.util.Collections

@@ -24,4 +24,9 @@ Run it against a booted emulator or device:
 ```
 
 The script builds both flavors in R8 full mode and compat mode, installs each APK, and fails unless every
-run reports `RESULT=PASS`. CI runs the same script (`.github/workflows/integration-tests-nav3-r8.yml`).
+run reports `RESULT=PASS`. `withSerialization` is built against the kotlinx.serialization compile floor
+(the pinned `libs` version) and each version in `NAV3_EXTRA_KOTLINX_VERSIONS`, since apps may ship a
+newer kotlinx than we compile against. That defaults to `defaultLatestKotlinx` in the script, which
+`scripts/update-nav3-kotlinx-serialization.sh` keeps current via a daily PR
+(`.github/workflows/update-deps.yml`), so no one has to bump it by hand. CI runs the same check script
+(`.github/workflows/integration-tests-nav3-r8.yml`).
