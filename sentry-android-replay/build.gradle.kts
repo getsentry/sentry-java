@@ -8,7 +8,10 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.gradle.versions)
-  alias(libs.plugins.detekt)
+  id("io.sentry.detekt")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
 }
 
@@ -59,6 +62,10 @@ android {
 
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
+
+    // Lint 9.5 can't load the custom checks bundled with older androidx.lifecycle releases and
+    // reports that it skips them. They only cover lifecycle APIs this module doesn't call.
+    disable += "ObsoleteLintCustomCheck"
   }
 
   buildFeatures { buildConfig = true }

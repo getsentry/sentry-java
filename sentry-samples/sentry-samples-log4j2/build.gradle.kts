@@ -3,12 +3,16 @@ plugins {
   application
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.shadow)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 application { mainClass.set("io.sentry.samples.log4j2.Main") }
 
 dependencies {
-  implementation(projects.sentryLog4j2)
+  implementation("io.sentry:sentry-log4j2:$sentryVersion")
   implementation(libs.log4j.api)
   implementation(libs.log4j.core)
 }

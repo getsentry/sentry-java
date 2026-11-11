@@ -1,4 +1,4 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -6,7 +6,11 @@ plugins {
   alias(libs.plugins.spring.dependency.management)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 group = "io.sentry.sample.spring-boot-4"
 
@@ -36,22 +40,22 @@ dependencies {
   implementation(libs.springboot4.starter.websocket)
   implementation(libs.springboot4.starter.webclient)
   implementation(libs.springboot4.starter.restclient)
-  implementation(Config.Libs.aspectj)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-  implementation(projects.sentrySpringBoot4Starter)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryGraphql22)
-  implementation(projects.sentryQuartz)
-  implementation(projects.sentryOpentelemetry.sentryOpentelemetryAgentlessSpring)
-  implementation(projects.sentryAsyncProfiler)
+  implementation(libs.aspectjweaver)
+  implementation(libs.kotlin.reflect)
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
+  implementation("io.sentry:sentry-spring-boot-4-starter:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-graphql-22:$sentryVersion")
+  implementation("io.sentry:sentry-quartz:$sentryVersion")
+  implementation("io.sentry:sentry-opentelemetry-agentless-spring:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
 
   // kafka
   implementation(libs.springboot4.starter.kafka)
-  implementation(projects.sentryKafka)
+  implementation("io.sentry:sentry-kafka:$sentryVersion")
 
   // database query tracing
-  implementation(projects.sentryJdbc)
+  implementation("io.sentry:sentry-jdbc:$sentryVersion")
   runtimeOnly(libs.hsqldb)
 }
 

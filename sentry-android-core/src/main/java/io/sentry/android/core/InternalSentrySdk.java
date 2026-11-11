@@ -51,7 +51,7 @@ import org.jetbrains.annotations.Nullable;
 public final class InternalSentrySdk {
 
   /**
-   * @return a copy of the current scopes's topmost scope, or null in case the scopes is disabled
+   * Returns a copy of the current scopes's topmost scope, or null in case the scopes is disabled.
    */
   @Nullable
   public static IScope getCurrentScope() {
@@ -409,6 +409,7 @@ public final class InternalSentrySdk {
     spans.add(spanMap);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static void deleteCurrentSessionFile(
       final @NotNull SentryOptions options, boolean isSync) {
     if (!isSync) {

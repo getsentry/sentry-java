@@ -34,6 +34,8 @@ class AgentApp(args: List<String> = emptyList()) : Closeable {
           "SENTRY_PROFILE_LIFECYCLE" to "TRACE",
           "SENTRY_PROFILING_TRACES_DIR_PATH" to
             "${System.getProperty("java.io.tmpdir")}/sentry-integration-test/profiling-traces",
+          // Tests wait for Sentry's span batches, which are 5 seconds apart by default.
+          "OTEL_BSP_SCHEDULE_DELAY" to "100ms",
           "OTEL_TRACES_EXPORTER" to "none",
           "OTEL_METRICS_EXPORTER" to "none",
           "OTEL_LOGS_EXPORTER" to "none",

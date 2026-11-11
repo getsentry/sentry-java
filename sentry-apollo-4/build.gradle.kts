@@ -5,11 +5,14 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   alias(libs.plugins.kotlin.jvm)
-  alias(libs.plugins.detekt)
+  id("io.sentry.detekt")
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer.android")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
 }
 
@@ -34,6 +37,7 @@ dependencies {
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
   testImplementation(libs.apollo4.kotlin)
+  testImplementation(libs.google.truth)
   testImplementation(libs.kotlin.test.junit)
   testImplementation(libs.google.truth)
   testImplementation(libs.kotlinx.coroutines)
@@ -41,7 +45,7 @@ dependencies {
   testImplementation(libs.mockito.kotlin)
   testImplementation(libs.mockito.core)
   testImplementation(libs.okhttp.mockwebserver)
-  testImplementation("org.jetbrains.kotlin:kotlin-reflect:2.0.0")
+  testImplementation(libs.kotlin.reflect)
 }
 
 tasks.withType<JavaCompile>().configureEach {

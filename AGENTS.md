@@ -41,8 +41,8 @@ The project uses **Gradle** with Kotlin DSL. Key build files:
 ## Essential Commands
 
 ```bash
-# Format code and regenerate .api files (REQUIRED before committing)
-./gradlew spotlessApply updateKotlinAbi
+# Format code in every build and regenerate .api files (REQUIRED before committing)
+make format api
 
 # Run all tests and linter
 ./gradlew check
@@ -59,11 +59,17 @@ resolves the per-module test task, including integration test suites, for you.
 
 ### Android-Specific Commands
 ```bash
-# Assemble Android test APKs
-./gradlew :sentry-android-integration-tests:sentry-uitest-android:assembleRelease :sentry-android-integration-tests:sentry-uitest-android:assembleAndroidTest
+# Assemble Android test APKs, in a separate Gradle build that includes this one
+./gradlew -p sentry-android-integration-tests :sentry-uitest-android:assembleRelease :sentry-uitest-android:assembleAndroidTest
 
 # Run critical UI tests
 ./scripts/test-ui-critical.sh
+
+# Build the Android sample, a separate Gradle build that includes this one
+./gradlew -p sentry-samples/sentry-samples-android assembleDebug
+
+# Build the JVM samples, another separate Gradle build that includes this one
+./gradlew -p sentry-samples assemble
 ```
 
 ## Development Workflow Rules
@@ -74,7 +80,7 @@ resolves the per-module test task, including integration test suites, for you.
 3. **Use todo tracking**: Work through todo items, marking them as complete as you go
 4. **High-level communication**: Give high-level explanations of changes made, not step-by-step descriptions
 5. **Simplicity first**: Make every task and code change as simple as possible. Avoid massive or complex changes. Impact as little code as possible.
-6. **Format and regenerate**: Once done, format code and regenerate .api files: `./gradlew spotlessApply updateKotlinAbi`
+6. **Format and regenerate**: Once done, format code and regenerate .api files: `make format api`
 7. **Propose commit**: As final step, git stage relevant files and propose (but not execute) a single git commit command. This applies to implementation work; when the task is to open a PR, the `create-java-pr` skill takes over from here and does commit, push, and open it.
 
 ## Repository Skills
@@ -110,7 +116,7 @@ The repository is organized into multiple modules:
 
 ### Utility Modules
 - **`sentry-test-support`** - Shared test utilities, including `MockSentryServer` and envelope matchers
-- **`sentry-samples`** - Example applications
+- **`sentry-samples`** - Example applications, in two separate Gradle builds that include this one: `sentry-samples` (JVM) and `sentry-samples/sentry-samples-android`. Root tasks such as `check` and `spotlessApply` don't reach them, and `sentry-android-integration-tests` is a separate build too
 - **`sentry-bom`** - Bill of Materials for dependency management
 
 ### Key Architectural Patterns
@@ -129,30 +135,35 @@ The repository is organized into multiple modules:
 
 ### Exception Handling
 
-**Never introduce a new `catch (Throwable)`.** Catch the narrowest type the guarded code can
-actually throw. The repository still contains many pre-existing broad catches; they are legacy,
-not a precedent to follow.
+The following section applies only in cases where the spec (sentry-docs) do not define an exception
+handling strategy.
 
-A broad catch swallows `OutOfMemoryError`, `StackOverflowError`, `ThreadDeath` and `LinkageError` —
-conditions the JVM/ART cannot recover from and that leave the process in an undefined state — and
-it hides real bugs in our own code behind a log line.
+Inside the SDK, **never add a broad catch** (`Throwable`, `Error`, `Exception`,
+`RuntimeException`). Catch the narrowest type the guarded code can actually throw. The many
+existing broad catches are legacy, not precedent: they hide real bugs in our own code and make it
+appear that Sentry is broken.
 
-"The SDK must never crash the host application" is not a reason to catch `Throwable`. That goal is
-served by `io.sentry.util.ExceptionUtils.rethrowIfFatal`, which lets the non-recoverable throwables
-through while leaving everything else for the caller to log or ignore:
+A broad catch is allowed only at a boundary where we can't know what the other side throws. Two
+examples:
 
-```java
-try {
-  doSomethingRisky();
-} catch (Throwable t) {
-  ExceptionUtils.rethrowIfFatal(t);
-  options.getLogger().log(SentryLevel.ERROR, "Failed to do something risky", t);
-}
-```
+- public API entry points like `captureException`
+- Android framework calls that cross into another process (`ContentResolver`, system services)
+- user callbacks like `beforeSendLogs` defined in the spec (sentry-docs)
 
-Apply that pattern only where a broad catch is genuinely unavoidable — an entry point that runs
-arbitrary user code or third-party callbacks. Everywhere else, name the exception types. Say in the
-PR description why the broad catch is necessary.
+At a boundary follow the spec (sentry-docs) otherwise if no spec is defined for this case:
+
+- Call `ExceptionUtils.rethrowIfFatal(t)` first so `OutOfMemoryError`, `StackOverflowError`, etc.
+  are never swallowed. It also rethrows `LinkageError`, so code probing an optional `compileOnly`
+  dependency must catch the specific subclass (`NoClassDefFoundError`, ...) before it.
+- A code comment is required saying why the catch is broad and what happens on failure (event
+  dropped, feature disabled, ...).
+- If wrapping user code with a broad catch, documentation is **required** explaining how the user
+  is expected to discover that the code they wrote isn't working. Both in the Javadoc and in sentry-docs.
+- Logging is not handling: `options.getLogger()` is silent unless `debug` is enabled, so a failure
+  that is only logged is invisible in production.
+
+Instrumentation that wraps user code is not a boundary for the user's own exceptions: let them
+propagate unchanged.
 
 ### Concurrency
 
@@ -201,6 +212,29 @@ Two more rules that catch most of the rest:
   decisions in one pass lets it change mid-pass, so the results disagree with each other.
 
 Prefer `AutoClosableReentrantLock` over `synchronized`, matching the rest of the codebase.
+
+### Measuring Time
+
+**New code that reads a clock uses `io.sentry.time`**, not `System.currentTimeMillis()`,
+`System.nanoTime()`, `SystemClock`, `DateUtils.getCurrentDateTime()`, a `SentryDateProvider`, or an
+`ICurrentDateProvider`. Those are legacy, not a precedent to follow.
+
+Pick the type by what the number is for:
+
+| You need | Use |
+|---|---|
+| An instant that leaves the process (event, breadcrumb, session) | `EpochClock` → `Timestamp`. Never subtract two of them |
+| How long something took | `Stopwatch` |
+| Whether a window has elapsed (TTL, backoff, timeout) | `Deadline` |
+| Several instants compared with each other (spans of a transaction) | `AnchoredClock` |
+| A raw tick, when none of the above fits | `MonotonicTicker` |
+
+Get the clock from `options.getEpochClock()` or `options.getMonotonicTicker()`, not a
+`getInstance()`: on Android the ticker keeps counting through device suspend, and `System.nanoTime()`
+does not. Take it as a constructor parameter; tests use `TestMonotonicTicker` instead of sleeping.
+
+If none of these fits, propose a new type, and the clock bug it makes impossible, before writing
+call sites against it. Don't inline raw tick arithmetic as a stopgap.
 
 ### Testing Requirements
 - Write comprehensive unit tests for new features

@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import io.sentry.gradle.MergeSpringMetadataAction
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -7,7 +8,11 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 // Spring scans this app's own bytecode with its repackaged ASM at startup, and the oldest version
 // the Spring Boot 2.x matrix covers (2.4.13, Spring 5.3.13) fails on class files as new as the
@@ -30,12 +35,12 @@ dependencies {
   implementation(libs.springboot.starter.actuator)
   implementation(libs.springboot.starter.graphql)
   implementation(libs.springboot.starter.webflux)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-  implementation(projects.sentrySpringBootStarter)
-  implementation(projects.sentryLogback)
-  implementation(projects.sentryGraphql)
-  implementation(projects.sentryAsyncProfiler)
+  implementation(libs.kotlin.reflect)
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
+  implementation("io.sentry:sentry-spring-boot-starter:$sentryVersion")
+  implementation("io.sentry:sentry-logback:$sentryVersion")
+  implementation("io.sentry:sentry-graphql:$sentryVersion")
+  implementation("io.sentry:sentry-async-profiler:$sentryVersion")
 }
 
 val runtimeClasspath = configurations.named("runtimeClasspath")

@@ -16,6 +16,7 @@ public final class AndroidMonotonicTicker implements MonotonicTicker {
 
   private static final AndroidMonotonicTicker instance = new AndroidMonotonicTicker();
 
+  /** Prefer {@link io.sentry.SentryOptions#getMonotonicTicker()}; on Android it returns this. */
   public static @NotNull MonotonicTicker getInstance() {
     return instance;
   }

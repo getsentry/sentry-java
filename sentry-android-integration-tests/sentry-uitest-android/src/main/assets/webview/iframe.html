@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script>
+      // Same origin as the page, but an iframe: the trace must only reach the main frame.
+      window.traceAtHeadStart = document.querySelector('meta[name="sentry-trace"]');
+    </script>
+  </head>
+  <body>
+    <script>
+      SentryTest.onIframeTrace(!!window.traceAtHeadStart);
+    </script>
+  </body>
+</html>

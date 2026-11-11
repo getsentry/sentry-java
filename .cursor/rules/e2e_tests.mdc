@@ -56,11 +56,14 @@ match on values only they produce.
 ## The OpenTelemetry agent
 
 The agent must not run in the test's JVM, because it would instrument the test's own HTTP client
-and server. The Spring Boot modules have an `agentFixture` source set with the app. `AgentApp`
-starts it once per test JVM in a child process, with `ChildJvmApp` and the agent jar passed through
+and server. The `io.sentry.otel-agent-tests` plugin in `build-logic` gives the Spring Boot modules
+an `agentFixture` source set with the app, the `integrationTestOtelAgent` suite and the built agent
+jar; each module adds only the dependencies of its Spring Boot line. `AgentApp` starts the app once
+per test JVM in a child process, with `ChildJvmApp` and the agent jar passed through
 `ChildJvmTestArguments`. The suite's task runs with the agent initializing Sentry, and
 `integrationTestOtelAgentWithoutAutoInit` runs the same tests with the Spring Boot starter doing
-it. Gradle runs the two in parallel.
+it. Gradle runs the two in parallel. `otelAgentTests()` in a `springBootMatrix` block registers
+both on each version.
 
 ## Running them
 
@@ -83,8 +86,9 @@ it. Gradle runs the two in parallel.
   customizes, and that the OpenTelemetry starter instruments, so it adds or replaces trace headers
   on the requests a test sends. Build one outside the context.
 - Sentry exports OpenTelemetry spans in batches every 5 seconds. In-process, flush the tracer
-  provider from the server's hook. With the agent this isn't possible, so each test waits for a
-  batch and negative checks wait at least 6 seconds.
+  provider from the server's hook. With the agent this isn't possible, so set
+  `OTEL_BSP_SCHEDULE_DELAY` on the app to shorten the batch delay, and make negative checks wait
+  well past it.
 - Sentry is global, so a second live Spring context in an OpenTelemetry suite takes it over. Keep
   one live context per JVM (`@DirtiesContext` when a test needs its own).
 - The async profiler rejects a traces path with a `.` anywhere in its absolute form. Put the path

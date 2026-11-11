@@ -60,6 +60,7 @@ final class LifecycleWatcher implements AppState.AppStateListener {
     addAppBreadcrumb("foreground");
   }
 
+  @SuppressWarnings("JavaUtilDate")
   private void startSession() {
     cancelTask();
 

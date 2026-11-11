@@ -7,13 +7,19 @@ registries:
     password: dummy # Required by dependabot
 updates:
   - package-ecosystem: "gradle"
-    directory: "/"
+    # The root build doesn't include the separate sample and test builds.
+    directories:
+      - "/"
+      - "/sentry-samples/sentry-samples-android"
+      - "/sentry-android-integration-tests"
+      - "/sentry-samples"
     registries:
       - gradle-plugin-portal
     schedule:
       interval: "daily"
     ignore:
       - dependency-name: "org.springframework.boot*"
+      - dependency-name: "io.opentelemetry*"
     commit-message:
       prefix: "chore(deps)"
   - package-ecosystem: "github-actions"

@@ -1,4 +1,4 @@
-import io.sentry.gradle.ChildJvmTestArguments
+import io.sentry.gradle.otelAgentTests
 import net.ltgt.gradle.errorprone.errorprone
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -7,11 +7,15 @@ plugins {
   `java-library`
   id("io.sentry.javadoc")
   id("io.sentry.spring-boot-matrix")
+  id("io.sentry.otel-agent-tests")
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
 }
 
@@ -138,22 +142,7 @@ tasks.jar {
   }
 }
 
-// The OpenTelemetry agent tests run this app in a child JVM, on its own classpath like a real app
-// with the agent attached, rather than on the test's classpath.
-val agentFixture = sourceSets.create("agentFixture")
-
-// The built agent jar, rather than the plain jar the unit tests compile against.
-val otelAgentJar =
-  configurations.create("otelAgentJar") {
-    isCanBeResolved = true
-    isCanBeConsumed = false
-    isTransitive = false
-    attributes {
-      attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-      attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.SHADOWED))
-    }
-  }
-
+// The app the OpenTelemetry agent tests run in a child JVM.
 dependencies {
   "agentFixtureImplementation"(platform(libs.springboot2.bom))
   "agentFixtureImplementation"(projects.sentrySpringBootStarter)
@@ -170,8 +159,6 @@ dependencies {
   "agentFixtureImplementation"(libs.springboot.starter.webflux)
   "agentFixtureImplementation"(libs.spring.kafka2)
   "agentFixtureRuntimeOnly"(libs.hsqldb)
-
-  otelAgentJar(projects.sentryOpentelemetry.sentryOpentelemetryAgent)
 }
 
 testing {
@@ -253,9 +240,8 @@ testing {
       }
     }
 
-    // Runs agentFixture's app with the agent initializing Sentry.
-    register<JvmTestSuite>("integrationTestOtelAgent") {
-      useJUnit()
+    // The OpenTelemetry agent tests, against agentFixture's app.
+    named<JvmTestSuite>("integrationTestOtelAgent") {
       dependencies {
         implementation(platform(libs.springboot2.bom))
         implementation(projects.sentryTestSupport)
@@ -266,40 +252,8 @@ testing {
         implementation(libs.springboot.starter.web)
         implementation(libs.spring.kafka2.test)
       }
-      targets.all { testTask.configure { runAgentFixture(autoInit = true) } }
     }
   }
-}
-
-/**
- * Has the OpenTelemetry agent tests start agentFixture's app in a child JVM, with the built agent
- * attached. [autoInit] decides whether the agent initializes Sentry or, as with
- * `SENTRY_AUTO_INIT=false`, the Spring Boot starter. [appClasspath] is the app's classpath for
- * another Spring Boot version.
- */
-fun Test.runAgentFixture(
-  autoInit: Boolean,
-  appClasspath: FileCollection = agentFixture.runtimeClasspath,
-) {
-  jvmArgumentProviders.add(
-    objects.newInstance<ChildJvmTestArguments>().apply {
-      agentJar.from(otelAgentJar)
-      this.appClasspath.from(appClasspath)
-    }
-  )
-  systemProperty("sentry.test.agentAutoInit", autoInit)
-}
-
-// The same tests with the Spring Boot starter initializing Sentry. Each test JVM starts one app, so
-// this mode needs a task of its own, which Gradle runs in parallel with the suite's.
-tasks.register<Test>("integrationTestOtelAgentWithoutAutoInit") {
-  description = "Runs the OpenTelemetry agent tests with SENTRY_AUTO_INIT=false."
-  group = LifecycleBasePlugin.VERIFICATION_GROUP
-  val sources = sourceSets["integrationTestOtelAgent"]
-  testClassesDirs = sources.output.classesDirs
-  classpath = sources.runtimeClasspath
-  useJUnit()
-  runAgentFixture(autoInit = false)
 }
 
 // The Spring Boot Gradle plugin compiles apps with parameter names, which Spring reads, for example
@@ -321,10 +275,5 @@ springBootMatrix {
   test("integrationTest")
   test("integrationTestWebflux")
   test("integrationTestOtelNoAgent")
-  test("integrationTestOtelAgent") { version ->
-    runAgentFixture(autoInit = true, appClasspath = runtimeClasspath("agentFixture", version))
-  }
-  test("integrationTestOtelAgent", name = "integrationTestOtelAgentWithoutAutoInit") { version ->
-    runAgentFixture(autoInit = false, appClasspath = runtimeClasspath("agentFixture", version))
-  }
+  otelAgentTests()
 }

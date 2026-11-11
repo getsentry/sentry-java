@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import io.sentry.gradle.MergeSpringMetadataAction
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -7,7 +8,11 @@ plugins {
   alias(libs.plugins.shadow)
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.spring)
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
 }
+
+val sentryVersion = libs.versions.sentry.get()
 
 application { mainClass.set("io.sentry.samples.netflix.dgs.NetlixDgsApplication") }
 
@@ -22,10 +27,10 @@ java.targetCompatibility = JavaVersion.VERSION_1_8
 dependencies {
   implementation(platform(libs.springboot2.bom))
   implementation(libs.springboot.starter.web)
-  implementation(Config.Libs.kotlinReflect)
-  implementation(kotlin(Config.kotlinStdLib, KotlinCompilerVersion.VERSION))
-  implementation(projects.sentrySpringBootStarter)
-  implementation(projects.sentryGraphql)
+  implementation(libs.kotlin.reflect)
+  implementation(kotlin("stdlib-jdk8", getKotlinPluginVersion()))
+  implementation("io.sentry:sentry-spring-boot-starter:$sentryVersion")
+  implementation("io.sentry:sentry-graphql:$sentryVersion")
   implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:4.9.2"))
   implementation("com.netflix.graphql.dgs:graphql-dgs-subscriptions-websockets-autoconfigure:4.9.2")
   implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")

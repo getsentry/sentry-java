@@ -3,15 +3,51 @@
 > [!WARNING]
 > SDK 9.0.0 will raise the minimum supported Java and Android versions:
 > - Java 8 support will be dropped. SDK 9.0.0 requires Java 11+. See [#6469](https://github.com/getsentry/sentry-java/issues/6469).
-> - The Android `minSdk` will be raised from 21 to 26. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
+> - The Android `minSdk` will be raised from 21 to 24. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
 
 ## Unreleased
 
+### Breaking Changes
+
+- Android: `AnrV2Integration`, `AnrProfilingIntegration`, `WindowContentChangedCallback`, the deprecated `SentryUserFeedbackButton` and `SentryUserFeedbackDialog.Builder`, and the internal `sentry-android-core` classes are now `final`, and `ActivityLifecycleCallbacksAdapter` is now `abstract` ([#6494](https://github.com/getsentry/sentry-java/pull/6494))
+
 ### Features
 
+- Connect Android traces with web content in a `WebView` using `SentryWebViewTracing.addTracePropagation(webView, "example.com")` ([#6395](https://github.com/getsentry/sentry-java/pull/6395))
+  - Requires the `androidx.webkit:webkit` dependency. Only list hosts whose content you control.
+  - Call it on the main thread before each page load you want connected.
+  - Set `options.webViewTracing.allowedHosts`, or the `io.sentry.webview-tracing.allowed-hosts` manifest entry, to call `addTracePropagation(webView)` without passing hosts ([#6516](https://github.com/getsentry/sentry-java/pull/6516))
+  - See the [WebView docs](https://docs.sentry.io/platforms/android/configuration/webview/) for details.
 - Monitor every Spring `@Scheduled` method with Sentry Crons by setting `sentry.monitor-scheduled-tasks=true`, without adding `@SentryCheckIn` to each method. Sentry creates each monitor from the method's `@Scheduled` schedule. Exclude methods with `sentry.exclude-scheduled-tasks` ([#6275](https://github.com/getsentry/sentry-java/pull/6275), [#6276](https://github.com/getsentry/sentry-java/pull/6276), [#6277](https://github.com/getsentry/sentry-java/pull/6277))
 - Quartz `SentryJobListener` can send a monitor config derived from the trigger with check-ins, so Sentry creates or updates the monitor from code. Set the `sentry-upsert-monitor-config` job or trigger data key to `"true"` to send the schedule ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
 - Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = true)` to send the schedule ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
+- Sentry OpenTelemetry integrations now honor `OTEL_BSP_SCHEDULE_DELAY` (`otel.bsp.schedule.delay`) for how often spans are sent to Sentry, instead of always waiting 5 seconds ([#6388](https://github.com/getsentry/sentry-java/pull/6388))
+
+### Behavioral Changes
+
+- Gradle builds now resolve all Sentry SDK modules to the same version, the highest one present, because every module depends on `sentry-bom` as a platform ([#6466](https://github.com/getsentry/sentry-java/pull/6466))
+  - Before, a build could mix module versions, for example a newer `sentry-android-core` with an older `sentry-android-fragment`, which failed at runtime. Maven builds resolve as before.
+  - `sentry-bom` now also includes `sentry-android-distribution`.
+
+### Fixes
+
+- Capture scroll breadcrumbs for `LazyColumn`, `LazyRow`, lazy grids, and `Pager` on Jetpack Compose foundation 1.10+ ([#6548](https://github.com/getsentry/sentry-java/pull/6548))
+- Prevent the main thread from potentially hanging during app start if Android is slow to register the SDK's network or telephony listeners. `Sentry.init`, Session Replay, and capturing events no longer wait for that registration ([#6537](https://github.com/getsentry/sentry-java/pull/6537))
+- Add opt-in support for matching GraphQL ignored error types against classification specifications via `sentry.graphql.enable-specification-error-type-filtering` ([#6092](https://github.com/getsentry/sentry-java/pull/6092))
+- Session Replay: Fix `SentryOkHttpInterceptor` hanging forever on responses whose body has no known length, such as Server-Sent Events or a gzipped response, when network details are enabled for the URL ([#6231](https://github.com/getsentry/sentry-java/pull/6231))
+- Session Replay: `SentryOkHttpInterceptor` now captures network request and response details only while Session Replay is recording or buffering ([#6486](https://github.com/getsentry/sentry-java/pull/6486))
+- Stop marking an OkHttp call span as failed when a connection attempt to one of the host's addresses fails but OkHttp connects on another ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
+- Stop blocking the main thread while the frame metrics thread starts when the first activity transaction begins ([#6500](https://github.com/getsentry/sentry-java/pull/6500))
+  - On a busy device during cold start this could stall the launcher activity's `onCreate` for hundreds of milliseconds.
+- Do not inspect the response body of streaming Apollo 3 and 4 responses (`multipart/mixed`, `text/event-stream`) for failed requests, which blocked `@defer` and `@stream` ([#6432](https://github.com/getsentry/sentry-java/pull/6432))
+- Session Replay: Measure how long touch moves are batched on a monotonic clock, so a device time change during a swipe no longer drops its positions, delays them, or stretches their timing ([#6538](https://github.com/getsentry/sentry-java/pull/6538))
+
+### Dependencies
+
+- Bump OkHttp from 4.9.2 to 5.5.1 ([#6472](https://github.com/getsentry/sentry-java/pull/6472))
+  - `sentry-okhttp` and the Spring Boot integrations keep OkHttp as a `compileOnly` dependency, so your app keeps the OkHttp version it declares. OkHttp 4 is still supported.
+  - [changelog](https://github.com/square/okhttp/blob/master/CHANGELOG.md)
+  - [diff](https://github.com/square/okhttp/compare/parent-4.9.2...parent-5.5.1)
 
 ## 8.63.0
 
@@ -41,6 +77,7 @@
 - Refuse to send data to servers whose certificate was issued by one of the leaked eMudhra intermediates (CVE-2026-111943) ([#6336](https://github.com/getsentry/sentry-java/pull/6336))
 - Stop sending the whole release as `dist` on ANR and app-exit events when the release has no `+versionCode` ([#6450](https://github.com/getsentry/sentry-java/pull/6450))
   - Relay rejected these values (e.g. `invalid character '@'`). `dist` is now left empty unless `options.dist` is set or the release contains a version code.
+- Accept profiling traces directories whose path contains a `.` on the JVM, and keep profiling disabled after its first start rejects the options instead of starting on the next one ([#6334](https://github.com/getsentry/sentry-java/pull/6334))
 
 ### Dependencies
 
@@ -49,6 +86,10 @@
 - Bump Native SDK from v0.17.4 to v0.17.6 ([#6409](https://github.com/getsentry/sentry-java/pull/6409), [#6460](https://github.com/getsentry/sentry-java/pull/6460))
   - [changelog](https://github.com/getsentry/sentry-native/blob/master/CHANGELOG.md#0176)
   - [diff](https://github.com/getsentry/sentry-native/compare/0.17.4...0.17.6)
+
+### Internal
+
+- Measure ANR detection and ANR profiling durations on the internal `MonotonicTicker` ([#6041](https://github.com/getsentry/sentry-java/pull/6041))
 
 ## 8.62.0
 

@@ -11,6 +11,9 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   alias(libs.plugins.springboot4) apply false
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
 }
 
@@ -33,7 +36,7 @@ dependencies {
   compileOnly(Config.Libs.springWeb)
   compileOnly(Config.Libs.springAop)
   compileOnly(Config.Libs.springSecurityWeb)
-  compileOnly(Config.Libs.aspectj)
+  compileOnly(libs.aspectjweaver)
   compileOnly(libs.context.propagation)
   compileOnly(libs.jetbrains.annotations)
   compileOnly(libs.nopen.annotations)

@@ -24,14 +24,12 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 @ApiStatus.Internal
-public class ScreenshotUtils {
+public final class ScreenshotUtils {
 
   private static final long CAPTURE_TIMEOUT_MS = 1000;
 
   // Used by Hybrid SDKs
-  /**
-   * @noinspection unused
-   */
+  @SuppressWarnings("unused")
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull ILogger logger,
@@ -40,7 +38,10 @@ public class ScreenshotUtils {
   }
 
   // Used by Hybrid SDKs
-  @SuppressLint("NewApi")
+  // Lint infers a UI-thread constraint from the View calls in captureScreenshot, which clashes with
+  // Bitmap.compress's @WorkerThread. captureScreenshot is safe from any thread, as it posts the
+  // view draw to the UI thread when it isn't already on it.
+  @SuppressLint({"NewApi", "ThreadConstraint"})
   public static @Nullable byte[] takeScreenshot(
       final @NotNull Activity activity,
       final @NotNull IThreadChecker threadChecker,
@@ -58,8 +59,8 @@ public class ScreenshotUtils {
    * same way {@link io.sentry.android.core.ScreenshotEventProcessor} does for native errors.
    *
    * @see #captureMaskedScreenshot(Activity, SentryAndroidOptions, BuildInfoProvider, boolean)
-   * @noinspection unused
    */
+  @SuppressWarnings("unused")
   public static @Nullable byte[] takeMaskedScreenshot(
       final @NotNull Activity activity,
       final @NotNull SentryAndroidOptions options,

@@ -55,6 +55,7 @@ public final class SentryGraphqlInstrumentation {
   private final @NotNull SentrySubscriptionHandler subscriptionHandler;
   private final @NotNull ExceptionReporter exceptionReporter;
   private final @NotNull List<String> ignoredErrorTypes;
+  private final boolean enableSpecificationErrorTypeFiltering;
   private final @NotNull String traceOrigin;
 
   /**
@@ -75,8 +76,35 @@ public final class SentryGraphqlInstrumentation {
     this(
         beforeSpan,
         subscriptionHandler,
+        captureRequestBodyForNonSubscriptions,
+        ignoredErrorTypes,
+        false,
+        traceOrigin);
+  }
+
+  /**
+   * @param beforeSpan callback when a span is created
+   * @param subscriptionHandler can report subscription errors
+   * @param captureRequestBodyForNonSubscriptions false if request bodies should not be captured by
+   *     this integration for query and mutation operations
+   * @param ignoredErrorTypes list of error types that should not be captured and sent to Sentry
+   * @param enableSpecificationErrorTypeFiltering whether ignored error types should also be matched
+   *     against {@link ErrorClassification#toSpecification(GraphQLError)}
+   * @param traceOrigin origin used for spans created by this integration
+   */
+  public SentryGraphqlInstrumentation(
+      final @Nullable BeforeSpanCallback beforeSpan,
+      final @NotNull SentrySubscriptionHandler subscriptionHandler,
+      final boolean captureRequestBodyForNonSubscriptions,
+      final @NotNull List<String> ignoredErrorTypes,
+      final boolean enableSpecificationErrorTypeFiltering,
+      final @NotNull String traceOrigin) {
+    this(
+        beforeSpan,
+        subscriptionHandler,
         new ExceptionReporter(captureRequestBodyForNonSubscriptions),
         ignoredErrorTypes,
+        enableSpecificationErrorTypeFiltering,
         traceOrigin);
   }
 
@@ -87,10 +115,22 @@ public final class SentryGraphqlInstrumentation {
       final @NotNull ExceptionReporter exceptionReporter,
       final @NotNull List<String> ignoredErrorTypes,
       final @NotNull String traceOrigin) {
+    this(beforeSpan, subscriptionHandler, exceptionReporter, ignoredErrorTypes, false, traceOrigin);
+  }
+
+  @TestOnly
+  public SentryGraphqlInstrumentation(
+      final @Nullable BeforeSpanCallback beforeSpan,
+      final @NotNull SentrySubscriptionHandler subscriptionHandler,
+      final @NotNull ExceptionReporter exceptionReporter,
+      final @NotNull List<String> ignoredErrorTypes,
+      final boolean enableSpecificationErrorTypeFiltering,
+      final @NotNull String traceOrigin) {
     this.beforeSpan = beforeSpan;
     this.subscriptionHandler = subscriptionHandler;
     this.exceptionReporter = exceptionReporter;
     this.ignoredErrorTypes = ignoredErrorTypes;
+    this.enableSpecificationErrorTypeFiltering = enableSpecificationErrorTypeFiltering;
     this.traceOrigin = traceOrigin;
   }
 
@@ -127,8 +167,7 @@ public final class SentryGraphqlInstrumentation {
       final @NotNull List<GraphQLError> errors = result.getErrors();
       if (errors != null) {
         for (GraphQLError error : errors) {
-          String errorType = getErrorType(error);
-          if (!isIgnored(errorType)) {
+          if (!isIgnored(error)) {
             exceptionReporter.captureThrowable(
                 new RuntimeException(error.getMessage()),
                 new ExceptionReporter.ExceptionDetails(
@@ -158,19 +197,38 @@ public final class SentryGraphqlInstrumentation {
         || ignoredErrorTypes.contains(errorType);
   }
 
-  private @Nullable String getErrorType(final @Nullable GraphQLError error) {
+  private boolean isIgnored(final @Nullable GraphQLError error) {
     if (error == null) {
-      return null;
+      return false;
     }
     final @Nullable ErrorClassification errorType = error.getErrorType();
     if (errorType != null) {
-      return errorType.toString();
+      if (isIgnored(errorType.toString())) {
+        return true;
+      }
+      if (!enableSpecificationErrorTypeFiltering) {
+        return false;
+      }
+      try {
+        final @Nullable Object specification = errorType.toSpecification(error);
+        if (specification instanceof String && isIgnored((String) specification)) {
+          return true;
+        }
+        if (specification instanceof Map) {
+          final @Nullable Object specificationType = ((Map<?, ?>) specification).get("type");
+          return specificationType instanceof String && isIgnored((String) specificationType);
+        }
+      } catch (Throwable throwable) {
+        ExceptionUtils.rethrowIfFatal(throwable);
+        // Fall back to capturing the error if a custom classification cannot be serialized.
+      }
+      return false;
     }
     final @Nullable Map<String, Object> extensions = error.getExtensions();
     if (extensions != null) {
-      return StringUtils.toString(extensions.get("errorType"));
+      return isIgnored(StringUtils.toString(extensions.get("errorType")));
     }
-    return null;
+    return false;
   }
 
   public void beginExecuteOperation(

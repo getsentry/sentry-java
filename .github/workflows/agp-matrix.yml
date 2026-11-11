@@ -17,20 +17,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        agp: [ '9.0.0', '9.2.1', '9.4.0' ]
+        agp: [ '9.0.0', '9.4.0', '9.5.1' ]
         integrations: [ true, false ]
 
     name: AGP Matrix Release - AGP ${{ matrix.agp }} - Integrations ${{ matrix.integrations }}
     env:
       VERSION_AGP: ${{ matrix.agp }}
       APPLY_SENTRY_INTEGRATIONS: ${{ matrix.integrations }}
+      # Upload replay snapshots from one cell only. Forks don't have access to the upload secret.
+      UPLOAD_REPLAY_SNAPSHOTS: ${{ matrix.agp == '9.5.1' && matrix.integrations && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
 
     steps:
       - name: Checkout Repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Java Version
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -51,20 +53,21 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-api-30-x86_64-aosp_atd
+          key: avd-api-30-x86_64-google_apis
 
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2
         with:
           api-level: 30
-          target: aosp_atd
-          channel: canary # Necessary for ATDs
+          # Not an ATD image: PixelCopy returns no data on ATDs, which the replay tests need
+          target: google_apis
+          channel: canary
           arch: x86_64
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory 4096 -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
           script: echo "Generated AVD snapshot for caching."
 
@@ -77,15 +80,28 @@ jobs:
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # pin@v2
         with:
           api-level: 30
-          target: aosp_atd
-          channel: canary # Necessary for ATDs
+          # Not an ATD image: PixelCopy returns no data on ATDs, which the replay tests need
+          target: google_apis
+          channel: canary
           arch: x86_64
           force-avd-creation: false
           disable-animations: true
           disable-spellchecker: true
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -memory 4096 -no-snapshot-save -no-window -gpu auto -noaudio -no-boot-anim -camera-back none
           disk-size: 4096M
-          script: ./gradlew sentry-android-integration-tests:sentry-uitest-android:connectedReleaseAndroidTest -Denvironment=github --daemon
+          script: ./scripts/test-ui-android.sh replay-snapshots
+
+      - name: Install Sentry CLI
+        if: ${{ !cancelled() && env.UPLOAD_REPLAY_SNAPSHOTS == 'true' }}
+        uses: getsentry/action-setup-cli@70d7e587b84c2e78cf4d37cd33d7b74fb3729c1b # v1
+
+      - name: Upload Replay Snapshots to Sentry
+        if: ${{ !cancelled() && env.UPLOAD_REPLAY_SNAPSHOTS == 'true' && hashFiles('replay-snapshots/*.png') != '' }}
+        run: sentry-cli snapshots upload ./replay-snapshots --app-id sentry-android-replay
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: sentry-sdks
+          SENTRY_PROJECT: sentry-android
 
       - name: Upload test results
         if: always()
@@ -96,6 +112,7 @@ jobs:
             **/build/reports/*
             **/build/outputs/*/connected/*
             **/build/outputs/mapping/release/*
+            replay-snapshots/
 
       - name: Test Report
         uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # pin@v16

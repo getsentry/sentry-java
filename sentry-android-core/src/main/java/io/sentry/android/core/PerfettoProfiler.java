@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @ApiStatus.Internal
 @RequiresApi(api = Build.VERSION_CODES.VANILLA_ICE_CREAM)
-public class PerfettoProfiler {
+public final class PerfettoProfiler {
 
   // Bundle keys matching ProfilingManager constants
   private static final String KEY_DURATION_MS = "KEY_DURATION_MS";
@@ -123,6 +123,7 @@ public class PerfettoProfiler {
    * error) once the OS delivers the result. The listener may be called synchronously if the result
    * has already arrived, or asynchronously on an OS-managed thread otherwise.
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void endAndCollect(final @NotNull Consumer<@Nullable File> listener) {
     if (!started) {
       logger.log(SentryLevel.WARNING, "PerfettoProfiler was never started");

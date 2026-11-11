@@ -4,12 +4,15 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   `java-library`
   alias(libs.plugins.kotlin.jvm)
-  alias(libs.plugins.detekt)
+  id("io.sentry.detekt")
   id("io.sentry.javadoc")
   alias(libs.plugins.errorprone)
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   id("io.sentry.animalsniffer.android")
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
 }
 
@@ -43,6 +46,31 @@ dependencies {
   testImplementation(libs.ktor.client.java)
   testImplementation(libs.okhttp.mockwebserver)
 }
+
+testing {
+  suites {
+    register<JvmTestSuite>("testKtor300") {
+      useJUnit()
+      dependencies {
+        implementation(enforcedPlatform("io.ktor:ktor-bom:3.0.0"))
+      }
+      sources {
+        java.setSrcDirs(sourceSets.test.get().java.srcDirs)
+        resources.setSrcDirs(sourceSets.test.get().resources.srcDirs)
+      }
+    }
+  }
+}
+
+configurations.named("testKtor300Implementation") {
+  extendsFrom(configurations.testImplementation.get())
+}
+
+kotlin.target.compilations.named("testKtor300") {
+  associateWith(kotlin.target.compilations.getByName("main"))
+}
+
+tasks.check { dependsOn(testing.suites.named("testKtor300")) }
 
 buildConfig {
   useJavaOutput()

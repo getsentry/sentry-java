@@ -314,6 +314,7 @@ public final class SentryGestureListener implements GestureDetector.OnGestureLis
   }
 
   @VisibleForTesting
+  @SuppressWarnings("ReferenceEquality")
   void clearScope(final @NotNull IScope scope) {
     scope.withTransaction(
         transaction -> {

@@ -1,3 +1,5 @@
+package io.sentry.gradle
+
 import java.net.URI
 import java.nio.file.FileSystems
 import java.nio.file.Files

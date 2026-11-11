@@ -18,6 +18,7 @@ public final class AssetsModulesLoader extends ModulesLoader {
 
   private final @NotNull Context context;
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   public AssetsModulesLoader(final @NotNull Context context, final @NotNull SentryOptions options) {
     super(options.getLogger());
     this.context = ContextUtils.getApplicationContext(context);
