@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -419,7 +420,7 @@ public final class InternalSentrySdk {
                 () -> {
                   deleteCurrentSessionFile(options);
                 });
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         options
             .getLogger()
             .log(WARNING, "Submission of deletion of the current session file rejected.", e);

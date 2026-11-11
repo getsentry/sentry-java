@@ -44,6 +44,7 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,7 +99,7 @@ public class TombstoneIntegration implements Integration, Closeable {
                     this.options,
                     dateProvider,
                     new TombstonePolicy(this.options, this.context)));
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start tombstone processor.", e);
       }
       options.getLogger().log(SentryLevel.DEBUG, "TombstoneIntegration installed.");

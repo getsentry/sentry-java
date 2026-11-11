@@ -27,22 +27,31 @@ object ContextUtilsTestHelper {
       )
       .thenReturn(mockApplicationInfo)
 
-    if (assets == null) {
-      val mockAssets = mock<AssetManager>()
-      whenever(mockAssets.open(any())).thenThrow(FileNotFoundException())
-      whenever(mockContext.assets).thenReturn(mockAssets)
-    } else {
-      whenever(mockContext.assets).thenReturn(assets)
-    }
+    val contextAssets = assets ?: assetsWithoutModulesFile()
+    whenever(mockContext.assets).thenReturn(contextAssets)
 
     mockApplicationInfo.metaData = metaData
     return mockContext
   }
 
   fun createMockContext(hasAppContext: Boolean = true): Context {
+    // A real Context always has assets. Without sentry-external-modules.txt, open() throws.
+    val assets = assetsWithoutModulesFile()
     val mockApp = mock<Context>()
-    whenever(mockApp.applicationContext)
-      .thenReturn(if (hasAppContext) mock<Application>() else null)
+    whenever(mockApp.assets).thenReturn(assets)
+    if (hasAppContext) {
+      val application = mock<Application>()
+      whenever(application.assets).thenReturn(assets)
+      whenever(mockApp.applicationContext).thenReturn(application)
+    } else {
+      whenever(mockApp.applicationContext).thenReturn(null)
+    }
     return mockApp
+  }
+
+  private fun assetsWithoutModulesFile(): AssetManager {
+    val mockAssets = mock<AssetManager>()
+    whenever(mockAssets.open(any())).thenThrow(FileNotFoundException())
+    return mockAssets
   }
 }

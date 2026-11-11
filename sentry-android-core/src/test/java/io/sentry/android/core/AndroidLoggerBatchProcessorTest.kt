@@ -10,6 +10,7 @@ import io.sentry.SentryOptions
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.test.getProperty
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -96,7 +97,7 @@ class AndroidLoggerBatchProcessorTest {
   fun `onBackground handles executor exception gracefully`() {
     val sut = fixture.getSut { options ->
       val rejectingExecutor = mock<ISentryExecutorService>()
-      whenever(rejectingExecutor.submit(any())).thenThrow(RuntimeException("Rejected"))
+      whenever(rejectingExecutor.submit(any())).thenThrow(RejectedExecutionException("Rejected"))
       options.executorService = rejectingExecutor
     }
     sut.add(SentryLogEvent(SentryId(), 1.0, "test", SentryLogLevel.INFO))

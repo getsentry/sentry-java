@@ -16,6 +16,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -97,7 +98,7 @@ public final class FeedbackShakeIntegration
       options
           .getExecutorService()
           .submit(() -> shakeDetector.init(application, options.getLogger()));
-    } catch (Throwable t) {
+    } catch (RejectedExecutionException t) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Failed to submit shake detector initialization.", t);

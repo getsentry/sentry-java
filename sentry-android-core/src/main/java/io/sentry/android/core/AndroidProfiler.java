@@ -214,7 +214,7 @@ public class AndroidProfiler {
         isRunning = true;
         return new ProfileStartData(
             profileStartNanos, profileStartCpuMillis, profileStartTimestamp);
-      } catch (Throwable e) {
+      } catch (RuntimeException e) {
         endAndCollect(false, null);
         logger.log(SentryLevel.ERROR, "Unable to start a profile: ", e);
         isRunning = false;
@@ -237,7 +237,7 @@ public class AndroidProfiler {
         // wrapped, so this should never happen (except for tests, where this is the only method
         // that throws)
         Debug.stopMethodTracing();
-      } catch (Throwable e) {
+      } catch (RuntimeException e) {
         logger.log(SentryLevel.ERROR, "Error while stopping profiling: ", e);
       } finally {
         isRunning = false;

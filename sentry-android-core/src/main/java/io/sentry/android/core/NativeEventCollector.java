@@ -223,7 +223,7 @@ public final class NativeEventCollector {
                 file.getAbsolutePath());
         return false;
       }
-    } catch (Throwable e) {
+    } catch (SecurityException e) {
       options
           .getLogger()
           .log(

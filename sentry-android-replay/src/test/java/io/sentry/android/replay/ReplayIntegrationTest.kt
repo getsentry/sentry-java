@@ -105,7 +105,12 @@ class ReplayIntegrationTest {
           mock { on { breadcrumbConverter }.thenReturn(DefaultReplayBreadcrumbConverter()) }
         )
         executorService = mock {
-          doAnswer { (it.arguments[0] as Runnable).run() }.whenever(mock).submit(any<Runnable>())
+          doAnswer {
+              (it.arguments[0] as Runnable).run()
+              null
+            }
+            .whenever(mock)
+            .submit(any<Runnable>())
         }
       }
     val scope = Scope(options)
@@ -1272,7 +1277,10 @@ class ReplayIntegrationTest {
     // hold back the startup work, like a busy executor does
     val deferredTasks = mutableListOf<Runnable>()
     fixture.options.executorService = mock {
-      doAnswer { deferredTasks += it.arguments[0] as Runnable }
+      doAnswer {
+          deferredTasks += it.arguments[0] as Runnable
+          null
+        }
         .whenever(mock)
         .submit(any<Runnable>())
     }
@@ -1326,7 +1334,10 @@ class ReplayIntegrationTest {
     fixture.options.addScopeObserver(PersistingScopeObserver(fixture.options))
     val deferredTasks = mutableListOf<Runnable>()
     fixture.options.executorService = mock {
-      doAnswer { deferredTasks += it.arguments[0] as Runnable }
+      doAnswer {
+          deferredTasks += it.arguments[0] as Runnable
+          null
+        }
         .whenever(mock)
         .submit(any<Runnable>())
     }

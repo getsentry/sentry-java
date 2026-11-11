@@ -100,7 +100,7 @@ public final class MonitorSchedule implements JsonUnknown, JsonSerializable {
     if (MonitorScheduleType.INTERVAL.apiName().equalsIgnoreCase(type)) {
       try {
         writer.name(JsonKeys.VALUE).value(Integer.valueOf(value));
-      } catch (Throwable t) {
+      } catch (NumberFormatException t) {
         logger.log(SentryLevel.ERROR, "Unable to serialize monitor schedule value: %s", value);
       }
     } else {

@@ -25,6 +25,7 @@ import io.sentry.SentryTraceHeader;
 import io.sentry.exception.InvalidSentryTraceHeaderException;
 import io.sentry.util.PropagationTargetsUtils;
 import io.sentry.util.TracingUtils;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
@@ -123,7 +124,7 @@ public final class OpenTelemetryOtlpPropagator implements TextMapPropagator {
       } else {
         return new URL(scheme, serverAddress, serverPort.intValue(), pathToUse).toString();
       }
-    } catch (Throwable t) {
+    } catch (MalformedURLException t) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Unable to combine URL span attributes into one.", t);

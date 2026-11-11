@@ -15,6 +15,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -122,7 +123,7 @@ public final class SentryTracer implements ITransaction {
                     .getOptions()
                     .getTimerExecutorService()
                     .schedule(this::onIdleTimeoutReached, idleTimeout);
-          } catch (Throwable e) {
+          } catch (RejectedExecutionException e) {
             scopes
                 .getOptions()
                 .getLogger()
@@ -314,7 +315,7 @@ public final class SentryTracer implements ITransaction {
                     .getOptions()
                     .getTimerExecutorService()
                     .schedule(this::onDeadlineTimeoutReached, deadlineTimeOut);
-          } catch (Throwable e) {
+          } catch (RejectedExecutionException e) {
             scopes
                 .getOptions()
                 .getLogger()

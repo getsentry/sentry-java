@@ -53,7 +53,7 @@ public final class SentryCrashLastRunState {
             nativeMarker.delete();
           }
         }
-      } catch (Throwable e) {
+      } catch (SecurityException e) {
         // ignore
         // TODO: Take ILogger via ctor and log here
       }

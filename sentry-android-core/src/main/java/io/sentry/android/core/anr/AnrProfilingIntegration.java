@@ -22,6 +22,7 @@ import io.sentry.util.SentryRandom;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -143,7 +144,7 @@ public class AnrProfilingIntegration
                     logger.log(SentryLevel.WARNING, "Failed to close AnrProfileManager");
                   }
                 });
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         logger.log(SentryLevel.WARNING, "Failed to submit AnrProfileManager close");
       }
     }

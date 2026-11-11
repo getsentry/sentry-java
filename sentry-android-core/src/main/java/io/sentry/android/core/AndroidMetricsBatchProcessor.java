@@ -4,6 +4,7 @@ import io.sentry.ISentryClient;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.metrics.MetricsBatchProcessor;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,7 +38,7 @@ public final class AndroidMetricsBatchProcessor extends MetricsBatchProcessor
                   flush(MetricsBatchProcessor.FLUSH_AFTER_MS);
                 }
               });
-    } catch (Throwable t) {
+    } catch (RejectedExecutionException t) {
       options
           .getLogger()
           .log(SentryLevel.ERROR, t, "Failed to submit metrics flush in onBackground()");

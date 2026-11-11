@@ -4,6 +4,7 @@ import com.p6spy.engine.common.ConnectionInformation;
 import com.p6spy.engine.common.StatementInformation;
 import io.sentry.util.StringUtils;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Locale;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +47,7 @@ public final class DatabaseUtils {
         final @NotNull String dbSystem = urlParts[0];
         return parseDbSystemSpecific(dbSystem, urlParts, rawUrl);
       }
-    } catch (Throwable t) {
+    } catch (IndexOutOfBoundsException t) {
       // ignore
     }
 
@@ -80,17 +81,11 @@ public final class DatabaseUtils {
       return parseAsUri(dbSystem, urlString);
     }
     if ("sqlserver".equalsIgnoreCase(dbSystem)) {
-      try {
-        String dbProperty = ";databasename=";
-        final int index = urlString.indexOf(dbProperty);
-        if (index >= 0) {
-          final @NotNull String dbNameAndMaybeMore =
-              urlString.substring(index + dbProperty.length());
-          return new DatabaseDetails(
-              dbSystem, StringUtils.substringBefore(dbNameAndMaybeMore, ";"));
-        }
-      } catch (Throwable t) {
-        // ignore
+      String dbProperty = ";databasename=";
+      final int index = urlString.indexOf(dbProperty);
+      if (index >= 0) {
+        final @NotNull String dbNameAndMaybeMore = urlString.substring(index + dbProperty.length());
+        return new DatabaseDetails(dbSystem, StringUtils.substringBefore(dbNameAndMaybeMore, ";"));
       }
     }
     if ("oracle".equalsIgnoreCase(dbSystem)) {
@@ -132,7 +127,7 @@ public final class DatabaseUtils {
       String path = StringUtils.removePrefix(url.getPath(), "/");
       String pathWithoutProperties = StringUtils.substringBefore(path, ";");
       return new DatabaseDetails(dbSystem, pathWithoutProperties);
-    } catch (Throwable t) {
+    } catch (URISyntaxException t) {
       // ignore
     }
     return new DatabaseDetails(dbSystem, null);
