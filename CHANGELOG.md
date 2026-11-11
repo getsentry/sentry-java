@@ -31,6 +31,7 @@
 
 ### Fixes
 
+- Kotlin now sees `Attachment.getBytes()`, `Device.getArchs()`, `Spring.getActiveProfiles()` and `JsonSerializationUtils.bytesFrom(...)` as nullable, because `@Nullable` now annotates the returned array instead of its elements ([#6558](https://github.com/getsentry/sentry-java/pull/6558))
 - Capture scroll breadcrumbs for `LazyColumn`, `LazyRow`, lazy grids, and `Pager` on Jetpack Compose foundation 1.10+ ([#6548](https://github.com/getsentry/sentry-java/pull/6548))
 - Prevent the main thread from potentially hanging during app start if Android is slow to register the SDK's network or telephony listeners. `Sentry.init`, Session Replay, and capturing events no longer wait for that registration ([#6537](https://github.com/getsentry/sentry-java/pull/6537))
 - Add opt-in support for matching GraphQL ignored error types against classification specifications via `sentry.graphql.enable-specification-error-type-filtering` ([#6092](https://github.com/getsentry/sentry-java/pull/6092))
