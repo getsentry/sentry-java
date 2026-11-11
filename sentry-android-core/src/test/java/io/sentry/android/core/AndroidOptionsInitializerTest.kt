@@ -52,6 +52,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.runner.RunWith
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -125,6 +126,7 @@ class AndroidOptionsInitializerTest {
 
     fun initSutWithClassLoader(
       classesToLoad: List<String> = emptyList(),
+      loadedClasses: Map<String, Class<*>> = emptyMap(),
       isFragmentAvailable: Boolean = false,
       isTimberAvailable: Boolean = false,
       isReplayAvailable: Boolean = false,
@@ -138,6 +140,9 @@ class AndroidOptionsInitializerTest {
       sentryOptions.isDebug = true
       val buildInfo = createBuildInfo()
       val loadClass = createClassMock(classesToLoad)
+      loadedClasses.forEach { (name, clazz) ->
+        whenever(loadClass.loadClass(eq(name), anyOrNull())).thenReturn(clazz)
+      }
       val activityFramesTracker = ActivityFramesTracker(loadClass, sentryOptions)
 
       AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
@@ -638,6 +643,17 @@ class AndroidOptionsInitializerTest {
 
     val actual = fixture.sentryOptions.integrations.firstOrNull { it is NdkIntegration }
     assertNotNull((actual as NdkIntegration).sentryNdkClass)
+  }
+
+  @Test
+  fun `NdkIntegration prefers the outproc backend class`() {
+    fixture.initSutWithClassLoader(
+      classesToLoad = listOfNotNull(NdkIntegration.SENTRY_NDK_CLASS_NAME),
+      loadedClasses = mapOf(NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME to Any::class.java),
+    )
+
+    val actual = fixture.sentryOptions.integrations.firstOrNull { it is NdkIntegration }
+    assertEquals(Any::class.java, (actual as NdkIntegration).sentryNdkClass)
   }
 
   @Test

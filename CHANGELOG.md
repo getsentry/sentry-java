@@ -22,6 +22,9 @@
 - Quartz `SentryJobListener` can send a monitor config derived from the trigger with check-ins, so Sentry creates or updates the monitor from code. Set the `sentry-upsert-monitor-config` job or trigger data key to `"true"` to send the schedule ([#6216](https://github.com/getsentry/sentry-java/pull/6216))
 - Send a monitor config derived from Spring `@Scheduled` with `@SentryCheckIn` check-ins, so Sentry creates or updates the monitor from code. Set `@SentryCheckIn(upsertMonitorConfig = true)` to send the schedule ([#6215](https://github.com/getsentry/sentry-java/pull/6215))
 - Sentry OpenTelemetry integrations now honor `OTEL_BSP_SCHEDULE_DELAY` (`otel.bsp.schedule.delay`) for how often spans are sent to Sentry, instead of always waiting 5 seconds ([#6388](https://github.com/getsentry/sentry-java/pull/6388))
+- Add experimental, opt-in out-of-process crash reporting on Android ([#6347](https://github.com/getsentry/sentry-java/pull/6347))
+  - To enable it, add the `sentry-android-ndk-outproc` dependency and exclude `sentry-native-ndk`. Requires Android 11 (API level 30) or later.
+  - See the [NDK docs](https://docs.sentry.io/platforms/android/configuration/using-ndk/#out-of-process-crash-handling) for details.
 
 ### Behavioral Changes
 

@@ -84,6 +84,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowActivityManager
 import org.robolectric.shadows.ShadowActivityManager.ApplicationExitInfoBuilder
+import org.robolectric.shadows.ShadowApplication
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [Build.VERSION_CODES.N], shadows = [SentryShadowProcess::class])
@@ -571,6 +572,18 @@ class SentryAndroidTest {
 
     assertTrue(optionsRef.eventProcessors.any { it is DefaultAndroidEventProcessor })
     assertTrue(optionsRef.eventProcessors.any { it is ApplicationExitInfoEventProcessor })
+  }
+
+  @Test
+  @Config(sdk = [30])
+  fun `init does nothing in the NDK crash service process`() {
+    ShadowApplication.setProcessName("${context.packageName}.sentry_ndk_crash")
+    var configured = false
+
+    fixture.initSut { configured = true }
+
+    assertFalse(configured)
+    assertFalse(Sentry.isEnabled())
   }
 
   private fun prefillScopeCache(options: SentryOptions, cacheDir: String) {
