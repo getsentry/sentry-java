@@ -283,7 +283,7 @@ public final class Attachment {
    *
    * @return the bytes.
    */
-  public @Nullable byte[] getBytes() {
+  public byte @Nullable [] getBytes() {
     return bytes;
   }
 
