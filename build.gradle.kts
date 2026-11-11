@@ -36,11 +36,9 @@ allprojects {
     description = Config.Sentry.description
     tasks {
         withType<Test>().configureEach {
-            testLogging.showStandardStreams = true
             testLogging.exceptionFormat = TestExceptionFormat.FULL
             testLogging.events = setOf(
                 TestLogEvent.SKIPPED,
-                TestLogEvent.PASSED,
                 TestLogEvent.FAILED
             )
         }
