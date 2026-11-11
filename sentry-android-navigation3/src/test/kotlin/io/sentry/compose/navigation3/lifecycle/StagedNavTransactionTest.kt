@@ -7,15 +7,14 @@ import io.sentry.ITransaction
 import io.sentry.NoOpTransaction
 import io.sentry.Scope
 import io.sentry.ScopeObserverAdapter
-import io.sentry.SentryDateProvider
 import io.sentry.SentryLevel
-import io.sentry.SentryNanotimeDate
 import io.sentry.SentryOptions
 import io.sentry.SpanContext
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
-import java.util.Date
+import io.sentry.time.TestMonotonicTicker
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -509,11 +508,46 @@ class StagedNavTransactionTest {
     fixture.scope.transaction = uiLoadTransaction
     stagedNavTransaction.publishTo(fixture.scope)
     fixture.scope.clearTransaction()
-    fixture.nowNanos = UI_LOAD_RETRY_WINDOW_NANOS
+    fixture.ticker.advance(
+      TimeUnit.SECONDS.toNanos(UI_LOAD_RETRY_WINDOW_SECONDS) - 1,
+      TimeUnit.NANOSECONDS,
+    )
 
     stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
 
     assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - measures the retry window from the blocked publication`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS, TimeUnit.SECONDS)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS - 1, TimeUnit.SECONDS)
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries nothing exactly at the end of the retry window`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS, TimeUnit.SECONDS)
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
   }
 
   @Test
@@ -524,7 +558,7 @@ class StagedNavTransactionTest {
     fixture.scope.transaction = uiLoadTransaction
     stagedNavTransaction.publishTo(fixture.scope)
     fixture.scope.clearTransaction()
-    fixture.nowNanos = UI_LOAD_RETRY_WINDOW_NANOS + 1
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS + 1, TimeUnit.SECONDS)
 
     stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
 
@@ -539,10 +573,9 @@ class StagedNavTransactionTest {
     stagedNavTransaction.stage(request)
     fixture.scope.transaction = uiLoadTransaction
     stagedNavTransaction.publishTo(fixture.scope)
-    fixture.nowNanos = UI_LOAD_RETRY_WINDOW_NANOS + 1
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS, TimeUnit.SECONDS)
     stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
     fixture.scope.clearTransaction()
-    fixture.nowNanos = 0
 
     stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
 
@@ -848,8 +881,8 @@ class StagedNavTransactionTest {
     val scope = Scope(SentryOptions())
     val logger = mock<ILogger>()
 
-    /** The time [scopes]' date provider reports, in nanoseconds. */
-    var nowNanos = 0L
+    /** Measures [stagedNavTransaction]'s retry window. */
+    val ticker = TestMonotonicTicker()
 
     /** Whether [scopes] declines to start transactions, returning a no-op transaction instead. */
     var declinesTransactions = false
@@ -865,7 +898,6 @@ class StagedNavTransactionTest {
             SentryOptions().apply {
               setLogger(this@Fixture.logger)
               isDebug = true
-              dateProvider = SentryDateProvider { SentryNanotimeDate(Date(0), nowNanos) }
             }
           )
         whenever(scopes.startTransaction(any<TransactionContext>(), any<TransactionOptions>()))
@@ -881,7 +913,7 @@ class StagedNavTransactionTest {
           }
       }
 
-    val stagedNavTransaction = StagedNavTransaction(scopes)
+    val stagedNavTransaction = StagedNavTransaction(scopes, ticker)
 
     init {
       scope.options.addScopeObserver(

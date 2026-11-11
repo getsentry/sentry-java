@@ -3,9 +3,10 @@ package io.sentry.compose.navigation3.lifecycle
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.ITransaction
-import io.sentry.SentryDate
 import io.sentry.SentryLevel
 import io.sentry.SpanStatus
+import io.sentry.time.Deadline
+import io.sentry.time.MonotonicTicker
 import java.lang.ref.WeakReference
 import java.util.concurrent.TimeUnit
 
@@ -24,7 +25,7 @@ internal const val ACTIVITY_UI_LOAD_ORIGIN: String = "auto.ui.activity"
  * `ui.load` transaction from the shared [IScope]. A busy main thread can delay destruction past
  * this window; in that case, the return gets no nav transaction until the next navigation.
  */
-internal val UI_LOAD_RETRY_WINDOW_NANOS: Long = TimeUnit.SECONDS.toNanos(10)
+internal const val UI_LOAD_RETRY_WINDOW_SECONDS: Long = 10
 
 /**
  * Holds a nav transaction staged for publication to a shared [IScope].
@@ -54,7 +55,10 @@ internal val UI_LOAD_RETRY_WINDOW_NANOS: Long = TimeUnit.SECONDS.toNanos(10)
  * This class is ***not*** thread-safe. Apply the thread safety policy from [NavScopes].
  */
 @Suppress("TooManyFunctions")
-internal class StagedNavTransaction(private val scopes: IScopes) {
+internal class StagedNavTransaction(
+  private val scopes: IScopes,
+  private val ticker: MonotonicTicker,
+) {
 
   /**
    * The request most recently passed to [stage], whatever became of its transaction. Cleared when
@@ -134,12 +138,12 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
 
   /**
    * Retries publication to [scope] after the blocking Activity `ui.load` leaves its slot. Retries
-   * only within [UI_LOAD_RETRY_WINDOW_NANOS], and never arms another retry. Other blockers do not
-   * qualify.
+   * only within [UI_LOAD_RETRY_WINDOW_SECONDS] of the blocked attempt, and never arms another
+   * retry. Other blockers do not qualify.
    */
   fun retryPublishIfBlocked(scope: IScope) {
     val blocked = blockedPublication ?: return
-    if (scopes.options.dateProvider.now().diff(blocked.blockedAt) > UI_LOAD_RETRY_WINDOW_NANOS) {
+    if (blocked.retryDeadline.hasPassed()) {
       blockedPublication = null
       return
     }
@@ -248,17 +252,20 @@ internal class StagedNavTransaction(private val scopes: IScopes) {
     if (canHold(current, transaction) || current.spanContext.origin != ACTIVITY_UI_LOAD_ORIGIN) {
       return null
     }
-    return BlockedPublication(WeakReference(current), scopes.options.dateProvider.now())
+    return BlockedPublication(
+      uiLoad = WeakReference(current),
+      retryDeadline = Deadline.after(ticker, UI_LOAD_RETRY_WINDOW_SECONDS, TimeUnit.SECONDS),
+    )
   }
 
   /**
-   * A nav publication blocked by [uiLoad] at [blockedAt].
+   * A nav publication blocked by [uiLoad], which may be retried until [retryDeadline].
    *
    * The `ui.load` transaction is held weakly, as it's only compared with the scope's transaction.
    * (A collected transaction can't be bound to the scope anymore.)
    */
   private class BlockedPublication(
     val uiLoad: WeakReference<ITransaction>,
-    val blockedAt: SentryDate,
+    val retryDeadline: Deadline,
   )
 }

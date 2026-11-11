@@ -76,7 +76,8 @@ internal class NavScopes(
   /** This instance's registration with the [coordinator], while it's attached. */
   private var registration: NavLeaseRegistration? = null
 
-  private val stagedNavTransaction = StagedNavTransaction(delegate)
+  private val stagedNavTransaction =
+    StagedNavTransaction(delegate, delegate.options.monotonicTicker)
   private val stagedNavData = StagedNavData()
 
   private val navStatePublisher = NavStatePublisher()

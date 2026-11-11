@@ -193,7 +193,7 @@ acquisition: on its first back stack update, a candidate has no destination to s
 
 When the user returns by closing an Activity, that Activity's `ui.load` transaction may still be running and hold the slot. It normally
 leaves the slot when the closed Activity is destroyed, which happens after the nav root has resumed. If the Activity is destroyed within
-`UI_LOAD_RETRY_WINDOW_NANOS` of the blocked attempt, binding the nav root's transaction is retried once (see `onAnyActivityDestroyed`).
+`UI_LOAD_RETRY_WINDOW_SECONDS` of the blocked attempt, binding the nav root's transaction is retried once (see `onAnyActivityDestroyed`).
 Otherwise, the nav root goes without a bound nav transaction until its next navigation or return.
 
 Only the current leaseholder is asked to retry when an Activity is destroyed. Its publisher checks whether the blocked `ui.load` has left
@@ -229,7 +229,7 @@ document but AOSP and androidx have historically upheld:
   platform.
 
 - A visible Activity that finishes is destroyed once the Activity that replaces it reports idle,
-  or when the system's idle timeout fires (see `UI_LOAD_RETRY_WINDOW_NANOS`).
+  or when the system's idle timeout fires (see `UI_LOAD_RETRY_WINDOW_SECONDS`).
 
 Going forward, if an order changes, nav data may be attributed to the wrong nav root, or a nav transaction may go unbound, but nothing would
 throw.
