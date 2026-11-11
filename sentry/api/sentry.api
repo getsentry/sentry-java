@@ -587,6 +587,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getShutdownTimeoutMillis ()Ljava/lang/Long;
 	public fun getSpotlightConnectionUrl ()Ljava/lang/String;
 	public fun getTags ()Ljava/util/Map;
+	public fun getTraceIgnoreStatusCodes ()Ljava/util/List;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun isCaptureOpenTelemetryEvents ()Ljava/lang/Boolean;
@@ -644,6 +645,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setSpotlightConnectionUrl (Ljava/lang/String;)V
 	public fun setStrictTraceContinuation (Ljava/lang/Boolean;)V
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
+	public fun setTraceIgnoreStatusCodes (Ljava/util/List;)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 }
 
@@ -710,6 +712,7 @@ public final class io/sentry/HttpStatusCodeRange {
 	public fun <init> (I)V
 	public fun <init> (II)V
 	public fun isInRange (I)Z
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/HttpStatusCodeRange;
 }
 
 public abstract interface class io/sentry/IAppStartExtender {
@@ -3616,6 +3619,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getTags ()Ljava/util/Map;
 	public fun getThreadChecker ()Lio/sentry/util/thread/IThreadChecker;
 	public fun getTimerExecutorService ()Lio/sentry/ISentryExecutorService;
+	public fun getTraceIgnoreStatusCodes ()Ljava/util/List;
 	public fun getTracePropagationTargets ()Ljava/util/List;
 	public fun getTracesSampleRate ()Ljava/lang/Double;
 	public fun getTracesSampler ()Lio/sentry/SentryOptions$TracesSamplerCallback;
@@ -3785,6 +3789,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setTag (Ljava/lang/String;Ljava/lang/String;)V
 	public fun setThreadChecker (Lio/sentry/util/thread/IThreadChecker;)V
 	public fun setTimerExecutorService (Lio/sentry/ISentryExecutorService;)V
+	public fun setTraceIgnoreStatusCodes (Ljava/util/List;)V
 	public fun setTraceOptionsRequests (Z)V
 	public fun setTracePropagationTargets (Ljava/util/List;)V
 	public fun setTraceSampling (Z)V
