@@ -35,8 +35,10 @@ internal class SentryComposeHelper(logger: ILogger) {
         val value = sentryTagElementField.get(modifier)
         return value as String?
       }
-    } catch (e: Throwable) {
-      // ignored
+    } catch (_: IllegalAccessException) {
+      // fall back to SemanticsModifier below
+    } catch (_: ClassCastException) {
+      // the tag is not a String in this Compose version
     }
 
     // Older versions use SemanticsModifier

@@ -33,6 +33,7 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.findRootCoordinates
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.text.TextLayoutResult
+import io.sentry.util.ExceptionUtils
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -93,7 +94,7 @@ internal fun LayoutNode.findPainter(): Painter? {
       return try {
         modifier::class.java.getDeclaredField("painter").apply { isAccessible = true }.get(modifier)
           as? Painter
-      } catch (e: Throwable) {
+      } catch (_: ReflectiveOperationException) {
         null
       }
     }
@@ -136,7 +137,12 @@ internal fun LayoutNode.findTextColor(): Color? {
         (modifier::class.java.getDeclaredField("color").apply { isAccessible = true }.get(modifier)
             as? ColorProducer)
           ?.invoke()
+      } catch (_: LinkageError) {
+        // older Compose versions don't have ColorProducer
+        null
       } catch (e: Throwable) {
+        // ColorProducer.invoke() runs the app's color lambda, so we can't know what it throws
+        ExceptionUtils.rethrowIfFatal(e)
         null
       }
     }

@@ -17,9 +17,11 @@ import io.sentry.exception.ExceptionMechanismException
 import io.sentry.exception.SentryHttpClientException
 import io.sentry.protocol.Mechanism
 import io.sentry.util.CookieUtils
+import io.sentry.util.ExceptionUtils
 import io.sentry.util.HttpUtils
 import io.sentry.util.UrlUtils
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
 
 internal object SentryKtorClientUtils {
   internal suspend fun captureClientError(
@@ -52,7 +54,12 @@ internal object SentryKtorClientUtils {
         statusCode = response.status.value
         try {
           bodySize = response.bodyAsBytes().size.toLong()
-        } catch (_: Throwable) {}
+        } catch (e: CancellationException) {
+          throw e
+        } catch (@Suppress("TooGenericExceptionCaught") e: Throwable) {
+          // The HTTP engine can throw anything while reading the body. The body size is optional.
+          ExceptionUtils.rethrowIfFatal(e)
+        }
       }
 
     event.request = sentryRequest

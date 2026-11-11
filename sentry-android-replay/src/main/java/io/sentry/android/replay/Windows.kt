@@ -53,7 +53,7 @@ internal object WindowSpy {
     lazy(NONE) {
       try {
         Class.forName("com.android.internal.policy.DecorView")
-      } catch (ignored: Throwable) {
+      } catch (ignored: ClassNotFoundException) {
         Log.d("WindowSpy", "Unexpected exception loading DecorView on API $SDK_INT", ignored)
         null
       }
@@ -171,7 +171,7 @@ internal object WindowManagerSpy {
       val className = "android.view.WindowManagerGlobal"
       try {
         Class.forName(className)
-      } catch (ignored: Throwable) {
+      } catch (ignored: ClassNotFoundException) {
         Log.w("WindowManagerSpy", ignored)
         null
       }
@@ -198,7 +198,10 @@ internal object WindowManagerSpy {
           mViewsField[windowManagerInstance] = swap(mViews)
         }
       }
-    } catch (ignored: Throwable) {
+    } catch (ignored: ReflectiveOperationException) {
+      Log.w("WindowManagerSpy", ignored)
+    } catch (ignored: ClassCastException) {
+      // mViews is not an ArrayList on this device
       Log.w("WindowManagerSpy", ignored)
     }
   }

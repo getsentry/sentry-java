@@ -144,6 +144,9 @@ public final class UncaughtExceptionHandlerIntegration
           }
         }
       } catch (Throwable e) {
+        // Deliberately broad and without ExceptionUtils.rethrowIfFatal: this thread is already
+        // dying, and rethrowing would skip the chained handler below, which is what makes the app
+        // crash as it normally would (on Android, it kills the process). The crash event is lost.
         options
             .getLogger()
             .log(SentryLevel.ERROR, "Error sending uncaught exception to Sentry.", e);
