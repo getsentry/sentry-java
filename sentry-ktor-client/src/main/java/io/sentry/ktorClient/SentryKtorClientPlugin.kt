@@ -7,6 +7,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.util.*
 import io.ktor.util.pipeline.*
+import io.ktor.util.reflect.TypeInfo
 import io.sentry.BaggageHeader
 import io.sentry.BuildConfig
 import io.sentry.DataCategory
@@ -98,9 +99,13 @@ public val SentryKtorClientPlugin: ClientPlugin<SentryKtorClientPluginConfig> =
 
     // Attributes
     // Request start time for breadcrumbs
-    val requestStartTimestampKey = AttributeKey<SentryDate>("SentryRequestStartTimestamp")
+    val requestStartTimestampKey =
+      AttributeKey<SentryDate>(
+        "SentryRequestStartTimestamp",
+        TypeInfo(SentryDate::class, null),
+      )
     // Span associated with the request
-    val requestSpanKey = AttributeKey<ISpan>("SentryRequestSpan")
+    val requestSpanKey = AttributeKey<ISpan>("SentryRequestSpan", TypeInfo(ISpan::class, null))
 
     onRequest { request, _ ->
       val effectiveScopes = if (forceScopes) scopes else Sentry.getCurrentScopes()
