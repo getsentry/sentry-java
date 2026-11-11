@@ -49,7 +49,7 @@ public final class ViewHierarchyNode implements JsonUnknown, JsonSerializable {
     this.renderingSystem = renderingSystem;
   }
 
-  public void setType(String type) {
+  public void setType(final @Nullable String type) {
     this.type = type;
   }
 

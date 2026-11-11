@@ -316,6 +316,7 @@ public final class TombstoneParser implements Closeable {
       this.previousOffset = mapping.offset;
     }
 
+    @Nullable
     DebugImage toDebugImage() {
       if (buildId.isEmpty()) {
         return null;
