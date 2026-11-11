@@ -2,6 +2,7 @@ package io.sentry.spring.boot4.integrationtest
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Sentry
+import io.sentry.SpanDataConvention
 import io.sentry.protocol.FeatureFlag
 import io.sentry.test.event
 import io.sentry.test.hasFlag
@@ -45,6 +46,10 @@ class PersonIntegrationTest : IntegrationTest() {
           } == true
         }
         .transaction()!!
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+      .isEqualTo("server")
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+      .isEqualTo(200)
     assertThat(
         transaction.hasOp(
           "http.server",
@@ -83,6 +88,10 @@ class PersonIntegrationTest : IntegrationTest() {
 
     val transaction =
       server.awaitEnvelope { it.transaction()?.transaction == "POST /person/" }.transaction()!!
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+      .isEqualTo("server")
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+      .isEqualTo(200)
     assertThat(transaction.hasSpanWithOp("PersonService.create")).isTrue()
     assertThat(
         transaction.hasSpanWithOpAndDescription(

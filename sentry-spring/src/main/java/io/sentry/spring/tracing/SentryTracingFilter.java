@@ -9,6 +9,7 @@ import io.sentry.IScopes;
 import io.sentry.ITransaction;
 import io.sentry.ScopesAdapter;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -163,6 +164,7 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         if (transactionName != null) {
           transaction.setName(transactionName, transactionNameSource);
           transaction.setOperation(TRANSACTION_OP);
+          transaction.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, httpResponse.getStatus());
           // if exception has been thrown, transaction status is already set to INTERNAL_ERROR, and
           // httpResponse.getStatus() returns 200.
           if (transaction.getStatus() == null) {
@@ -239,15 +241,20 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     transactionOptions.setBindToScope(true);
     transactionOptions.setOrigin(TRACE_ORIGIN);
 
+    final @NotNull ITransaction transaction;
     if (transactionContext != null) {
       transactionContext.setName(name);
       transactionContext.setTransactionNameSource(TransactionNameSource.URL);
       transactionContext.setOperation("http.server");
 
-      return scopes.startTransaction(transactionContext, transactionOptions);
+      transaction = scopes.startTransaction(transactionContext, transactionOptions);
+    } else {
+      transaction =
+          scopes.startTransaction(
+              new TransactionContext(name, TransactionNameSource.URL, "http.server"),
+              transactionOptions);
     }
-
-    return scopes.startTransaction(
-        new TransactionContext(name, TransactionNameSource.URL, "http.server"), transactionOptions);
+    transaction.setData(SpanDataConvention.SENTRY_KIND_KEY, "server");
+    return transaction;
   }
 }

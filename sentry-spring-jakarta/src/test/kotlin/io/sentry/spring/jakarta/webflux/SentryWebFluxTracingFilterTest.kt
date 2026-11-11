@@ -9,6 +9,7 @@ import io.sentry.ScopeCallback
 import io.sentry.Sentry
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
@@ -143,6 +144,32 @@ class SentryWebFluxTracingFilterTest {
             assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
             assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
             assertThat(it.contexts.response!!.statusCode).isEqualTo(200)
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+              .isEqualTo("server")
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+              .isEqualTo(200)
+          },
+          anyOrNull<TraceContext>(),
+          anyOrNull(),
+          anyOrNull(),
+        )
+    }
+  }
+
+  @Test
+  fun `records not found response status`() {
+    val filter = fixture.getSut(status = HttpStatus.NOT_FOUND)
+
+    withMockScopes {
+      filter.filter(fixture.exchange, fixture.chain).block()
+
+      verify(fixture.scopes)
+        .captureTransaction(
+          check {
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+              .isEqualTo("server")
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+              .isEqualTo(404)
           },
           anyOrNull<TraceContext>(),
           anyOrNull(),
@@ -215,7 +242,13 @@ class SentryWebFluxTracingFilterTest {
 
       verify(fixture.scopes)
         .captureTransaction(
-          check { assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId) },
+          check {
+            assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+              .isEqualTo("server")
+            assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+              .isEqualTo(200)
+          },
           anyOrNull<TraceContext>(),
           anyOrNull(),
           anyOrNull(),

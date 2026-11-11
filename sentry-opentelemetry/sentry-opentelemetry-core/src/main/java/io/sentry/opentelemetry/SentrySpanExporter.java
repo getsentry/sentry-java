@@ -6,6 +6,7 @@ import static io.sentry.opentelemetry.OtelInternalSpanDetectionUtil.isSentryRequ
 import static io.sentry.opentelemetry.OtelSpanUtils.maybeTransferOtelAttribute;
 
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.trace.data.SpanData;
@@ -28,6 +29,7 @@ import io.sentry.SentryInstantDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryLongDate;
 import io.sentry.SpanContext;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanId;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
@@ -240,6 +242,7 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(spanData, sentryChildSpan);
     setOtelSpanKind(spanData, sentryChildSpan);
     transferSpanDetails(sentrySpanMaybe, sentryChildSpan);
+    setSentrySpanKind(spanData, sentryChildSpan);
 
     for (SpanNode childNode : spanNode.getChildren()) {
       createAndFinishSpanForOtelSpan(childNode, sentryChildSpan, remaining);
@@ -355,6 +358,10 @@ public final class SentrySpanExporter implements SpanExporter {
     setOtelInstrumentationInfo(span, sentryTransaction);
     setOtelSpanKind(span, sentryTransaction);
     transferSpanDetails(sentrySpanMaybe, sentryTransaction);
+    setSentrySpanKind(span, sentryTransaction);
+    if (SpanKind.SERVER.equals(span.getKind())) {
+      maybeTransferOtelAttribute(span, sentryTransaction, HttpAttributes.HTTP_RESPONSE_STATUS_CODE);
+    }
 
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_ID);
     maybeTransferOtelAttribute(span, sentryTransaction, ThreadIncubatingAttributes.THREAD_NAME);
@@ -553,6 +560,13 @@ public final class SentrySpanExporter implements SpanExporter {
 
   private void setOtelSpanKind(final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
     sentrySpan.setData("otel.kind", otelSpan.getKind().name());
+  }
+
+  private void setSentrySpanKind(
+      final @NotNull SpanData otelSpan, final @NotNull ISpan sentrySpan) {
+    if (SpanKind.SERVER.equals(otelSpan.getKind())) {
+      sentrySpan.setData(SpanDataConvention.SENTRY_KIND_KEY, "server");
+    }
   }
 
   @Override
