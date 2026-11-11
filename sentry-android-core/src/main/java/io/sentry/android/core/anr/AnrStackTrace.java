@@ -58,7 +58,6 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
   public void serialize(final @NotNull DataOutputStream dos) throws IOException {
     dos.writeShort(2); // version
     dos.writeLong(timestampMs);
-    // Write null as a special marker to preserve null vs empty string distinction
     dos.writeBoolean(state == null);
     dos.writeUTF(state == null ? "" : state.name());
     dos.writeInt(stack.length);
@@ -81,7 +80,6 @@ public final class AnrStackTrace implements Comparable<AnrStackTrace> {
         final long timestampMs = dis.readLong();
         @Nullable Thread.State state = null;
         if (version == 2) {
-          // Read the null marker to restore null vs empty string distinction
           final boolean isStateNull = dis.readBoolean();
           final @NotNull String stateName = dis.readUTF();
           if (!isStateNull) {
