@@ -12,6 +12,7 @@ import androidx.lifecycle.LifecycleOwner
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.SentryLevel
+import java.lang.ref.WeakReference
 
 /**
  * Manages a lease in order to determine which [NavScopes] instance can bind nav transactions and
@@ -88,8 +89,8 @@ internal class NavLeaseCoordinator {
     val initialResumeOrder = if (lifecycleState == Lifecycle.State.RESUMED) ++resumeOrder else 0
     val candidate = Candidate(rootInfo, lifecycleState, initialResumeOrder, publisher, scopes)
 
-    // Only list the candidate once addObserver() succeeds, so a failure can't leak the host
-    // Activity.
+    // Only list the candidate once addObserver() succeeds, so a failure can't leave behind a
+    // candidate that never observes its nav root's lifecycle.
     lifecycle.addObserver(candidate)
     candidates += candidate
     return candidate
@@ -180,13 +181,12 @@ internal class NavLeaseCoordinator {
   /**
    * The eligible candidate most recently observed to be in a resumed state, other than [excluding].
    *
-   * If [resumedOnly] is set to `true`, only candidates that are resumed right now are considered;
-   * if `false`, started and paused candidates are also included. Candidates hosted by
-   * [excludingHostedBy] are skipped.
+   * Only candidates whose current state is at least [minimumState] are considered. Candidates
+   * hosted by [excludingHostedBy] are skipped.
    */
   private fun mostRecentlyResumedCandidate(
     excluding: Candidate? = null,
-    resumedOnly: Boolean = false,
+    minimumState: Lifecycle.State = Lifecycle.State.STARTED,
     excludingHostedBy: Activity? = null,
   ): Candidate? =
     candidates
@@ -194,9 +194,8 @@ internal class NavLeaseCoordinator {
         it !== excluding &&
           (excludingHostedBy == null || it.hostActivity !== excludingHostedBy) &&
           it.canReceiveLease &&
-          it.state.isAtLeast(Lifecycle.State.STARTED) &&
-          it.resumeOrder > 0 &&
-          (!resumedOnly || it.state == Lifecycle.State.RESUMED)
+          it.state.isAtLeast(minimumState) &&
+          it.resumeOrder > 0
       }
       .maxByOrNull { it.resumeOrder }
 
@@ -237,7 +236,7 @@ internal class NavLeaseCoordinator {
       val next =
         mostRecentlyResumedCandidate(
           excluding = candidate,
-          resumedOnly = true,
+          minimumState = Lifecycle.State.RESUMED,
           excludingHostedBy = candidate.hostActivity.takeIf { candidate.isHostActivityPaused },
         )
       when {
@@ -265,7 +264,9 @@ internal class NavLeaseCoordinator {
     // beneath it), and that nav root isn't what the user last saw. A paused nav root that comes
     // back to the foreground will acquire the lease when it resumes.
     if (leaseHolder === candidate) {
-      mostRecentlyResumedCandidate(resumedOnly = true)?.let { next -> handOffLease(next, scope) }
+      mostRecentlyResumedCandidate(minimumState = Lifecycle.State.RESUMED)?.let { next ->
+        handOffLease(next, scope)
+      }
     }
   }
 
@@ -372,7 +373,13 @@ internal class NavLeaseCoordinator {
     private val scopes: IScopes,
   ) : NavLeaseRegistration, LifecycleEventObserver {
 
-    val hostActivity: Activity? = rootInfo.activity
+    // Held weakly because candidates live in a process-wide coordinator: if disposal fails before
+    // the candidate is removed, it must not keep its destroyed host Activity alive.
+    private val hostActivityRef: WeakReference<Activity>? = rootInfo.activity?.let(::WeakReference)
+
+    /** The Activity hosting this nav root, or `null` if it's unknown or has been collected. */
+    val hostActivity: Activity?
+      get() = hostActivityRef?.get()
 
     /** Whether the host Activity is resumed; false when its lifecycle is unavailable. */
     val isHostActivityResumed: Boolean

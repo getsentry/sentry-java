@@ -39,17 +39,14 @@ While nav roots overlap (e.g., during an Activity transition), the nav transacti
 2. the incoming nav root that may crash before it becomes visible,
 
 but not both. `NavLeaseCoordinator` opts for (2) so that the incoming destination populates crash context and any work performed is
-associated with it† – the idea being that start-up logic is more likely to cause a crash or produce interesting spans than an outgoing
-destination's steady state.
-
-> † Associating work with the incoming transaction means spans produced by the outgoing nav root
-may appear as if they were produced by the incoming nav root (or vice versa, were our policy
-reversed).
+associated with it – the idea being that start-up logic is more likely to cause a crash or produce interesting spans than an outgoing
+destination's steady state. As a consequence, spans produced by the outgoing nav root may appear as if they were produced by the incoming
+nav root (or vice versa, were our policy reversed).
 
 ### Lease handoff policy
 
 The lease is acquired preemptively by an incoming nav root's `NavScopes` instance when it applies its first back stack update
-(`onBackStackUpdate`).†
+(`onBackStackUpdate`)†.
 
 A displaced nav root remains eligible for lease restoration until it stops (`ON_STOP`). It gets the lease back when it resumes
 (`ON_RESUME`), or sooner if the new nav root leaves or pauses while the displaced nav root is still visible. If restored, the displaced nav
