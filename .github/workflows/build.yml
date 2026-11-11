@@ -39,8 +39,9 @@ jobs:
           key=$( (grep '^roboelectric' gradle/libs.versions.toml; git grep -hoE 'sdk *= *\[[^]]*\]|^sdk=.*' -- '*/src/test/*') | sort -u | sha256sum | cut -c1-16)
           echo "key=$key" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Robolectric android-all jars
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Restore Robolectric android-all jars
+        id: robolectric-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.m2/repository/org/robolectric
           key: robolectric-${{ steps.robolectric-key.outputs.key }}
@@ -50,6 +51,14 @@ jobs:
 
       - name: Run Tests and Lint
         run: make preMerge
+
+      # Only main saves, so PRs share one entry instead of each storing ~700 MB.
+      - name: Save Robolectric android-all jars
+        if: github.ref == 'refs/heads/main' && steps.robolectric-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ steps.robolectric-key.outputs.key }}
 
       - name: Install Sentry CLI
         uses: getsentry/action-setup-cli@70d7e587b84c2e78cf4d37cd33d7b74fb3729c1b # v1
