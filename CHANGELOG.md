@@ -88,6 +88,7 @@
   - On a busy device during cold start this could stall the launcher activity's `onCreate` for hundreds of milliseconds.
 - Do not inspect the response body of streaming Apollo 3 and 4 responses (`multipart/mixed`, `text/event-stream`) for failed requests, which blocked `@defer` and `@stream` ([#6432](https://github.com/getsentry/sentry-java/pull/6432))
 - Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
+- Do not capture failed Apollo 3, 4, and 5 requests when the GraphQL `errors` array is empty ([#6285](https://github.com/getsentry/sentry-java/pull/6285))
 
 ### Improvements
 
