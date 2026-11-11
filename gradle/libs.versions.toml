@@ -37,7 +37,7 @@ otelInstrumentationAlpha = "2.29.0-alpha"
 otelSemanticConventions = "1.42.0"
 otelSemanticConventionsAlpha = "1.42.0-alpha"
 retrofit = "3.0.0"
-room2 = "2.8.4"
+room2 = "2.8.5"
 room3 = "3.0.0-rc01"
 sagp = "6.13.0"
 # The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
