@@ -88,6 +88,9 @@
   - On a busy device during cold start this could stall the launcher activity's `onCreate` for hundreds of milliseconds.
 - Do not inspect the response body of streaming Apollo 3 and 4 responses (`multipart/mixed`, `text/event-stream`) for failed requests, which blocked `@defer` and `@stream` ([#6432](https://github.com/getsentry/sentry-java/pull/6432))
 - Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
+- Stop swallowing fatal errors such as `OutOfMemoryError` in the SDK code that loads native libraries and optional dependencies ([#6562](https://github.com/getsentry/sentry-java/pull/6562))
+  - The offline cache no longer deletes its queue file when it runs out of memory while reading it.
+  - The Ktor client integration no longer swallows coroutine cancellation while reading the response body of a failed request.
 
 ### Improvements
 
