@@ -130,12 +130,8 @@ public final class CheckInUtils {
     }
 
     for (final FilterString ignoredSlug : ignoredSlugs) {
-      try {
-        if (ignoredSlug.matches(slug)) {
-          return true;
-        }
-      } catch (Throwable t) {
-        // ignore invalid regex
+      if (ignoredSlug.matches(slug)) {
+        return true;
       }
     }
 

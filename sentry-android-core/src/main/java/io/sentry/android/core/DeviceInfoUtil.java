@@ -369,16 +369,10 @@ public final class DeviceInfoUtil {
    *
    * @return the total amount of internal storage, in bytes
    */
-  @Nullable
-  private Long getTotalInternalStorage(final @NotNull StatFs stat) {
-    try {
-      long blockSize = stat.getBlockSizeLong();
-      long totalBlocks = stat.getBlockCountLong();
-      return totalBlocks * blockSize;
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting total internal storage amount.", e);
-      return null;
-    }
+  private long getTotalInternalStorage(final @NotNull StatFs stat) {
+    long blockSize = stat.getBlockSizeLong();
+    long totalBlocks = stat.getBlockCountLong();
+    return totalBlocks * blockSize;
   }
 
   /**
@@ -386,18 +380,10 @@ public final class DeviceInfoUtil {
    *
    * @return the unused amount of internal storage, in bytes
    */
-  @Nullable
-  private Long getUnusedInternalStorage(final @NotNull StatFs stat) {
-    try {
-      long blockSize = stat.getBlockSizeLong();
-      long availableBlocks = stat.getAvailableBlocksLong();
-      return availableBlocks * blockSize;
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Error getting unused internal storage amount.", e);
-      return null;
-    }
+  private long getUnusedInternalStorage(final @NotNull StatFs stat) {
+    long blockSize = stat.getBlockSizeLong();
+    long availableBlocks = stat.getAvailableBlocksLong();
+    return availableBlocks * blockSize;
   }
 
   @Nullable
@@ -449,16 +435,10 @@ public final class DeviceInfoUtil {
    * @return the total amount of external storage, in bytes, or null if no external storage is
    *     mounted
    */
-  @Nullable
-  private Long getTotalExternalStorage(final @NotNull StatFs stat) {
-    try {
-      final long blockSize = stat.getBlockSizeLong();
-      final long totalBlocks = stat.getBlockCountLong();
-      return totalBlocks * blockSize;
-    } catch (Throwable e) {
-      options.getLogger().log(SentryLevel.ERROR, "Error getting total external storage amount.", e);
-      return null;
-    }
+  private long getTotalExternalStorage(final @NotNull StatFs stat) {
+    final long blockSize = stat.getBlockSizeLong();
+    final long totalBlocks = stat.getBlockCountLong();
+    return totalBlocks * blockSize;
   }
 
   /**
@@ -467,18 +447,10 @@ public final class DeviceInfoUtil {
    * @return the unused amount of external storage, in bytes, or null if no external storage is
    *     mounted
    */
-  @Nullable
-  private Long getUnusedExternalStorage(final @NotNull StatFs stat) {
-    try {
-      final long blockSize = stat.getBlockSizeLong();
-      final long availableBlocks = stat.getAvailableBlocksLong();
-      return availableBlocks * blockSize;
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Error getting unused external storage amount.", e);
-      return null;
-    }
+  private long getUnusedExternalStorage(final @NotNull StatFs stat) {
+    final long blockSize = stat.getBlockSizeLong();
+    final long availableBlocks = stat.getAvailableBlocksLong();
+    return availableBlocks * blockSize;
   }
 
   @Nullable
