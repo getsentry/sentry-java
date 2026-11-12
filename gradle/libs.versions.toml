@@ -291,7 +291,7 @@ camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref =
 camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 
 google-truth = { module = "com.google.truth:truth", version = "1.4.5" }
-hsqldb = { module = "org.hsqldb:hsqldb", version = "2.6.1" }
+hsqldb = { module = "org.hsqldb:hsqldb", version = "2.7.4" }
 javafaker = { module = "com.github.javafaker:javafaker", version = "1.0.2" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 leakcanary-instrumentation = { module = "com.squareup.leakcanary:leakcanary-android-instrumentation", version = "2.14" }
