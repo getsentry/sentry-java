@@ -400,51 +400,14 @@ class SentryNavEffectLifecycleIntegrationTest {
 
   // ViewPager2 pages
 
-  @Test
-  @Config(sdk = [30])
-  fun `backgrounding a view pager activity above API 29 keeps the current page's nav data and transaction`() {
-    val fixture = Fixture.create()
-    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
-    fixture.idle()
-    val homeTransaction = requireNotNull(fixture.scope.transaction)
-
-    activity.pause()
-    activity.stop()
-    fixture.idle()
-
-    assertThat(fixture.events).containsAtLeast("ViewPager:ON_PAUSE", "Home:view:ON_PAUSE").inOrder()
-    assertThat(fixture.scope.screen).isEqualTo("/Home")
-    assertThat(fixture.scope.navigationEntries()).containsExactly("/Home")
-    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
-    assertThat(homeTransaction.isFinished).isFalse()
-  }
-
-  @Test
-  @Config(sdk = [29])
-  fun `backgrounding a view pager activity at API 29 keeps the current page's nav data and transaction`() {
-    val fixture = Fixture.create()
-    val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
-    fixture.idle()
-    val homeTransaction = requireNotNull(fixture.scope.transaction)
-
-    activity.pause()
-    activity.stop()
-    fixture.idle()
-
-    assertThat(fixture.events).containsAtLeast("ViewPager:ON_PAUSE", "Home:view:ON_PAUSE").inOrder()
-    assertThat(fixture.scope.screen).isEqualTo("/Home")
-    assertThat(fixture.scope.navigationEntries()).containsExactly("/Home")
-    assertThat(fixture.scope.transaction).isSameInstanceAs(homeTransaction)
-    assertThat(homeTransaction.isFinished).isFalse()
-  }
-
   /**
-   * Below API 29, `ComponentActivity` reports that it paused from `ReportFragment` rather than from
-   * `onActivityPrePaused`, which must still precede its Fragments pausing.
+   * All supported API levels, because below API 29 `ComponentActivity` reports that it paused from
+   * `ReportFragment` rather than from `onActivityPrePaused`, which must still precede its Fragments
+   * pausing.
    */
   @Test
-  @Config(sdk = [28])
-  fun `backgrounding a view pager activity below API 29 keeps the current page's nav data and transaction`() {
+  @Config(sdk = [28, 29, 30])
+  fun `backgrounding a view pager activity keeps the current page's nav data and transaction`() {
     val fixture = Fixture.create()
     val activity = Robolectric.buildActivity(ViewPagerActivity::class.java).setup()
     fixture.idle()

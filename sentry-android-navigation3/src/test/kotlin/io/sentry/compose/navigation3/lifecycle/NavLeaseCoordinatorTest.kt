@@ -1126,7 +1126,7 @@ class NavLeaseCoordinatorTest {
   }
 
   @Test
-  fun `pausing the leaseholder while its host activity is paused keeps the nav lease from a resumed owner in that activity`() {
+  fun `pausing a leaseholder whose host is paused keeps the lease from a resumed owner in the same activity`() {
     val fixture = Fixture.create()
     val hostOwner = TestOwner(RESUMED)
     val host = fixture.lifecycleOwnerActivity(hostOwner.lifecycle)
@@ -1143,7 +1143,7 @@ class NavLeaseCoordinatorTest {
   }
 
   @Test
-  fun `pausing the leaseholder while its host activity is paused hands the nav lease to a resumed owner in another activity`() {
+  fun `pausing a leaseholder whose host is paused hands the lease to a resumed owner in another activity`() {
     val fixture = Fixture.create()
     val otherHost = fixture.lifecycleOwnerActivity(TestOwner(RESUMED).lifecycle)
     val other = fixture.acquireLease("other", TestOwner(RESUMED), host = otherHost)
