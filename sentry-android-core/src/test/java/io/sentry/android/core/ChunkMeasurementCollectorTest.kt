@@ -4,6 +4,7 @@ import io.sentry.CompositePerformanceCollector
 import io.sentry.PerformanceCollectionData
 import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
+import io.sentry.test.getProperty
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -105,6 +106,31 @@ class ChunkMeasurementCollectorTest {
     )
   }
 
+  @Test
+  fun `performance samples are placed by their tick, not their wall timestamp`() {
+    val performanceCollector: CompositePerformanceCollector = mock()
+    val collector = PerfettoContinuousProfiler.ChunkMeasurementCollector(mock())
+    collector.start(performanceCollector, "chunk")
+    val chunkStart = collector.getProperty<Long>("profileStartElapsedRealtimeNanos")
+    // Wall timestamps that disagree with the ticks, as after a clock step during the chunk.
+    whenever(performanceCollector.stop(any<String>()))
+      .thenReturn(
+        listOf(
+          PerformanceCollectionData(0, chunkStart + 1_000_000).apply { usedHeapMemory = 1 },
+          PerformanceCollectionData(TimeUnit.HOURS.toNanos(5), chunkStart + 2_000_000).apply {
+            usedHeapMemory = 2
+          },
+        )
+      )
+
+    val measurements = collector.stop()
+
+    assertEquals(
+      listOf("1000000", "2000000"),
+      measurements[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!.values.map { it.relativeStartNs },
+    )
+  }
+
   /**
    * A frameEndNanos far enough ahead of the collector's own `System.nanoTime()` reading that the
    * chunk-relative timestamp stays positive regardless of test execution timing.
@@ -113,7 +139,7 @@ class ChunkMeasurementCollectorTest {
 
   /** A null measurement is left unset, as it would be by a collector that did not report it. */
   private fun perfData(nanos: Long, cpu: Double?, heap: Long?, native: Long?) =
-    PerformanceCollectionData(nanos).apply {
+    PerformanceCollectionData(nanos, nanos).apply {
       cpu?.let { cpuUsagePercentage = it }
       heap?.let { usedHeapMemory = it }
       native?.let { usedNativeMemory = it }

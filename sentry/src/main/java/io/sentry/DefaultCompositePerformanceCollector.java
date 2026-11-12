@@ -114,7 +114,9 @@ public final class DefaultCompositePerformanceCollector implements CompositePerf
                 timedOutTransactions.clear();
 
                 final @NotNull PerformanceCollectionData tempData =
-                    new PerformanceCollectionData(options.getDateProvider().now().nanoTimestamp());
+                    new PerformanceCollectionData(
+                        options.getDateProvider().now().nanoTimestamp(),
+                        options.getMonotonicTicker().tickNanos());
 
                 // Enrich tempData using collectors
                 for (IPerformanceSnapshotCollector collector : snapshotCollectors) {
