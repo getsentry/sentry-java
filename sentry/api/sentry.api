@@ -5833,6 +5833,85 @@ public final class io/sentry/profiling/ProfilingServiceLoader {
 	public static fun loadProfileConverter ()Lio/sentry/IProfileConverter;
 }
 
+public final class io/sentry/protocol/AnrFlameGraph : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;Ljava/util/List;)V
+	public fun getDebugMeta ()Lio/sentry/protocol/DebugMeta;
+	public fun getFrames ()Ljava/util/List;
+	public fun getNodes ()Ljava/util/List;
+	public fun getPlatform ()Ljava/lang/String;
+	public fun getTrees ()Ljava/util/List;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun getVersion ()Ljava/lang/String;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setDebugMeta (Lio/sentry/protocol/DebugMeta;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/AnrFlameGraph$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/AnrFlameGraph;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/AnrFlameGraph$JsonKeys {
+	public static final field DEBUG_META Ljava/lang/String;
+	public static final field FRAMES Ljava/lang/String;
+	public static final field NODES Ljava/lang/String;
+	public static final field PLATFORM Ljava/lang/String;
+	public static final field TREES Ljava/lang/String;
+	public static final field VERSION Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/AnrFlameGraphNode : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (IJLjava/util/List;)V
+	public fun getChildren ()Ljava/util/List;
+	public fun getFrameId ()I
+	public fun getSampleCount ()J
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setSampleCount (J)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/AnrFlameGraphNode$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/AnrFlameGraphNode;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/AnrFlameGraphNode$JsonKeys {
+	public static final field CHILDREN Ljava/lang/String;
+	public static final field FRAME_ID Ljava/lang/String;
+	public static final field SAMPLE_COUNT Ljava/lang/String;
+	public fun <init> ()V
+}
+
+public final class io/sentry/protocol/AnrFlameGraphTree : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
+	public fun <init> (Ljava/util/List;)V
+	public fun getRoots ()Ljava/util/List;
+	public fun getThreadAttributed ()Ljava/lang/Boolean;
+	public fun getThreadId ()Ljava/lang/String;
+	public fun getUnknown ()Ljava/util/Map;
+	public fun serialize (Lio/sentry/ObjectWriter;Lio/sentry/ILogger;)V
+	public fun setThreadAttributed (Ljava/lang/Boolean;)V
+	public fun setThreadId (Ljava/lang/String;)V
+	public fun setUnknown (Ljava/util/Map;)V
+}
+
+public final class io/sentry/protocol/AnrFlameGraphTree$Deserializer : io/sentry/JsonDeserializer {
+	public fun <init> ()V
+	public fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Lio/sentry/protocol/AnrFlameGraphTree;
+	public synthetic fun deserialize (Lio/sentry/ObjectReader;Lio/sentry/ILogger;)Ljava/lang/Object;
+}
+
+public final class io/sentry/protocol/AnrFlameGraphTree$JsonKeys {
+	public static final field ROOTS Ljava/lang/String;
+	public static final field THREAD_ATTRIBUTED Ljava/lang/String;
+	public static final field THREAD_ID Ljava/lang/String;
+	public fun <init> ()V
+}
+
 public final class io/sentry/protocol/App : io/sentry/JsonSerializable, io/sentry/JsonUnknown {
 	public static final field TYPE Ljava/lang/String;
 	public fun <init> ()V
