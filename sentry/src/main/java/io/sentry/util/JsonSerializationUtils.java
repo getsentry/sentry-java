@@ -48,7 +48,7 @@ public final class JsonSerializationUtils {
     return list;
   }
 
-  public static @Nullable byte[] bytesFrom(
+  public static byte @Nullable [] bytesFrom(
       final @NotNull ISerializer serializer,
       final @NotNull ILogger logger,
       final @NotNull JsonSerializable serializable) {

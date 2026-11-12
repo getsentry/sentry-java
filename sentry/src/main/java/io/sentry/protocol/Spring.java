@@ -35,7 +35,7 @@ public final class Spring implements JsonUnknown, JsonSerializable {
     this.unknown = CollectionUtils.newConcurrentHashMap(spring.unknown);
   }
 
-  public @Nullable String[] getActiveProfiles() {
+  public String @Nullable [] getActiveProfiles() {
     return activeProfiles;
   }
 
