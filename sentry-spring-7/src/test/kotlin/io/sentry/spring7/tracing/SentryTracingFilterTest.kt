@@ -276,7 +276,11 @@ class SentryTracingFilterTest {
     } catch (_: Exception) {}
     verify(fixture.scopes)
       .captureTransaction(
-        check { assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR) },
+        check {
+          assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+          assertThat(it.contexts.trace!!.data)
+            .doesNotContainKey(SpanDataConvention.HTTP_STATUS_CODE_KEY)
+        },
         anyOrNull<TraceContext>(),
         anyOrNull(),
         anyOrNull(),
