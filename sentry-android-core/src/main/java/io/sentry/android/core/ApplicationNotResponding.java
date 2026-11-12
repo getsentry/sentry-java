@@ -1,5 +1,8 @@
+// Adapted from ANR-WatchDog.
+// Copyright (c) 2016 Salomon BRYS.
+// Licensed under the MIT License.
 // https://github.com/SalomonBrys/ANR-WatchDog/blob/1969075f75f5980e9000eaffbaa13b0daf282dcb/anr-watchdog/src/main/java/com/github/anrwatchdog/ANRError.java
-// Based on the class above. The API unnecessary here was removed.
+// The API unnecessary here was removed.
 package io.sentry.android.core;
 
 import io.sentry.util.Objects;
