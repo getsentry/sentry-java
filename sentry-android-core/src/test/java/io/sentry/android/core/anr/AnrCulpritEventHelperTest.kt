@@ -1,10 +1,9 @@
-package io.sentry.android.core
+package io.sentry.android.core.anr
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.SentryExceptionFactory
 import io.sentry.SentryOptions
 import io.sentry.SentryStackTraceFactory
-import io.sentry.android.core.anr.AggregatedStackTrace
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryException
 import io.sentry.protocol.SentryStackFrame
@@ -31,6 +30,7 @@ class AnrCulpritEventHelperTest {
     assertThat(exceptions!!).hasSize(1)
     val exception = exceptions[0]
     assertThat(exception.type).isEqualTo("ApplicationNotResponding")
+    assertThat(exception.module).isEqualTo("io.sentry.android.core")
     assertThat(exception.value).isEqualTo("com.example.Foo.bar")
     assertThat(exception.mechanism!!.type).isEqualTo("ANR")
     assertThat(exception.stacktrace!!.frames!!.map { it.function }).containsExactly("loop", "bar")

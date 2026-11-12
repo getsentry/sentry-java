@@ -147,12 +147,6 @@ public final class io/sentry/android/core/AndroidSocketTagger : io/sentry/ISocke
 	public fun untagSockets ()V
 }
 
-public final class io/sentry/android/core/AnrCulpritEventHelper {
-	public fun <init> (Lio/sentry/SentryExceptionFactory;)V
-	public static fun hasOnlySystemFrames (Ljava/util/List;)Z
-	public fun toSentryExceptions (Lio/sentry/android/core/anr/AggregatedStackTrace;Lio/sentry/protocol/Mechanism;)Ljava/util/List;
-}
-
 public final class io/sentry/android/core/AnrIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;)V
 	public fun close ()V
@@ -248,6 +242,11 @@ public final class io/sentry/android/core/ApplicationExitInfoEventProcessor : io
 	public fun getOrder ()Ljava/lang/Long;
 	public fun process (Lio/sentry/SentryEvent;Lio/sentry/Hint;)Lio/sentry/SentryEvent;
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
+}
+
+public final class io/sentry/android/core/ApplicationNotResponding : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getThread ()Ljava/lang/Thread;
 }
 
 public final class io/sentry/android/core/BuildConfig {
@@ -720,6 +719,12 @@ public final class io/sentry/android/core/anr/AggregatedStackTrace {
 	public fun <init> ([Ljava/lang/StackTraceElement;IIJF)V
 	public fun addOccurrence (J)V
 	public fun getStack ()[Ljava/lang/StackTraceElement;
+}
+
+public final class io/sentry/android/core/anr/AnrCulpritEventHelper {
+	public fun <init> (Lio/sentry/SentryExceptionFactory;)V
+	public static fun hasOnlySystemFrames (Ljava/util/List;)Z
+	public fun toSentryExceptions (Lio/sentry/android/core/anr/AggregatedStackTrace;Lio/sentry/protocol/Mechanism;)Ljava/util/List;
 }
 
 public final class io/sentry/android/core/anr/AnrCulpritIdentifier {

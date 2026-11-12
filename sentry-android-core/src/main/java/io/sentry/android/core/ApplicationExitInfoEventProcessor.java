@@ -40,6 +40,7 @@ import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
 import io.sentry.android.core.anr.AggregatedStackTrace;
+import io.sentry.android.core.anr.AnrCulpritEventHelper;
 import io.sentry.android.core.anr.AnrCulpritIdentifier;
 import io.sentry.android.core.anr.AnrProfile;
 import io.sentry.android.core.anr.AnrProfileManager;
