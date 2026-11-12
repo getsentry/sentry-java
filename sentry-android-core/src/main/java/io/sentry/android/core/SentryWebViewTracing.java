@@ -16,6 +16,7 @@ import io.sentry.SentryOptions;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.LoadClass;
 import io.sentry.util.TracingUtils;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +49,13 @@ public final class SentryWebViewTracing {
   private static final @NotNull Map<WebView, Long> replacements =
       Collections.synchronizedMap(new WeakHashMap<>());
 
+  /**
+   * The hosts the app passed explicitly, per WebView, so an automatic refresh keeps them instead of
+   * widening the WebView to the hosts in the options. Weak keys, so it doesn't keep WebViews alive.
+   */
+  private static final @NotNull Map<WebView, List<String>> explicitHosts =
+      Collections.synchronizedMap(new WeakHashMap<>());
+
   private SentryWebViewTracing() {}
 
   /**
@@ -60,13 +68,9 @@ public final class SentryWebViewTracing {
    */
   @MainThread
   public static boolean addTracePropagation(final @NotNull WebView webView) {
+    explicitHosts.remove(webView);
     final @NotNull IScopes scopes = Sentry.getCurrentScopes();
-    final @NotNull SentryOptions options = scopes.getOptions();
-    final @NotNull List<String> allowedHosts =
-        options instanceof SentryAndroidOptions
-            ? ((SentryAndroidOptions) options).getWebViewTracing().getAllowedHosts()
-            : Collections.<String>emptyList();
-    return addTracePropagation(webView, allowedHosts, scopes, new LoadClass());
+    return addTracePropagation(webView, optionsHosts(scopes.getOptions()), scopes, new LoadClass());
   }
 
   /**
@@ -108,7 +112,36 @@ public final class SentryWebViewTracing {
   @MainThread
   public static boolean addTracePropagation(
       final @NotNull WebView webView, final @NotNull List<String> allowedHosts) {
+    explicitHosts.put(webView, new ArrayList<>(allowedHosts));
     return addTracePropagation(webView, allowedHosts, Sentry.getCurrentScopes(), new LoadClass());
+  }
+
+  /**
+   * Refreshes the trace propagated to the WebView's next page load, for {@link
+   * SentryWebViewTracingAdapter}. Uses the hosts the app last passed explicitly for this WebView,
+   * or else the hosts in the options. Does nothing, and leaves any installed script alone, when
+   * there are no hosts or it is called off the WebView's thread.
+   *
+   * @return true if the trace propagation script was installed
+   */
+  static boolean refreshTracePropagation(final @NotNull WebView webView) {
+    if (!isOnWebViewThread(webView)) {
+      return false;
+    }
+    final @NotNull IScopes scopes = Sentry.getCurrentScopes();
+    final @Nullable List<String> explicit = explicitHosts.get(webView);
+    final @NotNull List<String> hosts =
+        explicit != null ? explicit : optionsHosts(scopes.getOptions());
+    if (hosts.isEmpty()) {
+      return false;
+    }
+    return addTracePropagation(webView, hosts, scopes, new LoadClass());
+  }
+
+  private static @NotNull List<String> optionsHosts(final @NotNull SentryOptions options) {
+    return options instanceof SentryAndroidOptions
+        ? ((SentryAndroidOptions) options).getWebViewTracing().getAllowedHosts()
+        : Collections.<String>emptyList();
   }
 
   static boolean addTracePropagation(

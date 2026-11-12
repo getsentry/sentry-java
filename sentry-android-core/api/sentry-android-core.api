@@ -635,6 +635,11 @@ public final class io/sentry/android/core/SentryWebViewTracing {
 	public static fun addTracePropagation (Landroid/webkit/WebView;[Ljava/lang/String;)Z
 }
 
+public final class io/sentry/android/core/SentryWebViewTracingAdapter {
+	public static fun loadUrl (Landroid/webkit/WebView;Ljava/lang/String;)V
+	public static fun loadUrl (Landroid/webkit/WebView;Ljava/lang/String;Ljava/util/Map;)V
+}
+
 public final class io/sentry/android/core/SentryWebViewTracingOptions {
 	public fun <init> ()V
 	public fun getAllowedHosts ()Ljava/util/List;
