@@ -23,6 +23,7 @@ import io.sentry.util.Objects;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -120,7 +121,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     final File crashMarkerFile = new File(outboxDir, STARTUP_CRASH_MARKER_FILE);
     try {
       crashMarkerFile.createNewFile();
-    } catch (Throwable e) {
+    } catch (IOException e) {
       options.getLogger().log(ERROR, "Error writing the startup crash marker file to the disk", e);
     }
   }
@@ -148,7 +149,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
         }
       }
       return exists;
-    } catch (Throwable e) {
+    } catch (SecurityException e) {
       options
           .getLogger()
           .log(ERROR, "Error reading/deleting the startup crash marker file on the disk", e);
@@ -171,17 +172,15 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       // we wrapped into try-catch already
       //noinspection ConstantConditions
       return (content == null || content.equals("null")) ? null : Long.parseLong(content.trim());
-    } catch (Throwable e) {
-      if (e instanceof FileNotFoundException) {
-        options
-            .getLogger()
-            .log(
-                DEBUG,
-                "Last " + markerLabel + " marker does not exist. %s.",
-                lastMarker.getAbsolutePath());
-      } else {
-        options.getLogger().log(ERROR, "Error reading last " + markerLabel + " marker", e);
-      }
+    } catch (FileNotFoundException e) {
+      options
+          .getLogger()
+          .log(
+              DEBUG,
+              "Last " + markerLabel + " marker does not exist. %s.",
+              lastMarker.getAbsolutePath());
+    } catch (IOException | NumberFormatException e) {
+      options.getLogger().log(ERROR, "Error reading last " + markerLabel + " marker", e);
     }
     return null;
   }
@@ -205,7 +204,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     try (final OutputStream outputStream = new FileOutputStream(anrMarker)) {
       outputStream.write(String.valueOf(timestamp).getBytes(UTF_8));
       outputStream.flush();
-    } catch (Throwable e) {
+    } catch (IOException e) {
       options
           .getLogger()
           .log(ERROR, "Error writing the " + markerCategory + " marker to the disk", e);

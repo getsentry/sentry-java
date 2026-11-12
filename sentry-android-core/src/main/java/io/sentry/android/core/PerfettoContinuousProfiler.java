@@ -552,7 +552,7 @@ public class PerfettoContinuousProfiler
       } else {
         executorServiceSupplier.evaluate().submit(task);
       }
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunk.", e);
     }
   }

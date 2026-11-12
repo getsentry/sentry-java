@@ -187,7 +187,7 @@ public final class SystemEventsBreadcrumbsIntegration
                   }
                 }
               });
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options
           .getLogger()
           .log(

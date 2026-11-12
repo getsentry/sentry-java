@@ -20,6 +20,7 @@ import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Locale;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -173,7 +174,7 @@ public final class AppComponentsBreadcrumbsIntegration
     if (options != null) {
       try {
         options.getExecutorService().submit(runnable);
-      } catch (Throwable t) {
+      } catch (RejectedExecutionException t) {
         options
             .getLogger()
             .log(SentryLevel.ERROR, t, "Failed to submit app components breadcrumb task");

@@ -213,7 +213,7 @@ constructor(
       if (!file.delete()) {
         options.logger.log(ERROR, "Failed to delete replay segment: %s", file.absolutePath)
       }
-    } catch (e: Throwable) {
+    } catch (e: SecurityException) {
       options.logger.log(ERROR, e, "Failed to delete replay segment: %s", file.absolutePath)
     }
   }

@@ -417,7 +417,7 @@ public final class JavaContinuousProfiler
                   scopes.captureProfileChunk(payload);
                 }
               });
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to send profile chunks.", e);
     }
   }

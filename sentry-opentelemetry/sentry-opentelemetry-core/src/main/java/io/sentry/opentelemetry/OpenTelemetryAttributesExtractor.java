@@ -13,6 +13,7 @@ import io.sentry.util.CookieUtils;
 import io.sentry.util.HttpUtils;
 import io.sentry.util.StringUtils;
 import io.sentry.util.UrlUtils;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -94,7 +95,7 @@ public final class OpenTelemetryAttributesExtractor {
                       toString(
                           CookieUtils.filterOutSecurityCookiesFromHeader(
                               headerValues, headerName, null)));
-                } catch (Throwable t) {
+                } catch (ClassCastException t) {
                   options
                       .getLogger()
                       .log(SentryLevel.WARNING, "Expected a List<String> as header", t);
@@ -143,7 +144,7 @@ public final class OpenTelemetryAttributesExtractor {
       } else {
         return new URL(scheme, serverAddress, serverPort.intValue(), pathToUse).toString();
       }
-    } catch (Throwable t) {
+    } catch (MalformedURLException t) {
       options
           .getLogger()
           .log(SentryLevel.WARNING, "Unable to combine URL span attributes into one.", t);

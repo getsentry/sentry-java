@@ -20,6 +20,7 @@ import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -75,7 +76,7 @@ public final class AnrIntegration implements Integration, Closeable {
                     }
                   }
                 });
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         options
             .getLogger()
             .log(SentryLevel.DEBUG, "Failed to start AnrIntegration on executor thread.", e);

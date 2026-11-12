@@ -5,6 +5,7 @@ import io.sentry.SentryLevel;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +51,7 @@ final class FilesystemPropertiesLoader implements PropertiesLoader {
             "Failed to load Sentry configuration since it is not readable: %s",
             filePath);
       }
-    } catch (Throwable e) {
+    } catch (IOException | IllegalArgumentException e) {
       logger.log(
           SentryLevel.ERROR, e, "Failed to load Sentry configuration from file: %s", filePath);
       return null;

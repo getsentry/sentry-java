@@ -37,13 +37,13 @@ public class AnrProfileRotationHelper {
 
       try {
         oldFile.delete();
-      } catch (Throwable e) {
+      } catch (SecurityException e) {
         // ignored
       }
 
       try {
         currentFile.renameTo(oldFile);
-      } catch (Throwable e) {
+      } catch (SecurityException e) {
         // ignored
       }
 

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,7 +31,7 @@ public final class AssetsModulesLoader extends ModulesLoader {
               () -> {
                 getOrLoadModules();
               });
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.ERROR, "AssetsModulesLoader submit failed", e);
     }
   }

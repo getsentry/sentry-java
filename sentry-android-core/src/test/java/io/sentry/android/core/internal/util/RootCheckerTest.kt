@@ -14,6 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -25,7 +26,10 @@ class RootCheckerTest {
     val logger = mock<ILogger>()
     val buildInfoProvider = mock<BuildInfoProvider>()
     val packageManager = mock<PackageManager>()
-    val runtime = mock<Runtime>()
+    // by default, `which su` finds nothing, like on a device without su
+    private val whichSuNotFound =
+      mock<Process> { on { inputStream } doReturn ByteArrayInputStream(ByteArray(0)) }
+    val runtime = mock<Runtime> { on { exec(any<Array<String>>()) } doReturn whichSuNotFound }
 
     fun getSut(
       tags: String? = "abc",

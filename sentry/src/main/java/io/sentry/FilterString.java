@@ -2,6 +2,7 @@ package io.sentry;
 
 import java.util.Objects;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,7 +15,7 @@ public final class FilterString {
     @Nullable Pattern pattern = null;
     try {
       pattern = Pattern.compile(filterString);
-    } catch (Throwable t) {
+    } catch (PatternSyntaxException t) {
       Sentry.getCurrentScopes()
           .getOptions()
           .getLogger()

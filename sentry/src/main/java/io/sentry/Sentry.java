@@ -32,6 +32,7 @@ import io.sentry.util.thread.ThreadChecker;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -490,7 +491,7 @@ public final class Sentry {
                     options.getSerializer().serialize(appStartProfilingOptions, writer);
                   }
                 }
-              } catch (Throwable e) {
+              } catch (IOException e) {
                 options
                     .getLogger()
                     .log(
@@ -498,7 +499,7 @@ public final class Sentry {
               }
             }
           });
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options
           .getLogger()
           .log(
@@ -523,7 +524,7 @@ public final class Sentry {
     // enqueue a task to move previous unfinished session to its own file
     try {
       options.getExecutorService().submit(new MovePreviousSession(options));
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to move previous session.", e);
     }
   }
@@ -536,7 +537,7 @@ public final class Sentry {
     // to modify the previous session have done their work, even if they do that async.
     try {
       options.getExecutorService().submit(new PreviousSessionFinalizer(options, scopes));
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to finalize previous session.", e);
     }
   }
@@ -579,7 +580,7 @@ public final class Sentry {
                   }
                 }
               });
-    } catch (Throwable e) {
+    } catch (RejectedExecutionException e) {
       options.getLogger().log(SentryLevel.DEBUG, "Failed to notify options observers.", e);
     }
   }

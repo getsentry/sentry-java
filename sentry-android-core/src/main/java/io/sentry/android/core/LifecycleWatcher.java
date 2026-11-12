@@ -11,6 +11,7 @@ import io.sentry.time.MonotonicTicker;
 import io.sentry.util.AutoClosableReentrantLock;
 import java.util.Date;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
@@ -131,7 +132,7 @@ final class LifecycleWatcher implements AppState.AppStateListener {
                 .getOptions()
                 .getTimerExecutorService()
                 .schedule(endSession, sessionEnd.remaining(TimeUnit.MILLISECONDS));
-      } catch (Throwable e) {
+      } catch (RejectedExecutionException e) {
         scopes
             .getOptions()
             .getLogger()

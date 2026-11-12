@@ -24,6 +24,7 @@ import io.sentry.hints.SessionStartHint
 import io.sentry.protocol.SentryId
 import io.sentry.util.HintUtils
 import java.io.File
+import java.io.IOException
 import java.io.Writer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -335,7 +336,7 @@ class EnvelopeCacheTest {
     val delayedStart = createSession(sessionId = sid)
     val serializer = mock<ISerializer>()
     whenever(serializer.serialize(same(liveSession), any<Writer>()))
-      .thenThrow(RuntimeException("forced ex"))
+      .thenThrow(IOException("forced ex"))
     whenever(serializer.deserialize(any(), eq(Session::class.java))).thenReturn(delayedStart)
     val cache = fixture.getSUT { options -> options.setSerializer(serializer) }
 

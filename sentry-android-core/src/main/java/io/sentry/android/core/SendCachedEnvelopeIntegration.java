@@ -16,6 +16,7 @@ import io.sentry.util.LazyEvaluator;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -157,6 +158,14 @@ final class SendCachedEnvelopeIntegration
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Synchronous send timed out, continuing in the background.");
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG, "Synchronous send interrupted, continuing in the background.");
+        } catch (ExecutionException e) {
+          options.getLogger().log(SentryLevel.ERROR, "Failed trying to send cached events.", e);
         }
       }
       options.getLogger().log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");
@@ -167,10 +176,6 @@ final class SendCachedEnvelopeIntegration
               SentryLevel.ERROR,
               "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?",
               e);
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to call the executor. Cached events will not be sent", e);
     }
   }
 }

@@ -4,6 +4,7 @@ import io.sentry.ISentryClient;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.logger.LoggerBatchProcessor;
+import java.util.concurrent.RejectedExecutionException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,7 +38,7 @@ public final class AndroidLoggerBatchProcessor extends LoggerBatchProcessor
                   flush(LoggerBatchProcessor.FLUSH_AFTER_MS);
                 }
               });
-    } catch (Throwable t) {
+    } catch (RejectedExecutionException t) {
       options.getLogger().log(SentryLevel.ERROR, t, "Failed to submit log flush in onBackground()");
     }
   }
