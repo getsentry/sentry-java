@@ -18,6 +18,7 @@ import io.sentry.android.core.performance.TimeSpan;
 import io.sentry.android.fragment.FragmentLifecycleIntegration;
 import io.sentry.android.timber.SentryTimberIntegration;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.LoadClass;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -101,7 +102,7 @@ public final class SentryAndroid {
       Sentry.init(
           new SentryAndroidOptionsContainer(),
           options -> {
-            final io.sentry.util.LoadClass classLoader = new io.sentry.util.LoadClass();
+            final LoadClass classLoader = new LoadClass();
             final boolean isTimberUpstreamAvailable =
                 classLoader.isClassAvailable(TIMBER_CLASS_NAME, options);
             final boolean isFragmentUpstreamAvailable =
@@ -119,7 +120,7 @@ public final class SentryAndroid {
                 classLoader.isClassAvailable(SENTRY_DISTRIBUTION_INTEGRATION_CLASS_NAME, options);
 
             final BuildInfoProvider buildInfoProvider = new BuildInfoProvider(logger);
-            final io.sentry.util.LoadClass loadClass = new io.sentry.util.LoadClass();
+            final LoadClass loadClass = new LoadClass();
 
             AndroidOptionsInitializer.loadDefaultAndMetadataOptions(
                 options, context, logger, buildInfoProvider);

@@ -56,6 +56,7 @@ import io.sentry.transport.CurrentDateProvider;
 import io.sentry.transport.NoOpEnvelopeCache;
 import io.sentry.transport.NoOpTransportGate;
 import io.sentry.util.LazyEvaluator;
+import io.sentry.util.LoadClass;
 import io.sentry.util.Objects;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
@@ -149,7 +150,7 @@ final class AndroidOptionsInitializer {
   static void initializeIntegrationsAndProcessors(
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
-      final @NotNull io.sentry.util.LoadClass loadClass,
+      final @NotNull LoadClass loadClass,
       final boolean isReplayAvailable) {
     initializeIntegrationsAndProcessors(
         options, context, new BuildInfoProvider(new AndroidLogger()), loadClass, isReplayAvailable);
@@ -159,7 +160,7 @@ final class AndroidOptionsInitializer {
       final @NotNull SentryAndroidOptions options,
       final @NotNull Context context,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull io.sentry.util.LoadClass loadClass,
+      final @NotNull LoadClass loadClass,
       final boolean isReplayAvailable) {
 
     if (options.getCacheDirPath() != null
@@ -406,7 +407,7 @@ final class AndroidOptionsInitializer {
       final @NotNull Context context,
       final @NotNull SentryAndroidOptions options,
       final @NotNull BuildInfoProvider buildInfoProvider,
-      final @NotNull io.sentry.util.LoadClass loadClass,
+      final @NotNull LoadClass loadClass,
       final boolean isFragmentAvailable,
       final boolean isTimberAvailable,
       final boolean isReplayAvailable,
