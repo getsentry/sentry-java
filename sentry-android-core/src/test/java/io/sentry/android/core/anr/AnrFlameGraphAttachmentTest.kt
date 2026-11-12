@@ -57,6 +57,20 @@ class AnrFlameGraphAttachmentTest {
   }
 
   @Test
+  fun `marks native frames and omits unknown line numbers`() {
+    val nativeFrame = StackTraceElement("java.lang.Object", "wait", null, -2)
+    val profile = AnrProfile(listOf(AnrStackTrace(1000, arrayOf(nativeFrame))))
+
+    val attachment = AnrFlameGraphAttachment.fromAnrProfile(profile, null)!!
+
+    val flamegraph = parse(String(attachment.bytes!!, Charsets.UTF_8)) as Map<*, *>
+    assertThat(flamegraph["frames"])
+      .isEqualTo(
+        listOf(mapOf("function" to "wait", "module" to "java.lang.Object", "native" to true))
+      )
+  }
+
+  @Test
   fun `creates a flame graph attachment`() {
     val profile = AnrProfile(listOf(AnrStackTrace(1000, arrayOf(main))))
 

@@ -25,13 +25,11 @@ import android.content.pm.PackageInfo;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import androidx.annotation.WorkerThread;
+import io.sentry.Attachment;
 import io.sentry.BackfillingEventProcessor;
 import io.sentry.Breadcrumb;
 import io.sentry.Hint;
 import io.sentry.IpAddressUtils;
-import io.sentry.ProfileChunk;
-import io.sentry.ProfileContext;
-import io.sentry.Sentry;
 import io.sentry.SentryBaseEvent;
 import io.sentry.SentryEvent;
 import io.sentry.SentryExceptionFactory;
@@ -39,12 +37,13 @@ import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
 import io.sentry.SentryStackTraceFactory;
 import io.sentry.SpanContext;
+import io.sentry.android.core.AnrV2Integration.AnrV2Hint;
 import io.sentry.android.core.anr.AggregatedStackTrace;
 import io.sentry.android.core.anr.AnrCulpritIdentifier;
+import io.sentry.android.core.anr.AnrFlameGraphAttachment;
 import io.sentry.android.core.anr.AnrProfile;
 import io.sentry.android.core.anr.AnrProfileManager;
 import io.sentry.android.core.anr.AnrProfileRotationHelper;
-import io.sentry.android.core.anr.StackTraceConverter;
 import io.sentry.android.core.internal.util.CpuInfoUtils;
 import io.sentry.cache.PersistingOptionsObserver;
 import io.sentry.cache.PersistingScopeObserver;
@@ -63,13 +62,11 @@ import io.sentry.protocol.OperatingSystem;
 import io.sentry.protocol.Request;
 import io.sentry.protocol.SdkVersion;
 import io.sentry.protocol.SentryException;
-import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryStackFrame;
 import io.sentry.protocol.SentryStackTrace;
 import io.sentry.protocol.SentryThread;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.User;
-import io.sentry.protocol.profiling.SentryProfile;
 import io.sentry.util.HintUtils;
 import io.sentry.util.SentryRandom;
 import java.io.File;
@@ -123,9 +120,9 @@ public final class ApplicationExitInfoEventProcessor
     sentryExceptionFactory = new SentryExceptionFactory(sentryStackTraceFactory);
   }
 
-  private @Nullable HintEnricher findEnricher(final @NotNull Object hint) {
+  private @Nullable HintEnricher findEnricher(final @NotNull Object sdkHint) {
     for (HintEnricher enricher : hintEnrichers) {
-      if (enricher.supports(hint)) {
+      if (enricher.supports(sdkHint)) {
         return enricher;
       }
     }
@@ -143,8 +140,8 @@ public final class ApplicationExitInfoEventProcessor
 
   @Override
   public @Nullable SentryEvent process(@NotNull SentryEvent event, @NotNull Hint hint) {
-    final Object unwrappedHint = HintUtils.getSentrySdkHint(hint);
-    if (!(unwrappedHint instanceof Backfillable)) {
+    final @Nullable Object sdkHint = HintUtils.getSentrySdkHint(hint);
+    if (!(sdkHint instanceof Backfillable)) {
       options
           .getLogger()
           .log(
@@ -152,11 +149,11 @@ public final class ApplicationExitInfoEventProcessor
               "The event is not Backfillable, but has been passed to BackfillingEventProcessor, skipping.");
       return event;
     }
-    final @NotNull Backfillable backfillable = (Backfillable) unwrappedHint;
-    final @Nullable HintEnricher hintEnricher = findEnricher(unwrappedHint);
+    final @NotNull Backfillable backfillable = (Backfillable) sdkHint;
+    final @Nullable HintEnricher hintEnricher = findEnricher(sdkHint);
 
     if (hintEnricher != null) {
-      hintEnricher.applyPreEnrichment(event, backfillable, unwrappedHint);
+      hintEnricher.applyPreEnrichment(event, backfillable);
     }
 
     // We always set  os and device even if the ApplicationExitInfo event is not enrich-able.
@@ -186,7 +183,7 @@ public final class ApplicationExitInfoEventProcessor
     setStaticValues(event);
 
     if (hintEnricher != null) {
-      hintEnricher.applyPostEnrichment(event, backfillable, unwrappedHint, optionsSource);
+      hintEnricher.applyPostEnrichment(event, hint, backfillable, optionsSource);
     }
 
     return event;
@@ -592,12 +589,12 @@ public final class ApplicationExitInfoEventProcessor
    * accepted for compatibility; {@link OptionsSource#NONE} is returned when neither current nor
    * persisted options can be matched to the exit.
    */
-  private @NotNull OptionsSource getOptionsSource(final @NotNull Backfillable hint) {
+  private @NotNull OptionsSource getOptionsSource(final @NotNull Backfillable backfillable) {
     final @Nullable Long timestamp;
-    if (hint instanceof AbnormalExit) {
-      timestamp = ((AbnormalExit) hint).timestamp();
-    } else if (hint instanceof NativeCrashExit) {
-      timestamp = ((NativeCrashExit) hint).timestamp();
+    if (backfillable instanceof AbnormalExit) {
+      timestamp = ((AbnormalExit) backfillable).timestamp();
+    } else if (backfillable instanceof NativeCrashExit) {
+      timestamp = ((NativeCrashExit) backfillable).timestamp();
     } else {
       timestamp = null;
     }
@@ -795,53 +792,48 @@ public final class ApplicationExitInfoEventProcessor
   }
 
   private interface HintEnricher {
-    boolean supports(@NotNull Object hint);
+    boolean supports(@NotNull Object sdkHint);
 
-    void applyPreEnrichment(
-        @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint);
+    void applyPreEnrichment(@NotNull SentryEvent event, @NotNull Backfillable backfillable);
 
     void applyPostEnrichment(
         @NotNull SentryEvent event,
-        @NotNull Backfillable hint,
-        @NotNull Object rawHint,
+        @NotNull Hint hint,
+        @NotNull Backfillable backfillable,
         @NotNull OptionsSource optionsSource);
   }
 
   private final class AnrHintEnricher implements HintEnricher {
 
     @Override
-    public boolean supports(@NotNull Object hint) {
-      return hint instanceof AnrV2Integration.AnrV2Hint;
+    public boolean supports(@NotNull Object sdkHint) {
+      return sdkHint instanceof AnrV2Hint;
     }
 
-    // by default we assume that the ANR is foreground, unless abnormalMechanism is "anr_background"
-    private boolean isBackgroundAnr(final @NotNull Object hint) {
-      if (hint instanceof AbnormalExit) {
-        final String abnormalMechanism = ((AbnormalExit) hint).mechanism();
-        return "anr_background".equals(abnormalMechanism);
-      }
-      return false;
+    private boolean isBackgroundAnr(final @NotNull AnrV2Hint anrHint) {
+      return "anr_background".equals(anrHint.mechanism());
     }
 
     @Override
-    public void applyPreEnrichment(
-        @NotNull SentryEvent event, @NotNull Backfillable hint, @NotNull Object rawHint) {
-      final boolean isBackgroundAnr = isBackgroundAnr(rawHint);
+    public void applyPreEnrichment(@NotNull SentryEvent event, @NotNull Backfillable backfillable) {
+      final @NotNull AnrV2Hint anrHint = (AnrV2Hint) backfillable;
+      final boolean isBackgroundAnr = isBackgroundAnr(anrHint);
       // we always set exception values and default platform even if the ANR is not enrich-able
       setDefaultPlatform(event);
-      setAnrExceptions(event, hint, isBackgroundAnr);
+      setAnrExceptions(event, anrHint, isBackgroundAnr);
     }
 
     @Override
     public void applyPostEnrichment(
         @NotNull SentryEvent event,
-        @NotNull Backfillable hint,
-        @NotNull Object rawHint,
+        @NotNull Hint hint,
+        @NotNull Backfillable backfillable,
         @NotNull OptionsSource optionsSource) {
-      final boolean isBackgroundAnr = isBackgroundAnr(rawHint);
+      final @NotNull AnrV2Hint anrHint = (AnrV2Hint) backfillable;
+      final boolean isBackgroundAnr = isBackgroundAnr(anrHint);
 
       if (options.isAnrProfilingEnabled()) {
-        applyAnrProfile(event, hint, isBackgroundAnr, optionsSource);
+        applyAnrProfile(event, hint, anrHint, isBackgroundAnr, optionsSource);
       }
 
       setDefaultAnrFingerprint(event, isBackgroundAnr);
@@ -901,7 +893,7 @@ public final class ApplicationExitInfoEventProcessor
 
     private void setAnrExceptions(
         final @NotNull SentryEvent event,
-        final @NotNull Backfillable hint,
+        final @NotNull AnrV2Hint anrHint,
         final boolean isBackgroundAnr) {
       if (event.getExceptions() != null) {
         return;
@@ -909,7 +901,7 @@ public final class ApplicationExitInfoEventProcessor
       // AnrV2 threads contain a thread dump from the OS, so we just search for the main thread dump
       // and make an exception out of its stacktrace
       final Mechanism mechanism = new Mechanism();
-      if (!hint.shouldEnrich()) {
+      if (!anrHint.shouldEnrich()) {
         // we only enrich the latest ANR in the list, so this is historical
         mechanism.setType("HistoricalAppExitInfo");
       } else {
@@ -934,10 +926,10 @@ public final class ApplicationExitInfoEventProcessor
           sentryExceptionFactory.getSentryExceptionsFromThread(mainThread, mechanism, anr));
     }
 
-    @SuppressWarnings("JavaUtilDate")
     private void applyAnrProfile(
         @NotNull SentryEvent event,
-        @NotNull Backfillable hint,
+        @NotNull Hint hint,
+        @NotNull AnrV2Hint anrHint,
         boolean isBackgroundAnr,
         @NotNull OptionsSource optionsSource) {
 
@@ -952,18 +944,7 @@ public final class ApplicationExitInfoEventProcessor
       }
       final File cacheDir = new File(cacheDirPath);
 
-      if (!(hint instanceof AbnormalExit)) {
-        return;
-      }
-      final Long anrTimestampObj = ((AbnormalExit) hint).timestamp();
-      final long anrTimestamp;
-      if (anrTimestampObj != null) {
-        anrTimestamp = anrTimestampObj;
-      } else if (event.getTimestamp() != null) {
-        anrTimestamp = event.getTimestamp().getTime();
-      } else {
-        return;
-      }
+      final long anrTimestamp = anrHint.timestamp();
 
       AnrProfile anrProfile = null;
       try {
@@ -994,14 +975,28 @@ public final class ApplicationExitInfoEventProcessor
         return;
       }
 
+      // The profile is read after the relaunch, and the app may have been updated in between. The
+      // build options select the ProGuard UUID of the build that recorded the profile.
+      @Nullable
+      String proguardUuid =
+          getBuildOption(
+              PROGUARD_UUID_FILENAME, String.class, options.getProguardUuid(), optionsSource);
+      if (proguardUuid == null) {
+        // Best effort: the frames can only be deobfuscated with a UUID, and the profile is most
+        // likely from the current build.
+        proguardUuid = options.getProguardUuid();
+      }
+      final @Nullable Attachment flameGraph =
+          AnrFlameGraphAttachment.fromAnrProfile(anrProfile, proguardUuid);
+      if (flameGraph != null) {
+        hint.addAttachment(flameGraph);
+      }
+
       final AggregatedStackTrace culprit = AnrCulpritIdentifier.identify(anrProfile.stacks);
       if (culprit == null) {
         return;
       }
 
-      // Capture profile chunk
-      final @Nullable SentryId profilerId =
-          captureAnrProfile(anrTimestamp, anrProfile, optionsSource);
       final @NotNull StackTraceElement[] stack = culprit.getStack();
 
       if (stack.length > 0) {
@@ -1024,36 +1019,6 @@ public final class ApplicationExitInfoEventProcessor
         // the event threads are kept as-is, so the original main thread stacktrace is still
         // available
         event.setExceptions(sentryException);
-
-        if (profilerId != null) {
-          event.getContexts().setProfile(new ProfileContext(profilerId));
-        }
-      }
-    }
-
-    @Nullable
-    private SentryId captureAnrProfile(
-        final long anrTimestampMs,
-        @NotNull AnrProfile anrProfile,
-        final @NotNull OptionsSource optionsSource) {
-      final SentryProfile profile = StackTraceConverter.convert(anrProfile);
-      final ProfileChunk chunk =
-          new ProfileChunk(
-              new SentryId(),
-              new SentryId(),
-              null,
-              new HashMap<>(0),
-              anrTimestampMs / 1000.0d,
-              ProfileChunk.PLATFORM_ANDROID,
-              options);
-      chunk.setSentryProfile(profile);
-      chunk.setDebugMeta(createAnrProfileDebugMeta(optionsSource));
-
-      final SentryId profilerId = Sentry.getCurrentScopes().captureProfileChunk(chunk);
-      if (SentryId.EMPTY_ID.equals(profilerId)) {
-        return null;
-      } else {
-        return chunk.getProfilerId();
       }
     }
 
@@ -1081,31 +1046,6 @@ public final class ApplicationExitInfoEventProcessor
         }
       }
       return true;
-    }
-
-    /**
-     * Creates debug metadata for an ANR profile chunk using the build metadata selected for the ANR
-     * event.
-     *
-     * <p>ANR profile chunks are captured after app relaunch. If the app was updated between the ANR
-     * and the relaunch, the current options may contain the new build's ProGuard UUID. The provided
-     * {@link OptionsSource} lets us resolve the profile chunk and ANR event to the same originating
-     * build.
-     */
-    private @Nullable DebugMeta createAnrProfileDebugMeta(
-        final @NotNull OptionsSource optionsSource) {
-      final String proguardUuid =
-          getBuildOption(
-              PROGUARD_UUID_FILENAME, String.class, options.getProguardUuid(), optionsSource);
-      if (proguardUuid == null) {
-        // If no historical UUID is available, let the generic profile chunk pipeline apply the
-        // current options UUID as its normal best-effort fallback.
-        return null;
-      }
-
-      final DebugMeta debugMeta = new DebugMeta();
-      debugMeta.setImages(Collections.singletonList(createProguardDebugImage(proguardUuid)));
-      return debugMeta;
     }
   }
 

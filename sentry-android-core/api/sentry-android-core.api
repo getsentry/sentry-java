@@ -773,11 +773,6 @@ public final class io/sentry/android/core/anr/AnrStackTrace : java/lang/Comparab
 	public fun serialize (Ljava/io/DataOutputStream;)V
 }
 
-public final class io/sentry/android/core/anr/StackTraceConverter {
-	public fun <init> ()V
-	public static fun convert (Lio/sentry/android/core/anr/AnrProfile;)Lio/sentry/protocol/profiling/SentryProfile;
-}
-
 public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry/cache/EnvelopeCache {
 	public static final field LAST_ANR_MARKER_LABEL Ljava/lang/String;
 	public static final field LAST_ANR_REPORT Ljava/lang/String;

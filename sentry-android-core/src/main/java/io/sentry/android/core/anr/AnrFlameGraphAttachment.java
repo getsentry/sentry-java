@@ -91,11 +91,11 @@ public final class AnrFlameGraphAttachment {
       int parentId = NO_PARENT;
       for (int i = stack.length - 1; i >= 0; i--) {
         final @NotNull StackTraceElement element = stack[i];
-        final @NotNull String frameSignature = StackTraceConverter.createFrameSignature(element);
+        final @NotNull String frameSignature = createFrameSignature(element);
         @Nullable Integer frameId = frameSignatureToIndex.get(frameSignature);
         if (frameId == null) {
           frameId = frames.size();
-          frames.add(StackTraceConverter.createSentryStackFrame(element));
+          frames.add(createSentryStackFrame(element));
           frameSignatureToIndex.put(frameSignature, frameId);
         }
 
@@ -131,6 +131,29 @@ public final class AnrFlameGraphAttachment {
       flameGraph.setDebugMeta(createDebugMeta(proguardUuid));
     }
     return flameGraph;
+  }
+
+  private static @NotNull String createFrameSignature(final @NotNull StackTraceElement element) {
+    return element.getClassName()
+        + "#"
+        + element.getMethodName()
+        + "#"
+        + element.getFileName()
+        + "#"
+        + element.getLineNumber();
+  }
+
+  private static @NotNull SentryStackFrame createSentryStackFrame(
+      final @NotNull StackTraceElement element) {
+    final @NotNull SentryStackFrame frame = new SentryStackFrame();
+    frame.setFilename(element.getFileName());
+    frame.setFunction(element.getMethodName());
+    frame.setModule(element.getClassName());
+    frame.setLineno(element.getLineNumber() > 0 ? element.getLineNumber() : null);
+    if (element.isNativeMethod()) {
+      frame.setNative(true);
+    }
+    return frame;
   }
 
   private static @NotNull byte[] serialize(final @NotNull AnrFlameGraph flameGraph)
