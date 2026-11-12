@@ -13,6 +13,7 @@ import io.sentry.ITransaction;
 import io.sentry.NoOpScopes;
 import io.sentry.Sentry;
 import io.sentry.SentryTraceHeader;
+import io.sentry.SpanDataConvention;
 import io.sentry.SpanStatus;
 import io.sentry.TransactionContext;
 import io.sentry.TransactionOptions;
@@ -126,6 +127,7 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     if (response != null) {
       final @Nullable HttpStatusCode statusCode = response.getStatusCode();
       if (statusCode != null) {
+        transaction.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, statusCode.value());
         transaction
             .getContexts()
             .withResponse(
@@ -154,16 +156,20 @@ public abstract class AbstractSentryWebFilter implements WebFilter {
     transactionOptions.setBindToScope(true);
     transactionOptions.setOrigin(origin);
 
+    final @NotNull ITransaction transaction;
     if (transactionContext != null) {
       transactionContext.setName(name);
       transactionContext.setTransactionNameSource(TransactionNameSource.URL);
       transactionContext.setOperation(TRANSACTION_OP);
 
-      return scopes.startTransaction(transactionContext, transactionOptions);
+      transaction = scopes.startTransaction(transactionContext, transactionOptions);
+    } else {
+      transaction =
+          scopes.startTransaction(
+              new TransactionContext(name, TransactionNameSource.URL, TRANSACTION_OP),
+              transactionOptions);
     }
-
-    return scopes.startTransaction(
-        new TransactionContext(name, TransactionNameSource.URL, TRANSACTION_OP),
-        transactionOptions);
+    transaction.setData(SpanDataConvention.SENTRY_KIND_KEY, "server");
+    return transaction;
   }
 }

@@ -4360,6 +4360,7 @@ public abstract interface class io/sentry/SpanDataConvention {
 	public static final field MESSAGING_OPERATION_TYPE Ljava/lang/String;
 	public static final field MESSAGING_SYSTEM Ljava/lang/String;
 	public static final field PROFILER_ID Ljava/lang/String;
+	public static final field SENTRY_KIND_KEY Ljava/lang/String;
 	public static final field THREAD_ID Ljava/lang/String;
 	public static final field THREAD_NAME Ljava/lang/String;
 }

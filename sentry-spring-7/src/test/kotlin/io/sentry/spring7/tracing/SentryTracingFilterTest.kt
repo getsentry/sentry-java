@@ -5,6 +5,7 @@ import io.sentry.IScopes
 import io.sentry.PropagationContext
 import io.sentry.SentryOptions
 import io.sentry.SentryTracer
+import io.sentry.SpanDataConvention
 import io.sentry.SpanId
 import io.sentry.SpanStatus
 import io.sentry.TraceContext
@@ -134,6 +135,10 @@ class SentryTracingFilterTest {
           assertThat(it.transaction).isEqualTo("POST /product/{id}")
           assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
           assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
+          assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+            .isEqualTo("server")
+          assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+            .isEqualTo(200)
         },
         anyOrNull<TraceContext>(),
         anyOrNull(),
@@ -154,6 +159,26 @@ class SentryTracingFilterTest {
     verify(fixture.scopes)
       .captureTransaction(
         check { assertThat(it.transaction).isEqualTo(DEFAULT_TRANSACTION_NAME) },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `records not found response status`() {
+    val filter = fixture.getSut(status = 404)
+
+    filter.doFilter(fixture.request, fixture.response, fixture.chain)
+
+    verify(fixture.scopes)
+      .captureTransaction(
+        check {
+          assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+            .isEqualTo("server")
+          assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+            .isEqualTo(404)
+        },
         anyOrNull<TraceContext>(),
         anyOrNull(),
         anyOrNull(),
@@ -214,7 +239,13 @@ class SentryTracingFilterTest {
 
     verify(fixture.scopes)
       .captureTransaction(
-        check { assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId) },
+        check {
+          assertThat(it.contexts.trace!!.parentSpanId).isEqualTo(parentSpanId)
+          assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+            .isEqualTo("server")
+          assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+            .isEqualTo(200)
+        },
         anyOrNull<TraceContext>(),
         anyOrNull(),
         anyOrNull(),
@@ -245,7 +276,11 @@ class SentryTracingFilterTest {
     } catch (_: Exception) {}
     verify(fixture.scopes)
       .captureTransaction(
-        check { assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR) },
+        check {
+          assertThat(it.status).isEqualTo(SpanStatus.INTERNAL_ERROR)
+          assertThat(it.contexts.trace!!.data)
+            .doesNotContainKey(SpanDataConvention.HTTP_STATUS_CODE_KEY)
+        },
         anyOrNull<TraceContext>(),
         anyOrNull(),
         anyOrNull(),
@@ -429,6 +464,10 @@ class SentryTracingFilterTest {
           assertThat(it.transaction).isEqualTo("POST /product/{id}")
           assertThat(it.contexts.trace!!.status).isEqualTo(SpanStatus.OK)
           assertThat(it.contexts.trace!!.operation).isEqualTo("http.server")
+          assertThat(it.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+            .isEqualTo("server")
+          assertThat(it.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+            .isEqualTo(200)
         },
         anyOrNull<TraceContext>(),
         anyOrNull(),

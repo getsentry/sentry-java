@@ -2,6 +2,7 @@ package io.sentry.spring.boot.jakarta.webfluxintegrationtest
 
 import com.google.common.truth.Truth.assertThat
 import io.sentry.Sentry
+import io.sentry.SpanDataConvention
 import io.sentry.test.event
 import io.sentry.test.hasFlag
 import io.sentry.test.hasLogWithAttribute
@@ -30,6 +31,10 @@ class PersonWebfluxIntegrationTest : WebfluxIntegrationTest() {
     val transaction =
       server.awaitEnvelope { it.transaction()?.transaction == "GET /person/{id}" }.transaction()!!
     assertThat(transaction.contexts.trace!!.operation).isEqualTo("http.server")
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+      .isEqualTo("server")
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+      .isEqualTo(500)
 
     val logs =
       server
@@ -55,6 +60,10 @@ class PersonWebfluxIntegrationTest : WebfluxIntegrationTest() {
     val transaction =
       server.awaitEnvelope { it.transaction()?.transaction == "POST /person/" }.transaction()!!
     assertThat(transaction.contexts.trace!!.operation).isEqualTo("http.server")
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.SENTRY_KIND_KEY])
+      .isEqualTo("server")
+    assertThat(transaction.contexts.trace!!.data[SpanDataConvention.HTTP_STATUS_CODE_KEY])
+      .isEqualTo(200)
   }
 
   @Test
