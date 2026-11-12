@@ -22,8 +22,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 
 /**
  * Connects the app's trace with the trace of web content shown in a {@link WebView}.
@@ -55,6 +57,9 @@ public final class SentryWebViewTracing {
    */
   private static final @NotNull Map<WebView, List<String>> explicitHosts =
       Collections.synchronizedMap(new WeakHashMap<>());
+
+  /** Whether the automatic refresh already warned that androidx.webkit is missing. */
+  private static final @NotNull AtomicBoolean missingWebkitWarned = new AtomicBoolean(false);
 
   private SentryWebViewTracing() {}
 
@@ -103,6 +108,10 @@ public final class SentryWebViewTracing {
    * <p>The root span name ({@code sentry-transaction}) is removed from {@code baggage}, as it is
    * free-form text that may carry user data.
    *
+   * <p>With the Sentry Android Gradle Plugin's WebView instrumentation, which refreshes the trace
+   * on every {@code loadUrl} call, the refresh keeps these hosts for this WebView instead of using
+   * the ones in {@link SentryWebViewTracingOptions}.
+   *
    * @param webView the WebView to connect
    * @param allowedHosts hosts whose pages receive the trace
    * @return true if the script was installed; false if androidx.webkit is missing, the WebView does
@@ -125,6 +134,11 @@ public final class SentryWebViewTracing {
    * @return true if the trace propagation script was installed
    */
   static boolean refreshTracePropagation(final @NotNull WebView webView) {
+    return refreshTracePropagation(webView, new LoadClass());
+  }
+
+  static boolean refreshTracePropagation(
+      final @NotNull WebView webView, final @NotNull LoadClass loadClass) {
     if (!isOnWebViewThread(webView)) {
       return false;
     }
@@ -135,7 +149,7 @@ public final class SentryWebViewTracing {
     if (hosts.isEmpty()) {
       return false;
     }
-    return addTracePropagation(webView, hosts, scopes, new LoadClass());
+    return addTracePropagation(webView, hosts, scopes, loadClass, true);
   }
 
   private static @NotNull List<String> optionsHosts(final @NotNull SentryOptions options) {
@@ -149,17 +163,35 @@ public final class SentryWebViewTracing {
       final @NotNull List<String> allowedHosts,
       final @NotNull IScopes scopes,
       final @NotNull LoadClass loadClass) {
-    // Registered on use rather than on success, like the other SDKs, so adoption counts apps that
-    // wired the feature up even when this call cannot install.
-    addIntegrationToSdkVersion(INTEGRATION_NAME);
+    return addTracePropagation(webView, allowedHosts, scopes, loadClass, false);
+  }
+
+  /**
+   * @param automatic whether the call comes from the automatic refresh, which runs on every {@code
+   *     loadUrl}: it doesn't record manual adoption, as the Gradle plugin reports its own feature,
+   *     and warns about a missing androidx.webkit only once
+   */
+  private static boolean addTracePropagation(
+      final @NotNull WebView webView,
+      final @NotNull List<String> allowedHosts,
+      final @NotNull IScopes scopes,
+      final @NotNull LoadClass loadClass,
+      final boolean automatic) {
+    if (!automatic) {
+      // Registered on use rather than on success, like the other SDKs, so adoption counts apps that
+      // wired the feature up even when this call cannot install.
+      addIntegrationToSdkVersion(INTEGRATION_NAME);
+    }
 
     if (!loadClass.isClassAvailable(SCRIPT_HANDLER_CLASS_NAME, scopes.getOptions())) {
-      scopes
-          .getOptions()
-          .getLogger()
-          .log(
-              SentryLevel.WARNING,
-              "WebView trace propagation requires the androidx.webkit dependency, skipping.");
+      if (!automatic || missingWebkitWarned.compareAndSet(false, true)) {
+        scopes
+            .getOptions()
+            .getLogger()
+            .log(
+                SentryLevel.WARNING,
+                "WebView trace propagation requires the androidx.webkit dependency, skipping.");
+      }
       return false;
     }
     return install(webView, allowedHosts, scopes, new AndroidxWebViewScriptInstaller());
@@ -294,6 +326,11 @@ public final class SentryWebViewTracing {
   private static long replacementsOf(final @NotNull WebView webView) {
     final @Nullable Long count = replacements.get(webView);
     return count == null ? 0 : count;
+  }
+
+  @TestOnly
+  static void resetMissingWebkitWarning() {
+    missingWebkitWarned.set(false);
   }
 
   private static boolean isOnWebViewThread(final @NotNull WebView webView) {

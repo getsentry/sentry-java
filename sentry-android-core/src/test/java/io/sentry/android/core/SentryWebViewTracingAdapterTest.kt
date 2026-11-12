@@ -7,8 +7,12 @@ import androidx.webkit.ScriptHandler
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.google.common.truth.Truth.assertThat
+import io.sentry.ILogger
 import io.sentry.OptionsContainer
 import io.sentry.Sentry
+import io.sentry.SentryIntegrationPackageStorage
+import io.sentry.SentryLevel
+import io.sentry.util.LoadClass
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -21,10 +25,34 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
 
 @RunWith(AndroidJUnit4::class)
 class SentryWebViewTracingAdapterTest {
+
+  private class RecordingLogger : ILogger {
+    val messages = mutableListOf<String>()
+
+    override fun log(level: SentryLevel, message: String, vararg args: Any?) {
+      messages.add(message)
+    }
+
+    override fun log(level: SentryLevel, message: String, throwable: Throwable?) {
+      messages.add(message)
+    }
+
+    override fun log(
+      level: SentryLevel,
+      throwable: Throwable?,
+      message: String,
+      vararg args: Any?,
+    ) {
+      messages.add(message)
+    }
+
+    override fun isEnabled(level: SentryLevel?): Boolean = true
+  }
 
   private lateinit var webView: WebView
   private lateinit var webViewCompat: MockedStatic<WebViewCompat>
@@ -152,6 +180,50 @@ class SentryWebViewTracingAdapterTest {
     assertFailsWith<OutOfMemoryError> {
       SentryWebViewTracingAdapter.loadUrl(webView, "https://example.com")
     }
+  }
+
+  @Test
+  fun `loads the url when the refresh hits a LinkageError`() {
+    initSentry()
+    mockStatic(SentryWebViewTracing::class.java).use { tracing ->
+      tracing
+        .`when`<Boolean> { SentryWebViewTracing.refreshTracePropagation(any<WebView>()) }
+        .thenThrow(NoClassDefFoundError("androidx/webkit/WebViewCompat"))
+
+      SentryWebViewTracingAdapter.loadUrl(webView, "https://example.com")
+    }
+
+    assertThat(shadowOf(webView).lastLoadedUrl).isEqualTo("https://example.com")
+  }
+
+  @Test
+  fun `does not record manual adoption`() {
+    SentryIntegrationPackageStorage.getInstance().clearStorage()
+    initSentry()
+
+    SentryWebViewTracingAdapter.loadUrl(webView, "https://example.com")
+
+    assertThat(installedOrigins).hasSize(1)
+    assertThat(SentryIntegrationPackageStorage.getInstance().integrations)
+      .doesNotContain("WebViewTracePropagation")
+  }
+
+  @Test
+  fun `warns about a missing androidx webkit only once`() {
+    val logger = RecordingLogger()
+    Sentry.init(OptionsContainer.create(SentryAndroidOptions::class.java)) {
+      it.dsn = "https://key@sentry.io/123"
+      it.isDebug = true
+      it.setLogger(logger)
+      it.webViewTracing.allowedHosts = listOf("example.com")
+    }
+    SentryWebViewTracing.resetMissingWebkitWarning()
+    val loadClass = mock<LoadClass>()
+    whenever(loadClass.isClassAvailable(any(), any<io.sentry.SentryOptions>())).thenReturn(false)
+
+    repeat(3) { SentryWebViewTracing.refreshTracePropagation(webView, loadClass) }
+
+    assertThat(logger.messages.filter { it.contains("requires the androidx.webkit") }).hasSize(1)
   }
 
   @Test
