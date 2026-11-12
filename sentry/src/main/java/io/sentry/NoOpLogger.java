@@ -20,6 +20,19 @@ public final class NoOpLogger implements ILogger {
   public void log(@NotNull SentryLevel level, @NotNull String message, @Nullable Object... args) {}
 
   @Override
+  public void log(@NotNull SentryLevel level, @NotNull String message) {}
+
+  @Override
+  public void log(@NotNull SentryLevel level, @NotNull String message, @Nullable Object arg) {}
+
+  @Override
+  public void log(
+      @NotNull SentryLevel level,
+      @NotNull String message,
+      @Nullable Object arg1,
+      @Nullable Object arg2) {}
+
+  @Override
   public void log(
       @NotNull SentryLevel level, @NotNull String message, @Nullable Throwable throwable) {}
 
