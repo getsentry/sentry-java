@@ -5,6 +5,12 @@
 > - Java 8 support will be dropped. SDK 9.0.0 requires Java 11+. See [#6469](https://github.com/getsentry/sentry-java/issues/6469).
 > - The Android `minSdk` will be raised from 21 to 24. See [#5508](https://github.com/getsentry/sentry-java/issues/5508).
 
+## Unreleased
+
+### Internal
+
+- Add a `WebView.loadUrl` adapter for automatic WebView trace propagation in the Sentry Android Gradle Plugin ([#6592](https://github.com/getsentry/sentry-java/pull/6592))
+
 ## 8.64.0
 
 ### Breaking Changes
