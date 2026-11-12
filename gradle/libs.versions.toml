@@ -72,7 +72,7 @@ buildconfig = { id = "com.github.gmazzo.buildconfig", version = "5.6.5" }
 dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
 errorprone = { id = "net.ltgt.errorprone", version = "5.1.1" }
-gradle-versions = { id = "com.github.ben-manes.versions", version = "0.42.0" }
+gradle-versions = { id = "com.github.ben-manes.versions", version = "0.67.0" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktechMavenPublish" }
