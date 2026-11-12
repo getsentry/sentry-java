@@ -548,9 +548,10 @@ public final class SentryTracer implements ITransaction {
       return NoOpSpan.getInstance();
     }
 
-    // A span started now would start after the deadline ends the transaction. On a device that
-    // stayed awake the transaction would already be finished, which starts no span either.
-    if (finishAtDeadlineIfPassed(transactionOptions.getIdleTimeout() != null, null)) {
+    // A span started now would start after the deadline the transaction ends at. On a device that
+    // stayed awake the transaction would already be finished. The overdue deadline timer finishes
+    // it, rather than this thread, which may be holding a lock.
+    if (hasDeadlinePassed()) {
       return NoOpSpan.getInstance();
     }
 

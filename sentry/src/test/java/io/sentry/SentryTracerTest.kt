@@ -1961,18 +1961,24 @@ class SentryTracerTest {
   }
 
   @Test
-  fun `when a span starts after the deadline passed, it is a no-op and the transaction ends at the deadline`() {
+  fun `when a span starts after the deadline passed, it is a no-op and the deadline timer ends the transaction`() {
+    val timer = ManualTimer()
     val clock = TestDateProvider()
-    val transaction = getSutWithDeadline(ManualTimer(), clock)
+    val transaction = getSutWithDeadline(timer, clock)
     val span = transaction.startChild("op")
 
     sleepFor(3, TimeUnit.HOURS, clock)
     val lateSpan = transaction.startChild("late")
 
     assertThat(lateSpan).isInstanceOf(NoOpSpan::class.java)
-    assertThat(transaction.isFinished).isTrue()
+    assertThat(transaction.isFinished).isFalse()
+
+    timer.run(DEADLINE_MILLIS)
+
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
     assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
     assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+    assertThat(transaction.children).containsExactly(span)
   }
 
   @Test
