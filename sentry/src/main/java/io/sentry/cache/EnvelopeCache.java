@@ -101,18 +101,8 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
     previousSessionLatch = new CountDownLatch(1);
   }
 
-  @SuppressWarnings("deprecation")
-  @Override
-  public void store(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
-    storeInternal(envelope, hint);
-  }
-
   @Override
   public boolean storeEnvelope(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
-    return storeInternal(envelope, hint);
-  }
-
-  private boolean storeInternal(final @NotNull SentryEnvelope envelope, final @NotNull Hint hint) {
     Objects.requireNonNull(envelope, "Envelope is required.");
 
     // Create the cache dir lazily on the first write so Sentry.init doesn't block on the mkdirs.
@@ -421,7 +411,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    *
    * <p>This only computes a path and never creates the directory, so that {@link
    * #discard(SentryEnvelope)} doesn't resurrect a cache dir it is only deleting from. Writers go
-   * through {@link #storeInternal}, which creates the directory up front.
+   * through {@link #storeEnvelope}, which creates the directory up front.
    *
    * @param envelope the SentryEnvelope object
    * @return the file
