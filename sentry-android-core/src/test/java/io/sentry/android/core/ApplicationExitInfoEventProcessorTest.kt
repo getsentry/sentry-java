@@ -6,13 +6,13 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import io.sentry.Attachment
 import io.sentry.Breadcrumb
 import io.sentry.Hint
-import io.sentry.IScopes
 import io.sentry.IpAddressUtils
+import io.sentry.JsonObjectReader
 import io.sentry.NoOpLogger
-import io.sentry.ProfileChunk
-import io.sentry.Sentry
 import io.sentry.SentryBaseEvent
 import io.sentry.SentryEvent
 import io.sentry.SentryLevel
@@ -45,6 +45,7 @@ import io.sentry.cache.PersistingScopeObserver.USER_FILENAME
 import io.sentry.cache.tape.QueueFile
 import io.sentry.hints.AbnormalExit
 import io.sentry.hints.Backfillable
+import io.sentry.protocol.AnrFlameGraph
 import io.sentry.protocol.Browser
 import io.sentry.protocol.Contexts
 import io.sentry.protocol.DebugImage
@@ -65,6 +66,7 @@ import io.sentry.protocol.User
 import io.sentry.util.HintUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.StringReader
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -76,11 +78,7 @@ import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
-import org.mockito.Mockito.mockStatic
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 import org.robolectric.shadow.api.Shadow
@@ -1181,7 +1179,7 @@ class ApplicationExitInfoEventProcessorTest {
   }
 
   @Test
-  fun `does not set profile context when ANR profiling is disabled`() {
+  fun `does not attach a flame graph when ANR profiling is disabled`() {
     fixture.options.anrProfilingSampleRate = null
     val hint = anrHint(mechanism = "anr_foreground")
     val processed =
@@ -1204,6 +1202,7 @@ class ApplicationExitInfoEventProcessorTest {
           )
       }
     assertNull(processed.contexts.profile)
+    assertThat(hint.attachments).isEmpty()
   }
 
   @Test
@@ -1220,50 +1219,33 @@ class ApplicationExitInfoEventProcessorTest {
     val hintTimestamp = System.currentTimeMillis()
     val hint = anrHint(mechanism = "anr_foreground", timestamp = hintTimestamp)
 
-    AnrProfileManager(
-        fixture.options,
-        AnrProfileRotationHelper.getFileForRecording(File(fixture.options.cacheDirPath!!)),
+    recordAnrProfile(
+      AnrStackTrace(
+        hintTimestamp,
+        arrayOf(
+          StackTraceElement(
+            "android.view.Choreographer",
+            "doFrame",
+            "Choreographer.java",
+            1234,
+          ),
+          StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
+        ),
       )
-      .apply {
-        add(
-          AnrStackTrace(
-            hintTimestamp,
-            arrayOf(
-              StackTraceElement(
-                "android.view.Choreographer",
-                "doFrame",
-                "Choreographer.java",
-                1234,
-              ),
-              StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
-            ),
-          )
-        )
-        close()
-      }
-    AnrProfileRotationHelper.rotate()
+    )
 
-    val scopes = mock<IScopes>()
-    whenever(scopes.captureProfileChunk(any())).thenReturn(SentryId())
+    val processed = processor.process(SentryEvent(), hint)
 
-    mockStatic(Sentry::class.java).use { mockedSentry ->
-      mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
-
-      val processed = processor.process(SentryEvent(), hint)
-      val chunkCaptor = argumentCaptor<ProfileChunk>()
-      verify(scopes).captureProfileChunk(chunkCaptor.capture())
-      val sentryProfile = chunkCaptor.firstValue.sentryProfile
-
-      assertNotNull(processed?.contexts?.profile)
-      assertNotNull(processed.contexts.profile?.profilerId)
-      assertNotNull(sentryProfile)
-      // Two samples are present b/c the converter adds a synthetic one to keep Relay happy.
-      assertEquals(2, sentryProfile.samples.size)
-    }
+    assertThat(processed?.contexts?.profile).isNull()
+    val attachment = hint.attachments.single()
+    assertThat(attachment.filename).isEqualTo("flamegraph.json")
+    assertThat(attachment.attachmentType).isEqualTo("event.flamegraph")
+    val nodes = flameGraph(attachment).nodes
+    assertThat(nodes.map { it.frameId to it.sampleCount }).containsExactly(0 to 1L, 1 to 1L)
   }
 
   @Test
-  fun `uses persisted proguard uuid for ANR profile chunk after app update`() {
+  fun `uses persisted proguard uuid for ANR flame graph after app update`() {
     fixture.options.anrProfilingSampleRate = 1.0
     fixture.options.proguardUuid = "current-uuid"
     val processor =
@@ -1278,39 +1260,79 @@ class ApplicationExitInfoEventProcessorTest {
 
     val hint = anrHint(mechanism = "anr_foreground", timestamp = 1_000)
 
-    AnrProfileManager(
-        fixture.options,
-        AnrProfileRotationHelper.getFileForRecording(File(fixture.options.cacheDirPath!!)),
+    recordAnrProfile(
+      AnrStackTrace(
+        1_000,
+        arrayOf(
+          StackTraceElement("com.example.MyApp", "blocked", "MyApp.java", 42),
+          StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
+        ),
       )
-      .apply {
-        add(
-          AnrStackTrace(
-            1_000,
-            arrayOf(
-              StackTraceElement("com.example.MyApp", "blocked", "MyApp.java", 42),
-              StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
-            ),
-          )
-        )
-        close()
-      }
-    AnrProfileRotationHelper.rotate()
+    )
 
-    val scopes = mock<IScopes>()
-    whenever(scopes.captureProfileChunk(any())).thenReturn(SentryId())
+    processor.process(SentryEvent(), hint)
 
-    mockStatic(Sentry::class.java).use { mockedSentry ->
-      mockedSentry.`when`<Any> { Sentry.getCurrentScopes() }.thenReturn(scopes)
+    val images = flameGraph(hint.attachments.single()).debugMeta!!.images!!
+    assertEquals(1, images.size)
+    assertEquals(DebugImage.PROGUARD, images[0].type)
+    assertEquals("previous-uuid", images[0].uuid)
+  }
 
-      processor.process(SentryEvent(), hint)
+  @Test
+  fun `falls back to the current proguard uuid for ANR flame graph without a persisted one`() {
+    fixture.options.anrProfilingSampleRate = 1.0
+    fixture.options.proguardUuid = "current-uuid"
+    val processor =
+      fixture.getSut(
+        tmpDir,
+        populateScopeCache = false,
+        populateOptionsCache = false,
+        isSendDefaultPii = false,
+      )
+    setLastUpdateTime(2_000)
 
-      val chunkCaptor = argumentCaptor<ProfileChunk>()
-      verify(scopes).captureProfileChunk(chunkCaptor.capture())
-      val images = chunkCaptor.firstValue.debugMeta!!.images!!
-      assertEquals(1, images.size)
-      assertEquals(DebugImage.PROGUARD, images[0].type)
-      assertEquals("previous-uuid", images[0].uuid)
-    }
+    val hint = anrHint(mechanism = "anr_foreground", timestamp = 1_000)
+    recordAnrProfile(
+      AnrStackTrace(
+        1_000,
+        arrayOf(
+          StackTraceElement("com.example.MyApp", "blocked", "MyApp.java", 42),
+          StackTraceElement("android.os.Handler", "dispatchMessage", "Handler.java", 5678),
+        ),
+      )
+    )
+
+    processor.process(SentryEvent(), hint)
+
+    val images = flameGraph(hint.attachments.single()).debugMeta!!.images!!
+    assertThat(images.map { it.type to it.uuid })
+      .containsExactly(DebugImage.PROGUARD to "current-uuid")
+  }
+
+  @Test
+  fun `attaches ANR flame graph when no culprit is identified`() {
+    fixture.options.anrProfilingSampleRate = 1.0
+    val processor =
+      fixture.getSut(
+        tmpDir,
+        populateScopeCache = false,
+        populateOptionsCache = false,
+        isSendDefaultPii = false,
+      )
+
+    val hintTimestamp = System.currentTimeMillis()
+    val hint = anrHint(mechanism = "anr_foreground", timestamp = hintTimestamp)
+    recordAnrProfile(
+      AnrStackTrace(
+        hintTimestamp,
+        arrayOf(StackTraceElement("com.example.MyApp", "blocked", "MyApp.java", 42)),
+      )
+    )
+
+    val processed = processor.process(SentryEvent(), hint)!!
+
+    assertThat(processed.exceptions!!.single().mechanism!!.type).isEqualTo("AppExitInfo")
+    assertThat(flameGraph(hint.attachments.single()).nodes).hasSize(1)
   }
 
   @Test
@@ -1455,6 +1477,25 @@ class ApplicationExitInfoEventProcessorTest {
       )
     return processor.process(original, hint)!!
   }
+
+  private fun recordAnrProfile(vararg stacks: AnrStackTrace) {
+    AnrProfileManager(
+        fixture.options,
+        AnrProfileRotationHelper.getFileForRecording(File(fixture.options.cacheDirPath!!)),
+      )
+      .apply {
+        stacks.forEach { add(it) }
+        close()
+      }
+    AnrProfileRotationHelper.rotate()
+  }
+
+  private fun flameGraph(attachment: Attachment): AnrFlameGraph =
+    AnrFlameGraph.Deserializer()
+      .deserialize(
+        JsonObjectReader(StringReader(String(attachment.bytes!!, Charsets.UTF_8))),
+        NoOpLogger.getInstance(),
+      )
 
   private fun setLastUpdateTime(lastUpdateTime: Long) {
     ContextUtils.getPackageInfo(fixture.context, fixture.buildInfo)!!.lastUpdateTime =
