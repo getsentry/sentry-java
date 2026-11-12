@@ -1871,6 +1871,28 @@ class ScopesTest {
   }
 
   @Test
+  fun `when startTransaction, passes a snapshot of transaction options to span factory`() {
+    val scopes = generateScopes()
+    val spanFactory = mock<ISpanFactory>()
+    val transaction = mock<ITransaction>()
+    whenever(spanFactory.createTransaction(any(), any(), any(), anyOrNull()))
+      .thenReturn(transaction)
+    val transactionOptions =
+      TransactionOptions().apply {
+        isWaitForChildren = true
+        setSpanFactory(spanFactory)
+      }
+
+    scopes.startTransaction(TransactionContext("name", "op"), transactionOptions)
+    transactionOptions.isWaitForChildren = false
+
+    val optionsCaptor = argumentCaptor<TransactionOptions>()
+    verify(spanFactory).createTransaction(any(), eq(scopes), optionsCaptor.capture(), anyOrNull())
+    assertThat(optionsCaptor.firstValue).isNotSameInstanceAs(transactionOptions)
+    assertThat(optionsCaptor.firstValue.isWaitForChildren).isTrue()
+  }
+
+  @Test
   fun `when startTransaction with bindToScope set to false, transaction is not attached to the scope`() {
     val scopes = generateScopes()
 

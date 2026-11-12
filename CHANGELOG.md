@@ -174,6 +174,10 @@
 
 - Add policy-controlled URL query parameters and fragments to Ktor HTTP client spans ([#6433](https://github.com/getsentry/sentry-java/pull/6433))
 
+### Fixes
+
+- Prevent changes to reused tracing options from affecting spans and transactions after creation ([#6417](https://github.com/getsentry/sentry-java/pull/6417))
+
 ## 8.62.0
 
 ### Improvements
