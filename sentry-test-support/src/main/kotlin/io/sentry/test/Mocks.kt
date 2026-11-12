@@ -75,6 +75,29 @@ class DeferredExecutorService : ISentryExecutorService {
   fun hasScheduledRunnables(): Boolean = scheduledRunnables.isNotEmpty()
 }
 
+/**
+ * Keeps the latest task scheduled with each delay instead of running it, so a test can run one
+ * timer, such as an idle timeout, while another, such as a deadline, stays pending.
+ */
+class ManualTimerExecutorService : ISentryExecutorService {
+  private val scheduled = mutableMapOf<Long, Runnable>()
+
+  fun runScheduled(delayMillis: Long) = synchronized(this) { scheduled.getValue(delayMillis) }.run()
+
+  override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
+    synchronized(this) { scheduled[delayMillis] = runnable }
+    return FutureTask {}
+  }
+
+  override fun submit(runnable: Runnable): Future<*> = FutureTask {}
+
+  override fun <T> submit(callable: Callable<T>): Future<T> = FutureTask(callable)
+
+  override fun close(timeoutMillis: Long) {}
+
+  override fun isClosed(): Boolean = false
+}
+
 class NonOverridableNoOpSentryExecutorService : ISentryExecutorService {
   // mirrors NoOpSentryExecutorService: a task that is never run is reported as cancelled, so
   // callers can tell it apart from a queued one
