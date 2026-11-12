@@ -48,7 +48,7 @@ public final class TracingUtils {
       @Nullable List<String> thirdPartyBaggageHeaders,
       final @Nullable ISpan span) {
     final @NotNull SentryOptions sentryOptions = scopes.getOptions();
-    if (sentryOptions.isTraceSampling() && shouldAttachTracingHeaders(requestUrl, sentryOptions)) {
+    if (shouldAttachTracingHeaders(requestUrl, sentryOptions)) {
       return trace(scopes, thirdPartyBaggageHeaders, span);
     }
 

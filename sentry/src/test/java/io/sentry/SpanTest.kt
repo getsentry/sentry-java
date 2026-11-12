@@ -28,7 +28,6 @@ class SpanTest {
         .thenReturn(
           SentryOptions().apply {
             dsn = "https://key@sentry.io/proj"
-            isTraceSampling = true
           }
         )
     }

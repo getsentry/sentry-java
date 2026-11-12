@@ -84,7 +84,7 @@ public interface ISpan {
   /**
    * Returns the trace context.
    *
-   * @return a trace context or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
+   * @return a trace context or {@code null} if there is no baggage.
    */
   @Nullable
   @ApiStatus.Experimental
@@ -93,7 +93,7 @@ public interface ISpan {
   /**
    * Returns the baggage that can be sent as "baggage" header.
    *
-   * @return BaggageHeader or {@code null} if {@link SentryOptions#isTraceSampling()} is disabled.
+   * @return BaggageHeader or {@code null} if there is no baggage.
    */
   @Nullable
   @ApiStatus.Experimental

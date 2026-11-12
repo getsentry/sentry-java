@@ -108,7 +108,6 @@ class SentryClientTest {
         logs.setLoggerBatchProcessorFactory(loggerBatchProcessorFactory)
         metrics.setMetricsBatchProcessorFactory(metricsBatchProcessorFactory)
         release = "0.0.1"
-        isTraceSampling = true
       }
 
     init {
