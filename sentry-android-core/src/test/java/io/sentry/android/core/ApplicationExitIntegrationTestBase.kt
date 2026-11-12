@@ -27,7 +27,6 @@ import org.junit.Rule
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.anyVararg
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.atMost
 import org.mockito.kotlin.check
@@ -172,7 +171,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
 
     verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
     verify(fixture.logger, never())
-      .log(any(), argThat { startsWith(config.flushLogPrefix) }, anyVararg<Any>())
+      .log(any(), argThat { startsWith(config.flushLogPrefix) }, any<Any>(), any<Any>())
   }
 
   @Test
@@ -185,7 +184,7 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
 
     verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
     verify(fixture.logger, never())
-      .log(any(), argThat { startsWith(config.flushLogPrefix) }, anyVararg<Any>())
+      .log(any(), argThat { startsWith(config.flushLogPrefix) }, any<Any>(), any<Any>())
   }
 
   @Test
@@ -317,7 +316,6 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
       .log(
         any(),
         argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
-        anyVararg<Any>(),
       )
   }
 
@@ -338,7 +336,6 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
       .log(
         any(),
         argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
-        anyVararg<Any>(),
       )
     verify(fixture.scopes).captureEvent(any(), any<Hint>())
   }
@@ -355,7 +352,6 @@ abstract class ApplicationExitIntegrationTestBase<THint : Any> {
       .log(
         any(),
         argThat { startsWith("Timed out waiting to flush previous session to its own file.") },
-        anyVararg<Any>(),
       )
     assertTrue((fixture.options.envelopeDiskCache as EnvelopeCache).waitPreviousSessionFlush())
   }
