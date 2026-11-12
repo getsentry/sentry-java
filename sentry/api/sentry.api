@@ -566,6 +566,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getIdleTimeout ()Ljava/lang/Long;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
+	public fun getIgnoredErrorsForDeduplication ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
@@ -623,6 +624,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
+	public fun setIgnoredErrorsForDeduplication (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setOrgId (Ljava/lang/String;)V
@@ -3495,6 +3497,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun addEventProcessor (Lio/sentry/EventProcessor;)V
 	public fun addIgnoredCheckIn (Ljava/lang/String;)V
 	public fun addIgnoredError (Ljava/lang/String;)V
+	public fun addIgnoredErrorForDeduplication (Ljava/lang/String;)V
 	public fun addIgnoredExceptionForType (Ljava/lang/Class;)V
 	public fun addIgnoredSpanOrigin (Ljava/lang/String;)V
 	public fun addIgnoredTransaction (Ljava/lang/String;)V
@@ -3554,7 +3557,9 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getIgnoredCheckInFilters ()Ljava/util/List;
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredErrorFilters ()Ljava/util/List;
+	public fun getIgnoredErrorFiltersForDeduplication ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
+	public fun getIgnoredErrorsForDeduplication ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
 	public fun getIgnoredSpanOriginFilters ()Ljava/util/List;
 	public fun getIgnoredSpanOrigins ()Ljava/util/List;
@@ -3661,7 +3666,6 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun isStartProfilerOnAppStart ()Z
 	public fun isStrictTraceContinuation ()Z
 	public fun isTraceOptionsRequests ()Z
-	public fun isTraceSampling ()Z
 	public fun isTracingEnabled ()Z
 	public fun merge (Lio/sentry/ExternalOptions;)V
 	public fun setAppStartExtender (Lio/sentry/IAppStartExtender;)V
@@ -3729,6 +3733,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
+	public fun setIgnoredErrorsForDeduplication (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
@@ -3787,7 +3792,6 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setTimerExecutorService (Lio/sentry/ISentryExecutorService;)V
 	public fun setTraceOptionsRequests (Z)V
 	public fun setTracePropagationTargets (Ljava/util/List;)V
-	public fun setTraceSampling (Z)V
 	public fun setTracesSampleRate (Ljava/lang/Double;)V
 	public fun setTracesSampler (Lio/sentry/SentryOptions$TracesSamplerCallback;)V
 	public fun setTransactionProfiler (Lio/sentry/ITransactionProfiler;)V
@@ -4392,6 +4396,7 @@ public final class io/sentry/SpanId$Deserializer : io/sentry/JsonDeserializer {
 public class io/sentry/SpanOptions {
 	protected field origin Ljava/lang/String;
 	public fun <init> ()V
+	public fun <init> (Lio/sentry/SpanOptions;)V
 	public fun getOrigin ()Ljava/lang/String;
 	public fun getScopeBindingMode ()Lio/sentry/ScopeBindingMode;
 	public fun getStartTimestamp ()Lio/sentry/SentryDate;
@@ -7816,6 +7821,12 @@ public final class io/sentry/util/MapObjectWriter : io/sentry/ObjectWriter {
 	public fun value (Z)Lio/sentry/util/MapObjectWriter;
 }
 
+public final class io/sentry/util/MonitorConfigUtils {
+	public static fun fromSchedule (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;)Lio/sentry/MonitorConfig;
+	public static fun fromSpringScheduled (Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Z)Lio/sentry/MonitorConfig;
+	public static fun parsePeriodMillis (Ljava/lang/String;Ljava/util/concurrent/TimeUnit;)Ljava/lang/Long;
+}
+
 public final class io/sentry/util/Objects {
 	public static fun equals (Ljava/lang/Object;Ljava/lang/Object;)Z
 	public static fun hash ([Ljava/lang/Object;)I
@@ -7984,11 +7995,12 @@ public final class io/sentry/util/network/NetworkBody$NetworkBodyWarning : java/
 
 public final class io/sentry/util/network/NetworkBodyParser {
 	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;ILio/sentry/ILogger;)Lio/sentry/util/network/NetworkBody;
+	public static fun fromBytes ([BLjava/lang/String;Ljava/lang/String;IZLio/sentry/ILogger;)Lio/sentry/util/network/NetworkBody;
 }
 
 public final class io/sentry/util/network/NetworkDetailCaptureUtils {
 	public static fun createRequest (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
-	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
+	public static fun createResponse (Ljava/lang/Object;Ljava/lang/Integer;Ljava/lang/Long;ZLio/sentry/util/network/NetworkDetailCaptureUtils$NetworkBodyExtractor;Ljava/util/List;Lio/sentry/util/network/NetworkDetailCaptureUtils$NetworkHeaderExtractor;)Lio/sentry/util/network/ReplayNetworkRequestOrResponse;
 	public static fun initializeForUrl (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;Ljava/util/List;)Lio/sentry/util/network/NetworkRequestData;
 }
 
@@ -8009,15 +8021,17 @@ public final class io/sentry/util/network/NetworkRequestData {
 	public fun getResponseBodySize ()Ljava/lang/Long;
 	public fun getStatusCode ()Ljava/lang/Integer;
 	public fun setRequestDetails (Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
-	public fun setResponseDetails (ILio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
+	public fun setResponseDetails (Lio/sentry/util/network/ReplayNetworkRequestOrResponse;)V
 	public fun toString ()Ljava/lang/String;
 }
 
 public final class io/sentry/util/network/ReplayNetworkRequestOrResponse {
+	public fun <init> (Ljava/lang/Integer;Ljava/lang/Long;Lio/sentry/util/network/NetworkBody;Ljava/util/Map;)V
 	public fun <init> (Ljava/lang/Long;Lio/sentry/util/network/NetworkBody;Ljava/util/Map;)V
 	public fun getBody ()Lio/sentry/util/network/NetworkBody;
 	public fun getHeaders ()Ljava/util/Map;
 	public fun getSize ()Ljava/lang/Long;
+	public fun getStatusCode ()Ljava/lang/Integer;
 	public fun toString ()Ljava/lang/String;
 }
 

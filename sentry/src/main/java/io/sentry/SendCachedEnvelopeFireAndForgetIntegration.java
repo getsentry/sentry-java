@@ -173,10 +173,6 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
               SentryLevel.ERROR,
               "Failed to call the executor. Cached events will not be sent. Did you call Sentry.close()?",
               e);
-    } catch (Throwable e) {
-      options
-          .getLogger()
-          .log(SentryLevel.ERROR, "Failed to call the executor. Cached events will not be sent", e);
     }
   }
 }

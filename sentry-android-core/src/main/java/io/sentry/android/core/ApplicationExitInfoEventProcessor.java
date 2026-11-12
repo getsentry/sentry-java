@@ -18,7 +18,6 @@ import static io.sentry.cache.PersistingScopeObserver.TRANSACTION_FILENAME;
 import static io.sentry.cache.PersistingScopeObserver.USER_FILENAME;
 import static io.sentry.protocol.Contexts.REPLAY_ID;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -728,7 +727,6 @@ public final class ApplicationExitInfoEventProcessor
 
   // only use static data that does not change between app launches (e.g. timezone, boottime,
   // battery level will change)
-  @SuppressLint("NewApi")
   private @NotNull Device getDevice() {
     Device device = new Device();
     device.setManufacturer(Build.MANUFACTURER);

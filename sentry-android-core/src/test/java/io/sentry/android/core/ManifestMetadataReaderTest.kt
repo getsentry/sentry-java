@@ -1034,31 +1034,6 @@ class ManifestMetadataReaderTest {
   }
 
   @Test
-  fun `applyMetadata reads traceSampling to options`() {
-    // Arrange
-    val bundle = bundleOf(ManifestMetadataReader.TRACE_SAMPLING to false)
-    val context = fixture.getContext(metaData = bundle)
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertFalse(fixture.options.isTraceSampling)
-  }
-
-  @Test
-  fun `applyMetadata reads traceSampling to options and keeps default`() {
-    // Arrange
-    val context = fixture.getContext()
-
-    // Act
-    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
-
-    // Assert
-    assertTrue(fixture.options.isTraceSampling)
-  }
-
-  @Test
   fun `applyMetadata reads profilesSampleRate from metadata`() {
     // Arrange
     val expectedSampleRate = 0.99f
@@ -2085,6 +2060,46 @@ class ManifestMetadataReaderTest {
       listOf("Some error", "Another .*"),
       fixture.options.ignoredErrors,
     )
+  }
+
+  @Test
+  fun `applyMetadata reads ignored errors for deduplication if found`() {
+    val bundle =
+      bundleOf(
+        ManifestMetadataReader.IGNORED_ERRORS_FOR_DEDUPLICATION to
+          "example.FirstException,example.SecondException"
+      )
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.ignoredErrorsForDeduplication)
+      .containsExactly("example.FirstException", "example.SecondException")
+      .inOrder()
+  }
+
+  @Test
+  fun `applyMetadata preserves default ignored errors for deduplication if missing`() {
+    val context = fixture.getContext()
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.ignoredErrorsForDeduplication)
+      .containsExactly(
+        "io.netty.handler.timeout.ReadTimeoutException",
+        "io.netty.handler.timeout.WriteTimeoutException",
+      )
+      .inOrder()
+  }
+
+  @Test
+  fun `applyMetadata empty ignored errors for deduplication removes the default`() {
+    val bundle = bundleOf(ManifestMetadataReader.IGNORED_ERRORS_FOR_DEDUPLICATION to "")
+    val context = fixture.getContext(metaData = bundle)
+
+    ManifestMetadataReader.applyMetadata(context, fixture.options, fixture.buildInfoProvider)
+
+    assertThat(fixture.options.ignoredErrorsForDeduplication).isEmpty()
   }
 
   @Test

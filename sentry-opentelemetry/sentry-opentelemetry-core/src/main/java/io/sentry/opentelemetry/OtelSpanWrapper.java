@@ -153,11 +153,9 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
       @Nullable String description,
       @Nullable SentryDate timestamp,
       @NotNull SpanOptions spanOptions) {
-    if (timestamp != null) {
-      spanOptions.setStartTimestamp(timestamp);
-    }
-
-    return startChild(operation, description, spanOptions);
+    final @NotNull SpanOptions spanOptionsSnapshot = new SpanOptions(spanOptions);
+    spanOptionsSnapshot.setStartTimestamp(timestamp);
+    return startChild(operation, description, spanOptionsSnapshot);
   }
 
   @Override
@@ -194,12 +192,10 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
   @Override
   public @Nullable TraceContext traceContext() {
-    if (scopes.getOptions().isTraceSampling()) {
-      final @Nullable Baggage baggage = context.getBaggage();
-      if (baggage != null) {
-        updateBaggageValues(baggage);
-        return baggage.toTraceContext();
-      }
+    final @Nullable Baggage baggage = context.getBaggage();
+    if (baggage != null) {
+      updateBaggageValues(baggage);
+      return baggage.toTraceContext();
     }
     return null;
   }
@@ -232,12 +228,10 @@ public final class OtelSpanWrapper implements IOtelSpanWrapper {
 
   @Override
   public @Nullable BaggageHeader toBaggageHeader(@Nullable List<String> thirdPartyBaggageHeaders) {
-    if (scopes.getOptions().isTraceSampling()) {
-      final @Nullable Baggage baggage = context.getBaggage();
-      if (baggage != null) {
-        updateBaggageValues(baggage);
-        return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
-      }
+    final @Nullable Baggage baggage = context.getBaggage();
+    if (baggage != null) {
+      updateBaggageValues(baggage);
+      return BaggageHeader.fromBaggageAndOutgoingHeader(baggage, thirdPartyBaggageHeaders);
     }
     return null;
   }

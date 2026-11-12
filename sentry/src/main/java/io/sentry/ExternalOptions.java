@@ -40,6 +40,7 @@ public final class ExternalOptions {
   private final @NotNull Set<Class<? extends Throwable>> ignoredExceptionsForType =
       new CopyOnWriteArraySet<>();
   private @Nullable List<String> ignoredErrors;
+  private @Nullable List<String> ignoredErrorsForDeduplication;
   private @Nullable Boolean printUncaughtStackTrace;
   private @Nullable Boolean sendClientReports;
   private @NotNull Set<String> bundleIds = new CopyOnWriteArraySet<>();
@@ -148,6 +149,8 @@ public final class ExternalOptions {
         propertiesProvider.getLongProperty("session-flush-timeout-millis"));
 
     options.setIgnoredErrors(propertiesProvider.getListOrNull("ignored-errors"));
+    options.setIgnoredErrorsForDeduplication(
+        propertiesProvider.getListOrNull("ignored-errors-for-deduplication"));
 
     options.setEnabled(propertiesProvider.getBooleanProperty("enabled"));
 
@@ -547,6 +550,15 @@ public final class ExternalOptions {
 
   public void setIgnoredErrors(final @Nullable List<String> ignoredErrors) {
     this.ignoredErrors = ignoredErrors;
+  }
+
+  public @Nullable List<String> getIgnoredErrorsForDeduplication() {
+    return ignoredErrorsForDeduplication;
+  }
+
+  public void setIgnoredErrorsForDeduplication(
+      final @Nullable List<String> ignoredErrorsForDeduplication) {
+    this.ignoredErrorsForDeduplication = ignoredErrorsForDeduplication;
   }
 
   public @Nullable Boolean getSendClientReports() {

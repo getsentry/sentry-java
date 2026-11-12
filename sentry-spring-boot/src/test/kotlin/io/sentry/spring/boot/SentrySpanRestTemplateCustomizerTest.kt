@@ -81,7 +81,6 @@ class SentrySpanRestTemplateCustomizerTest {
       }
 
       sentryOptions.dsn = "https://key@sentry.io/proj"
-      sentryOptions.isTraceSampling = true
 
       mockServer.enqueue(
         MockResponse().setBody("OK").setSocketPolicy(socketPolicy).setResponseCode(status.value())

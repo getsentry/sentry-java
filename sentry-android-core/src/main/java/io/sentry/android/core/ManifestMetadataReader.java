@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -101,7 +100,6 @@ final class ManifestMetadataReader {
 
   static final String PROFILER_START_ON_APP_START = "io.sentry.traces.profiling.start-on-app-start";
 
-  @ApiStatus.Experimental static final String TRACE_SAMPLING = "io.sentry.traces.trace-sampling";
   static final String TRACE_PROPAGATION_TARGETS = "io.sentry.traces.trace-propagation-targets";
 
   static final String ATTACH_THREADS = "io.sentry.attach-threads";
@@ -185,6 +183,9 @@ final class ManifestMetadataReader {
   static final String MAX_BREADCRUMBS = "io.sentry.max-breadcrumbs";
 
   static final String IGNORED_ERRORS = "io.sentry.ignored-errors";
+
+  static final String IGNORED_ERRORS_FOR_DEDUPLICATION =
+      "io.sentry.ignored-errors-for-deduplication";
 
   static final String IN_APP_INCLUDES = "io.sentry.in-app-includes";
 
@@ -472,9 +473,6 @@ final class ManifestMetadataReader {
           }
         }
 
-        options.setTraceSampling(
-            readBool(metadata, logger, TRACE_SAMPLING, options.isTraceSampling()));
-
         options.setEnableAutoActivityLifecycleTracing(
             readBool(
                 metadata,
@@ -730,6 +728,12 @@ final class ManifestMetadataReader {
         }
 
         options.setIgnoredErrors(readList(metadata, logger, IGNORED_ERRORS));
+
+        final @Nullable List<String> ignoredErrorsForDeduplication =
+            readList(metadata, logger, IGNORED_ERRORS_FOR_DEDUPLICATION);
+        if (ignoredErrorsForDeduplication != null) {
+          options.setIgnoredErrorsForDeduplication(ignoredErrorsForDeduplication);
+        }
 
         final @Nullable List<String> includes = readList(metadata, logger, IN_APP_INCLUDES);
         if (includes != null && !includes.isEmpty()) {

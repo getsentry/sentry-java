@@ -663,17 +663,6 @@ class AndroidConnectionStatusProviderTest {
   }
 
   @Test
-  fun `API level below M falls back to legacy method`() {
-    whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.LOLLIPOP)
-    whenever(networkInfo.isConnected).thenReturn(true)
-
-    assertEquals(
-      IConnectionStatusProvider.ConnectionStatus.CONNECTED,
-      connectionStatusProvider.connectionStatus,
-    )
-  }
-
-  @Test
   fun `onCapabilitiesChanged updates cache`() {
     whenever(buildInfo.sdkInfoVersion).thenReturn(Build.VERSION_CODES.N)
 

@@ -91,6 +91,79 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `transaction options copy snapshots all values`() {
+    val startTimestamp = SentryLongDate(1234)
+    val customSamplingContext = CustomSamplingContext()
+    val finishedCallback = mock<TransactionFinishedCallback>()
+    val spanFactory = mock<ISpanFactory>()
+    val original =
+      TransactionOptions().apply {
+        this.startTimestamp = startTimestamp
+        scopeBindingMode = ScopeBindingMode.ON
+        isTrimStart = true
+        isTrimEnd = true
+        isIdle = true
+        origin = "origin"
+        this.customSamplingContext = customSamplingContext
+        isAppStartTransaction = true
+        isWaitForChildren = true
+        idleTimeout = 1000
+        deadlineTimeout = 2000
+        transactionFinishedCallback = finishedCallback
+        setSpanFactory(spanFactory)
+      }
+
+    val copy = TransactionOptions(original)
+
+    assertThat(copy.startTimestamp).isSameInstanceAs(startTimestamp)
+    assertThat(copy.scopeBindingMode).isEqualTo(ScopeBindingMode.ON)
+    assertThat(copy.isTrimStart).isTrue()
+    assertThat(copy.isTrimEnd).isTrue()
+    assertThat(copy.isIdle).isTrue()
+    assertThat(copy.origin).isEqualTo("origin")
+    assertThat(copy.customSamplingContext).isSameInstanceAs(customSamplingContext)
+    assertThat(copy.isAppStartTransaction).isTrue()
+    assertThat(copy.isWaitForChildren).isTrue()
+    assertThat(copy.idleTimeout).isEqualTo(1000)
+    assertThat(copy.deadlineTimeout).isEqualTo(2000)
+    assertThat(copy.transactionFinishedCallback).isSameInstanceAs(finishedCallback)
+    assertThat(copy.spanFactory).isSameInstanceAs(spanFactory)
+  }
+
+  @Test
+  fun `modifying transaction options does not affect running transaction`() {
+    val originalCallback = mock<TransactionFinishedCallback>()
+    val replacementCallback = mock<TransactionFinishedCallback>()
+    val transactionOptions =
+      TransactionOptions().apply {
+        isWaitForChildren = true
+        transactionFinishedCallback = originalCallback
+      }
+    val transaction =
+      SentryTracer(
+        TransactionContext("name", "op", TracesSamplingDecision(true)),
+        fixture.scopes,
+        transactionOptions,
+        null,
+      )
+    val child = transaction.startChild("child")
+
+    transactionOptions.isWaitForChildren = false
+    transactionOptions.transactionFinishedCallback = replacementCallback
+    transaction.finish()
+
+    assertThat(transaction.isFinished).isFalse()
+    verify(originalCallback, never()).execute(any())
+    verify(replacementCallback, never()).execute(any())
+
+    child.finish()
+
+    assertThat(transaction.isFinished).isTrue()
+    verify(originalCallback).execute(transaction)
+    verify(replacementCallback, never()).execute(any())
+  }
+
+  @Test
   fun `root span has thread name and thread id in the data`() {
     val tracer = fixture.getSut()
     assertTrue(tracer.root.data.containsKey(SpanDataConvention.THREAD_NAME))
@@ -912,7 +985,6 @@ class SentryTracerTest {
   fun `returns trace state`() {
     val transaction =
       fixture.getSut({
-        it.isTraceSampling = true
         it.isSendDefaultPii = true
       })
     fixture.scopes.setUser(User().apply { id = "user-id" })
@@ -931,7 +1003,7 @@ class SentryTracerTest {
 
   @Test
   fun `trace state uses the scope environment when set`() {
-    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    val transaction = fixture.getSut()
     fixture.scopes.configureScope { it.environment = "scope-environment" }
 
     val trace = transaction.traceContext()
@@ -941,7 +1013,7 @@ class SentryTracerTest {
 
   @Test
   fun `trace state uses the global scope environment when set`() {
-    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    val transaction = fixture.getSut()
     fixture.scopes.configureScope(ScopeType.GLOBAL) { it.environment = "global-environment" }
 
     val trace = transaction.traceContext()
@@ -951,7 +1023,7 @@ class SentryTracerTest {
 
   @Test
   fun `returns trace state without userId if not send pii`() {
-    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    val transaction = fixture.getSut()
     fixture.scopes.setUser(User().apply { id = "user-id" })
     val trace = transaction.traceContext()
     assertNotNull(trace) {
@@ -966,7 +1038,7 @@ class SentryTracerTest {
 
   @Test
   fun `trace state does not change once computed`() {
-    val transaction = fixture.getSut({ it.isTraceSampling = true })
+    val transaction = fixture.getSut()
     val traceBeforeUserSet = transaction.traceContext()
     fixture.scopes.setUser(User().apply { id = "user-id" })
     val traceAfterUserSet = transaction.traceContext()
@@ -987,7 +1059,6 @@ class SentryTracerTest {
   fun `returns baggage header`() {
     val transaction =
       fixture.getSut({
-        it.isTraceSampling = true
         it.environment = "production"
         it.release = "1.0.99-rc.7"
         it.isSendDefaultPii = true
@@ -1016,7 +1087,6 @@ class SentryTracerTest {
   fun `returns baggage header without userId if not send pii`() {
     val transaction =
       fixture.getSut({
-        it.isTraceSampling = true
         it.environment = "production"
         it.release = "1.0.99-rc.7"
       })
@@ -1041,7 +1111,6 @@ class SentryTracerTest {
   fun `returns baggage header without userId if send pii and null user`() {
     val transaction =
       fixture.getSut({
-        it.isTraceSampling = true
         it.environment = "production"
         it.release = "1.0.99-rc.7"
         it.isSendDefaultPii = true

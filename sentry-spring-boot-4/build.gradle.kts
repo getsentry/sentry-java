@@ -13,6 +13,9 @@ plugins {
   alias(libs.plugins.gradle.versions)
   alias(libs.plugins.buildconfig)
   alias(libs.plugins.springboot4) apply false
+  id("io.sentry.spotless")
+  id("io.sentry.jdk-target")
+  id("io.sentry.publish")
   id("io.sentry.api-validation")
 }
 
@@ -83,7 +86,7 @@ dependencies {
   testImplementation(projects.sentryReactor)
   testImplementation(projects.sentryTestSupport)
   testImplementation(kotlin(Config.kotlinStdLib))
-  testImplementation(Config.Libs.kotlinReflect)
+  testImplementation(libs.kotlin.reflect)
   testImplementation(platform(SpringBootPlugin.BOM_COORDINATES))
   testImplementation(libs.apache.httpclient)
   testImplementation(libs.context.propagation)

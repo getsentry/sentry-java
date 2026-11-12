@@ -112,53 +112,46 @@ public final class Baggage {
     @Nullable Double sampleRand = null;
 
     if (headerValue != null) {
-      try {
-        // see https://errorprone.info/bugpattern/StringSplitter for why limit is passed
-        final String[] keyValueStrings = headerValue.split(",", -1);
-        for (final String keyValueString : keyValueStrings) {
-          if (keyValueString.trim().startsWith(SENTRY_BAGGAGE_PREFIX)) {
-            try {
-              // As per spec (https://www.w3.org/TR/baggage/#value)
-              // a value may contain "=" signs, thus we split by the first occurrence
-              final int separatorIndex = keyValueString.indexOf("=");
-              final String key = keyValueString.substring(0, separatorIndex).trim();
-              final String keyDecoded = decode(key);
-              final String value = keyValueString.substring(separatorIndex + 1).trim();
-              final String valueDecoded = decode(value);
+      // see https://errorprone.info/bugpattern/StringSplitter for why limit is passed
+      final String[] keyValueStrings = headerValue.split(",", -1);
+      for (final String keyValueString : keyValueStrings) {
+        if (keyValueString.trim().startsWith(SENTRY_BAGGAGE_PREFIX)) {
+          try {
+            // As per spec (https://www.w3.org/TR/baggage/#value)
+            // a value may contain "=" signs, thus we split by the first occurrence
+            final int separatorIndex = keyValueString.indexOf("=");
+            final String key = keyValueString.substring(0, separatorIndex).trim();
+            final String keyDecoded = decode(key);
+            final String value = keyValueString.substring(separatorIndex + 1).trim();
+            final String valueDecoded = decode(value);
 
-              if (DSCKeys.SAMPLE_RATE.equals(keyDecoded)) {
-                sampleRate = toDouble(valueDecoded);
-              } else if (DSCKeys.SAMPLE_RAND.equals(keyDecoded)) {
-                sampleRand = toDouble(valueDecoded);
-              } else {
-                keyValues.put(keyDecoded, valueDecoded);
-              }
-              // Without ignoring SAMPLE_RAND here, we'd be freezing baggage that we're transporting
-              // via OTel span attributes.
-              // This is done when a transaction is created via Sentry API.
-              // In that case Baggage is created before the OTel span is created and we put it on
-              // the span attributes.
-              // It does however only contain the sample random value as its only value.
-              // The OTel code then uses it to create a propagation context from it and ends up
-              // freezing it,
-              // preventing outgoing requests (to other systems or Sentry) from adding info to
-              // baggage and only then freeze it.
-              if (!DSCKeys.SAMPLE_RAND.equalsIgnoreCase(key)) {
-                shouldFreeze = true;
-              }
-            } catch (Throwable e) {
-              logger.log(
-                  SentryLevel.ERROR,
-                  e,
-                  "Unable to decode baggage key value pair %s",
-                  keyValueString);
+            if (DSCKeys.SAMPLE_RATE.equals(keyDecoded)) {
+              sampleRate = toDouble(valueDecoded);
+            } else if (DSCKeys.SAMPLE_RAND.equals(keyDecoded)) {
+              sampleRand = toDouble(valueDecoded);
+            } else {
+              keyValues.put(keyDecoded, valueDecoded);
             }
-          } else if (includeThirdPartyValues) {
-            thirdPartyKeyValueStrings.add(keyValueString.trim());
+            // Without ignoring SAMPLE_RAND here, we'd be freezing baggage that we're transporting
+            // via OTel span attributes.
+            // This is done when a transaction is created via Sentry API.
+            // In that case Baggage is created before the OTel span is created and we put it on
+            // the span attributes.
+            // It does however only contain the sample random value as its only value.
+            // The OTel code then uses it to create a propagation context from it and ends up
+            // freezing it,
+            // preventing outgoing requests (to other systems or Sentry) from adding info to
+            // baggage and only then freeze it.
+            if (!DSCKeys.SAMPLE_RAND.equalsIgnoreCase(key)) {
+              shouldFreeze = true;
+            }
+          } catch (Throwable e) {
+            logger.log(
+                SentryLevel.ERROR, e, "Unable to decode baggage key value pair %s", keyValueString);
           }
+        } else if (includeThirdPartyValues) {
+          thirdPartyKeyValueStrings.add(keyValueString.trim());
         }
-      } catch (Throwable e) {
-        logger.log(SentryLevel.ERROR, e, "Unable to decode baggage header %s", headerValue);
       }
     }
     final String thirdPartyHeader =
