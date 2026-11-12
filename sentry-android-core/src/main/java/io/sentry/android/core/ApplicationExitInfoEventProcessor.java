@@ -859,7 +859,8 @@ public final class ApplicationExitInfoEventProcessor
         return;
       }
 
-      if (options.isEnableAnrFingerprinting() && AnrCulpritEventHelper.hasOnlySystemFrames(event)) {
+      if (options.isEnableAnrFingerprinting()
+          && AnrCulpritEventHelper.hasOnlySystemFrames(event.getExceptions())) {
         // If the stacktrace only contains system frames, we want to statically group these events
         // to avoid ANR noise due to {{ default }} stacktrace grouping
         event.setFingerprints(
@@ -1005,7 +1006,7 @@ public final class ApplicationExitInfoEventProcessor
       final Mechanism mechanism = new Mechanism();
       mechanism.setType("ANR");
       final @Nullable List<SentryException> sentryExceptions =
-          culpritEventHelper.createExceptions(culprit, mechanism);
+          culpritEventHelper.toSentryExceptions(culprit, mechanism);
 
       if (sentryExceptions != null) {
         // Replace the original ANR exception with the profile-derived one,
