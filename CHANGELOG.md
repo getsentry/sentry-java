@@ -10,7 +10,7 @@
 ### Fixes
 
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
-- Android: End `ui.load` transactions at their deadline as `deadline_exceeded` when the device slept or the app was frozen, instead of reporting TTID, TTFD and app start values that are hours long ([#6599](https://github.com/getsentry/sentry-java/pull/6599))
+- Android: Mark transactions and spans that finish after their deadline as `deadline_exceeded`, so `ui.load` transactions with TTID, TTFD or app start values that are hours long after a device sleep no longer report `ok` ([#6599](https://github.com/getsentry/sentry-java/pull/6599))
 
 ## 8.64.0
 
