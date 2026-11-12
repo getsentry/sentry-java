@@ -264,6 +264,7 @@ class SentryAutoConfigurationTest {
         "sentry.ignored-checkins=slug1,slugB",
         "sentry.ignored-errors=Some error,Another .*",
         "sentry.ignored-transactions=transactionName1,transactionNameB",
+        "sentry.ignored-server-http-status-codes-for-tracing=404,500-599",
         "sentry.enable-backpressure-handling=false",
         "sentry.enable-database-transaction-tracing=true",
         "sentry.enable-spotlight=true",
@@ -319,6 +320,10 @@ class SentryAutoConfigurationTest {
         assertThat(options.ignoredCheckIns).containsOnly("slug1", "slugB")
         assertThat(options.ignoredErrors).containsOnly("Some error", "Another .*")
         assertThat(options.ignoredTransactions).containsOnly("transactionName1", "transactionNameB")
+        assertThat(options.ignoredServerHttpStatusCodesForTracing).hasSize(2)
+        assertThat(options.ignoredServerHttpStatusCodesForTracing!![0].isInRange(404)).isTrue()
+        assertThat(options.ignoredServerHttpStatusCodesForTracing!![1].isInRange(500)).isTrue()
+        assertThat(options.ignoredServerHttpStatusCodesForTracing!![1].isInRange(599)).isTrue()
         assertThat(options.isEnableBackpressureHandling).isEqualTo(false)
         assertThat(options.isEnableDatabaseTransactionTracing).isEqualTo(true)
         assertThat(options.isForceInit).isEqualTo(true)
@@ -339,6 +344,19 @@ class SentryAutoConfigurationTest {
         assertThat(options.profileLifecycle).isEqualTo(ProfileLifecycle.TRACE)
         assertThat(options.isStrictTraceContinuation).isEqualTo(true)
         assertThat(options.orgId).isEqualTo("12345")
+      }
+  }
+
+  @Test
+  fun `empty ignored server HTTP status codes disable the configuration`() {
+    contextRunner
+      .withPropertyValues(
+        "sentry.dsn=http://key@localhost/proj",
+        "sentry.ignored-server-http-status-codes-for-tracing=",
+      )
+      .run {
+        assertThat(it.getBean(SentryProperties::class.java).ignoredServerHttpStatusCodesForTracing)
+          .isEmpty()
       }
   }
 

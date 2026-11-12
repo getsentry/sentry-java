@@ -14,6 +14,7 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 
 class ExternalOptionsTest {
@@ -406,6 +407,77 @@ class ExternalOptionsTest {
   fun `creates options with null ignoredTransactions if missing`() {
     val logger = mock<ILogger>()
     withPropertiesFile("Another .*", logger) { options -> assertNull(options.ignoredTransactions) }
+  }
+
+  @Test
+  fun `ignored server HTTP status codes are null if missing`() {
+    withPropertiesFile { assertThat(it.ignoredServerHttpStatusCodesForTracing).isNull() }
+  }
+
+  @Test
+  fun `creates empty ignored server HTTP status codes from empty input`() {
+    withPropertiesFile("ignored-server-http-status-codes-for-tracing=") {
+      assertThat(it.ignoredServerHttpStatusCodesForTracing).isEmpty()
+    }
+  }
+
+  @Test
+  fun `creates ignored server HTTP status codes and ranges`() {
+    withPropertiesFile("ignored-server-http-status-codes-for-tracing=404, 410 , 500-599") { options
+      ->
+      val ranges = options.ignoredServerHttpStatusCodesForTracing
+      assertThat(ranges).hasSize(3)
+      assertThat(ranges!![0].isInRange(404)).isTrue()
+      assertThat(ranges[1].isInRange(410)).isTrue()
+      assertThat(ranges[2].isInRange(500)).isTrue()
+      assertThat(ranges[2].isInRange(599)).isTrue()
+    }
+  }
+
+  @Test
+  fun `ignores invalid entries while preserving valid ignored server HTTP status codes`() {
+    val logger = mock<ILogger>()
+    withPropertiesFile(
+      "ignored-server-http-status-codes-for-tracing=404,invalid,600,500-400",
+      logger,
+    ) { options ->
+      val ranges = options.ignoredServerHttpStatusCodesForTracing
+      assertThat(ranges).hasSize(1)
+      assertThat(ranges!![0].isInRange(404)).isTrue()
+    }
+    verify(logger, times(3)).log(eq(SentryLevel.WARNING), any<String>(), any<String>())
+  }
+
+  @Test
+  fun `all invalid ignored server HTTP status codes leave existing configuration unchanged`() {
+    withPropertiesFile("ignored-server-http-status-codes-for-tracing=invalid,600,500-400") {
+      externalOptions ->
+      assertThat(externalOptions.ignoredServerHttpStatusCodesForTracing).isNull()
+
+      val options =
+        SentryOptions().apply {
+          ignoredServerHttpStatusCodesForTracing = listOf(HttpStatusCodeRange(410))
+        }
+      options.merge(externalOptions)
+
+      assertThat(options.ignoredServerHttpStatusCodesForTracing).hasSize(1)
+      assertThat(options.ignoredServerHttpStatusCodesForTracing!![0].isInRange(410)).isTrue()
+    }
+  }
+
+  @Test
+  fun `system property takes precedence for ignored server HTTP status codes`() {
+    System.setProperty("sentry.ignored-server-http-status-codes-for-tracing", "410")
+    try {
+      withPropertiesFile("ignored-server-http-status-codes-for-tracing=404") { options ->
+        val ranges = options.ignoredServerHttpStatusCodesForTracing
+        assertThat(ranges).hasSize(1)
+        assertThat(ranges!![0].isInRange(410)).isTrue()
+        assertThat(ranges[0].isInRange(404)).isFalse()
+      }
+    } finally {
+      System.clearProperty("sentry.ignored-server-http-status-codes-for-tracing")
+    }
   }
 
   @Test

@@ -567,6 +567,7 @@ public final class io/sentry/ExternalOptions {
 	public fun getIgnoredCheckIns ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
+	public fun getIgnoredServerHttpStatusCodesForTracing ()Ljava/util/List;
 	public fun getIgnoredTransactions ()Ljava/util/List;
 	public fun getInAppExcludes ()Ljava/util/List;
 	public fun getInAppIncludes ()Ljava/util/List;
@@ -623,6 +624,7 @@ public final class io/sentry/ExternalOptions {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
+	public fun setIgnoredServerHttpStatusCodesForTracing (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setMaxRequestBodySize (Lio/sentry/SentryOptions$RequestSize;)V
 	public fun setOrgId (Ljava/lang/String;)V
@@ -710,6 +712,7 @@ public final class io/sentry/HttpStatusCodeRange {
 	public fun <init> (I)V
 	public fun <init> (II)V
 	public fun isInRange (I)Z
+	public static fun valueOf (Ljava/lang/String;)Lio/sentry/HttpStatusCodeRange;
 }
 
 public abstract interface class io/sentry/IAppStartExtender {
@@ -3556,6 +3559,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun getIgnoredErrorFilters ()Ljava/util/List;
 	public fun getIgnoredErrors ()Ljava/util/List;
 	public fun getIgnoredExceptionsForType ()Ljava/util/Set;
+	public fun getIgnoredServerHttpStatusCodesForTracing ()Ljava/util/List;
 	public fun getIgnoredSpanOriginFilters ()Ljava/util/List;
 	public fun getIgnoredSpanOrigins ()Ljava/util/List;
 	public fun getIgnoredTransactionFilters ()Ljava/util/List;
@@ -3729,6 +3733,7 @@ public class io/sentry/SentryOptions : io/sentry/transport/RateLimiterConfig {
 	public fun setIdleTimeout (Ljava/lang/Long;)V
 	public fun setIgnoredCheckIns (Ljava/util/List;)V
 	public fun setIgnoredErrors (Ljava/util/List;)V
+	public fun setIgnoredServerHttpStatusCodesForTracing (Ljava/util/List;)V
 	public fun setIgnoredSpanOrigins (Ljava/util/List;)V
 	public fun setIgnoredTransactions (Ljava/util/List;)V
 	public fun setInitPriority (Lio/sentry/InitPriority;)V
