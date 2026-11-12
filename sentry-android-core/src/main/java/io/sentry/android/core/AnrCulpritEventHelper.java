@@ -1,6 +1,5 @@
 package io.sentry.android.core;
 
-import io.sentry.SentryEvent;
 import io.sentry.SentryExceptionFactory;
 import io.sentry.android.core.anr.AggregatedStackTrace;
 import io.sentry.android.core.anr.AnrCulpritIdentifier;
@@ -14,7 +13,6 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Turns the culprit of an ANR profile into event exceptions, for fatal and non-fatal ANRs. */
 @ApiStatus.Internal
 public final class AnrCulpritEventHelper {
 
@@ -29,7 +27,7 @@ public final class AnrCulpritEventHelper {
    *
    * @return the exceptions, or {@code null} if the culprit stack is empty
    */
-  public @Nullable List<SentryException> createExceptions(
+  public @Nullable List<SentryException> toSentryExceptions(
       final @NotNull AggregatedStackTrace culprit, final @NotNull Mechanism mechanism) {
     final @NotNull StackTraceElement[] stack = culprit.getStack();
     if (stack.length == 0) {
@@ -44,9 +42,14 @@ public final class AnrCulpritEventHelper {
         new ExceptionMechanismException(mechanism, exception, null, false));
   }
 
-  /** Returns {@code true} if the event has exceptions and none of their frames is an app frame. */
-  public static boolean hasOnlySystemFrames(final @NotNull SentryEvent event) {
-    final @Nullable List<SentryException> exceptions = event.getExceptions();
+  /**
+   * A frame is a system frame if it is not in app and its module is a Java, Kotlin, or Android
+   * framework package, see {@link AnrCulpritIdentifier#isSystemFrame(String)}.
+   *
+   * @return {@code true} if there is at least one exception and none of their frames is an app
+   *     frame
+   */
+  public static boolean hasOnlySystemFrames(final @Nullable List<SentryException> exceptions) {
     if (exceptions == null || exceptions.isEmpty()) {
       return false;
     }
