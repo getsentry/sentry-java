@@ -1,5 +1,6 @@
 package io.sentry.time;
 
+import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +33,11 @@ public final class Timestamp {
 
   public long epochNanos() {
     return epochNanos;
+  }
+
+  /** Truncated to whole milliseconds, the precision of {@link java.util.Date} and most payloads. */
+  public long epochMillis() {
+    return TimeUnit.NANOSECONDS.toMillis(epochNanos);
   }
 
   @Override
