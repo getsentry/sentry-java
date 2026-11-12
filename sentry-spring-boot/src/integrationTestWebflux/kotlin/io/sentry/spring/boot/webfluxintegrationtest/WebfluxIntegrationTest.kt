@@ -26,7 +26,6 @@ import org.springframework.test.context.junit4.SpringRunner
   properties =
     [
       "sentry.traces-sample-rate=1.0",
-      "sentry.ignored-server-http-status-codes-for-tracing=404",
       "sentry.logs.enabled=true",
       "sentry.profile-session-sample-rate=1.0",
       "sentry.profile-lifecycle=TRACE",

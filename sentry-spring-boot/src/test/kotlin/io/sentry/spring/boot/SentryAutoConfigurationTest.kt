@@ -348,6 +348,15 @@ class SentryAutoConfigurationTest {
   }
 
   @Test
+  fun `ignored server HTTP status codes default to 404`() {
+    contextRunner.withPropertyValues("sentry.dsn=http://key@localhost/proj").run {
+      val ranges = it.getBean(SentryProperties::class.java).ignoredServerHttpStatusCodesForTracing
+      assertThat(ranges).hasSize(1)
+      assertThat(ranges!!.single().isInRange(404)).isTrue()
+    }
+  }
+
+  @Test
   fun `empty ignored server HTTP status codes disable the configuration`() {
     contextRunner
       .withPropertyValues(

@@ -598,7 +598,8 @@ public class SentryOptions implements RateLimiterConfig {
    */
   private @Nullable List<FilterString> ignoredTransactions = null;
 
-  private @Nullable List<HttpStatusCodeRange> ignoredServerHttpStatusCodesForTracing = null;
+  private @Nullable List<HttpStatusCodeRange> ignoredServerHttpStatusCodesForTracing =
+      new ArrayList<>(Collections.singletonList(new HttpStatusCodeRange(404)));
 
   @ApiStatus.Experimental
   private @NotNull IBackpressureMonitor backpressureMonitor = NoOpBackpressureMonitor.getInstance();
@@ -3151,9 +3152,10 @@ public class SentryOptions implements RateLimiterConfig {
 
   /**
    * Returns the HTTP status codes and inclusive ranges for which incoming server transactions are
-   * not sent to Sentry. An empty list disables this filter.
+   * not sent to Sentry. Defaults to a single range containing 404. An empty list disables this
+   * filter.
    *
-   * @return the configured HTTP status code ranges, or {@code null} if unset
+   * @return the configured HTTP status code ranges, or {@code null} if explicitly set to null
    */
   public @Nullable List<HttpStatusCodeRange> getIgnoredServerHttpStatusCodesForTracing() {
     return ignoredServerHttpStatusCodesForTracing;
@@ -3163,11 +3165,11 @@ public class SentryOptions implements RateLimiterConfig {
    * Sets the HTTP status codes and inclusive ranges for which incoming server transactions are not
    * sent to Sentry. For example, configure {@code new HttpStatusCodeRange(404)} for one status or
    * {@code new HttpStatusCodeRange(500, 599)} for an inclusive range. External configuration
-   * accepts comma-separated codes and ranges such as {@code 404,410,500-599}. An empty list
-   * disables this filter.
+   * accepts comma-separated codes and ranges such as {@code 404,410,500-599}. An empty list or
+   * {@code null} disables this filter.
    *
    * @param ignoredServerHttpStatusCodesForTracing the HTTP status code ranges, or {@code null} to
-   *     leave the option unset
+   *     disable the filter
    */
   public void setIgnoredServerHttpStatusCodesForTracing(
       final @Nullable List<HttpStatusCodeRange> ignoredServerHttpStatusCodesForTracing) {

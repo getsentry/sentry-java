@@ -52,6 +52,44 @@
       `logsEnabled` argument. Pass `false` to keep Sentry Logs disabled.
 - Disable tracing for HTTP `OPTIONS` requests by default. Set `traceOptionsRequests` to `true` to
   preserve the previous behavior ([#6254](https://github.com/getsentry/sentry-java/pull/6254))
+- Incoming HTTP server transactions that finish with status 404 are no longer sent to Sentry by
+  default. This includes matched endpoints that intentionally return 404. Outgoing HTTP requests
+  that receive a 404 are unaffected.
+
+  Restore the previous behavior and trace every incoming HTTP status with an empty configuration:
+
+  Java:
+
+  ```java
+  import java.util.Collections;
+
+  options.setIgnoredServerHttpStatusCodesForTracing(Collections.emptyList());
+  ```
+
+  `sentry.properties`:
+
+  ```properties
+  ignored-server-http-status-codes-for-tracing=
+  ```
+
+  Spring Boot `application.properties`:
+
+  ```properties
+  sentry.ignored-server-http-status-codes-for-tracing=
+  ```
+
+  Spring Boot `application.yml`:
+
+  ```yaml
+  sentry:
+    ignored-server-http-status-codes-for-tracing: []
+  ```
+
+  The final response status is only known after sampling and request handling. The transaction may
+  already have propagated a sampled trace to downstream services, which can still report their
+  segments. Local child spans are discarded with the ignored transaction. Continuous profile
+  chunks are reported independently. External OTLP export does not pass through `SentryClient` and
+  is not filtered by this option ([#6567](https://github.com/getsentry/sentry-java/pull/6567))
 - Remove the Apache HttpClient transport and stop publishing `sentry-apache-http-client-5` ([#6214](https://github.com/getsentry/sentry-java/pull/6214))
 - Remove the deprecated `Instrumenter` enum, option, span context property, and `startChild` overloads ([#6252](https://github.com/getsentry/sentry-java/pull/6252))
 - Remove deprecated OpenTelemetry integration classes and the legacy `SentrySpanStorage` ([#6243](https://github.com/getsentry/sentry-java/pull/6243))
