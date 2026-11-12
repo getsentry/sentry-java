@@ -140,8 +140,10 @@ public class SentryTracingFilter extends OncePerRequestFilter {
     final @Nullable ITransaction transaction =
         getOrStartTransaction(httpRequest, transactionContext);
 
+    boolean filterChainCompleted = false;
     try {
       filterChain.doFilter(httpRequest, httpResponse);
+      filterChainCompleted = true;
     } catch (Throwable e) {
       if (transaction != null) {
         // exceptions that are not handled by Spring
@@ -165,7 +167,10 @@ public class SentryTracingFilter extends OncePerRequestFilter {
         if (transactionName != null) {
           transaction.setName(transactionName, transactionNameSource);
           transaction.setOperation(TRANSACTION_OP);
-          transaction.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, httpResponse.getStatus());
+          // An escaping exception may be mapped to an HTTP status later by the container.
+          if (filterChainCompleted) {
+            transaction.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, httpResponse.getStatus());
+          }
           // if exception has been thrown, transaction status is already set to INTERNAL_ERROR, and
           // httpResponse.getStatus() returns 200.
           if (transaction.getStatus() == null) {
