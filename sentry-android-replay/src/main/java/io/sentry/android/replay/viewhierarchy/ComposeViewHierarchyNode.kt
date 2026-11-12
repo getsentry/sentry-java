@@ -32,6 +32,7 @@ import io.sentry.android.replay.util.toRect
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.GenericViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.ImageViewHierarchyNode
 import io.sentry.android.replay.viewhierarchy.ViewHierarchyNode.TextViewHierarchyNode
+import io.sentry.util.ExceptionUtils
 import java.lang.ref.WeakReference
 import java.lang.reflect.Method
 
@@ -45,7 +46,7 @@ internal object ComposeViewHierarchyNode {
           .java
           .getDeclaredMethod("getCollapsedSemantics\$ui_release")
           .apply { isAccessible = true }
-      } catch (_: Throwable) {
+      } catch (_: NoSuchMethodException) {
         // ignore, as this method may not be available
       }
       return@lazy null
@@ -57,7 +58,7 @@ internal object ComposeViewHierarchyNode {
   internal fun retrieveSemanticsConfiguration(node: LayoutNode): SemanticsConfiguration? {
     return try {
       node.semanticsConfiguration
-    } catch (t: Throwable) {
+    } catch (t: NoSuchMethodError) {
       // for backwards compatibility
       // Jetpack Compose 1.8 or older
       if (getCollapsedSemanticsMethod != null) {
@@ -128,16 +129,27 @@ internal object ComposeViewHierarchyNode {
     }
 
     val visibleRect = node.coordinates.boundsInWindow(_rootCoordinates?.get())
-    val semantics: SemanticsConfiguration?
+    var semanticsFailure: Throwable? = null
+    val semantics: SemanticsConfiguration? =
+      try {
+        retrieveSemanticsConfiguration(node)
+      } catch (e: LinkageError) {
+        // an unsupported Compose version, which must not crash the app
+        semanticsFailure = e
+        null
+      } catch (t: Throwable) {
+        // semantics modifiers run app code, so we can't know what this throws
+        ExceptionUtils.rethrowIfFatal(t)
+        semanticsFailure = t
+        null
+      }
 
-    try {
-      semantics = retrieveSemanticsConfiguration(node)
-    } catch (t: Throwable) {
+    if (semanticsFailure != null) {
       if (!semanticsRetrievalErrorLogged) {
         semanticsRetrievalErrorLogged = true
         logger.log(
           SentryLevel.ERROR,
-          t,
+          semanticsFailure,
           """
           Error retrieving semantics information from Compose tree. Most likely you're using
           an unsupported version of androidx.compose.ui:ui. The supported
@@ -152,7 +164,7 @@ internal object ComposeViewHierarchyNode {
       // fail fast in our own sample/UI-test apps (see SentryReplayDebug), so regressions surface
       // as crashes instead of silently degrading masking
       if (SentryReplayDebug.failFast) {
-        throw t
+        throw semanticsFailure
       }
 
       // If we're unable to retrieve the semantics configuration
@@ -284,13 +296,23 @@ internal object ComposeViewHierarchyNode {
       return false
     }
 
+    var traversalFailure: Throwable? = null
     try {
       val rootNode = (view as? Owner)?.root ?: return false
       rootNode.traverse(parent, isComposeRoot = true, options, logger)
+    } catch (e: LinkageError) {
+      // an unsupported Compose version, which must not crash the app
+      traversalFailure = e
     } catch (e: Throwable) {
+      // the traversal runs app code, so we can't know what it throws
+      ExceptionUtils.rethrowIfFatal(e)
+      traversalFailure = e
+    }
+
+    if (traversalFailure != null) {
       logger.log(
         SentryLevel.ERROR,
-        e,
+        traversalFailure,
         """
         Error traversing Compose tree. Most likely you're using an unsupported version of
         androidx.compose.ui:ui. The minimum supported version is 1.5.0. If it's a newer
@@ -302,7 +324,7 @@ internal object ComposeViewHierarchyNode {
       // fail fast in our own sample/UI-test apps (see SentryReplayDebug), so regressions surface
       // as crashes instead of silently skipping the whole Compose subtree (i.e. not masking it)
       if (SentryReplayDebug.failFast) {
-        throw e
+        throw traversalFailure
       }
       return false
     }

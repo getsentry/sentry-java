@@ -8,6 +8,7 @@ import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.ndk.NativeModuleListLoader;
 import io.sentry.protocol.DebugImage;
 import io.sentry.util.AutoClosableReentrantLock;
+import io.sentry.util.ExceptionUtils;
 import io.sentry.util.Objects;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -71,7 +72,13 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
                 .getLogger()
                 .log(SentryLevel.DEBUG, "Debug images loaded: %d", debugImages.size());
           }
+        } catch (LinkageError e) {
+          // e.g. UnsatisfiedLinkError when the native library failed to load
+          options.getLogger().log(SentryLevel.ERROR, e, "Failed to load debug images.");
         } catch (Throwable e) {
+          // A JNI call into sentry-native, so we can't know what it throws. The event is sent
+          // without debug images.
+          ExceptionUtils.rethrowIfFatal(e);
           options.getLogger().log(SentryLevel.ERROR, e, "Failed to load debug images.");
         }
       }
@@ -172,7 +179,13 @@ public final class DebugImagesLoader implements IDebugImagesLoader {
         moduleListLoader.clearModuleList();
 
         options.getLogger().log(SentryLevel.INFO, "Debug images cleared.");
+      } catch (LinkageError e) {
+        // e.g. UnsatisfiedLinkError when the native library failed to load
+        options.getLogger().log(SentryLevel.ERROR, e, "Failed to clear debug images.");
       } catch (Throwable e) {
+        // A JNI call into sentry-native, so we can't know what it throws. The cached list is
+        // cleared either way.
+        ExceptionUtils.rethrowIfFatal(e);
         options.getLogger().log(SentryLevel.ERROR, e, "Failed to clear debug images.");
       }
       debugImages = null;

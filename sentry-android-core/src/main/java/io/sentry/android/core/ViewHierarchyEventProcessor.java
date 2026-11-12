@@ -196,7 +196,14 @@ public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
               try {
                 viewHierarchy.set(snapshotViewHierarchy(decorView, exporters));
                 latch.countDown();
+              } catch (LinkageError e) {
+                // The Compose exporter calls Compose internals, which may not match the app's
+                // Compose version
+                logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", e);
               } catch (Throwable t) {
+                // The snapshot calls into the app's own views, so we can't know what it throws.
+                // The event is sent without a view hierarchy.
+                ExceptionUtils.rethrowIfFatal(t);
                 logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
               }
             });
@@ -204,7 +211,14 @@ public final class ViewHierarchyEventProcessor implements SentryEventProcessor {
           return viewHierarchy.get();
         }
       }
+    } catch (LinkageError e) {
+      // The Compose exporter calls Compose internals, which may not match the app's Compose
+      // version
+      logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", e);
     } catch (Throwable t) {
+      // The snapshot calls into the app's own views, so we can't know what it throws. The event
+      // is sent without a view hierarchy.
+      ExceptionUtils.rethrowIfFatal(t);
       logger.log(SentryLevel.ERROR, "Failed to process view hierarchy.", t);
     }
     return null;
