@@ -1,8 +1,7 @@
-package io.sentry.android.core;
+package io.sentry.android.core.anr;
 
 import io.sentry.SentryExceptionFactory;
-import io.sentry.android.core.anr.AggregatedStackTrace;
-import io.sentry.android.core.anr.AnrCulpritIdentifier;
+import io.sentry.android.core.ApplicationNotResponding;
 import io.sentry.exception.ExceptionMechanismException;
 import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
