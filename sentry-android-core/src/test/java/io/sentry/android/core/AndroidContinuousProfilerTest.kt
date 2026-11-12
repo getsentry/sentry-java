@@ -19,6 +19,7 @@ import io.sentry.android.core.internal.util.SentryFrameMetricsCollector
 import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
+import io.sentry.util.LoadClass
 import java.io.File
 import java.util.concurrent.Future
 import kotlin.test.AfterTest

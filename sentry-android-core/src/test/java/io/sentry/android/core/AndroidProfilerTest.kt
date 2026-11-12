@@ -13,6 +13,7 @@ import io.sentry.profilemeasurements.ProfileMeasurement
 import io.sentry.test.getCtor
 import io.sentry.test.getProperty
 import io.sentry.util.LazyEvaluator
+import io.sentry.util.LoadClass
 import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Future

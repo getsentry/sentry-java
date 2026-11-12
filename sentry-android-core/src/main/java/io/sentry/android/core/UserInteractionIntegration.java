@@ -15,6 +15,7 @@ import io.sentry.SentryOptions;
 import io.sentry.android.core.internal.gestures.NoOpWindowCallback;
 import io.sentry.android.core.internal.gestures.SentryGestureListener;
 import io.sentry.android.core.internal.gestures.SentryWindowCallback;
+import io.sentry.util.LoadClass;
 import io.sentry.util.Objects;
 import java.io.Closeable;
 import java.io.IOException;
@@ -44,7 +45,7 @@ public final class UserInteractionIntegration
   private final @NotNull Object wrappedWindowsLock = new Object();
 
   public UserInteractionIntegration(
-      final @NotNull Application application, final @NotNull io.sentry.util.LoadClass classLoader) {
+      final @NotNull Application application, final @NotNull LoadClass classLoader) {
     this.application = Objects.requireNonNull(application, "Application is required");
     isAndroidxLifecycleAvailable =
         classLoader.isClassAvailable("androidx.lifecycle.Lifecycle", options);

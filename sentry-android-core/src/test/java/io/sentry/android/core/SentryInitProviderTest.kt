@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.sentry.Sentry
 import io.sentry.test.callMethod
+import io.sentry.util.LoadClass
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

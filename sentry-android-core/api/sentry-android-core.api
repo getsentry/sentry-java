@@ -321,13 +321,6 @@ public final class io/sentry/android/core/InternalSentrySdk {
 	public static fun updateSessionForDroppedEventNonTerminating (Z)V
 }
 
-public final class io/sentry/android/core/LoadClass : io/sentry/util/LoadClass {
-	public fun <init> ()V
-	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/ILogger;)Z
-	public fun isClassAvailable (Ljava/lang/String;Lio/sentry/SentryOptions;)Z
-	public fun loadClass (Ljava/lang/String;Lio/sentry/ILogger;)Ljava/lang/Class;
-}
-
 public final class io/sentry/android/core/MemoryLimiterIntegration : io/sentry/Integration, java/io/Closeable {
 	public fun <init> (Landroid/content/Context;Lio/sentry/android/core/BuildInfoProvider;)V
 	public fun close ()V

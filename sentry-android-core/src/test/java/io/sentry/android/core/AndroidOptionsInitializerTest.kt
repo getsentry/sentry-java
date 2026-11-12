@@ -39,6 +39,7 @@ import io.sentry.internal.modules.IModulesLoader
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.ITransportGate
+import io.sentry.util.LoadClass
 import io.sentry.util.thread.IThreadChecker
 import java.io.File
 import kotlin.test.BeforeTest
