@@ -9,7 +9,7 @@
 
 ### Performance
 
-- SDK log calls no longer allocate when `debug` is off ([#6600](https://github.com/getsentry/sentry-java/pull/6600))
+- Most SDK log calls no longer allocate when `debug` is off ([#6600](https://github.com/getsentry/sentry-java/pull/6600))
 
 ### Fixes
 
