@@ -52,7 +52,7 @@ testing {
     register<JvmTestSuite>("testKtor300") {
       useJUnit()
       dependencies {
-        implementation(enforcedPlatform("io.ktor:ktor-bom:3.0.0"))
+        implementation(enforcedPlatform("io.ktor:ktor-bom:3.6.1"))
       }
       sources {
         java.setSrcDirs(sourceSets.test.get().java.srcDirs)
