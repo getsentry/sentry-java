@@ -67,7 +67,11 @@ class PerformanceAndroidEventProcessorTest {
 
   private val fixture = Fixture()
 
-  private fun createAppStartSpan(traceId: SentryId, coldStart: Boolean = true) =
+  private fun createAppStartSpan(
+    traceId: SentryId,
+    coldStart: Boolean = true,
+    status: SpanStatus = SpanStatus.OK,
+  ) =
     SentrySpan(
         0.0,
         1.0,
@@ -76,7 +80,7 @@ class PerformanceAndroidEventProcessorTest {
         null,
         if (coldStart) APP_START_COLD else APP_START_WARM,
         "App Start",
-        SpanStatus.OK,
+        status,
         null,
         emptyMap(),
         emptyMap(),
@@ -455,6 +459,22 @@ class PerformanceAndroidEventProcessorTest {
 
     assertFalse(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_COLD))
     assertFalse(tr.measurements.containsKey(MeasurementValue.KEY_APP_START_WARM))
+  }
+
+  @Test
+  fun `app start that the deadline ended before the first frame adds no measurement`() {
+    val sut = fixture.getSut()
+    var tr = createUiLoadTransaction()
+    tr.spans.add(
+      createAppStartSpan(tr.contexts.trace!!.traceId, status = SpanStatus.DEADLINE_EXCEEDED)
+    )
+    // a first frame drawn after the device slept stopped the app start time span
+    setAppStart(fixture.options)
+
+    tr = sut.process(tr, Hint())
+
+    assertThat(tr.measurements).doesNotContainKey(MeasurementValue.KEY_APP_START_COLD)
+    assertThat(tr.spans.map { it.op }).containsExactly(APP_START_COLD)
   }
 
   @Test

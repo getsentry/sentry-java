@@ -100,7 +100,8 @@ final class PerformanceAndroidEventProcessor implements SentryEventProcessor {
                 && isStandaloneAppStartTxn
                 && !traceContext.getData().containsKey(APP_START_SCREEN_DATA);
 
-        if (appStartMetrics.shouldSendStartMeasurements(isHeadlessStandaloneAppStartTxn)) {
+        if (appStartMetrics.shouldSendStartMeasurements(isHeadlessStandaloneAppStartTxn)
+            && !isAppStartSpanCutShort(transaction)) {
           final @NotNull TimeSpan appStartTimeSpan =
               isHeadlessStandaloneAppStartTxn
                   ? appStartMetrics.getAppStartTimeSpanForHeadless()
@@ -289,6 +290,24 @@ final class PerformanceAndroidEventProcessor implements SentryEventProcessor {
 
     final @Nullable SpanContext context = txn.getContexts().getTrace();
     return context != null && context.getOperation().equals(STANDALONE_APP_START_OP);
+  }
+
+  /**
+   * Whether something ended the app.start span before the first frame did, such as the deadline or
+   * the activity being destroyed.
+   *
+   * <p>On a device that stays awake the app start time span is still running then, so nothing is
+   * measured. After the device slept or the process was frozen, a first frame drawn since may
+   * already have stopped it, hours after the app.start span ended.
+   */
+  private static boolean isAppStartSpanCutShort(final @NotNull SentryTransaction txn) {
+    for (final @NotNull SentrySpan span : txn.getSpans()) {
+      if (span.getOp().contentEquals(APP_START_COLD)
+          || span.getOp().contentEquals(APP_START_WARM)) {
+        return span.getStatus() != SpanStatus.OK;
+      }
+    }
+    return false;
   }
 
   private void attachAppStartSpans(

@@ -7,9 +7,15 @@ import io.sentry.protocol.TransactionNameSource
 import io.sentry.protocol.User
 import io.sentry.test.createTestScopes
 import io.sentry.test.getProperty
+import io.sentry.time.MonotonicTicker
+import io.sentry.time.TestMonotonicTicker
 import io.sentry.util.thread.IThreadChecker
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.Callable
+import java.util.concurrent.Future
+import java.util.concurrent.FutureTask
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -35,7 +41,12 @@ import org.mockito.kotlin.whenever
 
 class SentryTracerTest {
   private class Fixture {
-    val options = SentryOptions()
+    val ticker = TestMonotonicTicker()
+    // SentryOptions has no ticker setter.
+    val options =
+      object : SentryOptions() {
+        override fun getMonotonicTicker(): MonotonicTicker = ticker
+      }
     val scopes: Scopes
     val compositePerformanceCollector: CompositePerformanceCollector
 
@@ -1869,5 +1880,167 @@ class SentryTracerTest {
     transaction.setTag(null, "v")
     assertNull(transaction.getTag(null))
     assertNull(transaction.getTag("k"))
+  }
+
+  @Test
+  fun `when the deadline timer runs late, the transaction and its open spans end at the deadline`() {
+    val timer = ManualTimer()
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(timer, clock)
+    val span = transaction.startChild("op")
+
+    sleepFor(3, TimeUnit.HOURS, clock)
+    timer.run(DEADLINE_MILLIS)
+
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+    assertThat(span.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+    verify(fixture.scopes).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `when finished after the deadline passed but before the deadline timer ran, the transaction ends at the deadline`() {
+    val timer = ManualTimer()
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(timer, clock)
+    val span = transaction.startChild("op")
+
+    sleepFor(3, TimeUnit.HOURS, clock)
+    transaction.finish(SpanStatus.OK)
+
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+    assertThat(span.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+    verify(fixture.scopes).captureTransaction(any(), anyOrNull(), anyOrNull(), anyOrNull())
+  }
+
+  @Test
+  fun `when finished after the deadline passed, the transaction keeps a status it already had`() {
+    val transaction = getSutWithDeadline(ManualTimer(), TestDateProvider())
+    transaction.startChild("op")
+    transaction.status = SpanStatus.UNAVAILABLE
+
+    fixture.ticker.advance(3, TimeUnit.HOURS)
+    transaction.finish(SpanStatus.OK)
+
+    assertThat(transaction.status).isEqualTo(SpanStatus.UNAVAILABLE)
+  }
+
+  @Test
+  fun `when the idle timeout runs after the deadline passed, the transaction ends at the deadline`() {
+    val timer = ManualTimer()
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(timer, clock, idleTimeout = IDLE_MILLIS)
+    val span = transaction.startChild("open")
+    // schedules the idle timeout, since the transaction doesn't wait for children
+    transaction.startChild("finished").finish()
+
+    sleepFor(3, TimeUnit.HOURS, clock)
+    timer.run(IDLE_MILLIS)
+
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+  }
+
+  @Test
+  fun `when force finished after the deadline passed, the transaction ends at the deadline with the hint`() {
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(ManualTimer(), clock)
+    transaction.startChild("op")
+    val hint = Hint()
+
+    sleepFor(3, TimeUnit.HOURS, clock)
+    transaction.forceFinish(SpanStatus.ABORTED, false, hint)
+
+    assertThat(transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+    verify(fixture.scopes).captureTransaction(any(), anyOrNull(), eq(hint), anyOrNull())
+  }
+
+  @Test
+  fun `when a span starts after the deadline passed, it is a no-op and the transaction ends at the deadline`() {
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(ManualTimer(), clock)
+    val span = transaction.startChild("op")
+
+    sleepFor(3, TimeUnit.HOURS, clock)
+    val lateSpan = transaction.startChild("late")
+
+    assertThat(lateSpan).isInstanceOf(NoOpSpan::class.java)
+    assertThat(transaction.isFinished).isTrue()
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(clock.deadlineNanos())
+  }
+
+  @Test
+  fun `when finished before the deadline, the transaction ends now with its own status`() {
+    val clock = TestDateProvider()
+    val transaction = getSutWithDeadline(ManualTimer(), clock)
+    val span = transaction.startChild("op")
+
+    sleepFor(DEADLINE_MILLIS - 1, TimeUnit.MILLISECONDS, clock)
+    span.finish(SpanStatus.OK)
+    transaction.finish(SpanStatus.OK)
+
+    assertThat(transaction.status).isEqualTo(SpanStatus.OK)
+    assertThat(transaction.finishDate!!.nanoTimestamp()).isEqualTo(clock.now().nanoTimestamp())
+    assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(clock.now().nanoTimestamp())
+  }
+
+  private fun getSutWithDeadline(
+    timer: ManualTimer,
+    clock: TestDateProvider,
+    idleTimeout: Long? = null,
+  ): SentryTracer =
+    fixture.getSut(
+      optionsConfiguration = {
+        it.timerExecutorService = timer
+        it.dateProvider = clock
+      },
+      idleTimeout = idleTimeout,
+      deadlineTimeout = DEADLINE_MILLIS,
+    )
+
+  /** Moves both clocks on, as a device does across a suspend that the timers don't notice. */
+  private fun sleepFor(amount: Long, unit: TimeUnit, clock: TestDateProvider) {
+    fixture.ticker.advance(amount, unit)
+    clock.nowNanos += unit.toNanos(amount)
+  }
+
+  private class TestDateProvider : SentryDateProvider {
+    var nowNanos = START_NANOS
+
+    override fun now(): SentryDate = SentryLongDate(nowNanos)
+
+    fun deadlineNanos(): Long = START_NANOS + TimeUnit.MILLISECONDS.toNanos(DEADLINE_MILLIS)
+  }
+
+  /** Holds scheduled tasks by their delay instead of running them, so a test runs each one. */
+  private class ManualTimer : ISentryExecutorService {
+    private val tasks = mutableMapOf<Long, Runnable>()
+
+    fun run(delayMillis: Long) = tasks.getValue(delayMillis).run()
+
+    override fun schedule(runnable: Runnable, delayMillis: Long): Future<*> {
+      tasks[delayMillis] = runnable
+      return FutureTask<Unit> {}
+    }
+
+    override fun submit(runnable: Runnable): Future<*> = FutureTask<Unit> {}
+
+    override fun <T> submit(callable: Callable<T>): Future<T> = FutureTask(callable)
+
+    override fun close(timeoutMillis: Long) {}
+
+    override fun isClosed(): Boolean = false
+  }
+
+  private companion object {
+    const val START_NANOS = 1_000_000_000_000L
+    const val DEADLINE_MILLIS = 30_000L
+    const val IDLE_MILLIS = 3_000L
   }
 }

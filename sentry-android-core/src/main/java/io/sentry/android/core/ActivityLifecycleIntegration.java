@@ -25,6 +25,7 @@ import io.sentry.SentryDate;
 import io.sentry.SentryLevel;
 import io.sentry.SentryNanotimeDate;
 import io.sentry.SentryOptions;
+import io.sentry.SentryTracer;
 import io.sentry.SpanOptions;
 import io.sentry.SpanStatus;
 import io.sentry.TracesSamplingDecision;
@@ -522,6 +523,7 @@ public final class ActivityLifecycleIntegration
       final @Nullable ISpan ttidSpan,
       final @Nullable ISpan ttfdSpan) {
     if (transaction != null) {
+      finishTransactionIfDeadlinePassed(transaction, ttidSpan, ttfdSpan);
       // if io.sentry.traces.activity.auto-finish.enable is disabled, transaction may be already
       // finished manually when this method is called.
       if (transaction.isFinished()) {
@@ -581,6 +583,7 @@ public final class ActivityLifecycleIntegration
         scopes.configureScope(scope -> scope.setScreen(activityClassName));
       }
       startTracing(activity);
+      final @Nullable ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
       final @Nullable ISpan ttidSpan = ttidSpanMap.get(activity);
       final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
 
@@ -591,7 +594,7 @@ public final class ActivityLifecycleIntegration
           && ttfdSpan != null
           && fullyDisplayedReporter != null) {
         fullyDisplayedReporter.registerFullyDrawnListener(
-            () -> onFullFrameDrawn(ttidSpan, ttfdSpan));
+            () -> onFullFrameDrawn(transaction, ttidSpan, ttfdSpan));
       }
     }
   }
@@ -654,15 +657,19 @@ public final class ActivityLifecycleIntegration
       }
       if (performanceEnabled) {
 
+        final @Nullable ITransaction transaction = activitiesWithOngoingTransactions.get(activity);
         final @Nullable ISpan ttidSpan = ttidSpanMap.get(activity);
         final @Nullable ISpan ttfdSpan = ttfdSpanMap.get(activity);
         if (activity.getWindow() != null) {
           FirstDrawDoneListener.registerForNextDraw(
-              activity, () -> onFirstFrameDrawn(ttfdSpan, ttidSpan), buildInfoProvider);
+              activity,
+              () -> onFirstFrameDrawn(transaction, ttfdSpan, ttidSpan),
+              buildInfoProvider);
         } else {
           // Posting a task to the main thread's handler will make it executed after it finished
           // its current job. That is, right after the activity draws the layout.
-          new Handler(Looper.getMainLooper()).post(() -> onFirstFrameDrawn(ttfdSpan, ttidSpan));
+          new Handler(Looper.getMainLooper())
+              .post(() -> onFirstFrameDrawn(transaction, ttfdSpan, ttidSpan));
         }
       }
     }
@@ -715,6 +722,10 @@ public final class ActivityLifecycleIntegration
         helper.clear();
       }
       if (performanceEnabled) {
+        final ISpan ttidSpan = ttidSpanMap.get(activity);
+        final ISpan ttfdSpan = ttfdSpanMap.get(activity);
+        finishTransactionIfDeadlinePassed(
+            activitiesWithOngoingTransactions.get(activity), ttidSpan, ttfdSpan);
 
         // in case the appStartSpan isn't completed yet, we finish it as cancelled to avoid
         // memory leak
@@ -724,8 +735,6 @@ public final class ActivityLifecycleIntegration
         }
 
         // we finish the ttidSpan as cancelled in case it isn't completed yet
-        final ISpan ttidSpan = ttidSpanMap.get(activity);
-        final ISpan ttfdSpan = ttfdSpanMap.get(activity);
         finishSpan(ttidSpan, SpanStatus.DEADLINE_EXCEEDED);
 
         // we finish the ttfdSpan as deadline_exceeded in case it isn't completed yet
@@ -796,7 +805,12 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void onFirstFrameDrawn(final @Nullable ISpan ttfdSpan, final @Nullable ISpan ttidSpan) {
+  private void onFirstFrameDrawn(
+      final @Nullable ITransaction transaction,
+      final @Nullable ISpan ttfdSpan,
+      final @Nullable ISpan ttidSpan) {
+    finishTransactionIfDeadlinePassed(transaction, ttidSpan, ttfdSpan);
+
     // app start span
     final @NotNull AppStartMetrics appStartMetrics = AppStartMetrics.getInstance();
     final @NotNull TimeSpan appStartTimeSpan = appStartMetrics.getAppStartTimeSpan();
@@ -853,7 +867,11 @@ public final class ActivityLifecycleIntegration
     }
   }
 
-  private void onFullFrameDrawn(final @NotNull ISpan ttidSpan, final @NotNull ISpan ttfdSpan) {
+  private void onFullFrameDrawn(
+      final @Nullable ITransaction transaction,
+      final @NotNull ISpan ttidSpan,
+      final @NotNull ISpan ttfdSpan) {
+    finishTransactionIfDeadlinePassed(transaction, ttidSpan, ttfdSpan);
     cancelTtfdAutoClose();
     // Sentry.reportFullyDisplayed can be run in any thread, so we have to ensure synchronization
     // with first frame drawn
@@ -876,6 +894,31 @@ public final class ActivityLifecycleIntegration
         finishSpan(ttfdSpan);
       }
     }
+  }
+
+  /**
+   * Ends the transaction at its deadline if that has passed, because the device slept or the
+   * process was frozen before the deadline timer could run.
+   *
+   * <p>On a device that stayed awake the deadline timer would have ended the transaction and its
+   * spans before the activity callback that calls this. Ending them here first lets the callback
+   * carry on as it would have there: its spans are finished, so it measures nothing.
+   */
+  private void finishTransactionIfDeadlinePassed(
+      final @Nullable ITransaction transaction,
+      final @Nullable ISpan ttidSpan,
+      final @Nullable ISpan ttfdSpan) {
+    if (!(transaction instanceof SentryTracer)
+        || !((SentryTracer) transaction).hasDeadlinePassed()) {
+      return;
+    }
+    // When the TTFD auto-close is due before the deadline, on that device it had already ended the
+    // TTFD span.
+    if (options != null && TTFD_TIMEOUT_MILLIS < options.getDeadlineTimeout()) {
+      finishExceededTtfdSpan(ttfdSpan, ttidSpan);
+    }
+    // Past the deadline, finishing ends the transaction at the deadline, with its status.
+    transaction.finish();
   }
 
   private void finishExceededTtfdSpan(

@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewTreeObserver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.DateUtils
 import io.sentry.FullyDisplayedReporter
 import io.sentry.IScope
@@ -44,6 +45,7 @@ import io.sentry.protocol.SentryId
 import io.sentry.protocol.TransactionNameSource
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.getProperty
+import io.sentry.time.TestMonotonicTicker
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
@@ -68,6 +70,7 @@ import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.spy
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -82,7 +85,12 @@ class ActivityLifecycleIntegrationTest {
   private class Fixture {
     val application = mock<Application>()
     val scopes = mock<Scopes>()
-    val options = SentryAndroidOptions().apply { dsn = "https://key@sentry.io/proj" }
+    val ticker = TestMonotonicTicker()
+    // SentryAndroidOptions is final and has no ticker setter, so a spy supplies the ticker.
+    val options =
+      spy(SentryAndroidOptions().apply { dsn = "https://key@sentry.io/proj" }).also {
+        whenever(it.monotonicTicker).thenReturn(ticker)
+      }
     val bundle = mock<Bundle>()
     val activityFramesTracker = mock<ActivityFramesTracker>()
     val transactionFinishedCallback = mock<TransactionFinishedCallback>()
@@ -2558,6 +2566,138 @@ class ActivityLifecycleIntegrationTest {
     assertNotEquals(0, lastUptimeMillis.nanoTimestamp())
   }
 
+  @Test
+  fun `first frame drawn after the deadline passed ends the transaction at the deadline without TTID`() {
+    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    var nowMillis = START_MILLIS
+    fixture.options.dateProvider = SentryDateProvider { SentryNanotimeDate(nowMillis, 0) }
+    setAppStartTime(SentryNanotimeDate(START_MILLIS, 0))
+    sut.register(fixture.scopes, fixture.options)
+    val view = fixture.createView()
+    val activity = createAndResumeActivity(sut, view)
+    val ttidSpan = sut.ttidSpanMap[activity]!!
+    val appStartSpan = sut.appStartSpan!!
+
+    // the device sleeps before the first frame, and the deadline timer hasn't run yet
+    fixture.ticker.advance(3, TimeUnit.HOURS)
+    nowMillis += TimeUnit.HOURS.toMillis(3)
+    runFirstDraw(view)
+
+    for (span in listOf(fixture.transaction, ttidSpan, appStartSpan)) {
+      assertThat(span.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+      assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(deadlineNanos())
+    }
+    assertThat((ttidSpan as Span).measurements).isEmpty()
+    verify(fixture.scopes)
+      .captureTransaction(
+        check {
+          assertThat(it.measurements)
+            .doesNotContainKey(MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY)
+        },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `first frame drawn before the deadline still measures TTID`() {
+    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    var nowMillis = START_MILLIS
+    fixture.options.dateProvider = SentryDateProvider { SentryNanotimeDate(nowMillis, 0) }
+    setAppStartTime(SentryNanotimeDate(START_MILLIS, 0))
+    sut.register(fixture.scopes, fixture.options)
+    val view = fixture.createView()
+    val activity = createAndResumeActivity(sut, view)
+    val ttidSpan = sut.ttidSpanMap[activity]!!
+
+    fixture.ticker.advance(29, TimeUnit.SECONDS)
+    nowMillis += TimeUnit.SECONDS.toMillis(29)
+    runFirstDraw(view)
+
+    assertThat(ttidSpan.status).isEqualTo(SpanStatus.OK)
+    assertThat(ttidSpan.finishDate!!.nanoTimestamp())
+      .isEqualTo(TimeUnit.MILLISECONDS.toNanos(nowMillis))
+    assertThat(
+        (ttidSpan as Span).measurements[MeasurementValue.KEY_TIME_TO_INITIAL_DISPLAY]!!.value
+      )
+      .isEqualTo(TimeUnit.SECONDS.toMillis(29))
+    assertThat(fixture.transaction.isFinished).isFalse()
+  }
+
+  @Test
+  fun `full display reported after the deadline passed ends the TTFD span as its auto-close would, without TTFD`() {
+    val sut = fixture.getSut {
+      it.tracesSampleRate = 1.0
+      it.isEnableTimeToFullDisplayTracing = true
+    }
+    var nowMillis = START_MILLIS
+    fixture.options.dateProvider = SentryDateProvider { SentryNanotimeDate(nowMillis, 0) }
+    setAppStartTime(SentryNanotimeDate(START_MILLIS, 0))
+    sut.register(fixture.scopes, fixture.options)
+    val view = fixture.createView()
+    val activity = createAndResumeActivity(sut, view)
+    val ttidSpan = sut.ttidSpanMap[activity]!!
+    val ttfdSpan = sut.ttfdSpanMap[activity]!!
+    nowMillis += 1_000
+    runFirstDraw(view)
+
+    // the device sleeps before the app reports full display, and the timers haven't run yet
+    fixture.ticker.advance(3, TimeUnit.HOURS)
+    nowMillis += TimeUnit.HOURS.toMillis(3)
+    fixture.options.fullyDisplayedReporter.reportFullyDrawn()
+
+    assertThat(ttfdSpan.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    assertThat(ttfdSpan.finishDate).isEqualTo(ttidSpan.finishDate)
+    assertThat(ttfdSpan.description).endsWith(" - Deadline Exceeded")
+    assertThat((ttfdSpan as Span).measurements).isEmpty()
+    assertThat(fixture.transaction.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+    verify(fixture.scopes)
+      .captureTransaction(
+        check {
+          assertThat(it.measurements).doesNotContainKey(MeasurementValue.KEY_TIME_TO_FULL_DISPLAY)
+        },
+        anyOrNull<TraceContext>(),
+        anyOrNull(),
+        anyOrNull(),
+      )
+  }
+
+  @Test
+  fun `activity destroyed after the deadline passed ends the transaction at the deadline`() {
+    val sut = fixture.getSut { it.tracesSampleRate = 1.0 }
+    var nowMillis = START_MILLIS
+    fixture.options.dateProvider = SentryDateProvider { SentryNanotimeDate(nowMillis, 0) }
+    setAppStartTime(SentryNanotimeDate(START_MILLIS, 0))
+    sut.register(fixture.scopes, fixture.options)
+    val activity = createAndResumeActivity(sut, fixture.createView())
+    val ttidSpan = sut.ttidSpanMap[activity]!!
+    val appStartSpan = sut.appStartSpan!!
+
+    fixture.ticker.advance(3, TimeUnit.HOURS)
+    nowMillis += TimeUnit.HOURS.toMillis(3)
+    sut.onActivityDestroyed(activity)
+
+    for (span in listOf(fixture.transaction, ttidSpan, appStartSpan)) {
+      assertThat(span.status).isEqualTo(SpanStatus.DEADLINE_EXCEEDED)
+      assertThat(span.finishDate!!.nanoTimestamp()).isEqualTo(deadlineNanos())
+    }
+  }
+
+  private fun createAndResumeActivity(sut: ActivityLifecycleIntegration, view: View): Activity {
+    val activity = mock<Activity>()
+    whenever(activity.findViewById<View>(any())).thenReturn(view)
+    sut.onActivityCreated(activity, fixture.bundle)
+    sut.onActivityResumed(activity)
+    return activity
+  }
+
+  /** Where the deadline ends a ui.load that started at [START_MILLIS]. */
+  private fun deadlineNanos(): Long =
+    TimeUnit.MILLISECONDS.toNanos(
+      START_MILLIS + TransactionOptions.DEFAULT_DEADLINE_TIMEOUT_AUTO_TRANSACTION
+    )
+
   private fun SentryTracer.isFinishing() =
     getProperty<Any>("finishStatus").getProperty<Boolean>("isFinishing")
 
@@ -2644,6 +2784,10 @@ class ActivityLifecycleIntegrationTest {
     if (stopDate != null) {
       AppStartMetrics.getInstance().onActivityCreated(mock(), mock())
     }
+  }
+
+  private companion object {
+    const val START_MILLIS = 1_000_000L
   }
 }
 
