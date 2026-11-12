@@ -53,7 +53,8 @@ The lease is acquired preemptively by an incoming nav root's `NavScopes` instanc
 
 A displaced nav root remains eligible for lease restoration until it stops (`ON_STOP`). It gets the lease back when it resumes
 (`ON_RESUME`), or sooner if the new nav root leaves or pauses while the displaced nav root is still visible. If restored, the displaced nav
-root's nav data and unfinished transaction are reinstated.
+root's nav data is reinstated, and so is its nav transaction if unfinished. Otherwise, the nav root gets a new nav transaction (see
+[below](#returning-to-a-nav-root)).
 
 > † The exception is an incoming nav root that isn't resumed while the leaseholder is, e.g., a
 preloaded ViewPager2 Fragment page next to the current one. The user isn't interacting with such a
@@ -138,15 +139,31 @@ Alternative at rollback point: B disposes before A stops
                              Unbind txB ◄─────────────── dispose B ───┤
                              Navigation lease: A                      │
                              Republish A's staged data                │
-                             Restore txA if unfinished and scope free │
+                             Restore txA if unfinished, else start a  │
+                               new txA; bind it if the scope is free  │
                              Finish txB if unfinished                 │
 ```
 
-### Nav transactions follow navigation, not the lease
+### Returning to a nav root
 
-A nav root gets a nav transaction for a destination it navigates to, never merely for acquiring the lease. A destination reached without
-the lease gets its transaction when the lease is next acquired, if it can start then; otherwise it gets none. On reacquiring the lease
-without having navigated in the meantime, a nav root only gets its unfinished transaction back, if any.
+A nav root is "returned to" when its candidate acquires the lease at any time other than on its first back stack update, e.g., when the
+Activity covering it closes, or when the user swipes back to its ViewPager2 page. Spans produced on return (e.g., by work the nav root
+resumes) need a nav transaction to attach to:
 
-Hence the asymmetry for, e.g., ViewPager2 pages: the first time the user swipes to a preloaded page, it gets the transaction for the
-destination it reached while offscreen, but swiping back to a page whose transaction has finished starts none.
+- if the candidate's nav transaction is still active, that transaction is bound again, which
+  keeps the spans with the transaction that already holds the destination's earlier spans; and
+
+- if the candidate's nav transaction is finished (e.g., the transaction timed out while another
+  nav root held the lease, or it never started because another transaction held the scope's
+  transaction slot), a new nav transaction is started for the current destination.
+
+Either way, the transaction is bound only if the scope's transaction slot is free (see `StagedNavTransaction`). Rebinding and starting both
+happen when the candidate publishes (`INavStatePublisher.publishTo`) its nav state, so the coordinator needn't tell a return from a first
+acquisition: on its first back stack update, a candidate has no destination to start a transaction for yet.
+
+A nav root that's destroyed and recreated after losing the lease (e.g., on a configuration change) isn't returned to: it registers anew and
+gets a transaction on its first back stack update. See [#6454](https://github.com/getsentry/sentry-java/issues/6454).
+
+Bringing the app back to the foreground isn't a return either: the leaseholder keeps the lease while the app is in the background (see
+`stopCandidate`), so it starts no new nav transaction when it resumes. This matches the rest of the SDK, which starts no transaction when an
+existing Activity comes back to the foreground.
