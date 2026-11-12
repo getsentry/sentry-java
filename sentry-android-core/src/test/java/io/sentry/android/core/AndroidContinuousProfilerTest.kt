@@ -196,7 +196,7 @@ class AndroidContinuousProfilerTest {
   @Test
   fun `profiler sends chunk with measurements`() {
     val performanceCollector = mock<CompositePerformanceCollector>()
-    val collectionData = PerformanceCollectionData(10)
+    val collectionData = PerformanceCollectionData(10, 10)
 
     collectionData.usedHeapMemory = 2
     collectionData.usedNativeMemory = 3

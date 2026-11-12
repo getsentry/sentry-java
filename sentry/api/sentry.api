@@ -2215,9 +2215,10 @@ public final class io/sentry/OutboxSender : io/sentry/IEnvelopeSender {
 }
 
 public final class io/sentry/PerformanceCollectionData {
-	public fun <init> (J)V
+	public fun <init> (JJ)V
 	public fun getCpuUsagePercentage ()D
 	public fun getNanoTimestamp ()J
+	public fun getTickNanos ()J
 	public fun getUsedHeapMemory ()J
 	public fun getUsedNativeMemory ()J
 	public fun hasCpuUsagePercentage ()Z

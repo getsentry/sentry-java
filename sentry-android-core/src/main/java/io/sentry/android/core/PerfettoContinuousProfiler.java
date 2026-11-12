@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.ApiStatus;
@@ -673,14 +672,8 @@ public final class PerfettoContinuousProfiler
       @Nullable List<PerformanceCollectionData> performanceData = null;
       if (performanceCollector != null && chunkId != null) {
         performanceData = performanceCollector.stop(chunkId);
-        final long wallClockNowNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis());
-        final long elapsedRealtimeNowNanos = SystemClock.elapsedRealtimeNanos();
         addPerformanceDataToMeasurements(
-            performanceData,
-            measurements,
-            wallClockNowNanos,
-            elapsedRealtimeNowNanos,
-            profileStartElapsedRealtimeNanos);
+            performanceData, measurements, profileStartElapsedRealtimeNanos);
       }
       performanceCollector = null;
       chunkId = null;
@@ -714,8 +707,6 @@ public final class PerfettoContinuousProfiler
     private static void addPerformanceDataToMeasurements(
         final @Nullable List<PerformanceCollectionData> performanceData,
         final @NotNull Map<String, ProfileMeasurement> measurements,
-        final long wallClockNowNanos,
-        final long elapsedRealtimeNowNanos,
         final long profileStartElapsedRealtimeNanos) {
       if (performanceData == null || performanceData.isEmpty()) {
         return;
@@ -731,14 +722,10 @@ public final class PerfettoContinuousProfiler
       // still write to, so we synchronize on it while iterating, as AndroidProfiler does.
       synchronized (performanceData) {
         for (final @NotNull PerformanceCollectionData data : performanceData) {
-          // Convert sample timestamps (reported by CompositePerformanceCollector using
-          // System.currentTimeMillis), into the SystemClock.elapsedRealtime to report
-          // elapsed realtime nanos since chunk start
           final long nanoTimestamp = data.getNanoTimestamp();
-          final long nanosSinceSample = wallClockNowNanos - nanoTimestamp;
-          final long sampleElapsedRealtimeNanos = elapsedRealtimeNowNanos - nanosSinceSample;
-          final long relativeStartNs =
-              sampleElapsedRealtimeNanos - profileStartElapsedRealtimeNanos;
+          // The tick comes from options.getMonotonicTicker(), which on Android is
+          // SystemClock.elapsedRealtimeNanos(), the clock the chunk start was read from.
+          final long relativeStartNs = data.getTickNanos() - profileStartElapsedRealtimeNanos;
           if (data.hasCpuUsagePercentage()) {
             cpuUsageMeasurements.addLast(
                 new ProfileMeasurementValue(

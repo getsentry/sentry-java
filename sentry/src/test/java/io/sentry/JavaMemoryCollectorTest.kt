@@ -13,7 +13,7 @@ class JavaMemoryCollectorTest {
 
   @Test
   fun `when collect, only heap memory is collected`() {
-    val data = PerformanceCollectionData(10)
+    val data = PerformanceCollectionData(10, 10)
     val usedMemory = fixture.runtime.totalMemory() - fixture.runtime.freeMemory()
     fixture.collector.collect(data)
     assertThat(data.hasUsedNativeMemory()).isFalse()
