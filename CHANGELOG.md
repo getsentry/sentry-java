@@ -60,7 +60,7 @@
 
 ### Fixes
 
-- Preserve independent Netty read and write timeout events when exception singletons are reused ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
+- Preserve independent Netty read and write timeout events when exception singletons are reused. These exceptions now bypass event deduplication by default, so applications with multiple capture integrations may report the same timeout more than once. Use `SentryOptions.setIgnoredErrorsForDeduplication(...)` or `ignored-errors-for-deduplication` to customize or clear the default exclusions. ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
 
 ### Improvements
 
