@@ -17,6 +17,7 @@ import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
 import java.util.concurrent.FutureTask
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.assertContentEquals
@@ -276,13 +277,13 @@ class AndroidProfilerTest {
   fun `profiler includes performance measurements when passed on end`() {
     val profiler = fixture.getSut()
     val performanceCollectionData = ArrayList<PerformanceCollectionData>()
-    var singleData = PerformanceCollectionData(10)
+    var singleData = PerformanceCollectionData(10, 10)
     singleData.usedHeapMemory = 2
     singleData.usedNativeMemory = 3
     singleData.cpuUsagePercentage = 1.4
     performanceCollectionData.add(singleData)
 
-    singleData = PerformanceCollectionData(20)
+    singleData = PerformanceCollectionData(20, 20)
     singleData.usedHeapMemory = 3
     singleData.usedNativeMemory = 4
     performanceCollectionData.add(singleData)
@@ -300,6 +301,30 @@ class AndroidProfilerTest {
     assertContentEquals(
       listOf(3.0, 4.0),
       data.measurementsMap[ProfileMeasurement.ID_MEMORY_NATIVE_FOOTPRINT]!!.values.map { it.value },
+    )
+  }
+
+  @Test
+  fun `performance measurements are placed by their tick, not their wall timestamp`() {
+    val profiler = fixture.getSut()
+    profiler.start()
+    val profileStartNanos = profiler.getProperty<Long>("profileStartNanos")
+    // Wall timestamps that disagree with the ticks, as after a clock step during the profile.
+    val samples =
+      listOf(
+        PerformanceCollectionData(0, profileStartNanos + 1_000_000).apply { usedHeapMemory = 2 },
+        PerformanceCollectionData(TimeUnit.HOURS.toNanos(5), profileStartNanos + 2_000_000).apply {
+          usedHeapMemory = 3
+        },
+      )
+
+    val data = profiler.endAndCollect(false, samples)
+
+    assertContentEquals(
+      listOf("1000000", "2000000"),
+      data!!.measurementsMap[ProfileMeasurement.ID_MEMORY_FOOTPRINT]!!.values.map {
+        it.relativeStartNs
+      },
     )
   }
 
