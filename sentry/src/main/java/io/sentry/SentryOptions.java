@@ -40,6 +40,7 @@ import io.sentry.util.thread.IThreadChecker;
 import io.sentry.util.thread.NoOpThreadChecker;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,6 +78,11 @@ public class SentryOptions implements RateLimiterConfig {
    * have the environment field set.
    */
   private static final String DEFAULT_ENVIRONMENT = "production";
+
+  private static final String DEFAULT_IGNORED_READ_ERROR_FOR_DEDUPLICATION =
+      "io.netty.handler.timeout.ReadTimeoutException";
+  private static final String DEFAULT_IGNORED_WRITE_ERROR_FOR_DEDUPLICATION =
+      "io.netty.handler.timeout.WriteTimeoutException";
 
   /**
    * Are callbacks that run for every event. They can either return a new event which in most cases
@@ -386,6 +392,13 @@ public class SentryOptions implements RateLimiterConfig {
    * one framework active that captures errors, for example Logback and Spring Boot.
    */
   private boolean enableDeduplication = true;
+
+  /** Exception types that are excluded from event deduplication. */
+  private @Nullable List<FilterString> ignoredErrorsForDeduplication =
+      new ArrayList<>(
+          Arrays.asList(
+              new FilterString(DEFAULT_IGNORED_READ_ERROR_FOR_DEDUPLICATION),
+              new FilterString(DEFAULT_IGNORED_WRITE_ERROR_FOR_DEDUPLICATION)));
 
   /**
    * Enables event size limiting with {@link EventSizeLimitingEventProcessor}. When enabled, events
@@ -1947,6 +1960,68 @@ public class SentryOptions implements RateLimiterConfig {
    */
   public void setEnableDeduplication(final boolean enableDeduplication) {
     this.enableDeduplication = enableDeduplication;
+  }
+
+  /**
+   * Returns the list of exception class names excluded from event deduplication.
+   *
+   * <p>The returned list is a copy. Use the setter or adder to change the configured values.
+   *
+   * @return the list of exception class names excluded from event deduplication
+   */
+  public @Nullable List<String> getIgnoredErrorsForDeduplication() {
+    if (ignoredErrorsForDeduplication == null) {
+      return null;
+    }
+    final @NotNull List<String> strings = new ArrayList<>(ignoredErrorsForDeduplication.size());
+    for (final @NotNull FilterString filter : ignoredErrorsForDeduplication) {
+      strings.add(filter.getFilterString());
+    }
+    return strings;
+  }
+
+  /**
+   * Returns the compiled filters for {@link #getIgnoredErrorsForDeduplication()}.
+   *
+   * @return the compiled filters
+   */
+  @ApiStatus.Internal
+  public @Nullable List<FilterString> getIgnoredErrorFiltersForDeduplication() {
+    return ignoredErrorsForDeduplication;
+  }
+
+  /**
+   * Sets the list of exception class names excluded from event deduplication. Entries may be exact
+   * class names or regular expressions.
+   *
+   * @param ignoredErrorsForDeduplication exception class names or regular expressions
+   */
+  public void setIgnoredErrorsForDeduplication(
+      final @Nullable List<String> ignoredErrorsForDeduplication) {
+    if (ignoredErrorsForDeduplication == null) {
+      this.ignoredErrorsForDeduplication = null;
+    } else {
+      final @NotNull List<FilterString> patterns = new ArrayList<>();
+      for (final String pattern : ignoredErrorsForDeduplication) {
+        if (pattern != null && !pattern.isEmpty()) {
+          patterns.add(new FilterString(pattern));
+        }
+      }
+      this.ignoredErrorsForDeduplication = patterns;
+    }
+  }
+
+  /**
+   * Adds an exception class name or regular expression to the list excluded from event
+   * deduplication.
+   *
+   * @param pattern the exception class name or regular expression
+   */
+  public void addIgnoredErrorForDeduplication(final @NotNull String pattern) {
+    if (ignoredErrorsForDeduplication == null) {
+      ignoredErrorsForDeduplication = new ArrayList<>();
+    }
+    ignoredErrorsForDeduplication.add(new FilterString(pattern));
   }
 
   /**
@@ -3826,6 +3901,11 @@ public class SentryOptions implements RateLimiterConfig {
     if (options.getIgnoredErrors() != null) {
       final List<String> ignoredExceptions = new ArrayList<>(options.getIgnoredErrors());
       setIgnoredErrors(ignoredExceptions);
+    }
+    if (options.getIgnoredErrorsForDeduplication() != null) {
+      final List<String> ignoredErrorsForDeduplication =
+          new ArrayList<>(options.getIgnoredErrorsForDeduplication());
+      setIgnoredErrorsForDeduplication(ignoredErrorsForDeduplication);
     }
     if (options.isEnableBackpressureHandling() != null) {
       setEnableBackpressureHandling(options.isEnableBackpressureHandling());

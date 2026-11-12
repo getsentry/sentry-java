@@ -334,6 +334,29 @@ class ExternalOptionsTest {
   }
 
   @Test
+  fun `creates options with ignored errors for deduplication using external properties`() {
+    withPropertiesFile(
+      "ignored-errors-for-deduplication=example.FirstException,example.SecondException"
+    ) { options ->
+      assertThat(options.ignoredErrorsForDeduplication)
+        .containsExactly("example.FirstException", "example.SecondException")
+        .inOrder()
+    }
+  }
+
+  @Test
+  fun `creates options with empty ignored errors for deduplication using external properties`() {
+    withPropertiesFile("ignored-errors-for-deduplication=") { options ->
+      assertThat(options.ignoredErrorsForDeduplication).containsExactly("")
+    }
+  }
+
+  @Test
+  fun `creates options with null ignored errors for deduplication if missing`() {
+    withPropertiesFile { options -> assertThat(options.ignoredErrorsForDeduplication).isNull() }
+  }
+
+  @Test
   fun `creates options with single bundle ID using external properties`() {
     withPropertiesFile("bundle-ids=12ea7a02-46ac-44c0-a5bb-6d1fd9586411") { options ->
       assertTrue(options.bundleIds.containsAll(listOf("12ea7a02-46ac-44c0-a5bb-6d1fd9586411")))

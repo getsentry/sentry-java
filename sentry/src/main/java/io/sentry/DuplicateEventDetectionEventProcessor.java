@@ -26,8 +26,10 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
     if (options.isEnableDeduplication()) {
       final Throwable throwable = event.getThrowable();
       if (throwable != null) {
-        if (capturedObjects.containsKey(throwable)
-            || containsAnyKey(capturedObjects, allCauses(throwable))) {
+        if (isIgnoredForDeduplication(throwable)) {
+          return event;
+        }
+        if (capturedObjects.containsKey(throwable) || containsAnyKey(allCauses(throwable))) {
           options
               .getLogger()
               .log(
@@ -35,9 +37,8 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
                   "Duplicate Exception detected. Event %s will be discarded.",
                   event.getEventId());
           return null;
-        } else {
-          capturedObjects.put(throwable, null);
         }
+        capturedObjects.put(throwable, null);
       }
     } else {
       options.getLogger().log(SentryLevel.DEBUG, "Event deduplication is disabled.");
@@ -45,10 +46,29 @@ public final class DuplicateEventDetectionEventProcessor implements SentryEventP
     return event;
   }
 
-  private static <T> boolean containsAnyKey(
-      final @NotNull Map<T, Object> map, final @NotNull List<T> list) {
-    for (T entry : list) {
-      if (map.containsKey(entry)) {
+  private boolean containsAnyKey(final @NotNull List<Throwable> throwables) {
+    for (final Throwable throwable : throwables) {
+      if (isIgnoredForDeduplication(throwable)) {
+        return false;
+      }
+      if (capturedObjects.containsKey(throwable)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isIgnoredForDeduplication(final @NotNull Throwable throwable) {
+    final @Nullable List<FilterString> ignoredErrors =
+        options.getIgnoredErrorFiltersForDeduplication();
+    if (ignoredErrors == null || ignoredErrors.isEmpty()) {
+      return false;
+    }
+
+    final String exceptionClassName = throwable.getClass().getName();
+    for (final FilterString ignoredError : ignoredErrors) {
+      if (ignoredError.getFilterString().equals(exceptionClassName)
+          || ignoredError.matches(exceptionClassName)) {
         return true;
       }
     }

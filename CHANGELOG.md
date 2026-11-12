@@ -89,6 +89,10 @@
 - Do not inspect the response body of streaming Apollo 3 and 4 responses (`multipart/mixed`, `text/event-stream`) for failed requests, which blocked `@defer` and `@stream` ([#6432](https://github.com/getsentry/sentry-java/pull/6432))
 - Set Apollo 3, 4, and 5 HTTP spans to `CANCELLED` instead of `INTERNAL_ERROR` when the request is cancelled ([#6284](https://github.com/getsentry/sentry-java/pull/6284))
 
+### Fixes
+
+- Preserve independent Netty read and write timeout events when exception singletons are reused. These exceptions now bypass event deduplication by default, so applications with multiple capture integrations may report the same timeout more than once. Use `SentryOptions.setIgnoredErrorsForDeduplication(...)` or `ignored-errors-for-deduplication` to customize or clear the default exclusions. ([#6465](https://github.com/getsentry/sentry-java/pull/6465))
+
 ### Improvements
 
 - Promote check-in APIs from experimental to stable ([#6422](https://github.com/getsentry/sentry-java/pull/6422))
