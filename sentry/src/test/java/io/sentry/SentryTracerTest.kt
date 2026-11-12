@@ -240,6 +240,34 @@ class SentryTracerTest {
   }
 
   @Test
+  fun `ignored HTTP status configuration does not skip profiling and performance finalization`() {
+    val transactionProfiler = mock<ITransactionProfiler>()
+    val performanceCollector = mock<CompositePerformanceCollector>()
+    val profilingTraceData = mock<ProfilingTraceData>()
+    whenever(transactionProfiler.onTransactionFinish(any(), anyOrNull(), anyOrNull()))
+      .thenReturn(profilingTraceData)
+    val tracer =
+      fixture.getSut(
+        optionsConfiguration = {
+          it.profilesSampleRate = 1.0
+          it.setTransactionProfiler(transactionProfiler)
+          it.setIgnoredServerHttpStatusCodesForTracing(listOf(HttpStatusCodeRange(404)))
+        },
+        samplingDecision = TracesSamplingDecision(true, null, true, null),
+        performanceCollector = performanceCollector,
+      )
+    tracer.setData(SpanDataConvention.SENTRY_KIND_KEY, "server")
+    tracer.setData(SpanDataConvention.HTTP_STATUS_CODE_KEY, 404)
+
+    tracer.finish()
+
+    verify(performanceCollector).stop(tracer)
+    verify(transactionProfiler).onTransactionFinish(eq(tracer), anyOrNull(), eq(fixture.options))
+    verify(fixture.scopes)
+      .captureTransaction(any(), anyOrNull(), anyOrNull(), eq(profilingTraceData))
+  }
+
+  @Test
   fun `when continuous profiler is running, profile context is set`() {
     val continuousProfiler = mock<IContinuousProfiler>()
     val profilerId = SentryId()

@@ -103,6 +103,17 @@ class PersonIntegrationTest : IntegrationTest() {
   }
 
   @Test
+  fun `configured not found response does not send a transaction`() {
+    val path = "/missing-ignored-status"
+
+    val response = restTemplate.getForEntity(path, String::class.java)
+
+    assertThat(response.statusCode.value()).isEqualTo(404)
+    Sentry.flush(5000)
+    server.assertNoEnvelope { it.transaction()?.request?.url?.endsWith(path) == true }
+  }
+
+  @Test
   fun `creating a person starts a profile linked to the transaction`() {
     val response =
       restTemplate.postForEntity("/person/", Person("firstA", "lastB"), Person::class.java)
