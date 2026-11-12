@@ -712,7 +712,7 @@ public final class SentryTracer implements ITransaction {
     @NotNull final ListIterator<Span> iterator = this.children.listIterator();
     while (iterator.hasNext()) {
       @NotNull final Span span = iterator.next();
-      if (span.getOptions().isIdle()) {
+      if (span.isIdle()) {
         continue;
       }
       // This is used in the spanFinishCallback, when the span isn't finished, but has a finish
