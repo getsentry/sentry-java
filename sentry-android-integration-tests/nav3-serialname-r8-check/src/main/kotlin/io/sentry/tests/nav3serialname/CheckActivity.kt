@@ -9,8 +9,8 @@ import io.sentry.compose.navigation3.BackStackEntryMapper
 import io.sentry.compose.navigation3.SentryBackStackEntry
 
 /**
- * A back stack key, the name [BackStackEntryMapper.serialName] should produce for it, and the
- * arguments [BackStackEntryMapper.serialNameWithArguments] should record for it.
+ * A back stack key, the name [BackStackEntryMapper.SerialNames] should produce for it, and the
+ * arguments [BackStackEntryMapper.SerialNamesAndArguments] should record for it.
  */
 class Expectation(
   val label: String,
@@ -26,8 +26,8 @@ enum class UnannotatedEnum {
 }
 
 /**
- * Maps every [Expectation] with [BackStackEntryMapper.serialName] and
- * [BackStackEntryMapper.serialNameWithArguments], and reports the results. An exception crashes the
+ * Maps every [Expectation] with [BackStackEntryMapper.SerialNames] and
+ * [BackStackEntryMapper.SerialNamesAndArguments], and reports the results. An exception crashes the
  * app, which the runner script reports as a failure.
  */
 class CheckActivity : Activity() {
@@ -35,8 +35,8 @@ class CheckActivity : Activity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    val nameMapper = BackStackEntryMapper.serialName()
-    val argumentsMapper = BackStackEntryMapper.serialNameWithArguments()
+    val nameMapper = BackStackEntryMapper.SerialNames
+    val argumentsMapper = BackStackEntryMapper.SerialNamesAndArguments
     val expectations =
       listOf(
         Expectation("string", "home", null),
@@ -82,7 +82,7 @@ class CheckActivity : Activity() {
   ): String {
     val parts = mutableListOf<String>()
     if (nameMapperArguments != null) {
-      parts += "serialName() arguments=$nameMapperArguments"
+      parts += "SerialNames arguments=$nameMapperArguments"
     }
     if (withArguments?.name != expectation.expected) {
       parts += "withArguments name=${withArguments?.name}"

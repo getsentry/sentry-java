@@ -46,7 +46,7 @@ sealed interface Origin {
   @Serializable @SerialName("deeplink") data object DeepLink : Origin
 }
 
-/** Uses every encoding rule of [BackStackEntryMapper.serialNameWithArguments], plus filtering. */
+/** Uses every encoding rule of [BackStackEntryMapper.SerialNamesAndArguments], plus filtering. */
 @Serializable
 data class ArgumentsKey(
   val productId: Int,

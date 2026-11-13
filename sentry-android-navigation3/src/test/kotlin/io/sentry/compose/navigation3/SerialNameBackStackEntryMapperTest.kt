@@ -140,29 +140,29 @@ class SerialNameBackStackEntryMapperTest {
   }
 
   @Test
-  fun `serialName returns a shared mapper backed by kotlinx serialization`() {
-    val sut = BackStackEntryMapper.serialName()
+  fun `SerialNames returns a shared mapper backed by kotlinx serialization`() {
+    val sut = BackStackEntryMapper.SerialNames
 
-    assertThat(sut).isSameInstanceAs(BackStackEntryMapper.serialName())
+    assertThat(sut).isSameInstanceAs(BackStackEntryMapper.SerialNames)
     assertThat(sut.map(Home)).isEqualTo(SentryBackStackEntry("Home"))
     assertThat(sut.map(Detail("1"))).isEqualTo(SentryBackStackEntry("Detail"))
     assertThat(sut.map(NotSerializable("1"))).isNull()
   }
 
   @Test
-  fun `serialName can serve as the mapper for any entry type`() {
-    val homeMapper: BackStackEntryMapper<Home> = BackStackEntryMapper.serialName()
+  fun `SerialNames can serve as the mapper for any entry type`() {
+    val homeMapper: BackStackEntryMapper<Home> = BackStackEntryMapper.SerialNames
 
     assertThat(homeMapper.map(Home)).isEqualTo(SentryBackStackEntry("Home"))
   }
 
   @Test
-  fun `custom mappers can delegate unhandled entries to serialName`() {
+  fun `custom mappers can delegate unhandled entries to SerialNames`() {
     val sut =
       BackStackEntryMapper<Any> { entry ->
         when (entry) {
           is Detail -> SentryBackStackEntry("Detail", mapOf("id" to entry.id))
-          else -> BackStackEntryMapper.serialName().map(entry)
+          else -> BackStackEntryMapper.SerialNames.map(entry)
         }
       }
 
@@ -246,11 +246,11 @@ class SerialNameBackStackEntryMapperTest {
   }
 
   @Test
-  fun `serialNameWithArguments returns a shared mapper backed by kotlinx serialization`() {
-    val sut = BackStackEntryMapper.serialNameWithArguments()
+  fun `SerialNamesAndArguments returns a shared mapper backed by kotlinx serialization`() {
+    val sut = BackStackEntryMapper.SerialNamesAndArguments
 
-    assertThat(sut).isSameInstanceAs(BackStackEntryMapper.serialNameWithArguments())
-    assertThat(sut).isNotSameInstanceAs(BackStackEntryMapper.serialName())
+    assertThat(sut).isSameInstanceAs(BackStackEntryMapper.SerialNamesAndArguments)
+    assertThat(sut).isNotSameInstanceAs(BackStackEntryMapper.SerialNames)
     assertThat(sut.map(Home)).isEqualTo(SentryBackStackEntry("Home"))
     assertThat(sut.map(Detail("1"))).isEqualTo(SentryBackStackEntry("Detail", mapOf("id" to "1")))
     assertThat(sut.map(NotSerializable("1"))).isNull()

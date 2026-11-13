@@ -48,11 +48,11 @@
 
 ### Improvements
 
-- Nav3: Add `BackStackEntryMapper.serialName()`, a ready-made mapper that names back stack entries after their kotlinx.serialization serial names ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
-  - Pass it to `SentryNavEffect` instead of writing your own mapper: `SentryNavEffect(backStack, BackStackEntryMapper.serialName())`
+- Nav3: Add `BackStackEntryMapper.SerialNames`, a ready-made mapper that names back stack entries after their kotlinx.serialization serial names ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+  - Pass it to `SentryNavEffect` instead of writing your own mapper: `SentryNavEffect(backStack, BackStackEntryMapper.SerialNames)`
   - Names are the key class's fully qualified name, or its `@SerialName` value if it has one, so they survive R8 minification
   - Keys that aren't `@Serializable` are recorded as `/unknown`
-- Nav3: Add `BackStackEntryMapper.serialNameWithArguments()`, which names entries like `serialName()` and also records each entry's properties as arguments ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
+- Nav3: Add `BackStackEntryMapper.SerialNamesAndArguments`, which names entries like `SerialNames` and also records each entry's properties as arguments ([#PR_NUMBER](https://github.com/getsentry/sentry-java/pull/PR_NUMBER))
   - It sends the full content of your back stack keys, which may include personal data. Only use it if your keys are safe to send to Sentry
   - Values whose property names match Sentry's sensitive denylist (e.g. `token`, `password`, `session`) are replaced with `[Filtered]`
 

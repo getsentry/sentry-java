@@ -1,6 +1,6 @@
 # nav3-serialname-r8-check
 
-Checks that `BackStackEntryMapper.serialName()` and `BackStackEntryMapper.serialNameWithArguments()` from
+Checks that `BackStackEntryMapper.SerialNames` and `BackStackEntryMapper.SerialNamesAndArguments` from
 `sentry-android-navigation3` still name back stack entries and record their arguments correctly in
 R8-minified release builds, using the consumer R8 rules the library ships.
 

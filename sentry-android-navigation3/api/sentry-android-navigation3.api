@@ -4,8 +4,8 @@ public abstract interface class io/sentry/compose/navigation3/BackStackEntryMapp
 }
 
 public final class io/sentry/compose/navigation3/BackStackEntryMapper$Companion {
-	public final fun serialName ()Lio/sentry/compose/navigation3/BackStackEntryMapper;
-	public final fun serialNameWithArguments ()Lio/sentry/compose/navigation3/BackStackEntryMapper;
+	public final fun getSerialNames ()Lio/sentry/compose/navigation3/BackStackEntryMapper;
+	public final fun getSerialNamesAndArguments ()Lio/sentry/compose/navigation3/BackStackEntryMapper;
 }
 
 public final class io/sentry/compose/navigation3/BuildConfig {

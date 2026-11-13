@@ -146,14 +146,14 @@ class SentryNavEffectTest {
   @Serializable private data class SerializableProfileRoute(val userId: String)
 
   @Test
-  fun `serialName mapper names entries after their serial names`() {
+  fun `SerialNames mapper names entries after their serial names`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(SerializableHomeRoute)
 
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        backStackEntryMapper = BackStackEntryMapper.serialName(),
+        backStackEntryMapper = BackStackEntryMapper.SerialNames,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
         coordinator = fixture.coordinator,
@@ -186,14 +186,14 @@ class SentryNavEffectTest {
   private data class CheckoutRoute(val cartId: String, val authToken: String)
 
   @Test
-  fun `serialNameWithArguments mapper records filtered arguments`() {
+  fun `SerialNamesAndArguments mapper records filtered arguments`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(CheckoutRoute(cartId = "c-1", authToken = "secret"))
 
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        backStackEntryMapper = BackStackEntryMapper.serialNameWithArguments(),
+        backStackEntryMapper = BackStackEntryMapper.SerialNamesAndArguments,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
         coordinator = fixture.coordinator,

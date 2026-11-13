@@ -55,10 +55,10 @@ public class SentryBackStackEntry(
 /**
  * Maps a back stack entry to a displayable name and optional diagnostic arguments.
  *
- * Use [BackStackEntryMapper.serialName] to name `@Serializable` entries after their serial names,
- * [BackStackEntryMapper.serialNameWithArguments] to also record their properties as arguments, or
+ * Use [BackStackEntryMapper.SerialNames] to name `@Serializable` entries after their serial names,
+ * [BackStackEntryMapper.SerialNamesAndArguments] to also record their properties as arguments, or
  * implement this interface to choose your own names and arguments. A custom mapper can delegate the
- * entries it doesn't handle to [BackStackEntryMapper.serialName].
+ * entries it doesn't handle to [BackStackEntryMapper.SerialNames].
  *
  * **Privacy / PII**
  *
@@ -77,7 +77,7 @@ public class SentryBackStackEntry(
  *
  * In particular, avoid `::class.simpleName`, as R8 obfuscates class names and may associate them
  * with different symbols across builds. For `@Serializable` entries, prefer serial names, which
- * survive minification (see [BackStackEntryMapper.serialName]).
+ * survive minification (see [BackStackEntryMapper.SerialNames]).
  *
  * **Names fall back to "/unknown"**
  *
@@ -120,7 +120,7 @@ public class SentryBackStackEntry(
  *
  * **Using kotlinx.serialization**
  *
- * If your back stack contains `@Serializable` entry types, [BackStackEntryMapper.serialName] names
+ * If your back stack contains `@Serializable` entry types, [BackStackEntryMapper.SerialNames] names
  * them after their `descriptor.serialName`. To add arguments for some entries, write a custom
  * mapper that handles those entries and delegates the rest. For performance reasons, don't
  * serialize back stack keys in their entirety as `arguments` if they might be large, deeply nested,
@@ -147,7 +147,7 @@ public class SentryBackStackEntry(
  *       arguments = mapOf("product_id" to entry.productId)
  *     )
  *     // Home and any other entries are named after their serial names.
- *     else -> BackStackEntryMapper.serialName().map(entry)
+ *     else -> BackStackEntryMapper.SerialNames.map(entry)
  *   }
  * }
  * ```
@@ -160,16 +160,15 @@ public fun interface BackStackEntryMapper<in T : Any> {
   public companion object {
 
     /**
-     * A convenience method for generating entry names for apps that use kotlinx.serialization.
+     * A ready-made mapper for apps that use kotlinx.serialization.
      *
-     * Returns a [BackStackEntryMapper] that names each back stack entry after the entry's
-     * `descriptor.serialName`, viz.:
+     * Names each back stack entry after the entry's `descriptor.serialName`, viz.:
      *
      * - the entry's `@SerialName` if it has one; or else
      * - the entry's fully qualified class name (e.g., "com.example.Home").
      *
-     * Returns `null` for an entry if any of the following is true (note that Sentry displays `null`
-     * as "/unknown"):
+     * The mapper returns `null` for an entry if any of the following is true (note that Sentry
+     * displays `null` as "/unknown"):
      *
      * - kotlinx.serialization is not on the app's runtime classpath. (kotlinx.serialization is an
      *   optional dependency of this library; if your app doesn't use it, define your own
@@ -190,17 +189,18 @@ public fun interface BackStackEntryMapper<in T : Any> {
      * classes that use the same custom serializer (`@Serializable(with = ...)`). To tell them apart
      * give them distinct `SerialName`s or define a custom [BackStackEntryMapper].
      */
-    @ApiStatus.Experimental
-    public fun serialName(): BackStackEntryMapper<Any> = SerialNameBackStackEntryMapper.instance
+    @get:ApiStatus.Experimental
+    public val SerialNames: BackStackEntryMapper<Any>
+      get() = SerialNameBackStackEntryMapper.instance
 
     /**
-     * Like [serialName], but also records the properties of each back stack as arguments.
+     * Like [SerialNames], but also records the properties of each back stack as arguments.
      *
      * **Privacy**
      *
-     * This method records the full content of your back stack keys, which may include user IDs,
+     * This mapper records the full content of your back stack keys, which may include user IDs,
      * emails, search queries, or other personal data. Only use it if every key in your back stack
-     * is safe to send to Sentry; otherwise, [send only names][serialName], or use a custom
+     * is safe to send to Sentry; otherwise, [send only names][SerialNames], or use a custom
      * [BackStackEntryMapper].
      *
      * Values of properties whose names contain a term from Sentry's sensitive denylist (e.g.,
@@ -251,7 +251,7 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *         "productId" to entry.productId, "source" to entry.source
      *       ),
      *     )
-     *     else -> BackStackEntryMapper.serialNameWithArguments().map(entry)
+     *     else -> BackStackEntryMapper.SerialNamesAndArguments.map(entry)
      *   }
      * }
      * ```
@@ -279,11 +279,11 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *
      * Arguments are subject to the same size and depth limits as those returned by custom mappers.
      * Entries that can't be named are recorded as "/unknown" without arguments, as with
-     * [serialName].
+     * [SerialNames].
      */
-    @ApiStatus.Experimental
-    public fun serialNameWithArguments(): BackStackEntryMapper<Any> =
-      SerialNameBackStackEntryMapper.withArgumentsInstance
+    @get:ApiStatus.Experimental
+    public val SerialNamesAndArguments: BackStackEntryMapper<Any>
+      get() = SerialNameBackStackEntryMapper.withArgumentsInstance
   }
 }
 
