@@ -44,6 +44,7 @@
 
 ### Fixes
 
+- Keep the interrupt of the thread that calls `Sentry.init` when it is interrupted while the SDK waits for cached events to be sent after a startup crash ([#6568](https://github.com/getsentry/sentry-java/pull/6568))
 - Capture scroll breadcrumbs for `LazyColumn`, `LazyRow`, lazy grids, and `Pager` on Jetpack Compose foundation 1.10+ ([#6548](https://github.com/getsentry/sentry-java/pull/6548))
 - Prevent the main thread from potentially hanging during app start or when returning to the foreground if Android is slow to register the SDK's network or telephony listeners. `Sentry.init`, Session Replay, and capturing events no longer wait for that registration ([#6537](https://github.com/getsentry/sentry-java/pull/6537))
 - Add opt-in support for matching GraphQL ignored error types against classification specifications via `sentry.graphql.enable-specification-error-type-filtering` ([#6092](https://github.com/getsentry/sentry-java/pull/6092))
