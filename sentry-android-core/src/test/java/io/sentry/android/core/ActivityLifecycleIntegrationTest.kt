@@ -704,8 +704,8 @@ class ActivityLifecycleIntegrationTest {
   }
 
   @Test
-  @Config(sdk = [Build.VERSION_CODES.M])
-  fun `onHeadlessAppStart creates standalone App Start transaction on API 23`() {
+  @Config(sdk = [Build.VERSION_CODES.N])
+  fun `onHeadlessAppStart creates standalone App Start transaction on API 24`() {
     val sut = fixture.getSut {
       it.tracesSampleRate = 1.0
       it.isEnableStandaloneAppStartTracing = true

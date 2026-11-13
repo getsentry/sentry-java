@@ -324,7 +324,7 @@ public final class AndroidConnectionStatusProvider
             public void onAvailable(final @NotNull Network network) {
               @NotNull ConnectionSnapshot current;
               do {
-                current = snapshot.get();
+                current = currentSnapshot();
               } while (!snapshot.compareAndSet(current, current.withNetwork(network)));
 
               // Only forward the call on first registration + when the connection is
@@ -348,7 +348,7 @@ public final class AndroidConnectionStatusProvider
 
             @Override
             public void onLost(final @NotNull Network network) {
-              if (!network.equals(snapshot.get().network)) {
+              if (!network.equals(currentSnapshot().network)) {
                 return;
               }
               clearCacheAndNotifyObservers();
@@ -376,7 +376,7 @@ public final class AndroidConnectionStatusProvider
             @Override
             public void onCapabilitiesChanged(
                 @NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
-              if (!network.equals(snapshot.get().network)) {
+              if (!network.equals(currentSnapshot().network)) {
                 return;
               }
               updateCacheAndNotifyObservers(networkCapabilities);
@@ -397,7 +397,7 @@ public final class AndroidConnectionStatusProvider
               @NotNull ConnectionSnapshot current;
               @NotNull ConnectionSnapshot updated;
               do {
-                current = snapshot.get();
+                current = currentSnapshot();
                 if (!isSignificantChange(current.capabilities, networkCapabilities)) {
                   return;
                 }
@@ -482,9 +482,15 @@ public final class AndroidConnectionStatusProvider
     }
   }
 
+  // NullAway treats AtomicReference.get() as nullable, but the snapshot is never set to null.
+  @SuppressWarnings("NullAway")
+  private @NotNull ConnectionSnapshot currentSnapshot() {
+    return snapshot.get();
+  }
+
   /** The current snapshot, refreshed first if it's stale. */
   private @NotNull ConnectionSnapshot freshSnapshot() {
-    final @NotNull ConnectionSnapshot current = snapshot.get();
+    final @NotNull ConnectionSnapshot current = currentSnapshot();
     return current.isFresh() ? current : refresh(current);
   }
 
@@ -510,7 +516,7 @@ public final class AndroidConnectionStatusProvider
       if (snapshot.compareAndSet(current, refreshed)) {
         break;
       }
-      current = snapshot.get();
+      current = currentSnapshot();
       if (current.isFresh()) {
         return current;
       }
@@ -651,7 +657,7 @@ public final class AndroidConnectionStatusProvider
 
           // proactively update cache and notify observers on foreground to ensure connectivity
           // state is not stale
-          final @NotNull ConnectionStatus status = statusOf(refresh(snapshot.get()));
+          final @NotNull ConnectionStatus status = statusOf(refresh(currentSnapshot()));
           if (status == ConnectionStatus.DISCONNECTED) {
             // onLost is not called retroactively when we registerNetworkCallback (as opposed to
             // onAvailable), so we have to do it manually for the DISCONNECTED case
@@ -699,7 +705,7 @@ public final class AndroidConnectionStatusProvider
   @TestOnly
   @Nullable
   public NetworkCapabilities getCachedNetworkCapabilities() {
-    return snapshot.get().capabilities;
+    return currentSnapshot().capabilities;
   }
 
   /**

@@ -13,6 +13,7 @@ plugins {
   id("io.sentry.jdk-target")
   id("io.sentry.publish")
   id("io.sentry.api-validation")
+  id("io.sentry.robolectric")
 }
 
 android {

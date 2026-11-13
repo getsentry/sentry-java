@@ -49,7 +49,7 @@ import org.robolectric.shadows.ShadowBitmapFactory
 import org.robolectric.shadows.ShadowCloseGuard
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [26], shadows = [ReplayShadowMediaCodec::class])
+@Config(sdk = [30], shadows = [ReplayShadowMediaCodec::class])
 class ReplayCacheTest {
   @get:Rule val tmpDir = TemporaryFolder()
 

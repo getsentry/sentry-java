@@ -36,7 +36,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [31])
+@Config(sdk = [33])
 class SessionTrackingIntegrationTest {
   private lateinit var context: Context
 

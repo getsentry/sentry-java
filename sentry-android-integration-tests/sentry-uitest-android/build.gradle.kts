@@ -135,11 +135,22 @@ dependencies {
   androidTestImplementation(libs.okhttp.mockwebserver4)
 }
 
-tasks.withType<JavaCompile>().configureEach {
-  options.errorprone {
-    check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
-    option("NullAway:AnnotatedPackages", "io.sentry")
-    option("NullAway:UnannotatedSubPackages", "io.sentry.uitest.android.databinding")
+// net.ltgt.errorprone only configures Gradle's JVM source sets, not Android variants, so put Error
+// Prone on each variant's processor path and enable it ourselves.
+androidComponents.onVariants { variant ->
+  variant.annotationProcessorConfiguration.extendsFrom(configurations.errorprone.get())
+  variant.configureJavaCompileTask { task ->
+    // Tells Error Prone this is Android code, so it skips checks that don't apply there, such as
+    // DefaultCharset (Android's default charset is always UTF-8), and runs its Android checks.
+    task.options.compilerArgs.add("-XDandroidCompatible=true")
+    task.options.errorprone {
+      enabled = true
+      check("NullAway", net.ltgt.gradle.errorprone.CheckSeverity.ERROR)
+      option("NullAway:AnnotatedPackages", "io.sentry")
+      option("NullAway:UnannotatedSubPackages", "io.sentry.uitest.android.databinding")
+      // AGP generates the view binding classes, so their findings can't be fixed here.
+      excludedPaths.set(".*/build/generated/.*")
+    }
   }
 }
 

@@ -1,27 +1,22 @@
 package io.sentry.android.core.internal.util
 
-import io.sentry.transport.ICurrentDateProvider
-import kotlin.test.BeforeTest
+import io.sentry.time.TestMonotonicTicker
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 
 class DebouncerTest {
-  private class Fixture : ICurrentDateProvider {
-    var currentTimeMs: Long = 0
+  private class Fixture {
+    val ticker = TestMonotonicTicker()
 
-    override fun getCurrentTimeMillis(): Long = currentTimeMs
+    fun advance(millis: Long) = ticker.advance(millis, TimeUnit.MILLISECONDS)
 
     fun getDebouncer(waitTimeMs: Long = 3000, maxExecutions: Int = 1): Debouncer =
-      Debouncer(this, waitTimeMs, maxExecutions)
+      Debouncer(ticker, waitTimeMs, maxExecutions)
   }
 
   private val fixture = Fixture()
-
-  @BeforeTest
-  fun `set up`() {
-    fixture.currentTimeMs = 0
-  }
 
   @Test
   fun `Debouncer should not debounce on the first check`() {
@@ -39,27 +34,34 @@ class DebouncerTest {
 
   @Test
   fun `Debouncer should signal debounce if the second invocation is too early`() {
-    fixture.currentTimeMs = 1000
     val debouncer = fixture.getDebouncer(3000)
     assertFalse(debouncer.checkForDebounce())
 
-    fixture.currentTimeMs = 3999
+    fixture.advance(2999)
     assertTrue(debouncer.checkForDebounce())
   }
 
   @Test
   fun `Debouncer should not signal debounce if the second invocation is late enough`() {
-    fixture.currentTimeMs = 1000
     val debouncer = fixture.getDebouncer(3000)
     assertFalse(debouncer.checkForDebounce())
 
-    fixture.currentTimeMs = 4000
+    fixture.advance(3000)
+    assertFalse(debouncer.checkForDebounce())
+  }
+
+  @Test
+  fun `Debouncer does not debounce after a window that expired during deep sleep`() {
+    val debouncer = fixture.getDebouncer(60_000)
+    assertFalse(debouncer.checkForDebounce())
+
+    // The ticker keeps counting while the device sleeps, so an hour asleep expires the window.
+    fixture.advance(TimeUnit.HOURS.toMillis(1))
     assertFalse(debouncer.checkForDebounce())
   }
 
   @Test
   fun `Debouncer maxExecutions is always greater than 0`() {
-    fixture.currentTimeMs = 1000
     val debouncer = fixture.getDebouncer(3000, -1)
     assertFalse(debouncer.checkForDebounce())
     assertTrue(debouncer.checkForDebounce())
@@ -67,7 +69,6 @@ class DebouncerTest {
 
   @Test
   fun `Debouncer should signal debounce after maxExecutions calls`() {
-    fixture.currentTimeMs = 1000
     val debouncer = fixture.getDebouncer(3000, 3)
     assertFalse(debouncer.checkForDebounce())
     assertFalse(debouncer.checkForDebounce())
@@ -77,13 +78,12 @@ class DebouncerTest {
 
   @Test
   fun `Debouncer maxExecutions counter resets if the other invocation is late enough`() {
-    fixture.currentTimeMs = 1000
     val debouncer = fixture.getDebouncer(3000, 3)
     assertFalse(debouncer.checkForDebounce())
     assertFalse(debouncer.checkForDebounce())
 
     // After waitTimeMs passes, the maxExecutions counter is reset
-    fixture.currentTimeMs = 4000
+    fixture.advance(3000)
     assertFalse(debouncer.checkForDebounce())
     assertFalse(debouncer.checkForDebounce())
     assertFalse(debouncer.checkForDebounce())
@@ -92,7 +92,6 @@ class DebouncerTest {
 
   @Test
   fun `Debouncer maxExecutions counter resets after maxExecutions`() {
-    fixture.currentTimeMs = 1000
     val debouncer = fixture.getDebouncer(3000, 3)
     assertFalse(debouncer.checkForDebounce())
     assertFalse(debouncer.checkForDebounce())

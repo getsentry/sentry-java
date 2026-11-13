@@ -1,5 +1,6 @@
 package io.sentry.android.core
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.IConnectionStatusProvider
 import io.sentry.IConnectionStatusProvider.ConnectionStatus
 import io.sentry.ILogger
@@ -133,6 +134,27 @@ class SendCachedEnvelopeIntegrationTest {
       .log(eq(DEBUG), eq("Synchronous send timed out, continuing in the background."))
 
     // then wait until the async send finishes in background
+    await.untilFalse(fixture.flag)
+    verify(fixture.sender).send()
+  }
+
+  @Test
+  fun `when interrupted while awaiting the task, keeps the interrupt and continues in the background`() {
+    // the delay keeps the task running, so the wait for it sees the interrupt
+    val sut = fixture.getSut(hasStartupCrashMarker = true, delaySend = 500)
+
+    Thread.currentThread().interrupt()
+    try {
+      sut.register(fixture.scopes, fixture.options)
+
+      assertThat(Thread.currentThread().isInterrupted).isTrue()
+    } finally {
+      // don't leak the interrupt into other tests
+      Thread.interrupted()
+    }
+    verify(fixture.logger)
+      .log(eq(DEBUG), eq("Synchronous send interrupted, continuing in the background."))
+
     await.untilFalse(fixture.flag)
     verify(fixture.sender).send()
   }

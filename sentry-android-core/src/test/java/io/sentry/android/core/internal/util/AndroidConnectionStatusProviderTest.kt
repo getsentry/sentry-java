@@ -258,7 +258,7 @@ class AndroidConnectionStatusProviderTest {
 
   /// Lets a test reject work only after the setup that needs a working executor is done.
   @Test
-  @Config(sdk = [Build.VERSION_CODES.S])
+  @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
   fun `When the network callback cannot be registered, the telephony listener is not started`() {
     // Without ACCESS_NETWORK_STATE the network callback registration fails, and onBackground skips
     // unregistering while there is no network callback, so the listener must not be started here.

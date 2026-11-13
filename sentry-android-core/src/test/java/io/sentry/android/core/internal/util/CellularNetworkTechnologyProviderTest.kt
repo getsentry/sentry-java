@@ -27,7 +27,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [Build.VERSION_CODES.S])
+@Config(sdk = [Build.VERSION_CODES.TIRAMISU])
 class CellularNetworkTechnologyProviderTest {
   private class Fixture {
     val context = mock<Context>()

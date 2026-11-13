@@ -12,7 +12,6 @@ import io.sentry.IScopes;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.android.core.internal.util.DeviceOrientations;
 import io.sentry.protocol.Device;
@@ -34,10 +33,7 @@ public final class AppComponentsBreadcrumbsIntegration
   private @Nullable IScopes scopes;
   private @Nullable SentryAndroidOptions options;
 
-  // TODO: JAVA-729
-  @SuppressWarnings("deprecation")
-  private final @NotNull Debouncer trimMemoryDebouncer =
-      new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
+  private volatile @Nullable Debouncer trimMemoryDebouncer;
 
   public AppComponentsBreadcrumbsIntegration(final @NotNull Context context) {
     this.context =
@@ -51,6 +47,8 @@ public final class AppComponentsBreadcrumbsIntegration
         Objects.requireNonNull(
             (options instanceof SentryAndroidOptions) ? (SentryAndroidOptions) options : null,
             "SentryAndroidOptions is required");
+    this.trimMemoryDebouncer =
+        new Debouncer(this.options.getMonotonicTicker(), DEBOUNCE_WAIT_TIME_MS, 0);
 
     this.options
         .getLogger()
@@ -121,7 +119,8 @@ public final class AppComponentsBreadcrumbsIntegration
       return;
     }
 
-    if (trimMemoryDebouncer.checkForDebounce()) {
+    final @Nullable Debouncer trimMemoryDebouncer = this.trimMemoryDebouncer;
+    if (trimMemoryDebouncer != null && trimMemoryDebouncer.checkForDebounce()) {
       // if we received trim_memory within 1 minute time, ignore this call
       return;
     }

@@ -1,6 +1,7 @@
 package io.sentry.android.core;
 
 import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_CLASS_NAME;
+import static io.sentry.android.core.NdkIntegration.SENTRY_NDK_OUTPROC_CLASS_NAME;
 import static io.sentry.util.IntegrationUtils.addIntegrationToSdkVersion;
 
 import android.annotation.SuppressLint;
@@ -438,8 +439,12 @@ final class AndroidOptionsInitializer {
 
     // Integrations are registered in the same order. NDK before adding Watch outbox,
     // because sentry-native move files around and we don't want to watch that.
-    final Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
-    options.addIntegration(new NdkIntegration(sentryNdkClass));
+    // the outproc backend builds on the inproc one, so it goes first, and quietly
+    Class<?> sentryNdkClass = loadClass.loadClass(SENTRY_NDK_OUTPROC_CLASS_NAME, null);
+    if (sentryNdkClass == null) {
+      sentryNdkClass = loadClass.loadClass(SENTRY_NDK_CLASS_NAME, options.getLogger());
+    }
+    options.addIntegration(new NdkIntegration(context, sentryNdkClass));
 
     if (buildInfoProvider.getSdkInfoVersion() >= Build.VERSION_CODES.S) {
       options.addIntegration(new TombstoneIntegration(context));

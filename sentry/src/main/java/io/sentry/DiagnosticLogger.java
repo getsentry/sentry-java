@@ -57,6 +57,32 @@ public final class DiagnosticLogger implements ILogger {
     }
   }
 
+  @Override
+  public void log(final @NotNull SentryLevel level, final @NotNull String message) {
+    if (logger != null && isEnabled(level)) {
+      logger.log(level, message);
+    }
+  }
+
+  @Override
+  public void log(
+      final @NotNull SentryLevel level, final @NotNull String message, final @Nullable Object arg) {
+    if (logger != null && isEnabled(level)) {
+      logger.log(level, message, arg);
+    }
+  }
+
+  @Override
+  public void log(
+      final @NotNull SentryLevel level,
+      final @NotNull String message,
+      final @Nullable Object arg1,
+      final @Nullable Object arg2) {
+    if (logger != null && isEnabled(level)) {
+      logger.log(level, message, arg1, arg2);
+    }
+  }
+
   /**
    * Logs a message with the specified level, message and throwable.
    *

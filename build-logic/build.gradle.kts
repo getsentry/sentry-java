@@ -42,6 +42,10 @@ gradlePlugin {
       id = "io.sentry.animalsniffer.android"
       implementationClass = "io.sentry.gradle.SentryAnimalSnifferAndroidPlugin"
     }
+    register("sentryRobolectric") {
+      id = "io.sentry.robolectric"
+      implementationClass = "io.sentry.gradle.SentryRobolectricPlugin"
+    }
     register("sentrySpringBootMatrix") {
       id = "io.sentry.spring-boot-matrix"
       implementationClass = "io.sentry.gradle.SpringBootMatrixPlugin"
