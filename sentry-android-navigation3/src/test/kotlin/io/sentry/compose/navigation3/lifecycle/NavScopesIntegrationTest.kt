@@ -10,7 +10,6 @@ import io.sentry.Scope
 import io.sentry.ScopeType
 import io.sentry.Scopes
 import io.sentry.SentryOptions
-import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -24,11 +23,11 @@ class NavScopesIntegrationTest {
     val fixture = Fixture.create()
     val incumbentOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
     val incumbent = fixture.navScopes()
-    incumbent.attach(incumbentOwner.lifecycle)
+    incumbent.attach(NavRootInfo(incumbentOwner.lifecycle, activity = null))
     incumbent.onBackStackUpdate()
     val incomingOwner = TestLifecycleOwner(Lifecycle.State.STARTED)
     val incoming = fixture.navScopes()
-    incoming.attach(incomingOwner.lifecycle)
+    incoming.attach(NavRootInfo(incomingOwner.lifecycle, activity = null))
     incoming.onBackStackUpdate()
     val contextBeforeResume = fixture.scope.propagationContext
     val contextsAtSampling = mutableListOf<PropagationContext>()
@@ -37,7 +36,12 @@ class NavScopesIntegrationTest {
       1.0
     }
     incoming.configureScope {
-      it.startNavTransaction(TransactionContext("/Checkout", "navigation"), TransactionOptions())
+      it.startNavTransaction(
+        NavTransactionRequest(
+          name = "/Checkout",
+          newOptions = ::TransactionOptions,
+        )
+      )
     }
     assertThat(contextsAtSampling).isEmpty()
     assertThat(fixture.scope.propagationContext).isSameInstanceAs(contextBeforeResume)

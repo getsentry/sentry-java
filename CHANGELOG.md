@@ -7,17 +7,33 @@
 
 ## Unreleased
 
+### Features
+
+- Session Replay: Add `Sentry.replay().pauseTouchTracking()` and `resumeTouchTracking()` to stop recording touches on sensitive screens, such as a custom PIN pad, while the screen recording continues. Touch tracking stays paused until `resumeTouchTracking()` is called, also for new replays and after `resume()` ([#6546](https://github.com/getsentry/sentry-java/pull/6546))
+
 ### Performance
 
 - Most SDK log calls no longer allocate when `debug` is off ([#6600](https://github.com/getsentry/sentry-java/pull/6600))
 
+### Behavioral Changes
+
+- Nav3: Returning to an Activity or Fragment with its own `SentryNavEffect` within the app (e.g., closing the Activity that covered it, swiping back to its ViewPager2 page, or dismissing a dialog over it) now starts a new navigation transaction for the current destination if the previous one finished, so spans produced upon return can now be consistently captured ([#6482](https://github.com/getsentry/sentry-java/pull/6482))
+- Nav3: `ui.load` transactions are bound to `IScope` in preference to Nav3 transactions when transitioning between Activities, matching Nav2 behavior (API 29+) ([#6484](https://github.com/getsentry/sentry-java/pull/6484))
+
 ### Fixes
 
+- Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
 
 ### Dependencies
 
-- Bump OpenTelemetry from 1.63.0 / 2.29.0 to 1.67.0 / 2.33.1 ([#6602](https://github.com/getsentry/sentry-java/pull/6602))
+- Bump OpenTelemetry ([#6602](https://github.com/getsentry/sentry-java/pull/6602))
+  - OpenTelemetry to 1.67.0 (was 1.63.0)
+  - OpenTelemetry Instrumentation to 2.33.1 (was 2.29.0)
+  - OpenTelemetry Instrumentation Alpha to 2.33.1-alpha (was 2.29.0-alpha)
+  - OpenTelemetry Semantic Conventions to 1.44.0 (was 1.42.0)
+  - OpenTelemetry Semantic Conventions Alpha to 1.44.0-alpha (was 1.42.0-alpha)
+  - OpenTelemetry 1.67 creates no-op spans when no `SpanProcessor` is configured. If you construct the OpenTelemetry SDK manually while using `sentry-opentelemetry-otlp` classes directly, configure a span processor. Without one, Sentry cannot inspect outgoing request URLs and may inject `sentry-trace` and `baggage` headers into destinations excluded by `tracePropagationTargets`. Standard OTLP exporter, Sentry Java agent, and agentless setups already configure one.
 
 ## 8.64.0
 
@@ -48,6 +64,7 @@
 
 ### Fixes
 
+- Keep the interrupt of the thread that calls `Sentry.init` when it is interrupted while the SDK waits for cached events to be sent after a startup crash ([#6568](https://github.com/getsentry/sentry-java/pull/6568))
 - Capture scroll breadcrumbs for `LazyColumn`, `LazyRow`, lazy grids, and `Pager` on Jetpack Compose foundation 1.10+ ([#6548](https://github.com/getsentry/sentry-java/pull/6548))
 - Prevent the main thread from potentially hanging during app start or when returning to the foreground if Android is slow to register the SDK's network or telephony listeners. `Sentry.init`, Session Replay, and capturing events no longer wait for that registration ([#6537](https://github.com/getsentry/sentry-java/pull/6537))
 - Add opt-in support for matching GraphQL ignored error types against classification specifications via `sentry.graphql.enable-specification-error-type-filtering` ([#6092](https://github.com/getsentry/sentry-java/pull/6092))

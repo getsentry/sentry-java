@@ -10,6 +10,7 @@ asyncProfiler = "4.4"
 camerax = "1.4.0"
 composeCompiler = "1.5.14"
 coroutines = "1.6.1"
+dgs = "4.9.2"
 detekt = "1.23.8"
 dokka = "2.0.0"
 espresso = "3.7.0"
@@ -34,8 +35,8 @@ otelAlpha = "1.67.0-alpha"
 otelInstrumentation = "2.33.1"
 otelInstrumentationAlpha = "2.33.1-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
-otelSemanticConventions = "1.42.0"
-otelSemanticConventionsAlpha = "1.42.0-alpha"
+otelSemanticConventions = "1.44.0"
+otelSemanticConventionsAlpha = "1.44.0-alpha"
 retrofit = "3.0.0"
 room2 = "2.8.5"
 room3 = "3.0.0-rc01"
@@ -146,6 +147,8 @@ feign-gson = { module = "io.github.openfeign:feign-gson", version.ref = "feign" 
 graphql-java17 = { module = "com.graphql-java:graphql-java", version = "17.3" }
 graphql-java22 = { module = "com.graphql-java:graphql-java", version = "22.1" }
 graphql-java24 = { module = "com.graphql-java:graphql-java", version = "24.0" }
+netflix-dgs-platform = { module = "com.netflix.graphql.dgs:graphql-dgs-platform-dependencies", version.ref = "dgs" }
+netflix-dgs-subscriptions-websockets-autoconfigure = { module = "com.netflix.graphql.dgs:graphql-dgs-subscriptions-websockets-autoconfigure", version.ref = "dgs" }
 jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jetbrains-annotations = { module = "org.jetbrains:annotations", version = "23.0.0" }
@@ -196,6 +199,7 @@ retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref 
 sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.17.6" }
 sentry-native-ndk-outproc = { module = "io.sentry:sentry-native-ndk-outproc", version = "1.0.0-beta.1" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
+servlet4-api = { module = "javax.servlet:javax.servlet-api", version = "4.0.1" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }

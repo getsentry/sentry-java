@@ -157,6 +157,13 @@ final class SendCachedEnvelopeIntegration
           options
               .getLogger()
               .log(SentryLevel.DEBUG, "Synchronous send timed out, continuing in the background.");
+        } catch (InterruptedException e) {
+          // We don't own the calling thread, so keep its interrupt for the code that does
+          Thread.currentThread().interrupt();
+          options
+              .getLogger()
+              .log(
+                  SentryLevel.DEBUG, "Synchronous send interrupted, continuing in the background.");
         }
       }
       options.getLogger().log(SentryLevel.DEBUG, "SendCachedEnvelopeIntegration installed.");
