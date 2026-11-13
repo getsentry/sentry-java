@@ -7,8 +7,10 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 public class PersonService {
+  @SuppressWarnings("removal")
   private final RestTemplate restTemplate;
 
+  @SuppressWarnings("removal")
   public PersonService(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
   }

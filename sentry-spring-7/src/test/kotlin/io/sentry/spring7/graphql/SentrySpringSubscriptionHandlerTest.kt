@@ -2,7 +2,9 @@ package io.sentry.spring7.graphql
 
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.language.Document
+import graphql.language.Field
 import graphql.language.OperationDefinition
+import graphql.language.SelectionSet
 import graphql.schema.DataFetchingEnvironment
 import io.sentry.IScopes
 import io.sentry.graphql.ExceptionReporter
@@ -20,6 +22,19 @@ import org.springframework.graphql.execution.SubscriptionPublisherException
 import reactor.core.publisher.Flux
 
 class SentrySpringSubscriptionHandlerTest {
+  private val document =
+    Document.newDocument()
+      .definition(
+        OperationDefinition.newOperationDefinition()
+          .operation(OperationDefinition.Operation.QUERY)
+          .name("testQuery")
+          .selectionSet(
+            SelectionSet.newSelectionSet().selection(Field.newField("test").build()).build()
+          )
+          .build()
+      )
+      .build()
+
   @Test
   fun `reports exception`() {
     val exception = IllegalStateException("some exception")
@@ -27,15 +42,6 @@ class SentrySpringSubscriptionHandlerTest {
     val exceptionReporter = mock<ExceptionReporter>()
     val parameters = mock<InstrumentationFieldFetchParameters>()
     val dataFetchingEnvironment = mock<DataFetchingEnvironment>()
-    val document =
-      Document.newDocument()
-        .definition(
-          OperationDefinition.newOperationDefinition()
-            .operation(OperationDefinition.Operation.QUERY)
-            .name("testQuery")
-            .build()
-        )
-        .build()
     whenever(dataFetchingEnvironment.document).thenReturn(document)
     whenever(parameters.environment).thenReturn(dataFetchingEnvironment)
     val resultObject =
@@ -49,7 +55,7 @@ class SentrySpringSubscriptionHandlerTest {
         check {
           assertEquals(true, it.isSubscription)
           assertSame(scopes, it.scopes)
-          assertEquals("query testQuery \n", it.query)
+          assertEquals("query testQuery {\n  test\n}\n", it.query)
         },
         anyOrNull(),
       )
@@ -63,15 +69,6 @@ class SentrySpringSubscriptionHandlerTest {
     val exceptionReporter = mock<ExceptionReporter>()
     val parameters = mock<InstrumentationFieldFetchParameters>()
     val dataFetchingEnvironment = mock<DataFetchingEnvironment>()
-    val document =
-      Document.newDocument()
-        .definition(
-          OperationDefinition.newOperationDefinition()
-            .operation(OperationDefinition.Operation.QUERY)
-            .name("testQuery")
-            .build()
-        )
-        .build()
     whenever(dataFetchingEnvironment.document).thenReturn(document)
     whenever(parameters.environment).thenReturn(dataFetchingEnvironment)
     val resultObject =
@@ -90,7 +87,7 @@ class SentrySpringSubscriptionHandlerTest {
         check {
           assertEquals(true, it.isSubscription)
           assertSame(scopes, it.scopes)
-          assertEquals("query testQuery \n", it.query)
+          assertEquals("query testQuery {\n  test\n}\n", it.query)
         },
         anyOrNull(),
       )

@@ -24,6 +24,7 @@ public class WebConfig {
    * @return RestTemplate
    */
   @Bean
+  @SuppressWarnings("removal")
   RestTemplate restTemplate(IScopes scopes) {
     RestTemplate restTemplate = new RestTemplate();
     SentrySpanClientHttpRequestInterceptor sentryRestTemplateInterceptor =

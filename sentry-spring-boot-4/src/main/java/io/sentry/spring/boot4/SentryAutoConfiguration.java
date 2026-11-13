@@ -512,6 +512,7 @@ public class SentryAutoConfiguration {
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass({RestTemplate.class, RestTemplateAutoConfiguration.class})
     @Open
+    @SuppressWarnings("removal")
     static class SentryPerformanceRestTemplateConfigurationWrapper {
       @Configuration(proxyBeanMethods = false)
       @AutoConfigureBefore(RestTemplateAutoConfiguration.class)
