@@ -194,17 +194,18 @@ public fun interface BackStackEntryMapper<in T : Any> {
       get() = SerialNameBackStackEntryMapper.instance
 
     /**
-     * Like [SerialNames], but also records the properties of each back stack as arguments.
+     * Like [SerialNames], but also records the properties of each back stack entry as arguments.
      *
-     * **Privacy**
+     * **Privacy / PII**
      *
      * This mapper records the full content of your back stack keys, which may include user IDs,
      * emails, search queries, or other personal data. Only use it if every key in your back stack
      * is safe to send to Sentry; otherwise, [send only names][SerialNames], or use a custom
      * [BackStackEntryMapper].
      *
-     * Values of properties whose names contain a term from Sentry's sensitive denylist (e.g.,
-     * `auth`, `token`, `password`, `key`) are replaced with `"[Filtered]"` at every level of
+     * Values of properties whose names contain a term from
+     * [Sentry's sensitive denylist](https://develop.sentry.dev/sdk/foundations/client/data-collection/#sensitive-denylist)
+     * (e.g., `auth`, `token`, `password`, `key`) are replaced with `"[Filtered]"` at every level of
      * nesting. Matching is case-insensitive and by substring, so names like `author` are also
      * filtered. Treat the denylist as a safety net, and not as a fully-fledged scrubber.
      *
@@ -227,16 +228,13 @@ public fun interface BackStackEntryMapper<in T : Any> {
      * ```
      *
      * Navigating to `ProductDetail("sku-1234", Source.DEEP_LINK, "jane@example.com", "abc123")`
-     * records:
+     * records the following arguments:
      * ```json
      * {
-     *   "to": "/ProductDetail",
-     *   "to_arguments": {
-     *     "productId": "sku-1234",
-     *     "source": "deep_link",
-     *     "userEmail": "jane@example.com",
-     *     "authToken": "[Filtered]"
-     *   }
+     *   "productId": "sku-1234",
+     *   "source": "deep_link",
+     *   "userEmail": "jane@example.com",
+     *   "authToken": "[Filtered]"
      * }
      * ```
      *
