@@ -15,6 +15,10 @@
 
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
 
+### Dependencies
+
+- Bump OpenTelemetry from 1.63.0 / 2.29.0 to 1.67.0 / 2.33.1 ([#6602](https://github.com/getsentry/sentry-java/pull/6602))
+
 ## 8.64.0
 
 ### Breaking Changes
