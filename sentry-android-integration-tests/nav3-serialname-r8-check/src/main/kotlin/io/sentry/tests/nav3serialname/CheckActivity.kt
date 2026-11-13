@@ -10,7 +10,7 @@ import io.sentry.compose.navigation3.SentryBackStackEntry
 
 /**
  * A back stack key, the name [BackStackEntryMapper.SerialNames] should produce for it, and the
- * arguments [BackStackEntryMapper.SerialNamesAndArguments] should record for it.
+ * arguments [BackStackEntryMapper.SerialNamesAndProperties] should record for it.
  */
 class Expectation(
   val label: String,
@@ -27,8 +27,8 @@ enum class UnannotatedEnum {
 
 /**
  * Maps every [Expectation] with [BackStackEntryMapper.SerialNames] and
- * [BackStackEntryMapper.SerialNamesAndArguments], and reports the results. An exception crashes the
- * app, which the runner script reports as a failure.
+ * [BackStackEntryMapper.SerialNamesAndProperties], and reports the results. An exception crashes
+ * the app, which the runner script reports as a failure.
  */
 class CheckActivity : Activity() {
 
@@ -36,7 +36,7 @@ class CheckActivity : Activity() {
     super.onCreate(savedInstanceState)
 
     val nameMapper = BackStackEntryMapper.SerialNames
-    val argumentsMapper = BackStackEntryMapper.SerialNamesAndArguments
+    val argumentsMapper = BackStackEntryMapper.SerialNamesAndProperties
     val expectations =
       listOf(
         Expectation("string", "home", null),

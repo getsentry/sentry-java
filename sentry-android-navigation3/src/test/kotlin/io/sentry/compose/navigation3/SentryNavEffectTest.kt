@@ -186,14 +186,14 @@ class SentryNavEffectTest {
   private data class CheckoutRoute(val cartId: String, val authToken: String)
 
   @Test
-  fun `SerialNamesAndArguments mapper records filtered arguments`() {
+  fun `SerialNamesAndProperties mapper records filtered arguments`() {
     val fixture = Fixture()
     val backStack = mutableStateListOf<Any>(CheckoutRoute(cartId = "c-1", authToken = "secret"))
 
     composeRule.setContent {
       SentryNavEffect(
         backStack = backStack,
-        backStackEntryMapper = BackStackEntryMapper.SerialNamesAndArguments,
+        backStackEntryMapper = BackStackEntryMapper.SerialNamesAndProperties,
         options = SentryNavOptions(),
         scopes = fixture.scopes,
         coordinator = fixture.coordinator,

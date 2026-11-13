@@ -56,7 +56,7 @@ public class SentryBackStackEntry(
  * Maps a back stack entry to a displayable name and optional diagnostic arguments.
  *
  * Use [BackStackEntryMapper.SerialNames] to name `@Serializable` entries after their serial names,
- * [BackStackEntryMapper.SerialNamesAndArguments] to also record their properties as arguments, or
+ * [BackStackEntryMapper.SerialNamesAndProperties] to also record their properties as arguments, or
  * implement this interface to choose your own names and arguments. A custom mapper can delegate the
  * entries it doesn't handle to [BackStackEntryMapper.SerialNames].
  *
@@ -160,7 +160,7 @@ public fun interface BackStackEntryMapper<in T : Any> {
   public companion object {
 
     /**
-     * A ready-made mapper for apps that use kotlinx.serialization.
+     * A convenience mapper for apps that use kotlinx.serialization.
      *
      * Names each back stack entry after the entry's `descriptor.serialName`, viz.:
      *
@@ -194,20 +194,22 @@ public fun interface BackStackEntryMapper<in T : Any> {
       get() = SerialNameBackStackEntryMapper.instance
 
     /**
-     * Like [SerialNames], but also records the properties of each back stack entry as arguments.
+     * Like [SerialNames], but also records the properties of each back stack entry as Sentry
+     * arguments.
      *
      * **Privacy / PII**
      *
      * This mapper records the full content of your back stack keys, which may include user IDs,
-     * emails, search queries, or other personal data. Only use it if every key in your back stack
-     * is safe to send to Sentry; otherwise, [send only names][SerialNames], or use a custom
-     * [BackStackEntryMapper].
+     * emails, search queries, or other personal data. Only use it if ***every*** key in your back
+     * stack is safe to send to Sentry; otherwise, [send only names][SerialNames], or use a custom
+     * [BackStackEntryMapper] (see example below).
      *
      * Values of properties whose names contain a term from
      * [Sentry's sensitive denylist](https://develop.sentry.dev/sdk/foundations/client/data-collection/#sensitive-denylist)
      * (e.g., `auth`, `token`, `password`, `key`) are replaced with `"[Filtered]"` at every level of
      * nesting. Matching is case-insensitive and by substring, so names like `author` are also
-     * filtered. Treat the denylist as a safety net, and not as a fully-fledged scrubber.
+     * filtered. Sentry's denylist is intentionally narrow, so treat it as a safety net rather than
+     * a fully-fledged scrubber.
      *
      * For instance, given:
      * ```kotlin
@@ -249,7 +251,9 @@ public fun interface BackStackEntryMapper<in T : Any> {
      *         "productId" to entry.productId, "source" to entry.source
      *       ),
      *     )
-     *     else -> BackStackEntryMapper.SerialNamesAndArguments.map(entry)
+     *     // You can still use the convenience mapper for any entries you don't
+     *     // need to special-case.
+     *     else -> BackStackEntryMapper.SerialNamesAndProperties.map(entry)
      *   }
      * }
      * ```
@@ -280,7 +284,7 @@ public fun interface BackStackEntryMapper<in T : Any> {
      * [SerialNames].
      */
     @get:ApiStatus.Experimental
-    public val SerialNamesAndArguments: BackStackEntryMapper<Any>
+    public val SerialNamesAndProperties: BackStackEntryMapper<Any>
       get() = SerialNameBackStackEntryMapper.withArgumentsInstance
   }
 }

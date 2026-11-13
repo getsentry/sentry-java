@@ -246,10 +246,10 @@ class SerialNameBackStackEntryMapperTest {
   }
 
   @Test
-  fun `SerialNamesAndArguments returns a shared mapper backed by kotlinx serialization`() {
-    val sut = BackStackEntryMapper.SerialNamesAndArguments
+  fun `SerialNamesAndProperties returns a shared mapper backed by kotlinx serialization`() {
+    val sut = BackStackEntryMapper.SerialNamesAndProperties
 
-    assertThat(sut).isSameInstanceAs(BackStackEntryMapper.SerialNamesAndArguments)
+    assertThat(sut).isSameInstanceAs(BackStackEntryMapper.SerialNamesAndProperties)
     assertThat(sut).isNotSameInstanceAs(BackStackEntryMapper.SerialNames)
     assertThat(sut.map(Home)).isEqualTo(SentryBackStackEntry("Home"))
     assertThat(sut.map(Detail("1"))).isEqualTo(SentryBackStackEntry("Detail", mapOf("id" to "1")))

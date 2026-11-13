@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Implementation of [BackStackEntryMapper.SerialNames] and
- * [BackStackEntryMapper.SerialNamesAndArguments].
+ * [BackStackEntryMapper.SerialNamesAndProperties].
  *
  * kotlinx.serialization is a `compileOnly` dependency. Only [KotlinxSerialNameLookup] and
  * [KotlinxArgumentsEncoder] reference it, and this class only touches the lookup after confirming
@@ -102,7 +102,7 @@ internal class SerialNameBackStackEntryMapper(
     logger()
       .log(
         WARNING,
-        "Nav3 BackStackEntryMapper.SerialNamesAndArguments couldn't encode the arguments of " +
+        "Nav3 BackStackEntryMapper.SerialNamesAndProperties couldn't encode the arguments of " +
           "back stack entries of type %s. Recording their names without arguments. Contextual " +
           "and open polymorphic properties aren't supported; use a custom BackStackEntryMapper.",
         type.name,

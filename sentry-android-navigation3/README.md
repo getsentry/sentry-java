@@ -8,17 +8,17 @@ users move around your app. Configure the data you want captured via `SentryNavO
 `SentryNavEffect` uses a `BackStackEntryMapper` to turn each Nav3 back stack key into a screen name and arguments. Choose one of these
 approaches:
 
-| Mapper                                         | What Sentry records                           |
-|------------------------------------------------|-----------------------------------------------|
-| `BackStackEntryMapper.SerialNames`             | The serialization name; no arguments          |
-| `BackStackEntryMapper.SerialNamesAndArguments` | The serialization name and every key property |
-| A custom `BackStackEntryMapper`                | The names and arguments you choose            |
+| Mapper                                          | What Sentry records                           |
+|-------------------------------------------------|-----------------------------------------------|
+| `BackStackEntryMapper.SerialNames`              | The serialization name; no arguments          |
+| `BackStackEntryMapper.SerialNamesAndProperties` | The serialization name and every key property |
+| A custom `BackStackEntryMapper`                 | The names and arguments you choose            |
 
 For the two built-in mappers, an `@Serializable` key's name is its fully qualified class name (for example,
 `/com.example.Route.Detail`) or its `@SerialName` value. Use `@SerialName` for shorter names. A key that isn't `@Serializable` is
 recorded as `/unknown`.
 
-`SerialNamesAndArguments` sends the full content of each key, which may include personal data. Use it only for keys that are safe to
+`SerialNamesAndProperties` sends the full content of each key, which may include personal data. Use it only for keys that are safe to
 send to Sentry. Values whose property names match the sensitive denylist, such as `token`, `password`, or `session`, become
 `"[Filtered]"`. To send only selected properties or choose different names, use a custom mapper and delegate other keys to
 `SerialNames`:
