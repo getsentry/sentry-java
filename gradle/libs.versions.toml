@@ -84,7 +84,7 @@ sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 gretty = { id = "org.gretty", version = "4.0.0" }
 animalsniffer = { id = "ru.vyarus.animalsniffer", version.ref = "animalsniffer" }
 sentry = { id = "io.sentry.android.gradle", version.ref = "sagp"}
-shadow = { id = "com.gradleup.shadow", version = "9.4.1" }
+shadow = { id = "com.gradleup.shadow", version = "9.6.1" }
 
 [libraries]
 animalsniffer-gradle-plugin = { module = "ru.vyarus:gradle-animalsniffer-plugin", version.ref = "animalsniffer" }
