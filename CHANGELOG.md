@@ -17,7 +17,6 @@
 
 ### Dependencies
 
-- Bump Spring Boot 4 from 4.1.0 to 4.2.0-RC2 ([#6532](https://github.com/getsentry/sentry-java/pull/6532))
 - Bump OpenTelemetry from 1.63.0 / 2.29.0 to 1.67.0 / 2.33.1 ([#6602](https://github.com/getsentry/sentry-java/pull/6602))
 
 ## 8.64.0

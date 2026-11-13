@@ -3,9 +3,6 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 pluginManagement {
   repositories {
     mavenCentral()
-    maven("https://repo.spring.io/milestone") {
-      content { includeGroupByRegex("org\\.springframework.*") }
-    }
     gradlePluginPortal()
     google()
   }
@@ -39,9 +36,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://repo.spring.io/milestone") {
-            content { includeGroupByRegex("org\\.springframework.*") }
-        }
         mavenLocal()
     }
 }

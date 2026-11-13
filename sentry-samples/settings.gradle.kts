@@ -1,9 +1,6 @@
 pluginManagement {
   repositories {
     mavenCentral()
-    maven("https://repo.spring.io/milestone") {
-      content { includeGroupByRegex("org\\.springframework.*") }
-    }
     gradlePluginPortal()
   }
 }
@@ -23,9 +20,6 @@ develocity {
 dependencyResolutionManagement {
   repositories {
     mavenCentral()
-    maven("https://repo.spring.io/milestone") {
-      content { includeGroupByRegex("org\\.springframework.*") }
-    }
     mavenLocal()
   }
   versionCatalogs {
