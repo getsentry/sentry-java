@@ -12,6 +12,7 @@ import androidx.lifecycle.LifecycleOwner
 import io.sentry.IScope
 import io.sentry.IScopes
 import io.sentry.SentryLevel
+import java.lang.ref.WeakReference
 
 /**
  * Manages a lease in order to determine which [NavScopes] instance can bind nav transactions and
@@ -57,9 +58,14 @@ internal class NavLeaseCoordinator {
 
   /**
    * Reports the host application's Activities to this coordinator so that it can detect whether a
-   * leaseholder is covered by a non-candidate root.
+   * leaseholder is covered by a non-candidate root, and retry a nav transaction blocked by a closed
+   * Activity's `ui.load` transaction.
    */
-  private val activityWatcher = NavActivityWatcher(onActivityResumed = ::onAnyActivityResumed)
+  private val activityWatcher =
+    NavActivityWatcher(
+      onActivityCreatedOrResumed = ::onActivityCreatedOrResumed,
+      onActivityDestroyed = ::onAnyActivityDestroyed,
+    )
 
   /**
    * Registers a [nav root][rootInfo] as a lease candidate until disposal or lifecycle destruction.
@@ -83,8 +89,8 @@ internal class NavLeaseCoordinator {
     val initialResumeOrder = if (lifecycleState == Lifecycle.State.RESUMED) ++resumeOrder else 0
     val candidate = Candidate(rootInfo, lifecycleState, initialResumeOrder, publisher, scopes)
 
-    // Only list the candidate once addObserver() succeeds, so a failure can't leak the host
-    // Activity.
+    // Only list the candidate once addObserver() succeeds, so a failure can't leave behind a
+    // candidate that never observes its nav root's lifecycle.
     lifecycle.addObserver(candidate)
     candidates += candidate
     return candidate
@@ -175,13 +181,12 @@ internal class NavLeaseCoordinator {
   /**
    * The eligible candidate most recently observed to be in a resumed state, other than [excluding].
    *
-   * If [resumedOnly] is set to `true`, only candidates that are resumed right now are considered;
-   * if `false`, started and paused candidates are also included. Candidates hosted by
-   * [excludingHostedBy] are skipped.
+   * Only candidates whose current state is at least [minimumState] are considered. Candidates
+   * hosted by [excludingHostedBy] are skipped.
    */
   private fun mostRecentlyResumedCandidate(
     excluding: Candidate? = null,
-    resumedOnly: Boolean = false,
+    minimumState: Lifecycle.State = Lifecycle.State.STARTED,
     excludingHostedBy: Activity? = null,
   ): Candidate? =
     candidates
@@ -189,9 +194,8 @@ internal class NavLeaseCoordinator {
         it !== excluding &&
           (excludingHostedBy == null || it.hostActivity !== excludingHostedBy) &&
           it.canReceiveLease &&
-          it.state.isAtLeast(Lifecycle.State.STARTED) &&
-          it.resumeOrder > 0 &&
-          (!resumedOnly || it.state == Lifecycle.State.RESUMED)
+          it.state.isAtLeast(minimumState) &&
+          it.resumeOrder > 0
       }
       .maxByOrNull { it.resumeOrder }
 
@@ -232,7 +236,7 @@ internal class NavLeaseCoordinator {
       val next =
         mostRecentlyResumedCandidate(
           excluding = candidate,
-          resumedOnly = true,
+          minimumState = Lifecycle.State.RESUMED,
           excludingHostedBy = candidate.hostActivity.takeIf { candidate.isHostActivityPaused },
         )
       when {
@@ -260,7 +264,9 @@ internal class NavLeaseCoordinator {
     // beneath it), and that nav root isn't what the user last saw. A paused nav root that comes
     // back to the foreground will acquire the lease when it resumes.
     if (leaseHolder === candidate) {
-      mostRecentlyResumedCandidate(resumedOnly = true)?.let { next -> handOffLease(next, scope) }
+      mostRecentlyResumedCandidate(minimumState = Lifecycle.State.RESUMED)?.let { next ->
+        handOffLease(next, scope)
+      }
     }
   }
 
@@ -307,14 +313,17 @@ internal class NavLeaseCoordinator {
     it.canReceiveLease && it.isActivityNavRoot(activity)
   }
 
-  /** Withdraws the lease when the resumed [activity] appears to cover a non-resumed nav root. */
-  private fun onAnyActivityResumed(activity: Activity) {
-    // Assume the resumed `activity` is covering the current leaseholder if i) the leaseholder
-    // itself isn't resumed, ii) `activity` isn't the leaseholder's host Activity, and iii)
-    // `activity` isn't itself a nav root (see [isActivityNavRoot]). (i) checks the leaseholder's
-    // own state rather than its host Activity's, as they differ for Fragment nav roots: a Fragment
-    // leaseholder that isn't resumed isn't what the user is interacting with, even if its host
-    // Activity is resumed.
+  /** Withdraws the lease when [activity] appears to cover a non-resumed nav root. */
+  private fun onActivityCreatedOrResumed(
+    activity: Activity,
+    event: NavActivityWatcher.ActivityEvent,
+  ) {
+    // Assume the created or resumed `activity` is covering the current leaseholder if i) the
+    // leaseholder itself isn't resumed, ii) `activity` isn't the leaseholder's host Activity, and
+    // iii) `activity` isn't itself a nav root (see [isActivityNavRoot]). (i) checks the
+    // leaseholder's own state rather than its host Activity's, as they differ for Fragment nav
+    // roots: a Fragment leaseholder that isn't resumed isn't what the user is interacting with,
+    // even if its host Activity is resumed.
     val holder = leaseHolder ?: return
     val hostActivity = holder.hostActivity ?: return
     if (
@@ -329,8 +338,25 @@ internal class NavLeaseCoordinator {
       withdrawLease(
         scope,
         withdrawalReason =
-          "${activity.javaClass.name} was resumed while the nav root wasn't resumed",
+          "${activity.javaClass.name} was ${event.description} while the nav root wasn't resumed",
       )
+    }
+  }
+
+  /**
+   * After [activity] is destroyed, asks the leaseholder to retry publication if an Activity's
+   * `ui.load` blocked it. The publisher decides whether the blocker has left and retry is allowed.
+   */
+  private fun onAnyActivityDestroyed(activity: Activity) {
+    val holder = leaseHolder ?: return
+    if (holder.hostActivity === activity) {
+      return
+    }
+
+    holder.withScopeOrNull { scope ->
+      if (scope != null) {
+        holder.publisher.retryTransactionPublication(scope)
+      }
     }
   }
 
@@ -347,7 +373,13 @@ internal class NavLeaseCoordinator {
     private val scopes: IScopes,
   ) : NavLeaseRegistration, LifecycleEventObserver {
 
-    val hostActivity: Activity? = rootInfo.activity
+    // Held weakly because candidates live in a process-wide coordinator: if disposal fails before
+    // the candidate is removed, it must not keep its destroyed host Activity alive.
+    private val hostActivityRef: WeakReference<Activity>? = rootInfo.activity?.let(::WeakReference)
+
+    /** The Activity hosting this nav root, or `null` if it's unknown or has been collected. */
+    val hostActivity: Activity?
+      get() = hostActivityRef?.get()
 
     /** Whether the host Activity is resumed; false when its lifecycle is unavailable. */
     val isHostActivityResumed: Boolean
@@ -501,6 +533,12 @@ internal interface INavStatePublisher {
 
   /** Publishes the candidate's staged nav state to [scope]. */
   fun publishTo(scope: IScope)
+
+  /**
+   * Retries a nav transaction blocked by an Activity's `ui.load`, subject to
+   * [StagedNavTransaction.retryPublishIfBlocked]. Leaves other published nav state alone.
+   */
+  fun retryTransactionPublication(scope: IScope)
 
   /** Removes published nav state from [scope], retaining it for a later lease acquisition. */
   fun unpublishFrom(scope: IScope)

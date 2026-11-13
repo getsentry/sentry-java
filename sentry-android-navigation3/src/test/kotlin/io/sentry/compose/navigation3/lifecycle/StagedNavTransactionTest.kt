@@ -13,6 +13,8 @@ import io.sentry.SpanContext
 import io.sentry.SpanStatus
 import io.sentry.TransactionContext
 import io.sentry.TransactionOptions
+import io.sentry.time.TestMonotonicTicker
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -31,6 +33,7 @@ class StagedNavTransactionTest {
   private val finishedTransaction =
     mock<ITransaction>().also { whenever(it.isFinished).thenReturn(true) }
   private val hostTransaction = transactionWithOrigin("manual")
+  private val uiLoadTransaction = transactionWithOrigin(ACTIVITY_UI_LOAD_ORIGIN)
 
   @Test
   fun `publishTo() - keeps the started nav transaction when binding it throws`() {
@@ -434,6 +437,271 @@ class StagedNavTransactionTest {
   }
 
   @Test
+  fun `retryPublishIfBlocked() - starts a nav transaction blocked by a ui load once it leaves the slot`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - binds an unfinished nav transaction blocked by a ui load once it leaves the slot`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    val started = fixture.start()
+    stagedNavTransaction.unpublishFrom(fixture.scope)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(started)
+    assertThat(fixture.startedTransactions).containsExactly(started)
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - starts a nav transaction blocked by a ui load once it finishes`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    val uiLoad = transactionWithOrigin(ACTIVITY_UI_LOAD_ORIGIN)
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoad
+    stagedNavTransaction.publishTo(fixture.scope)
+    whenever(uiLoad.isFinished).thenReturn(true)
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - waits while the blocking ui load holds the slot`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isSameInstanceAs(uiLoadTransaction)
+
+    fixture.scope.clearTransaction()
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries within the retry window`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+    fixture.ticker.advance(
+      TimeUnit.SECONDS.toNanos(UI_LOAD_RETRY_WINDOW_SECONDS) - 1,
+      TimeUnit.NANOSECONDS,
+    )
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - measures the retry window from the blocked publication`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS, TimeUnit.SECONDS)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS - 1, TimeUnit.SECONDS)
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isSameInstanceAs(fixture.startedTransaction("/Profile"))
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries nothing exactly at the end of the retry window`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS, TimeUnit.SECONDS)
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries nothing after the retry window`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS + 1, TimeUnit.SECONDS)
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries nothing once the retry window passes while the ui load holds the slot`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.ticker.advance(UI_LOAD_RETRY_WINDOW_SECONDS, TimeUnit.SECONDS)
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries only once`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.transaction = transactionWithOrigin(ACTIVITY_UI_LOAD_ORIGIN)
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries nothing after a transaction other than a ui load blocked it`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = hostTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - starts no new nav transaction when the publication wasn't blocked`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    val started = fixture.start()
+    stagedNavTransaction.publishTo(fixture.scope)
+    whenever(started.isFinished).thenReturn(true)
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).containsExactly(started)
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries nothing after a start the scopes declined`() {
+    val fixture = Fixture.create(declinesTransactions = true)
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    stagedNavTransaction.publishTo(fixture.scope)
+    fixture.declinesTransactions = false
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries nothing once the nav transaction is unpublished`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    stagedNavTransaction.unpublishFrom(fixture.scope)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - retries nothing once the nav transaction is finished`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope)
+    stagedNavTransaction.finish(fixture.scope)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - starts nothing after a ui load blocked a publication that can't be retried`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    stagedNavTransaction.stage(request)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope, canRetry = false)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.startedTransactions).isEmpty()
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
+  fun `retryPublishIfBlocked() - binds nothing after a ui load blocked a rebind that can't be retried`() {
+    val fixture = Fixture.create()
+    val stagedNavTransaction = fixture.stagedNavTransaction
+    fixture.start()
+    stagedNavTransaction.unpublishFrom(fixture.scope)
+    fixture.scope.transaction = uiLoadTransaction
+    stagedNavTransaction.publishTo(fixture.scope, canRetry = false)
+    fixture.scope.clearTransaction()
+
+    stagedNavTransaction.retryPublishIfBlocked(fixture.scope)
+
+    assertThat(fixture.scope.transaction).isNull()
+  }
+
+  @Test
   fun `unpublishFrom() - unbinds the started nav transaction without finishing it`() {
     val fixture = Fixture.create()
     val stagedNavTransaction = fixture.stagedNavTransaction
@@ -613,6 +881,9 @@ class StagedNavTransactionTest {
     val scope = Scope(SentryOptions())
     val logger = mock<ILogger>()
 
+    /** Measures [stagedNavTransaction]'s retry window. */
+    val ticker = TestMonotonicTicker()
+
     /** Whether [scopes] declines to start transactions, returning a no-op transaction instead. */
     var declinesTransactions = false
     val startedTransactions = mutableListOf<ITransaction>()
@@ -642,7 +913,7 @@ class StagedNavTransactionTest {
           }
       }
 
-    val stagedNavTransaction = StagedNavTransaction(scopes)
+    val stagedNavTransaction = StagedNavTransaction(scopes, ticker)
 
     init {
       scope.options.addScopeObserver(
