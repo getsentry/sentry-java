@@ -7773,6 +7773,7 @@ public final class io/sentry/time/SystemEpochClock : io/sentry/time/EpochClock {
 }
 
 public final class io/sentry/time/Timestamp {
+	public fun epochMillis ()J
 	public fun epochNanos ()J
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I

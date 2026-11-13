@@ -13,7 +13,6 @@ import io.sentry.cache.EnvelopeCache;
 import io.sentry.cache.IEnvelopeCache;
 import io.sentry.hints.BlockingFlushHint;
 import io.sentry.protocol.SentryId;
-import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,13 +56,13 @@ final class ApplicationExitInfoHistoryDispatcher implements Runnable {
       final @NotNull Context context,
       final @NotNull IScopes scopes,
       final @NotNull SentryAndroidOptions options,
-      final @NotNull ICurrentDateProvider dateProvider,
       final @NotNull ApplicationExitInfoPolicy policy) {
     this.context = ContextUtils.getApplicationContext(context);
     this.scopes = scopes;
     this.options = options;
     this.policy = policy;
-    this.threshold = dateProvider.getCurrentTimeMillis() - NINETY_DAYS_THRESHOLD;
+    // ApplicationExitInfo timestamps are epoch millis, so the cutoff has to be on the wall clock.
+    this.threshold = options.getEpochClock().now().epochMillis() - NINETY_DAYS_THRESHOLD;
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)

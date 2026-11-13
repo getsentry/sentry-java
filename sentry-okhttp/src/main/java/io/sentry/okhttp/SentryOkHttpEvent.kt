@@ -8,7 +8,6 @@ import io.sentry.SentryDate
 import io.sentry.SpanDataConvention
 import io.sentry.SpanOptions
 import io.sentry.TypeCheckHint
-import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.Platform
 import io.sentry.util.UrlUtils
 import io.sentry.util.network.NetworkRequestData
@@ -51,7 +50,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
         // needs this as unix timestamp for rrweb
         setData(
           SpanDataConvention.HTTP_START_TIMESTAMP,
-          CurrentDateProvider.getInstance().currentTimeMillis,
+          scopes.options.epochClock.now().epochMillis(),
         )
       }
 
@@ -177,7 +176,7 @@ internal class SentryOkHttpEvent(private val scopes: IScopes, private val reques
     // needs this as unix timestamp for rrweb
     breadcrumb.setData(
       SpanDataConvention.HTTP_END_TIMESTAMP,
-      CurrentDateProvider.getInstance().currentTimeMillis,
+      scopes.options.epochClock.now().epochMillis(),
     )
     // We send the breadcrumb even without spans.
     scopes.addBreadcrumb(breadcrumb, hint)

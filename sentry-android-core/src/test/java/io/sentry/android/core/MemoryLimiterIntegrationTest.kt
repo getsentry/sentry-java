@@ -15,7 +15,6 @@ import io.sentry.android.core.cache.AndroidEnvelopeCache
 import io.sentry.cache.EnvelopeCache
 import io.sentry.protocol.SentryId
 import io.sentry.test.ImmediateExecutorService
-import io.sentry.transport.CurrentDateProvider
 import io.sentry.util.HintUtils
 import java.io.File
 import kotlin.test.BeforeTest
@@ -105,7 +104,7 @@ class MemoryLimiterIntegrationTest {
       whenever(scopes.captureEvent(any(), anyOrNull<Hint>())).thenReturn(SentryId())
       val buildInfoProvider = mock<BuildInfoProvider>()
       whenever(buildInfoProvider.sdkInfoVersion).thenReturn(sdkVersion)
-      return MemoryLimiterIntegration(context, CurrentDateProvider.getInstance(), buildInfoProvider)
+      return MemoryLimiterIntegration(context, buildInfoProvider)
     }
 
     fun addAppExitInfo(

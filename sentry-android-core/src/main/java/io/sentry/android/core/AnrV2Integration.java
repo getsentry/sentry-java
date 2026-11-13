@@ -28,8 +28,6 @@ import io.sentry.protocol.DebugMeta;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
-import io.sentry.transport.CurrentDateProvider;
-import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.BufferedReader;
@@ -47,19 +45,10 @@ import org.jetbrains.annotations.Nullable;
 public final class AnrV2Integration implements Integration, Closeable {
 
   private final @NotNull Context context;
-  private final @NotNull ICurrentDateProvider dateProvider;
   private @Nullable SentryAndroidOptions options;
 
   public AnrV2Integration(final @NotNull Context context) {
-    // using CurrentDateProvider instead of AndroidCurrentDateProvider as AppExitInfo uses
-    // System.currentTimeMillis
-    this(context, CurrentDateProvider.getInstance());
-  }
-
-  AnrV2Integration(
-      final @NotNull Context context, final @NotNull ICurrentDateProvider dateProvider) {
     this.context = ContextUtils.getApplicationContext(context);
-    this.dateProvider = dateProvider;
   }
 
   @SuppressLint("NewApi") // we do the check in the AnrIntegrationFactory
@@ -88,7 +77,7 @@ public final class AnrV2Integration implements Integration, Closeable {
             .getExecutorService()
             .submit(
                 new ApplicationExitInfoHistoryDispatcher(
-                    context, scopes, this.options, dateProvider, new AnrV2Policy(this.options)));
+                    context, scopes, this.options, new AnrV2Policy(this.options)));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start ANR processor.", e);
       }

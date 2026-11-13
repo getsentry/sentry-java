@@ -33,8 +33,6 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryThread;
-import io.sentry.transport.CurrentDateProvider;
-import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
 import java.io.ByteArrayInputStream;
@@ -51,19 +49,10 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class TombstoneIntegration implements Integration, Closeable {
   private final @NotNull Context context;
-  private final @NotNull ICurrentDateProvider dateProvider;
   private @Nullable SentryAndroidOptions options;
 
   public TombstoneIntegration(final @NotNull Context context) {
-    // using CurrentDateProvider instead of AndroidCurrentDateProvider as AppExitInfo uses
-    // System.currentTimeMillis
-    this(context, CurrentDateProvider.getInstance());
-  }
-
-  TombstoneIntegration(
-      final @NotNull Context context, final @NotNull ICurrentDateProvider dateProvider) {
     this.context = ContextUtils.getApplicationContext(context);
-    this.dateProvider = dateProvider;
   }
 
   @Override
@@ -97,7 +86,6 @@ public final class TombstoneIntegration implements Integration, Closeable {
                     context,
                     scopes,
                     this.options,
-                    dateProvider,
                     new TombstonePolicy(this.options, this.context)));
       } catch (Throwable e) {
         options.getLogger().log(SentryLevel.DEBUG, "Failed to start tombstone processor.", e);

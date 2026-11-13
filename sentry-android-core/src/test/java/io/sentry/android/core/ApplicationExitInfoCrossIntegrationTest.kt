@@ -169,11 +169,7 @@ class ApplicationExitInfoCrossIntegrationTest {
       }
     val buildInfoProvider = mock<BuildInfoProvider>()
     whenever(buildInfoProvider.sdkInfoVersion).thenReturn(37)
-    MemoryLimiterIntegration(
-        fixture.context,
-        io.sentry.transport.CurrentDateProvider.getInstance(),
-        buildInfoProvider,
-      )
+    MemoryLimiterIntegration(fixture.context, buildInfoProvider)
       .register(memoryLimiterScopes, memoryLimiterOptions)
 
     verify(memoryLimiterScopes)
@@ -224,11 +220,7 @@ class ApplicationExitInfoCrossIntegrationTest {
       }
     val buildInfoProvider = mock<BuildInfoProvider>()
     whenever(buildInfoProvider.sdkInfoVersion).thenReturn(37)
-    MemoryLimiterIntegration(
-        fixture.context,
-        io.sentry.transport.CurrentDateProvider.getInstance(),
-        buildInfoProvider,
-      )
+    MemoryLimiterIntegration(fixture.context, buildInfoProvider)
       .register(memoryLimiterScopes, memoryLimiterOptions)
 
     verify(memoryLimiterScopes)

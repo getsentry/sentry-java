@@ -27,8 +27,6 @@ import io.sentry.protocol.Mechanism;
 import io.sentry.protocol.Message;
 import io.sentry.protocol.SentryException;
 import io.sentry.protocol.SentryId;
-import io.sentry.transport.CurrentDateProvider;
-import io.sentry.transport.ICurrentDateProvider;
 import io.sentry.util.ExceptionUtils;
 import io.sentry.util.HintUtils;
 import io.sentry.util.Objects;
@@ -41,7 +39,6 @@ import java.util.Map;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.TestOnly;
 
 /**
  * Reports Android process deaths that the OS records as <a
@@ -85,24 +82,12 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
   static final @NotNull String PROCESS_IMPORTANCE_FINGERPRINT_PREFIX = "process_importance:";
 
   private final @NotNull Context context;
-  private final @NotNull ICurrentDateProvider dateProvider;
   private final @NotNull BuildInfoProvider buildInfoProvider;
   private @Nullable SentryAndroidOptions androidOptions;
 
   public MemoryLimiterIntegration(
       final @NotNull Context context, final @NotNull BuildInfoProvider buildInfoProvider) {
-    // Use CurrentDateProvider instead of AndroidCurrentDateProvider as ApplicationExitInfo uses
-    // epochal System.currentTimeMillis and not time since boot.
-    this(context, CurrentDateProvider.getInstance(), buildInfoProvider);
-  }
-
-  @TestOnly
-  MemoryLimiterIntegration(
-      final @NotNull Context context,
-      final @NotNull ICurrentDateProvider dateProvider,
-      final @NotNull BuildInfoProvider buildInfoProvider) {
     this.context = ContextUtils.getApplicationContext(context);
-    this.dateProvider = dateProvider;
     this.buildInfoProvider = buildInfoProvider;
   }
 
@@ -146,11 +131,7 @@ public final class MemoryLimiterIntegration implements Integration, Closeable {
           .getExecutorService()
           .submit(
               new ApplicationExitInfoHistoryDispatcher(
-                  context,
-                  scopes,
-                  androidOptions,
-                  dateProvider,
-                  new MemoryLimiterPolicy(androidOptions)));
+                  context, scopes, androidOptions, new MemoryLimiterPolicy(androidOptions)));
     } catch (Throwable e) {
       ExceptionUtils.rethrowIfFatal(e);
       options.getLogger().log(DEBUG, "Failed to start MemoryLimiter processor.", e);
