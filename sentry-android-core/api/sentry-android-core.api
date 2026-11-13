@@ -244,6 +244,11 @@ public final class io/sentry/android/core/ApplicationExitInfoEventProcessor : io
 	public fun process (Lio/sentry/protocol/SentryTransaction;Lio/sentry/Hint;)Lio/sentry/protocol/SentryTransaction;
 }
 
+public final class io/sentry/android/core/ApplicationNotResponding : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+	public fun getThread ()Ljava/lang/Thread;
+}
+
 public final class io/sentry/android/core/BuildConfig {
 	public static final field BUILD_TYPE Ljava/lang/String;
 	public static final field DEBUG Z
@@ -714,6 +719,12 @@ public final class io/sentry/android/core/anr/AggregatedStackTrace {
 	public fun <init> ([Ljava/lang/StackTraceElement;IIJF)V
 	public fun addOccurrence (J)V
 	public fun getStack ()[Ljava/lang/StackTraceElement;
+}
+
+public final class io/sentry/android/core/anr/AnrCulpritEventHelper {
+	public fun <init> (Lio/sentry/SentryExceptionFactory;)V
+	public static fun hasOnlySystemFrames (Ljava/util/List;)Z
+	public fun toSentryExceptions (Lio/sentry/android/core/anr/AggregatedStackTrace;Lio/sentry/protocol/Mechanism;)Ljava/util/List;
 }
 
 public final class io/sentry/android/core/anr/AnrCulpritIdentifier {
