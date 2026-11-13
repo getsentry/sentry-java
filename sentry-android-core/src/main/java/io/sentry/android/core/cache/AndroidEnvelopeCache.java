@@ -23,6 +23,7 @@ import io.sentry.util.Objects;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -84,7 +85,7 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
                 DEBUG,
                 "Startup Crash detected %d milliseconds after SDK init. Writing a startup crash marker file to disk.",
                 timeSinceSdkInit);
-        writeStartupCrashMarkerFile();
+        writeStartupCrashMarkerFile(getEnvelopeFile(envelope).getName());
       }
     }
 
@@ -100,7 +101,11 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
     return directory.getFile();
   }
 
-  private void writeStartupCrashMarkerFile() {
+  /**
+   * Writes the startup crash marker, which names the cached crash envelope so the next app start
+   * can send it ahead of the rest of the cache.
+   */
+  private void writeStartupCrashMarkerFile(final @NotNull String envelopeFileName) {
     // we use outbox path always, as it's the one that will also contain markers if hybrid sdks
     // decide to write it, which will trigger the blocking init
     final String outboxPath = options.getOutboxPath();
@@ -118,42 +123,86 @@ public final class AndroidEnvelopeCache extends EnvelopeCache {
       return;
     }
     final File crashMarkerFile = new File(outboxDir, STARTUP_CRASH_MARKER_FILE);
-    try {
-      crashMarkerFile.createNewFile();
+    try (final OutputStream outputStream = new FileOutputStream(crashMarkerFile)) {
+      outputStream.write(envelopeFileName.getBytes(UTF_8));
     } catch (Throwable e) {
       options.getLogger().log(ERROR, "Error writing the startup crash marker file to the disk", e);
     }
   }
 
-  public static boolean hasStartupCrashMarker(final @NotNull SentryOptions options) {
+  /**
+   * Reads and deletes the startup crash marker.
+   *
+   * @return the marker, {@link StartupCrashMarker#NONE} if there is none
+   */
+  public static @NotNull StartupCrashMarker readStartupCrashMarker(
+      final @NotNull SentryOptions options) {
     final String outboxPath = options.getOutboxPath();
     if (outboxPath == null) {
       options
           .getLogger()
           .log(DEBUG, "Outbox path is null, the startup crash marker file does not exist");
-      return false;
+      return StartupCrashMarker.NONE;
     }
 
     final File crashMarkerFile = new File(outboxPath, STARTUP_CRASH_MARKER_FILE);
     try {
-      final boolean exists = crashMarkerFile.exists();
-      if (exists) {
-        if (!crashMarkerFile.delete()) {
-          options
-              .getLogger()
-              .log(
-                  ERROR,
-                  "Failed to delete the startup crash marker file. %s.",
-                  crashMarkerFile.getAbsolutePath());
-        }
+      if (!crashMarkerFile.exists()) {
+        return StartupCrashMarker.NONE;
       }
-      return exists;
+      @Nullable String content = null;
+      try {
+        content = FileUtils.readText(crashMarkerFile);
+      } catch (IOException e) {
+        options.getLogger().log(ERROR, "Error reading the startup crash marker file", e);
+      }
+      if (!crashMarkerFile.delete()) {
+        options
+            .getLogger()
+            .log(
+                ERROR,
+                "Failed to delete the startup crash marker file. %s.",
+                crashMarkerFile.getAbsolutePath());
+      }
+      // older SDK versions, and possibly hybrid SDKs, write an empty marker
+      final @Nullable String envelopeFileName = content == null ? null : content.trim();
+      return new StartupCrashMarker(
+          envelopeFileName == null || envelopeFileName.isEmpty() ? null : envelopeFileName);
     } catch (Throwable e) {
       options
           .getLogger()
           .log(ERROR, "Error reading/deleting the startup crash marker file on the disk", e);
     }
-    return false;
+    return StartupCrashMarker.NONE;
+  }
+
+  /** The startup crash marker of the previous app run, read once on app start. */
+  public static final class StartupCrashMarker {
+    public static final @NotNull StartupCrashMarker NONE = new StartupCrashMarker(false, null);
+
+    private final boolean exists;
+    private final @Nullable String envelopeFileName;
+
+    /**
+     * @param envelopeFileName the file name of the crash envelope in the cache dir, or null if the
+     *     marker doesn't name one
+     */
+    public StartupCrashMarker(final @Nullable String envelopeFileName) {
+      this(true, envelopeFileName);
+    }
+
+    private StartupCrashMarker(final boolean exists, final @Nullable String envelopeFileName) {
+      this.exists = exists;
+      this.envelopeFileName = envelopeFileName;
+    }
+
+    public boolean exists() {
+      return exists;
+    }
+
+    public @Nullable String getEnvelopeFileName() {
+      return envelopeFileName;
+    }
   }
 
   private static @Nullable Long lastReportedMarker(

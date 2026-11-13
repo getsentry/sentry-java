@@ -13,6 +13,14 @@ import org.mockito.kotlin.mock
 
 class SentryAndroidOptionsTest {
   @Test
+  fun `init should raise maxCacheItems and maxQueueSize to 100`() {
+    val sentryOptions = SentryAndroidOptions()
+
+    assertEquals(100, sentryOptions.maxCacheItems)
+    assertEquals(100, sentryOptions.maxQueueSize)
+  }
+
+  @Test
   fun `init should set clientName`() {
     val sentryOptions = SentryAndroidOptions()
 

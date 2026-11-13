@@ -82,11 +82,7 @@ abstract class DirectoryProcessor {
 
         logger.log(SentryLevel.DEBUG, "Processing file: %s", filePath);
 
-        final SendCachedEnvelopeHint cachedHint =
-            new SendCachedEnvelopeHint(flushTimeoutMillis, logger, filePath, processedEnvelopes);
-
-        final Hint hint = HintUtils.createWithTypeCheckHint(cachedHint);
-        processFile(file, hint);
+        processFile(file, createCachedHint(filePath));
 
         // a short delay between processing envelopes to avoid bursting our server and hitting
         // another rate limit https://develop.sentry.dev/sdk/features/#additional-capabilities
@@ -103,6 +99,29 @@ abstract class DirectoryProcessor {
     } catch (Throwable e) {
       logger.log(SentryLevel.ERROR, e, "Failed processing '%s'", directory.getAbsolutePath());
     }
+  }
+
+  /**
+   * Processes a single file of the directory, e.g. to send it ahead of the others. Once enqueued,
+   * {@link #processDirectory(File)} skips it like any other processed file.
+   *
+   * @param file the file to process
+   * @return false if the file doesn't exist or isn't relevant for this processor
+   */
+  boolean processSingleFile(final @NotNull File file) {
+    if (!file.isFile() || !isRelevantFileName(file.getName())) {
+      logger.log(SentryLevel.DEBUG, "File %s is not a relevant file.", file.getAbsolutePath());
+      return false;
+    }
+    final String filePath = file.getAbsolutePath();
+    logger.log(SentryLevel.DEBUG, "Processing single file: %s", filePath);
+    processFile(file, createCachedHint(filePath));
+    return true;
+  }
+
+  private @NotNull Hint createCachedHint(final @NotNull String filePath) {
+    return HintUtils.createWithTypeCheckHint(
+        new SendCachedEnvelopeHint(flushTimeoutMillis, logger, filePath, processedEnvelopes));
   }
 
   protected abstract void processFile(final @NotNull File file, final @NotNull Hint hint);

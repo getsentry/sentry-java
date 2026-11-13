@@ -429,8 +429,8 @@ final class AndroidOptionsInitializer {
 
     // read the startup crash marker here to avoid doing double-IO for the SendCachedEnvelope
     // integrations below
-    LazyEvaluator<Boolean> startupCrashMarkerEvaluator =
-        new LazyEvaluator<>(() -> AndroidEnvelopeCache.hasStartupCrashMarker(options));
+    LazyEvaluator<AndroidEnvelopeCache.StartupCrashMarker> startupCrashMarkerEvaluator =
+        new LazyEvaluator<>(() -> AndroidEnvelopeCache.readStartupCrashMarker(options));
 
     options.addIntegration(
         new SendCachedEnvelopeIntegration(
