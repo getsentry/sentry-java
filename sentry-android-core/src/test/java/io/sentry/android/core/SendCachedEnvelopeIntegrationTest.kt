@@ -10,6 +10,7 @@ import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForget
 import io.sentry.SendCachedEnvelopeFireAndForgetIntegration.SendFireAndForgetFactory
 import io.sentry.SentryExecutorService
 import io.sentry.SentryLevel.DEBUG
+import io.sentry.android.core.cache.AndroidEnvelopeCache.StartupCrashMarker
 import io.sentry.test.DeferredExecutorService
 import io.sentry.test.ImmediateExecutorService
 import io.sentry.transport.RateLimiter
@@ -21,6 +22,7 @@ import kotlin.test.Test
 import org.awaitility.kotlin.await
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -39,6 +41,8 @@ class SendCachedEnvelopeIntegrationTest {
     fun getSut(
       cacheDirPath: String? = "abc",
       hasStartupCrashMarker: Boolean = false,
+      startupCrashFileName: String? = null,
+      hasStartupCrashFile: Boolean = true,
       hasSender: Boolean = true,
       delaySend: Long = 0L,
       taskFails: Boolean = false,
@@ -56,6 +60,7 @@ class SendCachedEnvelopeIntegrationTest {
         }
         flag.set(false)
       }
+      whenever(sender.sendFile(any())).thenReturn(hasStartupCrashFile)
       whenever(factory.hasValidPath(any(), any())).thenCallRealMethod()
       whenever(factory.create(any(), any()))
         .thenReturn(
@@ -66,7 +71,10 @@ class SendCachedEnvelopeIntegrationTest {
           }
         )
 
-      return SendCachedEnvelopeIntegration(factory, LazyEvaluator { hasStartupCrashMarker })
+      val startupCrashMarker =
+        if (hasStartupCrashMarker) StartupCrashMarker(startupCrashFileName)
+        else StartupCrashMarker.NONE
+      return SendCachedEnvelopeIntegration(factory, LazyEvaluator { startupCrashMarker })
     }
   }
 
@@ -118,6 +126,72 @@ class SendCachedEnvelopeIntegrationTest {
 
     // we do not need to await here, because it's executed synchronously
     verify(fixture.sender).send()
+  }
+
+  @Test
+  fun `when startup crash marker names a file, sends it first and only awaits it`() {
+    val sut =
+      fixture.getSut(
+        hasStartupCrashMarker = true,
+        startupCrashFileName = "crash.envelope",
+        delaySend = 1000,
+      )
+
+    sut.register(fixture.scopes, fixture.options)
+
+    // the crash file was sent synchronously, the rest of the cache is still being sent
+    verify(fixture.sender).sendFile("crash.envelope")
+    assertThat(fixture.flag.get()).isTrue()
+    verify(fixture.logger, never())
+      .log(eq(DEBUG), eq("Synchronous send timed out, continuing in the background."))
+
+    await.untilFalse(fixture.flag)
+    val inOrder = inOrder(fixture.sender)
+    inOrder.verify(fixture.sender).sendFile("crash.envelope")
+    inOrder.verify(fixture.sender).send()
+  }
+
+  @Test
+  fun `when startup crash marker names a missing file, awaits the whole task`() {
+    val sut =
+      fixture.getSut(
+        hasStartupCrashMarker = true,
+        startupCrashFileName = "crash.envelope",
+        hasStartupCrashFile = false,
+      )
+
+    sut.register(fixture.scopes, fixture.options)
+
+    // we do not need to await here, because it's executed synchronously
+    verify(fixture.sender).sendFile("crash.envelope")
+    verify(fixture.sender).send()
+  }
+
+  @Test
+  fun `when startup crash marker is empty, does not send a single file and awaits the whole task`() {
+    val sut = fixture.getSut(hasStartupCrashMarker = true)
+
+    sut.register(fixture.scopes, fixture.options)
+
+    // we do not need to await here, because it's executed synchronously
+    verify(fixture.sender, never()).sendFile(any())
+    verify(fixture.sender).send()
+  }
+
+  @Test
+  fun `when startup crash marker exists, only sends the crash file first on the first run`() {
+    val sut =
+      fixture.getSut(
+        hasStartupCrashMarker = true,
+        startupCrashFileName = "crash.envelope",
+        mockExecutorService = ImmediateExecutorService(),
+      )
+
+    sut.register(fixture.scopes, fixture.options)
+    sut.onConnectionStatusChanged(ConnectionStatus.CONNECTED)
+
+    verify(fixture.sender).sendFile("crash.envelope")
+    verify(fixture.sender, times(2)).send()
   }
 
   @Test

@@ -28,6 +28,16 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
 
   public interface SendFireAndForget {
     void send();
+
+    /**
+     * Sends the file with the given name from this sender's directory ahead of {@link #send()}.
+     *
+     * @param fileName the name of the file in this sender's directory
+     * @return false if this sender has no such file
+     */
+    default boolean sendFile(final @NotNull String fileName) {
+      return false;
+    }
   }
 
   public interface SendFireAndForgetDirPath {
@@ -52,12 +62,20 @@ public final class SendCachedEnvelopeFireAndForgetIntegration
         final @NotNull String dirPath,
         final @NotNull ILogger logger) {
       final File dirFile = new File(dirPath);
-      return () -> {
-        logger.log(SentryLevel.DEBUG, "Started processing cached files from %s", dirPath);
+      return new SendFireAndForget() {
+        @Override
+        public void send() {
+          logger.log(SentryLevel.DEBUG, "Started processing cached files from %s", dirPath);
 
-        directoryProcessor.processDirectory(dirFile);
+          directoryProcessor.processDirectory(dirFile);
 
-        logger.log(SentryLevel.DEBUG, "Finished processing cached files from %s", dirPath);
+          logger.log(SentryLevel.DEBUG, "Finished processing cached files from %s", dirPath);
+        }
+
+        @Override
+        public boolean sendFile(final @NotNull String fileName) {
+          return directoryProcessor.processSingleFile(new File(dirFile, fileName));
+        }
       };
     }
   }

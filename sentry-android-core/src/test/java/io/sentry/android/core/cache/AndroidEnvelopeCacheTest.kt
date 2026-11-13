@@ -138,6 +138,55 @@ class AndroidEnvelopeCacheTest {
   }
 
   @Test
+  fun `startup crash marker names the cached crash envelope file`() {
+    val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 2000L)
+
+    val hints = HintUtils.createWithTypeCheckHint(UncaughtHint())
+    cache.storeEnvelope(fixture.envelope, hints)
+
+    val envelopeFiles =
+      File(fixture.options.cacheDirPath!!).listFiles { _, name ->
+        name.endsWith(EnvelopeCache.SUFFIX_ENVELOPE_FILE)
+      }!!
+    assertThat(envelopeFiles).hasLength(1)
+    assertThat(fixture.startupCrashMarkerFile.readText()).isEqualTo(envelopeFiles[0].name)
+  }
+
+  @Test
+  fun `readStartupCrashMarker returns NONE when there is no marker`() {
+    fixture.getSut(tmpDir)
+
+    val marker = AndroidEnvelopeCache.readStartupCrashMarker(fixture.options)
+
+    assertThat(marker.exists()).isFalse()
+    assertThat(marker.envelopeFileName).isNull()
+  }
+
+  @Test
+  fun `readStartupCrashMarker returns the envelope file name and deletes the marker`() {
+    fixture.getSut(tmpDir)
+    fixture.startupCrashMarkerFile.writeText("crash.envelope")
+
+    val marker = AndroidEnvelopeCache.readStartupCrashMarker(fixture.options)
+
+    assertThat(marker.exists()).isTrue()
+    assertThat(marker.envelopeFileName).isEqualTo("crash.envelope")
+    assertThat(fixture.startupCrashMarkerFile.exists()).isFalse()
+  }
+
+  @Test
+  fun `readStartupCrashMarker returns no envelope file name for an empty marker`() {
+    fixture.getSut(tmpDir)
+    fixture.startupCrashMarkerFile.createNewFile()
+
+    val marker = AndroidEnvelopeCache.readStartupCrashMarker(fixture.options)
+
+    assertThat(marker.exists()).isTrue()
+    assertThat(marker.envelopeFileName).isNull()
+    assertThat(fixture.startupCrashMarkerFile.exists()).isFalse()
+  }
+
+  @Test
   fun `creates outbox dir when writing startup crash file and dir does not exist yet`() {
     val cache = fixture.getSut(dir = tmpDir, appStartMillis = 1000L, currentTimeMillis = 2000L)
 
