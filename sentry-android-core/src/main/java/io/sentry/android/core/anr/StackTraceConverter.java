@@ -118,7 +118,7 @@ public final class StackTraceConverter {
    * @return a signature string representing this frame
    */
   @NotNull
-  private static String createFrameSignature(@NotNull StackTraceElement element) {
+  static String createFrameSignature(@NotNull StackTraceElement element) {
     return element.getClassName()
         + "#"
         + element.getMethodName()
@@ -153,7 +153,7 @@ public final class StackTraceConverter {
    * @return a SentryStackFrame populated with available information
    */
   @NotNull
-  private static SentryStackFrame createSentryStackFrame(@NotNull StackTraceElement element) {
+  static SentryStackFrame createSentryStackFrame(@NotNull StackTraceElement element) {
     final @NotNull SentryStackFrame frame = new SentryStackFrame();
     frame.setFilename(element.getFileName());
     frame.setFunction(element.getMethodName());

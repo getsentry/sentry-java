@@ -1,0 +1,44 @@
+{
+  "version": "1",
+  "platform": "java",
+  "frames": [
+    {
+      "filename": "App.java",
+      "function": "main",
+      "module": "com.example.App",
+      "lineno": 10
+    },
+    {
+      "filename": "App.java",
+      "function": "work",
+      "module": "com.example.App",
+      "lineno": 20
+    }
+  ],
+  "nodes": [
+    {
+      "frame_id": 0,
+      "sample_count": 3,
+      "children": [1]
+    },
+    {
+      "frame_id": 1,
+      "sample_count": 2
+    }
+  ],
+  "trees": [
+    {
+      "roots": [0],
+      "thread_id": "1",
+      "thread_attributed": true
+    }
+  ],
+  "debug_meta": {
+    "images": [
+      {
+        "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "type": "proguard"
+      }
+    ]
+  }
+}

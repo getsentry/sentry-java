@@ -722,6 +722,10 @@ public final class io/sentry/android/core/anr/AnrCulpritIdentifier {
 	public static fun isSystemFrame (Ljava/lang/String;)Z
 }
 
+public final class io/sentry/android/core/anr/AnrFlameGraphAttachment {
+	public static fun fromAnrProfile (Lio/sentry/android/core/anr/AnrProfile;Ljava/lang/String;)Lio/sentry/Attachment;
+}
+
 public final class io/sentry/android/core/anr/AnrProfile {
 	public final field endTimeMs J
 	public final field stacks Ljava/util/List;
