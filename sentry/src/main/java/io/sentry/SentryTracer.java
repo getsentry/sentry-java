@@ -5,6 +5,7 @@ import io.sentry.protocol.Contexts;
 import io.sentry.protocol.SentryId;
 import io.sentry.protocol.SentryTransaction;
 import io.sentry.protocol.TransactionNameSource;
+import io.sentry.time.Deadline;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.CollectionUtils;
 import io.sentry.util.Objects;
@@ -15,6 +16,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.ApiStatus;
@@ -48,6 +50,15 @@ public final class SentryTracer implements ITransaction {
 
   private final @NotNull AtomicBoolean isIdleFinishTimerRunning = new AtomicBoolean(false);
   private final @NotNull AtomicBoolean isDeadlineTimerRunning = new AtomicBoolean(false);
+
+  /**
+   * When the deadline timeout is reached, or null without one.
+   *
+   * <p>The deadline timer counts on a clock that stops while an Android device is suspended, so it
+   * runs late after the device slept, and after the process was frozen the app's own threads can
+   * finish spans before it. This deadline keeps counting through both.
+   */
+  private volatile @Nullable Deadline deadline;
 
   private @NotNull TransactionNameSource transactionNameSource;
   private final @NotNull Instrumenter instrumenter;
@@ -145,12 +156,21 @@ public final class SentryTracer implements ITransaction {
   }
 
   private void onDeadlineTimeoutReached() {
-    final @Nullable SpanStatus status = getStatus();
-    forceFinish(
-        (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED,
-        transactionOptions.getIdleTimeout() != null,
-        null);
+    forceFinish(getDeadlineStatus(), transactionOptions.getIdleTimeout() != null, null);
     isDeadlineTimerRunning.set(false);
+  }
+
+  /** Whether the deadline timeout has been reached, even if the deadline timer has not run yet. */
+  boolean hasDeadlinePassed() {
+    final @Nullable Deadline deadline = this.deadline;
+    return deadline != null && deadline.hasPassed();
+  }
+
+  /** The status the deadline gives: the transaction's own, if it has one. */
+  @NotNull
+  SpanStatus getDeadlineStatus() {
+    final @Nullable SpanStatus status = getStatus();
+    return (status != null) ? status : SpanStatus.DEADLINE_EXCEEDED;
   }
 
   @Override
@@ -310,6 +330,9 @@ public final class SentryTracer implements ITransaction {
         if (timersEnabled) {
           cancelDeadlineTimer();
           isDeadlineTimerRunning.set(true);
+          deadline =
+              Deadline.after(
+                  scopes.getOptions().getMonotonicTicker(), deadlineTimeOut, TimeUnit.MILLISECONDS);
           try {
             deadlineTimeoutFuture =
                 scopes
