@@ -10,6 +10,7 @@ body:
       options:
         - sentry-android
         - sentry-android-ndk
+        - sentry-android-ndk-outproc
         - sentry-android-timber
         - sentry-android-fragment
         - sentry-android-navigation3

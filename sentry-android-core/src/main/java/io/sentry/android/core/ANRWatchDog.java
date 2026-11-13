@@ -49,7 +49,6 @@ final class ANRWatchDog extends Thread {
   private final boolean reportInDebug;
   private final ANRListener anrListener;
   private final MainLooperHandler uiHandler;
-  private final MonotonicTicker monotonicTicker;
 
   /** the interval in which we check if there's an ANR, in ms */
   private long pollingIntervalMs;
@@ -65,7 +64,6 @@ final class ANRWatchDog extends Thread {
   private final @NotNull Context context;
   private final @Nullable IDebugManager debugManager;
 
-  @SuppressWarnings("UnnecessaryLambda")
   private final Runnable ticker;
 
   static @NotNull ANRWatchDog create(
@@ -97,7 +95,6 @@ final class ANRWatchDog extends Thread {
 
     super("|ANR-WatchDog|");
 
-    this.monotonicTicker = monotonicTicker;
     this.timeoutIntervalMillis = timeoutIntervalMillis;
     this.pollingIntervalMs = pollingIntervalMillis;
     this.reportInDebug = reportInDebug;

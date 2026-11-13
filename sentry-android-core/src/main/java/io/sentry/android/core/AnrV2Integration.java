@@ -44,7 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressLint("NewApi") // we check this in AnrIntegrationFactory
-public class AnrV2Integration implements Integration, Closeable {
+public final class AnrV2Integration implements Integration, Closeable {
 
   private final @NotNull Context context;
   private final @NotNull ICurrentDateProvider dateProvider;
@@ -64,6 +64,7 @@ public class AnrV2Integration implements Integration, Closeable {
 
   @SuppressLint("NewApi") // we do the check in the AnrIntegrationFactory
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void register(@NotNull IScopes scopes, @NotNull SentryOptions options) {
     this.options =
         Objects.requireNonNull(

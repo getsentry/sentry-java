@@ -1,5 +1,6 @@
 package io.sentry.android.ndk;
 
+import android.content.Context;
 import io.sentry.android.core.NdkHandlerStrategy;
 import io.sentry.android.core.SentryAndroidOptions;
 import io.sentry.ndk.NativeModuleListLoader;
@@ -41,6 +42,17 @@ public final class SentryNdk {
    * @param options the SentryAndroidOptions
    */
   public static void init(@NotNull final SentryAndroidOptions options) {
+    init(null, options);
+  }
+
+  /**
+   * Init the NDK integration
+   *
+   * @param context the Android context
+   * @param options the SentryAndroidOptions
+   */
+  public static void init(
+      @Nullable final Context context, @NotNull final SentryAndroidOptions options) {
     SentryNdkUtil.addPackage(options.getSdkVersion());
     try {
       if (loadLibraryLatch.await(2000, TimeUnit.MILLISECONDS)) {

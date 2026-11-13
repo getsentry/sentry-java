@@ -35,7 +35,6 @@ import io.sentry.ISentryLifecycleToken;
 import io.sentry.Integration;
 import io.sentry.SentryLevel;
 import io.sentry.SentryOptions;
-import io.sentry.android.core.internal.util.AndroidCurrentDateProvider;
 import io.sentry.android.core.internal.util.Debouncer;
 import io.sentry.util.AutoClosableReentrantLock;
 import io.sentry.util.Objects;
@@ -66,8 +65,7 @@ public final class SystemEventsBreadcrumbsIntegration
   private final @NotNull String[] actions;
   private volatile boolean isClosed = false;
   private volatile boolean isStopped = false;
-  private volatile IntentFilter filter = null;
-  private volatile HandlerThread handlerThread = null;
+  private volatile @Nullable HandlerThread handlerThread = null;
   private final @NotNull AtomicBoolean isReceiverRegistered = new AtomicBoolean(false);
   private final @NotNull AutoClosableReentrantLock receiverLock = new AutoClosableReentrantLock();
   // Track previous battery state to avoid duplicate breadcrumbs when values haven't changed
@@ -124,6 +122,7 @@ public final class SystemEventsBreadcrumbsIntegration
     }
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void registerReceiver(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
 
@@ -146,17 +145,9 @@ public final class SystemEventsBreadcrumbsIntegration
                   }
 
                   receiver = new SystemEventsBroadcastReceiver(scopes, options);
-                  if (filter == null) {
-                    filter = new IntentFilter();
-                    for (String item : actions) {
-                      filter.addAction(item);
-                    }
-                  }
-                  if (customHandler == null && handlerThread == null) {
-                    handlerThread =
-                        new HandlerThread(
-                            "SystemEventsReceiver", Process.THREAD_PRIORITY_BACKGROUND);
-                    handlerThread.start();
+                  final @NotNull IntentFilter filter = new IntentFilter();
+                  for (String item : actions) {
+                    filter.addAction(item);
                   }
                   try {
                     // registerReceiver can throw SecurityException but it's not documented in the
@@ -167,6 +158,12 @@ public final class SystemEventsBreadcrumbsIntegration
                     if (customHandler != null) {
                       handler = customHandler;
                     } else {
+                      if (handlerThread == null) {
+                        handlerThread =
+                            new HandlerThread(
+                                "SystemEventsReceiver", Process.THREAD_PRIORITY_BACKGROUND);
+                        handlerThread.start();
+                      }
                       handler = new Handler(handlerThread.getLooper());
                     }
                     ContextUtils.registerReceiver(context, options, receiver, filter, handler);
@@ -196,8 +193,12 @@ public final class SystemEventsBreadcrumbsIntegration
     }
   }
 
-  @SuppressWarnings("Convert2MethodRef") // older AGP versions do not support method references
+  @SuppressWarnings({
+    "Convert2MethodRef",
+    "FutureReturnValueIgnored"
+  }) // older AGP versions do not support method references
   private void scheduleUnregisterReceiver() {
+    final @Nullable SentryAndroidOptions options = this.options;
     if (options == null) {
       return;
     }
@@ -233,7 +234,6 @@ public final class SystemEventsBreadcrumbsIntegration
   public void close() throws IOException {
     try (final @NotNull ISentryLifecycleToken ignored = receiverLock.acquire()) {
       isClosed = true;
-      filter = null;
       if (handlerThread != null) {
         handlerThread.quit();
       }
@@ -299,15 +299,14 @@ public final class SystemEventsBreadcrumbsIntegration
     private final @NotNull IScopes scopes;
     private final @NotNull SentryAndroidOptions options;
 
-    // TODO: JAVA-729
-    @SuppressWarnings("deprecation")
-    private final @NotNull Debouncer batteryChangedDebouncer =
-        new Debouncer(AndroidCurrentDateProvider.getInstance(), DEBOUNCE_WAIT_TIME_MS, 0);
+    private final @NotNull Debouncer batteryChangedDebouncer;
 
     SystemEventsBroadcastReceiver(
         final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
       this.scopes = scopes;
       this.options = options;
+      this.batteryChangedDebouncer =
+          new Debouncer(options.getMonotonicTicker(), DEBOUNCE_WAIT_TIME_MS, 0);
     }
 
     @Override

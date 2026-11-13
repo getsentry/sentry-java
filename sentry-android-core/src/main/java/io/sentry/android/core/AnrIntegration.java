@@ -47,8 +47,7 @@ public final class AnrIntegration implements Integration, Closeable {
 
   private @Nullable SentryOptions options;
 
-  protected static final @NotNull AutoClosableReentrantLock watchDogLock =
-      new AutoClosableReentrantLock();
+  static final @NotNull AutoClosableReentrantLock watchDogLock = new AutoClosableReentrantLock();
 
   @Override
   public final void register(final @NotNull IScopes scopes, final @NotNull SentryOptions options) {
@@ -56,6 +55,7 @@ public final class AnrIntegration implements Integration, Closeable {
     register(scopes, (SentryAndroidOptions) options);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void register(
       final @NotNull IScopes scopes, final @NotNull SentryAndroidOptions options) {
     options

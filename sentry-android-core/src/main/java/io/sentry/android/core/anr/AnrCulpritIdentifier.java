@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @ApiStatus.Internal
-public class AnrCulpritIdentifier {
+public final class AnrCulpritIdentifier {
 
   // common Java and Android packages who are less relevant for being the actual culprit
   private static final List<String> systemAndFrameworkPackages = new ArrayList<>(11);
@@ -89,8 +89,9 @@ public class AnrCulpritIdentifier {
   }
 
   /**
+   * Returns the most common occurring stacktrace identified as the culprit.
+   *
    * @param stacks a list of stack traces to analyze
-   * @return the most common occurring stacktrace identified as the culprit
    */
   @Nullable
   public static AggregatedStackTrace identify(final @NotNull List<AnrStackTrace> stacks) {

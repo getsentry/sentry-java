@@ -40,7 +40,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.annotation.Config
 
 @RunWith(AndroidJUnit4::class)
-@Config(sdk = [26], shadows = [ReplayShadowMediaCodec::class])
+@Config(sdk = [30], shadows = [ReplayShadowMediaCodec::class])
 class ReplayIntegrationWithRecorderTest {
   @get:Rule val tmpDir = TemporaryFolder()
 

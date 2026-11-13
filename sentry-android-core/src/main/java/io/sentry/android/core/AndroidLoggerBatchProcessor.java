@@ -23,6 +23,7 @@ public final class AndroidLoggerBatchProcessor extends LoggerBatchProcessor
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void onBackground() {
     if (!hasAcceptedItem) {
       return;

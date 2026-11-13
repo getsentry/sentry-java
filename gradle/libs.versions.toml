@@ -21,7 +21,7 @@ jetbrainsCompose = "1.6.11"
 kotlin = "2.3.21"
 kotlin-compatible-version = "1.9"
 ksp = "2.3.13"
-ktorClient = "3.0.0"
+ktorClient = "3.6.1"
 logback = "1.2.9"
 log4j2 = "2.26.1"
 nopen = "1.0.1"
@@ -36,12 +36,12 @@ otelInstrumentationAlpha = "2.33.1-alpha"
 # check https://github.com/open-telemetry/opentelemetry-java-instrumentation/blob/main/dependencyManagement/build.gradle.kts#L49 for release version above to find a compatible version
 otelSemanticConventions = "1.42.0"
 otelSemanticConventionsAlpha = "1.42.0-alpha"
-retrofit = "2.9.0"
-room2 = "2.8.4"
+retrofit = "3.0.0"
+room2 = "2.8.5"
 room3 = "3.0.0-rc01"
 sagp = "6.13.0"
 # The AGP matrix job overrides this with the VERSION_AGP env var, through each build's settings.
-agp = "9.4.0"
+agp = "9.5.1"
 sqlite = "2.6.2"
 sqliteRc = "2.8.0-alpha03" # Required by Room3 3.0.0-rc*
 slf4j = "1.7.30"
@@ -126,6 +126,7 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room2" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room2" }
 androidx-room3-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room3" }
 androidx-room3-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }
+androidx-webkit = { module = "androidx.webkit:webkit", version = "1.14.0" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "sqlite" }
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqliteRc" }
 androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqliteRc" }
@@ -193,6 +194,7 @@ reactor-core = { module = "io.projectreactor:reactor-core", version = "3.5.3" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 sentry-native-ndk = { module = "io.sentry:sentry-native-ndk", version = "0.17.6" }
+sentry-native-ndk-outproc = { module = "io.sentry:sentry-native-ndk-outproc", version = "1.0.0-beta.1" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version = "3.1.0" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -303,6 +305,8 @@ okhttp-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.
 okhttp-mockwebserver4 = { module = "com.squareup.okhttp3:mockwebserver", version = "4.9.2" }
 okhttp-tls = { module = "com.squareup.okhttp3:okhttp-tls", version.ref = "okhttp" }
 okio = { module = "com.squareup.okio:okio", version = "1.13.0" }
+rhino = { module = "org.mozilla:rhino", version = "1.8.0" }
+# Upgrading Robolectric can change the android-all jars it needs, see SentryRobolectricPlugin.
 roboelectric = { module = "org.robolectric:robolectric", version = "4.15" }
 
 [bundles]

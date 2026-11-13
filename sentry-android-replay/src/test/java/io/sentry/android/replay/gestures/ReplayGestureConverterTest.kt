@@ -2,6 +2,7 @@ package io.sentry.android.replay.gestures
 
 import android.view.MotionEvent
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.android.replay.ScreenshotRecorderConfig
 import io.sentry.rrweb.RRWebInteractionEvent
 import io.sentry.rrweb.RRWebInteractionMoveEvent
@@ -136,6 +137,55 @@ class ReplayGestureConverterTest {
       assertEquals(0, positions!![0].id)
       assertEquals(0, pointerId)
     }
+
+    downEvent.recycle()
+    moveEvent.recycle()
+  }
+
+  @Test
+  fun `wall clock stepping backwards during a swipe does not hold back the batch`() {
+    val sut = fixture.getSut()
+    val recorderConfig = ScreenshotRecorderConfig(scaleFactorX = 1f, scaleFactorY = 1f)
+    val downEvent = MotionEvent.obtain(0, 0, MotionEvent.ACTION_DOWN, 100f, 200f, 0)
+    val moveEvent = MotionEvent.obtain(0, 0, MotionEvent.ACTION_MOVE, 110f, 210f, 0)
+    sut.convert(downEvent, recorderConfig)
+    assertThat(sut.convert(moveEvent, recorderConfig)).isNull()
+
+    // an NTP correction drags the wall clock back mid-swipe
+    fixture.now -= 1_000
+    fixture.advance(300)
+    assertThat(sut.convert(moveEvent, recorderConfig)).isNull()
+
+    fixture.advance(300)
+    val result = sut.convert(moveEvent, recorderConfig)
+
+    assertThat(result).hasSize(1)
+    val batch = result!!.single() as RRWebInteractionMoveEvent
+    assertThat(batch.positions!!.map { it.timeOffset }).containsExactly(-600L, -300L, 0L).inOrder()
+
+    downEvent.recycle()
+    moveEvent.recycle()
+  }
+
+  @Test
+  fun `wall clock stepping forwards during a swipe does not send the batch early`() {
+    val sut = fixture.getSut()
+    val recorderConfig = ScreenshotRecorderConfig(scaleFactorX = 1f, scaleFactorY = 1f)
+    val downEvent = MotionEvent.obtain(0, 0, MotionEvent.ACTION_DOWN, 100f, 200f, 0)
+    val moveEvent = MotionEvent.obtain(0, 0, MotionEvent.ACTION_MOVE, 110f, 210f, 0)
+    sut.convert(downEvent, recorderConfig)
+    assertThat(sut.convert(moveEvent, recorderConfig)).isNull()
+
+    fixture.now += 60_000
+    fixture.advance(300)
+    assertThat(sut.convert(moveEvent, recorderConfig)).isNull()
+
+    fixture.advance(300)
+    val result = sut.convert(moveEvent, recorderConfig)
+
+    assertThat(result).hasSize(1)
+    val batch = result!!.single() as RRWebInteractionMoveEvent
+    assertThat(batch.positions!!.map { it.timeOffset }).containsExactly(-600L, -300L, 0L).inOrder()
 
     downEvent.recycle()
     moveEvent.recycle()

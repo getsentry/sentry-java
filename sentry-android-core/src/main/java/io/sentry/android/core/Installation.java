@@ -21,8 +21,7 @@ final class Installation {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  protected static final @NotNull AutoClosableReentrantLock staticLock =
-      new AutoClosableReentrantLock();
+  static final @NotNull AutoClosableReentrantLock staticLock = new AutoClosableReentrantLock();
 
   private Installation() {}
 

@@ -186,7 +186,7 @@ public final class ActivityLifecycleIntegration
 
   private void startTracing(final @NotNull Activity activity) {
     WeakReference<Activity> weakActivity = new WeakReference<>(activity);
-    if (scopes != null && !isRunningTransactionOrTrace(activity)) {
+    if (scopes != null && options != null && !isRunningTransactionOrTrace(activity)) {
       if (!performanceEnabled) {
         activitiesWithOngoingTransactions.put(activity, NoOpTransaction.getInstance());
         if (options.isEnableAutoTraceIdGeneration()) {
@@ -309,7 +309,7 @@ public final class ActivityLifecycleIntegration
         // Continue either the foreground app.start above or an earlier headless app.start.
         final @Nullable String continueSentryTrace;
         final @Nullable String continueBaggage;
-        if (createStandaloneAppStart) {
+        if (createStandaloneAppStart && appStartTransaction != null) {
           continueSentryTrace = appStartTransaction.toSentryTrace().getValue();
           final @Nullable BaggageHeader baggageHeader = appStartTransaction.toBaggageHeader(null);
           continueBaggage = baggageHeader == null ? null : baggageHeader.getValue();
@@ -359,7 +359,7 @@ public final class ActivityLifecycleIntegration
         final SpanOptions spanOptions = new SpanOptions();
         setSpanOrigin(spanOptions);
 
-        if (isAppStart) {
+        if (isAppStart && coldStart != null) {
           if (!createStandaloneAppStart && !options.isEnableStandaloneAppStartTracing()) {
             appStartSpan =
                 transaction.startChild(
@@ -496,6 +496,7 @@ public final class ActivityLifecycleIntegration
   }
 
   @VisibleForTesting
+  @SuppressWarnings("ReferenceEquality")
   void clearScope(final @NotNull IScope scope, final @NotNull ITransaction transaction) {
     scope.withTransaction(
         scopeTransaction -> {
@@ -977,13 +978,16 @@ public final class ActivityLifecycleIntegration
   }
 
   private void finishAppStartSpan(final @Nullable SentryDate endDate) {
+    if (!performanceEnabled || options == null) {
+      return;
+    }
     final @Nullable SentryDate appStartEndTime =
         endDate != null
             ? endDate
             : AppStartMetrics.getInstance()
                 .getAppStartTimeSpanWithFallback(options)
                 .getProjectedStopTimestamp();
-    if (performanceEnabled && appStartEndTime != null) {
+    if (appStartEndTime != null) {
       finishSpan(appStartSpan, appStartEndTime);
       if (appStartTransaction != null && !appStartTransaction.isFinished()) {
         appStartTransaction.finish(SpanStatus.OK, appStartEndTime);
@@ -1032,7 +1036,7 @@ public final class ActivityLifecycleIntegration
     }
 
     final @NotNull ITransaction transaction =
-        createStandaloneAppStartTransaction(startTime, null, false);
+        createStandaloneAppStartTransaction(scopes, options, startTime, null, false);
     transaction.finish(SpanStatus.OK, endTime);
   }
 
@@ -1043,6 +1047,8 @@ public final class ActivityLifecycleIntegration
    * for its children and gets a deadline so it stays open until the extended span finishes.
    */
   private @NotNull ITransaction createStandaloneAppStartTransaction(
+      final @NotNull IScopes scopes,
+      final @NotNull SentryAndroidOptions options,
       final @NotNull SentryDate startTime,
       final @Nullable TracesSamplingDecision samplingDecision,
       final boolean holdOpenForExtension) {
@@ -1121,7 +1127,7 @@ public final class ActivityLifecycleIntegration
     metrics.setAppStartSamplingDecision(null);
 
     final @NotNull ITransaction transaction =
-        createStandaloneAppStartTransaction(startTime, samplingDecision, true);
+        createStandaloneAppStartTransaction(scopes, options, startTime, samplingDecision, true);
 
     final SpanOptions spanOptions = new SpanOptions();
     setSpanOrigin(spanOptions);

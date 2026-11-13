@@ -19,8 +19,10 @@ import android.os.Handler
 import android.os.Looper
 import android.telephony.TelephonyManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import io.sentry.IConnectionStatusProvider
 import io.sentry.ILogger
+import io.sentry.SentryLevel
 import io.sentry.SentryOptions
 import io.sentry.android.core.AppState
 import io.sentry.android.core.BuildInfoProvider
@@ -256,7 +258,7 @@ class AndroidConnectionStatusProviderTest {
 
   /// Lets a test reject work only after the setup that needs a working executor is done.
   @Test
-  @Config(sdk = [Build.VERSION_CODES.S])
+  @Config(sdk = [Build.VERSION_CODES.TIRAMISU])
   fun `When the network callback cannot be registered, the telephony listener is not started`() {
     // Without ACCESS_NETWORK_STATE the network callback registration fails, and onBackground skips
     // unregistering while there is no network callback, so the listener must not be started here.
@@ -380,6 +382,23 @@ class AndroidConnectionStatusProviderTest {
   }
 
   @Test
+  fun `addConnectionStatusObserver adds the observer and returns true when the network callback cannot be registered`() {
+    whenever(
+        contextMock.checkPermission(eq(Manifest.permission.ACCESS_NETWORK_STATE), any(), any())
+      )
+      .thenReturn(PERMISSION_DENIED)
+    val provider = AndroidConnectionStatusProvider(contextMock, options, buildInfo, ticker)
+    val observer = IConnectionStatusProvider.IConnectionStatusObserver {}
+
+    val added = provider.addConnectionStatusObserver(observer)
+
+    assertThat(added).isTrue()
+    assertThat(provider.statusObservers).containsExactly(observer)
+    assertThat(provider.networkCallback).isNull()
+    provider.close()
+  }
+
+  @Test
   fun `an unpopulated cache is not treated as fresh shortly after boot`() {
     whenever(networkInfo.isConnected).thenReturn(true)
 
@@ -398,6 +417,31 @@ class AndroidConnectionStatusProviderTest {
     assertTrue(callsAfter > callsBefore, "An empty cache must be populated before it is read")
 
     provider.close()
+  }
+
+  @Test
+  fun `a stale-cache refresh without network capabilities does not query the connectivity manager for its debug log when debug logging is off`() {
+    options.isDebug = false
+    whenever(networkInfo.isConnected).thenReturn(true)
+    whenever(connectivityManager.activeNetwork).thenReturn(null)
+    clearInvocations(connectivityManager)
+
+    val status = connectionStatusProvider.connectionStatus
+
+    assertThat(status).isEqualTo(IConnectionStatusProvider.ConnectionStatus.CONNECTED)
+    // Only the refresh and the returned status query; the debug log message is not built.
+    verify(connectivityManager, times(1)).activeNetwork
+    verify(connectivityManager, times(1)).activeNetworkInfo
+  }
+
+  @Test
+  fun `a stale-cache refresh logs the refreshed connection status and type when debug logging is on`() {
+    options.isDebug = true
+    whenever(networkInfo.isConnected).thenReturn(true)
+
+    connectionStatusProvider.connectionStatus
+
+    verify(logger).log(eq(SentryLevel.DEBUG), eq("Cache updated - Status: CONNECTED, Type: wifi"))
   }
 
   @Test
@@ -792,7 +836,7 @@ class AndroidConnectionStatusProviderTest {
     connectionStatusProvider.onBackground()
 
     assertFalse(
-      AppState.getInstance().lifecycleObserver.listeners.any {
+      AppState.getInstance().lifecycleObserver!!.listeners.any {
         it is SystemEventsBreadcrumbsIntegration
       }
     )
