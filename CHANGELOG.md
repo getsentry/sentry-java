@@ -18,6 +18,7 @@
 ### Dependencies
 
 - Bump OpenTelemetry from 1.63.0 / 2.29.0 to 1.67.0 / 2.33.1 ([#6602](https://github.com/getsentry/sentry-java/pull/6602))
+  - OpenTelemetry 1.67 creates no-op spans when no `SpanProcessor` is configured. If you construct the OpenTelemetry SDK manually while using `sentry-opentelemetry-otlp` classes directly, configure a span processor so outgoing span attributes remain available. Standard OTLP exporter, Sentry Java agent, and agentless setups already configure one.
 
 ## 8.64.0
 
