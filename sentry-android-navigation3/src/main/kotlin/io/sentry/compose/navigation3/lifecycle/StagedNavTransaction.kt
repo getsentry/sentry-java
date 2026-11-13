@@ -32,6 +32,7 @@ import io.sentry.SpanStatus
  *
  * This class is ***not*** thread-safe. Apply the thread safety policy from [NavScopes].
  */
+@Suppress("TooManyFunctions")
 internal class StagedNavTransaction(private val scopes: IScopes) {
 
   /**
