@@ -46,6 +46,10 @@ android {
     warningsAsErrors = true
     checkDependencies = true
 
+    // Lifecycle 2.8.3's lint checks are incompatible with AGP 9.5. Lifecycle 2.10.0 fixes them,
+    // but raises minSdk to 23 while this SDK still supports 21.
+    disable += "ObsoleteLintCustomCheck"
+
     // We run a full lint analysis as build part in CI, so skip vital checks for assemble tasks.
     checkReleaseBuilds = false
   }
