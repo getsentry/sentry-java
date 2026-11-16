@@ -18,7 +18,7 @@ jobs:
   native:
     runs-on: ubuntu-latest
     steps:
-      - uses: getsentry/github-workflows/updater@959162c159b866489d3fabe93327f48f9b8cb7ee # v3
+      - uses: getsentry/github-workflows/updater@36529d71129a14967bea1fb81bcaf2a5943cf877 # v3
         with:
           path: scripts/update-sentry-native-ndk.sh
           name: Native SDK
