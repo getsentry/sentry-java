@@ -24,6 +24,7 @@
 
 - Nav3: Stop attributing errors and spans from an Activity or ViewPager2 page without a `SentryNavEffect` to the most recently visited Nav3 root ([#6483](https://github.com/getsentry/sentry-java/pull/6483))
 - Android: Count deep sleep in breadcrumb, screenshot and view hierarchy debounce windows, so the first low-memory or battery breadcrumb after a long Doze is no longer dropped ([#6590](https://github.com/getsentry/sentry-java/pull/6590))
+- Android: Out-of-process crash reporting now supports Android 5.0 (API level 21) and later, previously required Android 11 (API level 30) ([#6614](https://github.com/getsentry/sentry-java/pull/6614))
 
 ### Dependencies
 
