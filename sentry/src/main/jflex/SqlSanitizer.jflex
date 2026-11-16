@@ -65,6 +65,9 @@ UNTERMINATED_QUOTED_STR          = "'" ("''" | [^'])*
 UNTERMINATED_DOUBLE_QUOTED_STR   = "\"" ("\"\"" | [^\"])*
 UNTERMINATED_BACKTICK_QUOTED_STR = "`" ("``" | [^`])*
 UNTERMINATED_DOLLAR_QUOTED_STR   = "$$" [^$]*
+// Sentry: Oracle q'…' / nq'…' with the delimiters of Oracle's documentation (D39).
+Q_QUOTE_START        = [nN]? [qQ] "'"
+Q_QUOTED_STR         = {Q_QUOTE_START} ("[" ~"]'" | "{" ~"}'" | "(" ~")'" | "<" ~">'" | "!" ~"!'")
 POSTGRE_PARAM_MARKER = "$"[0-9]*
 WHITESPACE           = [ \t\r\n]+
 
@@ -180,6 +183,19 @@ WHITESPACE           = [ \t\r\n]+
       }
     }
     return false;
+  }
+
+  // Sentry: where alternativeQuoting is NO, q or nq before a quote is an identifier, as upstream
+  // reads it. Pushes back to it and handles it like the {IDENTIFIER} rule.
+  private boolean qQuoteIsIdentifier() {
+    if (dialect.alternativeQuoting() != Support.NO) {
+      return false;
+    }
+    yypushback(yylength() - (zzBuffer[zzStartRead + 1] == '\'' ? 1 : 2));
+    cancelPendingSubqueryIfNeeded();
+    operation.handleIdentifier();
+    appendCurrentFragment();
+    return true;
   }
 
   // Sentry: a /* after the opener, also one sharing its * with the closing */ (D35).
@@ -1435,6 +1451,24 @@ WHITESPACE           = [ \t\r\n]+
   {UNTERMINATED_QUOTED_STR} | {UNTERMINATED_DOUBLE_QUOTED_STR} | {UNTERMINATED_BACKTICK_QUOTED_STR} | {UNTERMINATED_DOLLAR_QUOTED_STR} {
           builder.append('?');
           return YYEOF;
+      }
+
+  // Sentry: Oracle q'…' (D9, D39). YES: a literal; UNKNOWN: stop.
+  {Q_QUOTED_STR} {
+          if (!qQuoteIsIdentifier()) {
+            builder.append('?');
+            if (dialect.alternativeQuoting() == Support.UNKNOWN) return YYEOF;
+          }
+          if (isOverLimit()) return YYEOF;
+      }
+
+  // Sentry: another delimiter, or no closing one: stop where alternativeQuoting is not NO.
+  {Q_QUOTE_START} {
+          if (!qQuoteIsIdentifier()) {
+            builder.append('?');
+            return YYEOF;
+          }
+          if (isOverLimit()) return YYEOF;
       }
 
   {DOLLAR_TAG_START} {
