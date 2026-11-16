@@ -712,6 +712,7 @@ public final class io/sentry/HttpStatusCodeRange {
 	public fun <init> (I)V
 	public fun <init> (II)V
 	public fun isInRange (I)Z
+	public static fun valueOf (Ljava/lang/Integer;)Lio/sentry/HttpStatusCodeRange;
 	public static fun valueOf (Ljava/lang/String;)Lio/sentry/HttpStatusCodeRange;
 }
 
