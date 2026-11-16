@@ -152,6 +152,28 @@ WHITESPACE           = [ \t\r\n]+
     }
   }
 
+  // Sentry: a number never contains -- (D32), it starts a comment. Pushes the match back to the
+  // first --, as the [.+-]+ rule does. Returns true after appending what is left when that has
+  // no digit (a sign such as "+"). A match never starts with --: {LINE_COMMENT} wins there.
+  private boolean appendSignBeforeDashDash() {
+    if (zzBuffer[zzStartRead] == '$') {
+      return false;
+    }
+    for (int i = zzStartRead + 2; i < zzMarkedPos; i++) {
+      if (zzBuffer[i - 1] == '-' && zzBuffer[i] == '-') {
+        yypushback(zzMarkedPos - i + 1);
+        for (int j = zzStartRead; j < zzMarkedPos; j++) {
+          if (zzBuffer[j] >= '0' && zzBuffer[j] <= '9') {
+            return false;
+          }
+        }
+        appendCurrentFragment();
+        return true;
+      }
+    }
+    return false;
+  }
+
   // Sentry: a /* after the opener, also one sharing its * with the closing */ (D35).
   private boolean blockCommentNests() {
     for (int i = zzStartRead + 3; i < zzMarkedPos; i++) {
@@ -1324,7 +1346,9 @@ WHITESPACE           = [ \t\r\n]+
 
   // here is where the actual sanitization happens
   {BASIC_NUM} | {HEX_NUM} | {DOLLAR_QUOTED_STR} {
-          builder.append('?');
+          if (!appendSignBeforeDashDash()) {
+            builder.append('?');
+          }
           if (isOverLimit()) return YYEOF;
       }
 

@@ -419,6 +419,20 @@
       "note": ""
     },
     {
+      "id": "literal.dollar.dash_dash_inside.postgresql",
+      "requirements": ["R2", "R8"],
+      "dialect": "postgresql",
+      "input": "SELECT * FROM t WHERE body = $$a--x\nZq9xK7wf$$",
+      "expected": {
+        "text": "SELECT * FROM t WHERE body = ?",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7wf"],
+      "source": "sentry",
+      "note": "A -- inside a dollar quote is literal text; only a number ends at --. Cut there, the next line would be read as SQL."
+    },
+    {
       "id": "literal.dollar_tag.postgresql",
       "requirements": ["R2", "R8"],
       "dialect": "postgresql",
@@ -972,6 +986,20 @@
       "secrets": ["Zq9xK7wc"],
       "source": "sentry",
       "note": "A number never contains --: it starts a comment here. OTel Java's number pattern absorbs it and keeps the comment text. Also after an exponent marker."
+    },
+    {
+      "id": "comment.dash_dash.sign_prefix.postgresql",
+      "requirements": ["R3", "R8"],
+      "dialect": "postgresql",
+      "input": "SELECT a+--1234 Zq9xK7we\nFROM t",
+      "expected": {
+        "text": "SELECT a+ FROM t",
+        "summary": "SELECT t",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7we"],
+      "source": "sentry",
+      "note": "A number never contains --: it starts a comment here. OTel Java's number pattern absorbs it and keeps the comment text. Also in the sign before the digits: OTel Java reads +--1234 as one number and keeps the rest of the comment as SQL. The + stays, as for an operator before a comment."
     },
     {
       "id": "comment.double_slash.h2",
