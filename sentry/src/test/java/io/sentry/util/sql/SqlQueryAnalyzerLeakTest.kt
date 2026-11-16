@@ -7,7 +7,8 @@ import org.junit.runners.Parameterized
 
 /**
  * Owns leaks for the shared case file: no declared secret, and no fragment of one, reaches any
- * output field. Expected outputs are owned by [SqlQueryAnalyzerCasesTest].
+ * output field. Expected outputs are owned by [SqlQueryAnalyzerCasesTest]. No analyzed input may
+ * give an internal error, which would hide a leak behind `null` fields (plan 01, step 11d).
  *
  * Every prefix of the input is analyzed too, so a construct that is unterminated at some cut point
  * cannot leak. The full input is checked first with a whole-secret message (the canary check);
@@ -23,6 +24,7 @@ class SqlQueryAnalyzerLeakTest(
   @Test
   fun `no secret or secret fragment leaks from the input or any prefix`() {
     val full = analyze(case.input)
+    assertNoInternalError(full) { "full input" }
     for ((field, value) in full.fields()) {
       for (secret in case.secrets) {
         assertWithMessage("secret '%s' in %s", secret, field)
@@ -35,7 +37,9 @@ class SqlQueryAnalyzerLeakTest(
       val prefix = case.input.substring(0, length)
       val fragments = secretPartsIn(prefix).flatMap { fragments(it) }.toSet()
       if (fragments.isEmpty()) continue
-      for ((field, value) in analyze(prefix).fields()) {
+      val query = analyze(prefix)
+      assertNoInternalError(query) { "prefix of length $length (${escape(prefix)})" }
+      for ((field, value) in query.fields()) {
         val leaked = fragments.firstOrNull { value?.contains(it) == true } ?: continue
         assertWithMessage(
             "prefix of length %s (%s): fragment '%s' in %s",

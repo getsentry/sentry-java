@@ -1,6 +1,7 @@
 package io.sentry.util.sql
 
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import io.sentry.JsonObjectReader
 import io.sentry.vendor.gson.stream.JsonToken
 import java.io.InputStreamReader
@@ -29,6 +30,15 @@ class SqlQueryAnalyzerCasesTest(
 
     assertThat(Fields(query.queryText, query.querySummary, query.storedProcedureName, query.status))
       .isEqualTo(case.expected)
+
+    // D28: the text of a complete result is a fixed point (plan 01, step 11d).
+    val text = case.expected.text
+    if (case.expected.status == SqlQuery.Status.COMPLETE && text != null) {
+      val again = SqlQueryAnalyzer.analyze(text, case.dialect, case.maxQueryTextLength)
+      assertWithMessage("not idempotent (D28): re-analysis of the expected text")
+        .that(again.queryText to again.status)
+        .isEqualTo(text to SqlQuery.Status.COMPLETE)
+    }
   }
 
   data class Fields(

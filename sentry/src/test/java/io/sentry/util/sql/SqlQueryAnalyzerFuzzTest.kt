@@ -11,9 +11,11 @@ import java.util.Random
 import org.junit.Test
 
 /**
- * Owns stability and leaks for generated input: [SqlQueryAnalyzer.analyze] must not throw, must not
- * emit a canary placed inside a literal or comment, must respect `maxQueryTextLength`, and must
- * finish each input within [TIME_BOUND_MILLIS] (plan 01, step 6).
+ * Owns stability, leaks and idempotence for generated input: [SqlQueryAnalyzer.analyze] must not
+ * throw or report an internal error, must not emit a canary placed inside a literal or comment,
+ * must respect `maxQueryTextLength`, and must finish each input within [TIME_BOUND_MILLIS] (plan
+ * 01, step 6). Re-analyzing the text of a `COMPLETE` result with the same dialect and limit must
+ * give the same text, again `COMPLETE` (D28, plan 01 step 11d).
  *
  * Each test runs a fixed seed and a run seed. The run seed is random unless the
  * `sentry.sql.fuzz.seed` system property sets it; every failure message prints the seed and the
@@ -22,23 +24,26 @@ import org.junit.Test
 class SqlQueryAnalyzerFuzzTest {
 
   @Test
-  fun `token inputs never throw, leak a canary, exceed the limit or the time bound`() {
-    AnalyzerWorker().use { worker ->
-      warmUp(worker)
-      for (seed in seeds()) {
-        val random = Random(seed)
-        repeat(TOKEN_INPUTS) { index ->
-          val (name, dialect) = pickDialect(random)
-          val limit = pickLimit(random)
-          val input = TokenInputGenerator(random, dialect).generate()
-          assertRobust(worker, seed, index, name, dialect, limit, input, canary = true)
-        }
-      }
-    }
+  fun `token inputs never fail, leak a canary, exceed the limit or the time bound`() {
+    runTokenInputs(TOKEN_INPUTS, glue = false)
   }
 
+  /**
+   * Tokens without whitespace between them exercise boundary lexing (`x-1`, `ELSE'x'`, `1--1`,
+   * literal prefixes). Gluing can merge two tokens into another construct, which moves a canary
+   * into code legitimately, so these inputs are not checked for canaries (D20, plan 01 step 11d).
+   */
   @Test
-  fun `random UTF-16 inputs never throw, exceed the limit or the time bound`() {
+  fun `glued token inputs never fail, exceed the limit or the time bound`() {
+    runTokenInputs(GLUED_TOKEN_INPUTS, glue = true)
+  }
+
+  /**
+   * Most inputs start with an allowlisted keyword; otherwise the analyzer stops at the first
+   * character and the input never reaches the lexer (D12, D20).
+   */
+  @Test
+  fun `random UTF-16 inputs never fail, exceed the limit or the time bound`() {
     AnalyzerWorker().use { worker ->
       warmUp(worker)
       for (seed in seeds()) {
@@ -46,8 +51,29 @@ class SqlQueryAnalyzerFuzzTest {
         repeat(UTF16_INPUTS) { index ->
           val (name, dialect) = pickDialect(random)
           val limit = pickLimit(random)
-          val input = String(CharArray(UTF16_LENGTH) { random.nextInt(0x10000).toChar() })
+          val keyword =
+            if (random.nextInt(4) != 0) {
+              LEADING_KEYWORDS[random.nextInt(LEADING_KEYWORDS.size)] + " "
+            } else {
+              ""
+            }
+          val input = keyword + String(CharArray(UTF16_LENGTH) { random.nextInt(0x10000).toChar() })
           assertRobust(worker, seed, index, name, dialect, limit, input, canary = false)
+        }
+      }
+    }
+  }
+
+  private fun runTokenInputs(count: Int, glue: Boolean) {
+    AnalyzerWorker().use { worker ->
+      warmUp(worker)
+      for (seed in seeds()) {
+        val random = Random(seed)
+        repeat(count) { index ->
+          val (name, dialect) = pickDialect(random)
+          val limit = pickLimit(random)
+          val input = TokenInputGenerator(random, dialect, glue).generate()
+          assertRobust(worker, seed, index, name, dialect, limit, input, canary = !glue)
         }
       }
     }
@@ -70,15 +96,38 @@ class SqlQueryAnalyzerFuzzTest {
     }
     val query = worker.analyze(input, dialect, limit, TIME_BOUND_MILLIS, describe)
 
+    assertNoInternalError(query, describe)
     assertWithMessage("text longer than the limit; %s", describe())
       .that(query.queryText?.length ?: 0)
       .isAtMost(limit)
-    if (!canary) return
-    for ((field, value) in query.fields()) {
-      val leaked = CANARY_FRAGMENTS.firstOrNull { value?.contains(it) == true } ?: continue
-      assertWithMessage("canary fragment '%s' in %s; %s", leaked, field, describe())
-        .that(value)
-        .doesNotContain(leaked)
+    if (canary) {
+      for ((field, value) in query.fields()) {
+        val leaked = CANARY_FRAGMENTS.firstOrNull { value?.contains(it) == true } ?: continue
+        assertWithMessage("canary fragment '%s' in %s; %s", leaked, field, describe())
+          .that(value)
+          .doesNotContain(leaked)
+      }
+    }
+    if (query.status == SqlQuery.Status.COMPLETE) {
+      assertIdempotent(worker, dialect, limit, query.queryText!!, describe)
+    }
+  }
+
+  /** D28: the text of a `COMPLETE` result is a fixed point of the analyzer. */
+  private fun assertIdempotent(
+    worker: AnalyzerWorker,
+    dialect: SqlDialect,
+    limit: Int,
+    text: String,
+    describe: () -> String,
+  ) {
+    val describeAgain = { "re-analysis of text=\"${escape(text)}\"; ${describe()}" }
+    val again = worker.analyze(text, dialect, limit, TIME_BOUND_MILLIS, describeAgain)
+    assertNoInternalError(again, describeAgain)
+    if (again.queryText != text || again.status != SqlQuery.Status.COMPLETE) {
+      assertWithMessage("not idempotent (D28); %s", describeAgain())
+        .that(again.queryText to again.status)
+        .isEqualTo(text to SqlQuery.Status.COMPLETE)
     }
   }
 
@@ -118,6 +167,7 @@ class SqlQueryAnalyzerFuzzTest {
     private const val WARM_UP_INPUTS = 200
     private const val WARM_UP_TIMEOUT_MILLIS = 10_000L
     private const val TOKEN_INPUTS = 2_000
+    private const val GLUED_TOKEN_INPUTS = 500
     private const val UTF16_INPUTS = 200
     private const val UTF16_LENGTH = 1_000
 
@@ -126,17 +176,28 @@ class SqlQueryAnalyzerFuzzTest {
   }
 }
 
+/** Allowlisted statement starts (D12) for generated inputs. */
+private val LEADING_KEYWORDS =
+  listOf("SELECT", "INSERT INTO", "UPDATE", "DELETE FROM", "CALL", "EXEC", "WITH", "CREATE")
+
 /**
- * Generates whitespace-separated token soup over keywords, identifiers, operators, parameter
- * markers, and every quote and comment construct.
+ * Generates token soup over keywords, identifiers, operators, parameter markers, and every quote
+ * and comment construct, whitespace-separated unless `glue` is set.
  *
  * A canary goes only where the dialect makes a correct analyzer redact it: inside a literal or
  * comment, inside a construct whose rule is `UNKNOWN` (the analyzer stops there), or inside the
  * last construct when it is left unterminated (R4). Constructs before the last are always closed,
  * and their content cannot close them early, so a stray quote can't shift the lexer state for later
- * canaries; that would report a generator artifact, not a leak.
+ * canaries; that would report a generator artifact, not a leak. With `glue`, two adjacent tokens
+ * can merge into another construct (`-` and `-2.5` into a `--` comment), so the canary guarantee
+ * does not hold for glued inputs.
  */
-private class TokenInputGenerator(private val random: Random, private val dialect: SqlDialect) {
+private class TokenInputGenerator(
+  private val random: Random,
+  private val dialect: SqlDialect,
+  /** Drop each separator with probability ½; see the glued fuzz test. */
+  private val glue: Boolean = false,
+) {
   private val out = StringBuilder()
 
   fun generate(): String {
@@ -150,7 +211,9 @@ private class TokenInputGenerator(private val random: Random, private val dialec
   }
 
   private fun append(token: String) {
-    if (out.isNotEmpty()) out.append(pick(SEPARATORS))
+    // `glue` is checked first, so unglued inputs draw no extra random numbers and their seeds
+    // still reproduce inputs generated before glued inputs existed.
+    if (out.isNotEmpty() && !(glue && random.nextBoolean())) out.append(pick(SEPARATORS))
     out.append(token)
   }
 
@@ -264,9 +327,6 @@ private class TokenInputGenerator(private val random: Random, private val dialec
     private const val MAX_SEGMENTS = 60
 
     private val SEPARATORS = listOf(" ", " ", " ", "\n", "\t", "  ", "\r\n")
-
-    private val LEADING_KEYWORDS =
-      listOf("SELECT", "INSERT INTO", "UPDATE", "DELETE FROM", "CALL", "EXEC", "WITH", "CREATE")
 
     private val FREE_TOKENS =
       listOf(

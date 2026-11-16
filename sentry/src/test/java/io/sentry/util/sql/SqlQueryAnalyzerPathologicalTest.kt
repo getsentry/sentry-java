@@ -15,8 +15,9 @@ import org.junit.runners.Parameterized
  * Owns stability for oversized and degenerate input, under every dialect:
  * [SqlQueryAnalyzer.analyze] completes within [TIME_BOUND_MILLIS] on a
  * [AnalyzerWorker.STACK_SIZE_BYTES] stack, throws nothing (a `StackOverflowError` would surface
- * here), respects `maxQueryTextLength`, never splits a surrogate pair, and leaks none of the
- * input's secrets. Exact outputs are owned by [SqlQueryAnalyzerCasesTest] (plan 01, step 6).
+ * here), reports no internal error, respects `maxQueryTextLength`, never splits a surrogate pair,
+ * and leaks none of the input's secrets. Exact outputs are owned by [SqlQueryAnalyzerCasesTest]
+ * (plan 01, step 6).
  */
 @RunWith(Parameterized::class)
 class SqlQueryAnalyzerPathologicalTest(
@@ -33,7 +34,7 @@ class SqlQueryAnalyzerPathologicalTest(
   )
 
   @Test
-  fun `completes within the bound without throwing, splitting surrogates or leaking`() {
+  fun `completes within the bound without failing, splitting surrogates or leaking`() {
     val sql = input.build()
     val dialect = ALL_DIALECTS.getValue(dialectName)
     val describe = { "${input.name} (${sql.length} chars) under $dialectName" }
@@ -43,6 +44,7 @@ class SqlQueryAnalyzerPathologicalTest(
         it.analyze(sql, dialect, input.maxQueryTextLength, TIME_BOUND_MILLIS, describe)
       }
 
+    assertNoInternalError(query, describe)
     assertWithMessage("text longer than the limit; %s", describe())
       .that(query.queryText?.length ?: 0)
       .isAtMost(input.maxQueryTextLength)
@@ -87,7 +89,10 @@ class SqlQueryAnalyzerPathologicalTest(
           val statement = "SELECT a, b FROM t WHERE c = 'Zq9xK7' AND d IN (1, 2, 3) /* Zq9xK7 */; "
           statement.repeat(KIB * KIB / statement.length + 1)
         },
-        Input("64 KiB of single quotes") { "'".repeat(64 * KIB) },
+        // After an allowlisted keyword, so the quotes reach the lexer (D12, D20). An even count
+        // closes the literal (`''` is an escaped quote); an odd count leaves it unterminated.
+        Input("64 KiB of single quotes, closed") { "SELECT " + "'".repeat(64 * KIB) },
+        Input("64 KiB of single quotes, unterminated") { "SELECT " + "'".repeat(64 * KIB + 1) },
         Input("64 KiB of comment openers") { "/*".repeat(32 * KIB) },
         // OTel .NET SqlProcessorTests#…RepeatedUnterminatedEscapedIdentifiersInFromClause…
         Input("4096 unterminated brackets", secrets = listOf("secret-name", "123", "DEADBEEF")) {

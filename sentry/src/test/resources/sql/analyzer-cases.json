@@ -559,6 +559,34 @@
       "note": "alternativeQuoting is NO: q is an identifier followed by an ordinary literal."
     },
     {
+      "id": "literal.q_quote.paired_inner_quotes.oracle",
+      "requirements": ["R2", "R8"],
+      "dialect": "oracle",
+      "input": "SELECT q'[A'Zq9xK7qa'B]' FROM dual",
+      "expected": {
+        "text": "SELECT ? FROM dual",
+        "summary": "SELECT dual",
+        "status": "COMPLETE"
+      },
+      "secrets": ["Zq9xK7qa"],
+      "source": "sentry",
+      "note": "Plan 04 finding 1 (D20): the ' inside q'[...]' do not end the literal. Pairing them as plain quotes reads '[A' and 'B]' as two literals and keeps the canary between them."
+    },
+    {
+      "id": "literal.q_quote.paired_inner_quotes.conservative",
+      "requirements": ["R4", "R8"],
+      "dialect": "CONSERVATIVE",
+      "input": "SELECT q'[A'Zq9xK7qb'B]' FROM dual",
+      "expected": {
+        "text": "SELECT ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7qb"],
+      "source": "sentry",
+      "note": "alternativeQuoting is UNKNOWN (D13): stop at q'. Plan 04 finding 1 (D20)."
+    },
+    {
       "id": "literal.keyword_before_quote",
       "requirements": ["R2"],
       "dialect": "CONSERVATIVE",

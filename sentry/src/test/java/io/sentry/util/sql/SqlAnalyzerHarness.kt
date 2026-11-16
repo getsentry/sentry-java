@@ -1,5 +1,6 @@
 package io.sentry.util.sql
 
+import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
@@ -30,6 +31,30 @@ internal fun SqlQuery.fields(): Map<String, String?> =
     "summary" to querySummary,
     "storedProcedure" to storedProcedureName,
   )
+
+/**
+ * Asserts what every robustness input must give: no internal error, and therefore a text. Status
+ * `ERROR` means [SqlQueryAnalyzer.analyze] caught an exception (R5), which no input may cause; and
+ * text is `null` only after `ERROR` (D27). Together the two imply D27's invariant for non-null
+ * input (plan 01, step 11d). Its other half, that `ERROR` comes with `null` text, has no test: no
+ * input may reach `ERROR`, and forcing one would need a production seam.
+ */
+internal fun assertNoInternalError(query: SqlQuery, describe: () -> String) {
+  if (query.status == SqlQuery.Status.ERROR) {
+    assertWithMessage("internal error (R5); %s", describe())
+      .that(query.status)
+      .isNotEqualTo(SqlQuery.Status.ERROR)
+  }
+  if (query.queryText == null) {
+    assertWithMessage(
+        "text null with status %s (D27: null only after ERROR); %s",
+        query.status,
+        describe(),
+      )
+      .that(query.queryText)
+      .isNotNull()
+  }
+}
 
 /** Every substring of [value] that is [FRAGMENT_LENGTH] characters long. */
 internal fun fragments(value: String): Set<String> =
