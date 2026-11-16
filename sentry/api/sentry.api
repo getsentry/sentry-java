@@ -2866,6 +2866,7 @@ public final class io/sentry/SendCachedEnvelopeFireAndForgetIntegration : io/sen
 
 public abstract interface class io/sentry/SendCachedEnvelopeFireAndForgetIntegration$SendFireAndForget {
 	public abstract fun send ()V
+	public fun sendFile (Ljava/lang/String;)Z
 }
 
 public abstract interface class io/sentry/SendCachedEnvelopeFireAndForgetIntegration$SendFireAndForgetDirPath {
@@ -5030,6 +5031,7 @@ public class io/sentry/cache/EnvelopeCache : io/sentry/cache/IEnvelopeCache {
 	public fun discard (Lio/sentry/SentryEnvelope;)V
 	public fun flushPreviousSession ()V
 	public static fun getCurrentSessionFile (Ljava/lang/String;)Ljava/io/File;
+	protected fun getEnvelopeFile (Lio/sentry/SentryEnvelope;)Ljava/io/File;
 	public static fun getPreviousSessionFile (Ljava/lang/String;)Ljava/io/File;
 	public fun iterator ()Ljava/util/Iterator;
 	public fun movePreviousSession (Ljava/io/File;Ljava/io/File;)V

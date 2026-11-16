@@ -30,6 +30,8 @@ import org.jetbrains.annotations.TestOnly;
 /** Sentry SDK options for Android */
 public final class SentryAndroidOptions extends SentryOptions {
 
+  private static final int DEFAULT_MAX_CACHE_ITEMS = 100;
+
   /**
    * Enable or disable ANR (Application Not Responding) Default is enabled Used by AnrIntegration
    */
@@ -337,6 +339,10 @@ public final class SentryAndroidOptions extends SentryOptions {
     setSentryClientName(BuildConfig.SENTRY_ANDROID_SDK_NAME + "/" + BuildConfig.VERSION_NAME);
     setSdkVersion(createSdkVersion());
     setAttachServerName(false);
+    // devices are offline more often than servers, so keep more envelopes on disk. The queue size
+    // matches it, so the transport queue and the dedupe of in-flight cached files fit the cache
+    setMaxCacheItems(DEFAULT_MAX_CACHE_ITEMS);
+    setMaxQueueSize(DEFAULT_MAX_CACHE_ITEMS);
   }
 
   private @NotNull SdkVersion createSdkVersion() {

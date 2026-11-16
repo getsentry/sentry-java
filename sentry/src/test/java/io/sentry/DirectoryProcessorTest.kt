@@ -119,6 +119,49 @@ class DirectoryProcessorTest {
   }
 
   @Test
+  fun `processSingleFile processes the file and returns true`() {
+    val path = getTempEnvelope("envelope-event-attachment.txt")
+
+    val event = SentryEvent()
+    val envelope = SentryEnvelope.from(fixture.serializer, event, null)
+
+    whenever(fixture.envelopeReader.read(any())).thenReturn(envelope)
+    whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
+
+    val processed = fixture.getSut().processSingleFile(File(path))
+
+    assertThat(processed).isTrue()
+    verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
+  fun `processSingleFile returns false when the file does not exist`() {
+    val processed = fixture.getSut().processSingleFile(File(file, "missing.tmp"))
+
+    assertThat(processed).isFalse()
+    verify(fixture.scopes, never()).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
+  fun `when envelope has been submitted by processSingleFile, processDirectory does not process it again`() {
+    val path = getTempEnvelope("envelope-event-attachment.txt")
+
+    val event = SentryEvent()
+    val envelope = SentryEnvelope.from(fixture.serializer, event, null)
+
+    whenever(fixture.envelopeReader.read(any())).thenReturn(envelope)
+    whenever(fixture.serializer.deserialize(any(), eq(SentryEvent::class.java))).thenReturn(event)
+
+    // make it retryable so it doesn't get deleted
+    val sut = fixture.getSut(isRetryable = true)
+    sut.processSingleFile(File(path))
+    sut.processDirectory(file)
+
+    // should only capture once
+    verify(fixture.scopes).captureEvent(any(), anyOrNull<Hint>())
+  }
+
+  @Test
   fun `when rate limiting gets active in the middle of processing, stops processing`() {
     getTempEnvelope("envelope-event-attachment.txt")
     getTempEnvelope("envelope-event-attachment.txt")

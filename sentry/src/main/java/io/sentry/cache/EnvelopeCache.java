@@ -426,7 +426,7 @@ public class EnvelopeCache extends CacheStrategy implements IEnvelopeCache {
    * @param envelope the SentryEnvelope object
    * @return the file
    */
-  private @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
+  protected @NotNull File getEnvelopeFile(final @NotNull SentryEnvelope envelope) {
     try (final @NotNull ISentryLifecycleToken ignored = cacheLock.acquire()) {
       final @NotNull String fileName;
       if (fileNameMap.containsKey(envelope)) {

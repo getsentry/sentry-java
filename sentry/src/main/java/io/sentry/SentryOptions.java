@@ -2119,7 +2119,7 @@ public class SentryOptions implements RateLimiterConfig {
   }
 
   /**
-   * The max cache items for capping the number of events Default is 30
+   * The max cache items for capping the number of events Default is 30, and 100 on Android
    *
    * @return the maxCacheItems
    */

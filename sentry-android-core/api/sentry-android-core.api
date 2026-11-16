@@ -783,15 +783,22 @@ public final class io/sentry/android/core/cache/AndroidEnvelopeCache : io/sentry
 	public static final field LAST_TOMBSTONE_REPORT Ljava/lang/String;
 	public fun <init> (Lio/sentry/android/core/SentryAndroidOptions;)V
 	public fun getDirectory ()Ljava/io/File;
-	public static fun hasStartupCrashMarker (Lio/sentry/SentryOptions;)Z
 	public static fun lastReportedAnr (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public static fun lastReportedMemoryLimiter (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public static fun lastReportedTombstone (Lio/sentry/SentryOptions;)Ljava/lang/Long;
 	public static fun markAnrReported (Lio/sentry/SentryOptions;J)V
 	public static fun markMemoryLimiterReported (Lio/sentry/SentryOptions;J)V
 	public static fun markTombstoneReported (Lio/sentry/SentryOptions;J)V
+	public static fun readStartupCrashMarker (Lio/sentry/SentryOptions;)Lio/sentry/android/core/cache/AndroidEnvelopeCache$StartupCrashMarker;
 	public fun store (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)V
 	public fun storeEnvelope (Lio/sentry/SentryEnvelope;Lio/sentry/Hint;)Z
+}
+
+public final class io/sentry/android/core/cache/AndroidEnvelopeCache$StartupCrashMarker {
+	public static final field NONE Lio/sentry/android/core/cache/AndroidEnvelopeCache$StartupCrashMarker;
+	public fun <init> (Ljava/lang/String;)V
+	public fun exists ()Z
+	public fun getEnvelopeFileName ()Ljava/lang/String;
 }
 
 public abstract class io/sentry/android/core/performance/ActivityLifecycleCallbacksAdapter : android/app/Application$ActivityLifecycleCallbacks {
