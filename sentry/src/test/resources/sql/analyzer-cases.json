@@ -754,6 +754,20 @@
       "note": "nestedBlockComments is UNKNOWN: stop at the inner /*. The comment is replaced by ?."
     },
     {
+      "id": "comment.nested.overlapping",
+      "requirements": ["R3", "R4", "R8"],
+      "dialect": "sqlite",
+      "input": "SELECT a /*/*/ Zq9xK7wd */ FROM t",
+      "expected": {
+        "text": "SELECT a ?",
+        "summary": "SELECT",
+        "status": "STOPPED"
+      },
+      "secrets": ["Zq9xK7wd"],
+      "source": "sentry",
+      "note": "D35: the inner /* shares its * with the first */. A non-nesting reader closes the comment there, a nesting reader does not, so the secret is SQL text in one reading. Stop at the inner /*."
+    },
+    {
       "id": "comment.hash.mysql",
       "requirements": ["R3", "R8"],
       "dialect": "mysql",

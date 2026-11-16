@@ -38,6 +38,9 @@ CLOSE_PAREN          = ")"
 OPEN_COMMENT         = "/*"
 CLOSE_COMMENT        = "*/"
 LINE_COMMENT         = "--" [^\r\n]*
+// Sentry: a whole block comment, and one that runs to the end of input.
+CLOSED_COMMENT       = "/*" ([^*] | "*"+ [^*/])* "*"+ "/"
+UNTERMINATED_COMMENT = "/*" ([^*] | "*"+ [^*/])* "*"*
 UNQUOTED_IDENTIFIER  = ([:letter:] | "_") ([:letter:] | [0-9] | "_")*
 IDENTIFIER_PART      = {UNQUOTED_IDENTIFIER} | {DOUBLE_QUOTED_STR} | {BACKTICK_QUOTED_STR} | {BRACKET_QUOTED_STR}
 // We are using {UNQUOTED_IDENTIFIER} instead of {IDENTIFIER_PART} here because DOUBLE_QUOTED_STR
@@ -139,6 +142,24 @@ WHITESPACE           = [ \t\r\n]+
 
   private boolean isOverLimit() {
     return builder.length() > LIMIT;
+  }
+
+  // Sentry: one space for removed comments and whitespace runs, collapsed, none at the start.
+  private void appendSpace() {
+    int length = builder.length();
+    if (length > 0 && builder.charAt(length - 1) != ' ') {
+      builder.append(' ');
+    }
+  }
+
+  // Sentry: a /* after the opener, also one sharing its * with the closing */ (D35).
+  private boolean blockCommentNests() {
+    for (int i = zzStartRead + 3; i < zzMarkedPos; i++) {
+      if (zzBuffer[i - 1] == '/' && zzBuffer[i] == '*') {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** Appends an operation name (SELECT, INSERT, etc.) to the query summary. */
@@ -1255,6 +1276,22 @@ WHITESPACE           = [ \t\r\n]+
           if (isOverLimit()) return YYEOF;
       }
 
+  // Sentry: comment bodies are dropped (R3). These rules win over {OPEN_COMMENT}, so the
+  // BLOCK_COMMENT state is no longer entered from here.
+  {CLOSED_COMMENT} {
+          if (blockCommentNests()) {
+            builder.append('?');
+            return YYEOF;
+          }
+          appendSpace();
+          if (isOverLimit()) return YYEOF;
+      }
+
+  {UNTERMINATED_COMMENT} {
+          builder.append('?');
+          return YYEOF;
+      }
+
   {OPEN_COMMENT}  {
           insideComment = true;
           yybegin(BLOCK_COMMENT);
@@ -1268,8 +1305,8 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   {LINE_COMMENT} {
-          // Line comment - append as-is, don't process keywords or sanitize literals
-          appendCurrentFragment();
+          // Sentry: line comment body dropped (R3)
+          appendSpace();
           if (isOverLimit()) return YYEOF;
       }
 
@@ -1340,7 +1377,7 @@ WHITESPACE           = [ \t\r\n]+
       }
 
   {WHITESPACE} {
-          builder.append(' ');
+          appendSpace();
           if (isOverLimit()) return YYEOF;
       }
   [^] {
