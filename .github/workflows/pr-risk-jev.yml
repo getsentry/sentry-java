@@ -28,7 +28,7 @@ jobs:
       # The Action reads PR Git objects without checking out or executing PR code.
       - name: Classify PR risk
         id: risk
-        uses: getsentry/pr-risk-action@45de582ca688251eab50b4c7cea096d46756cd4d
+        uses: getsentry/pr-risk-action@1cdeab5ada06969e5376666b3a79f444c2f41a67 # main
         env:
           AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
         with:
@@ -39,7 +39,7 @@ jobs:
 
       - name: Publish risk label
         if: ${{ !cancelled() && steps.risk.outcome != 'skipped' }}
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
         with:
