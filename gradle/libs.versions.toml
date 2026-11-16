@@ -203,7 +203,7 @@ servlet4-api = { module = "javax.servlet:javax.servlet-api", version = "4.0.1" }
 servlet-jakarta-api = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.1.0" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
-slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.5" }
+slf4j2-api = { module = "org.slf4j:slf4j-api", version = "2.0.20" }
 spotlessLib = { module = "com.diffplug.spotless:com.diffplug.spotless.gradle.plugin", version.ref = "spotless"}
 detektLib = { module = "io.gitlab.arturbosch.detekt:io.gitlab.arturbosch.detekt.gradle.plugin", version.ref = "detekt" }
 vanniktechMavenPublishLib = { module = "com.vanniktech.maven.publish:com.vanniktech.maven.publish.gradle.plugin", version.ref = "vanniktechMavenPublish" }
