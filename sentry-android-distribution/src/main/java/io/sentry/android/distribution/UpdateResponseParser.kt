@@ -72,10 +72,8 @@ internal class UpdateResponseParser(private val options: SentryOptions) {
       missingFields.add("downloadUrl")
     }
 
-    if (missingFields.isNotEmpty()) {
-      throw IllegalArgumentException(
-        "Missing required fields in API response: ${missingFields.joinToString(", ")}",
-      )
+    require(missingFields.isEmpty()) {
+      "Missing required fields in API response: ${missingFields.joinToString(", ")}"
     }
 
     return UpdateInfo(
