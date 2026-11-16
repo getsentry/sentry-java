@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import java.lang.Exception
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -284,15 +285,40 @@ class SentryStackTraceFactoryTest {
   }
 
   @Test
-  fun `caps number of stack frames to STACKTRACE_FRAME_LIMIT to not exceed payload size limit`() {
-    val exception = Exception()
-    exception.stackTrace = arrayOf()
-    repeat(120) { exception.stackTrace += generateStackTrace("com.me.stackoverflow") }
+  fun `does not truncate stack frames within the limit`() {
+    val stackTrace = Array(250) { generateStackTrace("frame-$it") }
 
-    val sut = SentryStackTraceFactory(SentryOptions())
-    val sentryFrames = sut.getStackFrames(exception.stackTrace, false)
+    val sentryFrames = sut.getStackFrames(stackTrace, false)
 
-    assertEquals(100, sentryFrames!!.size)
+    assertThat(sentryFrames).hasSize(250)
+  }
+
+  @Test
+  fun `retains 50 oldest and 200 newest stack frames`() {
+    val stackTrace = Array(300) { generateStackTrace("frame-$it") }
+
+    val sentryFrames = sut.getStackFrames(stackTrace, false)!!
+
+    assertThat(sentryFrames).hasSize(250)
+    assertThat(sentryFrames[0].module).isEqualTo("frame-299")
+    assertThat(sentryFrames[49].module).isEqualTo("frame-250")
+    assertThat(sentryFrames[50].module).isEqualTo("frame-199")
+    assertThat(sentryFrames[249].module).isEqualTo("frame-0")
+  }
+
+  @Test
+  fun `filters sentry frames before applying stack frame limit`() {
+    val stackTrace =
+      Array(50) { generateStackTrace("io.sentry.frame-$it") } +
+        Array(300) { generateStackTrace("frame-$it") }
+
+    val sentryFrames = sut.getStackFrames(stackTrace, false)!!
+
+    assertThat(sentryFrames).hasSize(250)
+    assertThat(sentryFrames[0].module).isEqualTo("frame-299")
+    assertThat(sentryFrames[49].module).isEqualTo("frame-250")
+    assertThat(sentryFrames[50].module).isEqualTo("frame-199")
+    assertThat(sentryFrames[249].module).isEqualTo("frame-0")
   }
 
   private fun generateStackTrace(className: String?) =

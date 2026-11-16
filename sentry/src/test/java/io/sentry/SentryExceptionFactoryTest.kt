@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import io.sentry.exception.ExceptionMechanismException
 import io.sentry.protocol.Mechanism
 import io.sentry.protocol.SentryStackFrame
@@ -44,7 +45,8 @@ class SentryExceptionFactoryTest {
   @Test
   fun `when frames are null, do not set a stack trace object`() {
     val stackTraceFactory = mock<SentryStackTraceFactory>()
-    whenever(stackTraceFactory.getStackFrames(any(), eq(false))).thenReturn(null)
+    whenever(stackTraceFactory.getStackFrames(any<Array<StackTraceElement>>(), eq(false)))
+      .thenReturn(null)
 
     val sut = fixture.getSut(stackTraceFactory)
     val exception = Exception("Exception")
@@ -57,7 +59,8 @@ class SentryExceptionFactoryTest {
   @Test
   fun `when frames are empty, do not set a stack trace object`() {
     val stackTraceFactory = mock<SentryStackTraceFactory>()
-    whenever(stackTraceFactory.getStackFrames(any(), eq(false))).thenReturn(emptyList())
+    whenever(stackTraceFactory.getStackFrames(any<Array<StackTraceElement>>(), eq(false)))
+      .thenReturn(emptyList())
 
     val sut = fixture.getSut(stackTraceFactory)
     val exception = Exception("Exception")
@@ -65,6 +68,20 @@ class SentryExceptionFactoryTest {
     val sentryExceptions = sut.getSentryExceptions(exception)
 
     assertNull(sentryExceptions[0].stacktrace)
+  }
+
+  @Test
+  fun `limits exception stack trace to 50 oldest and 200 newest frames`() {
+    val exception = Exception("Exception")
+    exception.stackTrace = Array(300) { StackTraceElement("frame-$it", "method", "File.java", it) }
+
+    val frames = fixture.getSut().getSentryExceptions(exception).single().stacktrace!!.frames!!
+
+    assertThat(frames).hasSize(250)
+    assertThat(frames[0].module).isEqualTo("frame-299")
+    assertThat(frames[49].module).isEqualTo("frame-250")
+    assertThat(frames[50].module).isEqualTo("frame-199")
+    assertThat(frames[249].module).isEqualTo("frame-0")
   }
 
   @Test

@@ -13,7 +13,8 @@ import org.jetbrains.annotations.Nullable;
 @ApiStatus.Internal
 public final class SentryStackTraceFactory {
 
-  private static final int STACKTRACE_FRAME_LIMIT = 100;
+  private static final int NEWEST_FRAMES_LIMIT = 200;
+  private static final int OLDEST_FRAMES_LIMIT = 50;
   private final @NotNull SentryOptions options;
 
   public SentryStackTraceFactory(final @NotNull SentryOptions options) {
@@ -32,43 +33,60 @@ public final class SentryStackTraceFactory {
     List<SentryStackFrame> sentryStackFrames = null;
 
     if (elements != null && elements.length > 0) {
-      sentryStackFrames = new ArrayList<>();
-      for (StackTraceElement item : elements) {
-        if (item != null) {
-
-          // we don't want to add our own frames
-          final String className = item.getClassName();
-          if (!includeSentryFrames
-              && (className.startsWith("io.sentry.")
-                  && !className.startsWith("io.sentry.samples.")
-                  && !className.startsWith("io.sentry.mobile."))) {
-            continue;
-          }
-
-          final SentryStackFrame sentryStackFrame = new SentryStackFrame();
-          // https://docs.sentry.io/development/sdk-dev/features/#in-app-frames
-          sentryStackFrame.setInApp(isInApp(className));
-          sentryStackFrame.setModule(className);
-          sentryStackFrame.setFunction(item.getMethodName());
-          sentryStackFrame.setFilename(item.getFileName());
-          // Protocol doesn't accept negative line numbers.
-          // The runtime seem to use -2 as a way to signal a native method
-          if (item.getLineNumber() >= 0) {
-            sentryStackFrame.setLineno(item.getLineNumber());
-          }
-          sentryStackFrame.setNative(item.isNativeMethod());
-          sentryStackFrames.add(sentryStackFrame);
-
-          // hard cap to not exceed payload size limit
-          if (sentryStackFrames.size() >= STACKTRACE_FRAME_LIMIT) {
-            break;
-          }
+      int frameCount = 0;
+      for (final StackTraceElement item : elements) {
+        if (shouldIncludeFrame(item, includeSentryFrames)) {
+          frameCount++;
         }
+      }
+
+      sentryStackFrames =
+          new ArrayList<>(Math.min(frameCount, NEWEST_FRAMES_LIMIT + OLDEST_FRAMES_LIMIT));
+      int frameIndex = 0;
+      for (final StackTraceElement item : elements) {
+        if (!shouldIncludeFrame(item, includeSentryFrames)) {
+          continue;
+        }
+
+        if (frameIndex < NEWEST_FRAMES_LIMIT || frameIndex >= frameCount - OLDEST_FRAMES_LIMIT) {
+          sentryStackFrames.add(getSentryStackFrame(item));
+        }
+        frameIndex++;
       }
       Collections.reverse(sentryStackFrames);
     }
 
     return sentryStackFrames;
+  }
+
+  private static boolean shouldIncludeFrame(
+      final @Nullable StackTraceElement item, final boolean includeSentryFrames) {
+    if (item == null) {
+      return false;
+    }
+
+    final String className = item.getClassName();
+    return includeSentryFrames
+        || !className.startsWith("io.sentry.")
+        || className.startsWith("io.sentry.samples.")
+        || className.startsWith("io.sentry.mobile.");
+  }
+
+  private @NotNull SentryStackFrame getSentryStackFrame(final @NotNull StackTraceElement item) {
+    final SentryStackFrame sentryStackFrame = new SentryStackFrame();
+    final String className = item.getClassName();
+    // https://docs.sentry.io/development/sdk-dev/features/#in-app-frames
+    sentryStackFrame.setInApp(isInApp(className));
+    sentryStackFrame.setModule(className);
+    sentryStackFrame.setFunction(item.getMethodName());
+    sentryStackFrame.setFilename(item.getFileName());
+    // Protocol doesn't accept negative line numbers.
+    // The runtime seem to use -2 as a way to signal a native method
+    if (item.getLineNumber() >= 0) {
+      sentryStackFrame.setLineno(item.getLineNumber());
+    }
+    sentryStackFrame.setNative(item.isNativeMethod());
+    return sentryStackFrame;
   }
 
   /**

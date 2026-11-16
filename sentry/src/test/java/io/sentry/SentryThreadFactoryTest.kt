@@ -1,5 +1,6 @@
 package io.sentry
 
+import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -89,6 +90,25 @@ class SentryThreadFactoryTest {
     val threads = sut.getCurrentThreads(stackTraces, null, false, false)
 
     assertNotNull(threads!!.firstOrNull { it.id == currentThread.id })
+  }
+
+  @Test
+  fun `limits thread stack trace to 50 oldest and 200 newest frames`() {
+    val sut = fixture.getSut()
+    val thread = Thread()
+    val stackTrace = Array(300) { StackTraceElement("frame-$it", "method", "File.java", it) }
+
+    val sentryThread =
+      sut.getCurrentThreads(mutableMapOf(thread to stackTrace), null, false, true)!!.single {
+        it.id == thread.id
+      }
+    val frames = sentryThread.stacktrace!!.frames!!
+
+    assertThat(frames).hasSize(250)
+    assertThat(frames[0].module).isEqualTo("frame-299")
+    assertThat(frames[49].module).isEqualTo("frame-250")
+    assertThat(frames[50].module).isEqualTo("frame-199")
+    assertThat(frames[249].module).isEqualTo("frame-0")
   }
 
   @Test
