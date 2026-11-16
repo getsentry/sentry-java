@@ -121,11 +121,12 @@ If the push fails due to diverged history, ask the user how to proceed rather th
 
 ## Step 5: Create PR
 
-Invoke the `sentry-skills:create-pr` skill to create a draft PR.
+Invoke the `sentry-skills:pr-writer` skill to create a draft PR.
 
-Read `.github/pull_request_template.md` and use it as the PR body structure — it is the single source
-of truth for the sections and checklist, so never reproduce it from memory. Fill in each section based
-on the changes being PR'd, drop the HTML comment hints, and check any checklist items that apply.
+Read `.github/pull_request_template.md` and use it as the PR body structure instead of pr-writer's
+default body shape — it is the single source of truth for the sections and checklist, so never
+reproduce it from memory. Fill in each section based on the changes being PR'd, drop the HTML
+comment hints, and check any checklist items that apply.
 
 **PR title format** — same as the commit subject (Step 3):
 
@@ -190,7 +191,7 @@ Create the subsection under `## Unreleased` if it does not already exist.
 - <Short description of the change> ([#<PR_NUMBER>](https://github.com/getsentry/sentry-java/pull/<PR_NUMBER>))
 ```
 
-Use the PR number returned by `sentry-skills:create-pr`. Match the style of existing entries — sentence case, ending with the PR link, no trailing period.
+Use the number of the PR created in Step 5. Match the style of existing entries — sentence case, ending with the PR link, no trailing period.
 
 #### Commit and push
 
